@@ -1,0 +1,12 @@
+services:
+  jamsend-tracker:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM alpine:latest
+        RUN apk add --no-cache opentracker
+    ports:
+      - "6969:6969"
+      - "6969:6969/udp"
+    command: opentracker
+    restart: always
