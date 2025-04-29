@@ -1,25 +1,37 @@
 <script lang="ts">
-    import * as ed from '@noble/ed25519';
 	import QrCode from "svelte-qrcode"
     import SvelteCopyUrlButton from 'svelte-copy-url-button';
     import { untrack } from 'svelte';
+    import { exportKeyHex, Idento } from './Peer.svelte';
     // your id, we save
     // < privacy: dont share user_pub? or regen for each streamer_pub
     //    simply avoid peers sharing pubkeys?
     // < privacy: consent to share user_name with room
-    let user = $state({ name: "", sec: "", pub: "" });
-    // who runs the room, could become you
-    let streamer_name = $state("");
-    let streamer_pub_hex = $state("");
-    let streamer_pub = $state("");
+    let user = new Idento()
+    // the streamer, who runs the room, could become you
+    let A = new Idento()
     // status messages
     let stat = $state("");
 
+    let user_pub_hex = $state('')
+    let streamer_pub_hex = $state("");
+    $effect(async () => {
+        if (!user.publicKey) return
+        user_pub_hex = await exportKeyHex(user.publicKey)
+    })
+    $effect(async () => {
+        if (!A.publicKey) return
+        streamer_pub_hex = await exportKeyHex(A.publicKey)
+    })
+
 
     async function newStream() {
-        streamer_name = "Loud"
-        streamer_pub = user.pub
-        streamer_pub_hex = ed.etc.bytesToHex(user.pub)
+        if (!user.publicKey) {
+            stat = "no keys"
+            return
+        }
+        A.replaceKeys(user)
+        await A.to_location_hash()
         stat = "newStream()"
     }
     let sharable_link = $state("")
@@ -30,26 +42,27 @@
     $effect(() => {
         if (streamer_init) return
         streamer_init = true
-        get_streamer_name();
-        window.addEventListener("popstate", get_streamer_name);
-        window.addEventListener("pushstate", get_streamer_name);
+        get_streamer();
+        window.addEventListener("popstate", get_streamer);
+        window.addEventListener("pushstate", get_streamer);
     });
-    function get_streamer_name() {
-        let m = window.location.hash.match(/^#(\w+)_(\w+)$/);
-        streamer_name = (m && m[1]) || "";
-        streamer_pub_hex = (m && m[2] || "");
-        streamer_pub = streamer_pub_hex && ed.etc.hexToBytes(streamer_pub_hex)
+    let hash = $state('')
+    async function get_streamer() {
+        hash = window.location.hash
+        await A.from_location_hash()
+        if (!A.publicKey) return
+        stat  = "got streamer"
     }
     $effect(() => {
         if (streamer_pub_hex) {
             // they followed a link to someone's room
             //  have their name in the URL for human-friendliness of the link itself
             // or, they might have just become the streamer
-            window.location.hash = `${streamer_name}_${streamer_pub_hex}`;
-            if (untrack(() => streamer_pub == user.pub)) {
+            
+            if (untrack(() => A.publicKey == user.publicKey)) {
                 // your room
                 stat = "TODO sharable link + QR code";
-                sharable_link = window.location
+                sharable_link = window.location+''
             } else {
                 // < connect there
                 stat = "TODO finding the streamer...";
@@ -60,22 +73,29 @@
         }
     });
 
-    // init the user
-    let user_init = false;
-    $effect(() => {
-        if (!user_init) {
-            if (localStorage.jamsend_user) {
-                user = JSON.parse(localStorage.jamsend_user)
-            }
-            user_init = true;
+
+
+    // persist the user
+    //  so they can reload the page and resume as the peer they were
+    let user_init = async () => {
+        if (localStorage.jamsend_user) {
+            await user.from_json(localStorage.jamsend_user)
+        }
+        user_init = () => {}
+    }
+    $effect(async () => {
+        user_init()
+    });
+    $effect(async () => {
+        if (user.publicKey) {
+            localStorage.jamsend_user = await user.to_json()
         }
     });
-    $effect(() => {
-        if (user.name || user.pub) {
-            localStorage.jamsend_user = JSON.stringify(user)
-        }
-    });
-    // init user's keys
+
+
+
+
+
     // pubkeys prototyping
     let signature = $state();
     let noise = $state();
@@ -84,8 +104,7 @@
     // Generate a key pair
     async function generateKey() {
         stat = "Generating..."
-        user.sec = ed.utils.randomPrivateKey()
-        user.pub = await ed.getPublicKeyAsync(user.sec)
+        user.generateKeys()
         signature = undefined;
         verified = undefined;
         stat = "Got keys..."
@@ -100,47 +119,59 @@
 
     // Sign the noise
     async function signNoise() {
-        if (!user.sec || !noise) return
-        signature = await ed.signAsync(noise, user.sec)
+        if (!user.privateKey || !noise) return
+        let sig = await user.sign(noise)
+        // sig = sig.slice(1)+'e'
+        signature = sig
         verified = undefined
     }
 
     // Verify the signature
     async function verifySignature() {
-        if (!user.pub || !signature || !noise) return;
-        verified = await ed.verifyAsync(signature,noise,user.pub)
+        if (!user.publicKey || !signature || !noise) return;
+        verified = await user.verify(signature,noise)
     }
 
-    let user_pub_hex = $state('')
-    $effect(() => {
-        if (!user.pub) return
-        user_pub_hex = untrack(() => { user.pub && ed.etc.bytesToHex(user.pub) || '' })
-        
-    })
 </script>
 
+
+
+
+
+
+
+
+
+
+
+
+
 <div>
-    <p>{streamer_name} <small>({streamer_pub_hex})</small></p>
+    <p>tuned to:
+        {#if hash}<small>{hash}</small>{/if}
+        <small>({streamer_pub_hex})</small>
+</p>
     {#if user_pub_hex}<p>You: <small>({user_pub_hex})</small></p>{/if}
     {#if stat}<p>><small>{stat}</small></p>{/if}
+    
 </div>
 <div>
     {#if sharable_link}
         <p>Sharable link: <SvelteCopyUrlButton url={sharable_link} />
-             <details>
+             <!-- <details>
                 <summary>QR code</summary>
                 <QrCode value={sharable_link} />
-            </details>
+            </details> -->
         </p>
     {/if}
 </div>
 
 <div>
-    <button on:click={generateKey}>generate</button>
-    <button on:click={newStream}>New Stream</button>
-    <button on:click={makeNoise}>noise</button>
-    <button on:click={signNoise}>sign</button>
-    <button on:click={verifySignature}>Verify</button>
+    <button onclick={generateKey}>generate</button>
+    <button onclick={newStream}>New Stream</button>
+    <button onclick={makeNoise}>noise</button>
+    <button onclick={signNoise}>sign</button>
+    <button onclick={verifySignature}>Verify</button>
 </div>
 
 
@@ -150,7 +181,7 @@
         <p>Noise: {Array.from(noise).join(", ")}</p>
     {/if}
     {#if signature}
-        <p>Signature: {Array.from(new Uint8Array(signature)).join(", ")}</p>
+        <p>Signature: {signature}</p>
     {/if}
     {#if verified !== undefined}
         <p>Signature Verified: {verified ? "✅" : "❌"}</p>
