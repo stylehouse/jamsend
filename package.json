@@ -31,6 +31,7 @@
 		"vitest": "^3.0.0"
 	},
 	"dependencies": {
+		"@noble/ed25519": "^2.2.3",
 		"trystero": "^0.21.2"
 	}
 }

@@ -17,11 +17,11 @@
     let streamer_pub_hex = $state("");
     $effect(async () => {
         if (!user.publicKey) return
-        user_pub_hex = await exportKeyHex(user.publicKey)
+        user_pub_hex = exportKeyHex(user.publicKey)
     })
     $effect(async () => {
         if (!A.publicKey) return
-        streamer_pub_hex = await exportKeyHex(A.publicKey)
+        streamer_pub_hex = exportKeyHex(A.publicKey)
     })
 
 
@@ -78,7 +78,7 @@
     // persist the user
     //  so they can reload the page and resume as the peer they were
     let user_init = async () => {
-        if (localStorage.jamsend_user) {
+        if (0 && localStorage.jamsend_user) {
             await user.from_json(localStorage.jamsend_user)
         }
         user_init = () => {}
