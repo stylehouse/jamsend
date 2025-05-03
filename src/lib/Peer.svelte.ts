@@ -12,14 +12,16 @@ export function importKeyHex(hex) {
     return ed.etc.hexToBytes(hex)
 }
 
+
 // the crypto features of Idento
 export class IdentoCrypto {
     public publicKey = $state()
     public privateKey = $state()
 
     async generateKeys() {
-        const publicKey = ed.utils.randomPrivateKey()
-        const privateKey = await ed.getPublicKeyAsync(publicKey)
+        const privateKey = ed.utils.randomPrivateKey()
+        const publicKey = await ed.getPublicKeyAsync(privateKey)
+
         this.replaceKeys({ publicKey, privateKey })
     }
     // changes the identity of this Idento
@@ -30,16 +32,20 @@ export class IdentoCrypto {
 
     async sign(message) {
         if (!this.privateKey) throw "!privateKey"
-        const signature = await ed.signAsync(message, this.privateKey)
+        const signature = await ed.signAsync(hex(message),this.privateKey)
         return signature
     }
 
-    async verify(signatureHex, message) {
+    async verify(signature, message) {
         if (!this.publicKey) throw "!publicKey"
-        const signature = signatureHex
-        return await ed.verifyAsync(signature,message,this.publicKey)
-
+        let verified = await ed.verifyAsync(signature,hex(message),this.publicKey)
+        return verified
     }
+}
+
+function hex(message) {
+    return message instanceof Uint8Array ? 
+        message : new TextEncoder().encode(message)
 }
 
 //#region idento

@@ -78,7 +78,7 @@
     // persist the user
     //  so they can reload the page and resume as the peer they were
     let user_init = async () => {
-        if (0 && localStorage.jamsend_user) {
+        if (localStorage.jamsend_user) {
             await user.from_json(localStorage.jamsend_user)
         }
         user_init = () => {}
@@ -104,7 +104,7 @@
     // Generate a key pair
     async function generateKey() {
         stat = "Generating..."
-        user.generateKeys()
+        await user.generateKeys()
         signature = undefined;
         verified = undefined;
         stat = "Got keys..."
@@ -113,6 +113,8 @@
     // Generate some random noise (as Uint8Array)
     function makeNoise() {
         noise = crypto.getRandomValues(new Uint8Array(32))
+        noise = "Blah"
+        // noise = new TextEncoder().encode(noise)
         signature = undefined
         verified = undefined
     }
