@@ -2,7 +2,7 @@
 	import QrCode from "svelte-qrcode"
     import SvelteCopyUrlButton from 'svelte-copy-url-button';
     import { untrack } from 'svelte';
-    import { exportKeyHex, Idento } from './Peer.svelte';
+    import { Idento } from './Peer.svelte';
     // your id, we save
     // < privacy: dont share user_pub? or regen for each streamer_pub
     //    simply avoid peers sharing pubkeys?
@@ -17,11 +17,15 @@
     let streamer_pub_hex = $state("");
     $effect(async () => {
         if (!user.publicKey) return
-        user_pub_hex = exportKeyHex(user.publicKey)
+        user_pub_hex = user.pub
     })
-    $effect(async () => {
+    function getApubkey() {
         if (!A.publicKey) return
-        streamer_pub_hex = exportKeyHex(A.publicKey)
+        streamer_pub_hex = A.pub
+
+    }
+    $effect(async () => {
+        getApubkey()
     })
 
 
@@ -33,22 +37,21 @@
         A.replaceKeys(user)
         await A.to_location_hash()
         stat = "newStream()"
+        getApubkey()
     }
-    let sharable_link = $state("")
+    let sharable_link = $state()
 
     // init the streamer
     //  who is identified by the URL, which can change
-    let streamer_init = false;
-    $effect(() => {
-        if (streamer_init) return
-        streamer_init = true
-        get_streamer();
+    let streamer_init = async () => {
         window.addEventListener("popstate", get_streamer);
         window.addEventListener("pushstate", get_streamer);
-    });
+        streamer_init = () => {}
+        await get_streamer();
+    }
+    $effect(() => streamer_init());
     let hash = $state('')
     async function get_streamer() {
-        hash = window.location.hash
         await A.from_location_hash()
         if (!A.publicKey) return
         stat  = "got streamer"
@@ -61,10 +64,12 @@
             
             if (untrack(() => A.publicKey == user.publicKey)) {
                 // your room
+                console.log("...you ", [A.publicKey,user.publicKey])
                 stat = "TODO sharable link + QR code";
                 sharable_link = window.location+''
             } else {
                 // < connect there
+                console.log("...they're ", [A.publicKey,user.publicKey])
                 stat = "TODO finding the streamer...";
             }
         } else {
@@ -79,18 +84,16 @@
     //  so they can reload the page and resume as the peer they were
     let user_init = async () => {
         if (localStorage.jamsend_user) {
-            await user.from_json(localStorage.jamsend_user)
+            await user.thaw(JSON.parse(localStorage.jamsend_user))
         }
         user_init = () => {}
     }
-    $effect(async () => {
-        user_init()
-    });
+    $effect(user_init)
     $effect(async () => {
         if (user.publicKey) {
-            localStorage.jamsend_user = await user.to_json()
+            localStorage.jamsend_user = JSON.stringify(await user.freeze())
         }
-    });
+    })
 
 
 
@@ -150,7 +153,7 @@
 
 <div>
     <p>tuned to:
-        {#if hash}<small>{hash}</small>{/if}
+        {#if hash}<small>{streamer_pub_hex}</small>{/if}
         <small>({streamer_pub_hex})</small>
 </p>
     {#if user_pub_hex}<p>You: <small>({user_pub_hex})</small></p>{/if}
@@ -160,10 +163,11 @@
 <div>
     {#if sharable_link}
         <p>Sharable link: <SvelteCopyUrlButton url={sharable_link} />
-             <!-- <details>
+            <small>{sharable_link}</small>
+             <details>
                 <summary>QR code</summary>
                 <QrCode value={sharable_link} />
-            </details> -->
+            </details>
         </p>
     {/if}
 </div>

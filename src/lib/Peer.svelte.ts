@@ -2,21 +2,18 @@ import * as ed from '@noble/ed25519';
 
 //#region crypto
 // Export keys to hexadecimal
-const bufferToHex = buffer => [...new Uint8Array(buffer)]
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-export function exportKeyHex(key) {
-    return ed.etc.bytesToHex(key)
+export const enhex = ed.etc.bytesToHex
+export const dehex = ed.etc.hexToBytes
+// ensure Uint8Array (Bytes)
+function enu8(message) {
+    return message instanceof Uint8Array ? 
+        message : new TextEncoder().encode(message)
 }
-export function importKeyHex(hex) {
-    return ed.etc.hexToBytes(hex)
-}
-
 
 // the crypto features of Idento
 export class IdentoCrypto {
-    public publicKey = $state()
-    public privateKey = $state()
+    public publicKey:ed.Bytes = $state()
+    public privateKey:ed.Bytes = $state()
 
     async generateKeys() {
         const privateKey = ed.utils.randomPrivateKey()
@@ -32,21 +29,21 @@ export class IdentoCrypto {
 
     async sign(message) {
         if (!this.privateKey) throw "!privateKey"
-        const signature = await ed.signAsync(hex(message),this.privateKey)
+        const signature = await ed.signAsync(enu8(message),this.privateKey)
         return signature
     }
 
     async verify(signature, message) {
         if (!this.publicKey) throw "!publicKey"
-        let verified = await ed.verifyAsync(signature,hex(message),this.publicKey)
+        let verified = await ed.verifyAsync(signature,enu8(message),this.publicKey)
         return verified
+    }
+
+    get pub():ed.Hex {
+        return enhex(this.publicKey)
     }
 }
 
-function hex(message) {
-    return message instanceof Uint8Array ? 
-        message : new TextEncoder().encode(message)
-}
 
 //#region idento
 // lifecycle-related helpers
@@ -56,25 +53,24 @@ export class Idento extends IdentoCrypto {
     async from_location_hash() {
         let m = window.location.hash.match(/^#(\w+)$/);
         if (!m) return
-        this.publicKey = importKeyHex(m[1])
+        this.publicKey = dehex(m[1])
         if (!this.publicKey) {
             console.warn("Malformed public key?",m[1])
         }
     }
     async to_location_hash() {
-        window.location.hash = exportKeyHex(this.publicKey)
+        window.location.hash = enhex(this.publicKey)
     }
 
-    async from_json(json) {
-        let a:storableIdento = JSON.parse(json)
-        this.publicKey = importKeyHex(a.pub)
-        this.privateKey = importKeyHex(a.key)
+    async thaw(a:storableIdento) {
+        this.publicKey = dehex(a.pub)
+        if (a.key) this.privateKey = dehex(a.key)
     }
 
-    async to_json() {
+    async freeze() {
         let a:storableIdento = {}
-        a.pub = exportKeyHex(this.publicKey)
-        a.key = exportKeyHex(this.privateKey)
-        return JSON.stringify(a)
+        a.pub = enhex(this.publicKey)
+        if (this.privateKey) a.key = enhex(this.privateKey)
+        return a
     }
 }
