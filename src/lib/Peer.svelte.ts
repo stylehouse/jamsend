@@ -66,7 +66,6 @@ export class Idento extends IdentoCrypto {
         this.publicKey = dehex(a.pub)
         if (a.key) this.privateKey = dehex(a.key)
     }
-
     async freeze() {
         let a:storableIdento = {}
         a.pub = enhex(this.publicKey)

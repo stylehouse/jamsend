@@ -13,6 +13,39 @@
     // status messages
     let stat = $state("");
 
+
+    async function newStream() {
+        if (!user.publicKey) {
+            stat = "no keys"
+            return
+        }
+        A.replaceKeys(user)
+        await A.to_location_hash()
+        stat = "newStream()"
+        getApubkey()
+        get_streamer();
+    }
+    let sharable_link = $state()
+
+    // init the streamer
+    //  who is identified by the URL, which can change
+    let streamer_init = async () => {
+        window.addEventListener("popstate", get_streamer);
+        window.addEventListener("pushstate", get_streamer);
+        streamer_init = () => {}
+        get_streamer();
+    }
+    $effect(() => streamer_init());
+    let hash = $state('')
+    async function get_streamer() {
+        await A.from_location_hash()
+        if (!A.publicKey) return
+        stat  = "got streamer"
+        begin()
+    }
+
+
+
     let user_pub_hex = $state('')
     let streamer_pub_hex = $state("");
     $effect(async () => {
@@ -28,55 +61,25 @@
         getApubkey()
     })
 
-
-    async function newStream() {
-        if (!user.publicKey) {
-            stat = "no keys"
-            return
+    function begin() {
+        if (!streamer_pub_hex) {
+            debugger
         }
-        A.replaceKeys(user)
-        await A.to_location_hash()
-        stat = "newStream()"
-        getApubkey()
-    }
-    let sharable_link = $state()
-
-    // init the streamer
-    //  who is identified by the URL, which can change
-    let streamer_init = async () => {
-        window.addEventListener("popstate", get_streamer);
-        window.addEventListener("pushstate", get_streamer);
-        streamer_init = () => {}
-        await get_streamer();
-    }
-    $effect(() => streamer_init());
-    let hash = $state('')
-    async function get_streamer() {
-        await A.from_location_hash()
-        if (!A.publicKey) return
-        stat  = "got streamer"
-    }
-    $effect(() => {
-        if (streamer_pub_hex) {
-            // they followed a link to someone's room
-            //  have their name in the URL for human-friendliness of the link itself
-            // or, they might have just become the streamer
-            
-            if (untrack(() => A.publicKey == user.publicKey)) {
-                // your room
-                console.log("...you ", [A.publicKey,user.publicKey])
-                stat = "TODO sharable link + QR code";
-                sharable_link = window.location+''
-            } else {
-                // < connect there
-                console.log("...they're ", [A.publicKey,user.publicKey])
-                stat = "TODO finding the streamer...";
-            }
+        // they followed a link to someone's room
+        //  have their name in the URL for human-friendliness of the link itself
+        // or, they might have just become the streamer
+        
+        if (A.pub == user.pub) {
+            // your room
+            console.log("...you ", [A.publicKey,user.publicKey])
+            stat = "TODO sharable link + QR code";
+            sharable_link = window.location+''
         } else {
-            // they left the room or followed a non-room link
-            stat = "non-room link";
+            // < connect there
+            console.log("...they're ", [A.publicKey,user.publicKey])
+            stat = "TODO finding the streamer...";
         }
-    });
+    }
 
 
 
@@ -162,13 +165,15 @@
 </div>
 <div>
     {#if sharable_link}
-        <p>Sharable link: <SvelteCopyUrlButton url={sharable_link} />
+        <div>Sharable link: <SvelteCopyUrlButton url={sharable_link} />
             <small>{sharable_link}</small>
+            <!-- <QrCode value={sharable_link} /> -->
+             Here:
              <details>
                 <summary>QR code</summary>
-                <QrCode value={sharable_link} />
+                <p> <QrCode value={sharable_link} /> </p>
             </details>
-        </p>
+        </div>
     {/if}
 </div>
 
@@ -197,5 +202,8 @@
 <style>
     button {
         border: 1px solid green;
+    }
+    details p {
+        mix-blend-mode: multiply;
     }
 </style>
