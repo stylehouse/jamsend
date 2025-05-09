@@ -1,19 +1,31 @@
 <script lang="ts">
-    import { joinRoom } from "trystero/torrent";
+    let torrenting = false
+
+    import { joinRoom } from "trystero/mqtt";
+    // torrenting = false
+    // import { joinRoom } from "trystero/torrent";
     import { Participant } from "./Peer.svelte";
     import { SvelteMap } from "svelte/reactivity";
     let {room:room_id,is_host,stat} = $props()
 
-    const config = {
+    let config = {
         appId: "jamsend",
-        relayUrls: [
-            // < disabled because opentracker doesn't do websockets?
+    };
+    if (torrenting) {
+        // too slow for development
+        config.relayUrls = [
+            // < disabled because opentracker doesn't do secure websockets?
             // "http://127.0.24.1:6969",
             "wss://tracker.openwebtorrent.com",
             "wss://tracker.files.fm:7073",
             "wss://tracker.webtorrent.dev",
-        ],
-    };
+        ]
+    }
+    else {
+        config.relayUrls = [`wss://${window.location.hostname}:9001`]
+    }
+
+
     let onError = (m,s,b) => {
         console.log("Wonderful",{m,s,b})
     }
@@ -25,7 +37,7 @@
     let participants:Map<peerId, Participant> = $state(new SvelteMap())
     let spam = () => {}
     function joinery() {
-        stat("Joining room...")
+        stat("Joining room..." + crypto.sublte.digest('SHA-1','blah'))
         const room = joinRoom(config,room_id,onError)
         const [sendMessage, receiveMessage] = room.makeAction('message')
 
@@ -50,12 +62,13 @@
             console.log(`Peer left: ${peerId}`)
             participants.delete(peerId)
         })
+        stat("Joining room......")
     }
     $effect(() => {
         joinery()
     })
 
-    let mess
+    let mess = "Message"
     async function amuck() {
         spam(mess)
         stat("Geaamuck...")
@@ -64,7 +77,7 @@
 </script>
 
 Peers!
-<input bind:this={mess} onchange={amuck} />
+<input bind:value={mess} onchange={amuck} />
 <button onclick={amuck}>amuck</button>
 <button onclick={joinery}>joinery</button>
 

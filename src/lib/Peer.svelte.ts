@@ -40,6 +40,7 @@ export class IdentoCrypto {
     }
 
     get pub():ed.Hex {
+        if (!this.publicKey) return ''
         return enhex(this.publicKey)
     }
 }
