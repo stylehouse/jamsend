@@ -45,6 +45,7 @@ export class IdentoCrypto {
 }
 
 
+//#endregion
 //#region idento
 // lifecycle-related helpers
 type storableIdento = {pub:string,key:string}
@@ -73,3 +74,15 @@ export class Idento extends IdentoCrypto {
         return a
     }
 }
+//#endregion
+//#region Room
+
+export class Participant {
+    peerId:string
+    name:string|undefined = $state()
+
+    constructor(opt) {
+        Object.assign(this, opt)
+    }
+}
+//#endregion

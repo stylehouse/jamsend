@@ -1,8 +1,10 @@
 <script lang="ts">
 	import QrCode from "svelte-qrcode"
     import SvelteCopyUrlButton from 'svelte-copy-url-button';
-    import { untrack } from 'svelte';
     import { Idento } from './Peer.svelte';
+    import Peers from "./Room.svelte";
+    import Room from "./Room.svelte";
+
     // your id, we save
     // < privacy: dont share user_pub? or regen for each streamer_pub
     //    simply avoid peers sharing pubkeys?
@@ -11,17 +13,24 @@
     // the streamer, who runs the room, could become you
     let A = new Idento()
     // status messages
-    let stat = $state("");
+    let statmsg = $state("");
+    let labelled_stat = (label:string) => {
+        return (m,data?) => {
+            statmsg = `${label}: ${m}`
+            if (data) console.info(statmsg,data)
+        }
+    }
+    let stat = labelled_stat('Who')
 
 
     async function newStream() {
         if (!user.publicKey) {
-            stat = "no keys"
+            stat("no keys")
             return
         }
         A.replaceKeys(user)
         await A.to_location_hash()
-        stat = "newStream()"
+        stat("newStream()")
         getApubkey()
         get_streamer();
     }
@@ -36,18 +45,17 @@
         get_streamer();
     }
     $effect(() => streamer_init());
-    let hash = $state('')
     async function get_streamer() {
         await A.from_location_hash()
         if (!A.publicKey) return
-        stat  = "got streamer"
+        stat("got streamer")
         begin()
     }
 
 
 
     let user_pub_hex = $state('')
-    let streamer_pub_hex = $state("");
+    let streamer_pub_hex = $state("")
     $effect(async () => {
         if (!user.publicKey) return
         user_pub_hex = user.pub
@@ -61,27 +69,19 @@
         getApubkey()
     })
 
+    // we decide to connect to peers
+    let room = $state()
+    // we are the origin of the stream
+    let is_host = $state(false)
     function begin() {
         if (!streamer_pub_hex) {
             debugger
         }
-        // they followed a link to someone's room
-        //  have their name in the URL for human-friendliness of the link itself
-        // or, they might have just become the streamer
         
-        if (A.pub == user.pub) {
-            // your room
-            console.log("...you ", [A.publicKey,user.publicKey])
-            stat = "TODO sharable link + QR code";
-            sharable_link = window.location+''
-        } else {
-            // < connect there
-            console.log("...they're ", [A.publicKey,user.publicKey])
-            stat = "TODO finding the streamer...";
-        }
+        room = A.pub
+        sharable_link = window.location+''
+        is_host = A.pub == user.pub
     }
-
-
 
     // persist the user
     //  so they can reload the page and resume as the peer they were
@@ -109,11 +109,11 @@
 
     // Generate a key pair
     async function generateKey() {
-        stat = "Generating..."
+        stat("Generating...")
         await user.generateKeys()
         signature = undefined;
         verified = undefined;
-        stat = "Got keys..."
+        stat("Got keys...")
     }
 
     // Generate some random noise (as Uint8Array)
@@ -156,11 +156,10 @@
 
 <div>
     <p>tuned to:
-        {#if hash}<small>{streamer_pub_hex}</small>{/if}
         <small>({streamer_pub_hex})</small>
 </p>
     {#if user_pub_hex}<p>You: <small>({user_pub_hex})</small></p>{/if}
-    {#if stat}<p>><small>{stat}</small></p>{/if}
+    {#if statmsg}<p>><small>{statmsg}</small></p>{/if}
     
 </div>
 <div>
@@ -198,6 +197,13 @@
         <p>Signature Verified: {verified ? "✅" : "❌"}</p>
     {/if}
 </div>
+
+{#if room}
+    <div> Room:
+        <Room {room} {is_host}
+            stat={labelled_stat('Room')} />
+    </div>
+{/if}
 
 <style>
     button {
