@@ -37,7 +37,7 @@
     let participants:Map<peerId, Participant> = $state(new SvelteMap())
     let spam = () => {}
     function joinery() {
-        stat("Joining room..." + crypto.sublte.digest('SHA-1','blah'))
+        stat("Joining room...")
         const room = joinRoom(config,room_id,onError)
         const [sendMessage, receiveMessage] = room.makeAction('message')
 

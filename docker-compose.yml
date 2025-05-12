@@ -1,6 +1,22 @@
 services:
   jamsend-dev:
-    image: oven/bun:latest
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM alpine:latest
+        # Install Bun prerequisites and FFmpeg
+        RUN apk add --no-cache \
+            curl \
+            unzip \
+            ca-certificates \
+            ffmpeg \
+            bash
+        # Install Bun
+        RUN curl -fsSL https://bun.sh/install | bash
+        # Make bun available in PATH for all users
+        ENV PATH="/root/.bun/bin:${PATH}"
+        # Verify installations
+        RUN bun --version && ffmpeg -version
     container_name: jamsend-dev
     working_dir: /app
     volumes:
@@ -10,33 +26,3 @@ services:
     command: bun run dev --host 0.0.0.0 --port 9091
     tty: true
     stdin_open: true
-
-  mqtt:
-    image: eclipse-mosquitto:latest
-    container_name: mqtt_broker
-    ports:
-      - "1883:1883"  # MQTT default port
-      - "9001:9001"  # MQTT over WebSockets port
-    volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
-    restart: unless-stopped
-
-  caddy:
-    image: caddy:latest
-    container_name: caddy
-    ports:
-      # - "80:80"
-      - "9086:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - jamsend-dev
-    restart: unless-stopped
-
-volumes:
-  caddy_data:
-  caddy_config:
