@@ -1,6 +1,7 @@
 
 import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
+import { writable, derived, get } from 'svelte/store';
 
 // a unique song URI hash
 export type urihash = String
@@ -17,11 +18,12 @@ type audiole = audioi & {
     blob: Uint8Array,
     done?: Boolean
 }
-class Gatherer {
+export class Gatherer {
     socket:Socket
+    on_error:Function
 
     audiolets:Map<urihash,Audiolet> = new Map()
-    constructor(opt) {
+    constructor(opt?) {
         Object.assign(this, opt)
         this.setupSocket();
     }
@@ -35,21 +37,65 @@ class Gatherer {
             let got = this.audiolets.get(r.id)
             if (!got) {
                 got = new Audiolet()
-                this.audiolets.get(r.id, got)
+                this.audiolets.set(r.id, got)
             }
             got.more(r)
         })
-        this.socket.on('error', async ({error,filename}) => {
-            console.error("ws-server Error: ",{error,filename})
+        this.socket.on('error', async ({error}) => {
+            this.on_error?.(error)
         })
     }
 
+    close() {
+        this.socket.close()
+    }
 }
 
 class Audiolet {
-    data
+    // indexed by mu.index
+    chunks = []
+
     more(r:audiole) {
 
     }
 
+}
+
+
+// handles time-spurred whims to arrange audio
+export class Audiocean {
+    AC = new AudioContext()
+    close() {
+        this.AC.close()
+    }
+    // currently playing
+    current:Audiolet
+    current_meta = $state()
+    // next track is also random, but starts from the start
+    next_track:Audiolet
+
+    // < punctuate voluntary track changes with radio-tuning squelches, loop
+    tuning_noise:Audiolet
+
+    // start random track at random position
+    surf() {
+        if (!this.random_track) {
+            throw "!this.random_track"
+        }
+        if (this.current) {
+            this.current.fadeOut()
+        }
+        this.current = random_tracks.shift()
+        this.gather_random_track()
+    }
+    // start random track at the start
+    next() {
+        // < called at the end of the previous track, 
+    }
+
+    // queue of incoming random tracks
+    random_tracks = []
+    gather_random_track() {
+
+    }
 }
