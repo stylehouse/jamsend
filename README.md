@@ -7,8 +7,8 @@ Hifi streaming with radio-tuner UI
 First time,
 
 ```bash
-docker pull oven/bun
-docker run -v .:/home/bun/app oven/bun bun install
+docker compose build
+docker run -v .:/app jamsend-jamsend-dev bash -c "cd /app && npm i"
 ```
 
 Thence,

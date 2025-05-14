@@ -16,6 +16,7 @@ export type audioi = {
 // the response of part|whole
 type audiole = audioi & {
     blob: Uint8Array,
+    // < last bit -> start another from the start
     done?: Boolean
 }
 export class Gatherer {
@@ -63,7 +64,6 @@ class Audiolet {
     chunks = []
 
     more(r:audiole) {
-
     }
 
 }
@@ -78,6 +78,7 @@ export class Audiocean {
     // currently playing
     current:Audiolet
     current_meta = $state()
+
     // next track is also random, but starts from the start
     next_track:Audiolet
 
