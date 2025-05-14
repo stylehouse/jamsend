@@ -44,10 +44,17 @@ export class Gatherer {
         this.socket.on('error', async ({error}) => {
             this.on_error?.(error)
         })
+        this.socket.on('connect', () => {
+            console.log('Connected to audio server');
+        })
+        this.socket.on('disconnect', () => {
+            console.log('Disconnected from audio server');
+        })
     }
 
     close() {
-        this.socket.close()
+        console.error("Closing socket")
+        this.socket.disconnect()
     }
 }
 

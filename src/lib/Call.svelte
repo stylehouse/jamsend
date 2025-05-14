@@ -1,15 +1,15 @@
-<!-- AudioPlayer.svelte -->
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { Audiocean, Gatherer, type urihash } from "./Gather.svelte";
 
-    let gather
-    let audios = $state()
+    let gather;
+    let audios = $state();
     // Initialize AudioContext in response to user gesture
     const initAudio = () => {
-        if (audios) return
+        console.log("Trying...")
+        if (audios) return;
         try {
-            audios = new Audiocean()
+            audios = new Audiocean();
             document.removeEventListener("click", initAudio);
             document.removeEventListener("touchstart", initAudio);
         } catch (err) {
@@ -19,49 +19,51 @@
     };
 
     let errorMessage = "";
-    let trackInfo = $state()
+    let trackInfo = $state();
 
     $effect(() => {
         // Initialize WebSocket connection
-        gather = new Gatherer({on_error: (er) => {
-            console.error("Server error:", er);
-            errorMessage = er || "Unknown server error";
-        }})
+        gather = new Gatherer({
+            on_error: (er) => {
+                console.error("Server error:", er);
+                errorMessage = er || "Unknown server error";
+            },
+        });
+        // try this
+        initAudio()
 
         document.addEventListener("click", initAudio);
         document.addEventListener("touchstart", initAudio);
-
-        
     });
-
 
     // Skip to next track
     function skipTrack() {
-        audios?.surf()
+        console.log("surf?")
+        audios?.surf();
     }
-
 
     // Clean up when component is destroyed
     onDestroy(() => {
-        gather?.close()
-        audios?.close()
+        gather?.close();
+        audios?.close();
     });
 </script>
 
 <div class="audio-player">
-    <div class="track-info">
-        <h3>{trackInfo.title}</h3>
-        <p>
-            {trackInfo.artist} • {trackInfo.album}
-            {trackInfo.year ? `(${trackInfo.year})` : ""}
-        </p>
-    </div>
+    {#if trackInfo}
+        <div class="track-info">
+            <h3>{trackInfo.title}</h3>
+            <p>
+                {trackInfo.artist} • {trackInfo.album}
+                {trackInfo.year ? `(${trackInfo.year})` : ""}
+            </p>
+        </div>
+    {/if}
 
     <div class="controls">
         <button on:click={skipTrack}>Skip</button>
         {#if !audios}<p><a>Click Here</a> to being.</p>{/if}
     </div>
-    
 
     {#if errorMessage}
         <div class="error-message">
