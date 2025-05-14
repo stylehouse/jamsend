@@ -22,6 +22,7 @@
     let trackInfo = $state();
 
     $effect(() => {
+        if (gather) return
         // Initialize WebSocket connection
         gather = new Gatherer({
             on_error: (er) => {

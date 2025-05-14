@@ -3,8 +3,9 @@ import { readFile, writeFile, access, mkdir, readdir, stat } from 'fs/promises';
 import { join, dirname, basename, extname } from 'path';
 import { constants } from 'fs';
 import { createHash } from 'crypto';
-import { constants } from 'fs';
-import type { urihash } from './Gather.svelte';
+import type { ViteDevServer } from 'vite';
+// a unique song URI hash
+export type urihash = String
 
 export const webSocketServer = {
     name: 'webSocketServer',
@@ -25,6 +26,7 @@ export const webSocketServer = {
 }
 
 
+
 // ms?
 type timestamp = Number
 type songmeta = {
@@ -43,6 +45,7 @@ type TheMusic = {
     last_read:timestamp,
 }
 let Music:Map<urihash,TheMusic> = new Map()
+
 // stocking Music
 // < on server start
 // < wander around directory structure
@@ -54,7 +57,7 @@ async function scan_music(musicDir = '/music') {
     const scanned = new Map();
     
     // Recursive function to scan directories
-    async function scanDir(dir+) {
+    async function scanDir(dir) {
         try {
             const entries = await readdir(dir, { withFileTypes: true });
             
