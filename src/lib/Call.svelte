@@ -2,14 +2,12 @@
     import { onDestroy } from "svelte";
     import { Audiocean, Gatherer, type urihash } from "./Gather.svelte";
 
-    let gather;
-    let audios = $state();
+    let gather = $state();
     // Initialize AudioContext in response to user gesture
     const initAudio = () => {
-        console.log("Trying...")
-        if (audios) return;
+        if (gather.AC) return;
         try {
-            audios = new Audiocean();
+            gather.init()
             document.removeEventListener("click", initAudio);
             document.removeEventListener("touchstart", initAudio);
         } catch (err) {
@@ -26,8 +24,8 @@
         // Initialize WebSocket connection
         gather = new Gatherer({
             on_error: (er) => {
-                console.error("Server error:", er);
-                errorMessage = er || "Unknown server error";
+                console.error(er);
+                errorMessage = er || "Unknown error";
             },
         });
         // try this
@@ -39,14 +37,12 @@
 
     // Skip to next track
     function skipTrack() {
-        console.log("surf?")
-        audios?.surf();
+        gather?.surf();
     }
 
     // Clean up when component is destroyed
     onDestroy(() => {
         gather?.close();
-        audios?.close();
     });
 </script>
 
@@ -63,7 +59,7 @@
 
     <div class="controls">
         <button on:click={skipTrack}>Skip</button>
-        {#if !audios}<p><a>Click Here</a> to being.</p>{/if}
+        {#if !gather?.AC}<p><a>Click Here</a> to being.</p>{/if}
     </div>
 
     {#if errorMessage}
