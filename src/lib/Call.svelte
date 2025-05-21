@@ -1,24 +1,9 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Audiocean, Gatherer, type urihash } from "./Gather.svelte";
+    import { Gatherer, type urihash } from "./Gather.svelte";
 
-    let gather = $state();
-    // Initialize AudioContext in response to user gesture
-    const initAudio = () => {
-        if (gather.AC) return;
-        try {
-            gather.init()
-            document.removeEventListener("click", initAudio);
-            document.removeEventListener("touchstart", initAudio);
-        } catch (err) {
-            console.error("Failed to create AudioContext:", err);
-            errorMessage = "Could not initialize audio playback.";
-        }
-    };
-
+    let gather:Gatherer|undefined = $state();
     let errorMessage = "";
-    let trackInfo = $state();
-
     $effect(() => {
         if (gather) return
         // Initialize WebSocket connection
@@ -33,6 +18,31 @@
 
         document.addEventListener("click", initAudio);
         document.addEventListener("touchstart", initAudio);
+    });
+    // Initialize AudioContext in response to user gesture
+    const initAudio = () => {
+        if (gather.AC) return;
+        try {
+            gather.init()
+            document.removeEventListener("click", initAudio);
+            document.removeEventListener("touchstart", initAudio);
+        } catch (err) {
+            console.error("Failed to create AudioContext:", err);
+            errorMessage = "Could not initialize audio playback.";
+        }
+    };
+
+    let trackInfo = $state();
+    // Update track info when current_meta changes
+    $effect(() => {
+        if (gather?.current_meta) {
+            trackInfo = {
+                title: gather.current_meta.title || "Unknown Track",
+                artist: gather.current_meta.artist || "Unknown Artist",
+                album: gather.current_meta.album || "Unknown Album", 
+                year: gather.current_meta.year || ""
+            };
+        }
     });
 
     // Skip to next track
@@ -54,6 +64,14 @@
                 {trackInfo.artist} • {trackInfo.album}
                 {trackInfo.year ? `(${trackInfo.year})` : ""}
             </p>
+        </div>
+    {:else if gather?.loading}
+        <div class="loading">
+            <p>Loading track...</p>
+        </div>
+    {:else}
+        <div class="no-track">
+            <p>Ready to play music</p>
         </div>
     {/if}
 

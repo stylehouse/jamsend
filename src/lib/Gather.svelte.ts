@@ -16,141 +16,508 @@ export type audioi = {
 // the response of part|whole
 type audiole = audioi & {
     blob: Uint8Array,
-    // < last bit -> start another from the start
-    done?: Boolean
+  // Last bit -> start another from the start
+  done?: boolean;
+  // Song metadata if available
+  meta?: {
+    artist: string;
+    album: string;
+    title: string;
+    year: string;
+    cover?: Uint8Array;
+    duration?: number;
+  };
 }
+
+const BUFFER_AHEAD = 3; // Number of chunks to keep buffered ahead
+const FADE_DURATION = 0.5; // Fade duration in seconds
 
 
 // handles time-spurred whims to arrange audio
 export class Audiocean {
     AC:AudioContext|null = $state(null)
-    close() {
-        this.AC?.close()
+  connected = false;
+  begun = false;
+  socket: Socket;
+  
+  // Currently playing and next up tracks
+  current: Audiolet | null = $state(null);
+  next_track: Audiolet | null = $state(null);
+  
+  // UI state
+  current_meta = $state(null);
+  loading = $state(false);
+  progress = $state(0); // 0-1 playback progress
+  
+  // Queue of incoming random tracks
+  random_tracks: Audiolet[] = [];
+  
+  // Scheduled timeout for next chunk
+  nextChunkTimeout: number | null = null;
+  
+  close() {
+    this.AC?.close();
+    if (this.nextChunkTimeout) {
+      clearTimeout(this.nextChunkTimeout);
     }
-    // can fail before user gesture on the page
-    init() {
-        try {
-            this.AC = new AudioContext()
-        }
-        catch (er) {
-            return
-        }
-        this.beginable()
+  }
+  
+  // Initialize audio context (must be triggered by user interaction)
+  init() {
+    try {
+      this.AC = new AudioContext();
+      // Create a master gain node for volume control
+      this.masterGain = this.AC.createGain();
+      this.masterGain.connect(this.AC.destination);
+      this.masterGain.gain.value = 0.8; // Default volume
+      
+      console.log("AudioContext initialized");
+      this.beginable();
+      return true;
+    } catch (er) {
+      console.error("Failed to initialize AudioContext:", er);
+      return false;
     }
-    begun = false
-    beginable() {
-        if (this.AC && this.connected) {
-            if (!this.begun) {
-                this.begun = true
-                this.begin()
-            }
-        }
+  }
+  
+  // Check if we can begin playback
+  beginable() {
+    if (this.AC && this.connected && !this.begun) {
+      this.begun = true;
+      this.begin();
     }
-    begin() {
-        console.log("BEGUN")
-        this.socket.emit('more')
+  }
+  
+  // Start playback process
+  begin() {
+    console.log("Beginning audio stream");
+    this.loading = true;
+    // Request first random track
+    this.socket.emit('more', {});
+  }
+  
+  // Start a random track at random position
+  surf() {
+    console.log("Surfing to new random track");
+    this.loading = true;
+    
+    // Fade out current if playing
+    if (this.current) {
+      this.current.fadeOut().then(() => {
+        this.current.stop();
+        this.current = null;
+      });
     }
-
-    // currently playing
-    current:Audiolet
-    current_meta = $state()
-
-    // next track is also random, but starts from the start
-    next_track:Audiolet
-
-    // < punctuate voluntary track changes with radio-tuning squelches, loop
-    tuning_noise:Audiolet
-
-    // start random track at random position
-    surf() {
-        if (this.current) {
-            // this.current.fadeOut()
-        }
-        this.current = this.random_tracks.shift()
-        // this.current.fadeIn()
-
-        console.log("surf?")
-        this.socket.emit('more',{})
+    
+    // Request new random track
+    this.socket.emit('more', {});
+  }
+  
+  // Play next planned track (called near end of current track)
+  playNextTrack() {
+    if (!this.next_track) {
+      this.surf(); // No next track ready, just surf
+      return;
     }
-    // start random track at the start
-    next() {
-        // < called near the end of the previous track
-        //prev.on_ended = () => next.play()
-    }
-
-    // queue of incoming random tracks
-    random_tracks = []
-    gather_tracks() {
-        if (this.random_tracks.length > 5) return
+    
+    const nextTrack = this.next_track;
+    this.next_track = null;
+    
+    // Fade out current if playing
+    if (this.current) {
+      this.current.fadeOut().then(() => {
+        this.current.stop();
+        this.current = nextTrack;
+        this.current.play();
+        this.current.fadeIn();
         
+        // Update current metadata for UI
+        if (nextTrack.meta) {
+          this.current_meta = nextTrack.meta;
+        }
+      });
+    } else {
+      // No current track, just play next
+      this.current = nextTrack;
+      this.current.play();
+      this.current.fadeIn();
+      
+      // Update current metadata for UI
+      if (nextTrack.meta) {
+        this.current_meta = nextTrack.meta;
+      }
     }
+    
+    // Prepare another next track
+    this.prepareNextTrack();
+  }
+  
+  // Request and prepare next track
+  prepareNextTrack() {
+    if (this.next_track) return; // Already have one
+    
+    // Request a track from beginning (index 0)
+    this.socket.emit('more', { index: 0 });
+  }
+  
+  // Process incoming audio data
+  processAudioData(data: audiole) {
+    if (!this.AC) return;
+    
+    // If this is new track data with metadata
+    if (data.meta) {
+      // Update metadata in UI if this is for current track
+      if (this.current && this.current.id === data.id) {
+        this.current_meta = data.meta;
+      }
+    }
+    
+    // Find or create the audiolet for this track
+    let audiolet = this.findOrCreateAudiolet(data.id);
+    
+    // Add the chunk to the audiolet
+    audiolet.addChunk(data.index, data.blob, data.done);
+    
+    // If we don't have a current track playing, start this one
+    if (!this.current && audiolet.canPlay()) {
+      this.current = audiolet;
+      this.current.play();
+      this.current.fadeIn();
+      
+      // If we have metadata for this track, set it as current
+      if (data.meta) {
+        this.current_meta = data.meta;
+      }
+      
+      this.loading = false;
+      
+      // Start preparing a next track
+      this.prepareNextTrack();
+    }
+    // If we don't have a next track ready and this isn't the current track
+    else if (!this.next_track && (!this.current || this.current.id !== data.id) && audiolet.canPlay()) {
+      this.next_track = audiolet;
+    }
+    
+    // Request more chunks if needed for current track
+    this.requestMoreIfNeeded();
+  }
+  
+  // Find or create an Audiolet for a track ID
+  findOrCreateAudiolet(id: urihash): Audiolet {
+    let audiolet = this.audiolets.get(id);
+    if (!audiolet) {
+      audiolet = new Audiolet(this.AC, id, () => {
+        // When this track finishes
+        if (this.current && this.current.id === id) {
+          if (this.next_track) {
+            this.playNextTrack();
+          } else {
+            this.surf(); // No next track ready, just surf
+          }
+        }
+      });
+      this.audiolets.set(id, audiolet);
+    }
+    return audiolet;
+  }
+  
+  // Check if we need to request more audio chunks
+  requestMoreIfNeeded() {
+    if (!this.current) return;
+    
+    // If we're close to the end of buffered data for current track,
+    // request more chunks
+    if (this.current.needsMoreChunks()) {
+      // Schedule the request slightly ahead of when we'll need it
+      if (this.nextChunkTimeout) {
+        clearTimeout(this.nextChunkTimeout);
+      }
+      
+      this.nextChunkTimeout = setTimeout(() => {
+        this.socket.emit('more', {
+          id: this.current.id,
+          index: this.current.getNextChunkIndex()
+        });
+        this.nextChunkTimeout = null;
+      }, 50); // Small delay to avoid too frequent requests
+    }
+  }
+  
+  // Volume control (0-1)
+  setVolume(volume: number) {
+    if (!this.AC || !this.masterGain) return;
+    
+    // Clamp volume to 0-1
+    volume = Math.max(0, Math.min(1, volume));
+    this.masterGain.gain.value = volume;
+  }
+  
+  // Master gain node for volume control
+  masterGain: GainNode;
+  
+  // Collection of all audiolets by ID
+  audiolets: Map<urihash, Audiolet> = new Map();
 }
 
 
 export class Gatherer extends Audiocean {
-    socket:Socket
-    on_error:Function
-
-    audiolets:Map<urihash,Audiolet> = new Map()
-    constructor(opt?) {
-        super()
-        Object.assign(this, opt)
-        this.setupSocket();
-    }
-    connected = false
-    setupSocket() {
-        this.socket = io();
-
-        // may return more bits of songs
-        this.socket.on('more', async (r:audiole) => {
-            if (!r.id) throw "!audiole"
-            let got = this.audiolets.get(r.id)
-            if (!got) {
-                got = new Audiolet()
-                this.audiolets.set(r.id, got)
-            }
-            got.more(r)
-        })
-        this.socket.on('error', async ({error}) => {
-            this.on_error?.("Server error: "+error)
-        })
-        this.socket.on('connect', () => {
-            console.log('Connected to audio server');
-            this.connected = true
-            this.beginable()
-        })
-        this.socket.on('disconnect', () => {
-            console.log('Disconnected from audio server');
-            this.connected = false
-        })
-    }
-
-    close() {
-        console.error("Closing socket")
-        this.socket.disconnect()
-    }
+  on_error: Function;
+  
+  constructor(opt?) {
+    super();
+    Object.assign(this, opt);
+    this.setupSocket();
+  }
+  
+  setupSocket() {
+    this.socket = io();
+    
+    // Handle incoming audio data
+    this.socket.on('more', async (r: audiole) => {
+      try {
+        if (!r.id) throw new Error("Missing track ID in response");
+        this.processAudioData(r);
+      } catch (err) {
+        console.error("Error processing audio data:", err);
+        this.on_error?.("Error processing audio: " + err.message);
+      }
+    });
+    
+    // Handle server errors
+    this.socket.on('error', async ({ error }) => {
+      console.error("Server error:", error);
+      this.on_error?.("Server error: " + error);
+    });
+    
+    // Socket connection handlers
+    this.socket.on('connect', () => {
+      console.log('Connected to audio server');
+      this.connected = true;
+      this.beginable();
+    });
+    
+    this.socket.on('disconnect', () => {
+      console.log('Disconnected from audio server');
+      this.connected = false;
+    });
+  }
+  
+  close() {
+    super.close(); // Close AudioContext
+    console.log("Closing socket");
+    this.socket.disconnect();
+  }
 }
 
 
 class Audiolet {
-    // indexed by mu.index
-    chunks = []
-
-    more(r:audiole) {
-        if (r.index == undefined) throw "more !index"
-        if (r.blob == undefined) throw "more !blob"
-        this.chunks[r.index] = r.blob
-        if (r.done) {
-            
-        }
+  id: urihash;
+  context: AudioContext;
+  destination: AudioNode;
+  onFinished: Function;
+  
+  // Indexed by chunk index
+  chunks: Map<number, Uint8Array> = new Map();
+  decodedChunks: Map<number, AudioBuffer> = new Map();
+  
+  // Playback state
+  isPlaying = false;
+  isStopping = false;
+  currentTime = 0;
+  lastChunkIndex = -1;
+  sourceNode: AudioBufferSourceNode | null = null;
+  gainNode: GainNode;
+  
+  // Track status
+  isDone = false;
+  meta: any = null;
+  
+  // Playback position tracking
+  scheduledEndTime = 0;
+  currentChunkStartTime = 0;
+  currentChunkIndex = 0;
+  
+  constructor(
+    context: AudioContext,
+    id: urihash,
+    onFinished?: Function
+  ) {
+    this.context = context;
+    this.destination = context.destination;
+    this.id = id;
+    this.onFinished = onFinished || (() => {});
+    
+    // Create gain node for fades
+    this.gainNode = context.createGain();
+    this.gainNode.connect(destination);
+    this.gainNode.gain.value = 0; // Start silent
+  }
+  
+  // Add a new chunk of audio data
+  addChunk(index: number, data: Uint8Array, isDone = false) {
+    // Store chunk
+    this.chunks.set(index, data);
+    
+    // Update last chunk index if needed
+    if (index > this.lastChunkIndex) {
+      this.lastChunkIndex = index;
     }
-
-    // each may be playing
-    fadeOut() {
-
+    
+    // Mark if this is the last chunk
+    if (isDone) {
+      this.isDone = true;
     }
-    fadeIn() {
-
+    
+    // Start decoding the chunk
+    this.decodeChunk(index);
+  }
+  
+  // Decode a chunk of audio data
+  async decodeChunk(index: number) {
+    try {
+      const data = this.chunks.get(index);
+      if (!data) return;
+      
+      // Decode the audio data
+      const audioBuffer = await this.context.decodeAudioData(data);
+      
+      // Store decoded chunk
+      this.decodedChunks.set(index, audioBuffer);
+      
+      // If we're playing and this is the next chunk we need, schedule it
+      if (this.isPlaying && index === this.currentChunkIndex + 1) {
+        this.scheduleNextChunk();
+      }
+    } catch (err) {
+      console.error(`Error decoding chunk ${index}:`, err);
     }
+  }
+  
+  // Check if we have enough decoded chunks to start playing
+  canPlay(): boolean {
+    return this.decodedChunks.has(0);
+  }
+  
+  // Start playback
+  play() {
+    if (this.isPlaying) return;
+    
+    this.isPlaying = true;
+    this.currentChunkIndex = 0;
+    this.scheduleNextChunk();
+  }
+  
+  // Schedule the next chunk for playback
+  scheduleNextChunk() {
+    if (!this.isPlaying || this.isStopping) return;
+    
+    const index = this.currentChunkIndex;
+    const audioBuffer = this.decodedChunks.get(index);
+    
+    if (!audioBuffer) {
+      // We don't have this chunk decoded yet, wait for it
+      console.log(`Waiting for chunk ${index} to be decoded`);
+      return;
+    }
+    
+    // Create a new source node
+    const source = this.context.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(this.gainNode);
+    
+    // Calculate start time
+    let startTime;
+    if (this.scheduledEndTime <= this.context.currentTime) {
+      // Start immediately if we're not currently playing
+      startTime = this.context.currentTime;
+    } else {
+      // Schedule to play right after current chunk
+      startTime = this.scheduledEndTime;
+    }
+    
+    // Schedule the chunk to play
+    source.start(startTime);
+    this.sourceNode = source;
+    this.currentChunkStartTime = startTime;
+    
+    // Calculate when this chunk will end
+    this.scheduledEndTime = startTime + audioBuffer.duration;
+    
+    // Set up callback for when this chunk finishes
+    source.onended = () => {
+      // Move to next chunk
+      this.currentChunkIndex++;
+      
+      // If we have more chunks, schedule the next one
+      if (this.decodedChunks.has(this.currentChunkIndex)) {
+        this.scheduleNextChunk();
+      } 
+      // If we're done and there are no more chunks
+      else if (this.isDone && this.currentChunkIndex > this.lastChunkIndex) {
+        this.isPlaying = false;
+        this.onFinished();
+      }
+      // Otherwise, we need to wait for more chunks
+    };
+  }
+  
+  // Check if we need more chunks
+  needsMoreChunks(): boolean {
+    // If we're playing and getting close to running out of buffered chunks
+    return this.isPlaying && 
+           !this.isDone && 
+           this.currentChunkIndex + BUFFER_AHEAD > this.lastChunkIndex;
+  }
+  
+  // Get the next chunk index to request
+  getNextChunkIndex(): number {
+    return this.lastChunkIndex + 1;
+  }
+  
+  // Stop playback
+  stop() {
+    if (!this.isPlaying) return;
+    
+    // Stop the current source
+    if (this.sourceNode) {
+      try {
+        this.sourceNode.stop();
+      } catch (e) {
+        // Ignore errors if already stopped
+      }
+      this.sourceNode = null;
+    }
+    
+    this.isPlaying = false;
+    this.isStopping = false;
+  }
+  
+  // Fade in (from silent)
+  async fadeIn() {
+    if (!this.context) return Promise.resolve();
+    
+    const now = this.context.currentTime;
+    this.gainNode.gain.setValueAtTime(0, now);
+    this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_DURATION);
+    
+    return new Promise<void>(resolve => {
+      setTimeout(resolve, FADE_DURATION * 1000);
+    });
+  }
+  
+  // Fade out (to silent)
+  async fadeOut() {
+    if (!this.context) return Promise.resolve();
+    
+    const now = this.context.currentTime;
+    this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+    this.gainNode.gain.linearRampToValueAtTime(0, now + FADE_DURATION);
+    this.isStopping = true;
+    
+    return new Promise<void>(resolve => {
+      setTimeout(resolve, FADE_DURATION * 1000);
+    });
+  }
 }
 
