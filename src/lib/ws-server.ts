@@ -227,30 +227,35 @@ async function createFFmpegStream(mu, fraction = 0) {
     
     // Store encoded chunks from ffmpeg
     const blobs = [];
-    let currentIndex = 0;
+    let producedIndex = 0;
+    let consumedIndex = 0;
     let isEnded = false;
     
     // Map of pending requests by index
-    const pendingRequests = new Map();
+    const waitingRequests = new Map();
     
     // Set up data handler
     ff.on_data((data) => {
         // Store the new chunk
-        blobs[currentIndex] = data;
+        blobs[producedIndex] = data;
         
         // Resolve any pending request for this index
-        const resolver = pendingRequests.get(currentIndex);
+        const resolver = waitingRequests.get(producedIndex);
         if (resolver) {
-            resolver(data);
-            pendingRequests.delete(currentIndex);
+            resolver.resolve(data);
+            waitingRequests.delete(producedIndex);
         }
         
         // Increment index for next chunk
-        currentIndex++;
+        producedIndex++;
         
         // Pause stream if we've buffered enough chunks ahead
-        if (blobs.length > currentIndex + 3) {
+        if (consumedIndex + 3 < producedIndex) {
             ff.pause();
+            console.log(`FFmpeg++ ${mu.id} ${consumedIndex}/${producedIndex}, pausing`);
+        }
+        else {
+            console.log(`FFmpeg++ ${mu.id} ${consumedIndex}/${producedIndex}`);
         }
     });
     
@@ -260,9 +265,9 @@ async function createFFmpegStream(mu, fraction = 0) {
         isEnded = true;
         
         // Reject all pending requests
-        for (const [index, resolver] of pendingRequests.entries()) {
-            resolver(null, new Error(`FFmpeg stream error: ${error.message}`));
-            pendingRequests.delete(index);
+        for (const [index, { reject }] of waitingRequests.entries()) {
+            reject(new Error(`FFmpeg stream error: ${error.message}`));
+            waitingRequests.delete(index);
         }
     });
     
@@ -271,10 +276,10 @@ async function createFFmpegStream(mu, fraction = 0) {
         console.log(`FFmpeg stream for ${mu.id} ended normally`);
         isEnded = true;
         
-        // Resolve any remaining pending requests with null (end of stream)
-        for (const [index, resolver] of pendingRequests.entries()) {
-            resolver(null);
-            pendingRequests.delete(index);
+        // Reject all pending requests that can't be fulfilled
+        for (const [index, { reject }] of waitingRequests.entries()) {
+            reject(new Error('End of stream reached'));
+            waitingRequests.delete(index);
         }
     });
 
@@ -282,26 +287,22 @@ async function createFFmpegStream(mu, fraction = 0) {
     return {
         async get_index(index) {
             // If requested chunk already exists, return it immediately
+            consumedIndex = index
             if (blobs[index] !== undefined) {
                 const blob = blobs[index];
-                
-                // Free memory by deleting older chunks
-                for (let i = 0; i < index; i++) {
-                    delete blobs[i];
-                }
-                
-                console.log(`/more served ${mu.id}: ${index} (from cache)`);
+                delete blobs[index];
+                console.log(`/more served ${mu.id}: ${index}`);
                 return blob;
             }
             
             // If stream has ended and we're requesting beyond available chunks
-            if (isEnded && index >= currentIndex) {
-                console.log(`/more request for ${mu.id}: ${index} (beyond end of stream)`);
-                return null; // Indicate end of stream
+            if (isEnded) {
+                console.log(`/more request for ${mu.id}: ${index} (stream ended)`);
+                throw new Error("End of stream reached");
             }
             
             // If requested future chunk that hasn't been generated yet
-            if (index >= currentIndex) {
+            if (index >= producedIndex) {
                 console.log(`/more waiting for ${mu.id}: ${index} (resuming stream)`);
                 
                 // Resume the stream to generate more chunks
@@ -309,29 +310,14 @@ async function createFFmpegStream(mu, fraction = 0) {
                 
                 // Create a promise that will resolve when the requested chunk is available
                 return new Promise((resolve, reject) => {
-                    pendingRequests.set(index, (data, error) => {
-                        if (error) {
-                            reject(error);
-                        } else if (data === null) {
-                            // End of stream reached before we got to the requested index
-                            resolve(null);
-                        } else {
-                            // Got the data we wanted
-                            
-                            // Free memory by deleting older chunks
-                            for (let i = 0; i < index; i++) {
-                                delete blobs[i];
-                            }
-                            
-                            console.log(`/more served ${mu.id}: ${index} (waited)`);
-                            resolve(data);
-                        }
-                    });
+                    // Store the promise resolvers for this index
+                    waitingRequests.set(index, { resolve, reject });
+                    console.log("Have now the thing! "+index)
                     
                     // Set a timeout to avoid hanging forever
                     setTimeout(() => {
-                        if (pendingRequests.has(index)) {
-                            pendingRequests.delete(index);
+                        if (waitingRequests.has(index)) {
+                            waitingRequests.delete(index);
                             reject(new Error(`Timeout waiting for chunk ${index}`));
                         }
                     }, 30000); // 30 second timeout
@@ -350,9 +336,9 @@ async function createFFmpegStream(mu, fraction = 0) {
             isEnded = true;
             ff.terminate();
             // Clear any pending requests
-            for (const [index, resolver] of pendingRequests.entries()) {
-                resolver(null, new Error('Stream closed by client'));
-                pendingRequests.delete(index);
+            for (const [index, { reject }] of waitingRequests.entries()) {
+                reject(new Error('Stream closed by client'));
+                waitingRequests.delete(index);
             }
             console.log(`FFmpeg stream for ${mu.id} closed by client`);
         }

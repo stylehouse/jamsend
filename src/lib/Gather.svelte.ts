@@ -47,7 +47,6 @@ export class Audiocean {
   // UI state
   current_meta = $state(null);
   loading = $state(false);
-  progress = $state(0); // 0-1 playback progress
   
   // Queue of incoming random tracks
   random_tracks: Audiolet[] = [];
@@ -66,10 +65,6 @@ export class Audiocean {
   init() {
     try {
       this.AC = new AudioContext();
-      // Create a master gain node for volume control
-      this.masterGain = this.AC.createGain();
-      this.masterGain.connect(this.AC.destination);
-      this.masterGain.gain.value = 0.8; // Default volume
       
       console.log("AudioContext initialized");
       this.beginable();
@@ -84,16 +79,8 @@ export class Audiocean {
   beginable() {
     if (this.AC && this.connected && !this.begun) {
       this.begun = true;
-      this.begin();
+      this.surf();
     }
-  }
-  
-  // Start playback process
-  begin() {
-    console.log("Beginning audio stream");
-    this.loading = true;
-    // Request first random track
-    this.socket.emit('more', {});
   }
   
   // Start a random track at random position
@@ -123,26 +110,18 @@ export class Audiocean {
     const nextTrack = this.next_track;
     this.next_track = null;
     
-    // Fade out current if playing
     if (this.current) {
-      this.current.fadeOut().then(() => {
-        this.current.stop();
-        this.current = nextTrack;
-        this.current.play();
-        this.current.fadeIn();
-        
-        // Update current metadata for UI
-        if (nextTrack.meta) {
-          this.current_meta = nextTrack.meta;
-        }
-      });
+        // crossfade, then update the UI
+        let was = this.current
+        nextTrack.play();
+        nextTrack.fadeIn();
+        was.fadeOut().then(() => {
+            was.stop();
+            this.encurrent(nextTrack)
+        });
     } else {
       // No current track, just play next
-      this.current = nextTrack;
-      this.current.play();
-      this.current.fadeIn();
-      
-      // Update current metadata for UI
+    this.encurrent(nextTrack)
       if (nextTrack.meta) {
         this.current_meta = nextTrack.meta;
       }
@@ -152,46 +131,27 @@ export class Audiocean {
     this.prepareNextTrack();
   }
   
-  // Request and prepare next track
+  // Request a track from beginning (index 0)
   prepareNextTrack() {
-    if (this.next_track) return; // Already have one
-    
-    // Request a track from beginning (index 0)
     this.socket.emit('more', { index: 0 });
   }
   
   // Process incoming audio data
-  processAudioData(data: audiole) {
+  async handle_more(data: audiole) {
     if (!this.AC) return;
-    
-    // If this is new track data with metadata
-    if (data.meta) {
-      // Update metadata in UI if this is for current track
-      if (this.current && this.current.id === data.id) {
-        this.current_meta = data.meta;
-      }
-    }
-    
-    // Find or create the audiolet for this track
     let audiolet = this.findOrCreateAudiolet(data.id);
     
     // Add the chunk to the audiolet
-    audiolet.addChunk(data.index, data.blob, data.done);
+    await audiolet.addChunk(data.index, data.blob, data.done);
+    if (data.index == 0) {
+        // might need it playable for the below encurrent()
+        await audiolet.decodeChunk(0);
+    }
     
     // If we don't have a current track playing, start this one
     if (!this.current && audiolet.canPlay()) {
-      this.current = audiolet;
-      this.current.play();
-      this.current.fadeIn();
-      
-      // If we have metadata for this track, set it as current
-      if (data.meta) {
-        this.current_meta = data.meta;
-      }
-      
+      this.encurrent(audiolet);
       this.loading = false;
-      
-      // Start preparing a next track
       this.prepareNextTrack();
     }
     // If we don't have a next track ready and this isn't the current track
@@ -202,6 +162,12 @@ export class Audiocean {
     // Request more chunks if needed for current track
     this.requestMoreIfNeeded();
   }
+
+  encurrent(au:Audiolet) {
+    this.current = au;
+    this.current_meta = au.meta;
+    au.play()
+  }
   
   // Find or create an Audiolet for a track ID
   findOrCreateAudiolet(id: urihash): Audiolet {
@@ -210,11 +176,7 @@ export class Audiocean {
       audiolet = new Audiolet(this.AC, id, () => {
         // When this track finishes
         if (this.current && this.current.id === id) {
-          if (this.next_track) {
-            this.playNextTrack();
-          } else {
-            this.surf(); // No next track ready, just surf
-          }
+          this.playNextTrack();
         }
       });
       this.audiolets.set(id, audiolet);
@@ -244,18 +206,6 @@ export class Audiocean {
     }
   }
   
-  // Volume control (0-1)
-  setVolume(volume: number) {
-    if (!this.AC || !this.masterGain) return;
-    
-    // Clamp volume to 0-1
-    volume = Math.max(0, Math.min(1, volume));
-    this.masterGain.gain.value = volume;
-  }
-  
-  // Master gain node for volume control
-  masterGain: GainNode;
-  
   // Collection of all audiolets by ID
   audiolets: Map<urihash, Audiolet> = new Map();
 }
@@ -277,7 +227,7 @@ export class Gatherer extends Audiocean {
     this.socket.on('more', async (r: audiole) => {
       try {
         if (!r.id) throw new Error("Missing track ID in response");
-        this.processAudioData(r);
+        this.handle_more(r);
       } catch (err) {
         console.error("Error processing audio data:", err);
         this.on_error?.("Error processing audio: " + err.message);
@@ -309,6 +259,21 @@ export class Gatherer extends Audiocean {
     this.socket.disconnect();
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Audiolet {
@@ -350,12 +315,12 @@ class Audiolet {
     
     // Create gain node for fades
     this.gainNode = context.createGain();
-    this.gainNode.connect(destination);
+    this.gainNode.connect(this.destination);
     this.gainNode.gain.value = 0; // Start silent
   }
   
   // Add a new chunk of audio data
-  addChunk(index: number, data: Uint8Array, isDone = false) {
+  async addChunk(index: number, data: Uint8Array, isDone = false) {
     // Store chunk
     this.chunks.set(index, data);
     
@@ -368,9 +333,6 @@ class Audiolet {
     if (isDone) {
       this.isDone = true;
     }
-    
-    // Start decoding the chunk
-    this.decodeChunk(index);
   }
   
   // Decode a chunk of audio data
@@ -378,13 +340,8 @@ class Audiolet {
     try {
       const data = this.chunks.get(index);
       if (!data) return;
-      
-      // Decode the audio data
       const audioBuffer = await this.context.decodeAudioData(data);
-      
-      // Store decoded chunk
       this.decodedChunks.set(index, audioBuffer);
-      
       // If we're playing and this is the next chunk we need, schedule it
       if (this.isPlaying && index === this.currentChunkIndex + 1) {
         this.scheduleNextChunk();
@@ -407,6 +364,8 @@ class Audiolet {
     this.currentChunkIndex = 0;
     this.scheduleNextChunk();
   }
+
+
   
   // Schedule the next chunk for playback
   scheduleNextChunk() {
