@@ -17,9 +17,14 @@
             distime = distime + 1
         },175)
     })
-    let stop = () => simtime_interval && clearInterval(simtime_interval)
+    let stop = () => {
+        simtime_interval && clearInterval(simtime_interval)
+        distime_interval && clearInterval(distime_interval)
+    }
     onDestroy(stop)
     $effect(() => {
+        // Svelte's SSR gets in a loop in here otherwise:
+        if (!self.window) return 0
         if (simtime || 1) {
             setTimeout(() => handle_time(), 1)
         }
