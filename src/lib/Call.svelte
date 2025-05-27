@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Gatherer, type urihash } from "./Gather.svelte";
+    import { Gatherer, type urihash } from "./audio/Gather.svelte";
 
     let gather:Gatherer|undefined = $state();
     let errorMessage = "";

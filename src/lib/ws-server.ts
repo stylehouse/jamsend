@@ -4,7 +4,7 @@ import { join, dirname, basename, extname } from 'path';
 import { constants } from 'fs';
 import { createHash } from 'crypto';
 import type { ViteDevServer } from 'vite';
-import type { urihash } from './Gather.svelte';
+import type { urihash } from './audio/Gather.svelte';
 import { spawn } from 'child_process'
 import { promisify } from 'util'
 
