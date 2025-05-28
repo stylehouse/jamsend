@@ -64,6 +64,9 @@
     <span class="name">GathererTest</span>
     at {Math.round(perftime)}ms
     {#if gat}
+        <span>
+            <span>{#if gat.more_wanted}morewant {gat.more_wanted}{/if}</span>
+        </span>
         {#each gat.queue as aud (aud.id)}
             <GatherTestAudiolet {aud} />
         {/each}

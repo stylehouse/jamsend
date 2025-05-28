@@ -13,7 +13,6 @@
         if (distime) {
             pos = aud.cursor()
             remains = aud.remaining_stretch()
-
         }
 
     })
@@ -28,12 +27,16 @@
         <span>{#if aud.spawn_time}spawn_time {Math.round(aud.spawn_time)}ms{/if}</span>
     </span>
     <span>
-        <span>{#if pos}pos {pos}ms{/if}</span>
+        <span>{#if pos}cursor {pos}{/if}</span>
         <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
+    </span>
+    <span>
+        <span>{#if aud.more_wanted}morewant {aud.more_wanted}{/if}</span>
     </span>
     <ul>
         {#each aud.queue as wav}
             <li>{wav}</li>
+            {#if aud.end_reached} done{/if}
         {/each}
         
     </ul>
