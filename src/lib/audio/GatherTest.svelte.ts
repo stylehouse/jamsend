@@ -114,16 +114,17 @@ export class GathererTest extends Queuey {
 export class AudioletTest extends Queuey {
     // still encoded chunks of ogg
     queue:Array<Uint8Array> = $state([])
-    playing:BufferSource
+    playing:BufferSource = $state()
     // the index after get_more's we are in to the track (-1)
     next_index:number
 
     gat:GathererTest
     
     // < can we assume start_time + duration = end_time?
-    start_time:integer
+    spawn_time:integer
+    start_time:integer = $state()
     // test fabrications
-    ms_per_item = 900
+    ms_per_item = 300
 
     cursor() {
         let time = this.along()
@@ -138,11 +139,15 @@ export class AudioletTest extends Queuey {
     remaining_stretch() {
         // < playing.duration - along()
         //    or just the seeked part of playing?
+        let duration = this.stretch_size * this.ms_per_item
+        let remains = duration - this.along()
+        return remains
     }
     
     constructor(opt) {
         super(opt)
-        this.gat = opt.gat;
+        let gat = this.gat = opt.gat;
+        this.spawn_time = gat.now()
         // keep entire track once downloaded
         this.scheme.history = -1
         this.scheme.future = 3
@@ -179,9 +184,10 @@ export class AudioletTest extends Queuey {
 
 
     // decodes stretches of the queue
+    stretch_size = $state()
     new_stretch() {
-        console.log("Wanted a new stretch ")
         let encoded = this.queue.slice()
+        this.stretch_size = encoded.length
 
         // const encoded = await this.context.decodeAudioData(encoded);
         let decoded = (encoded)
@@ -200,7 +206,7 @@ export class AudioletTest extends Queuey {
         this.start_time = this.gat.now()
         // let play_from = !was ? 0 : was.duration
         // stretch.start(this.start_time,play_from)
-        console.log("Stretch++")
+        console.log(`aud:${this.id} Stretch++ ${this.stretch_size}`)
     }
 
     get_more({delay}) {

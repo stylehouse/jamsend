@@ -4,6 +4,7 @@
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
 
     let gat = $state()
+    let perftime = $state('')
     let simtime = $state(0)
     let distime = $state(0)
     let simtime_interval
@@ -36,27 +37,33 @@
         else if (simtime == 1) {
             gat.surf()
         }
-        else if (simtime == 9) {
+        else if (simtime == 5) {
             stop()
         }
         gat.think()
         console.log("Time = "+simtime)
-
     }
     $effect(() => {
+        // Svelte's SSR gets in a loop in here otherwise:
+        if (!self.window) return 0
+        if (distime || 1) {
+            setTimeout(() => handle_display(), 1)
+        }
+    })
+    function handle_display() {
+        let i = distime + 3
         if (distime == 0) {
             
         }
-
-    })
+        gat.queue.map(aud => aud?.onanimationframe())
+        perftime = gat.now()
+    }
 </script>
 
 <div class="mach" >
     <span class="name">GathererTest</span>
+    at {Math.round(perftime)}ms
     {#if gat}
-        {#key distime}
-
-        {/key}
         {#each gat.queue as aud (aud.id)}
             <GatherTestAudiolet {aud} />
         {/each}
