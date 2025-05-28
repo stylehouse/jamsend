@@ -136,7 +136,7 @@ export class AudioletTest extends Queuey {
         if (this.start_time == null) return null
         return this.gat.now() - this.start_time
     }
-    remaining_stretch() {
+    remaining_stretch():number {
         // < playing.duration - along()
         //    or just the seeked part of playing?
         let duration = this.stretch_size * this.ms_per_item
@@ -172,8 +172,9 @@ export class AudioletTest extends Queuey {
         else if (this.remaining_stretch() < this.ms_per_item) {
             let stretch = this.new_stretch()
             // schedule it to play when this one finishes
-            this.playing.onended = () => {
+            this.playing_onended = () => {
                 this.start_stretch(stretch)
+                delete this.playing_onended
             }
         }
         else {
@@ -185,8 +186,14 @@ export class AudioletTest extends Queuey {
 
     // decodes stretches of the queue
     stretch_size = $state()
+    playing_onended:Function|null
     new_stretch() {
         let encoded = this.queue.slice()
+        if (this.stretch_size == encoded.length) {
+            console.log("Hit the end!")
+            return
+        }
+        console.log("Hit the end!")
         this.stretch_size = encoded.length
 
         // const encoded = await this.context.decodeAudioData(encoded);
@@ -204,6 +211,10 @@ export class AudioletTest extends Queuey {
         let was = this.playing
         this.playing = stretch
         this.start_time = this.gat.now()
+        setTimeout(() => {
+            console.log(`stretchended`)
+            this.playing_onended?.()
+        }, this.stretch_size * this.ms_per_item)
         // let play_from = !was ? 0 : was.duration
         // stretch.start(this.start_time,play_from)
         console.log(`aud:${this.id} Stretch++ ${this.stretch_size}`)

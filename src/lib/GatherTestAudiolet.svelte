@@ -8,8 +8,13 @@
         distime++
     }
     let pos = $state()
+    let remains = $state()
     $effect(() => {
-        pos = aud.cursor()
+        if (distime) {
+            pos = aud.cursor()
+            remains = aud.remaining_stretch()
+
+        }
 
     })
 
@@ -21,6 +26,10 @@
     <span>
         <span>{#if aud.start_time}start_time {Math.round(aud.start_time)}ms{/if}</span>
         <span>{#if aud.spawn_time}spawn_time {Math.round(aud.spawn_time)}ms{/if}</span>
+    </span>
+    <span>
+        <span>{#if pos}pos {pos}ms{/if}</span>
+        <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
     </span>
     <ul>
         {#each aud.queue as wav}

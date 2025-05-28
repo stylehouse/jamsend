@@ -37,7 +37,7 @@
         else if (simtime == 1) {
             gat.surf()
         }
-        else if (simtime == 5) {
+        else if (simtime == 9) {
             stop()
         }
         gat.think()
