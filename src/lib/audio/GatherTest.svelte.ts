@@ -9,12 +9,30 @@ class Queuey {
         history?:number,
         future?:number,
     } = {}
+
+    // < this
     cull_queue() {
         let history = this.scheme.history || 0
         if (history == -1) return
         // which item is the cursor in
         let i = Math.floor(this.cursor())
         this.queue
+    }
+
+
+    // get more queue
+    provision() {
+        this.scheme.future ||= 3
+        let i = this.cursor()
+        let more_wanted = i == null ? this.scheme.future
+            : this.scheme.future - (i+1)
+        if (more_wanted) {
+            let name = this.constructor.name
+            console.log(`${name} Wanted ${more_wanted} more`)
+            for (let it = 1; it <= more_wanted; it++) {
+                this.get_more({delay:it*140})
+            }
+        }
     }
 }
 
@@ -27,9 +45,35 @@ export class GathererTest extends Queuey {
         this.scheme.history = 3
     }
     idi = 1
-    surf() {
-        let aud = new AudioletTest({id:this.idi++,gat:this})
+    cursor() {
+        let i = this.queue.indexOf(this.current)
+        if (i == -1) return null
+        return i
+    }
+
+    // fetch a random track, creating its AudioletTest
+    get_more({from_start,delay}) {
+        setTimeout(() => {
+            let index = from_start ? 0 : 3
+            // response:
+            this.have_more({id:this.idi++,blob:'vvv',index})
+        }, delay || 100)
+    }
+    have_more({id,blob,index}) {
+        let aud = new AudioletTest({id,gat:this})
+        aud.next_index = index
+        aud.have_more({id,blob,index})
         this.queue.push(aud)
+        this.think()
+    }
+
+
+
+    surf() {
+        if (!this.queue.length) {
+            // beginning, acquire random track at random position
+            return this.provision()
+        }
         console.log("The aud: ",aud)
         this.might()
     }
@@ -40,21 +84,27 @@ export class GathererTest extends Queuey {
     might() {
         let next = this.queue
             // not the old track currently fading out
-            .filter(aud => !this.fadeout.includes(aud)) [0]
+            .filter(aud => !this.fadeout.includes(aud))
+            // corner case: not the one we had ready to play in sequence
+            .filter(aud => this.nextly != aud)
+            [0]
         next && next.might()
 
         // a suitable time to think about:
         this.provision()
     }
-    // get more queue
-    provision() {
 
-    }
-
-
+    currently:AudioletTest
     // might might(), but only if...
     think() {
-
+        // if near the end of the track
+        let cur = this.currently
+        if (cur) {
+            if (cur.near_end && !this.nextly) {
+                this.get_more({from_start:true})
+            }
+            cur.think()
+        }
         // if not satisfied, come back
     }
 }
@@ -65,6 +115,8 @@ export class AudioletTest extends Queuey {
     // still encoded chunks of ogg
     queue:Array<Uint8Array> = $state([])
     playing:BufferSource
+    // the index after get_more's we are in to the track (-1)
+    next_index:number
 
     gat:GathererTest
     
@@ -93,6 +145,7 @@ export class AudioletTest extends Queuey {
         this.gat = opt.gat;
         // keep entire track once downloaded
         this.scheme.history = -1
+        this.scheme.future = 3
     }
 
     // act: start a bit of queue
@@ -150,26 +203,18 @@ export class AudioletTest extends Queuey {
         console.log("Stretch++")
     }
 
-
-    // get more queue
-    provision() {
-        this.scheme.future ||= 4
-        let i = this.cursor()
-        let more_wanted = i == null ? this.scheme.future
-            : this.scheme.future - (i+1)
-        if (more_wanted) {
-            console.log(`Wanted ${more_wanted} more`)
-            for (let it = 1; it <= more_wanted; it++) {
-                this.get_more({delay:it*140})
-            }
-        }
-    }
     get_more({delay}) {
         setTimeout(() => {
-            this.have_more({blob:'vvv'})
+            // here we always just want more of the queue, in sequence
+            //  see gat.have_more() for creation and an initial aud.have_more()
+            let req = {id: this.id, index: this.next_index++}
+            let res = {...req, blob:'vvv'}
+            this.have_more(res)
         },delay)
     }
-    have_more({blob}) {
+    have_more({id,blob,index}) {
+        // tempting to assign next_index = index+1 here
+        //  but more get_more() may be dispatched already
         this.queue.push(blob)
         this.think()
     }
