@@ -1,4 +1,10 @@
 
+// test params
+// all queues have this ending
+const MOCK_END_OF_INDEX = 9
+// various timing code needs to regard the decoded audio aud.playing.duration
+const MOCK_MS_PER_ITEM = 900
+
 
 class Queuey {
     constructor(opt) {
@@ -39,7 +45,7 @@ class Queuey {
         let deficit = this.scheme.future - ahead
         
         let more_wanted = deficit > 0 ? deficit : 0
-        
+
         if (this.awaiting_mores) {
             // don't want the same bit of more again
             more_wanted -= this.awaiting_mores.length
@@ -151,7 +157,7 @@ export class AudioletTest extends Queuey {
     playing:BufferSource = $state()
     // the index after get_more's we are in to the track (-1)
     next_index:number = $state()
-    end_index = $state(false)
+    end_index = $state()
     get idname() {
         return `aud:${this.id}`
     }
@@ -161,13 +167,11 @@ export class AudioletTest extends Queuey {
     // < can we assume start_time + duration = end_time?
     spawn_time:integer
     start_time:integer = $state()
-    // test fabrications
-    ms_per_item = 900
 
     cursor() {
         let time = this.along()
         if (time == null) return null
-        let i = Math.floor(time / this.ms_per_item)
+        let i = Math.floor(time / MOCK_MS_PER_ITEM)
         return i
     }
     along() {
@@ -183,7 +187,7 @@ export class AudioletTest extends Queuey {
         return remains
     }
     duration():number {
-        return this.stretch_size * this.ms_per_item
+        return this.stretch_size * MOCK_MS_PER_ITEM
     }
     
     constructor(opt) {
@@ -262,7 +266,6 @@ export class AudioletTest extends Queuey {
         console.log(`aud:${this.id} Stretch++ ${this.stretch_size}`)
     }
 
-    mock_end_of_index = 7
     get_more({delay}) {
         this.awaiting_mores.push(1)
         setTimeout(() => {
@@ -270,7 +273,7 @@ export class AudioletTest extends Queuey {
             //  see gat.have_more() for creation and an initial aud.have_more()
             let req = {id: this.id, index: this.next_index++}
             let res = {...req, blob:'vvv'}
-            if (req.index == this.mock_end_of_index) {
+            if (req.index == MOCK_END_OF_INDEX) {
                 res.done = 1
             }
             this.have_more(res)

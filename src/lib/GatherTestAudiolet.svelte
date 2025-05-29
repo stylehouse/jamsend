@@ -41,9 +41,9 @@
         <span>end_index {aud.end_index}</span>
     </span>
     <ul>
-        {#each aud.queue as wav}
+        {#each aud.queue as wav, i}
             <li>{wav}
-
+                {#if pos == i} (pos){/if}
             </li>
         {/each}
         
