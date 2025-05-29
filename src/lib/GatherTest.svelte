@@ -21,6 +21,7 @@
     let stop = () => {
         simtime_interval && clearInterval(simtime_interval)
         distime_interval && clearInterval(distime_interval)
+        if (gat?.currently) gat.currently.aud_onended = () => {}
     }
     onDestroy(stop)
     $effect(() => {
@@ -62,6 +63,9 @@
         perftime = gat.now()
         awaiting = gat.awaiting_mores.length
     }
+    function surf() {
+        gat.might('really')
+    }
 </script>
 
 <div class="mach" >
@@ -70,6 +74,8 @@
     {#if gat}
         <span>
             <span>{#if gat.more_wanted}morewant {gat.more_wanted}{/if}</span>
+
+            <button onclick={surf} >surf</button>
         </span>
         {#each gat.queue as aud (aud.id)}
             <GatherTestAudiolet {aud} />

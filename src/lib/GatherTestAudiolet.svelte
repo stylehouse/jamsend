@@ -41,7 +41,7 @@
     </span>
     <span>
         <span>awaiting {awaiting}</span>
-        <span>end_index {aud.end_index}</span>
+        <span>{aud.is_nextly && 'is_nextly'}</span>
     </span>
     <ul>
         {#each aud.queue as wav, i}

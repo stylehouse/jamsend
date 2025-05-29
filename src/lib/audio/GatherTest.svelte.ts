@@ -97,8 +97,10 @@ export class GathererTest extends Queuey {
         aud.next_index = index+1
         aud.have_more({id,blob,index})
         if (from_start) {
-            this.queue.unshift(aud)
-            aud.a_nextly = true
+            let i = this.queue.indexOf(this.currently)
+            if (i < 0) throw "noi"
+            this.queue.splice(i+1,0,aud)
+            aud.is_nextly = true
             this.nextly = aud
         }
         else {
@@ -106,7 +108,8 @@ export class GathererTest extends Queuey {
         }
         this.think()
     }
-
+    // the next track to play in sequence, from the start
+    nextly
 
 
     surf() {
@@ -121,15 +124,25 @@ export class GathererTest extends Queuey {
         return performance.now()
     }
     // act: pull from queue
-    might() {
+    might(really) {
         let next = this.queue
             // not the old track currently fading out
             .filter(aud => !this.fadeout.includes(aud))
             // corner case: not the one we had ready to play in sequence
             .filter(aud => this.nextly != aud)
+            .filter(aud => this.currently != aud)
+            .filter(aud => this.stopped != aud)
             [0]
         if (next) {
+            let cur = this.currently
+            if (cur) {
+                this.fadeout.push(cur)
+                cur.stop()
+            }
             next.might()
+        }
+        else {
+            if (really) debugger
         }
 
         // a suitable time to think about:
@@ -138,10 +151,8 @@ export class GathererTest extends Queuey {
 
     // might might(), but only if...
     think() {
-        // if near the end of the track
-        let cur = this.currently
-        if (cur) {
-            cur.think()
+        if (this.currently) {
+            this.currently.think()
         }
         else {
             console.log("gat.think() start")
@@ -231,9 +242,16 @@ export class AudioletTest extends Queuey {
         }
         this.provision()
     }
+    stop() {
+        this.stopped = 1
+    }
     // ambiently
     next_stretch
     think() {
+        if (this.stopped) {
+            // no more planning
+            return
+        }
         // is the playhead moving
         if (!this.playing) {
             // waits for gat to aud.might()
@@ -348,8 +366,12 @@ export class AudioletTest extends Queuey {
         let endsin = this.stretch_size * MOCK_MS_PER_ITEM
         if (was) endsin -= was.length * MOCK_MS_PER_ITEM
         setTimeout(() => {
+            if (this.stopped) {
+                // is over, no need to keep feeding audio
+                return
+            }
             let ismore = this.playing_onended ? ', is more' : ''
-            console.log(`stretchended ${ismore}`)
+            console.log(`stretchended${ismore}`)
             if (this.playing_onended) {
                 // the next stretch is ready to play
                 this.playing_onended()
@@ -358,7 +380,7 @@ export class AudioletTest extends Queuey {
                 // the next track (aud) is ready to play
                 if (!this.aud_onended) return console.error("Off the end")
                 this.aud_onended()
-
+                this.stopped = 1
             }
         }, endsin)
     }
@@ -380,6 +402,7 @@ export class AudioletTest extends Queuey {
         console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
         this.awaiting_mores.shift()
         if (this.end_index && index > this.end_index) {
+            // test harness generates any index you ask for, ignore extra
             console.log(`  end was located, dropped a have_more()`)
             return
         }
