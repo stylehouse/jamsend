@@ -24,19 +24,29 @@ class Queuey {
     awaiting_mores = []
     more_wanted = $state()
     provision() {
-        if (this.end_reached) return
+        if (this.end_index) {
+            // Audiolet is done loading
+            return
+        }
         this.scheme.future ||= 2
+        // where we have consumed up til
         let i = this.cursor()
-        let more_wanted = i == null ? this.scheme.future
-            : this.scheme.future - (i+1)
+        // where we have
+        let queued = this.queue.length - 1
+        // how far ahead we have
+        let ahead = queued - (i||0)
+        // compare to how far ahead we like to be
+        let deficit = this.scheme.future - ahead
+        
+        let more_wanted = deficit > 0 ? deficit : 0
+        
         if (this.awaiting_mores) {
             // don't want the same bit of more again
             more_wanted -= this.awaiting_mores.length
         }
         this.more_wanted = more_wanted
         if (more_wanted) {
-            let name = this.constructor.name
-            console.log(`${name} Wanted ${more_wanted} more`)
+            console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
             for (let it = 1; it <= more_wanted; it++) {
                 this.get_more({delay:it*140})
             }
@@ -48,6 +58,9 @@ export class GathererTest extends Queuey {
     queue:Array<AudioletTest> = $state([])
     fadeout:Array<AudioletTest> = $state([])
     currently:AudioletTest
+    get idname() {
+        return "gat"
+    }
     constructor() {
         super()
         // keep the last 3 tracks
@@ -72,7 +85,7 @@ export class GathererTest extends Queuey {
         console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
         let aud = new AudioletTest({id,gat:this})
-        aud.next_index = index
+        aud.next_index = index+1
         aud.have_more({id,blob,index})
         // < skips the queue?
         this.queue.push(aud)
@@ -138,7 +151,10 @@ export class AudioletTest extends Queuey {
     playing:BufferSource = $state()
     // the index after get_more's we are in to the track (-1)
     next_index:number = $state()
-    end_reached = $state(false)
+    end_index = $state(false)
+    get idname() {
+        return `aud:${this.id}`
+    }
 
     gat:GathererTest
     
@@ -146,7 +162,7 @@ export class AudioletTest extends Queuey {
     spawn_time:integer
     start_time:integer = $state()
     // test fabrications
-    ms_per_item = 300
+    ms_per_item = 900
 
     cursor() {
         let time = this.along()
@@ -161,9 +177,13 @@ export class AudioletTest extends Queuey {
     remaining_stretch():number {
         // < playing.duration - along()
         //    or just the seeked part of playing?
-        let duration = this.stretch_size * this.ms_per_item
-        let remains = duration - this.along()
+        let along = this.along()
+        if (along == null) throw "!along remaining"
+        let remains = this.duration() - along
         return remains
+    }
+    duration():number {
+        return this.stretch_size * this.ms_per_item
     }
     
     constructor(opt) {
@@ -203,7 +223,7 @@ export class AudioletTest extends Queuey {
         else {
             console.log("~")
         }
-        // is the playing reaching
+        this.provision()
     }
 
 
@@ -213,8 +233,7 @@ export class AudioletTest extends Queuey {
     new_stretch() {
         let encoded = this.queue.slice()
         if (this.stretch_size == encoded.length) {
-            console.log("Hit the end!!!!")
-            return
+            console.log(`${this.idname} Stretchsame ${this.stretch_size}`)
         }
         this.stretch_size = encoded.length
 
@@ -232,7 +251,8 @@ export class AudioletTest extends Queuey {
     start_stretch(stretch) {
         let was = this.playing
         this.playing = stretch
-        this.start_time = this.gat.now()
+        this.start_time ||= this.gat.now()
+
         setTimeout(() => {
             console.log(`stretchended`)
             this.playing_onended?.()
@@ -242,6 +262,7 @@ export class AudioletTest extends Queuey {
         console.log(`aud:${this.id} Stretch++ ${this.stretch_size}`)
     }
 
+    mock_end_of_index = 7
     get_more({delay}) {
         this.awaiting_mores.push(1)
         setTimeout(() => {
@@ -249,17 +270,23 @@ export class AudioletTest extends Queuey {
             //  see gat.have_more() for creation and an initial aud.have_more()
             let req = {id: this.id, index: this.next_index++}
             let res = {...req, blob:'vvv'}
-            if (req.index == 7) res.done = 1
+            if (req.index == this.mock_end_of_index) {
+                res.done = 1
+            }
             this.have_more(res)
         },delay)
     }
     have_more({id,blob,index,done}) {
-        console.log(`aud:${id} more ${index}`)
+        console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
         this.awaiting_mores.shift()
+        if (this.end_index && index > this.end_index) {
+            console.log(`  end was located, dropped a have_more()`)
+            return
+        }
         // tempting to assign next_index = index+1 here
         //  but more get_more() may be dispatched already
         this.queue.push(blob)
-        if (done) this.end_reached = true
+        if (done) this.end_index = index
         this.think()
     }
 }

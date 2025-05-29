@@ -13,10 +13,10 @@
     $effect(() => {
         simtime_interval = setInterval(() => {
             simtime = simtime + 1
-        },600)
+        },222)
         distime_interval = setInterval(() => {
             distime = distime + 1
-        },175)
+        },111)
     })
     let stop = () => {
         simtime_interval && clearInterval(simtime_interval)
@@ -37,7 +37,7 @@
         else if (simtime == 1) {
             gat.surf()
         }
-        else if (simtime == 9) {
+        else if (simtime == 19) {
             stop()
         }
         gat.think()
@@ -50,13 +50,17 @@
             setTimeout(() => handle_display(), 1)
         }
     })
+    let awaiting = $state()
     function handle_display() {
         let i = distime + 3
         if (distime == 0) {
             
         }
+        // update child components
         gat.queue.map(aud => aud?.onanimationframe())
+
         perftime = gat.now()
+        awaiting = gat.awaiting_mores.length
     }
 </script>
 

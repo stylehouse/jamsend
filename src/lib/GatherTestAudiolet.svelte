@@ -9,10 +9,12 @@
     }
     let pos = $state()
     let remains = $state()
+    let awaiting = $state()
     $effect(() => {
         if (distime) {
             pos = aud.cursor()
-            remains = aud.remaining_stretch()
+            remains = aud.along() != null && aud.remaining_stretch()
+            awaiting = aud.awaiting_mores?.length
         }
 
     })
@@ -31,12 +33,18 @@
         <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
     </span>
     <span>
-        <span>{#if aud.more_wanted}morewant {aud.more_wanted}{/if}</span>
+        <span>morewant {aud.more_wanted}</span>
+        <span>end_index {aud.end_index}</span>
+    </span>
+    <span>
+        <span>awaiting {awaiting}</span>
+        <span>end_index {aud.end_index}</span>
     </span>
     <ul>
         {#each aud.queue as wav}
-            <li>{wav}</li>
-            {#if aud.end_reached} done{/if}
+            <li>{wav}
+
+            </li>
         {/each}
         
     </ul>
