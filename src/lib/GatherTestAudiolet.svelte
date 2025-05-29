@@ -23,7 +23,10 @@
 
 <div class="mach" >
     <span class="name">aud:{aud.id}</span>
-    {#if aud.stretch_size}playing *{aud.stretch_size}{/if}
+    <span>
+        <span>{#if aud.playing}playing {aud.playing.length}{/if}</span>
+        <span>{#if aud.stretch_size}stretch {aud.stretch_size}{/if}</span>
+    </span>
     <span>
         <span>{#if aud.start_time}start_time {Math.round(aud.start_time)}ms{/if}</span>
         <span>{#if aud.spawn_time}spawn_time {Math.round(aud.spawn_time)}ms{/if}</span>
@@ -42,7 +45,7 @@
     </span>
     <ul>
         {#each aud.queue as wav, i}
-            <li>{wav}
+            <li>{i} {wav}
                 {#if pos == i} (pos){/if}
             </li>
         {/each}

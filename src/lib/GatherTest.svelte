@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { GathererTest } from "./audio/GatherTest.svelte";
+    import { GathererTest, MS_PER_SIMULATION_TIME } from "./audio/GatherTest.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
 
     let gat = $state()
@@ -13,10 +13,10 @@
     $effect(() => {
         simtime_interval = setInterval(() => {
             simtime = simtime + 1
-        },222)
+        },MS_PER_SIMULATION_TIME)
         distime_interval = setInterval(() => {
             distime = distime + 1
-        },111)
+        },MS_PER_SIMULATION_TIME / 4)
     })
     let stop = () => {
         simtime_interval && clearInterval(simtime_interval)
@@ -37,11 +37,11 @@
         else if (simtime == 1) {
             gat.surf()
         }
-        else if (simtime == 39) {
+        else if (simtime == 122) {
             stop()
         }
         gat.think()
-        console.log("Time = "+simtime)
+        // console.log("Time = "+simtime)
     }
     $effect(() => {
         // Svelte's SSR gets in a loop in here otherwise:

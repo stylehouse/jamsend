@@ -3,7 +3,9 @@
 // all queues have this ending
 const MOCK_END_OF_INDEX = 9
 // various timing code needs to regard the decoded audio aud.playing.duration
-const MOCK_MS_PER_ITEM = 900
+const MOCK_MS_PER_ITEM = 450
+const PHI = 1.613
+export const MS_PER_SIMULATION_TIME = 111
 
 
 class Queuey {
@@ -34,7 +36,6 @@ class Queuey {
             // Audiolet is done loading
             return
         }
-        this.scheme.future ||= 2
         // where we have consumed up til
         let i = this.cursor()
         // where we have
@@ -46,6 +47,7 @@ class Queuey {
         
         let more_wanted = deficit > 0 ? deficit : 0
 
+        // < we should really be generating unique wills to get more (by index)
         if (this.awaiting_mores) {
             // don't want the same bit of more again
             more_wanted -= this.awaiting_mores.length
@@ -71,6 +73,7 @@ export class GathererTest extends Queuey {
         super()
         // keep the last 3 tracks
         this.scheme.history = 3
+        this.scheme.future = 2
     }
     idi = 1
     cursor() {
@@ -93,12 +96,13 @@ export class GathererTest extends Queuey {
         let aud = new AudioletTest({id,gat:this})
         aud.next_index = index+1
         aud.have_more({id,blob,index})
-        // < skips the queue?
-        this.queue.push(aud)
         if (from_start) {
             this.queue.unshift(aud)
             aud.a_nextly = true
             this.nextly = aud
+        }
+        else {
+            this.queue.push(aud)
         }
         this.think()
     }
@@ -137,14 +141,27 @@ export class GathererTest extends Queuey {
         // if near the end of the track
         let cur = this.currently
         if (cur) {
-            if (cur.near_end && !this.nextly) {
-                this.get_more({from_start:true})
-            }
             cur.think()
         }
         else {
             console.log("gat.think() start")
             this.might()
+        }
+    }
+
+    next_is_gettable(aud) {
+        if (!this.nextly) {
+            this.get_more({from_start:true})
+        }
+    }
+    next_is_coming(aud) {
+        let nex = this.nextly
+        if (!nex) throw "!nex"
+        let start = nex.might("returning start")
+        aud.aud_onended = () => {
+            console.log("Next track!")
+            start()
+            delete this.nextly
         }
     }
 }
@@ -182,9 +199,9 @@ export class AudioletTest extends Queuey {
         // < playing.duration - along()
         //    or just the seeked part of playing?
         let along = this.along()
-        if (along == null) throw "!along remaining"
+        if (along == null) return 0
         let remains = this.duration() - along
-        return remains
+        return Math.round(remains)
     }
     duration():number {
         return this.stretch_size * MOCK_MS_PER_ITEM
@@ -196,50 +213,107 @@ export class AudioletTest extends Queuey {
         this.spawn_time = gat.now()
         // keep entire track once downloaded
         this.scheme.history = -1
-        this.scheme.future = 3
+        this.scheme.future = 2
     }
 
     // act: start a bit of queue
     //  then are dispatched by think()
-    might() {
+    might(returning_start=false) {
         if (!this.playing && this.queue.length) {
             let stretch = this.new_stretch()
-            this.gat.currently = this
-            this.start_stretch(stretch)
+            let start = () => {
+                this.gat.currently = this
+                this.start_stretch(stretch)
+            }
+            // when preparing (decoding) gat.nextly
+            if (returning_start) return start
+            start()
         }
         this.provision()
     }
     // ambiently
+    next_stretch
     think() {
         // is the playhead moving
         if (!this.playing) {
             // waits for gat to aud.might()
         }
         // within one item from the end
-        else if (this.remaining_stretch() < this.ms_per_item) {
+        // remaining depends on along depends on start_time which is sync with playing
+        //  other places is can express 0 when not started as a way to do something asap
+        else if (this.remaining_stretch() < MOCK_MS_PER_ITEM) {
+            if (this.next_stretch) {
+                // is organised
+                return
+            }
             let stretch = this.new_stretch()
+            if (!stretch) {
+
+                return
+            }
+            this.next_stretch = stretch
+
+            console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
+                +`\t\t${this.remaining_stretch()} of ${MOCK_MS_PER_ITEM}`)
+            
+            let was_playing = this.playing
             // schedule it to play when this one finishes
             this.playing_onended = () => {
+                if (was_playing != this.playing) {
+                    debugger
+                }
                 this.start_stretch(stretch)
+                delete this.next_stretch
                 delete this.playing_onended
             }
         }
         else {
-            console.log("~")
+            // nothing to actuate right now
         }
+
+        // prepare for the next track
+        if (this.end_index != null && this.end_index <= this.cursor()+3) {
+            this.gat.next_is_gettable(this)
+        }
+
+        // prepare for the next track
+        if (this.end_index != null && this.end_index <= this.cursor()+1) {
+            this.gat.next_is_coming(this)
+        }
+        
+
         this.provision()
     }
 
+    
+
 
     // decodes stretches of the queue
+    // this fabricates the duration
+    //  and is set during decode (too early?) before it reflects this.playing
     stretch_size = $state()
     playing_onended:Function|null
+    delayed_stretch_think
     new_stretch() {
         let encoded = this.queue.slice()
         if (this.stretch_size == encoded.length) {
             console.log(`${this.idname} Stretchsame ${this.stretch_size}`)
+            // we can panic about having a queue of one initially
+            if (this.stretch_size == 1) {
+                if (this.delayed_stretch_think) return
+                this.delayed_stretch_think = setTimeout(() => {
+                    delete this.delayed_stretch_think
+                    console.log(`   And with ${this.remaining_stretch()} left... `)
+
+                    this.think()
+                }, this.remaining_stretch() / PHI*2)
+            }
+            else {
+            }
+            return
         }
-        this.stretch_size = encoded.length
+        // this.stretch_size == encoded.length
+        
 
         // const encoded = await this.context.decodeAudioData(encoded);
         let decoded = (encoded)
@@ -256,14 +330,37 @@ export class AudioletTest extends Queuey {
         let was = this.playing
         this.playing = stretch
         this.start_time ||= this.gat.now()
+        this.stretch_size = stretch.length
 
-        setTimeout(() => {
-            console.log(`stretchended`)
-            this.playing_onended?.()
-        }, this.stretch_size * this.ms_per_item)
+        // exponentially loady, log times we new_stretch()
+        let addiction = Math.floor(this.stretch_size / PHI)
+        // we end up loading the last third
+        this.scheme.future += addiction
+
+        this.mock_ending(was)
+
         // let play_from = !was ? 0 : was.duration
         // stretch.start(this.start_time,play_from)
         console.log(`aud:${this.id} Stretch++ ${this.stretch_size}`)
+    }
+    aud_onended:Function|null
+    mock_ending(was) {
+        let endsin = this.stretch_size * MOCK_MS_PER_ITEM
+        if (was) endsin -= was.length * MOCK_MS_PER_ITEM
+        setTimeout(() => {
+            let ismore = this.playing_onended ? ', is more' : ''
+            console.log(`stretchended ${ismore}`)
+            if (this.playing_onended) {
+                // the next stretch is ready to play
+                this.playing_onended()
+            }
+            else {
+                // the next track (aud) is ready to play
+                if (!this.aud_onended) return console.error("Off the end")
+                this.aud_onended()
+
+            }
+        }, endsin)
     }
 
     get_more({delay}) {
@@ -290,6 +387,15 @@ export class AudioletTest extends Queuey {
         //  but more get_more() may be dispatched already
         this.queue.push(blob)
         if (done) this.end_index = index
-        this.think()
+
+        let thinkdelay = 0
+        if (index == 1) {
+            // debounces us through stretch_size = 1, 3, ...
+            thinkdelay = this.remaining_stretch() / PHI
+        }
+        setTimeout(
+            () => this.think(),
+            thinkdelay,
+        )
     }
 }
