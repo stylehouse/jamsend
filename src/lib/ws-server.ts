@@ -164,11 +164,6 @@ function get_music(id): TheMusic | undefined {
 }
 // bytes of audio given out at once, audioi.index
 const CHUNK_SIZE = 60_000
-function random_index(mu) {
-    let seek = random_seek_fraction() * mu.size
-    let index = Math.floor(seek / CHUNK_SIZE)
-    return index
-}
 function random_seek_fraction() {
     let min = 0.2
     let max = 0.7
@@ -186,6 +181,7 @@ function AudioServer(socket, io) {
             console.log("ws AudioServer more: ",r)
             
             let specific = r.id && true
+            let from_start = r.from_start
             let mu = r.id ? get_music(r.id) : random_music()
             if (!mu) {
                 throw new Error(`!song: ${r.id}`);
@@ -193,7 +189,7 @@ function AudioServer(socket, io) {
             // create an encoder
             if (!mu.feed) {
                 if (r.index) throw "following (with index) an unstarted mu"
-                let fraction = r.index == 0 ? 0 : random_seek_fraction()
+                let fraction = from_start ? 0 : random_seek_fraction()
                 mu.feed = await createFFmpegStream(mu,fraction);
             }
             // read from the encoder
@@ -235,7 +231,7 @@ async function createFFmpegStream(mu, fraction = 0) {
     const waitingRequests = new Map();
     
     // Set up data handler
-    ff.on_data((data) => {
+    ff.on_data = (data) => {
         // Store the new chunk
         blobs[producedIndex] = data;
         
@@ -257,10 +253,10 @@ async function createFFmpegStream(mu, fraction = 0) {
         else {
             console.log(`FFmpeg++ ${mu.id} ${consumedIndex}/${producedIndex}`);
         }
-    });
+    }
     
     // Handle errors from ffmpeg
-    ff.on_error((error) => {
+    ff.on_error = (error) => {
         console.error(`FFmpeg error for ${mu.id}:`, error);
         isEnded = true;
         
@@ -269,10 +265,11 @@ async function createFFmpegStream(mu, fraction = 0) {
             reject(new Error(`FFmpeg stream error: ${error.message}`));
             waitingRequests.delete(index);
         }
-    });
+    }
     
-    // Handle end of stream
-    ff.on_end(() => {
+    // < ignore that it ends
+    //    we just need to know the end_index
+    ff.on_end = () => {
         console.log(`FFmpeg stream for ${mu.id} ended normally`);
         isEnded = true;
         
@@ -281,7 +278,7 @@ async function createFFmpegStream(mu, fraction = 0) {
             reject(new Error('End of stream reached'));
             waitingRequests.delete(index);
         }
-    });
+    }
 
     // Return feed interface with improved chunk retrieval
     return {
@@ -312,7 +309,6 @@ async function createFFmpegStream(mu, fraction = 0) {
                 return new Promise((resolve, reject) => {
                     // Store the promise resolvers for this index
                     waitingRequests.set(index, { resolve, reject });
-                    console.log("Have now the thing! "+index)
                     
                     // Set a timeout to avoid hanging forever
                     setTimeout(() => {
@@ -368,92 +364,85 @@ function ffmpegnate(mu:TheMusic, seektime = 0) {
         '-'  // Output to stdout
     ])
     
-    // Stream control state
-    let paused = false
-    let dataHandler = null
-    let errorHandler = null
-    let endHandler = null
+    // API
+    let ff = {
+        paused: false
+    }
     let buffer = Buffer.alloc(0)
+    // < do we drain the pipe?
+    let streamEnded = false
+    
+    // Process buffer data and send chunks
+    function processBuffer(forceDrain = false) {
+        // Process full chunks
+        while (buffer.length >= CHUNK_SIZE) {
+            const dataToSend = buffer.subarray(0, CHUNK_SIZE)
+            buffer = buffer.subarray(CHUNK_SIZE)
+            
+            ff.on_data(dataToSend)
+        }
+        
+        // If force draining (on end) and we have remaining data, send it
+        if (forceDrain && buffer.length > 0) {
+            const remainingData = buffer
+            buffer = Buffer.alloc(0)
+            
+            ff.on_data(remainingData)
+        }
+    }
     
     // Handle data from FFmpeg
     ffmpeg.stdout.on('data', (chunk) => {
-        buffer = Buffer.concat([buffer, chunk])
-        
-        // If we have collected enough data, process it
-        if (buffer.length >= CHUNK_SIZE) {
-            const dataToSend = buffer.slice(0, CHUNK_SIZE)
-            buffer = buffer.slice(CHUNK_SIZE)
-            
-            // Send to registered handler
-            if (dataHandler) {
-                dataHandler(dataToSend)
-            }
+        if (streamEnded) {
+            console.error("dropped more data after streamEnded")
+            return
         }
+        buffer = Buffer.concat([buffer, chunk])
+        processBuffer()
     })
-    
     // Error handling
-    ffmpeg.stderr.on('data', (data) => {
-        console.log(`FFmpeg log: ${data.toString()}`)
+    ffmpeg.stderr.on('end', (data) => {
+        console.log('FFmpeg stdout stream ended, draining buffer...')
+        // Drain any remaining data from buffer
+        processBuffer(true)
     })
     
     ffmpeg.on('error', (err) => {
         console.error('FFmpeg process error:', err)
-        if (errorHandler) {
-            errorHandler(err)
-        }
+        ff.on_error(err)
     })
     
     ffmpeg.on('close', (code) => {
         console.log(`FFmpeg process closed with code ${code}`)
-        if (endHandler) {
-            endHandler(code)
-        }
+        ff.on_end(code)
     })
     
     // Return control interface
-    return {
+    Object.assign(ff,{
         pause() {
-            if (!paused) {
+            if (!ff.paused) {
                 // Send SIGSTOP to pause the process (similar to Ctrl+Z)
                 ffmpeg.kill('SIGSTOP')
-                paused = true
+                ff.paused = true
                 console.log('FFmpeg stream paused')
             }
         },
         
         resume() {
-            if (paused) {
+            if (ff.paused) {
                 // Send SIGCONT to resume the process (similar to 'fg')
                 ffmpeg.kill('SIGCONT')
-                paused = false
+                ff.paused = false
                 console.log('FFmpeg stream resumed')
             }
-        },
-        
-        on_data(handler) {
-            dataHandler = handler
-            
-            // If we already have data in buffer, process it
-            if (buffer.length >= CHUNK_SIZE) {
-                const dataToSend = buffer.slice(0, CHUNK_SIZE)
-                buffer = buffer.slice(CHUNK_SIZE)
-                handler(dataToSend)
-            }
-        },
-        
-        on_error(handler) {
-            errorHandler = handler
-        },
-        
-        on_end(handler) {
-            endHandler = handler
         },
         
         terminate() {
             ffmpeg.kill('SIGKILL')
             console.log('FFmpeg stream terminated')
         }
-    }
+    })
+    return ff
 }
 
 // Extract metadata using ffprobe
