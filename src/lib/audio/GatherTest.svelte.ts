@@ -56,7 +56,7 @@ class Queuey {
         if (more_wanted) {
             console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
             // < request specific indexes here
-            for (let it = 1; it < more_wanted; it++) {
+            for (let it = 1; it <= more_wanted; it++) {
                 this.get_more({delay:it*140})
             }
         }
@@ -176,10 +176,10 @@ export class GathererTest extends Queuey {
             this.get_more({from_start:true})
         }
     }
-    next_is_coming(aud) {
+    async next_is_coming(aud) {
         let nex = this.nextly
         if (!nex) throw "!nex"
-        let start = nex.might("returning start")
+        let start = await nex.might("returning start")
         aud.aud_onended = () => {
             console.log("Next track!")
             start()
@@ -244,9 +244,9 @@ export class AudioletTest extends Queuey {
 
     // act: start a bit of queue
     //  then are dispatched by think()
-    might(returning_start=false) {
+    async might(returning_start=false) {
         if (!this.playing && this.queue.length) {
-            let stretch = this.new_stretch()
+            let stretch = await this.new_stretch()
             let start = () => {
                 this.gat.currently = this
                 this.start_stretch(stretch)
@@ -306,7 +306,7 @@ export class AudioletTest extends Queuey {
 
         // prepare for the next track
         if (this.end_index != null && this.end_index <= this.cursor()+1) {
-            this.gat.next_is_coming(this)
+            await this.gat.next_is_coming(this)
         }
         
 
