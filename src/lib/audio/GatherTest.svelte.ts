@@ -55,7 +55,8 @@ class Queuey {
         this.more_wanted = more_wanted
         if (more_wanted) {
             console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
-            for (let it = 1; it <= more_wanted; it++) {
+            // < request specific indexes here
+            for (let it = 1; it < more_wanted; it++) {
                 this.get_more({delay:it*140})
             }
         }
@@ -66,7 +67,7 @@ class Queuey {
 
 export class GathererTest extends Queuey {
     queue:Array<AudioletTest> = $state([])
-    fadeout:Array<AudioletTest> = $state([])
+    fadingout:Array<AudioletTest> = $state([])
     currently:AudioletTest
     get idname() {
         return "gat"
@@ -76,6 +77,8 @@ export class GathererTest extends Queuey {
         // keep the last 3 tracks
         this.scheme.history = 3
         this.scheme.future = 2
+        // for the GatherAudios subclass
+        this.setupSocket?.();
     }
     idi = 1
     cursor() {
@@ -129,7 +132,7 @@ export class GathererTest extends Queuey {
     might(really) {
         let next = this.queue
             // not the old track currently fading out
-            .filter(aud => !this.fadeout.includes(aud))
+            .filter(aud => !this.fadingout.includes(aud))
             // corner case: not the one we had ready to play in sequence
             .filter(aud => this.nextly != aud)
             .filter(aud => this.currently != aud)
@@ -138,7 +141,6 @@ export class GathererTest extends Queuey {
         if (next) {
             let cur = this.currently
             if (cur) {
-                // < do the fadeout
                 this.fadeout(cur)
                 cur.stop()
             }
@@ -152,8 +154,9 @@ export class GathererTest extends Queuey {
         this.provision()
     }
     
+    // < do the fadeout
     fadeout(aud) {
-        this.fadeout.push(aud)
+        this.fadingout.push(aud)
 
     }
 
@@ -184,6 +187,8 @@ export class GathererTest extends Queuey {
         }
     }
 }
+
+
 
 // the thing that is playing
 //  it requests more pieces to play
@@ -233,6 +238,8 @@ export class AudioletTest extends Queuey {
         // keep entire track once downloaded
         this.scheme.history = -1
         this.scheme.future = 2
+        // for the GatherAudios subclass
+        this.setupAudiolet?.();
     }
 
     // act: start a bit of queue
@@ -255,7 +262,7 @@ export class AudioletTest extends Queuey {
     }
     // ambiently
     next_stretch
-    think() {
+    async think() {
         if (this.stopped) {
             // no more planning
             return
@@ -273,7 +280,7 @@ export class AudioletTest extends Queuey {
         //   as a way to do something asap
         else if (this.remaining_stretch() < MOCK_MS_PER_ITEM) {
             if (this.next_stretch) return
-            let stretch = this.new_stretch()
+            let stretch = await this.new_stretch()
             if (!stretch) return
             this.next_stretch = stretch
 
@@ -315,7 +322,7 @@ export class AudioletTest extends Queuey {
     stretch_size = $state()
     playing_onended:Function|null
     delayed_stretch_think
-    new_stretch() {
+    async new_stretch() {
         let encoded = this.queue.slice()
         if (this.stretch_size == encoded.length) {
             console.log(`${this.idname} Stretchsame ${this.stretch_size}`)
@@ -333,18 +340,12 @@ export class AudioletTest extends Queuey {
             }
             return
         }
-        // this.stretch_size == encoded.length
-        
-
-        // const encoded = await this.context.decodeAudioData(encoded);
-        let decoded = (encoded)
-
-        // const stretch = this.gat.context.createBufferSource();
-        // stretch.buffer = decoded;
-        // stretch.connect(this.gainNode);
-        let stretch = decoded
+        let stretch = await this.decode_stretch(encoded)
 
         return stretch
+    }
+    async decode_stretch(encoded) {
+        return encoded
     }
     // decodes stretches of the queue
     start_stretch(stretch) {
@@ -358,13 +359,16 @@ export class AudioletTest extends Queuey {
         // we end up loading the last third
         this.scheme.future += addiction
 
-        this.mock_ending(was)
+        this.plan_ending(was)
 
         // let play_from = !was ? 0 : was.duration
         // stretch.start(this.start_time,play_from)
         console.log(`aud:${this.id} Stretch++ ${this.stretch_size}`)
     }
     aud_onended:Function|null
+    plan_ending(was) {
+        this.mock_ending(was)
+    }
     mock_ending(was) {
         let endsin = this.stretch_size * MOCK_MS_PER_ITEM
         if (was) endsin -= was.length * MOCK_MS_PER_ITEM

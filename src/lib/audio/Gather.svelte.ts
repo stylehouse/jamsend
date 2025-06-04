@@ -1,7 +1,6 @@
 
 import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
-import { writable, derived, get } from 'svelte/store';
 
 // a unique song URI hash
 export type urihash = string
