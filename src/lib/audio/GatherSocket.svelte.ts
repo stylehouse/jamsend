@@ -49,7 +49,7 @@ export class GatherAudios extends GathererTest {
         this.socket.on('more', async (r: audiole) => {
             try {
                 if (!r.id) throw new Error("Missing track ID in response");
-                this.have_more(r);
+                this.handle_more(r);
             } catch (err) {
                 console.error("Error processing audio data:", err);
                 this.on_error?.("Error processing audio: " + err.message);
@@ -134,6 +134,18 @@ export class GatherAudios extends GathererTest {
         let req:audioi = {}
         if (from_start) req.from_start = 1
         this.socket.emit('more',req)
+    }
+    handle_more(r) {
+        if (r.index == 0) {
+            // requested by gat
+            this.have_more(r)
+        }
+        else {
+            // requested by an aud
+            let aud = this.queue.filter(aud => aud.id == r.id)[0]
+            if (!aud) throw "id !aud"
+            aud.have_more(r)
+        }
     }
     // via have_more()
     new_audiolet(opt) {
