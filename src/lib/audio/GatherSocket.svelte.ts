@@ -8,6 +8,7 @@ export class GatherAudios extends GathererTest {
     begun = false;
     socket: Socket;
     on_error:Function|null
+    declare on_begun:Function|null
 
     setupSocket() {
         this.socket = io();
@@ -62,8 +63,10 @@ export class GatherAudios extends GathererTest {
 
     // Check if we can begin playback
     beginable() {
-        if (this.AC && this.connected && !this.begun) {
+        if (this.AC && this.socket && this.connected && !this.begun) {
             this.begun = true;
+            this.on_begun?.()
+            if (!this.on_begun) throw "non on_begun"
             this.surf();
         }
     }

@@ -13,30 +13,31 @@
     let simtime_interval
     let distime_interval
 
-    $effect(() => {
-        simtime_interval = setInterval(() => {
-            simtime = simtime + 1
-        },MS_PER_SIMULATION_TIME)
-        distime_interval = setInterval(() => {
-            distime = distime + 1
-        },MS_PER_SIMULATION_TIME / 4)
-    })
     let stop = () => {
         simtime_interval && clearInterval(simtime_interval)
         distime_interval && clearInterval(distime_interval)
         if (gat?.currently) gat.currently.aud_onended = () => {}
     }
     onDestroy(stop)
+    function start_simtime() {
+        simtime_interval = setInterval(() => {
+            simtime = simtime + 1
+        },MS_PER_SIMULATION_TIME)
+        distime_interval = setInterval(() => {
+            distime = distime + 1
+        },MS_PER_SIMULATION_TIME / 4)
+    }
     $effect(() => {
         // Svelte's SSR gets in a loop in here otherwise:
         if (!self.window) return 0
-        if (simtime || 1) {
+        if (!gat) initGat()
+        if (!gat?.begun) return
+        if (simtime) {
             setTimeout(() => handle_time(), 1)
         }
     })
     function handle_time() {
         if (simtime == 0) {
-            initGat()
         }
         else if (simtime == 1) {
             // gat.surf()
@@ -56,6 +57,9 @@
                 console.error(er);
                 errorMessage = er || "Unknown error";
             },
+            on_begun: () => {
+                start_simtime()
+            }
         });
         // try this
         initAudio()
