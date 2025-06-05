@@ -239,8 +239,6 @@ export class AudioletTest extends Queuey {
         // keep entire track once downloaded
         this.scheme.history = -1
         this.scheme.future = 2
-        // for the GatherAudios subclass
-        this.setupAudiolet?.();
     }
 
     // act: start a bit of queue
@@ -354,6 +352,7 @@ export class AudioletTest extends Queuey {
         this.playing = stretch
         this.start_time ||= this.gat.now()
         this.stretch_size = stretch.length
+        this.started_stretch?.()
 
         // exponentially loady, log times we new_stretch()
         let addiction = Math.floor(this.stretch_size / PHI)

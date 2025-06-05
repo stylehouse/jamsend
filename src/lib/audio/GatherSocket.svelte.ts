@@ -169,21 +169,38 @@ export class Audiolet extends AudioletTest {
 
     constructor(opt) {
         super(opt)
+        this.setupAudiolet();
     }
 
     setupAudiolet() {
         // Create gain node for fades
         this.gainNode = this.gat.AC.createGain();
         this.gainNode.connect(this.gat.AC.destination);
-        this.gainNode.gain.value = 0; // Start silent
+        this.gainNode.gain.value = 1;
     }
 
     async decode_stretch(encoded) {
-        const decoded = await this.gat.AC.decodeAudioData(encoded);
+        let n_chunks = encoded.length
+        encoded = this.flatten_ArrayBuffers(encoded)
+        const decoded = await this.gat.AC.decodeAudioData(encoded.buffer);
         const stretch = this.gat.AC.createBufferSource();
         stretch.buffer = decoded;
         stretch.connect(this.gainNode);
+        // stash this here, becomes stretch_size
+        stretch.length = n_chunks
         return stretch
+    }
+    flatten_ArrayBuffers(ArrayBuffers:Array<ArrayBuffer>) {
+        const totalLength = ArrayBuffers.reduce((sum, buffer) => sum + buffer.byteLength, 0);
+        const concatenated = new Uint8Array(totalLength);
+        
+        let offset = 0;
+        for (const buffer of ArrayBuffers) {
+            concatenated.set(new Uint8Array(buffer), offset);
+            offset += buffer.byteLength;
+        }
+
+        return concatenated
     }
 
     get_more({}) {
@@ -196,7 +213,12 @@ export class Audiolet extends AudioletTest {
 
 
     aud_onended:Function|null
+
     // called by start_stretch()
+    started_stretch() {
+        this.playing.start(0)
+        console.info("started_stretch()",this.playing)
+    }
     plan_ending(was) {
         console.info("Well, is it playing?", this.playing)
         this.playing.onended = () => {

@@ -321,7 +321,7 @@ async function createFFmpegStream(mu, fraction = 0) {
             }
             
             // Should never reach here if logic is correct
-            throw new Error(`Unexpected state in get_index(${index}) for ${mu.id}`);
+            throw new Error(`Unexpected state in get_index(${index}, producedIndex:${producedIndex}) for ${mu.id}`);
         },
         
         get done() {
