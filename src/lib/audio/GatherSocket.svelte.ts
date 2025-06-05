@@ -80,21 +80,44 @@ export class GatherAudios extends GathererTest {
     }
 
     // Initialize audio context (must be triggered by user interaction)
+    AC_ready = $state(false)
     init() {
         try {
             this.AC = new AudioContext();
 
-            console.log("AudioContext initialized");
-            this.beginable();
-            return true;
+            if (this.AC_OK()) {
+                console.log("AudioContext initialized");
+                this.beginable();
+                return true;
+            }
         } catch (er) {
             console.error("Failed to initialize AudioContext:", er);
             return false;
         }
     }
+    AC_OK() {
+        if (this.AC.state === 'suspended') {
+            this.AC.resume();
+        }
+        if (this.AC.state === 'suspended') {
+            console.warn("AudioContext still suspended")
+            this.AC_ready = false
+        }
+        else {
+            this.AC_ready = true
+            return true
+        }
+    }
 
     // Check if we can begin playback
     beginable() {
+        if (this.AC.state === 'suspended') {
+            this.AC.resume();
+        }
+        if (this.AC.state === 'suspended') {
+            console.warn("AudioContext still suspended")
+            return
+        }
         if (this.AC && this.socket && this.connected && !this.begun) {
             this.begun = true;
             this.on_begun?.()
@@ -104,7 +127,7 @@ export class GatherAudios extends GathererTest {
     }
 
 
-
+    
     // fetch a random track, creating its AudioletTest
     get_more({from_start,delay}) {
         this.awaiting_mores.push(1)

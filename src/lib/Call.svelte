@@ -69,11 +69,12 @@
     }
     // Initialize AudioContext in response to user gesture
     const initAudio = () => {
-        if (gat.AC) return;
+        if (gat.AC && gat.AC_OK()) return;
         try {
-            gat.init()
-            document.removeEventListener("click", initAudio);
-            document.removeEventListener("touchstart", initAudio);
+            if (gat.init()) {
+                document.removeEventListener("click", initAudio);
+                document.removeEventListener("touchstart", initAudio);
+            }
         } catch (err) {
             console.error("Failed to create AudioContext:", err);
             errorMessage = "Could not initialize audio playback.";
@@ -138,8 +139,8 @@
     {/if}
 
     <div class="controls">
-        <button onclick={skipTrack}>Skip</button>
-        {#if !gat?.AC}<p><a>Click Here</a> to being.</p>{/if}
+        <button onclick={surf}>Skip</button>
+        {#if !gat?.AC_ready}<p><a>Click Here</a> to being.</p>{/if}
     </div>
 
     {#if errorMessage}
