@@ -98,7 +98,7 @@ export class GathererTest extends Queuey {
     have_more({id,blob,index,from_start}) {
         console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
-        let aud = new AudioletTest({id,gat:this})
+        let aud = this.new_audiolet({id,gat:this})
         aud.next_index = index+1
         aud.have_more({id,blob,index})
         if (from_start) {
@@ -112,6 +112,9 @@ export class GathererTest extends Queuey {
             this.queue.push(aud)
         }
         this.think()
+    }
+    new_audiolet(opt) {
+        return new AudioletTest(opt)
     }
     // the next track to play in sequence, from the start
     nextly

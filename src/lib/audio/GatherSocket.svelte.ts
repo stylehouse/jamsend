@@ -7,6 +7,7 @@ export class GatherAudios extends GathererTest {
     connected = false;
     begun = false;
     socket: Socket;
+    on_error:Function|null
 
     setupSocket() {
         this.socket = io();
@@ -41,7 +42,7 @@ export class GatherAudios extends GathererTest {
         });
     }
     close() {
-        this.socket.disconnect();
+        this.socket?.disconnect();
         this.AC?.close();
     }
 
@@ -77,6 +78,14 @@ export class GatherAudios extends GathererTest {
             this.have_more({id:this.idi++,blob:'vvv',index:0,from_start})
         }, delay || 100)
     }
+    // via have_more()
+    new_audiolet(opt) {
+        let aud = new Audiolet(opt)
+        if (!aud.gat) {
+            debugger
+        }
+        return aud
+    }
     now() {
         return this.AC?.currentTime
     }
@@ -86,8 +95,14 @@ export class GatherAudios extends GathererTest {
 
 
 export class Audiolet extends AudioletTest {
-    gat:GatherAudios
+    // we re-type this from the superclass
+    //  'declare' that or it'll come back from super() undefined
+    declare gat:GatherAudios
     gainNode: GainNode;
+
+    constructor(opt) {
+        super(opt)
+    }
 
     setupAudiolet() {
         // Create gain node for fades
@@ -116,6 +131,7 @@ export class Audiolet extends AudioletTest {
     aud_onended:Function|null
     // called by start_stretch()
     plan_ending(was) {
+        console.info("Well, is it playing?", this.playing)
         this.playing.onended = () => {
             if (this.stopped) {
                 // is over, no need to keep feeding audio

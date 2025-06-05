@@ -1,13 +1,57 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Gatherer, type urihash } from "./audio/Gather.svelte";
+    import { GatherAudios } from "./audio/GatherSocket.svelte";
+    import { MS_PER_SIMULATION_TIME } from "./audio/GatherTest.svelte";
+    import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
 
-    let gather:Gatherer|undefined = $state();
     let errorMessage = "";
+
+    let gat:GatherAudios|undefined = $state();
+    let perftime = $state('')
+    let simtime = $state(0)
+    let distime = $state(0)
+    let simtime_interval
+    let distime_interval
+
     $effect(() => {
-        if (gather) return
+        simtime_interval = setInterval(() => {
+            simtime = simtime + 1
+        },MS_PER_SIMULATION_TIME)
+        distime_interval = setInterval(() => {
+            distime = distime + 1
+        },MS_PER_SIMULATION_TIME / 4)
+    })
+    let stop = () => {
+        simtime_interval && clearInterval(simtime_interval)
+        distime_interval && clearInterval(distime_interval)
+        if (gat?.currently) gat.currently.aud_onended = () => {}
+    }
+    onDestroy(stop)
+    $effect(() => {
+        // Svelte's SSR gets in a loop in here otherwise:
+        if (!self.window) return 0
+        if (simtime || 1) {
+            setTimeout(() => handle_time(), 1)
+        }
+    })
+    function handle_time() {
+        if (simtime == 0) {
+            initGat()
+        }
+        else if (simtime == 1) {
+            // gat.surf()
+        }
+        else if (simtime == 122) {
+            // stop()
+        }
+        gat.think()
+        // console.log("Time = "+simtime)
+    }
+
+    function initGat() {
+        if (gat) return
         // Initialize WebSocket connection
-        gather = new Gatherer({
+        gat = new GatherAudios({
             on_error: (er) => {
                 console.error(er);
                 errorMessage = er || "Unknown error";
@@ -18,12 +62,12 @@
 
         document.addEventListener("click", initAudio);
         document.addEventListener("touchstart", initAudio);
-    });
+    }
     // Initialize AudioContext in response to user gesture
     const initAudio = () => {
-        if (gather.AC) return;
+        if (gat.AC) return;
         try {
-            gather.init()
+            gat.init()
             document.removeEventListener("click", initAudio);
             document.removeEventListener("touchstart", initAudio);
         } catch (err) {
@@ -35,25 +79,39 @@
     let trackInfo = $state();
     // Update track info when current_meta changes
     $effect(() => {
-        if (gather?.current_meta) {
+        if (gat?.current_meta) {
             trackInfo = {
-                title: gather.current_meta.title || "Unknown Track",
-                artist: gather.current_meta.artist || "Unknown Artist",
-                album: gather.current_meta.album || "Unknown Album", 
-                year: gather.current_meta.year || ""
+                title: gat.current_meta.title || "Unknown Track",
+                artist: gat.current_meta.artist || "Unknown Artist",
+                album: gat.current_meta.album || "Unknown Album", 
+                year: gat.current_meta.year || ""
             };
         }
     });
 
-    // Skip to next track
-    function skipTrack() {
-        gather?.surf();
-    }
+    $effect(() => {
+        // Svelte's SSR gets in a loop in here otherwise:
+        if (!self.window) return 0
+        if (!gat) return
+        if (distime || 1) {
+            setTimeout(() => handle_display(), 1)
+        }
+    })
+    let awaiting = $state()
+    function handle_display() {
+        let i = distime + 3
+        if (distime == 0) {
+            
+        }
+        // update child components
+        gat.queue.map(aud => aud?.onanimationframe?.())
 
-    // Clean up when component is destroyed
-    onDestroy(() => {
-        gather?.close();
-    });
+        perftime = gat.now()
+        awaiting = gat.awaiting_mores.length
+    }
+    function surf() {
+        gat.might('really')
+    }
 </script>
 
 <div class="audio-player">
@@ -65,7 +123,7 @@
                 {trackInfo.year ? `(${trackInfo.year})` : ""}
             </p>
         </div>
-    {:else if gather?.loading}
+    {:else if gat?.loading}
         <div class="loading">
             <p>Loading track...</p>
         </div>
@@ -76,19 +134,49 @@
     {/if}
 
     <div class="controls">
-        <button on:click={skipTrack}>Skip</button>
-        {#if !gather?.AC}<p><a>Click Here</a> to being.</p>{/if}
+        <button onclick={skipTrack}>Skip</button>
+        {#if !gat?.AC}<p><a>Click Here</a> to being.</p>{/if}
     </div>
 
     {#if errorMessage}
         <div class="error-message">
             {errorMessage}
-            <button on:click={() => (errorMessage = "")}>×</button>
+            <button onclick={() => (errorMessage = "")}>×</button>
         </div>
     {/if}
+
+
+
+    <div class="mach" >
+        <span class="name">GathererTest</span>
+        at {Math.round(perftime)}ms
+        {#if gat}
+            <span>
+                <span>{#if gat.more_wanted}morewant {gat.more_wanted}{/if}</span>
+
+                <button onclick={surf} >surf</button>
+            </span>
+            {#each gat.queue as aud (aud.id)}
+                <GatherTestAudiolet {aud} />
+            {/each}
+        {/if}
+    </div>
+
+
 </div>
 
 <style>
+    /* debug visuals */
+    .mach {
+        border-radius:1em;
+        border:3px solid green;
+        background: darkgreen;
+    }
+    .name {
+        font-size: 130%;
+        color: white;
+    }
+
     .audio-player {
         padding: 1rem;
         border-radius: 8px;
