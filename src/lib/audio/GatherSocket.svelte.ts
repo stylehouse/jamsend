@@ -2,6 +2,33 @@ import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
 import { AudioletTest, GathererTest } from "./GatherTest.svelte";
 
+
+// a unique song URI hash
+export type urihash = string
+
+// sometimes requests for more audio have specifics:
+export type audioi = {
+    // identifies a track
+    id: urihash,
+    // position they're streaming towards
+    index: number,
+}
+// the response of part|whole
+type audiole = audioi & {
+    blob: Uint8Array,
+    // Last bit -> start another from the start
+    done?: boolean;
+    // Song metadata if available
+    meta?: {
+        artist: string;
+        album: string;
+        title: string;
+        year: string;
+        cover?: Uint8Array;
+        duration?: number;
+    };
+}
+
 export class GatherAudios extends GathererTest {
     AC: AudioContext | null = $state(null)
     connected = false;
@@ -10,6 +37,11 @@ export class GatherAudios extends GathererTest {
     on_error:Function|null
     declare on_begun:Function|null
 
+    constructor(opt) {
+        super(opt)
+        this.setupSocket();
+    }
+
     setupSocket() {
         this.socket = io();
 
@@ -17,7 +49,7 @@ export class GatherAudios extends GathererTest {
         this.socket.on('more', async (r: audiole) => {
             try {
                 if (!r.id) throw new Error("Missing track ID in response");
-                this.handle_more(r);
+                this.have_more(r);
             } catch (err) {
                 console.error("Error processing audio data:", err);
                 this.on_error?.("Error processing audio: " + err.message);
@@ -76,10 +108,9 @@ export class GatherAudios extends GathererTest {
     // fetch a random track, creating its AudioletTest
     get_more({from_start,delay}) {
         this.awaiting_mores.push(1)
-        setTimeout(() => {
-            // response:
-            this.have_more({id:this.idi++,blob:'vvv',index:0,from_start})
-        }, delay || 100)
+        let req:audioi = {}
+        if (from_start) req.from_start = 1
+        this.socket.emit('more',req)
     }
     // via have_more()
     new_audiolet(opt) {
@@ -92,8 +123,6 @@ export class GatherAudios extends GathererTest {
     now() {
         return this.AC?.currentTime
     }
-
-    
 }
 
 
@@ -127,7 +156,7 @@ export class Audiolet extends AudioletTest {
         // here we always just want more of the queue, in sequence
         //  see gat.have_more() for creation and an initial aud.have_more()
         let req = {id: this.id, index: this.next_index++}
-        this.socket.emit('more',req)
+        this.gat.socket.emit('more',req)
     }
 
 

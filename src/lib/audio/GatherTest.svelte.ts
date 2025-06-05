@@ -72,13 +72,11 @@ export class GathererTest extends Queuey {
     get idname() {
         return "gat"
     }
-    constructor() {
-        super()
+    constructor(opt) {
+        super(opt)
         // keep the last 3 tracks
         this.scheme.history = 3
         this.scheme.future = 2
-        // for the GatherAudios subclass
-        this.setupSocket?.();
     }
     idi = 1
     cursor() {
