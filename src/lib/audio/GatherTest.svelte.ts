@@ -196,9 +196,11 @@ export class GathererTest extends Queuey {
 export class AudioletTest extends Queuey {
     // still encoded chunks of ogg
     queue:Array<Uint8Array> = $state([])
-    playing:BufferSource = $state()
+    //  a decoded, from-the-start subset of the queue
+    playing:AudioBufferSourceNode = $state()
     // the index after get_more's we are in to the track (-1)
     next_index:number = $state()
+    is_nextly = $state()
     end_index = $state()
     get idname() {
         return `aud:${this.id}`
@@ -213,7 +215,7 @@ export class AudioletTest extends Queuey {
     cursor() {
         let time = this.along()
         if (time == null) return null
-        let i = Math.floor(time / MOCK_MS_PER_ITEM)
+        let i = Math.floor(time / this.approx_chunk_time)
         return i
     }
     along() {
@@ -229,7 +231,7 @@ export class AudioletTest extends Queuey {
         return Math.round(remains)
     }
     duration():number {
-        return this.stretch_size * MOCK_MS_PER_ITEM
+        return this.stretch_size * this.approx_chunk_time
     }
     
     constructor(opt) {
@@ -260,7 +262,7 @@ export class AudioletTest extends Queuey {
         this.stopped = 1
     }
     // ambiently
-    next_stretch
+    next_stretch = $state()
     async think() {
         if (this.stopped) {
             // no more planning
@@ -269,6 +271,7 @@ export class AudioletTest extends Queuey {
         // is the playhead moving
         if (!this.playing) {
             // waits for gat to aud.might()
+            return
         }
         // within one item from the end
         // remaining_stretch() depends on along()
@@ -277,14 +280,14 @@ export class AudioletTest extends Queuey {
         //   but stays that of first playing (stretch)
         //  in other places it can express 0 when not started
         //   as a way to do something asap
-        else if (this.remaining_stretch() < MOCK_MS_PER_ITEM) {
-            if (this.next_stretch) return
+        if (this.remaining_stretch() < this.approx_chunk_time
+                && !this.next_stretch) {
             let stretch = await this.new_stretch()
             if (!stretch) return
             this.next_stretch = stretch
 
             console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
-                +`\t\t${this.remaining_stretch()} of ${MOCK_MS_PER_ITEM}`)
+                +`\t\t${this.remaining_stretch()} of ${this.approx_chunk_time}`)
             
             // schedule it to play when this one finishes
             let was_playing = this.playing
@@ -293,8 +296,8 @@ export class AudioletTest extends Queuey {
                     debugger
                 }
                 this.start_stretch(stretch)
-                delete this.next_stretch
-                delete this.playing_onended
+                this.next_stretch = null
+                this.playing_onended = null
             }
         }
 
@@ -310,6 +313,9 @@ export class AudioletTest extends Queuey {
         
 
         this.provision()
+    }
+    get approx_chunk_time() {
+        return MOCK_MS_PER_ITEM
     }
 
     
@@ -370,8 +376,8 @@ export class AudioletTest extends Queuey {
         this.mock_ending(was)
     }
     mock_ending(was) {
-        let endsin = this.stretch_size * MOCK_MS_PER_ITEM
-        if (was) endsin -= was.length * MOCK_MS_PER_ITEM
+        let endsin = this.stretch_size * this.approx_chunk_time
+        if (was) endsin -= was.length * this.approx_chunk_time
         setTimeout(() => {
             if (this.stopped) {
                 // is over, no need to keep feeding audio

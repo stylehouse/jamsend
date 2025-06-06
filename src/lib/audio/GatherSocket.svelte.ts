@@ -39,6 +39,7 @@ export class GatherAudios extends GathererTest {
 
     constructor(opt) {
         super(opt)
+        this.scheme.future = 1
         this.setupSocket();
     }
 
@@ -156,11 +157,11 @@ export class GatherAudios extends GathererTest {
         return aud
     }
     now() {
-        return this.AC?.currentTime
+        return this.AC?.currentTime * 1000
     }
 }
 
-
+let MOCK_MS_PER_ITEM = 3000
 export class Audiolet extends AudioletTest {
     // we re-type this from the superclass
     //  'declare' that or it'll come back from super() undefined
@@ -171,13 +172,56 @@ export class Audiolet extends AudioletTest {
         super(opt)
         this.setupAudiolet();
     }
-
     setupAudiolet() {
         // Create gain node for fades
         this.gainNode = this.gat.AC.createGain();
         this.gainNode.connect(this.gat.AC.destination);
         this.gainNode.gain.value = 1;
     }
+
+    // < become based on a rolling start_time?
+    //    any extra duration divided by extra stretch_size
+    //   or something.
+    get approx_chunk_time() {
+        return MOCK_MS_PER_ITEM
+    }
+    cursor() {
+        let time = this.along()
+        if (time == null) return null
+        let i = Math.floor(time / this.approx_chunk_time)
+        return i
+    }
+    along() {
+        if (this.start_time == null) return null
+        return this.gat.now() - this.start_time
+    }
+    remaining_stretch():number {
+        // < playing.duration - along()
+        //    or just the seeked part of playing?
+        let along = this.along()
+        if (along == null) return 0
+        let remains = this.duration() - along
+        return Math.round(remains)
+    }
+    // includes the skipped portion (playFrom)
+    duration():number {
+        return this.playing.buffer.duration * 1000
+    }
+
+    // in seconds, not ms
+    previous_duration?:number
+    // called by start_stretch() before it calls plan_ending()
+    started_stretch() {
+        let playFrom = 0
+        if (this.previous_duration) {
+            // skip to where we ended
+            playFrom = this.previous_duration
+        }
+        this.playing.start(0,playFrom)
+        this.start_time ||= this.gat.now()
+        this.previous_duration = this.playing.buffer.duration
+    }
+
 
     async decode_stretch(encoded) {
         let n_chunks = encoded.length
@@ -213,12 +257,7 @@ export class Audiolet extends AudioletTest {
 
 
     aud_onended:Function|null
-
     // called by start_stretch()
-    started_stretch() {
-        this.playing.start(0)
-        console.info("started_stretch()",this.playing)
-    }
     plan_ending(was) {
         console.info("Well, is it playing?", this.playing)
         this.playing.onended = () => {
