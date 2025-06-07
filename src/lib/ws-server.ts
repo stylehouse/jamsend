@@ -1,4 +1,4 @@
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import { readFile, writeFile, access, mkdir, readdir, stat } from 'fs/promises';
 import { join, dirname, basename, extname } from 'path';
 import { constants } from 'fs';
@@ -47,9 +47,9 @@ type TheMusic = {
 let Music:Map<urihash,TheMusic> = new Map()
 
 // error-sending wrapper
-function carefully(label: string, callback: Function, doing: Function) {
+async function carefully(label: string, callback: Function, socket:Socket, doing: Function) {
     try {
-        doing()
+        await doing()
     } catch (error) {
         console.error("Error in ws-server", error)
         socket.emit('error', {
@@ -176,7 +176,7 @@ function random_seek_fraction() {
 //     so the stream starts with an ogg header
 function AudioServer(socket, io) {
     socket.on('more', async (r: audioi, cb) => {
-        carefully('more', cb, async () => {
+        carefully('more', cb, socket, async () => {
             r ||= {}
             console.log("ws AudioServer more: ",r)
             
@@ -321,7 +321,7 @@ async function createFFmpegStream(mu, fraction = 0) {
             }
             
             // Should never reach here if logic is correct
-            throw new Error(`Unexpected state in get_index(${index}, producedIndex:${producedIndex}) for ${mu.id}`);
+            console.error(`Unexpected state in get_index(${index}, producedIndex:${producedIndex}) for ${mu.id}`);
         },
         
         get done() {

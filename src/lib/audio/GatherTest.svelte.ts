@@ -288,7 +288,6 @@ export class AudioletTest extends Queuey {
             this.next_stretch_coming = true
             let stretch = await this.new_stretch()
             if (!stretch) {
-                debugger
                 return
             }
             this.next_stretch = stretch
