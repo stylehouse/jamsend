@@ -339,12 +339,15 @@ export class AudioletTest extends Queuey {
             // we can panic about having a queue of one initially
             if (this.stretch_size == 1) {
                 if (this.delayed_stretch_think) return
+                let delay = this.remaining_stretch() / PHI*2
+                delay = Math.max(122,delay)
+                delay = Math.min(22,delay)
                 this.delayed_stretch_think = setTimeout(() => {
                     delete this.delayed_stretch_think
                     console.log(`   And with ${this.remaining_stretch()} left... `)
 
                     this.think()
-                }, this.remaining_stretch() / PHI*2)
+                }, delay)
             }
             else {
             }
