@@ -268,6 +268,7 @@ export class AudioletTest extends Queuey {
             // no more planning
             return
         }
+        this.provision()
         // is the playhead moving
         if (!this.playing) {
             // waits for gat to aud.might()
@@ -317,9 +318,6 @@ export class AudioletTest extends Queuey {
         if (this.end_index != null && this.end_index <= this.cursor()+1) {
             await this.gat.next_is_coming(this)
         }
-        
-
-        this.provision()
     }
     get approx_chunk_time() {
         return MOCK_MS_PER_ITEM
