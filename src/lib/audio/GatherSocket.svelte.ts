@@ -182,13 +182,21 @@ export class Audiolet extends AudioletTest {
     // < become based on a rolling start_time?
     //    any extra duration divided by extra stretch_size
     //   or something.
+    average_new_chunk_duration?:number
     get approx_chunk_time() {
-        return MOCK_MS_PER_ITEM
+        return this.average_new_chunk_duration || MOCK_MS_PER_ITEM
     }
+    // where in the queue are we up to
     cursor() {
-        let time = this.along()
-        if (time == null) return null
+        if (this.stretch_start_time == null) return null
+        // time into the new part of this stretch
+        let time = this.gat.now() - this.stretch_start_time
         let i = Math.floor(time / this.approx_chunk_time)
+        // time = Math.round(time)
+        // let newdur = Math.round(this.stretch_new_duration)
+        // console.log(`cursor(): ${i}: ${time} @ ${newdur} (+${this.stretch_start_index})`)
+        // into the wider context of the queue
+        i = i + this.stretch_start_index
         return i
     }
     along() {
@@ -210,6 +218,11 @@ export class Audiolet extends AudioletTest {
 
     // in seconds, not ms
     previous_duration?:number
+    previous_stretch_size?:number
+    stretch_start_index?:number
+    stretch_start_time?:number
+    stretch_new_chunks?:number
+    stretch_new_duration?:number
     // called by start_stretch() before it calls plan_ending()
     started_stretch() {
         let playFrom = 0
@@ -218,8 +231,15 @@ export class Audiolet extends AudioletTest {
             playFrom = this.previous_duration
         }
         this.playing.start(0,playFrom)
-        this.start_time ||= this.gat.now()
-        this.previous_duration = this.playing.buffer.duration
+        // allows cursor() to be more accurate
+        this.stretch_start_index = (this.previous_stretch_size||1) - 1
+        this.stretch_start_time = this.gat.now()
+        this.stretch_new_chunks = this.stretch_size - (this.previous_stretch_size||0)
+        this.stretch_new_duration = this.duration() - (this.previous_duration||0)
+        this.average_new_chunk_duration = this.stretch_new_duration / this.stretch_new_chunks
+        // for next time
+        this.previous_duration = this.duration()
+        this.previous_stretch_size = this.stretch_size
     }
 
 

@@ -28,11 +28,11 @@
         },MS_PER_SIMULATION_TIME / 4)
     }
     $effect(() => {
-        // Svelte's SSR gets in a loop in here otherwise:
-        if (!self.window) return 0
-        if (!gat) initGat()
-        if (!gat?.begun) return
-        if (simtime) {
+        if (simtime || 1) {
+            // Svelte's SSR gets in a loop in here otherwise:
+            if (!self.window) return 0
+            if (!gat) initGat()
+            if (!gat?.begun) return
             setTimeout(() => handle_time(), 1)
         }
     })

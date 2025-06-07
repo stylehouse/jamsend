@@ -5,7 +5,7 @@ const MOCK_END_OF_INDEX = 9
 // various timing code needs to regard the decoded audio aud.playing.duration
 const MOCK_MS_PER_ITEM = 621
 const PHI = 1.613
-export const MS_PER_SIMULATION_TIME = 111
+export const MS_PER_SIMULATION_TIME = 333
 
 
 class Queuey {
@@ -164,7 +164,7 @@ export class GathererTest extends Queuey {
     // might might(), but only if...
     think() {
         if (this.currently) {
-            this.currently.think()
+            this.currently.think('from gat')
         }
         else {
             console.log("gat.think() start")
@@ -263,7 +263,7 @@ export class AudioletTest extends Queuey {
     }
     // ambiently
     next_stretch = $state()
-    async think() {
+    async think(source?) {
         if (this.stopped) {
             // no more planning
             return
@@ -273,6 +273,9 @@ export class AudioletTest extends Queuey {
             // waits for gat to aud.might()
             return
         }
+        if (source == "from gat") {
+            console.log("Gat Think! "+this.approx_chunk_time)
+        }
         // within one item from the end
         // remaining_stretch() depends on along()
         //  which depends on start_time
@@ -281,9 +284,13 @@ export class AudioletTest extends Queuey {
         //  in other places it can express 0 when not started
         //   as a way to do something asap
         if (this.remaining_stretch() < this.approx_chunk_time
-                && !this.next_stretch) {
+                && !this.next_stretch_coming) {
+            this.next_stretch_coming = true
             let stretch = await this.new_stretch()
-            if (!stretch) return
+            if (!stretch) {
+                debugger
+                return
+            }
             this.next_stretch = stretch
 
             console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
@@ -297,6 +304,7 @@ export class AudioletTest extends Queuey {
                 }
                 this.start_stretch(stretch)
                 this.next_stretch = null
+                this.next_stretch_coming = null
                 this.playing_onended = null
             }
         }
@@ -324,9 +332,9 @@ export class AudioletTest extends Queuey {
     // decodes stretches of the queue
     // this fabricates the duration
     //  and is set during decode (too early?) before it reflects this.playing
-    stretch_size = $state()
+    stretch_size:number = $state()
     playing_onended:Function|null
-    delayed_stretch_think
+    delayed_stretch_think:number
     async new_stretch() {
         let encoded = this.queue.slice()
         if (this.stretch_size == encoded.length) {
