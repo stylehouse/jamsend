@@ -369,9 +369,9 @@ export class AudioletTest extends Queuey {
         this.started_stretch?.()
 
         // exponentially loady, log times we new_stretch()
-        let addiction = Math.floor(this.stretch_size / PHI)
+        let enthusiasm = Math.floor(this.stretch_size / PHI)
         // we end up loading the last third
-        this.scheme.future += addiction
+        this.scheme.future += enthusiasm
 
         this.plan_ending(was)
 
