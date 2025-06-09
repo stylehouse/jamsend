@@ -39,7 +39,7 @@ export class GatherAudios extends GathererTest {
 
     constructor(opt) {
         super(opt)
-        this.scheme.future = 1
+        this.scheme.future = 2
         this.setupSocket();
     }
 
@@ -216,7 +216,7 @@ export class Audiolet extends AudioletTest {
         return this.playing.buffer.duration * 1000
     }
 
-    // in seconds, not ms
+    // in miliseconds!
     previous_duration?:number
     previous_stretch_size?:number
     stretch_start_index?:number
@@ -227,8 +227,8 @@ export class Audiolet extends AudioletTest {
     started_stretch() {
         let playFrom = 0
         if (this.previous_duration) {
-            // skip to where we ended
-            playFrom = this.previous_duration
+            // skip to where we ended, in seconds
+            playFrom = this.previous_duration / 1000
         }
         this.playing.start(0,playFrom)
         // allows cursor() to be more accurate
@@ -279,25 +279,8 @@ export class Audiolet extends AudioletTest {
     aud_onended:Function|null
     // called by start_stretch()
     plan_ending(was) {
-        console.info("Well, is it playing?", this.playing)
         this.playing.onended = () => {
-            if (this.stopped) {
-                // is over, no need to keep feeding audio
-                throw "onended stop happens"
-                return
-            }
-            let ismore = this.playing_onended ? ', is more' : ''
-            console.log(`stretchended${ismore}`)
-            if (this.playing_onended) {
-                // the next stretch is ready to play
-                this.playing_onended()
-            }
-            else {
-                // the next track (aud) is ready to play
-                if (!this.aud_onended) return console.error("Off the end")
-                this.aud_onended()
-                this.stopped = 1
-            }
+            this.whatsnext()
         }
     }
 

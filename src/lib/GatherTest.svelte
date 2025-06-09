@@ -36,7 +36,7 @@
             gat = new GathererTest()
         }
         else if (simtime == 1) {
-            gat.surf()
+            // gat.surf()
         }
         else if (simtime == 122) {
             stop()
