@@ -96,6 +96,12 @@ export class GathererTest extends Queuey {
     have_more({id,blob,index,from_start}) {
         console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
+        if (index == 0 && this.find_audiolet({id})) {
+            // the server randomly sent a previous track
+            // < pseudo-random, avoid repeats for as long as possible
+            this.get_more({from_start})
+            return
+        }
         let aud = this.new_audiolet({id,gat:this})
         aud.next_index = index+1
         aud.have_more({id,blob,index})
@@ -110,6 +116,12 @@ export class GathererTest extends Queuey {
             this.queue.push(aud)
         }
         this.think()
+    }
+    find_audiolet({id}) {
+        let aud = this.queue
+            // not the old track currently fading out
+            .filter(aud => aud.id == id) [0]
+        return aud
     }
     new_audiolet(opt) {
         return new AudioletTest(opt)
