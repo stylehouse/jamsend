@@ -2,6 +2,10 @@ import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
 import { AudioletTest, GathererTest } from "./GatherTest.svelte";
 
+// in ms
+const FADE_OUT_DURATION = 555
+const FADE_IN_DURATION = 333
+const MIN_GAIN = 0.001
 
 // a unique song URI hash
 export type urihash = string
@@ -29,6 +33,7 @@ type audiole = audioi & {
     };
 }
 
+//#region gat
 export class GatherAudios extends GathererTest {
     AC: AudioContext | null = $state(null)
     connected = false;
@@ -80,6 +85,7 @@ export class GatherAudios extends GathererTest {
         this.AC?.close();
     }
 
+    //#region gat AC
     // Initialize audio context (must be triggered by user interaction)
     AC_ready = $state(false)
     init() {
@@ -129,6 +135,7 @@ export class GatherAudios extends GathererTest {
 
 
     
+    //#region gat req
     // fetch a random track, creating its AudioletTest
     get_more({from_start,delay}) {
         this.awaiting_mores.push(1)
@@ -161,6 +168,7 @@ export class GatherAudios extends GathererTest {
     }
 }
 
+//#region aud
 let MOCK_MS_PER_ITEM = 3000
 export class Audiolet extends AudioletTest {
     // we re-type this from the superclass
@@ -178,7 +186,43 @@ export class Audiolet extends AudioletTest {
         this.gainNode.connect(this.gat.AC.destination);
         this.gainNode.gain.value = 1;
     }
+    fadein() {
+        this.gainNode.gain.setValueAtTime(MIN_GAIN, this.gat.now()/1000)
+        let at = this.gat.now() + FADE_IN_DURATION
+        this.gainNode.gain.exponentialRampToValueAtTime(
+            1.0,
+            at/1000
+        )
+    }
+    fadeout() {
+        // prevent further aud.start_stretch() etc immediately
+        this.stopped = 1
+        // < redundant given stopped?
+        this.gat.fadingout.push(this)
+        setTimeout(() => {
+            console.log(`Fadeout done, ${this.gainNode.gain.value}`)
+            this.stop()
+        }, FADE_OUT_DURATION)
 
+
+        let at = (this.gat.now() + FADE_OUT_DURATION) / 1000
+        console.log(`Fadeout? ${this.gat.now()/1000}\t${at}`)
+        this.gainNode.gain.linearRampToValueAtTime(
+            MIN_GAIN,
+            at
+        )
+    }
+    stop() {
+        console.log(`stop!`)
+
+        this.stopped = 1
+        this.playing?.stop()
+        this.gat.fadingout = this.gat.fadingout
+            .filter(aud => aud != this)
+    }
+
+
+    //#region aud time
     // < become based on a rolling start_time?
     //    any extra duration divided by extra stretch_size
     //   or something.
@@ -215,7 +259,6 @@ export class Audiolet extends AudioletTest {
     duration():number {
         return this.playing.buffer.duration * 1000
     }
-
     // in miliseconds!
     previous_duration?:number
     previous_stretch_size?:number
@@ -243,6 +286,7 @@ export class Audiolet extends AudioletTest {
     }
 
 
+    //#region aud stretch
     async decode_stretch(encoded) {
         let n_chunks = encoded.length
         encoded = this.flatten_ArrayBuffers(encoded)
@@ -280,6 +324,7 @@ export class Audiolet extends AudioletTest {
     // called by start_stretch()
     plan_ending(was) {
         this.playing.onended = () => {
+
             this.whatsnext()
         }
     }

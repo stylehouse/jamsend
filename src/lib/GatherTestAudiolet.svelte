@@ -44,6 +44,7 @@
         <span>
             {aud.is_nextly && 'is_nextly'} 
             {aud.next_stretch && 'next_stretch'}
+            {aud.stopped && 'stopped'}
         </span>
     </span>
     <ul>

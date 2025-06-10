@@ -16,7 +16,7 @@
     let stop = () => {
         simtime_interval && clearInterval(simtime_interval)
         distime_interval && clearInterval(distime_interval)
-        if (gat?.currently) gat.currently.aud_onended = () => {}
+        gat?.stop()
     }
     onDestroy(stop)
     function start_simtime() {
@@ -115,7 +115,7 @@
         awaiting = gat.awaiting_mores.length
     }
     function surf() {
-        gat.might('really')
+        gat.surf()
     }
 </script>
 

@@ -6,6 +6,7 @@ const MOCK_END_OF_INDEX = 9
 const MOCK_MS_PER_ITEM = 621
 const PHI = 1.613
 export const MS_PER_SIMULATION_TIME = 333
+// see also the audio constants in GatherSocket
 
 
 class Queuey {
@@ -66,6 +67,7 @@ class Queuey {
 
 
 
+//#region gat
 export class GathererTest extends Queuey {
     queue:Array<AudioletTest> = $state([])
     fadingout:Array<AudioletTest> = $state([])
@@ -79,13 +81,21 @@ export class GathererTest extends Queuey {
         this.scheme.history = 3
         this.scheme.future = 2
     }
+    stop() {
+        this.queue.map(aud => aud.stop())
+        this.close?.()
+    }
     idi = 1
     cursor() {
         let i = this.queue.indexOf(this.currently)
         if (i == -1) return null
         return i
     }
+    now() {
+        return performance.now()
+    }
 
+    //#region gat req
     // fetch a random track, creating its AudioletTest
     get_more({from_start,delay}) {
         this.awaiting_mores.push(1)
@@ -131,16 +141,14 @@ export class GathererTest extends Queuey {
     nextly
 
 
+    //#region gat req
     surf() {
         if (!this.queue.length) {
             // beginning, acquire random track at random position
             return this.provision()
         }
         console.log("surf()")
-        this.might()
-    }
-    now() {
-        return performance.now()
+        this.might("surf()")
     }
     // act: pull from queue
     might(really) {
@@ -150,27 +158,30 @@ export class GathererTest extends Queuey {
             // corner case: not the one we had ready to play in sequence
             .filter(aud => this.nextly != aud)
             .filter(aud => this.currently != aud)
-            .filter(aud => this.stopped != aud)
+            .filter(aud => !aud.stopped)
             [0]
         if (next) {
             let cur = this.currently
-            if (cur) {
-                this.fadeout(cur)
+            if (really && cur) {
+                // was a track skip, do a mix
+                next.aud_onstarted = () => {
+                    next.aud_onstarted = null
+                    console.log("DOING A MIX")
+                    cur.fadeout()
+                    next.fadein()
+                }
             }
             next.might()
         }
         else {
-            if (really) debugger
+            if (really) {
+                // < surf()ing faster than the queue can load?
+                console.warn("surf() > have_more()")
+            }
         }
 
         // a suitable time to think about:
         this.provision()
-    }
-    
-    // < do the fadeout
-    fadeout(aud) {
-        this.fadingout.push(aud)
-        aud.stop()
     }
 
     // might might(), but only if...
@@ -220,9 +231,11 @@ export class AudioletTest extends Queuey {
 
     gat:GathererTest
     
+    //#region aud time
     // < can we assume start_time + duration = end_time?
     spawn_time:integer
     start_time:integer = $state()
+    stopped = $state()
 
     cursor() {
         let time = this.along()
@@ -244,6 +257,22 @@ export class AudioletTest extends Queuey {
     }
     duration():number {
         return this.stretch_size * this.approx_chunk_time
+    }
+
+    fadein() {
+        // noop
+    }
+    fadeout() {
+        // prevent further aud.start_stretch() etc immediately
+        this.stopped = 1
+        // < redundant given stopped?
+        this.gat.fadingout.push(this)
+        setTimeout(() => this.stop(), 2)
+    }
+    stop() {
+        this.stopped = 1
+        this.gat.fadingout = this.gat.fadingout
+            .filter(aud => aud != this)
     }
     
     constructor(opt) {
@@ -270,9 +299,9 @@ export class AudioletTest extends Queuey {
         }
         this.provision()
     }
-    stop() {
-        this.stopped = 1
-    }
+    
+
+    
     // ambiently
     next_stretch = $state()
     next_stretch_coming = ''
@@ -340,6 +369,7 @@ export class AudioletTest extends Queuey {
     
 
 
+    //#region aud stretch
     // decodes stretches of the queue
     // this fabricates the duration
     //  and is set during decode (too early?) before it reflects this.playing
@@ -384,6 +414,8 @@ export class AudioletTest extends Queuey {
         this.start_time ||= this.gat.now()
         this.stretch_size = stretch.length
         this.started_stretch?.()
+        this.aud_onstarted?.()
+        
 
         // exponentially loady, log times we new_stretch()
         let enthusiasm = Math.floor(this.stretch_size / PHI)
@@ -397,6 +429,7 @@ export class AudioletTest extends Queuey {
         console.log(`aud:${this.id} Stretch++ ${this.stretch_size} ${this.tc}`)
     }
     aud_onended:Function|null
+    aud_onstarted:Function|null
     plan_ending(was) {
         this.mock_ending(was)
     }
@@ -410,7 +443,7 @@ export class AudioletTest extends Queuey {
     whatsnext() {
         if (this.stopped) {
             // is over, no need to keep feeding audio
-            throw "onended stop happens"
+            // small chance it will cut out during fadeout()
             return
         }
         let ismore = this.playing_onended ? ', is more' : ''
