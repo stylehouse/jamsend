@@ -56,7 +56,7 @@ class Queuey {
         }
         this.more_wanted = more_wanted
         if (more_wanted) {
-            // console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
+            console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
             // < request specific indexes here
             for (let it = 1; it <= more_wanted; it++) {
                 this.get_more({delay:it*140})
@@ -110,6 +110,7 @@ export class GathererTest extends Queuey {
         if (index == 0 && this.find_audiolet({id})) {
             // the server randomly sent a previous track
             // < pseudo-random, avoid repeats for as long as possible
+            console.error("the server randomly sent a previous track")
             this.get_more({from_start})
             return
         }
@@ -195,14 +196,25 @@ export class GathererTest extends Queuey {
         }
     }
 
+    next_is_gettable_done = $state(null)
+    next_is_coming_done = $state(null)
     next_is_gettable(aud) {
+        if (this.next_is_gettable_done == aud) return
+        this.next_is_gettable_done = aud
         if (!this.nextly) {
+            console.log(`${aud.idname} next_is_gettable`)
             this.get_more({from_start:true})
         }
     }
     async next_is_coming(aud) {
+        if (this.next_is_coming_done == aud) return
+        this.next_is_coming_done = aud
         let nex = this.nextly
-        if (!nex) throw "!nex"
+        if (!nex) {
+            // would be odd, not enough think() per second?
+            console.error("next is not got yet")
+            return
+        }
         let start = await nex.might("returning start")
         aud.aud_onended = () => {
             console.log("Next track!")
@@ -335,29 +347,7 @@ export class AudioletTest extends Queuey {
         //  in other places it can express 30 when not started
         //   as a way to do something asap
         if (near && !prepped) {
-            this.next_stretch_coming = "?"
-            let stretch = await this.new_stretch()
-            if (!stretch) {
-                this.next_stretch_coming = ""
-                return
-            }
-            this.next_stretch_coming = stretch.length
-            this.next_stretch = stretch
-
-            console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
-                +`\t\t${this.remaining_stretch()} of ${this.approx_chunk_time}`)
-            
-            // schedule it to play when this one finishes
-            let was_playing = this.playing
-            this.playing_onended = () => {
-                if (was_playing != this.playing) {
-                    debugger
-                }
-                this.start_stretch(stretch)
-                this.next_stretch = null
-                this.next_stretch_coming = ''
-                this.playing_onended = null
-            }
+            await this.try_stretching()
         }
 
         // prepare for the next track
@@ -367,6 +357,7 @@ export class AudioletTest extends Queuey {
 
         // prepare for the next track
         if (this.end_index != null && this.end_index <= this.cursor()+1) {
+            console.log(`aud:${this.id} next_is_coming`)
             await this.gat.next_is_coming(this)
         }
     }
@@ -378,6 +369,40 @@ export class AudioletTest extends Queuey {
 
 
     //#region aud stretch
+    async try_stretching() {
+        if (this.next_stretch_coming) {
+            if (this.next_stretch_coming != "?") {
+                // otherwise is sync with this.next_stretch
+                debugger
+            }
+            console.log("still waiting for a new_stretch() decode")
+            return
+        }
+        this.next_stretch_coming = "?"
+        let stretch = await this.new_stretch()
+        if (!stretch) {
+            this.next_stretch_coming = ""
+            return
+        }
+        this.next_stretch_coming = stretch.length
+        this.next_stretch = stretch
+
+        console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
+            +`\t\t${this.remaining_stretch()} of ${this.approx_chunk_time}`)
+        
+        // schedule it to play when this one finishes
+        let was_playing = this.playing
+        this.playing_onended = () => {
+            if (was_playing != this.playing) {
+                debugger
+            }
+            this.start_stretch(stretch)
+            this.next_stretch = null
+            this.next_stretch_coming = ''
+            this.playing_onended = null
+        }
+
+    }
     // decodes stretches of the queue
     // this fabricates the duration
     //  and is set during decode (too early?) before it reflects this.playing

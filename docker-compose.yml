@@ -12,7 +12,8 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - "/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix:/music"
+      - "./testsounds:/music"
+      # - "/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix:/music"
     ports:
       - "9091:9091"
     command: npm run dev -- --host 0.0.0.0 --port 9091

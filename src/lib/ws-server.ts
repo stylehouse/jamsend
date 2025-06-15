@@ -147,16 +147,29 @@ async function scan_music(musicDir = '/music') {
 // < check for anything, repick
 // < take the next couple, in the same page read, save disk io?
 // < prefer what others are streaming, save disk io?
+let recentlyServed: Set<urihash> = new Set();
+const MAX_RECENT = 100
 function random_music(): TheMusic | undefined {
     if (Music.size === 0) {
         console.log("No music tracks available.");
         return undefined;
     }
+
     // < a Music object with hash and sequence indexes
     // generate an array
-    const musicArray = Array.from(Music.values());
-    const randomIndex = Math.floor(Math.random() * musicArray.length);
-    const mu = musicArray[randomIndex];
+    const available = Array.from(Music.values())
+        .filter(mu => !recentlyServed.has(mu.id));;
+    const randomIndex = Math.floor(Math.random() * available.length);
+    const mu = available[randomIndex];
+
+    // Track this as recently served
+    recentlyServed.add(mu.id);
+    if (recentlyServed.size > MAX_RECENT) {
+        // Remove oldest (though Set doesn't guarantee order, this is simple)
+        const first = recentlyServed.values().next().value;
+        recentlyServed.delete(first);
+    }
+
     return mu
 }
 function get_music(id): TheMusic | undefined {
@@ -175,6 +188,8 @@ function random_seek_fraction() {
 //    if spawning a new mu.feed && index is random, we should seek into it
 //     so the stream starts with an ogg header
 function AudioServer(socket, io) {
+    // per socket|user
+    let last_meta_id = null
     socket.on('more', async (r: audioi, cb) => {
         carefully('more', cb, socket, async () => {
             r ||= {}
@@ -211,10 +226,15 @@ function AudioServer(socket, io) {
             if (mu.feed.lastIndex != null && r.index == mu.feed.lastIndex) {
                 res.done = 1
             }
-            if (socket.last_meta_id != mu.id) {
+            if (last_meta_id != mu.id) {
                 // the user has now been told
                 res.meta = mu.meta
-                socket.last_meta_id = mu.id
+                last_meta_id = mu.id
+            }
+
+            if (from_start) {
+                console.log(` - is from start`)
+                res.from_start = 1
             }
             
             socket.emit('more', res)
