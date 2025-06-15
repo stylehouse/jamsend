@@ -183,11 +183,13 @@ function random_seek_fraction() {
     return Math.random() * (max-min) + min
 }
 
-// < ffmpeg jobs spawn on mu.feed
+// -> mu <-> feed
 //    pauses and resumes to pipe us just enough 100k ogg to serve /more indexes
 //    if spawning a new mu.feed && index is random, we should seek into it
 //     so the stream starts with an ogg header
 function AudioServer(socket, io) {
+    // Track FFmpeg feeds per socket
+    socket.feeds = new Map(); // mu.id -> feed
     // per socket|user
     let last_meta_id = null
     socket.on('more', async (r: audioi, cb) => {
@@ -202,17 +204,19 @@ function AudioServer(socket, io) {
                 throw new Error(`!song: ${r.id}`);
             }
             // create an encoder
-            if (!mu.feed) {
+            let feed = socket.feeds.get(mu.id);
+            if (!feed) {
                 if (r.index) throw "following (with index) an unstarted mu"
                 let fraction = from_start ? 0 : random_seek_fraction()
-                mu.feed = await createFFmpegStream(mu,fraction);
+                feed = await createFFmpegStream(mu, fraction);
+                socket.feeds.set(mu.id, feed);
             }
             // read from the encoder
             //  starting at 0 even when we randomly seek
             r.index ||= 0
             let res = {id: mu.id}
             try {
-                res.blob = await mu.feed.get_index(r.index);
+                res.blob = await feed.get_index(r.index);
             } catch (error) {
                 if (error.message === 'End of stream reached') {
                     // < the one that says .done=1 should respond before these?
@@ -223,7 +227,7 @@ function AudioServer(socket, io) {
                 }
             }
             res.index = r.index
-            if (mu.feed.lastIndex != null && r.index == mu.feed.lastIndex) {
+            if (feed.lastIndex != null && r.index == feed.lastIndex) {
                 res.done = 1
             }
             if (last_meta_id != mu.id) {
@@ -239,6 +243,16 @@ function AudioServer(socket, io) {
             
             socket.emit('more', res)
         })
+    });
+    // drop encoders|cache on disconnect
+    // < state of gat must reset if it reconnects?
+    socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
+        // Clean up any FFmpeg streams for this client
+        for (const [id, feed] of socket.feeds.entries()) {
+            feed.close();
+        }
+        socket.feeds.clear();
     });
 }
 
@@ -267,7 +281,10 @@ async function createFFmpegStream(mu, fraction = 0) {
     // Set up data handler
     //#region on_data
     ff.on_data = (data) => {
-        if (isEnded) throw "data after ended"
+        if (isEnded) {
+            if (ff.termied) return
+            throw new Error("data after ended")
+        }
         if (producedIndex == null) {
             producedIndex = 0
         }
@@ -362,7 +379,8 @@ async function createFFmpegStream(mu, fraction = 0) {
             // If requested future chunk that hasn't been generated yet
 
             if (index >= producedIndex) {
-                console.log(`/more waiting for ${mu.id}: ${index} (resuming stream)`);
+                let resu = ff.paused ? "(resuming)" : ""
+                console.log(`/more waiting for ${mu.id}: ${index} ${resu}`);
                 ff.resume();
                 // when the requested chunk is available
                 return new Promise((resolve, reject) => {
@@ -503,6 +521,7 @@ function ffmpegnate(mu:TheMusic, seektime = 0) {
         
         terminate() {
             ffmpeg.kill('SIGKILL')
+            ff.termied = 1
             console.log('FFmpeg stream terminated')
         }
     })

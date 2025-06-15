@@ -56,7 +56,7 @@ class Queuey {
         }
         this.more_wanted = more_wanted
         if (more_wanted) {
-            console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
+            // console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
             // < request specific indexes here
             for (let it = 1; it <= more_wanted; it++) {
                 this.get_more({delay:it*140})

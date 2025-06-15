@@ -12,10 +12,23 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      - "./testsounds:/music"
-      # - "/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix:/music"
+      # - "./testsounds:/music"
+      - "/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix:/music"
     ports:
       - "9091:9091"
     command: npm run dev -- --host 0.0.0.0 --port 9091
     tty: true
     stdin_open: true
+    # Resource limits to prevent runaway processes
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'          # Max 2 CPU cores
+          memory: 1G           # Max 1GB RAM
+        reservations:
+          cpus: '0.5'          # Reserve 0.5 CPU cores  
+          memory: 256M         # Reserve 256MB RAM
+    # Process limits
+    ulimits:
+      nproc: 100               # Max 100 processes total
+      nofile: 1024             # Max 1024 open files
