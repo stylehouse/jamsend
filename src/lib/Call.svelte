@@ -4,7 +4,7 @@
     import { MS_PER_SIMULATION_TIME } from "./audio/GatherTest.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
 
-    let errorMessage = "";
+    let errorMessage = $state("");
 
     let gat:GatherAudios|undefined = $state();
     let perftime = $state('')

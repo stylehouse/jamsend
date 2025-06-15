@@ -196,10 +196,21 @@ function AudioServer(socket, io) {
             //  starting at 0 even when we randomly seek
             r.index ||= 0
             let res = {id: mu.id}
-            res.blob = await mu.feed.get_index(r.index)
+            try {
+                res.blob = await mu.feed.get_index(r.index);
+            } catch (error) {
+                if (error.message === 'End of stream reached') {
+                    // < the one that says .done=1 should respond before these?
+                    res.notexist = 1
+                    res.blob = undefined;
+                } else {
+                    throw error; // Re-throw other errors
+                }
+            }
             res.index = r.index
-
-            if (mu.feed.done) res.done = 1
+            if (mu.feed.lastIndex != null && r.index == mu.feed.lastIndex) {
+                res.done = 1
+            }
             if (socket.last_meta_id != mu.id) {
                 // the user has now been told
                 res.meta = mu.meta
@@ -210,6 +221,7 @@ function AudioServer(socket, io) {
         })
     });
 }
+
 
 async function createFFmpegStream(mu, fraction = 0) {
     // Get metadata including duration
@@ -223,35 +235,46 @@ async function createFFmpegStream(mu, fraction = 0) {
     
     // Store encoded chunks from ffmpeg
     const blobs = [];
-    let producedIndex = 0;
+    let producedIndex = null;
     let consumedIndex = 0;
+    let lastIndex = undefined
     let isEnded = false;
     
     // Map of pending requests by index
     const waitingRequests = new Map();
+    console.log(`FFmpeg++ ${mu.id}`);
     
     // Set up data handler
+    //#region on_data
     ff.on_data = (data) => {
-        // Store the new chunk
-        blobs[producedIndex] = data;
-        
-        // Resolve any pending request for this index
-        const resolver = waitingRequests.get(producedIndex);
-        if (resolver) {
-            resolver.resolve(data);
-            waitingRequests.delete(producedIndex);
-        }
-        
-        // Increment index for next chunk
-        producedIndex++;
-        
-        // Pause stream if we've buffered enough chunks ahead
-        if (consumedIndex + 3 < producedIndex) {
-            ff.pause();
-            console.log(`FFmpeg++ ${mu.id} ${consumedIndex}/${producedIndex}, pausing`);
+        if (isEnded) throw "data after ended"
+        if (producedIndex == null) {
+            producedIndex = 0
         }
         else {
-            console.log(`FFmpeg++ ${mu.id} ${consumedIndex}/${producedIndex}`);
+            producedIndex++
+        }
+        // Store the new chunk
+        blobs[producedIndex] = data;
+
+        // It becomes safe to resolve index-1
+        let safe_index = producedIndex - 1
+        const nonlast = safe_index >= 0 && waitingRequests.get(safe_index);
+        if (nonlast) {
+            let safeblob = blobs[safe_index]
+            if (!safeblob) throw "!blobs[safe_index] "+safe_index
+            consumedIndex = safe_index
+            nonlast.resolve(safeblob)
+            waitingRequests.delete(safe_index);
+        }
+        
+        // Pause stream if we've buffered enough chunks ahead
+        if (consumedIndex + 5 < producedIndex) {
+            ff.pause();
+            console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}, pausing`);
+        }
+        else {
+            console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}`);
         }
     }
     
@@ -272,40 +295,56 @@ async function createFFmpegStream(mu, fraction = 0) {
     ff.on_end = () => {
         console.log(`FFmpeg stream for ${mu.id} ended normally`);
         isEnded = true;
-        
-        // Reject all pending requests that can't be fulfilled
+        // and has drained the pipe
+        lastIndex = producedIndex
+
+        // so we can send the final chunk now
+        const nonlast = waitingRequests.get(lastIndex);
+        if (nonlast) {
+            let safeblob = blobs[lastIndex]
+            if (!safeblob) throw "!blobs[lastIndex] "+lastIndex
+            consumedIndex = lastIndex
+            nonlast.resolve(safeblob)
+            waitingRequests.delete(lastIndex);
+        }
+        // and reject requests further than that
         for (const [index, { reject }] of waitingRequests.entries()) {
             reject(new Error('End of stream reached'));
             waitingRequests.delete(index);
         }
     }
 
+    //#region get_index
     // Return feed interface with improved chunk retrieval
     return {
         async get_index(index) {
-            // If requested chunk already exists, return it immediately
-            consumedIndex = index
-            if (blobs[index] !== undefined) {
+            // If requested chunk already exists,
+            //  and can't become the last chunk
+            //   for which we need to say "done"
+            // return it immediately
+            let last_chunk = index == producedIndex
+            let should_wait = lastIndex == null && last_chunk
+            if (!should_wait && blobs[index] !== undefined) {
                 const blob = blobs[index];
-                delete blobs[index];
+                // < efficient multi-client vs. not storing lots of memory?
+                // delete blobs[index];
+                consumedIndex = index
                 console.log(`/more served ${mu.id}: ${index}`);
                 return blob;
             }
             
             // If stream has ended and we're requesting beyond available chunks
-            if (isEnded) {
+            if (lastIndex != null && index > lastIndex) {
                 console.log(`/more request for ${mu.id}: ${index} (stream ended)`);
                 throw new Error("End of stream reached");
             }
             
             // If requested future chunk that hasn't been generated yet
+
             if (index >= producedIndex) {
                 console.log(`/more waiting for ${mu.id}: ${index} (resuming stream)`);
-                
-                // Resume the stream to generate more chunks
                 ff.resume();
-                
-                // Create a promise that will resolve when the requested chunk is available
+                // when the requested chunk is available
                 return new Promise((resolve, reject) => {
                     // Store the promise resolvers for this index
                     waitingRequests.set(index, { resolve, reject });
@@ -320,12 +359,17 @@ async function createFFmpegStream(mu, fraction = 0) {
                 });
             }
             
+            console.log(`Oh woops ${index} !-> ${consumedIndex}/${producedIndex}`)
             // Should never reach here if logic is correct
             throw new Error(`Unexpected state in get_index(${index}, producedIndex:${producedIndex}) for ${mu.id}`);
         },
         
         get done() {
             return isEnded;
+        },
+        
+        get lastIndex() {
+            return lastIndex;
         },
         
         close() {
@@ -401,7 +445,7 @@ function ffmpegnate(mu:TheMusic, seektime = 0) {
         processBuffer()
     })
     // Error handling
-    ffmpeg.stderr.on('end', (data) => {
+    ffmpeg.stdout.on('end', (data) => {
         console.log('FFmpeg stdout stream ended, draining buffer...')
         // Drain any remaining data from buffer
         processBuffer(true)
