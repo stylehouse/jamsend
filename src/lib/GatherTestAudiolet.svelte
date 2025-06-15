@@ -37,7 +37,7 @@
     </span>
     <span>
         <span>morewant {aud.more_wanted}</span>
-        <span>end_index {aud.end_index}</span>
+        <span>{#if aud.end_index}end_index {aud.end_index}{/if}</span>
     </span>
     <span>
         <span>awaiting {awaiting}</span>

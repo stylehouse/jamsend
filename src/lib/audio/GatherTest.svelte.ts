@@ -288,8 +288,15 @@ export class AudioletTest extends Queuey {
     //  then are dispatched by gat think()
     async might(returning_start=false) {
         if (!this.playing && this.queue.length) {
+            if (this.starting_first_stretch) {
+                return console.log("notrently: ",this)
+            }
+            this.starting_first_stretch = 1
+
             let stretch = await this.new_stretch()
             let start = () => {
+                //  could now delete this.starting_first_stretch
+                //   but we're never back this way
                 console.log("Currently: ",this)
                 this.gat.currently = this
                 this.start_stretch(stretch)
@@ -478,8 +485,12 @@ export class AudioletTest extends Queuey {
             this.have_more(res)
         },delay)
     }
-    have_more({id,blob,index,done}) {
+    have_more({id,blob,index,done,notexist}) {
         if (!blob?.byteLength) {
+            if (notexist) {
+                this.awaiting_mores.shift()
+                return
+            }
             debugger
         }
         console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
