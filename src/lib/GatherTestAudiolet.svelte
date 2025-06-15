@@ -32,10 +32,12 @@
         <span>{#if aud.start_time}start_time {Math.round(aud.start_time)}ms{/if}</span>
         <span>{#if aud.spawn_time}spawn_time {Math.round(aud.spawn_time)}ms{/if}</span>
     </span>
-    <span>
-        <span>{#if pos != null}cursor {pos}{/if}</span>
-        <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
-    </span>
+    {#if !aud.stopped}
+        <span>
+            <span>{#if pos != null}cursor {pos}{/if}</span>
+            <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
+        </span>
+    {/if}
     <span>
         <span>morewant {aud.more_wanted}</span>
         <span>{#if aud.end_index}end_index {aud.end_index}{/if}</span>
