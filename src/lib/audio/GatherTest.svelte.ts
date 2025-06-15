@@ -240,6 +240,7 @@ export class AudioletTest extends Queuey {
     get idname() {
         return `aud:${this.id}`
     }
+    meta = $state()
 
     gat:GathererTest
     
@@ -510,13 +511,16 @@ export class AudioletTest extends Queuey {
             this.have_more(res)
         },delay)
     }
-    have_more({id,blob,index,done,notexist}) {
+    have_more({id,blob,index,done,notexist,meta}) {
         if (!blob?.byteLength) {
             if (notexist) {
                 this.awaiting_mores.shift()
                 return
             }
             debugger
+        }
+        if (meta) {
+            this.meta = meta
         }
         console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
         this.awaiting_mores.shift()

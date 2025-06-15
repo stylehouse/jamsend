@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { GathererTest } from "./audio/GatherTest.svelte";
+    import Meta from "./Meta.svelte";
 
     let {aud} = $props()
     let distime = $state(0)
@@ -47,17 +48,24 @@
             {aud.stopped && 'stopped'}
         </span>
     </span>
-    <ul>
+    {#if aud.meta != null}
+        <Meta meta={aud.meta} />
+    {/if}
+    <ul class=bitsies>
         {#each aud.queue as wav, i}
-            <li>{i} {wav}
+            <ww>{i} {typeof wav == 'string' ? wav : ''}
                 {#if pos == i} (pos){/if}
-            </li>
+            </ww>
         {/each}
-        
     </ul>
 </div>
 
 <style>
+    ul.bitsies ww {
+        display: inline-box;
+        border-radius:0.3em;
+        border:3px solid rgb(51, 90, 134);
+    }
     .mach {
         border-radius:1em;
         border:3px solid rgb(216, 196, 18);
