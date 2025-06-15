@@ -324,7 +324,16 @@ export class Audiolet extends AudioletTest {
     // called by start_stretch()
     plan_ending(was) {
         this.playing.onended = () => {
-
+            let early = this.gat.now() < 1500
+            let playlittle = this.along() / this.duration() < 0.1
+            if (early && playlittle) {
+                console.error(`Wert only: ${this.along()} / ${this.duration()}`)
+                this.was_playlittle = 1
+                return
+            }
+            if (this.was_playlittle) {
+                console.warn("this.was_playlittle")
+            }
             this.whatsnext()
         }
     }

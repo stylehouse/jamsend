@@ -285,11 +285,12 @@ export class AudioletTest extends Queuey {
     }
 
     // act: start a bit of queue
-    //  then are dispatched by think()
+    //  then are dispatched by gat think()
     async might(returning_start=false) {
         if (!this.playing && this.queue.length) {
             let stretch = await this.new_stretch()
             let start = () => {
+                console.log("Currently: ",this)
                 this.gat.currently = this
                 this.start_stretch(stretch)
             }
@@ -441,6 +442,7 @@ export class AudioletTest extends Queuey {
         }, endsin)
     }
     whatsnext() {
+        let began_whatsnexting = this.gat.now()
         if (this.stopped) {
             // is over, no need to keep feeding audio
             // small chance it will cut out during fadeout()
@@ -463,6 +465,7 @@ export class AudioletTest extends Queuey {
     }
 
     get_more({delay}) {
+        if (this.net_disabled) return console.log(`Avoiding more ${this.idname}`)
         this.awaiting_mores.push(1)
         setTimeout(() => {
             // here we always just want more of the queue, in sequence
@@ -476,6 +479,9 @@ export class AudioletTest extends Queuey {
         },delay)
     }
     have_more({id,blob,index,done}) {
+        if (!blob?.byteLength) {
+            debugger
+        }
         console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
         this.awaiting_mores.shift()
         if (this.end_index && index > this.end_index) {
