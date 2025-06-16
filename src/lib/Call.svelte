@@ -3,6 +3,7 @@
     import { GatherAudios } from "./audio/GatherSocket.svelte";
     import { MS_PER_SIMULATION_TIME } from "./audio/GatherTest.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
+    import Meta from "./Meta.svelte";
 
     let errorMessage = $state("");
 
@@ -81,19 +82,6 @@
         }
     };
 
-    let trackInfo = $state();
-    // Update track info when current_meta changes
-    $effect(() => {
-        if (gat?.current_meta) {
-            trackInfo = {
-                title: gat.current_meta.title || "Unknown Track",
-                artist: gat.current_meta.artist || "Unknown Artist",
-                album: gat.current_meta.album || "Unknown Album", 
-                year: gat.current_meta.year || ""
-            };
-        }
-    });
-
     $effect(() => {
         // Svelte's SSR gets in a loop in here otherwise:
         if (!self.window) return 0
@@ -120,22 +108,8 @@
 </script>
 
 <div class="audio-player">
-    {#if trackInfo}
-        <div class="track-info">
-            <h3>{trackInfo.title}</h3>
-            <p>
-                {trackInfo.artist} • {trackInfo.album}
-                {trackInfo.year ? `(${trackInfo.year})` : ""}
-            </p>
-        </div>
-    {:else if gat?.loading}
-        <div class="loading">
-            <p>Loading track...</p>
-        </div>
-    {:else}
-        <div class="no-track">
-            <p>Ready to play music</p>
-        </div>
+    {#if gat?.currently?.meta}
+        <Meta meta={gat?.currently?.meta} />
     {/if}
 
     <div class="controls">
@@ -191,20 +165,6 @@
         margin: 0 auto;
     }
 
-    .track-info {
-        margin-bottom: 1rem;
-    }
-
-    .track-info h3 {
-        margin: 0;
-        font-size: 1.2rem;
-    }
-
-    .track-info p {
-        margin: 0.5rem 0 0;
-        color: #666;
-        font-size: 0.9rem;
-    }
 
     .controls {
         display: flex;

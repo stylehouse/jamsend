@@ -51,6 +51,7 @@ async function carefully(label: string, callback: Function, socket:Socket, doing
     try {
         await doing()
     } catch (error) {
+        if (error.message == 'Stream closed by client') return
         console.error("Error in ws-server", error)
         socket.emit('error', {
             error: `${label}: ${error.message}`
@@ -191,7 +192,7 @@ function AudioServer(socket, io) {
     // Track FFmpeg feeds per socket
     socket.feeds = new Map(); // mu.id -> feed
     // per socket|user
-    let last_meta_id = null
+    let has_meta = {} // mu.id -> true
     socket.on('more', async (r: audioi, cb) => {
         carefully('more', cb, socket, async () => {
             r ||= {}
@@ -230,10 +231,10 @@ function AudioServer(socket, io) {
             if (feed.lastIndex != null && r.index == feed.lastIndex) {
                 res.done = 1
             }
-            if (last_meta_id != mu.id) {
+            if (!has_meta[mu.id]) {
                 // the user has now been told
                 res.meta = mu.meta
-                last_meta_id = mu.id
+                has_meta[mu.id] = true
             }
 
             if (from_start) {
@@ -528,6 +529,7 @@ function ffmpegnate(mu:TheMusic, seektime = 0) {
     return ff
 }
 
+//#region ffprobe
 // Extract metadata using ffprobe
 async function ffprobe(mu) {
     return new Promise((resolve, reject) => {
@@ -537,7 +539,6 @@ async function ffprobe(mu) {
             album: '',
             title: '',
             year: '',
-            cover: new Uint8Array(),
             duration: 0
         }
         
@@ -556,7 +557,7 @@ async function ffprobe(mu) {
             outputData += chunk.toString()
         })
         
-        ffprobe.on('close', (code) => {
+        ffprobe.on('close', async (code) => {
             if (code !== 0) {
                 console.error(`ffprobe process exited with code ${code}`)
                 return resolve(mu) // Return mu even if we couldn't get metadata
@@ -570,9 +571,10 @@ async function ffprobe(mu) {
                     mu.meta.duration = parseFloat(metadata.format.duration)
                 }
                 
-                // Extract tags from format section
-                if (metadata.format && metadata.format.tags) {
-                    const tags = metadata.format.tags
+                // Extract tags from...
+                const tags = metadata.format && metadata.format.tags
+                    || metadata.streams[0].tags
+                if (tags) {
                     mu.meta.artist = tags.artist || tags.ARTIST || tags.Artist || mu.meta.artist
                     mu.meta.album = tags.album || tags.ALBUM || tags.Album || mu.meta.album
                     mu.meta.title = tags.title || tags.TITLE || tags.Title || mu.meta.title
@@ -591,12 +593,15 @@ async function ffprobe(mu) {
                     
                     if (coverStream) {
                         // We found a cover stream, extract it with a separate call
-                        extractCoverArt(mu).catch(err => {
+                        try {
+                            await extractCoverArt(mu)
+                        } catch (err) {
                             console.warn('Failed to extract cover art:', err)
-                        })
+                        }
                     }
                 }
                 
+                console.log(`ffprobed ${mu.id}: ${mu.meta.artist} - ${mu.meta.title}`)
                 resolve(mu)
             } catch (err) {
                 console.error('Error parsing ffprobe output:', err)
@@ -636,7 +641,9 @@ async function extractCoverArt(mu) {
             
             if (chunks.length > 0) {
                 const coverBuffer = Buffer.concat(chunks)
-                mu.meta.cover = new Uint8Array(coverBuffer)
+                if (coverBuffer.byteLength) {
+                    mu.meta.cover = new Uint8Array(coverBuffer)
+                }
                 resolve(mu)
             } else {
                 reject(new Error('No cover art data extracted'))

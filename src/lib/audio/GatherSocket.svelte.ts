@@ -3,8 +3,8 @@ import { io } from "socket.io-client";
 import { AudioletTest, GathererTest } from "./GatherTest.svelte";
 
 // in ms
-const FADE_OUT_DURATION = 555
-const FADE_IN_DURATION = 333
+const FADE_OUT_DURATION = 333
+const FADE_IN_DURATION = 155
 const MIN_GAIN = 0.001
 
 // a unique song URI hash

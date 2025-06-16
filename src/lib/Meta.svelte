@@ -13,29 +13,21 @@
             </div>
         {/if}
         
-        <div class="meta-info">
-            {#if meta.title}
-                <h2 class="title">{meta.title}</h2>
-            {/if}
-            
-            {#if meta.artist}
-                <div class="artist">by {meta.artist}</div>
-            {/if}
-            
-            {#if meta.album}
-                <div class="album">from "{meta.album}"</div>
-            {/if}
+        <div class="track-info">
+            <h3 class="title">{meta.title}</h3>
+            <p>
+                <span class="artist">{meta.artist}</span>
+                 •
+                <span class="album">{meta.album}</span>
+                {meta.year ? `(${meta.year})` : ""}
+            </p>
             
             <div class="details">
-                {#if meta.year}
-                    <span class="year">{meta.year}</span>
-                {/if}
-                
-                {#if meta.duration}
+                <!-- {#if meta.duration}
                     <span class="duration">
                         {Math.floor(meta.duration / 60)}:{String(Math.floor(meta.duration % 60)).padStart(2, '0')}
                     </span>
-                {/if}
+                {/if} -->
             </div>
         </div>
     </div>
@@ -63,22 +55,32 @@
         border: 2px solid rgb(51, 90, 134);
     }
     
-    .meta-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
+    .track-info {
+        margin-bottom: 1rem;
     }
-    
-    .title {
+
+    .track-info h3 {
         margin: 0;
         font-size: 1.2rem;
         font-weight: bold;
         color: rgb(51, 90, 134);
     }
+    .track-info * {
+        display: inline-block;
+    }
+
+    .track-info p {
+        margin: 0.5rem 0 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
     
+    .title {
+    }
     .artist {
+        font-size: 1.1rem;
         font-style: italic;
-        opacity: 0.8;
+        opacity: 0.9;
     }
     
     .album {

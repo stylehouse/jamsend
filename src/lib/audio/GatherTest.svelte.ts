@@ -8,7 +8,6 @@ const PHI = 1.613
 export const MS_PER_SIMULATION_TIME = 333
 // see also the audio constants in GatherSocket
 
-
 class Queuey {
     constructor(opt) {
         Object.assign(this,opt)
@@ -71,7 +70,7 @@ class Queuey {
 export class GathererTest extends Queuey {
     queue:Array<AudioletTest> = $state([])
     fadingout:Array<AudioletTest> = $state([])
-    currently:AudioletTest
+    currently:AudioletTest = $state()
     get idname() {
         return "gat"
     }
@@ -104,7 +103,8 @@ export class GathererTest extends Queuey {
             this.have_more({id:this.idi++,blob:'vvv',index:0,from_start})
         }, delay || 100)
     }
-    have_more({id,blob,index,from_start}) {
+    have_more(res) {
+        let {id,blob,index,from_start} = res
         console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
         if (index == 0 && this.find_audiolet({id})) {
@@ -116,7 +116,7 @@ export class GathererTest extends Queuey {
         }
         let aud = this.new_audiolet({id,gat:this})
         aud.next_index = index+1
-        aud.have_more({id,blob,index})
+        aud.have_more(res)
         if (from_start) {
             let i = this.queue.indexOf(this.currently)
             if (i < 0) throw "noi"
@@ -176,7 +176,7 @@ export class GathererTest extends Queuey {
         }
         else {
             if (really) {
-                // < surf()ing faster than the queue can load?
+                // < surf()ing faster than gat queue can load?
                 console.warn("surf() > have_more()")
             }
         }
@@ -521,6 +521,9 @@ export class AudioletTest extends Queuey {
         }
         if (meta) {
             this.meta = meta
+            if (!this.meta.cover?.byteLength) {
+                delete this.meta.cover
+            }
         }
         console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
         this.awaiting_mores.shift()

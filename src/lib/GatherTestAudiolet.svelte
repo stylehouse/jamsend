@@ -50,13 +50,17 @@
             {aud.stopped && 'stopped'}
         </span>
     </span>
+    
+    
     {#if aud.meta != null}
         <Meta meta={aud.meta} />
     {/if}
+
+
     <ul class=bitsies>
         {#each aud.queue as wav, i}
             <ww>{i} {typeof wav == 'string' ? wav : ''}
-                {#if pos == i} (pos){/if}
+                {#if !aud.stopped && pos == i} (pos){/if}
             </ww>
         {/each}
     </ul>
