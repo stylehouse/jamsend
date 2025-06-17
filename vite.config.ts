@@ -10,7 +10,9 @@ export default defineConfig({
 
 
 
-
+	server: {
+		allowedHosts: ["jamsend.duckdns.org"]
+	}
 	// test: {
 	// 	workspace: [
 	// 		{

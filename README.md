@@ -8,7 +8,7 @@ First time,
 
 ```bash
 docker compose build
-docker run -v .:/app jamsend-jamsend-dev bash -c "cd /app && npm i"
+docker run --rm -v .:/app jamola-app:latest sh -c "cd /app && npm install"
 ```
 
 Thence,
@@ -16,6 +16,8 @@ Thence,
 ```bash
 docker compose up
 ```
+
+If your docker0 interface isnt 172.17.0.1 (so _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works.
 
 # spec (all TODO)
 
