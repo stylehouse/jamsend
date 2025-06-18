@@ -1,6 +1,6 @@
 import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
-import { AudioletTest, GathererTest } from "./GatherTest.svelte";
+import { V, AudioletTest, GathererTest } from "./GatherTest.svelte";
 
 // in ms
 const FADE_OUT_DURATION = 333
@@ -69,14 +69,15 @@ export class GatherAudios extends GathererTest {
         });
 
         // Socket connection handlers
+        // < ffmpeg recycling token via gat
         this.socket.on('connect', () => {
-            console.log('Connected to audio server');
+            V>0 && console.log('Connected to audio server');
             this.connected = true;
             this.beginable();
         });
 
         this.socket.on('disconnect', () => {
-            console.log('Disconnected from audio server');
+            V>0 && console.log('Disconnected from audio server');
             this.connected = false;
         });
     }
@@ -93,7 +94,7 @@ export class GatherAudios extends GathererTest {
             this.AC = new AudioContext();
 
             if (this.AC_OK()) {
-                console.log("AudioContext initialized");
+                V>0 && console.log("AudioContext initialized");
                 this.beginable();
                 return true;
             }
@@ -200,21 +201,19 @@ export class Audiolet extends AudioletTest {
         // < redundant given stopped?
         this.gat.fadingout.push(this)
         setTimeout(() => {
-            console.log(`Fadeout done, ${this.gainNode.gain.value}`)
+            V>2 && console.log(`Fadeout done, ${this.gainNode.gain.value}`)
             this.stop()
         }, FADE_OUT_DURATION)
 
 
         let at = (this.gat.now() + FADE_OUT_DURATION) / 1000
-        console.log(`Fadeout? ${this.gat.now()/1000}\t${at}`)
+        V>1 && console.log(`Fadeout? ${this.gat.now()/1000}\t${at}`)
         this.gainNode.gain.linearRampToValueAtTime(
             MIN_GAIN,
             at
         )
     }
     stop() {
-        console.log(`stop!`)
-
         this.stopped = 1
         this.playing?.stop()
         this.gat.fadingout = this.gat.fadingout

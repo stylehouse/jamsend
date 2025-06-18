@@ -7,6 +7,9 @@ const MOCK_MS_PER_ITEM = 621
 const PHI = 1.613
 export const MS_PER_SIMULATION_TIME = 333
 // see also the audio constants in GatherSocket
+// turn up log statement level
+//  3 = every more response
+export const V = 2
 
 class Queuey {
     constructor(opt) {
@@ -19,7 +22,6 @@ class Queuey {
         future?:number,
     } = {}
 
-    // < this
     cull_queue() {
         let history = this.scheme.history || 0
         if (history == -1) return
@@ -44,6 +46,9 @@ class Queuey {
         else {
             // < something Queuey-generic about which item is the cursor in
             // let i = Math.floor(this.cursor())
+        }
+        if (culled) {
+            V>1 && console.log(`cull_queue() x${culled}`)
         }
     }
 
@@ -73,7 +78,7 @@ class Queuey {
         }
         this.more_wanted = more_wanted
         if (more_wanted) {
-            // console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
+            V>2 && console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
             // < request specific indexes here
             for (let it = 1; it <= more_wanted; it++) {
                 this.get_more({delay:it*140})
@@ -123,7 +128,7 @@ export class GathererTest extends Queuey {
     }
     have_more(res) {
         let {id,blob,index,from_start} = res
-        console.log(`Gat more aud:${id} ${index}`)
+        V>0 && console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
         if (index == 0 && this.find_audiolet({id})) {
             // the server randomly sent a previous track
@@ -185,7 +190,7 @@ export class GathererTest extends Queuey {
                 // was a track skip, do a mix
                 next.aud_onstarted = () => {
                     next.aud_onstarted = null
-                    console.log("DOING A MIX")
+                    V>1 && console.log("DOING A MIX")
                     cur.fadeout()
                     next.fadein()
                 }
@@ -210,7 +215,7 @@ export class GathererTest extends Queuey {
             this.currently.think('from gat')
         }
         else {
-            console.log("gat.think() start")
+            V>1 && console.log("gat.think() start")
             this.might()
         }
         if (this.think_ticks++ % 250 == 0) {
@@ -225,7 +230,7 @@ export class GathererTest extends Queuey {
         if (this.next_is_gettable_done == aud) return
         this.next_is_gettable_done = aud
         if (!this.nextly) {
-            console.log(`${aud.idname} next_is_gettable`)
+            V>1 && console.log(`${aud.idname} next_is_gettable`)
             this.get_more({from_start:true})
         }
     }
@@ -234,13 +239,13 @@ export class GathererTest extends Queuey {
         this.next_is_coming_done = aud
         let nex = this.nextly
         if (!nex) {
-            // would be odd, not enough think() per second?
+            // would be odd, not enough think() per second? low future?
             console.error("next is not got yet")
             return
         }
         let start = await nex.might("returning start")
         aud.aud_onended = () => {
-            console.log("Next track!")
+            V>1 && console.log("Next track!")
             start()
             delete this.nextly
         }
@@ -322,10 +327,12 @@ export class AudioletTest extends Queuey {
 
     // act: start a bit of queue
     //  then are dispatched by gat think()
+    // < surf()
     async might(returning_start=false) {
         if (!this.playing && this.queue.length) {
+            V>0 && console.log(`${this.idname} -> might`)
             if (this.starting_first_stretch) {
-                return console.log("notrently: ",this)
+                return
             }
             this.starting_first_stretch = 1
 
@@ -333,12 +340,13 @@ export class AudioletTest extends Queuey {
             let start = () => {
                 //  could now delete this.starting_first_stretch
                 //   but we're never back this way
-                console.log("Currently: ",this)
+                V>0 && console.log(`${this.idname} -> Currently`)
                 this.gat.currently = this
                 this.start_stretch(stretch)
             }
             // when preparing (decoding) gat.nextly
             if (returning_start) return start
+            
             start()
         }
         this.provision()
@@ -374,15 +382,16 @@ export class AudioletTest extends Queuey {
             await this.try_stretching()
         }
 
-        // prepare for the next track
-        if (this.end_index != null && this.end_index <= this.cursor()+3) {
-            this.gat.next_is_gettable(this)
-        }
-
-        // prepare for the next track
-        if (this.end_index != null && this.end_index <= this.cursor()+1) {
-            console.log(`aud:${this.id} next_is_coming`)
-            await this.gat.next_is_coming(this)
+        // prepare for the next track when we know this is ending
+        if (this.end_index != null) {
+            if (this.end_index <= this.cursor()+3) {
+                this.gat.next_is_gettable(this)
+            }
+            // prepare for the next track
+            if (this.end_index <= this.cursor()+1) {
+                V>1 && console.log(`aud:${this.id} next_is_coming`)
+                await this.gat.next_is_coming(this)
+            }
         }
     }
     get approx_chunk_time() {
@@ -399,7 +408,7 @@ export class AudioletTest extends Queuey {
                 // otherwise is sync with this.next_stretch
                 debugger
             }
-            console.log("still waiting for a new_stretch() decode")
+            V>1 && console.log("still waiting for a new_stretch() decode")
             return
         }
         this.next_stretch_coming = "?"
@@ -411,7 +420,7 @@ export class AudioletTest extends Queuey {
         this.next_stretch_coming = stretch.length
         this.next_stretch = stretch
 
-        console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
+        V>1 && console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
             +`\t\t${this.remaining_stretch()} of ${this.approx_chunk_time}`)
         
         // schedule it to play when this one finishes
@@ -436,7 +445,7 @@ export class AudioletTest extends Queuey {
     async new_stretch() {
         let encoded = this.queue.slice()
         if (this.stretch_size == encoded.length) {
-            console.log(`${this.idname} Stretchsame ${this.stretch_size}`)
+            V>2 && console.log(`${this.idname} Stretchsame ${this.stretch_size}`)
             // we can panic about having a queue of one initially
             if (this.stretch_size == 1) {
                 if (this.delayed_stretch_think) return
@@ -445,7 +454,7 @@ export class AudioletTest extends Queuey {
                 delay = Math.min(122,delay)
                 this.delayed_stretch_think = setTimeout(() => {
                     delete this.delayed_stretch_think
-                    console.log(`   And with ${this.remaining_stretch()} left... `)
+                    V>0 && console.log(`   And with ${this.remaining_stretch()} left... `)
 
                     this.think()
                 }, delay)
@@ -483,7 +492,7 @@ export class AudioletTest extends Queuey {
 
         // let play_from = !was ? 0 : was.duration
         // stretch.start(this.start_time,play_from)
-        console.log(`aud:${this.id} Stretch++ ${this.stretch_size} ${this.tc}`)
+        V>1 && console.log(`aud:${this.id} Stretch++ ${this.stretch_size} ${this.tc}`)
     }
     aud_onended:Function|null
     aud_onstarted:Function|null
@@ -505,7 +514,7 @@ export class AudioletTest extends Queuey {
             return
         }
         let ismore = this.playing_onended ? ', is more' : ''
-        console.log(`${this.idname} stretchended${ismore} ${this.tc}`)
+        V>1 && console.log(`${this.idname} stretchended${ismore} ${this.tc}`)
         if (this.playing_onended) {
             // the next stretch is ready to play
             this.playing_onended()
@@ -521,7 +530,6 @@ export class AudioletTest extends Queuey {
     }
 
     get_more({delay}) {
-        if (this.net_disabled) return console.log(`Avoiding more ${this.idname}`)
         this.awaiting_mores.push(1)
         setTimeout(() => {
             // here we always just want more of the queue, in sequence
@@ -548,11 +556,11 @@ export class AudioletTest extends Queuey {
                 delete this.meta.cover
             }
         }
-        console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
+        V>2 && console.log(`aud:${id} more ${index} ${done?" DONE":""}`)
         this.awaiting_mores.shift()
         if (this.end_index && index > this.end_index) {
             // test harness generates any index you ask for, ignore extra
-            console.log(`  end was located, dropped a have_more()`)
+            V>1 && console.log(`  end was located, dropped a have_more()`)
             return
         }
         // tempting to assign next_index = index+1 here
