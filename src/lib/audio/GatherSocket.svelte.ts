@@ -46,7 +46,7 @@ export class GatherAudios extends GathererTest {
 
     constructor(opt) {
         super(opt)
-        this.scheme.future = 2
+        this.scheme.future = 0
         this.setupSocket();
     }
 
@@ -139,7 +139,13 @@ export class GatherAudios extends GathererTest {
     }
 
     // Check if we can begin playback
+    socket_begun = false
     beginable() {
+        if (this.socket && this.connected && !this.socket_begun) {
+            // first wave of provisioning
+            this.socket_begun = true
+            this.think()
+        }
         if (this.AC.state === 'suspended') {
             this.AC.resume();
         }
@@ -149,10 +155,31 @@ export class GatherAudios extends GathererTest {
         }
         if (this.AC && this.socket && this.connected && !this.begun) {
             this.begun = true;
+            // two more for getting this far
+            this.scheme.future = 2;
+
+            (this.pending_have_more||[]).map(res => {
+                this.have_more(res)
+            })
+
             this.on_begun?.()
             if (!this.on_begun) throw "non on_begun"
             this.surf();
         }
+    }
+
+    pending_have_more:Array<audiole>
+    // arrests the initial few gat.have_more()
+    grab_have_more(res) {
+        if (this.begun) return
+        if (this.AC_OK()) {
+            debugger
+        }
+        // if !gat.AC_OK, we don't want to spawn any aud just yet...
+        let N = this.pending_have_more ||= []
+        N.push(res)
+        console.log("Pending the aud: ",res)
+        return true
     }
 
 

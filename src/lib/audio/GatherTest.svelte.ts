@@ -128,6 +128,10 @@ export class GathererTest extends Queuey {
     }
     have_more(res) {
         let {id,blob,index,from_start} = res
+        if (this.grab_have_more?.(res)) {
+            // if !gat.AC_OK, we don't want to spawn any aud just yet...
+            return
+        }
         V>0 && console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
         if (index == 0 && this.find_audiolet({id})) {
