@@ -23,10 +23,28 @@ class Queuey {
     cull_queue() {
         let history = this.scheme.history || 0
         if (history == -1) return
-        // which item is the cursor in
-        let i = Math.floor(this.cursor())
-        // < todo
-
+        let culled = 0
+        if (this.now) {
+            // assume things will get stopped when they're old
+            let stopped = this.queue
+                .filter(aud => aud.stopped)
+            for (let i = 0; i < history; i++) {
+                stopped.pop()
+            }
+            let sane = 0
+            while (stopped.length && sane++<500) {
+                let aud = stopped.shift()
+                let index = this.queue.indexOf(aud)
+                if (index >= 0) {
+                    this.queue.splice(index, 1)
+                    culled++
+                }
+            }
+        }
+        else {
+            // < something Queuey-generic about which item is the cursor in
+            // let i = Math.floor(this.cursor())
+        }
     }
 
     // get more queue
@@ -186,6 +204,7 @@ export class GathererTest extends Queuey {
     }
 
     // might might(), but only if...
+    think_ticks = 0
     think() {
         if (this.currently) {
             this.currently.think('from gat')
@@ -193,6 +212,10 @@ export class GathererTest extends Queuey {
         else {
             console.log("gat.think() start")
             this.might()
+        }
+        if (this.think_ticks++ % 250 == 0) {
+            // avoid browser mem growing 2GB/hr
+            this.cull_queue()
         }
     }
 
@@ -277,13 +300,13 @@ export class AudioletTest extends Queuey {
     }
     fadeout() {
         // prevent further aud.start_stretch() etc immediately
-        this.stopped = 1
+        this.stopped = this.gat.now()
         // < redundant given stopped?
         this.gat.fadingout.push(this)
         setTimeout(() => this.stop(), 2)
     }
     stop() {
-        this.stopped = 1
+        this.stopped = this.gat.now()
         this.gat.fadingout = this.gat.fadingout
             .filter(aud => aud != this)
     }
