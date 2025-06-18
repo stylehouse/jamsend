@@ -7,8 +7,10 @@ Hifi streaming with radio-tuner UI
 First time,
 
 ```bash
+# get such a container
 docker compose build
-docker run --rm -v .:/app jamola-app:latest sh -c "cd /app && npm install"
+# populate your ./node_modules, mounted in the container under /app
+docker run --rm -v .:/app jamsend-app:latest npm install"
 ```
 
 Thence,
