@@ -215,11 +215,14 @@ export class GathererTest extends Queuey {
     // might might(), but only if...
     think_ticks = 0
     think() {
+        // we are preoccupied with...
         if (this.currently) {
+            // what's on
             this.currently.think('from gat')
         }
         else {
-            V>1 && console.log("gat.think() start")
+            // getting going
+            V>0 && console.log("gat.think() start")
             this.might()
         }
         if (this.think_ticks++ % 250 == 0) {
@@ -235,6 +238,7 @@ export class GathererTest extends Queuey {
         this.next_is_gettable_done = aud
         if (!this.nextly) {
             V>1 && console.log(`${aud.idname} next_is_gettable`)
+            // the only way to get a whole track is to finish another
             this.get_more({from_start:true})
         }
     }
@@ -335,26 +339,24 @@ export class AudioletTest extends Queuey {
     async might(returning_start=false) {
         if (!this.playing && this.queue.length) {
             V>0 && console.log(`${this.idname} -> might`)
-            if (this.starting_first_stretch) {
-                return
-            }
-            this.starting_first_stretch = 1
-
-            let stretch = await this.new_stretch()
-            let start = () => {
-                //  could now delete this.starting_first_stretch
-                //   but we're never back this way
+            // we're going to hit play on this aud
+            // if it's ready
+            await this.prep_next_stretch()
+            if (this.next_stretch) {
                 V>0 && console.log(`${this.idname} -> Currently`)
-                this.gat.currently = this
-                this.start_stretch(stretch)
+                
+                let start = () => {
+                    this.gat.currently = this
+                    this.start_stretch(this.next_stretch)
+                }
+                if (returning_start) return start
+                start()
             }
-            // when preparing (decoding) gat.nextly
-            if (returning_start) return start
-            
-            start()
         }
         this.provision()
     }
+
+
     
 
     
@@ -402,10 +404,27 @@ export class AudioletTest extends Queuey {
         return MOCK_MS_PER_ITEM
     }
 
-    
+    async prep_next_stretch() {
+        if (this.next_stretch_coming) {
+            return
+        }
+        this.next_stretch_coming = "?"
+
+        let stretch = await this.new_stretch()
+        if (!stretch) {
+            debugger
+            this.next_stretch_coming = ""
+            return
+        }
+        // < this way stays blocked until start_stretch()
+        this.next_stretch_coming = stretch.length
+        this.next_stretch = stretch
+    }
 
 
     //#region aud stretch
+    // from think(), when cursor nears the end of a stretch
+    //  think of the next one, schedule it
     async try_stretching() {
         if (this.next_stretch_coming) {
             if (this.next_stretch_coming != "?") {
@@ -434,8 +453,6 @@ export class AudioletTest extends Queuey {
                 debugger
             }
             this.start_stretch(stretch)
-            this.next_stretch = null
-            this.next_stretch_coming = ''
             this.playing_onended = null
         }
 
@@ -483,6 +500,14 @@ export class AudioletTest extends Queuey {
         this.playing = stretch
         this.start_time ||= this.gat.now()
         this.stretch_size = stretch.length
+        // allow the next one to build on a think()
+        this.next_stretch = null
+        this.next_stretch_coming = ''
+
+        if (this.gat.currently != this) {
+            debugger
+        }
+
         this.started_stretch?.()
         this.aud_onstarted?.()
         

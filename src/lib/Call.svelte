@@ -39,6 +39,7 @@
     })
     function handle_time() {
         if (simtime == 0) {
+
         }
         else if (simtime == 1) {
             // gat.surf()
@@ -59,6 +60,7 @@
                 errorMessage = er || "Unknown error";
             },
             on_begun: () => {
+                console.log("GO!")
                 start_simtime()
             }
         });
@@ -116,9 +118,6 @@
 </script>
 
 <div class="audio-player">
-    {#if gat?.currently?.meta}
-        <Meta meta={gat?.currently?.meta} />
-    {/if}
 
     <div class="controls">
         <button onclick={surf}>Skip</button>
@@ -133,6 +132,9 @@
     {/if}
 
 
+    {#if gat?.currently?.meta}
+        <Meta meta={gat?.currently?.meta} />
+    {/if}
 
     <div class="mach" >
         <span class="name">GathererTest</span>
