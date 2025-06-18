@@ -9,7 +9,7 @@ export const MS_PER_SIMULATION_TIME = 333
 // see also the audio constants in GatherSocket
 // turn up log statement level
 //  3 = every more response
-export const V = 2
+export const V = 1
 
 class Queuey {
     constructor(opt) {
@@ -542,7 +542,12 @@ export class AudioletTest extends Queuey {
             this.have_more(res)
         },delay)
     }
-    have_more({id,blob,index,done,notexist,meta}) {
+    have_more({id,blob,index,done, meta, try_again,notexist}) {
+        if (try_again) {
+            V>0 && console.log(`aud:${id} more shall try_again`)
+            setTimeout(() => this.request_more(try_again), 1000)
+            return
+        }
         if (!blob?.byteLength) {
             if (notexist) {
                 this.awaiting_mores.shift()

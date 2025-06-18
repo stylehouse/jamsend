@@ -50,9 +50,9 @@
         // console.log("Time = "+simtime)
     }
 
-    function initGat() {
-        if (gat) return
-        // Initialize WebSocket connection
+    let recreate_gat = () => {
+        // Initialize WebSocket connection, and of things got there
+        gat?.stop()
         gat = new GatherAudios({
             on_error: (er) => {
                 console.error(er);
@@ -62,8 +62,16 @@
                 start_simtime()
             }
         });
+        gat.recreate_gat = recreate_gat
+
         // try this
         initAudio()
+    }
+
+    function initGat() {
+        if (gat) return
+
+        recreate_gat()
 
         document.addEventListener("click", initAudio);
         document.addEventListener("touchstart", initAudio);

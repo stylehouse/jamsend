@@ -39,6 +39,8 @@ export class GatherAudios extends GathererTest {
     connected = false;
     begun = false;
     socket: Socket;
+    // throws this away and starts over
+    recreate_gat:Function|null
     on_error:Function|null
     declare on_begun:Function|null
 
@@ -71,10 +73,29 @@ export class GatherAudios extends GathererTest {
         // Socket connection handlers
         // < ffmpeg recycling token via gat
         this.socket.on('connect', () => {
-            V>0 && console.log('Connected to audio server');
             this.connected = true;
+            
+            let recycled = ''
+            if (this.socketid) {
+                this.socket.emit('try_recycle_gatid', {id:this.socketid})
+                recycled = ', recycling '+this.socketid
+            }
+            this.socketid = this.socket.id
+
+            V>0 && console.log('Connected to audio server'+recycled);
             this.beginable();
         });
+        // while waiting for this process,
+        //  more unstarted mu can occur, so we get them to retry with backoff
+        this.socket.on('try_recycle_gatid_failed', () => {
+            // a new Gat!
+            V>0 && console.log("gatid recycling failed, have to reload")
+            this.recreate_gat()
+        })
+        this.socket.on('try_recycle_gatid_success', () => {
+            // it works. to test, devtools you can throttle Network to nothing
+            // debugger
+        })
 
         this.socket.on('disconnect', () => {
             V>0 && console.log('Disconnected from audio server');
@@ -315,6 +336,9 @@ export class Audiolet extends AudioletTest {
         // here we always just want more of the queue, in sequence
         //  see gat.have_more() for creation and an initial aud.have_more()
         let req = {id: this.id, index: this.next_index++}
+        this.request_more(req)
+    }
+    request_more(req) {
         this.gat.socket.emit('more',req)
     }
 

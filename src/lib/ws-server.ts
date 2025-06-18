@@ -4,7 +4,7 @@ import { join, dirname, basename, extname } from 'path';
 import { constants } from 'fs';
 import { createHash } from 'crypto';
 import type { ViteDevServer } from 'vite';
-import type { urihash } from './audio/Gather.svelte';
+import { V } from './audio/GatherTest.svelte';
 import { spawn } from 'child_process'
 import { promisify } from 'util'
 
@@ -28,6 +28,7 @@ export const webSocketServer = {
 
 
 // ms?
+type urihash = string
 type timestamp = Number
 type songmeta = {
     artist:string,
@@ -112,7 +113,7 @@ async function scan_music(musicDir = '/music') {
                             };
                             
                             Music.set(fileHash, musicEntry);
-                            console.log(`Added track: ${musicEntry.meta.title}`);
+                            V>0 && console.log(`Added track: ${musicEntry.meta.title}`);
                         } catch (fileErr) {
                             console.error(`Error processing file ${fullPath}:`, fileErr);
                         }
@@ -184,19 +185,38 @@ function random_seek_fraction() {
     return Math.random() * (max-min) + min
 }
 
+let users = {}
 // -> mu <-> feed
 //    pauses and resumes to pipe us just enough 100k ogg to serve /more indexes
 //    if spawning a new mu.feed && index is random, we should seek into it
 //     so the stream starts with an ogg header
 function AudioServer(socket, io) {
+    // track users by socket.id
+    let user = users[socket.id] ||= {}
+    // which they can reclaim after socket reconnects, with the same Gat state
+    socket.on('try_recycle_gatid', async ({id}, cb) => {
+        carefully('try_recycle_gatid', cb, socket, async () => {
+            let was = users[id]
+            if (was) {
+                for (const [id, feed] of Object.entries(was.feeds)) {
+                    user.feeds[id] = feed
+                }
+                socket.emit('try_recycle_gatid_success')
+            }
+            else {
+                socket.emit('try_recycle_gatid_failed')
+            }
+        })
+    })
+    
     // Track FFmpeg feeds per socket
-    socket.feeds = new Map(); // mu.id -> feed
+    user.feeds = {} // mu.id -> feed
     // per socket|user
     let has_meta = {} // mu.id -> true
     socket.on('more', async (r: audioi, cb) => {
         carefully('more', cb, socket, async () => {
             r ||= {}
-            console.log("ws AudioServer more: ",r)
+            V>0 && console.log("ws AudioServer more: ",r)
             
             let specific = r.id && true
             let from_start = r.from_start
@@ -205,12 +225,17 @@ function AudioServer(socket, io) {
                 throw new Error(`!song: ${r.id}`);
             }
             // create an encoder
-            let feed = socket.feeds.get(mu.id);
+            let feed = user.feeds[mu.id];
             if (!feed) {
-                if (r.index) throw "following (with index) an unstarted mu"
+                if (r.index) {
+                    // can occur before recycling hands over the feeds
+                    console.warn("more of old feed before recycle?")
+                    socket.emit('more', {id:r.id,try_again:r})
+                    return
+                }
                 let fraction = from_start ? 0 : random_seek_fraction()
                 feed = await createFFmpegStream(mu, fraction);
-                socket.feeds.set(mu.id, feed);
+                user.feeds[mu.id] = feed;
             }
             // read from the encoder
             //  starting at 0 even when we randomly seek
@@ -238,25 +263,29 @@ function AudioServer(socket, io) {
             }
 
             if (from_start) {
-                console.log(` - is from start`)
+                V>0 && console.log(` - is from start`)
                 res.from_start = 1
             }
             
             socket.emit('more', res)
         })
     });
-    // drop encoders|cache on disconnect
-    // < state of gat must reset if it reconnects?
+
+
+    // drop user a while after disconnect
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
-        // Clean up any FFmpeg streams for this client
-        for (const [id, feed] of socket.feeds.entries()) {
-            feed.close();
-        }
-        socket.feeds.clear();
+        // after 2m
+        setTimeout(() => {
+            // Clean up any FFmpeg streams for this client
+            for (const [id, feed] of Object.entries(user.feeds)) {
+                feed.close();
+            }
+            delete users[socket.id]
+        }, 2*60*1000)
+
     });
 }
-
 
 async function createFFmpegStream(mu, fraction = 0) {
     // Get metadata including duration
@@ -309,10 +338,10 @@ async function createFFmpegStream(mu, fraction = 0) {
         // Pause stream if we've buffered enough chunks ahead
         if (consumedIndex + 5 < producedIndex) {
             ff.pause();
-            console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}, pausing`);
+            V>0 && console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}, pausing`);
         }
         else {
-            console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}`);
+            V>0 && console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}`);
         }
     }
     
@@ -367,13 +396,13 @@ async function createFFmpegStream(mu, fraction = 0) {
                 // < efficient multi-client vs. not storing lots of memory?
                 // delete blobs[index];
                 consumedIndex = index
-                console.log(`/more served ${mu.id}: ${index}`);
+                V>0 && console.log(`/more served ${mu.id}: ${index}`);
                 return blob;
             }
             
             // If stream has ended and we're requesting beyond available chunks
             if (lastIndex != null && index > lastIndex) {
-                console.log(`/more request for ${mu.id}: ${index} (stream ended)`);
+                V>0 && console.log(`/more request for ${mu.id}: ${index} (stream ended)`);
                 throw new Error("End of stream reached");
             }
             
@@ -381,7 +410,7 @@ async function createFFmpegStream(mu, fraction = 0) {
 
             if (index >= producedIndex) {
                 let resu = ff.paused ? "(resuming)" : ""
-                console.log(`/more waiting for ${mu.id}: ${index} ${resu}`);
+                V>0 && console.log(`/more waiting for ${mu.id}: ${index} ${resu}`);
                 ff.resume();
                 // when the requested chunk is available
                 return new Promise((resolve, reject) => {
@@ -398,7 +427,7 @@ async function createFFmpegStream(mu, fraction = 0) {
                 });
             }
             
-            console.log(`Oh woops ${index} !-> ${consumedIndex}/${producedIndex}`)
+            console.log(`Oh no, ${index} !-> ${consumedIndex}/${producedIndex}`)
             // Should never reach here if logic is correct
             throw new Error(`Unexpected state in get_index(${index}, producedIndex:${producedIndex}) for ${mu.id}`);
         },
