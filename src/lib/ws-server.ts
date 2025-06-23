@@ -4,8 +4,8 @@ import { join, dirname, basename, extname } from 'path';
 import { constants } from 'fs';
 import { createHash } from 'crypto';
 import type { ViteDevServer } from 'vite';
-import { V } from './audio/GatherTest.svelte';
-import { spawn } from 'child_process'
+import { V } from './audio/Common.svelte';
+import { spawn,urihash,timestamp,songmeta,TheMusic } from 'child_process'
 import { promisify } from 'util'
 
 export const webSocketServer = {
@@ -26,25 +26,6 @@ export const webSocketServer = {
     }
 }
 
-
-// ms?
-type urihash = string
-type timestamp = Number
-type songmeta = {
-    artist:string,
-    album:string,
-    title:string,
-    year:string,
-    cover:Uint8Array,
-}
-type TheMusic = {
-    id:urihash,
-    path:string, // on the filesystem at /music
-    meta:songmeta, // gradually emerging, cover art etc
-    size:Number, // in bytes
-    // < to garbage collect meta, meta.covers may get big
-    last_read:timestamp,
-}
 let Music:Map<urihash,TheMusic> = new Map()
 
 // error-sending wrapper

@@ -1,6 +1,8 @@
 import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
-import { V, GathererTest } from "./GatherTest.svelte";
+import { V } from "./Common.svelte";
+import type { urihash,audioi,audiole } from "./Common.svelte";
+import { GathererTest } from "./GatherTest.svelte";
 import { AudioletTest } from "./GatherAudiolet.svelte";
 
 // in ms
@@ -8,31 +10,6 @@ const FADE_OUT_DURATION = 333
 const FADE_IN_DURATION = 155
 const MIN_GAIN = 0.001
 
-// a unique song URI hash
-export type urihash = string
-
-// sometimes requests for more audio have specifics:
-export type audioi = {
-    // identifies a track
-    id: urihash,
-    // position they're streaming towards
-    index: number,
-}
-// the response of part|whole
-type audiole = audioi & {
-    blob: Uint8Array,
-    // Last bit -> start another from the start
-    done?: boolean;
-    // Song metadata if available
-    meta?: {
-        artist: string;
-        album: string;
-        title: string;
-        year: string;
-        cover?: Uint8Array;
-        duration?: number;
-    };
-}
 
 //#region gat
 export class GatherAudios extends GathererTest {

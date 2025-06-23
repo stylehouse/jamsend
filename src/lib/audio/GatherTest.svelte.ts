@@ -1,94 +1,7 @@
 
-// test params
-
-import type { audioi } from "./GatherSocket.svelte"
-
-// all queues have this ending
-export const MOCK_END_OF_INDEX = 9
-// various timing code needs to regard the decoded audio aud.playing.duration
-export const MOCK_MS_PER_ITEM = 621
-export const PHI = 1.613
-export const MS_PER_SIMULATION_TIME = 333
-// see also the audio constants in GatherSocket
-// turn up log statement level
-//  3 = every more response
-export const V = 2
-
-export class Queuey {
-    constructor(opt) {
-        Object.assign(this,opt)
-        window.gat = this
-    }
-    // parameterises this superclass
-    scheme:{
-        history?:number,
-        future?:number,
-    } = {}
-
-    cull_queue() {
-        let history = this.scheme.history || 0
-        if (history == -1) return
-        let culled = 0
-        if (this.now) {
-            // assume things will get stopped when they're old
-            let stopped = this.queue
-                .filter(aud => aud.stopped)
-            for (let i = 0; i < history; i++) {
-                stopped.pop()
-            }
-            let sane = 0
-            while (stopped.length && sane++<500) {
-                let aud = stopped.shift()
-                let index = this.queue.indexOf(aud)
-                if (index >= 0) {
-                    this.queue.splice(index, 1)
-                    culled++
-                }
-            }
-        }
-        else {
-            // < something Queuey-generic about which item is the cursor in
-            // let i = Math.floor(this.cursor())
-        }
-        if (culled) {
-            V>1 && console.log(`cull_queue() x${culled}`)
-        }
-    }
-
-    // get more queue
-    awaiting_mores = []
-    more_wanted = $state()
-    provision() {
-        if (this.end_index) {
-            // Audiolet is done loading
-            return
-        }
-        // where we have consumed up til
-        let i = this.cursor()
-        // where we have
-        let queued = this.queue.length - 1
-        // how far ahead we have
-        let ahead = queued - (i||0)
-        // compare to how far ahead we like to be
-        let deficit = this.scheme.future - ahead
-        
-        let more_wanted = deficit > 0 ? deficit : 0
-
-        // < we should really be generating unique wills to get more (by index)
-        if (this.awaiting_mores) {
-            // don't want the same bit of more again
-            more_wanted -= this.awaiting_mores.length
-        }
-        this.more_wanted = more_wanted
-        if (more_wanted) {
-            V>2 && console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
-            // < request specific indexes here
-            for (let it = 1; it <= more_wanted; it++) {
-                this.get_more({delay:it*140})
-            }
-        }
-    }
-}
+import { Queuey, V,  } from "./Common.svelte";
+import type { audioi } from "./Common.svelte";
+import { AudioletTest } from "./GatherAudiolet.svelte"
 
 
 
@@ -170,7 +83,7 @@ export class GathererTest extends Queuey {
         return new AudioletTest(opt)
     }
     shouldnt_repeat_aud(res) {
-        if (res.index == 0 && this.find_audiolet({id})) {
+        if (res.index == 0 && this.find_audiolet({id:res.id})) {
                 console.error("the server randomly sent a previous track")
                 this.get_more_from_start()
                 return true
@@ -245,6 +158,7 @@ export class GathererTest extends Queuey {
         }
     }
 
+    //#region next
     next_is_gettable_done = $state(null)
     next_is_coming_done = $state(null)
     // from an aud noticing it ends soon
@@ -272,6 +186,7 @@ export class GathererTest extends Queuey {
             delete this.nextly
         }
     }
+
 }
 
 

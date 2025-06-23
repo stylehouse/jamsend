@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { GathererTest, MS_PER_SIMULATION_TIME } from "./audio/GatherTest.svelte";
+    import { GathererTest } from "./audio/GatherTest.svelte";
+    import { MS_PER_SIMULATION_TIME } from "./audio/Common.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
 
     let gat = $state()

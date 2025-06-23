@@ -1,5 +1,6 @@
 
-import { PHI, V, GathererTest, Queuey } from "./GatherTest.svelte";
+import { PHI, Queuey, V } from "./Common.svelte";
+import { GathererTest } from "./GatherTest.svelte";
 
 // the thing that is playing
 //  it requests more pieces to play

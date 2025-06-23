@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { GatherAudios } from "./audio/GatherSocket.svelte";
-    import { MS_PER_SIMULATION_TIME } from "./audio/GatherTest.svelte";
+    import { MS_PER_SIMULATION_TIME } from "./audio/Common.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
     import Meta from "./Meta.svelte";
 
