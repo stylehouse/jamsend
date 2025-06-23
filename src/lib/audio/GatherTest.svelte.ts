@@ -1,5 +1,8 @@
 
 // test params
+
+import type { audioi } from "./GatherSocket.svelte"
+
 // all queues have this ending
 export const MOCK_END_OF_INDEX = 9
 // various timing code needs to regard the decoded audio aud.playing.duration
@@ -119,6 +122,9 @@ export class GathererTest extends Queuey {
 
     //#region gat req
     // fetch a random track, creating its AudioletTest
+    get_more_from_start() {
+        this.get_more({from_start:true})
+    }
     get_more({from_start,delay}) {
         this.awaiting_mores.push(1)
         setTimeout(() => {
@@ -126,7 +132,7 @@ export class GathererTest extends Queuey {
             this.have_more({id:this.idi++,blob:'vvv',index:0,from_start})
         }, delay || 100)
     }
-    have_more(res) {
+    have_more(res:audioi) {
         let {id,blob,index,from_start} = res
         if (this.grab_have_more?.(res)) {
             // if !gat.AC_OK, we don't want to spawn any aud just yet...
@@ -134,13 +140,10 @@ export class GathererTest extends Queuey {
         }
         V>0 && console.log(`Gat more aud:${id} ${index}`)
         this.awaiting_mores.shift()
-        if (index == 0 && this.find_audiolet({id})) {
-            // the server randomly sent a previous track
-            // < pseudo-random, avoid repeats for as long as possible
-            console.error("the server randomly sent a previous track")
-            this.get_more({from_start})
-            return
-        }
+        // the server randomly sent a previous track
+        // < pseudo-random, avoid repeats for as long as possible
+        if (this.shouldnt_repeat_aud(res)) return
+
         let aud = this.new_audiolet({id,gat:this})
         aud.next_index = index+1
         aud.have_more(res)
@@ -166,6 +169,13 @@ export class GathererTest extends Queuey {
     new_audiolet(opt) {
         return new AudioletTest(opt)
     }
+    shouldnt_repeat_aud(res) {
+        if (res.index == 0 && this.find_audiolet({id})) {
+                console.error("the server randomly sent a previous track")
+                this.get_more_from_start()
+                return true
+        }
+    }
     // the next track to play in sequence, from the start
     nextly
 
@@ -181,14 +191,7 @@ export class GathererTest extends Queuey {
     }
     // act: pull from queue
     might(really) {
-        let next = this.queue
-            // not the old track currently fading out
-            .filter(aud => !this.fadingout.includes(aud))
-            // corner case: not the one we had ready to play in sequence
-            .filter(aud => this.nextly != aud)
-            .filter(aud => this.currently != aud)
-            .filter(aud => !aud.stopped)
-            [0]
+        let next = this.suitable_new_aud()
         if (next) {
             let cur = this.currently
             if (really && cur) {
@@ -212,6 +215,16 @@ export class GathererTest extends Queuey {
         // a suitable time to think about:
         this.provision()
     }
+    suitable_new_aud() {
+        return this.queue
+            // not the old track currently fading out
+            .filter(aud => !this.fadingout.includes(aud))
+            // corner case: not the one we had ready to play in sequence
+            .filter(aud => this.nextly != aud)
+            .filter(aud => this.currently != aud)
+            .filter(aud => !aud.stopped)
+            [0]
+    }
 
     // might might(), but only if...
     think_ticks = 0
@@ -234,13 +247,13 @@ export class GathererTest extends Queuey {
 
     next_is_gettable_done = $state(null)
     next_is_coming_done = $state(null)
+    // from an aud noticing it ends soon
     next_is_gettable(aud) {
         if (this.next_is_gettable_done == aud) return
         this.next_is_gettable_done = aud
         if (!this.nextly) {
             V>1 && console.log(`${aud.idname} next_is_gettable`)
-            // the only way to get a whole track is to finish another
-            this.get_more({from_start:true})
+            this.get_more_from_start()
         }
     }
     async next_is_coming(aud) {
