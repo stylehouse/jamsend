@@ -144,11 +144,12 @@ export class GathererTest extends Queuey {
         let aud = this.new_audiolet({id,gat:this})
         aud.next_index = index+1
         aud.have_more(res)
+
         if (from_start) {
             let i = this.queue.indexOf(this.currently)
             if (i < 0) throw "noi"
             this.queue.splice(i+1,0,aud)
-            aud.is_nextly = true
+            aud.from_start = true
             this.nextly = aud
         }
         else {
@@ -169,7 +170,7 @@ export class GathererTest extends Queuey {
     nextly
 
 
-    //#region gat req
+    //#region surf might
     surf() {
         if (!this.queue.length) {
             // beginning, acquire random track at random position

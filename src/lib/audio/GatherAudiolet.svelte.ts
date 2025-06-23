@@ -1,7 +1,7 @@
 
-// the thing that is playing
 import { PHI, V, GathererTest, Queuey } from "./GatherTest.svelte";
 
+// the thing that is playing
 //  it requests more pieces to play
 export class AudioletTest extends Queuey {
     // still encoded chunks of ogg
@@ -10,7 +10,7 @@ export class AudioletTest extends Queuey {
     playing:AudioBufferSourceNode = $state()
     // the index after get_more's we are in to the track (-1)
     next_index:number = $state()
-    is_nextly = $state()
+    from_start = $state()
     end_index = $state()
     get idname() {
         return `aud:${this.id}`
@@ -72,6 +72,7 @@ export class AudioletTest extends Queuey {
         this.scheme.future = 2
     }
 
+    //#region might
     // act: start a bit of queue
     //  then are dispatched by gat think()
     // < surf()
@@ -262,8 +263,10 @@ export class AudioletTest extends Queuey {
         // stretch.start(this.start_time,play_from)
         V>1 && console.log(`aud:${this.id} Stretch++ ${this.stretch_size} ${this.tc}`)
     }
-    aud_onended:Function|null
     aud_onstarted:Function|null
+    playing_onended:Function|null
+    aud_onended:Function|null
+    
     plan_ending(was) {
         this.mock_ending(was)
     }
@@ -275,7 +278,6 @@ export class AudioletTest extends Queuey {
         }, endsin)
     }
     whatsnext() {
-        let began_whatsnexting = this.gat.now()
         if (this.stopped) {
             // is over, no need to keep feeding audio
             // small chance it will cut out during fadeout()
@@ -291,17 +293,19 @@ export class AudioletTest extends Queuey {
             // the next track (aud) is ready to play
             this.aud_onended()
             this.stopped = 1
+
         }
         else {
             console.error("Off the end")
         }
     }
 
+    //#region get, have
     get_more({delay}) {
         this.awaiting_mores.push(1)
         setTimeout(() => {
             // here we always just want more of the queue, in sequence
-            //  see gat.have_more() for creation and an initial aud.have_more()
+            //  see gat.have_more() for aud creation, initial aud.have_more()
             let req = {id: this.id, index: this.next_index++}
             let res = {...req, blob:'vvv'}
             if (req.index == MOCK_END_OF_INDEX) {
@@ -339,6 +343,7 @@ export class AudioletTest extends Queuey {
         // tempting to assign next_index = index+1 here
         //  but more get_more() may be dispatched already
         this.queue.push(blob)
+
         if (done) this.end_index = index
 
         let thinkdelay = 0

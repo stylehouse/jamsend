@@ -45,7 +45,7 @@
     <span>
         <span>awaiting {awaiting}</span>
         <span>
-            {aud.is_nextly && 'is_nextly'} 
+            {aud.from_start && 'from_start'} 
             {aud.next_stretch && 'next_stretch'}
             {aud.stopped && 'stopped'}
         </span>
