@@ -1,5 +1,5 @@
 
-import { PHI, Queuey, V } from "./Common.svelte";
+import { MOCK_BLOB, MOCK_END_OF_INDEX, MOCK_MS_PER_ITEM, PHI, Queuey, V } from "./Common.svelte";
 import { GathererTest } from "./GatherTest.svelte";
 
 // the thing that is playing
@@ -308,7 +308,7 @@ export class AudioletTest extends Queuey {
             // here we always just want more of the queue, in sequence
             //  see gat.have_more() for aud creation, initial aud.have_more()
             let req = {id: this.id, index: this.next_index++}
-            let res = {...req, blob:'vvv'}
+            let res = {...req, blob:MOCK_BLOB}
             if (req.index == MOCK_END_OF_INDEX) {
                 res.done = 1
             }
@@ -321,7 +321,7 @@ export class AudioletTest extends Queuey {
             setTimeout(() => this.request_more(try_again), 1000)
             return
         }
-        if (!blob?.byteLength) {
+        if (!blob?.byteLength && blob != MOCK_BLOB) {
             if (notexist) {
                 this.awaiting_mores.shift()
                 return
