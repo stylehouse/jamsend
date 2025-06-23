@@ -1,6 +1,7 @@
 import type { Socket } from "socket.io";
 import { io } from "socket.io-client";
-import { V, AudioletTest, GathererTest } from "./GatherTest.svelte";
+import { V, GathererTest } from "./GatherTest.svelte";
+import { AudioletTest } from "./GatherAudiolet.svelte";
 
 // in ms
 const FADE_OUT_DURATION = 333
