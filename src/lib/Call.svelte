@@ -1,9 +1,10 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { GatherAudios } from "./audio/GatherSocket.svelte";
     import { MS_PER_SIMULATION_TIME } from "./audio/Common.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
     import Meta from "./Meta.svelte";
+    import { GatherStars } from "./audio/GatherStars.svelte";
+    import StarField from "./ui/StarField.svelte";
 
     let errorMessage = $state("");
 
@@ -54,7 +55,7 @@
     let recreate_gat = () => {
         // Initialize WebSocket connection, and of things got there
         gat?.stop()
-        gat = new GatherAudios({
+        gat = new GatherStars({
             on_error: (er) => {
                 console.error(er);
                 errorMessage = er || "Unknown error";
@@ -117,11 +118,15 @@
     }
 </script>
 
+{#if gat}
 <div class="audio-player">
 
     <div class="controls">
         <button onclick={surf}>Skip</button>
         {#if !gat?.AC_ready}<p><a>Click Here</a> to being.</p>{/if}
+    </div>
+    <div class="field">
+        <StarField {gat}/>
     </div>
 
     {#if errorMessage}
@@ -153,6 +158,7 @@
 
 
 </div>
+{/if}
 
 <style>
     /* debug visuals */
@@ -164,6 +170,10 @@
     .name {
         font-size: 130%;
         color: white;
+    }
+    .field {
+        position:relative;
+        max-height: 13em;
     }
 
     .audio-player {
