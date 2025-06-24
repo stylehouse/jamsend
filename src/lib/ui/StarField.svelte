@@ -16,37 +16,108 @@
         
         // Handle scroll events
         scrollContainer.addEventListener('scroll', handleScroll);
+
+        // Add mouse event listeners for dragging
+        scrollContainer.addEventListener('mousedown', handleMouseDown);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        // Prevent default drag behavior on images/text
+        scrollContainer.addEventListener('dragstart', (e) => e.preventDefault());
     });
 
     onDestroy(() => {
         scrollContainer?.removeEventListener('scroll', handleScroll);
+        scrollContainer?.removeEventListener('mousedown', handleMouseDown);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        scrollContainer?.removeEventListener('dragstart', (e) => e.preventDefault());
     })
     
+    function viewportWidth() {
+        return scrollContainer ? scrollContainer.clientWidth : 0
+    }
     function handleScroll() {
         if (!gat || !scrollContainer) return;
         
         // Convert scroll position to normalized position
         const scrollLeft = scrollContainer.scrollLeft;
-        const viewportWidth = scrollContainer.clientWidth;
-        const maxScroll = SCROLL_WIDTH - viewportWidth;
+        const maxScroll = SCROLL_WIDTH - viewportWidth();
         const normalizedScroll = scrollLeft / maxScroll;
+        let distance_from_center = 0.5 - normalizedScroll
+        // supposedly how many StarFields in a gat.field, spanning SCROLL_WIDTH
+        let expanse = 5000
+        // how many pixels wide is a field
+        let scale = SCROLL_WIDTH / expanse
+
+        let location = distance_from_center * scale
+        // and player is centered
+        location += 0.5
+
         
-        // Map to your position system (centered around 0, extending in both directions)
-        const newPosition = (normalizedScroll - 0.5) * 20; // Scale factor of 20
         
-        gat.position = newPosition;
+        gat.position = location
+        console.log("Loca: "+gat.position,{
+            location:location.toFixed(2)
+        })
         gat.look();
         
         // Handle infinite scroll wrap-around
         if (scrollLeft < 1000) {
             // Scrolled near the left edge, jump to right side
             scrollContainer.scrollLeft = SCROLL_WIDTH - 2000;
+            console.log("Wrapping left")
         } else if (scrollLeft > SCROLL_WIDTH - 1000) {
             // Scrolled near the right edge, jump to left side
             scrollContainer.scrollLeft = 2000;
+            console.log("Wrapping right")
         }
     }
+
+
+
+
+
+
+
+    let isDragging = false;
+    let lastMouseX = 0;
+    let dragVelocity = 0;
+    let lastDragTime = 0;
     
+    // Mouse drag handlers
+    function handleMouseDown(e) {
+        isDragging = true;
+        lastMouseX = e.clientX;
+        scrollContainer.style.cursor = 'grabbing';
+        // Prevent text selection during drag
+        document.body.style.userSelect = 'none';
+    }
+
+    function handleMouseMove(e) {
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - lastMouseX;
+        
+        // Apply drag movement (invert for natural feel)
+        scrollContainer.scrollLeft -= deltaX*5;
+        
+        lastMouseX = e.clientX;
+    }
+
+    function handleMouseUp() {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        scrollContainer.style.cursor = 'grab';
+        document.body.style.userSelect = '';
+    }
+
+
+
+
+    
+
+
     // Calculate the offset for each field relative to current position
     function getFieldOffset(fieldIndex: number) {
         const fieldOffset = fieldIndex - gat.position;
@@ -167,6 +238,8 @@
         width: 100%;
         height: 100%;
         /* pointer-events: none; */
+        border:2px solid burlywood;
+        border-radius:2em;
     }
     
     .star {

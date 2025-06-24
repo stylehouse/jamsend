@@ -5,18 +5,15 @@ const N_STARS = 7
 const STAR_MIN_DISTANCE = 0.03
 // behaviour superimposition, generating a starfield
 export class GatherStars extends GatherAudios {
-    think() {
-        super.think()
-
-        if (!this.field) this.whole_new_field()
-    }
     field = $state()
     position = $state()
+
     whole_new_field() {
         this.field = {}
         this.position = 0
         this.look()
     }
+
     field_visiting:number
     star_visiting:Star
     look() {
@@ -38,6 +35,7 @@ export class GatherStars extends GatherAudios {
             closest.play()
         }
         this.star_visiting = closest
+
     }
 
     // to render at the viewport, in the expanse
@@ -61,7 +59,6 @@ export class GatherStars extends GatherAudios {
             this.keep_field(index+1),
             this.keep_field(index+2)
         ]
-        console.log("The: ",this.local_space)
     }
     keep_field(index) {
         let is = this.field[index]
