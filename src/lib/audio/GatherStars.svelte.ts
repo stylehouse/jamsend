@@ -1,8 +1,6 @@
 import type { AudioletTest } from "./GatherAudiolet.svelte";
 import { GatherAudios } from "./GatherSocket.svelte";
 
-const N_STARS = 7
-const STAR_MIN_DISTANCE = 0.03
 // behaviour superimposition, generating a starfield
 export class GatherStars extends GatherAudios {
     field = $state()
@@ -15,7 +13,7 @@ export class GatherStars extends GatherAudios {
     }
 
     field_visiting:number
-    star_visiting:Star
+    star_visiting:Star = $state()
     look() {
         if (!this.field) this.whole_new_field()
             
@@ -92,6 +90,9 @@ export class GatherStars extends GatherAudios {
         return closest;
     }
 }
+
+const N_STARS = 7
+const STAR_MIN_DISTANCE = 0.1
 class StarField {
     index: number // in Stars.field
     stars: Star[] = [];
@@ -108,25 +109,32 @@ class StarField {
         let placed = 0;
         
         for (let attempt = 0; attempt < attempts && placed < N_STARS; attempt++) {
-            const x = Math.random() * 0.999;
-            const y = Math.random() * 0.999;
+            let x = Math.random() * 1
+            let y = Math.random() * 1;
+            // squish from ends since we dont check inter-field star distance
+            x = x * (1 - (STAR_MIN_DISTANCE*2))
+            x = x + STAR_MIN_DISTANCE
+            // squish and put gap
+            y = y * 0.6 + 0.1
+            if (y > 0.4) y += 0.2
+
             
+            let bail = 0
             // Check if this position is far enough from other stars
             for (const existingStar of this.stars) {
-                const distance = Math.sqrt(
-                    Math.pow(x - existingStar.x, 2) + 
-                    Math.pow(y - existingStar.y, 2)
-                );
+                const distance = Math.abs(existingStar.x - x)
                 if (distance < STAR_MIN_DISTANCE) {
+                    bail = 1
                     break;
                 }
             }
+            if (bail) continue
             
             this.stars.push(new Star({ 
                 x, 
                 y, 
                 fieldIndex: this.index,
-                size: 2 + Math.random() * 4,
+                size: 3 + Math.random() * 3,
                 brightness: 0.3 + Math.random() * 0.7
             }));
             placed++;
@@ -148,11 +156,11 @@ class Star {
     }
     pause() {
         this.isActive = false;
-        console.log(`Star at (${this.x}, ${this.y}) paused`);
+        console.log(`Star at (${this.x.toFixed(2)}) paused`);
     }
     play() {
         this.isActive = true;
-        console.log(`Star at (${this.x}, ${this.y}) is now playing`);
+        console.log(`Star at (${this.x.toFixed(2)}) is now playing`);
         
     }
 }

@@ -50,10 +50,10 @@
         
         
         gat.position = location
-        console.log("Loca: "+gat.position,{
-            where_is: where_is.toFixed(2),
-            location:location.toFixed(2),
-        })
+        // console.log("Loca: "+gat.position,{
+        //     where_is: where_is.toFixed(2),
+        //     location:location.toFixed(2),
+        // })
         gat.look();
         
         // Handle infinite scroll wrap-around
@@ -161,7 +161,6 @@
                     </div>
                 {/if}
             {/each}
-            <span>Stuff!</span>
         </div>
     </div>
     
@@ -202,6 +201,7 @@
         min-height:10em;
         overflow: hidden;
         background: radial-gradient(ellipse at center, #001122 0%, #000008 100%);
+        border-radius: 50%;
     }
     
     .scroll-container {
