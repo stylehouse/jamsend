@@ -33,6 +33,8 @@
         scrollContainer?.removeEventListener('dragstart', (e) => e.preventDefault());
     })
     
+    // supposedly how many StarFields in a gat.field, spanning SCROLL_WIDTH
+    let expanse = $state(444)
     function viewportWidth() {
         return scrollContainer ? scrollContainer.clientWidth : 0
     }
@@ -40,38 +42,41 @@
         if (!gat || !scrollContainer) return;
         
         // Convert scroll position to normalized position
-        const scrollLeft = scrollContainer.scrollLeft;
-        const maxScroll = SCROLL_WIDTH - viewportWidth();
-        const normalizedScroll = scrollLeft / maxScroll;
-        let distance_from_center = 0.5 - normalizedScroll
-        // supposedly how many StarFields in a gat.field, spanning SCROLL_WIDTH
-        let expanse = 5000
-        // how many pixels wide is a field
-        let scale = SCROLL_WIDTH / expanse
-
-        let location = distance_from_center * scale
-        // and player is centered
-        location += 0.5
+        let scrollLeft = scrollContainer.scrollLeft;
+        let halfway = SCROLL_WIDTH / 2
+        let where_is = scrollLeft - halfway
+        let location = where_is / viewportWidth()
 
         
         
         gat.position = location
         console.log("Loca: "+gat.position,{
-            location:location.toFixed(2)
+            where_is: where_is.toFixed(2),
+            location:location.toFixed(2),
         })
         gat.look();
         
         // Handle infinite scroll wrap-around
         if (scrollLeft < 1000) {
-            // Scrolled near the left edge, jump to right side
             scrollContainer.scrollLeft = SCROLL_WIDTH - 2000;
             console.log("Wrapping left")
         } else if (scrollLeft > SCROLL_WIDTH - 1000) {
-            // Scrolled near the right edge, jump to left side
             scrollContainer.scrollLeft = 2000;
             console.log("Wrapping right")
         }
     }
+    // Calculate the offset for each field relative to current position
+    function getFieldOffsetStyle(fieldIndex: number) {
+        let halfway = SCROLL_WIDTH / 2
+        let distance_from_zero = fieldIndex * viewportWidth()
+        let left = `left: calc(`
+            +`calc(${halfway}px + ${distance_from_zero}px)`
+            +` + ${viewportWidth()/2}px)`
+
+        let css = `position:absolute; ${left};`;
+        return css
+    }
+
 
 
 
@@ -118,12 +123,6 @@
     
 
 
-    // Calculate the offset for each field relative to current position
-    function getFieldOffset(fieldIndex: number) {
-        const fieldOffset = fieldIndex - gat.position;
-        return `${fieldOffset * 100}%`;
-    }
-
     let local_space = $derived(gat.local_space || {})
 </script>
 
@@ -136,37 +135,39 @@
         <div 
             class="scroll-content" 
             style="width: {SCROLL_WIDTH}px;"
-        ></div>
+        >
+            <!-- Render StarFields from gat.local_space -->
+            {#each local_space as field, i (field.index)}
+                {#if field}
+                    <div 
+                        class="starfield-block"
+                        style="{getFieldOffsetStyle(field.index)};"
+                    >
+                        <!-- Render stars within this field -->
+                        {#each field.stars as star}
+                            <div 
+                                class="star"
+                                class:active={star.isActive}
+                                style="
+                                    left: {star.x * 100}%;
+                                    top: {star.y * 100}%;
+                                    font-size: {star.size * 0.25}em;
+                                    opacity: {star.brightness};
+                                "
+                            >
+                                ☯
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            {/each}
+            <span>Stuff!</span>
+        </div>
     </div>
     
 {#if gat.local_space}
     <!-- Fixed viewport overlay for stars and player -->
     <div bind:this={viewport} class="viewport">
-        <!-- Render StarFields from gat.local_space -->
-        {#each local_space as field, i (i)}
-            {#if field}
-                <div 
-                    class="starfield-block"
-                    style="left: {getFieldOffset(field.index)};"
-                >
-                    <!-- Render stars within this field -->
-                    {#each field.stars as star}
-                        <div 
-                            class="star"
-                            class:active={star.isActive}
-                            style="
-                                left: {star.x * 100}%;
-                                top: {star.y * 100}%;
-                                font-size: {star.size * 0.25}em;
-                                opacity: {star.brightness};
-                            "
-                        >
-                            ☯
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-        {/each}
         
         <!-- Player in center -->
         <div class="player">☯</div>
@@ -197,9 +198,9 @@
     .starfield-container {
         position: relative;
         width: 100%;
-        height: 100vh;
+        height: 100%;
+        min-height:10em;
         overflow: hidden;
-        max-height: 14em;
         background: radial-gradient(ellipse at center, #001122 0%, #000008 100%);
     }
     
@@ -211,11 +212,11 @@
         height: 100%;
         overflow-x: auto; /* Enable horizontal scrolling */
         overflow-y: hidden; /* Disable vertical scrolling */
-        scrollbar-width: none; /* Firefox - hide scrollbar */
-        -ms-overflow-style: none; /* IE/Edge - hide scrollbar */
     }
-    .scroll-container::-webkit-scrollbar {
-        display: none; /* Webkit browsers - hide scrollbar */
+    .scroll-content span {
+        position:absolute;
+        left: calc(50000px);
+        z-index: 50;
     }
     
     .scroll-content {
@@ -228,7 +229,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        pointer-events: none;
+        pointer-events:none;
         z-index: 10;
     }
     
@@ -237,9 +238,9 @@
         top: 0;
         width: 100%;
         height: 100%;
-        /* pointer-events: none; */
-        border:2px solid burlywood;
-        border-radius:2em;
+        pointer-events: none;
+        /* border:2px solid burlywood;
+        border-radius:2em; */
     }
     
     .star {

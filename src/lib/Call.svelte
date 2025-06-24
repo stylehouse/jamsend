@@ -173,7 +173,6 @@
     }
     .field {
         position:relative;
-        max-height: 13em;
     }
 
     .audio-player {
