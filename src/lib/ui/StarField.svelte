@@ -124,36 +124,39 @@
 
 <style>
     .starfield-container {
-        /* position: absolute; */
-        top: 0;
-        left: 0;
+        position: relative;
         width: 100%;
         height: 100vh;
+        overflow: hidden;
         max-height: 14em;
         background: radial-gradient(ellipse at center, #001122 0%, #000008 100%);
-        overflow: hidden;
     }
     
     .scroll-container {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scroll-behavior: auto;
+        overflow-x: auto; /* Enable horizontal scrolling */
+        overflow-y: hidden; /* Disable vertical scrolling */
+        scrollbar-width: none; /* Firefox - hide scrollbar */
+        -ms-overflow-style: none; /* IE/Edge - hide scrollbar */
+    }
+    .scroll-container::-webkit-scrollbar {
+        display: none; /* Webkit browsers - hide scrollbar */
     }
     
     .scroll-content {
         height: 100%;
-        position: absolute;
-        background: transparent;
     }
     
     .viewport {
-        /* position: absolute; */
+        position: absolute;
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100%;
+        height: 100%;
         pointer-events: none;
         z-index: 10;
     }
@@ -161,7 +164,9 @@
     .starfield-block {
         position: absolute;
         top: 0;
-        pointer-events: none;
+        width: 100%;
+        height: 100%;
+        /* pointer-events: none; */
     }
     
     .star {
