@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { onDestroy } from "svelte";
-    import { GathererTest } from "./audio/GatherTest.svelte";
     import Meta from "./Meta.svelte";
 
     let {aud} = $props()
@@ -17,15 +15,17 @@
             remains = aud.along() != null && aud.remaining_stretch()
             awaiting = aud.awaiting_mores?.length
         }
-
     })
+    let wwclass = (i) => i < aud.stretch_size ? "playing"
+        : i < aud.next_stretch?.length ? "decoded"
+         : ''
 
 </script>
 
 <div class="mach" >
     <span class="name">aud:{aud.id}</span>
     <span>
-        <span>{#if aud.playing}playing {aud.playing.length}{/if}</span>
+        <span> </span>
         <span>{#if aud.stretch_size}stretch {aud.stretch_size}{/if}</span>
     </span>
     <span>
@@ -53,13 +53,12 @@
     
     
     {#if aud.meta != null}
-        <Meta meta={aud.meta} />
+        <Meta meta={aud.meta} nocover />
     {/if}
-
 
     <ul class=bitsies>
         {#each aud.queue as wav, i}
-            <ww>{i} {typeof wav == 'string' ? wav : ''}
+            <ww class={wwclass(i)}>{i} {typeof wav == 'string' ? wav : ''}
                 {#if !aud.stopped && pos == i} (pos){/if}
             </ww>
         {/each}
@@ -67,10 +66,16 @@
 </div>
 
 <style>
-    ul.bitsies ww {
+    ww {
         display: inline-box;
         border-radius:0.3em;
         border:3px solid rgb(51, 90, 134);
+    }
+    ww.decoded {
+        border-color: yellow;
+    }
+    ww.playing {
+        border-color: green;
     }
     .mach {
         border-radius:1em;

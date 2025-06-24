@@ -256,17 +256,15 @@ export class Audiolet extends AudioletTest {
         return this.average_new_chunk_duration || MOCK_MS_PER_ITEM
     }
     // where in the queue are we up to
-    cursor() {
+    cursor(hires=false) {
         if (this.stretch_start_time == null) return null
         // time into the new part of this stretch
         let time = this.gat.now() - this.stretch_start_time
-        let i = Math.floor(time / this.approx_chunk_time)
-        // time = Math.round(time)
-        // let newdur = Math.round(this.stretch_new_duration)
-        // console.log(`cursor(): ${i}: ${time} @ ${newdur} (+${this.stretch_start_index})`)
+        let cursor = time / this.approx_chunk_time
+        cursor += this.stretch_start_index
         // into the wider context of the queue
-        i = i + this.stretch_start_index
-        return i
+        if (hires) return cursor
+        return Math.floor(cursor)
     }
     along() {
         if (this.start_time == null) return null

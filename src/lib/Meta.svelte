@@ -1,9 +1,9 @@
 <script lang="ts">
-    let {meta} = $props()
+    let {meta,nocover} = $props()
 </script>
 
     <div class="meta-display">
-        {#if meta.cover}
+        {#if meta.cover && !nocover}
             <div class="cover-container">
                 <img 
                     src={URL.createObjectURL(new Blob([meta.cover], {type: 'image/jpeg'}))} 

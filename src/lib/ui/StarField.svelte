@@ -8,6 +8,7 @@
     
     // Scroll dimensions - make it really wide for infinite scroll feel
     const SCROLL_WIDTH = 100000;
+    const UI_overlays = 0;
     
     $effect(() => {
         // Set initial scroll position to middle
@@ -34,7 +35,6 @@
     })
     
     // supposedly how many StarFields in a gat.field, spanning SCROLL_WIDTH
-    let expanse = $state(444)
     function viewportWidth() {
         return scrollContainer ? scrollContainer.clientWidth : 0
     }
@@ -176,20 +176,23 @@
         <div class="scroll-hint right">→</div>
     </div>
     
-    <!-- UI overlays -->
-    <div class="info-overlay">
-        <div>Scroll horizontally to explore the cosmos</div>
-        <div>Field: {Math.floor(gat.position)}</div>
-        {#if gat.star_visiting}
-            <div>♪ Tuned to star at ({gat.star_visiting.x.toFixed(2)}, {gat.star_visiting.y.toFixed(2)})</div>
-        {/if}
-    </div>
     
-    <div class="position-info">
-        <div>Position: {gat.position?.toFixed(2) || '0.00'}</div>
-        <div>Fields loaded: {gat.local_space.filter(f => f).length}</div>
-        <div>Total stars: {gat.local_space.reduce((sum, f) => sum + (f?.stars?.length || 0), 0)}</div>
-    </div>
+    {#if UI_overlays}
+        <!-- UI overlays -->
+        <div class="info-overlay">
+            <div>Scroll horizontally to explore the cosmos</div>
+            <div>Field: {Math.floor(gat.position)}</div>
+            {#if gat.star_visiting}
+                <div>♪ Tuned to star at ({gat.star_visiting.x.toFixed(2)}, {gat.star_visiting.y.toFixed(2)})</div>
+            {/if}
+        </div>
+        
+        <div class="position-info">
+            <div>Position: {gat.position?.toFixed(2) || '0.00'}</div>
+            <div>Fields loaded: {gat.local_space.filter(f => f).length}</div>
+            <div>Total stars: {gat.local_space.reduce((sum, f) => sum + (f?.stars?.length || 0), 0)}</div>
+        </div>
+    {/if}
 {/if}
 </div>
 

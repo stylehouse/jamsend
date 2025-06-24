@@ -285,7 +285,10 @@ export class AudioletTest extends Queuey {
             return
         }
         let ismore = this.playing_onended ? ', is more' : ''
-        V>1 && console.log(`${this.idname} stretchended${ismore} ${this.tc}`)
+        let cur = this.cursor(1)
+        V>1 && console.log(`${this.idname} stretchended${ismore}`
+            +` ${this.tc}\tcursor:${cur}`)
+        
         if (this.playing_onended) {
             // the next stretch is ready to play
             this.playing_onended()
@@ -294,7 +297,6 @@ export class AudioletTest extends Queuey {
             // the next track (aud) is ready to play
             this.aud_onended()
             this.stopped = 1
-
         }
         else {
             console.error("Off the end")
