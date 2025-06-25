@@ -256,11 +256,18 @@ export class Audiolet extends AudioletTest {
         return this.average_new_chunk_duration || MOCK_MS_PER_ITEM
     }
     // where in the queue are we up to
+    //  we don't seem to be able to know exactly where the audio
     cursor(hires=false) {
         if (this.stretch_start_time == null) return null
         // time into the new part of this stretch
         let time = this.gat.now() - this.stretch_start_time
+        if (this.paused) {
+            // pretend it's then
+            time = this.paused
+        }
+        // where is that in a queue of typical chunks
         let cursor = time / this.approx_chunk_time
+        // point of reference = most recent start time data
         cursor += this.stretch_start_index
         // into the wider context of the queue
         if (hires) return cursor
@@ -268,7 +275,7 @@ export class Audiolet extends AudioletTest {
     }
     along() {
         if (this.start_time == null) return null
-        return this.gat.now() - this.start_time
+        return this.gat.now() - this.start_time - this.paused_time
     }
     remaining_stretch():number {
         // < playing.duration - along()
@@ -299,13 +306,30 @@ export class Audiolet extends AudioletTest {
         this.playing.start(0,playFrom)
         // allows cursor() to be more accurate
         this.stretch_start_index = (this.previous_stretch_size||1) - 1
-        this.stretch_start_time = this.gat.now()
+        this.stretch_start_time = this.gat.now() + this.paused_time
         this.stretch_new_chunks = this.stretch_size - (this.previous_stretch_size||0)
+        // < this may or may not include some paused_time - hard
         this.stretch_new_duration = this.duration() - (this.previous_duration||0)
         this.average_new_chunk_duration = this.stretch_new_duration / this.stretch_new_chunks
         // for next time
         this.previous_duration = this.duration()
         this.previous_stretch_size = this.stretch_size
+    }
+    paused_time = 0
+    pause() {
+        this.paused = this.gat.now()
+        // where to resume above
+        this.previous_duration = this.along()
+        this.playing.stop()
+    }
+    play() {
+        if (this.paused) {
+            this.paused_time += this.gat.now() - this.paused
+            this.paused = null
+            this.started_stretch()
+            // ending remains planned, ie the station plays another track
+        }
+
     }
 
 
@@ -350,6 +374,9 @@ export class Audiolet extends AudioletTest {
     // called by start_stretch()
     plan_ending(was) {
         this.playing.onended = () => {
+            if (this.paused) return
+
+            // < sanity checks for the wild
             let early = this.gat.now() < 1500
             let playlittle = this.along() / this.duration() < 0.1
             if (early && playlittle) {
@@ -360,6 +387,7 @@ export class Audiolet extends AudioletTest {
             if (this.was_playlittle) {
                 console.warn("this.was_playlittle")
             }
+
             this.whatsnext()
         }
     }

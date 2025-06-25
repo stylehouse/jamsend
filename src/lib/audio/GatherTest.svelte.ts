@@ -89,8 +89,22 @@ export class GathererTest extends Queuey {
                 return true
         }
     }
-    // the next track to play in sequence, from the start
-    nextly
+    suitable_new_auds() {
+        // we don't check whether they're loaded|decoded
+        // < which could make later code less shutographic?
+        return this.queue
+            // not the one we had ready to play in sequence
+            // < when looking at a music source we have entirely,
+            //    they would all be aud.from_start
+            //   but we'd want to play it from a random fraction
+            //    < move fraction choosing to the frontend?
+            .filter(aud => this.nextly != aud)
+            // .filter(aud => this.currently != aud)
+            // .filter(aud => !aud.stopped)
+            // .filter(aud => !aud.paused)
+            // indicates something's managing it
+            .filter(aud => !aud.playing)
+    }
 
 
     //#region surf might
@@ -128,17 +142,6 @@ export class GathererTest extends Queuey {
         // a suitable time to think about:
         this.provision()
     }
-    suitable_new_auds() {
-        return this.queue
-            // not the one we had ready to play in sequence
-            // < when looking at a music source we have entirely,
-            //    they would all be aud.from_start
-            //   but we'd want to play it from a random fraction
-            //    < move fraction choosing to the frontend?
-            .filter(aud => this.nextly != aud)
-            .filter(aud => this.currently != aud)
-            .filter(aud => !aud.stopped)
-    }
 
     // might might(), but only if...
     think_ticks = 0
@@ -160,6 +163,8 @@ export class GathererTest extends Queuey {
     }
 
     //#region next
+    // the next track to play in sequence, from the start
+    nextly:AudioletTest
     next_is_gettable_done = $state(null)
     next_is_coming_done = $state(null)
     // from an aud noticing it ends soon

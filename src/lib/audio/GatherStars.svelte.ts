@@ -1,5 +1,4 @@
-import type { AudioletTest } from "./GatherAudiolet.svelte";
-import { GatherAudios } from "./GatherSocket.svelte";
+import { Audiolet, GatherAudios } from "./GatherSocket.svelte";
 
 // behaviour superimposition, generating a starfield
 export class GatherStars extends GatherAudios {
@@ -8,6 +7,7 @@ export class GatherStars extends GatherAudios {
 
         if (!this.star_field) throw "think() before look()"
             // this.whole_new_field()
+        
         
     }
     
@@ -48,6 +48,7 @@ export class GatherStars extends GatherAudios {
     }
 
 //#region star fields
+
     // to render at the viewport, in the expanse
     star_fields_nearby:StarField[] = $state()
     track_field_visiting() {
@@ -73,13 +74,18 @@ export class GatherStars extends GatherAudios {
     keep_field(index) {
         let is = this.star_field[index]
         if (!is) {
-            is = this.star_field[index] = new StarField({index})
+            is = this.star_field[index] = new StarField({
+                gat:this,
+                index
+            })
         }
         is.last_seen = this.now()
         return is
     }
 
 
+//#endregion
+//#region star fields
     find_closest_star(): Star | null {
         let closest: Star | null = null;
         let closestDistance = Infinity;
@@ -106,6 +112,7 @@ export class GatherStars extends GatherAudios {
 const N_STARS = 7
 const STAR_MIN_DISTANCE = 0.1
 class StarField {
+    gat:GatherStars
     index: number // in Stars.field
     stars: Star[] = [];
     last_seen: number = 0;
@@ -143,8 +150,9 @@ class StarField {
             if (bail) continue
             
             this.stars.push(new Star({ 
+                gat:this.gat,
                 x, 
-                y, 
+                y,
                 fieldIndex: this.index,
                 size: 3 + Math.random() * 3,
                 brightness: 0.3 + Math.random() * 0.7
@@ -154,9 +162,9 @@ class StarField {
     }
 }
 
-//#endregion
 //#region star
 class Star {
+    gat:GatherStars
     x: number;
     y: number;
     fieldIndex: number;
@@ -165,7 +173,7 @@ class Star {
     isActive: boolean = $state(false);
     // keep track of which aud we are supposed to be playing
     //  in case we return to one
-    aud:AudioletTest | null = null;
+    aud:Audiolet | null = null;
     constructor(opt) {
         Object.assign(this,opt)
     }
@@ -176,7 +184,21 @@ class Star {
     play() {
         this.isActive = true;
         console.log(`Star at (${this.x.toFixed(2)}) is now playing`);
-        
+        this.aud ||= this.find_an_aud()
+        let aud = this.aud
+        // < await for gat.currently and use that?
+        //   the first station (started by gat.might()) may be lost
+        if (!aud) return console.warn("No new aud!")
+        if (aud.paused) {
+            aud.play()
+        }
+        else {
+            // become gat.currently
+            aud.might()
+        }
+    }
+    find_an_aud():Audiolet|null {
+        return this.gat.suitable_new_auds()[0]
     }
 }
 

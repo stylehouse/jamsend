@@ -253,7 +253,7 @@ export class AudioletTest extends Queuey {
         this.next_stretch_coming = ''
 
         if (this.gat.currently != this) {
-            debugger
+            console.warn("this.gat.currently != this")
         }
 
         this.started_stretch?.()
@@ -286,6 +286,7 @@ export class AudioletTest extends Queuey {
         }, endsin)
     }
     whatsnext() {
+        
         if (this.stopped) {
             // is over, no need to keep feeding audio
             // small chance it will cut out during fadeout()
