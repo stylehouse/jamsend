@@ -28,8 +28,6 @@ export class GatherStars extends GatherAudios {
         if (!this.star_field) this.whole_new_field()
             
         this.track_field_visiting()
-        // maintain pressure for zooming around lots of stations
-        this.scheme.future = 15
 
         // what station are we closest to, tune it in
         let closest = this.find_closest_star()
@@ -51,6 +49,20 @@ export class GatherStars extends GatherAudios {
     on_next_aud_started:Function|null
     // when that has happened
     star_started = null
+    // from first (and all) successful aud-star bindings
+    stars_are_playing() {
+        if (!this.star_started) {
+            this.star_begins_doing_stuff()
+        }
+        this.star_started = this.now()
+    }
+    star_begins_doing_stuff() {
+        // < doesn't seem to be working?
+        console.log(`star_begins_doing_stuff()`)
+        setTimeout(() => {
+           this.scheme.future = 10 
+        },500)
+    }
 
 //#region star fields
 
@@ -210,7 +222,8 @@ class Star {
                 throw new Error("!aud available for star to play")
             }
         }
-        this.gat.star_started = this.gat.now()
+        this.gat.stars_are_playing()
+
 
         if (aud.paused) {
             aud.play()

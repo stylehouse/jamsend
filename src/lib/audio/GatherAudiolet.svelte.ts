@@ -197,9 +197,6 @@ export class AudioletTest extends Queuey {
         // schedule it to play when this one finishes
         let was_playing = this.playing
         this.playing_onended = () => {
-            if (was_playing != this.playing) {
-                debugger
-            }
             this.start_stretch(stretch)
             this.playing_onended = null
         }

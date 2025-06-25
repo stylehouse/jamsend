@@ -275,7 +275,7 @@ export class Audiolet extends AudioletTest {
     }
     along() {
         if (this.start_time == null) return null
-        return this.gat.now() - this.start_time - this.paused_time
+        return this.gat.now() - this.start_time - this.all_paused_time()
     }
     remaining_stretch():number {
         // < playing.duration - along()
@@ -315,6 +315,7 @@ export class Audiolet extends AudioletTest {
         this.previous_duration = this.duration()
         this.previous_stretch_size = this.stretch_size
     }
+
     paused_time = 0
     pause() {
         this.paused = this.gat.now()
@@ -322,10 +323,19 @@ export class Audiolet extends AudioletTest {
         this.previous_duration = this.along()
         this.playing.stop()
     }
+    // stop along()ing
+    all_paused_time() {
+        let paused_time = this.paused_time
+        if (this.paused) {
+            paused_time += this.gat.now() - this.paused
+        }
+        return paused_time
+    }
     play() {
         if (this.paused) {
             this.paused_time += this.gat.now() - this.paused
             this.paused = null
+            this.gat.currently = this
             this.restart_stretch()
         }
         else {
@@ -336,7 +346,9 @@ export class Audiolet extends AudioletTest {
         // these objects only play once
         let old = this.playing
         let stretch = this.stretchify_decode(old.buffer)
+        // the params of the supposed 
         stretch.length = old.length
+        stretch.onended = old.onended
         this.playing = stretch
         this.started_stretch()
         // ending remains planned, ie the station plays another track
@@ -390,7 +402,7 @@ export class Audiolet extends AudioletTest {
     plan_ending(was) {
         this.playing.onended = () => {
             if (this.paused) return
-
+            
             // < sanity checks for the wild
             let early = this.gat.now() < 1500
             let playlittle = this.along() / this.duration() < 0.1
