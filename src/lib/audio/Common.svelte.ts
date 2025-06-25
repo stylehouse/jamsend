@@ -103,6 +103,7 @@ export class Queuey {
     // get more queue
     awaiting_mores = []
     more_wanted = $state()
+    provisioning_okay = null
     provision() {
         if (this.end_index) {
             // Audiolet is done loading
@@ -126,11 +127,20 @@ export class Queuey {
         }
         this.more_wanted = more_wanted
         if (more_wanted) {
+            this.provisioning_okay = false
             V>2 && console.log(`${this.idname} Wanted ${more_wanted} more (cursor:${i})`)
             // < request specific indexes here
             for (let it = 1; it <= more_wanted; it++) {
                 this.get_more({delay:it*140})
             }
+        }
+        if (!this.provisioning_okay
+            && !more_wanted
+            && !this.awaiting_mores?.length) {
+            // a sign that this is coming in okay (from where ever)
+            // and it's as ready as it can be until started
+            this.provisioning_okay = true
+            this.on_provisioning_okay?.()
         }
     }
 }

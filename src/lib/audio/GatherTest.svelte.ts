@@ -104,7 +104,7 @@ export class GathererTest extends Queuey {
     }
     // act: pull from queue
     might(really) {
-        let next = this.suitable_new_aud()
+        let next = this.suitable_new_auds()[0]
         if (next) {
             let cur = this.currently
             if (really && cur) {
@@ -128,15 +128,16 @@ export class GathererTest extends Queuey {
         // a suitable time to think about:
         this.provision()
     }
-    suitable_new_aud() {
+    suitable_new_auds() {
         return this.queue
-            // not the old track currently fading out
-            .filter(aud => !this.fadingout.includes(aud))
-            // corner case: not the one we had ready to play in sequence
+            // not the one we had ready to play in sequence
+            // < when looking at a music source we have entirely,
+            //    they would all be aud.from_start
+            //   but we'd want to play it from a random fraction
+            //    < move fraction choosing to the frontend?
             .filter(aud => this.nextly != aud)
             .filter(aud => this.currently != aud)
             .filter(aud => !aud.stopped)
-            [0]
     }
 
     // might might(), but only if...

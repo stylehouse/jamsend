@@ -145,6 +145,13 @@ export class AudioletTest extends Queuey {
         return MOCK_MS_PER_ITEM
     }
 
+    on_provisioning_okay() {
+        if (!this.playing) {
+            // as loaded as possible before playing! good time to:
+            this.prep_next_stretch()
+        }
+    }
+
     async prep_next_stretch() {
         if (this.next_stretch_coming) {
             return

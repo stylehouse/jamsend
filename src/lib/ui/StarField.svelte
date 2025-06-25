@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { GatherStars } from '$lib/audio/GatherStars.svelte';
     import { onDestroy } from 'svelte';
     
     type propos = {gat:GatherStars, fullscreen?: boolean}
@@ -49,7 +50,7 @@
 
         
         
-        gat.position = location
+        gat.star_position = location
         // console.log("Loca: "+gat.position,{
         //     where_is: where_is.toFixed(2),
         //     location:location.toFixed(2),
@@ -123,7 +124,7 @@
     
 
 
-    let local_space = $derived(gat.local_space || {})
+    let local_space = $derived(gat.star_fields_nearby || {})
 </script>
 
 <div class="starfield-container">
@@ -136,14 +137,12 @@
             class="scroll-content" 
             style="width: {SCROLL_WIDTH}px;"
         >
-            <!-- Render StarFields from gat.local_space -->
             {#each local_space as field, i (field.index)}
                 {#if field}
                     <div 
                         class="starfield-block"
                         style="{getFieldOffsetStyle(field.index)};"
                     >
-                        <!-- Render stars within this field -->
                         {#each field.stars as star}
                             <div 
                                 class="star"
@@ -164,7 +163,7 @@
         </div>
     </div>
     
-{#if gat.local_space}
+{#if gat.star_fields_nearby}
     <!-- Fixed viewport overlay for stars and player -->
     <div bind:this={viewport} class="viewport">
         
@@ -181,16 +180,16 @@
         <!-- UI overlays -->
         <div class="info-overlay">
             <div>Scroll horizontally to explore the cosmos</div>
-            <div>Field: {Math.floor(gat.position)}</div>
+            <div>Field: {Math.floor(gat.star_position)}</div>
             {#if gat.star_visiting}
                 <div>♪ Tuned to star at ({gat.star_visiting.x.toFixed(2)}, {gat.star_visiting.y.toFixed(2)})</div>
             {/if}
         </div>
         
         <div class="position-info">
-            <div>Position: {gat.position?.toFixed(2) || '0.00'}</div>
-            <div>Fields loaded: {gat.local_space.filter(f => f).length}</div>
-            <div>Total stars: {gat.local_space.reduce((sum, f) => sum + (f?.stars?.length || 0), 0)}</div>
+            <div>Position: {gat.star_position?.toFixed(2) || '0.00'}</div>
+            <div>Fields loaded: {gat.star_fields_nearby.filter(f => f).length}</div>
+            <div>Total stars: {gat.star_fields_nearby.reduce((sum, f) => sum + (f?.stars?.length || 0), 0)}</div>
         </div>
     {/if}
 {/if}

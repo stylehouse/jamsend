@@ -3,19 +3,29 @@ import { GatherAudios } from "./GatherSocket.svelte";
 
 // behaviour superimposition, generating a starfield
 export class GatherStars extends GatherAudios {
-    field = $state()
-    position = $state()
+    think() {
+        super.think()
+
+        if (!this.star_field) throw "think() before look()"
+            // this.whole_new_field()
+        
+    }
+    
+    
+
+    star_field = $state()
+    star_position = $state()
 
     whole_new_field() {
-        this.field = {}
-        this.position = 0
+        this.star_field = {}
+        this.star_position = 0
         this.look()
     }
 
-    field_visiting:number
+    star_field_visiting:number
     star_visiting:Star = $state()
     look() {
-        if (!this.field) this.whole_new_field()
+        if (!this.star_field) this.whole_new_field()
             
         this.track_field_visiting()
         // maintain pressure for zooming around lots of stations
@@ -26,6 +36,7 @@ export class GatherStars extends GatherAudios {
         if (!closest) throw "!closest"
         let cur = this.star_visiting
         if (cur && cur != closest) {
+            // change star
             cur.pause()
             closest.play()
         }
@@ -36,21 +47,22 @@ export class GatherStars extends GatherAudios {
 
     }
 
+//#region star fields
     // to render at the viewport, in the expanse
-    local_space:StarField[] = $state()
+    star_fields_nearby:StarField[] = $state()
     track_field_visiting() {
-        let index = Math.floor(this.position)
-        if (this.field_visiting == null
-            || index != this.field_visiting) {
-            this.field_visiting = index
+        let index = Math.floor(this.star_position)
+        if (this.star_field_visiting == null
+            || index != this.star_field_visiting) {
+            this.star_field_visiting = index
 
             this.crossed_border()
         }
     }
     crossed_border() {
         // maintain scenery for them to scroll intoe
-        let index = this.field_visiting
-        this.local_space = [
+        let index = this.star_field_visiting
+        this.star_fields_nearby = [
             this.keep_field(index-2),
             this.keep_field(index-1),
             this.keep_field(index),
@@ -59,9 +71,9 @@ export class GatherStars extends GatherAudios {
         ]
     }
     keep_field(index) {
-        let is = this.field[index]
+        let is = this.star_field[index]
         if (!is) {
-            is = this.field[index] = new StarField({index})
+            is = this.star_field[index] = new StarField({index})
         }
         is.last_seen = this.now()
         return is
@@ -73,12 +85,12 @@ export class GatherStars extends GatherAudios {
         let closestDistance = Infinity;
         
         // Check stars in nearby fields
-        for (let fieldIndex = this.field_visiting - 1; fieldIndex <= this.field_visiting + 1; fieldIndex++) {
-            const field = this.field[fieldIndex];
+        for (let fieldIndex = this.star_field_visiting - 1; fieldIndex <= this.star_field_visiting + 1; fieldIndex++) {
+            const field = this.star_field[fieldIndex];
             if (field && field.stars) {
                 for (const star of field.stars) {
                     const starWorldX = fieldIndex + star.x
-                    const distance = Math.abs(starWorldX - this.position);
+                    const distance = Math.abs(starWorldX - this.star_position);
                     if (distance < closestDistance) {
                         closestDistance = distance;
                         closest = star;
@@ -141,6 +153,9 @@ class StarField {
         }
     }
 }
+
+//#endregion
+//#region star
 class Star {
     x: number;
     y: number;
