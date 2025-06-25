@@ -24,12 +24,12 @@ export class GatherStars extends GatherAudios {
 
     star_field_visiting:number
     star_visiting:Star = $state()
-    look() {
+    async look() {
         if (!this.star_field) this.whole_new_field()
             
         this.track_field_visiting()
         // maintain pressure for zooming around lots of stations
-        // this.scheme.future = 15
+        this.scheme.future = 15
 
         // what station are we closest to, tune it in
         let closest = this.find_closest_star()
@@ -37,8 +37,8 @@ export class GatherStars extends GatherAudios {
         let cur = this.star_visiting
         if (cur && cur != closest) {
             // change star
+            await closest.play()
             cur.pause()
-            closest.play()
         }
         if (!cur) {
             closest.play()
@@ -46,6 +46,11 @@ export class GatherStars extends GatherAudios {
         this.star_visiting = closest
 
     }
+    // when we don't have an aud yet,
+    // callback to start the first star when the first aud starts
+    on_next_aud_started:Function|null
+    // when that has happened
+    star_started = null
 
 //#region star fields
 
@@ -180,21 +185,42 @@ class Star {
     pause() {
         this.isActive = false;
         console.log(`Star at (${this.x.toFixed(2)}) paused`);
+        this.aud?.pause()
     }
-    play() {
+    
+    async play() {
         this.isActive = true;
         console.log(`Star at (${this.x.toFixed(2)}) is now playing`);
         this.aud ||= this.find_an_aud()
         let aud = this.aud
         // < await for gat.currently and use that?
         //   the first station (started by gat.might()) may be lost
-        if (!aud) return console.warn("No new aud!")
+        if (!aud) {
+            if (!this.gat.star_started) {
+                this.gat.on_next_aud_started = (aud) => {
+                    // acquire the first aud that turns up
+                    this.gat.on_next_aud_started = null
+                    this.aud = aud
+                    // < going through this for consistency? to set gat.star_started?
+                    this.play()
+                }
+                return
+            }
+            else {
+                throw new Error("!aud available for star to play")
+            }
+        }
+        this.gat.star_started = this.gat.now()
+
         if (aud.paused) {
             aud.play()
+            console.log(`Was paused: ${aud.paused_time}`)
         }
         else {
-            // become gat.currently
-            aud.might()
+            // become gat.currently via provisioning,
+            //  being ready but not playing,
+            // or noop if we're already playing - the first star's aud is.
+            await aud.might()
         }
     }
     find_an_aud():Audiolet|null {

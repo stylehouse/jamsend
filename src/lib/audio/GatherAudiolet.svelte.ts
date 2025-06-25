@@ -258,6 +258,7 @@ export class AudioletTest extends Queuey {
 
         this.started_stretch?.()
         this.aud_onstarted?.()
+        this.gat.on_next_aud_started?.(this)
         
 
         // exponentially loady, log times we new_stretch()

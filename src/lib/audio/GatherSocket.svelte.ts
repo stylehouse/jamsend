@@ -326,10 +326,21 @@ export class Audiolet extends AudioletTest {
         if (this.paused) {
             this.paused_time += this.gat.now() - this.paused
             this.paused = null
-            this.started_stretch()
-            // ending remains planned, ie the station plays another track
+            this.restart_stretch()
         }
-
+        else {
+            throw "do you mean might()?"
+        }
+    }
+    restart_stretch() {
+        // these objects only play once
+        let old = this.playing
+        let stretch = this.stretchify_decode(old.buffer)
+        stretch.length = old.length
+        this.playing = stretch
+        this.started_stretch()
+        // ending remains planned, ie the station plays another track
+        
     }
 
 
@@ -338,11 +349,15 @@ export class Audiolet extends AudioletTest {
         let n_chunks = encoded.length
         encoded = this.flatten_ArrayBuffers(encoded)
         const decoded = await this.gat.AC.decodeAudioData(encoded.buffer);
+        const stretch = this.stretchify_decode(decoded)
+        // stash this here, becomes stretch_size
+        stretch.length = n_chunks
+        return stretch
+    }
+    stretchify_decode(decoded) {
         const stretch = this.gat.AC.createBufferSource();
         stretch.buffer = decoded;
         stretch.connect(this.gainNode);
-        // stash this here, becomes stretch_size
-        stretch.length = n_chunks
         return stretch
     }
     flatten_ArrayBuffers(ArrayBuffers:Array<ArrayBuffer>) {
