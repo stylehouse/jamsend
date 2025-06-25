@@ -60,7 +60,7 @@ export class GatherStars extends GatherAudios {
         // < doesn't seem to be working?
         console.log(`star_begins_doing_stuff()`)
         setTimeout(() => {
-           this.scheme.future = 10 
+           this.scheme.future = 10
         },150)
     }
 
@@ -212,10 +212,13 @@ class Star {
         if (!aud) {
             return this.no_aud_available()
         }
-        if (!gat.queue.includes(aud)) {
+        if (!this.gat.queue.includes(aud)) {
             return this.aud_is_lost()
         }
         this.gat.stars_are_playing()
+        if (aud.star && aud.star != this) {
+            throw "overassigning stars"
+        }
         aud.star = this
 
 
@@ -227,16 +230,17 @@ class Star {
             // become gat.currently via provisioning,
             //  being ready but not playing,
             // or noop if we're already playing - the first star's aud is.
-            if (!this.playing && this.queue.length) {
-                console.log("Vigorous")
-            }
             await aud.might()
         }
     }
     // < cull aud that have been paused for a long time
     //   as in traveling far across space, switching on lots of aud...
     aud_is_lost() {
-
+        console.warn("aud is lost")
+        setTimeout(() => {
+            this.aud = null
+            this.play()
+        },200)
     }
     find_an_aud():Audiolet|null {
         return this.gat.suitable_new_auds()
@@ -244,25 +248,33 @@ class Star {
             .filter(aud => !aud.star)
             [0]
     }
+    get idname() {
+        return "Star"+this.x.toFixed(2)
+    }
     no_aud_available():Audiolet|null {
         let got = (aud) => {
+            if (this.aud) {
+                debugger
+            }
             this.aud = aud
             // < going through this for consistency?
             //    to set gat.star_started?
             this.play()
         }
+        console.log(`Star no_aud_available()`)
         if (!this.gat.star_started) {
             // await for ~ gat.currently
             this.gat.on_next_aud_started = (aud) => {
                 this.gat.on_next_aud_started = null
+                console.log(`${aud.idname} on_next_aud_started ${this.idname}`)
                 got(aud)
             }
         }
         else {
             // < await whatever aud arrives next
             this.gat.on_next_aud_creation = (aud) => {
-                console.log(`${aud.idname} On creation -> Star at (${this.x.toFixed(2)})`)
                 this.gat.on_next_aud_creation = null
+                console.log(`${aud.idname} On creation ${this.idname}`)
                 got(aud)
             }
         }
