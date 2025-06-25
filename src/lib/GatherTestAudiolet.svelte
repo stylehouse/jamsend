@@ -9,11 +9,13 @@
     let pos = $state()
     let remains = $state()
     let awaiting = $state()
+    let paused = $state()
     $effect(() => {
         if (distime) {
             pos = aud.cursor()
             remains = aud.along() != null && aud.remaining_stretch()
             awaiting = aud.awaiting_mores?.length
+            paused = (aud.all_paused_time()).toFixed(2)
         }
     })
     let wwclass = (i) => i < aud.stretch_size ? "playing"
@@ -46,8 +48,9 @@
         <span>awaiting {awaiting}</span>
         <span>
             {aud.from_start && 'from_start'} 
-            {aud.next_stretch && 'next_stretch'}
+            {aud.next_stretch && 'next_stretch:'+aud.next_stretch.length}
             {aud.stopped && 'stopped'}
+            {aud.paused && 'paused:'+paused}
         </span>
     </span>
     

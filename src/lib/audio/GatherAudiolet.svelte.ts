@@ -195,12 +195,10 @@ export class AudioletTest extends Queuey {
             +`\t\t${this.remaining_stretch()} of ${this.approx_chunk_time}`)
         
         // schedule it to play when this one finishes
-        let was_playing = this.playing
         this.playing_onended = () => {
             this.start_stretch(stretch)
             this.playing_onended = null
         }
-
     }
     // decodes stretches of the queue
     // this fabricates the duration
@@ -284,7 +282,9 @@ export class AudioletTest extends Queuey {
         }, endsin)
     }
     whatsnext() {
-        
+        if (this.paused) {
+            debugger
+        }
         if (this.stopped) {
             // is over, no need to keep feeding audio
             // small chance it will cut out during fadeout()
@@ -306,6 +306,7 @@ export class AudioletTest extends Queuey {
         }
         else {
             console.error("Off the end")
+            this.stopped = 1
         }
     }
 
@@ -354,6 +355,7 @@ export class AudioletTest extends Queuey {
         this.queue.push(blob)
 
         if (done) this.end_index = index
+        // see also gat.have_more() which handles from_start
 
         let thinkdelay = 0
         if (index == 1) {

@@ -259,13 +259,11 @@ export class Audiolet extends AudioletTest {
     //  we don't seem to be able to know exactly where the audio
     cursor(hires=false) {
         if (this.stretch_start_time == null) return null
+
         // time into the new part of this stretch
-        let time = this.gat.now() - this.stretch_start_time
-        if (this.paused) {
-            // pretend it's then
-            time = this.paused
-        }
-        // where is that in a queue of typical chunks
+        let time = this.gat.now() - this.stretch_start_time - this.stretch_paused_time()
+
+        // where that is in a queue of typical these-chunks
         let cursor = time / this.approx_chunk_time
         // point of reference = most recent start time data
         cursor += this.stretch_start_index
@@ -307,8 +305,10 @@ export class Audiolet extends AudioletTest {
         // allows cursor() to be more accurate
         this.stretch_start_index = (this.previous_stretch_size||1) - 1
         this.stretch_start_time = this.gat.now() + this.paused_time
+        // because new_duration may include some paused_time
+        this.stretch_start_paused_time = this.all_paused_time()
+        
         this.stretch_new_chunks = this.stretch_size - (this.previous_stretch_size||0)
-        // < this may or may not include some paused_time - hard
         this.stretch_new_duration = this.duration() - (this.previous_duration||0)
         this.average_new_chunk_duration = this.stretch_new_duration / this.stretch_new_chunks
         // for next time
@@ -316,11 +316,18 @@ export class Audiolet extends AudioletTest {
         this.previous_stretch_size = this.stretch_size
     }
 
+    paused = $state(null)
     paused_time = 0
     pause() {
+        if (!this.playing) {
+            // < how does this happen?
+            console.warn(`pause() on non-playing ${this.idname}`)
+            return
+        }
         this.paused = this.gat.now()
         // where to resume above
         this.previous_duration = this.along()
+        // < not always enough?
         this.playing.stop()
     }
     // stop along()ing
@@ -331,6 +338,12 @@ export class Audiolet extends AudioletTest {
         }
         return paused_time
     }
+    // and for only the latest stretch
+    stretch_start_paused_time = 0
+    stretch_paused_time() {
+        return this.all_paused_time() - this.stretch_start_paused_time
+    }
+
     play() {
         if (this.paused) {
             this.paused_time += this.gat.now() - this.paused
@@ -349,6 +362,7 @@ export class Audiolet extends AudioletTest {
         // the params of the supposed 
         stretch.length = old.length
         stretch.onended = old.onended
+        if (!old.onended) debugger
         this.playing = stretch
         this.started_stretch()
         // ending remains planned, ie the station plays another track

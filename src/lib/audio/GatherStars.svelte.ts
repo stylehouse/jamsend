@@ -61,7 +61,7 @@ export class GatherStars extends GatherAudios {
         console.log(`star_begins_doing_stuff()`)
         setTimeout(() => {
            this.scheme.future = 10 
-        },500)
+        },150)
     }
 
 //#region star fields
@@ -180,6 +180,9 @@ class StarField {
 }
 
 //#region star
+// each star claims an aud when it needs one
+// < claim the next aud that plays in sequence
+// 
 class Star {
     gat:GatherStars
     x: number;
@@ -200,29 +203,20 @@ class Star {
         this.aud?.pause()
     }
     
+    loopy =0
     async play() {
         this.isActive = true;
         console.log(`Star at (${this.x.toFixed(2)}) is now playing`);
         this.aud ||= this.find_an_aud()
         let aud = this.aud
-        // < await for gat.currently and use that?
-        //   the first station (started by gat.might()) may be lost
         if (!aud) {
-            if (!this.gat.star_started) {
-                this.gat.on_next_aud_started = (aud) => {
-                    // acquire the first aud that turns up
-                    this.gat.on_next_aud_started = null
-                    this.aud = aud
-                    // < going through this for consistency? to set gat.star_started?
-                    this.play()
-                }
-                return
-            }
-            else {
-                throw new Error("!aud available for star to play")
-            }
+            return this.no_aud_available()
+        }
+        if (!gat.queue.includes(aud)) {
+            return this.aud_is_lost()
         }
         this.gat.stars_are_playing()
+        aud.star = this
 
 
         if (aud.paused) {
@@ -233,11 +227,45 @@ class Star {
             // become gat.currently via provisioning,
             //  being ready but not playing,
             // or noop if we're already playing - the first star's aud is.
+            if (!this.playing && this.queue.length) {
+                console.log("Vigorous")
+            }
             await aud.might()
         }
     }
+    // < cull aud that have been paused for a long time
+    //   as in traveling far across space, switching on lots of aud...
+    aud_is_lost() {
+
+    }
     find_an_aud():Audiolet|null {
-        return this.gat.suitable_new_auds()[0]
+        return this.gat.suitable_new_auds()
+            // avoid race to over-assign these before aud.playing
+            .filter(aud => !aud.star)
+            [0]
+    }
+    no_aud_available():Audiolet|null {
+        let got = (aud) => {
+            this.aud = aud
+            // < going through this for consistency?
+            //    to set gat.star_started?
+            this.play()
+        }
+        if (!this.gat.star_started) {
+            // await for ~ gat.currently
+            this.gat.on_next_aud_started = (aud) => {
+                this.gat.on_next_aud_started = null
+                got(aud)
+            }
+        }
+        else {
+            // < await whatever aud arrives next
+            this.gat.on_next_aud_creation = (aud) => {
+                console.log(`${aud.idname} On creation -> Star at (${this.x.toFixed(2)})`)
+                this.gat.on_next_aud_creation = null
+                got(aud)
+            }
+        }
     }
 }
 

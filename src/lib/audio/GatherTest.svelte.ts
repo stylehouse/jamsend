@@ -70,6 +70,8 @@ export class GathererTest extends Queuey {
         }
         else {
             this.queue.push(aud)
+            // when a new star wants to claim this new aud
+            this.on_next_aud_creation?.(aud)
         }
         this.think()
     }
@@ -98,7 +100,7 @@ export class GathererTest extends Queuey {
             //    they would all be aud.from_start
             //   but we'd want to play it from a random fraction
             //    < move fraction choosing to the frontend?
-            .filter(aud => this.nextly != aud)
+            .filter(aud => !aud.from_start)
             // .filter(aud => this.currently != aud)
             // .filter(aud => !aud.stopped)
             // .filter(aud => !aud.paused)
@@ -160,6 +162,8 @@ export class GathererTest extends Queuey {
             // avoid browser mem growing 2GB/hr
             this.cull_queue()
         }
+
+        this.provision()
     }
 
     //#region next
