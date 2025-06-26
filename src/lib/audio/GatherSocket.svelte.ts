@@ -316,6 +316,7 @@ export class Audiolet extends AudioletTest {
         this.previous_stretch_size = this.stretch_size
     }
 
+    //#region aud pauses
     paused = $state(null)
     paused_time = 0
     pause() {

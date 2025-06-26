@@ -180,23 +180,24 @@ export class GathererTest extends Queuey {
             this.get_more_from_start()
         }
     }
-    async next_is_coming(aud) {
-        if (this.next_is_coming_done == aud) return
-        this.next_is_coming_done = aud
+    async aud_plays_nextly(aud) {
         let nex = this.nextly
         if (!nex) {
             // would be odd, not enough think() per second? low future?
             console.error("next is not got yet")
+            debugger
             return
         }
+        // likely the first stretch is decoded already
+        let began = this.now()
         let start = await nex.might("returning start")
-        aud.aud_onended = () => {
-            V>1 && console.log("Next track!")
-            start()
-            delete this.nextly
-        }
-    }
+        let took = this.now() - began
 
+        V>1 && console.log("Next track! "+(took.toFixed(0)))
+        start()
+        delete this.nextly
+        return true
+    }
 }
 
 

@@ -191,6 +191,10 @@ class Star {
     size: number;
     brightness: number;
     isActive: boolean = $state(false);
+    get idname() {
+        return "Star"+this.x.toFixed(2)
+            +(this.aud ? "aud:"+this.aud.idname.slice(0,8) : '')
+    }
     // keep track of which aud we are supposed to be playing
     //  in case we return to one
     aud:Audiolet | null = null;
@@ -199,14 +203,14 @@ class Star {
     }
     pause() {
         this.isActive = false;
-        console.log(`Star at (${this.x.toFixed(2)}) paused`);
+        console.log(`Star at (${this.idname}) paused`);
         this.aud?.pause()
     }
     
     loopy =0
     async play() {
         this.isActive = true;
-        console.log(`Star at (${this.x.toFixed(2)}) is now playing`);
+        console.log(`Star at (${this.idname}) is now playing`);
         this.aud ||= this.find_an_aud()
         let aud = this.aud
         if (!aud) {
@@ -232,11 +236,14 @@ class Star {
             // or noop if we're already playing - the first star's aud is.
             await aud.might()
         }
+        
+        aud.think()
     }
     // < cull aud that have been paused for a long time
     //   as in traveling far across space, switching on lots of aud...
     aud_is_lost() {
         console.warn("aud is lost")
+        debugger
         setTimeout(() => {
             this.aud = null
             this.play()
@@ -247,9 +254,6 @@ class Star {
             // avoid race to over-assign these before aud.playing
             .filter(aud => !aud.star)
             [0]
-    }
-    get idname() {
-        return "Star"+this.x.toFixed(2)
     }
     no_aud_available():Audiolet|null {
         let got = (aud) => {

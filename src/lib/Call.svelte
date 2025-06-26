@@ -138,7 +138,7 @@
 
 
     {#if gat?.currently?.meta}
-        <Meta meta={gat?.currently?.meta} />
+        <Meta meta={gat?.currently?.meta} nocover />
     {/if}
 
     <div class="mach" >

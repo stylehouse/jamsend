@@ -36,3 +36,4 @@ services:
     ulimits:
       nproc: 100               # Max 100 processes total
       nofile: 1024             # Max 1024 open files
+    restart: 'always'

@@ -281,7 +281,7 @@ export class AudioletTest extends Queuey {
             this.whatsnext()
         }, endsin)
     }
-    whatsnext() {
+    async whatsnext() {
         if (this.paused) {
             debugger
         }
@@ -299,13 +299,16 @@ export class AudioletTest extends Queuey {
             // the next stretch is ready to play
             this.playing_onended()
         }
-        else if (this.aud_onended) {
-            // the next track (aud) is ready to play
-            this.aud_onended()
-            this.stopped = 1
-        }
         else {
-            console.error("Off the end")
+            if (this.end_index == null) {
+                console.error("Off the end of a stretch!")
+                debugger
+            }
+            let good = await this.gat.aud_plays_nextly(this)
+            if (!good) {
+                console.error("No from_start aud available!")
+                debugger
+            }
             this.stopped = 1
         }
     }
