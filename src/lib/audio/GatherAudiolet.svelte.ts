@@ -294,16 +294,16 @@ export class AudioletTest extends Queuey {
             this.playing_onended()
         }
         else {
+            this.stopped = 1
             if (this.end_index == null) {
                 console.error("Off the end of a stretch!")
-                debugger
+                throw new Error(`${this.idname}: Cursor < 0`)
             }
             let good = await this.gat.aud_plays_nextly(this)
             if (!good) {
                 console.error("No from_start aud available!")
-                debugger
+                throw new Error(`${this.idname}: Cursor < 0`)
             }
-            this.stopped = 1
         }
     }
 

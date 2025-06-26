@@ -267,6 +267,9 @@ export class Audiolet extends AudioletTest {
         let cursor = time / this.approx_chunk_time
         // point of reference = most recent start time data
         cursor += this.stretch_start_index
+        if (cursor < 0) {
+            throw new Error(`${this.idname}: Cursor < 0`)
+        }
         // into the wider context of the queue
         if (hires) return cursor
         return Math.floor(cursor)
@@ -304,7 +307,7 @@ export class Audiolet extends AudioletTest {
         this.playing.start(0,playFrom)
         // allows cursor() to be more accurate
         this.stretch_start_index = (this.previous_stretch_size||1) - 1
-        this.stretch_start_time = this.gat.now() + this.paused_time
+        this.stretch_start_time = this.gat.now()
         // because new_duration may include some paused_time
         this.stretch_start_paused_time = this.all_paused_time()
         
