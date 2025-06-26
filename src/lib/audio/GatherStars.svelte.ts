@@ -39,8 +39,8 @@ export class GatherStars extends GatherAudios {
             closest.play()
         }
         this.star_visiting = closest
-
     }
+
     // when we don't have an aud yet,
     // callback to start the first star when the first aud starts
     on_next_aud_started:Function|null
@@ -56,9 +56,13 @@ export class GatherStars extends GatherAudios {
     star_begins_doing_stuff() {
         // < doesn't seem to be working?
         console.log(`star_begins_doing_stuff()`)
+        // < or on that "nothing wanted" reflex
         setTimeout(() => {
-           this.scheme.future = 10
-        },150)
+           this.scheme.future += 2
+        },550)
+        setTimeout(() => {
+           this.scheme.future += 4
+        },3150)
     }
 
 //#region star fields
@@ -235,6 +239,10 @@ class Star {
         }
         
         aud.think()
+    }
+    // next track, same star
+    next_aud(next) {
+        this.aud = next
     }
     // < cull aud that have been paused for a long time
     //   as in traveling far across space, switching on lots of aud...
