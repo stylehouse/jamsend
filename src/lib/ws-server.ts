@@ -130,9 +130,9 @@ async function scan_music(musicDir = '/music') {
 // < check for anything, repick
 // < take the next couple, in the same page read, save disk io?
 // < prefer what others are streaming, save disk io?
-let recentlyServed: Set<urihash> = new Set();
 const MAX_RECENT = 100
-function random_music(): TheMusic | undefined {
+function random_music(user): TheMusic | undefined {
+    user.recentlyServed ||= new Set()
     if (Music.size === 0) {
         console.log("No music tracks available.");
         return undefined;
@@ -141,16 +141,23 @@ function random_music(): TheMusic | undefined {
     // < a Music object with hash and sequence indexes
     // generate an array
     const available = Array.from(Music.values())
-        .filter(mu => !recentlyServed.has(mu.id));;
+        .filter(mu => !user.recentlyServed.has(mu.id));
+    
     const randomIndex = Math.floor(Math.random() * available.length);
     const mu = available[randomIndex];
 
+    if (!mu) {
+        // what if it runs out
+        user.recentlyServed = new Set()
+        return random_music(user)
+    }
+
     // Track this as recently served
-    recentlyServed.add(mu.id);
-    if (recentlyServed.size > MAX_RECENT) {
+    user.recentlyServed.add(mu.id);
+    if (user.recentlyServed.size > MAX_RECENT) {
         // Remove oldest (though Set doesn't guarantee order, this is simple)
-        const first = recentlyServed.values().next().value;
-        recentlyServed.delete(first);
+        const first = user.recentlyServed.values().next().value;
+        user.recentlyServed.delete(first);
     }
 
     return mu
@@ -201,7 +208,7 @@ function AudioServer(socket, io) {
             
             let specific = r.id && true
             let from_start = r.from_start
-            let mu = r.id ? get_music(r.id) : random_music()
+            let mu = r.id ? get_music(r.id) : random_music(user)
             if (!mu) {
                 throw new Error(`!song: ${r.id}`);
             }
