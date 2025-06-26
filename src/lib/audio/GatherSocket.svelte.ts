@@ -349,7 +349,7 @@ export class Audiolet extends AudioletTest {
         if (this.paused) {
             this.paused_time += this.gat.now() - this.paused
             this.paused = null
-            this.gat.currently = this
+            this.gat.currentlify(this,"aud.play")
             this.restart_stretch()
         }
         else {

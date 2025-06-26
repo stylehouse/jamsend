@@ -64,6 +64,7 @@ export class GathererTest extends Queuey {
         if (from_start) {
             let i = this.queue.indexOf(this.currently)
             if (i < 0) throw "noi"
+            // put this in the playlist as if next
             this.queue.splice(i+1,0,aud)
             aud.from_start = true
             this.nextly = aud
@@ -145,6 +146,11 @@ export class GathererTest extends Queuey {
         this.provision()
     }
 
+    currentlify(aud,how) {
+        this.currently = aud
+
+        V>0 && console.log(`${aud.idname} -> Currently\tvia ${how}`)
+    }
     // might might(), but only if...
     think_ticks = 0
     think() {
@@ -158,6 +164,7 @@ export class GathererTest extends Queuey {
             V>0 && console.log("gat.think() start")
             this.might()
         }
+        
         if (this.think_ticks++ % 250 == 0) {
             // avoid browser mem growing 2GB/hr
             this.cull_queue()

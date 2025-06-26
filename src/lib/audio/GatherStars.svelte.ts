@@ -4,11 +4,8 @@ import { Audiolet, GatherAudios } from "./GatherSocket.svelte";
 export class GatherStars extends GatherAudios {
     think() {
         super.think()
-
-        if (!this.star_field) throw "think() before look()"
-            // this.whole_new_field()
-        
-        
+        // sometimes happens
+        if (!this.star_field) this.whole_new_field()
     }
     
     

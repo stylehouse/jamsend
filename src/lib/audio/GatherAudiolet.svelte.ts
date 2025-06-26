@@ -84,10 +84,9 @@ export class AudioletTest extends Queuey {
             // if it's ready
             await this.prep_next_stretch()
             if (this.next_stretch) {
-                V>0 && console.log(`${this.idname} -> Currently`)
                 
                 let start = () => {
-                    this.gat.currently = this
+                    this.gat.currentlify(this,"aud.might")
                     this.start_stretch(this.next_stretch)
                 }
                 if (returning_start) return start
@@ -96,7 +95,6 @@ export class AudioletTest extends Queuey {
         }
         this.provision()
     }
-
 
     
 
@@ -109,6 +107,7 @@ export class AudioletTest extends Queuey {
             // no more planning
             return
         }
+        console.log(`${this.idname} ,  ${source||''}`)
         this.provision()
         // is the playhead moving
         if (!this.playing) {
@@ -133,11 +132,6 @@ export class AudioletTest extends Queuey {
         if (this.end_index != null) {
             if (this.end_index <= this.cursor()+3) {
                 this.gat.next_is_gettable(this)
-            }
-            // prepare for the next track
-            if (this.end_index <= this.cursor()+1) {
-                V>1 && console.log(`aud:${this.id} next_is_coming`)
-                await this.gat.next_is_coming(this)
             }
         }
     }
