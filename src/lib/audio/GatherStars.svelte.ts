@@ -203,6 +203,7 @@ export class Star {
         Object.assign(this,opt)
     }
     pause() {
+        if (!this.isActive) console.warn("Star double-pause")
         this.isActive = false;
         console.log(`Star at (${this.idname}) paused`);
         this.aud?.pause()
@@ -210,6 +211,7 @@ export class Star {
     
     loopy =0
     async play() {
+        if (this.isActive) console.warn("Star double-play")
         this.isActive = true;
         console.log(`Star at (${this.idname}) is now playing`);
         this.aud ||= this.find_an_aud()
