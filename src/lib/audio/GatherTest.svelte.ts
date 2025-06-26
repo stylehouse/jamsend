@@ -130,10 +130,26 @@ export class GathererTest extends Queuey {
                     next.aud_onstarted = null
                     V>1 && console.log("DOING A MIX")
                     cur.fadeout()
+                    cur.star?.next_aud(next)
                     next.fadein()
                 }
             }
             next.might()
+
+            // we can use might() to correct course 
+            //  when insane states break out
+            let astar = this.star_visiting
+            setTimeout(() => {
+                if (this.currently == next) {
+                    if (astar && this.star_visiting && this.star_visiting.aud != next) {
+                        console.log(`Could do a Star takeover:`
+                            +`\n${this.star_visiting.aud.idname}`
+                            +`\n${next.idname}`)
+                        debugger
+                        // this.star_visiting.next_aud(next)
+                    }
+                }
+            },400)
         }
         else {
             if (really) {
@@ -148,7 +164,9 @@ export class GathererTest extends Queuey {
 
     currentlify(aud,how) {
         this.currently = aud
-
+        if (this.star_visiting?.aud != aud) {
+            this.star_visiting.next_aud(aud)
+        }
         V>0 && console.log(`${aud.idname} -> Currently\tvia ${how}`)
     }
     // might might(), but only if...

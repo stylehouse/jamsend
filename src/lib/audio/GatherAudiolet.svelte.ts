@@ -107,9 +107,9 @@ export class AudioletTest extends Queuey {
             // no more planning
             return
         }
-        console.log(`${this.idname} ,  ${source||''}`)
+        // console.log(`${this.idname} ,  ${source||''}`)
         this.provision()
-        // is the playhead moving
+        // is it on
         if (!this.playing) {
             // waits for gat to aud.might()
             return
@@ -297,12 +297,14 @@ export class AudioletTest extends Queuey {
             this.stopped = 1
             if (this.end_index == null) {
                 console.error("Off the end of a stretch!")
-                throw new Error(`${this.idname}: Cursor < 0`)
+                // this.gat.might()
+                // throw new Error(`${this.idname}: Off the end of a stretch`)
             }
             let good = await this.gat.aud_plays_nextly(this)
             if (!good) {
-                console.error("No from_start aud available!")
-                throw new Error(`${this.idname}: Cursor < 0`)
+                console.error("No nextly aud available!")
+                // this.gat.might()
+                // throw new Error(`${this.idname}: No nextly aud available`)
             }
         }
     }

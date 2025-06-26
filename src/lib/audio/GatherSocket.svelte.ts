@@ -4,6 +4,7 @@ import { V } from "./Common.svelte";
 import type { urihash,audioi,audiole } from "./Common.svelte";
 import { GathererTest } from "./GatherTest.svelte";
 import { AudioletTest } from "./GatherAudiolet.svelte";
+import type { Star } from "./GatherStars.svelte";
 
 // in ms
 const FADE_OUT_DURATION = 333
@@ -202,6 +203,7 @@ export class Audiolet extends AudioletTest {
     //  'declare' that or it'll come back from super() undefined
     declare gat:GatherAudios
     gainNode: GainNode;
+    star?:Star
 
     constructor(opt) {
         super(opt)

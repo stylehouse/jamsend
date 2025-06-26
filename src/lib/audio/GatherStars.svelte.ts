@@ -184,7 +184,7 @@ class StarField {
 // each star claims an aud when it needs one
 // < claim the next aud that plays in sequence
 // 
-class Star {
+export class Star {
     gat:GatherStars
     x: number;
     y: number;
@@ -242,7 +242,12 @@ class Star {
     }
     // next track, same star
     next_aud(next) {
+        let was = this.aud
         this.aud = next
+        next.star = this
+        if (was && was != next) {
+            was.pause()
+        }
     }
     // < cull aud that have been paused for a long time
     //   as in traveling far across space, switching on lots of aud...
@@ -262,7 +267,7 @@ class Star {
     }
     no_aud_available():Audiolet|null {
         let got = (aud) => {
-            if (this.aud) {
+            if (this.aud && this.aud != aud) {
                 debugger
             }
             this.aud = aud
