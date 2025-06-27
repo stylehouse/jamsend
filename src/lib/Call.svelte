@@ -95,7 +95,7 @@
 
     $effect(() => {
         // Svelte's SSR gets in a loop in here otherwise:
-        if (!self.window) return 0
+        // if (!self.window) return 0
         if (!gat) return
         if (distime || 1) {
             setTimeout(() => handle_display(), 1)

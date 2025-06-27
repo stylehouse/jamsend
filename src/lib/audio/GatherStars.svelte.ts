@@ -1,4 +1,4 @@
-import { Audiolet, GatherAudios } from "./GatherSocket.svelte";
+import { GatherAudios } from "./GatherSocket.svelte";
 
 // behaviour superimposition, generating a starfield
 export class GatherStars extends GatherAudios {
@@ -242,6 +242,7 @@ export class Star {
         
         aud.think()
     }
+
     // next track, same star
     next_aud(next) {
         let was = this.aud
