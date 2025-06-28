@@ -4,8 +4,8 @@ import { join, dirname, basename, extname } from 'path';
 import { constants } from 'fs';
 import { createHash } from 'crypto';
 import type { ViteDevServer } from 'vite';
-import { V } from './audio/Common.svelte';
-import { spawn,urihash,timestamp,songmeta,TheMusic } from 'child_process'
+import { V,urihash,timestamp,songmeta,TheMusic } from '$lib/audio/Common.svelte';
+import { spawn } from 'child_process'
 import { promisify } from 'util'
 
 export const webSocketServer = {
@@ -26,10 +26,9 @@ export const webSocketServer = {
     }
 }
 
-let Music:Map<urihash,TheMusic> = new Map()
 
 // error-sending wrapper
-async function carefully(label: string, callback: Function, socket:Socket, doing: Function) {
+export async function carefully(label: string, callback: Function, socket:Socket, doing: Function) {
     try {
         await doing()
     } catch (error) {
@@ -45,6 +44,7 @@ async function carefully(label: string, callback: Function, socket:Socket, doing
 }
 
 
+let Music:Map<urihash,TheMusic> = new Map()
 // stocking Music
 // < on server start
 // < wander around directory structure

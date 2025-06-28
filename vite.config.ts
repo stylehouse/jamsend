@@ -1,7 +1,7 @@
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import { webSocketServer } from './src/lib/ws-server';
+import { webSocketServer } from './src/lib/ws-server/ws-server';
 
 export default defineConfig({
 	plugins: [sveltekit(),
