@@ -1,3 +1,4 @@
+import { V } from "./Common.svelte";
 import type { Gather } from "./Gather.svelte";
 import { AudioletTest } from "./GatherAudiolet.svelte";
 import type { Star } from "./GatherStars.svelte";
@@ -138,6 +139,7 @@ export class Audiolet extends AudioletTest {
     paused = $state(null)
     paused_time = 0
     pause() {
+        this.should_play = false
         if (!this.playing) {
             // < how does this happen?
             console.warn(`pause() on non-playing ${this.idname}`)
@@ -163,15 +165,28 @@ export class Audiolet extends AudioletTest {
         return this.all_paused_time() - this.stretch_start_paused_time
     }
 
-    play() {
+    play(why="?") {
         if (this.paused) {
             this.paused_time += this.gat.now() - this.paused
             this.paused = null
             this.gat.currentlify(this,"aud.play")
             this.restart_stretch()
         }
+        else if (this.playing) {
+            throw "double play()?"
+        }
         else {
-            throw "do you mean might()?"
+            this.shall_play(why+' play()')
+        }
+    }
+    should_play = false
+    shall_play(caller) {
+        if (this.next_stretch) {
+            this.gat.currentlify(this,caller+" shall_play()")
+            this.start_stretch()
+        }
+        else {
+            this.should_play = true
         }
     }
     restart_stretch() {

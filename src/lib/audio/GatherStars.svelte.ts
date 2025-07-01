@@ -1,3 +1,4 @@
+import type { Audiolet } from "./Audiolet.svelte";
 import type { Gather } from "./Gather.svelte";
 import { GatherAudios } from "./GatherSocket.svelte";
 
@@ -24,7 +25,7 @@ export class GatherStars extends GatherAudios {
     star_visiting:Star = $state()
     async look() {
         if (!this.star_field) this.whole_new_field()
-            
+        
         this.track_field_visiting()
 
         // what station are we closest to, tune it in
@@ -42,21 +43,16 @@ export class GatherStars extends GatherAudios {
         this.star_visiting = closest
     }
 
-    // when we don't have an aud yet,
-    // callback to start the first star when the first aud starts
-    on_next_aud_started:Function|null
     // when that has happened
-    star_started = null
+    star_started:number|null = null
     // from first (and all) successful aud-star bindings
     stars_are_playing() {
         if (!this.star_started) {
             this.star_begins_doing_stuff()
         }
-        this.star_started = this.now()
     }
     star_begins_doing_stuff() {
-        // < doesn't seem to be working?
-        console.log(`star_begins_doing_stuff()`)
+        this.star_started = this.now()
         // < or on that "nothing wanted" reflex
         setTimeout(() => {
            this.scheme.future += 2
@@ -65,6 +61,8 @@ export class GatherStars extends GatherAudios {
            this.scheme.future += 4
         },3150)
     }
+    // until ^, we catch the first aud after decode via a one-timer in:
+    on_next_stretch:Function|null
 
 //#region star fields
 
@@ -212,14 +210,17 @@ export class Star {
     
     loopy =0
     async play() {
-        if (this.isActive) console.warn("Star double-play")
-        this.isActive = true;
-        console.log(`Star at (${this.idname}) is now playing`);
+        // find a new aud?
         this.aud ||= this.find_an_aud()
         let aud = this.aud
         if (!aud) {
             return this.no_aud_available()
         }
+
+        if (this.isActive) console.warn("Star double-play")
+        this.isActive = true;
+        console.log(`${this.idname} is now playing`);
+
         if (!this.gat.queue.includes(aud)) {
             return this.aud_is_lost()
         }
@@ -238,7 +239,7 @@ export class Star {
             // become gat.currently via provisioning,
             //  being ready but not playing,
             // or noop if we're already playing - the first star's aud is.
-            await aud.might()
+            aud.play()
         }
         
         aud.think()
@@ -269,32 +270,29 @@ export class Star {
             .filter(aud => !aud.star)
             [0]
     }
-    no_aud_available():Audiolet|null {
+    no_aud_available() {
         let got = (aud) => {
-            if (this.aud && this.aud != aud) {
-                debugger
-            }
-            this.aud = aud
             // < going through this for consistency?
             //    to set gat.star_started?
             this.play()
         }
         console.log(`Star no_aud_available()`)
-        if (!this.gat.star_started) {
-            // await for ~ gat.currently
-            this.gat.on_next_aud_started = (aud) => {
-                this.gat.on_next_aud_started = null
-                console.log(`${aud.idname} on_next_aud_started ${this.idname}`)
-                got(aud)
+
+        // before the first aud appears
+        // await for the next decode
+        console.log(`${this.idname} on_next_stretch`)
+        this.gat.on_next_stretch = (aud) => {
+            this.gat.on_next_stretch = null
+            console.log(`${this.idname} on_next_stretch !!!`)
+            // introduced to the star
+            if (this.aud && this.aud != aud) {
+                debugger
             }
-        }
-        else {
-            // < await whatever aud arrives next
-            this.gat.on_next_aud_creation = (aud) => {
-                this.gat.on_next_aud_creation = null
-                console.log(`${aud.idname} On creation ${this.idname}`)
-                got(aud)
+            if (this.aud) {
+                debugger
             }
+            this.aud = aud
+            got(aud)
         }
     }
 }

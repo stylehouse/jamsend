@@ -79,6 +79,7 @@ export class AudioletTest extends Queuey {
     //  then are dispatched by gat think()
     // < surf()
     async might(returning_start=false) {
+        return
         if (!this.playing && this.queue.length) {
             V>0 && console.log(`${this.idname} -> might`)
             // we're going to hit play on this aud
@@ -115,6 +116,9 @@ export class AudioletTest extends Queuey {
             // waits for gat to aud.might()
             return
         }
+        // < watch-for-ends should be generated from the latest started_stretch()
+        //    and include simply loading more chunks, avoiding provision() !?
+        //    and then stretching when intended loading is done
         let notlong = Math.max(500,this.approx_chunk_time)
         let near = this.remaining_stretch() < notlong
         let prepped = this.next_stretch
@@ -147,10 +151,13 @@ export class AudioletTest extends Queuey {
         }
     }
 
+    // < merge with 
     async prep_next_stretch() {
         if (this.next_stretch_coming) {
             return
         }
+        // < this way stays blocked until start_stretch()
+        //    unless the decode fails? (!stretch below)
         this.next_stretch_coming = "?"
 
         let stretch = await this.new_stretch()
@@ -159,9 +166,16 @@ export class AudioletTest extends Queuey {
             this.next_stretch_coming = ""
             return
         }
-        // < this way stays blocked until start_stretch()
         this.next_stretch_coming = stretch.length
         this.next_stretch = stretch
+
+        // when a new star wants to claim this new aud now it exists
+        //  it has to introduce the aud to the Star
+        this.gat.on_next_stretch?.(this)
+        if (this.should_play) {
+            console.log(`${this.idname} Autoplaying stretch`)
+            this.shall_play('prep')
+        }
     }
 
 
@@ -191,7 +205,7 @@ export class AudioletTest extends Queuey {
         
         // schedule it to play when this one finishes
         this.playing_onended = () => {
-            this.start_stretch(stretch)
+            this.start_stretch()
             this.playing_onended = null
         }
     }
@@ -233,8 +247,10 @@ export class AudioletTest extends Queuey {
         return encoded
     }
     // decodes stretches of the queue
-    start_stretch(stretch) {
+    start_stretch() {
         let was = this.playing
+        if (this.stopped) throw "start stopped"
+        let stretch = this.next_stretch
         this.playing = stretch
         this.start_time ||= this.gat.now()
         this.stretch_size = stretch.length
@@ -248,7 +264,6 @@ export class AudioletTest extends Queuey {
 
         this.started_stretch?.()
         this.aud_onstarted?.()
-        this.gat.on_next_aud_started?.(this)
         
 
         // exponentially loady, log times we new_stretch()

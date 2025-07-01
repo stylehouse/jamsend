@@ -122,6 +122,7 @@ export class GathererTest extends Queuey {
 
     // act: pull from queue
     might(really) {
+        return
         let next = this.suitable_new_auds()[0]
         if (next) {
             let cur = this.currently
@@ -163,13 +164,12 @@ export class GathererTest extends Queuey {
         this.provision()
     }
 
+
     currentlify(aud,how) {
         this.currently = aud
-        if (this.star_visiting?.aud != aud) {
-            this.star_visiting.next_aud(aud)
-        }
         V>0 && console.log(`${aud.idname} -> Currently\tvia ${how}`)
     }
+
     // might might(), but only if...
     think_ticks = 0
     think() {
@@ -215,9 +215,8 @@ export class GathererTest extends Queuey {
             return
         }
         // likely the first stretch is decoded already
-        let start = await next.might("returning start")
         V>1 && console.log("Next track!")
-        start()
+        next.play('nextly')
         delete this.nextly
 
         aud.star?.next_aud(next)
