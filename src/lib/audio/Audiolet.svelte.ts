@@ -133,6 +133,8 @@ export class Audiolet extends AudioletTest {
         // for next time
         this.previous_duration = this.duration()
         this.previous_stretch_size = this.stretch_size
+
+        this.star?.started_stretch?.()
     }
 
     //#region aud pauses

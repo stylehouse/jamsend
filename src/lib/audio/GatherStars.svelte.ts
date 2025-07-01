@@ -22,7 +22,10 @@ export class GatherStars extends GatherAudios {
     }
 
     star_field_visiting:number
-    star_visiting:Star = $state()
+    star_visiting:Star|null = $state()
+    // lock|concentrate on each target while:
+    star_travel_in_progress:Star|null = false
+    star_travel_wanted:Star|null = null
     async look() {
         if (!this.star_field) this.whole_new_field()
         
@@ -32,15 +35,46 @@ export class GatherStars extends GatherAudios {
         let closest = this.find_closest_star()
         if (!closest) throw "!closest"
         let cur = this.star_visiting
-        if (cur && cur != closest) {
+        if (!cur || cur && cur != closest) {
+            if (!this.may_travel(closest)) return
             // change star
-            await closest.play()
-            cur.pause()
+            this.change_star(closest,cur)
         }
-        if (!cur) {
-            closest.play()
+    }
+    async change_star(to:Star,from?:Star) {
+        if (to == from) return console.log("null change_star()")
+        await to.play()
+        from?.pause()
+        this.star_visiting = to
+    }
+    may_travel(to:Star) {
+        if (this.star_travel_in_progress) {
+            this.star_travel_wanted = to
         }
-        this.star_visiting = closest
+        else {
+            this.star_travel_in_progress = to
+            return true
+        }
+    }
+    done_travel(to:Star) {
+        if (to != this.star_travel_in_progress) {
+            debugger
+        }
+        this.star_travel_in_progress = null
+        if (this.star_travel_wanted) {
+            console.log("Belated star travel")
+            let to = this.star_travel_wanted
+            let from = this.star_visiting
+            this.star_travel_wanted = null
+            this.change_star(to,from)
+        }
+    }
+    // come from any start of a stretch (inc unpauses)
+    star_started_stretch(star) {
+        if (star == this.star_travel_in_progress) {
+            // we meant to get here!
+            this.done_travel(star)
+        }
     }
 
     // when that has happened
@@ -208,7 +242,6 @@ export class Star {
         this.aud?.pause()
     }
     
-    loopy =0
     async play() {
         // find a new aud?
         this.aud ||= this.find_an_aud()
@@ -232,17 +265,22 @@ export class Star {
 
 
         if (aud.paused) {
-            aud.play()
+            aud.play('*unpause')
             console.log(`Was paused: ${aud.paused_time}`)
         }
         else {
             // become gat.currently via provisioning,
             //  being ready but not playing,
             // or noop if we're already playing - the first star's aud is.
-            aud.play()
+            aud.play('*play')
         }
         
         aud.think()
+    }
+    // follows that of Audiolet
+    started_stretch() {
+        // deduce the one that means play() worked, and let Stars.look() happen again
+        this.gat.star_started_stretch(this)
     }
 
     // next track, same star
