@@ -1,8 +1,9 @@
 <script lang="ts">
+    import type { Gather } from '$lib/audio/Gather.svelte';
     import type { GatherStars } from '$lib/audio/GatherStars.svelte';
     import { onDestroy } from 'svelte';
     
-    type propos = {gat:GatherStars, fullscreen?: boolean}
+    type propos = {gat:Gather, fullscreen?: boolean}
     let {gat, fullscreen = false}:propos = $props();
     let scrollContainer: HTMLDivElement;
     let viewport: HTMLDivElement;

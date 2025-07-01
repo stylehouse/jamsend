@@ -45,7 +45,7 @@
         <span>{#if aud.end_index}end_index {aud.end_index}{/if}</span>
     </span>
     <span>
-        <span>awaiting {awaiting}</span>
+        <span>{#if awaiting}awaiting {awaiting}{/if}</span>
         <span>
             {aud.from_start && 'from_start'} 
             {aud.next_stretch && 'next_stretch:'+aud.next_stretch.length}

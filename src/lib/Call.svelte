@@ -3,12 +3,12 @@
     import { MS_PER_SIMULATION_TIME } from "./audio/Common.svelte";
     import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
     import Meta from "./Meta.svelte";
-    import { GatherStars } from "./audio/GatherStars.svelte";
     import StarField from "./ui/StarField.svelte";
+    import { Gather } from "./audio/Gather.svelte";
 
     let errorMessage = $state("");
 
-    let gat:GatherAudios|undefined = $state();
+    let gat:Gather|undefined = $state();
     let perftime = $state('')
     let simtime = $state(0)
     let distime = $state(0)
@@ -55,7 +55,7 @@
     let recreate_gat = () => {
         // Initialize WebSocket connection, and of things got there
         gat?.stop()
-        gat = new GatherStars({
+        gat = new Gather({
             on_error: (er) => {
                 console.error(er);
                 errorMessage = er || "Unknown error";

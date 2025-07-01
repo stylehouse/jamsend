@@ -7,7 +7,7 @@ export const MOCK_MS_PER_ITEM = 621
 export const MOCK_BLOB = 'vvv'
 export const PHI = 1.613
 export const MS_PER_SIMULATION_TIME = 333
-// see also the audio constants in GatherSocket
+// see also the audio constants in Audiolet
 // turn up log statement level
 //  3 = every more response
 export const V = 2

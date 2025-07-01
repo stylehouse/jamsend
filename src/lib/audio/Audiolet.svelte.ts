@@ -1,5 +1,5 @@
+import type { Gather } from "./Gather.svelte";
 import { AudioletTest } from "./GatherAudiolet.svelte";
-import type { GatherAudios } from "./GatherSocket.svelte";
 import type { Star } from "./GatherStars.svelte";
 
 // alongside AudioletTest
@@ -14,7 +14,7 @@ let MOCK_MS_PER_ITEM = 3000
 export class Audiolet extends AudioletTest {
     // we re-type this from the superclass
     //  'declare' that or it'll come back from super() undefined
-    declare gat:GatherAudios
+    declare gat:Gather
     gainNode: GainNode;
     star?:Star
 

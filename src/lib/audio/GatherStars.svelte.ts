@@ -1,3 +1,4 @@
+import type { Gather } from "./Gather.svelte";
 import { GatherAudios } from "./GatherSocket.svelte";
 
 // behaviour superimposition, generating a starfield
@@ -130,7 +131,7 @@ export class GatherStars extends GatherAudios {
 const N_STARS = 7
 const STAR_MIN_DISTANCE = 0.1
 class StarField {
-    gat:GatherStars
+    gat:Gather
     index: number // in Stars.field
     stars: Star[] = [];
     last_seen: number = 0;
@@ -185,7 +186,7 @@ class StarField {
 // < claim the next aud that plays in sequence
 // 
 export class Star {
-    gat:GatherStars
+    gat:Gather
     x: number;
     y: number;
     fieldIndex: number;
