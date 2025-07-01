@@ -14,7 +14,7 @@ export class AudioletTest extends Queuey {
     from_start = $state()
     end_index = $state()
     get idname() {
-        return `aud:${this.id}`
+        return `aud:${this.id}`.slice(0,12)
     }
     meta = $state()
 
@@ -48,7 +48,7 @@ export class AudioletTest extends Queuey {
         return this.stretch_size * this.approx_chunk_time
     }
 
-    
+
     fadein() {
         // noop
     }
@@ -277,14 +277,8 @@ export class AudioletTest extends Queuey {
         }, endsin)
     }
     async whatsnext() {
-        if (this.paused) {
-            debugger
-        }
-        if (this.stopped) {
-            // is over, no need to keep feeding audio
-            // small chance it will cut out during fadeout()
-            return
-        }
+        if (this.paused) console.error("paused aud reach the end: ${this.idname}")
+        if (this.stopped) return
         let ismore = this.playing_onended ? ', is more' : ''
         let cur = this.cursor(1)
         V>1 && console.log(`${this.idname} stretchended${ismore}`

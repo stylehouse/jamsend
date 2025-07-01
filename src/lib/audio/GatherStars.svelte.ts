@@ -194,7 +194,7 @@ export class Star {
     isActive: boolean = $state(false);
     get idname() {
         return "Star"+this.x.toFixed(2)
-            +(this.aud ? "aud:"+this.aud.idname.slice(0,8) : '')
+            +(this.aud ? ':'+this.aud.idname : '')
     }
     // keep track of which aud we are supposed to be playing
     //  in case we return to one
