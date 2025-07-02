@@ -1,15 +1,15 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { MS_PER_SIMULATION_TIME } from "./audio/Common.svelte";
-    import GatherTestAudiolet from "./GatherTestAudiolet.svelte";
-    import Meta from "./Meta.svelte";
+    import GatherTestAudiolet from "./ui/DebugAudiolet.svelte";
+    import Meta from "./ui/Meta.svelte";
     import StarField from "./ui/StarField.svelte";
     import { Gather } from "./audio/Gather.svelte";
+    import DebugGat from "./ui/DebugGat.svelte";
 
     let errorMessage = $state("");
 
     let gat:Gather|undefined = $state();
-    let perftime = $state('')
     let simtime = $state(0)
     let distime = $state(0)
     let simtime_interval
@@ -53,7 +53,7 @@
     }
 
     let recreate_gat = () => {
-        // Initialize WebSocket connection, and of things got there
+        // Initialize WebSocket connection
         gat?.stop()
         gat = new Gather({
             on_error: (er) => {
@@ -65,6 +65,7 @@
                 start_simtime()
             }
         });
+        // can reset its state if the server forgets us
         gat.recreate_gat = recreate_gat
 
         // try this
@@ -101,20 +102,14 @@
             setTimeout(() => handle_display(), 1)
         }
     })
-    let awaiting = $state()
     function handle_display() {
         let i = distime + 3
         if (distime == 0) {
             
         }
         // update child components
-        gat.queue.map(aud => aud?.onanimationframe?.())
+        gat.onanimationframe?.()
 
-        perftime = gat.now()
-        awaiting = gat.awaiting_mores.length
-    }
-    function surf() {
-        gat.surf()
     }
 </script>
 
@@ -122,7 +117,6 @@
 <div class="audio-player">
 
     <div class="controls">
-        <button onclick={surf}>Skip</button>
         {#if !gat?.AC_ready}<p><a>Click Here</a> to being.</p>{/if}
     </div>
     <div class="field">
@@ -141,21 +135,7 @@
         <Meta meta={gat?.currently?.meta} nocover />
     {/if}
 
-    <div class="mach" >
-        <span class="name">GathererTest</span>
-        at {Math.round(perftime)}ms
-        {#if gat}
-            <span>
-                <span>{#if gat.more_wanted}morewant {gat.more_wanted}{/if}</span>
-
-                <button onclick={surf} >surf</button>
-            </span>
-            {#each gat.queue as aud (aud.id)}
-                <GatherTestAudiolet {aud} />
-            {/each}
-        {/if}
-    </div>
-
+    <DebugGat {gat} />
 
 </div>
 {/if}

@@ -59,7 +59,7 @@
     </infoheight>
     
     {#if aud.meta != null}
-        <Meta meta={aud.meta} nocover />
+        <metar><Meta meta={aud.meta} nocover /></metar>
     {/if}
 
     <ul class=bitsies>
@@ -72,6 +72,9 @@
 </div>
 
 <style>
+    metar {
+        max-height:3em;
+    }
     ww {
         display: inline-box;
         border-radius:0.3em;
@@ -100,6 +103,9 @@
         position:relative;
         display:block;
     }
-    span { display:inline-table; margin:0.2em }
+    span {
+        display:inline-table; margin:0.2em;
+        color:rgb(6, 15, 26);
+    }
     span span { display:table-row }
 </style>
