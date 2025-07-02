@@ -201,7 +201,6 @@
         position: relative;
         width: 100%;
         height: 100%;
-        min-height:10em;
         overflow: hidden;
         background: radial-gradient(ellipse at center, #001122 0%, #000008 100%);
         border-radius: 50%;

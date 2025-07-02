@@ -111,16 +111,22 @@
         gat.onanimationframe?.()
 
     }
+    let debug = $state(false)
+    function flipdebug() {
+        debug = !debug
+    }
 </script>
 
 {#if gat}
-<div class="audio-player">
 
-    <div class="controls">
-        {#if !gat?.AC_ready}<p><a>Click Here</a> to being.</p>{/if}
-    </div>
     <div class="field">
         <StarField {gat}/>
+    </div>
+
+
+<div class="audio-player">
+    <div class="controls">
+        {#if !gat?.AC_ready}<p><a>Click Here</a> to being.</p>{/if}
     </div>
 
     {#if errorMessage}
@@ -135,41 +141,34 @@
         <Meta meta={gat?.currently?.meta} nocover />
     {/if}
 
-    <DebugGat {gat} />
+    
+    <p onclick={flipdebug}>debug</p>
+    {#if debug}
+        <DebugGat {gat} />
+    {/if}
 
 </div>
 {/if}
 
 <style>
-    /* debug visuals */
-    .mach {
-        border-radius:1em;
-        border:3px solid green;
-        background: darkgreen;
-    }
-    .name {
-        font-size: 130%;
-        color: white;
-    }
     .field {
-        position:relative;
+        margin: 0;
+        position:absolute;
+        top:0;left:0;
+        width:100%;
+        height:100%;
+        z-index: -100;
     }
-
     .audio-player {
+        mix-blend-mode:difference;
+        position:absolute;
         padding: 1rem;
         border-radius: 8px;
-        background: #f5f5f5;
+        background: #191a19;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         max-width: 500px;
         margin: 0 auto;
-    }
-
-
-    .controls {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        margin-top:calc(70vh);
     }
 
     button {

@@ -25,3 +25,10 @@
             {/each}
         {/if}
     </div>
+<style>
+    .mach {
+        border-radius:1em;
+        border:3px solid green;
+        background: darkgreen;
+    }
+</style>
