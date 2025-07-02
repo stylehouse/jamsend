@@ -7,12 +7,14 @@
         distime++
     }
     let pos = $state()
+    let along = $state()
     let remains = $state()
     let awaiting = $state()
     let paused = $state()
     $effect(() => {
         if (distime) {
             pos = aud.cursor()
+            along = (aud.along()||0).toFixed(2)
             remains = aud.along() != null && aud.remaining_stretch()
             awaiting = aud.awaiting_mores?.length
             paused = (aud.all_paused_time()).toFixed(2)
@@ -20,40 +22,41 @@
     })
     let wwclass = (i) => i < aud.stretch_size ? "playing"
         : i < aud.next_stretch?.length ? "decoded"
-         : ''
+        : ''
 
 </script>
 
-<div class="mach" >
-    <span class="name">aud:{aud.id}</span>
-    <span>
-        <span> </span>
-        <span>{#if aud.stretch_size}stretch {aud.stretch_size}{/if}</span>
-    </span>
-    <span>
-        <span>{#if aud.start_time}start_time {Math.round(aud.start_time)}ms{/if}</span>
-        <span>{#if aud.spawn_time}spawn_time {Math.round(aud.spawn_time)}ms{/if}</span>
-    </span>
-    {#if !aud.stopped}
+<div class="mach {aud == aud.gat.currently && 'currently'}" >
+    <infoheight>
+        <span class="name">aud:{aud.id}</span>
         <span>
-            <span>{#if pos != null}cursor {pos}{/if}</span>
-            <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
+            <span>along {along}</span>
+            <span>{#if aud.stretch_size}stretch {aud.stretch_size}{/if}</span>
         </span>
-    {/if}
-    <span>
-        <span>morewant {aud.more_wanted}</span>
-        <span>{#if aud.end_index}end_index {aud.end_index}{/if}</span>
-    </span>
-    <span>
-        <span>{#if awaiting}awaiting {awaiting}{/if}</span>
         <span>
-            {aud.from_start && 'from_start'} 
-            {aud.next_stretch && 'next_stretch:'+aud.next_stretch.length}
-            {aud.stopped && 'stopped'}
-            {aud.paused && 'paused:'+paused}
+            <span>{#if aud.start_time}start_time {Math.round(aud.start_time)}ms{/if}</span>
+            <span>{#if aud.spawn_time}spawn_time {Math.round(aud.spawn_time)}ms{/if}</span>
         </span>
-    </span>
-    
+        {#if !aud.stopped}
+            <span>
+                <span>{#if pos != null}cursor {pos}{/if}</span>
+                <span>{#if remains}remains {Math.round(remains)}ms{/if}</span>
+            </span>
+        {/if}
+        <span>
+            <span>morewant {aud.more_wanted}</span>
+            <span>{#if aud.end_index}end_index {aud.end_index}{/if}</span>
+        </span>
+        <span>
+            <span>{#if awaiting}awaiting {awaiting}{/if}</span>
+            <span>
+                {aud.from_start && 'from_start'} 
+                {aud.next_stretch && 'next_stretch:'+aud.next_stretch.length}
+                {aud.stopped && 'stopped'}
+                {aud.paused && !aud.stopped && 'paused:'+paused || ''}
+            </span>
+        </span>
+    </infoheight>
     
     {#if aud.meta != null}
         <Meta meta={aud.meta} nocover />
@@ -85,9 +88,17 @@
         border:3px solid rgb(216, 196, 18);
         background: rgb(112, 72, 11);
     }
+    .currently {
+        background: rgb(133, 103, 59);
+    }
     .name {
         font-size: 130%;
         color: white;
+    }
+    infoheight {
+        min-height:7em;
+        position:relative;
+        display:block;
     }
     span { display:inline-table; margin:0.2em }
     span span { display:table-row }
