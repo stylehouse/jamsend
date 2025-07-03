@@ -6,9 +6,9 @@ import type { Star } from "./GatherStars.svelte";
 // alongside AudioletTest
 
 // in ms
-const FADE_OUT_DURATION = 333
-const FADE_IN_DURATION = 155
-const MIN_GAIN = 0.001
+const FADE_OUT_DURATION = 3533
+const FADE_IN_DURATION = 255
+const MIN_GAIN = 0.02
 
 //#region aud
 let MOCK_MS_PER_ITEM = 3000
@@ -29,32 +29,7 @@ export class Audiolet extends AudioletTest {
         this.gainNode.connect(this.gat.AC.destination);
         this.gainNode.gain.value = 1;
     }
-    fadein() {
-        this.gainNode.gain.setValueAtTime(MIN_GAIN, this.gat.now()/1000)
-        let at = this.gat.now() + FADE_IN_DURATION
-        this.gainNode.gain.exponentialRampToValueAtTime(
-            1.0,
-            at/1000
-        )
-    }
-    fadeout() {
-        // prevent further aud.start_stretch() etc immediately
-        this.stopped = 1
-        // < redundant given stopped?
-        this.gat.fadingout.push(this)
-        setTimeout(() => {
-            V>2 && console.log(`Fadeout done, ${this.gainNode.gain.value}`)
-            this.stop()
-        }, FADE_OUT_DURATION)
 
-
-        let at = (this.gat.now() + FADE_OUT_DURATION) / 1000
-        V>1 && console.log(`Fadeout? ${this.gat.now()/1000}\t${at}`)
-        this.gainNode.gain.linearRampToValueAtTime(
-            MIN_GAIN,
-            at
-        )
-    }
     stop() {
         this.stopped = 1
         this.playing?.stop()
@@ -139,10 +114,52 @@ export class Audiolet extends AudioletTest {
     }
 
     //#region aud pauses
+    is_fading = false
+    fadein() {
+        if (!this.is_fading) {
+            // up from silence
+            this.gainNode.gain.setValueAtTime(MIN_GAIN, this.gat.now()/1000)
+        }
+        else {
+            // where-ever it is
+            this.gainNode.gain.cancelScheduledValues(this.gat.now()/1000)
+            this.is_fading = false
+            console.log(`${this.idname} fade back in from where-ever`)
+        }
+        let at = this.gat.now() + FADE_IN_DURATION
+        this.gainNode.gain.exponentialRampToValueAtTime(
+            1.0,
+            at/1000
+        )
+    }
+    async fadeout() {
+        let the_fading = this.is_fading = {}
+        let at = (this.gat.now() + FADE_OUT_DURATION) / 1000
+        this.gainNode.gain.exponentialRampToValueAtTime(
+            MIN_GAIN,
+            at
+        )
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                 resolve(the_fading != this.is_fading)
+            }, FADE_OUT_DURATION)
+
+        })
+    }
+
     paused = $state(null)
     paused_time = 0
-    pause() {
-        this.should_play = false
+    async pause() {
+        // this will take some time
+        let invalidated = await this.fadeout()
+        // if we fadein() (etc?) again while we were fading out, don't pause
+        if (invalidated) {
+            console.warn(`${this.idname} No longer fading!`)
+            return
+        }
+        console.log(`${this.idname} Finished fadeout?`)
+        this.is_fading = false
+        this.should_play = null
         if (!this.playing) {
             // < how does this happen?
             console.warn(`pause() on non-playing ${this.idname}`)
@@ -153,6 +170,7 @@ export class Audiolet extends AudioletTest {
         this.previous_duration = this.along()
         // < not always enough?
         this.playing.stop()
+        this.think()
     }
     // stop along()ing
     all_paused_time() {
@@ -168,30 +186,41 @@ export class Audiolet extends AudioletTest {
         return this.all_paused_time() - this.stretch_start_paused_time
     }
 
-    play(why="?") {
+    async play(why="?") {
         if (this.stopped) debugger
         if (this.paused) {
+            if (this.stopped) debugger
             this.paused_time += this.gat.now() - this.paused
             this.paused = null
             this.gat.currentlify(this,"aud.play")
             this.restart_stretch()
+            this.fadein()
+        }
+        else if (this.is_fading) {
+            this.fadein()
+            this.gat.currentlify(this,"was only fading towards a pause")
         }
         else if (this.playing) {
             console.error("double play()?")
             this.gat.currentlify(this,"double play()?")
+            this.fadein()
         }
         else {
-            this.shall_play(why+' play()')
+            // want to wait for it, because the other thing's pause() will be happening next
+            await this.shall_play(why+' play()')
+            this.fadein()
         }
     }
-    should_play = false
-    shall_play(caller) {
+    should_play = null
+    async shall_play(caller) {
         if (this.next_stretch) {
             this.gat.currentlify(this,caller+" shall_play()")
             this.start_stretch()
+            this.should_play?.()
+            this.should_play = null
         }
         else {
-            this.should_play = true
+            return new Promise((r) => this.should_play = r)
         }
     }
     restart_stretch() {

@@ -1,5 +1,5 @@
 <script lang="ts">
-    let {meta,nocover} = $props()
+    let {meta,nocover,aud} = $props()
 </script>
 
     <div class="meta-display">
@@ -20,6 +20,7 @@
                  •
                 <span class="album">{meta.album}</span>
                 {meta.year ? `(${meta.year})` : ""}
+                {aud?.id.slice(0,8)}
             </p>
             
             <div class="details">

@@ -233,7 +233,7 @@ export class AudioletTest extends Queuey {
         this.next_stretch_coming = ''
 
         if (this.gat.currently != this) {
-            console.warn("this.gat.currently != this")
+            !this.is_fading && console.warn("this.gat.currently != this")
         }
 
         this.started_stretch?.()

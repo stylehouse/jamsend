@@ -144,7 +144,7 @@
 
 
             {#if gat?.currently?.meta}
-                <Meta meta={gat?.currently?.meta} nocover />
+                <Meta meta={gat?.currently?.meta} nocover aud={gat?.currently} />
             {/if}
 
             
