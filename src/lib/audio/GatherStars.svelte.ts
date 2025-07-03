@@ -89,27 +89,11 @@ export class GatherStars extends GatherAudios {
             // we meant to get here!
             this.done_travel(star)
         }
-    }
-
-    // when that has happened
-    star_started:number|null = null
-    // from first (and all) successful aud-star bindings
-    stars_are_playing() {
-        if (!this.star_started) {
-            this.star_begins_doing_stuff()
+        // after making some progress, wind up our ambition
+        if (this.scheme.future < 10) {
+            this.scheme.future += 1
         }
-    }
-    star_begins_doing_stuff() {
-        this.star_started = this.now()
-        // < or on that "nothing wanted" reflex
-        setTimeout(() => {
-            console.warn("Future+=2")
-           this.scheme.future += 2
-        },550)
-        setTimeout(() => {
-            console.warn("Future+=4")
-           this.scheme.future += 4
-        },3150)
+
     }
     // until ^, we catch the first aud after decode via a one-timer in:
     on_next_stretch:Function|null
@@ -272,9 +256,9 @@ export class Star {
         if (!this.gat.queue.includes(aud)) {
             return this.aud_is_lost()
         }
-        this.gat.stars_are_playing()
         if (aud.star && aud.star != this) {
-            throw "overassigning stars"
+            console.error(`overassigning stars`)
+            aud.star.aud = null
         }
 
         this.aud = aud
@@ -308,22 +292,50 @@ export class Star {
             was.pause()
         }
     }
+
     // < cull aud that have been paused for a long time
     //   as in traveling far across space, switching on lots of aud...
     aud_is_lost() {
         console.warn("aud is lost")
-        debugger
         setTimeout(() => {
             this.aud = null
             this.play()
         },200)
     }
     find_an_aud():Audiolet|null {
-        return this.gat.suitable_new_auds()
-            // avoid race to over-assign these before aud.playing
-            .filter(aud => !aud.star)
-            [0]
+        // this gets us all !aud.playing
+        let all = this.gat.suitable_new_auds()
+        // it's probably better to recycle an aud than wait for a decode
+        // < not too clear what's happening, of course. when scrolling hard.
+        let playable = all.filter(aud => aud.next_stretch)
+        let nostar = playable.filter(aud => !aud.star)
+        if (nostar[0]) {
+            return nostar[0]
+        }
+        return this.recyclingly_find_an_aud()
     }
+    // try harder, by recycling a hardly-played aud
+    recyclingly_find_an_aud():Audiolet|null {
+        let all = this.gat.playable_auds()
+            .filter(aud => aud.paused)
+        let sorted = all.map(aud => {
+            return {along:(aud.along()||0),aud}
+        }).sort((a,b) => (a.along - b.along))
+
+        // console.log("Could be sorted: ",sorted)
+
+
+        let some_along = sorted.filter(a => a.along != 0)
+        let aud = some_along[0]?.aud
+        if (!aud) console.warn("still no recyclingly_find_an_aud()")
+        if (!aud) return
+        // revoke from the other star
+        // < this doesn't seem to get it done!
+        if (aud.star) aud.star.aud = null
+        console.warn(`recyclingly_find_an_aud() found ${aud.idname}`)
+        return aud
+    }
+
     no_aud_available() {
         // before the first aud appears
         //  or when we run out of fresh auds

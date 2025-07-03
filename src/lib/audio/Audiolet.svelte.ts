@@ -175,7 +175,7 @@ export class Audiolet extends AudioletTest {
             this.restart_stretch()
         }
         else if (this.playing) {
-            throw "double play()?"
+            console.error("double play()?")
         }
         else {
             this.shall_play(why+' play()')

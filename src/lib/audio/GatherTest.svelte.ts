@@ -92,9 +92,11 @@ export class GathererTest extends Queuey {
                 return true
         }
     }
+    // default way to Star.find_an_aud()
     suitable_new_auds() {
         // we don't check whether they're loaded|decoded
         // < which could make later code less shuntographic?
+        // but if we do the queue in order it's fine!
         return this.queue
             // not the one we had ready to play in sequence
             // < when looking at a music source we have entirely,
@@ -107,6 +109,11 @@ export class GathererTest extends Queuey {
             // .filter(aud => !aud.paused)
             // indicates something's managing it
             .filter(aud => !aud.playing)
+    }
+    playable_auds() {
+        return this.queue
+            .filter(aud => !aud.stopped)
+            .filter(aud => aud.playing)
     }
     active_auds() {
         return this.queue

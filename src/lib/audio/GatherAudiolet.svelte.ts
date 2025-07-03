@@ -283,6 +283,7 @@ export class AudioletTest extends Queuey {
                 console.error("Off the end of a stretch!")
                 this.gat.get_unstuck()
                 // throw new Error(`${this.idname}: Off the end of a stretch`)
+                return
             }
             let good = await this.gat.aud_plays_nextly(this)
             if (!good) {
