@@ -83,7 +83,8 @@ export class Audiolet extends AudioletTest {
         let cursor = time / this.approx_chunk_time
         // point of reference = most recent start time data
         cursor += this.stretch_start_index
-        if (cursor < 0) {
+        if (cursor < -0.05) {
+            // < some rounding error?
             throw new Error(`${this.idname}: Cursor < 0`)
         }
         // into the wider context of the queue

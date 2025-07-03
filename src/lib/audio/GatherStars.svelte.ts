@@ -259,6 +259,7 @@ export class Star {
         if (aud.star && aud.star != this) {
             console.error(`overassigning stars`)
             aud.star.aud = null
+            aud.star.isActive = false
         }
 
         this.aud = aud
@@ -289,6 +290,7 @@ export class Star {
         this.aud = next
         next.star = this
         if (was && was != next) {
+            if (!was.stopped) console.error(`next_aud(): was !stopped: ${was.idname}`)
             was.pause()
         }
     }
@@ -297,8 +299,12 @@ export class Star {
     //   as in traveling far across space, switching on lots of aud...
     aud_is_lost() {
         console.warn("aud is lost")
-        setTimeout(() => {
+        if (this.aud) {
+            this.aud.star = null
             this.aud = null
+        }
+        this.isActive = false
+        setTimeout(() => {
             this.play()
         },200)
     }
@@ -324,14 +330,17 @@ export class Star {
 
         // console.log("Could be sorted: ",sorted)
 
-
         let some_along = sorted.filter(a => a.along != 0)
         let aud = some_along[0]?.aud
         if (!aud) console.warn("still no recyclingly_find_an_aud()")
         if (!aud) return
         // revoke from the other star
-        // < this doesn't seem to get it done!
-        if (aud.star) aud.star.aud = null
+        // < this doesn't seem to get it done!?
+        if (aud.star) {
+            console.warn(`Recycling ${aud.idname} from ${aud.star.idname}`)
+            aud.star.aud = null
+            aud.star.isActive = false
+        }
         console.warn(`recyclingly_find_an_aud() found ${aud.idname}`)
         return aud
     }
@@ -348,7 +357,7 @@ export class Star {
             // there could be others that are suitable_new_auds() by now
             // we wait for the next decoded one, which may not be the one we actually pick
             if (this.aud) {
-                debugger
+                return
             }
 
             this.play()
