@@ -1,4 +1,5 @@
 import type { Audiolet } from "./Audiolet.svelte";
+import { V } from "./Common.svelte";
 import type { Gather } from "./Gather.svelte";
 import { GatherAudios } from "./GatherSocket.svelte";
 
@@ -8,6 +9,19 @@ export class GatherStars extends GatherAudios {
         super.think()
         // sometimes happens
         if (!this.star_field) this.whole_new_field()
+    }
+    // a general rescue-from-silence maneuvre
+    get_unstuck() {
+        console.warn(`had to get_unstuck()`)
+        let going = this.active_auds()
+        if (going.length) {
+            going.map(aud => {
+                console.warn(`get_unstuck() had to pause ${aud.idname}`)
+                aud.pause()
+            })
+        }
+        this.star_visiting = null
+        this.look()
     }
     
     
@@ -89,9 +103,11 @@ export class GatherStars extends GatherAudios {
         this.star_started = this.now()
         // < or on that "nothing wanted" reflex
         setTimeout(() => {
+            console.warn("Future+=2")
            this.scheme.future += 2
         },550)
         setTimeout(() => {
+            console.warn("Future+=4")
            this.scheme.future += 4
         },3150)
     }

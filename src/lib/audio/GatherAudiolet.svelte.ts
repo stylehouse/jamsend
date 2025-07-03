@@ -307,13 +307,13 @@ export class AudioletTest extends Queuey {
             this.stopped = 1
             if (this.end_index == null) {
                 console.error("Off the end of a stretch!")
-                // this.gat.might()
+                this.gat.get_unstuck()
                 // throw new Error(`${this.idname}: Off the end of a stretch`)
             }
             let good = await this.gat.aud_plays_nextly(this)
             if (!good) {
                 console.error("No nextly aud available!")
-                // this.gat.might()
+                this.gat.get_unstuck()
                 // throw new Error(`${this.idname}: No nextly aud available`)
             }
         }
