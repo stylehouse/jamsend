@@ -248,6 +248,12 @@ export class Star {
         if (!aud) {
             return this.no_aud_available()
         }
+        if (aud.stopped) {
+            console.warn(`${this.idname} aud had stopped. Off the end of a stretch?`)
+            this.isActive = false;
+            this.aud = null
+            return await this.play()
+        }
 
         if (this.isActive) console.warn("Star double-play")
         this.isActive = true;
@@ -340,6 +346,7 @@ export class Star {
             console.warn(`Recycling ${aud.idname} from ${aud.star.idname}`)
             aud.star.aud = null
             aud.star.isActive = false
+            aud.star = null
         }
         console.warn(`recyclingly_find_an_aud() found ${aud.idname}`)
         return aud

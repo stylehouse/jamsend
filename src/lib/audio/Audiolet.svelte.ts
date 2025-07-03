@@ -169,6 +169,7 @@ export class Audiolet extends AudioletTest {
     }
 
     play(why="?") {
+        if (this.stopped) debugger
         if (this.paused) {
             this.paused_time += this.gat.now() - this.paused
             this.paused = null
@@ -177,6 +178,7 @@ export class Audiolet extends AudioletTest {
         }
         else if (this.playing) {
             console.error("double play()?")
+            this.gat.currentlify(this,"double play()?")
         }
         else {
             this.shall_play(why+' play()')

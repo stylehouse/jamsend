@@ -280,7 +280,7 @@ export class AudioletTest extends Queuey {
         else {
             this.stopped = 1
             if (this.end_index == null) {
-                console.error("Off the end of a stretch!")
+                console.error(`Off the end of a stretch! ${this.idname}`)
                 this.gat.get_unstuck()
                 // throw new Error(`${this.idname}: Off the end of a stretch`)
                 return
