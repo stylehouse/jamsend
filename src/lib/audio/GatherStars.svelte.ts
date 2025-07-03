@@ -72,7 +72,15 @@ export class GatherStars extends GatherAudios {
     }
     done_travel(to:Star) {
         if (to != this.star_travel_in_progress) {
-            debugger
+            // < fadeout-in jitterbug: understand why this is with Story doing visuals, steps
+            // we sometimes come here from an aborted after-fadeout() pause()
+            //   which was about to stop this aud
+            //  this avoids a bug where you can't travel between
+            //   stars 1,2,1 faster than fadeout time
+            //   or star 1 doesn't play again until 2 started_stretch ??? unsure
+            //  suspect stickiness of which star we are visiting
+            // < also the 
+            // debugger
         }
         this.star_travel_in_progress = null
         if (this.star_travel_wanted) {
@@ -335,8 +343,11 @@ export class Star {
         }).sort((a,b) => (a.along - b.along))
 
         // console.log("Could be sorted: ",sorted)
-
         let some_along = sorted.filter(a => a.along != 0)
+
+        
+
+
         let aud = some_along[0]?.aud
         if (!aud) console.warn("still no recyclingly_find_an_aud()")
         if (!aud) return

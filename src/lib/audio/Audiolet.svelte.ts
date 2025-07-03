@@ -6,9 +6,9 @@ import type { Star } from "./GatherStars.svelte";
 // alongside AudioletTest
 
 // in ms
-const FADE_OUT_DURATION = 3533
+const FADE_OUT_DURATION = 1533
 const FADE_IN_DURATION = 255
-const MIN_GAIN = 0.02
+const MIN_GAIN = 0.0001
 
 //#region aud
 let MOCK_MS_PER_ITEM = 3000
@@ -116,15 +116,15 @@ export class Audiolet extends AudioletTest {
     //#region aud pauses
     is_fading = false
     fadein() {
-        if (!this.is_fading) {
-            // up from silence
-            this.gainNode.gain.setValueAtTime(MIN_GAIN, this.gat.now()/1000)
-        }
-        else {
+        if (this.is_fading) {
             // where-ever it is
             this.gainNode.gain.cancelScheduledValues(this.gat.now()/1000)
             this.is_fading = false
             console.log(`${this.idname} fade back in from where-ever`)
+        }
+        else {
+            // up from silence
+            this.gainNode.gain.setValueAtTime(MIN_GAIN, this.gat.now()/1000)
         }
         let at = this.gat.now() + FADE_IN_DURATION
         this.gainNode.gain.exponentialRampToValueAtTime(
@@ -155,6 +155,7 @@ export class Audiolet extends AudioletTest {
         // if we fadein() (etc?) again while we were fading out, don't pause
         if (invalidated) {
             console.warn(`${this.idname} No longer fading!`)
+            this.star && this.gat.done_travel?.(this.star)
             return
         }
         console.log(`${this.idname} Finished fadeout?`)
@@ -170,7 +171,6 @@ export class Audiolet extends AudioletTest {
         this.previous_duration = this.along()
         // < not always enough?
         this.playing.stop()
-        this.think()
     }
     // stop along()ing
     all_paused_time() {
