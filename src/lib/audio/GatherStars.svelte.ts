@@ -238,21 +238,20 @@ export class Star {
     pause() {
         if (!this.isActive) console.warn("Star double-pause")
         this.isActive = false;
-        console.log(`Star at (${this.idname}) paused`);
+        V>1 && console.log(`Star at (${this.idname}) paused`);
         this.aud?.pause()
     }
     
     async play() {
         // find a new aud?
-        this.aud ||= this.find_an_aud()
-        let aud = this.aud
+        let aud = this.aud || this.find_an_aud()
         if (!aud) {
             return this.no_aud_available()
         }
 
         if (this.isActive) console.warn("Star double-play")
         this.isActive = true;
-        console.log(`${this.idname} is now playing`);
+        V>1 && console.log(`${this.idname} is now playing`);
 
         if (!this.gat.queue.includes(aud)) {
             return this.aud_is_lost()
@@ -261,12 +260,13 @@ export class Star {
         if (aud.star && aud.star != this) {
             throw "overassigning stars"
         }
-        aud.star = this
 
+        this.aud = aud
+        aud.star = this
 
         if (aud.paused) {
             aud.play('*unpause')
-            console.log(`Was paused: ${aud.paused_time}`)
+            // console.log(`Was paused: ${aud.paused_time}`)
         }
         else {
             // become gat.currently via provisioning,
@@ -309,28 +309,25 @@ export class Star {
             [0]
     }
     no_aud_available() {
-        let got = (aud) => {
-            // < going through this for consistency?
-            //    to set gat.star_started?
-            this.play()
-        }
-        console.log(`Star no_aud_available()`)
-
         // before the first aud appears
+        //  or when we run out of fresh auds
         // await for the next decode
-        console.log(`${this.idname} on_next_stretch`)
+        console.warn(`${this.idname} no_aud_available(), waits for on_next_stretch...`)
         this.gat.on_next_stretch = (aud) => {
             this.gat.on_next_stretch = null
             console.log(`${this.idname} on_next_stretch !!!`)
-            // introduced to the star
-            if (this.aud && this.aud != aud) {
-                debugger
-            }
+            // not introduced to the star, just hope
+            // there could be others that are suitable_new_auds() by now
+            // we wait for the next decoded one, which may not be the one we actually pick
             if (this.aud) {
                 debugger
             }
-            this.aud = aud
-            got(aud)
+
+            this.play()
+
+            if (this.aud != aud) {
+                console.warn("on_next_stretch: didn't find the one")
+            }
         }
     }
 }
