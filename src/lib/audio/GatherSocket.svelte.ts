@@ -167,7 +167,7 @@ export class GatherAudios extends GatherSocket {
 
             this.on_begun?.()
             if (!this.on_begun) throw "non on_begun"
-            this.surf();
+            this.think();
         }
     }
     pending_have_more:Array<audiole> = null

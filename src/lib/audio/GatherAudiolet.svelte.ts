@@ -74,33 +74,7 @@ export class AudioletTest extends Queuey {
         this.scheme.future = 2
     }
 
-    //#region might
-    // act: start a bit of queue
-    //  then are dispatched by gat think()
-    // < surf()
-    async might(returning_start=false) {
-        return
-        if (!this.playing && this.queue.length) {
-            V>0 && console.log(`${this.idname} -> might`)
-            // we're going to hit play on this aud
-            // if it's ready
-            await this.prep_next_stretch()
-            if (this.next_stretch) {
-                
-                let start = () => {
-                    this.gat.currentlify(this,"aud.might")
-                    this.start_stretch(this.next_stretch)
-                }
-                if (returning_start) return start
-                start()
-            }
-        }
-        this.provision()
-    }
-
-    
-
-    
+    //#region think
     // ambiently
     next_stretch = $state()
     next_stretch_coming = ''
@@ -113,7 +87,7 @@ export class AudioletTest extends Queuey {
         this.provision()
         // is it on
         if (!this.playing) {
-            // waits for gat to aud.might()
+            // wait for something (a Star?) to aud.play()
             return
         }
         // < watch-for-ends should be generated from the latest started_stretch()

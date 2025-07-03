@@ -94,7 +94,7 @@ export class GathererTest extends Queuey {
     }
     suitable_new_auds() {
         // we don't check whether they're loaded|decoded
-        // < which could make later code less shutographic?
+        // < which could make later code less shuntographic?
         return this.queue
             // not the one we had ready to play in sequence
             // < when looking at a music source we have entirely,
@@ -108,80 +108,25 @@ export class GathererTest extends Queuey {
             // indicates something's managing it
             .filter(aud => !aud.playing)
     }
-
-
-    //#region surf might
-    surf() {
-        if (!this.queue.length) {
-            // beginning, acquire random track at random position
-            return this.provision()
-        }
-        console.log("surf()")
-        this.might("surf()")
+    active_auds() {
+        return this.queue
+            .filter(aud => !aud.stopped)
+            .filter(aud => !aud.paused)
+            .filter(aud => aud.playing)
     }
 
-    // act: pull from queue
-    might(really) {
-        return
-        let next = this.suitable_new_auds()[0]
-        if (next) {
-            let cur = this.currently
-            if (really && cur) {
-                // was a track skip, do a mix
-                next.aud_onstarted = () => {
-                    next.aud_onstarted = null
-                    V>1 && console.log("DOING A MIX")
-                    cur.fadeout()
-                    cur.star?.next_aud(next)
-                    next.fadein()
-                }
-            }
-            next.might()
-
-            // we can use might() to correct course 
-            //  when insane states break out
-            let astar = this.star_visiting
-            setTimeout(() => {
-                if (this.currently == next) {
-                    if (astar && this.star_visiting && this.star_visiting.aud != next) {
-                        console.log(`Could do a Star takeover:`
-                            +`\n${this.star_visiting.aud.idname}`
-                            +`\n${next.idname}`)
-                        debugger
-                        // this.star_visiting.next_aud(next)
-                    }
-                }
-            },400)
-        }
-        else {
-            if (really) {
-                // < surf()ing faster than gat queue can load?
-                console.warn("surf() > have_more()")
-            }
-        }
-
-        // a suitable time to think about:
-        this.provision()
-    }
-
-
+    //#region think
     currentlify(aud,how) {
         this.currently = aud
         V>0 && console.log(`${aud.idname} -> Currently\tvia ${how}`)
     }
 
-    // might might(), but only if...
     think_ticks = 0
     think() {
         // we are preoccupied with...
         if (this.currently) {
             // what's on
             this.currently.think('from gat')
-        }
-        else {
-            // getting going
-            V>0 && console.log("gat.think() start")
-            this.might()
         }
         
         if (this.think_ticks++ % 250 == 0) {
