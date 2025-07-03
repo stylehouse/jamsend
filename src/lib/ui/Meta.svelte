@@ -3,16 +3,6 @@
 </script>
 
     <div class="meta-display">
-        {#if meta.cover && !nocover}
-            <div class="cover-container">
-                <img 
-                    src={URL.createObjectURL(new Blob([meta.cover], {type: 'image/jpeg'}))} 
-                    alt="Album cover"
-                    class="cover-art"
-                />
-            </div>
-        {/if}
-        
         <div class="track-info">
             <h3 class="title">{meta.title}</h3>
             <p>
@@ -20,7 +10,7 @@
                  •
                 <span class="album">{meta.album}</span>
                 {meta.year ? `(${meta.year})` : ""}
-                {aud?.id.slice(0,8)}
+                <!-- {aud?.id.slice(0,8)} -->
             </p>
             
             <div class="details">
@@ -31,6 +21,16 @@
                 {/if} -->
             </div>
         </div>
+
+        {#if meta.cover && !nocover}
+            <div class="cover-container">
+                <img 
+                    src={URL.createObjectURL(new Blob([meta.cover], {type: 'image/jpeg'}))} 
+                    alt="Album cover"
+                    class="cover-art"
+                />
+            </div>
+        {/if}
     </div>
 
 <style>

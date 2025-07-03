@@ -25,7 +25,7 @@ you turn the knob to jump into the middle of a new track.
 # get such a container
 docker compose build
 # populate your ./node_modules, mounted in the container under /app
-docker run --rm -v .:/app jamsend-app:latest npm install"
+docker run --rm -v .:/app jamsend-app:latest npm install
 # thence
 docker compose up
 ```
