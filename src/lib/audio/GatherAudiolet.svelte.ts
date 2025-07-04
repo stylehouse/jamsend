@@ -83,36 +83,7 @@ export class AudioletTest extends Queuey {
             // no more planning
             return
         }
-        // console.log(`${this.idname} ,  ${source||''}`)
         this.provision()
-        // is it on
-        if (!this.playing) {
-            // wait for something (a Star?) to aud.play()
-            return
-        }
-        // < watch-for-ends should be generated from the latest started_stretch()
-        //    and include simply loading more chunks, avoiding provision() !?
-        //    and then stretching when intended loading is done
-        let notlong = Math.max(500,this.approx_chunk_time)
-        let near = this.remaining_stretch() < notlong
-        let prepped = this.next_stretch
-        // within one item from the end
-        // remaining_stretch() depends on along()
-        //  which depends on start_time
-        //   which is sync with playing
-        //   but stays that of first playing (stretch)
-        //  in other places it can express 30 when not started
-        //   as a way to do something asap
-        if (near && !prepped) {
-            await this.try_stretching()
-        }
-
-        // prepare for the next track when we know this is ending
-        if (this.end_index != null) {
-            if (this.end_index <= this.cursor()+3) {
-                this.gat.next_is_gettable(this)
-            }
-        }
     }
     get approx_chunk_time() {
         return MOCK_MS_PER_ITEM
@@ -217,6 +188,9 @@ export class AudioletTest extends Queuey {
     }
     // decodes stretches of the queue
     start_stretch() {
+        // old stretch departs, remember its shape
+        this.starting_new_stretch?.()
+
         let was = this.playing
         if (this.stopped) throw "start stopped"
         let stretch = this.next_stretch
@@ -245,10 +219,17 @@ export class AudioletTest extends Queuey {
         // stretch.start(this.start_time,play_from)
         V>1 && console.log(`aud:${this.id} Stretch++ ${this.stretch_size} ${this.tc}`)
     }
+
+
+
+
+
+    //#region ending, next
     playing_onended:Function|null
     
     plan_ending(was) {
         this.mock_ending(was)
+        this.plan_next()
     }
     mock_ending(was) {
         let endsin = this.stretch_size * this.approx_chunk_time
@@ -285,6 +266,61 @@ export class AudioletTest extends Queuey {
             }
         }
     }
+
+    // < and include simply loading more chunks, avoiding provision() !?
+    //    and then stretching when the intended loading is done
+    // called whenever we start a stretch
+    next_plan = null
+    async plan_next() {
+        // dedup the timers
+        let plan = this.next_plan = {}
+        let planned_delay = (delay,y) => {
+            setTimeout(() => {
+                if (plan == this.next_plan) {
+                    y()
+                }
+            }, Math.max(0,delay))
+        }
+        let remains = this.remaining_stretch()
+        if (remains == null) throw "!remains"
+
+        // next track prep might happen either distance from the end
+        //  really short auds may only just find out they end in time
+        let nextable = true
+        let nextilate = () => {
+            if (nextable && this.end_index != null) {
+                // respond to this once, at either time
+                nextable = false
+                this.gat.next_is_gettable(this)
+            }
+        }
+
+        let one_item_from_end = remains - this.approx_chunk_time
+        if (one_item_from_end < 100) {
+            console.error(`plan_next() while end-1 is in ${one_item_from_end}ms, remaining=${remains}`)
+        }
+        planned_delay(one_item_from_end, () => {
+            if (!this.next_stretch) {
+                this.try_stretching()
+            }
+            nextilate()
+        })
+        let three_items_from_end = remains - this.approx_chunk_time*3
+        planned_delay(three_items_from_end, () => {
+            nextilate()
+        })
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     //#region get, have
     get_more({delay}) {

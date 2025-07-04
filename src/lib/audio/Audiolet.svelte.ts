@@ -103,14 +103,22 @@ export class Audiolet extends AudioletTest {
         // because new_duration may include some paused_time
         this.stretch_start_paused_time = this.all_paused_time()
         
+        // see start_stretch() / previous_duration
         this.stretch_new_chunks = this.stretch_size - (this.previous_stretch_size||0)
         this.stretch_new_duration = this.duration() - (this.previous_duration||0)
         this.average_new_chunk_duration = this.stretch_new_duration / this.stretch_new_chunks
-        // for next time
-        this.previous_duration = this.duration()
-        this.previous_stretch_size = this.stretch_size
-
+        
         this.star?.started_stretch?.()
+        // re-assess when to do what for the future, now now is now
+        this.plan_next()
+    }
+    //  roll these over once per new stretch, not every started_stretch()
+    starting_new_stretch() {
+        if (this.playing) {
+            this.previous_duration = this.duration()
+            if (this.previous_stretch_size == this.stretch_size) debugger
+            this.previous_stretch_size = this.stretch_size || 0
+        }
     }
 
     //#region aud pauses
@@ -186,6 +194,7 @@ export class Audiolet extends AudioletTest {
         return this.all_paused_time() - this.stretch_start_paused_time
     }
 
+    //#region play
     async play(why="?") {
         if (this.stopped) debugger
         if (this.paused) {
@@ -206,7 +215,7 @@ export class Audiolet extends AudioletTest {
             this.fadein()
         }
         else {
-            // want to wait for it, because the other thing's pause() will be happening next
+            // want to wait for it, or we pause() / fadeout() the last aud too soon
             await this.shall_play(why+' play()')
             this.fadein()
         }
