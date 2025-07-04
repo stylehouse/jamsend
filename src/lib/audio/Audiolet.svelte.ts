@@ -279,7 +279,6 @@ export class Audiolet extends AudioletTest {
     }
 
 
-    aud_onended:Function|null
     // called by start_stretch()
     plan_ending(was) {
         this.playing.onended = () => {
@@ -300,5 +299,4 @@ export class Audiolet extends AudioletTest {
             this.whatsnext()
         }
     }
-
 }

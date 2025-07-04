@@ -173,21 +173,16 @@ export class AudioletTest extends Queuey {
         }
         this.next_stretch_coming = stretch.length
         this.next_stretch = stretch
+        // whatsnext() will play that
 
         V>1 && console.log(`aud:${this.id} strext ${this.stretch_size} -> ${stretch.length}`
             +`\t\t${this.remaining_stretch()} of ${this.approx_chunk_time}`)
         
-        // schedule it to play when this one finishes
-        this.playing_onended = () => {
-            this.start_stretch()
-            this.playing_onended = null
-        }
     }
     // decodes stretches of the queue
     // this fabricates the duration
     //  and is set during decode (too early?) before it reflects this.playing
     stretch_size:number = $state()
-    // playing_onended:Function|null
     delayed_stretch_think:number
     async new_stretch() {
         let encoded = this.queue.slice()
@@ -237,7 +232,6 @@ export class AudioletTest extends Queuey {
         }
 
         this.started_stretch?.()
-        this.aud_onstarted?.()
         
 
         // exponentially loady, log times we new_stretch()
@@ -251,9 +245,7 @@ export class AudioletTest extends Queuey {
         // stretch.start(this.start_time,play_from)
         V>1 && console.log(`aud:${this.id} Stretch++ ${this.stretch_size} ${this.tc}`)
     }
-    aud_onstarted:Function|null
     playing_onended:Function|null
-    aud_onended:Function|null
     
     plan_ending(was) {
         this.mock_ending(was)
@@ -268,14 +260,14 @@ export class AudioletTest extends Queuey {
     async whatsnext() {
         if (this.paused) console.error("paused aud reach the end: ${this.idname}")
         if (this.stopped) return
-        let ismore = this.playing_onended ? ', is more' : ''
+        let ismore = this.next_stretch ? ', is more' : ''
         let cur = this.cursor(1)
         V>1 && console.log(`${this.idname} stretchended${ismore}`
             +` ${this.tc}\tcursor:${cur}`)
         
-        if (this.playing_onended) {
+        if (this.next_stretch) {
             // the next stretch is ready to play
-            this.playing_onended()
+            this.start_stretch()
         }
         else {
             this.stopped = 1

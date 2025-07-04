@@ -345,8 +345,7 @@ export class Star {
         // console.log("Could be sorted: ",sorted)
         let some_along = sorted.filter(a => a.along != 0)
 
-        
-
+        // < there's a new Object.groupBy() method I kind of wanted to use here
 
         let aud = some_along[0]?.aud
         if (!aud) console.warn("still no recyclingly_find_an_aud()")
