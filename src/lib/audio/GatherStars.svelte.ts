@@ -81,6 +81,7 @@ export class GatherStars extends GatherAudios {
             //  suspect stickiness of which star we are visiting
             // < also the 
             // debugger
+            console.warn("fadeout-in jitterbug")
         }
         this.star_travel_in_progress = null
         if (this.star_travel_wanted) {
@@ -345,20 +346,29 @@ export class Star {
         // console.log("Could be sorted: ",sorted)
         let some_along = sorted.filter(a => a.along != 0)
 
+        let not_far = some_along.filter(a => a.along < 500)
+        let aud;
+        if (not_far.length) {
+            // < test this, doesn't seem to occur
+            let long_ago = not_far.map(a => {
+                return {...a, paused:a.aud.paused}
+            }).sort((a,b) => (a.paused - b.paused))
+            V>1 && console.log("In order: longest-paused first", long_ago.map(a => a.paused))
+            aud = long_ago[0]?.aud
+        }
         // < there's a new Object.groupBy() method I kind of wanted to use here
 
-        let aud = some_along[0]?.aud
+        aud ||= some_along[0]?.aud
         if (!aud) console.warn("still no recyclingly_find_an_aud()")
         if (!aud) return
         // revoke from the other star
         // < this doesn't seem to get it done!?
         if (aud.star) {
-            console.warn(`Recycling ${aud.idname} from ${aud.star.idname}`)
+            V>2 && console.log(`${this.idname} Recycling aud from ${aud.star.idname}`)
             aud.star.aud = null
             aud.star.isActive = false
             aud.star = null
         }
-        console.warn(`recyclingly_find_an_aud() found ${aud.idname}`)
         return aud
     }
 

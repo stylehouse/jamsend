@@ -197,7 +197,7 @@ export class Audiolet extends AudioletTest {
         let invalidated = await this.fadeout()
         // if we fadein() (etc?) again while we were fading out, don't pause
         if (invalidated) {
-            console.warn(`${this.idname} No longer fading!`)
+            V>1 && console.log(`${this.idname} stopped fading!`)
             this.star && this.gat.done_travel?.(this.star)
             return
         }
