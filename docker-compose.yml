@@ -12,7 +12,17 @@ services:
             ffmpeg \
             nodejs \
             npm
-    container_name: jamsend-dev
+        # Copy package files
+        COPY package*.json ./
+        RUN npm ci --only=production
+        # Copy source and build
+        COPY . .
+        RUN npm run build
+        # Serve the built files
+        RUN npm install -g serve
+        EXPOSE 9092
+        CMD ["serve", "-s", "dist", "-l", "9092"]
+    container_name: jamsend-prod
     working_dir: /app
     volumes:
       - .:/app
@@ -22,8 +32,8 @@ services:
       # this would bind to LAN address as well
       #  but WebRTC requires a secure context (can be localhost)
       # - "9091:9091"
-      - "172.17.0.1:9091:9091"
-    command: npm run dev -- --host 0.0.0.0 --port 9091
+      - "172.17.0.1:19091:19091"
+    command: npm run dev -- --host 0.0.0.0 --port 19091
     tty: true
     stdin_open: true
     restart: 'always'
