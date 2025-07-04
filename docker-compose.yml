@@ -8,32 +8,41 @@ services:
       dockerfile_inline: |
         FROM alpine:3.19
         WORKDIR /app
-        RUN apk add --no-cache \
+        RUN apk add --no-cache vim \
             ffmpeg \
             nodejs \
             npm
         # Copy package files
         COPY package*.json ./
-        RUN npm ci --only=production
+        # Install ALL dependencies (including devDependencies for build)
+        RUN npm ci
         # Copy source and build
         COPY . .
         RUN npm run build
-        # Serve the built files
-        RUN npm install -g serve
-        EXPOSE 9092
-        CMD ["serve", "-s", "dist", "-l", "9092"]
+        RUN npm run build:server
+
+
+        # Clean up dev dependencies after build
+        #RUN npm prune --production
+        
+        # doesn't know socket.io???
+        # CMD ["node", "build"]
+        # CMD ["node", "server.js"]
+        CMD ["node", "dist-server/server.js"]
     container_name: jamsend-prod
     working_dir: /app
     volumes:
-      - .:/app
       # - "./testsounds:/music:ro"
+      - ".svelte-kit/:/app/.svelte-kit/"
       - *music-volume
     ports:
       # this would bind to LAN address as well
       #  but WebRTC requires a secure context (can be localhost)
       # - "9091:9091"
       - "172.17.0.1:19091:19091"
-    command: npm run dev -- --host 0.0.0.0 --port 19091
+    environment:
+      - PORT=19091
+      - HOST=0.0.0.0
     tty: true
     stdin_open: true
     restart: 'always'
@@ -43,8 +52,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'          # Max 2 CPU cores
-          memory: 1G           # Max 1GB RAM
+          cpus: '2'          # Max 2 CPU cores
+          memory: 1.5G           # Max 1GB RAM
         reservations:
           cpus: '0.5'          # Reserve 0.5 CPU cores  
           memory: 256M         # Reserve 256MB RAM
