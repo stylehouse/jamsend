@@ -202,7 +202,7 @@ function AudioServer(socket, io) {
     socket.on('more', async (r: audioi, cb) => {
         carefully('more', cb, socket, async () => {
             r ||= {}
-            V>0 && console.log("ws AudioServer more: ",r)
+            V>0 && console.log("/more: ",r)
             
             let specific = r.id && true
             let from_start = r.from_start
@@ -257,6 +257,36 @@ function AudioServer(socket, io) {
         })
     });
 
+    // Handle no_more requests from client
+    socket.on('no_more', async (data, cb) => {
+        carefully('no_more', cb, socket, async () => {
+            console.log(`/no_more ${socket.id}'s`)
+            V>0 && console.log(`/no_more ${socket.id}'s`, data)
+            const { track_ids: ids } = data
+            if (!ids?.length) return
+            
+            V>0 && console.log(`culling ${socket.id}'s`, ids)
+            
+            let cleaned_count = 0
+            for (const id of ids) {
+                const feed = user.feeds[id]
+                if (feed) {
+                    try {
+                        // Close the FFmpeg stream
+                        await feed.close()
+                        delete user.feeds[id]
+                        cleaned_count++
+                        V>1 && console.log(`Cleaned up feed for track ${id}`)
+                    } catch (error) {
+                        console.error(`Error closing feed for track ${id}:`, error)
+                    }
+                }
+                delete has_meta[id]
+            }
+            
+            V>0 && console.log(`Cleaned up ${cleaned_count} feeds for client ${socket.id}`)
+        })
+    })
 
     // drop user a while after disconnect
     socket.on('disconnect', () => {
@@ -268,6 +298,7 @@ function AudioServer(socket, io) {
                 feed.close();
             }
             delete users[socket.id]
+            has_meta = {}
         }, 2*60*1000)
 
     });

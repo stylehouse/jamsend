@@ -1,11 +1,7 @@
-services:
-  drive-check:
-    image: alpine:3.19
-    command: sh -c 'while [ ! -d "/music" ] || [ -z "$$(ls -A /music)" ]; do echo "Waiting for drive to mount..."; sleep 2; done; echo "Drive is ready!"'
-    volumes:
-      - *music-volume
-    restart: "no"
+x-common-volumes: &common-volumes
+  music-volume: &music-volume "${MUSIC_PATH:-/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix}:/music:ro"
 
+services:
   app:
     build:
       context: .
@@ -20,8 +16,8 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-      # - "./testsounds:/music"
-      - "/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix:/music"
+      # - "./testsounds:/music:ro"
+      - *music-volume
     ports:
       # this would bind to LAN address as well
       #  but WebRTC requires a secure context (can be localhost)
@@ -30,11 +26,6 @@ services:
     command: npm run dev -- --host 0.0.0.0 --port 9091
     tty: true
     stdin_open: true
-
-
-    depends_on:
-      drive-check:
-        condition: service_completed_successfully
     restart: 'always'
 
 
@@ -51,4 +42,4 @@ services:
     ulimits:
       nproc: 100               # Max 100 processes total
       nofile: 1024             # Max 1024 open files
-    restart: 'always'
+

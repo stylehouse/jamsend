@@ -166,8 +166,9 @@ export class Audiolet extends AudioletTest {
             this.star && this.gat.done_travel?.(this.star)
             return
         }
-        console.log(`${this.idname} Finished fadeout?`)
         this.is_fading = false
+
+        
         this.should_play = null
         if (!this.playing) {
             // < how does this happen?
@@ -287,7 +288,6 @@ export class Audiolet extends AudioletTest {
         this.gat.socket.emit('more',req)
     }
 
-
     // called by start_stretch()
     plan_ending(was) {
         this.playing.onended = () => {
@@ -308,4 +308,5 @@ export class Audiolet extends AudioletTest {
             this.whatsnext()
         }
     }
+
 }

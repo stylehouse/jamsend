@@ -94,6 +94,13 @@ export class GatherSocket extends GathererTest {
             aud.have_more(r)
         }
     }
+    //tell the server to relax
+    no_more(culled:Array<Audiolet>) {
+        if (!this.connected || !culled?.length) return
+        let ids = culled.map(aud => aud.id)
+        this.socket.emit('no_more',{ids})
+
+    }
 }
 
 

@@ -71,27 +71,29 @@ export class Queuey {
     } = {}
 
     cull_queue() {
-        let history = this.scheme.history || 0
+        let history = (this.scheme.history || 0)
         if (history == -1) return
-        let culled = 0
+        let culled = []
         if (this.now) {
-            culled += this.cull_stopped_audiolets()
-            culled += this.cull_long_paused_audiolets?.() || 0
+            culled.push(...(this.cull_stopped_audiolets?.()||[]))
+            culled.push(...(this.cull_long_paused_audiolets?.()||[]))
         }
         else {
             // < something Queuey-generic about which item is the cursor in
             // let i = Math.floor(this.cursor())
         }
-        if (culled || 1) {
-            V>1 && console.log(`cull_queue() x${culled}`)
+        if (culled.length) {
+            V>1 && console.log(`cull_queue() x${culled.length}`)
+            // tell the server to relax
+            this.no_more?.(culled)
         }
     }
     cull_stopped_audiolets() {
-        let culled = 0
+        let culled = []
         // assume things will get stopped when they're old
         let stopped = this.queue
             .filter(aud => aud.stopped)
-        for (let i = 0; i < history; i++) {
+        for (let i = 0; i < (this.scheme.history || 0); i++) {
             stopped.pop()
         }
         let sane = 0
@@ -100,27 +102,27 @@ export class Queuey {
             let index = this.queue.indexOf(aud)
             if (index >= 0) {
                 this.queue.splice(index, 1)
-                culled++
+                culled.push(aud)
             }
         }
         return culled
     }
     cull_long_paused_audiolets() {
-        let culled = 0
+        let culled = []
         const now = this.now()
         // sort by most long ago paused
-        let one_minute = 60_000
+        let PAUSED_AGO_MIN = 5000
         const paused = this.queue
             .filter(aud => aud.paused && !aud.stopped)
             .map(aud => ({
                 aud,
                 pausedDuration: now - aud.paused,
             }))
-            .filter(a => a.pausedDuration > one_minute)
+            .filter(a => a.pausedDuration > PAUSED_AGO_MIN)
             .sort((a, b) => b.pausedDuration - a.pausedDuration)
         
 
-        for (let i = 0; i < history; i++) {
+        for (let i = 0; i < (this.scheme.history || 0); i++) {
             paused.pop()
         }
         let sane = 0
@@ -131,7 +133,7 @@ export class Queuey {
             let index = this.queue.indexOf(aud)
             if (index >= 0) {
                 this.queue.splice(index, 1)
-                culled++
+                culled.push(aud)
             }
         }
         return culled

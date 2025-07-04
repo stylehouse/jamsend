@@ -136,7 +136,7 @@ export class GathererTest extends Queuey {
             this.currently.think('from gat')
         }
         
-        if (this.think_ticks++ % 250 == 0) {
+        if (this.think_ticks++ % 50 == 0) {
             // avoid browser mem growing 2GB/hr
             this.cull_queue()
         }
