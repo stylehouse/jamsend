@@ -146,6 +146,18 @@ export class Audiolet extends AudioletTest {
         this.star?.started_stretch?.()
         // re-assess when to do what for the future, now now is now
         this.plan_next()
+
+        // sanity check there's nothing we forgot to pause?
+        // < this isn't accurate.
+        0 && this.gat.active_auds().filter(aud => aud != this)
+            .filter(aud => !aud.is_fading)
+            .map(aud => {
+                setTimeout(() => {
+                    if (aud.paused || aud.is_fading) return
+                    console.warn(`Forgot about: ${aud.idname}`)
+                    aud.pause()
+                },100)
+            })
     }
     //  roll these over once per new stretch, not every started_stretch()
     starting_new_stretch() {
