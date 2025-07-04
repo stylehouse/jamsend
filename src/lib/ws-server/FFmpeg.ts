@@ -476,11 +476,11 @@ async function ffloudness(mu: TheMusic, seektime = 0) {
             resolve(mu) // Return mu even if FFmpeg failed
         })
         
-        // Set a timeout to avoid hanging (loudness analysis can take time)
+        // Set a timeout to avoid hanging
         setTimeout(() => {
             ffmpeg.kill('SIGKILL')
             console.warn(`ffloudness timeout for ${mu.id}`)
             resolve(mu)
-        }, 30000) // 30 second timeout
+        }, 6000) // 6 second timeout
     })
 }
