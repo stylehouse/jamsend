@@ -12,20 +12,21 @@ export const webSocketServer = {
     name: 'webSocketServer',
     configureServer(server: ViteDevServer) {
         if (!server.httpServer) return
-
         const io = new Server(server.httpServer)
-
-        io.on('connection', async (socket) => {
-            console.log('Client connected:', socket.id);
-            // apply these handlers to each client object
-            // < bad memory management for a busy server?
-            AudioServer(socket, io)
-        });
-
-        scan_music()
+        init_an_io(io)
     }
 }
 
+export function init_an_io(io) {
+    io.on('connection', async (socket) => {
+        console.log('Client connected:', socket.id);
+        // apply these handlers to each client object
+        // < bad memory management for a busy server?
+        AudioServer(socket, io)
+    });
+
+    scan_music()
+}
 
 // error-sending wrapper
 export async function carefully(label: string, callback: Function, socket:Socket, doing: Function) {
