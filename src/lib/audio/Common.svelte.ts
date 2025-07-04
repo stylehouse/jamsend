@@ -57,8 +57,9 @@ export type TheMusic = {
 }
 
 
-
-
+// time since thing was relevant, when can be culled
+// five seconds in miliseconds
+const LONG_AGO = 5000
 export class Queuey {
     constructor(opt) {
         Object.assign(this,opt)
@@ -77,6 +78,7 @@ export class Queuey {
         if (this.now) {
             culled.push(...(this.cull_stopped_audiolets?.()||[]))
             culled.push(...(this.cull_long_paused_audiolets?.()||[]))
+            culled.push(...(this.cull_old_star_fields?.()||[]))
         }
         else {
             // < something Queuey-generic about which item is the cursor in
@@ -84,8 +86,16 @@ export class Queuey {
         }
         if (culled.length) {
             V>1 && console.log(`cull_queue() x${culled.length}`)
+            culled.map(aud => aud.culled = 1)
             // tell the server to relax
             this.no_more?.(culled)
+        }
+    }
+    remove_item_from_queue(aud) {
+        let index = this.queue.indexOf(aud)
+        if (index >= 0) {
+            this.queue.splice(index, 1)
+            return 1
         }
     }
     cull_stopped_audiolets() {
@@ -99,11 +109,8 @@ export class Queuey {
         let sane = 0
         while (stopped.length && sane++<500) {
             let aud = stopped.shift()
-            let index = this.queue.indexOf(aud)
-            if (index >= 0) {
-                this.queue.splice(index, 1)
-                culled.push(aud)
-            }
+            this.remove_item_from_queue(aud)
+                && culled.push(aud)
         }
         return culled
     }
@@ -111,14 +118,13 @@ export class Queuey {
         let culled = []
         const now = this.now()
         // sort by most long ago paused
-        let PAUSED_AGO_MIN = 5000
         const paused = this.queue
             .filter(aud => aud.paused && !aud.stopped)
             .map(aud => ({
                 aud,
                 pausedDuration: now - aud.paused,
             }))
-            .filter(a => a.pausedDuration > PAUSED_AGO_MIN)
+            .filter(a => a.pausedDuration > LONG_AGO)
             .sort((a, b) => b.pausedDuration - a.pausedDuration)
         
 
@@ -129,14 +135,62 @@ export class Queuey {
         while (paused.length && sane++<500) {
             let a = paused.shift()
             let aud = a.aud
-            console.log(` --cull ${aud.idname} - ${a.pausedDuration}`)
-            let index = this.queue.indexOf(aud)
-            if (index >= 0) {
-                this.queue.splice(index, 1)
-                culled.push(aud)
-            }
+            V>1 && console.log(` --cull ${aud.idname} - ${a.pausedDuration}`)
+            this.remove_item_from_queue(aud)
+                && culled.push(aud)
         }
         return culled
+    }
+    // cull old star fields and their star.aud references
+    //  aud not in gat.queue can be found in here
+    cull_old_star_fields() {
+        if (!this.star_field) return []
+        
+        let culled = []
+        const now = this.now()
+        const FIELD_DISTANCE_THRESHOLD = 4 // fields more than 5 away from current position
+        
+        const fieldsToRemove = []
+        
+        // Find old star fields to remove
+        V>1 && console.log(`Culling star fields far from ${this.star_field_visiting}`) 
+        for (const [indexStr, field] of Object.entries(this.star_field)) {
+            const index = parseInt(indexStr)
+            const distance = Math.abs(index - this.star_field_visiting)
+            
+            if (distance > FIELD_DISTANCE_THRESHOLD) {
+                // too old and too far away
+                fieldsToRemove.push({ index, field })
+            }
+        }
+        
+        // Clean up the star fields
+        for (const { index, field } of fieldsToRemove) {
+            // Clean up star.aud references and collect culled audiolets
+            if (field.stars) {
+                for (const star of field.stars) {
+                    if (star.aud) {
+                        V>1 && console.log(`Culling from star field ${index}: ${star.idname}`)
+                        if (star.isActive) console.error("culled star was active")
+                        // Break the circular reference
+                        star.aud.star = null
+                        star.aud = null
+                        // we could drop all the aud that were there?
+                        //  but it's likely user is surfing along
+                        //  and we want the diversity of snippets
+                        // this.remove_item_from_queue(aud)
+                        //     && culled.push(aud)
+                    }
+                }
+            }
+            
+            // Remove the field from memory
+            //  keep_field() will regenerate it if we look() at it
+            delete this.star_field[index]
+            V>1 && console.log(`Culled old star field ${index}`)
+        }
+        // don't return already culled audiolets
+        return culled.filter(aud => !aud.culled)
     }
 
 
