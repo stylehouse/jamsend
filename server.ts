@@ -24,5 +24,5 @@ const port = process.env.PORT || 19091;
 const host = process.env.HOST || '0.0.0.0';
 
 server.listen(port, host, () => {
-  console.log(`socket.io server running on http://${host}:${port}`);
+  console.log(`socket.io server on http://${host}:${port}`);
 });
