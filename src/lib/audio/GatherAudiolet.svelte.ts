@@ -296,8 +296,8 @@ export class AudioletTest extends Queuey {
         }
 
         let one_item_from_end = remains - this.approx_chunk_time
-        if (one_item_from_end < 100) {
-            console.error(`plan_next() while end-1 is in ${one_item_from_end}ms, remaining=${remains}`)
+        if (one_item_from_end < 55) {
+            console.warn(`plan_next() while end-1 is in ${one_item_from_end}ms, remaining=${remains}`)
         }
         planned_delay(one_item_from_end, () => {
             if (!this.next_stretch) {

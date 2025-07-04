@@ -1,5 +1,5 @@
 <script lang="ts">
-    let {meta,nocover,aud} = $props()
+    let {meta,nocover} = $props()
 </script>
 
     <div class="meta-display">

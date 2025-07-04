@@ -11,7 +11,8 @@ export async function createFFmpegStream(mu:TheMusic, fraction = 0) {
     
     // Calculate seek time based on duration and fraction
     const seektime = mu.meta.duration ? Math.floor(mu.meta.duration * fraction) : 0;
-    
+
+    await ffloudness(mu,seektime);
     // Create ffmpeg process with stream control
     const ff = ffmpegnate(mu, seektime);
     
@@ -24,7 +25,7 @@ export async function createFFmpegStream(mu:TheMusic, fraction = 0) {
     
     // Map of pending requests by index
     const waitingRequests = new Map();
-    console.log(`FFmpeg++ ${mu.id}`);
+    V>0 && console.log(`FFmpeg++ ${mu.id}`);
     
     // Set up data handler
     //#region on_data
@@ -182,8 +183,8 @@ function ffmpegnate(mu:TheMusic, seektime = 0) {
     
     // Create FFmpeg process with appropriate arguments for transcoding
     const ffmpeg = spawn('ffmpeg', [
-        '-i', mu.path,
         ...(seektime > 0 ? ['-ss', seektime.toString()] : []),
+        '-i', mu.path,
         '-c:a', audioCodec,
         '-f', format,
         '-movflags', 'frag_keyframe+empty_moov',
@@ -404,5 +405,82 @@ async function extractCoverArt(mu) {
             ffmpeg.kill('SIGKILL')
             reject(new Error('Cover art extraction timeout'))
         }, 5000)
+    })
+}
+
+//#region ffloudness
+// Extract loudness information using FFmpeg's loudnorm filter
+async function ffloudness(mu: TheMusic, seektime = 0) {
+    return new Promise((resolve, reject) => {
+        // Use FFmpeg with loudnorm filter in analysis mode
+        const ffmpeg = spawn('ffmpeg', [
+            ...(seektime > 0 ? ['-ss', seektime.toString()] : []),
+            '-i', mu.path,
+            '-t', 20, // only ten seconds
+            '-af', 'loudnorm=print_format=json',
+            '-f', 'null',
+            '-'
+        ])
+        
+        let outputData = ''
+        let errorData = ''
+        
+        // FFmpeg outputs loudnorm results to stderr
+        ffmpeg.stderr.on('data', (chunk) => {
+            errorData += chunk.toString()
+        })
+        
+        ffmpeg.stdout.on('data', (chunk) => {
+            outputData += chunk.toString()
+        })
+        
+        ffmpeg.on('close', (code) => {
+            if (code !== 0) {
+                console.error(`ffloudness process exited with code ${code}`)
+                console.error('Error output:', errorData)
+                return resolve(mu) // Return mu even if we couldn't get loudness data
+            }
+            
+            try {
+                // Extract JSON from stderr output
+                const jsonMatch = errorData.match(/\{[\s\S]*?\}/);
+                if (!jsonMatch) {
+                    console.warn('No loudness JSON found in FFmpeg output')
+                    return resolve(mu)
+                }
+                
+                const loudnessData = JSON.parse(jsonMatch[0])
+                
+                // Map FFmpeg loudnorm output to our metadata structure
+                mu.meta.loudness = {
+                    integrated: parseFloat(loudnessData.input_i) || 0,
+                    truePeak: parseFloat(loudnessData.input_tp) || 0,
+                    lra: parseFloat(loudnessData.input_lra) || 0,
+                    threshold: parseFloat(loudnessData.input_thresh) || 0,
+                    targetOffset: parseFloat(loudnessData.target_offset) || 0
+                }
+                console.log(`ffloudness ${mu.id}: ${mu.meta.loudness.integrated} LUFS, ${mu.meta.loudness.truePeak} dBTP`)
+                // only want
+                mu.meta.loudness = mu.meta.loudness.integrated
+                
+                resolve(mu)
+            } catch (err) {
+                console.error('Error parsing loudness output:', err)
+                console.error('Raw stderr:', errorData)
+                resolve(mu) // Return mu even if we couldn't parse loudness data
+            }
+        })
+        
+        ffmpeg.on('error', (err) => {
+            console.error('ffloudness process error:', err)
+            resolve(mu) // Return mu even if FFmpeg failed
+        })
+        
+        // Set a timeout to avoid hanging (loudness analysis can take time)
+        setTimeout(() => {
+            ffmpeg.kill('SIGKILL')
+            console.warn(`ffloudness timeout for ${mu.id}`)
+            resolve(mu)
+        }, 30000) // 30 second timeout
     })
 }

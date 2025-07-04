@@ -46,6 +46,7 @@ export type songmeta = {
     title:string,
     year:string,
     cover:Uint8Array,
+    
 }
 export type TheMusic = {
     id:urihash,

@@ -9,6 +9,10 @@ import type { Star } from "./GatherStars.svelte";
 const FADE_OUT_DURATION = 1533
 const FADE_IN_DURATION = 255
 const MIN_GAIN = 0.0001
+// Target loudness in LUFS
+const TARGET_LUFS = -8.0
+const MAX_GAIN = 6.0
+const MIN_GAIN_DB = -20
 
 //#region aud
 let MOCK_MS_PER_ITEM = 3000
@@ -35,6 +39,37 @@ export class Audiolet extends AudioletTest {
         this.playing?.stop()
         this.gat.fadingout = this.gat.fadingout
             .filter(aud => aud != this)
+    }
+
+    // make all the same loudness
+    // < use libebur128-wasm
+    full_gain(): number {
+        // Default to 1.0 if no loudness data available
+        const loudness = this.meta?.loudness;
+        if (!loudness) {
+            V > 0 && console.warn(`${this.idname}: No loudness data, using gain 1.0`);
+            return 1.0;
+        }
+        
+        // Calculate gain needed to reach target LUFS
+        const gainDb = TARGET_LUFS - loudness;
+        
+        // Apply safety limits
+        const limitedGainDb = Math.max(MIN_GAIN_DB, Math.min(gainDb, this.dbToLinear(MAX_GAIN)));
+        
+        // Convert to linear gain
+        const linearGain = this.dbToLinear(limitedGainDb);
+        
+        // Log the calculation for debugging
+        V > 2 && console.log(
+            `${this.idname}: Loudness ${loudness.toFixed(1)} LUFS → ` +
+            `${gainDb.toFixed(1)}dB gain (${linearGain.toFixed(3)} linear) `
+        );
+        
+        return linearGain;
+    }
+    private dbToLinear(db: number): number {
+        return Math.pow(10, db / 20);
     }
 
 
@@ -136,7 +171,7 @@ export class Audiolet extends AudioletTest {
         }
         let at = this.gat.now() + FADE_IN_DURATION
         this.gainNode.gain.exponentialRampToValueAtTime(
-            1.0,
+            this.full_gain(),
             at/1000
         )
     }
