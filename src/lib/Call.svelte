@@ -144,7 +144,10 @@
 
 
             {#if gat?.currently?.meta}
-                <Meta meta={gat?.currently?.meta} aud={gat?.currently} />
+                <Meta meta={gat?.currently?.meta} 
+                    aud={gat?.currently} 
+                    nocover={!isLandscape}
+                    />
             {/if}
 
             
@@ -200,7 +203,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 1rem;
+        padding: 0rem;
         box-sizing: border-box;
     }
 
@@ -238,7 +241,7 @@
 
     .audio-player {
         mix-blend-mode: difference;
-        padding: 1.5rem;
+        padding: 0.5rem;
         border-radius: 12px;
         background: #1a1a1a;
         border: 1px solid #333;
