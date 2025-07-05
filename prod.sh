@@ -15,6 +15,10 @@ fi
 
 # dev news
 git pull
+if [ $? -ne 0 ]; then
+  echo "Pull failed."
+  exit 1
+fi
 
 # become prod
 cp docker-compose.prod.yml docker-compose.yml
