@@ -404,7 +404,7 @@ async function extractCoverArt(mu) {
         setTimeout(() => {
             ffmpeg.kill('SIGKILL')
             reject(new Error('Cover art extraction timeout'))
-        }, 5000)
+        }, 9000)
     })
 }
 
@@ -413,10 +413,13 @@ async function extractCoverArt(mu) {
 async function ffloudness(mu: TheMusic, seektime = 0) {
     return new Promise((resolve, reject) => {
         // Use FFmpeg with loudnorm filter in analysis mode
+        // should take 500ms to loudnorm 10s of audio
         const ffmpeg = spawn('ffmpeg', [
             ...(seektime > 0 ? ['-ss', seektime.toString()] : []),
             '-i', mu.path,
-            '-t', 20, // only ten seconds
+            '-t', 10, // only ten seconds
+            // < why does not skipping the video channel (mjpeg) make it 20x slower?
+            '-vn',
             '-af', 'loudnorm=print_format=json',
             '-f', 'null',
             '-'
@@ -434,13 +437,16 @@ async function ffloudness(mu: TheMusic, seektime = 0) {
             outputData += chunk.toString()
         })
         
+        // once closed, hurryups stops:
+        let done = 0
+        let hurried_up = 0
         ffmpeg.on('close', (code) => {
-            if (code !== 0) {
+            if (code !== 0 && !hurried_up) {
                 console.error(`ffloudness process exited with code ${code}`)
                 console.error('Error output:', errorData)
                 return resolve(mu) // Return mu even if we couldn't get loudness data
             }
-            
+            done = 1
             try {
                 // Extract JSON from stderr output
                 const jsonMatch = errorData.match(/\{[\s\S]*?\}/);
@@ -459,7 +465,7 @@ async function ffloudness(mu: TheMusic, seektime = 0) {
                     threshold: parseFloat(loudnessData.input_thresh) || 0,
                     targetOffset: parseFloat(loudnessData.target_offset) || 0
                 }
-                console.log(`ffloudness ${mu.id}: ${mu.meta.loudness.integrated} LUFS, ${mu.meta.loudness.truePeak} dBTP`)
+                V>2 && console.log(`ffloudness ${mu.id}: ${mu.meta.loudness.integrated} LUFS, ${mu.meta.loudness.truePeak} dBTP`)
                 // only want
                 mu.meta.loudness = mu.meta.loudness.integrated
                 
@@ -478,9 +484,16 @@ async function ffloudness(mu: TheMusic, seektime = 0) {
         
         // Set a timeout to avoid hanging
         setTimeout(() => {
+            if (done) return
+            hurried_up = 1
+            ffmpeg.kill('SIGINT')
+            console.warn(`ffloudness hurryup for ${mu.id}`)
+        }, 4000) // 5 second timeout
+        setTimeout(() => {
+            if (done) return
             ffmpeg.kill('SIGKILL')
             console.warn(`ffloudness timeout for ${mu.id}`)
             resolve(mu)
-        }, 6000) // 6 second timeout
+        }, 5000) // 5 second timeout
     })
 }
