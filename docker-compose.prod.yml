@@ -1,0 +1,55 @@
+x-common-volumes: &common-volumes
+  music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music:ro"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM alpine:3.19
+        WORKDIR /app
+        RUN apk add --no-cache vim \
+            ffmpeg \
+            nodejs \
+            npm
+        # Copy package files
+        COPY package*.json ./
+        # Install ALL dependencies (including devDependencies for build)
+        RUN npm ci
+        # Copy source and build
+        COPY . .
+        RUN npm run build
+        RUN npm run build:server
+
+        # Clean up dev dependencies after build
+        RUN npm prune --production
+        
+        CMD ["node", "dist-server/server.js"]
+    container_name: jamsend-prod
+    working_dir: /app
+    volumes:
+      - *music-volume
+    ports:
+      # this would bind to LAN address as well
+      #  but WebRTC requires a secure context (can be localhost)
+      # - "9091:9091"
+      - "172.17.0.1:19091:19091"
+    environment:
+      - PORT=19091
+      - HOST=0.0.0.0
+    tty: true
+    stdin_open: true
+    restart: 'always'
+    command: node dist-server/server.js
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    ulimits:
+      nproc: 100
+      nofile: 1024

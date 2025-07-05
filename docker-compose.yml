@@ -1,5 +1,6 @@
 x-common-volumes: &common-volumes
-  music-volume: &music-volume "${MUSIC_PATH:-/media/s/be3654b3-8643-4a6e-9477-68327cc11ff5/Music/0 curations and encodes/Jolist/71mix}:/music:ro"
+  music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music:ro"
+
 
 services:
   app:
