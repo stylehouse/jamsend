@@ -7,7 +7,7 @@ import type { Star } from "./GatherStars.svelte";
 
 // in ms
 const FADE_OUT_DURATION = 1533
-const FADE_IN_DURATION = 255
+const FADE_IN_DURATION = 40
 const MIN_GAIN = 0.0001
 // Target loudness in LUFS
 const TARGET_LUFS = -8.0
