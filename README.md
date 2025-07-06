@@ -28,6 +28,8 @@ docker compose build
 docker run --rm -v .:/app jamsend-app:latest npm install
 # thence
 docker compose up
+# maybe eventually
+cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
 ```
 
 If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works.
