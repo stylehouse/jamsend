@@ -1,3 +1,4 @@
+import { throttle } from "$lib/Y";
 import type { Audiolet } from "./Audiolet.svelte";
 import { V } from "./Common.svelte";
 import type { Gather } from "./Gather.svelte";
@@ -40,26 +41,27 @@ export class GatherStars extends GatherAudios {
     // lock|concentrate on each target while:
     star_travel_in_progress:Star|null = false
     star_travel_wanted:Star|null = null
+    star_finding_frequency = 7
+    star_finding_freq_throttle:Function
     async look() {
         if (!this.star_field) this.whole_new_field()
         
         this.track_field_visiting()
 
-        // what station are we closest to, tune it in
-        let closest = this.find_closest_star()
-        if (!closest) throw "!closest"
-        let cur = this.star_visiting
-        if (!cur || cur && cur != closest) {
-            if (!this.may_travel(closest)) return
-            // change star
-            this.change_star(closest,cur)
-        }
+        this.might_travel()
     }
-    async change_star(to:Star,from?:Star) {
-        if (to == from) return console.log("null change_star()")
-        await to.play()
-        from?.pause()
-        this.star_visiting = to
+    might_travel() {
+        this.star_finding_freq_throttle ||= throttle(() => {
+            // what station are we closest to
+            let closest = this.find_closest_star()
+            if (!closest) throw "!closest"
+            let cur = this.star_visiting
+            if (!cur || cur && cur != closest) {
+                if (!this.may_travel(closest)) return
+                this.change_star(closest,cur)
+            }
+        }, 1000 / this.star_finding_frequency)
+        this.star_finding_freq_throttle()
     }
     may_travel(to:Star) {
         if (this.star_travel_in_progress) {
@@ -91,6 +93,12 @@ export class GatherStars extends GatherAudios {
             this.star_travel_wanted = null
             this.change_star(to,from)
         }
+    }
+    async change_star(to:Star,from?:Star) {
+        if (to == from) return console.log("null change_star()")
+        await to.play()
+        from?.pause()
+        this.star_visiting = to
     }
     // come from any start of a stretch (inc unpauses)
     star_started_stretch(star) {

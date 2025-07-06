@@ -2,7 +2,6 @@
 	import QrCode from "svelte-qrcode"
     import SvelteCopyUrlButton from 'svelte-copy-url-button';
     import { Idento } from './Peer.svelte';
-    import Peers from "./Room.svelte";
     import Room from "./Room.svelte";
 
     // your id, we save
