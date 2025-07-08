@@ -55,7 +55,7 @@ export async function createFFmpegStream(mu:TheMusic, fraction = 0) {
         }
         
         // Pause stream if we've buffered enough chunks ahead
-        if (consumedIndex + 5 < producedIndex) {
+        if (consumedIndex + 1 < producedIndex) {
             ff.pause();
             V>0 && console.log(`FFmpeg+= ${mu.id} ${consumedIndex}/${producedIndex}, pausing`);
         }

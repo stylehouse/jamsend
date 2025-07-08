@@ -13,7 +13,7 @@ export class GatherSocket extends GathererTest {
 
     constructor(opt) {
         super(opt)
-        this.scheme.future = 0
+        this.scheme.future = 1
         this.setupSocket();
     }
 

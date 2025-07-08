@@ -100,20 +100,9 @@ export class Queuey {
         }
     }
     cull_stopped_audiolets() {
-        let culled = []
-        // assume things will get stopped when they're old
-        let stopped = this.queue
+        return this.queue
             .filter(aud => aud.stopped)
-        for (let i = 0; i < (this.scheme.history || 0); i++) {
-            stopped.pop()
-        }
-        let sane = 0
-        while (stopped.length && sane++<500) {
-            let aud = stopped.shift()
-            this.remove_item_from_queue(aud)
-                && culled.push(aud)
-        }
-        return culled
+            .filter(aud => this.remove_item_from_queue(aud))
     }
     cull_long_paused_audiolets() {
         let culled = []
@@ -153,25 +142,13 @@ export class Queuey {
         
         const fieldsToRemove = []
         
-        // Find old star fields to remove
-        V>1 && console.log(`Culling star fields far from ${this.star_field_visiting}`) 
         for (const [indexStr, field] of Object.entries(this.star_field)) {
             const index = parseInt(indexStr)
+            // Find star fields far from
             const distance = Math.abs(index - this.star_field_visiting)
-            
             if (distance > FIELD_DISTANCE_THRESHOLD) {
-                // too old and too far away
-                fieldsToRemove.push({ index, field })
-            }
-        }
-        
-        // Clean up the star fields
-        for (const { index, field } of fieldsToRemove) {
-            // Clean up star.aud references and collect culled audiolets
-            if (field.stars) {
                 for (const star of field.stars) {
                     if (star.aud) {
-                        V>1 && console.log(`Culling from star field ${index}: ${star.idname}`)
                         if (star.isActive) console.error("culled star was active")
                         // Break the circular reference
                         star.aud.star = null
@@ -183,15 +160,11 @@ export class Queuey {
                         //     && culled.push(aud)
                     }
                 }
+                // Remove the field from memory
+                //  keep_field() will regenerate it if we look() at it
+                delete this.star_field[index]
             }
-            
-            // Remove the field from memory
-            //  keep_field() will regenerate it if we look() at it
-            delete this.star_field[index]
-            V>1 && console.log(`Culled old star field ${index}`)
         }
-        // don't return already culled audiolets
-        return culled.filter(aud => !aud.culled)
     }
 
 
