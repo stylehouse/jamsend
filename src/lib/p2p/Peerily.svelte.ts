@@ -1,7 +1,7 @@
 
 import * as ed from '@noble/ed25519';
 import type { DataConnection } from 'peerjs';
-import Peer from 'peerjs'
+import PeerJS from 'peerjs'
 import { SvelteMap } from 'svelte/reactivity';
 
 type TheStash = {
@@ -17,56 +17,114 @@ export function bunch_of_nowish() {
 }
 //#endregion
 //#region Peerily
+// < This PeerJS object is funny. for some reason extending it says:
+//    TypeError: Class extends value #<Object> is not a constructor or null
+//   so we proxy everything
+class Peer {
+    P:Peerily
+    Peer:PeerJS
+    constructor(P,pub:prepub) {
+        this.P = P
+        this.Peer = new PeerJS(pub)
+    }
+    // the many remotes
+    Piers:SvelteMap<prepub,Pier> = $state(new SvelteMap())
+    a_pier(pub):Pier {
+        if (!pub) throw "!pub"
+        pub = ''+pub
+        let pier = this.Piers.get(pub)
+        if (!pier) {
+            pier = new Pier({P:this.P,Peer:this,pub})
+            this.Piers.set(pub,pier)
+        }
+        return pier
+    }
+    // proxy these methods we
+    on(...args) {
+        return this.Peer.on(...args)
+    }
+    connect(...args) {
+        return this.Peer.connect(...args)
+    }
+    destroy(...args) {
+        return this.Peer.destroy(...args)
+    }
+}
 export class Peerily {
     stash:TheStash = $state({})
     Id:Idento = new Idento()
     eer:Peer
-    peers_by_pub = $state(new SvelteMap())
+    on_error:Function|null
     constructor(opt={}) {
         Object.assign(this, opt)
     }
     stop() {
         this.eer?.destroy()
     }
-    // own pubkey location
+
+
+    // own a pubkey address
+    //  are one per Peer, so we create them here
     // < by proving you own it
+    addresses:SvelteMap<prepub,Peer> = $state(new SvelteMap())
+    // there's probably just one of these Peer objects
+    // < if there are many, it doesn't matter which does outgoing connect()s?
+    address_to_connect_from:Peer|null = null
     async listen_pubkey(pub) {
         pub = ''+pub
         if (!pub) throw "!pub"
-        this.eer ||= new Peer(pub)
-        let pier = this.a_pier(pub)
+        let eer = this.addresses.get(pub)
+        if (!eer) {
+            eer = this.setupPeer(pub)
+            this.addresses.set(pub,eer)
+            this.address_to_connect_from ||= eer
+        }
         console.log(`listen_pubkey(${pub})`)
-        this.eer.on('connection', (con) => {
-            console.log(`<- connection(${pub})`,con)
-            pier.init(con)
-        })
     }
+    setupPeer(pub) {
+        // these listen to one address (for us) each
+        let eer = new Peer(pub)
+        eer.on('connection', (con) => {
+            let pier = eer.a_pier(con.peer)
+            console.log(`inbound connection(${con.peer})`,con)
+            pier.init(eer,con)
+        })
+        eer.on('open', () => {
+            console.log(`connected (to PeerServer)`)
+
+        })
+        eer.on('disconnected', () => {
+            console.log(`disconnected (from PeerServer)`)
+
+        })
+        eer.on('error', (err) => {
+            this.on_error?.(err)
+        })
+        return eer
+    }
+
+
+    // to others
     async connect_pubkey(pub) {
         pub = ''+pub
-        let con = this.eer.connect(pub)
-        if (!con) {
-            throw "OHNO"
-        }
-        let pier = this.a_pier(pub)
-        pier.said_hello = false
+        let eer = this.address_to_connect_from
+        if (!eer) throw "!eer"
+        let con = eer.connect(pub)
+        if (!con) throw "!con"
+        if (con.trivance) throw "con same!"
+        con.trivance = 1
+
+        let pier = eer.a_pier(pub)
+        // pier.said_hello = false
+        console.log(`connect_pubkey(${pub})`)
+
         con.on('open', () => {
             if (con.peer != pub) debugger
             console.log(`-> connection(${pub})`,con)
-            pier.init(con)
+            pier.init(eer,con)
             // someone has to try con.send() to get it open
             pier.say_hello()
-        });
-        console.log(`connect_pubkey(${pub})`)
-    }
-    a_pier(pub):Pier {
-        if (!pub) throw "!pub"
-        pub = ''+pub
-        let pier = this.peers_by_pub.get(pub)
-        if (!pier) {
-            pier = new Pier({P:this,pub})
-            this.peers_by_pub.set(pub,pier)
-        }
-        return pier
+        })
     }
 }
 
@@ -183,7 +241,9 @@ abstract class PierThings {
 // aka Participant
 export class Pier extends PierThings {
     P:Peerily
+    Peer:Peer
     pub:prepub|null // if we want to find that full pretty_pubkey()
+    eer:Peer
     con:DataConnection
 
 
@@ -191,12 +251,15 @@ export class Pier extends PierThings {
         super()
         Object.assign(this, opt)
     }
-    done_init = false
-    init(con) {
+    done_init = $state(false)
+    init(eer,con) {
         if (this.done_init) return
         this.done_init = true
 
+        this.eer = eer
         this.con = con
+        let pub = con.peer
+        let pier = eer.Piers.get(pub)
         // Receive messages
         this.con.on('data', (msg) => {
             this.unemit(msg)

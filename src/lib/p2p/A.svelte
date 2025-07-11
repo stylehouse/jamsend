@@ -2,9 +2,14 @@
     import { onDestroy } from "svelte";
     import { Idento, Peerily } from "./Peerily.svelte";
     import Pier from "./Pier.svelte";
+    import { SvelteSet } from "svelte/reactivity";
 
-    let P = new Peerily()
-    let whoto = "706f0190cfe9b497"
+    let errors = $state(new SvelteSet())
+    let on_error = (err) => {
+        errors.add(err)
+        console.error(`Error ${err.type}: ${err}`)
+    }
+    let P = new Peerily({on_error})
     // P.stash persists
     $effect(() => {
         if (localStorage.Astash) {
@@ -17,16 +22,17 @@
         console.log(`saving Astash`)
         localStorage.Astash = JSON.stringify(P.stash)
     })
-    $effect(() => {
-    })
-    let tryit = () => {
-        if (whoto == P.Id.pretty_pubkey()) return
-        P.connect_pubkey(whoto)
-        setTimeout(() => P.connect_pubkey(whoto),455)
-    }
     onDestroy(() => {
         P.stop()
     })
+
+
+    let whoto = $state("706f0190cfe9b497")
+    let tryit = () => {
+        if (whoto == P.Id.pretty_pubkey()) whoto = "b3c6b6bccfbd67fa"
+        P.connect_pubkey(whoto)
+        setTimeout(() => P.connect_pubkey(whoto),455)
+    }
 
 
 
@@ -69,23 +75,41 @@
         let link = P.Id.to_location_hash()
         // < QR code, copyable link?
     }
+
     $effect(() => {
-        setTimeout(() => tryit(),455)
+        0 &&
+        setTimeout(() => {
+            [455,2455,5455].map(ms => setTimeout(() => tryit(), ms))
+        },1)
     })
 
 
 </script>
 
-<button onclick={sharing} >share</button>
+<div>
+    <button onclick={sharing} >share</button>
 
-<p><a href="/A?#{whoto}">Everything.</a></p>
+    <p><a href="/A?#{whoto}">Everything.</a></p>
 
-<button onclick={tryit}>go</button>
-
-
+    <button onclick={tryit}>go</button>
 
     <ul class=bitsies>
-        {#each Array.from(Object.values(P.peers_by_pub)) as pier (pier.pub)}
-            <Pier {pier} />
+        {#each P.addresses as [pub,eer] (pub)}
+            <li>Listening: {pub}</li>
+            <ul class=bitsies>
+                {#each eer.Piers as [pub,pier] (pub)}
+                    <li>Peering: {pub}</li>
+                    <ul class=bitsies>
+                        <Pier {pier} />
+                    </ul>
+                {/each}
+            </ul>
         {/each}
     </ul>
+</div>
+
+<style>
+    div {
+        color: green;
+    }
+</style>
