@@ -56,8 +56,6 @@
         if (Ud.publicKey && Ud.pretty_pubkey() != P.Id.pretty_pubkey()) {
             P.connect_pubkey(Ud)
         }
-        // console.log("Id",Id.freeze())
-        // console.log("Ud",Ud)
 
         // location becomes us, so we can share it easily
         link = P.Id.to_location_hash()

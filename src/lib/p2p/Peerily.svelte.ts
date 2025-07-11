@@ -7,6 +7,7 @@ type TheStash = {
     Id: storableIdento,
     trust: {},
 }
+type prepub = string
 export function bunch_of_nowish() {
     let seconds = Math.floor(Date.now() / 1000)
     let t = Math.floor(seconds / 5) * 5
@@ -61,8 +62,7 @@ export class Peerily {
     }
 }
 
-
-type prepub = string
+//#endregion
 //#region crypto
 // Export keys to hexadecimal
 export const enhex = ed.etc.bytesToHex
@@ -153,8 +153,27 @@ export class Idento extends IdentoCrypto {
 //#endregion
 //#region Pier
 
+abstract class PierThings {
+    // < maybe?
+    // binary emit() puts backpressure here (from Sharing.sendFile)
+    _sendQueue = []
+    // ui drawers
+    // for ftp
+    sharing:Sharing|undefined = $state()
+    sharing_requested = $state(false)
+    async start_sharing() {
+        this.sharing = new Sharing({par:this})
+        await this.sharing.start()
+    }
+    async stop_sharing() {
+        await this.sharing.stop()
+        this.sharing = null
+    }
+}
+
+
 // aka Participant
-export class Pier {
+export class Pier extends PierThings {
     P:Peerily
     pub:prepub|null // if we want to find that full pretty_pubkey()
     con:DataConnection
