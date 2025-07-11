@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { Idento, Peerily } from "./Peerily.svelte";
+    import Pier from "./Pier.svelte";
 
     let P = new Peerily()
     let whoto = "706f0190cfe9b497"
@@ -19,10 +20,12 @@
     $effect(() => {
     })
     let tryit = () => {
+        if (whoto == P.Id.pretty_pubkey()) return
         P.connect_pubkey(whoto)
+        setTimeout(() => P.connect_pubkey(whoto),455)
     }
     onDestroy(() => {
-        P.eer?.destroy()
+        P.stop()
     })
 
 
@@ -66,6 +69,9 @@
         let link = P.Id.to_location_hash()
         // < QR code, copyable link?
     }
+    $effect(() => {
+        setTimeout(() => tryit(),455)
+    })
 
 
 </script>
@@ -77,3 +83,9 @@
 <button onclick={tryit}>go</button>
 
 
+
+    <ul class=bitsies>
+        {#each Array.from(Object.values(P.peers_by_pub)) as pier (pier.pub)}
+            <Pier {pier} />
+        {/each}
+    </ul>
