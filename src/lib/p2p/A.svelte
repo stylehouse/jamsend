@@ -27,9 +27,9 @@
     })
 
 
-    let whoto = $state("24a2aac78666b4d7")
+    let whoto = $state("969c32b419a6eb79")
     let tryit = () => {
-        if (whoto == P.Id.pretty_pubkey()) whoto = "eb0340f4d28de96f"
+        if (whoto == P.Id.pretty_pubkey()) whoto = "e092bc4767702a42"
         P.connect_pubkey(whoto)
         setTimeout(() => P.connect_pubkey(whoto),455)
     }

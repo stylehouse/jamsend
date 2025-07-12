@@ -44,3 +44,12 @@ services:
       nproc: 100               # Max 100 processes total
       nofile: 1024             # Max 1024 open files
 
+  peerjs:
+    image: peerjs/peerjs-server
+    container_name: jamsend-peerjs
+    ports:
+      - "172.17.0.1:9995:9995"
+    command: ["--port", "9995"]
+    #, "--path", "/peerjs-server"]
+    restart: 'always'
+

@@ -83,7 +83,7 @@ export class Peerily {
     }
     setupPeer(pub) {
         // these listen to one address (for us) each
-        let eer = new Peer(pub)
+        let eer = new Peer(pub, {host:location.host,port:443,path:"peerjs-server"})
         eer.on('connection', (con) => {
             let pier = eer.a_pier(con.peer)
             console.log(`inbound connection(${con.peer})`,con)
