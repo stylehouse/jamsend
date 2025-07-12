@@ -27,9 +27,9 @@
     })
 
 
-    let whoto = $state("706f0190cfe9b497")
+    let whoto = $state("24a2aac78666b4d7")
     let tryit = () => {
-        if (whoto == P.Id.pretty_pubkey()) whoto = "b3c6b6bccfbd67fa"
+        if (whoto == P.Id.pretty_pubkey()) whoto = "eb0340f4d28de96f"
         P.connect_pubkey(whoto)
         setTimeout(() => P.connect_pubkey(whoto),455)
     }
@@ -46,6 +46,10 @@
     $effect(() => {
         setTimeout(startup,5)
     })
+    async function generate_keys() {
+        await P.Id.generateKeys()
+        P.stash.Id = P.Id.freeze()
+    }
     async function startup() {
         // yourself
         if (P.stash.Id) {
@@ -53,8 +57,7 @@
         }
         else {
             // become someone
-            await P.Id.generateKeys()
-            P.stash.Id = P.Id.freeze()
+            generate_keys()
         }
         P.listen_pubkey(P.Id)
 
@@ -88,6 +91,8 @@
 
 <div>
     <button onclick={sharing} >share</button>
+    -----
+    <button onclick={generate_keys} >regen</button>
 
     <p><a href="/A?#{whoto}">Everything.</a></p>
 
