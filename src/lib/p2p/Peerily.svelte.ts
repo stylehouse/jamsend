@@ -4,6 +4,12 @@ import type { DataConnection } from 'peerjs';
 import PeerJS from 'peerjs'
 import { SvelteMap } from 'svelte/reactivity';
 
+function Peer_OPTIONS() {
+    // to not run your own server:
+    // return {}
+    return {host:location.host,port:443,path:"peerjs-server"}
+}
+
 type TheStash = {
     Id: storableIdento,
     trust: {},
@@ -83,7 +89,7 @@ export class Peerily {
     }
     setupPeer(pub:prepub) {
         // these listen to one address (for us) each
-        let eer = new Peer(this, pub, {host:location.host,port:443,path:"peerjs-server"})
+        let eer = new Peer(this, pub, Peer_OPTIONS())
         eer.on('connection', (con) => {
             let pier = eer.a_pier(con.peer)
             console.log(`inbound connection(${con.peer})`,con)

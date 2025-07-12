@@ -29,6 +29,8 @@ If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), e
 
 DevTools with 'pause on exception' will need to ignore the line in Decoder.ts with a meaningless RangeError.
 
+To use *prod.sh*, see *Peer_OPTIONS*.
+
 ## goals
 
 - p2p

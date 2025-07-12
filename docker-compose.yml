@@ -50,6 +50,7 @@ services:
     ports:
       - "172.17.0.1:9995:9995"
     command: ["--port", "9995"]
+    # the Caddy handle_path in leproxy takes this bit of path off
     #, "--path", "/peerjs-server"]
     restart: 'always'
 
