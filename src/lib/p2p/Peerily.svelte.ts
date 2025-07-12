@@ -23,9 +23,9 @@ export function bunch_of_nowish() {
 class Peer {
     P:Peerily
     Peer:PeerJS
-    constructor(P,pub:prepub) {
+    constructor(P,pub:prepub,opt) {
         this.P = P
-        this.Peer = new PeerJS(pub)
+        this.Peer = new PeerJS(pub,opt)
     }
     // the many remotes
     Piers:SvelteMap<prepub,Pier> = $state(new SvelteMap())
@@ -81,9 +81,9 @@ export class Peerily {
         }
         console.log(`listen_pubkey(${pub})`)
     }
-    setupPeer(pub) {
+    setupPeer(pub:prepub) {
         // these listen to one address (for us) each
-        let eer = new Peer(pub, {host:location.host,port:443,path:"peerjs-server"})
+        let eer = new Peer(this, pub, {host:location.host,port:443,path:"peerjs-server"})
         eer.on('connection', (con) => {
             let pier = eer.a_pier(con.peer)
             console.log(`inbound connection(${con.peer})`,con)
