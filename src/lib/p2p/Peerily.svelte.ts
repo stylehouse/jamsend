@@ -28,9 +28,11 @@ export function bunch_of_nowish() {
 //   so we proxy everything
 class Peer {
     P:Peerily
+    pub:prepub
     Peer:PeerJS
     constructor(P,pub:prepub,opt) {
         this.P = P
+        this.pub = pub
         this.Peer = new PeerJS(pub,opt)
     }
     // the many remotes
@@ -65,11 +67,16 @@ export class Peerily {
         Object.assign(this, opt)
     }
     stop() {
-        this.eer?.destroy()
+        console.warn(`P.stop()`)
+        for (let [pub, eer] of this.addresses) {
+            console.warn(`Peer destroyed: ${pub}`)
+            eer.destroy()
+        }
+        this.addresses.clear()
     }
 
 
-    // own a pubkey address
+    // own a pubkey address!
     //  are one per Peer, so we create them here
     // < by proving you own it
     addresses:SvelteMap<prepub,Peer> = $state(new SvelteMap())

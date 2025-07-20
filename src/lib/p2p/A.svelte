@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { Idento, Peerily } from "./Peerily.svelte";
-    import Pier from "./Pier.svelte";
     import { SvelteSet } from "svelte/reactivity";
+    import Listening from "./ui/Listening.svelte";
 
     let errors = $state(new SvelteSet())
     let on_error = (err) => {
@@ -99,15 +99,7 @@
 
     <ul class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
-            <li>Listening: {pub}</li>
-            <ul class=bitsies>
-                {#each eer.Piers as [pub,pier] (pub)}
-                    <li>Peering: {pub}</li>
-                    <ul class=bitsies>
-                        <Pier {pier} />
-                    </ul>
-                {/each}
-            </ul>
+            <Listening {pub} {eer} />
         {/each}
     </ul>
 </div>
