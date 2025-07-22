@@ -3,7 +3,8 @@
 
     let {pier}:{pier:Pier} = $props()
 </script>
-            <ww class={1}>
-                {pier.pub}
-            </ww>
-
+<li>Pier: {pier.pub} 
+    {#if pier.disconnected}
+        <span class=ohno>discon</span>
+    {/if}
+</li>

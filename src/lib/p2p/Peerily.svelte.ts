@@ -22,6 +22,98 @@ export function bunch_of_nowish() {
 
 }
 //#endregion
+
+//#region crypto
+// Export keys to hexadecimal
+export const enhex = ed.etc.bytesToHex
+export const dehex = ed.etc.hexToBytes
+// ensure Uint8Array (Bytes)
+function enu8(message) {
+    return message instanceof Uint8Array ? 
+        message : new TextEncoder().encode(message)
+}
+
+// the crypto features of Idento
+export class IdentoCrypto {
+    public publicKey:ed.Bytes = $state()
+    public privateKey:ed.Bytes = $state()
+
+    async generateKeys() {
+        const privateKey = ed.utils.randomPrivateKey()
+        const publicKey = await ed.getPublicKeyAsync(privateKey)
+
+        this.replaceKeys({ publicKey, privateKey })
+    }
+    // changes the identity of this Idento
+    //  when you become the streamer, etc.
+    replaceKeys({ publicKey, privateKey }) {
+        Object.assign(this, { publicKey, privateKey })
+    }
+
+    async sign(message) {
+        if (!this.privateKey) throw "!privateKey"
+        const signature = await ed.signAsync(enu8(message),this.privateKey)
+        return signature
+    }
+
+    async verify(signature, message) {
+        if (!this.publicKey) throw "!publicKey"
+        let verified = await ed.verifyAsync(signature,enu8(message),this.publicKey)
+        return verified
+    }
+
+    get pub():ed.Hex {
+        if (!this.publicKey) return ''
+        return enhex(this.publicKey)
+    }
+}
+
+//#endregion
+
+
+//#region idento
+// lifecycle-related helpers
+export type storableIdento = {pub:string,key:string}
+export class Idento extends IdentoCrypto {
+    // url bit with a pubkey
+    from_location_hash() {
+        let m = window.location.hash.match(/^#(\w+)$/);
+        if (!m) return
+        let hex = m[1]
+        if (hex.length == 16) this.advert = true
+        this.publicKey = dehex(hex)
+        if (!this.publicKey) {
+            console.warn("Malformed public key?",hex)
+        }
+    }
+    to_location_hash() {
+        window.location.hash = this.pretty_pubkey()
+        return window.location.toString()
+    }
+    // when we only have the pretty part of the pubkey
+    //  we can't verify signatures but can find out the longer pubkey
+    advert = false
+    pretty_pubkey():prepub {
+        return enhex(this.publicKey).slice(0,16)
+    }
+    toString() {
+        return this.pretty_pubkey()
+    }
+
+    thaw(a:storableIdento) {
+        this.publicKey = dehex(a.pub)
+        if (a.key) this.privateKey = dehex(a.key)
+    }
+    freeze() {
+        let a:storableIdento = {}
+        a.pub = enhex(this.publicKey)
+        if (this.privateKey) a.key = enhex(this.privateKey)
+        return a
+    }
+}
+//#endregion
+
+
 //#region Peerily
 // < This PeerJS object is funny. for some reason extending it says:
 //    TypeError: Class extends value #<Object> is not a constructor or null
@@ -37,7 +129,7 @@ class Peer {
     }
     // the many remotes
     Piers:SvelteMap<prepub,Pier> = $state(new SvelteMap())
-    a_pier(pub):Pier {
+    a_pier(pub:prepub):Pier {
         if (!pub) throw "!pub"
         pub = ''+pub
         let pier = this.Piers.get(pub)
@@ -57,6 +149,8 @@ class Peer {
     destroy(...args) {
         return this.Peer.destroy(...args)
     }
+    // the Peer.disconnected is unreliable https://github.com/peers/peerjs/issues/1345
+    disconnected = $state(true)
 }
 export class Peerily {
     stash:TheStash = $state({})
@@ -129,28 +223,27 @@ export class Peerily {
         let eer = new Peer(this, pub, Peer_OPTIONS())
         eer.disconnected = true
         eer.on('connection', (con) => {
+
+
+            console.log(`inbound connection(${con.peer})`)
             let pier = eer.a_pier(con.peer)
-            console.log(`inbound connection(${con.peer})`,con)
-            pier.init(eer,con)
+            pier.init_begins(eer,con,true)
+
+
         })
         eer.on('open', () => {
             console.log(`connected (to PeerServer)`)
             eer.disconnected = false
-
         })
         eer.on('disconnected', () => {
             console.log(`disconnected (from PeerServer)`)
-
+            eer.disconnected = true
         })
         eer.on('error', (err) => {
             this.on_error?.(err)
         })
         return eer
     }
-    async pending_PeerServer() {
-
-    }
-
 
     // to others
     async connect_pubkey(pub) {
@@ -158,124 +251,26 @@ export class Peerily {
         let eer = this.address_to_connect_from
         if (!eer) throw "!eer"
         if (eer.disconnected) {
-            console.log(`eer.connect awaits...`)
+            console.log(`connect_pubkey(${pub}) awaits...`)
             setTimeout(() => this.connect_pubkey(pub), 210)
             return
         }
-        console.log(`eer.connect)`)
         let con = eer.connect(pub)
-        console.log(`eer.connect)!`,con)
 
         if (!con) throw "!con"
         if (con.trivance) throw "con same!"
         con.trivance = 1
 
-        let pier = eer.a_pier(pub)
-        // pier.said_hello = false
+
         console.log(`connect_pubkey(${pub})`)
+        let pier = eer.a_pier(pub)
+        pier.init_begins(eer,con)
 
-        con.on('open', () => {
-            if (con.peer != pub) debugger
-            console.log(`-> connection(${pub})`,con)
-            pier.init(eer,con)
-            // someone has to try con.send() to get it open
-            pier.say_hello()
-        })
-        con.on('error', (err) => {
-            console.log(`!! connection(${pub})`,con)
-            this.on_error?.(err)
-        })
-    }
-}
 
-//#endregion
-//#region crypto
-// Export keys to hexadecimal
-export const enhex = ed.etc.bytesToHex
-export const dehex = ed.etc.hexToBytes
-// ensure Uint8Array (Bytes)
-function enu8(message) {
-    return message instanceof Uint8Array ? 
-        message : new TextEncoder().encode(message)
-}
-
-// the crypto features of Idento
-export class IdentoCrypto {
-    public publicKey:ed.Bytes = $state()
-    public privateKey:ed.Bytes = $state()
-
-    async generateKeys() {
-        const privateKey = ed.utils.randomPrivateKey()
-        const publicKey = await ed.getPublicKeyAsync(privateKey)
-
-        this.replaceKeys({ publicKey, privateKey })
-    }
-    // changes the identity of this Idento
-    //  when you become the streamer, etc.
-    replaceKeys({ publicKey, privateKey }) {
-        Object.assign(this, { publicKey, privateKey })
-    }
-
-    async sign(message) {
-        if (!this.privateKey) throw "!privateKey"
-        const signature = await ed.signAsync(enu8(message),this.privateKey)
-        return signature
-    }
-
-    async verify(signature, message) {
-        if (!this.publicKey) throw "!publicKey"
-        let verified = await ed.verifyAsync(signature,enu8(message),this.publicKey)
-        return verified
-    }
-
-    get pub():ed.Hex {
-        if (!this.publicKey) return ''
-        return enhex(this.publicKey)
     }
 }
 
 
-//#endregion
-//#region idento
-// lifecycle-related helpers
-export type storableIdento = {pub:string,key:string}
-export class Idento extends IdentoCrypto {
-    // url bit with a pubkey
-    from_location_hash() {
-        let m = window.location.hash.match(/^#(\w+)$/);
-        if (!m) return
-        let hex = m[1]
-        if (hex.length == 16) this.advert = true
-        this.publicKey = dehex(hex)
-        if (!this.publicKey) {
-            console.warn("Malformed public key?",hex)
-        }
-    }
-    to_location_hash() {
-        window.location.hash = this.pretty_pubkey()
-        return window.location.toString()
-    }
-    // when we only have the pretty part of the pubkey
-    //  we can't verify signatures but can find out the longer pubkey
-    advert = false
-    pretty_pubkey():prepub {
-        return enhex(this.publicKey).slice(0,16)
-    }
-    toString() {
-        return this.pretty_pubkey()
-    }
-
-    thaw(a:storableIdento) {
-        this.publicKey = dehex(a.pub)
-        if (a.key) this.privateKey = dehex(a.key)
-    }
-    freeze() {
-        let a:storableIdento = {}
-        a.pub = enhex(this.publicKey)
-        if (this.privateKey) a.key = enhex(this.privateKey)
-        return a
-    }
-}
 //#endregion
 //#region Pier
 
@@ -297,7 +292,10 @@ abstract class PierThings {
     }
 }
 
+// part of pier 
+function con_handlers() {
 
+}
 // aka Participant
 export class Pier extends PierThings {
     P:Peerily
@@ -310,20 +308,49 @@ export class Pier extends PierThings {
     constructor(opt) {
         super()
         Object.assign(this, opt)
+
+    }
+    on_error(err) {
+        console.log(`!! error via connection(${this.pub})`)
+        this.eer.on_error(err)
+    }
+    disconnected = $state(true)
+    inbound = false
+    init_begins(eer,con,inbound=false) {
+        this.eer = eer
+        this.con = con
+        this.inbound = inbound
+        con.on('open', () => {
+            this.disconnected = false
+            console.log(`-> connection(${this.pub})`)
+            // the other con.on handlers, hello procedure, etc:
+            this.init_completo(eer,con)
+        })
+        con.on('close', () => {
+            this.disconnected = true
+            console.log(`closed connection(${this.pub})`)
+        })
+        con.on('error', (err) => {
+            this.on_error?.(err)
+        })
+
     }
     done_init = $state(false)
-    init(eer,con) {
+    init_completo() {
         if (this.done_init) return
         this.done_init = true
 
-        this.eer = eer
-        this.con = con
-        let pub = con.peer
-        let pier = eer.Piers.get(pub)
         // Receive messages
         this.con.on('data', (msg) => {
             this.unemit(msg)
         });
+
+        // begin crypto introduction
+        // also a technicality: someone has to try con.send() to get it open
+        if (!this.inbound) {
+            this.say_hello()
+        }
+
         return this
     }
     said_hello = false
