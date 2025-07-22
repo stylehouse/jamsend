@@ -147,7 +147,7 @@ class Peer {
         return this.Peer.connect(...args)
     }
     reconnect(...args) {
-        return this.Peer.connect(...args)
+        return this.Peer.reconnect(...args)
     }
     destroy(...args) {
         return this.Peer.destroy(...args)
@@ -167,13 +167,13 @@ export class Peerily {
     }
     destroyed = false
     stop() {
+        this.destroyed = true
         console.warn(`P.stop()`)
         for (let [pub, eer] of this.addresses) {
             console.warn(`Peer destroyed: ${pub}`)
             eer.destroy()
         }
         this.addresses.clear()
-        this.destroyed = true
     }
     // if you don't remember yourself
     // < identity per ?id=..., which we namespace into which stash...
@@ -245,7 +245,7 @@ export class Peerily {
         eer.on('disconnected', () => {
             console.log(`disconnected (from PeerServer)`)
             eer.disconnected = true
-            eer.reconnect()
+            !this.destroyed && eer.reconnect()
         })
         eer.on('error', (err) => {
             this.on_error?.(err)
@@ -401,8 +401,8 @@ export class Pier extends PierThings {
         this.said_hello = true
     }
 
-    // friend-online polling
-    //  !!!!!!!!!!
+    // < friend-online polling
+    //  !!!!!!!!!!!!!!!!!!!
     auto_reconnect_time:number|null = null
     auto_reconnect() {
         this.inbound = true
