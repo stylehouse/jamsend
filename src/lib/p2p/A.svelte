@@ -43,38 +43,19 @@
     let Ud:Idento
     let link
     $effect(() => {
-        setTimeout(startup,5)
+        // escape reactivity:
+        setTimeout(async () => {
+            await P.startup()
+            if (whoto == P.Id.pretty_pubkey()) {
+                tryit()
+                console.log("Tryit")
+            }
+        }, 0)
     })
-    async function generate_keys() {
-        await P.Id.generateKeys()
-        P.stash.Id = P.Id.freeze()
-    }
-    async function startup() {
-        // yourself
-        if (P.stash.Id) {
-            P.Id.thaw(P.stash.Id)
-        }
-        else {
-            // become someone
-            generate_keys()
-        }
-        P.listen_pubkey(P.Id)
-
-        // the location may be another persons
-        Ud = new Idento()
-        Ud.from_location_hash()
-        // if it's not us
-        if (Ud.publicKey && Ud.pretty_pubkey() != P.Id.pretty_pubkey()) {
-            P.connect_pubkey(Ud)
-        }
-
-        // location becomes us, so we can share it easily
-        link = P.Id.to_location_hash()
-    }
     async function sharing() {
         console.log("QRify", Id)
         // puts this into the address bar
-        let link = P.Id.to_location_hash()
+        link = P.Id.to_location_hash()
         // < QR code, copyable link?
     }
 

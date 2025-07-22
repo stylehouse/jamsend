@@ -74,6 +74,36 @@ export class Peerily {
         }
         this.addresses.clear()
     }
+    // if you don't remember yourself
+    // < identity per ?id=..., which we namespace into which stash...
+    async generate_keys() {
+        await this.Id.generateKeys()
+        this.stash.Id = this.Id.freeze()
+    }
+    // becomes the url to bring your people to
+    link = $state()
+    async startup() {
+        // yourself
+        if (this.stash.Id) {
+            this.Id.thaw(this.stash.Id)
+        }
+        else {
+            // become someone
+            await this.generate_keys()
+        }
+        this.listen_pubkey(this.Id)
+
+        // the location may be another persons
+        let Ud = new Idento()
+        Ud.from_location_hash()
+        // if it's not us
+        if (Ud.publicKey && Ud.pretty_pubkey() != this.Id.pretty_pubkey()) {
+            this.connect_pubkey(Ud)
+        }
+
+        // location becomes us, so we can share it easily
+        this.link = this.Id.to_location_hash()
+    }
 
 
     // own a pubkey address!
@@ -116,7 +146,7 @@ export class Peerily {
         return eer
     }
 
-
+    
     // to others
     async connect_pubkey(pub) {
         pub = ''+pub
