@@ -5,6 +5,6 @@
 </script>
 <li>Pier: {pier.pub} 
     {#if pier.disconnected}
-        <span class=ohno>discon</span>
+        <span class="ohno tech">discon</span>
     {/if}
 </li>
