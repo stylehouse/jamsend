@@ -255,7 +255,7 @@ export class Peerily {
 
     // to others
     eer_awaitsing = null
-    async connect_pubkey(pub) {
+    async connect_pubkey(pub,label="") {
         pub = ''+pub
         let eer = this.address_to_connect_from
         if (!eer) throw "!eer"
@@ -277,8 +277,7 @@ export class Peerily {
         if (con.trivance) throw "con same!"
         con.trivance = 1
 
-
-        console.log(`connect_pubkey(${pub})`)
+        console.log(`connect_pubkey(${pub})\t${label}`)
         let pier = eer.a_pier(pub)
         pier.init_begins(eer,con)
 
@@ -327,12 +326,14 @@ export class Pier extends PierThings {
     }
     disconnected = $state(true)
     was_disconnected = false
+    worth_reconnecting = true
+    // we are the peer that was first reached out to
     inbound = false
     init_begins(eer,con,inbound=false) {
         if (this.con) {
-            // gets messy without:
+            // < gets messy (send on a disconnected handle) without con.close here
+            if (this.con == con) throw "concon"
             this.con.close()
-            // console.log("Had cons: ",[this.con == con, this.con, con])
         }
         this.eer = eer
         this.con = con
@@ -348,7 +349,14 @@ export class Pier extends PierThings {
         con.on('close', () => {
             this.disconnected = true
             console.log(`closed connection(${this.pub})`)
-            if (!this.inbound) {
+            // any time the connection might have been mitm attacked
+            this.said_hello = false
+            // < if ever staying disconnected, perhaps switching this on:
+            //    causes an extra disconnect after an initial hello, though...
+            //     like we could wait a while depending on .inbound, then switch on
+            const inbound_peer_may_auto_reconnect = 0
+            if (this.worth_reconnecting
+                && (inbound_peer_may_auto_reconnect || !this.inbound)) {
                 // just this isn't enough to make con reopen,
                 // this.P.connect_pubkey(this.pub)
                 // unless you keep trying it:
@@ -362,11 +370,12 @@ export class Pier extends PierThings {
     }
     done_init = $state(false)
     init_completo() {
-        console.log(`init_completo()(${this.pub})  ${this.inbound}`)
-        if (!this.done_init) {
+        console.log(`init_completo()(${this.pub})  ${this.inbound}  ${this.said_hello}`)
+        if (1 || !this.done_init) {
             this.handle_data_etc()
         }
         this.done_init = true
+        this.said_hello = false
         
         // begin crypto introduction
         // also a technicality: someone has to try con.send() to get it open
@@ -385,7 +394,7 @@ export class Pier extends PierThings {
     }
     said_hello = false
     say_hello() {
-        if (this.said_hello) return true
+        if (this.said_hello) return console.log("Dont say hello")
         // give them our entire pubkey
         // < sign a recent timestamp
         this.emit('hello',{publicKey:enhex(this.P.Id.publicKey)})
@@ -393,25 +402,24 @@ export class Pier extends PierThings {
     }
 
     // friend-online polling
-    //  !!!!!!
+    //  !!!!!!!!!!
     auto_reconnect_time:number|null = null
     auto_reconnect() {
+        this.inbound = true
         if (this.auto_reconnect_time) {
             // < there are duplicate con.on('open') handlers somehow
             return
         }
-        this.said_hello = false
         let get_auto_reconnect_time = () => {
             if (!this.auto_reconnect_time) {
                 this.auto_reconnect_time =  100 + Math.random()*100
             }
-            this.auto_reconnect_time = this.auto_reconnect_time * 1.61
+            this.auto_reconnect_time = this.auto_reconnect_time * 1.21
             return Math.round(Math.min(this.auto_reconnect_time,9000))
         }
         let recur = () => {
             let time = get_auto_reconnect_time()
             if (this.P.destroyed) return console.log(`guess no auto_reconnect...`)
-            console.log(`retry in ${time}`)
             setTimeout(() => {
                 if (!this.disconnected) {
                     // it's over
@@ -419,9 +427,7 @@ export class Pier extends PierThings {
                     return
                 }
                 // try
-                this.con.close
-
-                this.P.connect_pubkey(this.pub)
+                this.P.connect_pubkey(this.pub, `retried after ${time}ms`)
                 // maybe try again
                 recur()
             },get_auto_reconnect_time())
@@ -461,6 +467,7 @@ export class Pier extends PierThings {
         hello: (data) => {
             console.log("they say hi: ",data)
             if (!this.said_hello) {
+                console.log("tand we...")
                 this.say_hello()
             }
             else {

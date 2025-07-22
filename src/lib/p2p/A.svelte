@@ -48,7 +48,6 @@
             await P.startup()
             if (whoto == P.Id.pretty_pubkey()) {
                 tryit()
-                console.log("Tryit")
             }
         }, 0)
     })
