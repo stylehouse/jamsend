@@ -127,7 +127,7 @@ export class Peerily {
     setupPeer(pub:prepub) {
         // these listen to one address (for us) each
         let eer = new Peer(this, pub, Peer_OPTIONS())
-        // eer.disconnected = true
+        eer.disconnected = true
         eer.on('connection', (con) => {
             let pier = eer.a_pier(con.peer)
             console.log(`inbound connection(${con.peer})`,con)
@@ -135,7 +135,7 @@ export class Peerily {
         })
         eer.on('open', () => {
             console.log(`connected (to PeerServer)`)
-            // eer.disconnected = false
+            eer.disconnected = false
 
         })
         eer.on('disconnected', () => {
