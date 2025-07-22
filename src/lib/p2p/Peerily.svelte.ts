@@ -127,6 +127,7 @@ export class Peerily {
     setupPeer(pub:prepub) {
         // these listen to one address (for us) each
         let eer = new Peer(this, pub, Peer_OPTIONS())
+        // eer.disconnected = true
         eer.on('connection', (con) => {
             let pier = eer.a_pier(con.peer)
             console.log(`inbound connection(${con.peer})`,con)
@@ -134,6 +135,7 @@ export class Peerily {
         })
         eer.on('open', () => {
             console.log(`connected (to PeerServer)`)
+            // eer.disconnected = false
 
         })
         eer.on('disconnected', () => {
@@ -145,14 +147,25 @@ export class Peerily {
         })
         return eer
     }
+    async pending_PeerServer() {
 
-    
+    }
+
+
     // to others
     async connect_pubkey(pub) {
         pub = ''+pub
         let eer = this.address_to_connect_from
         if (!eer) throw "!eer"
+        if (eer.disconnected) {
+            console.log(`eer.connect awaits...`)
+            setTimeout(() => this.connect_pubkey(pub), 210)
+            return
+        }
+        console.log(`eer.connect)`)
         let con = eer.connect(pub)
+        console.log(`eer.connect)!`,con)
+
         if (!con) throw "!con"
         if (con.trivance) throw "con same!"
         con.trivance = 1
@@ -167,6 +180,10 @@ export class Peerily {
             pier.init(eer,con)
             // someone has to try con.send() to get it open
             pier.say_hello()
+        })
+        con.on('error', (err) => {
+            console.log(`!! connection(${pub})`,con)
+            this.on_error?.(err)
         })
     }
 }
