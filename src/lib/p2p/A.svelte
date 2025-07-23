@@ -3,6 +3,7 @@
     import { Idento, Peerily } from "./Peerily.svelte";
     import { SvelteSet } from "svelte/reactivity";
     import Listening from "./ui/Listening.svelte";
+    import ShareButton from "./ui/ShareButton.svelte";
 
     let errors = $state(new SvelteSet())
     let on_error = (err) => {
@@ -69,7 +70,9 @@
 </script>
 
 <div>
-    <button onclick={sharing} >share</button>
+    <button onclick={sharing} title="share">share</button>
+    <ShareButton onclick={sharing} />
+    
     -----
     <button onclick={generate_keys} >regen</button>
 
