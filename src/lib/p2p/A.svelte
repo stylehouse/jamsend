@@ -4,6 +4,8 @@
     import { SvelteSet } from "svelte/reactivity";
     import Listening from "./ui/Listening.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
+	import QrCode from "svelte-qrcode"
+    
 
     let errors = $state(new SvelteSet())
     let on_error = (err) => {
@@ -42,7 +44,7 @@
     
     let Id:Idento
     let Ud:Idento
-    let link
+    let link = $state()
     $effect(() => {
         // escape reactivity:
         setTimeout(async () => {
@@ -53,10 +55,12 @@
         }, 0)
     })
     async function sharing() {
-        console.log("QRify", Id)
-        // puts this into the address bar
+        if (link) return link = null
+        // puts this copyable link into the address bar
         link = P.Id.to_location_hash()
-        // < QR code, copyable link?
+    }
+    async function copy_link() {
+        await navigator.clipboard.writeText(link);
     }
 
     $effect(() => {
@@ -71,7 +75,15 @@
 
 <div>
     <button onclick={sharing} title="share">share</button>
-    <ShareButton onclick={sharing} />
+    <span onclick={sharing}>
+        <ShareButton />
+        {#if link}
+            <qrthing>
+                <p> <button onclick={copy_link}>Copy Link</button> </p>
+                <p> <QrCode value={link} /> </p>
+            </qrthing>
+        {/if}
+    </span>
     
     -----
     <button onclick={generate_keys} >regen</button>
@@ -88,6 +100,19 @@
 </div>
 
 <style>
+    qrthing {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
     div {
         color: green;
     }
