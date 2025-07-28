@@ -15,9 +15,11 @@ type TheStash = {
     trust: {},
 }
 type prepub = string
+function now_in_seconds() {
+    return Math.floor(Date.now() / 1000)
+}
 export function bunch_of_nowish() {
-    let seconds = Math.floor(Date.now() / 1000)
-    let t = Math.floor(seconds / 5) * 5
+    let t = Math.floor(now_in_seconds() / 5) * 5
     return [t,t-5,t+5,t-10,t+10]
 
 }
@@ -115,6 +117,7 @@ export class Idento extends IdentoCrypto {
 
 
 //#region Peer (eer)
+// per listen address we want (pub)
 // < This PeerJS object is funny. for some reason extending it says:
 //    TypeError: Class extends value #<Object> is not a constructor or null
 //   so we proxy everything
@@ -366,8 +369,24 @@ export class Pier extends PierThings {
         con.on('error', (err) => {
             this.on_error?.(err)
         })
+        // backpressure relief, resume streaming largenesses
+        con.dataChannel.onbufferedamountlow = () => {
+            this.send_paused = false;
+            this._processEmitQueue();
+        };
 
     }
+    // backpressure gauging for streaming large files
+    get send_buffered() {
+        return this.con.dataChannel.bufferedAmount
+    }
+
+    send_paused = false
+    _processEmitQueue() {
+        // < etc
+        console.log(`_processEmitQueue()`)
+    }
+    
     done_init = $state(false)
     init_completo() {
         console.log(`init_completo()(${this.pub})  ${this.inbound}  ${this.said_hello}`)
@@ -391,14 +410,6 @@ export class Pier extends PierThings {
             this.unemit(msg)
         });
 
-    }
-    said_hello = false
-    say_hello() {
-        if (this.said_hello) return console.log("Dont say hello")
-        // give them our entire pubkey
-        // < sign a recent timestamp
-        this.emit('hello',{publicKey:enhex(this.P.Id.publicKey)})
-        this.said_hello = true
     }
 
     // < friend-online polling
@@ -448,10 +459,23 @@ export class Pier extends PierThings {
             sig: "yes",
             data
         }
+        this.plog("presend")
         this.con.send(msg)
+        this.plog("postsend")
     }
+    next_unemit_type = 'crypto'
+    next_unemit_crypto = null
     unemit(msg) {
         let data = msg.data
+        if (this.next_unemit_type == 'crypto') {
+
+        }
+        if (this.next_unemit_type == 'data') {
+            
+        }
+        if (this.next_unemit_type == 'buffer') {
+            
+        }
         // < check permit
         this.handleMessage(data,msg)
     }
@@ -463,15 +487,32 @@ export class Pier extends PierThings {
         handler(data);
     }
 
+    plog(msg) {
+        console.log(`plog ${msg}\t${this.send_buffered}`)
+    }
+
+    said_hello = false
+    say_hello() {
+        if (this.said_hello) return console.warn("Dont say hello")
+        // give them our entire pubkey, enabling new contacts to verify
+        this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.P.Id.publicKey)})
+        this.said_hello = true
+    }
+
     handlers = {
         hello: (data) => {
             console.log("they say hi: ",data)
+
+            // verify they didn'n just steal this auth token
+            let delta = data.time - now_in_seconds()
+            if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
+            
             if (!this.said_hello) {
-                console.log("tand we...")
                 this.say_hello()
             }
             else {
                 this.emit('story',{yadda:3})
+                
             }
         },
         story: (data) => {
@@ -481,4 +522,18 @@ export class Pier extends PierThings {
         },
     }
 }
+
+// 
+
+
 //#endregion
+//#region Trust (us)
+
+class Trust {
+    
+}
+
+//#endregion
+
+
+
