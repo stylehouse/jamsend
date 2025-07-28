@@ -37,7 +37,7 @@
     }
 
 
-
+    
 
 
 
@@ -74,29 +74,35 @@
 </script>
 
 <div>
-    <button onclick={sharing} title="share">share</button>
-    <span onclick={sharing}>
-        <ShareButton />
-        {#if link}
-            <qrthing>
-                <p> <button onclick={copy_link}>Copy Link</button> </p>
-                <p> <QrCode value={link} /> </p>
-            </qrthing>
-        {/if}
-    </span>
-    
-    -----
-    <button onclick={generate_keys} >regen</button>
+    <pan>
+        <span onclick={sharing}>
+            <ShareButton />
+            {#if link}
+                <qrthing>
+                    <p> <button onclick={copy_link}>Copy Link</button> </p>
+                    <p> <QrCode value={link} /> </p>
+                </qrthing>
+            {/if}
+        </span>
+        
+        <span>
+            <label for="onramptype" >onramp</label>
+            <select id="onramptype">
+                <option>figaro</option>
+                <option>figaro</option>
+            </select>
+        </span>
+    </pan>
 
     <p><a href="/A?#{whoto}">Everything.</a></p>
 
     <button onclick={tryit}>go</button>
 
-    <ul class=bitsies>
+    <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
             <Listening {pub} {eer} />
         {/each}
-    </ul>
+    </div>
 </div>
 
 <style>

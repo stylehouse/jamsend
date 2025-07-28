@@ -3,15 +3,15 @@
 
     let {pub,eer} = $props()
 </script>
-            <li>Listening: {pub} 
+            <div>Listening: {pub} 
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>
                 {/if}
-            </li>
-            <ul class="bitsies">
+            </div>
+            <div class="bitsies">
                 {#each eer.Piers as [pub,pier] (pub)}
-                    <ul class=bitsies>
+                    <div class=bitsies>
                         <Pier {pier} />
-                    </ul>
+                    </div>
                 {/each}
-            </ul>
+            </div>
