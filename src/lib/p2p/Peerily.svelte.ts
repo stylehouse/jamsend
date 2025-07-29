@@ -4,9 +4,12 @@ import type { DataConnection } from 'peerjs';
 import PeerJS from 'peerjs'
 import { SvelteMap } from 'svelte/reactivity';
 
+const MAX_BUFFER = 64 * 1024; // 64KB
+const LOW_BUFFER = MAX_BUFFER * 0.8; // Start sending again at 80%
 function Peer_OPTIONS() {
     // to not run your own server:
     // return {}
+    // this gets a path intercepted by Caddy in stylehouse/leproxy
     return {host:location.host,port:443,path:"peerjs-server"}
 }
 
@@ -295,7 +298,7 @@ export class Peerily {
 abstract class PierThings {
     // < maybe?
     // binary emit() puts backpressure here (from Sharing.sendFile)
-    _sendQueue = []
+    send_queue = []
     // ui drawers
     // for ftp
     sharing:Sharing|undefined = $state()
@@ -369,30 +372,13 @@ export class Pier extends PierThings {
         con.on('error', (err) => {
             this.on_error?.(err)
         })
-        // backpressure relief, resume streaming largenesses
-        con.dataChannel.onbufferedamountlow = () => {
-            this.send_paused = false;
-            this._processEmitQueue();
-        };
 
-    }
-    // backpressure gauging for streaming large files
-    get send_buffered() {
-        return this.con.dataChannel.bufferedAmount
-    }
-
-    send_paused = false
-    _processEmitQueue() {
-        // < etc
-        console.log(`_processEmitQueue()`)
     }
     
     done_init = $state(false)
     init_completo() {
         console.log(`init_completo()(${this.pub})  ${this.inbound}  ${this.said_hello}`)
-        if (1 || !this.done_init) {
-            this.handle_data_etc()
-        }
+        this.handle_data_etc()
         this.done_init = true
         this.said_hello = false
         
@@ -403,13 +389,6 @@ export class Pier extends PierThings {
         }
 
         return this
-    }
-    handle_data_etc() {
-        // Receive messages
-        this.con.on('data', (msg) => {
-            this.unemit(msg)
-        });
-
     }
 
     // < friend-online polling
@@ -446,38 +425,148 @@ export class Pier extends PierThings {
         recur()
     }
 
-    emit(type,data={},options={}) {
-        // put in type
-        // < binary mode
-        data = {type, ...data}
-        // become only about data going somewhere
-        // < sign from here (another JSON.stringify() at each end?)
-        if (!this.pub) throw "!Pier.pub"
-        let msg = {
-            to: this.pub,
-            from: this.P.Id.pretty_pubkey(),
-            sig: "yes",
-            data
-        }
-        this.plog("presend")
-        this.con.send(msg)
-        this.plog("postsend")
-    }
-    next_unemit_type = 'crypto'
-    next_unemit_crypto = null
-    unemit(msg) {
-        let data = msg.data
-        if (this.next_unemit_type == 'crypto') {
+//#endregion
+//#region Pier emit
 
-        }
-        if (this.next_unemit_type == 'data') {
+    handle_data_etc() {
+        // Receive messages
+        this.con.on('data', (msg) => {
+            this.unemit(msg)
+        });
+        // backpressure <-> relief
+        this.con.dataChannel.bufferedAmountLowThreshold = LOW_BUFFER;
+        this.con.dataChannel.onbufferedamountlow = () => {
+            this.send_paused = false;
+            this.process_emit_queue();
+        };
+    }
+    get send_buffered() {
+        return this.con.dataChannel.bufferedAmount
+    }
+    get send_ready() {
+        return this.con.dataChannel.readyState == "open"
+    }
+
+    // resume streaming largenesses
+    send_paused = false
+    send_queue = []
+    process_emit_queue() {
+        // < etc
+        console.log(`process_emit_queue()`)
+        while (!this.send_paused && this.send_queue.length > 0) {
+            const { crypto,data,buffer, resolve } = this.send_queue.shift()!;
             
+            try {
+                this.send_stuff({crypto,data,buffer})
+                resolve();
+                
+                if (this.send_buffered > MAX_BUFFER) {
+                    this.send_paused = true;
+                    break;
+                }
+            } catch (err) {
+                throw 'Error sending queued data'+err;
+            }
         }
-        if (this.next_unemit_type == 'buffer') {
+    }
+
+    send_stuff({crypto,data,buffer}) {
+        this.con.send(crypto)
+        this.con.send(data)
+        buffer && this.con.send(buffer)
+    }
+
+    async emit(type,data={},
+        options: {
+            priority?: 'high' | 'normal' | 'low',
+            quiet: boolean,
+        }={}) {
+        const { priority = 'high' } = options;
+        if (!this.send_ready) {
+            if (options.quiet) return false
+            console.error(`${this} !channel not open, cannot send message type=${type}`);
+            return false;
+        }
+
+        try {
+            // put in type
+            data = {type, ...data}
+            // may take out buffer
+            // < {buffer, ...data} = {type, ...data} !?
+            let buffer:Uint8Array|null = data.buffer
+            delete data.buffer
+
+            let json = JSON.stringify(data);
+
+            // assures everything we say
+            let crypto = {}
+            crypto.sign = enhex(await this.P.Id.sign(json))
+            if (buffer) {
+                crypto.buffer_sign = enhex(await this.P.Id.sign(buffer))
+            }
             
+            console.log("emit()",{crypto,data})
+            // json is already string, crypto isn't
+            let stuff = {crypto,data:json,buffer}
+
+            // Queue handling
+            if (this.send_buffered > MAX_BUFFER) {
+                this.send_paused = true;
+                return new Promise((resolve, reject) => {
+                    this.send_queue.push({ crypto,data:json,buffer, resolve, reject });
+                    
+                    // Sort queue by priority if needed
+                    if (priority === 'high') {
+                        this.send_queue.sort((a, b) => 
+                            (a.data['priority'] === 'high' ? -1 : 1));
+                    }
+                });
+            }
+
+            this.plog("presend")
+            this.send_stuff(stuff)
+            this.plog("postsend")
+            return true;
+        } catch (err) {
+            throw `Failed to send message: `+err
+            return false;
         }
-        // < check permit
-        this.handleMessage(data,msg)
+    }
+    next_unemission = 'crypto'
+    next_unemit:{crypto?,data?} = {}
+    next_unemit_data = null
+    async unemit(data:any) {
+        console.log(`unemits: `,data)
+        if (this.next_unemission == 'crypto') {
+            this.next_unemit.crypto = data
+            this.next_unemission = 'data'
+            return
+        }
+        else if (this.next_unemission == 'data') {
+            if (typeof data != 'string') throw "not string"
+            let crypto = this.next_unemit.crypto
+            let valid = await this.P.Id.verify(dehex(crypto.sign), data)
+            if (!valid) console.error(`invalid signature`)
+            this.next_unemit.data = JSON.parse(data)
+
+            if (crypto.buffer_sign) {
+                this.next_unemission = 'buffer'
+                return
+            }
+        }
+        else if (this.next_unemission == 'buffer') {
+            let crypto = this.next_unemit.crypto
+            let valid = await this.P.Id.verify(dehex(crypto.buffer_sign), data)
+            if (!valid) console.error(`invalid buffer_sign`)
+            this.next_unemit.data.buffer = data
+        }
+        // we have it all
+        let eventual_data = this.next_unemit.data
+        this.next_unemit = {}
+        this.next_unemission = 'crypto'
+
+        // < check permit on data.type
+        this.handleMessage(eventual_data)
     }
     handleMessage(data) {
         const handler = this.handlers[data.type]
@@ -503,7 +592,6 @@ export class Pier extends PierThings {
         hello: (data) => {
             console.log("they say hi: ",data)
 
-            // verify they didn'n just steal this auth token
             let delta = data.time - now_in_seconds()
             if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
             
