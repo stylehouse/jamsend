@@ -85,7 +85,7 @@ export class Idento extends IdentoCrypto {
         let m = window.location.hash.match(/^#(\w+)$/);
         if (!m) return
         let hex = m[1]
-        if (hex.length == 16) this.advert = true
+        // if (hex.length != 16) this.advert = true
         this.publicKey = dehex(hex)
         if (!this.publicKey) {
             console.warn("Malformed public key?",hex)
@@ -97,7 +97,6 @@ export class Idento extends IdentoCrypto {
     }
     // when we only have the pretty part of the pubkey
     //  we can't verify signatures but can find out the longer pubkey
-    advert = false
     pretty_pubkey():prepub {
         return enhex(this.publicKey).slice(0,16)
     }
@@ -316,7 +315,11 @@ abstract class PierThings {
 // aka Participant
 export class Pier extends PierThings {
     P:Peerily
-    pub:prepub|null // if we want to find that full pretty_pubkey()
+
+    // their pretty and full pubkey
+    pub:prepub|null
+    Ud?:Idento 
+
     eer:Peer
     con:DataConnection
 
@@ -545,10 +548,18 @@ export class Pier extends PierThings {
         else if (this.next_unemission == 'data') {
             if (typeof data != 'string') throw "not string"
             let crypto = this.next_unemit.crypto
-            let valid = await this.P.Id.verify(dehex(crypto.sign), data)
-            if (!valid) console.error(`invalid signature`)
+            // check it's them
+            if (this.Ud) {
+                let valid = await this.Ud.verify(dehex(crypto.sign), data)
+                if (!valid) throw `invalid signature`
+            }
             this.next_unemit.data = JSON.parse(data)
 
+            if (!this.Ud) {
+                // only accept hello before we know
+                let type = this.next_unemit.data.type
+                if (type != 'hello') throw `unauthorised emit:${type}`
+            }
             if (crypto.buffer_sign) {
                 this.next_unemission = 'buffer'
                 return
@@ -556,8 +567,8 @@ export class Pier extends PierThings {
         }
         else if (this.next_unemission == 'buffer') {
             let crypto = this.next_unemit.crypto
-            let valid = await this.P.Id.verify(dehex(crypto.buffer_sign), data)
-            if (!valid) console.error(`invalid buffer_sign`)
+            let valid = await this.Ud.verify(dehex(crypto.buffer_sign), data)
+            if (!valid) throw `invalid buffer_sign`
             this.next_unemit.data.buffer = data
         }
         // we have it all
@@ -595,13 +606,29 @@ export class Pier extends PierThings {
             let delta = data.time - now_in_seconds()
             if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
             
+            // check they are who we want
+            let publicKey = data.publicKey
+            if (this.Ud) {
+                // we already knew them
+                let repubkey = enhex(this.Ud.publicKey)
+                if (repubkey != publicKey) throw `not them anymore`
+            }
+            else {
+                // we're looking for the full pubkey from an address
+                if (!publicKey.startsWith(this.pub)) throw `not them`
+                // < new Indento(pubkey,privkey?)
+                this.Ud = new Idento()
+                this.Ud.publicKey = dehex(publicKey)
+            }
+
+            // reciprocate or continue
             if (!this.said_hello) {
                 this.say_hello()
             }
             else {
                 this.emit('story',{yadda:3})
-                
             }
+
         },
         story: (data) => {
             console.log("they say story: ",data)
