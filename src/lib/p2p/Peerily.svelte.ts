@@ -13,11 +13,31 @@ function Peer_OPTIONS() {
     return {host:location.host,port:443,path:"peerjs-server"}
 }
 
+
+// hex strings, [0-9a-f]
+type Sighex = string
+type StashedPolicy = {
+    to: string,
+    sign: Sighex,
+}
+type StashedPier = {
+    policies: StashedPolicy[]
+}
+export type StashedListen = {
+    keys: storableIdento,
+    contacts: StashedPier[],
+}
 type TheStash = {
     Id: storableIdento,
     trust: {},
+    Listens: StashedListen[],
 }
-type prepub = string
+
+// shortened pubkey, used as your identifier
+type Prekey = Sighex
+type Pubkey = Sighex
+type Prikey = Sighex
+
 function now_in_seconds() {
     return Math.floor(Date.now() / 1000)
 }
@@ -48,6 +68,7 @@ export class IdentoCrypto {
         const publicKey = await ed.getPublicKeyAsync(privateKey)
 
         this.replaceKeys({ publicKey, privateKey })
+        return this
     }
     // changes the identity of this Idento
     //  when you become the streamer, etc.
@@ -81,11 +102,18 @@ export class IdentoCrypto {
 export type storableIdento = {pub:string,key:string}
 export class Idento extends IdentoCrypto {
     // url bit with a pubkey
+    prepub_only = false
+    from_hex(pubkey,prikey?) {
+        this.prepub_only = pubkey.length == 16
+        this.publicKey = dehex(pubkey)
+        if (prikey) this.publicKey = dehex(prikey)
+        return this
+    }
+
     from_location_hash() {
         let m = window.location.hash.match(/^#(\w+)$/);
         if (!m) return
         let hex = m[1]
-        // if (hex.length != 16) this.advert = true
         this.publicKey = dehex(hex)
         if (!this.publicKey) {
             console.warn("Malformed public key?",hex)
@@ -97,7 +125,7 @@ export class Idento extends IdentoCrypto {
     }
     // when we only have the pretty part of the pubkey
     //  we can't verify signatures but can find out the longer pubkey
-    pretty_pubkey():prepub {
+    pretty_pubkey():Prekey {
         return enhex(this.publicKey).slice(0,16)
     }
     toString() {
@@ -125,16 +153,18 @@ export class Idento extends IdentoCrypto {
 //   so we proxy everything
 class Peer {
     P:Peerily
-    pub:prepub
+    Id:Idento
+    stashed:Object
     Peer:PeerJS
-    constructor(P,pub:prepub,opt) {
+    constructor(P,Id,opt) {
         this.P = P
-        this.pub = pub
-        this.Peer = new PeerJS(pub,opt)
+        this.Id = Id
+        let prekey = Id+''
+        this.Peer = new PeerJS(prekey,opt)
     }
     // the many remotes
-    Piers:SvelteMap<prepub,Pier> = $state(new SvelteMap())
-    a_pier(pub:prepub):Pier {
+    Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
+    a_pier(pub:Prekey):Pier {
         if (!pub) throw "!pub"
         pub = ''+pub
         let pier = this.Piers.get(pub)
@@ -165,7 +195,6 @@ class Peer {
 // the main|single object of our p2p business
 export class Peerily {
     stash:TheStash = $state({})
-    Id:Idento = new Idento()
     on_error:Function|null
     constructor(opt={}) {
         Object.assign(this, opt)
@@ -180,64 +209,93 @@ export class Peerily {
         }
         this.addresses.clear()
     }
-    // if you don't remember yourself
-    // < identity per ?id=..., which we namespace into which stash...
-    async generate_keys() {
-        await this.Id.generateKeys()
-        this.stash.Id = this.Id.freeze()
-    }
-    // becomes the url to bring your people to
-    link = $state()
     // arrive at the webpage! who are we? who do we want?
     async startup() {
-        // yourself
-        if (this.stash.Id) {
-            this.Id.thaw(this.stash.Id)
-        }
-        else {
-            // become someone
-            await this.generate_keys()
-        }
-        this.listen_pubkey(this.Id)
+        let eer = await this.listen_to_yourself()
+
+        // this.seek_others()
 
         // the location may be another person's
         let Ud = new Idento()
         Ud.from_location_hash()
-        // if it's not us
-        if (Ud.publicKey && Ud.pretty_pubkey() != this.Id.pretty_pubkey()) {
+        let prepub = Ud.publicKey && Ud.pretty_pubkey()
+        let is_us = this.addresses.has(prepub)
+        if (!is_us) {
             this.connect_pubkey(Ud)
         }
+    }
+    // if you don't remember yourself
+    async listen_to_yourself() {
+        if (!this.stash.Listens) {
+            if (this.stash.Id) {
+                // migrate this
+                let Id = new Idento()
+                Id.thaw(this.stash.Id)
+                // P.stash.Id = null
+                return this.new_Listen(Id)
+            }
+            else {
+                // you're new!
+                let Id = new Idento()
+                await Id.generateKeys()
+                return this.new_Listen(Id)
+            }
+        }
+        else {
 
-        // location becomes us, so we can share it easily
-        this.link = this.Id.to_location_hash()
+            this.stash.Listens.map((a:StashedListen) => {
+                let Id = new Idento()
+                Id.thaw(a.keys)
+                // they CRUD further into a.**
+                return this.new_Listen(Id)
+            })
+        }
+    }
+    seek_others() {
+        // consume the URL they navigated to
+        let m = window.location.hash.match(/^#([\w,:]+)$/);
+        if (!m) return
+        let [hex,...policy] = m[1].split(',')
+        // < finish this
     }
 
 
-    // own a pubkey address!
+    // own pubkey addresses
     //  are one per Peer, so we create them here
-    // < by proving you own it
-    addresses:SvelteMap<prepub,Peer> = $state(new SvelteMap())
+    addresses:SvelteMap<Prekey,Peer> = $state(new SvelteMap())
     // there's probably just one of these Peer objects
     // < if there are many, it doesn't matter which does outgoing connect()s?
     address_to_connect_from:Peer|null = null
-    async listen_pubkey(pub) {
-        pub = ''+pub
-        if (!pub) throw "!pub"
-        let eer = this.addresses.get(pub)
+    // create a new listen address (eer)
+    new_Listen(Id:Idento) {
+        let prepub = Id+''
+        // this'll track this.addresses/$prepub = eer
+        let eer = this.addresses.get(prepub)
         if (!eer) {
-            eer = this.setupPeer(pub)
-            this.addresses.set(pub,eer)
+            eer = this.setupPeer(Id)
+            this.addresses.set(prepub,eer)
             this.address_to_connect_from ||= eer
         }
-        console.log(`listen_pubkey(${pub})`)
+
+        // stash it with our known selves (keypairs, listen addresses)
+        // also, have a list of these...? to keep real objects out of P.stash
+        let stashed = this.stash.Listens?.find(a => a.keys.pub.startsWith(prepub))
+        if (!stashed) {
+            stashed = {keys:Id.freeze()}
+            this.stash.Listens ||= []
+            this.stash.Listens.push(stashed)
+        }
+        // < can we update it from eer/Pier?
+        eer.stashed = stashed
+
+        return eer
     }
-    setupPeer(pub:prepub) {
+
+    setupPeer(Id:Idento) {
         // these listen to one address (for us) each
-        let eer = new Peer(this, pub, Peer_OPTIONS())
+        let eer = new Peer(this, Id, Peer_OPTIONS())
         eer.disconnected = true
         eer.on('connection', (con) => {
-
-
             console.log(`inbound connection(${con.peer})`)
             let pier = eer.a_pier(con.peer)
             pier.done_init = false
@@ -317,7 +375,7 @@ export class Pier extends PierThings {
     P:Peerily
 
     // their pretty and full pubkey
-    pub:prepub|null
+    pub:Prekey|null
     Ud?:Idento 
 
     eer:Peer
@@ -503,9 +561,9 @@ export class Pier extends PierThings {
 
             // assures everything we say
             let crypto = {}
-            crypto.sign = enhex(await this.P.Id.sign(json))
+            crypto.sign = enhex(await this.eer.Id.sign(json))
             if (buffer) {
-                crypto.buffer_sign = enhex(await this.P.Id.sign(buffer))
+                crypto.buffer_sign = enhex(await this.eer.Id.sign(buffer))
             }
             
             console.log("emit()",{crypto,data})
@@ -526,9 +584,7 @@ export class Pier extends PierThings {
                 });
             }
 
-            this.plog("presend")
             this.send_stuff(stuff)
-            this.plog("postsend")
             return true;
         } catch (err) {
             throw `Failed to send message: `+err
@@ -537,7 +593,6 @@ export class Pier extends PierThings {
     }
     next_unemission = 'crypto'
     next_unemit:{crypto?,data?} = {}
-    next_unemit_data = null
     async unemit(data:any) {
         console.log(`unemits: `,data)
         if (this.next_unemission == 'crypto') {
@@ -587,15 +642,13 @@ export class Pier extends PierThings {
         handler(data);
     }
 
-    plog(msg) {
-        console.log(`plog ${msg}\t${this.send_buffered}`)
-    }
-
+//#endregion
+//#region Pier protocols
     said_hello = false
     say_hello() {
         if (this.said_hello) return console.warn("Dont say hello")
         // give them our entire pubkey, enabling new contacts to verify
-        this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.P.Id.publicKey)})
+        this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.eer.Id.publicKey)})
         this.said_hello = true
     }
 

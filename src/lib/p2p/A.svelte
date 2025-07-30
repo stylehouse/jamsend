@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Idento, Peerily } from "./Peerily.svelte";
+    import { Idento, Peerily, type StashedListen } from "./Peerily.svelte";
     import { SvelteSet } from "svelte/reactivity";
     import Listening from "./ui/Listening.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
@@ -12,8 +12,11 @@
         errors.add(err)
         console.error(`Error ${err.type}: ${err}`)
     }
+
+
     let P = new Peerily({on_error})
     // P.stash persists
+    // < identity per ?id=..., which we namespace into which stash...
     $effect(() => {
         if (localStorage.Astash) {
             console.log(`loading Astash`)
@@ -32,7 +35,7 @@
 
     let whoto = $state("3cd0df3609e62134")
     let tryit = () => {
-        if (whoto == P.Id.pretty_pubkey()) whoto = "e092bc4767702a42"
+        if (P.addresses.has(whoto)) whoto = "e092bc4767702a42"
         P.connect_pubkey(whoto)
     }
 
@@ -49,7 +52,7 @@
         // escape reactivity:
         setTimeout(async () => {
             await P.startup()
-            if (whoto == P.Id.pretty_pubkey()) {
+            if (P.addresses.has(whoto)) {
                 tryit()
             }
         }, 0)
@@ -61,6 +64,10 @@
     }
     async function copy_link() {
         await navigator.clipboard.writeText(link);
+    }
+    async function showstash() {
+        console.log("P.stash",P.stash)
+        console.log("localStorage.Astash",JSON.parse(localStorage.Astash))
     }
 
     $effect(() => {
@@ -97,6 +104,7 @@
     <p><a href="/A?#{whoto}">Everything.</a></p>
 
     <button onclick={tryit}>go</button>
+    <button onclick={showstash}>stash</button>
 
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
