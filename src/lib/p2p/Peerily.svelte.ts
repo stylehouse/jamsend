@@ -148,10 +148,10 @@ export class Idento extends IdentoCrypto {
 
 //#region Peer (eer)
 // per listen address we want (pub)
-// < This PeerJS object is funny. for some reason extending it says:
+// < the PeerJS object is funny. for some reason extending it says:
 //    TypeError: Class extends value #<Object> is not a constructor or null
 //   so we proxy everything
-class Peer {
+class Peering {
     P:Peerily
     Id:Idento
     stashed:Object
@@ -164,7 +164,7 @@ class Peer {
     }
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
-    a_pier(pub:Prekey):Pier {
+    a_Pier(pub:Prekey):Pier {
         if (!pub) throw "!pub"
         pub = ''+pub
         let pier = this.Piers.get(pub)
@@ -204,7 +204,7 @@ export class Peerily {
         this.destroyed = true
         console.warn(`P.stop()`)
         for (let [pub, eer] of this.addresses) {
-            console.warn(`Peer destroyed: ${pub}`)
+            console.warn(`Peering destroyed: ${pub}`)
             eer.destroy()
         }
         this.addresses.clear()
@@ -232,13 +232,13 @@ export class Peerily {
                 let Id = new Idento()
                 Id.thaw(this.stash.Id)
                 // P.stash.Id = null
-                return this.new_Listen(Id)
+                return this.a_Peering(Id)
             }
             else {
                 // you're new!
                 let Id = new Idento()
                 await Id.generateKeys()
-                return this.new_Listen(Id)
+                return this.a_Peering(Id)
             }
         }
         else {
@@ -247,7 +247,7 @@ export class Peerily {
                 let Id = new Idento()
                 Id.thaw(a.keys)
                 // they CRUD further into a.**
-                return this.new_Listen(Id)
+                return this.a_Peering(Id)
             })
         }
     }
@@ -262,17 +262,17 @@ export class Peerily {
 
     // own pubkey addresses
     //  are one per Peer, so we create them here
-    addresses:SvelteMap<Prekey,Peer> = $state(new SvelteMap())
-    // there's probably just one of these Peer objects
+    addresses:SvelteMap<Prekey,Peering> = $state(new SvelteMap())
+    // there's probably just one of these Peering objects
     // < if there are many, it doesn't matter which does outgoing connect()s?
-    address_to_connect_from:Peer|null = null
+    address_to_connect_from:Peering|null = null
     // create a new listen address (eer)
-    new_Listen(Id:Idento) {
+    a_Peering(Id:Idento) {
         let prepub = Id+''
         // this'll track this.addresses/$prepub = eer
         let eer = this.addresses.get(prepub)
         if (!eer) {
-            eer = this.setupPeer(Id)
+            eer = this.create_Peering(Id)
             this.addresses.set(prepub,eer)
             this.address_to_connect_from ||= eer
         }
@@ -291,13 +291,13 @@ export class Peerily {
         return eer
     }
 
-    setupPeer(Id:Idento) {
+    create_Peering(Id:Idento) {
         // these listen to one address (for us) each
-        let eer = new Peer(this, Id, Peer_OPTIONS())
+        let eer = new Peering(this, Id, Peer_OPTIONS())
         eer.disconnected = true
         eer.on('connection', (con) => {
             console.log(`inbound connection(${con.peer})`)
-            let pier = eer.a_pier(con.peer)
+            let pier = eer.a_Pier(con.peer)
             pier.done_init = false
             pier.init_begins(eer,con,true)
         })
@@ -341,7 +341,7 @@ export class Peerily {
         con.trivance = 1
 
         console.log(`connect_pubkey(${pub})\t${label}`)
-        let pier = eer.a_pier(pub)
+        let pier = eer.a_Pier(pub)
         pier.init_begins(eer,con)
 
 
@@ -378,7 +378,7 @@ export class Pier extends PierThings {
     pub:Prekey|null
     Ud?:Idento 
 
-    eer:Peer
+    eer:Peering
     con:DataConnection
 
 
