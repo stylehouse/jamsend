@@ -1,10 +1,11 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Idento, Peerily, type StashedListen } from "./Peerily.svelte";
+    import { Idento, Peerily, type StashedPeering } from "./Peerily.svelte";
     import { SvelteSet } from "svelte/reactivity";
-    import Listening from "./ui/Listening.svelte";
+    import Peering from "./ui/Peering.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
 	import QrCode from "svelte-qrcode"
+    import { throttle } from "$lib/Y";
     
 
     let errors = $state(new SvelteSet())
@@ -12,21 +13,25 @@
         errors.add(err)
         console.error(`Error ${err.type}: ${err}`)
     }
+    function load_stash() {
+        console.log(`loading Astash`)
+        P.stash = JSON.parse(localStorage.Astash)
+    }
+    let save_stash = throttle(() => {
+        console.log(`saving Astash`)
+        localStorage.Astash = JSON.stringify(P.stash)
+    },200)
 
-
-    let P = new Peerily({on_error})
+    let P = new Peerily({on_error,save_stash})
     // P.stash persists
     // < identity per ?id=..., which we namespace into which stash...
     $effect(() => {
-        if (localStorage.Astash) {
-            console.log(`loading Astash`)
-            P.stash = JSON.parse(localStorage.Astash)
-        }
+        if (!localStorage.Astash) return
+        load_stash()
     })
     $effect(() => {
         if (!P.stash) return
-        console.log(`saving Astash`)
-        localStorage.Astash = JSON.stringify(P.stash)
+        save_stash()
     })
     onDestroy(() => {
         P.stop()
@@ -76,6 +81,7 @@
             [455,2455,5455].map(ms => setTimeout(() => tryit(), ms))
         },1)
     })
+    $inspect(P.stash)
 
 
 </script>
@@ -108,7 +114,7 @@
 
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
-            <Listening {pub} {eer} />
+            <Peering {pub} {eer} />
         {/each}
     </div>
 </div>

@@ -21,16 +21,17 @@ type StashedPolicy = {
     sign: Sighex,
 }
 type StashedPier = {
+    pubkey: Pubkey,
     policies: StashedPolicy[]
 }
-export type StashedListen = {
+export type StashedPeering = {
     keys: storableIdento,
-    contacts: StashedPier[],
+    Piers: StashedPier[],
 }
 type TheStash = {
     Id: storableIdento,
     trust: {},
-    Listens: StashedListen[],
+    Peerings: StashedPeering[],
 }
 
 // shortened pubkey, used as your identifier
@@ -47,6 +48,7 @@ export function bunch_of_nowish() {
 
 }
 //#endregion
+
 
 //#region crypto
 // Export keys to hexadecimal
@@ -93,7 +95,6 @@ export class IdentoCrypto {
         return enhex(this.publicKey)
     }
 }
-
 //#endregion
 
 
@@ -146,7 +147,7 @@ export class Idento extends IdentoCrypto {
 //#endregion
 
 
-//#region Peer (eer)
+//#region Peering (eer)
 // per listen address we want (pub)
 // < the PeerJS object is funny. for some reason extending it says:
 //    TypeError: Class extends value #<Object> is not a constructor or null
@@ -154,7 +155,7 @@ export class Idento extends IdentoCrypto {
 class Peering {
     P:Peerily
     Id:Idento
-    stashed:Object
+    stashed:StashedPeering = $state()
     Peer:PeerJS
     constructor(P,Id,opt) {
         this.P = P
@@ -172,6 +173,17 @@ class Peering {
             pier = new Pier({P:this.P,Peer:this,pub})
             this.Piers.set(pub,pier)
         }
+
+        // stashable
+        let stashed = this.stashed.Piers?.find(a => a.pubkey?.startsWith(pub))
+        if (!stashed) {
+            // awaits .pubkey
+            stashed = {aha:1}
+            this.stashed.Piers ||= []
+            this.stashed.Piers.push(stashed)
+        }
+        pier.stashed = stashed
+
         return pier
     }
     // proxy these methods we
@@ -196,6 +208,7 @@ class Peering {
 export class Peerily {
     stash:TheStash = $state({})
     on_error:Function|null
+    save_stash:Function|null
     constructor(opt={}) {
         Object.assign(this, opt)
     }
@@ -226,24 +239,16 @@ export class Peerily {
     }
     // if you don't remember yourself
     async listen_to_yourself() {
-        if (!this.stash.Listens) {
-            if (this.stash.Id) {
-                // migrate this
-                let Id = new Idento()
-                Id.thaw(this.stash.Id)
-                // P.stash.Id = null
-                return this.a_Peering(Id)
-            }
-            else {
-                // you're new!
-                let Id = new Idento()
-                await Id.generateKeys()
-                return this.a_Peering(Id)
-            }
+        if (!this.stash.Peerings) {
+            // you're new!
+            let Id = new Idento()
+            await Id.generateKeys()
+            return this.a_Peering(Id)
         }
         else {
-
-            this.stash.Listens.map((a:StashedListen) => {
+            // resume Peering at all our Ids
+            // < slightly bad security|privacy: all your Ids become online-looking
+            this.stash.Peerings.map((a:StashedPeering) => {
                 let Id = new Idento()
                 Id.thaw(a.keys)
                 // they CRUD further into a.**
@@ -279,11 +284,11 @@ export class Peerily {
 
         // stash it with our known selves (keypairs, listen addresses)
         // also, have a list of these...? to keep real objects out of P.stash
-        let stashed = this.stash.Listens?.find(a => a.keys.pub.startsWith(prepub))
+        let stashed = this.stash.Peerings?.find(a => a.keys.pub.startsWith(prepub))
         if (!stashed) {
             stashed = {keys:Id.freeze()}
-            this.stash.Listens ||= []
-            this.stash.Listens.push(stashed)
+            this.stash.Peerings ||= []
+            this.stash.Peerings.push(stashed)
         }
         // < can we update it from eer/Pier?
         eer.stashed = stashed
@@ -373,6 +378,7 @@ abstract class PierThings {
 // aka Participant
 export class Pier extends PierThings {
     P:Peerily
+    stashed:StashedPier = $state()
 
     // their pretty and full pubkey
     pub:Prekey|null
@@ -401,6 +407,14 @@ export class Pier extends PierThings {
             // < gets messy (send on a disconnected handle) without con.close here
             if (this.con == con) throw "concon"
             this.con.close()
+        }
+        if (this.stashed.pubkey) {
+            // will insist on this in unemit:hello, slightly better security
+            this.Ud = new Idento()
+            this.Ud.publicKey = dehex(this.stashed.pubkey)
+            // < frontier beyond persisting a Pier
+            console.log(`met ${this.pub} before`)
+            debugger
         }
         this.eer = eer
         this.con = con
@@ -566,7 +580,7 @@ export class Pier extends PierThings {
                 crypto.buffer_sign = enhex(await this.eer.Id.sign(buffer))
             }
             
-            console.log("emit()",{crypto,data})
+            console.log("emit()",{...data,crypto})
             // json is already string, crypto isn't
             let stuff = {crypto,data:json,buffer}
 
@@ -594,7 +608,7 @@ export class Pier extends PierThings {
     next_unemission = 'crypto'
     next_unemit:{crypto?,data?} = {}
     async unemit(data:any) {
-        console.log(`unemits: `,data)
+        // console.log(`unemits: `,data)
         if (this.next_unemission == 'crypto') {
             this.next_unemit.crypto = data
             this.next_unemission = 'data'
@@ -669,9 +683,12 @@ export class Pier extends PierThings {
             else {
                 // we're looking for the full pubkey from an address
                 if (!publicKey.startsWith(this.pub)) throw `not them`
-                // < new Indento(pubkey,privkey?)
                 this.Ud = new Idento()
                 this.Ud.publicKey = dehex(publicKey)
+                this.stashed.pubkey = publicKey
+                this.stashed.saw_first ||= now_in_seconds()
+                // < hang this off e:ping?
+                // this.stashed.saw_last ||= now_in_seconds()
             }
 
             // reciprocate or continue
