@@ -153,7 +153,7 @@ export class Idento extends IdentoCrypto {
 //#endregion
 
 function Stashedness(this,index) {
-    
+
 }
 
 //#region Peering (eer)
@@ -228,7 +228,6 @@ export class Peerily {
     stash:TheStash = $state({})
     on_error:Function|null
     save_stash:Function|null
-    met_new_Pier:Function|null
     constructor(opt={}) {
         Object.assign(this, opt)
     }
