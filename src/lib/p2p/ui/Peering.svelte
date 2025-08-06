@@ -22,6 +22,8 @@
     })
     $inspect('Peering shing',eer.stashed)
 </script>
+
+
             <div>Listening: {pub} 
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>

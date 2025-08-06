@@ -13,6 +13,7 @@
         errors.add(err)
         console.error(`Error ${err.type}: ${err}`)
     }
+
     function load_stash() {
         console.log(`loading Astash`)
         P.stash = JSON.parse(localStorage.Astash)
@@ -72,7 +73,13 @@
     }
     async function showstash() {
         console.log("P.stash",P.stash)
-        console.log("localStorage.Astash",JSON.parse(localStorage.Astash))
+        let data = JSON.parse(localStorage.Astash)
+        let bit = data.Peerings[0]?.Piers[0]
+        console.log("localStorage.Astash.Peerings[0].Piers[0]",bit)
+        console.log("localStorage.Astash",data)
+    }
+    async function dropstashedPeerings() {
+        P.stash.Peerings = []
     }
 
     $effect(() => {
@@ -111,6 +118,7 @@
 
     <button onclick={tryit}>go</button>
     <button onclick={showstash}>stash</button>
+    <button onclick={dropstashedPeerings}>--</button>
 
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}

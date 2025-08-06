@@ -13,6 +13,11 @@ function Peer_OPTIONS() {
     return {host:location.host,port:443,path:"peerjs-server"}
 }
 
+function arre(a:Array,gone,neu) {
+    const i = a.indexOf(gone)
+    if (i < 0) throw "!found"
+    a[i] = neu
+}
 
 // hex strings, [0-9a-f]
 type Sighex = string
@@ -21,6 +26,7 @@ type StashedPolicy = {
     sign: Sighex,
 }
 type StashedPier = {
+    uninitiated?: boolean,
     pubkey: Pubkey,
     policies: StashedPolicy[]
 }
@@ -146,6 +152,9 @@ export class Idento extends IdentoCrypto {
 }
 //#endregion
 
+function Stashedness(this,index) {
+    
+}
 
 //#region Peering (eer)
 // per listen address we want (pub)
@@ -167,7 +176,6 @@ class Peering {
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     a_Pier(pub:Prekey):Pier {
         if (!pub) throw "!pub"
-        pub = ''+pub
         let pier = this.Piers.get(pub)
         if (!pier) {
             pier = new Pier({P:this.P,Peer:this,pub})
@@ -175,14 +183,25 @@ class Peering {
         }
 
         // stashable
+        // .pubkey as primary key, ignore malformed
+        if (this.stashed.Piers?.find(a => !a.pubkey)) {
+            this.stashed.Piers = this.stashed.Piers.filter(a => a.pubkey)
+        }
         let stashed = this.stashed.Piers?.find(a => a.pubkey?.startsWith(pub))
         if (!stashed) {
-            // awaits .pubkey
-            stashed = {aha:1}
+            // svelte reactivity: must be given to the object first
+            //  or it won't be the same object as ends up in .Piers
+            pier.stashed = {uninitiated:true,policies:[]}
+            stashed = pier.stashed
             this.stashed.Piers ||= []
             this.stashed.Piers.push(stashed)
+            // svelte reactivity: must wake up the array, or something?
+            //  or Pier.svelte will not react to its changes
+            //   this gotcha seems much stranger than the above
+            this.stashed.Piers = this.stashed.Piers
         }
         pier.stashed = stashed
+        arre(this.stashed.Piers,stashed,pier.stashed)
 
         return pier
     }
@@ -209,6 +228,7 @@ export class Peerily {
     stash:TheStash = $state({})
     on_error:Function|null
     save_stash:Function|null
+    met_new_Pier:Function|null
     constructor(opt={}) {
         Object.assign(this, opt)
     }
@@ -286,12 +306,15 @@ export class Peerily {
         // also, have a list of these...? to keep real objects out of P.stash
         let stashed = this.stash.Peerings?.find(a => a.keys.pub.startsWith(prepub))
         if (!stashed) {
-            stashed = {keys:Id.freeze()}
+            eer.stashed = {keys:Id.freeze()}
+            stashed = eer.stashed
             this.stash.Peerings ||= []
             this.stash.Peerings.push(stashed)
         }
         // < can we update it from eer/Pier?
         eer.stashed = stashed
+        arre(this.stash.Peerings,stashed,eer.stashed)
+
 
         return eer
     }
@@ -412,9 +435,6 @@ export class Pier extends PierThings {
             // will insist on this in unemit:hello, slightly better security
             this.Ud = new Idento()
             this.Ud.publicKey = dehex(this.stashed.pubkey)
-            // < frontier beyond persisting a Pier
-            console.log(`met ${this.pub} before`)
-            debugger
         }
         this.eer = eer
         this.con = con

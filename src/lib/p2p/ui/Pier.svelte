@@ -17,6 +17,18 @@
             pier.P.save_stash()
         }
     })
+    $effect(() => {
+        delete pier.stashed.uninitiated
+        setTimeout(() => {
+            if (pier.stashed.uninitiated) {
+                // regenerate Peering/Pier UI every now and again
+                //  to shake out reactivity fail when new Pier are inserted
+                delete pier.stashed.uninitiated
+                // pier.P.met_new_Pier()
+            }
+            // pier.stashed = pier.stashed
+        },21)
+    })
     $inspect('Pier shing',pier.stashed)
 </script>
 Pier: {pier.pub} 
