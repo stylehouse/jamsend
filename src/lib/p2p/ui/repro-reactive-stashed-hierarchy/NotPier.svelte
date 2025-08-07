@@ -11,6 +11,7 @@
         pier.stashed.thinke = 3
         console.log(`Pier thinked`)
     }
+    pier.tweakstash = tweakstash
     $effect(() => {
         if (pier.stashed) {
             console.log(`Pier stashed save...`)
