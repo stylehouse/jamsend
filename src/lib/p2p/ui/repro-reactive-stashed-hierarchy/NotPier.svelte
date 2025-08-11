@@ -2,6 +2,14 @@
     import type { NotPier } from "./NotPeerily.svelte";
 
     let {pier}:{pier:NotPier} = $props()
+    async function save() {
+        console.log("pier save()")
+        // svelte ignores non-change:
+        // pier.stashed = pier.stashed
+        // Force a change by temporarily adding/removing a property
+        // pier.stashed._trigger = Date.now()
+        // delete pier.stashed._trigger
+    }
     async function showstash() {
         console.log("pier",pier.stashed)
     }
@@ -13,12 +21,14 @@
     }
     pier.tweakstash = tweakstash
     $effect(() => {
-        if (pier.stashed) {
+        // console.log('Pier stashed changed:', JSON.stringify(pier.stashed))
+        if (Object.entries(pier.stashed)) {
             console.log(`Pier stashed save...`)
             pier.P.save_stash()
         }
     })
     $effect(() => {
+        console.log("Pier inits!")
         delete pier.stashed.uninitiated
         setTimeout(() => {
             if (pier.stashed.uninitiated) {
@@ -38,3 +48,5 @@ Pier: {pier.pub}
 {/if}
     <button onclick={showstash}>stash</button>
     <button onclick={tweakstash}>~~</button>
+    ~
+    <button onclick={save}>save</button>

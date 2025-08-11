@@ -1,15 +1,25 @@
 import { SvelteMap } from "svelte/reactivity"
 
+function arre(a:Array,gone,neu) {
+    const i = a.indexOf(gone)
+    if (i < 0) throw "!found"
+    a[i] = neu
+}
 export class NotPeerily {
     stash = $state({})
     save_stash:Function|null
     constructor(opt={}) {
         Object.assign(this, opt)
     }
+
+    // for test convenience, has the first|only one of:
+    eer:NotPeering
+    pier:NotPier
     startup() {
-        let eer = this.a_NotPeering('one')
-        let pier = eer.a_NotPier('two')
+        this.eer = this.a_NotPeering('one')
+        this.pier = this.eer.a_NotPier('two')
     }
+
     // own pubkey addresses
     //  are one per Peer, so we create them here
     addresses:SvelteMap<Prekey,Peering> = $state(new SvelteMap())
@@ -30,6 +40,7 @@ export class NotPeerily {
         }
         // < can we update it from eer/Pier?
         eer.stashed = stashed
+        arre(this.stash.Peerings,stashed,eer.stashed)
         return eer
     }
 }
@@ -38,7 +49,6 @@ class NotPeering {
     stashed = $state()
     constructor(opt={}) {
         Object.assign(this, opt)
-        this.P.eer = this
     }
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     a_NotPier(id) {
@@ -57,7 +67,7 @@ class NotPeering {
         if (!stashed) {
             // svelte reactivity: must be given to the object first
             //  or it won't be the same object as ends up in .Piers
-            pier.stashed = {uninitiated:true,policies:[]}
+            pier.stashed = {id,uninitiated:true,policies:[]}
             stashed = pier.stashed
             this.stashed.Piers ||= []
             this.stashed.Piers.push(stashed)
@@ -67,14 +77,15 @@ class NotPeering {
             this.stashed.Piers = this.stashed.Piers
         }
         pier.stashed = stashed
+        arre(this.stashed.Piers,stashed,pier.stashed)
         return pier
     }
 }
 export class NotPier {
     P:NotPeerily
     stashed = $state()
+    tweakstash?:Function
     constructor(opt={}) {
         Object.assign(this, opt)
-        this.P.pier = this
     }
 }

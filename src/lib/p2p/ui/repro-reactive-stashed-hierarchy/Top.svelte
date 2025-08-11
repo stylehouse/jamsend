@@ -3,50 +3,75 @@
     import { NotPeerily } from "./NotPeerily.svelte";
     import NotPeering from "./NotPeering.svelte";
     // persistence, spans many lives of P in this test
+    let this_test_number = $state(0)
     let stashed = $state()
     let save_stash = throttle(() => {
         console.log(`saving Astash`)
         stashed = JSON.stringify(P.stash)
-    },200)
+    },100)
 
     async function wait() {
         return new Promise((resolve) => {
-            setTimeout(() => {resolve()},50)
+            setTimeout(() => {resolve()},250)
         })
     }
     let OKs = $state([])
+    let okify = (label,data) => {
+        console.info("Tested: "+label,data)
+        OKs.push(label)
+    }
     function eer_ok(stashedkey,is,label) {
-        let in_situ = P.eer.stashed[stashedkey]
-        let on_disk = JSON.parse(stashed)?.Peerings?.[0]?.Piers?.[0]?.[stashedkey]
-        let ok = in_situ == is && on_dist == is
+        let in_situ = P.pier.stashed[stashedkey]
+        let disk = JSON.parse(stashed)
+        if (disk?.Peerings?.length != 1) console.warn(`n!=1 Peerings`)
+        if (disk?.Peerings?.[0]?.Piers?.length != 1) console.warn(`n!=1 Piers`)
+        let on_disk = disk?.Peerings?.[0]?.Piers?.[0]?.[stashedkey]
+        let ok = in_situ == is && on_disk == is
         if (ok) {
-            return OKs.push(`✅ ${label}`)
+            okify(`✅ ${label}`)
         }
-        let bad = in_situ == is ? "situ✅" : `situ❌(${in_situ})`
-        bad += "\t"
-        bad += on_disk == is ? "disk✅" : `disk❌(${on_disk})`
-        OKs.push(`❌ ${label}: ${bad}\twanted:${is}`)
+        else {
+            let bad = in_situ == is ? "situ✅" : `situ❌(${in_situ})`
+            bad += "\t"
+            bad += on_disk == is ? "disk✅" : `disk❌(${on_disk})`
+            okify(`❌ ${label}: ${bad}\twanted:${is}`)
+            console.warn("Pier on disk: ",disk?.Peerings?.[0]?.Piers?.[0])
+        }
     }
 
 
-    let P = $state()
-    async function around() {
+    let P:NotPeerily|null = $state()
+    async function top() {
+        console.warn(`Starting test case...`)
+        this_test_number = this_test_number + 1
+        stashed = "{}"
+        OKs = []
         P = new NotPeerily({save_stash})
         P.startup()
         await wait()
         nudge()
         await wait()
-        eer_ok('leg',4,'ininudge')
+        eer_ok('leg',3,'pier creates stashed properties')
         nudge()
         await wait()
-        eer_ok('leg',5,'nudge')
-
+        eer_ok('leg',4,'pier updates again')
     }
     // another P (another time), 
-    function more() {
+    // < this never works...
+    async function more() {
+        P.stash = JSON.parse(stashed)
         P = new NotPeerily({save_stash})
         P.stash = JSON.parse(stashed)
+        P.stash.Peerings[0].Piers[0].leg = 17
         P.startup()
+        // have to recreate the UI to get a new pier.tweakstash()
+        this_test_number = this_test_number + 1
+        await wait()
+        let pier = P.pier
+        eer_ok('leg',17,'pier restores from stash')
+        pier.tweakstash()
+        await wait()
+        eer_ok('leg',18,'pier updates continue')
     }
     function huh() {
         console.log(P)
@@ -55,19 +80,30 @@
         // this is in Pier.svelte
         P.pier.tweakstash()
     }
+    $inspect(P)
+    async function showstash() {
+        console.log("Pstash",{Pstash:P.stash,situ:P.eer.stashed})
+        console.log("disk",JSON.parse(stashed))
+    }
 
     $effect(() => {
-        setTimeout(() => around(), 5)
+        setTimeout(() => top(), 5)
     })
 </script>
 
+<button onclick={top}>top</button>
 <button onclick={more}>more</button>
 <button onclick={nudge}>nudge</button>
 <button onclick={huh}>huh</button>
-<pre>:P {OKs?.join("\n\n")}</pre>
+<button onclick={showstash}>stash</button>
+{#key this_test_number}
+    <pre>Disk: {stashed}</pre>
+
+    <pre>:P {OKs?.join("\n\n")}</pre>
 
     <div class=bitsies>
         {#each P?.addresses as [pub,eer] (pub)}
             <NotPeering {pub} {eer} />
         {/each}
     </div>
+{/key}
