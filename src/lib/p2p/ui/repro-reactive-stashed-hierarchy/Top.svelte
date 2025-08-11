@@ -26,6 +26,11 @@
         if (disk?.Peerings?.length != 1) console.warn(`n!=1 Peerings`)
         if (disk?.Peerings?.[0]?.Piers?.length != 1) console.warn(`n!=1 Piers`)
         let on_disk = disk?.Peerings?.[0]?.Piers?.[0]?.[stashedkey]
+        if (typeof is == 'object') {
+            is = JSON.stringify(is)
+            in_situ = in_situ && JSON.stringify(in_situ)
+            on_disk = on_disk && JSON.stringify(on_disk)
+        }
         let ok = in_situ == is && on_disk == is
         if (ok) {
             okify(`✅ ${label}`)
@@ -52,9 +57,13 @@
         nudge()
         await wait()
         eer_ok('leg',3,'pier creates stashed properties')
+        eer_ok('waft',["Blah"],'pier creates array')
         nudge()
         await wait()
         eer_ok('leg',4,'pier updates again')
+        eer_ok('waft',["Blah","Blah"],'pier also grows array')
+
+        more()
     }
     // another P (another time), 
     // < this never works...
@@ -69,9 +78,22 @@
         await wait()
         let pier = P.pier
         eer_ok('leg',17,'pier restores from stash')
-        pier.tweakstash()
+        nudge()
         await wait()
         eer_ok('leg',18,'pier updates continue')
+        eer_ok('waft',["Blah","Blah","Blah"],'pier grows array')
+
+
+
+        P.pier.tweakwaft()
+        await wait()
+        eer_ok('waft',["Blah","Blah","Blah","Blah"],'pier grows array only')
+        P.pier.tweakdeeply()
+        await wait()
+        eer_ok('swan',{of:{did:3}},'pier creates deep object')
+        P.pier.tweakdeeply()
+        await wait()
+        eer_ok('swan',{of:{did:4}},'pier updates deep object')
     }
     function huh() {
         console.log(P)
@@ -99,7 +121,7 @@
 {#key this_test_number}
     <pre>Disk: {stashed}</pre>
 
-    <pre>:P {OKs?.join("\n\n")}</pre>
+    <pre>{OKs?.join("\n\n")}</pre>
 
     <div class=bitsies>
         {#each P?.addresses as [pub,eer] (pub)}

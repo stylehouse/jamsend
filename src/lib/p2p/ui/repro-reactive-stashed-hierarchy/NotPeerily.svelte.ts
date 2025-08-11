@@ -67,7 +67,7 @@ class NotPeering {
         if (!stashed) {
             // svelte reactivity: must be given to the object first
             //  or it won't be the same object as ends up in .Piers
-            pier.stashed = {id,uninitiated:true,policies:[]}
+            pier.stashed = {id,policies:[]}
             stashed = pier.stashed
             this.stashed.Piers ||= []
             this.stashed.Piers.push(stashed)
@@ -84,7 +84,6 @@ class NotPeering {
 export class NotPier {
     P:NotPeerily
     stashed = $state()
-    tweakstash?:Function
     constructor(opt={}) {
         Object.assign(this, opt)
     }

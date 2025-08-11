@@ -17,9 +17,20 @@
         pier.stashed.leg ||= 2
         pier.stashed.leg = pier.stashed.leg + 1
         pier.stashed.thinke = 3
+        tweakwaft()
         console.log(`Pier thinked`)
     }
-    pier.tweakstash = tweakstash
+    function tweakwaft() {
+        pier.stashed.waft ||= []
+        pier.stashed.waft.push("Blah")
+    }
+    function tweakdeeply() {
+        pier.stashed.swan ||= {}
+        pier.stashed.swan.of ||= {}
+        pier.stashed.swan.of.did ||= 2
+        pier.stashed.swan.of.did++
+    }
+
     $effect(() => {
         // console.log('Pier stashed changed:', JSON.stringify(pier.stashed))
         if (Object.entries(pier.stashed)) {
@@ -29,6 +40,9 @@
     })
     $effect(() => {
         console.log("Pier inits!")
+        pier.tweakstash = tweakstash
+        pier.tweakwaft = tweakwaft
+        pier.tweakdeeply = tweakdeeply
         delete pier.stashed.uninitiated
         setTimeout(() => {
             if (pier.stashed.uninitiated) {
