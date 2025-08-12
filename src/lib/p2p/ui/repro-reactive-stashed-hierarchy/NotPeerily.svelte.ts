@@ -34,13 +34,13 @@ export class NotPeerily {
         let stashed = this.stash.Peerings?.find(a => a.id.startsWith(id))
         if (!stashed) {
             eer.stashed = {id}
-            stashed = eer.stashed
             this.stash.Peerings ||= []
-            this.stash.Peerings.push(stashed)
+            this.stash.Peerings.push(eer.stashed)
         }
-        // < can we update it from eer/Pier?
-        eer.stashed = stashed
-        arre(this.stash.Peerings,stashed,eer.stashed)
+        else {
+            eer.stashed = stashed
+            arre(this.stash.Peerings,stashed,eer.stashed)
+        }
         return eer
     }
 }
@@ -67,17 +67,14 @@ class NotPeering {
         if (!stashed) {
             // svelte reactivity: must be given to the object first
             //  or it won't be the same object as ends up in .Piers
-            pier.stashed = {id,policies:[]}
-            stashed = pier.stashed
+            pier.stashed = {id}
             this.stashed.Piers ||= []
-            this.stashed.Piers.push(stashed)
-            // svelte reactivity: must wake up the array, or something?
-            //  or Pier.svelte will not react to its changes
-            //   this gotcha seems much stranger than the above
-            this.stashed.Piers = this.stashed.Piers
+            this.stashed.Piers.push(pier.stashed)
         }
-        pier.stashed = stashed
-        arre(this.stashed.Piers,stashed,pier.stashed)
+        else {
+            pier.stashed = stashed
+            arre(this.stashed.Piers,stashed,pier.stashed)
+        }
         return pier
     }
 }
