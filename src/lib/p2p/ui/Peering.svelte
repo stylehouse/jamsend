@@ -15,7 +15,7 @@
         delete eer.stashed.Piers
     }
     $effect(() => {
-        if (eer.stashed) {
+        if (Object.entries(eer.stashed)) {
             console.log(`Peering stashed save...`)
             eer.P.save_stash()
         }

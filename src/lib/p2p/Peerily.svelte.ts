@@ -21,14 +21,14 @@ function arre(a:Array,gone,neu) {
 
 // hex strings, [0-9a-f]
 type Sighex = string
-type StashedPolicy = {
+type StashedTrusticle = {
     to: string,
     sign: Sighex,
 }
 type StashedPier = {
     uninitiated?: boolean,
     pubkey: Pubkey,
-    policies: StashedPolicy[]
+    trust: StashedTrusticle[],
 }
 export type StashedPeering = {
     keys: storableIdento,
@@ -152,9 +152,7 @@ export class Idento extends IdentoCrypto {
 }
 //#endregion
 
-function Stashedness(this,index) {
 
-}
 
 //#region Peering (eer)
 // per listen address we want (pub)
@@ -191,17 +189,14 @@ class Peering {
         if (!stashed) {
             // svelte reactivity: must be given to the object first
             //  or it won't be the same object as ends up in .Piers
-            pier.stashed = {uninitiated:true,policies:[]}
-            stashed = pier.stashed
+            pier.stashed = {trust:[]}
             this.stashed.Piers ||= []
-            this.stashed.Piers.push(stashed)
-            // svelte reactivity: must wake up the array, or something?
-            //  or Pier.svelte will not react to its changes
-            //   this gotcha seems much stranger than the above
-            this.stashed.Piers = this.stashed.Piers
+            this.stashed.Piers.push(pier.stashed)
         }
-        pier.stashed = stashed
-        arre(this.stashed.Piers,stashed,pier.stashed)
+        else {
+            pier.stashed = stashed
+            arre(this.stashed.Piers,stashed,pier.stashed)
+        }
 
         return pier
     }
@@ -258,7 +253,7 @@ export class Peerily {
     }
     // if you don't remember yourself
     async listen_to_yourself() {
-        if (!this.stash.Peerings) {
+        if (!this.stash.Peerings?.length) {
             // you're new!
             let Id = new Idento()
             await Id.generateKeys()
@@ -302,18 +297,16 @@ export class Peerily {
         }
 
         // stash it with our known selves (keypairs, listen addresses)
-        // also, have a list of these...? to keep real objects out of P.stash
         let stashed = this.stash.Peerings?.find(a => a.keys.pub.startsWith(prepub))
         if (!stashed) {
             eer.stashed = {keys:Id.freeze()}
-            stashed = eer.stashed
             this.stash.Peerings ||= []
-            this.stash.Peerings.push(stashed)
+            this.stash.Peerings.push(eer.stashed)
         }
-        // < can we update it from eer/Pier?
-        eer.stashed = stashed
-        arre(this.stash.Peerings,stashed,eer.stashed)
-
+        else {
+            eer.stashed = stashed
+            arre(this.stash.Peerings,stashed,eer.stashed)
+        }
 
         return eer
     }
