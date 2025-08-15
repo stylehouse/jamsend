@@ -21,9 +21,22 @@ function arre(a:Array,gone,neu) {
 
 // hex strings, [0-9a-f]
 type Sighex = string
-type StashedTrusticle = {
-    to: string,
+type TrustName = string
+// extra properties may be involved, for consumers of the state of pier.trust|trusted
+type TrustedTrust = ToTrust & {qua?:number}
+// this is what's signed, is stored without .pub
+// server removes .sign and adds .pub to verify the rest as json
+type SaidTrusticle = ToTrust & {pub?: Prekey}
+type StashedTrusticle = ToTrust | NotTrust
+// abilities we have on our peer
+type ToTrust = {
+    to: TrustName,
+    time: number,
     sign: Sighex,
+}
+// abilities our peer had here, revoked
+type NotTrust = {
+    not: TrustName,
 }
 type StashedPier = {
     uninitiated?: boolean,
@@ -189,7 +202,8 @@ class Peering {
         if (!stashed) {
             // svelte reactivity: must be given to the object first
             //  or it won't be the same object as ends up in .Piers
-            pier.stashed = {trust:[]}
+            // no .pubkey yet
+            pier.stashed = {}
             this.stashed.Piers ||= []
             this.stashed.Piers.push(pier.stashed)
         }
@@ -394,6 +408,12 @@ abstract class PierThings {
 export class Pier extends PierThings {
     P:Peerily
     stashed:StashedPier = $state()
+    forget() {
+        let N = this.eer.stashed.Piers
+        let i = N.indexOf(this.stashed)
+        if (i<0) throw "!forget"
+        N.splice(i,1)
+    }
 
     // their pretty and full pubkey
     pub:Prekey|null
@@ -467,7 +487,7 @@ export class Pier extends PierThings {
         console.log(`init_completo()(${this.pub})  ${this.inbound}  ${this.said_hello}`)
         this.handle_data_etc()
         this.done_init = true
-        this.said_hello = false
+        this.reset_protocol_state()
         
         // begin crypto introduction
         // also a technicality: someone has to try con.send() to get it open
@@ -670,52 +690,193 @@ export class Pier extends PierThings {
 
 //#endregion
 //#region Pier protocols
+    reset_protocol_state() {
+        this.said_hello = false
+
+        this.said_trust = false
+        this.stated_trust.clear()
+        this.trust.clear()
+        this.trusted.clear()
+    }
+
+    // hello comes first, gives full pubkey
     said_hello = false
     say_hello() {
         if (this.said_hello) return console.warn("Dont say hello")
-        // give them our entire pubkey, enabling new contacts to verify
         this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.eer.Id.publicKey)})
         this.said_hello = true
     }
+    hear_hello(data) {
+        let delta = data.time - now_in_seconds()
+        if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
+
+        // they provide their full publicKey
+        this.receive_publicKey(data)
+
+        // reciprocate or continue
+        if (!this.said_hello) {
+            this.say_hello()
+        }
+        else {
+            this.say_trust()
+        }
+    }
+    receive_publicKey(data) {
+        let publicKey = data.publicKey
+        if (this.Ud) {
+            // we already knew them
+            let repubkey = enhex(this.Ud.publicKey)
+            if (repubkey != publicKey) throw `not them anymore`
+        }
+        else {
+            // we're looking for the full pubkey from an address
+            if (!publicKey.startsWith(this.pub)) throw `not them`
+            this.Ud = new Idento()
+            this.Ud.publicKey = dehex(publicKey)
+            this.stashed.pubkey = publicKey
+            this.stashed.saw_first ||= now_in_seconds()
+            // < hang this off e:ping?
+            // this.stashed.saw_last ||= now_in_seconds()
+        }
+    }
+
+
+
+    // trusting them to access the $TrustName service
+    //  so that busy servers dont have to hold lots of auth data,
+    //   the client holds on to signed trust certs
+    //    < which should include the client id
+    //  drawbacks:
+    //   can only grant trust to someone currently online to receive it
+    //   server must retain revoked trust
+    said_trust = false
+    // what they say we can trust them with
+    stated_trust:SvelteMap<TrustName,TrustedTrust> = $state(new SvelteMap())
+    // what we actually trust them with, after revocations
+    trust:SvelteMap<TrustName,TrustedTrust> = $state(new SvelteMap())
+    update_trust() {
+        // what they say we can trust them with
+        for (let [to,t] of this.stated_trust) {
+            if (to != t.to) throw "t!to"
+            this.trust.set(to,t)
+        }
+        // without any revoked
+        this.stashed.trust.forEach(t => {
+            if (t.not) {
+                this.trust.delete(t.not)
+            }
+        })
+    }
+
+    // client reminds server what abilities they're allowed
+    say_trust() {
+        let trust = this.stashed.trust.filter(t => t.to)
+        if (trust.length) this.emit('trust',{trust})
+    }
+    // server checks and applies those abilities
+    async hear_trust({trust}) {
+        if (!this.said_trust) this.say_trust()
+        if (!trust.some(t => !t.to)) throw "revoke in trust[]?"
+        // verify grants
+        // using trust.map() here would not wait for the throw to be effective
+        for (const t of trust) {
+            this.verify_trust(t)
+        }
+        // trust them to do that for this session
+        for (const t of trust) {
+            this.stated_trust.set(t.to,t)
+        }
+        this.update_trust()
+    }
+
+    get ourId() {
+        return this.eer.Id
+    }
+    get theirId() {
+        if (!this.Ud) throw "expected Id by now"
+        return this.Ud
+    }
+
+
+    async verify_trust(t,for_us=false) {
+        let sign = t.sign
+        delete t.sign
+        // for us, checks pub=us with them.verify
+        let verifier = for_us ? this.theirId : this.ourId
+        t.pub = (for_us ? this.ourId : this.theirId)+''
+        let valid = await verifier.verify(dehex(sign), JSON.stringify(t))
+        if (!valid) throw `invalid trust signature to:${t.to}`
+        delete t.pub
+        t.sign = sign
+    }
+
+    // what they trust us with
+    //  features we can switch on
+    trusted:SvelteMap<TrustName,TrustedTrust> = $state(new SvelteMap())
+    async hear_trusted(t:SaidTrusticle|NotTrust) {
+        if ('not' in t) {
+            // a revoke
+            let ti = this.stashed.trust.findIndex(st => t.not == st.to)
+            if (ti >= 0) this.stashed.trust.splice(ti,1)
+            this.trusted.delete(t.not)
+        }
+        else {
+            // a grant
+            this.verify_trust(t,true)
+            // replaces any existing $to
+            let ti = this.stashed.trust.findIndex(st => t.to == st.to)
+            if (ti >= 0) this.stashed.trust.splice(ti,1)
+            this.stashed.trust.push(t)
+            // can come with other opinions in t
+            this.trusted.set(t.to,t)
+        }
+    }
+    
+    // we trust them
+    async grant_trust(to:TrustName,opt={}) {
+        // signed data
+        let t:SaidTrusticle = {to,time:now_in_seconds(),...opt,pub:this.Ud+''}
+        t.sign = enhex(await this.eer.Id.sign(JSON.stringify(t)))
+        delete t.pub
+
+        // enable it to save them saying it back to us?
+        // < we probably do want to round-trip it, user needs to consent to each feature?
+        this.stated_trust.set(to,t)
+        // un-revoke
+        let ti = this.stashed.trust.findIndex(t => to == t.not)
+        if (ti >= 0) this.stashed.trust.splice(ti,1)
+        this.update_trust()
+
+        // let them know and remember
+        this.emit('trusted',t)
+        console.log(`grant_trust(${to})`)
+    }
+    // we un-trust them
+    revoke_trust(not:TrustName) {
+        // let them know
+        this.emit('trusted',{not})
+        // remember, since the grant is out there (on the devil's computer)
+        this.stashed.trust.push({not})
+        // disable the in-memory grant
+        this.stated_trust.delete(not)
+        this.update_trust()
+        console.log(`revoke_trust(${not})`)
+    }
+
+
 
     handlers = {
         hello: (data) => {
             console.log("they say hi: ",data)
-
-            let delta = data.time - now_in_seconds()
-            if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
-            
-            // check they are who we want
-            let publicKey = data.publicKey
-            if (this.Ud) {
-                // we already knew them
-                let repubkey = enhex(this.Ud.publicKey)
-                if (repubkey != publicKey) throw `not them anymore`
-            }
-            else {
-                // we're looking for the full pubkey from an address
-                if (!publicKey.startsWith(this.pub)) throw `not them`
-                this.Ud = new Idento()
-                this.Ud.publicKey = dehex(publicKey)
-                this.stashed.pubkey = publicKey
-                this.stashed.saw_first ||= now_in_seconds()
-                // < hang this off e:ping?
-                // this.stashed.saw_last ||= now_in_seconds()
-            }
-
-            // reciprocate or continue
-            if (!this.said_hello) {
-                this.say_hello()
-            }
-            else {
-                this.emit('story',{yadda:3})
-            }
-
+            this.hear_hello(data)
         },
-        story: (data) => {
-            console.log("they say story: ",data)
-            data.yadda++ < 9
-                && this.emit('story',{yadda:data.yadda})
+        trust: (data) => {
+            console.log("they say trust: ",data)
+            this.hear_trust(data)
+        },
+        trusted: (data) => {
+            console.log("they say trusted: ",data)
+            this.hear_trusted(data)
         },
     }
 }
@@ -727,7 +888,8 @@ export class Pier extends PierThings {
 //#region Trust (us)
 
 class Trust {
-    
+    pier:Pier
+
 }
 
 //#endregion

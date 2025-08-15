@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Pier } from "../Peerily.svelte";
+    import Trusticles from "./Trusticles.svelte";
 
     let {pier}:{pier:Pier} = $props()
     async function showstash() {
@@ -25,3 +26,4 @@ Pier: {pier.pub}
 {/if}
     <button onclick={showstash}>stash</button>
     <button onclick={tweakstash}>~~</button>
+    <Trusticles {pier} />

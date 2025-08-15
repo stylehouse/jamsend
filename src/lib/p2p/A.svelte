@@ -66,11 +66,12 @@
     async function sharing() {
         if (link) return link = null
         // puts this copyable link into the address bar
-        link = P.Id.to_location_hash()
+        link = P.address_to_connect_from.Id.to_location_hash()
     }
     async function copy_link() {
         await navigator.clipboard.writeText(link);
     }
+
     async function showstash() {
         console.log("P.stash",P.stash)
         let data = JSON.parse(localStorage.Astash)
@@ -117,8 +118,8 @@
     <p><a href="/A?#{whoto}">Everything.</a></p>
 
     <button onclick={tryit}>go</button>
-    <button onclick={showstash}>stash</button>
-    <button onclick={dropstashedPeerings}>--</button>
+    <!-- <button onclick={showstash}>stash</button> -->
+    <!-- <button onclick={dropstashedPeerings}>--</button> -->
 
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
