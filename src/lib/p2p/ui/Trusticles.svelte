@@ -1,4 +1,4 @@
-<script lang=ts>
+<script lang="ts">
     import type { Pier } from "../Peerily.svelte";
 
     let {pier}:{pier:Pier} = $props()
@@ -14,16 +14,103 @@
         if (ability.startsWith('-')) {
             // revoke an ability
             ability = ability.slice(1)
-            let i = pier.stashed.trust.findIndex(t => t.to == ability)
-            if (i<0) throw "!dis-ability"
-
+            pier.revoke_trust(ability)
+        } else {
+            // grant an ability
+            pier.grant_trust(ability)
         }
-        pier.eer.Id.sign(ability)
+    }
+    // Get currently trusted abilities (what we trust them with)
+    let trusted_abilities = $state([])
+    let dropdown_options = $state([])
+    
+    $effect(() => {
+        trusted_abilities = Array.from(pier.trust?.keys() || [])
+    })
+
+    // Get available options for the dropdown
+    $effect(() => {
+        dropdown_options = abilities.flatMap(ability => {
+            if (ability === 'forget') {
+                return [{ value: 'forget', label: 'Forget peer', action: 'special' }]
+            }
+            
+            const is_trusted = trusted_abilities.includes(ability)
+            
+            if (is_trusted) {
+                // Show revoke option
+                return [{ value: `-${ability}`, label: `--${ability}`, action: 'revoke' }]
+            } else {
+                // Show grant option  
+                return [{ value: ability, label: ability, action: 'grant' }]
+            }
+        })
+    })
+
+    function handleSelection(event) {
+        const selectedValue = event.target.value
+        if (selectedValue) {
+            apply(selectedValue)
+            // Reset dropdown to show "Trust" label
+            event.target.value = ""
+        }
     }
 </script>
 
-Trust:{pier.stashed.trust?.map(t => t.to).join(", ")}
+<div class="trust-container">
+    <span class="trust-status">
+        Trust: {trusted_abilities.join(", ") || "none"}
+    </span>
 
-<select>
+    <select onchange={handleSelection} class="trust-dropdown">
+        <option value="">Trust</option>
+        <option disabled>──────────</option>
+        {#each dropdown_options as option}
+            <option
+                value={option.value}
+                class="trust-option trust-{option.action}"
+            >
+                {option.label}
+            </option>
+        {/each}
+    </select>
+</div>
 
-</select>
+<style>
+    .trust-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .trust-status {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .trust-dropdown {
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .trust-dropdown:hover {
+        border-color: #999;
+    }
+
+    .trust-option.trust-grant {
+        color: #0066cc;
+    }
+
+    .trust-option.trust-revoke {
+        color: #cc6600;
+        font-style: italic;
+    }
+
+    .trust-option.trust-special {
+        color: #cc0000;
+        font-weight: bold;
+    }
+</style>

@@ -214,6 +214,12 @@ class Peering {
 
         return pier
     }
+    forget_Pier(pub:Prekey) {
+        let before = this.stashed.Piers.length
+        this.stashed.Piers = this.stashed.Piers.filter(a => a.pubkey != pub)
+        let after = this.stashed.Piers.length
+        if (before == after) throw `!forget_Pier`
+    }
     // proxy these methods we
     on(...args) {
         return this.Peer.on(...args)
@@ -289,6 +295,7 @@ export class Peerily {
         let m = window.location.hash.match(/^#([\w,:]+)$/);
         if (!m) return
         let [hex,...policy] = m[1].split(',')
+        if (policy) throw `< seek_others() with policy=${policy}`
         // < finish this
     }
 
@@ -409,10 +416,7 @@ export class Pier extends PierThings {
     P:Peerily
     stashed:StashedPier = $state()
     forget() {
-        let N = this.eer.stashed.Piers
-        let i = N.indexOf(this.stashed)
-        if (i<0) throw "!forget"
-        N.splice(i,1)
+        this.eer.forget_Pier(this.pub)
     }
 
     // their pretty and full pubkey
