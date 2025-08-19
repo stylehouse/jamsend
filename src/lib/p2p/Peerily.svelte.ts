@@ -793,12 +793,17 @@ export class Pier extends PierThings {
     say_trust() {
         if (!this.stashed.trust) return
         let trust = this.stashed.trust.filter(t => t.to)
-        if (trust.length) this.emit('trust',{trust})
+        if (trust.length) {
+            for (const t of trust) {
+                this.verify_trust(t,true)
+            }
+            this.emit('trust',{trust})
+        }
     }
     // server checks and applies those abilities
     async hear_trust({trust}) {
         if (!this.said_trust) this.say_trust()
-        if (!trust.some(t => !t.to)) throw "revoke in trust[]?"
+        if (trust.some(t => !t.to)) throw "revoke in trust[]?"
         // verify grants
         // using trust.map() here would not wait for the throw to be effective
         for (const t of trust) {
@@ -821,12 +826,15 @@ export class Pier extends PierThings {
 
 
     async verify_trust(t,for_us=false) {
+        t = {...t}
+        // for us, checks pub=us with them.verify
+        let believer = for_us ? this.theirId : this.ourId
+        let receiver = for_us ? this.ourId : this.theirId
+        // it signs the other stuff, if we add .pub on the end
         let sign = t.sign
         delete t.sign
-        // for us, checks pub=us with them.verify
-        let verifier = for_us ? this.theirId : this.ourId
-        t.pub = (for_us ? this.ourId : this.theirId)+''
-        let valid = await verifier.verify(dehex(sign), JSON.stringify(t))
+        t.pub = receiver+''
+        let valid = await believer.verify(dehex(sign), JSON.stringify(t))
         if (!valid) throw `invalid trust signature to:${t.to}`
         delete t.pub
         t.sign = sign
@@ -835,26 +843,28 @@ export class Pier extends PierThings {
     // what they trust us with
     //  features we can switch on
     trusted:SvelteMap<TrustName,TrustedTrust> = $state(new SvelteMap())
-    async hear_trusted(t:SaidTrusticle|NotTrust) {
-        if ('not' in t) {
-            // a revoke
-            if (!this.stashed.trust) return
-            let ti = this.stashed.trust.findIndex(st => t.not == st.to)
-            if (ti >= 0) this.stashed.trust.splice(ti,1)
-            this.trusted.delete(t.not)
-        }
-        else {
-            // a grant
-            this.verify_trust(t,true)
-            if (this.stashed.trust) {
-                // replaces any existing $to
-                let ti = this.stashed.trust.findIndex(st => t.to == st.to)
+    async hear_trusted(m:{trust:Array<SaidTrusticle|NotTrust>}) {
+        for (const t of m.trust) {
+            if ('not' in t) {
+                // a revoke
+                if (!this.stashed.trust) continue
+                let ti = this.stashed.trust.findIndex(st => t.not == st.to)
                 if (ti >= 0) this.stashed.trust.splice(ti,1)
+                this.trusted.delete(t.not)
             }
-            this.stashed.trust ||= []
-            this.stashed.trust.push(t)
-            // can come with other opinions in t
-            this.trusted.set(t.to,t)
+            else {
+                // a grant
+                this.verify_trust(t,true)
+                if (this.stashed.trust) {
+                    // replaces any existing $to
+                    let ti = this.stashed.trust.findIndex(st => t.to == st.to)
+                    if (ti >= 0) this.stashed.trust.splice(ti,1)
+                }
+                this.stashed.trust ||= []
+                this.stashed.trust.push(t)
+                // can come with other opinions in t
+                this.trusted.set(t.to,t)
+            }
         }
     }
     
@@ -876,13 +886,13 @@ export class Pier extends PierThings {
         this.update_trust()
 
         // let them know and remember
-        this.emit('trusted',t)
+        this.emit('trusted',{trust:[t]})
         console.log(`grant_trust(${to})`)
     }
     // we un-trust them
     revoke_trust(not:TrustName) {
         // let them know
-        this.emit('trusted',{not})
+        this.emit('trusted',{trust:[{not}]})
         // remember it's revoked
         //  since the grant would still work (on the devil's computer)
         this.stashed.trust ||= []
