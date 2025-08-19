@@ -65,8 +65,8 @@
     })
     async function sharing() {
         if (link) return link = null
-        // puts this copyable link into the address bar
-        link = P.address_to_connect_from.Id.to_location_hash()
+        // already in the address bar, can become QR code
+        link = P.share_url
     }
     async function copy_link() {
         await navigator.clipboard.writeText(link);

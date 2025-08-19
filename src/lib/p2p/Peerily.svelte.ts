@@ -216,7 +216,8 @@ class Peering {
     }
     forget_Pier(pub:Prekey) {
         let before = this.stashed.Piers.length
-        this.stashed.Piers = this.stashed.Piers.filter(a => a.pubkey != pub)
+        this.stashed.Piers = this.stashed.Piers
+            .filter(a => !a.pubkey?.startsWith(pub))
         let after = this.stashed.Piers.length
         if (before == after) throw `!forget_Pier`
     }
@@ -260,16 +261,9 @@ export class Peerily {
     async startup() {
         let eer = await this.listen_to_yourself()
 
-        // this.seek_others()
+        this.seek_others()
 
-        // the location may be another person's
-        let Ud = new Idento()
-        Ud.from_location_hash()
-        let prepub = Ud.publicKey && Ud.pretty_pubkey()
-        let is_us = this.addresses.has(prepub)
-        if (!is_us) {
-            this.connect_pubkey(Ud)
-        }
+        this.remember_people()
     }
     // if you don't remember yourself
     async listen_to_yourself() {
@@ -290,13 +284,36 @@ export class Peerily {
             })
         }
     }
+    share_url = $state()
     seek_others() {
         // consume the URL they navigated to
         let m = window.location.hash.match(/^#([\w,:]+)$/);
         if (!m) return
         let [hex,...policy] = m[1].split(',')
-        if (policy) throw `< seek_others() with policy=${policy}`
-        // < finish this
+        if (policy.length) throw `< seek_others() with policy=${policy}`
+        
+        // the location may be another person's
+        let Ud = new Idento()
+        Ud.from_hex(hex)
+        let prepub = Ud.publicKey && Ud.pretty_pubkey()
+        let is_us = this.addresses.has(prepub)
+        if (!is_us) {
+            this.connect_pubkey(Ud)
+        }
+
+        // plant a sharable URL for attracting others to them
+        window.location.hash = this.address_to_connect_from.Id+''
+        this.share_url = window.location.toString()
+    }
+    // autoconnect everyone you knew! if they're online
+    remember_people() {
+        let eer = this.address_to_connect_from
+        eer.stashed.Piers.map(sp => {
+            // put its pubkey into 
+            let Ud = new Idento()
+            Ud.from_hex(sp.pubkey)
+            this.connect_pubkey(Ud)
+        })
     }
 
 
