@@ -101,7 +101,7 @@
             {#if link}
                 <qrthing>
                     <p> <button onclick={copy_link}>Copy Link</button> </p>
-                    <p> <QrCode value={link} /> </p>
+                    <pqr> <QrCode value={link} /> </pqr>
                 </qrthing>
             {/if}
         </span>
@@ -141,6 +141,11 @@
         align-items: center;
         z-index: 1000;
         backdrop-filter: blur(4px);
+    }
+    pqr {
+        background: white;
+        padding-left: 3em;
+        padding-top: 3em;
     }
     div {
         color: green;
