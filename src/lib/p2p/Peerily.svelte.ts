@@ -782,7 +782,7 @@ export class Pier extends PierThings {
             this.trust.set(to,t)
         }
         // without any revoked
-        this.stashed.trust.forEach(t => {
+        this.stashed.trust?.forEach(t => {
             if (t.not) {
                 this.trust.delete(t.not)
             }
@@ -791,6 +791,7 @@ export class Pier extends PierThings {
 
     // client reminds server what abilities they're allowed
     say_trust() {
+        if (!this.stashed.trust) return
         let trust = this.stashed.trust.filter(t => t.to)
         if (trust.length) this.emit('trust',{trust})
     }
@@ -837,6 +838,7 @@ export class Pier extends PierThings {
     async hear_trusted(t:SaidTrusticle|NotTrust) {
         if ('not' in t) {
             // a revoke
+            if (!this.stashed.trust) return
             let ti = this.stashed.trust.findIndex(st => t.not == st.to)
             if (ti >= 0) this.stashed.trust.splice(ti,1)
             this.trusted.delete(t.not)
@@ -844,9 +846,12 @@ export class Pier extends PierThings {
         else {
             // a grant
             this.verify_trust(t,true)
-            // replaces any existing $to
-            let ti = this.stashed.trust.findIndex(st => t.to == st.to)
-            if (ti >= 0) this.stashed.trust.splice(ti,1)
+            if (this.stashed.trust) {
+                // replaces any existing $to
+                let ti = this.stashed.trust.findIndex(st => t.to == st.to)
+                if (ti >= 0) this.stashed.trust.splice(ti,1)
+            }
+            this.stashed.trust ||= []
             this.stashed.trust.push(t)
             // can come with other opinions in t
             this.trusted.set(t.to,t)
@@ -863,9 +868,11 @@ export class Pier extends PierThings {
         // enable it to save them saying it back to us?
         // < we probably do want to round-trip it, user needs to consent to each feature?
         this.stated_trust.set(to,t)
-        // un-revoke
-        let ti = this.stashed.trust.findIndex(t => to == t.not)
-        if (ti >= 0) this.stashed.trust.splice(ti,1)
+        if (this.stashed.trust) {
+            // un-revoke
+            let ti = this.stashed.trust.findIndex(t => to == t.not)
+            if (ti >= 0) this.stashed.trust.splice(ti,1)
+        }
         this.update_trust()
 
         // let them know and remember
@@ -876,7 +883,9 @@ export class Pier extends PierThings {
     revoke_trust(not:TrustName) {
         // let them know
         this.emit('trusted',{not})
-        // remember, since the grant is out there (on the devil's computer)
+        // remember it's revoked
+        //  since the grant would still work (on the devil's computer)
+        this.stashed.trust ||= []
         this.stashed.trust.push({not})
         // disable the in-memory grant
         this.stated_trust.delete(not)
