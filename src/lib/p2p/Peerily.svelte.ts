@@ -1,6 +1,6 @@
 
 import * as ed from '@noble/ed25519';
-import type { DataConnection } from 'peerjs';
+import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
 import { SvelteMap } from 'svelte/reactivity';
 
@@ -221,12 +221,18 @@ class Peering {
         let after = this.stashed.Piers.length
         if (before == after) throw `!forget_Pier`
     }
-    // proxy these methods we
+    // proxy these methods
     on(...args) {
         return this.Peer.on(...args)
     }
-    connect(...args) {
-        return this.Peer.connect(...args)
+    connect(pub,opt:PeerConnectOption={}) {
+        // this translates to 'ordered' in lib/dataconnection/DataConnection.ts
+        // hasn't proven necessary
+        //  and is apparently the default nowadays
+        //  though our Pier.con.dataChannel.ordered = false
+        opt.reliable = true
+
+        return this.Peer.connect(pub,opt)
     }
     reconnect(...args) {
         return this.Peer.reconnect(...args)
@@ -483,8 +489,10 @@ export class Pier extends PierThings {
         con.on('close', () => {
             this.disconnected = true
             console.log(`closed connection(${this.pub})`)
+            // < is redunant? they're not going to unemit us again without:
+            //    con.on open -> init_completo() -> reset_protocol_state()
             // any time the connection might have been mitm attacked
-            this.said_hello = false
+            this.reset_protocol_state()
             // < if ever staying disconnected, perhaps switching this on:
             //    causes an extra disconnect after an initial hello, though...
             //     like we could wait a while depending on .inbound, then switch on
@@ -505,7 +513,7 @@ export class Pier extends PierThings {
     
     done_init = $state(false)
     init_completo() {
-        console.log(`init_completo()(${this.pub})  ${this.inbound}  ${this.said_hello}`)
+        console.log(`init_completo()(${this.pub})  ${this.inbound ? 'in' : 'out'}  ${this.said_hello ? 'helloed' : ''}`)
         this.handle_data_etc()
         this.done_init = true
         this.reset_protocol_state()
@@ -602,6 +610,9 @@ export class Pier extends PierThings {
         this.con.send(crypto)
         this.con.send(data)
         buffer && this.con.send(buffer)
+
+        if (typeof data == 'string') data = {data}
+        console.log("emit()"+(buffer ? " BUFFER":""),{...data,crypto})
     }
 
     async emit(type,data={},
@@ -633,7 +644,6 @@ export class Pier extends PierThings {
                 crypto.buffer_sign = enhex(await this.eer.Id.sign(buffer))
             }
             
-            console.log("emit()",{...data,crypto})
             // json is already string, crypto isn't
             let stuff = {crypto,data:json,buffer}
 
@@ -658,10 +668,35 @@ export class Pier extends PierThings {
             return false;
         }
     }
+    // messages come with crypto first and binary after
     next_unemission = 'crypto'
     next_unemit:{crypto?,data?} = {}
-    async unemit(data:any) {
-        // console.log(`unemits: `,data)
+    reset_unemit_state() {
+        this.next_unemit = {}
+        this.next_unemission = 'crypto'
+    }
+    // they're always in order but we go async to verify data|buffer
+    // we avoid processing the next crypto while verifying the previous data
+    unemit_queue = []
+    unemit_processing = false
+    async unemit(data: any) {
+        this.unemit_queue.push(data)
+        if (this.unemit_processing) return
+        this.unemit_processing = true
+        while (this.unemit_queue.length > 0) {
+            const currentData = this.unemit_queue.shift()
+            try {
+                await this.process_single_unemit(currentData)
+            } catch (err) {
+                console.error(`Error processing unemit:`, err)
+                this.reset_unemit_state()
+                this.on_error?.(err)
+            }
+        }
+        this.unemit_processing = false
+    }
+    async process_single_unemit(data:any) {
+        // console.log(`unemits ${this.next_unemission}:`,data)
         if (this.next_unemission == 'crypto') {
             this.next_unemit.crypto = data
             this.next_unemission = 'data'
@@ -695,13 +730,11 @@ export class Pier extends PierThings {
         }
         // we have it all
         let eventual_data = this.next_unemit.data
-        this.next_unemit = {}
-        this.next_unemission = 'crypto'
-
-        // < check permit on data.type
+        this.reset_unemit_state()
         this.handleMessage(eventual_data)
     }
     handleMessage(data) {
+        // < check permit on data.type
         const handler = this.handlers[data.type]
         if (!handler) {
             return console.warn(`${this} channel !handler for message type:`, data);
@@ -726,6 +759,11 @@ export class Pier extends PierThings {
         if (this.said_hello) return console.warn("Dont say hello")
         this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.eer.Id.publicKey)})
         this.said_hello = true
+        // and immediately after that, any trust
+        // < bad security|privacy: tells a mitm attacker your trust with who they're impersonating
+        //    we could wait for their hello to work out..?
+        //     may require another round 
+        // this.say_trust()
     }
     hear_hello(data) {
         let delta = data.time - now_in_seconds()
@@ -737,6 +775,7 @@ export class Pier extends PierThings {
         // reciprocate or continue
         if (!this.said_hello) {
             this.say_hello()
+            this.say_trust()
         }
         else {
             this.say_trust()
