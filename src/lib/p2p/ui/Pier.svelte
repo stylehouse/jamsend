@@ -20,10 +20,21 @@
     })
     $inspect('Pier shing',pier.stashed)
 </script>
-Pier: {pier.pub} 
-{#if pier.disconnected}
-    <span class="ohno tech">discon</span>
-{/if}
-    <button onclick={showstash}>stash</button>
-    <button onclick={tweakstash}>~~</button>
+
+<div id=levity>
+    Pier: {pier.pub} 
+    {#if pier.disconnected}
+        <span class="ohno tech">discon</span>
+    {/if}
+    <!-- <button onclick={showstash}>stash</button> -->
+    <!-- <button onclick={tweakstash}>~~</button> -->
     <Trusticles {pier} />
+</div>
+
+<style>
+    #levity {
+        margin-left:-1em;
+        border-left: 2em solid rgb(97, 139, 19);
+        border-radius:2em;
+    }
+</style>

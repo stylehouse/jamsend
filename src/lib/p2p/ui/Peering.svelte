@@ -23,13 +23,13 @@
     $inspect('Peering shing',eer.stashed)
 </script>
 
-
+    <div id=levity>
             <div>Listening: {pub} 
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>
                 {/if}
                 <button onclick={showstash}>stash</button>
-                <button onclick={tweakstash}>~~</button>
+                <!-- <button onclick={tweakstash}>~~</button> -->
                 <button onclick={dropstashedPiers}>--</button>
             </div>
             <div class="bitsies">
@@ -39,3 +39,11 @@
                     </div>
                 {/each}
             </div>
+    </div>
+<style>
+    #levity {
+        margin-left:-1em;
+        border-left: 2em solid saddlebrown;
+        border-radius:2em;
+    }
+</style>

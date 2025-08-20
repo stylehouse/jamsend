@@ -54,13 +54,14 @@
             // Reset dropdown to show "Trust" label
             event.target.value = ""
         }
+        event.target.blur()
     }
 </script>
 
 <div class="trust-container">
-    <span class="trust-status">
+    <!-- <span class="trust-status">
         Trust: {trusted_abilities.join(", ") || "none"}
-    </span>
+    </span> -->
 
     <select onchange={handleSelection} class="trust-dropdown">
         <option value="">Trust</option>
@@ -77,8 +78,11 @@
 </div>
 
 <style>
+    .trust-dropdown {
+        width: 5em;
+    }
     .trust-container {
-        display: flex;
+        display: inline-table;
         align-items: center;
         gap: 0.5rem;
     }
@@ -88,20 +92,8 @@
         color: #666;
     }
 
-    .trust-dropdown {
-        padding: 0.25rem 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        background: white;
-        cursor: pointer;
-    }
-
-    .trust-dropdown:hover {
-        border-color: #999;
-    }
-
     .trust-option.trust-grant {
-        color: #0066cc;
+        color: #181125;
     }
 
     .trust-option.trust-revoke {

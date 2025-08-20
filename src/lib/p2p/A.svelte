@@ -56,17 +56,12 @@
     let link = $state()
     $effect(() => {
         // escape reactivity:
-        setTimeout(async () => {
-            await P.startup()
-            if (P.addresses.has(whoto)) {
-                tryit()
-            }
-        }, 0)
+        setTimeout(() => P.startup(), 0)
     })
     async function sharing() {
         if (link) return link = null
         // already in the address bar, can become QR code
-        link = P.share_url
+        link = P.share_url + ",blaggablagga,hitech"
     }
     async function copy_link() {
         await navigator.clipboard.writeText(link);
@@ -115,8 +110,6 @@
         </span>
     </pan>
 
-    <p><a href="/A?#{whoto}">Everything.</a></p>
-
     <button onclick={tryit}>go</button>
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
@@ -144,8 +137,8 @@
     }
     pqr {
         background: white;
-        padding-left: 3em;
-        padding-top: 3em;
+        padding-left: 26px;
+        padding-top: 30px;
     }
     div {
         color: green;
