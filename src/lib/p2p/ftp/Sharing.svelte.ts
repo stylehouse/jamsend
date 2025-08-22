@@ -17,11 +17,6 @@ export class Sharing extends PeerilyFeature {
         return new PierSharing({P:this.P,Pier,F:this})
     }
 
-    unemitter = {
-        whatsup: (data,{P,Pier}) => {
-            console.log("Landed in yondo: ",data)
-        },
-    }
 }
 
 // the PF (per Pier)
@@ -29,16 +24,16 @@ export class PierSharing extends PierFeature {
     constructor(opt) {
         super(opt)
         console.warn("Got PierSharing!")
+        this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
 
-    // < move to PF superclass
-    // routing messages to this Pier feature on the other end
-    emit(type,data={},options={}) {
-        if (!this.F.unemitter[type]) throw `emit handler unknown to self: ${type}`
-        type = `${this.F.trust_name}.${type}`
-        this.Pier.emit(type,data,options)
-    }
+    // be here... and in a UI...
 
+    unemits = {
+        whatsup: (data,{P,Pier}) => {
+            console.log("Landed in yondo: ",data)
+        },
+    }
 }
 
 

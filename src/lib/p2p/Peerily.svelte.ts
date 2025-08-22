@@ -744,23 +744,22 @@ export class Pier extends PierThings {
     handleMessage(data) {
         // extra args to the handler for convenient environment grabbing
         let handy = {P:this.P,Pier:this}
-        // < check permit on data.type
+
         let type:string = data.type
         let handler = this.handlers[data.type]
         if (!handler) {
+            // might route to a feature
             if (type.includes('.')) {
-                let [trust_name, inner_type] = type.split('.',1)
-                if (!this.trust.get(trust_name)) {
-                    throw `${this} unemit !permit to feature: ${type}`
-                }
-                let F = this.P.features.get(trust_name)
-                // < also attach the per-PF
+                let [trust_name, ...inner_type] = type.split('.')
+                data.type = inner_type.join('.')
+                // check permit
+                let t = this.trust.get(trust_name)
+                    || this.trusted.get(trust_name)
+                if (!t) throw `${this} unemit !permit to feature: ${trust_name}`
+
+                let F = this.features.get(trust_name)
                 handy.F = F
-                handler = F.unemitter[inner_type]
-                if (!handler) {
-                    return console.warn(`${this} unemit !handler for message type:`, data);
-                }
-                data.type = inner_type
+                handler = F.unemits[data.type]
             }
             if (!handler) {
                 return console.warn(`${this} unemit !handler for message type:`, data);
@@ -1009,7 +1008,7 @@ export class Pier extends PierThings {
                 if (!this.features.get(k)) {
                     // P.F <-> Pier.PF
                     let F = this.P.features.get(k)
-                    let PF = F.spawn_PF(this)
+                    let PF = F.spawn_PF({Pier:this})
                     this.features.set(k,PF)
                 }
                 let PF = this.features.get(k)
@@ -1044,37 +1043,54 @@ export class Pier extends PierThings {
     }
 }
 
-// 
 
 
 //#endregion
 //#region *Feature
 
 // one of these, page-globally
+//  the main, for-itself UI of the feature as a whole
 // < describes how to onramp the feature
 export abstract class PeerilyFeature {
     P:Peerily
-    
-    
     constructor(opt) {
         Object.assign(this, opt)
     }
+    
+    
     
     // subclass must fill in:
     // trust item this whole feature is under
     trust_name:TrustName
     abstract spawn_PierF():PierFeature
 }
+
 // one of these per Pier with that feature switched on
-//  eg for Sharing this would be a small net io dial
+//  would show UI parts of the feature relevant to the individual Pier
+//   eg for Sharing this would be a small net io dial
+//   < click to do a join onto the various tables, eg find that user's downloads
 type BidiTrustication = {local:TrustedTrust,remote:TrustedTrust}
 export abstract class PierFeature {
     P:Peerily
     F:PeerilyFeature
     // who we're about
+    eer:Peering
     Pier:Pier
     // < their perm.local (to here) may include arbitrary signed data
     perm:BidiTrustication = {}
+    constructor(opt) {
+        Object.assign(this, opt)
+        this.eer = this.Pier.eer
+        if (!this.eer) throw "where eer"
+    }
+    // < move to PF superclass
+    // routing messages to this Pier feature on the other end
+    abstract unemits:Object
+    emit(type,data={},options={}) {
+        if (!this.unemits[type]) throw `emit handler unknown to self: ${type}`
+        type = `${this.F.trust_name}.${type}`
+        this.Pier.emit(type,data,options)
+    }
 }
 
 
