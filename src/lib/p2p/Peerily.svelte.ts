@@ -870,12 +870,19 @@ export class Pier extends PierThings {
     async say_trust() {
         if (!this.stashed.trust) return
         let trust = this.stashed.trust.filter(t => t.to)
-        if (trust.length) {
-            for (const t of trust) {
-                await this.verify_trust(t,true)
-            }
-            this.emit('trust',{trust})
+        if (!trust.length) return
+
+        for (const t of trust) {
+            await this.verify_trust(t,true)
         }
+        this.emit('trust',{trust})
+
+        // assume that's going to work for now...
+        //  they won't send a NotTrust if you're lying
+        for (const t of trust) {
+            this.trusted.set(t.to,t)
+        }
+        this.update_trust()
     }
     // server checks and applies those abilities
     async hear_trust({trust}) {
