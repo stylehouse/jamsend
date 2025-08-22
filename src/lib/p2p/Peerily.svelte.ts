@@ -285,7 +285,7 @@ export class Peerily {
             // you're new!
             let Id = new Idento()
             await Id.generateKeys()
-            return this.a_Peering(Id)
+            this.a_Peering(Id)
         }
         else {
             // resume Peering at all our Ids
@@ -294,7 +294,7 @@ export class Peerily {
                 let Id = new Idento()
                 Id.thaw(a.keys)
                 // they CRUD further into a.**
-                return this.a_Peering(Id)
+                this.a_Peering(Id)
             })
         }
     }
@@ -800,11 +800,6 @@ export class Pier extends PierThings {
         if (this.said_hello) return console.warn("Dont say hello")
         this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.eer.Id.publicKey)})
         this.said_hello = true
-        // and immediately after that, any trust
-        // < bad security|privacy: tells a mitm attacker your trust with who they're impersonating
-        //    we could wait for their hello to work out..?
-        //     may require another round 
-        // this.say_trust()
     }
     hear_hello(data) {
         let delta = data.time - now_in_seconds()
@@ -812,15 +807,16 @@ export class Pier extends PierThings {
 
         // they provide their full publicKey
         this.receive_publicKey(data)
-
+        
         // reciprocate or continue
         if (!this.said_hello) {
             this.say_hello()
-            this.say_trust()
         }
-        else {
-            this.say_trust()
-        }
+
+        // after a hello they are verified!
+        //   not mitm using a collided Prekey
+        //  we only send trust info to them now
+        this.say_trust()
     }
     receive_publicKey(data) {
         let publicKey = data.publicKey
@@ -871,24 +867,25 @@ export class Pier extends PierThings {
     }
 
     // client reminds server what abilities they're allowed
-    say_trust() {
+    async say_trust() {
         if (!this.stashed.trust) return
         let trust = this.stashed.trust.filter(t => t.to)
         if (trust.length) {
             for (const t of trust) {
-                this.verify_trust(t,true)
+                await this.verify_trust(t,true)
             }
             this.emit('trust',{trust})
         }
     }
     // server checks and applies those abilities
     async hear_trust({trust}) {
+        // < redundant?
         if (!this.said_trust) this.say_trust()
         if (trust.some(t => !t.to)) throw "revoke in trust[]?"
         // verify grants
         // using trust.map() here would not wait for the throw to be effective
         for (const t of trust) {
-            this.verify_trust(t)
+            await this.verify_trust(t)
         }
         // trust them to do that for this session
         for (const t of trust) {
@@ -935,7 +932,7 @@ export class Pier extends PierThings {
             }
             else {
                 // a grant
-                this.verify_trust(t,true)
+                await this.verify_trust(t,true)
                 if (this.stashed.trust) {
                     // replaces any existing $to
                     let ti = this.stashed.trust.findIndex(st => t.to == st.to)
