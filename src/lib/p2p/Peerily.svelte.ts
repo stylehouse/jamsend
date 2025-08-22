@@ -248,8 +248,16 @@ class Peering {
 // the main|single object of our p2p business
 export class Peerily {
     stash:TheStash = $state({})
+
     on_error:Function|null
     save_stash:Function|null
+
+    features = $state(new SvelteMap())
+    feature(F) {
+        if (this.features.get(F.trust_name)) throw `dup trust_name=${F.trust_name}`
+        this.features.set(F.trust_name,F)
+    }
+
     constructor(opt={}) {
         Object.assign(this, opt)
     }
@@ -734,12 +742,31 @@ export class Pier extends PierThings {
         this.handleMessage(eventual_data)
     }
     handleMessage(data) {
+        // extra args to the handler for convenient environment grabbing
+        let handy = {P:this.P,Pier:this}
         // < check permit on data.type
-        const handler = this.handlers[data.type]
+        let type:string = data.type
+        let handler = this.handlers[data.type]
         if (!handler) {
-            return console.warn(`${this} channel !handler for message type:`, data);
+            if (type.includes('.')) {
+                let [trust_name, inner_type] = type.split('.',1)
+                if (!this.trust.get(trust_name)) {
+                    throw `${this} unemit !permit to feature: ${type}`
+                }
+                let F = this.P.features.get(trust_name)
+                // < also attach the per-PF
+                handy.F = F
+                handler = F.unemitter[inner_type]
+                if (!handler) {
+                    return console.warn(`${this} unemit !handler for message type:`, data);
+                }
+                data.type = inner_type
+            }
+            if (!handler) {
+                return console.warn(`${this} unemit !handler for message type:`, data);
+            }
         }
-        handler(data);
+        handler(data,handy);
     }
 
 //#endregion
@@ -751,6 +778,20 @@ export class Pier extends PierThings {
         this.stated_trust.clear()
         this.trust.clear()
         this.trusted.clear()
+    }
+    handlers = {
+        hello: (data) => {
+            console.log("they say hi: ",data)
+            this.hear_hello(data)
+        },
+        trust: (data) => {
+            console.log("they say trust: ",data)
+            this.hear_trust(data)
+        },
+        trusted: (data) => {
+            console.log("they say trusted: ",data)
+            this.hear_trusted(data)
+        },
     }
 
     // hello comes first, gives full pubkey
@@ -826,6 +867,7 @@ export class Pier extends PierThings {
                 this.trust.delete(t.not)
             }
         })
+        this.refresh_features()
     }
 
     // client reminds server what abilities they're allowed
@@ -905,6 +947,7 @@ export class Pier extends PierThings {
                 this.trusted.set(t.to,t)
             }
         }
+        this.refresh_features()
     }
     
     // we trust them
@@ -942,21 +985,58 @@ export class Pier extends PierThings {
         console.log(`revoke_trust(${not})`)
     }
 
+    features:SvelteMap<TrustName,PierFeature> = $state(new SvelteMap())
+    feature(F) {
+        if (this.features.get(F.trust_name)) throw `dup trust_name=${F.trust_name}`
+        this.features.set(F.trust_name,F)
+    }
+    refresh_features() {
+        let was = {}
+        this.features.forEach((PF,k) => {
+            was[k] = {...PF.perm}
+        })
 
+        // a PF switches on when either party has trust
+        // it must negotiate security despite this
+        //  eg can we push music there, or just pull?
 
-    handlers = {
-        hello: (data) => {
-            console.log("they say hi: ",data)
-            this.hear_hello(data)
-        },
-        trust: (data) => {
-            console.log("they say trust: ",data)
-            this.hear_trust(data)
-        },
-        trusted: (data) => {
-            console.log("they say trusted: ",data)
-            this.hear_trusted(data)
-        },
+        let switch_on = (direction) => {
+            return (t:TrustedTrust,k:TrustName) => {
+                if (!this.features.get(k)) {
+                    // P.F <-> Pier.PF
+                    let F = this.P.features.get(k)
+                    let PF = F.spawn_PF(this)
+                    this.features.set(k,PF)
+                }
+                let PF = this.features.get(k)
+                PF.perm[direction] = t
+
+                let before = was[k]?.[direction]
+                if (!before) {
+                    direction == 'local' ? 
+                        PF.gets_perm_local?.()
+                        :
+                        PF.gets_perm_remote?.()
+                }
+            }
+        }
+        this.trust.forEach(switch_on('local'))
+        this.trusted.forEach(switch_on('remote'))
+
+        // Check for lost permissions
+        Object.keys(was).forEach(k => {
+            let PF = this.features.get(k)
+            if (!PF) throw `Feature was removed?`
+            // push any trust change
+            PF.perm.local = this.trust.get(k) || null
+            PF.perm.remote = this.trusted.get(k) || null
+            let before = was[k] || {}
+            
+            // inform PF of losses
+            //  so they can eg turn off a stream
+            if (before.local && !PF.perm.local) PF.loses_perm_local?.()
+            if (before.remote && !PF.perm.remote) PF.loses_perm_remote?.()
+        })
     }
 }
 
@@ -964,12 +1044,35 @@ export class Pier extends PierThings {
 
 
 //#endregion
-//#region Trust (us)
+//#region *Feature
 
-class Trust {
-    pier:Pier
-
+// one of these, page-globally
+// < describes how to onramp the feature
+export abstract class PeerilyFeature {
+    P:Peerily
+    
+    
+    constructor(opt) {
+        Object.assign(this, opt)
+    }
+    
+    // subclass must fill in:
+    // trust item this whole feature is under
+    trust_name:TrustName
+    abstract spawn_PierF():PierFeature
 }
+// one of these per Pier with that feature switched on
+//  eg for Sharing this would be a small net io dial
+type BidiTrustication = {local:TrustedTrust,remote:TrustedTrust}
+export abstract class PierFeature {
+    P:Peerily
+    F:PeerilyFeature
+    // who we're about
+    Pier:Pier
+    // < their perm.local (to here) may include arbitrary signed data
+    perm:BidiTrustication = {}
+}
+
 
 //#endregion
 

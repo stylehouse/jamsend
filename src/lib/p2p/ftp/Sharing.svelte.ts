@@ -1,7 +1,53 @@
 import { SvelteMap } from "svelte/reactivity";
-import type { Participant } from "./Participants.svelte";
+// import type { Participant } from "./Participants.svelte";
 import { erring } from "$lib/Y";
 import { tick } from "svelte";
+
+
+import { PeerilyFeature, PierFeature } from "../Peerily.svelte";
+
+
+// the F
+export class Sharing extends PeerilyFeature {
+    constructor(opt) {
+        super(opt)
+        this.trust_name = 'ftp'
+    }
+    spawn_PF({Pier}) {
+        return new PierSharing({P:this.P,Pier,F:this})
+    }
+
+    unemitter = {
+        whatsup: (data,{P,Pier}) => {
+            console.log("Landed in yondo: ",data)
+        },
+    }
+}
+
+// the PF (per Pier)
+export class PierSharing extends PierFeature {
+    constructor(opt) {
+        super(opt)
+        console.warn("Got PierSharing!")
+    }
+
+    // < move to PF superclass
+    // routing messages to this Pier feature on the other end
+    emit(type,data={},options={}) {
+        if (!this.F.unemitter[type]) throw `emit handler unknown to self: ${type}`
+        type = `${this.F.trust_name}.${type}`
+        this.Pier.emit(type,data,options)
+    }
+
+}
+
+
+
+
+
+
+
+
 
 
 // inherited by Sharing, to hide the guts
@@ -19,7 +65,7 @@ class Caring {
 
 //#region Sharing
 type percentage = number
-export class Sharing extends Caring {
+export class LaSharing extends Caring {
     // leads back to party
     par:Participant
     tm:TransferManager

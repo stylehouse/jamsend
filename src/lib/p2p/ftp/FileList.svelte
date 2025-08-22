@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { FileListing } from "$lib/kolektiva/Sharing.svelte";
+    import type { FileListing } from "$lib/p2p/ftp/Shares.svelte";
     import type { Snippet } from "svelte";
 
     type args = {

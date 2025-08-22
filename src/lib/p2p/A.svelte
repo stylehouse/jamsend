@@ -6,6 +6,7 @@
     import ShareButton from "./ui/ShareButton.svelte";
 	import QrCode from "svelte-qrcode"
     import { throttle } from "$lib/Y";
+    import { Sharing } from "./ftp/Sharing.svelte";
     
 
     let errors = $state(new SvelteSet())
@@ -24,6 +25,8 @@
     },200)
 
     let P = new Peerily({on_error,save_stash})
+    P.feature(new Sharing({P}))
+
     // P.stash persists
     // < identity per ?id=..., which we namespace into which stash...
     $effect(() => {
@@ -47,7 +50,6 @@
 
 
     
-
 
 
     

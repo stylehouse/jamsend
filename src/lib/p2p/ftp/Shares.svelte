@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { FileListing, Sharing } from '$lib/kolektiva/Sharing.svelte';
+    import { FileListing, Sharing } from '$lib/p2p/ftp/Shares.svelte';
     import FileList from './FileList.svelte';
     
     let { par } = $props();
