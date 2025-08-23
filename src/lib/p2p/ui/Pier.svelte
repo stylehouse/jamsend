@@ -29,6 +29,14 @@
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={tweakstash}>~~</button> -->
     <Trusticles {pier} />
+
+    <div class=bitsies>
+        {#each pier.features as [k,F] (k)}
+            <div class=bitsies>
+                <svelte:component this={F.UI_component} {pier} {F} />
+            </div>
+        {/each}
+    </div>
 </div>
 
 <style>

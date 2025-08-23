@@ -2,6 +2,7 @@
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
+import type { Component } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 
 const MAX_BUFFER = 64 * 1024; // 64KB
@@ -1060,9 +1061,12 @@ export abstract class PeerilyFeature {
     
     
     // subclass must fill in:
+
     // trust item this whole feature is under
     trust_name:TrustName
     abstract spawn_PierF():PierFeature
+    
+    UI_component:Component
 }
 
 // one of these per Pier with that feature switched on

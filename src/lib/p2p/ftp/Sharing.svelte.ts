@@ -1,10 +1,11 @@
 import { SvelteMap } from "svelte/reactivity";
-// import type { Participant } from "./Participants.svelte";
 import { erring } from "$lib/Y";
 import { tick } from "svelte";
 
-
 import { PeerilyFeature, PierFeature } from "../Peerily.svelte";
+// UI
+import Shares from "./Shares.svelte";
+import Sharee from "./Sharee.svelte";
 
 
 // the F
@@ -12,6 +13,7 @@ export class Sharing extends PeerilyFeature {
     constructor(opt) {
         super(opt)
         this.trust_name = 'ftp'
+        this.UI_component = Shares
     }
     spawn_PF({Pier}) {
         return new PierSharing({P:this.P,Pier,F:this})
@@ -23,6 +25,7 @@ export class Sharing extends PeerilyFeature {
 export class PierSharing extends PierFeature {
     constructor(opt) {
         super(opt)
+        this.UI_component = Sharee
         console.warn("Got PierSharing!")
         this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
@@ -61,8 +64,6 @@ class Caring {
 //#region Sharing
 type percentage = number
 export class LaSharing extends Caring {
-    // leads back to party
-    par:Participant
     tm:TransferManager
     private fsHandler:FileSystemHandler
     // compat
@@ -79,18 +80,8 @@ export class LaSharing extends Caring {
     constructor(opt) {
         super()
         Object.assign(this,opt)
-        if (this.par.sharing_requested) {
-            // they asked for it
-            this.remoteConsent = true
-            this.par.sharing_requested = false
-        }
     }
-    // we asked for it, they are now ready
-    async consented() {
-        if (this.remoteConsent) return
-        this.remoteConsent = true
-        await this.consented_acts()
-    }
+    // < depend on F.perm
     async consented_acts() {
         await this.refresh_localList()
         await this.refresh_remoteList()

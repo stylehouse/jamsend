@@ -1,12 +1,13 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Idento, Peerily, type StashedPeering } from "./Peerily.svelte";
+    import { Idento, Peerily, PeerilyFeature, type StashedPeering } from "./Peerily.svelte";
     import { SvelteSet } from "svelte/reactivity";
     import Peering from "./ui/Peering.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
 	import QrCode from "svelte-qrcode"
     import { throttle } from "$lib/Y";
     import { Sharing } from "./ftp/Sharing.svelte";
+    import Shares from "./ftp/Sharee.svelte";
     
 
     let errors = $state(new SvelteSet())
@@ -119,6 +120,15 @@
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
             <Peering {pub} {eer} />
+        {/each}
+    </div>
+
+
+    <div class=bitsies>
+        {#each P.features as [k,PF] (k)}
+            <div class=bitsies>
+                <svelte:component this={PF.UI_component} {P} {PF} />
+            </div>
         {/each}
     </div>
 </div>
