@@ -198,7 +198,7 @@ export class PierSharing extends PierFeature {
 
 
         // Starts a new download
-        // fyi, our PUT is just a file-meta someone receives
+        // our PUT is just a file_meta someone receives
         file_meta: async (data) => {
             console.log("file meta: ",data)
             const transfer = this.tm.initTransfer(
@@ -220,6 +220,7 @@ export class PierSharing extends PierFeature {
         },
         // ...downloads
         file_chunk: async (data) => {
+            console.log("file chunk: ",data)
             const transfer = this.tm.transfers.get(data.fileId);
             if (!transfer || transfer.status !== 'active') {
                 console.warn(`Invalid transfer state for chunk: ${data.fileId}`);
@@ -236,6 +237,7 @@ export class PierSharing extends PierFeature {
         },
         // ...complete
         file_complete: async (data) => {
+            console.log("file complete: ",data)
             const transfer = this.tm.transfers.get(data.fileId);
             if (!transfer) return;
 

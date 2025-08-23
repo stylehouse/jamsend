@@ -650,7 +650,9 @@ export class Pier extends PierThings {
             let crypto = {}
             crypto.sign = enhex(await this.eer.Id.sign(json))
             if (buffer) {
-                crypto.buffer_sign = enhex(await this.eer.Id.sign(buffer.buffer))
+                // text comes as ArrayBuffer, binary as Uint8Array !?
+                if (buffer.constructor != ArrayBuffer) buffer = buffer.buffer
+                crypto.buffer_sign = enhex(await this.eer.Id.sign(buffer))
             }
             
             // json is already string, crypto isn't
@@ -1090,10 +1092,10 @@ export abstract class PierFeature {
     // < move to PF superclass
     // routing messages to this Pier feature on the other end
     abstract unemits:Object
-    emit(type,data={},options={}) {
+    async emit(type,data={},options={}) {
         if (!this.unemits[type]) throw `emit handler unknown to self: ${type}`
         type = `${this.PF.trust_name}.${type}`
-        this.Pier.emit(type,data,options)
+        await this.Pier.emit(type,data,options)
     }
 }
 
