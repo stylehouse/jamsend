@@ -6,10 +6,6 @@
     let { pier,F } = $props();
     let sharing:Sharing = F;
 
-    $effect(() => {
-        // setTimeout(() => sharing.starts(), 1)
-    })
-
     // Convert transfer objects to FileListing-like objects
     let transfers = $derived(
         Array.from(sharing.tm?.transfers.values() ?? []).map(t => ({
@@ -56,6 +52,8 @@
         }
     })
     $inspect("wee compat element", compat_directory_input_element)
+    $inspect("sharing.localList", sharing.localList)
+
 </script>
 
 <div class="file-sharing">
@@ -65,6 +63,9 @@
             list={sharing.localList} 
             onFileClick={click_push}
             onRefreshClick={() => sharing.refresh_localList()} >
+            {#snippet list_awaits()}
+                <button onclick={() => F.start()}>open share</button>
+            {/snippet}
             {#snippet compat()}
                 {#if compat_mode}
                     <h3>THE COMPAT MODE SPEECH</h3>

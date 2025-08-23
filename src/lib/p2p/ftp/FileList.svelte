@@ -7,9 +7,10 @@
         title: string,
         onFileClick: (file: FileListing) => void,
         onRefreshClick: () => void,
+        list_awaits?: Snippet
         compat?: Snippet
     }
-    let { list,title,onFileClick,onRefreshClick,compat }:args = $props();
+    let { list,title,onFileClick,onRefreshClick,list_awaits,compat }:args = $props();
     let {files,directories} = $derived(list || {})
     onRefreshClick ||= () => {}
     onFileClick ||= () => {}
@@ -24,7 +25,11 @@
     {@render compat?.()}
 
     {#if !list}
-        list awaits...
+        {#if list_awaits}
+            {@render list_awaits?.()}
+        {:else}
+            list awaits...
+        {/if}
     {:else}
         {#if directories?.length}
             <div class="items">
@@ -51,7 +56,7 @@
                         <span class="name">{file.name}</span>
                         <span class="meta">
                             <span class="size">{file.formattedSize}</span>
-                            <span class="date">{file.formattedDate}</span>
+                            <!-- <span class="date">{file.formattedDate}</span> -->
                         </span>
                     </div>
                 {/each}

@@ -16,11 +16,12 @@ export class Sharing extends PeerilyFeature {
         this.UI_component = Shares
     }
     spawn_PF({Pier}) {
-        return new PierSharing({P:this.P,Pier,F:this})
+        return new PierSharing({P:this.P,Pier,PF:this})
     }
 
 }
 
+type percentage = number
 // the PF (per Pier)
 export class PierSharing extends PierFeature {
     constructor(opt) {
@@ -31,39 +32,6 @@ export class PierSharing extends PierFeature {
     }
 
     // be here... and in a UI...
-
-    unemits = {
-        whatsup: (data,{P,Pier}) => {
-            console.log("Landed in yondo: ",data)
-        },
-    }
-}
-
-
-
-
-
-
-
-
-
-
-// inherited by Sharing, to hide the guts
-//  may export to fancy up Peering's emit
-class Caring {
-
-
-
-    to
-
-}
-
-
-
-
-//#region Sharing
-type percentage = number
-export class LaSharing extends Caring {
     tm:TransferManager
     private fsHandler:FileSystemHandler
     // compat
@@ -73,14 +41,9 @@ export class LaSharing extends Caring {
     // listings here + there
     localList: DirectoryListing | null = $state()
     remoteList: DirectoryListing | null = $state()
-    remoteConsent = false;
 
     started = $state(false);
 
-    constructor(opt) {
-        super()
-        Object.assign(this,opt)
-    }
     // < depend on F.perm
     async consented_acts() {
         await this.refresh_localList()
@@ -94,25 +57,14 @@ export class LaSharing extends Caring {
             // consent by the user
             await this.fsHandler.start()
             
-            // < racey. Paring.unemit() should wait up to 3s for new handlers to arrive
-            this.setupSharingHandlers(this.par)
+            // < racey. Pier.unemit() should wait up to 3s for new handlers to arrive
+            // this.setupSharingHandlers(this.par)
             
-            if (this.remoteConsent) {
-                // this will let them know we are ready
-                this.consented_acts()
-            }
-            else {
-                // if you are first, this asks them to start
-                this.send('sharing-ready',{})
-                // make things look like they're working here
-                //  but we'll do this again when they're ready
-                // in compat mode the picker isn't ready yet.
-                await this.refresh_localList()
-            }
+            // < in compat mode the picker isn't ready yet.
+            await this.refresh_localList()
 
             this.started = true;
-            let say = this.remoteConsent ? " consentedly" : ""
-            console.log(`File sharing started${say} with files:`, this.localList);
+            console.log(`File sharing started with files:`, this.localList);
         } catch (err) {
             throw erring("Failed to start file sharing", err);
         }
@@ -138,10 +90,6 @@ export class LaSharing extends Caring {
         }
     }
 
-    // make code in here nicer
-    async send(type,data,options?) {
-        return await this.par.ing.emit(type,data,options)
-    }
 
 //#region sendFile
     // Send a file from the filesystem
@@ -165,12 +113,12 @@ export class LaSharing extends Caring {
         if (seek) {
             meta.seek = seek
         }
-        await this.send('file-meta', meta);
+        await this.emit('file_meta', meta);
 
         // Read and send chunks
         try {
             for await (const chunk of reader.iterate(seek)) {
-                await this.send('file-chunk',{
+                await this.emit('file_chunk',{
                     fileId,
                     buffer: chunk
                 },{priority: 'low'});
@@ -180,7 +128,7 @@ export class LaSharing extends Caring {
             }
 
             // Send completion message
-            await this.send('file-complete',{
+            await this.emit('file_complete',{
                 fileId,
             })
             transfer.status = 'completed';
@@ -190,7 +138,7 @@ export class LaSharing extends Caring {
         }
     }
     async pull(name) {
-        await this.par.emit('file-pull', {name})
+        await this.emit('file_pull', {name})
     }
 
     // List available files
@@ -209,13 +157,13 @@ export class LaSharing extends Caring {
         }
     }
     async refresh_remoteList() {
-        await this.par.emit('file-list-request')
+        await this.emit('file_list_request')
     }
     async send_file_list() {
         try {
             // < could be moving around
             let listing = this.localList?.transportable()
-            listing && await this.par.emit('file-list-response', {listing})
+            listing && await this.emit('file_list_response', {listing})
         } catch (err) {
             throw erring('sending file lists', err)
         }
@@ -231,31 +179,28 @@ export class LaSharing extends Caring {
             }
         }, 5000) // Check every 5 seconds
     }
-//#region on
-    setupSharingHandlers(par) {
-        // every handler in here counts as consent
-        let parhand = (name,callback) => {
-            this.par.on(name, async (par,data) => {
-                par.sharing.consented()
-                await callback(data)
-            })
-        }
+//#region unemits
+    unemits = {
+        whatsup: (data,{P,Pier}) => {
+            console.log("Landed in yondo: ",data)
+        },
 
         // remote peer requesting our file list
-        parhand('file-list-request', async () => {
+        file_list_request: async () => {
             await this.send_file_list()
-        })
+        },
         // receiving remote peer's file list
         // < data.directory:string[]
-        parhand('file-list-response', async (data) => {
+        file_list_response: async (data) => {
             this.remoteList = DirectoryListing.fromJSON(data.listing)
-        })
+        },
 
 
 
         // Starts a new download
         // fyi, our PUT is just a file-meta someone receives
-        parhand('file-meta', async (data) => {
+        file_meta: async (data) => {
+            console.log("file meta: ",data)
             const transfer = this.tm.initTransfer(
                 'download',
                 data.fileId, 
@@ -272,9 +217,9 @@ export class LaSharing extends Caring {
                 transfer.status = 'error';
                 throw erring('starting file transfer', err);
             }
-        });
+        },
         // ...downloads
-        parhand('file-chunk', async (data) => {
+        file_chunk: async (data) => {
             const transfer = this.tm.transfers.get(data.fileId);
             if (!transfer || transfer.status !== 'active') {
                 console.warn(`Invalid transfer state for chunk: ${data.fileId}`);
@@ -288,9 +233,9 @@ export class LaSharing extends Caring {
                 transfer.status = 'error';
                 throw erring('Error writing chunk', err);
             }
-        });
+        },
         // ...complete
-        parhand('file-complete', async (data) => {
+        file_complete: async (data) => {
             const transfer = this.tm.transfers.get(data.fileId);
             if (!transfer) return;
 
@@ -302,30 +247,18 @@ export class LaSharing extends Caring {
                 transfer.status = 'error';
                 throw erring('Error completing transfer', err);
             }
-        });
+        },
         // or do they
-        parhand('file-error', async (data) => {
+        file_error: async (data) => {
             const transfer = this.tm.transfers.get(data.fileId);
             if (!transfer) return;
             await transfer.error(data.error, false); // Don't notify back
-        });
+        },
         // remote nabs
-        parhand('file-pull', async (data) => {
+        file_pull: async (data) => {
             await this.sendFile(data.name, undefined, data.seek, data.fileId);
-        });
+        },
     }
-}
-
-// first user to enable Sharing asks the other to reciprocate
-export function setupSharingCourtshipHandlers(par) {
-    par.on('sharing-ready', async (data) => {
-        if (par.sharing) {
-            par.sharing.consented()
-        }
-        else {
-            par.sharing_requested = true
-        }
-    });
 }
 
 
@@ -354,7 +287,7 @@ class Transfer {
     
     // Services
     tm:TransferManager
-    sharing:Sharing
+    sharing:PierSharing
     writable?: FileSystemWritableFileStream  // for downloads
     
     constructor(opt: Partial<Transfer>) {
@@ -373,7 +306,7 @@ class Transfer {
         this.status = 'error';
         this.errorMessage = msg;
         if (notify) {
-            await this.sharing.send('file-error', {
+            await this.sharing.emit('file_error', {
                 fileId: this.id,
                 error: msg
             });
@@ -428,9 +361,9 @@ class Transfer {
 
 class TransferManager {
     // parent
-    sharing:Sharing
+    sharing:PierSharing
     
-    constructor(opt: { sharing: Sharing }) {
+    constructor(opt: { sharing: PierSharing }) {
         Object.assign(this,opt)
     }
     transfers = $state(new SvelteMap<string, Transfer>());
@@ -630,7 +563,9 @@ class FileSystemHandler {
         dirHandle: FileSystemDirectoryHandle | null,
         fileHandles: Map<string, FileSystemFileHandle>,
     }
-    private sharing:Sharing
+    // < this one probably does belong to Sharing...
+    //    might want to trust.etc different shares
+    private sharing:PierSharing
     private compat_mode:Boolean
     constructor({sharing}) {
         this.sharing = sharing
