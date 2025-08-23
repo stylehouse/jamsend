@@ -735,6 +735,8 @@ export class Pier extends PierThings {
         }
         else if (this.next_unemission == 'buffer') {
             let crypto = this.next_unemit.crypto
+            // text comes as ArrayBuffer, binary as Uint8Array !?
+            if (data.constructor != ArrayBuffer) data = data.buffer
             let valid = await this.Ud.verify(dehex(crypto.buffer_sign), data)
             if (!valid) throw `invalid buffer_sign`
             this.next_unemit.data.buffer = data
