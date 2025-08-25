@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { FileListing, Sharing } from '$lib/p2p/ftp/Sharing.svelte';
+    import { FileListing, PierSharing } from '$lib/p2p/ftp/Sharing.svelte';
     import FileList from './FileList.svelte';
     
     // the global Peerily and PeerilyFeature object
     let { pier,F } = $props();
-    let sharing:Sharing = F;
+    let sharing:PierSharing = F;
 
     // Convert transfer objects to FileListing-like objects
     let transfers = $derived(
