@@ -34,8 +34,6 @@ export class PierSharing extends PierFeature {
     // be here... and in a UI...
     tm:TransferManager
     private fsHandler:FileSystemHandler
-    // compat
-    local_directory_compat?:Function
     
     // < figure out how to do navigation and population
     // listings here + there
@@ -60,7 +58,6 @@ export class PierSharing extends PierFeature {
             // < racey. Pier.unemit() should wait up to 3s for new handlers to arrive
             // this.setupSharingHandlers(this.par)
             
-            // < in compat mode the picker isn't ready yet.
             await this.refresh_localList()
 
             this.started = true;
@@ -561,14 +558,13 @@ const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer
 
 type FileSystemDirectoryHandle = any
 class FileSystemHandler {
+    private sharing:PierSharing
     private _fs: FileSystemState = {
         dirHandle: FileSystemDirectoryHandle | null,
         fileHandles: Map<string, FileSystemFileHandle>,
     }
     // < this one probably does belong to Sharing...
     //    might want to trust.etc different shares
-    private sharing:PierSharing
-    private compat_mode:Boolean
     constructor({sharing}) {
         this.sharing = sharing
         this._fs = {
@@ -587,16 +583,8 @@ class FileSystemHandler {
 
     
     // Request directory access from user
-    // < permanent shares
-    private isFileSystemAccessSupported(): boolean {
-        return 'showDirectoryPicker' in window;
-    }
     async requestDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
         try {
-            if (!this.isFileSystemAccessSupported()) {
-                this.compat_VirtualDirectoryHandle()
-                return
-            }
             // Modern browsers that support File System Access API
             this._fs.dirHandle = await window.showDirectoryPicker({
                 mode: 'readwrite'
@@ -619,10 +607,6 @@ class FileSystemHandler {
     // List all files in the directory
     async listDirectory(): Promise<DirectoryListing> {
         if (!this._fs.dirHandle) {
-            if (this.compat_mode) {
-                // localList unavailable for longer than usual
-                return
-            }
             throw erring('No directory access')
         }
         
@@ -685,76 +669,6 @@ class FileSystemHandler {
 
 
 
-
-//#region fs-compat
-    // this'll all go
-    
-    private compat_VirtualDirectoryHandle() {
-        this.compat_mode = true
-        // Fallback for browsers without File System Access API support
-        this.sharing.local_directory_compat = (input) => {
-            return new Promise((resolve, reject) => {
-                input.onchange = async (event) => {
-                    const files = Array.from(input.files || []);
-                    if (files.length > 0) {
-                        // Create a virtual directory handle
-                        this._fs.dirHandle = this.createVirtualDirectoryHandle(files);
-                        resolve(this._fs.dirHandle);
-                        // and read from it
-                        this.sharing.refresh_localList()
-                    } else {
-                        reject(new Error('No directory selected'));
-                    }
-                };
-                // Trigger the file picker? too late now,
-                // < perhaps the UI should precede sharing.start()?
-                // input.click();
-            })
-        }
-    }
-    // compat - older browsers can throw a whole folder at us
-    private createVirtualDirectoryHandle(files: File[]) {
-        return {
-            kind: 'directory',
-            *values() {
-                for (const file of files) {
-                    yield {
-                        kind: 'file',
-                        name: file.name,
-                        getFile: async () => file
-                    };
-                }
-            },
-            async getFileHandle(name: string) {
-                const file = files.find(f => f.name === name);
-                if (!file) throw new Error('File not found');
-                return {
-                    kind: 'file',
-                    name: file.name,
-                    getFile: async () => file,
-                    createWritable: async () => {
-                        // Implement in-memory write operations
-                        let chunks: Uint8Array[] = [];
-                        return {
-                            write: async (chunk: Uint8Array) => {
-                                chunks.push(chunk);
-                            },
-                            close: async () => {
-                                const blob = new Blob(chunks);
-                                // Trigger download since we can't write directly
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = name;
-                                a.click();
-                                URL.revokeObjectURL(url);
-                            }
-                        };
-                    }
-                };
-            }
-        };
-    }
 
 
 

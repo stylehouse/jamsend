@@ -747,6 +747,7 @@ export class Pier extends PierThings {
         this.handleMessage(eventual_data)
     }
     handleMessage(data) {
+        console.log(`unemits ${data.type}:`,data)
         // extra args to the handler for convenient environment grabbing
         let handy = {P:this.P,Pier:this}
 

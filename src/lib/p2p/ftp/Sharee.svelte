@@ -34,24 +34,11 @@
     }
     // always have this in there...
     let compat_mode = $state()
-    let compat_directory_input_element = $state()
     $effect(() => {
         if (!('showDirectoryPicker' in window)) {
             compat_mode = true
         }
     })
-    $effect(async () => {
-        if (compat_directory_input_element) {
-            // < extra step|interaction here - not fast enough!
-            //   maybe if we Participant.svelte tog_ftp()
-            //    on pointerdown create this UI, pointerup hit sharing.start()
-            //     probably just exposes a crack to fall into
-            let hook = sharing.local_directory_compat
-            if (!hook) throw "hook not ready"
-            await hook(compat_directory_input_element)
-        }
-    })
-    $inspect("wee compat element", compat_directory_input_element)
     $inspect("sharing.localList", sharing.localList)
 
 </script>
@@ -69,19 +56,7 @@
             {#snippet compat()}
                 {#if compat_mode}
                     <h3>THE COMPAT MODE SPEECH</h3>
-                    <p>You don't seem to allow Directory writing access.
-                        Downloads will be batched in a .tar file to preserve directory structure, use
-                        <a href="https://play.google.com/store/apps/details?id=com.rarlab.rar">
-                            Android's RAR</a>
-                        or 
-                        <a href="https://apps.apple.com/us/app/izip-zip-unzip-unrar/id413971331">
-                            Apple's iZip</a>
-                        to extract it.
-                    </p>
-                    <span style="">
-                        <input bind:this={compat_directory_input_element}
-                            type=file webkitdirectory multiple />
-                    </span>
+                    <p>You don't seem to allow Directory writing access. Sorry.</p>
                 {/if}
             {/snippet}
         </FileList>
