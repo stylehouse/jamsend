@@ -29,7 +29,7 @@ export class IndexedDBStorage<T = any> {
     protected version: number
     private _db: IDBDatabase | null = null
 
-    constructor(version = 1) {
+    constructor(version = 2) {
         this.version = version
     }
     set_table(dbName: string, storeName: string) {

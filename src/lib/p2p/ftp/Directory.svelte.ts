@@ -1,6 +1,8 @@
 
 import { IndexedDBStorage,CollectionStorage } from '$lib/data/IndexedDBStorage'
 import { erring } from '$lib/Y'
+import { SvelteMap } from 'svelte/reactivity'
+import { DirectoryListing } from './Sharing.svelte'
 
 
 
@@ -8,7 +10,7 @@ import { erring } from '$lib/Y'
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare extends IndexedDBStorage {
     F: Sharing
-    name: string
+    name: string = $state()
     fsHandler: FileSystemHandler
     
     // State
@@ -83,13 +85,6 @@ export class DirectoryShare extends IndexedDBStorage {
         this.localList = await this.fsHandler.listDirectory()
     }
 
-    // Send file from this share
-    async sendFile(filename: string, onProgress?: (progress: number) => void) {
-        if (!this.isActive) throw erring('Share not active')
-        // Delegate to PF's sendFile with share context
-        return await this.PF.sendFile(filename, this.name, onProgress)
-    }
-
     // Get file reader from this share's directory
     async getFileReader(filename: string) {
         return await this.fsHandler.getFileReader(filename)
@@ -104,7 +99,7 @@ export class DirectoryShare extends IndexedDBStorage {
 // Collection of DirectoryShares with persistence
 export class DirectoryShares extends CollectionStorage<{name: string}> {
     F: Sharing
-    _shares = $state(new Map<string, DirectoryShare>())
+    _shares = $state(new SvelteMap<string, DirectoryShare>())
     
     constructor(F: Sharing) {
         super()

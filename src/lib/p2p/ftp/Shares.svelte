@@ -7,15 +7,22 @@
     // the fairly-global Peering and PeerilyFeature object
     let { eer,F }:{ eer:Peering,F:Sharing } = $props();
 
-    onMount(() => F.start())
+    onMount(async () => {
+        // < Things might F.shares.start()
+        //   Thing then DirectoryShare.start()?
+        setTimeout(async () => {
+            //  await F.start()
+             }, 2100)
+        console.log("shares!: ",[F,F.shares._shares])
+    })
 </script>
 
 <h2>Expect big shares</h2>
 
-
+    DSs:{F.shares._shares.size}
     {#each F.shares._shares as [k,DS] (k)}
         <div class=bitsies>
-            DS:{DS.name}
+            DS:{DS.name} <button onclick={() => DS.start()}>o</button>
         </div>
     {/each}
     
