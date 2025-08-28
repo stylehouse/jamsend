@@ -1,7 +1,9 @@
 <script lang="ts">
+    import type { Peering } from "../Peerily.svelte";
     import Pier from "./Pier.svelte";
 
-    let {pub,eer} = $props()
+
+    let {pub,eer}:{eer:Peering} = $props()
     async function showstash() {
         console.log("eer",eer.stashed)
     }
@@ -24,6 +26,7 @@
 </script>
 
     <div id=levity>
+        <!-- for itself: -->
             <div>Listening: {pub} 
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>
@@ -32,10 +35,21 @@
                 <!-- <button onclick={tweakstash}>~~</button> -->
                 <button onclick={dropstashedPiers}>--</button>
             </div>
+
+        <!-- for others: -->
             <div class="bitsies">
                 {#each eer.Piers as [pub,pier] (pub)}
                     <div class=bitsies>
                         <Pier {pier} />
+                    </div>
+                {/each}
+            </div>
+
+        <!-- and their commonalities -->
+            <div class=bitsies>
+                {#each eer.features as [k,PF] (k)}
+                    <div class=bitsies>
+                        <svelte:component this={PF.UI_component} {eer} {PF} />
                     </div>
                 {/each}
             </div>

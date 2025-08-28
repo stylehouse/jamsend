@@ -173,7 +173,7 @@ export class Idento extends IdentoCrypto {
 // < the PeerJS object is funny. for some reason extending it says:
 //    TypeError: Class extends value #<Object> is not a constructor or null
 //   so we proxy everything
-class Peering {
+export class Peering {
     P:Peerily
     Id:Idento
     stashed:StashedPeering = $state()
@@ -183,7 +183,21 @@ class Peering {
         this.Id = Id
         let prekey = Id+''
         this.Peer = new PeerJS(prekey,opt)
+        // and that's it!
+        this.P.on_Peering?.(this)
     }
+
+
+    // multi-user features stack up here (rather than P)
+    //  so there's an extra deep partitioning of them
+    features = $state(new SvelteMap<TrustName,PeerilyFeature>())
+    feature(PF:PeerilyFeature) {
+        let k = PF.trust_name
+        if (this.features.get(k)) throw `dup trust_name=${k}`
+        this.features.set(k,PF)
+    }
+
+
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     a_Pier(pub:Prekey):Pier {
@@ -222,6 +236,9 @@ class Peering {
         let after = this.stashed.Piers.length
         if (before == after) throw `!forget_Pier`
     }
+
+
+
     // proxy these methods
     on(...args) {
         return this.Peer.on(...args)
@@ -246,18 +263,14 @@ class Peering {
 }
 
 //#region Peerily (P)
-// the main|single object of our p2p business
+// the main|single object of our p2p business, over all Peerings
 export class Peerily {
     stash:TheStash = $state({})
 
     on_error:Function|null
+    // called for each "host" address we create, before Piers arrive
+    on_Peering:Function|null
     save_stash:Function|null
-
-    features = $state(new SvelteMap())
-    feature(F) {
-        if (this.features.get(F.trust_name)) throw `dup trust_name=${F.trust_name}`
-        this.features.set(F.trust_name,F)
-    }
 
     constructor(opt={}) {
         Object.assign(this, opt)
@@ -317,6 +330,7 @@ export class Peerily {
         }
 
         // plant a sharable URL for attracting others to them
+        // < this wants navigator.history.push() or some such integration
         window.location.hash = this.address_to_connect_from.Id+''
         this.share_url = window.location.toString()
     }
@@ -1012,10 +1026,10 @@ export class Pier extends PierThings {
         let switch_on = (direction) => {
             return (t:TrustedTrust,k:TrustName) => {
                 if (!this.features.get(k)) {
-                    // P.F <-> Pier.PF
-                    let F = this.P.features.get(k)
-                    let PF = F.spawn_PF({Pier:this})
-                    this.features.set(k,PF)
+                    // Peerily.PF <-> Pier.F
+                    let PF = this.eer.features.get(k)
+                    let F = PF.spawn_F({Pier:this})
+                    this.features.set(k,F)
                 }
                 let PF = this.features.get(k)
                 PF.perm[direction] = t
@@ -1085,14 +1099,18 @@ export abstract class PierFeature {
     // who we're about
     eer:Peering
     Pier:Pier
-    // < their perm.local (to here) may include arbitrary signed data
+    // < their perm.local.* (to here) may include arbitrary signed data
     perm:BidiTrustication = {}
     constructor(opt) {
         Object.assign(this, opt)
         this.eer = this.Pier.eer
         if (!this.eer) throw "where eer"
     }
-    // < move to PF superclass
+    
+    UI_component:Component
+
+
+    
     // routing messages to this Pier feature on the other end
     abstract unemits:Object
     async emit(type,data={},options={}) {

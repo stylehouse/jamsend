@@ -1,13 +1,14 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { Idento, Peerily, PeerilyFeature, type StashedPeering } from "./Peerily.svelte";
-    import { SvelteSet } from "svelte/reactivity";
+    import { Peering as Peering_type } from "./Peerily.svelte";
     import Peering from "./ui/Peering.svelte";
+
+    import { SvelteSet } from "svelte/reactivity";
     import ShareButton from "./ui/ShareButton.svelte";
 	import QrCode from "svelte-qrcode"
     import { throttle } from "$lib/Y";
     import { Sharing } from "./ftp/Sharing.svelte";
-    import Shares from "./ftp/Sharee.svelte";
     
 
     let errors = $state(new SvelteSet())
@@ -24,9 +25,14 @@
         console.log(`saving Astash`)
         localStorage.Astash = JSON.stringify(P.stash)
     },200)
-
-    let P = new Peerily({on_error,save_stash})
-    P.feature(new Sharing({P}))
+    let on_Peering = (eer:Peering_type) => {
+        // < switch features on|off on different Peerings
+        //   we'll presume we dont
+        //    and the app would get compiled to a subdomain
+        //    when it wants different arrangements
+        eer.feature(new Sharing({P}))
+    }
+    let P = new Peerily({on_error,save_stash,on_Peering})
 
     // P.stash persists
     // < identity per ?id=..., which we namespace into which stash...
@@ -124,13 +130,6 @@
     </div>
 
 
-    <div class=bitsies>
-        {#each P.features as [k,PF] (k)}
-            <div class=bitsies>
-                <svelte:component this={PF.UI_component} {P} {PF} />
-            </div>
-        {/each}
-    </div>
 </div>
 
 <style>

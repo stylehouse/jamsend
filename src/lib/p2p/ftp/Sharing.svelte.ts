@@ -15,7 +15,7 @@ export class Sharing extends PeerilyFeature {
         this.trust_name = 'ftp'
         this.UI_component = Shares
     }
-    spawn_PF({Pier}) {
+    spawn_F({Pier}) {
         return new PierSharing({P:this.P,Pier,PF:this})
     }
 
