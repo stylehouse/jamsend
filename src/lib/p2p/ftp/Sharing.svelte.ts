@@ -8,21 +8,43 @@ import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
 
 
-// the F
+// the PF
 export class Sharing extends PeerilyFeature {
     constructor(opt) {
         super(opt)
         this.trust_name = 'ftp'
         this.UI_component = Shares
+
+        this.start()
     }
+    // be here and in a Pier's UI
     spawn_F({Pier}) {
         return new PierSharing({P:this.P,Pier,PF:this})
+    }
+
+    // < should be a multiplicity of these
+    private fsHandler:FileSystemHandler
+    localList: DirectoryListing | null = $state()
+    async start() {
+        try {
+            this.fsHandler = new FileSystemHandler({sharing:this});
+            // consent by the user
+            await this.fsHandler.start()
+            
+            
+            await this.refresh_localList()
+
+            this.started = true;
+            console.log(`File sharing started with files:`, this.localList);
+        } catch (err) {
+            throw erring("Failed to start PF Sharing", err);
+        }
     }
 
 }
 
 type percentage = number
-// the PF (per Pier)
+// the F (per Pier)
 export class PierSharing extends PierFeature {
     constructor(opt) {
         super(opt)
@@ -31,16 +53,11 @@ export class PierSharing extends PierFeature {
         this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
 
-    // be here... and in a UI...
     tm:TransferManager
-    private fsHandler:FileSystemHandler
     
     // < figure out how to do navigation and population
     // listings here + there
-    localList: DirectoryListing | null = $state()
     remoteList: DirectoryListing | null = $state()
-
-    started = $state(false);
 
     // < depend on F.perm
     async consented_acts() {
@@ -50,18 +67,10 @@ export class PierSharing extends PierFeature {
     // then, maybe via ui,
     async start() {
         try {
+            // < resume against what we had? another Thing to store?
             this.tm = new TransferManager({sharing:this})
-            this.fsHandler = new FileSystemHandler({sharing:this});
-            // consent by the user
-            await this.fsHandler.start()
-            
-            // < racey. Pier.unemit() should wait up to 3s for new handlers to arrive
-            // this.setupSharingHandlers(this.par)
-            
-            await this.refresh_localList()
 
-            this.started = true;
-            console.log(`File sharing started with files:`, this.localList);
+            console.log(`PierSharing:`, this.localList);
         } catch (err) {
             throw erring("Failed to start file sharing", err);
         }
@@ -74,7 +83,6 @@ export class PierSharing extends PierFeature {
             // Clear file system state
             this.localList = null
             this.remoteList = null
-            this.started = false;
 
             // Close any open file handles
             if (this.fsHandler) {

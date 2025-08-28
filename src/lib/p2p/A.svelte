@@ -17,6 +17,11 @@
         console.error(`Error ${err.type}: ${err}`)
     }
 
+    // top level storage
+    //  Peering|Pier.stashed.* come out of here
+    //  features each have their own IndexedDB
+    //  < more hidden-in-the-dom storage as well
+    //    for people that want to save the app as a document
     function load_stash() {
         console.log(`loading Astash`)
         P.stash = JSON.parse(localStorage.Astash)
@@ -43,6 +48,9 @@
     $effect(() => {
         if (!P.stash) return
         save_stash()
+        // for debugging whether Pier.stashed.leg++ still works
+        //  < name it something easy to grep out of the json, hidden in the dom?
+        console.log("stashed JSON: "+localStorage.Astash)
     })
     onDestroy(() => {
         P.stop()

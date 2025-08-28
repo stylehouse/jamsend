@@ -439,26 +439,9 @@ export class Peerily {
 //#endregion
 //#region Pier
 
-abstract class PierThings {
-    // < maybe?
-    // binary emit() puts backpressure here (from Sharing.sendFile)
-    send_queue = []
-    // ui drawers
-    // for ftp
-    sharing:Sharing|undefined = $state()
-    sharing_requested = $state(false)
-    async start_sharing() {
-        this.sharing = new Sharing({par:this})
-        await this.sharing.start()
-    }
-    async stop_sharing() {
-        await this.sharing.stop()
-        this.sharing = null
-    }
-}
 
 // aka Participant
-export class Pier extends PierThings {
+export class Pier {
     P:Peerily
     stashed:StashedPier = $state()
     forget() {
@@ -472,9 +455,9 @@ export class Pier extends PierThings {
     eer:Peering
     con:DataConnection
 
+    // for ui drawers - see features
 
     constructor(opt) {
-        super()
         Object.assign(this, opt)
 
     }
@@ -587,6 +570,8 @@ export class Pier extends PierThings {
 //#endregion
 //#region Pier emit
 
+    // binary emit() puts backpressure here (from Sharing.sendFile)
+    send_queue = []
     handle_data_etc() {
         // Receive messages
         this.con.on('data', (msg) => {
@@ -1008,6 +993,7 @@ export class Pier extends PierThings {
         console.log(`revoke_trust(${not})`)
     }
 
+    //#region Pier features
     features:SvelteMap<TrustName,PierFeature> = $state(new SvelteMap())
     feature(F) {
         if (this.features.get(F.trust_name)) throw `dup trust_name=${F.trust_name}`

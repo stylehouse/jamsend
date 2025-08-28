@@ -6,6 +6,7 @@
 </script>
 <h2>Expect big shares</h2>
     <!-- <Things 
+            shelfware={DirectoryShares}
             type="share" 
             pfId={"eer:"+PF.eer.pub}
             defaultItems={["music"]}
