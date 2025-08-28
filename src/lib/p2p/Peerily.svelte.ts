@@ -191,10 +191,10 @@ export class Peering {
     // multi-user features stack up here (rather than P)
     //  so there's an extra deep partitioning of them
     features = $state(new SvelteMap<TrustName,PeerilyFeature>())
-    feature(PF:PeerilyFeature) {
-        let k = PF.trust_name
+    feature(F:PeerilyFeature) {
+        let k = F.trust_name
         if (this.features.get(k)) throw `dup trust_name=${k}`
-        this.features.set(k,PF)
+        this.features.set(k,F)
     }
 
 
@@ -762,9 +762,9 @@ export class Pier {
                     || this.trusted.get(trust_name)
                 if (!t) throw `${this} unemit !permit to feature: ${trust_name}`
 
-                let F = this.features.get(trust_name)
-                handy.F = F
-                handler = F.unemits[data.type]
+                let PF = this.features.get(trust_name)
+                handy.PF = PF
+                handler = PF.unemits[data.type]
             }
             if (!handler) {
                 return console.warn(`${this} unemit !handler for message type:`, data);
@@ -995,10 +995,6 @@ export class Pier {
 
     //#region Pier features
     features:SvelteMap<TrustName,PierFeature> = $state(new SvelteMap())
-    feature(F) {
-        if (this.features.get(F.trust_name)) throw `dup trust_name=${F.trust_name}`
-        this.features.set(F.trust_name,F)
-    }
     refresh_features() {
         let was = {}
         this.features.forEach((PF,k) => {
@@ -1012,11 +1008,14 @@ export class Pier {
         let switch_on = (direction) => {
             return (t:TrustedTrust,k:TrustName) => {
                 if (!this.features.get(k)) {
-                    // Peerily.PF <-> Pier.F
-                    let PF = this.eer.features.get(k)
-                    let F = PF.spawn_F({Pier:this})
-                    this.features.set(k,F)
+                    // Peerily.F <-> Pier.PF
+                    // F must already exist
+                    //  thusly we allow a PF to exist and talk to Pier
+                    let F = this.eer.features.get(k)
+                    let PF = F.spawn_PF({Pier:this})
+                    this.features.set(k,PF)
                 }
+                // and on the 
                 let PF = this.features.get(k)
                 PF.perm[direction] = t
 
@@ -1081,7 +1080,7 @@ export abstract class PeerilyFeature {
 type BidiTrustication = {local:TrustedTrust,remote:TrustedTrust}
 export abstract class PierFeature {
     P:Peerily
-    PF:PeerilyFeature
+    F:PeerilyFeature
     // who we're about
     eer:Peering
     Pier:Pier
@@ -1101,7 +1100,7 @@ export abstract class PierFeature {
     abstract unemits:Object
     async emit(type,data={},options={}) {
         if (!this.unemits[type]) throw `emit handler unknown to self: ${type}`
-        type = `${this.PF.trust_name}.${type}`
+        type = `${this.F.trust_name}.${type}`
         await this.Pier.emit(type,data,options)
     }
 }

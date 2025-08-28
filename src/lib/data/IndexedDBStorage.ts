@@ -1,17 +1,25 @@
 let AI = `
 this is mostly claude.ai
      I want a base class for indexed db
-      that we can derive storage for PF or F things
+      that we can derive storage for F or PF things
        (tuples, sets of things we shall CRUD|collect)
-       in this case for a DirectoryHandle on PF
+       in this case for a DirectoryHandle on F
        to separate all this db access noise
         from the permissions-resuming layer
          of stuff going on in a restoreDirectoryHandle()
      on the things,
-      we want to start the set of PF.shares with "music"
+      we want to start the set of F.shares with "music"
       and in a generic way
        be able to add more
        and storage them to indexeddb.
+    # it got confused about multiplicity, giving us a single active FileSystemHandler
+     Sharing (the F) should have multiple shared directories, called "shares".
+     lets say F.shares = DirectoryShares
+      it extends CollectionStorage with the namespace "shares" basically
+       and specifies like F.spawn_PF() does how to create a DirectoryShare for each of its rows.
+      DirectoryShare will have a FileSystemHandler to present.
+      the Things ui is good, in Shares.svelte (for the F)
+       we shall give: <Things shelfware={DirectoryShares} ... {eer} {F}> 
 `
 
 // Base IndexedDB storage class for CRUD operations

@@ -6,20 +6,22 @@ import { PeerilyFeature, PierFeature } from "../Peerily.svelte";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
+import { DirectoryShares } from "./Directory.svelte";
 
 
 // the PF
 export class Sharing extends PeerilyFeature {
+    shares: DirectoryShares
     constructor(opt) {
-        super(opt)
+        this.shares = new DirectoryShares(this)
         this.trust_name = 'ftp'
         this.UI_component = Shares
 
         this.start()
     }
     // be here and in a Pier's UI
-    spawn_F({Pier}) {
-        return new PierSharing({P:this.P,Pier,PF:this})
+    spawn_PF({Pier}) {
+        return new PierSharing({P:this.P,Pier,F:this})
     }
 
     // < should be a multiplicity of these
