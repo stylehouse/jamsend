@@ -13,9 +13,10 @@ import { DirectoryShares } from "./Directory.svelte";
 export class Sharing extends PeerilyFeature {
     shares: DirectoryShares
     constructor(opt) {
-        this.shares = new DirectoryShares(this)
+        super(opt)
         this.trust_name = 'ftp'
         this.UI_component = Shares
+        this.shares = new DirectoryShares(this)
 
         this.start()
     }
@@ -24,22 +25,14 @@ export class Sharing extends PeerilyFeature {
         return new PierSharing({P:this.P,Pier,F:this})
     }
 
-    // < should be a multiplicity of these
-    private fsHandler:FileSystemHandler
-    localList: DirectoryListing | null = $state()
+    // < who|where|when hits start? the UI?
     async start() {
         try {
-            this.fsHandler = new FileSystemHandler({sharing:this});
-            // consent by the user
-            await this.fsHandler.start()
-            
-            
-            await this.refresh_localList()
+            await this.shares.start()
 
-            this.started = true;
-            console.log(`File sharing started with files:`, this.localList);
+            console.log(`File sharing started with ${this.shares.getShares().length} shares`)
         } catch (err) {
-            throw erring("Failed to start PF Sharing", err);
+            throw erring("Failed to start file sharing", err);
         }
     }
 
@@ -102,20 +95,27 @@ export class PierSharing extends PierFeature {
     // Send a file from the filesystem
     async sendFile(
         filename: string,
+        shareName: string = 'music', // default share
         onProgress?: (progress: percentage) => void,
         seek = 0,
         fileId?
     ): Promise<void> {
         // for file-pull, they may already have a transfer object
+        const share = this.F.shares.getShare(shareName)
+        if (!share) {
+            throw erring(`Share "${shareName}" not found`)
+        }
+        
         fileId ||= crypto.randomUUID();
-        const reader = await this.fsHandler.getFileReader(filename);
+        const reader = await share.getFileReader(filename)
         const transfer = this.tm.initTransfer('upload', fileId, filename, reader.size);
     
         // Send file metadata
         let meta = {
             fileId,
             name: filename,
-            size: reader.size
+            size: reader.size,
+            share: shareName // include share context
         }
         if (seek) {
             meta.seek = seek
@@ -556,138 +556,6 @@ export class CollectionListing {
 
 
 
-
-//#region fs
-
-interface FileReader {
-    size: number;
-    iterate: (startFrom?: number) => AsyncGenerator<ArrayBuffer>;
-}
-
-const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer
-
-type FileSystemDirectoryHandle = any
-class FileSystemHandler {
-    private sharing:PierSharing
-    private _fs: FileSystemState = {
-        dirHandle: FileSystemDirectoryHandle | null,
-        fileHandles: Map<string, FileSystemFileHandle>,
-    }
-    // < this one probably does belong to Sharing...
-    //    might want to trust.etc different shares
-    constructor({sharing}) {
-        this.sharing = sharing
-        this._fs = {
-            dirHandle: null,
-            fileHandles: new Map()
-        };
-    }
-    async start() {
-        await this.requestDirectoryAccess()
-    }
-    async stop() {
-        // Clear all stored handles
-        this._fs.fileHandles.clear();
-        this._fs.dirHandle = null;
-    }
-
-    
-    // Request directory access from user
-    async requestDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
-        try {
-            // Modern browsers that support File System Access API
-            this._fs.dirHandle = await window.showDirectoryPicker({
-                mode: 'readwrite'
-            })
-        } catch (err) {
-            throw erring('Error accessing directory', err);
-        }
-    }
-
-
-    // go somewhere
-    async getFileHandle(filename: string): Promise<FileSystemFileHandle> {
-        if (!this._fs.dirHandle) throw erring('No directory access')
-        const handle = await this._fs.dirHandle.getFileHandle(filename);
-        this._fs.fileHandles.set(filename, handle);
-        return handle;
-    }
-
-
-    // List all files in the directory
-    async listDirectory(): Promise<DirectoryListing> {
-        if (!this._fs.dirHandle) {
-            throw erring('No directory access')
-        }
-        
-        const listing = new DirectoryListing()
-        let files = []
-        let directories = []
-        // < tabulation?
-        for await (const entry of this._fs.dirHandle.values()) {
-            try {
-                if (entry.kind === 'file') {
-                    const file = await entry.getFile();
-                    files.push(new FileListing({
-                        name: entry.name,
-                        size: file.size,
-                        modified: new Date(file.lastModified)
-                    }));
-                } else {
-                    directories.push(new DirectoryListing({
-                        name: entry.name
-                    }));
-                }
-            } catch (err) {
-                console.warn(`Skipping problematic entry ${entry.name}:`, err);
-            }
-        }
-        listing.files = files.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
-        listing.directories = directories.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
-
-        return listing;
-    }
-
-    // First get file info and iterator factory
-    async getFileReader(filename: string, chunkSize = CHUNK_SIZE): Promise<FileReader> {
-        if (!this._fs.dirHandle) throw erring('No directory access')
-
-        const fileHandle = await this._fs.dirHandle.getFileHandle(filename);
-        const file = await fileHandle.getFile();
-        
-        return {
-            size: file.size,
-            iterate: async function*(startFrom = 0) {
-                let offset = startFrom;
-                while (offset < file.size) {
-                    // Read file in chunks
-                    const chunk = file.slice(offset, offset + chunkSize);
-                    yield await chunk.arrayBuffer();
-                    offset += chunkSize;
-                }
-            }
-        };
-    }
-
-    // Write file in chunks
-    async writeFileChunks(filename: string): Promise<FileSystemWritableFileStream> {
-        if (!this._fs.dirHandle) throw erring('No directory access')
-
-        const fileHandle = await this._fs.dirHandle.getFileHandle(filename, { create: true });
-        const writable = await fileHandle.createWritable();
-        this._fs.fileHandles.set(filename, fileHandle);
-        return writable;
-    }
-
-
-
-
-
-
-
-
-
-}
 
 
 

@@ -29,10 +29,14 @@ export class IndexedDBStorage<T = any> {
     protected version: number
     private _db: IDBDatabase | null = null
 
-    constructor(dbName: string, storeName: string, version = 1) {
-        this.dbName = dbName
-        this.storeName = storeName
+    constructor(version = 1) {
         this.version = version
+    }
+    set_table(dbName: string, storeName: string) {
+        // per Peering+feature
+        this.dbName = dbName
+        // per thing the feature is thinking about (the set of)
+        this.storeName = storeName
     }
 
     // Initialize or get IndexedDB connection
@@ -175,8 +179,8 @@ export class IndexedDBStorage<T = any> {
 
 // Collection storage for managing sets of things
 export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
-    constructor(dbName: string, storeName: string, version = 1) {
-        super(dbName, storeName, version)
+    constructor(version = 1) {
+        super(version)
     }
 
     // Add item to collection
@@ -209,186 +213,3 @@ export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
     }
 }
 
-// Specific storage for FileSystem handles per PF
-export class PFDirectoryStorage extends IndexedDBStorage<FileSystemDirectoryHandle> {
-    private pfId: string
-
-    constructor(pfId: string) {
-        super('peerily-fs', `pf-directories-${pfId}`, 1)
-        this.pfId = pfId
-    }
-
-    async storeDirectory(handle: FileSystemDirectoryHandle): Promise<void> {
-        await this.put('selected-directory', handle)
-    }
-
-    async restoreDirectory(): Promise<FileSystemDirectoryHandle | null> {
-        const handle = await this.get('selected-directory')
-        if (!handle) return null
-
-        try {
-            // Verify the handle is still valid
-            const permission = await handle.queryPermission({ mode: 'readwrite' })
-            
-            if (permission === 'granted') {
-                return handle
-            } else if (permission === 'prompt') {
-                // Try to request permission again
-                const newPermission = await handle.requestPermission({ mode: 'readwrite' })
-                if (newPermission === 'granted') {
-                    return handle
-                }
-            }
-            
-            // Permission denied or handle invalid, remove it
-            await this.clearDirectory()
-            return null
-            
-        } catch (err) {
-            console.warn('Directory handle validation failed:', err)
-            await this.clearDirectory()
-            return null
-        }
-    }
-
-    async clearDirectory(): Promise<void> {
-        await this.delete('selected-directory')
-    }
-}
-
-// Specific storage for PF shares collection
-export class PFSharesStorage extends CollectionStorage<string> {
-    private pfId: string
-
-    constructor(pfId: string) {
-        super('peerily-shares', `pf-shares-${pfId}`, 1)
-        this.pfId = pfId
-    }
-
-    // Initialize with default shares
-    async initialize(): Promise<string[]> {
-        const existingShares = await this.getAll()
-        if (existingShares.length === 0) {
-            // Start with "music" as default
-            await this.add('music', 'music')
-            return ['music']
-        }
-        return existingShares
-    }
-
-    // Add a new share type
-    async addShare(shareType: string): Promise<void> {
-        await this.add(shareType, shareType)
-    }
-
-    // Remove a share type
-    async removeShare(shareType: string): Promise<void> {
-        await this.remove(shareType)
-    }
-
-    // Get all share types
-    async getShares(): Promise<string[]> {
-        return await this.getAll()
-    }
-
-    // Check if share type exists
-    async hasShare(shareType: string): Promise<boolean> {
-        return await this.has(shareType)
-    }
-}
-
-// Enhanced FileSystemHandler with separated storage concerns
-export class FileSystemHandler {
-    private _fs: FileSystemState
-    private sharing: PierSharing
-    private directoryStorage: PFDirectoryStorage
-    private sharesStorage: PFSharesStorage
-
-    constructor({sharing}: {sharing: PierSharing}) {
-        this.sharing = sharing
-        this._fs = {
-            dirHandle: null,
-            fileHandles: new Map()
-        }
-        
-        // Initialize storage with PF-specific identifiers
-        const pfId = this.sharing.Pier.eer.Id // or however you identify the PF
-        this.directoryStorage = new PFDirectoryStorage(pfId)
-        this.sharesStorage = new PFSharesStorage(pfId)
-    }
-
-    async start() {
-        // Initialize shares first
-        const shares = await this.sharesStorage.initialize()
-        console.log('Initialized shares:', shares)
-
-        // Try to restore previous directory handle
-        const restored = await this.restoreDirectoryHandle()
-        if (restored) {
-            console.log('Restored previous directory access')
-            return
-        }
-        
-        // If no previous handle, request new access
-        await this.requestDirectoryAccess()
-    }
-
-    async stop() {
-        this._fs.fileHandles.clear()
-        this._fs.dirHandle = null
-        await this.directoryStorage.close()
-        await this.sharesStorage.close()
-    }
-
-    // Clean separation: just handle the permission logic
-    private async restoreDirectoryHandle(): Promise<boolean> {
-        const dirHandle = await this.directoryStorage.restoreDirectory()
-        if (dirHandle) {
-            this._fs.dirHandle = dirHandle
-            return true
-        }
-        return false
-    }
-
-    async requestDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
-        try {
-            this._fs.dirHandle = await window.showDirectoryPicker({
-                mode: 'readwrite'
-            })
-            
-            // Store using the storage layer
-            await this.directoryStorage.storeDirectory(this._fs.dirHandle)
-            
-            return this._fs.dirHandle
-        } catch (err) {
-            if (err.name === 'AbortError') {
-                throw erring('User cancelled directory selection')
-            }
-            throw erring('Error accessing directory', err)
-        }
-    }
-
-    // Share management methods
-    async addShare(shareType: string): Promise<void> {
-        await this.sharesStorage.addShare(shareType)
-    }
-
-    async removeShare(shareType: string): Promise<void> {
-        await this.sharesStorage.removeShare(shareType)
-    }
-
-    async getShares(): Promise<string[]> {
-        return await this.sharesStorage.getShares()
-    }
-
-    async hasShare(shareType: string): Promise<boolean> {
-        return await this.sharesStorage.hasShare(shareType)
-    }
-
-    async clearStoredPermissions(): Promise<void> {
-        await this.directoryStorage.clearDirectory()
-        this._fs.dirHandle = null
-    }
-
-    // ... rest of your existing file operations remain the same
-}

@@ -47,9 +47,9 @@
 
         <!-- and their commonalities -->
             <div class=bitsies>
-                {#each eer.features as [k,PF] (k)}
+                {#each eer.features as [k,F] (k)}
                     <div class=bitsies>
-                        <svelte:component this={PF.UI_component} {eer} {PF} />
+                        <svelte:component this={F.UI_component} {eer} {F} />
                     </div>
                 {/each}
             </div>

@@ -35,7 +35,7 @@
         //   we'll presume we dont
         //    and the app would get compiled to a subdomain
         //    when it wants different arrangements
-        eer.feature(new Sharing({P}))
+        eer.feature(new Sharing({P,eer}))
     }
     let P = new Peerily({on_error,save_stash,on_Peering})
 

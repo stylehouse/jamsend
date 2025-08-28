@@ -195,6 +195,7 @@ export class Peering {
         let k = F.trust_name
         if (this.features.get(k)) throw `dup trust_name=${k}`
         this.features.set(k,F)
+        F.eer = this
     }
 
 
@@ -1058,6 +1059,8 @@ export class Pier {
 // < describes how to onramp the feature
 export abstract class PeerilyFeature {
     P:Peerily
+    // < rename this class PeeringFeature
+    eer:Peering
     constructor(opt) {
         Object.assign(this, opt)
     }
