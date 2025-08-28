@@ -611,18 +611,20 @@ class FileSystemHandler {
         }
         
         const listing = new DirectoryListing()
+        let files = []
+        let directories = []
         // < tabulation?
         for await (const entry of this._fs.dirHandle.values()) {
             try {
                 if (entry.kind === 'file') {
                     const file = await entry.getFile();
-                    listing.files.push(new FileListing({
+                    files.push(new FileListing({
                         name: entry.name,
                         size: file.size,
                         modified: new Date(file.lastModified)
                     }));
                 } else {
-                    listing.directories.push(new DirectoryListing({
+                    directories.push(new DirectoryListing({
                         name: entry.name
                     }));
                 }
@@ -630,6 +632,8 @@ class FileSystemHandler {
                 console.warn(`Skipping problematic entry ${entry.name}:`, err);
             }
         }
+        listing.files = files.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
+        listing.directories = directories.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
 
         return listing;
     }
