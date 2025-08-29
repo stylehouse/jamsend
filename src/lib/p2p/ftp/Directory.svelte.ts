@@ -4,14 +4,41 @@ import { erring } from '$lib/Y'
 import { SvelteMap } from 'svelte/reactivity'
 import { DirectoryListing, FileListing, PeeringSharing } from './Sharing.svelte'
 
+// these Shares/Share things are given to a Things/Thing UI
+type ThingAction = {
+    label: string
+    style?: object
+    handler: Function
+}
+abstract class ThingIsms {
+    // they must have a unique name, $state
+    //  and that's all that's required to create a new one
+    name: string
+    // must the many, $state()
+    things:SvelteMap
+
+    actions?: ThingAction[]
+
+    // can be a start|stopper, $state()
+    started?: boolean
+    no_autostart?: boolean
+
+    i_action(act:ThingAction) {
+        this.actions ||= []
+        this.actions = this.actions.filter(a => a.label != act.label)
+        this.actions.push(act)
+    }
+}
+
+//#region DirectoryShare
 // Individual share - like a PierFeature but for directories
-export class DirectoryShare {
+export class DirectoryShare extends ThingIsms {
     F: PeeringSharing
     name: string = $state()
     fsHandler: FileSystemHandler
     
     // State
-    isActive = $state(false)
+    started = $state(false)
     localList: DirectoryListing | null = $state()
     
     persisted_handle:KVStore
@@ -53,11 +80,22 @@ export class DirectoryShare {
             },
         })
     }
-
+    async may_not_autostart() {
+        // if it's not persisted, wants a click before starting
+        let handle = await this.persisted_handle.get()
+        if (!handle) {
+            // instructions for Things
+            this.no_autostart = true
+            // < modulate the default (when a Thing.S has .started=boolean)
+            //    so it's more visible
+            this.i_action({label:'open share', style:{big:1},
+                handler: async () => await this.start()})
+        }
+    }
     async start() {
         try {
             await this.fsHandler.start()
-            this.isActive = true
+            this.started = true
             await this.refresh()
             console.log(`DirectoryShare "${this.name}" started`)
         } catch (err) {
@@ -68,7 +106,7 @@ export class DirectoryShare {
     async stop() {
         try {
             await this.fsHandler.stop()
-            this.isActive = false
+            this.started = false
             this.localList = null
             console.log(`DirectoryShare "${this.name}" stopped`)
         } catch (err) {
@@ -79,7 +117,7 @@ export class DirectoryShare {
 
 
     async refresh() {
-        if (!this.isActive) return
+        if (!this.started) return
         this.localList = await this.fsHandler.listDirectory()
     }
 
@@ -94,11 +132,17 @@ export class DirectoryShare {
     }
 }
 
+//#region DirectoryShares
 // Collection of DirectoryShares with persistence
+// < this also extends ThingIsms
+//   javascript's single upstream (prototype) inheritance means:
+//     have to have all my ThingIsms with CollectionStorage
+//      and just not touch those parts?
 export class DirectoryShares extends CollectionStorage<{name: string}> {
     F: PeeringSharing
-    _shares = $state(new SvelteMap<string, DirectoryShare>())
+    things = $state(new SvelteMap<string, DirectoryShare>())
     
+    started = $state(false)
     constructor(F: PeeringSharing) {
         super()
         this.F = F
@@ -106,11 +150,12 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
     }
 
     // Like PF.spawn_F() but for DirectoryShare
-    spawn_share(name: string): DirectoryShare {
-        let share = this._shares.get(name)
+    async spawn_share(name: string): DirectoryShare {
+        let share = this.things.get(name)
         if (!share) {
             share = new DirectoryShare({name, F: this.F })
-            this._shares.set(name, share)
+            await share.may_not_autostart()
+            this.things.set(name, share)
         }
         return share
     }
@@ -123,25 +168,26 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
             if (persistedShares.length === 0) {
                 // Auto-vivify with "music"
                 await this.add({name: 'music'}, 'music')
-                this.spawn_share('music')
+                await this.spawn_share('music')
             } else {
                 // Spawn shares for all persisted entries
                 for (const shareData of persistedShares) {
-                    this.spawn_share(shareData.name)
+                    await this.spawn_share(shareData.name)
                 }
             }
             
-            console.log(`Initialized ${this._shares.size} shares`)
+            this.started = true
+            console.log(`Initialized ${this.things.size} shares`)
         } catch (err) {
             console.warn('Failed to initialize shares:', err)
             // Fallback to default
-            this.spawn_share('music')
+            await this.spawn_share('music')
         }
     }
 
     // Add a new share
     async addShare(name: string): Promise<DirectoryShare> {
-        if (this._shares.has(name)) {
+        if (this.things.has(name)) {
             throw erring(`Share "${name}" already exists`)
         }
 
@@ -155,10 +201,10 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
 
     // Remove a share
     async removeShare(name: string): Promise<void> {
-        const share = this._shares.get(name)
+        const share = this.things.get(name)
         if (share) {
             await share.stop()
-            this._shares.delete(name)
+            this.things.delete(name)
         }
         
         // Remove from persistence
@@ -167,33 +213,33 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
 
     // Get share by name
     getShare(name: string): DirectoryShare | undefined {
-        return this._shares.get(name)
+        return this.things.get(name)
     }
 
     // Get all active shares
     getShares(): DirectoryShare[] {
-        return Array.from(this._shares.values())
+        return Array.from(this.things.values())
     }
 
     // Get share names for UI
     getShareNames(): string[] {
-        return Array.from(this._shares.keys())
+        return Array.from(this.things.keys())
     }
 
     // Check if share exists
     hasShare(name: string): boolean {
-        return this._shares.has(name)
+        return this.things.has(name)
     }
 
     // Start all shares
     async startAll() {
-        const promises = Array.from(this._shares.values()).map(share => share.start())
+        const promises = Array.from(this.things.values()).map(share => share.start())
         await Promise.allSettled(promises) // Don't fail if one share fails
     }
 
     // Stop all shares
     async stopAll() {
-        const promises = Array.from(this._shares.values()).map(share => share.stop())
+        const promises = Array.from(this.things.values()).map(share => share.stop())
         await Promise.allSettled(promises)
     }
 

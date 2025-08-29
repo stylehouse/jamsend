@@ -13,14 +13,14 @@
         setTimeout(async () => {
             //  await F.start()
              }, 2100)
-        console.log("shares!: ",[F,F.shares._shares])
+        console.log("shares!: ",[F,F.shares.things])
     })
 </script>
 
 <h2>Expect big shares</h2>
 
-    DSs:{F.shares._shares.size}
-    {#each F.shares._shares as [k,DS] (k)}
+    DSs:{F.shares.things.size}
+    {#each F.shares.things as [k,DS] (k)}
         <div class=bitsies>
             DS:{DS.name} <button onclick={() => DS.start()}>o</button>
         </div>
