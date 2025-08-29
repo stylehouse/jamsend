@@ -1,13 +1,14 @@
-
 <script lang="ts">
+    import Thingness from './Thingness.svelte'
+
     interface ThingProps {
+        S: any // The ThingIsms instance (DirectoryShare, etc)
         name: string
         type: string
         onRemove: () => void
-        actions?: Array<{label: string, handler: () => void}> // Future extensibility
     }
 
-    let { name, type, onRemove, actions = [] }: ThingProps = $props()
+    let { S, name, type, onRemove }: ThingProps = $props()
 
     function handleRemove() {
         if (confirm(`Remove ${type} "${name}"?`)) {
@@ -16,24 +17,24 @@
     }
 </script>
 
-<div class="thing-item" data-type={type}>
+<div 
+    class="thing-item" 
+    data-type={type}
+    class:started={S.started}
+    class:needs-attention={S.no_autostart}
+>
     <div class="thing-content">
-        <span class="thing-name">{name}</span>
+        <div class="thing-name-row">
+            <span class="thing-name">{name}</span>
+        </div>
+        
         <div class="thing-meta">
             <span class="thing-type">{type}</span>
         </div>
     </div>
     
-    <div class="thing-actions">
-        {#each actions as action}
-            <button 
-                onclick={action.handler}
-                class="action-button"
-                title={action.label}
-            >
-                {action.label}
-            </button>
-        {/each}
+    <div class="thing-controls">
+        <Thingness {S} {type} />
         
         <button 
             onclick={handleRemove}
@@ -63,6 +64,16 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
+    .thing-item.started {
+        border-left: 4px solid #4CAF50;
+        background: rgba(76, 175, 80, 0.05);
+    }
+
+    .thing-item.needs-attention {
+        border-left: 4px solid #FF9800;
+        background: rgba(255, 152, 0, 0.05);
+    }
+
     .thing-content {
         flex: 1;
         display: flex;
@@ -70,10 +81,38 @@
         gap: 0.2rem;
     }
 
+    .thing-name-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
     .thing-name {
         font-weight: 500;
         color: #333;
         font-size: 0.95rem;
+    }
+
+    .status-indicators {
+        display: flex;
+        align-items: center;
+    }
+
+    .status-badge {
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .status-badge.started {
+        color: #4CAF50;
+    }
+
+    .status-badge.stopped {
+        color: #666;
+    }
+
+    .status-badge.attention {
+        color: #FF9800;
     }
 
     .thing-meta {
@@ -92,28 +131,16 @@
         letter-spacing: 0.5px;
     }
 
-    .thing-actions {
+    .thing-state {
+        font-size: 0.75rem;
+        color: #888;
+        font-style: italic;
+    }
+
+    .thing-controls {
         display: flex;
         gap: 0.3rem;
         align-items: center;
-    }
-
-    .action-button, .remove-button {
-        padding: 0.3rem 0.6rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        transition: all 0.2s ease;
-    }
-
-    .action-button {
-        background: #2196F3;
-        color: white;
-    }
-
-    .action-button:hover {
-        background: #1976D2;
     }
 
     .remove-button {
@@ -126,6 +153,10 @@
         align-items: center;
         justify-content: center;
         padding: 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
 
     .remove-button:hover {
@@ -135,14 +166,14 @@
 
     /* Type-specific styling */
     .thing-item[data-type="share"] {
-        border-left: 4px solid #4CAF50;
+        border-left: 2px solid #4CAF50;
     }
 
     .thing-item[data-type="playlist"] {
-        border-left: 4px solid #9C27B0;
+        border-left: 2px solid #9C27B0;
     }
 
     .thing-item[data-type="bookmark"] {
-        border-left: 4px solid #FF9800;
+        border-left: 2px solid #FF9800;
     }
 </style>
