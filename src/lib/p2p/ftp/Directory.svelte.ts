@@ -2,7 +2,7 @@
 import { IndexedDBStorage,CollectionStorage, KVStore } from '$lib/data/IndexedDBStorage'
 import { erring } from '$lib/Y'
 import { SvelteMap } from 'svelte/reactivity'
-import { DirectoryListing } from './Sharing.svelte'
+import { DirectoryListing, FileListing, Sharing } from './Sharing.svelte'
 
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare {

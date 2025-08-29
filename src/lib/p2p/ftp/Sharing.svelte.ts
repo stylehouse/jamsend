@@ -12,7 +12,7 @@ import { DirectoryShares } from "./Directory.svelte";
 
 
 // the PF
-export class Sharing extends PeerilyFeature {
+export abstract class Sharing extends PeerilyFeature {
     shares: DirectoryShares
     constructor(opt) {
         super(opt)

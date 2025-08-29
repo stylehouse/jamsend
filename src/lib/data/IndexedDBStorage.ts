@@ -250,8 +250,8 @@ export class KVStore extends IndexedDBStorage {
 // Collection storage for managing sets of things
 //  
 export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
-    constructor(version = 1) {
-        super(version)
+    constructor() {
+        super()
     }
 
     // Add item to collection
