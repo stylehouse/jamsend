@@ -21,6 +21,9 @@ this is mostly claude.ai
       the Things ui is good, in Shares.svelte (for the F)
        we shall give: <Things shelfware={DirectoryShares} ... {eer} {F}> 
 `
+// Shared database connections to prevent blocking
+const dbConnections = new Map<string, Promise<IDBDatabase>>();
+
 
 // Base IndexedDB storage class for CRUD operations
 export class IndexedDBStorage<T = any> {
@@ -29,7 +32,7 @@ export class IndexedDBStorage<T = any> {
     protected version: number
     private _db: IDBDatabase | null = null
 
-    constructor(version = 2) {
+    constructor(version = 3) {
         this.version = version
     }
     set_table(dbName: string, storeName: string) {
@@ -42,17 +45,60 @@ export class IndexedDBStorage<T = any> {
     // Initialize or get IndexedDB connection
     protected async getDB(): Promise<IDBDatabase> {
         if (this._db) return this._db
+        // validate that set_table() was called
+        if (!this.dbName || !this.storeName) {
+            throw new Error(`Database configuration incomplete: dbName="${this.dbName}", storeName="${this.storeName}"`)
+        }
 
+        // Share database connections to avoid blocking
+        const connectionKey = `${this.dbName}:${this.version}`
+        
+        if (!dbConnections.has(connectionKey)) {
+            const connectionPromise = this.openDatabase()
+            dbConnections.set(connectionKey, connectionPromise)
+        }
+
+        this._db = await dbConnections.get(connectionKey)!
+        return this._db
+    }
+
+    private openDatabase(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
+            console.log(`Opening IndexedDB: ${this.dbName}, store: ${this.storeName}, version: ${this.version}`)
             const request = indexedDB.open(this.dbName, this.version)
             
-            request.onerror = () => reject(request.error)
+            request.onerror = () => {
+                console.error(`IndexedDB open error for ${this.dbName}:`, request.error)
+                reject(request.error)
+            }
+            
+            request.onblocked = () => {
+                console.warn(`IndexedDB open blocked for ${this.dbName}. Close other tabs or instances.`)
+                // Could implement retry logic or user notification here
+            }
+            
             request.onsuccess = () => {
-                this._db = request.result
-                resolve(this._db)
+                console.log(`IndexedDB opened successfully: ${this.dbName}`)
+                const db = request.result
+                
+                // Add error handler for the database connection
+                db.onerror = (event) => {
+                    console.error('IndexedDB error:', event)
+                }
+
+                // Handle version changes from other tabs
+                db.onversionchange = () => {
+                    console.log('Database version changed in another tab, closing connection')
+                    db.close()
+                    // Remove from shared connections so next access will reopen
+                    dbConnections.delete(`${this.dbName}:${this.version}`)
+                }
+                
+                resolve(db)
             }
             
             request.onupgradeneeded = (event) => {
+                console.log(`IndexedDB upgrade needed: ${this.dbName}, version: ${this.version}`)
                 const db = (event.target as IDBOpenDBRequest).result
                 this.onUpgradeNeeded(db, event)
             }
@@ -61,8 +107,12 @@ export class IndexedDBStorage<T = any> {
 
     // Override in subclasses to define schema
     protected onUpgradeNeeded(db: IDBDatabase, event: IDBVersionChangeEvent): void {
+        console.log(`Creating object store: ${this.storeName}`)
         if (!db.objectStoreNames.contains(this.storeName)) {
-            db.createObjectStore(this.storeName)
+            const store = db.createObjectStore(this.storeName)
+            console.log(`Object store created: ${this.storeName}`)
+        } else {
+            console.log(`Object store already exists: ${this.storeName}`)
         }
     }
 
