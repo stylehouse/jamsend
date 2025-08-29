@@ -1,4 +1,5 @@
 
+import { KVStore } from '$lib/data/IndexedDBStorage';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
@@ -1054,6 +1055,9 @@ export class Pier {
 //#endregion
 //#region *Feature
 
+// data models...
+
+
 // one of these, page-globally
 //  the main, for-itself UI of the feature as a whole
 // < describes how to onramp the feature
@@ -1064,7 +1068,16 @@ export abstract class PeerilyFeature {
     constructor(opt) {
         Object.assign(this, opt)
     }
-    
+    // creates a single value set|get IndexedDB storager
+    spawn_KVStore(store,key) {
+        // dbname is for this feature,
+        // store is a KV table, key is your row
+        return new KVStore(this.IDB_Store_name,store,key)
+    }
+    get IDB_Store_name() {
+        return `${this.eer.Id} Sharing`
+    }
+
     
     
     // subclass must fill in:

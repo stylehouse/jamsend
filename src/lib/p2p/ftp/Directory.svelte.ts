@@ -1,14 +1,11 @@
 
-import { IndexedDBStorage,CollectionStorage } from '$lib/data/IndexedDBStorage'
+import { IndexedDBStorage,CollectionStorage, KVStore } from '$lib/data/IndexedDBStorage'
 import { erring } from '$lib/Y'
 import { SvelteMap } from 'svelte/reactivity'
 import { DirectoryListing } from './Sharing.svelte'
 
-
-
-
 // Individual share - like a PierFeature but for directories
-export class DirectoryShare extends IndexedDBStorage {
+export class DirectoryShare {
     F: Sharing
     name: string = $state()
     fsHandler: FileSystemHandler
@@ -17,18 +14,19 @@ export class DirectoryShare extends IndexedDBStorage {
     isActive = $state(false)
     localList: DirectoryListing | null = $state()
     
+    persisted_handle:KVStore
     constructor({name, F}: {name: string, F: Sharing}) {
-        super()
-        this.set_table(`${F.eer.Id} Sharing`, `share=${name}`)
         this.name = name
         this.F = F
+
+        this.persisted_handle = F.spawn_KVStore(`share handle`,name)
         this.fsHandler = new FileSystemHandler({
             share: this,
             storeDirectoryHandle: async (handle) => {
-                await this.put('selected-directory', handle)
+                await this.persisted_handle.put(handle)
             },
             restoreDirectoryHandle: async () => {
-                const handle = await this.get('selected-directory')
+                const handle = await this.persisted_handle.get()
                 if (!handle) return null
 
                 try {
@@ -50,7 +48,7 @@ export class DirectoryShare extends IndexedDBStorage {
                     // < huh?
                 }
                 // maybe drop this stored object?
-                await this.delete('selected-directory')
+                await this.persisted_handle.delete()
                 return null
             },
         })
@@ -103,8 +101,8 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
     
     constructor(F: Sharing) {
         super()
-        this.set_table(`${F.eer.Id} Sharing`, `shares`)
         this.F = F
+        this.set_table(F.IDB_Store_name, `shares`)
     }
 
     // Like PF.spawn_F() but for DirectoryShare

@@ -177,7 +177,28 @@ export class IndexedDBStorage<T = any> {
     }
 }
 
+// locate and change a single row
+export class KVStore extends IndexedDBStorage {
+    constructor(dbname,dbstore,key) {
+        super()
+        this.set_table(dbname,dbstore)
+        this.key = key
+    }
+    async get() {
+        return await super.get(this.key)
+    }
+    async put(v) {
+        return await super.put(this.key,v)
+    }
+    async delete() {
+        return await super.delete(this.key)
+    }
+}
+// < another less singular but still key-implying one?
+//    key subdomains|subnets? can getAll do a subset?
+
 // Collection storage for managing sets of things
+//  
 export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
     constructor(version = 1) {
         super(version)
