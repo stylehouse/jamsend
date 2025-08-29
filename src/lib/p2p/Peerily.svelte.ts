@@ -617,6 +617,12 @@ export class Pier {
     }
 
     send_stuff({crypto,data,buffer}) {
+        if (!this.send_ready) {
+            if (options.quiet) return false
+            console.error(`${this} channel not ready, dropping message type=${type}`);
+            return false;
+        }
+        
         this.con.send(crypto)
         this.con.send(data)
         buffer && this.con.send(buffer)
@@ -631,11 +637,6 @@ export class Pier {
             quiet: boolean,
         }={}) {
         const { priority = 'high' } = options;
-        if (!this.send_ready) {
-            if (options.quiet) return false
-            console.error(`${this} !channel not open, cannot send message type=${type}`);
-            return false;
-        }
 
         try {
             // put in type
