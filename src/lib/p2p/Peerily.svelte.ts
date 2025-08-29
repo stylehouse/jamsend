@@ -1,5 +1,5 @@
 
-import { KVStore } from '$lib/data/IDBThings';
+import { KVStore } from '$lib/data/IDBThings.svelte';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'

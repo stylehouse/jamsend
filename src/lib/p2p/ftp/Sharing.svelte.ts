@@ -18,7 +18,7 @@ export class PeeringSharing extends PeeringFeature {
         super(opt)
         this.trust_name = 'ftp'
         this.UI_component = Shares
-        this.shares = new DirectoryShares(this)
+        this.shares = new DirectoryShares({F:this})
 
         this.start()
     }
@@ -32,7 +32,7 @@ export class PeeringSharing extends PeeringFeature {
         try {
             await this.shares.start()
 
-            console.log(`File sharing started with ${this.shares.getShares().length} shares`)
+            console.log(`File sharing started with ${this.shares.things.size} shares`)
         } catch (err) {
             throw erring("Failed to start file sharing", err);
         }

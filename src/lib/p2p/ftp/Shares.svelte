@@ -2,7 +2,6 @@
     import { onMount } from 'svelte';
     import type { Peering } from '../Peerily.svelte';
     import Things from '../ui/Things.svelte'
-    import { DirectoryShare, DirectoryShares } from './Directory.svelte';
     import type { PeeringSharing } from './Sharing.svelte';
     // the fairly-global Peering and PeerilyFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
@@ -26,10 +25,7 @@
         </div>
     {/each}
     
-    <!-- <Things 
-            shelfware={DirectoryShares}
+    <Things
+            Ss={F.shares}
             type="share" 
-            pfId={"eer:"+PF.eer.pub}
-            defaultItems={["music"]}
-            title="File Shares"
-        /> -->
+        />

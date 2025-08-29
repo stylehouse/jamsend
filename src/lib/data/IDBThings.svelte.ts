@@ -1,3 +1,4 @@
+import type { PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap } from "svelte/reactivity";
 
 // Shared database connections to prevent blocking
@@ -276,19 +277,22 @@ export abstract class ThingIsms {
     name: string = $state()
     // < should have some .stashed equivalent?
 
+    constructor(opt) {
+        Object.assign(this,opt)
+    }
 
 
     // common with ThingsIsms:
-    F: PeeringSharing
+    F: PeeringFeature
     // can be a start|stopper
     started?: boolean
     no_autostart?: boolean
 
     actions?: ThingAction[]
-    i_action(act:ThingAction) {
+    i_action(act:ThingAction,deleet=false) {
         this.actions ||= []
         this.actions = this.actions.filter(a => a.label != act.label)
-        this.actions.push(act)
+        if (!deleet) this.actions.push(act)
     }
 }
 abstract class ThingNessIsms {
@@ -297,20 +301,28 @@ abstract class ThingNessIsms {
 }
 export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     // common with ThingIsms:
-    F: PeeringSharing
+    F: PeeringFeature
     // can be a start|stopper
     started?: boolean
     no_autostart?: boolean
 
     actions?: ThingAction[]
-    i_action(act:ThingAction) {
+    i_action(act:ThingAction,deleet=false) {
         this.actions ||= []
         this.actions = this.actions.filter(a => a.label != act.label)
-        this.actions.push(act)
+        if (!deleet) this.actions.push(act)
     }
 
 
 
+
+    constructor(opt) {
+        super()
+        Object.assign(this,opt)
+    }
+    set_table(name) {
+        super.set_table(this.F.IDB_Store_name, name)
+    }
 
     // Things are like a Thing[] with extra steps
     things = $state(new SvelteMap<string, ThingIsms>())
@@ -336,6 +348,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     }
     async start() {
         try {
+            // read the whole table, instantiating
             const many = await this.getAll()
             
             if (many.length === 0) {
@@ -346,35 +359,24 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
                 many.push(opt)
             }
             for (const one of many) {
-                await this.spawn_Thing(one)
+                let S = await this.spawn_Thing(one)
+                if (!S.no_autostart) {
+                    await S.start()
+                }
             }
             this.started = true
+
+
             console.log(`Initialized ${this.things.size} shares`)
         } catch (err) {
             console.warn('Failed to initialize shares:', err)
         }
     }
 
-    // < not called
-    // < our .start() is only just reading rows, theirs starts doing stuff...
-    //    the Things UI shall call startAll() to autostart any of our things?
-    // Start all shares
-    async startAll() {
-        const promises = Array.from(this.things.values()).map(share => share.start())
-        await Promise.allSettled(promises) // Don't fail if one share fails
-    }
-
-    // Stop all shares?
-    async stopAll() {
-        const promises = Array.from(this.things.values()).map(share => share.stop())
-        await Promise.allSettled(promises)
-    }
-
-
     // now CRUD, syncing that .things SvelteMap and IndexedDB
 
     // Add a new share
-    async add_Thing(name: string): Promise<DirectoryShare> {
+    async add_Thing(name: string): Promise<ThingIsms> {
         if (this.things.has(name)) {
             throw erring(`Share "${name}" already exists`)
         }

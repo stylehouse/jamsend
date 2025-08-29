@@ -1,7 +1,6 @@
 
-import { IndexedDBStorage,CollectionStorage, KVStore } from '$lib/data/IDBThings'
+import { KVStore, ThingIsms, ThingsIsms } from '$lib/data/IDBThings.svelte'
 import { erring } from '$lib/Y'
-import { SvelteMap } from 'svelte/reactivity'
 import { DirectoryListing, FileListing, PeeringSharing } from './Sharing.svelte'
 
 // these Shares/Share things are given to a Things/Thing UI
@@ -18,9 +17,9 @@ export class DirectoryShare extends ThingIsms {
     localList: DirectoryListing | null = $state()
     
     persisted_handle:KVStore
-    constructor({name, F}: {name: string, F: PeeringSharing}) {
-        this.name = name
-        this.F = F
+    constructor(opt) {
+        super(opt)
+        let {name,F} = opt
 
         this.persisted_handle = F.spawn_KVStore(`share handle`,name)
         this.fsHandler = new FileSystemHandler({
@@ -110,19 +109,11 @@ export class DirectoryShare extends ThingIsms {
 
 //#region DirectoryShares
 // Collection of DirectoryShares with persistence
-// < this also extends ThingIsms
-//   javascript's single upstream (prototype) inheritance means:
-//     have to have all my ThingIsms with CollectionStorage
-//      and just not touch those parts?
-
-
-
 export class DirectoryShares extends ThingsIsms {
     started = $state(false)
-    constructor(F: PeeringSharing) {
-        super()
-        this.F = F
-        this.set_table(F.IDB_Store_name, `shares`)
+    constructor(opt) {
+        super(opt)
+        this.set_table(`shares`)
     }
 
 
@@ -135,9 +126,6 @@ export class DirectoryShares extends ThingsIsms {
     async autovivify(opt) {
         opt.name = 'music'
     }
-
-
-
 }
 
 //#region DirectoryStorage

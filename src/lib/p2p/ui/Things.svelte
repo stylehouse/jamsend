@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
     import Thing from './Thing.svelte'
+    import Thingness from './Thingness.svelte'
 
     interface ThingsProps {
         Ss: any // The collection (DirectoryShares, etc) with .things SvelteMap
@@ -17,36 +19,21 @@
 
     // UI state
     let newItemName = $state('')
-    let isLoading = $state(true)
 
-    // Auto-start collection, respecting no_autostart
-    $effect(() => {
-        if (Ss && !Ss.started && !isLoading) {
-            if (!Ss.no_autostart) {
-                Ss.start?.()
-            } else {
-                isLoading = false // Don't auto-start but stop loading
-            }
-        } else if (Ss?.started) {
-            isLoading = false
+    // Auto-start collection, then startAll() for individual things
+    onMount(() => {
+        if (!Ss.no_autostart) {
+            Ss.start()
         }
     })
 
     async function addItem() {
-        if (!newItemName.trim()) return
-        
-        const trimmedName = newItemName.trim()
+        let name = newItemName.trim()
+        if (!name) return
         
         try {
-            // Use the collection's spawn method
-            if (Ss.spawn_share) {
-                await Ss.spawn_share(trimmedName)
-            } else if (Ss.addShare) {
-                await Ss.addShare(trimmedName)
-            } else if (Ss.add) {
-                await Ss.add(trimmedName)
-            }
-            
+            // Use the collection's add method
+            await Ss.add_Thing(name)
             newItemName = ''
         } catch (err) {
             console.warn(`Failed to add ${type}:`, err)
@@ -55,11 +42,7 @@
 
     async function removeItem(name: string) {
         try {
-            if (Ss.removeShare) {
-                await Ss.removeShare(name)
-            } else if (Ss.remove) {
-                await Ss.remove(name)
-            }
+            await Ss.remove_Thing(name)
         } catch (err) {
             console.warn(`Failed to remove ${type}:`, err)
         }
@@ -76,23 +59,15 @@
     <div class="things-header">
         <h3 class="things-title">{title}</h3>
         
-        <!-- Collection-level actions -->
-        {#if Ss?.actions}
-            <div class="collection-actions">
-                {#each Ss.actions as action}
-                    <button 
-                        onclick={action.handler}
-                        class="collection-action-button"
-                        style={action.style}
-                    >
-                        {action.label}
-                    </button>
-                {/each}
+        <!-- Use Thingness for collection-level actions -->
+        {#if Ss}
+            <div class="collection-thingness">
+                <Thingness S={Ss} type="collection" showStatus={false} />
             </div>
         {/if}
     </div>
     
-    {#if isLoading}
+    {#if 0}
         <div class="loading">Loading {type}s...</div>
     {:else}
         <div class="things-list">
@@ -148,31 +123,9 @@
         text-transform: capitalize;
     }
 
-    .collection-actions {
+    .collection-thingness {
         display: flex;
-        gap: 0.5rem;
-    }
-
-    .collection-action-button {
-        padding: 0.3rem 0.8rem;
-        background: #2196F3;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        transition: background 0.2s;
-    }
-
-    .collection-action-button:hover {
-        background: #1976D2;
-    }
-
-    /* Big action style for important actions */
-    .collection-action-button[style*="big"] {
-        padding: 0.5rem 1.2rem;
-        font-size: 0.9rem;
-        font-weight: 600;
+        align-items: center;
     }
 
     .loading {
