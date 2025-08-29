@@ -13,7 +13,7 @@ this is mostly claude.ai
        be able to add more
        and storage them to indexeddb.
     # it got confused about multiplicity, giving us a single active FileSystemHandler
-     Sharing (the F) should have multiple shared directories, called "shares".
+     PeeringSharing (the F) should have multiple shared directories, called "shares".
      lets say F.shares = DirectoryShares
       it extends CollectionStorage with the namespace "shares" basically
        and specifies like F.spawn_PF() does how to create a DirectoryShare for each of its rows.

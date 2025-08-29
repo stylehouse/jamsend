@@ -2,11 +2,11 @@
 import { IndexedDBStorage,CollectionStorage, KVStore } from '$lib/data/IndexedDBStorage'
 import { erring } from '$lib/Y'
 import { SvelteMap } from 'svelte/reactivity'
-import { DirectoryListing, FileListing, Sharing } from './Sharing.svelte'
+import { DirectoryListing, FileListing, PeeringSharing } from './Sharing.svelte'
 
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare {
-    F: Sharing
+    F: PeeringSharing
     name: string = $state()
     fsHandler: FileSystemHandler
     
@@ -15,7 +15,7 @@ export class DirectoryShare {
     localList: DirectoryListing | null = $state()
     
     persisted_handle:KVStore
-    constructor({name, F}: {name: string, F: Sharing}) {
+    constructor({name, F}: {name: string, F: PeeringSharing}) {
         this.name = name
         this.F = F
 
@@ -96,10 +96,10 @@ export class DirectoryShare {
 
 // Collection of DirectoryShares with persistence
 export class DirectoryShares extends CollectionStorage<{name: string}> {
-    F: Sharing
+    F: PeeringSharing
     _shares = $state(new SvelteMap<string, DirectoryShare>())
     
-    constructor(F: Sharing) {
+    constructor(F: PeeringSharing) {
         super()
         this.F = F
         this.set_table(F.IDB_Store_name, `shares`)

@@ -191,8 +191,8 @@ export class Peering {
 
     // multi-user features stack up here (rather than P)
     //  so there's an extra deep partitioning of them
-    features = $state(new SvelteMap<TrustName,PeerilyFeature>())
-    feature(F:PeerilyFeature) {
+    features = $state(new SvelteMap<TrustName,PeeringFeature>())
+    feature(F:PeeringFeature) {
         let k = F.trust_name
         if (this.features.get(k)) throw `dup trust_name=${k}`
         this.features.set(k,F)
@@ -572,7 +572,7 @@ export class Pier {
 //#endregion
 //#region Pier emit
 
-    // binary emit() puts backpressure here (from Sharing.sendFile)
+    // binary emit() puts backpressure here (from PierSharing.sendFile)
     send_queue = []
     handle_data_etc() {
         // Receive messages
@@ -622,7 +622,7 @@ export class Pier {
             console.error(`${this} channel not ready, dropping message type=${type}`);
             return false;
         }
-        
+
         this.con.send(crypto)
         this.con.send(data)
         buffer && this.con.send(buffer)
@@ -1062,7 +1062,7 @@ export class Pier {
 // one of these, page-globally
 //  the main, for-itself UI of the feature as a whole
 // < describes how to onramp the feature
-export abstract class PeerilyFeature {
+export abstract class PeeringFeature {
     P:Peerily
     // < rename this class PeeringFeature
     eer:Peering
@@ -1085,19 +1085,19 @@ export abstract class PeerilyFeature {
 
     // trust item this whole feature is under
     trust_name:TrustName
-    abstract spawn_PierF():PierFeature
+    abstract spawn_PF():PierFeature
     
     UI_component:Component
 }
 
 // one of these per Pier with that feature switched on
 //  would show UI parts of the feature relevant to the individual Pier
-//   eg for Sharing this would be a small net io dial
+//   eg for PierSharing this would be a small net io dial
 //   < click to do a join onto the various tables, eg find that user's downloads
 type BidiTrustication = {local:TrustedTrust,remote:TrustedTrust}
 export abstract class PierFeature {
     P:Peerily
-    F:PeerilyFeature
+    F:PeeringFeature
     // who we're about
     eer:Peering
     Pier:Pier

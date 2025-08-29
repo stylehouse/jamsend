@@ -2,7 +2,7 @@ import { SvelteMap } from "svelte/reactivity";
 import { erring } from "$lib/Y";
 import { tick } from "svelte";
 
-import { PeerilyFeature, PierFeature } from "../Peerily.svelte";
+import { PeeringFeature, PierFeature } from "../Peerily.svelte";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
@@ -12,7 +12,7 @@ import { DirectoryShares } from "./Directory.svelte";
 
 
 // the PF
-export abstract class Sharing extends PeerilyFeature {
+export class PeeringSharing extends PeeringFeature {
     shares: DirectoryShares
     constructor(opt) {
         super(opt)

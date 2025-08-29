@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
-    import { Idento, Peerily, PeerilyFeature, type StashedPeering } from "./Peerily.svelte";
+    import { Idento, Peerily, PeeringFeature, type StashedPeering } from "./Peerily.svelte";
     import { Peering as Peering_type } from "./Peerily.svelte";
     import Peering from "./ui/Peering.svelte";
 
@@ -8,7 +8,7 @@
     import ShareButton from "./ui/ShareButton.svelte";
 	import QrCode from "svelte-qrcode"
     import { throttle } from "$lib/Y";
-    import { Sharing } from "./ftp/Sharing.svelte";
+    import { PeeringSharing } from "./ftp/Sharing.svelte";
     
 
     let errors = $state(new SvelteSet())
@@ -35,7 +35,7 @@
         //   we'll presume we dont
         //    and the app would get compiled to a subdomain
         //    when it wants different arrangements
-        eer.feature(new Sharing({P,eer}))
+        eer.feature(new PeeringSharing({P,eer}))
     }
     let P = new Peerily({on_error,save_stash,on_Peering})
 

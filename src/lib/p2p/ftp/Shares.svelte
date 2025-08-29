@@ -3,9 +3,9 @@
     import type { Peering } from '../Peerily.svelte';
     import Things from '../ui/Things.svelte'
     import { DirectoryShare, DirectoryShares } from './Directory.svelte';
-    import type { Sharing } from './Sharing.svelte';
+    import type { PeeringSharing } from './Sharing.svelte';
     // the fairly-global Peering and PeerilyFeature object
-    let { eer,F }:{ eer:Peering,F:Sharing } = $props();
+    let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
 
     onMount(async () => {
         // < Things might F.shares.start()
