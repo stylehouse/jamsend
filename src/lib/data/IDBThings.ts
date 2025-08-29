@@ -1,30 +1,9 @@
-let AI = `
-this is mostly claude.ai
-     I want a base class for indexed db
-      that we can derive storage for F or PF things
-       (tuples, sets of things we shall CRUD|collect)
-       in this case for a DirectoryHandle on F
-       to separate all this db access noise
-        from the permissions-resuming layer
-         of stuff going on in a restoreDirectoryHandle()
-     on the things,
-      we want to start the set of F.shares with "music"
-      and in a generic way
-       be able to add more
-       and storage them to indexeddb.
-    # it got confused about multiplicity, giving us a single active FileSystemHandler
-     PeeringSharing (the F) should have multiple shared directories, called "shares".
-     lets say F.shares = DirectoryShares
-      it extends CollectionStorage with the namespace "shares" basically
-       and specifies like F.spawn_PF() does how to create a DirectoryShare for each of its rows.
-      DirectoryShare will have a FileSystemHandler to present.
-      the Things ui is good, in Shares.svelte (for the F)
-       we shall give: <Things shelfware={DirectoryShares} ... {eer} {F}> 
-`
+import { SvelteMap } from "svelte/reactivity";
+
 // Shared database connections to prevent blocking
 const dbConnections = new Map<string, Promise<IDBDatabase>>();
 
-
+//#region IDB
 // Base IndexedDB storage class for CRUD operations
 export class IndexedDBStorage<T = any> {
     protected dbName: string
@@ -227,6 +206,7 @@ export class IndexedDBStorage<T = any> {
     }
 }
 
+//#region KVStore
 // locate and change a single row
 export class KVStore extends IndexedDBStorage {
     constructor(dbname,dbstore,key) {
@@ -284,3 +264,140 @@ export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
     }
 }
 
+//#region Thing(s)Isms
+type ThingAction = {
+    label: string
+    style?: object
+    handler: Function
+}
+export abstract class ThingIsms {
+    // Thing must have a unique name
+    //  and that's all that's required to create a new one
+    name: string = $state()
+    // < should have some .stashed equivalent?
+
+
+
+    // common with ThingsIsms:
+    F: PeeringSharing
+    // can be a start|stopper
+    started?: boolean
+    no_autostart?: boolean
+
+    actions?: ThingAction[]
+    i_action(act:ThingAction) {
+        this.actions ||= []
+        this.actions = this.actions.filter(a => a.label != act.label)
+        this.actions.push(act)
+    }
+}
+abstract class ThingNessIsms {
+    // would exist but for javascript's single upstream (prototype) inheritance
+    // so F,started,actions defs are simply repeated
+}
+export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
+    // common with ThingIsms:
+    F: PeeringSharing
+    // can be a start|stopper
+    started?: boolean
+    no_autostart?: boolean
+
+    actions?: ThingAction[]
+    i_action(act:ThingAction) {
+        this.actions ||= []
+        this.actions = this.actions.filter(a => a.label != act.label)
+        this.actions.push(act)
+    }
+
+
+
+
+    // Things are like a Thing[] with extra steps
+    things = $state(new SvelteMap<string, ThingIsms>())
+
+    // subclass this: how to spawn individual ThingIsms
+    async thingsify(opt) {
+        return new YourThing(opt)
+    }
+    async spawn_Thing(opt): Promise<ThingIsms> {
+        if (opt.name == null) throw "!name thing"
+        let thing = this.things.get(opt.name)
+        if (!thing) {
+            opt.F = this.F
+            thing = await this.thingsify(opt)
+            this.things.set(opt.name, thing)
+        }
+        return thing
+    }
+
+    // subclass this: how to option up a blank thing
+    async autovivify(opt) {
+        opt.name = "default name"
+    }
+    async start() {
+        try {
+            const many = await this.getAll()
+            
+            if (many.length === 0) {
+                let opt = {}
+                await this.autovivify(opt)
+                if (opt.name == null) throw "!name thing"
+                await this.add(opt, opt.name)
+                many.push(opt)
+            }
+            for (const one of many) {
+                await this.spawn_Thing(one)
+            }
+            this.started = true
+            console.log(`Initialized ${this.things.size} shares`)
+        } catch (err) {
+            console.warn('Failed to initialize shares:', err)
+        }
+    }
+
+    // < not called
+    // < our .start() is only just reading rows, theirs starts doing stuff...
+    //    the Things UI shall call startAll() to autostart any of our things?
+    // Start all shares
+    async startAll() {
+        const promises = Array.from(this.things.values()).map(share => share.start())
+        await Promise.allSettled(promises) // Don't fail if one share fails
+    }
+
+    // Stop all shares?
+    async stopAll() {
+        const promises = Array.from(this.things.values()).map(share => share.stop())
+        await Promise.allSettled(promises)
+    }
+
+
+    // now CRUD, syncing that .things SvelteMap and IndexedDB
+
+    // Add a new share
+    async add_Thing(name: string): Promise<DirectoryShare> {
+        if (this.things.has(name)) {
+            throw erring(`Share "${name}" already exists`)
+        }
+
+        // Persist to storage
+        await this.add({name}, name)
+        
+        // Create and return the DirectoryShare
+        const share = this.spawn_Thing(name)
+        return share
+    }
+
+    // Remove a share
+    async remove_Thing(name: string): Promise<void> {
+        const share = this.things.get(name)
+        if (share) {
+            await share.stop?.()
+            this.things.delete(name)
+        }
+        
+        // Remove from persistence
+        await this.delete(name)
+    }
+
+
+}

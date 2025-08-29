@@ -1,36 +1,12 @@
 
-import { IndexedDBStorage,CollectionStorage, KVStore } from '$lib/data/IndexedDBStorage'
+import { IndexedDBStorage,CollectionStorage, KVStore } from '$lib/data/IDBThings'
 import { erring } from '$lib/Y'
 import { SvelteMap } from 'svelte/reactivity'
 import { DirectoryListing, FileListing, PeeringSharing } from './Sharing.svelte'
 
 // these Shares/Share things are given to a Things/Thing UI
-type ThingAction = {
-    label: string
-    style?: object
-    handler: Function
-}
-abstract class ThingIsms {
-    F: PeeringSharing
-    // Thing must have a unique name
-    //  and that's all that's required to create a new one
-    name: string = $state()
 
 
-    // can be a start|stopper
-    started?: boolean
-    no_autostart?: boolean
-
-    actions?: ThingAction[]
-    i_action(act:ThingAction) {
-        this.actions ||= []
-        this.actions = this.actions.filter(a => a.label != act.label)
-        this.actions.push(act)
-    }
-
-
-    
-}
 
 //#region DirectoryShare
 // Individual share - like a PierFeature but for directories
@@ -140,97 +116,6 @@ export class DirectoryShare extends ThingIsms {
 //      and just not touch those parts?
 
 
-class ThingsIsms extends CollectionStorage<{name: string}> {
-    F: PeeringSharing
-    // Things are like a Thing[], $state()
-    things = $state(new SvelteMap<string, ThingIsms>())
-
-    // subclass this: how to spawn individual ThingIsms
-    async thingsify(opt) {
-        return new YourThing(opt)
-    }
-    async spawn_Thing(opt): Promise<ThingIsms> {
-        if (opt.name == null) throw "!name thing"
-        let thing = this.things.get(opt.name)
-        if (!thing) {
-            opt.F = this.F
-            thing = await this.thingsify(opt)
-            this.things.set(opt.name, thing)
-        }
-        return thing
-    }
-
-    // subclass this: how to option up a blank thing
-    async autovivify(opt) {
-        opt.name = "default name"
-    }
-    async start() {
-        try {
-            const many = await this.getAll()
-            
-            if (many.length === 0) {
-                let opt = {}
-                await this.autovivify(opt)
-                if (opt.name == null) throw "!name thing"
-                await this.add(opt, opt.name)
-                many.push(opt)
-            }
-            for (const one of many) {
-                await this.spawn_Thing(one)
-            }
-            this.started = true
-            console.log(`Initialized ${this.things.size} shares`)
-        } catch (err) {
-            console.warn('Failed to initialize shares:', err)
-        }
-    }
-
-    // < not called
-    // < our .start() is only just reading rows, theirs starts doing stuff...
-    //    the Things UI shall call startAll() to autostart any of our things?
-    // Start all shares
-    async startAll() {
-        const promises = Array.from(this.things.values()).map(share => share.start())
-        await Promise.allSettled(promises) // Don't fail if one share fails
-    }
-
-    // Stop all shares?
-    async stopAll() {
-        const promises = Array.from(this.things.values()).map(share => share.stop())
-        await Promise.allSettled(promises)
-    }
-
-
-    // now CRUD, syncing that .things SvelteMap and IndexedDB
-
-    // Add a new share
-    async add_Thing(name: string): Promise<DirectoryShare> {
-        if (this.things.has(name)) {
-            throw erring(`Share "${name}" already exists`)
-        }
-
-        // Persist to storage
-        await this.add({name}, name)
-        
-        // Create and return the DirectoryShare
-        const share = this.spawn_Thing(name)
-        return share
-    }
-
-    // Remove a share
-    async remove_Thing(name: string): Promise<void> {
-        const share = this.things.get(name)
-        if (share) {
-            await share.stop?.()
-            this.things.delete(name)
-        }
-        
-        // Remove from persistence
-        await this.delete(name)
-    }
-
-
-}
 
 export class DirectoryShares extends ThingsIsms {
     started = $state(false)
