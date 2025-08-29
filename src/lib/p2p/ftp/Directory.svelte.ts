@@ -11,30 +11,30 @@ type ThingAction = {
     handler: Function
 }
 abstract class ThingIsms {
-    // they must have a unique name, $state
+    F: PeeringSharing
+    // Thing must have a unique name
     //  and that's all that's required to create a new one
-    name: string
-    // must the many, $state()
-    things:SvelteMap
+    name: string = $state()
 
-    actions?: ThingAction[]
 
-    // can be a start|stopper, $state()
+    // can be a start|stopper
     started?: boolean
     no_autostart?: boolean
 
+    actions?: ThingAction[]
     i_action(act:ThingAction) {
         this.actions ||= []
         this.actions = this.actions.filter(a => a.label != act.label)
         this.actions.push(act)
     }
+
+
+    
 }
 
 //#region DirectoryShare
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare extends ThingIsms {
-    F: PeeringSharing
-    name: string = $state()
     fsHandler: FileSystemHandler
     
     // State
@@ -138,55 +138,73 @@ export class DirectoryShare extends ThingIsms {
 //   javascript's single upstream (prototype) inheritance means:
 //     have to have all my ThingIsms with CollectionStorage
 //      and just not touch those parts?
-export class DirectoryShares extends CollectionStorage<{name: string}> {
+
+
+class ThingsIsms extends CollectionStorage<{name: string}> {
     F: PeeringSharing
-    things = $state(new SvelteMap<string, DirectoryShare>())
-    
-    started = $state(false)
-    constructor(F: PeeringSharing) {
-        super()
-        this.F = F
-        this.set_table(F.IDB_Store_name, `shares`)
-    }
+    // Things are like a Thing[], $state()
+    things = $state(new SvelteMap<string, ThingIsms>())
 
-    // Like PF.spawn_F() but for DirectoryShare
-    async spawn_share(name: string): DirectoryShare {
-        let share = this.things.get(name)
-        if (!share) {
-            share = new DirectoryShare({name, F: this.F })
-            await share.may_not_autostart()
-            this.things.set(name, share)
+    // subclass this: how to spawn individual ThingIsms
+    async thingsify(opt) {
+        return new YourThing(opt)
+    }
+    async spawn_Thing(opt): Promise<ThingIsms> {
+        if (opt.name == null) throw "!name thing"
+        let thing = this.things.get(opt.name)
+        if (!thing) {
+            opt.F = this.F
+            thing = await this.thingsify(opt)
+            this.things.set(opt.name, thing)
         }
-        return share
+        return thing
     }
 
-    // Initialize with default shares and load persisted ones
+    // subclass this: how to option up a blank thing
+    async autovivify(opt) {
+        opt.name = "default name"
+    }
     async start() {
         try {
-            const persistedShares = await this.getAll()
+            const many = await this.getAll()
             
-            if (persistedShares.length === 0) {
-                // Auto-vivify with "music"
-                await this.add({name: 'music'}, 'music')
-                await this.spawn_share('music')
-            } else {
-                // Spawn shares for all persisted entries
-                for (const shareData of persistedShares) {
-                    await this.spawn_share(shareData.name)
-                }
+            if (many.length === 0) {
+                let opt = {}
+                await this.autovivify(opt)
+                if (opt.name == null) throw "!name thing"
+                await this.add(opt, opt.name)
+                many.push(opt)
             }
-            
+            for (const one of many) {
+                await this.spawn_Thing(one)
+            }
             this.started = true
             console.log(`Initialized ${this.things.size} shares`)
         } catch (err) {
             console.warn('Failed to initialize shares:', err)
-            // Fallback to default
-            await this.spawn_share('music')
         }
     }
 
+    // < not called
+    // < our .start() is only just reading rows, theirs starts doing stuff...
+    //    the Things UI shall call startAll() to autostart any of our things?
+    // Start all shares
+    async startAll() {
+        const promises = Array.from(this.things.values()).map(share => share.start())
+        await Promise.allSettled(promises) // Don't fail if one share fails
+    }
+
+    // Stop all shares?
+    async stopAll() {
+        const promises = Array.from(this.things.values()).map(share => share.stop())
+        await Promise.allSettled(promises)
+    }
+
+
+    // now CRUD, syncing that .things SvelteMap and IndexedDB
+
     // Add a new share
-    async addShare(name: string): Promise<DirectoryShare> {
+    async add_Thing(name: string): Promise<DirectoryShare> {
         if (this.things.has(name)) {
             throw erring(`Share "${name}" already exists`)
         }
@@ -195,15 +213,15 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
         await this.add({name}, name)
         
         // Create and return the DirectoryShare
-        const share = this.spawn_share(name)
+        const share = this.spawn_Thing(name)
         return share
     }
 
     // Remove a share
-    async removeShare(name: string): Promise<void> {
+    async remove_Thing(name: string): Promise<void> {
         const share = this.things.get(name)
         if (share) {
-            await share.stop()
+            await share.stop?.()
             this.things.delete(name)
         }
         
@@ -211,50 +229,30 @@ export class DirectoryShares extends CollectionStorage<{name: string}> {
         await this.delete(name)
     }
 
-    // Get share by name
-    getShare(name: string): DirectoryShare | undefined {
-        return this.things.get(name)
+
+}
+
+export class DirectoryShares extends ThingsIsms {
+    started = $state(false)
+    constructor(F: PeeringSharing) {
+        super()
+        this.F = F
+        this.set_table(F.IDB_Store_name, `shares`)
     }
 
-    // Get all active shares
-    getShares(): DirectoryShare[] {
-        return Array.from(this.things.values())
+
+    async thingsify(opt) {
+        const share = new DirectoryShare(opt)
+        await share.may_not_autostart()
+        return share
+    }
+    // < what becomes of this object? should it be a saved stash situation?
+    async autovivify(opt) {
+        opt.name = 'music'
     }
 
-    // Get share names for UI
-    getShareNames(): string[] {
-        return Array.from(this.things.keys())
-    }
 
-    // Check if share exists
-    hasShare(name: string): boolean {
-        return this.things.has(name)
-    }
 
-    // Start all shares
-    async startAll() {
-        const promises = Array.from(this.things.values()).map(share => share.start())
-        await Promise.allSettled(promises) // Don't fail if one share fails
-    }
-
-    // Stop all shares
-    async stopAll() {
-        const promises = Array.from(this.things.values()).map(share => share.stop())
-        await Promise.allSettled(promises)
-    }
-
-    // For Things UI - implements the "shelfware" interface
-    get items(): string[] {
-        return this.getShareNames()
-    }
-
-    async onAdd(name: string): Promise<void> {
-        await this.addShare(name)
-    }
-
-    async onRemove(name: string): Promise<void> {
-        await this.removeShare(name)
-    }
 }
 
 //#region DirectoryStorage
