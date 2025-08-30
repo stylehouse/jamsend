@@ -1,4 +1,5 @@
 import type { PeeringFeature } from "$lib/p2p/Peerily.svelte";
+import { erring } from "$lib/Y";
 import { SvelteMap } from "svelte/reactivity";
 
 // Shared database connections to prevent blocking
@@ -266,9 +267,9 @@ export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
 }
 
 //#region Thing(s)Isms
-type ThingAction = {
+export type ThingAction = {
     label: string
-    style?: object
+    class?: string
     handler: Function
 }
 export abstract class ThingIsms {

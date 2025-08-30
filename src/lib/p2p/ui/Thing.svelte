@@ -1,22 +1,25 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import Thingness from './Thingness.svelte'
+    import type { ThingIsms } from '$lib/data/IDBThings.svelte';
 
     interface ThingProps {
-        S: any // The ThingIsms instance (DirectoryShare, etc)
+        Ss: ThingIsms // where is
+        S: ThingIsm // the thing
         name: string
         type: string
-        thing?: Snippet
-        onRemove: () => void
+        thing?: Snippet // how the client of the Things (F's component usually) wants to present each one
     }
 
-    let { S, name, type, thing, onRemove }: ThingProps = $props()
-
-    function handleRemove() {
-        if (confirm(`Remove ${type} "${name}"?`)) {
-            onRemove()
-        }
-    }
+    let { Ss, S, name, type, thing }: ThingProps = $props()
+    let actions = [
+        {label:'remove',icon:'×',handler: async () => {
+            if (confirm(`Remove ${type} "${name}"?`)) {
+                await Ss.remove_Thing(name)
+            }
+        }}
+    ]
+    
     // always have this in there...
     let compat_mode = $state()
     $effect(() => {
@@ -32,30 +35,24 @@
     class:started={S.started}
     class:needs-attention={S.no_autostart}
 >
-    <div class="thing-content">
-        <div class="thing-name-row">
-            <span class="thing-name">{name}</span>
+    <div class="thing-header">
+        <div class="thing-content">
+            <div class="thing-name-row">
+                <span class="thing-name">{name}</span>
+            </div>
+            {#if compat_mode}
+                <h3>THE COMPAT MODE SPEECH</h3>
+                <p>You don't seem to allow Directory writing access. Sorry.</p>
+            {/if}
+            
+            <div class="thing-meta">
+                <!-- <span class="thing-type">{type}</span> -->
+            </div>
         </div>
-        {#if compat_mode}
-            <h3>THE COMPAT MODE SPEECH</h3>
-            <p>You don't seem to allow Directory writing access. Sorry.</p>
-        {/if}
         
-        <div class="thing-meta">
-            <!-- <span class="thing-type">{type}</span> -->
+        <div class="thing-controls">
+            <Thingness {S} {type} {actions} />
         </div>
-    </div>
-    
-    <div class="thing-controls">
-        <Thingness {S} {type} />
-        
-        <button 
-            onclick={handleRemove}
-            class="remove-button"
-            title="Remove {type}"
-        >
-            ×
-        </button>
     </div>
 
     <div class="thing-self">
@@ -171,26 +168,6 @@
     align-items: center;
 }
 
-.remove-button {
-    background: #f44336;
-    color: white;
-    font-weight: bold;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.remove-button:hover {
-    background: #d32f2f;
-    transform: scale(1.1);
-}
 
 /* Type-specific styling */
 .thing-item[data-type="share"] {

@@ -40,13 +40,6 @@
         }
     }
 
-    async function removeItem(name: string) {
-        try {
-            await Ss.remove_Thing(name)
-        } catch (err) {
-            console.warn(`Failed to remove ${type}:`, err)
-        }
-    }
 
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Enter') {
@@ -72,12 +65,12 @@
     {:else}
         <div class="things-list">
             {#each Ss.things as [name, S] (name)}
-                <Thing 
+                <Thing
+                    {Ss}
                     {S}
                     {name}
                     {type}
                     {thing}
-                    onRemove={() => removeItem(name)}
                 />
             {/each}
         </div>

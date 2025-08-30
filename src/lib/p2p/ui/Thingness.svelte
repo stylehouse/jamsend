@@ -1,18 +1,25 @@
 <script lang="ts">
+    import type { ThingAction } from "$lib/data/IDBThings.svelte";
+
     // Common behavior for any ThingIsms object
     interface ThingnessProps {
         S: any // The ThingIsms instance (DirectoryShare, etc)
         type: string
         showStatus?: boolean
         showActions?: boolean
+        actions?: ThingAction[]
     }
 
     let { 
         S, 
         type,
         showStatus = true,
-        showActions = true
+        showActions = true,
+        actions
     }: ThingnessProps = $props()
+
+
+    let Actions = $derived([...(S.actions||[]),...(actions||[])])
 
     function handleAction(action: any) {
         try {
@@ -56,22 +63,21 @@
             {/if}
             
             <span class="status-text">
-                {S.started ? 'running' : S.no_autostart ? 'setup needed' : 'stopped'}
+                {S.started ? '' : S.no_autostart ? 'setup needed' : 'stopped'}
             </span>
         </div>
     {/if}
 
     <!-- Custom actions from ThingIsms -->
-    {#if showActions && S.actions}
+    {#if showActions && Actions.length}
         <div class="custom-actions">
-            {#each S.actions as action}
+            {#each Actions as action}
                 <button 
                     onclick={() => handleAction(action)}
-                    class="action-button"
-                    class:big-action={action.style?.big}
+                    class="action-button action-button-{action.class}"
                     title={action.label}
                 >
-                    {action.label}
+                    {action.icon || action.label}
                 </button>
             {/each}
         </div>
@@ -80,7 +86,7 @@
     <!-- Standard start/stop controls -->
     {#if showActions}
         <div class="standard-actions">
-            {#if !S.started && !S.no_autostart}
+            {#if !S.started}
                 <button 
                     onclick={handleStart}
                     class="control-button start-button"
@@ -105,6 +111,8 @@
     <!-- Slot for additional content -->
     <slot></slot>
 </div>
+
+
 
 <style>
     .thingness {
@@ -173,14 +181,37 @@
         background: #1976D2;
     }
 
-    .big-action {
+
+    .action-button-remove {
+        background: #f44336;
+        color: white;
+        font-weight: bold;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .remove-button-remove:hover {
+        background: #d32f2f;
+        transform: scale(1.1);
+    }
+
+
+    .action-button-big {
         padding: 0.4rem 0.8rem !important;
         font-weight: 600;
         font-size: 0.85rem !important;
         background: #FF5722 !important;
     }
 
-    .big-action:hover {
+    .action-button-big:hover {
         background: #E64A19 !important;
         transform: scale(1.05);
     }
