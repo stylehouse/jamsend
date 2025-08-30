@@ -13,7 +13,7 @@
 
     let { Ss, S, name, type, thing }: ThingProps = $props()
     let actions = []
-    actions.push({label:'remove',icon:'×',handler: async () => {
+    actions.push({label:'remove',icon:'×',class:'stop',handler: async () => {
         if (confirm(`Remove ${type} "${name}"?`)) {
             await Ss.remove_Thing(name)
         }
@@ -35,24 +35,16 @@
     class:needs-attention={S.no_autostart}
 >
     <div class="thing-header">
-        <div class="thing-content">
-            <div class="thing-name-row">
-                <span class="thing-name">{name}</span>
-            </div>
-            {#if compat_mode}
-                <h3>THE COMPAT MODE SPEECH</h3>
-                <p>You don't seem to allow Directory writing access. Sorry.</p>
-            {/if}
-            
-            <div class="thing-meta">
-                <!-- <span class="thing-type">{type}</span> -->
-            </div>
-        </div>
         
         <div class="thing-controls">
             <Thingness {S} {type} {actions} />
         </div>
     </div>
+
+    {#if compat_mode}
+        <h3>THE COMPAT MODE SPEECH</h3>
+        <p>You don't seem to allow Directory writing access. Sorry.</p>
+    {/if}
 
     <div class="thing-self">
         {@render thing?.(S)}
@@ -98,24 +90,6 @@
     background: rgba(255, 152, 0, 0.05);
 }
 
-.thing-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-
-.thing-name-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.thing-name {
-    font-weight: 500;
-    color: #333;
-    font-size: 0.95rem;
-}
 
 .status-indicators {
     display: flex;

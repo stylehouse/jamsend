@@ -5,6 +5,7 @@
     // Common behavior for any ThingIsms object
     interface ThingnessProps {
         S: any // The ThingIsms instance (DirectoryShare, etc)
+        name?: string
         type: string
         showStatus?: boolean
         showActions?: boolean
@@ -12,16 +13,18 @@
     }
 
     let { 
-        S, 
+        S,
+        name,
         type,
         showStatus = true,
         showActions = true,
         actions:generique_actions
     }: ThingnessProps = $props()
+    name ??= `${type}s`
 
 
-    let actions = $derived([...(S.actions||[]),...(generique_actions||[])])
     // also, isn't it called intuition because you know something because you see something, because standard?
+    let is_playable = $derived(S.started != null)
     let maybe_playable = () => {
         // null doesn't == false, so this detects presence of it having a "started" ness
         if (S.started == false) {
@@ -35,21 +38,38 @@
             }}
         }
     }
-    let standard_actions = $derived([maybe_playable()])
+    let actions = $derived([
+        ...(S.actions||[]),
+        ...[is_playable && maybe_playable()].filter(v=>v),
+        ...(generique_actions||[]),
+    ])
 
 </script>
 
+
 <div class="thingness" class:started={S.started} class:needs-attention={S.no_autostart}>
-    <!-- Status indicators -->
+
+    <div class="thing-content">
+        <div class="thing-name-row">
+            <span class="thing-name">{name}</span>
+        </div>
+        
+        <div class="thing-meta">
+            <!-- <span class="thing-type">{type}</span> -->
+        </div>
+    </div>
+
+    
     {#if showStatus}
         <div class="status-section">
-            {#if S.started}
-                <span class="status-badge started" title="Running">●</span>
-            {:else if S.no_autostart}
-                <span class="status-badge attention" title="Needs setup">!</span>
-            {:else}
-                <span class="status-badge stopped" title="Stopped">○</span>
+            {#if is_playable}
+                {#if S.started}
+                    <span class="status-badge started" title="Running">●</span>
+                {:else}
+                    <span class="status-badge stopped" title="Stopped">○</span>
+                {/if}
             {/if}
+
             
             <span class="status-text">
                 {S.started ? '' : S.no_autostart ? 'setup needed' : 'stopped'}
@@ -60,13 +80,6 @@
     <div class="custom-actions">
         <ActionButtons {actions} />
     </div>
-
-    <div class="standard-actions">
-        <ActionButtons actions={standard_actions} />
-    </div>
-
-    <!-- Slot for additional content -->
-    <slot></slot>
 </div>
 
 
@@ -79,10 +92,15 @@
         transition: all 0.2s ease;
     }
 
-    .status-section {
+    .thingness div {
         display: flex;
         align-items: center;
         gap: 0.3rem;
+    }
+    .thing-name {
+        font-weight: 500;
+        color: #333;
+        font-size: 0.95rem;
     }
 
     .status-badge {
@@ -113,11 +131,5 @@
         color: #888;
         font-style: italic;
         min-width: 80px;
-    }
-
-
-    .custom-actions, .standard-actions {
-        display: flex;
-        gap: 0.3rem;
     }
 </style>

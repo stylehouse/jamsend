@@ -55,7 +55,7 @@
         <!-- Use Thingness for collection-level actions -->
         {#if Ss}
             <div class="collection-thingness">
-                <Thingness S={Ss} type="collection" showStatus={false} />
+                <Thingness S={Ss} {type} showStatus={false} />
             </div>
         {/if}
     </div>
