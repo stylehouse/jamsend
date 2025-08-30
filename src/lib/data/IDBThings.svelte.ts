@@ -285,10 +285,10 @@ export abstract class ThingIsms {
     // common with ThingsIsms:
     F: PeeringFeature
     // can be a start|stopper
-    started?: boolean
+    started?: boolean = $state()
     no_autostart?: boolean
 
-    actions?: ThingAction[]
+    actions?: ThingAction[] = $state()
     i_action(act:ThingAction,deleet=false) {
         this.actions ||= []
         this.actions = this.actions.filter(a => a.label != act.label)
@@ -303,10 +303,10 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     // common with ThingIsms:
     F: PeeringFeature
     // can be a start|stopper
-    started?: boolean
+    started?: boolean = $state()
     no_autostart?: boolean
 
-    actions?: ThingAction[]
+    actions?: ThingAction[] = $state()
     i_action(act:ThingAction,deleet=false) {
         this.actions ||= []
         this.actions = this.actions.filter(a => a.label != act.label)

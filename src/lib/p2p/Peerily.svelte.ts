@@ -587,7 +587,7 @@ export class Pier {
         };
     }
     get send_buffered() {
-        return this.con.dataChannel.bufferedAmount
+        return this.con.dataChannel?.bufferedAmount
     }
     get send_ready() {
         return this.con.dataChannel.readyState == "open"
@@ -618,9 +618,8 @@ export class Pier {
 
     send_stuff({crypto,data,buffer}) {
         if (!this.send_ready) {
-            if (options.quiet) return false
-            console.error(`${this} channel not ready, dropping message type=${type}`);
-            return false;
+            if (!options.quiet) console.error(`${this} channel not ready, dropping emit`);
+            return
         }
 
         this.con.send(crypto)

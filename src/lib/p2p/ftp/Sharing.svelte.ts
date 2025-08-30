@@ -19,8 +19,6 @@ export class PeeringSharing extends PeeringFeature {
         this.trust_name = 'ftp'
         this.UI_component = Shares
         this.shares = new DirectoryShares({F:this})
-
-        this.start()
     }
     // be here and in a Pier's UI
     spawn_PF({Pier}) {
