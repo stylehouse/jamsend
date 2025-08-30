@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
     import type { DirectoryListing, FileListing } from "./Sharing.svelte";
+    import Scrollability from "../ui/Scrollability.svelte";
 
     type args = {
         list: DirectoryListing,
@@ -24,45 +25,49 @@
     </div>
 
     <div class="big">
-    {#if !list}
-        {#if list_awaits}
-            {@render list_awaits?.()}
-        {:else}
-            list awaits...
-        {/if}
-    {:else}
-        {#if directories?.length}
-            <div class="items">
-                {#each directories as dir (dir.name)}
-                    <div class="item dir" onclick={() => onFileClick(dir)}>
-                        <span class="name">
-                            {dir.name}
-                            <span class=slash>/</span>
-                        </span>
-                        <span class="meta">
-                            <span class="remember">...</span>
-                        </span>
-                    </div>
-                {/each}
-            </div>
-        {/if}
+        <Scrollability maxHeight="80vh" class="content-area">
+            {#snippet content()}
+                {#if !list}
+                    {#if list_awaits}
+                        {@render list_awaits?.()}
+                    {:else}
+                        list awaits...
+                    {/if}
+                {:else}
+                    {#if directories?.length}
+                        <div class="items">
+                            {#each directories as dir (dir.name)}
+                                <div class="item dir" onclick={() => onFileClick(dir)}>
+                                    <span class="name">
+                                        {dir.name}
+                                        <span class=slash>/</span>
+                                    </span>
+                                    <span class="meta">
+                                        <span class="remember">...</span>
+                                    </span>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
 
-        {#if !files?.length}
-            <div class="empty">No files</div>
-        {:else}
-            <div class="items">
-                {#each files as file (file.name)}
-                    <div class="item file" onclick={() => onFileClick(file)}>
-                        <span class="name">{file.name}</span>
-                        <span class="meta">
-                            <span class="size">{file.formattedSize}</span>
-                            <!-- <span class="date">{file.formattedDate}</span> -->
-                        </span>
-                    </div>
-                {/each}
-            </div>
-        {/if}
-    {/if}
+                    {#if !files?.length}
+                        <div class="empty">No files</div>
+                    {:else}
+                        <div class="items">
+                            {#each files as file (file.name)}
+                                <div class="item file" onclick={() => onFileClick(file)}>
+                                    <span class="name">{file.name}</span>
+                                    <span class="meta">
+                                        <span class="size">{file.formattedSize}</span>
+                                        <!-- <span class="date">{file.formattedDate}</span> -->
+                                    </span>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                {/if}
+            {/snippet}
+        </Scrollability>
     </div>
 </div>
 
@@ -72,11 +77,6 @@
         border-radius: 4px;
         padding: 0.5rem;
         background: rgba(0, 0, 0, 0.2);
-    }
-
-    .big {
-        max-height: 100vh;
-        overflow:scroll;
     }
 
     .title {
