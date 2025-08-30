@@ -20,7 +20,15 @@
         showActions = true,
         actions:generique_actions
     }: ThingnessProps = $props()
-    name ??= `${type}s`
+    if (name == null) {
+        if (S.name != null) {
+            name = S.name
+        }
+        else {
+            name = `${type}s`
+        }
+
+    }
 
 
     // also, isn't it called intuition because you know something because you see something, because standard?
@@ -49,19 +57,15 @@
 
 <div class="thingness" class:started={S.started} class:needs-attention={S.no_autostart}>
 
-    <div class="thing-content">
+    <div class="thing-meta">
         <div class="thing-name-row">
             <span class="thing-name">{name}</span>
-        </div>
-        
-        <div class="thing-meta">
-            <!-- <span class="thing-type">{type}</span> -->
         </div>
     </div>
 
     
-    {#if showStatus}
         <div class="status-section">
+    {#if showStatus}
             {#if is_playable}
                 {#if S.started}
                     <span class="status-badge started" title="Running">●</span>
@@ -74,8 +78,8 @@
             <span class="status-text">
                 {S.started ? '' : S.no_autostart ? 'setup needed' : 'stopped'}
             </span>
-        </div>
     {/if}
+        </div>
 
     <div class="custom-actions">
         <ActionButtons {actions} />
@@ -85,51 +89,62 @@
 
 
 <style>
-    .thingness {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s ease;
+.thingness {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+.thingness div {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+    .custom-actions {
+        flex: 1; /* Take remaining space */
+        justify-content: flex-end
     }
 
-    .thingness div {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-    }
-    .thing-name {
-        font-weight: 500;
-        color: #333;
-        font-size: 0.95rem;
-    }
+.thing-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 0.95rem;
+}
 
-    .status-badge {
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
+.status-badge {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+.status-badge.started {
+    color: #4CAF50;
+}
+.status-badge.stopped {
+    color: #666;
+}
+.status-badge.attention {
+    color: #FF9800;
+    animation: pulse 2s infinite;
+}
 
-    .status-badge.started {
-        color: #4CAF50;
-    }
 
-    .status-badge.stopped {
-        color: #666;
-    }
 
-    .status-badge.attention {
-        color: #FF9800;
-        animation: pulse 2s infinite;
-    }
+.thing-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
 
-    .status-text {
-        font-size: 0.75rem;
-        color: #888;
-        font-style: italic;
-        min-width: 80px;
-    }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-text {
+    font-size: 0.75rem;
+    color: #888;
+    font-style: italic;
+    min-width: 80px;
+}
 </style>

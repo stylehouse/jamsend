@@ -50,14 +50,9 @@
 
 <div class="things-container">
     <div class="things-header">
-        <h3 class="things-title">{title}</h3>
-        
-        <!-- Use Thingness for collection-level actions -->
-        {#if Ss}
-            <div class="collection-thingness">
-                <Thingness S={Ss} {type} showStatus={false} />
-            </div>
-        {/if}
+        <div>
+            <Thingness S={Ss} {type} name={title} showStatus={false} />
+        </div>
     </div>
     
     {#if 0}
@@ -104,22 +99,12 @@
 
     .things-header {
         display: flex;
-        justify-content: space-between;
         align-items: center;
         margin-bottom: 0.75rem;
+        /* you can't width:100% one of these, it has to be an inner: */
     }
-
-    .things-title {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #333;
-        text-transform: capitalize;
-    }
-
-    .collection-thingness {
-        display: flex;
-        align-items: center;
+    .things-header div {
+        width: 100%;
     }
 
     .loading {

@@ -62,16 +62,9 @@
     transition: all 0.2s ease;
 }
 
-.thing-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-}
-
 .thing-self {
     display: block;
-    width: 100%;
+    /* width: 100%; */
 }
 
 .thing-item:hover {
@@ -91,55 +84,6 @@
 }
 
 
-.status-indicators {
-    display: flex;
-    align-items: center;
-}
-
-.status-badge {
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-
-.status-badge.started {
-    color: #4CAF50;
-}
-
-.status-badge.stopped {
-    color: #666;
-}
-
-.status-badge.attention {
-    color: #FF9800;
-}
-
-.thing-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.thing-type {
-    font-size: 0.8rem;
-    color: #666;
-    background: #f0f0f0;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.thing-state {
-    font-size: 0.75rem;
-    color: #888;
-    font-style: italic;
-}
-
-.thing-controls {
-    display: flex;
-    gap: 0.3rem;
-    align-items: center;
-}
 
 
 /* Type-specific styling */
