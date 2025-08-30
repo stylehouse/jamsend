@@ -1,23 +1,21 @@
 <script lang="ts">
-    import FileList from '../ftp/FileList.svelte';
+    import type { Snippet } from 'svelte';
     import Thingness from './Thingness.svelte'
 
     interface ThingProps {
         S: any // The ThingIsms instance (DirectoryShare, etc)
         name: string
         type: string
+        thing?: Snippet
         onRemove: () => void
     }
 
-    let { S, name, type, onRemove }: ThingProps = $props()
+    let { S, name, type, thing, onRemove }: ThingProps = $props()
 
     function handleRemove() {
         if (confirm(`Remove ${type} "${name}"?`)) {
             onRemove()
         }
-    }
-    function click_push(file: FileListing) {
-        console.log(`Would send ${file.name}`)
     }
     // always have this in there...
     let compat_mode = $state()
@@ -38,23 +36,13 @@
         <div class="thing-name-row">
             <span class="thing-name">{name}</span>
         </div>
+        {#if compat_mode}
+            <h3>THE COMPAT MODE SPEECH</h3>
+            <p>You don't seem to allow Directory writing access. Sorry.</p>
+        {/if}
         
         <div class="thing-meta">
             <!-- <span class="thing-type">{type}</span> -->
-            <!-- Shares specific -->
-            <FileList 
-                title="Local Files" 
-                list={S.localList} 
-                onFileClick={click_push}
-                onRefreshClick={() => S.refresh()} >
-
-                {#snippet compat()}
-                    {#if compat_mode}
-                        <h3>THE COMPAT MODE SPEECH</h3>
-                        <p>You don't seem to allow Directory writing access. Sorry.</p>
-                    {/if}
-                {/snippet}
-            </FileList>
         </div>
     </div>
     
@@ -69,6 +57,10 @@
             ×
         </button>
     </div>
+
+    <div class="thing-self">
+        {@render thing?.(S)}
+    </div>
 </div>
 
 <style>
@@ -81,6 +73,9 @@
         border-radius: 6px;
         background: rgba(255, 255, 255, 0.8);
         transition: all 0.2s ease;
+    }
+    .thing-self {
+        display:block;
     }
 
     .thing-item:hover {

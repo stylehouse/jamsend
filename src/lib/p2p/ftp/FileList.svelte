@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { FileListing } from "$lib/p2p/ftp/Sharee.svelte";
     import type { Snippet } from "svelte";
+    import type { DirectoryListing, FileListing } from "./Sharing.svelte";
 
     type args = {
         list: DirectoryListing,
@@ -8,7 +8,6 @@
         onFileClick: (file: FileListing) => void,
         onRefreshClick: () => void,
         list_awaits?: Snippet
-        compat?: Snippet
     }
     let { list,title,onFileClick,onRefreshClick,list_awaits,compat }:args = $props();
     let {files,directories} = $derived(list || {})
@@ -17,13 +16,14 @@
 </script>
 
 <div class="file-list">
-    <h3 class="title">
-        {title} 
-        <span role=button onclick={onRefreshClick}>⟳</span>
-    </h3>
+    <div>
+        <h3 class="title">
+            {title} 
+            <span role=button onclick={onRefreshClick}>⟳</span>
+        </h3>
+    </div>
 
-    {@render compat?.()}
-
+    <div class="big">
     {#if !list}
         {#if list_awaits}
             {@render list_awaits?.()}
@@ -63,6 +63,7 @@
             </div>
         {/if}
     {/if}
+    </div>
 </div>
 
 <style>
@@ -71,6 +72,11 @@
         border-radius: 4px;
         padding: 0.5rem;
         background: rgba(0, 0, 0, 0.2);
+    }
+
+    .big {
+        max-height: 100vh;
+        overflow:scroll;
     }
 
     .title {

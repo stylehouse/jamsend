@@ -281,6 +281,8 @@ export abstract class ThingIsms {
         Object.assign(this,opt)
     }
 
+    // subclass this: how to "plug it in" or so
+    abstract start():null
 
     // common with ThingsIsms:
     F: PeeringFeature
@@ -346,6 +348,11 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     async autovivify(opt) {
         opt.name = "default name"
     }
+
+
+    may_start() {
+        if (!this.no_autostart) this.start()
+    }
     async start() {
         try {
             // read the whole table, instantiating
@@ -361,7 +368,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
             for (const one of many) {
                 let S = await this.spawn_Thing(one)
                 if (!S.no_autostart) {
-                    await S.start()
+                    await S.start?.()
                 }
             }
             this.started = true

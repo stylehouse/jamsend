@@ -3,6 +3,8 @@
     import type { Peering } from '../Peerily.svelte';
     import Things from '../ui/Things.svelte'
     import type { PeeringSharing } from './Sharing.svelte';
+    import { DirectoryShare } from './Directory.svelte';
+    import FileList from './FileList.svelte';
     // the fairly-global Peering and PeerilyFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
 
@@ -14,18 +16,26 @@
              }, 2100)
         console.log("shares!: ",[F,F.shares.things])
     })
+    function click_push(file: FileListing) {
+        console.log(`Would send ${file.name}`)
+    }
 </script>
 
 <h2>Expect big shares</h2>
 
     DSs:{F.shares.things.size}
-    {#each F.shares.things as [k,DS] (k)}
-        <div class=bitsies>
-            DS:{DS.name} <button onclick={() => DS.start()}>o</button>
-        </div>
-    {/each}
     
     <Things
             Ss={F.shares}
             type="share" 
-        />
+        >
+            {#snippet thing(S:DirectoryShare)}
+                <FileList 
+                        title="Local Files" 
+                        list={S.localList} 
+                        onFileClick={click_push}
+                        onRefreshClick={() => S.refresh()}
+                    >
+                </FileList>
+            {/snippet}
+    </Things>

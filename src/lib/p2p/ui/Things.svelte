@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, type Snippet } from 'svelte';
     import Thing from './Thing.svelte'
     import Thingness from './Thingness.svelte'
 
@@ -8,23 +8,23 @@
         type: string           // e.g. "share", "playlist", "bookmark"
         title?: string        // Display title
         placeholder?: string   // Placeholder for add input
+        thing?: Snippet
     }
 
     let {
         Ss,
         type,
         title = `${type}s`,
-        placeholder = `Add ${type}...`
+        placeholder = `Add ${type}...`,
+        thing,
     }: ThingsProps = $props()
 
     // UI state
     let newItemName = $state('')
 
-    // Auto-start collection, then startAll() for individual things
+    // will probably start all things as well
     onMount(() => {
-        if (!Ss.no_autostart) {
-            Ss.start()
-        }
+        Ss.may_start()
     })
 
     async function addItem() {
@@ -76,6 +76,7 @@
                     {S}
                     {name}
                     {type}
+                    {thing}
                     onRemove={() => removeItem(name)}
                 />
             {/each}
