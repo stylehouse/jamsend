@@ -55,29 +55,39 @@ export class DirectoryShare extends ThingIsms {
             },
         })
     }
-    async may_not_autostart() {
-        // if it's not persisted, wants a click before starting
-        let handle = await this.persisted_handle.get()
-        if (!handle) {
-            // instructions for Things
-            this.no_autostart = true
-            // < modulate the default (when a Thing.S has .started=boolean)
-            //    so it's more visible
-            this.i_action({label:'open share', style:{big:1},
-                handler: async () => await this.start()})
-        }
-    }
     async start() {
         try {
             await this.fsHandler.start()
-            this.started = true
-            await this.refresh()
-            console.log(`DirectoryShare "${this.name}" started`)
+            this.start_post(true)
         } catch (err) {
             throw erring(`Failed to start share "${this.name}"`, err)
         }
     }
+    // user interaction required
+    async click_start() {
+        await this.fsHandler.requestDirectoryAccess()
+        this.start_post()
 
+    }
+    async start_post(retriable=false) {
+        if (this.fsHandler.started) {
+            this.started = true
+            await this.refresh()
+            console.log(`DirectoryShare "${this.name}" started`)
+        }
+        else {
+            if (retriable) {
+                // the handle failed to resume, perhaps it is new
+                this.i_action({label:'open share', style:{big:1},
+                    handler: async () => await this.click_start()})
+            }
+            else {
+                throw erring(`Share not starting! "${this.name}"`)
+            }
+        }
+
+
+    }
     async stop() {
         try {
             await this.fsHandler.stop()
@@ -118,9 +128,7 @@ export class DirectoryShares extends ThingsIsms {
 
 
     async thingsify(opt) {
-        const share = new DirectoryShare(opt)
-        await share.may_not_autostart()
-        return share
+        return new DirectoryShare(opt)
     }
     // < what becomes of this object? should it be a saved stash situation?
     async autovivify(opt) {
@@ -151,6 +159,7 @@ class FileSystemHandler {
     // the owner can store this
     restoreDirectoryHandle:Function
     storeDirectoryHandle:Function
+    started:boolean = false
 
     constructor(opt={}) {
         Object.assign(this, opt)
@@ -163,11 +172,10 @@ class FileSystemHandler {
         const restored = await this.restoreDirectoryHandle?.()
         if (restored) {
             this._fs.dirHandle = restored
+            this.started = true
             console.log(`Restored directory for share "${this.share.name}"`)
             return
         }
-        
-        await this.requestDirectoryAccess()
     }
     // Request directory access from user
     async requestDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
@@ -176,6 +184,7 @@ class FileSystemHandler {
             this._fs.dirHandle = await window.showDirectoryPicker({
                 mode: 'readwrite'
             })
+            this.started = true
             // Store using the storage layer above this
             await this.storeDirectoryHandle?.(this._fs.dirHandle)
         } catch (err) {
@@ -186,6 +195,7 @@ class FileSystemHandler {
         // Clear all stored handles
         this._fs.fileHandles.clear();
         this._fs.dirHandle = null;
+        this.started = false
     }
 
     

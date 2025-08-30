@@ -1,4 +1,5 @@
 <script lang="ts">
+    import FileList from '../ftp/FileList.svelte';
     import Thingness from './Thingness.svelte'
 
     interface ThingProps {
@@ -15,6 +16,16 @@
             onRemove()
         }
     }
+    function click_push(file: FileListing) {
+        console.log(`Would send ${file.name}`)
+    }
+    // always have this in there...
+    let compat_mode = $state()
+    $effect(() => {
+        if (!('showDirectoryPicker' in window)) {
+            compat_mode = true
+        }
+    })
 </script>
 
 <div 
@@ -29,7 +40,21 @@
         </div>
         
         <div class="thing-meta">
-            <span class="thing-type">{type}</span>
+            <!-- <span class="thing-type">{type}</span> -->
+            <!-- Shares specific -->
+            <FileList 
+                title="Local Files" 
+                list={S.localList} 
+                onFileClick={click_push}
+                onRefreshClick={() => S.refresh()} >
+
+                {#snippet compat()}
+                    {#if compat_mode}
+                        <h3>THE COMPAT MODE SPEECH</h3>
+                        <p>You don't seem to allow Directory writing access. Sorry.</p>
+                    {/if}
+                {/snippet}
+            </FileList>
         </div>
     </div>
     

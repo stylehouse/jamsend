@@ -385,7 +385,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
         await this.add({name}, name)
         
         // Create and return the DirectoryShare
-        const share = this.spawn_Thing(name)
+        const share = this.spawn_Thing({name})
         return share
     }
 
