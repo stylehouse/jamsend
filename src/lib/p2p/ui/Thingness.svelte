@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { ThingAction } from "$lib/data/IDBThings.svelte";
+    import ActionButtons from "./ActionButtons.svelte";
 
     // Common behavior for any ThingIsms object
     interface ThingnessProps {
@@ -15,39 +16,27 @@
         type,
         showStatus = true,
         showActions = true,
-        actions
+        actions:generique_actions
     }: ThingnessProps = $props()
 
 
-    let Actions = $derived([...(S.actions||[]),...(actions||[])])
-
-    function handleAction(action: any) {
-        try {
-            action.handler()
-        } catch (err) {
-            console.warn(`Action "${action.label}" failed:`, err)
-        }
-    }
-
-    async function handleStart() {
-        if (S.start) {
-            try {
+    let actions = $derived([...(S.actions||[]),...(generique_actions||[])])
+    // also, isn't it called intuition because you know something because you see something, because standard?
+    let maybe_playable = () => {
+        // null doesn't == false, so this detects presence of it having a "started" ness
+        if (S.started == false) {
+            return {label:'start',icon:'▶',class:"start",handler: async () => {
                 await S.start()
-            } catch (err) {
-                console.warn(`Failed to start ${type}:`, err)
-            }
+            }}
         }
-    }
-
-    async function handleStop() {
-        if (S.stop) {
-            try {
+        else if (S.started == true) {
+            return {label:'stop',icon:'■',class:"stop",handler: async () => {
                 await S.stop()
-            } catch (err) {
-                console.warn(`Failed to stop ${type}:`, err)
-            }
+            }}
         }
     }
+    let standard_actions = $derived([maybe_playable()])
+
 </script>
 
 <div class="thingness" class:started={S.started} class:needs-attention={S.no_autostart}>
@@ -68,45 +57,13 @@
         </div>
     {/if}
 
-    <!-- Custom actions from ThingIsms -->
-    {#if showActions && Actions.length}
-        <div class="custom-actions">
-            {#each Actions as action}
-                <button 
-                    onclick={() => handleAction(action)}
-                    class="action-button action-button-{action.class}"
-                    title={action.label}
-                >
-                    {action.icon || action.label}
-                </button>
-            {/each}
-        </div>
-    {/if}
+    <div class="custom-actions">
+        <ActionButtons {actions} />
+    </div>
 
-    <!-- Standard start/stop controls -->
-    {#if showActions}
-        <div class="standard-actions">
-            {#if !S.started}
-                <button 
-                    onclick={handleStart}
-                    class="control-button start-button"
-                    title="Start {type}"
-                >
-                    ▶
-                </button>
-            {/if}
-            
-            {#if S.started}
-                <button 
-                    onclick={handleStop}
-                    class="control-button stop-button"
-                    title="Stop {type}"
-                >
-                    ■
-                </button>
-            {/if}
-        </div>
-    {/if}
+    <div class="standard-actions">
+        <ActionButtons actions={standard_actions} />
+    </div>
 
     <!-- Slot for additional content -->
     <slot></slot>
@@ -158,84 +115,9 @@
         min-width: 80px;
     }
 
+
     .custom-actions, .standard-actions {
         display: flex;
         gap: 0.3rem;
-    }
-
-    .action-button, .control-button {
-        padding: 0.3rem 0.6rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        transition: all 0.2s ease;
-    }
-
-    .action-button {
-        background: #2196F3;
-        color: white;
-    }
-
-    .action-button:hover {
-        background: #1976D2;
-    }
-
-
-    .action-button-remove {
-        background: #f44336;
-        color: white;
-        font-weight: bold;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .remove-button-remove:hover {
-        background: #d32f2f;
-        transform: scale(1.1);
-    }
-
-
-    .action-button-big {
-        padding: 0.4rem 0.8rem !important;
-        font-weight: 600;
-        font-size: 0.85rem !important;
-        background: #FF5722 !important;
-    }
-
-    .action-button-big:hover {
-        background: #E64A19 !important;
-        transform: scale(1.05);
-    }
-
-    .control-button {
-        padding: 0.3rem 0.5rem;
-        font-size: 0.7rem;
-    }
-
-    .start-button {
-        background: #4CAF50;
-        color: white;
-    }
-
-    .start-button:hover {
-        background: #45a049;
-    }
-
-    .stop-button {
-        background: #f44336;
-        color: white;
-    }
-
-    .stop-button:hover {
-        background: #d32f2f;
     }
 </style>

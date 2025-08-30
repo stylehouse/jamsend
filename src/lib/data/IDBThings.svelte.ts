@@ -266,7 +266,7 @@ export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
     }
 }
 
-//#region Thing(s)Isms
+//#region ThingIsms
 export type ThingAction = {
     label: string
     class?: string
@@ -302,6 +302,7 @@ abstract class ThingNessIsms {
     // would exist but for javascript's single upstream (prototype) inheritance
     // so F,started,actions defs are simply repeated
 }
+//#region ThingsIsms
 export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     // common with ThingIsms:
     F: PeeringFeature
@@ -374,11 +375,16 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
             }
             this.started = true
 
-
             console.log(`Initialized ${this.things.size} shares`)
         } catch (err) {
             console.warn('Failed to initialize shares:', err)
         }
+    }
+    async stop() {
+        for (const [name, S] of this.things) {
+            await S.stop?.()
+        }
+        this.started = false
     }
 
     // now CRUD, syncing that .things SvelteMap and IndexedDB

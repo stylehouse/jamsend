@@ -1,25 +1,24 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import Thingness from './Thingness.svelte'
-    import type { ThingIsms } from '$lib/data/IDBThings.svelte';
+    import type { ThingIsms, ThingsIsms } from '$lib/data/IDBThings.svelte';
 
     interface ThingProps {
-        Ss: ThingIsms // where is
-        S: ThingIsm // the thing
+        Ss: ThingsIsms // where is
+        S: ThingIsms // the thing
         name: string
         type: string
         thing?: Snippet // how the client of the Things (F's component usually) wants to present each one
     }
 
     let { Ss, S, name, type, thing }: ThingProps = $props()
-    let actions = [
-        {label:'remove',icon:'×',handler: async () => {
-            if (confirm(`Remove ${type} "${name}"?`)) {
-                await Ss.remove_Thing(name)
-            }
-        }}
-    ]
-    
+    let actions = []
+    actions.push({label:'remove',icon:'×',handler: async () => {
+        if (confirm(`Remove ${type} "${name}"?`)) {
+            await Ss.remove_Thing(name)
+        }
+    }})
+
     // always have this in there...
     let compat_mode = $state()
     $effect(() => {

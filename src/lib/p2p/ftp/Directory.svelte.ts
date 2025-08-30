@@ -78,8 +78,10 @@ export class DirectoryShare extends ThingIsms {
         else {
             if (retriable) {
                 // the handle failed to resume, perhaps it is new
-                this.i_action({label:'open share', style:{big:1},
-                    handler: async () => await this.click_start()})
+                this.i_action({label:'open share', class:'big', handler: async () => {
+                        await this.click_start()
+                        this.i_action({label:'open share'},true)
+                    }})
             }
             else {
                 throw erring(`Share not starting! "${this.name}"`)
