@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { ThingAction } from "$lib/data/IDBThings.svelte";
+    import type { ThingAction } from "$lib/data/Things.svelte";
 
     // Common behavior for any ThingIsms object
     interface ThingnessProps {

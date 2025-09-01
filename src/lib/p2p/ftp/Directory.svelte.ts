@@ -1,7 +1,8 @@
 
-import { KVStore, ThingIsms, ThingsIsms } from '$lib/data/IDBThings.svelte'
+import { KVStore } from '$lib/data/IDB.svelte'
+import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte'
 import { erring } from '$lib/Y'
-import { DirectoryListing, FileListing, PeeringSharing } from './Sharing.svelte'
+import { DirectoryListing, FileListing } from './Sharing.svelte'
 
 // these Shares/Share things are given to a Things/Thing UI
 

@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { Snippet } from 'svelte';
     import Thingness from './Thingness.svelte'
-    import type { ThingIsms, ThingsIsms } from '$lib/data/IDBThings.svelte';
+    import type { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte';
 
     interface ThingProps {
         Ss: ThingsIsms // where is
