@@ -3,7 +3,7 @@
     import type { Peering } from '../Peerily.svelte';
     import Things from '../ui/Things.svelte'
     import type { PeeringSharing } from './Sharing.svelte';
-    import { DirectoryShare } from './Directory.svelte';
+    import { DirectoryShare, FileListing } from './Directory.svelte';
     import FileList from './FileList.svelte';
     // the fairly-global Peering and PeerilyFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();

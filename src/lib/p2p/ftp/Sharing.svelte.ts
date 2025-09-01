@@ -6,7 +6,7 @@ import { PeeringFeature, PierFeature } from "../Peerily.svelte";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
-import { DirectoryShares } from "./Directory.svelte";
+import { DirectoryListing, DirectoryShares } from "./Directory.svelte";
 
 
 
@@ -463,92 +463,6 @@ class TransferManager {
 
 
 
-
-
-//#region *Listing
-export class FileListing {
-    name: string;
-    size: number;
-    modified: Date;
-    
-    constructor(init: Partial<FileListing>) {
-        this.name = init.name;
-        this.size = init.size;
-        this.modified = init.modified instanceof Date ? init.modified : new Date(init.modified);
-    }
-
-    // Format size in human readable format (KB, MB, etc)
-    get formattedSize(): string {
-        const units = ['B', 'KB', 'MB', 'GB'];
-        let size = this.size;
-        let unitIndex = 0;
-        
-        while (size >= 1024 && unitIndex < units.length - 1) {
-            size /= 1024;
-            unitIndex++;
-        }
-        
-        return `${size.toFixed(1)} ${units[unitIndex]}`;
-    }
-
-    // Format date in a readable way
-    get formattedDate(): string {
-        return this.modified.toLocaleString();
-    }
-
-    toJSON() {
-        return {
-            name: this.name,
-            size: this.size,
-            modified: this.modified.toISOString()
-        };
-    }
-}
-// many of the above
-export class DirectoryListing {
-    name: string;
-    up?: DirectoryListing;
-    files: FileListing[] = $state([])
-    directories: DirectoryListing[] = $state([])
-    
-    constructor(init: Partial<DirectoryListing> = {}) {
-        Object.assign(this,init)
-    }
-    // for sending only one directory-full at a time
-    //  ie return a Partial<DirectoryListing> without any 2-inners
-    //   ie dir/dir/dir or dir/dir/file
-    //  reduce dir/dir to their name
-    // < paginate?
-    transportable() {
-        return {
-            name: this.name,
-            files: this.files,
-            directories: this.directories.map(dir => {
-                // before toJSON gets called on them, and so on, snip
-                return {name: dir.name}
-            })
-        }
-    }
-    // might be huge if your have resolved a lot of inners
-    toJSON() {
-        return {
-            name: this.name,
-            files: this.files,
-            directories: this.directories
-        };
-    }
-    static fromJSON(json: any): DirectoryListing {
-        // it'll have no name until stitched into the landscape
-        const listing = new DirectoryListing(json);
-        listing.files = listing.files.map(f => new FileListing(f))
-        listing.directories = listing.directories.map(d => new DirectoryListing(d))
-        listing.directories.map(d => d.up = listing)
-        return listing;
-    }
-}
-// many of the above
-export class CollectionListing {
-}
 
 
 

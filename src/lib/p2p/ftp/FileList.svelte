@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import type { DirectoryListing, FileListing } from "./Sharing.svelte";
+    import type { DirectoryListing, FileListing } from "./Directory.svelte";
     import Scrollability from "../ui/Scrollability.svelte";
 
     type args = {

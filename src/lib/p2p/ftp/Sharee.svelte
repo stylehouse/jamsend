@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { FileListing, PierSharing } from '$lib/p2p/ftp/Sharing.svelte';
+    import { PierSharing } from '$lib/p2p/ftp/Sharing.svelte';
+    import type { FileListing } from './Directory.svelte';
     import FileList from './FileList.svelte';
     
     // the global Peerily and PeerilyFeature object
