@@ -1,5 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
+import { Stuff } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte'
 import { erring } from '$lib/Y'
 

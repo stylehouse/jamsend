@@ -31,8 +31,12 @@ use cases:
 type TheUniversal = {
     waits?: string
 } & any
+type TheEmpirical = {
+    drop?: any
+} & any
 
 type TheC = {
+    c: TheEmpirical
     sc: TheUniversal
 }
 
@@ -58,10 +62,10 @@ class TheX {
     up?: TheX;
 
     // by the usual names:
-    z?: TheN = []
-    k?: {} = {}
-    v?: [] = []
-    vs?: [] = []
+    z?: TheN
+    k?: {}
+    v?: []
+    vs?: []
 
     // X/$k +$n
     i_k(k: string, n: TheC, kf?: string): TheX {
@@ -69,7 +73,7 @@ class TheX {
         this[kf] = this[kf] || {};
         const x: TheX = this[kf][k] = this[kf][k] || new TheX();
         x.up = this;
-        this.i_z('z', n);
+        x.i_z('z', n);
         return x;
     }
 
@@ -82,21 +86,12 @@ class TheX {
     }
 
     // X/$v +$n
-    i_v(v: any, n: TheC, kf?: string, q?: object): TheX | null {
+    i_v(v: any, n: TheC, kf?: string): TheX | null {
         kf = kf || 'v';
-        return this.i_refer(v, n, kf, q);
+        return this.i_refer(v, n, kf);
     }
-
-    // < GONE? others iterate X...
-    // check X/$v for $n
-    o_v(v: any, n: TheC, kf?: string, q?: object): TheX | null {
-        q = q || {};
-        q.el = 8;
-        return this.i_v(v, n, kf, q);
-    }
-
     // indexing objects, or anything
-    i_refer(v: any, n: TheC, kf: string, q?: object, kfs?: string): TheX | null {
+    i_refer(v: any, n: TheC, kf: string, kfs?: string): TheX | null {
         // the X.something for the array of values
         // < which should be a WeakMap, preventing the need for two indexes
         kfs = kfs || kf + 's';
@@ -107,7 +102,6 @@ class TheX {
         const fs = this[kfs] = this[kfs] || [];
         let vi = fs.indexOf(v);
         
-        if (q && q.el == 8 && vi < 0) return null;
         if (vi < 0) vi = fs.push(v) - 1;
         
         const f = this[kf] = this[kf] || [];
@@ -124,6 +118,8 @@ export class Stuff {
 
     // regroup! indexes build up, forming X/.../$n to be with
     i(n: TheC) {
+        // bless the hash
+        if (!n.sc) n = {c:{},sc:n}
         // failed ideas here include:
         //   peeling a json-ish string, chaining from s=TheC, environmental awareness
 
@@ -150,80 +146,129 @@ export class Stuff {
     }
 
     // look for these keys if $key=1, or the value as well.
-    // the X.k gives us a /$n, which we then just grep for properties
+    // the X/$k(/$v) /$n give us a list
+    //   which we then just grep for the rest of properties
     //  as opposed to:
     //   > thinking about going into particular X/$k/$v, depending on $key=1
     //   > joining many reads on the X/$k/$v table, which is just uniq(/$n)
-    o(sc: TheUniversal) {
-        $M = [];
-        # AND
-        $amongst;
-        $X = zs&X;
-        each tv c {
-            # might have indexing, only for the first one
-            if (X && !amongst) {
-                $x = ahsk(X,'k',t);
+    // one_column_mode =
+    //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
+    //  1 returns the first column (javascript hashes are ordered)
+    //  0 returns the first value of the first column
+    o(sc: TheUniversal,one_column_mode) {
+        let M:TheN = [];
+        let amongst:TheN;
+        // Process each key-value pair in sc
+        Object.entries(sc || {}).forEach(([t, v]) => {
+            // might have indexing, only for the first one
+            if (!amongst) {
+                // Look up the key in X.k
+                let x = this.X.k && this.X.k[t] ? this.X.k[t] : null;
+                
                 if (x && v != 1) {
-                    $vi = x.refs.indexOf(v);
-                    vi < 0 and return
-                    x = x.ref[vi];
+                    // Find the value index
+                    let vi = x.vs ? x.vs.indexOf(v) : -1;
+                    if (vi < 0) return; // continue to next iteration
+                    x = x.v && x.v[vi] ? x.v[vi] : null;
                 }
-                !x and return
-                each in x.z {
-                    nc&drop and continue
-                    # check it's still in the data
-                    $non = !(n.sc[t] && (v == 1 || v == n.sc[t]))
+                
+                if (!x) return; // continue to next iteration
+                
+                // Process each item in x.z
+                (x.z || []).forEach(n => {
+                    if (n.c.drop) return; // continue if marked as dropped
+                    
+                    // check it's still in the data
+                    let non = !(n.sc && n.sc[t] && (v == 1 || v == n.sc[t]));
+                    
                     if (non) {
-                        if (!hak(n.sc,t)) {
-                            # < brack occasionally not readonly
-                            #   eg %%toomuch deleted, see &nottoomuch_Eref
-                            # dont match
-                            continue
+                        if (!n.sc || !n.sc.hasOwnProperty(t)) {
+                            // < brack occasionally not readonly
+                            //   eg %%toomuch deleted, see &nottoomuch_Eref
+                            // dont match
+                            return;
                         }
-                        elsif (num(n.sc[t]) && v == 1) {
-                            # c.led=1 may match %%led:0
-                            # eg &PaveelQup_5 / &jaa c='isready' o=1 [0]
-                            #  returns the 0 from %%isready:0
-                            # eg -Eel / &jaa c='Belti,Bet,Bit'
-                            #  wants %%Belti=0, is serial
-                            n.sc[t] != 0 and debugger
+                        else if (typeof n.sc[t] === 'number' && v == 1) {
+                            // c.led=1 may match %%led:0
+                            // eg &PaveelQup_5 / &jaa c='isready' o=1 [0]
+                            //  returns the 0 from %%isready:0
+                            // eg -Eel / &jaa c='Belti,Bet,Bit'
+                            //  wants %%Belti=0, is serial
+                            if (n.sc[t] != 0) console.log('debugger'); // debugger equivalent
                         }
                         else {
-                            debugger
-                            # dont match?
-                            continue
+                            console.log('debugger'); // debugger equivalent
+                            // dont match?
+                            return;
                         }
                     }
-                    !M.includes(n) and M.push(n)
-                }
+                    
+                    if (!M.includes(n)) M.push(n);
+                });
             }
             else {
-                $from = amongst || zs&z;
-                each in from {
-                    $non = !(n.sc[t] && (v == 1 || v == n.sc[t]));
-                    non && amongst and M = M.filter(out=>out!=n)
-                    non || amongst and continue
-                    nc&drop and continue
-                    !M.includes(n) and M.push(n)
-                }
+                let from = amongst
+                
+                from.forEach(n => {
+                    let non = !(n.sc && n.sc[t] && (v == 1 || v == n.sc[t]));
+                    
+                    if (non && amongst) {
+                        M = M.filter(out => out != n);
+                    }
+                    if (non || amongst) return;
+                    if (n.c.drop) return; // continue if marked as dropped
+                    
+                    if (!M.includes(n)) M.push(n);
+                });
             }
+            
             amongst = M;
-        }
-        # one column mode
-        if (o != null) {
-            o == 0 and $onerow = o = 1
-            o == 1 and o = haks(c)[0]
-            $N = M;
-            M = [];
-            each in N {
-                $v = n.sc[o];
-                v == null and continue
-                M.push(v);
+        });
+        
+        if (one_column_mode) {
+            let one_value_mode = false;
+            if (one_column_mode == 0) {
+                one_value_mode = true;
+                one_column_mode = 1;
             }
-            # not via &jaa, would || []
-            onerow and return M[0]
+            if (one_column_mode == 1) {
+                // Get first key from sc (equivalent to haks(c)[0])
+                one_column_mode = Object.keys(sc)[0];
+            }
+            
+            let N = M;
+            M = [];
+            
+            N.forEach(n => {
+                let v = n.sc && n.sc[one_column_mode];
+                if (v == null) return;
+                M.push(v);
+            });
+            
+            // not via &jaa, would || []
+            if (one_value_mode) return M[0];
         }
-        M.length and return M
+        
+        return M.length ? M : undefined;
+    }
+
+
+
+
+    test_Stuff() {
+        let S = new Stuff()
+        S.i({waffle:2,table:4})
+        S.i({waffle:5,six:4})
+        let two_one_one = [
+            S.o({waffle:1}),
+            S.o({table:4}),
+            S.o({waffle:5}),
+        ]
+        let empty = [
+            S.o({lovely:3}),
+            S.o({six:3}),
+        ]
+        console.log("Stuff",{empty,two_one_one})
     }
 }
 
