@@ -27,12 +27,57 @@ use cases:
 
 `
 
+type TheUniversal = {
+    waits?: string
+} & any
+type TheC = {
+    sc: TheUniversal
+}
+type TheN = TheC[]
+// storage
+type TheX = {
+    z?: TheN,
+
+    t?: {},
+
+    s?: [],
+    ss?: [],
+}
+type Thex = {
+    up: TheX
+} & TheX
+
 
 export class Stuff {
+    X:TheX = {}
 
+    i(n:TheC) {
+        // failed ideas here include:
+        //   peeling a json-ish string, chaining from s=TheC, environmental awareness
+
+        // do your basic index-everything
+        brackX([n],this.X)
+
+        // robustly
+        if (this.X.z?.length > 6000) throw "giant stuff"
+
+        // < is a convenient time to return an up-to-date picture of what's at all those locations
+        //    a /$k /$v
+    }
+    o(sc:TheUniversal) {
+
+    }
 }
 
 
+
+//#region U
+
+
+
+
+
+//#region X
 `
       =write or read (autovivificatorialy)
         X/$someindex ||= x += /$n
@@ -44,49 +89,87 @@ export class Stuff {
        < X_n, X_z for duplicating|not X.z?
       =cut 
 `
-        # the X/$t += r
-        # r could be Y, s (C), X|x, anything
-        # in &RbitXarrive it is R, &brackX it is a row
-        me.X_t = &acgtXtrk{
-            k ||= 't'
-            X[k] ||= {}
-            $x = X[k][t] ||= {};
-            x.up = X
-            x.z ||= [];
-            r && x.z.push(r)
-            return x
-        }
-        # (car,'i',a) dupey accumulator, like /$n (rows at x)
-        me.X_z = &acgtXkr{
-            $N = X[k] ||= []
-            !isar(N) and throw "!ar"
-            N.push(r)
-            return r
-        }
-        # the X/uniq($s) += r
-        me.oX_s = &acgtXsr,kf,q,{
-            q ||= {}
-            q.el = 8
-            return me&X_s,X,s,r,kf,q
-        }
-        me.X_s = &acgtXsr,kf,q,{
-            kf ||= 's'
-            return me&X_refer,X,s,r,kf,0,q
-        }
-        me.X_refer = &acgtXsr,kf,kfs,q,{
-            !kf and throw "named"
-            kfs ||= kf+'s'
-            # by id of the value
-            $fs = X[kfs] ||= [];
-            $vi = fs.indexOf(s);
-            q && q.el == 8 && vi < 0 and return
-            vi < 0 and vi = fs.push(s)-1
-            $f = X[kf] ||= [];
-            $x = f[vi] ||= {};
-            x.up = X
-            x.z ||= [];
-            r && x.z.push(r);
-            return x
-        }
-  
 
+
+// copy info from these $n to X/$k/$v
+function brackX(N:TheN, X?:TheX):TheX {
+    X = X || {};
+    
+    N.forEach(n => {
+        // everything we have
+        //  the below X_k and X_v also do X_z where they end up
+        X_z(X,'z',n)
+
+        Object.entries(n.sc || {}).forEach(([k, v]) => {
+            // the keys
+            const kx = X_k(X, k, n);
+
+                // have their values via unique id  
+                X_v(kx, v, n);
+            // so you have to look up all keys if you want all values
+        });
+    });
+    
+    return X;
+}
+
+
+// these index data from TheC
+// X/$k names it (X.k) and implies a type...
+// +$n means accumulate a list of TheC there
+//   also refered to as /$n
+
+// X/$k +$n
+function X_k(X:TheX, k:string, n:TheC, kf?:string):Thex {
+    kf = kf || 'k';
+    X[kf] = X[kf] || {};
+    const x:Thex = X[kf][k] = X[kf][k] || {};
+    x.up = X;
+    X_z(X,'z',n)
+    return x;
+}
+
+// X.z +$n
+// dupey accumulator, makes /$n (rows at x)
+function X_z(X:TheX, k:string, n:TheC) {
+    if (!n) return
+    const N = X[k] = X[k] || [];
+    if (!Array.isArray(N)) throw "!ar";
+    N.push(n);
+}
+
+// < GOING? iterating the index...
+// check X/$v for $n
+function oX_v(X, v, n, kf?, q?):Thex|null {
+    q = q || {};
+    q.el = 8;
+    return X_v(X, v, n, kf, q);
+}
+
+// X/$v +$n
+function X_v(X:TheX, v:any, n:TheC, kf?, q?):Thex|null {
+    kf = kf || 'v';
+    return X_refer(X, v, n, kf, q);
+}
+
+// indexing objects, or anything
+function X_refer(X:TheX, v:any, n:TheC, kf:string, q?:object, kfs?:string):Thex|null {
+    // the X.something for the array of values
+    // < which should be a WeakMap, preventing the need for two indexes
+    kfs = kfs || kf + 's';
+    // array mirroring the values with an x for that value
+    if (!kf) throw "named";
+    
+    // by id of the value
+    const fs = X[kfs] = X[kfs] || [];
+    let vi = fs.indexOf(v);
+    
+    if (q && q.el == 8 && vi < 0) return;
+    if (vi < 0) vi = fs.push(v) - 1;
+    
+    const f = X[kf] = X[kf] || [];
+    const x:Thex = f[vi] = f[vi] || {};
+    x.up = X;
+    X_z(x,'z',n)
+    return x;
+}
