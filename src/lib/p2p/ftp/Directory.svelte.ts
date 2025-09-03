@@ -1,6 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { Stuff } from '$lib/data/Stuff.svelte';
+import { Modus, Stuff } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte'
 import { erring } from '$lib/Y'
 
@@ -192,6 +192,7 @@ export class DirectoryShare extends ThingIsms {
     async refresh() {
         if (!this.started) return
         this.localList = await this.fsHandler.listDirectory()
+        Modus.test_Modus()
     }
 
     // Get file reader from this share's directory

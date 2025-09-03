@@ -35,12 +35,21 @@ type TheEmpirical = {
     drop?: any
 } & any
 
-type TheC = {
+class TheC {
     c: TheEmpirical
     sc: TheUniversal
+    constructor(v) {
+        Object.assign(this,v)
+    }
+}
+// ensures v={data:3} becomes C.sc={data:3}
+let _C = (v) => {
+    if (!v.sc) v = new TheC({c:{},sc:v})
+    return v
 }
 
 type TheN = TheC[]
+
 
 
 //#region TheX
@@ -112,14 +121,14 @@ class TheX {
     }
 }
 
+
+
 //#region Stuff
 export class Stuff {
     X: TheX = new TheX()
 
     // regroup! indexes build up, forming X/.../$n to be with
     i(n: TheC) {
-        // bless the hash
-        if (!n.sc) n = {c:{},sc:n}
         // failed ideas here include:
         //   peeling a json-ish string, chaining from s=TheC, environmental awareness
 
@@ -143,6 +152,7 @@ export class Stuff {
 
         // < is a convenient time to return an up-to-date picture of what's at all those locations
         //    a /$k /$v
+        return n
     }
 
     // look for these keys if $key=1, or the value as well.
@@ -255,20 +265,61 @@ export class Stuff {
 
 
 
-    test_Stuff() {
-        let S = new Stuff()
-        S.i({waffle:2,table:4})
-        S.i({waffle:5,six:4})
+    static test_Stuff() {
+        let M = new Modus()
+        M.ji({waffle:2,table:4})
+        M.ji({waffle:5,six:4})
         let two_one_one = [
-            S.o({waffle:1}),
-            S.o({table:4}),
-            S.o({waffle:5}),
+            M.jo({waffle:1}),
+            M.jo({table:4}),
+            M.jo({waffle:5}),
         ]
         let empty = [
-            S.o({lovely:3}),
-            S.o({six:3}),
+            M.jo({lovely:3}),
+            M.jo({six:3}),
         ]
         console.log("Stuff",{empty,two_one_one})
     }
 }
 
+//#region Modus
+export class Modus {
+    current = new Stuff()
+    before?:Stuff
+
+
+    // add to the Stuff
+    ji(C) {
+        return this.current.i(_C(C))
+    }
+    // look at this time's Stuff
+    jo(c,q?) {
+        return this.current.o(c, q)
+    }
+
+    // < zo() would look at the previous time until the current one was commit to
+    // look at previous time
+    bo(c,q?) {
+        return this.before?.o(c, q)
+    }
+
+
+    static test_Modus() {
+        let M = new Modus()
+        M.advance()
+    }
+
+    advance() {
+        this.ji({unfinished:1})
+        if (this.jo({unfinished:1})) {
+            console.log("We had it!")
+        }
+        if (this.jo({fefe:1})) {
+            console.log("We didn't have it!")
+        }
+    }
+    
+
+
+
+}
