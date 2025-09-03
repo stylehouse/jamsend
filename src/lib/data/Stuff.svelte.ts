@@ -149,8 +149,81 @@ export class Stuff {
         //    a /$k /$v
     }
 
+    // look for these keys if $key=1, or the value as well.
+    // the X.k gives us a /$n, which we then just grep for properties
+    //  as opposed to:
+    //   > thinking about going into particular X/$k/$v, depending on $key=1
+    //   > joining many reads on the X/$k/$v table, which is just uniq(/$n)
     o(sc: TheUniversal) {
-        
+        $M = [];
+        # AND
+        $amongst;
+        $X = zs&X;
+        each tv c {
+            # might have indexing, only for the first one
+            if (X && !amongst) {
+                $x = ahsk(X,'k',t);
+                if (x && v != 1) {
+                    $vi = x.refs.indexOf(v);
+                    vi < 0 and return
+                    x = x.ref[vi];
+                }
+                !x and return
+                each in x.z {
+                    nc&drop and continue
+                    # check it's still in the data
+                    $non = !(n.sc[t] && (v == 1 || v == n.sc[t]))
+                    if (non) {
+                        if (!hak(n.sc,t)) {
+                            # < brack occasionally not readonly
+                            #   eg %%toomuch deleted, see &nottoomuch_Eref
+                            # dont match
+                            continue
+                        }
+                        elsif (num(n.sc[t]) && v == 1) {
+                            # c.led=1 may match %%led:0
+                            # eg &PaveelQup_5 / &jaa c='isready' o=1 [0]
+                            #  returns the 0 from %%isready:0
+                            # eg -Eel / &jaa c='Belti,Bet,Bit'
+                            #  wants %%Belti=0, is serial
+                            n.sc[t] != 0 and debugger
+                        }
+                        else {
+                            debugger
+                            # dont match?
+                            continue
+                        }
+                    }
+                    !M.includes(n) and M.push(n)
+                }
+            }
+            else {
+                $from = amongst || zs&z;
+                each in from {
+                    $non = !(n.sc[t] && (v == 1 || v == n.sc[t]));
+                    non && amongst and M = M.filter(out=>out!=n)
+                    non || amongst and continue
+                    nc&drop and continue
+                    !M.includes(n) and M.push(n)
+                }
+            }
+            amongst = M;
+        }
+        # one column mode
+        if (o != null) {
+            o == 0 and $onerow = o = 1
+            o == 1 and o = haks(c)[0]
+            $N = M;
+            M = [];
+            each in N {
+                $v = n.sc[o];
+                v == null and continue
+                M.push(v);
+            }
+            # not via &jaa, would || []
+            onerow and return M[0]
+        }
+        M.length and return M
     }
 }
 
