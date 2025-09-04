@@ -5,6 +5,7 @@
     import type { PeeringSharing } from './Sharing.svelte';
     import { DirectoryShare, FileListing } from './Directory.svelte';
     import FileList from './FileList.svelte';
+    import Modus from '../ui/Modus.svelte';
     // the fairly-global Peering and PeerilyFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
 
@@ -30,6 +31,10 @@
             type="share" 
         >
             {#snippet thing(S:DirectoryShare)}
+                {#if S.modus}
+                    <Modus M={S.modus}></Modus>
+                {/if}
+                
                 <FileList 
                         title="Local Files" 
                         list={S.localList} 

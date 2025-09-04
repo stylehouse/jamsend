@@ -3,14 +3,28 @@ import { KVStore } from '$lib/data/IDB.svelte'
 import { Modus, Stuff } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte'
 import { erring } from '$lib/Y'
+import type { PeeringSharing } from './Sharing.svelte';
 
 
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
 //  Selections/Selection are your collations
 
+// ftp as a view to work with
+//  makes guesswork to provide defaults, remote plots may inject
+export class DirectoryModus extends Modus {
+    F:PeeringSharing
+    S:DirectoryShare // the Thing we're hotwiring
+
+    main() {
+        // < rewrite everything we're thinking about what to do:
+        // < look within $scope of the Tree (start with localList) for...
+
+    }
+}
 
 //#region *Listing
+// one file
 export class FileListing {
     name: string;
     size: number;
@@ -49,7 +63,7 @@ export class FileListing {
         };
     }
 }
-// many of the above
+// many files|dirs
 export class DirectoryListing {
     name: string;
     up?: DirectoryListing;
@@ -99,7 +113,12 @@ export class DirectoryShare extends ThingIsms {
     
     // State
     started = $state(false)
+
+    // private state
+    modus:Modus = $state()
+
     localList: DirectoryListing | null = $state()
+    
     
     persisted_handle:KVStore
     constructor(opt) {
@@ -159,6 +178,8 @@ export class DirectoryShare extends ThingIsms {
         if (this.fsHandler.started) {
             this.started = true
             await this.refresh()
+
+            // this.modus = new DirectoryModus({S:this,F:this.F})
             console.log(`DirectoryShare "${this.name}" started`)
         }
         else {
@@ -192,7 +213,7 @@ export class DirectoryShare extends ThingIsms {
     async refresh() {
         if (!this.started) return
         this.localList = await this.fsHandler.listDirectory()
-        Modus.test_Modus()
+        this.modus = Modus.test_Stuff()
     }
 
     // Get file reader from this share's directory

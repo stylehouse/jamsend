@@ -6,7 +6,7 @@ import { PeeringFeature, PierFeature } from "../Peerily.svelte";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
-import { DirectoryListing, DirectoryShares } from "./Directory.svelte";
+import { DirectoryListing, DirectoryModus, DirectoryShares } from "./Directory.svelte";
 
 
 

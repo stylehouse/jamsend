@@ -71,10 +71,10 @@ class TheX {
     up?: TheX;
 
     // by the usual names:
-    z?: TheN
     k?: {}
     v?: []
     vs?: []
+    z?: TheN
 
     // X/$k +$n
     i_k(k: string, n: TheC, kf?: string): TheX {
@@ -118,6 +118,10 @@ class TheX {
         x.up = this;
         x.i_z('z', n);
         return x;
+    }
+
+    o_kv() {
+        // < if compositing Stuffs, offload one-X reading here...
     }
 }
 
@@ -265,6 +269,39 @@ export class Stuff {
 
 
 
+}
+
+//#region Modus
+export class Modus {
+    current = $state(new Stuff())
+    before?:Stuff
+
+
+    // add to the Stuff
+    ji(C:TheC|TheUniversal) {
+        return this.current.i(_C(C))
+    }
+
+    // retrieval!
+    // return undefined if no rows, good for boolean logic
+    // look at this time's Stuff
+    jo(c:TheUniversal,q?) {
+        return this.current.o(c, q)
+    }
+    // < zo() would look at the previous time until the current one was commit to
+    // look at previous time
+    bo(c:TheUniversal,q?) {
+        return this.before?.o(c, q)
+    }
+    // return arrays, empty if no rows, good for iterating .forEach()
+    joa(c:TheUniversal,q?) {
+        return this.jo(c,q) || []
+    }
+    boa(c:TheUniversal,q?) {
+        return this.bo(c,q) || []
+    }
+
+
     static test_Stuff() {
         let M = new Modus()
         M.ji({waffle:2,table:4})
@@ -279,44 +316,28 @@ export class Stuff {
             M.jo({six:3}),
         ]
         console.log("Stuff",{empty,two_one_one})
+        return M
     }
-}
-
-//#region Modus
-export class Modus {
-    current = new Stuff()
-    before?:Stuff
-
-
-    // add to the Stuff
-    ji(C) {
-        return this.current.i(_C(C))
-    }
-    // look at this time's Stuff
-    jo(c,q?) {
-        return this.current.o(c, q)
-    }
-
-    // < zo() would look at the previous time until the current one was commit to
-    // look at previous time
-    bo(c,q?) {
-        return this.before?.o(c, q)
-    }
-
-
     static test_Modus() {
         let M = new Modus()
-        M.advance()
+
+        M.ji({unfinished:1})
+        if (M.jo({unfinished:1})) {
+            console.log("We had it!")
+        }
+        if (M.jo()) {
+            console.log("We had all!")
+        }
+        if (M.jo({fefe:1})) {
+            console.log("We didn't have it!")
+        }
+        return M
     }
 
     advance() {
-        this.ji({unfinished:1})
-        if (this.jo({unfinished:1})) {
-            console.log("We had it!")
-        }
-        if (this.jo({fefe:1})) {
-            console.log("We didn't have it!")
-        }
+        // < to rearrange a composite Stuff...
+        //    dropping only what we'll do again in the Modus.main()
+        //   or recreate any %domes until they are 
     }
     
 
