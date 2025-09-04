@@ -106,6 +106,12 @@ export class DirectoryListing {
     }
 }
 
+// < pass a bunch of Directory|Remote specifics in to Sharability.svelte
+export type AnyShare = RemoteShare | DirectoryShare
+export class RemoteShare extends ThingIsms {
+    async start() {}
+}
+
 //#region DirectoryShare
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare extends ThingIsms {
@@ -115,7 +121,7 @@ export class DirectoryShare extends ThingIsms {
     started = $state(false)
 
     // private state
-    modus:Modus = $state()
+    modus?:Modus = $state()
 
     localList: DirectoryListing | null = $state()
     
@@ -213,7 +219,7 @@ export class DirectoryShare extends ThingIsms {
     async refresh() {
         if (!this.started) return
         this.localList = await this.fsHandler.listDirectory()
-        this.modus = Modus.test_Stuff()
+        // this.modus = Modus.test_Stuff()
     }
 
     // Get file reader from this share's directory

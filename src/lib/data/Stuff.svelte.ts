@@ -76,8 +76,12 @@ class TheX {
     vs?: []
     z?: TheN
 
+    // tried to make .z state but... it loses the first row? but is reactive
+    serial_i = $state(1)
+
     // X/$k +$n
     i_k(k: string, n: TheC, kf?: string): TheX {
+        this.serial_i++
         kf = kf || 'k';
         this[kf] = this[kf] || {};
         const x: TheX = this[kf][k] = this[kf][k] || new TheX();
@@ -318,6 +322,10 @@ export class Modus {
         console.log("Stuff",{empty,two_one_one})
         return M
     }
+    incrementa() {
+        console.log("Disfrance")
+        this.ji({diffrance:23})
+    }
     static test_Modus() {
         let M = new Modus()
 
@@ -333,6 +341,7 @@ export class Modus {
         }
         return M
     }
+    
 
     advance() {
         // < to rearrange a composite Stuff...

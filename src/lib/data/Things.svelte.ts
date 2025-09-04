@@ -34,6 +34,10 @@ export abstract class ThingIsms {
         this.actions = this.actions.filter(a => a.label != act.label)
         if (!deleet) this.actions.push(act)
     }
+    // eg Shares does a bunch of i_action() on each Share
+    wantS(wantS) {
+        wantS(this)
+    }
 }
 abstract class ThingNessIsms {
     // would exist but for javascript's single upstream (prototype) inheritance

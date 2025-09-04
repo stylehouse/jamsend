@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { Modus } from "$lib/data/Stuff.svelte";
     import { throttle } from "$lib/Y";
+    import NotPier from "./repro-reactive-stashed-hierarchy/NotPier.svelte";
 
     let {M}:{M:Modus} = $props()
 
@@ -10,21 +11,20 @@
         return typeof v == 'number' || typeof v == 'string' ? v
             : v == null ? 'null'
             : v.constructor == Array ? `[${v.map(n => objectify(n)).join(',')}]`
-            : `${v.constructor}()`
+            : `${v.constructor.name}()`
     }
     let redraw = throttle((N) => restuffock(N), 1000/25)
     $effect(() => {
+        let i = M.current.X.serial_i
         let N = M.current.X.z.slice()
         redraw(N)
     })
     function restuffock(N) {
         stuffocks = []
         M.current.X.z?.forEach((n) => {
-            console.log(`n`)
             let stuff = []
             Object.entries(n.sc).forEach(([k,v]) => {
                 let say = objectify(v)
-                console.log(` got ${k}: ${say}`)
                 stuff.push({k,say})
             })
             stuff.slice(-1)[0].last = 1
