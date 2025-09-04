@@ -270,7 +270,12 @@ type FileSystemState = {
 }
 type FileSystemDirectoryHandle = any
 class FileSystemHandler {
-    private _fs: FileSystemState
+    // handle for the root directory of the share
+    handle:FileSystemDirectoryHandle|null
+    // handles for any file being read
+    // < or written to?
+    file_handles = new Map()
+    // up to share owning this
     share: DirectoryShare
     // the owner can store this
     restoreDirectoryHandle:Function
@@ -281,13 +286,13 @@ class FileSystemHandler {
         Object.assign(this, opt)
         this._fs = {
             dirHandle: null,
-            fileHandles: new Map()
+            fileHandles: 
         };
     }
     async start() {
         const restored = await this.restoreDirectoryHandle?.()
         if (restored) {
-            this._fs.dirHandle = restored
+            this.handle = restored
             this.started = true
             console.log(`Restored directory for share "${this.share.name}"`)
             return
@@ -297,20 +302,20 @@ class FileSystemHandler {
     async requestDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
         try {
             // Modern browsers that support File System Access API
-            this._fs.dirHandle = await window.showDirectoryPicker({
+            this.handle = await window.showDirectoryPicker({
                 mode: 'readwrite'
             })
             this.started = true
             // Store using the storage layer above this
-            await this.storeDirectoryHandle?.(this._fs.dirHandle)
+            await this.storeDirectoryHandle?.(this.handle)
         } catch (err) {
-            throw erring('Error accessing directory', err);
+            throw erring(`Error accessing directory for share "${this.share.name}"`, err);
         }
     }
     async stop() {
         // Clear all stored handles
-        this._fs.fileHandles.clear();
-        this._fs.dirHandle = null;
+        this.file_handles.clear();
+        this.handle = null;
         this.started = false
     }
 
@@ -319,24 +324,23 @@ class FileSystemHandler {
 
     // go somewhere
     async getFileHandle(filename: string): Promise<FileSystemFileHandle> {
-        if (!this._fs.dirHandle) throw erring('No directory access')
-        const handle = await this._fs.dirHandle.getFileHandle(filename);
-        this._fs.fileHandles.set(filename, handle);
+        if (!this.handle) throw erring('No directory access')
+        const handle = await this.handle.getFileHandle(filename);
+        this.file_handles.set(filename, handle);
         return handle;
     }
 
 
     // List all files in the directory
-    async listDirectory(): Promise<DirectoryListing> {
-        if (!this._fs.dirHandle) {
-            throw erring('No directory access')
-        }
+    async listDirectory(handle:FileSystemDirectoryHandle): Promise<DirectoryListing> {
+        handle ||= this.handle
+        if (!handle) throw erring('No directory access')
         
         const listing = new DirectoryListing()
         let files = []
         let directories = []
         // < tabulation?
-        for await (const entry of this._fs.dirHandle.values()) {
+        for await (const entry of handle.values()) {
             try {
                 if (entry.kind === 'file') {
                     const file = await entry.getFile();
@@ -362,9 +366,9 @@ class FileSystemHandler {
 
     // First get file info and iterator factory
     async getFileReader(filename: string, chunkSize = CHUNK_SIZE): Promise<FileReader> {
-        if (!this._fs.dirHandle) throw erring('No directory access')
+        if (!this.handle) throw erring('No directory access')
 
-        const fileHandle = await this._fs.dirHandle.getFileHandle(filename);
+        const fileHandle = await this.handle.getFileHandle(filename);
         const file = await fileHandle.getFile();
         
         return {
@@ -383,11 +387,11 @@ class FileSystemHandler {
 
     // Write file in chunks
     async writeFileChunks(filename: string): Promise<FileSystemWritableFileStream> {
-        if (!this._fs.dirHandle) throw erring('No directory access')
+        if (!this.handle) throw erring('No directory access')
 
-        const fileHandle = await this._fs.dirHandle.getFileHandle(filename, { create: true });
+        const fileHandle = await this.handle.getFileHandle(filename, { create: true });
         const writable = await fileHandle.createWritable();
-        this._fs.fileHandles.set(filename, fileHandle);
+        this.file_handles.set(filename, fileHandle);
         return writable;
     }
 
