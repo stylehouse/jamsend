@@ -32,7 +32,7 @@
 
     <FileList
             title="Local Files" 
-            list={S.localList} 
+            list={S.list} 
             onFileClick={click_push}
             onRefreshClick={() => S.refresh()}
         >

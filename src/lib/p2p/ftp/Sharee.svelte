@@ -40,7 +40,7 @@
             compat_mode = true
         }
     })
-    $inspect("sharing.localList", sharing.localList)
+    $inspect("sharing.list", sharing.list)
 
 </script>
 
@@ -48,7 +48,7 @@
     <div class="lists-container">
         <FileList 
             title="Local Files" 
-            list={sharing.localList} 
+            list={sharing.list} 
             onFileClick={click_push}
             onRefreshClick={() => sharing.refresh_localList()} >
             {#snippet list_awaits()}

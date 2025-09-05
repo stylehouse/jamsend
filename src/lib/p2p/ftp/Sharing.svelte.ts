@@ -54,18 +54,13 @@ export class PierSharing extends PierFeature {
     // listings here + there
     remoteList: DirectoryListing | null = $state()
 
-    // < depend on F.perm
-    async consented_acts() {
-        await this.refresh_localList()
-        await this.refresh_remoteList()
-    }
     // then, maybe via ui,
     async start() {
         try {
             // < resume against what we had? another Thing to store?
             this.tm = new TransferManager({sharing:this})
 
-            console.log(`PierSharing:`, this.localList);
+            console.log(`PierSharing:`, this.list);
         } catch (err) {
             throw erring("Failed to start file sharing", err);
         }
@@ -76,7 +71,6 @@ export class PierSharing extends PierFeature {
             await this.tm.stop()
 
             // Clear file system state
-            this.localList = null
             this.remoteList = null
 
             // Close any open file handles
@@ -148,6 +142,7 @@ export class PierSharing extends PierFeature {
         await this.emit('file_pull', {name})
     }
 
+    // < comes via Modus now
     // List available files
     // memoized here:
     localList_string?:string

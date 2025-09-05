@@ -123,8 +123,8 @@ export class DirectoryShare extends ThingIsms {
     // private state
     modus?:Modus = $state()
 
-    localList: DirectoryListing | null = $state()
-    
+    list: DirectoryListing | null = $state()
+    // was localList
     
     persisted_handle:KVStore
     constructor(opt) {
@@ -207,7 +207,7 @@ export class DirectoryShare extends ThingIsms {
         try {
             await this.fsHandler.stop()
             this.started = false
-            this.localList = null
+            this.list = null
             console.log(`DirectoryShare "${this.name}" stopped`)
         } catch (err) {
             throw erring(`Failed to stop share "${this.name}"`, err)
@@ -218,7 +218,8 @@ export class DirectoryShare extends ThingIsms {
 
     async refresh() {
         if (!this.started) return
-        this.localList = await this.fsHandler.listDirectory()
+
+        this.list = await this.fsHandler.listDirectory()
         // this.modus = Modus.test_Stuff()
     }
 
@@ -284,10 +285,6 @@ class FileSystemHandler {
 
     constructor(opt={}) {
         Object.assign(this, opt)
-        this._fs = {
-            dirHandle: null,
-            fileHandles: 
-        };
     }
     async start() {
         const restored = await this.restoreDirectoryHandle?.()
@@ -332,7 +329,7 @@ class FileSystemHandler {
 
 
     // List all files in the directory
-    async listDirectory(handle:FileSystemDirectoryHandle): Promise<DirectoryListing> {
+    async listDirectory(handle?:FileSystemDirectoryHandle): Promise<DirectoryListing> {
         handle ||= this.handle
         if (!handle) throw erring('No directory access')
         
