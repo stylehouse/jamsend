@@ -26,6 +26,7 @@ export class DirectoryModus extends Modus {
 //#region *Listing
 // one file
 export class FileListing {
+    up: DirectoryListing
     name: string;
     size: number;
     modified: Date;
@@ -63,11 +64,16 @@ export class FileListing {
         };
     }
 }
+type name_haver = {name:string}
+function sort_by_name(a:name_haver,b:name_haver,k?:string) {
+    k ||= 'name'
+    return a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : 0
+}
 // many files|dirs
 export class DirectoryListing {
     handle:any
-    name: string;
-    up?: DirectoryListing;
+    name: string
+    up?: DirectoryListing
     files: FileListing[] = $state([])
     directories: DirectoryListing[] = $state([])
     
@@ -78,35 +84,45 @@ export class DirectoryListing {
     }
     async expand(): Promise<DirectoryListing> {
         if (!this.handle) throw erring('No directory access')
-        
-        const this = new DirectoryListing()
-        let files = []
-        let directories = []
+        // if already expanded, it means return
+        this.files = []
+        this.directories = []
         // < tabulation?
         for await (const entry of this.handle.values()) {
             try {
+                let generally = {
+                    up: this,
+                    name: entry.name,
+                }
                 if (entry.kind === 'file') {
                     const file = await entry.getFile();
-                    files.push(new FileListing({
-                        name: entry.name,
+                    this.files.push(new FileListing({
+                        ...generally,
                         size: file.size,
                         modified: new Date(file.lastModified),
                     }));
                 } else {
-                    const file = await entry.getFile();
-                    directories.push(new DirectoryListing({
-                        name: entry.name,
-                        modified: new Date(file.lastModified),
+                    // < dirs don't have mtime. put a cache of Stuff in each one?
+                    this.directories.push(new DirectoryListing({
+                        handle: entry,
+                        ...generally,
                     }));
                 }
             } catch (err) {
                 console.warn(`Skipping problematic entry ${entry.name}:`, err);
             }
         }
-        this.files = files.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
-        this.directories = directories.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
+        this.files = this.files.sort(sort_by_name)
+        this.directories = this.directories.sort(sort_by_name)
+        this.expanded = true
 
         return this;
+    }
+    collapse() {
+        if (!this.expanded) return;
+        this.files = []
+        this.directories = []
+        this.expanded = false;
     }
 
     // for sending only one directory-full at a time
@@ -354,11 +370,10 @@ class FileSystemHandler {
     // start listing files, from the top of the share
     async listDirectory(): Promise<DirectoryListing> {
         let DL = new DirectoryListing({handle:this.handle,name:'/'})
-        return await DL.expand()
+        await DL.expand()
+        return DL
         
     }
-    
-
 
     // go somewhere
     async getFileHandle(filename: string): Promise<FileSystemFileHandle> {

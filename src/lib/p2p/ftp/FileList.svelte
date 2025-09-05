@@ -10,18 +10,29 @@
         onRefreshClick: () => void,
         list_awaits?: Snippet
     }
-    let { list,title,onFileClick,onRefreshClick,list_awaits,compat }:args = $props();
-    let {files,directories} = $derived(list || {})
+    let { list,title,onFileClick,onRefreshClick,list_awaits }:args = $props();
+
+    console.log("Incave ",list)
+    onFileClick = async (file) => {
+        console.log("Downsplat ",file)
+    }
+    let onDirClick = async (dir) => {
+        dir.expanded ? dir.collapse() : await dir.expand()
+    }
+
     onRefreshClick ||= () => {}
     onFileClick ||= () => {}
 </script>
 
 <div class="file-list">
     <div>
-        <h3 class="title">
-            {title} 
-            <span role=button onclick={onRefreshClick}>⟳</span>
-        </h3>
+        {#if title}
+            <h3 class="title">
+                {title} 
+                <span role=button onclick={onRefreshClick}>⟳</span>
+            </h3>
+        {/if}
+
     </div>
 
     <div class="big">
@@ -34,10 +45,10 @@
                         list awaits...
                     {/if}
                 {:else}
-                    {#if directories?.length}
+                    {#if list.directories?.length}
                         <div class="items">
-                            {#each directories as dir (dir.name)}
-                                <div class="item dir" onclick={() => onFileClick(dir)}>
+                            {#each list.directories as dir (dir.name)}
+                                <div class="item dir" onclick={() => onDirClick(dir)}>
                                     <span class="name">
                                         {dir.name}
                                         <span class=slash>/</span>
@@ -46,15 +57,20 @@
                                         <span class="remember">...</span>
                                     </span>
                                 </div>
+                                {#if dir.expanded}
+                                    <div class="item dir expanded">
+                                        <svelte:self list={dir} />
+                                    </div>
+                                {/if}
                             {/each}
                         </div>
                     {/if}
 
-                    {#if !files?.length}
+                    {#if !list.files?.length}
                         <div class="empty">No files</div>
                     {:else}
                         <div class="items">
-                            {#each files as file (file.name)}
+                            {#each list.files as file (file.name)}
                                 <div class="item file" onclick={() => onFileClick(file)}>
                                     <span class="name">{file.name}</span>
                                     <span class="meta">
@@ -109,6 +125,9 @@
     }
     .dir {
         font-weight:400;
+    }
+    .dir.expanded {
+        display:block;
     }
     .dir .slash {
         color:whitesmoke;
