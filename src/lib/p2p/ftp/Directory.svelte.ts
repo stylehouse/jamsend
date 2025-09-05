@@ -65,14 +65,50 @@ export class FileListing {
 }
 // many files|dirs
 export class DirectoryListing {
+    handle:any
     name: string;
     up?: DirectoryListing;
     files: FileListing[] = $state([])
     directories: DirectoryListing[] = $state([])
     
+    expanded = $state(false);
+    
     constructor(init: Partial<DirectoryListing> = {}) {
         Object.assign(this,init)
     }
+    async expand(): Promise<DirectoryListing> {
+        if (!this.handle) throw erring('No directory access')
+        
+        const this = new DirectoryListing()
+        let files = []
+        let directories = []
+        // < tabulation?
+        for await (const entry of this.handle.values()) {
+            try {
+                if (entry.kind === 'file') {
+                    const file = await entry.getFile();
+                    files.push(new FileListing({
+                        name: entry.name,
+                        size: file.size,
+                        modified: new Date(file.lastModified),
+                    }));
+                } else {
+                    const file = await entry.getFile();
+                    directories.push(new DirectoryListing({
+                        name: entry.name,
+                        modified: new Date(file.lastModified),
+                    }));
+                }
+            } catch (err) {
+                console.warn(`Skipping problematic entry ${entry.name}:`, err);
+            }
+        }
+        this.files = files.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
+        this.directories = directories.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
+
+        return this;
+    }
+
     // for sending only one directory-full at a time
     //  ie return a Partial<DirectoryListing> without any 2-inners
     //   ie dir/dir/dir or dir/dir/file
@@ -265,16 +301,13 @@ interface FileReader {
 }
 
 const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer
-type FileSystemState = {
-    dirHandle: FileSystemDirectoryHandle | null,
-    fileHandles: Map<string, FileSystemFileHandle>,
-}
 type FileSystemDirectoryHandle = any
 class FileSystemHandler {
     // handle for the root directory of the share
     handle:FileSystemDirectoryHandle|null
     // handles for any file being read
     // < or written to?
+    // < io limits per share? so leech swarms share what is going around
     file_handles = new Map()
     // up to share owning this
     share: DirectoryShare
@@ -316,6 +349,14 @@ class FileSystemHandler {
         this.started = false
     }
 
+
+
+    // start listing files, from the top of the share
+    async listDirectory(): Promise<DirectoryListing> {
+        let DL = new DirectoryListing({handle:this.handle,name:'/'})
+        return await DL.expand()
+        
+    }
     
 
 
@@ -325,40 +366,6 @@ class FileSystemHandler {
         const handle = await this.handle.getFileHandle(filename);
         this.file_handles.set(filename, handle);
         return handle;
-    }
-
-
-    // List all files in the directory
-    async listDirectory(handle?:FileSystemDirectoryHandle): Promise<DirectoryListing> {
-        handle ||= this.handle
-        if (!handle) throw erring('No directory access')
-        
-        const listing = new DirectoryListing()
-        let files = []
-        let directories = []
-        // < tabulation?
-        for await (const entry of handle.values()) {
-            try {
-                if (entry.kind === 'file') {
-                    const file = await entry.getFile();
-                    files.push(new FileListing({
-                        name: entry.name,
-                        size: file.size,
-                        modified: new Date(file.lastModified)
-                    }));
-                } else {
-                    directories.push(new DirectoryListing({
-                        name: entry.name
-                    }));
-                }
-            } catch (err) {
-                console.warn(`Skipping problematic entry ${entry.name}:`, err);
-            }
-        }
-        listing.files = files.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
-        listing.directories = directories.sort((a,b) => a.name > b.name ? 1 : a.name < b.name ? -1 : 0)
-
-        return listing;
     }
 
     // First get file info and iterator factory
