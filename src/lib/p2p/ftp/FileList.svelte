@@ -22,6 +22,12 @@
 
     onRefreshClick ||= () => {}
     onFileClick ||= () => {}
+    let whatsthis_says = $state()
+    let whatsthis_file = $state()
+    function whatsthis(file) {
+        whatsthis_file = file
+        whatsthis_says = "The ... "+file.name
+    }
 </script>
 
 <div class="file-list">
@@ -77,7 +83,15 @@
                                         <span class="size">{file.formattedSize}</span>
                                         <!-- <span class="date">{file.formattedDate}</span> -->
                                     </span>
+                                    <span class="meta">
+                                        <button onclick={() => whatsthis(file)} ></button>
+                                    </span>
                                 </div>
+                                {#if whatsthis_file == file}
+                                    <div>
+                                        {whatsthis_says}
+                                    </div>
+                                {/if}
                             {/each}
                         </div>
                     {/if}

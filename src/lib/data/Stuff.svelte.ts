@@ -68,6 +68,7 @@ type TheN = TheC[]
 // storage class with methods
 class TheX {
     // we may be inside another X
+    //  aka an x, as in X...x
     up?: TheX;
 
     // by the usual names:
@@ -172,8 +173,8 @@ export class Stuff {
     // one_column_mode =
     //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
     //  1 returns the first column (javascript hashes are ordered)
-    //  0 returns the first value of the first column
-    o(sc: TheUniversal,one_column_mode) {
+    //  0 returns the first value of the first column (in the query)
+    o(sc: TheUniversal,one_column_mode):TheN|TheC|any|undefined {
         let M:TheN = [];
         let amongst:TheN;
         // Process each key-value pair in sc
@@ -281,6 +282,7 @@ export class Modus {
     before?:Stuff
 
 
+
     // add to the Stuff
     ji(C:TheC|TheUniversal) {
         return this.current.i(_C(C))
@@ -298,10 +300,10 @@ export class Modus {
         return this.before?.o(c, q)
     }
     // return arrays, empty if no rows, good for iterating .forEach()
-    joa(c:TheUniversal,q?) {
+    joa(c:TheUniversal,q?):TheN|TheC|any {
         return this.jo(c,q) || []
     }
-    boa(c:TheUniversal,q?) {
+    boa(c:TheUniversal,q?):TheN|TheC|any {
         return this.bo(c,q) || []
     }
 

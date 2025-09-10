@@ -15,9 +15,10 @@
     }
     let redraw = throttle((N) => restuffock(N), 1000/25)
     $effect(() => {
-        let i = M.current.X.serial_i
-        let N = M.current.X.z.slice()
-        redraw(N)
+        if (M.current.X.serial_i) {
+            let N = M.current.X.z?.slice() || []
+            redraw(N)
+        }
     })
     function restuffock(N) {
         stuffocks = []

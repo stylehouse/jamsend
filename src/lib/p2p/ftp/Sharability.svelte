@@ -13,10 +13,10 @@
     //  along with the Modus that will be handling whatever the bot should handle
     
     onMount(() => {
-        S.modus = TheModus.test_Stuff()
+        // S.modus = TheModus.test_Stuff()
         // really:
-        // S.modus = new DirectoryModus({S,F:S.F})
-        S.i_action({label:'Mo++',handler: () => S.modus?.incrementa() })
+        S.modus = new DirectoryModus({S,F:S.F})
+        S.i_action({label:'Mo++',handler: () => S.modus?.main() })
     })
 
     function click_push(file: FileListing) {
