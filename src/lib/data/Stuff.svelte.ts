@@ -175,10 +175,20 @@ export class Stuff {
     //  1 returns the first column (javascript hashes are ordered)
     //  0 returns the first value of the first column (in the query)
     o(sc: TheUniversal,one_column_mode):TheN|TheC|any|undefined {
+        // results
         let M:TheN = [];
-        let amongst:TheN;
+        // 
+
+
         // Process each key-value pair in sc
-        Object.entries(sc || {}).forEach(([t, v]) => {
+        let query_params = Object.entries(sc || {})
+        if (!query_params.length) {
+            // wants everything
+            M = this.X.z?.slice() || []
+        }
+
+        let amongst:TheN;
+        query_params.forEach(([t, v]) => {
             // might have indexing, only for the first one
             if (!amongst) {
                 // Look up the key in X.k
@@ -291,19 +301,19 @@ export class Modus {
     // retrieval!
     // return undefined if no rows, good for boolean logic
     // look at this time's Stuff
-    jo(c:TheUniversal,q?) {
+    jo(c?:TheUniversal,q?) {
         return this.current.o(c, q)
     }
     // < zo() would look at the previous time until the current one was commit to
     // look at previous time
-    bo(c:TheUniversal,q?) {
+    bo(c?:TheUniversal,q?) {
         return this.before?.o(c, q)
     }
     // return arrays, empty if no rows, good for iterating .forEach()
-    joa(c:TheUniversal,q?):TheN|TheC|any {
+    joa(c?:TheUniversal,q?):TheN|TheC|any {
         return this.jo(c,q) || []
     }
-    boa(c:TheUniversal,q?):TheN|TheC|any {
+    boa(c?:TheUniversal,q?):TheN|TheC|any {
         return this.bo(c,q) || []
     }
 

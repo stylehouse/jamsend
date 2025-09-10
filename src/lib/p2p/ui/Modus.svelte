@@ -16,13 +16,12 @@
     let redraw = throttle((N) => restuffock(N), 1000/25)
     $effect(() => {
         if (M.current.X.serial_i) {
-            let N = M.current.X.z?.slice() || []
-            redraw(N)
+            redraw(M.joa())
         }
     })
     function restuffock(N) {
         stuffocks = []
-        M.current.X.z?.forEach((n) => {
+        M.joa().forEach((n) => {
             let stuff = []
             Object.entries(n.sc).forEach(([k,v]) => {
                 let say = objectify(v)
