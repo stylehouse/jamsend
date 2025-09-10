@@ -105,9 +105,11 @@ class TheX {
         return this.i_refer(v, n, kf);
     }
     // indexing objects, or anything
+    // < decide based on the v type (in o or i) whether to use
+    //    a third index for key-ish values...
+    // < value array should be a WeakMap, preventing the need for two indexes
     i_refer(v: any, n: TheC, kf: string, kfs?: string): TheX | null {
         // the X.something for the array of values
-        // < which should be a WeakMap, preventing the need for two indexes
         kfs = kfs || kf + 's';
         // array mirroring the values with an x for that value
         if (!kf) throw "named";
@@ -125,8 +127,20 @@ class TheX {
         return x;
     }
 
-    o_kv() {
-        // < if compositing Stuffs, offload one-X reading here...
+    // X reading, returning x to Stuff
+    o_kv(k:string,v:1|any):TheX|undefined {
+        // Look up the key in X.k
+        let x = this.k && this.k[k] ? this.k[k] : null;
+        
+        // wildcard where {$k:1}
+        if (x && v != 1) {
+            // Find the value index
+            let vi = x.vs ? x.vs.indexOf(v) : -1;
+            if (vi < 0) return; // continues to next iteration
+            x = x.v && x.v[vi] ? x.v[vi] : null;
+        }
+
+        return x
     }
 }
 
@@ -157,7 +171,7 @@ export class Stuff {
         });
 
         // robustly
-        if (this.X.z?.length > 6000) throw "giant stuff";
+        if (this.X.z && this.X.z.length > 6000) throw "giant stuff";
 
         // < is a convenient time to return an up-to-date picture of what's at all those locations
         //    a /$k /$v
@@ -176,10 +190,7 @@ export class Stuff {
     //  0 returns the first value of the first column (in the query)
     o(sc: TheUniversal,one_column_mode):TheN|TheC|any|undefined {
         // results
-        let M:TheN = [];
-        // 
-
-
+        let M:TheN = []
         // Process each key-value pair in sc
         let query_params = Object.entries(sc || {})
         if (!query_params.length) {
@@ -191,70 +202,30 @@ export class Stuff {
         query_params.forEach(([t, v]) => {
             // might have indexing, only for the first one
             if (!amongst) {
-                // Look up the key in X.k
-                let x = this.X.k && this.X.k[t] ? this.X.k[t] : null;
-                
-                if (x && v != 1) {
-                    // Find the value index
-                    let vi = x.vs ? x.vs.indexOf(v) : -1;
-                    if (vi < 0) return; // continue to next iteration
-                    x = x.v && x.v[vi] ? x.v[vi] : null;
-                }
-                
-                if (!x) return; // continue to next iteration
-                
-                // Process each item in x.z
-                (x.z || []).forEach(n => {
-                    if (n.c.drop) return; // continue if marked as dropped
-                    
-                    // check it's still in the data
-                    let non = !(n.sc && n.sc[t] && (v == 1 || v == n.sc[t]));
-                    
-                    if (non) {
-                        if (!n.sc || !n.sc.hasOwnProperty(t)) {
-                            // < brack occasionally not readonly
-                            //   eg %%toomuch deleted, see &nottoomuch_Eref
-                            // dont match
-                            return;
-                        }
-                        else if (typeof n.sc[t] === 'number' && v == 1) {
-                            // c.led=1 may match %%led:0
-                            // eg &PaveelQup_5 / &jaa c='isready' o=1 [0]
-                            //  returns the 0 from %%isready:0
-                            // eg -Eel / &jaa c='Belti,Bet,Bit'
-                            //  wants %%Belti=0, is serial
-                            if (n.sc[t] != 0) console.log('debugger'); // debugger equivalent
-                        }
-                        else {
-                            console.log('debugger'); // debugger equivalent
-                            // dont match?
-                            return;
-                        }
+                let x = this.X.o_kv(t,v);
+                // start resulting with items here in x.z
+                //  x.z = the /$n at the end of whatever expression
+                (x && x.z || []).forEach(n => {
+                    if (this.matchesQuery(n,t,v)) {
+                        // includes result
+                        if (!M.includes(n)) M.push(n)
                     }
-                    
-                    if (!M.includes(n)) M.push(n);
                 });
             }
             else {
-                let from = amongst
-                
-                from.forEach(n => {
-                    let non = !(n.sc && n.sc[t] && (v == 1 || v == n.sc[t]));
-                    
-                    if (non && amongst) {
-                        M = M.filter(out => out != n);
+                // filter results we are already joined to
+                amongst.forEach(n => {
+                    if (!this.matchesQuery(n,t,v)) {
+                        // disincludes results
+                        M = M.filter(out => out != n)
                     }
-                    if (non || amongst) return;
-                    if (n.c.drop) return; // continue if marked as dropped
-                    
-                    if (!M.includes(n)) M.push(n);
                 });
             }
             
             amongst = M;
         });
         
-        if (one_column_mode) {
+        if (one_column_mode != null) {
             let one_value_mode = false;
             if (one_column_mode == 0) {
                 one_value_mode = true;
@@ -274,12 +245,24 @@ export class Stuff {
                 M.push(v);
             });
             
-            // not via &jaa, would || []
             if (one_value_mode) return M[0];
         }
         
         return M.length ? M : undefined;
     }
+    private matchesQuery(n: TheC, key: string, value: any): boolean {
+        if (n.c.drop) return false;
+        
+        if (!n.sc || !n.sc.hasOwnProperty(key)) {
+            return false;
+        }
+        
+        // wildcard where {$k:1}
+        if (value == 1) return true
+        
+        return n.sc[key] === value;
+    }
+
 
 
 
@@ -327,14 +310,14 @@ export class Modus {
             M.jo({table:4}),
             M.jo({waffle:5}),
         ]
-        let empty = [
-            M.jo({lovely:3}),
+        let empty_undef = [
+            M.joa({lovely:3}),
             M.jo({six:3}),
         ]
-        console.log("Stuff",{empty,two_one_one})
+        console.log("Stuff",{empty_undef,two_one_one})
         return M
     }
-    incrementa() {
+    main() {
         console.log("Disfrance")
         this.ji({diffrance:23})
     }
