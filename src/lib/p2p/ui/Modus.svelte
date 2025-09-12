@@ -44,6 +44,7 @@
                                 {/if}
                         </span>{#if !s.last}, {/if}
                     {/each}
+                    {" "}
                 </span>
             {/each}
 <b>thing</b>nesses
