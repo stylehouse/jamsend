@@ -19,16 +19,16 @@ export class DirectoryModus extends Modus {
     main() {
         // < rewrite everything we're thinking about what to do:
         // < look within $scope of the Tree (start with localList) for...
-        let di = this.joa({diffrance:1})[0]
-        let all = this.joa()
+        let di = this.oa({diffrance:1})[0]
+        let all = this.oa()
         console.log("got out",all)
         let diffrance = 6
         if (di) {
             diffrance = di.sc.diffrance + 1
             di.c.drop = 1
         }
-        this.ji({diffrance})
-        this.jo({lights:1}) || this.ji({lights:3})
+        this.i({diffrance})
+        this.o({lights:1}) || this.i({lights:3})
 
     }
 }

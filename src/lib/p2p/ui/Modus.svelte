@@ -18,12 +18,12 @@
     let redraw = throttle((N) => restuffock(N), 1000/25)
     $effect(() => {
         if (M.current.X.serial_i) {
-            redraw(M.joa())
+            redraw(M.oa())
         }
     })
     function restuffock(N) {
         stuffocks = []
-        M.joa().forEach((n) => {
+        M.oa().forEach((n) => {
             let stuff = []
             Object.entries(n.sc).forEach(([k,v]) => {
                 let say = objectify(v)

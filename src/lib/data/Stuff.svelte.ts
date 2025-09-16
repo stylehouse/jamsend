@@ -195,7 +195,7 @@ export class Stuff {
         let query_params = Object.entries(sc || {})
         if (!query_params.length) {
             // wants everything
-            M = this.X.z?.slice() || []
+            M = this.X.z?.filter(n => this.n_matches_star(n)) || []
         }
 
         let amongst:TheN;
@@ -206,7 +206,7 @@ export class Stuff {
                 // start resulting with items here in x.z
                 //  x.z = the /$n at the end of whatever expression
                 (x && x.z || []).forEach(n => {
-                    if (this.matchesQuery(n,t,v)) {
+                    if (this.n_matches_kv(n,t,v)) {
                         // includes result
                         if (!M.includes(n)) M.push(n)
                     }
@@ -215,7 +215,7 @@ export class Stuff {
             else {
                 // filter results we are already joined to
                 amongst.forEach(n => {
-                    if (!this.matchesQuery(n,t,v)) {
+                    if (!this.n_matches_kv(n,t,v)) {
                         // disincludes results
                         M = M.filter(out => out != n)
                     }
@@ -250,8 +250,12 @@ export class Stuff {
         
         return M.length ? M : undefined;
     }
-    private matchesQuery(n: TheC, key: string, value: any): boolean {
-        if (n.c.drop) return false;
+    private n_matches_star(n:TheC) {
+        if (n.c.drop) return false
+        return true
+    }
+    private n_matches_kv(n: TheC, key: string, value: any): boolean {
+        if (!this.n_matches_star(n)) return false;
         
         if (!n.sc || !n.sc.hasOwnProperty(key)) {
             return false;
@@ -277,14 +281,14 @@ export class Modus {
 
 
     // add to the Stuff
-    ji(C:TheC|TheUniversal) {
+    i(C:TheC|TheUniversal) {
         return this.current.i(_C(C))
     }
 
     // retrieval!
     // return undefined if no rows, good for boolean logic
     // look at this time's Stuff
-    jo(c?:TheUniversal,q?) {
+    o(c?:TheUniversal,q?) {
         return this.current.o(c, q)
     }
     // < zo() would look at the previous time until the current one was commit to
@@ -293,8 +297,8 @@ export class Modus {
         return this.before?.o(c, q)
     }
     // return arrays, empty if no rows, good for iterating .forEach()
-    joa(c?:TheUniversal,q?):TheN|TheC|any {
-        return this.jo(c,q) || []
+    oa(c?:TheUniversal,q?):TheN|TheC|any {
+        return this.o(c,q) || []
     }
     boa(c?:TheUniversal,q?):TheN|TheC|any {
         return this.bo(c,q) || []
@@ -303,35 +307,35 @@ export class Modus {
 
     static test_Stuff() {
         let M = new Modus()
-        M.ji({waffle:2,table:4})
-        M.ji({waffle:5,six:4})
+        M.i({waffle:2,table:4})
+        M.i({waffle:5,six:4})
         let two_one_one = [
-            M.jo({waffle:1}),
-            M.jo({table:4}),
-            M.jo({waffle:5}),
+            M.o({waffle:1}),
+            M.o({table:4}),
+            M.o({waffle:5}),
         ]
         let empty_undef = [
-            M.joa({lovely:3}),
-            M.jo({six:3}),
+            M.oa({lovely:3}),
+            M.o({six:3}),
         ]
         console.log("Stuff",{empty_undef,two_one_one})
         return M
     }
     main() {
         console.log("Disfrance")
-        this.ji({diffrance:23})
+        this.i({diffrance:23})
     }
     static test_Modus() {
         let M = new Modus()
 
-        M.ji({unfinished:1})
-        if (M.jo({unfinished:1})) {
+        M.i({unfinished:1})
+        if (M.o({unfinished:1})) {
             console.log("We had it!")
         }
-        if (M.jo()) {
+        if (M.o()) {
             console.log("We had all!")
         }
-        if (M.jo({fefe:1})) {
+        if (M.o({fefe:1})) {
             console.log("We didn't have it!")
         }
         return M
