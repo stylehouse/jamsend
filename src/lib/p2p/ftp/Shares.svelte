@@ -20,8 +20,6 @@
 </script>
 
 <h2>Expect big shares</h2>
-
-    DSs:{F.shares.things.size}
     
     <Things
             Ss={F.shares}

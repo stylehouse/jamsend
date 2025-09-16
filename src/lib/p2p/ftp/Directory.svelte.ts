@@ -28,6 +28,7 @@ export class DirectoryModus extends Modus {
             di.c.drop = 1
         }
         this.ji({diffrance})
+        this.jo({lights:1}) || this.ji({lights:3})
 
     }
 }
@@ -96,7 +97,7 @@ export class DirectoryListing {
         // if already expanded, it means return
         this.files = []
         this.directories = []
-        // < tabulation?
+        // < tabulates|reduces into a Selection later
         for await (const entry of this.handle.values()) {
             try {
                 let generally = {
@@ -125,6 +126,8 @@ export class DirectoryListing {
         this.directories = this.directories.sort(sort_by_name)
         this.expanded = true
 
+
+
         return this;
     }
     collapse() {
@@ -136,7 +139,7 @@ export class DirectoryListing {
 
     // for sending only one directory-full at a time
     //  ie return a Partial<DirectoryListing> without any 2-inners
-    //   ie dir/dir/dir or dir/dir/file
+    //   ie dir/dir only, not their dir/dir/(dir|file)
     //  reduce dir/dir to their name
     // < paginate?
     transportable() {
@@ -245,8 +248,6 @@ export class DirectoryShare extends ThingIsms {
         if (this.fsHandler.started) {
             this.started = true
             await this.refresh()
-
-            // this.modus = new DirectoryModus({S:this,F:this.F})
             console.log(`DirectoryShare "${this.name}" started`)
         }
         else {
@@ -281,7 +282,6 @@ export class DirectoryShare extends ThingIsms {
         if (!this.started) return
 
         this.list = await this.fsHandler.listDirectory()
-        // this.modus = Modus.test_Stuff()
     }
 
     // Get file reader from this share's directory

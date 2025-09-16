@@ -13,6 +13,8 @@
             : v.constructor == Array ? `[${v.map(n => objectify(n)).join(',')}]`
             : `${v.constructor.name}()`
     }
+
+    // aka brackology
     let redraw = throttle((N) => restuffock(N), 1000/25)
     $effect(() => {
         if (M.current.X.serial_i) {

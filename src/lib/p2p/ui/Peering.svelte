@@ -26,7 +26,7 @@
 </script>
 
     <div id=levity>
-        <!-- for itself: -->
+        <!-- itself: -->
             <div>Listening: {pub} 
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>
@@ -36,7 +36,7 @@
                 <button onclick={dropstashedPiers}>--</button>
             </div>
 
-        <!-- for others: -->
+        <!-- others: -->
             <div class="bitsies">
                 {#each eer.Piers as [pub,pier] (pub)}
                     <div class=bitsies>
@@ -45,7 +45,7 @@
                 {/each}
             </div>
 
-        <!-- and their commonalities -->
+        <!-- apps on the  -->
             <div class=bitsies>
                 {#each eer.features as [k,F] (k)}
                     <div class=bitsies>

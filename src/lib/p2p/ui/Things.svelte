@@ -94,6 +94,7 @@
         border-radius: 8px;
         padding: 1rem;
         margin: 0.5rem 0;
+        margin-left: -0.8em;
         background: rgba(255, 255, 255, 0.05);
     }
 
@@ -132,6 +133,8 @@
         border: 1px solid #ccc;
         border-radius: 4px;
         font-size: 0.9rem;
+        background: #091409;
+        color: lightslategray;
     }
 
     .add-input:focus {
