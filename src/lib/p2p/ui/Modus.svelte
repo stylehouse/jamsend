@@ -58,4 +58,7 @@
     .stuffock label {
         color:rgb(77, 179, 165);
     }
+    .stuff {
+        white-space: pre;
+    }
 </style>

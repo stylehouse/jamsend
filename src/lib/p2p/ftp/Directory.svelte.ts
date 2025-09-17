@@ -3,7 +3,8 @@ import { KVStore } from '$lib/data/IDB.svelte'
 import { Modus, Stuff } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte'
 import { erring } from '$lib/Y'
-import type { PeeringSharing } from './Sharing.svelte';
+import type { PierFeature } from '../Peerily.svelte';
+import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
 
 // these One/Many things are given to a Things/Thing UI
@@ -14,11 +15,21 @@ import type { PeeringSharing } from './Sharing.svelte';
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
     F:PeeringSharing
-    S:DirectoryShare // the Thing we're hotwiring
+    S:AnyShare // the Thing we're hotwiring
+
+    constructor(opt:Partial<DirectoryModus>) {
+        super(opt)
+        // the above super() / assign() doesn't set .F|S (javascript quirk?)
+        Object.assign(this,opt)
+    }
 
     main() {
+        this.testcase()
         // < rewrite everything we're thinking about what to do:
+        this.read_directory()
         // < look within $scope of the Tree (start with localList) for...
+    }
+    testcase() {
         let di = this.oa({diffrance:1})[0]
         let all = this.oa()
         console.log("got out",all)
@@ -29,7 +40,15 @@ export class DirectoryModus extends Modus {
         }
         this.i({diffrance})
         this.o({lights:1}) || this.i({lights:3})
+    }
 
+    async read_directory() {
+        let li = this.S?.list
+        if (!li) return this.i({unready:this.S})
+        await li.expand()
+        li.directories.forEach(DL => {
+            this.i({nib:'dir',name:DL.name,DL})
+        })
     }
 }
 
@@ -92,7 +111,7 @@ export class DirectoryListing {
     constructor(init: Partial<DirectoryListing> = {}) {
         Object.assign(this,init)
     }
-    async expand(): Promise<DirectoryListing> {
+    async expand() {
         if (!this.handle) throw erring('No directory access')
         // if already expanded, it means return
         this.files = []
@@ -125,10 +144,6 @@ export class DirectoryListing {
         this.files = this.files.sort(sort_by_name)
         this.directories = this.directories.sort(sort_by_name)
         this.expanded = true
-
-
-
-        return this;
     }
     collapse() {
         if (!this.expanded) return;
@@ -169,7 +184,22 @@ export class DirectoryListing {
         return listing;
     }
 }
-
+// see unemit:file_list_response
+export class RemoteListing extends DirectoryListing {
+    PF:PierSharing
+    name: string
+    up?: RemoteListing
+    files: FileListing[] = $state([])
+    directories: RemoteListing[] = $state([])
+    expanded = $state(false);
+    
+    constructor(init: Partial<RemoteListing> = {}) {
+        Object.assign(this,init)
+    }
+    async expand() {
+        // < ask PF.send
+    }
+}
 // < pass a bunch of Directory|Remote specifics in to Sharability.svelte
 export type AnyShare = RemoteShare | DirectoryShare
 export class RemoteShare extends ThingIsms {
@@ -313,8 +343,6 @@ export class DirectoryShares extends ThingsIsms {
         opt.name = 'music'
     }
 }
-
-//#region DirectoryStorage
 
 
 

@@ -38,8 +38,8 @@ type TheEmpirical = {
 class TheC {
     c: TheEmpirical
     sc: TheUniversal
-    constructor(v) {
-        Object.assign(this,v)
+    constructor(opt:Partial<TheC>) {
+        Object.assign(this,opt)
     }
 }
 // ensures v={data:3} becomes C.sc={data:3}
@@ -278,14 +278,17 @@ export class Modus {
     current = $state(new Stuff())
     before?:Stuff
 
-
+    constructor(opt:Partial<Modus>) {
+        Object.assign(this,opt)
+    }
 
     // add to the Stuff
     i(C:TheC|TheUniversal) {
         return this.current.i(_C(C))
     }
 
-    // retrieval!
+    // retrieval (opening)
+    // for now or before
     // return undefined if no rows, good for boolean logic
     // look at this time's Stuff
     o(c?:TheUniversal,q?) {
@@ -296,6 +299,8 @@ export class Modus {
     bo(c?:TheUniversal,q?) {
         return this.before?.o(c, q)
     }
+
+
     // return arrays, empty if no rows, good for iterating .forEach()
     oa(c?:TheUniversal,q?):TheN|TheC|any {
         return this.o(c,q) || []

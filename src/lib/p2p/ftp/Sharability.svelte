@@ -15,10 +15,13 @@
     onMount(() => {
         // S.modus = TheModus.test_Stuff()
         // S.i_action({label:'test',handler: () => S.modus = TheModus.test_Stuff() })
-        
+
         // really:
+        if (!S) throw "What the hell S"
         S.modus = new DirectoryModus({S,F:S.F})
         S.i_action({label:'Mo++',handler: () => S.modus?.main() })
+        S.modus.main()
+        console.log("Sharability onMount()!")
     })
 
     function click_push(file: FileListing) {
