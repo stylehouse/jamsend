@@ -25,30 +25,7 @@ use cases:
    inflate and annotate a directory tree
     slow the directory listing iterator
 
-`
-
-
-type TheUniversal = {
-    waits?: string
-} & any
-type TheEmpirical = {
-    drop?: any
-} & any
-
-class TheC {
-    c: TheEmpirical
-    sc: TheUniversal
-    constructor(opt:Partial<TheC>) {
-        Object.assign(this,opt)
-    }
-}
-// ensures v={data:3} becomes C.sc={data:3}
-let _C = (v) => {
-    if (!v.sc) v = new TheC({c:{},sc:v})
-    return v
-}
-
-type TheN = TheC[]
+`;
 
 
 
@@ -63,7 +40,7 @@ type TheN = TheC[]
          the members being added to x locatable space
        < X_n, X_z for duplicating|not X.z?
       =cut 
-`
+`;
 
 // storage class with methods
 class TheX {
@@ -267,10 +244,56 @@ export class Stuff {
         return n.sc[key] === value;
     }
 
+    // visitor of many ** to o()
+    d(s:TheUniversal,y:Function,d?:TheEmpirical) {
+        d = Travel.onwards(d||{})
+        
+    }
+}
 
+//#region C, Travel
 
+type TheUniversal = {
+    waits?: string
+} & any
+type TheEmpirical = {
+    drop?: any
+} & any
 
+// extends Stuff means all C can .i(), .o() what's inside them!
+class TheC {
+    c: TheEmpirical
+    sc: TheUniversal
+    constructor(opt:Partial<TheC>) {
+        Object.assign(this,opt)
+    }
+}
+// ensures v={data:3} becomes C.sc={data:3}
+let _C = (v) => {
+    if (!v.sc) v = new TheC({c:{},sc:v})
+    return v
+}
 
+type TheN = TheC[]
+
+// the visitor of $n** for the Stuff.d() function
+class Travel extends TheX {
+    constructor(opt) {
+        Object.assign(this,opt)
+    }
+    // arrive at a new place, inc the first one
+    static onwards(d) {
+        d = new Travel(d)
+        // track all items ($n) visited to avoid loops
+        //  similar to X.i_refer()
+        if (!d.refs) {
+            d.refs = [];
+            d.refid = {}; // those indices to d
+        }
+    }
+    ref_visited(n) {
+
+    }
 }
 
 //#region Modus
