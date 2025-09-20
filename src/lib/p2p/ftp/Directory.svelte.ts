@@ -38,6 +38,7 @@ export class DirectoryModus extends Modus {
             diffrance = di.sc.diffrance + 1
             di.c.drop = 1
         }
+        debugger
         this.i({diffrance})
         this.o({lights:1}) || this.i({lights:3})
     }
@@ -45,9 +46,15 @@ export class DirectoryModus extends Modus {
     async read_directory() {
         let li = this.S?.list
         if (!li) return this.i({unready:this.S})
+
+        let tob = this.oa({nib:'dir'})[0]
+        if (tob) tob.c.drop = 1
+        let DL = li
+        let top = this.i({nib:'dir',name:DL.name,DL})
+        
         await li.expand()
         li.directories.forEach(DL => {
-            this.i({nib:'dir',name:DL.name,DL})
+            top.i({nib:'dir',name:DL.name,DL})
         })
     }
 }

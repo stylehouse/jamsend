@@ -1,9 +1,17 @@
 let spec = `
 
 what Stuff is (~~ brackio)
+   is the ability to C.i(inC)
+    using C.c.X... = x, x.z = [inC+]
+    the X... indexes group like stuff (from C.sc.*)
+     as well as simply listing all C/*
+    they can make trees by many of those steps (C/C/C/C)
+    or flatly being a pool of information to query
+     also known as baskets
+    < or being a hybrid, using o() illusions to union subsets
    it seems to go to form:
-    Modus of advancing states with methods (~~ Super)
-    Selection (~~ C**, nodes)
+    < Modus of advancing states with methods (~~ Super)
+    < Selection (~~ C**, nodes)
      types of hierarchy (edges)
       ie whether theyre basically all up or down
       the clone|mirror plane...
@@ -74,6 +82,8 @@ class TheX {
         const N = this[k] = this[k] || [];
         if (!Array.isArray(N)) throw "!ar";
         N.push(n);
+        // robustly
+        if (N.length > 6000) throw "giant stuff";
     }
 
     // X/$v +$n
@@ -124,31 +134,34 @@ class TheX {
 
 
 //#region Stuff
+// a class of activities you can make in a C
 export class Stuff {
-    X: TheX = new TheX()
+    c: TheEmpirical
+    Xify() {
+        this.c.X = new TheX()
+    }
+
 
     // regroup! indexes build up, forming X/.../$n to be with
     i(n: TheC) {
+        this.Xify()
         // failed ideas here include:
         //   peeling a json-ish string, chaining from s=TheC, environmental awareness
 
         // do your basic index-everything - copy info from these $n to X/$k/$v
         // everything we have
         //  the below i_k and i_v also do i_z where they end up
-        this.X.i_z('z', n);
+        this.c.X.i_z('z', n);
 
         Object.entries(n.sc || {}).forEach(([k, v]) => {
             // the keys
-            const kx = this.X.i_k(k, n);
+            const kx = this.c.X.i_k(k, n);
             
                 // this is under X/$k
                 // have their values via unique id  
                 kx.i_v(v, n);
             // so you have to look up all keys if you want all values
         });
-
-        // robustly
-        if (this.X.z && this.X.z.length > 6000) throw "giant stuff";
 
         // < is a convenient time to return an up-to-date picture of what's at all those locations
         //    a /$k /$v
@@ -161,25 +174,28 @@ export class Stuff {
     //  as opposed to:
     //   > thinking about going into particular X/$k/$v, depending on $key=1
     //   > joining many reads on the X/$k/$v table, which is just uniq(/$n)
-    // one_column_mode =
+    // q||.one_column_mode =
     //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
     //  1 returns the first column (javascript hashes are ordered)
     //  0 returns the first value of the first column (in the query)
-    o(sc: TheUniversal,one_column_mode):TheN|TheC|any|undefined {
+    o(sc: TheUniversal,q?:number|object):TheN|TheC|any|undefined {
+        if (typeof q == "number") q = {one_column_mode:q}
+        q ||= {}
+        this.Xify()
         // results
         let M:TheN = []
         // Process each key-value pair in sc
         let query_params = Object.entries(sc || {})
         if (!query_params.length) {
             // wants everything
-            M = this.X.z?.filter(n => this.n_matches_star(n)) || []
+            M = this.c.X.z?.filter(n => this.n_matches_star(n)) || []
         }
 
         let amongst:TheN;
         query_params.forEach(([t, v]) => {
             // might have indexing, only for the first one
             if (!amongst) {
-                let x = this.X.o_kv(t,v);
+                let x = this.c.X.o_kv(t,v);
                 // start resulting with items here in x.z
                 //  x.z = the /$n at the end of whatever expression
                 (x && x.z || []).forEach(n => {
@@ -202,27 +218,28 @@ export class Stuff {
             amongst = M;
         });
         
-        if (one_column_mode != null) {
-            let one_value_mode = false;
-            if (one_column_mode == 0) {
-                one_value_mode = true;
-                one_column_mode = 1;
+        if (q.one_column_mode != null) {
+            q.one_value_mode = false;
+            if (q.one_column_mode == 0) {
+                q.one_value_mode = true;
+                q.one_column_mode = 1;
             }
-            if (one_column_mode == 1) {
+            if (q.one_column_mode == 1) {
                 // Get first key from sc (equivalent to haks(c)[0])
-                one_column_mode = Object.keys(sc)[0];
+                q.one_column_mode = Object.keys(sc)[0];
             }
             
             let N = M;
             M = [];
             
             N.forEach(n => {
-                let v = n.sc && n.sc[one_column_mode];
+                let v = n.sc && n.sc[q.one_column_mode];
+                // also makes sure that value isn't null, even if you wildcard it
                 if (v == null) return;
                 M.push(v);
             });
             
-            if (one_value_mode) return M[0];
+            if (q.one_value_mode) return M[0];
         }
         
         return M.length ? M : undefined;
@@ -245,61 +262,111 @@ export class Stuff {
     }
 
     // visitor of many ** to o()
-    d(s:TheUniversal,y:Function,d?:TheEmpirical) {
-        d = Travel.onwards(d||{})
-        
+    d(s:TheUniversal,d?:Partial<Travel>) {
+        // start arriving
+        if (typeof d == 'function') d = {y:d}
+        let T = Travel.onwards(d||{})
+
+        // check if we're supposed to be here ($n=this) again
+        let refx = T.i_visit(this)
+        if (refx.z.length > 1) {
+            return d.sc.not = "visited"
+        }
+
+        // visit here
+        T.sc.n = this
+        T.c.y(this,T)
+
+        // find more!
+        // run the query here
+        let M = this.o(s)
+        M.forEach((n:TheC) => {
+            n.d(s,T)
+        })
     }
 }
 
-//#region C, Travel
-
+//#region C
 type TheUniversal = {
-    waits?: string
+    waits?: string,
 } & any
 type TheEmpirical = {
-    drop?: any
+    // whether it has been deleted, the index remains
+    drop?: any,
+    // contains indexes leading to in-C (C/C)
+    X?: TheX,
+    top?: Travel,
 } & any
 
-// extends Stuff means all C can .i(), .o() what's inside them!
-class TheC {
-    c: TheEmpirical
+// extends Stuff, so you can C.i(inC) for C/inC
+class TheC extends Stuff {
+    c: TheEmpirical = $state()
     sc: TheUniversal
     constructor(opt:Partial<TheC>) {
+        super()
         Object.assign(this,opt)
+        this.c ||= {}
+        if (!this.sc) throw "!C.sc"
     }
 }
 // ensures v={data:3} becomes C.sc={data:3}
-let _C = (v) => {
+//  as long as you never use the key=sc
+let _C = (v={}) => {
     if (!v.sc) v = new TheC({c:{},sc:v})
     return v
 }
 
 type TheN = TheC[]
 
+//#endregion
+
+
+
+//#region Travel
 // the visitor of $n** for the Stuff.d() function
-class Travel extends TheX {
+class Travel extends TheC {
+    // callback for each $n
+    y:Fuction
     constructor(opt) {
+        super(opt)
         Object.assign(this,opt)
     }
+    // factory, extender
+    //  d usu cloning a Travel we're going beyond
+    //  also from Stuff.d(s,y,d), so Travel.sc=d
     // arrive at a new place, inc the first one
-    static onwards(d) {
-        d = new Travel(d)
-        // track all items ($n) visited to avoid loops
-        //  similar to X.i_refer()
-        if (!d.refs) {
-            d.refs = [];
-            d.refid = {}; // those indices to d
+    static onwards(d:Travel["c"]|Travel):Travel {
+        if (d.instanceof(Travel)) {
+            // copy d.c.*, new d.sc.*
+            d = new Travel({c:{...d.c},sc:{up:d}})
+            // clone d.c.* that mutate
+            d.c.path = (d.c.path||[]).slice()
         }
-    }
-    ref_visited(n) {
+        else {
+            d = new Travel({c:d,sc:{}})
+        }
+        d.c.top ||= d
+        d.c.d ||= 0
+        d.c.d++
 
+        return d
+    }
+    // tracking visited refs at the top to avoid going in loops
+    i_visit(v:any|TheC):TheX {
+        let d = this
+        let top:Travel = this.c.top
+        top.Xify()
+        let X:TheX = top.c.X
+        return X.i_refer(v,d,'visit_v')
     }
 }
 
+
 //#region Modus
 export class Modus {
-    current = $state(new Stuff())
-    before?:Stuff
+    current:TheC = $state(_C())
+    before?:TheC
+    serial_i = $state(1)
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)
@@ -307,6 +374,7 @@ export class Modus {
 
     // add to the Stuff
     i(C:TheC|TheUniversal) {
+        this.serial_i++
         return this.current.i(_C(C))
     }
 

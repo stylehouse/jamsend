@@ -15,13 +15,22 @@
     }
 
     // aka brackology
-    let redraw = throttle((N) => restuffock(N), 1000/25)
+    let redraw = throttle(() => restuffock(M.oa()), 1000/25)
     $effect(() => {
-        if (M.current.X.serial_i) {
-            redraw(M.oa())
+        if (M.current.c.X.serial_i) {
+            console.log("reacting to M.current.c.X.serial_i")
+            redraw()
         }
     })
+    $effect(() => {
+        if (M.serial_i) {
+            console.log("reacting to M.serial_i")
+            redraw()
+        }
+    })
+
     function restuffock(N) {
+        console.log("restuffock "+(N.length))
         stuffocks = []
         M.oa().forEach((n) => {
             let stuff = []
@@ -35,7 +44,7 @@
     }
 </script>
 
-
+    <button onclick={redraw}>redraw</button>
             {#each Object.entries(stuffocks) as [i,stuff] (i)}
                 <span class=stuffock>
                     {#each Object.entries(stuff) as [i,s] (i)}
