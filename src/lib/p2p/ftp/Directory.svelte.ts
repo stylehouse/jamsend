@@ -15,12 +15,22 @@ import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
     F:PeeringSharing
-    S:AnyShare // the Thing we're hotwiring
+    S:DirectoryShare|AnyShare // the Thing we're hotwiring
 
     constructor(opt:Partial<DirectoryModus>) {
         super(opt)
         // the above super() / assign() doesn't set .F|S (javascript quirk?)
         Object.assign(this,opt)
+
+        // Set up reactive effect to watch for list changes
+        //  svelte docs: You can use $effect anywhere,
+        //   not just at the top level of a component, 
+        //   as long as it is called while a parent effect is running.
+        $effect(() => {
+            if (this.S?.list && this.o({unready:this.S})) {
+                this.main()
+            }
+        })
     }
 
     main() {
@@ -44,7 +54,9 @@ export class DirectoryModus extends Modus {
 
     async read_directory() {
         let li = this.S?.list
+        // < make this depend on this Super|Dome|Occasion
         if (!li) return this.i({unready:this.S})
+        this.drop(this.oa({unready:this.S})[0])
 
         let tob = this.oa({nib:'dir'})[0]
         if (tob) this.drop(tob)

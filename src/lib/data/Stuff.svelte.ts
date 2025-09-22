@@ -146,7 +146,13 @@ export class Stuff {
     i(n: TheC) {
         this.Xify()
         // failed ideas here include:
-        //   peeling a json-ish string, chaining from s=TheC, environmental awareness
+        //   peeling a json-ish string n, chaining from s=TheC, environmental awareness
+        // new, able to fail ideas:
+        //  everything can C.i(D), see TheC extends Stuff
+        //   < but what if D.sc.in!=C?
+        //      a third party, ancestor, knowing about the relation?
+        //   lets not have a D.sc.in, uplinks are harder to garbage collect?
+        
 
         // do your basic index-everything - copy info from these $n to X/$k/$v
         // everything we have
@@ -169,19 +175,27 @@ export class Stuff {
     }
 
     // look for these keys if $key=1, or the value as well.
-    // the X/$k(/$v) /$n give us a list
+    // the X/$k(/$v) /$n give us a list of $n
     //   which we then just grep for the rest of properties
     //  as opposed to:
     //   > thinking about going into particular X/$k/$v, depending on $key=1
     //   > joining many reads on the X/$k/$v table, which is just uniq(/$n)
+    // oa(...)[0] for the first row
     // q||.one_column_mode =
     //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
-    //  1 returns the first column (javascript hashes are ordered)
+    //  1 returns the first column mentioned in sc (javascript hashes are ordered)
     //  0 returns the first value of the first column (in the query)
-    o(sc: TheUniversal,q?:number|object):TheN|TheC|any|undefined {
+    o(sc?:TheUniversal,q?:number|any):TheN|TheC|any|undefined {
+        sc ||= {}
+        // < q might be a Travel...?
         if (typeof q == "number") q = {one_column_mode:q}
         q ||= {}
         this.Xify()
+
+        let M = this.o_query(sc)
+        return this.o_results(M,sc,q)
+    }
+    o_query(sc:TheUniversal) {
         // results
         let M:TheN = []
         // Process each key-value pair in sc
@@ -217,7 +231,10 @@ export class Stuff {
             
             amongst = M;
         });
-        
+        return M
+    }
+    // make subsets of the results easier to get
+    o_results(M:TheN,sc:TheUniversal,q:any) {
         if (q.one_column_mode != null) {
             q.one_value_mode = false;
             if (q.one_column_mode == 0) {
@@ -287,6 +304,7 @@ export class Stuff {
 
     // delete a C (filter it out of results)
     drop(n:TheC) {
+        if (!n) return
         n.c.drop = 1
         this.c.X.serial_i++
     }
@@ -379,7 +397,8 @@ export class Modus {
 
     // add to the Stuff
     i(C:TheC|TheUniversal) {
-        return this.current.i(_C(C))
+        C = _C(C)
+        return this.current.i(C)
     }
     drop(C:TheC) {
         return this.current.drop(C)
