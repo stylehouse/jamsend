@@ -22,12 +22,6 @@
             redraw()
         }
     })
-    $effect(() => {
-        if (M.serial_i) {
-            console.log("reacting to M.serial_i")
-            redraw()
-        }
-    })
 
     function restuffock(N) {
         console.log("restuffock "+(N.length))

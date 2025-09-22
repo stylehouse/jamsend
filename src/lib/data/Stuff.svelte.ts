@@ -138,7 +138,7 @@ class TheX {
 export class Stuff {
     c: TheEmpirical
     Xify() {
-        this.c.X = new TheX()
+        this.c.X ||= new TheX()
     }
 
 
@@ -284,6 +284,12 @@ export class Stuff {
             n.d(s,T)
         })
     }
+
+    // delete a C (filter it out of results)
+    drop(n:TheC) {
+        n.c.drop = 1
+        this.c.X.serial_i++
+    }
 }
 
 //#region C
@@ -366,7 +372,6 @@ class Travel extends TheC {
 export class Modus {
     current:TheC = $state(_C())
     before?:TheC
-    serial_i = $state(1)
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)
@@ -374,8 +379,10 @@ export class Modus {
 
     // add to the Stuff
     i(C:TheC|TheUniversal) {
-        this.serial_i++
         return this.current.i(_C(C))
+    }
+    drop(C:TheC) {
+        return this.current.drop(C)
     }
 
     // retrieval (opening)

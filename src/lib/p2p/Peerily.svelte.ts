@@ -573,7 +573,6 @@ export class Pier {
 //#region Pier emit
 
     // binary emit() puts backpressure here (from PierSharing.sendFile)
-    send_queue = []
     handle_data_etc() {
         // Receive messages
         this.con.on('data', (msg) => {
