@@ -17,8 +17,8 @@
     // aka brackology
     let redraw = throttle(() => restuffock(M.oa()), 1000/25)
     $effect(() => {
-        if (M.current.c.X.serial_i) {
-            console.log("reacting to M.current.c.X.serial_i")
+        if (M.current.version) {
+            console.log("reacting to M.current.version")
             redraw()
         }
     })
@@ -39,6 +39,7 @@
 </script>
 
     <button onclick={redraw}>redraw</button>
+
             {#each Object.entries(stuffocks) as [i,stuff] (i)}
                 <span class=stuffock>
                     {#each Object.entries(stuff) as [i,s] (i)}
@@ -52,7 +53,6 @@
                     {" "}
                 </span>
             {/each}
-<b>thing</b>nesses
 
 <style>
     .stuffock {

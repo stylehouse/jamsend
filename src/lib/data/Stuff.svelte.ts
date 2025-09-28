@@ -140,6 +140,9 @@ export class Stuff {
     Xify() {
         this.c.X ||= new TheX()
     }
+    get version() {
+        return this.c.X.serial_i
+    }
 
 
     // regroup! indexes build up, forming X/.../$n to be with
@@ -308,7 +311,51 @@ export class Stuff {
         n.c.drop = 1
         this.c.X.serial_i++
     }
+
+
+
+
 }
+
+
+
+
+//#region Stuffing
+// a look at some Stuff
+//  to come springing out of Modus.
+// < the universal, an experiential perspective
+// Stuffing - whole island of Stuff
+//  / Stuffusion - the compressed identity of some rows
+//  / Stuffziad - the k:v presentation, may be a compressed identity
+
+// whole island of Stuff
+class Stuffing {
+    Stuff:Stuff
+    constructor(Stuff:Stuff) {
+        this.Stuff = Stuff
+        $effect(() => {
+            if (this.Stuff.version) {
+                console.log("reacting to Stuff++")
+                this.brackology()
+            }
+        })
+    }
+    brackology() {
+
+    }
+}
+// the compressed identity of some rows
+class Stuffusion {
+    id:string
+
+    
+}
+// the k:v presentation, may be a compressed identity
+class Stuffziad {
+    
+}
+
+
 
 //#region C
 type TheUniversal = {

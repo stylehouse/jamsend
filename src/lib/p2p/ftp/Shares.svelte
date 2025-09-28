@@ -1,7 +1,7 @@
 <script lang=ts>
     import { onMount } from 'svelte';
     import type { Peering } from '../Peerily.svelte';
-    import Things from '../ui/Things.svelte'
+    import Things from '../../data/Things.svelte'
     import type { PeeringSharing } from './Sharing.svelte';
     import { DirectoryShare, FileListing } from './Directory.svelte';
     import FileList from './FileList.svelte';

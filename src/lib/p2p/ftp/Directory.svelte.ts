@@ -34,7 +34,7 @@ export class DirectoryModus extends Modus {
     }
 
     main() {
-        this.testcase()
+        // this.testcase()
         // < rewrite everything we're thinking about what to do:
         this.read_directory()
         // < look within $scope of the Tree (start with localList) for...
