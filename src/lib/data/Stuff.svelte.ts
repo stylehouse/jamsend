@@ -341,7 +341,46 @@ class Stuffing {
         })
     }
     brackology() {
+        let groups = _C()
+        this.Stuff.o().forEach((n:TheC) => {
+            let ks = Object.keys(n.sc);
+            let matchness = 0;
+            let match = null;
+            groups.o().forEach((c:TheC) => {
+                // leave apart if:
+                // more than one key is different
+                let different_keys = ks.filter(k => !Object.hasOwn(c.sc,k)).length
+                if (different_keys > 1) return
+                // certain keys' values are different
+                if (n.sc.dome != c.sc.dome) return
+                
+                // prefer 0 different keys to 1
+                // < fuzzier matching, lots
+                let same_keys = ks.filter(k => Object.hasOwn(c.sc,k)).length
+                let matched = same_keys - different_keys
+                if (matched <= matchness) return
+                match = c
+                matchness = matched
+            })
+            if (match && matchness >= ks.length-1) {
+                // groups members with <= 1 odd key
+                // < this could use Stuff.i_z() for speed, only needs X.z
+                match.i(n)
+            }
+            else {
+                // group labeled, copies k:v
+                // < more clean and proper to look at match/$n[0]
+                //    instead of copying the first datum to match itself?
+                match = _C({name:ks.join(','),sc:{...n.sc}})
+                // match|group knows the source $n
+                match.i(n)
+                groups.i(match)
+            }
+        })
 
+        groups.o().forEach((n:TheC) => {
+            // < generate Stuffusion/Stuffziad structure
+        })
     }
 }
 // the compressed identity of some rows
@@ -371,6 +410,12 @@ type TheEmpirical = {
 
 // extends Stuff, so you can C.i(inC) for C/inC
 class TheC extends Stuff {
+    // may be null, doesn't count as a key!
+    name?: string
+    // similar, but between 0-1
+    fraction?: number
+
+    // < $state() unnecessary?
     c: TheEmpirical = $state()
     sc: TheUniversal
     constructor(opt:Partial<TheC>) {
@@ -382,8 +427,9 @@ class TheC extends Stuff {
 }
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc
-let _C = (v={}) => {
-    if (!v.sc) v = new TheC({c:{},sc:v})
+function _C(v={}):TheC {
+    if (!v.sc) return new TheC({c:{},sc:v})
+    if (!(v instanceof TheC)) return  new TheC(v)
     return v
 }
 
