@@ -329,9 +329,10 @@ export class Stuff {
 // Stuffing - whole island of Stuff
 //  / Stuffusion - the compressed identity of some rows
 //  / Stuffziad - the k:v presentation, may be a compressed identity
+//  / Stuffziado - one value
 
 // whole island of Stuff
-class Stuffing {
+export class Stuffing {
     Stuff:Stuff
     groups = new SvelteMap()
     constructor(Stuff:Stuff) {
@@ -390,8 +391,9 @@ class Stuffing {
             // uniquely identify them
             let name = c.name || 'unnamed'
             name = name_numbered_for_uniqueness_in_Set(name, this.groups)
-            let rowcount = c.o().length
-            const stuffusion = new Stuffusion(this,name,rowcount)
+            let rows = c.o()
+            let rowcount = rows.length
+            const stuffusion = new Stuffusion(this, name, rowcount, rows)
 
             // add columns
             // there may be odd ones out (many of them) from c.sc
@@ -399,18 +401,26 @@ class Stuffing {
             column_names.forEach((key) => {
                 const kx = c.c.X?.o_kv(key, 1)
                 if (!kx) throw "!kx"
-                let rowcount = kx.z.length
-                const stuffziad = new Stuffziad(stuffusion,key,rowcount)
+                let rows = kx.z
+                let rowcount = rows.length
+                const stuffziad = new Stuffziad(stuffusion, key, rowcount, rows)
 
                 // vs contains the unique values, v contains the TheX for each
                 const values = kx.vs || []
                 const valueXs = kx.v || []
-                let count_variations = {}
                 values.forEach((val, idx) => {
                     const vx = valueXs[idx]
                     // Count how many $n have this value (from vx.z)
-                    const count = vx?.z?.length || 0
+                    let rows = vx?.z || []
+                    const count = rows.length
                     
+                    // Create a Stuffziado for each distinct value
+                    let val_name = String(val)
+                    val_name = name_numbered_for_uniqueness_in_Set(val_name, stuffziad.values)
+                    const stuffziado = new Stuffziado(stuffziad, val_name, count, rows)
+                    stuffziado.value = val
+                    
+                    stuffziad.values.set(stuffziado.name, stuffziado)
                 })
 
                 stuffusion.columns.set(stuffziad.name,stuffziad)
@@ -434,11 +444,12 @@ function name_numbered_for_uniqueness_in_Set(name,set) {
 
 // base class, a section of the slope into Stuff-ness, ((k:v+)+)+
 type manyable_Stuffusia = Stuffing|Stuffusion|Stuffziad
-class Stuffuzia {
+export class Stuffuzia {
     up:manyable_Stuffusia
     name:string
     rowcount:number
-    constructor(up,name:string,rowcount:number) {
+    rows: TheN
+    constructor(up, name: string, rowcount: number, rows: TheN) {
         this.up = up
         this.name = name
         this.rowcount = rowcount
@@ -446,21 +457,22 @@ class Stuffuzia {
 }
 
 // a group of rows, name is keys and maybe serial number
-class Stuffusion extends Stuffuzia {
+export class Stuffusion extends Stuffuzia {
     columns = new SvelteMap()
 }
 // a group of k:v, name is the key
-class Stuffziad extends Stuffuzia {
+export class Stuffziad extends Stuffuzia {
     values = new SvelteMap()
 }
 // single value, name is serial number?
 class Stuffziado extends Stuffuzia {
-    
+    value: any
 }
 
 
 
 
+//#endregion
 //#region C
 type TheUniversal = {
     waits?: string,

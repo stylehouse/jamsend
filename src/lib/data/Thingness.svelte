@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { ThingAction } from "$lib/data/Things.svelte";
-    import ActionButtons from "./ActionButtons.svelte";
+    import type { ThingAction } from "$lib/data/Things.svelte.ts";
+    import ActionButtons from "../p2p/ui/ActionButtons.svelte";
 
     // Common behavior for any ThingIsms object
     interface ThingnessProps {

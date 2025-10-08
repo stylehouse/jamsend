@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Modus } from "$lib/data/Stuff.svelte";
+    import Stuffing from "$lib/data/Stuffing.svelte";
     import { throttle } from "$lib/Y";
     import NotPier from "./repro-reactive-stashed-hierarchy/NotPier.svelte";
 
@@ -54,6 +55,8 @@
                 </span>
             {/each}
 
+
+        Stuff: <Stuffing stuff={M.current} />
 <style>
     .stuffock {
         margin: 1em;

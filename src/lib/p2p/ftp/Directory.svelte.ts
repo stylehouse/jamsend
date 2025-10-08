@@ -1,7 +1,7 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
 import { Modus, Stuff } from '$lib/data/Stuff.svelte';
-import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte'
+import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { erring } from '$lib/Y'
 import type { PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
