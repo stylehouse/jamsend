@@ -66,10 +66,13 @@ class TheX {
 
     // tried to make .z state but... it loses the first row? but is reactive
     serial_i = $state(1)
+    bump_version() {
+        this.serial_i = Number(this.serial_i) + 1
+    }
 
     // X/$k +$n
     i_k(k: string, n: TheC, kf?: string): TheX {
-        this.serial_i++
+        this.bump_version()
         kf = kf || 'k';
         this[kf] = this[kf] || {};
         const x: TheX = this[kf][k] = this[kf][k] || new TheX();
@@ -81,6 +84,7 @@ class TheX {
     // X.z +$n - dupey accumulator, makes /$n (rows at x)
     i_z(k: string, n: TheC) {
         if (!n) return;
+        this.bump_version()
         const N = this[k] = this[k] || [];
         if (!Array.isArray(N)) throw "!ar";
         N.push(n);
@@ -98,6 +102,7 @@ class TheX {
     //    a third index for key-ish values...
     // < value array should be a WeakMap, preventing the need for two indexes
     i_refer(v: any, n: TheC, kf: string, kfs?: string): TheX | null {
+        this.bump_version()
         // the X.something for the array of values
         kfs = kfs || kf + 's';
         // array mirroring the values with an x for that value
@@ -144,6 +149,12 @@ export class Stuff {
     }
     get version() {
         return this.c.X.serial_i
+    }
+    // delete a C (filter it out of results)
+    drop(n:TheC) {
+        if (!n) return
+        n.c.drop = 1
+        this.c.X.bump_version()
     }
 
 
@@ -305,13 +316,6 @@ export class Stuff {
         M.forEach((n:TheC) => {
             n.d(s,T)
         })
-    }
-
-    // delete a C (filter it out of results)
-    drop(n:TheC) {
-        if (!n) return
-        n.c.drop = 1
-        this.c.X.serial_i++
     }
 
 

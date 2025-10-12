@@ -16,11 +16,12 @@
     }
 
     // aka brackology
-    let redraw = throttle(() => restuffock(M.oa()), 1000/25)
+    let redraw = throttle((N) => restuffock(N), 1000/25)
     $effect(() => {
         if (M.current.version) {
-            console.log("reacting to M.current.version")
-            redraw()
+            let N = M.oa()
+            console.log("reacting to M.current.version=="+M.current.version, N)
+            redraw(N)
         }
     })
 

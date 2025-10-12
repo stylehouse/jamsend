@@ -38,6 +38,7 @@ export class DirectoryModus extends Modus {
         // < rewrite everything we're thinking about what to do:
         this.read_directory()
         // < look within $scope of the Tree (start with localList) for...
+        console.log("Yup")
     }
     testcase() {
         let di = this.oa({diffrance:1})[0]
@@ -50,6 +51,7 @@ export class DirectoryModus extends Modus {
         }
         this.i({diffrance})
         this.o({lights:1}) || this.i({lights:3})
+
     }
 
     async read_directory() {
