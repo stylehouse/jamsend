@@ -559,7 +559,7 @@ class Travel extends TheC {
 //#region Modus
 // > when q.one_value_mode, we may want a [] value
 function nonemptyArray_or_null(N:any) {
-    if (N?.legnth) return N
+    if (N?.length) return N
     return null
 }
 export class Modus {
