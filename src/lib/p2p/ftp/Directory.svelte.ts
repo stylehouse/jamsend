@@ -1,6 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { Modus, Stuff } from '$lib/data/Stuff.svelte';
+import { _C, Modus, Stuff } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { erring } from '$lib/Y'
 import type { PierFeature } from '../Peerily.svelte';
@@ -41,6 +41,11 @@ export class DirectoryModus extends Modus {
         console.log("Yup")
         this.i({doing:"well",witharo:2})
         this.i({doing:"well",witharo:3})
+        let thutch = _C({dog:"yaps"})
+        thutch.i({glab:3})
+        thutch.i({glab:5})
+        thutch.i({glabbioa:5})
+        this.i({thutch})
 
     }
     testcase() {

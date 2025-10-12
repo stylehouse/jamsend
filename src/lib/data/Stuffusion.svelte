@@ -41,7 +41,7 @@
             {/each}
         </span>
     {/if}
-    {#if stuffusion.rowcount !== 1}
-        <span class="content count">x{stuffusion.rowcount}</span>
+    {#if stuffusion.rows.length !== 1}
+        <span class="content count">x{stuffusion.rows.length}</span>
     {/if}
 </div>

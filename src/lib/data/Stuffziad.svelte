@@ -97,6 +97,13 @@
 }
 </style>
 
+{#snippet ziado(stuffziado)}
+    {#if stuffziado.is_C}
+        <span class="count">C</span>
+    {/if}
+    <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
+{/snippet}
+
 <div class="stuffziad">
     <button class="btn" onclick={toggle}>
         <span class="name">{stuffziad.name}</span>
@@ -115,9 +122,9 @@
         <div class="values">
             {#each stuffziados as stuffziado (stuffziado.name)}
                 <div class="stuffziado">
-                    <span class="{ziadostyle(stuffziado)}">{stuffziado.name}</span>
-                    {#if stuffziado.rowcount !== 1}
-                        <span class="count">x{stuffziado.rowcount}</span>
+                    {@render ziado(stuffziado)}
+                    {#if stuffziado.rows.length !== 1}
+                        <span class="count">x{stuffziado.rows.length}</span>
                     {/if}
                 </div>
             {/each}
@@ -126,7 +133,7 @@
         <!-- Single value (compressed) - show inline -->
         {@const stuffziado = stuffziados[0]}
         <span class="inline">
-            <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
+            {@render ziado(stuffziado)}
         </span>
     {/if}
 </div>

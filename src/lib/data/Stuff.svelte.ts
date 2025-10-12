@@ -396,8 +396,7 @@ export class Stuffing {
             let name = c.name || 'unnamed'
             name = name_numbered_for_uniqueness_in_Set(name, this.groups)
             let rows = c.o()
-            let rowcount = rows.length
-            const stuffusion = new Stuffusion(this, name, rowcount, rows)
+            const stuffusion = new Stuffusion(this, name, rows)
 
             // add columns
             // there may be odd ones out (many of them) from c.sc
@@ -406,8 +405,7 @@ export class Stuffing {
                 const kx = c.c.X?.o_kv(key, 1)
                 if (!kx) throw "!kx"
                 let rows = kx.z
-                let rowcount = rows.length
-                const stuffziad = new Stuffziad(stuffusion, key, rowcount, rows)
+                const stuffziad = new Stuffziad(stuffusion, key, rows)
 
                 // vs contains the unique values, v contains the TheX for each
                 const values = kx.vs || []
@@ -416,14 +414,24 @@ export class Stuffing {
                     const vx = valueXs[idx]
                     // Count how many $n have this value (from vx.z)
                     let rows = vx?.z || []
-                    const count = rows.length
                     
                     // Create a Stuffziado for each distinct value
                     let val_name = objectify(val)
                     val_name = name_numbered_for_uniqueness_in_Set(val_name, stuffziad.values)
-                    const stuffziado = new Stuffziado(stuffziad, val_name, count, rows)
+                    const stuffziado = new Stuffziado(stuffziad, val_name, rows)
                     stuffziado.value = val
-                    stuffziado.is_string = typeof val != 'object'
+                    // note some interesting features
+                    if (typeof val == 'object') {
+                        if (val instanceof TheC) {
+                            stuffziado.is_C = true
+                            // < does it contain C.c.X, nest Stuffing
+                        }
+                        // < pull out v(.constructor)+.name
+                    }
+                    else {
+                        stuffziado.is_string = true
+                    }
+                    
                     
                     stuffziad.values.set(stuffziado.name, stuffziado)
                 })
@@ -463,12 +471,11 @@ type manyable_Stuffusia = Stuffing|Stuffusion|Stuffziad
 export class Stuffuzia {
     up:manyable_Stuffusia
     name:string
-    rowcount:number
     rows: TheN
-    constructor(up, name: string, rowcount: number, rows: TheN) {
+    constructor(up, name: string, rows: TheN) {
         this.up = up
         this.name = name
-        this.rowcount = rowcount
+        this.rows = rows
     }
 }
 
@@ -484,6 +491,7 @@ export class Stuffziad extends Stuffuzia {
 class Stuffziado extends Stuffuzia {
     value: any
     is_string?: boolean
+    is_C?: boolean
 }
 
 
@@ -521,7 +529,7 @@ class TheC extends Stuff {
 }
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc
-function _C(v={}):TheC {
+export function _C(v={}):TheC {
     if (!v.sc) return new TheC({c:{},sc:v})
     if (!(v instanceof TheC)) return  new TheC(v)
     return v
