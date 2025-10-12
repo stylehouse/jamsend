@@ -8,12 +8,11 @@
     let stuffing: Stuffing | null = $state(null)
 
     $effect(() => {
-        debugger
         stuffing = new Stuffing(stuff)
     })
 
     // Track openness in the UI component to preserve across re-brackology()
-    let openness = $state(false)
+    let openness = $state(true)
 
     function toggle() {
         openness = !openness

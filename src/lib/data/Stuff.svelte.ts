@@ -264,7 +264,7 @@ export class Stuff {
             if (q.one_value_mode) return M[0];
         }
         
-        return M.length ? M : undefined;
+        return M
     }
     private n_matches_star(n:TheC) {
         if (n.c.drop) return false
@@ -340,7 +340,7 @@ export class Stuffing {
         $effect(() => {
             if (this.Stuff.version) {
                 console.log("reacting to Stuff++")
-                this.brackology()
+                setTimeout(() => this.brackology(), 0)
             }
         })
     }
@@ -557,6 +557,11 @@ class Travel extends TheC {
 
 
 //#region Modus
+// > when q.one_value_mode, we may want a [] value
+function nonemptyArray_or_null(N:any) {
+    if (N?.legnth) return N
+    return null
+}
 export class Modus {
     current:TheC = $state(_C())
     before?:TheC
@@ -579,12 +584,12 @@ export class Modus {
     // return undefined if no rows, good for boolean logic
     // look at this time's Stuff
     o(c?:TheUniversal,q?) {
-        return this.current.o(c, q)
+        return nonemptyArray_or_null(this.current.o(c, q))
     }
     // < zo() would look at the previous time until the current one was commit to
     // look at previous time
     bo(c?:TheUniversal,q?) {
-        return this.before?.o(c, q)
+        return nonemptyArray_or_null(this.before?.o(c, q))
     }
 
 
