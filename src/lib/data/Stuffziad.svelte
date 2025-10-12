@@ -11,6 +11,11 @@
 
     // Get all Stuffziado values
     const stuffziados = $derived(Array.from(stuffziad.values.values()))
+
+    function ziadostyle(stuffziado):string {
+        return stuffziado.is_string ? "" : "objectify"
+    }
+    
 </script>
 
 <style>
@@ -22,44 +27,49 @@
     display: inline-block;
     padding: 0.2em 0.5em;
     filter: hue-rotate(20deg);
-}
 
-.stuffziad-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25em;
-}
+    & button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25em;
+    }
 
-.stuffziad-name {
-    color: rgb(208, 245, 61);
-    filter: hue-rotate(10deg);
-    font-size: 100%;
-}
+    & .name {
+        color: rgb(208, 245, 61);
+        font-size: 100%;
+    }
 
-.stuffziad-colon {
-    color: rgb(228, 163, 245);
-}
+    & .colon {
+        color: rgb(228, 163, 245);
+    }
 
-.stuffziad-count {
-    color: rgb(156, 140, 217);
-    font-size: 85%;
-}
+    & .count {
+        color: rgb(156, 140, 217);
+        font-size: 85%;
+    }
 
-.stuffziad-arrow {
-    color: rgb(228, 163, 245);
-    font-size: 85%;
-}
+    & .arrow {
+        color: rgb(228, 163, 245);
+        font-size: 85%;
+    }
 
-.stuffziad-values {
-    margin-top: 0.3em;
-    margin-left: 0.5em;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2em;
+    &>.values {
+        margin-top: 0.3em;
+        margin-left: 0.5em;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2em;
+    }
+    &.inline {
+        color: rgb(208, 245, 61);
+        filter: brightness(0.7) hue-rotate(-10deg);
+        margin-left: 0.2em;
+        font-size: 95%;
+    }
 }
 
 .stuffziado {
@@ -69,57 +79,54 @@
     background-color: rgba(50, 90, 100, 0.3);
     display: inline-block;
     filter: hue-rotate(-30deg);
+    &>.name {
+        color: rgb(208, 245, 61);
+        filter: brightness(0.7);
+        margin-left: 0.2em;
+        font-size: 90%;
+    }
+    &>.count {
+        color: rgb(156, 140, 217);
+        font-size: 90%;
+    }
 }
 
-.stuffziado-count {
-    color: rgb(156, 140, 217);
-    font-size: 90%;
-}
-
-.stuffziado-name {
-    color: rgb(208, 245, 61);
-    filter: brightness(0.7);
-    margin-left: 0.2em;
-    font-size: 90%;
-}
-
-.stuffziado-inline {
-    color: rgb(208, 245, 61);
-    filter: brightness(0.7) hue-rotate(-10deg);
-    margin-left: 0.2em;
-    font-size: 95%;
+.objectify {
+    color: rgb(61, 245, 159);
+    background-color: rgba(14, 26, 29, 0.3);
 }
 </style>
 
 <div class="stuffziad">
-    <button class="stuffziad-btn" onclick={toggle}>
-        <span class="stuffziad-name">{stuffziad.name}</span>
-        <span class="stuffziad-colon">:</span>
+    <button class="btn" onclick={toggle}>
+        <span class="name">{stuffziad.name}</span>
+        <span class="colon">:</span>
         
         {#if stuffziad.values.size !== 1}
-            <span class="stuffziad-count">x{stuffziad.values.size}</span>
+            <span class="count">x{stuffziad.values.size}</span>
         {/if}
         
         {#if stuffziad.values.size > 1}
-            <span class="stuffziad-arrow">{openness ? '▼' : '▶'}</span>
+            <span class="arrow">{openness ? '▼' : '▶'}</span>
         {/if}
     </button>
 
     {#if openness && stuffziad.values.size > 1}
-        <div class="stuffziad-values">
+        <div class="values">
             {#each stuffziados as stuffziado (stuffziado.name)}
                 <div class="stuffziado">
+                    <span class="{ziadostyle(stuffziado)}">{stuffziado.name}</span>
                     {#if stuffziado.rowcount !== 1}
-                        <span class="stuffziado-count">x{stuffziado.rowcount}</span>
+                        <span class="count">x{stuffziado.rowcount}</span>
                     {/if}
-                    <span class="stuffziado-name">{stuffziado.name}</span>
                 </div>
             {/each}
         </div>
     {:else if stuffziad.values.size === 1}
         <!-- Single value (compressed) - show inline -->
-        <span class="stuffziado-inline">
-            {stuffziados[0]?.name}
+        {@const stuffziado = stuffziados[0]}
+        <span class="inline">
+            <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
         </span>
     {/if}
 </div>

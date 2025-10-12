@@ -12,7 +12,6 @@
     }
     let { list,title,onFileClick,onRefreshClick,list_awaits }:args = $props();
 
-    console.log("Incave ",list)
     onFileClick = async (file) => {
         console.log("Downsplat ",file)
     }

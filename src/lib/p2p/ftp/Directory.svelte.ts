@@ -39,6 +39,9 @@ export class DirectoryModus extends Modus {
         this.read_directory()
         // < look within $scope of the Tree (start with localList) for...
         console.log("Yup")
+        this.i({doing:"well",witharo:2})
+        this.i({doing:"well",witharo:3})
+
     }
     testcase() {
         let di = this.oa({diffrance:1})[0]

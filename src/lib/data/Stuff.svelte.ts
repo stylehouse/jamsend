@@ -419,10 +419,11 @@ export class Stuffing {
                     const count = rows.length
                     
                     // Create a Stuffziado for each distinct value
-                    let val_name = String(val)
+                    let val_name = objectify(val)
                     val_name = name_numbered_for_uniqueness_in_Set(val_name, stuffziad.values)
                     const stuffziado = new Stuffziado(stuffziad, val_name, count, rows)
                     stuffziado.value = val
+                    stuffziado.is_string = typeof val != 'object'
                     
                     stuffziad.values.set(stuffziado.name, stuffziado)
                 })
@@ -433,6 +434,17 @@ export class Stuffing {
         })
     }
 }
+// data dumper
+// < recursion
+function objectify(v:any):string {
+    return String(
+        typeof v == 'number' || typeof v == 'string' ? v
+        : v == null ? 'null'
+        : v.constructor == Array ? `[${v.map(n => objectify(n)).join(',')}]`
+        : `${v.constructor.name}()`
+    )
+}
+
 function name_numbered_for_uniqueness_in_Set(name,set) {
     if (typeof name !== 'string' || !(set instanceof Set) && !(set instanceof Map)) {
         throw new Error('Invalid arguments');
@@ -471,6 +483,7 @@ export class Stuffziad extends Stuffuzia {
 // single value, name is serial number?
 class Stuffziado extends Stuffuzia {
     value: any
+    is_string?: boolean
 }
 
 

@@ -17,16 +17,19 @@
 
     // aka brackology
     let redraw = throttle((N) => restuffock(N), 1000/25)
+    let lets_redraw = () => {
+        let N = M.oa()
+        console.log("reacting to M.current.version=="+M.current.version, N)
+        redraw(N)
+    }
     $effect(() => {
         if (M.current.version) {
-            let N = M.oa()
-            console.log("reacting to M.current.version=="+M.current.version, N)
-            redraw(N)
+            setTimeout(() => lets_redraw(), 0)
         }
     })
 
     function restuffock(N) {
-        console.log("restuffock "+(N.length))
+        // console.log("restuffock "+(N.length))
         stuffocks = []
         M.oa().forEach((n) => {
             let stuff = []
@@ -57,7 +60,7 @@
             {/each}
 
 
-        Stuff: <Stuffing stuff={M.current} />
+        <Stuffing stuff={M.current} />
 <style>
     .stuffock {
         margin: 1em;

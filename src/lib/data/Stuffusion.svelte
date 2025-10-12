@@ -4,8 +4,7 @@
     let { stuffusion }:{ stuffusion: Stuffusion } = $props()
 
     // Track openness in the UI component to preserve across re-brackology()
-    let openness = $state(false)
-
+    let openness = $state(true)
     function toggle() {
         openness = !openness
     }
@@ -13,63 +12,36 @@
 
 <style>
 .stuffusion {
-    margin: 0.3em;
+    margin: 0.1em;
     border-radius: 3em;
-    border: 1px dotted rgb(38, 110, 217);
-    background-color: rgba(10, 56, 66, 0.6);
+    border: 2px solid rgb(65, 38, 217);
+    background-color: rgba(25, 10, 66, 0.6);
     display: inline-block;
-    padding: 0.4em;
+    padding: 0.1em;
+    &.count {
+        color: rgb(156, 140, 217);
+        font-size: 95%;
+    }
+    &.content {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2em;
+    }
 }
 
-.stuffusion-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2em;
-}
 
-.stuffusion-arrow {
-    color: rgb(228, 163, 245);
-}
-
-.stuffusion-name {
-    color: rgb(208, 245, 61);
-    filter: hue-rotate(30deg);
-    font-size: 110%;
-}
-
-.stuffusion-count {
-    color: rgb(156, 140, 217);
-    font-size: 95%;
-}
-
-.stuffusion-content {
-    margin-top: 0.3em;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2em;
-}
 </style>
 
 <div class="stuffusion">
-    <button class="stuffusion-btn" onclick={toggle}>
-        <span class="stuffusion-arrow">
-            {openness ? '▼' : '▶'}
-        </span>
-        <span class="stuffusion-name">{stuffusion.name}</span>
-        {#if stuffusion.rowcount !== 1}
-            <span class="stuffusion-count">x{stuffusion.rowcount}</span>
-        {/if}
-    </button>
 
     {#if openness}
-        <div class="stuffusion-content">
+        <span class="content">
             {#each Array.from(stuffusion.columns.values()) as stuffziad (stuffziad.name)}
                 <Stuffziad {stuffziad} />
             {/each}
-        </div>
+        </span>
+    {/if}
+    {#if stuffusion.rowcount !== 1}
+        <span class="content count">x{stuffusion.rowcount}</span>
     {/if}
 </div>
