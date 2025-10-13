@@ -15,7 +15,7 @@ import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
     F:PeeringSharing
-    S:DirectoryShare|AnyShare // the Thing we're hotwiring
+    S:DirectoryShare//|AnyShare // the Thing we're hotwiring
 
     constructor(opt:Partial<DirectoryModus>) {
         super(opt)
@@ -33,10 +33,15 @@ export class DirectoryModus extends Modus {
         })
     }
 
-    main() {
+    busy?:string|null
+    async main() {
+        if (this.busy) throw `Still doing ${this.busy}`
+        this.busy = 'main'
+
+
         // this.testcase()
         // < rewrite everything we're thinking about what to do:
-        this.read_directory()
+        await this.read_directory()
         // < look within $scope of the Tree (start with localList) for...
         console.log("Yup")
         this.i({doing:"well",witharo:2})
@@ -47,6 +52,7 @@ export class DirectoryModus extends Modus {
         thutch.i({glabbioa:5})
         this.i({thutch})
 
+        this.busy = null
     }
     testcase() {
         let di = this.oa({diffrance:1})[0]
@@ -72,10 +78,12 @@ export class DirectoryModus extends Modus {
         if (tob) this.drop(tob)
         let DL = li
         let top = this.i({nib:'dir',name:DL.name,DL})
-        
         await li.expand()
         li.directories.forEach(DL => {
             top.i({nib:'dir',name:DL.name,DL})
+        })
+        li.files.forEach(FL => {
+            top.i({nib:'file',name:FL.name,FL: FL})
         })
     }
 }

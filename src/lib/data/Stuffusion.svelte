@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Stuffusion } from './Stuff.svelte';
     import Stuffziad from './Stuffziad.svelte'
+    import Stuffzipper from './Stuffzipper.svelte';
     let { stuffusion }:{ stuffusion: Stuffusion } = $props()
 
     // Track openness in the UI component to preserve across re-brackology()
@@ -43,5 +44,8 @@
     {/if}
     {#if stuffusion.rows.length !== 1}
         <span class="content count">x{stuffusion.rows.length}</span>
+    {/if}
+    {#if stuffusion.innered}
+        <Stuffzipper innered={stuffusion.innered} ></Stuffzipper>
     {/if}
 </div>

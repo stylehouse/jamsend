@@ -153,6 +153,7 @@ export class Stuff {
     // delete a C (filter it out of results)
     drop(n:TheC) {
         if (!n) return
+        if (!n.sc) throw "!drop(C)"
         n.c.drop = 1
         this.c.X.bump_version()
     }
@@ -160,6 +161,7 @@ export class Stuff {
 
     // regroup! indexes build up, forming X/.../$n to be with
     i(n: TheC) {
+        n = _C(n)
         this.Xify()
         // failed ideas here include:
         //   peeling a json-ish string n, chaining from s=TheC, environmental awareness
@@ -397,6 +399,8 @@ export class Stuffing {
             name = name_numbered_for_uniqueness_in_Set(name, this.groups)
             let rows = c.o()
             const stuffusion = new Stuffusion(this, name, rows)
+            // do any rows have n.c.X, nest Stuffing
+            stuffusion.detect_cX(rows)
 
             // add columns
             // there may be odd ones out (many of them) from c.sc
@@ -424,7 +428,8 @@ export class Stuffing {
                     if (typeof val == 'object') {
                         if (val instanceof TheC) {
                             stuffziado.is_C = true
-                            // < does it contain C.c.X, nest Stuffing
+                            // does it contain C.c.X, nest Stuffing
+                            stuffziado.detect_cX([val])
                         }
                         // < pull out v(.constructor)+.name
                     }
@@ -476,6 +481,17 @@ export class Stuffuzia {
         this.up = up
         this.name = name
         this.rows = rows
+    }
+
+    // subset of .rows or C-like .value that have n.c.X.z
+    innered?: TheN
+    // type cXhavable_Stuffusia = Stuffusion | Stuffziado
+    detect_cX(N) {
+        // supposing the X.z always has everything
+        let innered = N.filter(n => n.c.X?.z)
+        if (innered.length) {
+            this.innered = innered
+        }
     }
 }
 
@@ -535,7 +551,7 @@ export function _C(v={}):TheC {
     return v
 }
 
-type TheN = TheC[]
+export type TheN = TheC[]
 
 //#endregion
 
@@ -597,7 +613,6 @@ export class Modus {
 
     // add to the Stuff
     i(C:TheC|TheUniversal) {
-        C = _C(C)
         return this.current.i(C)
     }
     drop(C:TheC) {

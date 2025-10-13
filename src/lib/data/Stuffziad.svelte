@@ -1,5 +1,6 @@
 <script lang="ts">
     import Stuffziad from './Stuffziad.svelte'
+    import Stuffzipper from './Stuffzipper.svelte';
     let { stuffziad }:{ stuffziad: Stuffziad } = $props()
 
     // Track openness in the UI component to preserve across re-brackology()
@@ -102,6 +103,10 @@
         <span class="count">C</span>
     {/if}
     <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
+    {#if stuffziado.innered}
+        <Stuffzipper innered={stuffziado.innered} ></Stuffzipper>
+    {/if}
+
 {/snippet}
 
 <div class="stuffziad">
@@ -130,7 +135,6 @@
             {/each}
         </div>
     {:else if stuffziad.values.size === 1}
-        <!-- Single value (compressed) - show inline -->
         {@const stuffziado = stuffziados[0]}
         <span class="inline">
             {@render ziado(stuffziado)}
