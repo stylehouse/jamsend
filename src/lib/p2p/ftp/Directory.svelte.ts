@@ -33,26 +33,23 @@ export class DirectoryModus extends Modus {
         })
     }
 
-    busy?:string|null
+
+
     async main() {
-        if (this.busy) throw `Still doing ${this.busy}`
-        this.busy = 'main'
-
-
-        // this.testcase()
-        // < rewrite everything we're thinking about what to do:
-        await this.read_directory()
-        // < look within $scope of the Tree (start with localList) for...
-        console.log("Yup")
-        this.i({doing:"well",witharo:2})
-        this.i({doing:"well",witharo:3})
-        let thutch = _C({dog:"yaps"})
-        thutch.i({glab:3})
-        thutch.i({glab:5})
-        thutch.i({glabbioa:5})
-        this.i({thutch})
-
-        this.busy = null
+        this.have_time(async () => {
+            // this.testcase()
+            // < rewrite everything we're thinking about what to do:
+            await this.read_directory()
+            // < look within $scope of the Tree (start with localList) for...
+            console.log("Yup")
+            this.i({doing:"well",witharo:2})
+            this.i({doing:"well",witharo:3})
+            let thutch = _C({dog:"yaps"})
+            thutch.i({glab:3})
+            thutch.i({glab:5})
+            thutch.i({glabbioa:5})
+            this.i({thutch})
+        })
     }
     testcase() {
         let di = this.oa({diffrance:1})[0]

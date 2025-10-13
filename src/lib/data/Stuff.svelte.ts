@@ -67,7 +67,7 @@ class TheX {
     // tried to make .z state but... it loses the first row? but is reactive
     serial_i = $state(1)
     bump_version() {
-        this.serial_i = Number(this.serial_i) + 1
+        this.serial_i = this.serial_i*1 + 1
     }
 
     // X/$k +$n
@@ -296,6 +296,8 @@ export class Stuff {
         return n.sc[key] === value;
     }
 
+
+
     // visitor of many ** to o()
     d(s:TheUniversal,d?:Partial<Travel>) {
         // start arriving
@@ -322,7 +324,28 @@ export class Stuff {
 
 
 
+    // transact because of a Modus, or Modus/Wants|Doing**
+    // > rollback data changes
+    // is simply to block observers from observing unstable data
+    //  and eg singleton for Modus.main()
+    // < for Stuffing, which has an uplinked trail of C** to 
+    async transact(M:Modus|TheC,fn:Function) {
+        if (this.c.transacting) throw `Still doing ${this.c.transacting}`
+        this.c.transacting = M
 
+        try {
+            const result = await fn()
+            return result
+        } catch (error) {
+            console.error('Transaction failed:', error)
+            throw error
+        } finally {
+            this.c.transacting = undefined
+            // something probably changed
+            //  chase up observers eg Stuffing, who aren't waiting
+            this.c.X?.bump_version()
+        }
+    }
 }
 
 
@@ -345,8 +368,9 @@ export class Stuffing {
         this.Stuff = Stuff
         $effect(() => {
             if (this.Stuff.version) {
+                if (this.Stuff.c.transacting) return
                 console.log("reacting to Stuff++")
-                setTimeout(() => this.brackology(), 110)
+                setTimeout(() => this.brackology(), 0)
             }
         })
     }
@@ -391,7 +415,7 @@ export class Stuffing {
         this.regroup(groups)
     }
     // grouped stuff -> tree of objects with quantity descriptions
-    regroup(groups) {
+    regroup(groups:TheC) {
         this.groups.clear()
         groups.o().forEach((c:TheC) => {
             // uniquely identify them
@@ -524,6 +548,7 @@ type TheEmpirical = {
     // contains indexes leading to in-C (C/C)
     X?: TheX,
     top?: Travel,
+    transacting?: Modus|TheC,
 } & any
 
 // extends Stuff, so you can C.i(inC) for C/inC
@@ -604,11 +629,34 @@ function nonemptyArray_or_null(N:any) {
     return null
 }
 export class Modus {
-    current:TheC = $state(_C())
+    current:TheC = $state(_C({time:0}))
     before?:TheC
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)
+    }
+
+    next_time = 1
+    new_time() {
+        let gone = this.before
+        this.before = this.current
+        this.current = _C({time:this.next_time})
+        this.next_time = this.next_time*1 + 1
+    }
+    // the "I'm redoing the thing" process wrapper
+    async have_time(fn:Function) {
+        if (this.current.c.transacting) throw "re-transacting Modus"
+
+        // current -> before ->
+        this.new_time()
+
+        // transact Modus itself to prevent restarting any act before any finish
+        // < represent the act (usu main(), pull(...) with params?)
+        // transact what Stuffing is looking at
+        this.current.transact(this,async () => {
+            // doing the business
+            await fn()
+        })
     }
 
     // add to the Stuff
