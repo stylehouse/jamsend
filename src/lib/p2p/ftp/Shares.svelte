@@ -17,6 +17,16 @@
              }, 2100)
         console.log("shares!: ",[F,F.shares.things])
     })
+
+
+
+    // always have this in there...
+    let compat_mode = $state()
+    $effect(() => {
+        if (!('showDirectoryPicker' in window)) {
+            compat_mode = true
+        }
+    })
 </script>
 
 <h2>Expect big shares</h2>
@@ -26,6 +36,11 @@
             type="share" 
         >
             {#snippet thing(S:DirectoryShare)}
+                {#if compat_mode}
+                    <h3>BROWSER IS TOO OLD</h3>
+                    <p>You don't seem to allow Directory writing access. Sorry.</p>
+                {/if}
+                
                 <Sharability {S}></Sharability>
                 
             {/snippet}

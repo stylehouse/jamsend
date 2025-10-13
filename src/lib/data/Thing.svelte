@@ -18,14 +18,6 @@
             await Ss.remove_Thing(name)
         }
     }})
-
-    // always have this in there...
-    let compat_mode = $state()
-    $effect(() => {
-        if (!('showDirectoryPicker' in window)) {
-            compat_mode = true
-        }
-    })
 </script>
 
 <div 
@@ -40,11 +32,6 @@
             <Thingness {S} {type} {actions} />
         </div>
     </div>
-
-    {#if compat_mode}
-        <h3>THE COMPAT MODE SPEECH</h3>
-        <p>You don't seem to allow Directory writing access. Sorry.</p>
-    {/if}
 
     <div class="thing-self">
         {@render thing?.(S)}

@@ -1074,6 +1074,9 @@ export abstract class PeeringFeature {
         return new KVStore(this.IDB_Store_name,store,key)
     }
     get IDB_Store_name() {
+        // < use .trust_name
+        //   and have (Peering|Pier)${this.trust_name} objects
+        //    passed in svelte.config.ts?
         return `${this.eer.Id} Sharing`
     }
 

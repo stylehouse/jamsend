@@ -415,7 +415,7 @@ class FileSystemHandler {
         }
     }
     // Request directory access from user
-    async requestDirectoryAccess(): Promise<FileSystemDirectoryHandle> {
+    async requestDirectoryAccess(): Promise<void> {
         try {
             // Modern browsers that support File System Access API
             this.handle = await window.showDirectoryPicker({
