@@ -344,7 +344,7 @@ export class Stuffing {
         $effect(() => {
             if (this.Stuff.version) {
                 console.log("reacting to Stuff++")
-                setTimeout(() => this.brackology(), 0)
+                setTimeout(() => this.brackology(), 110)
             }
         })
     }
