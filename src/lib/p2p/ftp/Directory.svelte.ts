@@ -40,7 +40,7 @@ export class DirectoryModus extends Modus {
     // < and slowly dispatch everything else...
     async main() {
         this.have_time(async () => {
-
+            this.reset_interval()
 
             // Modus_testcase(this)
             // < rewrite everything we're thinking about what to do:
@@ -49,6 +49,21 @@ export class DirectoryModus extends Modus {
             console.log("DirectoryModus.main()")
         })
     }
+    // starting a new time, set the next
+    reset_interval() {
+        // the universal %interval persists through time, may be adjusted
+        let int = this.boa({mo:'main',interval:1})[0]
+        let interval = int?.sc.interval || 1.6
+        let id; id = setTimeout(() => {
+            // if we are still the current callback
+            if (n != this.oa({mo:'main',interval:1})[0]) return
+
+            this.main()
+            
+        },1000*interval)
+        let n = this.i({mo:'main',interval,id})
+    }
+
 
     async read_directory() {
         let li = this.S?.list
