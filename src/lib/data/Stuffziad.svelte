@@ -115,7 +115,7 @@
         <span class="colon">:</span>
         
         {#if stuffziad.values.size !== 1}
-            <span class="count">x{stuffziad.values.size}</span>
+            <span class="count">∇{stuffziad.values.size}</span>
         {/if}
         
         {#if stuffziad.values.size > 1}
