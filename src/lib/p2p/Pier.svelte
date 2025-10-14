@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { Pier } from "../Peerily.svelte";
-    import Trusticles from "./Trusticles.svelte";
+    import type { Pier } from "./Peerily.svelte";
+    import Trusticles from "./ui/Trusticles.svelte";
 
     let {pier}:{pier:Pier} = $props()
     async function showstash() {

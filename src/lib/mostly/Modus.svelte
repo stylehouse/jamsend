@@ -2,7 +2,7 @@
     import type { Modus } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
     import { throttle } from "$lib/Y";
-    import NotPier from "./repro-reactive-stashed-hierarchy/NotPier.svelte";
+    import NotPier from "../p2p/ui/repro-reactive-stashed-hierarchy/NotPier.svelte";
 
     let {M}:{M:Modus} = $props()
 

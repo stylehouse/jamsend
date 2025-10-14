@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Peering } from "../Peerily.svelte";
+    import type { Peering } from "./Peerily.svelte";
     import Pier from "./Pier.svelte";
 
 

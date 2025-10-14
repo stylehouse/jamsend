@@ -2,7 +2,7 @@
     import { onDestroy } from "svelte";
     import { Idento, Peerily, PeeringFeature, type StashedPeering } from "./Peerily.svelte";
     import { Peering as Peering_type } from "./Peerily.svelte";
-    import Peering from "./ui/Peering.svelte";
+    import Peering from "./Peering.svelte";
 
     import { SvelteSet } from "svelte/reactivity";
     import ShareButton from "./ui/ShareButton.svelte";
