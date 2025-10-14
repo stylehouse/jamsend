@@ -147,7 +147,7 @@ export class PierSharing extends PierFeature {
     // memoized here:
     localList_string?:string
     async refresh_localList(): Promise<string[]> {
-        this.localList = await this.fsHandler.listDirectory();
+        this.localList = await this.fsHandler.list.expand();
 
         let was = this.localList_string
         this.localList_string = JSON.stringify(

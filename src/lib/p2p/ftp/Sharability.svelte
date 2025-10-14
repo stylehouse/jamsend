@@ -19,9 +19,16 @@
         // really:
         if (!S) throw "What the hell S"
         S.modus = new DirectoryModus({S,F:S.F})
-        S.i_action({label:'Mo++',handler: () => S.modus?.main() })
-        S.modus.main()
+        S.i_action({
+            label:'Mo++',
+            handler: () => S.modus.main()
+        })
         console.log("Sharability onMount()!")
+    })
+    $effect(() => {
+        if (S.started) {
+            S.modus.main()
+        }
     })
 
     function click_push(file: FileListing) {
@@ -35,10 +42,12 @@
         <Modus M={S.modus}></Modus>
     {/if}
 
-    <FileList
-            title="Local Files" 
-            list={S.list} 
-            onFileClick={click_push}
-            onRefreshClick={() => S.refresh()}
-        >
-    </FileList>
+    {#if S.started}
+        <FileList
+                title="Local Files" 
+                list={S.list} 
+                onFileClick={click_push}
+                onRefreshClick={() => S.refresh()}
+            >
+        </FileList>
+    {/if}

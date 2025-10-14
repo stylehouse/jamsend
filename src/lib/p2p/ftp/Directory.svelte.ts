@@ -34,36 +34,20 @@ export class DirectoryModus extends Modus {
     }
 
 
-    // refresh the top level
+    // refresh the top level, etc
+    // UI:Sharability(DirectoryShare) reacts here once DirectoryShare.started
+    //  < GOING is DirectoryShare.refresh() and so forth
     // < and slowly dispatch everything else...
     async main() {
         this.have_time(async () => {
-            // this.testcase()
+
+
+            // Modus_testcase(this)
             // < rewrite everything we're thinking about what to do:
             await this.read_directory()
             // < look within $scope of the Tree (start with localList) for...
-            console.log("Yup")
-            this.i({doing:"well",witharo:2})
-            this.i({doing:"well",witharo:3})
-            let thutch = _C({dog:"yaps"})
-            thutch.i({glab:3})
-            thutch.i({glab:5})
-            thutch.i({glabbioa:5})
-            this.i({thutch})
+            console.log("DirectoryModus.main()")
         })
-    }
-    testcase() {
-        let di = this.oa({diffrance:1})[0]
-        let all = this.oa()
-        console.log("got out",all)
-        let diffrance = 6
-        if (di) {
-            diffrance = di.sc.diffrance + 1
-            this.drop(di)
-        }
-        this.i({diffrance})
-        this.o({lights:1}) || this.i({lights:3})
-
     }
 
     async read_directory() {
@@ -178,6 +162,7 @@ export class DirectoryListing {
         this.files = this.files.sort(sort_by_name)
         this.directories = this.directories.sort(sort_by_name)
         this.expanded = true
+        return this
     }
     collapse() {
         if (!this.expanded) return;
@@ -251,7 +236,11 @@ export class DirectoryShare extends ThingIsms {
     // private state
     modus?:Modus = $state()
 
-    list: DirectoryListing | null = $state()
+    // a single toplevel DL:'/',  DirectoryListing thing
+    get list():DirectoryListing {
+        return this.started && this.fsHandler.list
+    }
+    
     // was localList
     
     persisted_handle:KVStore
@@ -311,7 +300,6 @@ export class DirectoryShare extends ThingIsms {
     async start_post(retriable=false) {
         if (this.fsHandler.started) {
             this.started = true
-            await this.refresh()
             console.log(`DirectoryShare "${this.name}" started`)
         }
         else {
@@ -333,19 +321,17 @@ export class DirectoryShare extends ThingIsms {
         try {
             await this.fsHandler.stop()
             this.started = false
-            this.list = null
             console.log(`DirectoryShare "${this.name}" stopped`)
         } catch (err) {
             throw erring(`Failed to stop share "${this.name}"`, err)
         }
     }
 
-
-
+    // < used by FileList, which is perhaps not the future...
     async refresh() {
         if (!this.started) return
-
-        this.list = await this.fsHandler.listDirectory()
+        // only does the top level
+        await this.fsHandler.list.expand()
     }
 
     // Get file reader from this share's directory
@@ -401,7 +387,9 @@ class FileSystemHandler {
     // the owner can store this
     restoreDirectoryHandle:Function
     storeDirectoryHandle:Function
+
     started:boolean = false
+    list?:DirectoryListing|null
 
     constructor(opt={}) {
         Object.assign(this, opt)
@@ -410,7 +398,7 @@ class FileSystemHandler {
         const restored = await this.restoreDirectoryHandle?.()
         if (restored) {
             this.handle = restored
-            this.started = true
+            this.post_start()
             console.log(`Restored directory for share "${this.share.name}"`)
             return
         }
@@ -418,33 +406,31 @@ class FileSystemHandler {
     // Request directory access from user
     async requestDirectoryAccess(): Promise<void> {
         try {
-            // Modern browsers that support File System Access API
+            // browser's File System Access API
             this.handle = await window.showDirectoryPicker({
                 mode: 'readwrite'
             })
-            this.started = true
+            this.post_start()
             // Store using the storage layer above this
             await this.storeDirectoryHandle?.(this.handle)
         } catch (err) {
             throw erring(`Error accessing directory for share "${this.share.name}"`, err);
         }
     }
+    post_start() {
+        this.started = true
+        // create a root DirectoryListing
+        this.list = new DirectoryListing({handle:this.handle,name:'/'})
+
+    }
     async stop() {
         // Clear all stored handles
         this.file_handles.clear();
         this.handle = null;
+        this.list = null;
         this.started = false
     }
 
-
-
-    // start listing files, from the top of the share
-    async listDirectory(): Promise<DirectoryListing> {
-        let DL = new DirectoryListing({handle:this.handle,name:'/'})
-        await DL.expand()
-        return DL
-        
-    }
 
     // go somewhere
     async getFileHandle(filename: string): Promise<FileSystemFileHandle> {
@@ -494,3 +480,30 @@ class FileSystemHandler {
 
 
 }
+
+
+
+    function Modus_testcase(this) {
+        console.log("Yup")
+        this.i({doing:"well",witharo:2})
+        this.i({doing:"well",witharo:3})
+        let thutch = _C({dog:"yaps"})
+        thutch.i({glab:3})
+        thutch.i({glab:5})
+        thutch.i({glabbioa:5})
+        this.i({thutch})
+
+
+
+        let di = this.oa({diffrance:1})[0]
+        let all = this.oa()
+        console.log("got out",all)
+        let diffrance = 6
+        if (di) {
+            diffrance = di.sc.diffrance + 1
+            this.drop(di)
+        }
+        this.i({diffrance})
+        this.o({lights:1}) || this.i({lights:3})
+
+    }

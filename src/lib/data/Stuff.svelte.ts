@@ -148,7 +148,7 @@ export class Stuff {
         this.c.X ||= new TheX()
     }
     get version() {
-        return this.c.X.serial_i
+        return this.c.X?.serial_i || 0
     }
     // delete a C (filter it out of results)
     drop(n:TheC) {
@@ -645,7 +645,7 @@ export class Modus {
     }
     // the "I'm redoing the thing" process wrapper
     async have_time(fn:Function) {
-        if (this.current.c.transacting) throw "re-transacting Modus"
+        if (this.current.c.transacting) return console.error("re-transacting Modus",[this,this.current.c.transacting])
 
         // current -> before ->
         this.new_time()
