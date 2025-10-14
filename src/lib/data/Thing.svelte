@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Snippet } from 'svelte';
+    import { onMount, type Snippet } from 'svelte';
     import Thingness from './Thingness.svelte'
     import type { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte';
 
@@ -18,6 +18,10 @@
             await Ss.remove_Thing(name)
         }
     }})
+    onMount(() => {
+        // we arrive, so tell our ^Things to tell /Thing* (inc us) to start
+        Ss.may_start()
+    })
 </script>
 
 <div 
