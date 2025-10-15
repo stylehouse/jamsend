@@ -364,10 +364,12 @@ export class Stuff {
 export class Stuffing {
     Stuff:Stuff
     groups = new SvelteMap()
+    started = $state(false)
     constructor(Stuff:Stuff) {
         this.Stuff = Stuff
         $effect(() => {
             if (this.Stuff.version) {
+                // may drop out here, UI:Stuffing reacts to .started
                 if (this.Stuff.c.transacting) return
                 console.log("reacting to Stuff++")
                 setTimeout(() => this.brackology(), 0)
@@ -413,6 +415,7 @@ export class Stuffing {
             }
         })
         this.regroup(groups)
+        this.started = true
     }
     // grouped stuff -> tree of objects with quantity descriptions
     regroup(groups:TheC) {

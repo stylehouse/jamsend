@@ -37,7 +37,9 @@ DevTools with 'pause on exception' will need to ignore the line in Decoder.ts wi
 
 To use *prod.sh*, see *Peer_OPTIONS*.
 
-## objects
+## objects, data model
+
+Besides p2p and audio, we need a sophisticated, reactive data structure and UI framework, with a focus on managing dynamic, hierarchical data (like directory listings) and visualizing it in a way that responds to frequent updates.
 
 ### Peerily...
 
