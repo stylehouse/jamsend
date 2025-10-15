@@ -69,6 +69,8 @@
 }
 .content {
     display: inline-block;
+    min-height:1em;
+    min-width:1em;
 }
 </style>
 

@@ -44,7 +44,7 @@ export class DirectoryModus extends Modus {
 
     async surf_DLs() {
         // look to replace and climb down into the last %DL
-        let top = this.boa({nib:'dir',DL:1})[0]
+        let top = this.bo({nib:'dir',DL:1})[0]
         top ||= _C({nib:'dir',DL:this.S.list})
         await this.surfable_DL(top)
     }

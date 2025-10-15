@@ -5,7 +5,7 @@ let spec = `
 
 what Stuff is (~~ brackio)
    is the ability to C.i(inC)
-    using C.c.X... = x, x.z = [inC+]
+    using C..X... = x, x.z = [inC+]
     the X... indexes group like stuff (from C.sc.*)
      as well as simply listing all C/*
     they can make trees by many of those steps (C/C/C/C)
@@ -145,18 +145,27 @@ class TheX {
 // a class of activities you can make in a C
 export class Stuff {
     c: TheEmpirical
+    // this would be in c but it needs $state():
+    X:TheX = $state()
+    // while doing replace(), hops everything over to:
+    X_before?:TheX
     Xify() {
-        this.c.X ||= new TheX()
+        this.X ||= new TheX()
+        // via Stuff.replace(), X is a page that turns, keep version
+        if (this.X_before) {
+            this.X.serial_i = this.X_before.serial_i
+            this.X.bump_version()
+        }
     }
     get version() {
-        return this.c.X?.serial_i || 0
+        return this.X?.serial_i || 0
     }
     // delete a C (filter it out of results)
     drop(n:TheC) {
         if (!n) return
         if (!n.sc) throw "!drop(C)"
         n.c.drop = 1
-        this.c.X.bump_version()
+        this.X.bump_version()
     }
 
 
@@ -176,11 +185,11 @@ export class Stuff {
         // do your basic index-everything - copy info from these $n to X/$k/$v
         // everything we have
         //  the below i_k and i_v also do i_z where they end up
-        this.c.X.i_z('z', n);
+        this.X.i_z('z', n);
 
         Object.entries(n.sc || {}).forEach(([k, v]) => {
             // the keys
-            const kx = this.c.X.i_k(k, n);
+            const kx = this.X.i_k(k, n);
             
                 // this is under X/$k
                 // have their values via unique id  
@@ -199,7 +208,7 @@ export class Stuff {
     //  as opposed to:
     //   > thinking about going into particular X/$k/$v, depending on $key=1
     //   > joining many reads on the X/$k/$v table, which is just uniq(/$n)
-    // oa(...)[0] for the first row
+    // o(...)[0] for the first row
     // q||.one_column_mode =
     //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
     //  1 returns the first column mentioned in sc (javascript hashes are ordered)
@@ -211,24 +220,42 @@ export class Stuff {
         q ||= {}
         this.Xify()
 
-        let M = this.o_query(sc)
+        let M = this.o_query(sc,q)
         return this.o_results(M,sc,q)
     }
-    o_query(sc:TheUniversal) {
+    // return arrays, empty if no rows, good for iterating .forEach()
+    bo(c?:TheUniversal,q?):TheN|TheC|any {
+        q ||= {}
+        q.X ||= this.X_before
+        if (!q.X) return []
+        return this.o(c,q)
+    }
+    // returning null rather than empty arrays if no rows
+    //  less good for iterating .forEach(), more good for boolean logic
+    oa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+        return nonemptyArray_or_null(this.o(c,q))
+    }
+    boa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+        return nonemptyArray_or_null(this.bo(c,q))
+    }
+
+    o_query(sc:TheUniversal,q:any) {
+        q ||= {}
+        q.X ||= this.X
         // results
         let M:TheN = []
         // Process each key-value pair in sc
         let query_params = Object.entries(sc || {})
         if (!query_params.length) {
             // wants everything
-            M = this.c.X.z?.filter(n => this.n_matches_star(n)) || []
+            M = q.X.z?.filter(n => this.n_matches_star(n)) || []
         }
 
         let amongst:TheN;
         query_params.forEach(([t, v]) => {
             // might have indexing, only for the first one
             if (!amongst) {
-                let x = this.c.X.o_kv(t,v);
+                let x = q.X.o_kv(t,v);
                 // start resulting with items here in x.z
                 //  x.z = the /$n at the end of whatever expression
                 (x && x.z || []).forEach(n => {
@@ -330,29 +357,58 @@ export class Stuff {
     }
 
 
+//#region Stuff.replace
+    // redo everything or a subset that we replace things around
+    //  inside fn(),
+    //   bo() can be used to look at the before time
+    //   o() will only have what we've added so far
+    //  
+    async replace(pattern_sc:TheUniversal,fn:Function,gone_fn?:Function) {
+        if (this.X_before) throw `already X_before, still doing another replace()`
+        // move it aside and regerate another X
+        this.X_before = this.X
+        this.X = null
+        this.Xify()
 
-    // transact because of a Modus, or Modus/Wants|Doing**
-    // > rollback data changes
-    // is simply to block observers from observing unstable data
-    //  and eg singleton for Modus.main()
-    // < for Stuffing, which has an uplinked trail of C** to 
-    async transact(M:Modus|TheC,fn:Function) {
-        if (this.c.transacting) throw `Still doing ${this.c.transacting}`
-        this.c.transacting = M
+        // may be a subset of everything
+        let partial:TheN|null
+        if (Object.keys(pattern_sc).length) {
+            partial = this.bo(pattern_sc)
+        }
+
 
         try {
             const result = await fn()
+            // now all that's in X should be what's new in partial
+
+            // < regard new|gone, diff?
+            // gone_fn(info)
+
+            if (partial) {
+                // put everything else back in
+                this.bo().forEach(n => {
+                    if (partial?.includes(n)) return
+                    this.i(n)
+                })
+            }
+            
             return result
+
         } catch (error) {
+            // rollback data changes
+            this.X = this.X_before
+
             console.error('Transaction failed:', error)
             throw error
+
         } finally {
-            this.c.transacting = undefined
+            this.X_before = undefined
             // something probably changed
             //  chase up observers eg Stuffing, who aren't waiting
-            this.c.X?.bump_version()
+            this.X?.bump_version()
         }
     }
+
 }
 
 
@@ -380,7 +436,7 @@ export class Stuffing {
         $effect(() => {
             if (this.Stuff.version) {
                 // may drop out here, UI:Stuffing reacts to .started
-                if (this.Stuff.c.transacting) return
+                if (this.Stuff.X_before) return console.warn("Stuffing waits for X_before")
                 console.log("reacting to Stuff++")
                 setTimeout(() => this.brackology(), 0)
             }
@@ -430,20 +486,20 @@ export class Stuffing {
     // grouped stuff -> tree of objects with quantity descriptions
     regroup(groups:TheC) {
         this.groups.clear()
-        groups.o().forEach((c:TheC) => {
+        groups.o().forEach((n:TheC) => {
             // uniquely identify them
-            let name = c.name || 'unnamed'
+            let name = n.name || 'unnamed'
             name = name_numbered_for_uniqueness_in_Set(name, this.groups)
-            let rows = c.o()
+            let rows = n.o()
             const stuffusion = new Stuffusion(this, name, rows)
-            // do any rows have n.c.X, nest Stuffing
-            stuffusion.detect_cX(rows)
+            // do any rows have n.X, nest Stuffing
+            stuffusion.detect_nX(rows)
 
             // add columns
             // there may be odd ones out (many of them) from c.sc
-            let column_names = Object.keys(c.c.X.k)
+            let column_names = Object.keys(n.X.k)
             column_names.forEach((key) => {
-                const kx = c.c.X?.o_kv(key, 1)
+                const kx = n.X?.o_kv(key, 1)
                 if (!kx) throw "!kx"
                 let rows = kx.z
                 const stuffziad = new Stuffziad(stuffusion, key, rows)
@@ -465,8 +521,8 @@ export class Stuffing {
                     if (typeof val == 'object') {
                         if (val instanceof TheC) {
                             stuffziado.is_C = true
-                            // does it contain C.c.X, nest Stuffing
-                            stuffziado.detect_cX([val])
+                            // does it contain C.X, nest Stuffing
+                            stuffziado.detect_nX([val])
                         }
                         // < pull out v(.constructor)+.name
                     }
@@ -520,12 +576,12 @@ export class Stuffuzia {
         this.rows = rows
     }
 
-    // subset of .rows or C-like .value that have n.c.X.z
+    // subset of .rows or C-like .value that have n.X.z
     innered?: TheN
     // type cXhavable_Stuffusia = Stuffusion | Stuffziado
-    detect_cX(N) {
+    detect_nX(N) {
         // supposing the X.z always has everything
-        let innered = N.filter(n => n.c.X?.z)
+        let innered = N.filter(n => n.X?.z)
         if (innered.length) {
             this.innered = innered
         }
@@ -629,12 +685,13 @@ class Travel extends TheC {
         let d = this
         let top:Travel = this.c.top
         top.Xify()
-        let X:TheX = top.c.X
+        let X:TheX = top.X
         return X.i_refer(v,d,'visit_v')
     }
 }
 
 
+//#endregion Modus
 //#region Modus
 // > when q.one_value_mode, we may want a [] value
 function nonemptyArray_or_null(N:any) {
@@ -642,31 +699,19 @@ function nonemptyArray_or_null(N:any) {
     return null
 }
 export class Modus {
-    current:TheC = $state(_C({time:0}))
-    before?:TheC
+    current:TheC = $state(_C())
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)
     }
 
-    next_time = 1
-    new_time() {
-        let gone = this.before
-        this.before = this.current
-        this.current = _C({time:this.next_time})
-        this.next_time = this.next_time*1 + 1
-    }
     // the "I'm redoing the thing" process wrapper
+    // a forgiving layer on top of Stuff.replace(), which is singleton
     async have_time(fn:Function) {
-        if (this.current.c.transacting) return console.error("re-transacting Modus",[this,this.current.c.transacting])
-
-        // current -> before ->
-        this.new_time()
-
-        // transact Modus itself to prevent restarting any act before any finish
-        // < represent the act (usu main(), pull(...) with params?)
-        // transact what Stuffing is looking at
-        this.current.transact(this,async () => {
+        if (this.current.X_before) return console.error("re-transacting Modus")
+        // what we replace is... everything. but this could select some rows
+        let pattern_sc = {}
+        await this.current.replace(pattern_sc,async () => {
             // doing the business
             await fn()
         })
@@ -685,21 +730,19 @@ export class Modus {
     // return undefined if no rows, good for boolean logic
     // look at this time's Stuff
     o(c?:TheUniversal,q?) {
-        return nonemptyArray_or_null(this.current.o(c, q))
+        return this.current.o(c, q)
     }
     // < zo() would look at the previous time until the current one was commit to
     // look at previous time
     bo(c?:TheUniversal,q?) {
-        return nonemptyArray_or_null(this.before?.o(c, q))
+        return this.current.bo(c, q)
     }
 
-
-    // return arrays, empty if no rows, good for iterating .forEach()
-    oa(c?:TheUniversal,q?):TheN|TheC|any {
-        return this.o(c,q) || []
+    oa(c?:TheUniversal,q?) {
+        return this.current.oa(c, q)
     }
-    boa(c?:TheUniversal,q?):TheN|TheC|any {
-        return this.bo(c,q) || []
+    boa(c?:TheUniversal,q?) {
+        return this.current.boa(c, q)
     }
 
 
@@ -711,8 +754,8 @@ export class Modus {
     // when starting a new time, set the next
     reset_interval() {
         // the universal %interval persists through time, may be adjusted
-        let int = this.boa({mo:'main',interval:1})[0]
-        let interval = int?.sc.interval || 1.6
+        let int = this.bo({mo:'main',interval:1})[0]
+        let interval = int?.sc.interval || 3.6
         let id; id = setTimeout(() => {
             // if we are still the current callback
             if (n != this.oa({mo:'main',interval:1})[0]) return
@@ -727,13 +770,13 @@ export class Modus {
         let M = new Modus()
 
         M.i({unfinished:1})
-        if (M.o({unfinished:1})) {
+        if (M.oa({unfinished:1})) {
             console.log("We had it!")
         }
-        if (M.o()) {
+        if (M.oa().length) {
             console.log("We had all!")
         }
-        if (M.o({fefe:1})) {
+        if (M.oa({fefe:1})) {
             console.log("We didn't have it!")
         }
         return M
@@ -749,8 +792,8 @@ export class Modus {
             M.o({waffle:5}),
         ]
         let empty_undef = [
-            M.oa({lovely:3}),
-            M.o({six:3}),
+            M.o({lovely:3}),
+            M.oa({six:3}),
         ]
         console.log("Stuff",{empty_undef,two_one_one})
         return M

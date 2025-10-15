@@ -18,7 +18,7 @@
     // aka brackology
     let redraw = throttle((N) => restuffock(N), 1000/25)
     let lets_redraw = () => {
-        let N = M.oa()
+        let N = M.o()
         console.log("reacting to M.current.version=="+M.current.version, N)
         redraw(N)
     }
@@ -31,7 +31,7 @@
     function restuffock(N) {
         // console.log("restuffock "+(N.length))
         stuffocks = []
-        M.oa().forEach((n) => {
+        M.o().forEach((n) => {
             let stuff = []
             Object.entries(n.sc).forEach(([k,v]) => {
                 let say = objectify(v)

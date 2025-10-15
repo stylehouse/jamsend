@@ -10,7 +10,7 @@
 </script>
 
     {#each innered as inner}
-        {@const many = inner.c.X.z.length}
+        {@const many = inner.X.z.length}
         <button class="btn" onclick={toggle}>
             /*{many}
         </button>
