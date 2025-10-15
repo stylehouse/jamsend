@@ -1,3 +1,4 @@
+import { now_in_seconds } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 let spec = `
@@ -160,7 +161,7 @@ export class Stuff {
 
 
     // regroup! indexes build up, forming X/.../$n to be with
-    i(n: TheC) {
+    i(n: TheC|TheUniversal) {
         n = _C(n)
         this.Xify()
         // failed ideas here include:
@@ -295,6 +296,12 @@ export class Stuff {
         
         return n.sc[key] === value;
     }
+    // whole seconds of oldness getter
+    ago(gk) {
+        let time = this.sc[gk]
+        if (time == null) return Infinity
+        return now_in_seconds() - time
+    }
 
 
 
@@ -367,6 +374,9 @@ export class Stuffing {
     started = $state(false)
     constructor(Stuff:Stuff) {
         this.Stuff = Stuff
+        //  svelte docs: You can use $effect anywhere,
+        //   not just at the top level of a component, 
+        //   as long as it is called while a parent effect is running.
         $effect(() => {
             if (this.Stuff.version) {
                 // may drop out here, UI:Stuffing reacts to .started
@@ -555,7 +565,7 @@ type TheEmpirical = {
 } & any
 
 // extends Stuff, so you can C.i(inC) for C/inC
-class TheC extends Stuff {
+export class TheC extends Stuff {
     // may be null, doesn't count as a key!
     name?: string
     // similar, but between 0-1
@@ -693,26 +703,26 @@ export class Modus {
     }
 
 
-    static test_Stuff() {
-        let M = new Modus()
-        M.i({waffle:2,table:4})
-        M.i({waffle:5,six:4})
-        let two_one_one = [
-            M.o({waffle:1}),
-            M.o({table:4}),
-            M.o({waffle:5}),
-        ]
-        let empty_undef = [
-            M.oa({lovely:3}),
-            M.o({six:3}),
-        ]
-        console.log("Stuff",{empty_undef,two_one_one})
-        return M
-    }
     main() {
         console.log("Disfrance")
         this.i({diffrance:23})
     }
+
+    // when starting a new time, set the next
+    reset_interval() {
+        // the universal %interval persists through time, may be adjusted
+        let int = this.boa({mo:'main',interval:1})[0]
+        let interval = int?.sc.interval || 1.6
+        let id; id = setTimeout(() => {
+            // if we are still the current callback
+            if (n != this.oa({mo:'main',interval:1})[0]) return
+
+            this.main()
+            
+        },1000*interval)
+        let n = this.i({mo:'main',interval,id})
+    }
+
     static test_Modus() {
         let M = new Modus()
 
@@ -728,12 +738,22 @@ export class Modus {
         }
         return M
     }
-    
 
-    advance() {
-        // < to rearrange a composite Stuff...
-        //    dropping only what we'll do again in the Modus.main()
-        //   or recreate any %domes until they are 
+    static test_Stuff() {
+        let M = new Modus()
+        M.i({waffle:2,table:4})
+        M.i({waffle:5,six:4})
+        let two_one_one = [
+            M.o({waffle:1}),
+            M.o({table:4}),
+            M.o({waffle:5}),
+        ]
+        let empty_undef = [
+            M.oa({lovely:3}),
+            M.o({six:3}),
+        ]
+        console.log("Stuff",{empty_undef,two_one_one})
+        return M
     }
     
 

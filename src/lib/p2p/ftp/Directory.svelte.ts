@@ -1,9 +1,9 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, Modus, Stuff } from '$lib/data/Stuff.svelte';
+import { _C, Modus, Stuff, TheC } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { erring } from '$lib/Y'
-import type { PierFeature } from '../Peerily.svelte';
+import { now_in_seconds, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
 
@@ -21,16 +21,6 @@ export class DirectoryModus extends Modus {
         super(opt)
         // the above super() / assign() doesn't set .F|S (javascript quirk?)
         Object.assign(this,opt)
-
-        // Set up reactive effect to watch for list changes
-        //  svelte docs: You can use $effect anywhere,
-        //   not just at the top level of a component, 
-        //   as long as it is called while a parent effect is running.
-        $effect(() => {
-            if (this.S?.list && this.o({unready:this.S})) {
-                this.main()
-            }
-        })
     }
 
 
@@ -42,48 +32,41 @@ export class DirectoryModus extends Modus {
         this.have_time(async () => {
             this.reset_interval()
 
+            // < rewrite everything we're thinking about how to:
+            await this.surf_DLs()
+
             // Modus_testcase(this)
-            // < rewrite everything we're thinking about what to do:
-            await this.read_directory()
+
             // < look within $scope of the Tree (start with localList) for...
             console.log("DirectoryModus.main()")
         })
     }
-    // starting a new time, set the next
-    reset_interval() {
-        // the universal %interval persists through time, may be adjusted
-        let int = this.boa({mo:'main',interval:1})[0]
-        let interval = int?.sc.interval || 1.6
-        let id; id = setTimeout(() => {
-            // if we are still the current callback
-            if (n != this.oa({mo:'main',interval:1})[0]) return
 
-            this.main()
-            
-        },1000*interval)
-        let n = this.i({mo:'main',interval,id})
+    async surf_DLs() {
+        // look to replace and climb down into the last %DL
+        let top = this.boa({nib:'dir',DL:1})[0]
+        top ||= _C({nib:'dir',DL:this.S.list})
+        if (top.ago('seen') > 5) {
+            top.sc.seen = now_in_seconds()
+            await this.expand_DL(top)
+        }
+        this.i(top)
     }
-
-
-    async read_directory() {
-        let li = this.S?.list
-        // < make this depend on this Super|Dome|Occasion
-        if (!li) return this.i({unready:this.S})
-        this.drop(this.oa({unready:this.S})[0])
-
-        let tob = this.oa({nib:'dir'})[0]
-        if (tob) this.drop(tob)
-        let DL = li
-        let top = this.i({nib:'dir',name:DL.name,DL})
-        await li.expand()
-        li.directories.forEach(DL => {
+    async expand_DL(top:TheC) {
+        const DL:DirectoryListing = top.sc.DL
+        await DL.expand()
+        
+        DL.directories.forEach(DL => {
             top.i({nib:'dir',name:DL.name,DL})
         })
-        li.files.forEach(FL => {
-            top.i({nib:'file',name:FL.name,FL: FL})
+        DL.files.forEach(FL => {
+            top.i({nib:'file',name:FL.name,FL})
         })
+
     }
 }
+
+
 
 //#region *Listing
 // one file

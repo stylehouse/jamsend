@@ -60,7 +60,8 @@ type Prekey = Sighex
 type Pubkey = Sighex
 type Prikey = Sighex
 
-function now_in_seconds() {
+// the global internet time, UTC in whole seconds
+export function now_in_seconds() {
     return Math.floor(Date.now() / 1000)
 }
 export function bunch_of_nowish() {
