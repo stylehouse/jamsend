@@ -13,14 +13,16 @@
         // we have to wait for the new version
         //  if in transaction that went async
         //   after starting to change stuff
-        new_stuffing = new Stuffing(stuff)
-        spinner = true
-        console.log(`Stuffing new...`)
+        if (stuff.version) {
+            new_stuffing = new Stuffing(stuff)
+            spinner = true
+            // console.log(`Stuffing new...`)
+        }
     })
     $effect(() => {
         // it finished! bumping version agaion
         if (new_stuffing && new_stuffing.started) {
-            console.log(`Stuffing installed!`)
+            // console.log(`Stuffing installed!`)
             stuffing = new_stuffing
             new_stuffing = null
             setTimeout(() => {

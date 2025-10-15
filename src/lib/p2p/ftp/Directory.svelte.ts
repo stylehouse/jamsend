@@ -58,12 +58,14 @@ export class DirectoryModus extends Modus {
     async surf_DL(top:TheC) {
         const DL:DirectoryListing = top.sc.DL
         await DL.expand()
-        
-        DL.directories.forEach(DL => {
-            top.i({nib:'dir',name:DL.name,DL})
-        })
-        DL.files.forEach(FL => {
-            top.i({nib:'file',name:FL.name,FL})
+
+        top.replace({},async () => {
+            DL.directories.forEach(DL => {
+                top.i({nib:'dir',name:DL.name,DL})
+            })
+            DL.files.forEach(FL => {
+                top.i({nib:'file',name:FL.name,FL})
+            })
         })
     }
 }
