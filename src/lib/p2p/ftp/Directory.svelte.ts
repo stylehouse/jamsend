@@ -46,13 +46,16 @@ export class DirectoryModus extends Modus {
         // look to replace and climb down into the last %DL
         let top = this.boa({nib:'dir',DL:1})[0]
         top ||= _C({nib:'dir',DL:this.S.list})
+        await this.surfable_DL(top)
+    }
+    async surfable_DL(top:TheC) {
         if (top.ago('seen') > 5) {
             top.sc.seen = now_in_seconds()
-            await this.expand_DL(top)
+            await this.surf_DL(top)
         }
         this.i(top)
     }
-    async expand_DL(top:TheC) {
+    async surf_DL(top:TheC) {
         const DL:DirectoryListing = top.sc.DL
         await DL.expand()
         
@@ -62,7 +65,6 @@ export class DirectoryModus extends Modus {
         DL.files.forEach(FL => {
             top.i({nib:'file',name:FL.name,FL})
         })
-
     }
 }
 
