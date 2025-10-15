@@ -45,7 +45,7 @@ export class DirectoryModus extends Modus {
     async surf_DLs() {
         // look to replace and climb down into the last %DL
         let top = this.bo({nib:'dir',DL:1})[0]
-        top ||= _C({nib:'dir',DL:this.S.list})
+        top ||= _C({nib:'dir',DL:this.S.list, est:now_in_seconds()})
         await this.surfable_DL(top)
     }
     async surfable_DL(top:TheC) {
@@ -59,13 +59,23 @@ export class DirectoryModus extends Modus {
         const DL:DirectoryListing = top.sc.DL
         await DL.expand()
 
-        top.replace({},async () => {
+        top.replace({nib:1,name:1},async (ta) => {
             DL.directories.forEach(DL => {
                 top.i({nib:'dir',name:DL.name,DL})
             })
             DL.files.forEach(FL => {
                 top.i({nib:'file',name:FL.name,FL})
             })
+            return
+
+            ta.matchup_o({nib:'dir'},(a,b) => {
+                // each of those that are matched up, old a and new b
+                // so we'd put b.X = a.X to reassign its inners
+            })
+            ta.orphan(n)
+        }, async (a,b) => { 
+            // as matchup_o, but relying on pattern_sc?
+
         })
     }
 }

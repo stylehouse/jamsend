@@ -24,7 +24,8 @@
     }
     $effect(() => {
         if (M.current.version) {
-            setTimeout(() => lets_redraw(), 0)
+            if (M.current.X_before) return
+            setTimeout(() => lets_redraw(), 140)
         }
     })
 

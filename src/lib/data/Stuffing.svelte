@@ -3,6 +3,8 @@
     import Stuffusion from './Stuffusion.svelte'
 
     let { stuff }: { stuff: Stuff } = $props()
+    let stuff_length = $state(0)
+    let stufflen = () => { stuff_length = stuff?.X?.z.length || 0 }
 
     // Create Stuffing in an effect
     let stuffing: Stuffing | null = $state(null)
@@ -18,6 +20,7 @@
             spinner = true
             // console.log(`Stuffing new...`)
         }
+        stufflen()
     })
     $effect(() => {
         // it finished! bumping version agaion
@@ -29,6 +32,7 @@
                 spinner = false
             }, 333)
         }
+        stufflen()
     })
 
 </script>
@@ -79,6 +83,7 @@
 {#if stuffing}
     <div class="stuffing">
         <div class="content">
+            x{stuff_length}
             {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}
                 <Stuffusion {stuffusion} />
             {/each}

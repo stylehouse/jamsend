@@ -382,7 +382,7 @@ export class Stuff {
             // now all that's in X should be what's new in partial
 
             // < regard new|gone, diff?
-            // gone_fn(info)
+            // gone_fn?()
 
             if (partial) {
                 // put everything else back in
