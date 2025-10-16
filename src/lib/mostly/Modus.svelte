@@ -2,6 +2,7 @@
     import type { Modus } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
     import { throttle } from "$lib/Y";
+    import { onDestroy } from "svelte";
     import NotPier from "../p2p/ui/repro-reactive-stashed-hierarchy/NotPier.svelte";
 
     let {M}:{M:Modus} = $props()
@@ -42,6 +43,9 @@
             stuffocks.push(stuff)
         })
     }
+    onDestroy(() => {
+        M.stop()
+    })
 </script>
 
     <button onclick={redraw}>redraw</button>

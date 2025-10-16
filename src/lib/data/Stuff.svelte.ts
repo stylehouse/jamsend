@@ -759,11 +759,17 @@ export class Modus {
         let id; id = setTimeout(() => {
             // if we are still the current callback
             if (n != this.oa({mo:'main',interval:1})[0]) return
+            // if the UI:Modus still exists
+            if (this.stopped) return
 
             this.main()
             
         },1000*interval)
         let n = this.i({mo:'main',interval,id})
+    }
+    stopped = false
+    stop() {
+        this.stopped = true
     }
 
     static test_Modus() {
