@@ -72,21 +72,22 @@ class TheX {
     }
 
     // X/$k +$n
-    i_k(k: string, n: TheC, kf?: string): TheX {
+    i_k(k: string, n?: TheC|null, kf?: string): TheX {
         this.bump_version()
         kf = kf || 'k';
         this[kf] = this[kf] || {};
         const x: TheX = this[kf][k] = this[kf][k] || new TheX();
         x.up = this;
-        x.i_z('z', n);
+        x.i_z(n);
         return x;
     }
 
     // X.z +$n - dupey accumulator, makes /$n (rows at x)
-    i_z(k: string, n: TheC) {
+    i_z(n?: TheC|null, kf?: string) {
         if (!n) return;
+        kf = kf || 'z';
         this.bump_version()
-        const N = this[k] = this[k] || [];
+        const N = this[kf] = this[kf] || [];
         if (!Array.isArray(N)) throw "!ar";
         N.push(n);
         // robustly
@@ -118,17 +119,17 @@ class TheX {
         const f = this[kf] = this[kf] || [];
         const x: TheX = f[vi] = f[vi] || new TheX();
         x.up = this;
-        x.i_z('z', n);
+        x.i_z(n);
         return x;
     }
 
     // X reading, returning x to Stuff
-    o_kv(k:string,v:1|any):TheX|undefined {
+    o_kv(k:string,v:1|any,q:any):TheX|undefined {
         // Look up the key in X.k
         let x = this.k && this.k[k] ? this.k[k] : null;
         
         // wildcard where {$k:1}
-        if (x && v != 1) {
+        if (x && (v != 1 || q?.notwild)) {
             // Find the value index
             let vi = x.vs ? x.vs.indexOf(v) : -1;
             if (vi < 0) return; // continues to next iteration
@@ -185,7 +186,7 @@ export class Stuff {
         // do your basic index-everything - copy info from these $n to X/$k/$v
         // everything we have
         //  the below i_k and i_v also do i_z where they end up
-        this.X.i_z('z', n);
+        this.X.i_z(n);
 
         Object.entries(n.sc || {}).forEach(([k, v]) => {
             // the keys
@@ -363,26 +364,27 @@ export class Stuff {
     //   bo() can be used to look at the before time
     //   o() will only have what we've added so far
     //  
-    async replace(pattern_sc:TheUniversal,fn:Function,gone_fn?:Function) {
+    async replace(pattern_sc:TheUniversal,fn:Function,gone_fn?:Function,dump?:TheC) {
         if (this.X_before) throw `already X_before, still doing another replace()`
         // move it aside and regerate another X
         this.X_before = this.X
         this.X = null
         this.Xify()
 
-        // may be a subset of everything
-        let partial:TheN|null
+        // may select a subset to replace
+        let partial:TheN|null = null
         if (Object.keys(pattern_sc).length) {
             partial = this.bo(pattern_sc)
         }
-
 
         try {
             const result = await fn()
             // now all that's in X should be what's new in partial
 
-            // < regard new|gone, diff?
-            // gone_fn?()
+            if (gone_fn) {
+                // make a series of pairs of $n across time
+                this.resolve(this.X,this.X_before,partial,gone_fn,dump)
+            }
 
             if (partial) {
                 // put everything else back in
@@ -407,6 +409,105 @@ export class Stuff {
             //  chase up observers eg Stuffing, who aren't waiting
             this.X?.bump_version()
         }
+    }
+
+    // regard new|gone in here
+    // make a series of pairs of $n across time
+    async resolve(X:TheX,oldX:TheX,partial:TheN|null,fn:Function,dump?:TheC) {
+        console.log("Resolve! "+(oldX ? "" : "Nothing!"))
+        if (!oldX) {
+            X.z?.forEach((n,i) => {
+                // everything is new
+                fn(null,n)
+            })
+            return
+        }
+        // partial may be a set of old things we're replacing
+        //  if partial, there's other stuff in oldX we're not replacing
+        // but X is always the new stuff only
+        let partsof = (N:TheN) => {
+            return N.filter(n => !partial || partial.includes(n))
+        }
+        // debuggery
+        let keyser = (n:TheC) => {
+            let la = []
+            Object.entries(n.sc).forEach(([k,v]) => {
+                la.push(k+":"+objectify(v))
+            })
+            return la.join(", ")
+        }
+        let coms = dump || _C({void:1})
+
+        // collect islands of same k+v
+        let Over = _C({})
+        Over.Xify()
+        // iterate the new k/v structure
+        Object.entries(X.k).forEach(([k,kx]) => {
+            kx = kx as TheX
+            // eg k=nib, we're dividing nib=dir|blob
+            Object.entries(kx.v).forEach(([i,vx]) => {
+                let v = kx.vs[i]
+                vx = vx as TheX
+                // eg k=nib,v=dir
+                // console.log(`  vx: ${i}, /*${vx.z.length}`,vx)
+                // look for the same k/v
+                let oldvx = oldX.o_kv(k,v,{notwild:1})
+                if (!oldvx) return // none
+                // treat ref matching as less important
+                //  expect some string property will be more disambiguating
+                let vtype = typeof v == 'object' ? 'ref' : 'string'
+                if (vtype == 'ref') return // probably not worth the time
+
+
+                // lets assume we're going to uniquely identify everything easily
+                if (!oldvx.z.length) throw `should always be some /$n`
+                let old_z = partsof(oldvx.z)
+                if (!old_z.length) {
+                    debugger // may share kv with the out-group
+                    return
+                }
+                vx.z.forEach((n:TheC,i:number) => {
+                    // any neu%nib:dir could match any old%nib:dir
+                    // via /$v:neu /$k/$v:stringval /$n=old
+                    let nkvx = Over.X.i_v(n,null,'neu')
+                        .i_k(k).i_k(v,null,'stringval')
+                    old_z.forEach(oldn => nkvx.i_z(oldn))
+                })
+            })
+        })
+
+
+
+        let matchi = 1
+        // < deduce unique enough matches
+        // < leftovers
+        // /$v:neu /$k/$v:stringval /$n=old
+        Object.entries(Over.X.neu).forEach(([i,neux]) => {
+            let n = Over.X.neus[i]
+            neux = neux as TheX
+
+            Object.entries(neux.k).forEach(([k,kx]) => {
+                kx = kx as TheX
+                Object.entries(kx.stringval).forEach(([v,vx]) => {
+                    let oldn = vx.z[0]
+
+                    // < for deduction of %nib:dir x20 matching less than %name:veryunique x1
+
+                    // make incompressible Stuffusion
+                    let sc = {}
+                    sc['ma_'+k] = 1
+                    sc['be_'+v] = 1
+                    sc['chi'+matchi] = 1
+                    matchi++
+                    let ma = coms.i(sc)
+                    ma.i({neu:keyser(n)})
+                    ma.i({old:keyser(oldn),amongst:vx.z.length})
+                })
+            })
+        })
+
+
+
     }
 
 }
@@ -436,7 +537,7 @@ export class Stuffing {
         $effect(() => {
             if (this.Stuff.version) {
                 // may drop out here, UI:Stuffing reacts to .started
-                if (this.Stuff.X_before) return console.warn("Stuffing waits for X_before")
+                if (this.Stuff.X_before) return //console.warn("Stuffing waits for X_before")
                 console.log("reacting to Stuff++")
                 setTimeout(() => this.brackology(), 0)
             }
@@ -700,6 +801,7 @@ function nonemptyArray_or_null(N:any) {
 }
 export class Modus {
     current:TheC = $state(_C())
+    dump:TheC = $state(_C())
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)

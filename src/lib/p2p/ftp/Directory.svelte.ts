@@ -29,6 +29,7 @@ export class DirectoryModus extends Modus {
     //  < GOING is DirectoryShare.refresh() and so forth
     // < and slowly dispatch everything else...
     async main() {
+        this.dump.X = null
         this.have_time(async () => {
             this.reset_interval()
 
@@ -60,11 +61,12 @@ export class DirectoryModus extends Modus {
         await DL.expand()
 
         top.replace({nib:1,name:1},async (ta) => {
+            top.coms = this
             DL.directories.forEach(DL => {
                 top.i({nib:'dir',name:DL.name,DL})
             })
             DL.files.forEach(FL => {
-                top.i({nib:'file',name:FL.name,FL})
+                top.i({nib:'blob',name:FL.name,FL})
             })
             return
 
@@ -75,8 +77,8 @@ export class DirectoryModus extends Modus {
             ta.orphan(n)
         }, async (a,b) => { 
             // as matchup_o, but relying on pattern_sc?
-
-        })
+            console.warn("MATCHED",[a,b])
+        }, this.dump)
     }
 }
 

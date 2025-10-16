@@ -20,13 +20,13 @@
     let redraw = throttle((N) => restuffock(N), 1000/25)
     let lets_redraw = () => {
         let N = M.o()
-        console.log("reacting to M.current.version=="+M.current.version, N)
+        // console.log("reacting to M.current.version=="+M.current.version, N)
         redraw(N)
     }
     $effect(() => {
         if (M.current.version) {
             if (M.current.X_before) return
-            setTimeout(() => lets_redraw(), 140)
+            // setTimeout(() => lets_redraw(), 140)
         }
     })
 
@@ -66,6 +66,7 @@
 
 
         <Stuffing stuff={M.current} />
+        <Stuffing stuff={M.dump} />
 <style>
     .stuffock {
         margin: 1em;
