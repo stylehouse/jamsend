@@ -29,7 +29,7 @@ export class DirectoryModus extends Modus {
     //  < GOING is DirectoryShare.refresh() and so forth
     // < and slowly dispatch everything else...
     async main() {
-        this.dump.X = null
+        this.dump = _C()
         this.have_time(async () => {
             this.reset_interval()
 

@@ -83,7 +83,7 @@ class TheX {
     }
 
     // X.z +$n - dupey accumulator, makes /$n (rows at x)
-    i_z(n?: TheC|null, kf?: string) {
+    i_z(n?: TheC|any|null, kf?: string) {
         if (!n) return;
         kf = kf || 'z';
         this.bump_version()
@@ -103,7 +103,7 @@ class TheX {
     // < decide based on the v type (in o or i) whether to use
     //    a third index for key-ish values...
     // < value array should be a WeakMap, preventing the need for two indexes
-    i_refer(v: any, n: TheC, kf: string, kfs?: string): TheX | null {
+    i_refer(v: any, n?: TheC|null, kf: string, kfs?: string): TheX | null {
         this.bump_version()
         // the X.something for the array of values
         kfs = kfs || kf + 's';
@@ -114,6 +114,7 @@ class TheX {
         const fs = this[kfs] = this[kfs] || [];
         let vi = fs.indexOf(v);
         
+        // if $n=null you will inflate an empty /$n space
         if (vi < 0) vi = fs.push(v) - 1;
         
         const f = this[kf] = this[kf] || [];
@@ -415,7 +416,7 @@ export class Stuff {
     // make a series of pairs of $n across time
     async resolve(X:TheX,oldX:TheX,partial:TheN|null,fn:Function,dump?:TheC) {
         console.log("Resolve! "+(oldX ? "" : "Nothing!"))
-        if (!oldX) {
+        if (!oldX?.z?.length) {
             X.z?.forEach((n,i) => {
                 // everything is new
                 fn(null,n)
@@ -441,38 +442,45 @@ export class Stuff {
         // collect islands of same k+v
         let Over = _C({})
         Over.Xify()
-        // iterate the new k/v structure
-        Object.entries(X.k).forEach(([k,kx]) => {
-            kx = kx as TheX
-            // eg k=nib, we're dividing nib=dir|blob
-            Object.entries(kx.v).forEach(([i,vx]) => {
-                let v = kx.vs[i]
-                vx = vx as TheX
-                // eg k=nib,v=dir
-                // console.log(`  vx: ${i}, /*${vx.z.length}`,vx)
-                // look for the same k/v
-                let oldvx = oldX.o_kv(k,v,{notwild:1})
-                if (!oldvx) return // none
-                // treat ref matching as less important
-                //  expect some string property will be more disambiguating
-                let vtype = typeof v == 'object' ? 'ref' : 'string'
-                if (vtype == 'ref') return // probably not worth the time
 
-
-                // lets assume we're going to uniquely identify everything easily
-                if (!oldvx.z.length) throw `should always be some /$n`
-                let old_z = partsof(oldvx.z)
-                if (!old_z.length) {
-                    debugger // may share kv with the out-group
-                    return
-                }
-                vx.z.forEach((n:TheC,i:number) => {
-                    // any neu%nib:dir could match any old%nib:dir
-                    // via /$v:neu /$k/$v:stringval /$n=old
-                    let nkvx = Over.X.i_v(n,null,'neu')
-                        .i_k(k).i_k(v,null,'stringval')
-                    old_z.forEach(oldn => nkvx.i_z(oldn))
+        let kv_iter = (X,fn) => {
+            Object.entries(X.k).forEach(([k,kx]) => {
+                kx = kx as TheX
+                // eg k=nib, we're dividing nib=dir|blob
+                Object.entries(kx.v).forEach(([i,vx]) => {
+                    let v = kx.vs[i]
+                    fn(k,kx,v,vx)
                 })
+            })
+        }
+
+        // iterate the new k/v structure
+
+        kv_iter(X,(k,kx,v,vx) => {
+            // eg k=nib,v=dir
+
+            // expect some string property will be more disambiguating
+            // < ref matching. would be slower. do on the remainder?
+            let vtype = typeof v == 'object' ? 'ref' : 'string'
+            if (vtype == 'ref') return
+
+            // look for the same k/v
+            let oldvx = oldX.o_kv(k,v,{notwild:1})
+            if (!oldvx) return // none
+
+            // lets assume we're going to uniquely identify everything easily
+            if (!oldvx.z.length) throw `should always be some /$n`
+            let old_z = partsof(oldvx.z)
+            if (!old_z.length) {
+                debugger // may share kv with the out-group
+                return
+            }
+            vx.z.forEach((n:TheC,i:number) => {
+                // any neu%nib:dir could match any old%nib:dir
+                // via /$v:neu /$k/$v:stringval /$n=old
+                let nkvx = Over.X.i_v(n,null,'neu')
+                    .i_k(k).i_v(v,null)
+                old_z.forEach(oldn => nkvx.i_z(oldn))
             })
         })
 
@@ -486,30 +494,96 @@ export class Stuff {
             let n = Over.X.neus[i]
             neux = neux as TheX
 
-            Object.entries(neux.k).forEach(([k,kx]) => {
-                kx = kx as TheX
-                Object.entries(kx.stringval).forEach(([v,vx]) => {
-                    let oldn = vx.z[0]
+            // < kind of want to know how transportey the properties are,
+            //    to avoid a %current property that moves around implying ID continuity...
 
-                    // < for deduction of %nib:dir x20 matching less than %name:veryunique x1
 
-                    // make incompressible Stuffusion
-                    let sc = {}
-                    sc['ma_'+k] = 1
-                    sc['be_'+v] = 1
-                    sc['chi'+matchi] = 1
-                    matchi++
-                    let ma = coms.i(sc)
-                    ma.i({neu:keyser(n)})
-                    ma.i({old:keyser(oldn),amongst:vx.z.length})
+            kv_iter(neux,(k,kx,v,vx) => {
+                let possible = vx.z
+                let unambiguity = 1 / possible.length
+                // /$neu /$ambiguity=0.234 /$n=old
+                let rated = neux.i_k(unambiguity,null,'unambiguity')
+                rated.z = [...vx.z]
+                // /$ambiguity=0.234 /$n=neu for ordering matches amognst all $neu
+                Over.X.i_k(unambiguity,n,'unambiguity')
+
+                // < for deduction of %nib:dir x20 matching less than %name:veryunique x1
+                return
+
+                // make incompressible Stuffusion
+                let sc = {unambiguity}
+                sc['ma_'+k] = 1
+                sc['be_'+v] = 1
+                sc['chi'+matchi] = 1
+                matchi++
+                let ma = coms.i(sc)
+                ma.i({neu:keyser(n)})
+                possible.forEach(n => {
+                    ma.i({old:keyser(n)})
+                })
+            })
+        })
+        let sort_unambiguity = (X) => {
+            return Object.keys(X.unambiguity).sort().reverse()
+        }
+
+        // pairs of [oldn,n]
+        let pairs = []
+        // $neu dwindling to actual new items
+        let unfound:Array<TheC> = [...X.z]
+        // $oldn becoming paired with a $neu
+        let claimed:Array<TheC> = []
+        let claim = (oldn,n) => {
+            pairs.push([oldn,n])
+            unfound = unfound.filter(m => m != n)
+            claimed.push(oldn)
+        }
+
+        // sort by unambiguity
+        // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
+        let ratings = sort_unambiguity(Over.X)
+        ratings.forEach((unambiguity) => {
+            let x = Over.X.unambiguity[unambiguity]
+            x.z.forEach((n:TheC) => {
+                if (!unfound.includes(n)) return
+
+                // /$v:neu
+                let neux = Over.X.i_v(n,null,'neu')
+                if (!neux?.k) throw `algo!?k`
+                let rated = neux.i_k(unambiguity,null,'unambiguity')
+                if (!rated.z.length) throw `algo!?z`
+                rated.z.forEach((oldn) => {
+                    if (claimed.includes(oldn)) return
+                    // < I fade out here. maybe with a better io notation...
+                    //   sorting through arrangements any more is...
+                    //    one of those has-been-done academic things
+                    // let oldnx = Over.X.i_v(oldn,n,'old')
+                    // if (oldnx.z.length > 1) coms.i({ambiguo:n,neu:keyser(n),oldn,old:keyser(oldn)})
+                    // < pile up neux/$maybe=oldn from many vx
+                    //    to union many takes on $oldn with decreasing pickiness
+                    //     depending on everyone else's contest...
+                    //    lots of permuting?
+                    // or just accept the first one?
+                    //  they are sorted for uniqueness, won't re-claim...
+                    claim(oldn,n)
                 })
             })
         })
 
+        // what's left in X_before (that we are partial to replacing)
+        let gone = partsof(oldX.z||[])
+            .filter(oldn => !claimed.includes(oldn))
+        
+        // log it all
+        pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
+        unfound.forEach((n) => coms.i({spawn:keyser(n)}))
+        gone.forEach((n) => coms.i({gone:keyser(n)}))
 
-
+        // new stuff
+        unfound.forEach((n) => pairs.push([null,n]))
+        // gone stuff
+        gone.forEach((oldn) => pairs.push([oldn,null]))
     }
-
 }
 
 
@@ -801,7 +875,7 @@ function nonemptyArray_or_null(N:any) {
 }
 export class Modus {
     current:TheC = $state(_C())
-    dump:TheC = $state(_C())
+    dump?:TheC|null = $state()
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)

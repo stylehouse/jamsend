@@ -66,7 +66,7 @@
 
 
         <Stuffing stuff={M.current} />
-        <Stuffing stuff={M.dump} />
+        {#if M.dump}<Stuffing stuff={M.dump} />{/if}
 <style>
     .stuffock {
         margin: 1em;

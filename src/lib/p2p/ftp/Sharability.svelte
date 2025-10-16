@@ -42,7 +42,7 @@
         <Modus M={S.modus}></Modus>
     {/if}
 
-    {#if S.started}
+    {#if false && S.started}
         <FileList
                 title="Local Files" 
                 list={S.list} 
