@@ -162,6 +162,8 @@ export class Stuff {
     get version() {
         return this.X?.serial_i || 0
     }
+    // might have a channel to log (.i()) algorithm mumble to
+    coms?: TheC
     // delete a C (filter it out of results)
     drop(n:TheC) {
         if (!n) return
@@ -365,7 +367,7 @@ export class Stuff {
     //   bo() can be used to look at the before time
     //   o() will only have what we've added so far
     //  
-    async replace(pattern_sc:TheUniversal,fn:Function,gone_fn?:Function,dump?:TheC) {
+    async replace(pattern_sc:TheUniversal,fn:Function,gone_fn?:Function) {
         if (this.X_before) throw `already X_before, still doing another replace()`
         // move it aside and regerate another X
         this.X_before = this.X
@@ -384,7 +386,7 @@ export class Stuff {
 
             if (gone_fn) {
                 // make a series of pairs of $n across time
-                this.resolve(this.X,this.X_before,partial,gone_fn,dump)
+                await this.resolve(this.X,this.X_before,partial,gone_fn)
             }
 
             if (partial) {
@@ -414,8 +416,7 @@ export class Stuff {
 
     // regard new|gone in here
     // make a series of pairs of $n across time
-    async resolve(X:TheX,oldX:TheX,partial:TheN|null,fn:Function,dump?:TheC) {
-        console.log("Resolve! "+(oldX ? "" : "Nothing!"))
+    async resolve(X:TheX,oldX:TheX,partial:TheN|null,fn:Function) {
         if (!oldX?.z?.length) {
             X.z?.forEach((n,i) => {
                 // everything is new
@@ -430,14 +431,7 @@ export class Stuff {
             return N.filter(n => !partial || partial.includes(n))
         }
         // debuggery
-        let keyser = (n:TheC) => {
-            let la = []
-            Object.entries(n.sc).forEach(([k,v]) => {
-                la.push(k+":"+objectify(v))
-            })
-            return la.join(", ")
-        }
-        let coms = dump || _C({void:1})
+        let coms = this.coms
 
         // collect islands of same k+v
         let Over = _C({})
@@ -472,7 +466,8 @@ export class Stuff {
             if (!oldvx.z.length) throw `should always be some /$n`
             let old_z = partsof(oldvx.z)
             if (!old_z.length) {
-                debugger // may share kv with the out-group
+                // may share kv with the out-group
+                console.warn("Perhaps your replace() pattern_sc doesn't match the new atoms?",{X,partial})
                 return
             }
             vx.z.forEach((n:TheC,i:number) => {
@@ -487,44 +482,24 @@ export class Stuff {
 
 
         let matchi = 1
-        // < deduce unique enough matches
-        // < leftovers
         // /$v:neu /$k/$v:stringval /$n=old
-        Object.entries(Over.X.neu).forEach(([i,neux]) => {
+        Object.entries(Over.X.neu||{}).forEach(([i,_neux]) => {
             let n = Over.X.neus[i]
-            neux = neux as TheX
-
-            // < kind of want to know how transportey the properties are,
-            //    to avoid a %current property that moves around implying ID continuity...
-
-
+            let neux = _neux as TheX
             kv_iter(neux,(k,kx,v,vx) => {
                 let possible = vx.z
                 let unambiguity = 1 / possible.length
+                // for %nib:dir x20 matching less than %name:veryunique x1
                 // /$neu /$ambiguity=0.234 /$n=old
                 let rated = neux.i_k(unambiguity,null,'unambiguity')
                 rated.z = [...vx.z]
                 // /$ambiguity=0.234 /$n=neu for ordering matches amognst all $neu
                 Over.X.i_k(unambiguity,n,'unambiguity')
 
-                // < for deduction of %nib:dir x20 matching less than %name:veryunique x1
-                return
-
-                // make incompressible Stuffusion
-                let sc = {unambiguity}
-                sc['ma_'+k] = 1
-                sc['be_'+v] = 1
-                sc['chi'+matchi] = 1
-                matchi++
-                let ma = coms.i(sc)
-                ma.i({neu:keyser(n)})
-                possible.forEach(n => {
-                    ma.i({old:keyser(n)})
-                })
             })
         })
         let sort_unambiguity = (X) => {
-            return Object.keys(X.unambiguity).sort().reverse()
+            return Object.keys(X.unambiguity||{}).sort().reverse()
         }
 
         // pairs of [oldn,n]
@@ -558,7 +533,7 @@ export class Stuff {
                     //   sorting through arrangements any more is...
                     //    one of those has-been-done academic things
                     // let oldnx = Over.X.i_v(oldn,n,'old')
-                    // if (oldnx.z.length > 1) coms.i({ambiguo:n,neu:keyser(n),oldn,old:keyser(oldn)})
+                    // if (oldnx.z.length > 1) coms&&coms.i({ambiguo:n,neu:keyser(n),oldn,old:keyser(oldn)})
                     // < pile up neux/$maybe=oldn from many vx
                     //    to union many takes on $oldn with decreasing pickiness
                     //     depending on everyone else's contest...
@@ -575,16 +550,34 @@ export class Stuff {
             .filter(oldn => !claimed.includes(oldn))
         
         // log it all
-        pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
-        unfound.forEach((n) => coms.i({spawn:keyser(n)}))
-        gone.forEach((n) => coms.i({gone:keyser(n)}))
+        if (coms) {
+            pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
+            unfound.forEach((n) => coms.i({spawn:keyser(n)}))
+            gone.forEach((n) => coms.i({gone:keyser(n)}))
+        }
 
         // new stuff
         unfound.forEach((n) => pairs.push([null,n]))
         // gone stuff
         gone.forEach((oldn) => pairs.push([oldn,null]))
+
+        pairs.forEach(([a,b]) => {
+            fn?.(a,b)
+        })
     }
 }
+
+function keyser(n:TheC) {
+    let la:Array<string> = []
+    Object.entries(n.sc).forEach(([k,v]) => {
+        la.push(k+":"+objectify(v))
+    })
+    return la.join(", ")
+}
+
+
+
+
 
 
 
@@ -612,7 +605,7 @@ export class Stuffing {
             if (this.Stuff.version) {
                 // may drop out here, UI:Stuffing reacts to .started
                 if (this.Stuff.X_before) return //console.warn("Stuffing waits for X_before")
-                console.log("reacting to Stuff++")
+                // console.log("reacting to Stuff++")
                 setTimeout(() => this.brackology(), 0)
             }
         })
@@ -797,11 +790,6 @@ type TheEmpirical = {
 
 // extends Stuff, so you can C.i(inC) for C/inC
 export class TheC extends Stuff {
-    // may be null, doesn't count as a key!
-    name?: string
-    // similar, but between 0-1
-    fraction?: number
-
     // < $state() unnecessary?
     c: TheEmpirical = $state()
     sc: TheUniversal
@@ -811,6 +799,18 @@ export class TheC extends Stuff {
         this.c ||= {}
         if (!this.sc) throw "!C.sc"
     }
+
+
+    // < a corruption? a mistake... the idea of: first class properties
+    //    where .sc.* is not overloadable, eg brackology()
+    //    we should mirror C** graphs effortlessly enough to pair meta and raw graphs...
+    // may be null, doesn't count as a key!
+    name?: string
+    // similar, but between 0-1
+    fraction?: number
+
+
+    // your modus
 }
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc
@@ -875,7 +875,7 @@ function nonemptyArray_or_null(N:any) {
 }
 export class Modus {
     current:TheC = $state(_C())
-    dump?:TheC|null = $state()
+    coms?:TheC|null = $state()
 
     constructor(opt:Partial<Modus>) {
         Object.assign(this,opt)

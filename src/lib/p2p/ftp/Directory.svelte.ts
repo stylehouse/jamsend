@@ -29,7 +29,7 @@ export class DirectoryModus extends Modus {
     //  < GOING is DirectoryShare.refresh() and so forth
     // < and slowly dispatch everything else...
     async main() {
-        this.dump = _C()
+        this.coms = _C()
         this.have_time(async () => {
             this.reset_interval()
 
@@ -47,6 +47,7 @@ export class DirectoryModus extends Modus {
         // look to replace and climb down into the last %DL
         let top = this.bo({nib:'dir',DL:1})[0]
         top ||= _C({nib:'dir',DL:this.S.list, est:now_in_seconds()})
+        top.coms = this.coms
         await this.surfable_DL(top)
     }
     async surfable_DL(top:TheC) {
@@ -60,25 +61,55 @@ export class DirectoryModus extends Modus {
         const DL:DirectoryListing = top.sc.DL
         await DL.expand()
 
-        top.replace({nib:1,name:1},async (ta) => {
-            top.coms = this
+        let yon_dirs = []
+        await top.replace({nib:1,name:1},async (ta) => {
             DL.directories.forEach(DL => {
-                top.i({nib:'dir',name:DL.name,DL})
+                let di = top.i({nib:'dir',name:DL.name,DL})
+                yon_dirs.push(di)
             })
             DL.files.forEach(FL => {
                 top.i({nib:'blob',name:FL.name,FL})
             })
-            return
-
-            ta.matchup_o({nib:'dir'},(a,b) => {
-                // each of those that are matched up, old a and new b
-                // so we'd put b.X = a.X to reassign its inners
-            })
-            ta.orphan(n)
         }, async (a,b) => { 
             // as matchup_o, but relying on pattern_sc?
-            console.warn("MATCHED",[a,b])
-        }, this.dump)
+            if (a && !b) {
+                console.warn("GOING",a)
+                return
+            }
+            if (!a && b) {
+                console.warn("NEW",b)
+
+            }
+            if (a && b) {
+                if (b.X?.z?.length) {
+                    // < if we have b.i() already? post-hoc resolve()?
+                    throw "Ohno! something"
+                }
+                // < default?
+                b.X = a.X
+            }
+        })
+        console.log("%nib:dir replaced")
+
+        yon_dirs.forEach((n:TheC) => {
+            if (n.sc.name.includes('x')) {
+                console.log("insert yadda to: "+n.sc.name)
+                // n.i({yadda:1})
+                // 0 &&
+                n.replace({seeing:1},() => {
+                    let timer = n.bo({seeing:1})[0]
+                    let rate = 1
+                    if (timer) rate = timer.sc.rate*1 + 1
+                    console.log("insert rate to: "+n.sc.name)
+                    n.i({seeing:1,rate})
+                }, async (a,b) => {
+
+                })
+            }
+        })
+        console.log("%nib:dir caretaken")
+
+
     }
 }
 
