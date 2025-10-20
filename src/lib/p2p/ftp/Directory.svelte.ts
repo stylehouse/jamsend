@@ -70,24 +70,6 @@ export class DirectoryModus extends Modus {
             DL.files.forEach(FL => {
                 top.i({nib:'blob',name:FL.name,FL})
             })
-        }, async (a,b) => { 
-            // as matchup_o, but relying on pattern_sc?
-            if (a && !b) {
-                console.warn("GOING",a)
-                return
-            }
-            if (!a && b) {
-                console.warn("NEW",b)
-
-            }
-            if (a && b) {
-                if (b.X?.z?.length) {
-                    // < if we have b.i() already? post-hoc resolve()?
-                    throw "Ohno! something"
-                }
-                // < default?
-                b.X = a.X
-            }
         })
         console.log("%nib:dir replaced")
 
@@ -108,8 +90,6 @@ export class DirectoryModus extends Modus {
             }
         })
         console.log("%nib:dir caretaken")
-
-
     }
 }
 

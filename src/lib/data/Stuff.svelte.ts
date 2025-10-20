@@ -367,7 +367,7 @@ export class Stuff {
     //   bo() can be used to look at the before time
     //   o() will only have what we've added so far
     //  
-    async replace(pattern_sc:TheUniversal,fn:Function,gone_fn?:Function) {
+    async replace(pattern_sc:TheUniversal,fn:Function,pairs_fn?:Function) {
         if (this.X_before) throw `already X_before, still doing another replace()`
         // move it aside and regerate another X
         this.X_before = this.X
@@ -384,10 +384,19 @@ export class Stuff {
             const result = await fn()
             // now all that's in X should be what's new in partial
 
-            if (gone_fn) {
-                // make a series of pairs of $n across time
-                await this.resolve(this.X,this.X_before,partial,gone_fn)
+            // make a series of pairs of $n across time
+            const wrap_pairs_fn = (a:TheC,b:TheC) => {
+                if (b.X?.z?.length) {
+                    // < if they have b.i() already? post-hoc resolve()?
+                    throw "Ohno! something"
+                }
+                if (a && b) {
+                    // by default, replacing a C keeps its C/**
+                    b.X = a.X
+                }
+                pairs_fn?.(a,b)
             }
+            await this.resolve(this.X,this.X_before,partial,wrap_pairs_fn)
 
             if (partial) {
                 // put everything else back in
@@ -409,12 +418,13 @@ export class Stuff {
         } finally {
             this.X_before = undefined
             // something probably changed
-            //  chase up observers eg Stuffing, who aren't waiting
+            //  chase up observers, eg Stuffing, who aren't waiting
             this.X?.bump_version()
         }
     }
 
     // regard new|gone in here
+    // assumes we're going to uniquely identify everything easily
     // make a series of pairs of $n across time
     async resolve(X:TheX,oldX:TheX,partial:TheN|null,fn:Function) {
         if (!oldX?.z?.length) {
@@ -462,7 +472,6 @@ export class Stuff {
             let oldvx = oldX.o_kv(k,v,{notwild:1})
             if (!oldvx) return // none
 
-            // lets assume we're going to uniquely identify everything easily
             if (!oldvx.z.length) throw `should always be some /$n`
             let old_z = partsof(oldvx.z)
             if (!old_z.length) {
@@ -502,11 +511,11 @@ export class Stuff {
             return Object.keys(X.unambiguity||{}).sort().reverse()
         }
 
-        // pairs of [oldn,n]
+        // pairs of [oldn,n], eventual result
         let pairs = []
         // $neu dwindling to actual new items
         let unfound:Array<TheC> = [...X.z]
-        // $oldn becoming paired with a $neu
+        // $oldn that become paired with a $neu
         let claimed:Array<TheC> = []
         let claim = (oldn,n) => {
             pairs.push([oldn,n])
