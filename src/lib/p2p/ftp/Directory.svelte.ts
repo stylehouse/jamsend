@@ -32,7 +32,8 @@ export class DirectoryModus extends Modus {
         // switch on (and clear) the debug channel
         this.coms = _C()
         // this sty
-        this.have_time(async () => {
+        await this.have_time(async () => {
+            console.log("DirectoryModus.main!!")
             this.reset_interval()
 
             // < rewrite everything we're thinking about how to:
@@ -53,7 +54,8 @@ export class DirectoryModus extends Modus {
     //    to resolve some of the X.z at once...
     //   basically by holding off goners indefinitely
     // establish a single bunch of stuff
-    //  which may grow to multiple C matching base_sc
+    //  < which may grow to multiple C matching base_sc
+    //    if it could stop compulsively having two %nib,name,DL? what why?
     //  simply cloning the before set makes it trivial to resolve $n
     // it calls your middle_cb(n), then this.i(n)
     async replacies({base_sc,new_sc,middle_cb}:{
@@ -62,6 +64,7 @@ export class DirectoryModus extends Modus {
         middle_cb:Function
     }) {
         let N = this.boa(base_sc)
+        console.log("BOA: ",N)
         if (!N) {
             if (typeof new_sc == 'function') {
                 new_sc = new_sc()
@@ -70,7 +73,8 @@ export class DirectoryModus extends Modus {
             N = [_C(new_sc)]
         }
         console.log("replacies!",N.map(n => keyser(n)))
-        N.forEach(async (oldn:TheC) => {
+        if (N.length > 1) N = [N[0]]
+        for (const oldn of N) {
             let n = _C(oldn.sc)
             // keep n/* from last time, since we basically resolve $n
             n.X = oldn.X
@@ -78,7 +82,7 @@ export class DirectoryModus extends Modus {
             await middle_cb(n)
             //  because we index it now
             this.i(n)
-        })
+        }
     }
 
     // 
@@ -93,10 +97,15 @@ export class DirectoryModus extends Modus {
         // look to replace and climb down into the top %DL
         let DL = this.S.list
         if (!DL) throw "!DL"
+        let was = null
         await this.replacies({
             base_sc: {nib:'dir',name:'/',DL:1},
             new_sc: () => ({DL,  est:now_in_seconds()}),
             middle_cb: async (n:TheC) => {
+                if (was && was == n) {
+                    debugger
+                }
+                was = n
                 console.log("replacies() middle_cb(): ",n)
                 // sub coms
                 n.coms = this.coms?.i({into:"surf_DLs"})
@@ -133,12 +142,11 @@ export class DirectoryModus extends Modus {
         })
         console.log("%nib:dir replaced")
 
-        yon_dirs.forEach((n:TheC) => {
+        for (const n of yon_dirs) {
             if (n.sc.name.includes('x')) {
                 console.log("insert yadda to: "+n.sc.name)
-                // n.i({yadda:1})
-                // 0 &&
-                n.replace({seeing:1},async () => {
+                n.i({yadda:1})
+                await n.replace({seeing:1},async () => {
                     let timer = n.bo({seeing:1})[0]
                     let rate = 1
                     if (timer) rate = timer.sc.rate*1 + 1
@@ -147,7 +155,7 @@ export class DirectoryModus extends Modus {
                     n.i({note:"also this"})
                 })
             }
-        })
+        }
         console.log("%nib:dir caretaken")
     }
 }

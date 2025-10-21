@@ -482,7 +482,8 @@ export class Stuff {
             let old_z = partsof(oldvx.z)
             if (!old_z.length) {
                 // may share kv with the out-group
-                console.warn("Perhaps your replace() pattern_sc doesn't match the new atoms?",{X,partial})
+                // < an odd occasion to study in testing
+                // console.warn("Perhaps your replace() pattern_sc doesn't match the new atoms?",{X,partial})
                 return
             }
             vx.z.forEach((n:TheC,i:number) => {
