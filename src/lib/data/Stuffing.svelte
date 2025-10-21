@@ -4,7 +4,7 @@
 
     let { stuff }: { stuff: Stuff } = $props()
     let stuff_length = $state(0)
-    let stufflen = () => { stuff_length = stuff?.X?.z.length || 0 }
+    let stufflen = () => { stuff_length = stuff?.X?.z?.length || 0 }
 
     // Create Stuffing in an effect
     let stuffing: Stuffing | null = $state(null)

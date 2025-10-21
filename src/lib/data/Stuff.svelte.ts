@@ -367,8 +367,9 @@ export class Stuff {
     //   bo() can be used to look at the before time
     //   o() will only have what we've added so far
     //  
-    async replace(pattern_sc:TheUniversal,fn:Function,pairs_fn?:Function) {
+    async replace(pattern_sc:TheUniversal,fn:Function,q?:any) {
         if (this.X_before) throw `already X_before, still doing another replace()`
+        q ||= {}
         // move it aside and regerate another X
         this.X_before = this.X
         this.X = null
@@ -381,22 +382,28 @@ export class Stuff {
         }
 
         try {
+            // do the work, materialising atoms
             const result = await fn()
+            
             // now all that's in X should be what's new in partial
+            if (!q.fresh) {
+                // let's resolve what's the same (each C having an itself in before)
+                //  and then give each C.X from itself before
+                // so by default, replacing a C keeps its C/**
 
-            // make a series of pairs of $n across time
-            const wrap_pairs_fn = (a:TheC,b:TheC) => {
-                if (b.X?.z?.length) {
-                    // < if they have b.i() already? post-hoc resolve()?
-                    throw "Ohno! something"
+                // make a series of pairs of $n across time
+                const wrap_pairs_fn = (a:TheC,b:TheC) => {
+                    if (b.X?.z?.length) {
+                        // < if they have b.i() already? post-hoc resolve()?
+                        throw "Ohno! something"
+                    }
+                    if (a && b) {
+                        b.X = a.X
+                    }
+                    q.pairs_fn?.(a,b)
                 }
-                if (a && b) {
-                    // by default, replacing a C keeps its C/**
-                    b.X = a.X
-                }
-                pairs_fn?.(a,b)
+                await this.resolve(this.X,this.X_before,partial,wrap_pairs_fn)
             }
-            await this.resolve(this.X,this.X_before,partial,wrap_pairs_fn)
 
             if (partial) {
                 // put everything else back in
@@ -426,11 +433,11 @@ export class Stuff {
     // regard new|gone in here
     // assumes we're going to uniquely identify everything easily
     // make a series of pairs of $n across time
-    async resolve(X:TheX,oldX:TheX,partial:TheN|null,fn:Function) {
+    async resolve(X:TheX,oldX:TheX,partial:TheN|null,pairs_fn:Function) {
         if (!oldX?.z?.length) {
             X.z?.forEach((n,i) => {
                 // everything is new
-                fn(null,n)
+                pairs_fn(null,n)
             })
             return
         }
@@ -571,7 +578,7 @@ export class Stuff {
         gone.forEach((oldn) => pairs.push([oldn,null]))
 
         pairs.forEach(([a,b]) => {
-            fn?.(a,b)
+            pairs_fn?.(a,b)
         })
     }
 }
@@ -785,10 +792,10 @@ class Stuffziado extends Stuffuzia {
 
 //#endregion
 //#region C
-type TheUniversal = {
+export type TheUniversal = {
     waits?: string,
 } & any
-type TheEmpirical = {
+export type TheEmpirical = {
     // whether it has been deleted, the index remains
     drop?: any,
     // contains indexes leading to in-C (C/C)
@@ -882,16 +889,11 @@ function nonemptyArray_or_null(N:any) {
     if (N?.length) return N
     return null
 }
-export class Modus {
-    current:TheC = $state(_C())
-    coms?:TheC|null = $state()
-
-    constructor(opt:Partial<Modus>) {
-        Object.assign(this,opt)
-    }
-
+class TimeGallopia {
     // the "I'm redoing the thing" process wrapper
-    // a forgiving layer on top of Stuff.replace(), which is singleton
+    // a layer on top of Stuff.replace():
+    //  forgiving when already locked
+    //  doesn't recycle C/** (replace() q.fresh)
     async have_time(fn:Function) {
         if (this.current.X_before) return console.error("re-transacting Modus")
         // what we replace is... everything. but this could select some rows
@@ -899,8 +901,36 @@ export class Modus {
         await this.current.replace(pattern_sc,async () => {
             // doing the business
             await fn()
-        })
+        },{fresh:1})
     }
+
+    // when starting a new time, set the next
+    reset_interval() {
+        // the universal %interval persists through time, may be adjusted
+        let int = this.bo({mo:'main',interval:1})[0]
+        let interval = int?.sc.interval || 3.6
+        let id; id = setTimeout(() => {
+            // if we are still the current callback
+            if (n != this.oa({mo:'main',interval:1})[0]) return
+            // if the UI:Modus still exists
+            if (this.stopped) return
+
+            this.main()
+            
+        },1000*interval)
+        let n = this.i({mo:'main',interval,id})
+    }
+}
+
+export class Modus extends TimeGallopia {
+    current:TheC = $state(_C())
+    coms?:TheC|null = $state()
+
+    constructor(opt:Partial<Modus>) {
+        super()
+        Object.assign(this,opt)
+    }
+
 
     // add to the Stuff
     i(C:TheC|TheUniversal) {
@@ -930,28 +960,12 @@ export class Modus {
         return this.current.boa(c, q)
     }
 
-
+    // you subclass this
     main() {
         console.log("Disfrance")
         this.i({diffrance:23})
     }
 
-    // when starting a new time, set the next
-    reset_interval() {
-        // the universal %interval persists through time, may be adjusted
-        let int = this.bo({mo:'main',interval:1})[0]
-        let interval = int?.sc.interval || 3.6
-        let id; id = setTimeout(() => {
-            // if we are still the current callback
-            if (n != this.oa({mo:'main',interval:1})[0]) return
-            // if the UI:Modus still exists
-            if (this.stopped) return
-
-            this.main()
-            
-        },1000*interval)
-        let n = this.i({mo:'main',interval,id})
-    }
     stopped = false
     stop() {
         this.stopped = true

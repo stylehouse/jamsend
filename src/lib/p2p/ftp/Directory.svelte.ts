@@ -1,6 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, Modus, Stuff, TheC } from '$lib/data/Stuff.svelte';
+import { _C, Modus, Stuff, TheC, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { erring } from '$lib/Y'
 import { now_in_seconds, type PierFeature } from '../Peerily.svelte';
@@ -29,7 +29,9 @@ export class DirectoryModus extends Modus {
     //  < GOING is DirectoryShare.refresh() and so forth
     // < and slowly dispatch everything else...
     async main() {
+        // switch on (and clear) the debug channel
         this.coms = _C()
+        // this sty
         this.have_time(async () => {
             this.reset_interval()
 
@@ -43,13 +45,69 @@ export class DirectoryModus extends Modus {
         })
     }
 
-    async surf_DLs() {
+    // we usually want to consider a whole table of tuples we're replacing
+    //  but it's easier to code for single lumps of action
+    //  where a thing is defined and something is done with it over time
+    //   
+    // < works within the Modus.current.replace()
+    //    to resolve some of the X.z at once...
+    //   basically by holding off goners indefinitely
+    // establish a single bunch of stuff
+    //  which may grow to multiple C matching base_sc
+    //  simply cloning the before set makes it trivial to resolve $n
+    replacies({base_sc,new_sc,main}:{
+        base_sc:TheUniversal,
+        new_sc:Function|TheUniversal,
+        main:Function
+    }) {
+        let N = this.boa(base_sc)
+        if (!N) {
+            if (typeof new_sc == 'function') {
+                new_sc = new_sc()
+            }
+            new_sc = {...base_sc,...new_sc}
+        }
+        N ||= [_C(new_sc)]
+        N.map((oldn:TheC) => {
+            let n = _C(oldn.sc)
+            // keep n/* from last time, since we basically resolve $n
+            n.X = oldn.X
+            // you may still mutate n.sc
+            main(n)
+            //  because we index it now
+            this.i(n)
+        })
+    }
+
+    // 
+    async NOT_surf_DLs() {
         // look to replace and climb down into the last %DL
         let top = this.bo({nib:'dir',DL:1})[0]
         top ||= _C({nib:'dir',DL:this.S.list, est:now_in_seconds()})
         top.coms = this.coms
         await this.surfable_DL(top)
     }
+    async surf_DLs() {
+        // look to replace and climb down into the top %DL
+        let DL = this.S.list
+        if (!DL) throw "!DL"
+        this.replacies({
+            base_sc: {nib:'dir',name:'/',DL:1},
+            new_sc: () => ({DL,  est:now_in_seconds()}),
+            main: async (n:TheC) => {
+                console.log("replacies() main(): ",n)
+                // sub coms
+                n.coms = this.coms?.i({into:"surf_DLs"})
+                // start doing what we do for DL
+                await this.surfable_DL(n)
+            }
+        })
+        // these always change!?
+        // if (DL != n.sc.DL) throw "~DL"
+    }
+
+
+
     async surfable_DL(top:TheC) {
         if (top.ago('seen') > 5) {
             top.sc.seen = now_in_seconds()
@@ -62,7 +120,7 @@ export class DirectoryModus extends Modus {
         await DL.expand()
 
         let yon_dirs = []
-        await top.replace({nib:1,name:1},async (ta) => {
+        await top.replace({nib:1,name:1},async () => {
             DL.directories.forEach(DL => {
                 let di = top.i({nib:'dir',name:DL.name,DL})
                 yon_dirs.push(di)
