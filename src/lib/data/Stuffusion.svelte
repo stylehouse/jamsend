@@ -11,6 +11,23 @@
     }
 </script>
 
+<div class="stuffusion">
+
+    {#if openness}
+        <span class="content">
+            {#each Array.from(stuffusion.columns.values()) as stuffziad (stuffziad.name)}
+                <Stuffziad {stuffziad} />
+            {/each}
+        </span>
+    {/if}
+    {#if stuffusion.rows.length !== 1}
+        <span class="content count">x{stuffusion.rows.length}</span>
+    {/if}
+    {#if stuffusion.innered}
+        <Stuffzipper innered={stuffusion.innered} ></Stuffzipper>
+    {/if}
+</div>
+
 <style>
 .stuffusion {
     margin: 0.1em;
@@ -32,20 +49,3 @@
 
 
 </style>
-
-<div class="stuffusion">
-
-    {#if openness}
-        <span class="content">
-            {#each Array.from(stuffusion.columns.values()) as stuffziad (stuffziad.name)}
-                <Stuffziad {stuffziad} />
-            {/each}
-        </span>
-    {/if}
-    {#if stuffusion.rows.length !== 1}
-        <span class="content count">x{stuffusion.rows.length}</span>
-    {/if}
-    {#if stuffusion.innered}
-        <Stuffzipper innered={stuffusion.innered} ></Stuffzipper>
-    {/if}
-</div>

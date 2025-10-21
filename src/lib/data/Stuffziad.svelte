@@ -19,6 +19,52 @@
     
 </script>
 
+{#snippet ziado(stuffziado)}
+    {#if stuffziado.is_C}
+        <span class="count">C</span>
+    {/if}
+    <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
+    {#if stuffziado.innered}
+        <ziadoin>
+            <Stuffzipper innered={stuffziado.innered} ></Stuffzipper>
+        </ziadoin>
+    {/if}
+
+{/snippet}
+
+<div class="stuffziad">
+    <button class="btn" onclick={toggle}>
+        <span class="name">{stuffziad.name}</span>
+        <span class="colon">:</span>
+        
+        {#if stuffziad.values.size !== 1}
+            <span class="count">∇{stuffziad.values.size}</span>
+        {/if}
+        
+        {#if stuffziad.values.size > 1}
+            <span class="arrow">{openness ? '▼' : '▶'}</span>
+        {/if}
+    </button>
+
+    {#if openness && stuffziad.values.size > 1}
+        <div class="values">
+            {#each stuffziados as stuffziado (stuffziado.name)}
+                <div class="stuffziado">
+                    {@render ziado(stuffziado)}
+                    {#if stuffziado.rows.length !== 1}
+                        <span class="count">x{stuffziado.rows.length}</span>
+                    {/if}
+                </div>
+            {/each}
+        </div>
+    {:else if stuffziad.values.size === 1}
+        {@const stuffziado = stuffziados[0]}
+        <span class="inline">
+            {@render ziado(stuffziado)}
+        </span>
+    {/if}
+</div>
+
 <style>
 .stuffziad {
     margin: 0.2em;
@@ -97,47 +143,3 @@
     background-color: rgba(14, 26, 29, 0.3);
 }
 </style>
-
-{#snippet ziado(stuffziado)}
-    {#if stuffziado.is_C}
-        <span class="count">C</span>
-    {/if}
-    <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
-    {#if stuffziado.innered}
-        <Stuffzipper innered={stuffziado.innered} ></Stuffzipper>
-    {/if}
-
-{/snippet}
-
-<div class="stuffziad">
-    <button class="btn" onclick={toggle}>
-        <span class="name">{stuffziad.name}</span>
-        <span class="colon">:</span>
-        
-        {#if stuffziad.values.size !== 1}
-            <span class="count">∇{stuffziad.values.size}</span>
-        {/if}
-        
-        {#if stuffziad.values.size > 1}
-            <span class="arrow">{openness ? '▼' : '▶'}</span>
-        {/if}
-    </button>
-
-    {#if openness && stuffziad.values.size > 1}
-        <div class="values">
-            {#each stuffziados as stuffziado (stuffziado.name)}
-                <div class="stuffziado">
-                    {@render ziado(stuffziado)}
-                    {#if stuffziado.rows.length !== 1}
-                        <span class="count">x{stuffziado.rows.length}</span>
-                    {/if}
-                </div>
-            {/each}
-        </div>
-    {:else if stuffziad.values.size === 1}
-        {@const stuffziado = stuffziados[0]}
-        <span class="inline">
-            {@render ziado(stuffziado)}
-        </span>
-    {/if}
-</div>

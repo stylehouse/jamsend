@@ -37,6 +37,22 @@
 
 </script>
 
+{#if stuffing}
+    <div class="stuffing">
+        <div class="content">
+            x{stuff_length}
+            {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}
+                <Stuffusion {stuffusion} />
+            {/each}
+        </div>
+        {#if spinner}
+            <div class="spinner"></div>
+        {/if}
+    </div>
+{/if}
+
+
+
 <style>
 .stuffing {
     margin: 0.1em;
@@ -79,17 +95,3 @@
     min-width:1em;
 }
 </style>
-
-{#if stuffing}
-    <div class="stuffing">
-        <div class="content">
-            x{stuff_length}
-            {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}
-                <Stuffusion {stuffusion} />
-            {/each}
-        </div>
-        {#if spinner}
-            <div class="spinner"></div>
-        {/if}
-    </div>
-{/if}

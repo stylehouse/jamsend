@@ -7,12 +7,13 @@
     function toggle() {
         openness = !openness
     }
+    
 </script>
 
     {#each innered as inner}
         {@const many = inner.X.z.length}
         <button class="btn" onclick={toggle}>
-            /*{many}
+            .../*{many}
         </button>
         {#if openness}
             <Stuffing stuff={inner} />
