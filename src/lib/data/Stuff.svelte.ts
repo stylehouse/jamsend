@@ -392,17 +392,19 @@ export class Stuff {
                 // so by default, replacing a C keeps its C/**
 
                 // make a series of pairs of $n across time
-                const wrap_pairs_fn = (a:TheC,b:TheC) => {
+                let pairs = await this.resolve(this.X,this.X_before,partial)
+                let resolved_pairs = ([a,b]) => {
                     if (b.X?.z?.length) {
                         // < if they have b.i() already? post-hoc resolve()?
-                        throw "Ohno! something"
+                        console.error("Ohno! something already in: "+keyser(this)
+                            +"\n eg: "+keyser(b.X.z[0]))
                     }
                     if (a && b) {
                         b.X = a.X
                     }
                     q.pairs_fn?.(a,b)
                 }
-                await this.resolve(this.X,this.X_before,partial,wrap_pairs_fn)
+                pairs.forEach(resolved_pairs)
             }
 
             if (partial) {
@@ -433,13 +435,10 @@ export class Stuff {
     // regard new|gone in here
     // assumes we're going to uniquely identify everything easily
     // make a series of pairs of $n across time
-    async resolve(X:TheX,oldX:TheX,partial:TheN|null,pairs_fn:Function) {
+    async resolve(X:TheX,oldX:TheX,partial:TheN|null) {
         if (!oldX?.z?.length) {
-            X.z?.forEach((n,i) => {
-                // everything is new
-                pairs_fn(null,n)
-            })
-            return
+            // everything is new
+            return (X.z||[]).map(n => [null,n])
         }
         // partial may be a set of old things we're replacing
         //  if partial, there's other stuff in oldX we're not replacing
@@ -577,13 +576,11 @@ export class Stuff {
         // gone stuff
         gone.forEach((oldn) => pairs.push([oldn,null]))
 
-        pairs.forEach(([a,b]) => {
-            pairs_fn?.(a,b)
-        })
+        return pairs
     }
 }
 
-function keyser(n:TheC) {
+export function keyser(n:TheC) {
     let la:Array<string> = []
     Object.entries(n.sc).forEach(([k,v]) => {
         la.push(k+":"+objectify(v))
