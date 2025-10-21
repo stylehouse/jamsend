@@ -2,7 +2,7 @@
     import { Stuff,Stuffing } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
-    let { stuff }: { stuff: Stuff } = $props()
+    let { stuff }:{ stuff:Stuff } = $props()
     let stuff_length = $state(0)
     let stufflen = () => { stuff_length = stuff?.X?.z?.length || 0 }
 
@@ -40,7 +40,6 @@
 {#if stuffing}
     <div class="stuffing">
         <div class="content">
-            x{stuff_length}
             {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}
                 <Stuffusion {stuffusion} />
             {/each}

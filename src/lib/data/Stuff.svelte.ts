@@ -695,10 +695,11 @@ export class Stuffing {
                     let rows = vx?.z || []
                     
                     // Create a Stuffziado for each distinct value
-                    let val_name = objectify(val)
-                    val_name = name_numbered_for_uniqueness_in_Set(val_name, stuffziad.values)
+                    let display_name = objectify(val)
+                    let val_name = name_numbered_for_uniqueness_in_Set(display_name, stuffziad.values)
                     const stuffziado = new Stuffziado(stuffziad, val_name, rows)
                     stuffziado.value = val
+                    stuffziado.display_name = display_name
                     // note some interesting features
                     if (typeof val == 'object') {
                         if (val instanceof TheC) {

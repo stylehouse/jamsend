@@ -23,7 +23,7 @@
     {#if stuffziado.is_C}
         <span class="count">C</span>
     {/if}
-    <span class="{ziadostyle(stuffziado)}">{stuffziado?.name}</span>
+    <span class="{ziadostyle(stuffziado)}">{stuffziado?.display_name}</span>
     {#if stuffziado.innered}
         <ziadoin>
             <Stuffzipper innered={stuffziado.innered} ></Stuffzipper>
@@ -51,8 +51,8 @@
             {#each stuffziados as stuffziado (stuffziado.name)}
                 <div class="stuffziado">
                     {@render ziado(stuffziado)}
-                    {#if stuffziado.rows.length !== 1}
-                        <span class="count">x{stuffziado.rows.length}</span>
+                    {#if stuffziado.rows.length != 1}
+                        <span class="count">en x{stuffziado.rows.length}</span>
                     {/if}
                 </div>
             {/each}
