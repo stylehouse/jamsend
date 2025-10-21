@@ -105,7 +105,7 @@ export class DirectoryModus extends Modus {
         // o /*%nib:dir to think of now
         let yon_surfs:Array<TheC> = []
         for (const n of yon_dirs) {
-            if (n.sc.name.includes('w')) {
+            if (yon_dirs.length < 10 || n.sc.name.includes('w')) {
                 // debris like this just piles up:
                 // n.i({yadda:1})
                 await n.replace({seeing:1},async () => {

@@ -394,12 +394,12 @@ export class Stuff {
                 // make a series of pairs of $n across time
                 let pairs = await this.resolve(this.X,this.X_before,partial)
                 let resolved_pairs = ([a,b]) => {
-                    if (b.X?.z?.length) {
-                        // < if they have b.i() already? post-hoc resolve()?
-                        console.error("Ohno! something already in: "+keyser(this)
-                            +"\n eg: "+keyser(b.X.z[0]))
-                    }
                     if (a && b) {
+                        if (b.X?.z?.length) {
+                            // < if they have b.i() already? post-hoc resolve()?
+                            console.error("Ohno! something already in: "+keyser(this)
+                                +"\n eg: "+keyser(b.X.z[0]))
+                        }
                         b.X = a.X
                     }
                     q.pairs_fn?.(a,b)
@@ -454,7 +454,7 @@ export class Stuff {
         Over.Xify()
 
         let kv_iter = (X,fn) => {
-            Object.entries(X.k).forEach(([k,kx]) => {
+            Object.entries(X.k||{}).forEach(([k,kx]) => {
                 kx = kx as TheX
                 // eg k=nib, we're dividing nib=dir|blob
                 Object.entries(kx.v).forEach(([i,vx]) => {
@@ -521,7 +521,7 @@ export class Stuff {
         // pairs of [oldn,n], eventual result
         let pairs = []
         // $neu dwindling to actual new items
-        let unfound:Array<TheC> = [...X.z]
+        let unfound:Array<TheC> = [...(X.z||[])]
         // $oldn that become paired with a $neu
         let claimed:Array<TheC> = []
         let claim = (oldn,n) => {
@@ -912,6 +912,8 @@ class TimeGallopia {
             if (n != this.oa({mo:'main',interval:1})[0]) return
             // if the UI:Modus still exists
             if (this.stopped) return
+            // UI:Sharability thing above can stop
+            if (!this.S.started) return
 
             this.main()
             
