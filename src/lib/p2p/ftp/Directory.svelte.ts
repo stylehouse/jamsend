@@ -33,7 +33,6 @@ export class DirectoryModus extends Modus {
         this.coms = _C()
         // this sty
         await this.have_time(async () => {
-            console.log("DirectoryModus.main!!")
             this.reset_interval()
 
             // < rewrite everything we're thinking about how to:
@@ -42,7 +41,6 @@ export class DirectoryModus extends Modus {
             // Modus_testcase(this)
 
             // < look within $scope of the Tree (start with localList) for...
-            console.log("DirectoryModus.main()")
         })
     }
 
@@ -54,8 +52,6 @@ export class DirectoryModus extends Modus {
     //    to resolve some of the X.z at once...
     //   basically by holding off goners indefinitely
     // establish a single bunch of stuff
-    //  < which may grow to multiple C matching base_sc
-    //    if it could stop compulsively having two %nib,name,DL? what why?
     //  simply cloning the before set makes it trivial to resolve $n
     // it calls your middle_cb(n), then this.i(n)
     async replacies({base_sc,new_sc,middle_cb}:{
@@ -64,16 +60,22 @@ export class DirectoryModus extends Modus {
         middle_cb:Function
     }) {
         let N = this.boa(base_sc)
-        console.log("BOA: ",N)
         if (!N) {
+            // first time!
             if (typeof new_sc == 'function') {
                 new_sc = new_sc()
             }
             new_sc = {...base_sc,...new_sc}
             N = [_C(new_sc)]
         }
-        console.log("replacies!",N.map(n => keyser(n)))
+
+
+        // console.log("replacies!",N.map(n => keyser(n)))
+        //  < why is it (still) having two %nib,name,DL initially?
+        //    this could otherwise have multiple C matching base_sc
         if (N.length > 1) N = [N[0]]
+
+
         for (const oldn of N) {
             let n = _C(oldn.sc)
             // keep n/* from last time, since we basically resolve $n
@@ -106,12 +108,10 @@ export class DirectoryModus extends Modus {
                     debugger
                 }
                 was = n
-                console.log("replacies() middle_cb(): ",n)
                 // sub coms
                 n.coms = this.coms?.i({into:"surf_DLs"})
                 // start doing what we do for DL
                 await this.surfable_DL(n)
-                console.log("replacies() middle_cb() done")
             }
         })
         // these always change!?
@@ -126,11 +126,14 @@ export class DirectoryModus extends Modus {
             await this.surf_DL(top)
         }
     }
-    async surf_DL(top:TheC) {
+    async surf_DL(top:TheC,q?:object) {
+        q ||= {depth:0}
+        q.depth++
         const DL:DirectoryListing = top.sc.DL
         await DL.expand()
 
-        let yon_dirs = []
+        // i /*%nib:dir,...
+        let yon_dirs:Array<TheC> = []
         await top.replace({nib:1,name:1},async () => {
             DL.directories.forEach(async DL => {
                 let di = top.i({nib:'dir',name:DL.name,DL})
@@ -140,23 +143,31 @@ export class DirectoryModus extends Modus {
                 top.i({nib:'blob',name:FL.name,FL})
             })
         })
-        console.log("%nib:dir replaced")
 
+
+        // o /*%nib:dir to think of now
+        let yon_surfs:Array<TheC> = []
         for (const n of yon_dirs) {
-            if (n.sc.name.includes('x')) {
-                console.log("insert yadda to: "+n.sc.name)
-                n.i({yadda:1})
+            if (n.sc.name.includes('w')) {
+                // debris like this just piles up:
+                // n.i({yadda:1})
                 await n.replace({seeing:1},async () => {
                     let timer = n.bo({seeing:1})[0]
                     let rate = 1
                     if (timer) rate = timer.sc.rate*1 + 1
-                    console.log("insert rate to: "+n.sc.name)
+                    // console.log("insert rate to: "+n.sc.name)
                     n.i({seeing:1,rate})
-                    n.i({note:"also this"})
+                    n.i({seeing:1,note:"also this"})
+
+                    yon_surfs.push(n)
                 })
+
             }
         }
-        console.log("%nib:dir caretaken")
+        for (const n of yon_surfs) {
+            let oq = {...q}
+            await this.surf_DL(n,oq)
+        }
     }
 }
 
