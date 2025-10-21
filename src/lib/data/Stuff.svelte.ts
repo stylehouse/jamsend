@@ -918,6 +918,50 @@ class TimeGallopia {
         },1000*interval)
         let n = this.i({mo:'main',interval,id})
     }
+
+
+    // we usually want to consider a whole table of tuples we're replacing
+    //  but it's easier to code for single lumps of action
+    //  where a thing is defined and something is done with it over time
+    //   
+    // < works within the Modus.current.replace()
+    //    to resolve some of the X.z at once...
+    //   basically by holding off goners indefinitely
+    // establish a single bunch of stuff
+    //  simply cloning the before set makes it trivial to resolve $n
+    // it calls your middle_cb(n), then this.i(n)
+    async replacies({base_sc,new_sc,middle_cb}:{
+        base_sc:TheUniversal,
+        new_sc:Function|TheUniversal,
+        middle_cb:Function
+    }) {
+        let N = this.boa(base_sc)
+        if (!N) {
+            // first time!
+            if (typeof new_sc == 'function') {
+                new_sc = new_sc()
+            }
+            new_sc = {...base_sc,...new_sc}
+            N = [_C(new_sc)]
+        }
+
+
+        // console.log("replacies!",N.map(n => keyser(n)))
+        //  < why is it (still) having two %nib,name,DL initially?
+        //    this could otherwise have multiple C matching base_sc
+        if (N.length > 1) N = [N[0]]
+
+
+        for (const oldn of N) {
+            let n = _C(oldn.sc)
+            // keep n/* from last time, since we basically resolve $n
+            n.X = oldn.X
+            // you may still mutate n.sc
+            await middle_cb(n)
+            //  because we index it now
+            this.i(n)
+        }
+    }
 }
 
 export class Modus extends TimeGallopia {
@@ -963,6 +1007,11 @@ export class Modus extends TimeGallopia {
         console.log("Disfrance")
         this.i({diffrance:23})
     }
+    // see TimeGallopia for 
+    //  probably use replacies() to enliven some Stuff
+
+
+
 
     stopped = false
     stop() {
