@@ -701,17 +701,19 @@ export class Stuffing {
                     stuffziado.value = val
                     stuffziado.display_name = display_name
                     // note some interesting features
+                    let innerables = [...rows]
                     if (typeof val == 'object') {
                         if (val instanceof TheC) {
                             stuffziado.is_C = true
-                            // does it contain C.X, nest Stuffing
-                            stuffziado.detect_nX([val])
+                            // check for C.X, nest Stuffing
+                            innerables.push(val)
                         }
                         // < pull out v(.constructor)+.name
                     }
                     else {
                         stuffziado.is_string = true
                     }
+                    stuffziado.detect_nX(innerables)
                     
                     
                     stuffziad.values.set(stuffziado.name, stuffziado)
@@ -764,7 +766,7 @@ export class Stuffuzia {
     // type cXhavable_Stuffusia = Stuffusion | Stuffziado
     detect_nX(N) {
         // supposing the X.z always has everything
-        let innered = N.filter(n => n.X?.z)
+        let innered = N.filter(n => n.X?.z?.length)
         if (innered.length) {
             this.innered = innered
         }

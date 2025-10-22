@@ -115,7 +115,6 @@ export class DirectoryModus extends Modus {
                     // console.log("insert rate to: "+n.sc.name)
                     n.i({seeing:1,rate})
                     n.i({seeing:1,rate})
-                    n.i({seeing:1,note:"also this"})
 
                     yon_surfs.push(n)
                 })
