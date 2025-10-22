@@ -26,7 +26,7 @@
     <span class="{ziadostyle(stuffziado)}">{stuffziado?.display_name}</span>
     {#if stuffziado.innered}
         <ziadoin>
-            <Stuffzipper innered={stuffziado.innered} ></Stuffzipper>
+            <Stuffzipper innered={stuffziado.innered} {stuffziado} ></Stuffzipper>
         </ziadoin>
     {/if}
 

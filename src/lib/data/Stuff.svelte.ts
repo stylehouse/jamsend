@@ -725,6 +725,16 @@ export class Stuffing {
         })
     }
 }
+// C*/* measurer
+function inner_sizing(innered) {
+    let sizo = { here: 0, therein: 0 };
+    for (const inn of innered) {
+        sizo.here += 1;
+        sizo.therein += inn?.X?.z?.length || 0;
+    }
+    return (sizo.here == 1 ? '' : ("x" + sizo.here))
+            + "/*" + sizo.therein
+}
 // data dumper
 // < recursion
 function objectify(v:any):string {
@@ -763,13 +773,14 @@ export class Stuffuzia {
 
     // subset of .rows or C-like .value that have n.X.z
     innered?: TheN
+    inner_sizing?:string
     // type cXhavable_Stuffusia = Stuffusion | Stuffziado
     detect_nX(N) {
         // supposing the X.z always has everything
         let innered = N.filter(n => n.X?.z?.length)
-        if (innered.length) {
-            this.innered = innered
-        }
+        if (!innered.length) return
+        this.innered = innered
+        this.inner_sizing = inner_sizing(innered)
     }
 }
 
@@ -782,7 +793,7 @@ export class Stuffziad extends Stuffuzia {
     values = new SvelteMap()
 }
 // single value, name is serial number?
-class Stuffziado extends Stuffuzia {
+export class Stuffziado extends Stuffuzia {
     value: any
     is_string?: boolean
     is_C?: boolean
