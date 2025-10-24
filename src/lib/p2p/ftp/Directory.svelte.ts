@@ -52,8 +52,9 @@ export class DirectoryModus extends Modus {
         top.coms = this.coms
         await this.surfable_DL(top)
     }
+    // < partition a travel into %nib**
     async surf_DLs() {
-        // look to replace and climb down into the top %DL
+        // look to (or initialise) and climb down into the top %DL
         let DL = this.S.list
         if (!DL) throw "!DL"
         let was = null

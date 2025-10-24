@@ -145,7 +145,7 @@ class TheX {
 
 //#region Stuff
 // a class of activities you can make in a C
-export class Stuff {
+class StuffIO {
     c: TheEmpirical
     // this would be in c but it needs $state():
     X:TheX = $state()
@@ -338,30 +338,14 @@ export class Stuff {
 
     // visitor of many ** to o()
     d(s:TheUniversal,d?:Partial<Travel>) {
-        // start arriving
-        if (typeof d == 'function') d = {y:d}
-        let T = Travel.onwards(d||{})
-
-        // check if we're supposed to be here ($n=this) again
-        let refx = T.i_visit(this)
-        if (refx.z.length > 1) {
-            return d.sc.not = "visited"
-        }
-
-        // visit here
-        T.sc.n = this
-        T.c.y(this,T)
-
-        // find more!
-        // run the query here
-        let M = this.o(s)
-        M.forEach((n:TheC) => {
-            n.d(s,T)
-        })
+        return Travel.C_d(s,d)
     }
+}
 
 
+//#endregion
 //#region Stuff.replace
+export class Stuff extends StuffIO {
     // redo everything or a subset that we replace things around
     //  inside fn(),
     //   bo() can be used to look at the before time
@@ -850,10 +834,8 @@ export function _C(v={}):TheC {
 
 export type TheN = TheC[]
 
+
 //#endregion
-
-
-
 //#region Travel
 // the visitor of $n** for the Stuff.d() function
 class Travel extends TheC {
@@ -863,6 +845,33 @@ class Travel extends TheC {
         super(opt)
         Object.assign(this,opt)
     }
+
+    // outsourced from StuffIO , C.d() is here
+    // visitor of many ** to o()
+    static C_d(s:TheUniversal,d?:Partial<Travel>) {
+        if (0) 1 + StuffIO.d()
+        // start arriving
+        if (typeof d == 'function') d = {y:d}
+        let T = Travel.onwards(d||{})
+
+        // check if we're supposed to be here ($n=this) again
+        let refx = T.i_visit(this)
+        if (refx.z.length > 1) {
+            return d.sc.not = "visited"
+        }
+
+        // visit here
+        T.sc.n = this
+        T.c.y(this,T)
+
+        // find more!
+        // run the query here
+        let M = this.o(s)
+        M.forEach((n:TheC) => {
+            n.d(s,T)
+        })
+    }
+
     // factory, extender
     //  d usu cloning a Travel we're going beyond
     //  also from Stuff.d(s,y,d), so Travel.sc=d
@@ -871,7 +880,7 @@ class Travel extends TheC {
         if (d.instanceof(Travel)) {
             // copy d.c.*, new d.sc.*
             d = new Travel({c:{...d.c},sc:{up:d}})
-            // clone d.c.* that mutate
+            // clone d.c.* that mutate per node
             d.c.path = (d.c.path||[]).slice()
         }
         else {
@@ -894,7 +903,7 @@ class Travel extends TheC {
 }
 
 
-//#endregion Modus
+//#endregion
 //#region Modus
 // > when q.one_value_mode, we may want a [] value
 function nonemptyArray_or_null(N:any) {
@@ -935,7 +944,10 @@ class TimeGallopia {
         let n = this.i({mo:'main',interval,id})
     }
 
-
+    // replacies() does a really simple resolve $n
+    //  ie find the history (previous entry) of a particle by its look
+    //  works well in the empirical space of Modus' mind chunks
+    //
     // we usually want to consider a whole table of tuples we're replacing
     //  but it's easier to code for single lumps of action
     //  where a thing is defined and something is done with it over time

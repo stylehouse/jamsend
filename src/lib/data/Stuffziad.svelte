@@ -49,7 +49,6 @@
     {#if openness && stuffziad.values.size > 1}
         <div class="values">
             {#each stuffziados as stuffziado (stuffziado.name)}
-                { stuffziado.name.includes("Quoth") && console.log("Stuffziado: ",stuffziado), '' }
                 <div class="stuffziado">
                     {@render ziado(stuffziado)}
                     {#if stuffziado.rows.length != 1}
