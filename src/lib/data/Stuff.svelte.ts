@@ -338,7 +338,7 @@ class StuffIO {
 
     // visitor of many ** to o()
     d(s:TheUniversal,d?:Partial<Travel>) {
-        return Travel.C_d(s,d)
+        return Travel.C_d(this,s,d)
     }
 }
 
@@ -848,25 +848,25 @@ class Travel extends TheC {
 
     // outsourced from StuffIO , C.d() is here
     // visitor of many ** to o()
-    static C_d(s:TheUniversal,d?:Partial<Travel>) {
-        if (0) 1 + StuffIO.d()
-        // start arriving
+    static C_d(C:TheC,s:TheUniversal,d?:Partial<Travel>) {
+        // start arriving at C
+        //  we probably already got it 
         if (typeof d == 'function') d = {y:d}
         let T = Travel.onwards(d||{})
 
         // check if we're supposed to be here ($n=this) again
-        let refx = T.i_visit(this)
+        let refx = T.i_visit(C)
         if (refx.z.length > 1) {
             return d.sc.not = "visited"
         }
 
         // visit here
-        T.sc.n = this
-        T.c.y(this,T)
+        T.sc.n = C
+        T.c.y(C,T)
 
         // find more!
         // run the query here
-        let M = this.o(s)
+        let M = T.oa({more:1}) || C.o(s)
         M.forEach((n:TheC) => {
             n.d(s,T)
         })
