@@ -70,10 +70,25 @@ export class DirectoryModus extends Modus {
                 n.coms = this.coms?.i({into:"surf_DLs"})
                 // start doing what we do for DL
                 await this.surfable_DL(n)
+
+                await this.Travel_DLs(n)
             }
         })
         // these always change!?
         // if (DL != n.sc.DL) throw "~DL"
+    }
+
+    async Travel_DLs(n:TheC) {
+        n.d({nib:1,name:1},{
+            y: async (n) => {
+                if (n.sc.nib == 'blob') {
+                    let name = n.sc.name as String
+                    if (name.endsWith('.mp3')) {
+                        n.i({isa:'track'})
+                    }
+                }
+            }
+        })
     }
 
 

@@ -877,7 +877,7 @@ class Travel extends TheC {
     //  also from Stuff.d(s,y,d), so Travel.sc=d
     // arrive at a new place, inc the first one
     static onwards(d:Travel["c"]|Travel):Travel {
-        if (d.instanceof(Travel)) {
+        if (d instanceof Travel) {
             // copy d.c.*, new d.sc.*
             d = new Travel({c:{...d.c},sc:{up:d}})
             // clone d.c.* that mutate per node

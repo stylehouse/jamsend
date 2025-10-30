@@ -29,7 +29,9 @@ If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), e
 
 # development
 
-The radio-tuner system is currently centralised, nearly ready to rebuild on top of the p2p system for peer-sourcing music.
+The radio-tuner system is currently centralised.
+
+At /A, a p2p system grows towards peer-sourcing music...
 
 ## notes
 
@@ -43,15 +45,15 @@ Besides p2p and audio, we need a sophisticated, reactive data structure and UI f
 
 ### Peerily...
 
-Is the main|single object doing p2p. It persists to localStorage info mentioned in this section. It has one or more *Peering* listen addresses which collect *Pier* remote counterparts when people scan QR codes or so.
+Is the main|single object doing p2p. It persists to localStorage info mentioned in this section. It has one or more *Peering* listen addresses (which are public keys) which collect *Pier* remote counterparts when people scan QR codes or so.
 
-*Pier* can give each other trust (see *TrustName*), which might also come from QR codes or so. Trust enables a *PierFeature* at both ends, which shows UI parts of the feature relevant to the individual *Pier*, and also a *PeeringFeature* on *Peering*, for the main, for-itself UI of the feature as a whole, eg *PeeringSharing*.
+*Pier* can give each other trust (see *TrustName*), which might also come from QR codes or so. Trust enables a *PierFeature* (*PierSharing*) at both ends, which shows UI parts of the feature relevant to the individual *Pier*, and also a *PeeringFeature* on *Peering*, for the main, for-itself UI of the feature as a whole, eg *PeeringSharing*.
 
 ### Things
 
-Are persisted to IndexedDB. They CRUD, start|stop, and integrate with the *Things*/*Thing* UI generics.
+Are persisted to IndexedDB. They CRUD, start|stop, and integrate with the *Things*/*Thing* UI generics which have specifics imposed by their client, eg *Sharability*.
 
-Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Things* UI, which takes care of getting each *Thing* happening, including autovivifying the first one. It's important that this list of things uses IndexedDB to persist the *FileSystemDirectoryHandle* permission we acquire across page reloads.
+Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Things* UI, which takes care of getting each *Thing* happening, including autovivifying the first one. It's important that this list of things uses IndexedDB because that's how to persist the *FileSystemDirectoryHandle* permission we acquire across page reloads.
 
 ### Stuff
 
