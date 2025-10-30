@@ -13,12 +13,17 @@ export class IndexedDBStorage<T = any> {
     protected version: number
     private _db: IDBDatabase | null = null
 
-    constructor(version = 3) {
-        this.version = version
+    constructor() {
     }
-    set_table(dbName: string, storeName: string) {
+    // each object in the store ~~ a row in a table,
+    // we begin calling it a store rather than table here.
+    // we must all know F for its .IDB_tables
+    F:PeeringFeature
+    set_table(F:PeeringFeature, storeName: string) {
+        this.F = F
         // per Peering+feature
-        this.dbName = dbName
+        this.dbName = F.IDB_DB_name
+        this.version = F.IDB_version
         // per thing the feature is thinking about (the set of)
         this.storeName = storeName
     }
@@ -27,8 +32,8 @@ export class IndexedDBStorage<T = any> {
     protected async getDB(): Promise<IDBDatabase> {
         if (this._db) return this._db
         // validate that set_table() was called
-        if (!this.dbName || !this.storeName) {
-            throw new Error(`Database configuration incomplete: dbName="${this.dbName}", storeName="${this.storeName}"`)
+        if (!this.dbName || !this.storeName || !this.version) {
+            throw new Error(`Database configuration incomplete: dbName="${this.dbName}", storeName="${this.storeName}", version=${this.version}`)
         }
 
         // Share database connections to avoid blocking
@@ -86,14 +91,20 @@ export class IndexedDBStorage<T = any> {
         })
     }
 
-    // Override in subclasses to define schema
+    // the Feature has tables (stores)
     protected onUpgradeNeeded(db: IDBDatabase, event: IDBVersionChangeEvent): void {
-        console.log(`Creating object store: ${this.storeName}`)
-        if (!db.objectStoreNames.contains(this.storeName)) {
-            const store = db.createObjectStore(this.storeName)
-            console.log(`Object store created: ${this.storeName}`)
-        } else {
-            console.log(`Object store already exists: ${this.storeName}`)
+        console.log(`Creating tables for IDB: ${this.dbName}`)
+        let names = this.F.IDB_tables
+        if (!names) {
+            throw new Error(`!F.IDB_tables`)
+        }
+        for (const storeName of names) {
+            if (!db.objectStoreNames.contains(storeName)) {
+                const store = db.createObjectStore(storeName)
+                console.log(`Object store created: ${storeName}`)
+            } else {
+                console.log(`Object store already exists: ${storeName}`)
+            }
         }
     }
 
@@ -210,10 +221,11 @@ export class IndexedDBStorage<T = any> {
 
 //#region KVStore
 // locate and change a single row
+// < call this IDB_Rower?
 export class KVStore extends IndexedDBStorage {
-    constructor(dbname,dbstore,key) {
+    constructor(F:PeeringFeature,table:string,key:string) {
         super()
-        this.set_table(dbname,dbstore)
+        this.set_table(F,table)
         this.key = key
     }
     async get() {
@@ -232,8 +244,8 @@ export class KVStore extends IndexedDBStorage {
 // Collection storage for managing sets of things
 //  
 export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
-    constructor() {
-        super()
+    constructor(version) {
+        super(version)
     }
 
     // Add item to collection

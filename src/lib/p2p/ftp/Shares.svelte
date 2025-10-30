@@ -6,7 +6,7 @@
     import { DirectoryShare, FileListing } from './Directory.svelte';
     import FileList from './FileList.svelte';
     import Sharability from './Sharability.svelte';
-    // the fairly-global Peering and PeerilyFeature object
+    // the fairly-global Peering and PeeringFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
 
     onMount(async () => {

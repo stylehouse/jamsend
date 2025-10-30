@@ -1069,17 +1069,28 @@ export abstract class PeeringFeature {
         Object.assign(this, opt)
     }
     // creates a single value set|get IndexedDB storager
-    spawn_KVStore(store,key) {
+    // < wants to be stashable for blobs of json?
+    spawn_KVStore(table:string,key:string) {
         // dbname is for this feature,
         // store is a KV table, key is your row
-        return new KVStore(this.IDB_Store_name,store,key)
+        return new KVStore(this,table,key)
     }
-    get IDB_Store_name() {
-        // < use .trust_name
-        //   and have (Peering|Pier)${this.trust_name} objects
+    // Database name based on the Idento and feature
+    get IDB_DB_name() {
+        return `${this.eer.Id}_${this.trust_name}`;
+    }
+
+    // defined during F.new()
+    IDB_version:number
+    IDB_tables:string[]
+    // Table names have to be declared somewhere, all at once, when version++
+    IDB_Schema(version:number,names:string[]) {
+        this.IDB_tables = names
+        this.IDB_version = version
+    }
+
+        // < have (Peering|Pier)${this.trust_name} objects
         //    passed in svelte.config.ts?
-        return `${this.eer.Id} Sharing`
-    }
 
     
     

@@ -66,7 +66,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
         Object.assign(this,opt)
     }
     set_table(name) {
-        super.set_table(this.F.IDB_Store_name, name)
+        super.set_table(this.F, name)
     }
 
     // Things are like a Thing[] with extra steps

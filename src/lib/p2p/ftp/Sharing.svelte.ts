@@ -11,13 +11,18 @@ import { DirectoryListing, DirectoryModus, DirectoryShares } from "./Directory.s
 
 
 
-// the PF
+// the F
 export class PeeringSharing extends PeeringFeature {
     shares: DirectoryShares
     constructor(opt) {
         super(opt)
         this.trust_name = 'ftp'
         this.UI_component = Shares
+        this.IDB_Schema(4, [
+            // these two are /$share/$handle
+            'shares',        // for Things:DirectoryShares
+            'share handle',  // for DirectoryShare.persisted_handle
+        ])
         this.shares = new DirectoryShares({F:this})
     }
     // be here and in a Pier's UI
@@ -39,7 +44,7 @@ export class PeeringSharing extends PeeringFeature {
 }
 
 type percentage = number
-// the F (per Pier)
+// the PF (per Pier)
 export class PierSharing extends PierFeature {
     constructor(opt) {
         super(opt)

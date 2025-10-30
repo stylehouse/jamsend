@@ -3,7 +3,7 @@
     import type { FileListing } from './Directory.svelte';
     import FileList from './FileList.svelte';
     
-    // the global Peerily and PeerilyFeature object
+    // the global Peerily and PeeringFeature object
     let { pier,F } = $props();
     let sharing:PierSharing = F;
 
