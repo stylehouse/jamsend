@@ -1,6 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, keyser, Modus, Stuff, TheC, type TheUniversal } from '$lib/data/Stuff.svelte';
+import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { erring } from '$lib/Y'
 import { now_in_seconds, type PierFeature } from '../Peerily.svelte';
@@ -53,6 +53,7 @@ export class DirectoryModus extends Modus {
         await this.surfable_DL(top)
     }
     // < partition a travel into %nib**
+    //  < and deduplicate|DRY from having an extra toplevel %nib replace.
     async surf_DLs() {
         // look to (or initialise) and climb down into the top %DL
         let DL = this.S.list
@@ -70,7 +71,6 @@ export class DirectoryModus extends Modus {
                 n.coms = this.coms?.i({into:"surf_DLs"})
                 // start doing what we do for DL
                 await this.surfable_DL(n)
-
                 await this.Travel_DLs(n)
             }
         })
@@ -79,14 +79,34 @@ export class DirectoryModus extends Modus {
     }
 
     async Travel_DLs(n:TheC) {
+        let C:TheC
+
+        // get a new sheet of process-time
+        await n.replace({Travel:1},async () => {
+            C = this.i({Travel:'readin'})
+        })
+
+        // look for new things in it
+        let track_nibs:TheN = []
         n.d({nib:1,name:1},{
             y: async (n) => {
                 if (n.sc.nib == 'blob') {
-                    let name = n.sc.name as String
-                    if (name.endsWith('.mp3')) {
-                        n.i({isa:'track'})
-                    }
+                    await n.replace({readin:1},async () => {
+                        let name = n.sc.name as String
+                        if (name.endsWith('.mp3')) {
+                            n.i({readin:'name',isa:'track'})
+                            track_nibs.push(n)
+                        }
+                    })
                 }
+            }
+        })
+
+        // tally up
+        // < and down, ie handle bits of the above tree vanishing
+        C.replace({lead:1}, async()=>{
+            for (let n of track_nibs) {
+                C.i({lead:1,track_nib:n})
             }
         })
     }

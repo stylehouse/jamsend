@@ -854,6 +854,7 @@ class Travel extends TheC {
         if (typeof d == 'function') d = {y:d}
         let T = Travel.onwards(d||{})
 
+        // < all sorts of tracking, resolving our way down other C**
         // check if we're supposed to be here ($n=this) again
         let refx = T.i_visit(C)
         if (refx.z.length > 1) {
@@ -873,8 +874,9 @@ class Travel extends TheC {
     }
 
     // factory, extender
-    //  d usu cloning a Travel we're going beyond
-    //  also from Stuff.d(s,y,d), so Travel.sc=d
+    //  T -> /T with identical .c, reset .sc
+    //  cloning a Travel we're going beyond
+    //  also from Stuff.d(s,y,T.c:d)
     // arrive at a new place, inc the first one
     static onwards(d:Travel["c"]|Travel):Travel {
         if (d instanceof Travel) {
@@ -894,12 +896,14 @@ class Travel extends TheC {
     }
     // tracking visited refs at the top to avoid going in loops
     i_visit(v:any|TheC):TheX {
-        let d = this
+        let T = this
         let top:Travel = this.c.top
         top.Xify()
         let X:TheX = top.X
-        return X.i_refer(v,d,'visit_v')
+        return X.i_refer(v,T,'visit_v')
     }
+
+
 }
 
 
