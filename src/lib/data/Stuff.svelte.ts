@@ -337,8 +337,8 @@ class StuffIO {
 
 
     // visitor of many ** to o()
-    d(s:TheUniversal,d?:Partial<Travel>) {
-        return Travel.C_d(this,s,d)
+    async d(s:TheUniversal,d?:Partial<Travel>) {
+        return await Travel.C_d(this,s,d)
     }
 }
 
@@ -848,7 +848,7 @@ class Travel extends TheC {
 
     // outsourced from StuffIO , C.d() is here
     // visitor of many ** to o()
-    static C_d(C:TheC,s:TheUniversal,d?:Partial<Travel>) {
+    static async C_d(C:TheC,s:TheUniversal,d?:Partial<Travel>) {
         // start arriving at C
         //  we probably already got it 
         if (typeof d == 'function') d = {y:d}
@@ -858,19 +858,19 @@ class Travel extends TheC {
         // check if we're supposed to be here ($n=this) again
         let refx = T.i_visit(C)
         if (refx.z.length > 1) {
-            return d.sc.not = "visited"
+            return T.sc.not = "revisited"
         }
 
         // visit here
         T.sc.n = C
-        T.c.y(C,T)
+        await T.c.y(C,T,T.sc.up?.sc.n)
 
         // find more!
         // run the query here
-        let M = T.oa({more:1}) || C.o(s)
-        M.forEach((n:TheC) => {
-            n.d(s,T)
-        })
+        let M = (T.oa({more:1}) || C.o(s)) as TheN
+        for (const n of M) {
+            await n.d(s,T)
+        }
     }
 
     // factory, extender
@@ -882,18 +882,20 @@ class Travel extends TheC {
         if (d instanceof Travel) {
             // copy d.c.*, new d.sc.*
             d = new Travel({c:{...d.c},sc:{up:d}})
-            // clone d.c.* that mutate per node
-            d.c.path = (d.c.path||[]).slice()
         }
         else {
             d = new Travel({c:d,sc:{}})
         }
+        // clone d.c.* that mutate per node
+        d.c.path = (d.c.path||[]).slice()
+        d.c.path.push(d)
         d.c.top ||= d
         d.c.d ||= 0
         d.c.d++
 
         return d
     }
+
     // tracking visited refs at the top to avoid going in loops
     i_visit(v:any|TheC):TheX {
         let T = this
@@ -914,11 +916,12 @@ function nonemptyArray_or_null(N:any) {
     if (N?.length) return N
     return null
 }
-class TimeGallopia {
+abstract class TimeGallopia {
     // the "I'm redoing the thing" process wrapper
     // a layer on top of Stuff.replace():
     //  forgiving when already locked
     //  doesn't recycle C/** (replace() q.fresh)
+    abstract current:TheC
     async have_time(fn:Function) {
         if (this.current.X_before) return console.error("re-transacting Modus")
         // what we replace is... everything. but this could select some rows
@@ -949,19 +952,22 @@ class TimeGallopia {
     }
 
     // replacies() does a really simple resolve $n
-    //  ie find the history (previous entry) of a particle by its look
-    //  works well in the empirical space of Modus' mind chunks
+    //  or creates it
+    //  then it calls your middle_cb(n)
+    //  then this.i(n)
+    // ie find the history (previous entry) of a particle by its look
+    //  for the toplevel Modus mind chunks
     //
     // we usually want to consider a whole table of tuples we're replacing
     //  but it's easier to code for single lumps of action
     //  where a thing is defined and something is done with it over time
-    //   
-    // < works within the Modus.current.replace()
+    // 
+    // much simpler and more limited than Stuff.replace()
+    // < to work within the Modus.current.replace()
     //    to resolve some of the X.z at once...
     //   basically by holding off goners indefinitely
     // establish a single bunch of stuff
     //  simply cloning the before set makes it trivial to resolve $n
-    // it calls your middle_cb(n), then this.i(n)
     async replacies({base_sc,new_sc,middle_cb}:{
         base_sc:TheUniversal,
         new_sc:Function|TheUniversal,

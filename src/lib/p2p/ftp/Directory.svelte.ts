@@ -31,6 +31,7 @@ export class DirectoryModus extends Modus {
     async main() {
         // switch on (and clear) the debug channel
         this.coms = _C()
+        console.log(`~`)
         // this sty
         await this.have_time(async () => {
             this.reset_interval()
@@ -44,7 +45,6 @@ export class DirectoryModus extends Modus {
         })
     }
 
-    // 
     async NOT_surf_DLs() {
         // look to replace and climb down into the last %DL
         let top = this.bo({nib:'dir',DL:1})[0]
@@ -64,6 +64,9 @@ export class DirectoryModus extends Modus {
             new_sc: () => ({DL,  est:now_in_seconds()}),
             middle_cb: async (n:TheC) => {
                 if (was && was == n) {
+                    debugger
+                }
+                if (was) {
                     debugger
                 }
                 was = n
@@ -88,15 +91,38 @@ export class DirectoryModus extends Modus {
 
         // look for new things in it
         let track_nibs:TheN = []
-        n.d({nib:1,name:1},{
-            y: async (n) => {
+        await n.d({nib:1,name:1},{
+            y: async (n,T,u) => {
+
+                console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
+                let uT = T.sc.up
+                // build a tree!
+                // < but it's not all of uC/*%Tree yet
+                //   we could Stuff.resolve() gradually, one-at-a-time
+                let uC:TheC = uT?.sc.C || C
+                await uC.replace({Tree:3},async()=>{
+                    T.sc.C = uC.i({Tree:3,itis:keyser(n)})
+                })
+                // the D** sphere!
+                let D:TheC = T.sc.C
+
+                // D**, other than its %Tree basis, updates itself
+                // < after discovering all of itself
+                //   
+                if (n.sc.nib) {
+
+                }
                 if (n.sc.nib == 'blob') {
+                    await D.replace({readin:1},async () => {
                     await n.replace({readin:1},async () => {
                         let name = n.sc.name as String
                         if (name.endsWith('.mp3')) {
                             n.i({readin:'name',isa:'track'})
+                            D.i({readin:'name',isa:'track'})
                             track_nibs.push(n)
+                            console.log(`🔥 is`)
                         }
+                    })
                     })
                 }
             }
@@ -105,14 +131,16 @@ export class DirectoryModus extends Modus {
         // tally up
         // < and down, ie handle bits of the above tree vanishing
         C.replace({lead:1}, async()=>{
+            console.log("Was here.. out tnib x"+(track_nibs.length))
             for (let n of track_nibs) {
+                console.log("Was here.. in tnib")
                 C.i({lead:1,track_nib:n})
             }
         })
     }
 
 
-
+    // < GOING, a prototype with no slowmo
     async surfable_DL(top:TheC) {
         if (top.ago('seen') > 5) {
             top.sc.seen = now_in_seconds()
