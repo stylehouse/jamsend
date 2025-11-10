@@ -82,11 +82,11 @@ export class DirectoryModus extends Modus {
     }
 
     async Travel_DLs(n:TheC) {
-        let C:TheC
+        let topD:TheC
 
         // get a new sheet of process-time
         await n.replace({Travel:1},async () => {
-            C = this.i({Travel:'readin'})
+            topD = this.i({Travel:'readin'})
         })
 
         // look for new things in it
@@ -99,16 +99,18 @@ export class DirectoryModus extends Modus {
                 // build a tree!
                 // < but it's not all of uC/*%Tree yet
                 //   we could Stuff.resolve() gradually, one-at-a-time
-                let uC:TheC = uT?.sc.C || C
-                await uC.replace({Tree:3},async()=>{
-                    T.sc.C = uC.i({Tree:3,itis:keyser(n)})
+                let uD:TheC = uT?.sc.D || topD
+                await uD.replace({Tree:3},async()=>{
+                    T.sc.D = uD.i({Tree:3,itis:keyser(n)})
                 })
-                // the D** sphere!
-                let D:TheC = T.sc.C
+                // the C** sphere!
+                let D:TheC = T.sc.D
 
                 // D**, other than its %Tree basis, updates itself
-                // < after discovering all of itself
-                //   
+                // < after discovering all of itself (*%Tree)
+                // < redo thinking only if n.sc !~ D.sc.copy
+                //    responds to renames? do we? (resolve())
+
                 if (n.sc.nib) {
 
                 }
@@ -130,11 +132,11 @@ export class DirectoryModus extends Modus {
 
         // tally up
         // < and down, ie handle bits of the above tree vanishing
-        C.replace({lead:1}, async()=>{
+        topD.replace({lead:1}, async()=>{
             console.log("Was here.. out tnib x"+(track_nibs.length))
             for (let n of track_nibs) {
                 console.log("Was here.. in tnib")
-                C.i({lead:1,track_nib:n})
+                topD.i({lead:1,track_nib:n})
             }
         })
     }

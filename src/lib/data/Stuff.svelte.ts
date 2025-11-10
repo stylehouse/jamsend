@@ -850,26 +850,51 @@ class Travel extends TheC {
     // visitor of many ** to o()
     static async C_d(C:TheC,s:TheUniversal,d?:Partial<Travel>) {
         // start arriving at C
-        //  we probably already got it 
+        //  you may write n.d({such:1},n => ...)
         if (typeof d == 'function') d = {y:d}
         let T = Travel.onwards(d||{})
-
+        return await T.dive(C,s,T)
+    }
+    async dive(C:TheC,s:TheUniversal,T:Travel) {
+        await this.dive_start(C,T)
+        if (T.sc.not) return 
+        return await this.dive_middle(s,T)
+    }
+    async dive_start(C:TheC,T:Travel) {
         // < all sorts of tracking, resolving our way down other C**
         // check if we're supposed to be here ($n=this) again
         let refx = T.i_visit(C)
         if (refx.z.length > 1) {
             return T.sc.not = "revisited"
         }
-
         // visit here
         T.sc.n = C
-        await T.c.y(C,T,T.sc.up?.sc.n)
+    }
+    async dive_middle(s:TheUniversal,T:Travel) {
+        let args = [T.sc.n, T, T.sc.up?.sc.n]
 
-        // find more!
-        // run the query here
-        let M = (T.oa({more:1}) || C.o(s)) as TheN
+        // being at $n
+        await T.c.y(...args)
+
+        // find $n/*
+        //  run the query here
+        let M = (T.oa({more:1}) || T.sc.n.o(s)) as TheN
+        // create T/*
+        let N = []
         for (const n of M) {
-            await n.d(s,T)
+            let oT = Travel.onwards(T)
+            oT.dive_start(n,oT)
+            // establishes a column! aka ark, see iooia
+            //  or not if looplicate
+            if (oT.sc.n && !oT.sc.not) {
+                N.push(oT)
+            }
+        }
+
+        
+
+        for (const oT of N) {
+            await oT.dive_middle(s,oT)
         }
     }
 
