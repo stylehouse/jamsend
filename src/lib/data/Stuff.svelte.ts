@@ -850,6 +850,10 @@ export class Travel extends TheC {
         Object.assign(this,opt)
     }
 
+    get up() {
+        return this.c.path.slice(-2)[0]
+    }
+
     // outsourced from StuffIO , C.d() is here
     // visitor of many ** to o()
     static async C_d(C:TheC,s:TheUniversal,d?:Partial<Travel>) {

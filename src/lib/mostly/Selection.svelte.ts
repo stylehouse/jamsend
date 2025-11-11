@@ -59,17 +59,31 @@ export class Selection {
                 let D:TheC = T.sc.D = T.sc.D || topD
                 await D.replace(trace_sc,async()=>{
                     for (const oT of N) {
+                        // with T%n, get T%D
                         let on = oT.sc.n
                         let oD = oT.sc.D = await q.trace_fn?.(D,oT.sc.n,oT)
                         // < oD.c.n?
+                        // give DcT
+                        oD.c.T = oT
                     }
                 },{
                     pairs_fn:(a,b)=>{
                         if (a && !b) {
                             console.log("Goner on "+T.sc.D.sc.itis+": "+keyser(a))
                         }
-                        if (b && !a && b.sc.itis.includes("Locust")) {
-                            console.log("New on "+T.sc.D.sc.itis+": "+keyser(b))
+                        if (b && !a) {
+                            b.c.T.sc.changey = 'new'
+                            if (b.c.T.up?.sc.changey != 'new') {
+                                // announce only that a D is new, ignoring everything in it, which is also new
+                                console.log("New on "+T.sc.D.sc.itis+": "+keyser(b))
+                            }
+                        }
+                        if (a && b) {
+                            // could be a rename
+                            if (a.sc.itis != b.sc.itis) {
+                                console.log("Renamed on "+T.sc.D.sc.itis+": "+keyser(b))
+
+                            }
                         }
                     }
                 })

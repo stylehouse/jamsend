@@ -32,7 +32,7 @@ export class DirectoryModus extends Modus {
     async main() {
         // switch on (and clear) the debug channel
         this.coms = _C()
-        console.log(`~`)
+        console.log(`main:`)
         // this sty
         await this.have_time(async () => {
             this.reset_interval()
@@ -44,6 +44,7 @@ export class DirectoryModus extends Modus {
 
             // < look within $scope of the Tree (start with localList) for...
         })
+        console.log(`/main`)
     }
 
     async NOT_surf_DLs() {
@@ -83,6 +84,7 @@ export class DirectoryModus extends Modus {
     }
 
     async Travel_DLs(n:TheC) {
+        console.log(`Travel_DLs:`)
         let Se = new Selection(n)
         // look for new things in it
         let track_nibs:TheN = []
