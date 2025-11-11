@@ -86,7 +86,7 @@ export class DirectoryModus extends Modus {
 
         // get a new sheet of process-time
         await n.replace({Travel:1},async () => {
-            topD = this.i({Travel:'readin'})
+            topD = n.i({Travel:'readin'})
         })
 
 
