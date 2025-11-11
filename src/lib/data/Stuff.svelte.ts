@@ -838,7 +838,7 @@ export type TheN = TheC[]
 //#endregion
 //#region Travel
 // the visitor of $n** for the Stuff.d() function
-class Travel extends TheC {
+export class Travel extends TheC {
     // callback for each $n
     y:Fuction
     // callback for each n/*:N

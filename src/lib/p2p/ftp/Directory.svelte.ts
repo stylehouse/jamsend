@@ -2,6 +2,7 @@
 import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
+import { Selection } from '$lib/mostly/Selection.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
@@ -82,71 +83,54 @@ export class DirectoryModus extends Modus {
     }
 
     async Travel_DLs(n:TheC) {
-        let topD:TheC
-
-        // get a new sheet of process-time
-        await n.replace({Travel:1},async () => {
-            topD = n.i({Travel:'readin'})
-        })
-
-
-
+        let Se = new Selection(n)
         // look for new things in it
         let track_nibs:TheN = []
-        await n.d({nib:1,name:1},{
-            y: async (n:TheC,T:Travel) => {
-                // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
-                // < build (DL.expand(), etc) the n** here, as we go
-            },
-            y_many: async (n,N,T) => {
-                // build a tree!
-                // < but it's not all of uD/*%Tree yet
-                //   we could Stuff.resolve() gradually, one-at-a-time
-                let D:TheC = T.sc.D = T.sc.D || topD
-                await D.replace({Tree:3},async()=>{
-                    for (const oT of N) {
-                        let on = oT.sc.n
-                        oT.sc.D = D.i({Tree:3,itis:keyser(on)})
-                    }
-                },{
-                    pairs_fn:(a,b)=>{
-                        if (a && !b) {
-                            console.log("Goner on "+T.sc.D.sc.itis+": "+keyser(a))
-                        }
-                        if (b && !a && b.sc.itis.includes("Locust")) {
-                            console.log("New on "+T.sc.D.sc.itis+": "+keyser(b))
-                        }
-                    }
-                })
-            },
-            y_after: async (n:TheC,T:Travel) => {
-                // the D** sphere!
-                //  has a %Tree basis
-                //   ie D%Tree/D%Tree is itself
-                //   and D%Tree/C%such are hanging off it
-                let D:TheC = T.sc.D
-                // D**, other than its %Tree basis, updates itself
-                // < after discovering all of itself (*%Tree)
-                // < redo thinking only if n.sc !~ D.sc.copy
-                //    responds to renames? do we? (resolve())
+        let topD
+        await Se.process(
+            {Travel:'readin'}, // initial $n/%Travel, singular
+            {nib:1,name:1},    // climbing $n%nib,name**
+            {Tree:3},          // fabricating D%Tree**
+            {
+                async each_fn(n,T) {
+                    // < build (DL.expand(), etc) the n**=
+                    
+                },
 
-                if (n.sc.nib) {
+                // re-describe each n** into D**
+                //  $D/* fills with each Dyn/$n*
+                //   the D is one step above this n
+                // D** is thence always fillable with other stuff, not of pattern_sc
+                // < resolve() maybe could n.sc <-> D.sc.nid, a copy of n.sc
+                //    nid being D's index of the foreign n.sc, the identity it is tracking
+                //   and hopefully these new sort-of joins will +1 nicely
+                //    like you'd work things out on paper
+                async trace_fn(D,n) {
+                    topD ||= D
+                    return D.i({Tree:3,itis:keyser(n)})
+                },
 
-                }
-                if (n.sc.nib == 'blob') {
-                    await D.replace({readin:1},async () => {
-                    await n.replace({readin:1},async () => {
-                        let name = n.sc.name as String
-                        if (name.endsWith('.mp3')) {
-                            n.i({readin:'name',isa:'track'})
-                            D.i({readin:'name',isa:'track'})
-                            track_nibs.push(n)
-                        }
-                    })
-                    })
+                // everything that's going to be|wake inside (D|n)** is there|awake now
+                //  so you can write other stuff in places
+                async done_fn(D,n,T) {
+                    if (n.sc.nib) {
+
+                    }
+                    if (n.sc.nib == 'blob') {
+                        await D.replace({readin:1},async () => {
+                        await n.replace({readin:1},async () => {
+                            let name = n.sc.name as String
+                            if (name.endsWith('.mp3')) {
+                                n.i({readin:'name',isa:'track'})
+                                D.i({readin:'name',isa:'track'})
+                                track_nibs.push(n)
+                            }
+                        })
+                        })
+                    }
                 }
             }
-        })
+        )
 
         // tally up
         // < and down, ie handle bits of the above tree vanishing
