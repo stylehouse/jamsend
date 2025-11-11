@@ -89,23 +89,42 @@ export class DirectoryModus extends Modus {
             topD = this.i({Travel:'readin'})
         })
 
+
+
         // look for new things in it
         let track_nibs:TheN = []
         await n.d({nib:1,name:1},{
-            y: async (n,T,u) => {
-
-                console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
-                let uT = T.sc.up
+            y: async (n:TheC,T:Travel) => {
+                // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
+                // < build (DL.expand(), etc) the n** here, as we go
+            },
+            y_many: async (n,N,T) => {
                 // build a tree!
-                // < but it's not all of uC/*%Tree yet
+                // < but it's not all of uD/*%Tree yet
                 //   we could Stuff.resolve() gradually, one-at-a-time
-                let uD:TheC = uT?.sc.D || topD
-                await uD.replace({Tree:3},async()=>{
-                    T.sc.D = uD.i({Tree:3,itis:keyser(n)})
+                let D:TheC = T.sc.D = T.sc.D || topD
+                await D.replace({Tree:3},async()=>{
+                    for (const oT of N) {
+                        let on = oT.sc.n
+                        oT.sc.D = D.i({Tree:3,itis:keyser(on)})
+                    }
+                },{
+                    pairs_fn:(a,b)=>{
+                        if (a && !b) {
+                            console.log("Goner on "+T.sc.D.sc.itis+": "+keyser(a))
+                        }
+                        if (b && !a && b.sc.itis.includes("Locust")) {
+                            console.log("New on "+T.sc.D.sc.itis+": "+keyser(b))
+                        }
+                    }
                 })
-                // the C** sphere!
+            },
+            y_after: async (n:TheC,T:Travel) => {
+                // the D** sphere!
+                //  has a %Tree basis
+                //   ie D%Tree/D%Tree is itself
+                //   and D%Tree/C%such are hanging off it
                 let D:TheC = T.sc.D
-
                 // D**, other than its %Tree basis, updates itself
                 // < after discovering all of itself (*%Tree)
                 // < redo thinking only if n.sc !~ D.sc.copy
@@ -122,7 +141,6 @@ export class DirectoryModus extends Modus {
                             n.i({readin:'name',isa:'track'})
                             D.i({readin:'name',isa:'track'})
                             track_nibs.push(n)
-                            console.log(`🔥 is`)
                         }
                     })
                     })
@@ -133,9 +151,7 @@ export class DirectoryModus extends Modus {
         // tally up
         // < and down, ie handle bits of the above tree vanishing
         topD.replace({lead:1}, async()=>{
-            console.log("Was here.. out tnib x"+(track_nibs.length))
             for (let n of track_nibs) {
-                console.log("Was here.. in tnib")
                 topD.i({lead:1,track_nib:n})
             }
         })

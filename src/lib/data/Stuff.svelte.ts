@@ -841,6 +841,10 @@ export type TheN = TheC[]
 class Travel extends TheC {
     // callback for each $n
     y:Fuction
+    // callback for each n/*:N
+    y_many:Fuction
+    // callback for each $n, after travelling n**
+    y_after:Fuction
     constructor(opt) {
         super(opt)
         Object.assign(this,opt)
@@ -871,10 +875,11 @@ class Travel extends TheC {
         T.sc.n = C
     }
     async dive_middle(s:TheUniversal,T:Travel) {
+        if (T.sc.not) return 
         let args = [T.sc.n, T, T.sc.up?.sc.n]
 
         // being at $n
-        await T.c.y(...args)
+        await T.c.y?.(...args)
 
         // find $n/*
         //  run the query here
@@ -891,11 +896,18 @@ class Travel extends TheC {
             }
         }
 
-        
+        // consider $n/*
+        if (T.c.y_many) {
+            await T.c.y_many(T.sc.n, N, T)
+        }
 
+        // recurse into $n/*
         for (const oT of N) {
             await oT.dive_middle(s,oT)
         }
+
+        // after $n/*
+        await T.c.y_after?.(...args)
     }
 
     // factory, extender
