@@ -74,8 +74,7 @@ export class DirectoryModus extends Modus {
                 was = n
                 // sub coms
                 n.coms = this.coms?.i({into:"surf_DLs"})
-                // start doing what we do for DL
-                await this.surfable_DL(n)
+                // start recursing this %nib,DL**
                 await this.Travel_DLs(n)
             }
         })
@@ -94,9 +93,10 @@ export class DirectoryModus extends Modus {
             {nib:1,name:1},    // climbing $n%nib,name**
             {Tree:3},          // fabricating D%Tree**
             {
-                async each_fn(n,T) {
-                    // < build (DL.expand(), etc) the n**=
-                    
+                each_fn: async (n,T) => {
+                    if (n.sc.nib == 'dir') {
+                        await this.expand_DL(n,)
+                    }
                 },
 
                 // re-describe each n** into D**
@@ -107,14 +107,14 @@ export class DirectoryModus extends Modus {
                 //    nid being D's index of the foreign n.sc, the identity it is tracking
                 //   and hopefully these new sort-of joins will +1 nicely
                 //    like you'd work things out on paper
-                async trace_fn(D,n) {
+                trace_fn: async (D,n) => {
                     topD ||= D
                     return D.i({Tree:3,itis:keyser(n)})
                 },
 
                 // everything that's going to be|wake inside (D|n)** is there|awake now
                 //  so you can write other stuff in places
-                async done_fn(D,n,T) {
+                done_fn: async (D,n,T) => {
                     if (n.sc.nib) {
 
                     }
@@ -143,56 +143,19 @@ export class DirectoryModus extends Modus {
         })
     }
 
-
-    // < GOING, a prototype with no slowmo
-    async surfable_DL(top:TheC) {
-        if (top.ago('seen') > 5) {
-            top.sc.seen = now_in_seconds()
-            await this.surf_DL(top)
-        }
-    }
-    async surf_DL(top:TheC,q?:object) {
-        q ||= {depth:0}
-        q.depth++
+    async expand_DL(top:TheC) {
         const DL:DirectoryListing = top.sc.DL
         await DL.expand()
 
         // i /*%nib:dir,...
-        let yon_dirs:Array<TheC> = []
         await top.replace({nib:1,name:1},async () => {
             DL.directories.forEach(async DL => {
                 let di = top.i({nib:'dir',name:DL.name,DL})
-                yon_dirs.push(di)
             })
             DL.files.forEach(async FL => {
                 top.i({nib:'blob',name:FL.name,FL})
             })
         })
-
-
-        // o /*%nib:dir to think of now
-        let yon_surfs:Array<TheC> = []
-        for (const n of yon_dirs) {
-            if (yon_dirs.length < 10 || n.sc.name.includes('w')) {
-                // debris like this just piles up:
-                // n.i({yadda:1})
-                await n.replace({seeing:1},async () => {
-                    let timer = n.bo({seeing:1})[0]
-                    let rate = 1
-                    if (timer) rate = timer.sc.rate*1 + 1
-                    // console.log("insert rate to: "+n.sc.name)
-                    n.i({seeing:1,rate})
-                    n.i({seeing:1,rate})
-
-                    yon_surfs.push(n)
-                })
-
-            }
-        }
-        for (const n of yon_surfs) {
-            let oq = {...q}
-            await this.surf_DL(n,oq)
-        }
     }
 }
 

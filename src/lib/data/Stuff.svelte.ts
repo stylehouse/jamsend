@@ -355,6 +355,9 @@ export class Stuff extends StuffIO {
         if (this.X_before) throw `already X_before, still doing another replace()`
         q ||= {}
         // move it aside and regerate another X
+        //  ensuring we have an X_before the first time
+        //   so we can use it for locking, see have_time()
+        this.Xify()
         this.X_before = this.X
         this.X = null
         this.Xify()
@@ -962,7 +965,7 @@ function nonemptyArray_or_null(N:any) {
 abstract class TimeGallopia {
     // the "I'm redoing the thing" process wrapper
     // a layer on top of Stuff.replace():
-    //  forgiving when already locked
+    //  graceful fail when already locked
     //  doesn't recycle C/** (replace() q.fresh)
     abstract current:TheC
     async have_time(fn:Function) {
