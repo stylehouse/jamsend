@@ -1,6 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
+import { _C, keyser, Modus, Stuff, TheC, Travel, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection } from '$lib/mostly/Selection.svelte';
 import { erring } from '$lib/Y'
@@ -93,7 +93,7 @@ export class DirectoryModus extends Modus {
             {nib:1,name:1},    // climbing $n%nib,name**
             {Tree:3},          // fabricating D%Tree**
             {
-                each_fn: async (n,T) => {
+                each_fn: async (n:TheC,T:Travel) => {
                     if (n.sc.nib == 'dir') {
                         await this.expand_DL(n,)
                     }
@@ -107,14 +107,14 @@ export class DirectoryModus extends Modus {
                 //    nid being D's index of the foreign n.sc, the identity it is tracking
                 //   and hopefully these new sort-of joins will +1 nicely
                 //    like you'd work things out on paper
-                trace_fn: async (D,n) => {
+                trace_fn: async (D:TheC,n:TheC) => {
                     topD ||= D
                     return D.i({Tree:3,itis:keyser(n)})
                 },
 
                 // everything that's going to be|wake inside (D|n)** is there|awake now
                 //  so you can write other stuff in places
-                done_fn: async (D,n,T) => {
+                done_fn: async (D:TheC,n:TheC,T:Travel) => {
                     if (n.sc.nib) {
 
                     }

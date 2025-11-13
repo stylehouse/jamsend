@@ -172,8 +172,15 @@ class StuffIO {
         this.X.bump_version()
     }
 
+    // reality is like a.i(b) and b.i(c), so we can travel the a/b/c graph (hierarchy)
+    // visitor of many C** to o()
+    async d(s:TheUniversal,d?:Partial<Travel>) {
+        if (typeof d == 'function') d = {each_fn:d}
+        let T = Travel.onwards(d||{})
+        return await T.dive(this,s,T)
+    }
 
-    // regroup! indexes build up, forming X/.../$n to be with
+    // attachment, materialisation. indexes build up, forming X/.../$n to be with
     i(n: TheC|TheUniversal) {
         n = _C(n)
         this.Xify()
@@ -335,11 +342,6 @@ class StuffIO {
     }
 
 
-
-    // visitor of many ** to o()
-    async d(s:TheUniversal,d?:Partial<Travel>) {
-        return await Travel.C_d(this,s,d)
-    }
 }
 
 
@@ -421,6 +423,9 @@ export class Stuff extends StuffIO {
 
     // regard new|gone in here
     // assumes we're going to uniquely identify everything easily
+    //  by comparing n.sc.*,
+    //   n/* or n.sc.*.*
+    // < we could resolve gradually, even one-at-a-time
     // make a series of pairs of $n across time
     async resolve(X:TheX,oldX:TheX,partial:TheN|null) {
         if (!oldX?.z?.length) {
@@ -799,16 +804,13 @@ export type TheUniversal = {
 export type TheEmpirical = {
     // whether it has been deleted, the index remains
     drop?: any,
-    // contains indexes leading to in-C (C/C)
-    X?: TheX,
     top?: Travel,
     transacting?: Modus|TheC,
 } & any
 
-// extends Stuff, so you can C.i(inC) for C/inC
+// extends Stuff, with .X so you can C.i(inC) for C/inC
 export class TheC extends Stuff {
-    // < $state() unnecessary?
-    c: TheEmpirical = $state()
+    c: TheEmpirical
     sc: TheUniversal
     constructor(opt:Partial<TheC>) {
         super()
@@ -845,11 +847,11 @@ export type TheN = TheC[]
 // the visitor of $n** for the Stuff.d() function
 export class Travel extends TheC {
     // callback for each $n
-    y:Fuction
+    each_fn:Function
     // callback for each n/*:N
-    y_many:Fuction
+    many_fn:Function
     // callback for each $n, after travelling n**
-    y_after:Fuction
+    done_fn:Function
     constructor(opt) {
         super(opt)
         Object.assign(this,opt)
@@ -859,15 +861,7 @@ export class Travel extends TheC {
         return this.c.path.slice(-2)[0]
     }
 
-    // outsourced from StuffIO , C.d() is here
     // visitor of many ** to o()
-    static async C_d(C:TheC,s:TheUniversal,d?:Partial<Travel>) {
-        // start arriving at C
-        //  you may write n.d({such:1},n => ...)
-        if (typeof d == 'function') d = {y:d}
-        let T = Travel.onwards(d||{})
-        return await T.dive(C,s,T)
-    }
     async dive(C:TheC,s:TheUniversal,T:Travel) {
         await this.dive_start(C,T)
         if (T.sc.not) return 
@@ -888,7 +882,7 @@ export class Travel extends TheC {
         let args = [T.sc.n, T, T.sc.up?.sc.n]
 
         // being at $n
-        await T.c.y?.(...args)
+        await T.c.each_fn?.(...args)
 
         // find $n/*
         //  run the query here
@@ -906,8 +900,8 @@ export class Travel extends TheC {
         }
 
         // consider $n/*
-        if (T.c.y_many) {
-            await T.c.y_many(T.sc.n, N, T)
+        if (T.c.many_fn) {
+            await T.c.many_fn(T.sc.n, N, T)
         }
 
         // recurse into $n/*
@@ -916,7 +910,7 @@ export class Travel extends TheC {
         }
 
         // after $n/*
-        await T.c.y_after?.(...args)
+        await T.c.done_fn?.(...args)
     }
 
     // factory, extender

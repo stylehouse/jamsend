@@ -47,15 +47,13 @@ export class Selection {
 
         // go through n**
         await n.d(pattern_sc,{
-            y: async (n:TheC,T:Travel) => {
+            each_fn: async (n:TheC,T:Travel) => {
                 // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
                 // n** can be created here, as we go
                 await q.each_fn?.(n,T)
             },
-            y_many: async (n,N,T) => {
+            many_fn: async (n,N,T) => {
                 // build a tree!
-                // < but it's not all of uD/*%Tree yet
-                //   we could Stuff.resolve() gradually, one-at-a-time
                 let D:TheC = T.sc.D = T.sc.D || topD
                 await D.replace(trace_sc,async()=>{
                     for (const oT of N) {
@@ -88,16 +86,13 @@ export class Selection {
                     }
                 })
             },
-            y_after: async (n:TheC,T:Travel) => {
+            done_fn: async (n:TheC,T:Travel) => {
                 // the D** sphere!
                 //  has a %Tree basis
                 //   ie D%Tree/D%Tree is itself
                 //   and D%Tree/C%such are hanging off it
                 let D:TheC = T.sc.D
                 // D**, other than its %Tree basis, updates itself
-                // < after discovering all of itself (*%Tree)
-                // < redo thinking only if n.sc !~ D.sc.copy
-                //    responds to renames? do we? (resolve())
                 await q.done_fn?.(D,n,T)
             }
         })
