@@ -6,6 +6,7 @@
     import NotPier from "../p2p/ui/repro-reactive-stashed-hierarchy/NotPier.svelte";
 
     let {M}:{M:Modus} = $props()
+    let redraw_version = $state(1)
 
     let stuffocks = $state([])
     // data dumper
@@ -21,6 +22,7 @@
     let lets_redraw = () => {
         let N = M.o()
         // console.log("reacting to M.current.version=="+M.current.version, N)
+        redraw_version++
         redraw(N)
     }
     $effect(() => {
@@ -48,7 +50,7 @@
     })
 </script>
 
-    <button onclick={redraw}>redraw</button>
+    <button onclick={lets_redraw}>redraw</button>
 
             {#each Object.entries(stuffocks) as [i,stuff] (i)}
                 <span class=stuffock>
@@ -64,9 +66,11 @@
                 </span>
             {/each}
 
-
+    {#key redraw_version}
         <Stuffing stuff={M.current} />
         {#if M.coms}<Stuffing stuff={M.coms} />{/if}
+    {/key}
+    
 <style>
     .stuffock {
         margin: 1em;

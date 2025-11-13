@@ -749,10 +749,12 @@ export class Stuffuzia {
     up:manyable_Stuffusia
     name:string
     rows: TheN
+    row_count:number = $state()
     constructor(up, name: string, rows: TheN) {
         this.up = up
         this.name = name
         this.rows = rows
+        this.row_count = rows.length
     }
 
     // subset of .rows or C-like .value that have n.X.z

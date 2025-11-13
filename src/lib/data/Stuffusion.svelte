@@ -21,7 +21,7 @@
         </span>
     {/if}
     {#if stuffusion.rows.length !== 1}
-        <span class="content count">x{stuffusion.rows.length}</span>
+        <span class="content count">x{stuffusion.row_count}</span>
     {/if}
     {#if stuffusion.innered}
         <Stuffzipper innered={stuffusion.innered} {stuffusion} ></Stuffzipper>
