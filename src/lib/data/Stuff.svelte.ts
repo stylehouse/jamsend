@@ -985,9 +985,14 @@ export class Modusmem {
     set(key,value) {
         let here = this.M.stashed
         for (let k of this.keys) {
-            here = here[k] = here[k] || {}
+            let there = here
+            here = here[k] || {}
+            there[k] = here
         }
         here[key] = value
+
+        this.M.stashed.version ||= 0
+        this.M.stashed.version ++
     }
 }
 abstract class TimeGallopia {

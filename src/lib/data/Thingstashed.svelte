@@ -10,10 +10,9 @@
         name:string,
         M:stashedHaver,
     } = $props()
-    let fame = `${S.name}: ${name}: ${M.name || objectify(M)} `
 
     let save_stash = throttle(() => {
-        console.log(`saving stashedHaver ${fame}`)
+        console.log(`saving stashedHaver ${name}`)
         let it = JSON.stringify(M.stashed)
         M.stashed_mem.put(it)
     },200)
@@ -22,13 +21,14 @@
         if (!M.stashed) {
             let json = await M.stashed_mem.get()
             M.stashed = json && JSON.parse(json) || {}
+            if(json) {
+                console.log(`stashedHaver ${name} loaded`,M.stashed)
+            }
         }
         if (Object.entries(M.stashed)) {
             console.log(`stashedHaver save...`)
             save_stash()
         }
     })
-    $inspect('stashedHaver ',M.stashed)
+    // $inspect('stashedHaver ',M.stashed)
 </script>
-
-Stashed: ${fame}

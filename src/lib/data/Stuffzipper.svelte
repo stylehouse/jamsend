@@ -42,9 +42,6 @@
 {#if anything}
 <button class="btn {openness && 'open'}" onclick={toggle}> {inner_sizing} </button>
 <span class="inner">
-    {#if stuffusion}
-        a whole Stuffusion
-    {/if}
     {#if openness}
         {#each innered as inner}
             <Stuffing {mem} stuff={inner} />
