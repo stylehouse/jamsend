@@ -1,8 +1,10 @@
 <script lang="ts">
-    import { Stuffusion } from './Stuff.svelte';
+    import { Modusmem, Stuffusion } from './Stuff.svelte';
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
-    let { stuffusion }:{ stuffusion: Stuffusion } = $props()
+    
+    let { mem,stuffusion }:{ mem:Modusmem,stuffusion: Stuffusion } = $props()
+    mem = mem.further("Stuffusion:"+stuffusion.name)
 
     // Track openness in the UI component to preserve across re-brackology()
     let openness = $state(true)
@@ -16,7 +18,7 @@
     {#if openness}
         <span class="content">
             {#each Array.from(stuffusion.columns.values()) as stuffziad (stuffziad.name)}
-                <Stuffziad {stuffziad} />
+                <Stuffziad {mem} {stuffziad} />
             {/each}
         </span>
     {/if}
@@ -24,7 +26,7 @@
         <span class="content count">x{stuffusion.row_count}</span>
     {/if}
     {#if stuffusion.innered}
-        <Stuffzipper innered={stuffusion.innered} {stuffusion} ></Stuffzipper>
+        <Stuffzipper {mem} innered={stuffusion.innered} {stuffusion} ></Stuffzipper>
     {/if}
 </div>
 

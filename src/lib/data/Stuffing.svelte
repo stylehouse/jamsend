@@ -1,8 +1,9 @@
 <script lang="ts">
-    import { Stuff,Stuffing } from './Stuff.svelte';
+    import { Modusmem, Stuff,Stuffing } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
-    let { stuff }:{ stuff:Stuff } = $props()
+    let { mem,stuff }:{ mem:Modusmem, stuff:Stuff } = $props()
+    mem = mem.further("Stuffing")
     let stuff_length = $state(0)
     let stufflen = () => { stuff_length = stuff?.X?.z?.length || 0 }
 
@@ -41,7 +42,7 @@
     <div class="stuffing">
         <div class="content">
             {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}
-                <Stuffusion {stuffusion} />
+                <Stuffusion {mem} {stuffusion} />
             {/each}
         </div>
         {#if spinner}

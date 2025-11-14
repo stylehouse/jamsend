@@ -4,7 +4,7 @@ import { _C, keyser, Modus, Stuff, TheC, Travel, type TheN, type TheUniversal } 
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection } from '$lib/mostly/Selection.svelte';
 import { erring } from '$lib/Y'
-import { now_in_seconds, type PierFeature } from '../Peerily.svelte';
+import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
 
@@ -341,7 +341,7 @@ export class DirectoryShare extends ThingIsms {
     persisted_handle:KVStore
     constructor(opt) {
         super(opt)
-        let {name,F} = opt
+        let {name,F}:{name:string,F:PeeringFeature} = opt
 
         this.persisted_handle = F.spawn_KVStore(`share handle`,name)
         

@@ -1,6 +1,7 @@
 <script lang="ts">
     import type { ThingAction } from "$lib/data/Things.svelte.ts";
     import ActionButtons from "../p2p/ui/ActionButtons.svelte";
+    import Thingstashed from "./Thingstashed.svelte";
 
     // Common behavior for any ThingIsms object
     interface ThingnessProps {
@@ -29,6 +30,10 @@
         }
 
     }
+
+
+
+
 
 
     // also, isn't it called intuition because you know something because you see something, because standard?
@@ -62,6 +67,10 @@
             <span class="thing-name">{name}</span>
         </div>
     </div>
+
+    {#each S.gizmos as [name, M] (name)}
+        <Thingstashed {S} {name} {M} />
+    {/each}
 
     
         <div class="status-section">

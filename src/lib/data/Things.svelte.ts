@@ -1,7 +1,8 @@
 import { SvelteMap } from "svelte/reactivity"
-import { CollectionStorage } from "./IDB.svelte"
+import { CollectionStorage, KVStore } from "./IDB.svelte"
 import type { PeeringFeature } from "$lib/p2p/Peerily.svelte"
 import { erring } from "$lib/Y"
+import type Modus from "$lib/mostly/Modus.svelte"
 
 //#region ThingIsms
 export type ThingAction = {
@@ -9,6 +10,7 @@ export type ThingAction = {
     class?: string
     handler: Function
 }
+// aka S
 export abstract class ThingIsms {
     // Thing must have a unique name
     //  and that's all that's required to create a new one
@@ -28,16 +30,33 @@ export abstract class ThingIsms {
     started?: boolean = $state()
     no_autostart?: boolean
 
+    // eg Shares does a bunch of i_action() on each Share
     actions?: ThingAction[] = $state()
-    i_action(act:ThingAction,deleet=false) {
+    i_action(act:ThingAction,removal=false) {
         this.actions ||= []
         this.actions = this.actions.filter(a => a.label != act.label)
-        if (!deleet) this.actions.push(act)
+        if (!removal) this.actions.push(act)
     }
-    // eg Shares does a bunch of i_action() on each Share
-    wantS(wantS) {
-        wantS(this)
+    
+
+    // gizmos (eg Modus's brackology) within the thing can store memory
+    gizmos = $state(new SvelteMap())
+    gizmo_mem = new SvelteMap()
+    stashed_mem(M:Modus|Object,name:string) {
+        let key = `${this.name}/${name}`
+        // we keep a read+writer for each key in the KVStore
+        let mem = this.gizmo_mem.get(key)
+        if (!mem) {
+            mem = this.F.spawn_KVStore(`gizmo`,key)
+            this.gizmo_mem.set(key,mem)
+        }
+        // an invisible UI:Thingstashed will come for M.stashed
+        this.gizmos.set(name,M)
+        // and use M.stashed_mem, the KVStore
+        M.stashed_mem = mem
     }
+
+
 }
 abstract class ThingNessIsms {
     // would exist but for javascript's single upstream (prototype) inheritance

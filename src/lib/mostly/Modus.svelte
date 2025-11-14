@@ -31,6 +31,9 @@
             // setTimeout(() => lets_redraw(), 140)
         }
     })
+    function stashy() {
+        M.stashed.things = 3
+    }
 
     function restuffock(N) {
         // console.log("restuffock "+(N.length))
@@ -50,6 +53,7 @@
     })
 </script>
 
+    <button onclick={stashy}>stashy</button>
     <button onclick={lets_redraw}>redraw</button>
 
             {#each Object.entries(stuffocks) as [i,stuff] (i)}
@@ -67,8 +71,8 @@
             {/each}
 
     {#key redraw_version}
-        <Stuffing stuff={M.current} />
-        {#if M.coms}<Stuffing stuff={M.coms} />{/if}
+        <Stuffing mem={M.imem('current')} stuff={M.current} />
+        {#if M.coms} <Stuffing mem={M.imem('coms')} stuff={M.coms} />{/if}
     {/key}
     
 <style>

@@ -1,7 +1,10 @@
 <script lang="ts">
+    import Modus from '$lib/mostly/Modus.svelte';
+    import type { Modusmem } from './Stuff.svelte';
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
-    let { stuffziad }:{ stuffziad: Stuffziad } = $props()
+    let { mem,stuffziad }: { mem:Modusmem, stuffziad: Stuffziad } = $props()
+    mem = mem.further("Stuffziad:"+stuffziad.name)
 
     // Track openness in the UI component to preserve across re-brackology()
     let openness = $state(false)
@@ -26,7 +29,7 @@
     <span class="{ziadostyle(stuffziado)}">{stuffziado?.display_name}</span>
     {#if stuffziado.innered}
         <ziadoin>
-            <Stuffzipper innered={stuffziado.innered} {stuffziado} ></Stuffzipper>
+            <Stuffzipper {mem} innered={stuffziado.innered} {stuffziado} ></Stuffzipper>
         </ziadoin>
     {/if}
 

@@ -1,20 +1,25 @@
 <script lang="ts">
-    import { type TheN,Stuffusion,Stuffziado } from "./Stuff.svelte";
+    import { type TheN,Modusmem,Stuffusion,Stuffziado } from "./Stuff.svelte";
     import Stuffing from "./Stuffing.svelte";
 
-    let { innered,
+    type eitherzipperuzia = {stuffusion:Stuffusion} | {stuffziado:Stuffziado}
+    let { mem,
+        innered,
         // our client is either:
         stuffusion,
         stuffziado,
-    }: { innered: TheN,
-        stuffusion:Stuffusion,
-        stuffziado:Stuffziado, } = $props();
+    }: { mem:Modusmem,
+        innered: TheN } & eitherzipperuzia = $props();
+    
+    let either = stuffusion || stuffziado
+    mem = mem.further("Stuffzipper:"+either.name)
 
     let anything = true
     
-    let openness = $state(false);
+    let openness = $state(mem.get('openness') || false);
     function toggle() {
         openness = !openness;
+        mem.set('openness',openness)
     }
 
     // some rows here, have yay many rows in them
@@ -37,9 +42,12 @@
 {#if anything}
 <button class="btn {openness && 'open'}" onclick={toggle}> {inner_sizing} </button>
 <span class="inner">
+    {#if stuffusion}
+        a whole Stuffusion
+    {/if}
     {#if openness}
         {#each innered as inner}
-            <Stuffing stuff={inner} />
+            <Stuffing {mem} stuff={inner} />
         {/each}
     {/if}
 </span>

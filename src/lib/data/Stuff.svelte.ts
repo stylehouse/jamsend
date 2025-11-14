@@ -1,5 +1,7 @@
-import { now_in_seconds } from "$lib/p2p/Peerily.svelte";
+import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
+import type { KVStore } from "./IDB.svelte";
+import type { ThingIsms } from "./Things.svelte";
 
 let spec = `
 
@@ -729,7 +731,7 @@ function inner_sizing(innered) {
 }
 // data dumper
 // < recursion
-function objectify(v:any):string {
+export function objectify(v:any):string {
     return String(
         typeof v == 'number' || typeof v == 'string' ? v
         : v == null ? 'null'
@@ -956,7 +958,51 @@ function nonemptyArray_or_null(N:any) {
     if (N?.length) return N
     return null
 }
+type StashedModus = Object & {
+
+}
+export class Modusmem {
+    M:Modus
+    keys:Array<string>
+    constructor(M:Modus,keys:Array<string>) {
+        this.M = M
+        this.keys = keys
+    }
+    further(key) {
+        return new Modusmem(this.M,[...this.keys,key])
+    }
+    // they then have a bunch of possible k:v, all should react UI:Thingstashed
+    get(key) {
+        let here = this.M.stashed
+        for (let key of this.keys) {
+            if (!Object.hasOwn(here,key)) {
+                return null
+            }
+            here = here[key]
+        }
+        return here?.[key]
+    }
+    set(key,value) {
+        let here = this.M.stashed
+        for (let k of this.keys) {
+            here = here[k] = here[k] || {}
+        }
+        here[key] = value
+    }
+}
 abstract class TimeGallopia {
+    // M.stashed is persistent
+    stashed:StashedModus = $state()
+    stashed_mem:KVStore
+    init_stashed_mem() {
+        this.S.stashed_mem(this,`Modus:${objectify(this)}`)
+    }
+    // io into the .stashed.**
+    imem(key) {
+        return new Modusmem(this,[key])
+    }
+
+
     // the "I'm redoing the thing" process wrapper
     // a layer on top of Stuff.replace():
     //  graceful fail when already locked
@@ -1043,15 +1089,22 @@ abstract class TimeGallopia {
 }
 
 export class Modus extends TimeGallopia {
-    current:TheC = $state(_C())
+    // belongs to a thing of a feature
+    S:ThingIsms
+    // < FeatureIsms. PF.F = F
+    F:PeeringFeature
+    
     coms?:TheC|null = $state()
 
     constructor(opt:Partial<Modus>) {
         super()
         Object.assign(this,opt)
+        this.init_stashed_mem?.()
     }
 
 
+    // Modus having .current, rather than being C
+    current:TheC = $state(_C())
     // add to the Stuff
     i(C:TheC|TheUniversal) {
         return this.current.i(C)

@@ -18,10 +18,11 @@ export class PeeringSharing extends PeeringFeature {
         super(opt)
         this.trust_name = 'ftp'
         this.UI_component = Shares
-        this.IDB_Schema(5, [
+        this.IDB_Schema(7, [
             // these two are /$share/$handle
             'shares',        // for Things:DirectoryShares
             'share handle',  // for DirectoryShare.persisted_handle
+            'gizmo',        // for named Things:** with .stashed via UI:Thingstashed
         ])
         this.shares = new DirectoryShares({F:this})
     }
