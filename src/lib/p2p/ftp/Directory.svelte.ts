@@ -122,7 +122,7 @@ export class DirectoryModus extends Modus {
                         await D.replace({readin:1},async () => {
                         await n.replace({readin:1},async () => {
                             let name = n.sc.name as String
-                            if (name.endsWith('.mp3')) {
+                            if (track_looking(name)) {
                                 n.i({readin:'name',isa:'track'})
                                 D.i({readin:'name',isa:'track'})
                                 track_nibs.push(n)
@@ -157,6 +157,10 @@ export class DirectoryModus extends Modus {
             })
         })
     }
+}
+
+function track_looking(name: string) {
+    return /\.(mp3|wav|ogg|m4a|aac|flac|opus|webm|oga|mkv|mka|mp4)$/i.test(name);
 }
 
 
