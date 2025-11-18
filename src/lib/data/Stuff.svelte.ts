@@ -174,14 +174,6 @@ class StuffIO {
         this.X.bump_version()
     }
 
-    // reality is like a.i(b) and b.i(c), so we can travel the a/b/c graph (hierarchy)
-    // visitor of many C** to o()
-    async d(s:TheUniversal,d?:Partial<Travel>) {
-        if (typeof d == 'function') d = {each_fn:d}
-        let T = Travel.onwards(d||{})
-        return await T.dive(this,s,T)
-    }
-
     // attachment, materialisation. indexes build up, forming X/.../$n to be with
     i(n: TheC|TheUniversal) {
         n = _C(n)
@@ -800,7 +792,7 @@ export class Stuffziado extends Stuffuzia {
 
 
 //#endregion
-//#region C
+//#region TheC
 export type TheUniversal = {
     waits?: string,
 } & any
@@ -844,112 +836,6 @@ export function _C(v={}):TheC {
 
 export type TheN = TheC[]
 
-
-//#endregion
-//#region Travel
-// the visitor of $n** for the Stuff.d() function
-export class Travel extends TheC {
-    // callback for each $n
-    each_fn:Function
-    // callback for each n/*:N
-    many_fn:Function
-    // callback for each $n, after travelling n**
-    done_fn:Function
-    constructor(opt) {
-        super(opt)
-        Object.assign(this,opt)
-    }
-
-    get up() {
-        return this.c.path.slice(-2)[0]
-    }
-
-    // visitor of many ** to o()
-    async dive(C:TheC,s:TheUniversal,T:Travel) {
-        await this.dive_start(C,T)
-        if (T.sc.not) return 
-        return await this.dive_middle(s,T)
-    }
-    async dive_start(C:TheC,T:Travel) {
-        // < all sorts of tracking, resolving our way down other C**
-        // check if we're supposed to be here ($n=this) again
-        let refx = T.i_visit(C)
-        if (refx.z.length > 1) {
-            return T.sc.not = "revisited"
-        }
-        // visit here
-        T.sc.n = C
-    }
-    async dive_middle(s:TheUniversal,T:Travel) {
-        if (T.sc.not) return 
-        let args = [T.sc.n, T, T.sc.up?.sc.n]
-
-        // being at $n
-        await T.c.each_fn?.(...args)
-
-        // find $n/*
-        //  run the query here
-        let M = (T.oa({more:1}) || T.sc.n.o(s)) as TheN
-        // create T/*
-        let N = []
-        for (const n of M) {
-            let oT = Travel.onwards(T)
-            oT.dive_start(n,oT)
-            // establishes a column! aka ark, see iooia
-            //  or not if looplicate
-            if (oT.sc.n && !oT.sc.not) {
-                N.push(oT)
-            }
-        }
-
-        // consider $n/*
-        if (T.c.many_fn) {
-            await T.c.many_fn(T.sc.n, N, T)
-        }
-
-        // recurse into $n/*
-        for (const oT of N) {
-            await oT.dive_middle(s,oT)
-        }
-
-        // after $n/*
-        await T.c.done_fn?.(...args)
-    }
-
-    // factory, extender
-    //  T -> /T with identical .c, reset .sc
-    //  cloning a Travel we're going beyond
-    //  also from Stuff.d(s,y,T.c:d)
-    // arrive at a new place, inc the first one
-    static onwards(d:Travel["c"]|Travel):Travel {
-        if (d instanceof Travel) {
-            // copy d.c.*, new d.sc.*
-            d = new Travel({c:{...d.c},sc:{up:d}})
-        }
-        else {
-            d = new Travel({c:d,sc:{}})
-        }
-        // clone d.c.* that mutate per node
-        d.c.path = (d.c.path||[]).slice()
-        d.c.path.push(d)
-        d.c.top ||= d
-        d.c.d ||= 0
-        d.c.d++
-
-        return d
-    }
-
-    // tracking visited refs at the top to avoid going in loops
-    i_visit(v:any|TheC):TheX {
-        let T = this
-        let top:Travel = this.c.top
-        top.Xify()
-        let X:TheX = top.X
-        return X.i_refer(v,T,'visit_v')
-    }
-
-
-}
 
 
 //#endregion

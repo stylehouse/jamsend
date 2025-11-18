@@ -1,8 +1,8 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, keyser, Modus, Stuff, TheC, Travel, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
+import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
-import { Selection } from '$lib/mostly/Selection.svelte';
+import { Selection, Travel } from '$lib/mostly/Selection.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
@@ -88,66 +88,65 @@ export class DirectoryModus extends Modus {
     //  are there any unawaited promises in my code?
     async Travel_DLs(n:TheC) {
         console.log(`Travel_DLs:`)
-        let Se = new Selection(n)
+        let Se = new Selection()
         // look for new things in it
         let track_nibs:TheN = []
         let topD
-        await Se.process(
-            {Travel:'readin'}, // initial $n/%Travel, singular
-            {nib:1,name:1},    // climbing $n%nib,name**
-            {Tree:3},          // fabricating D%Tree**
-            {
-                each_fn: async (n:TheC,T:Travel) => {
-                    if (n.sc.nib == 'dir') {
-                        await this.expand_DL(n,)
+        await Se.process({
+            n,
+            process_sc: {Travel:'readin'}, // initial $n/%Travel, singular
+
+
+            match_sc: {nib:1,name:1},    // climbing $n%nib,name**
+            each_fn: async (n:TheC,T:Travel) => {
+                if (n.sc.nib == 'dir') {
+                    await this.expand_DL(n,)
+                }
+            },
+
+            // re-describe each n** into D**
+            //  $D/* fills with each Dyn/$n*
+            //   the D is one step above this n
+            // D** is thence always fillable with other stuff, not of pattern_sc
+            // < resolve() maybe could n.sc <-> D.sc.nid, a copy of n.sc
+            //    nid being D's index of the foreign n.sc, the identity it is tracking
+            //   and hopefully these new sort-of joins will +1 nicely
+            //    like you'd work things out on paper
+            trace_sc: {Tree:3},          // fabricating D%Tree**
+            trace_fn: async (D:TheC,n:TheC) => {
+                topD ||= D
+                return D.i({Tree:3,itis:keyser(n)})
+            },
+
+            // everything that's going to be|wake inside (D|n)** is there|awake now
+            //  so you can write other stuff in places
+            done_fn: async (D:TheC,n:TheC,T:Travel) => {
+                if (!n.sc.nib) throw "not o %nib"
+                if (!n.sc.name) throw "not o %name"
+                let val = n.sc.name
+                // if (val.includes('cope')) debugger
+
+                let needs_doing = false
+                await D.replace({reading:'name'},async () => {
+                    let was = D.bo({val:1,reading:'name'},1)[0]
+                    if (was != null && was != val) {
+                        console.warn(`diff name reading: ${val} <~ ${was}`)
                     }
-                },
-
-                // re-describe each n** into D**
-                //  $D/* fills with each Dyn/$n*
-                //   the D is one step above this n
-                // D** is thence always fillable with other stuff, not of pattern_sc
-                // < resolve() maybe could n.sc <-> D.sc.nid, a copy of n.sc
-                //    nid being D's index of the foreign n.sc, the identity it is tracking
-                //   and hopefully these new sort-of joins will +1 nicely
-                //    like you'd work things out on paper
-                trace_fn: async (D:TheC,n:TheC) => {
-                    topD ||= D
-                    return D.i({Tree:3,itis:keyser(n)})
-                },
-
-                // everything that's going to be|wake inside (D|n)** is there|awake now
-                //  so you can write other stuff in places
-                done_fn: async (D:TheC,n:TheC,T:Travel) => {
-                    if (!n.sc.nib) throw "not o %nib"
-                    if (!n.sc.name) throw "not o %name"
-                    let val = n.sc.name
-                    // if (val.includes('cope')) debugger
-
-                    let needs_doing = false
-                    await D.replace({reading:'name'},async () => {
-                        let was = D.bo({val:1,reading:'name'},1)[0]
-                        if (was != null && was != val) {
-                            console.warn(`diff name reading: ${val} <~ ${was}`)
-                        }
-                        if (was == null || was != val) {
-                            needs_doing = true
-                        }
-                        D.i({val,reading:'name'})
-                    })
-                    D.X_before && console.warn("Still transacting "+keyser(D))
-                    needs_doing
-                        // no go?
-                        && await this.intelligible_name(Se,D,n,T)
-                    if (needs_doing) {
-                        // no go?
-                        // await this.intelligible_name(Se,D,n,T)
-                        // in another traversal...
-                        track_nibs.push({D,n,T})
+                    if (was == null || was != val) {
+                        needs_doing = true
                     }
+                    D.i({val,reading:'name'})
+                })
+                D.X_before && console.warn("Still transacting "+keyser(D))
+                
+                if (needs_doing) {
+                    // no go?
+                    await this.intelligible_name(Se,D,n,T)
+                    // in another traversal...
+                    track_nibs.push({D,n,T})
                 }
             }
-        )
+        })
 
 
         // tally up
