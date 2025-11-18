@@ -25,34 +25,32 @@ hook into essential points of the lifecycle
 
 `
 
-    // // reality is like a.i(b) and b.i(c), so we can travel the a/b/c graph (hierarchy)
-    // // visitor of many C** to o()
-    // async d(s:TheUniversal,d?:Partial<Travel>) {
-    //     if (typeof d == 'function') d = {each_fn:d}
-    //     let T = Travel.onwards(d||{})
-    //     return await T.dive(this,s,T)
-    // }
-
 //#endregion
 //#region Travel
-// the visitor of $n** for the Stuff.d() function
+
+// reality is like a.i(b) and b.i(c), so we can travel the a/b/c graph (hierarchy)
+// the visitor of $n**
 export class Travel extends TheC {
     // these are all really on T.c.*, but for documentation:
     // the first step - so all n** visits have T.c.n=topn
     n:TheC
     // what $n looks like
     match_sc:TheUniversal
+
+    // moment handlers
     // each $n
     each_fn?:Function
     // each n/*:N
     many_fn?:Function
     // each $n, after travelling n/**
     done_fn?:Function
+
     // new Travel(your T.c)
     constructor(opt={}) {
         super({c:opt,sc:{}})
     }
 
+    // < GOING? have .sc.up...
     get up() {
         return this.c.path.slice(-2)[0]
     }
@@ -219,6 +217,17 @@ export class Selection extends Travel {
                             }
                         }
                         if (a && b) {
+                            // has a history
+                            if (T != b.c.T.up) throw `T != b.c.T.up`
+                            // so T%D,bD and any D.c.T
+                            b.c.T.sc.bD = a
+                            // before a
+                            let z = a.c.T.sc.bD
+                            if (z?.c.T.sc.b) {
+                                // can forget x to save memory
+                                delete z.c.T.sc.b
+                            }
+
                             // could be a rename
                             if (a.sc.itis != b.sc.itis) {
                                 console.log("Renamed on "+T.sc.D.sc.itis+": "+keyser(b))
@@ -227,6 +236,16 @@ export class Selection extends Travel {
                         }
                     }
                 })
+
+                // have a look through resolved D%Tree
+                for (const oT of N) {
+                    if (oT.sc.not) continue
+                    Se.c.traced_fn?.(
+                        oT.sc.D,
+                        oT.sc.bD,
+                        oT.sc.n,
+                        oT)
+                }
             },
             done_fn: async (n:TheC,T:Travel) => {
                 // the D** sphere!

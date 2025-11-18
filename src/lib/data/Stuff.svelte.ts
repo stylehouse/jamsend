@@ -2,6 +2,7 @@ import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { KVStore } from "./IDB.svelte";
 import type { ThingIsms } from "./Things.svelte";
+import type { Travel } from "$lib/mostly/Selection.svelte";
 
 let spec = `
 
@@ -553,7 +554,7 @@ export class Stuff extends StuffIO {
             .filter(oldn => !claimed.includes(oldn))
         
         // log it all
-        if (coms) {
+        if (0 && coms) {
             pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
             unfound.forEach((n) => coms.i({spawn:keyser(n)}))
             gone.forEach((n) => coms.i({gone:keyser(n)}))
@@ -795,12 +796,19 @@ export class Stuffziado extends Stuffuzia {
 //#region TheC
 export type TheUniversal = {
     waits?: string,
+    D: TheC,
+    bD: TheC,
+    n: TheC,
 } & any
 export type TheEmpirical = {
     // whether it has been deleted, the index remains
     drop?: any,
     top?: Travel,
-    transacting?: Modus|TheC,
+
+    T:Travel,
+    n: TheC,
+    path: Array<Travel>
+    d: number, // depth of .path
 } & any
 
 // extends Stuff, with .X so you can C.i(inC) for C/inC

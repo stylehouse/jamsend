@@ -38,7 +38,7 @@ export class DirectoryModus extends Modus {
             this.reset_interval()
 
             // < rewrite everything we're thinking about how to:
-            await this.surf_DLs()
+            await this.surf_nibs(this.S.list)
 
             // Modus_testcase(this)
 
@@ -47,18 +47,10 @@ export class DirectoryModus extends Modus {
         console.log(`/main`)
     }
 
-    async NOT_surf_DLs() {
-        // look to replace and climb down into the last %DL
-        let top = this.bo({nib:'dir',DL:1})[0]
-        top ||= _C({nib:'dir',DL:this.S.list, est:now_in_seconds()})
-        top.coms = this.coms
-        await this.surfable_DL(top)
-    }
     // < partition a travel into %nib**
     //  < and deduplicate|DRY from having an extra toplevel %nib replace.
-    async surf_DLs() {
-        // look to (or initialise) and climb down into the top %DL
-        let DL = this.S.list
+    // look to (or initialise) and climb down into the top %DL
+    async surf_nibs(DL) {
         if (!DL) throw "!DL"
         let was = null
         await this.replacies({
@@ -100,9 +92,11 @@ export class DirectoryModus extends Modus {
             match_sc: {nib:1,name:1},    // climbing $n%nib,name**
             each_fn: async (n:TheC,T:Travel) => {
                 if (n.sc.nib == 'dir') {
-                    await this.expand_DL(n,)
+                    // creates more $n/%nib,name**
+                    await this.expand_nib(n)
                 }
             },
+
 
             // re-describe each n** into D**
             //  $D/* fills with each Dyn/$n*
@@ -113,33 +107,31 @@ export class DirectoryModus extends Modus {
             //   and hopefully these new sort-of joins will +1 nicely
             //    like you'd work things out on paper
             trace_sc: {Tree:3},          // fabricating D%Tree**
-            trace_fn: async (D:TheC,n:TheC) => {
-                topD ||= D
-                return D.i({Tree:3,itis:keyser(n)})
+            trace_fn: async (uD:TheC,n:TheC) => {
+                topD ||= uD
+                return uD.i({Tree:3,name:n.sc.name})
             },
+            // now for each of those, what can we see...
+            traced_fn: async (D:TheC,bD:TheC,n:TheC,T:Travel) => {
+                if (!bD || bD.sc.name != D.sc.name) {
+                    if (bD) {
+                        console.warn(`process Renamed ${bD.sc.name} -> ${D.sc.name}`)
+                    }
+                    T.sc.needs_doing = true
+                }
+            },
+            
 
+            
             // everything that's going to be|wake inside (D|n)** is there|awake now
             //  so you can write other stuff in places
             done_fn: async (D:TheC,n:TheC,T:Travel) => {
                 if (!n.sc.nib) throw "not o %nib"
                 if (!n.sc.name) throw "not o %name"
-                let val = n.sc.name
-                // if (val.includes('cope')) debugger
-
-                let needs_doing = false
-                await D.replace({reading:'name'},async () => {
-                    let was = D.bo({val:1,reading:'name'},1)[0]
-                    if (was != null && was != val) {
-                        console.warn(`diff name reading: ${val} <~ ${was}`)
-                    }
-                    if (was == null || was != val) {
-                        needs_doing = true
-                    }
-                    D.i({val,reading:'name'})
-                })
                 D.X_before && console.warn("Still transacting "+keyser(D))
-                
-                if (needs_doing) {
+                // < GOING could also D_reading_val(D,n,k) to store traces inside D/*
+
+                if (T.sc.needs_doing) {
                     // no go?
                     await this.intelligible_name(Se,D,n,T)
                     // in another traversal...
@@ -152,16 +144,31 @@ export class DirectoryModus extends Modus {
         // tally up
         // < and down, ie handle bits of the above tree vanishing
         await topD.replace({lead:1}, async()=>{
-            for (let n of track_nibs) {
+            for (let {n} of track_nibs) {
                 topD.i({lead:1,track_nib:n})
             }
         })
     }
 
-    D_reading_val(D,n,k) {
-        // < for above D.replace({reading:'name'}
+    // < GOING? the n%name -> D%Tree/%Trace=name,val=$v mark making
+    //   we simply write some strings in eg %Tree,name=... for now...
+    async D_reading_val(D,n,k) {
+        let needs_doing = false
+        let val = n.sc.name
+        await D.replace({reading:'name'},async () => {
+            let was = D.bo({val:1,reading:'name'},1)[0]
+            if (was != null && was != val) {
+                console.warn(`diff name reading: ${val} <~ ${was}`)
+            }
+            if (was == null || was != val) {
+                needs_doing = true
+            }
+            D.i({val,reading:'name'})
+        })
     }
 
+    // < keeping things around
+    // < findable orphaned D** via path (fragments) and filesizes
     D_to_path(D) {
         let path = D.c.T.c.path
     }
@@ -185,18 +192,18 @@ export class DirectoryModus extends Modus {
         })
     }
 
-    async expand_DL(top:TheC) {
-        const DL:DirectoryListing = top.sc.DL
+    async expand_nib(n:TheC) {
+        const DL:DirectoryListing = n.sc.DL
         await DL.expand()
 
         // i /*%nib:dir,...
         let uDL = DL
-        await top.replace({nib:1,name:1},async () => {
+        await n.replace({nib:1,name:1},async () => {
             for (const DL of uDL.directories) {
-                let di = await top.i({nib:'dir',name:DL.name,DL})
+                let di = await n.i({nib:'dir',name:DL.name,DL})
             }
             for (const FL of uDL.files) {
-                await top.i({nib:'blob',name:FL.name,FL})
+                await n.i({nib:'blob',name:FL.name,FL})
             }
         })
     }
