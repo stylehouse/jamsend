@@ -82,6 +82,10 @@ export class DirectoryModus extends Modus {
         // if (DL != n.sc.DL) throw "~DL"
     }
 
+    // a big development.
+    //  is farming off to process() of domesticating information
+    // random challenges:
+    //  are there any unawaited promises in my code?
     async Travel_DLs(n:TheC) {
         console.log(`Travel_DLs:`)
         let Se = new Selection(n)
@@ -187,13 +191,14 @@ export class DirectoryModus extends Modus {
         await DL.expand()
 
         // i /*%nib:dir,...
+        let uDL = DL
         await top.replace({nib:1,name:1},async () => {
-            DL.directories.forEach(async DL => {
-                let di = top.i({nib:'dir',name:DL.name,DL})
-            })
-            DL.files.forEach(async FL => {
-                top.i({nib:'blob',name:FL.name,FL})
-            })
+            for (const DL of uDL.directories) {
+                let di = await top.i({nib:'dir',name:DL.name,DL})
+            }
+            for (const FL of uDL.files) {
+                await top.i({nib:'blob',name:FL.name,FL})
+            }
         })
     }
 }
