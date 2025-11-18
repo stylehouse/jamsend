@@ -238,6 +238,7 @@ class StuffIO {
     }
     // return arrays, empty if no rows, good for iterating .forEach()
     bo(c?:TheUniversal,q?):TheN|TheC|any {
+        if (typeof q == "number") q = {one_column_mode:q}
         q ||= {}
         q.X ||= this.X_before
         if (!q.X) return []
@@ -961,6 +962,8 @@ function nonemptyArray_or_null(N:any) {
 type StashedModus = Object & {
 
 }
+// memory hole climbing accessors
+//  for any M.stashed haver, for now Modus
 export class Modusmem {
     M:Modus
     keys:Array<string>

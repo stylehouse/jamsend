@@ -115,30 +115,69 @@ export class DirectoryModus extends Modus {
                 // everything that's going to be|wake inside (D|n)** is there|awake now
                 //  so you can write other stuff in places
                 done_fn: async (D:TheC,n:TheC,T:Travel) => {
-                    if (n.sc.nib) {
+                    if (!n.sc.nib) throw "not o %nib"
+                    if (!n.sc.name) throw "not o %name"
+                    let val = n.sc.name
+                    // if (val.includes('cope')) debugger
 
-                    }
-                    if (n.sc.nib == 'blob') {
-                        await D.replace({readin:1},async () => {
-                        await n.replace({readin:1},async () => {
-                            let name = n.sc.name as String
-                            if (track_looking(name)) {
-                                n.i({readin:'name',isa:'track'})
-                                D.i({readin:'name',isa:'track'})
-                                track_nibs.push(n)
-                            }
-                        })
-                        })
+                    let needs_doing = false
+                    await D.replace({reading:'name'},async () => {
+                        let was = D.bo({val:1,reading:'name'},1)[0]
+                        if (was != null && was != val) {
+                            console.warn(`diff name reading: ${val} <~ ${was}`)
+                        }
+                        if (was == null || was != val) {
+                            needs_doing = true
+                        }
+                        D.i({val,reading:'name'})
+                    })
+                    D.X_before && console.warn("Still transacting "+keyser(D))
+                    needs_doing
+                        // no go?
+                        && await this.intelligible_name(Se,D,n,T)
+                    if (needs_doing) {
+                        // no go?
+                        // await this.intelligible_name(Se,D,n,T)
+                        // in another traversal...
+                        track_nibs.push({D,n,T})
                     }
                 }
             }
         )
 
+
         // tally up
         // < and down, ie handle bits of the above tree vanishing
-        topD.replace({lead:1}, async()=>{
+        await topD.replace({lead:1}, async()=>{
             for (let n of track_nibs) {
                 topD.i({lead:1,track_nib:n})
+            }
+        })
+    }
+
+    D_reading_val(D,n,k) {
+        // < for above D.replace({reading:'name'}
+    }
+
+    D_to_path(D) {
+        let path = D.c.T.c.path
+    }
+
+    // propagate D** about the tracks
+    async intelligible_name(Se,D,n,T) {
+        await D.replace({readin:1},() => {
+            let name = n.sc.name as String
+            if (n.sc.nib == 'blob') {
+                if (track_looking(name)) {
+                    D.i({readin:'name',isa:'track'})
+                    // track_nibs.push(n)
+                }
+                else {
+                    // text?
+                }
+            }
+            if (n.sc.nib == 'dir') {
+                // console.log(`at directoiry: ${T.c.path.map(T=>T.sc.n.sc.name).join("\t")}`, D)
             }
         })
     }
