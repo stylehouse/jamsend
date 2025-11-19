@@ -1,3 +1,4 @@
+import { TheC } from "./data/Stuff.svelte";
 
 export function throttle(func, interval_ms = 200) {
     let isWaiting = false;
@@ -67,6 +68,8 @@ export function erring(label: string, err?: Error | string): Error {
     return wrappedError;
 }
 
+// warning: from here down is AI translated from stylehouse / NutGravy, Pictures, etc
+
 // Parser that modifies string and captures matches
 export class Parserify {
     s: string;           // current string being parsed
@@ -127,4 +130,177 @@ export class Parserify {
             if (opts.noloop) return;
         }
     }
+}
+
+// some of the smallest structures
+// reversibly|diffily, create transform theory
+// phenom comes in waves
+// waves have a skin
+// skins relate posture
+// even ...arguments become the values, like perl's {@kvs}
+export function hashkv() {
+    let args = [...arguments];
+    
+    if (args.length == 1) {
+        const first = args[0];
+        if (!isar(first)) {
+            // hashkv('it') -> {it:1}
+            args.push(1);
+        } else {
+            // hashkv([[nc&sip,n]+]) -> {'0 1 2':n}
+            //  !N.length -> {}
+            const array = isar(first[0]);
+            // hashkv(['it','es']) -> {it:1,es:1}
+            args = [];
+            for (let i in first) {
+                const n = first[i];
+                args.push(array ? n[0] : n);
+                args.push(array ? n[1] : 1);
+            }
+        }
+    }
+    
+    let c = null;
+    while (args.length) {
+        const k = args.shift();
+        if (c && args.length < 1) {
+            throw new Error("odd hashkv");
+        }
+        const v = args.shift();
+        c = c || {};
+        if (!iske(k)) debugger;
+        c[k] = v;
+    }
+    return c || {};
+}
+
+// map, [] or {}, waves of y(v,k)
+export function map(...args) {
+    const N = args.pop();
+    const array = isar(N);
+    const waves = [N];
+    
+    // map(N) ~~ N.slice()
+    if (!hak(args)) {
+        if (!isar(N)) throw "N!ar"
+        args.push(s => s);
+    }
+    
+    args.reverse().forEach(y => {
+        const N = waves.slice(-1)[0];
+        const neu = array ? [] : {};
+        waves.push(neu);
+        
+        for (let i in N) {
+            const n = N[i];
+            if (array) i = i * 1;
+            neu[i] = y(n, i);
+        }
+    });
+    
+    return waves.slice(-1)[0];
+}
+
+// Filter array or object by predicate
+
+export function grep(c:Array<any>|Object, s?:any) {
+    // no function greps for true
+    // see also nex(), for not-null
+    if (arguments.length == 1) {
+        s = c;
+        c = { y: v => v };
+    } else if (isfu(c)) {
+        // function
+        c = { y: c };
+    } else if (isit(c)) {
+        // item: usually C to look for in /$n
+        c = { is: c };
+    } else if (isar(c)) {
+        c = { in: c };
+    }
+    
+    if (hak(c, 'is')) {
+        c.y = v => v == c.is;
+    }
+    if (hak(c, 'in')) {
+        c.y = v => c.in.includes(v);
+    }
+    if (isfu(s)) {
+        throw "iterating? it's grep(y,N)";
+    }
+    
+    const array = isar(s);
+    const o = array ? [] : {};
+    
+    for (let k in s) {
+        const v = s[k];
+        if (!c.y(v, k, o, s)) continue;
+        if (array) {
+            o.push(v);
+        } else {
+            o[k] = v;
+        }
+    }
+    return o;
+}
+
+// false if empty, like &za
+export function grap(c, s?:any) {
+    const N = grep(c, s);
+    return hak(N) && N;
+};
+
+// removing .filter, y=[n+]|&n{1}|$n
+export function grop(N, y?) {
+    const out = [];
+    
+    // expets is|includes
+    if (isar(y)) {
+        const Z = y;
+        y = n => Z.includes(n);
+    } else if (hak(y, 'is')) {
+        const v = y.is;
+        y = n => n == v;
+    } else if (!isfu(y)) {
+        const v = y;
+        y = n => n == v;
+    }
+    
+    const array = !N || isar(N);
+    for (let i in N) {
+        const n = N[i];
+        if (array) i = i * 1;
+        if (y(n, i)) {
+            out.unshift(i);
+        }
+    }
+    
+    return array 
+        ? out.map(i => N.splice(i, 1)[0]).reverse()
+        : tax({}, N, out);
+};
+
+// can be a key (object property name)
+export function iske(s) {
+    return typeof s == 'string' || typeof s == 'number'
+}
+// Check if itemic, ie C
+export function isit(s) {
+    return s instanceof TheC
+}
+
+// Check if function
+export function isfu(s) {
+    return typeof s === 'function';
+}
+
+// Check if array
+export function isar(s) {
+    return Array.isArray(s);
+}
+
+// s=Object number of keys, or has a d=key
+export function hak(s, d?:string) {
+    if (!s) return 0;
+    return d == null ? Object.keys(s).length : s.hasOwnProperty(d);
 }

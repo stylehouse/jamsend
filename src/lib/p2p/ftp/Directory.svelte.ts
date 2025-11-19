@@ -3,7 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Travel } from '$lib/mostly/Selection.svelte';
-import { erring, Parserify } from '$lib/Y'
+import { erring, hak, Parserify } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
@@ -46,6 +46,12 @@ export class DirectoryModus extends Modus {
         })
         console.log(`/main`)
     }
+    // sleep when possible
+    hard = false
+    toggle_gohard() {
+        this.hard = !this.hard
+        console.log("going hard: "+this.hard)
+    }
 
     // < partition a travel into %nib**
     //  < and deduplicate|DRY from having an extra toplevel %nib replace.
@@ -85,8 +91,8 @@ export class DirectoryModus extends Modus {
         n.coms.i({twas_thetime:this.thetime})
         
         let Se = new Selection()
+        let DS = new DirectorySelectivity(this)
         // look for new things in it
-        let track_nibs:TheN = []
         let topD
         await Se.process({
             n,
@@ -97,7 +103,7 @@ export class DirectoryModus extends Modus {
             each_fn: async (n:TheC,T:Travel) => {
                 if (n.sc.nib == 'dir') {
                     // creates more $n/%nib,name**
-                    await this.expand_nib(n)
+                    await DS.expand_nib(n)
                 }
             },
 
@@ -137,24 +143,15 @@ export class DirectoryModus extends Modus {
                 if (n.sc.name == null) throw "not o %name"
                 D.X_before && console.warn("Still transacting "+keyser(D))
 
-                // T.sc.needs_doing = true
+                if (this.hard) T.sc.needs_doing = true
+
                 if (T.sc.needs_doing) {
                     // no go?
-                    await this.intelligible_name(Se,D,n,T)
-                    // in another traversal...
-                    track_nibs.push({D,n,T})
+                    await DS.intelligible_name(Se,D,n,T)
                 }
             }
         })
 
-
-        // tally up
-        // < and down, ie handle bits of the above tree vanishing
-        await topD.replace({lead:1}, async()=>{
-            for (let {n} of track_nibs) {
-                topD.i({lead:1,track_nib:n})
-            }
-        })
     }
 
     // < keeping things around
@@ -163,7 +160,14 @@ export class DirectoryModus extends Modus {
         let path = D.c.T.c.path
     }
 
-
+}
+class DirectorySelectivity {
+    constructor (M) {
+        this.M = M
+    }
+    get thetime() {
+        return this.M.thetime
+    }
     async expand_nib(n:TheC) {
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
@@ -180,11 +184,12 @@ export class DirectoryModus extends Modus {
         })
     }
     // propagate D**%readin=$aspect about the tracks
-    async intelligible_name(Se, D, n, T) {
-        let readin = (t:string,s:TheUniversal) => {
+    // Artist get %readin:type,val:artist
+    async intelligible_name(Se:Selection, D:TheC, n:TheC, T:Travel) {
+        let i_readin = (t:string,s:TheUniversal) => {
             D.i({readin: t, thetime: this.thetime, ...s})
         }
-        await D.replace({readin: 1}, () => {
+        await D.replace({readin: 1}, async () => {
             const name = n.sc.name as string;
             const p = new Parserify(name);
             
@@ -192,18 +197,18 @@ export class DirectoryModus extends Modus {
                 // Extract and index file extension
                 if (p.p(/\.([a-z0-9]{3,4})$/i)) {
                     const format = p[1]!.toLowerCase();
-                    readin('format', {val: format});
+                    i_readin('format', {val: format});
                     
                     // Determine if it's a track
                     if (format.match(/^(mp3|wav|ogg|m4a|aac|flac|opus|webm|oga|mkv|mka|mp4)$/)) {
-                        readin('type',{val: 'track'});
+                        i_readin('type',{val: 'track'});
                     }
                 }
                 
                 // Extract and index track number from start
                 if (p.p(/^(\d+)[\s.\-_]+/, '')) {
                     const seq = parseInt(p[1]!, 10);
-                    readin('seq', {val: seq});
+                    i_readin('seq', {val: seq});
                 }
                 
                 // Clean up punctuation noise at the edges
@@ -214,7 +219,7 @@ export class DirectoryModus extends Modus {
                 
                 // Final cleaned name
                 const cleaned_name = p.s.trim();
-                readin('name', {val: p.s.trim()});
+                i_readin('name', {val: p.s.trim()});
             }
             
             if (n.sc.nib === 'dir') {
@@ -222,32 +227,40 @@ export class DirectoryModus extends Modus {
                 //  extrapolate outwards to become D^^%readin:type,val:artist
                 // note D.replace() is happening, so we .bo() the previous time
                 //  during replace(), only the newly placed items are findable with .o()
-                let is_album = false
-                for (let Tree of D.bo({Tree:3})) {
+                let said_album = 0
+                for (let oD of D.bo({Tree:3})) {
                     // D:Album/Tree:Track*
-                    if (Tree.oa({readin:'type',val:'track'})) {
-                        // we are an album
-                        is_album = true
-                        readin('track',{
-                            name: Tree.o({val:1,readin:'name'},1)[0],
-                            seq:  Tree.o({val:1,readin:'seq'},1)[0],
+                    if (oD.oa({readin:'type',val:'track'})) {
+                        // tracks imply we are an album
+                        if (!said_album++) {
+                            i_readin('type',{val:'album'})
+                        }
+                        // < gappy %seq
+                        i_readin('track',{
+                            name: oD.o({val:1,readin:'name'},1)[0],
+                            seq:  oD.o({val:1,readin:'seq'},1)[0],
+                            oD,
                             // < removable sleep debug
-                            thetime:  Tree.o({thetime:1,readin:'name'},1)[0],
-                        })
-                    }
-
-
-                    if (Tree.oa({readin:'type',val:'album'})) {
-                        // hoist these
-                        readin('type',{val:'artist'})
-                        readin('album',{
-                            name: Tree.o({val:1,readin:'name'},1)[0]
+                            thetime:  oD.o({thetime:1,readin:'name'},1)[0],
                         })
                     }
                 }
-                if (is_album) {
-                    readin('type',{val:'album'})
-                    // < guess if we're "Artist - Album (1979)"
+
+                // %artist
+                let said_artist = 0
+                for (let oD of D.bo({Tree:3})) {
+                    if (oD.oa({readin:'type',val:'album'})) {
+                        // albums imply we are an artist
+                        if (!said_artist++) {
+                            i_readin('type',{val:'artist'})
+                        }
+                        i_readin('album',{
+                            name: oD.o({val:1,readin:'name'},1)[0],
+                            oD,
+                            // < removable sleep debug
+                            thetime:  oD.o({thetime:1,readin:'name'},1)[0],
+                        })
+                    }
                 }
                 // < we may never get to those two points
                 //   and they may be collections|areas|genres, eg "0 Classique"/"0 neo"
@@ -261,25 +274,87 @@ export class DirectoryModus extends Modus {
         });
 
         // random flood of %ads hoisted about tracks
+        // < do in a second traversal of D** and incorporate how the hierarchies have flopped out
+        //    including from top-down
+        //    
         // < which pseudo-randomly shuffles what to talk about at the top level
-        await D.replace({ads: 1}, () => {
-            for (let Tree of D.bo({Tree:3})) {
-                if (Tree.oa({readin:'type',val:'track'})) {
-                    // take a few of its tracks
-                    let few = 3
-                    Tree.o({readin:'track'}) .map(n => {
-                        if (--few > 0) {
-                            D.i({ads:'for',track:n.sc.name})
-                        }
-                    })
+        // 
+        // < can make ads about:
+        //    D/oD/%readin=type,val=track|album|artist
+
+        //    D/oD/%readin=track
+        //    D/oD/%readin=album
+        //    D/oD/%readin=artist
+        // the fact we also D%readin=
+
+        // < prefers to advertise albums
+
+        // < guess if we're "Artist - Album (1979)" based on the surroundings
+        // haphazardly extend up, or spawn whole, %artist,album,track tuples
+        await D.replace({ads: 1}, async () => {
+            // < what about when aD == D
+            let gather_meta = (aD:TheC) => {
+                let meta = {}
+                let gather_meta = (type:string) => {
+                    aD.bo({val:'artist',readin:'type'})
+                        && console.log("Trackfound: "+D.sc.name)
+                    let name = aD.oa({val:type,readin:'type'})
+                            && aD.oa({val:1,   readin:'name'},1)[0]
+                    if (name != null) {
+                        meta[type] = name
+                    }
                 }
+                gather_meta('artist')
+                gather_meta('album')
+                gather_meta('track')
+                return meta
+            }
+            let meta_here = gather_meta(D)
+
+
+            let odd_limbs = true
+            let some = false
+            for (let oD of D.bo({Tree:3})) {
+                // ads build up locality as they hoist
+                let meta = {...meta_here, ...gather_meta(oD)}
+                gather_meta
+                if (!hak(meta)) {
+                    // dir that doesn't lead to a track, or a non-track-looking blob
+                    console.log("dir that doesn't lead to a track, or a non-track-looking blob",D.sc.name)
+                    continue
+                }
+                if (meta.artist) debugger
+
+
+                // meta accumulates when hoisted, on ads
+                let ads = (t:string,sc={}) => {
+                    // set ads twice for object property ordering...
+                    //  every %thing,with,values is a thing primarily
+                    D.i({ads:0,...meta,...sc,ads:t,oD})
+                }
+
+                let few = 3
+                some = oD.oa({ads:1})?.map((n:TheC) => few-- && ads('beyond',n.sc))
+
+                if (!some || odd_limbs) {
+                    // create the first %ads
+                    //  for a whole something this oD is
+                    //   certainly all tracks (!some, unless D** goes further?)
+                    some = ads('here')
+                }
+
+                odd_limbs = !odd_limbs
+            }
+
+            // allow toplevel artists to be see, as we only see them in D/oD
+            if (some) {
+
             }
         });
-
     }
 
 
-    
+
     // < GOING? the n%name -> D%Tree/%Trace=name,val=$v mark making
     //   we simply write some strings in eg %Tree,name=... for now...
     async D_reading_val(D,n,k) {

@@ -23,6 +23,10 @@
             label:'Mo++',
             handler: () => S.modus.main()
         })
+        S.i_action({
+            label:'hard',
+            handler: () => S.modus.toggle_gohard()
+        })
         console.log("Sharability onMount()!")
     })
     $effect(() => {
