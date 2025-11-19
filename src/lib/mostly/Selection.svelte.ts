@@ -165,9 +165,17 @@ export class Selection extends Travel {
         // .c += opt
         super(opt)
     }
+    // what the top D looks like (it is n/D)
+    process_sc:TheUniversal
+    // n** to travel
+    declare match_sc:TheUniversal
+    // what D** looks like (its tree basis, sans epiphytes)
+    trace_sc:TheUniversal
+
     each_fn?:Function
     trace_fn?:Function
     done_fn?:Function
+
     // a layer above Travel.dive()
     async process(d:Partial<Selection>) {
         const Se = this
@@ -192,7 +200,7 @@ export class Selection extends Travel {
                 // n** can be created here, as we go
                 await Se.c.each_fn?.(n,T)
             },
-            many_fn: async (n,N,T) => {
+            many_fn: async (n:TheC,N:TheN,T:Travel) => {
                 // build a tree!
                 let D:TheC = T.sc.D = T.sc.D || topD
                 await D.replace(Se.c.trace_sc,async()=>{
@@ -205,15 +213,19 @@ export class Selection extends Travel {
                         oD.c.T = oT
                     }
                 },{
-                    pairs_fn:(a,b)=>{
+                    // receive pairs of continuous-looking particles
+                    pairs_fn:(a:TheC,b:TheC)=>{
                         if (a && !b) {
-                            console.log("Goner on "+T.sc.D.sc.itis+": "+keyser(a))
+                            console.log("Goner on "+keyser(T.sc.D)+": "+keyser(a))
                         }
                         if (b && !a) {
-                            b.c.T.sc.changey = 'new'
-                            if (b.c.T.up?.sc.changey != 'new') {
+                            // D/b is new!
+                            if (b.c.T.up != T) debugger
+                            // this b means before, ie the previous creation of D
+                            let inside_a_new_D = !T.sc.bD
+                            if (!inside_a_new_D) {
                                 // announce only that a D is new, ignoring everything in it, which is also new
-                                console.log("New on "+T.sc.D.sc.itis+": "+keyser(b))
+                                console.log("New on "+keyser(T.sc.D)+": "+keyser(b))
                             }
                         }
                         if (a && b) {
@@ -223,15 +235,9 @@ export class Selection extends Travel {
                             b.c.T.sc.bD = a
                             // before a
                             let z = a.c.T.sc.bD
-                            if (z?.c.T.sc.b) {
+                            if (z?.c.T.sc.bD) {
                                 // can forget x to save memory
-                                delete z.c.T.sc.b
-                            }
-
-                            // could be a rename
-                            if (a.sc.itis != b.sc.itis) {
-                                console.log("Renamed on "+T.sc.D.sc.itis+": "+keyser(b))
-
+                                delete z.c.T.sc.bD
                             }
                         }
                     }

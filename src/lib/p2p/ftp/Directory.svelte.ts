@@ -78,8 +78,12 @@ export class DirectoryModus extends Modus {
     //  is farming off to process() of domesticating information
     // random challenges:
     //  are there any unawaited promises in my code?
+    thetime = 0
     async Travel_DLs(n:TheC) {
         console.log(`Travel_DLs:`)
+        let thetime = this.thetime += 1
+        n.coms.i({twas_thetime:this.thetime})
+        
         let Se = new Selection()
         // look for new things in it
         let track_nibs:TheN = []
@@ -119,17 +123,19 @@ export class DirectoryModus extends Modus {
                     }
                     T.sc.needs_doing = true
                 }
+                else {
+                    // sleepable?
+                    // return T.sc.not = 'sleepable'
+                }
             },
-            
 
-            
+
             // everything that's going to be|wake inside (D|n)** is there|awake now
             //  so you can write other stuff in places
             done_fn: async (D:TheC,n:TheC,T:Travel) => {
-                if (!n.sc.nib) throw "not o %nib"
-                if (!n.sc.name) throw "not o %name"
+                if (n.sc.nib == null) throw "not o %nib"
+                if (n.sc.name == null) throw "not o %name"
                 D.X_before && console.warn("Still transacting "+keyser(D))
-                // < GOING could also D_reading_val(D,n,k) to store traces inside D/*
 
                 if (T.sc.needs_doing) {
                     // no go?
@@ -150,6 +156,50 @@ export class DirectoryModus extends Modus {
         })
     }
 
+    // < keeping things around
+    // < findable orphaned D** via path (fragments) and filesizes
+    D_to_path(D) {
+        let path = D.c.T.c.path
+    }
+
+
+    async expand_nib(n:TheC) {
+        const DL:DirectoryListing = n.sc.DL
+        await DL.expand()
+
+        // i /*%nib:dir,...
+        let uDL = DL
+        await n.replace({nib:1,name:1},async () => {
+            for (const DL of uDL.directories) {
+                let di = await n.i({nib:'dir',name:DL.name,DL,thetime:this.thetime})
+            }
+            for (const FL of uDL.files) {
+                await n.i({nib:'blob',name:FL.name,FL,thetime:this.thetime})
+            }
+        })
+    }
+    // propagate D** about the tracks
+    async intelligible_name(Se,D,n,T) {
+        await D.replace({readin:1},() => {
+            let name = n.sc.name as String
+            if (n.sc.nib == 'blob') {
+                if (track_looking(name)) {
+                    D.i({readin:'name',isa:'track',thetime:this.thetime})
+                    // track_nibs.push(n)
+                }
+                else {
+                    // text?
+                }
+            }
+            if (n.sc.nib == 'dir') {
+                // console.log(`at directoiry: ${T.c.path.map(T=>T.sc.n.sc.name).join("\t")}`, D)
+                
+            }
+        })
+    }
+
+    
+
     // < GOING? the n%name -> D%Tree/%Trace=name,val=$v mark making
     //   we simply write some strings in eg %Tree,name=... for now...
     async D_reading_val(D,n,k) {
@@ -164,47 +214,6 @@ export class DirectoryModus extends Modus {
                 needs_doing = true
             }
             D.i({val,reading:'name'})
-        })
-    }
-
-    // < keeping things around
-    // < findable orphaned D** via path (fragments) and filesizes
-    D_to_path(D) {
-        let path = D.c.T.c.path
-    }
-
-    // propagate D** about the tracks
-    async intelligible_name(Se,D,n,T) {
-        await D.replace({readin:1},() => {
-            let name = n.sc.name as String
-            if (n.sc.nib == 'blob') {
-                if (track_looking(name)) {
-                    D.i({readin:'name',isa:'track'})
-                    // track_nibs.push(n)
-                }
-                else {
-                    // text?
-                }
-            }
-            if (n.sc.nib == 'dir') {
-                // console.log(`at directoiry: ${T.c.path.map(T=>T.sc.n.sc.name).join("\t")}`, D)
-            }
-        })
-    }
-
-    async expand_nib(n:TheC) {
-        const DL:DirectoryListing = n.sc.DL
-        await DL.expand()
-
-        // i /*%nib:dir,...
-        let uDL = DL
-        await n.replace({nib:1,name:1},async () => {
-            for (const DL of uDL.directories) {
-                let di = await n.i({nib:'dir',name:DL.name,DL})
-            }
-            for (const FL of uDL.files) {
-                await n.i({nib:'blob',name:FL.name,FL})
-            }
         })
     }
 }

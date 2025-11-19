@@ -795,20 +795,26 @@ export class Stuffziado extends Stuffuzia {
 //#endregion
 //#region TheC
 export type TheUniversal = {
-    waits?: string,
+    waits: string,
     D: TheC,
     bD: TheC,
     n: TheC,
+    name: string,
+    needs_doing: boolean,
 } & any
 export type TheEmpirical = {
     // whether it has been deleted, the index remains
-    drop?: any,
-    top?: Travel,
+    drop: any,
+    top: Travel,
 
     T:Travel,
     n: TheC,
     path: Array<Travel>
     d: number, // depth of .path
+// < these & any mean we don't get types in eg D.c.T
+//   but without them lots of red underline happens
+//   with: & Record<string, unknown>
+//    everything in o(s)'s s is red underlined...
 } & any
 
 // extends Stuff, with .X so you can C.i(inC) for C/inC
