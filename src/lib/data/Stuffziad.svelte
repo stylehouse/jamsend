@@ -55,7 +55,7 @@
                 <div class="stuffziado">
                     {@render ziado(stuffziado)}
                     {#if stuffziado.rows.length != 1}
-                        <span class="count">en x{stuffziado.rows.length}</span>
+                        <span class="count">x{stuffziado.rows.length}</span>
                     {/if}
                 </div>
             {/each}

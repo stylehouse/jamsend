@@ -3,7 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Travel } from '$lib/mostly/Selection.svelte';
-import { erring } from '$lib/Y'
+import { erring, Parserify } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
@@ -137,6 +137,7 @@ export class DirectoryModus extends Modus {
                 if (n.sc.name == null) throw "not o %name"
                 D.X_before && console.warn("Still transacting "+keyser(D))
 
+                // T.sc.needs_doing = true
                 if (T.sc.needs_doing) {
                     // no go?
                     await this.intelligible_name(Se,D,n,T)
@@ -178,28 +179,107 @@ export class DirectoryModus extends Modus {
             }
         })
     }
-    // propagate D** about the tracks
-    async intelligible_name(Se,D,n,T) {
-        await D.replace({readin:1},() => {
-            let name = n.sc.name as String
-            if (n.sc.nib == 'blob') {
-                if (track_looking(name)) {
-                    D.i({readin:'name',isa:'track',thetime:this.thetime})
-                    // track_nibs.push(n)
+    // propagate D**%readin=$aspect about the tracks
+    async intelligible_name(Se, D, n, T) {
+        let readin = (t:string,s:TheUniversal) => {
+            D.i({readin: t, thetime: this.thetime, ...s})
+        }
+        await D.replace({readin: 1}, () => {
+            const name = n.sc.name as string;
+            const p = new Parserify(name);
+            
+            if (n.sc.nib === 'blob') {
+                // Extract and index file extension
+                if (p.p(/\.([a-z0-9]{3,4})$/i)) {
+                    const format = p[1]!.toLowerCase();
+                    readin('format', {val: format});
+                    
+                    // Determine if it's a track
+                    if (format.match(/^(mp3|wav|ogg|m4a|aac|flac|opus|webm|oga|mkv|mka|mp4)$/)) {
+                        readin('type',{val: 'track'});
+                    }
                 }
-                else {
-                    // text?
-                }
-            }
-            if (n.sc.nib == 'dir') {
-                // console.log(`at directoiry: ${T.c.path.map(T=>T.sc.n.sc.name).join("\t")}`, D)
                 
+                // Extract and index track number from start
+                if (p.p(/^(\d+)[\s.\-_]+/, '')) {
+                    const seq = parseInt(p[1]!, 10);
+                    readin('seq', {val: seq});
+                }
+                
+                // Clean up punctuation noise at the edges
+                p.p(/^[\s\-_\.]+/)
+                p.p(/[\s\-_\.]+$/);
+                // Collapse multiple spaces
+                while (p.p(/  +/,' ')) 1
+                
+                // Final cleaned name
+                const cleaned_name = p.s.trim();
+                readin('name', {val: p.s.trim()});
             }
-        })
+            
+            if (n.sc.nib === 'dir') {
+                // Directory handling depends on finding D**%readin:type,val:track somewhere
+                //  extrapolate outwards to become D^^%readin:type,val:artist
+                // note D.replace() is happening, so we .bo() the previous time
+                //  during replace(), only the newly placed items are findable with .o()
+                let is_album = false
+                for (let Tree of D.bo({Tree:3})) {
+                    // D:Album/Tree:Track*
+                    if (Tree.oa({readin:'type',val:'track'})) {
+                        // we are an album
+                        is_album = true
+                        readin('track',{
+                            name: Tree.o({val:1,readin:'name'},1)[0],
+                            seq:  Tree.o({val:1,readin:'seq'},1)[0],
+                            // < removable sleep debug
+                            thetime:  Tree.o({thetime:1,readin:'name'},1)[0],
+                        })
+                    }
+
+
+                    if (Tree.oa({readin:'type',val:'album'})) {
+                        // hoist these
+                        readin('type',{val:'artist'})
+                        readin('album',{
+                            name: Tree.o({val:1,readin:'name'},1)[0]
+                        })
+                    }
+                }
+                if (is_album) {
+                    readin('type',{val:'album'})
+                    // < guess if we're "Artist - Album (1979)"
+                }
+                // < we may never get to those two points
+                //   and they may be collections|areas|genres, eg "0 Classique"/"0 neo"
+
+
+
+                const cleaned_name = name.trim();
+                D.i({readin: 'name', val: cleaned_name, thetime: this.thetime});
+
+            }
+        });
+
+        // random flood of %ads hoisted about tracks
+        // < which pseudo-randomly shuffles what to talk about at the top level
+        await D.replace({ads: 1}, () => {
+            for (let Tree of D.bo({Tree:3})) {
+                if (Tree.oa({readin:'type',val:'track'})) {
+                    // take a few of its tracks
+                    let few = 3
+                    Tree.o({readin:'track'}) .map(n => {
+                        if (--few > 0) {
+                            D.i({ads:'for',track:n.sc.name})
+                        }
+                    })
+                }
+            }
+        });
+
     }
 
-    
 
+    
     // < GOING? the n%name -> D%Tree/%Trace=name,val=$v mark making
     //   we simply write some strings in eg %Tree,name=... for now...
     async D_reading_val(D,n,k) {
@@ -216,10 +296,6 @@ export class DirectoryModus extends Modus {
             D.i({val,reading:'name'})
         })
     }
-}
-
-function track_looking(name: string) {
-    return /\.(mp3|wav|ogg|m4a|aac|flac|opus|webm|oga|mkv|mka|mp4)$/i.test(name);
 }
 
 
