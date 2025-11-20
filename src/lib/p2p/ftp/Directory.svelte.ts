@@ -194,21 +194,24 @@ class DirectorySelectivity {
             const p = new Parserify(name);
             
             if (n.sc.nib === 'blob') {
+                let format, type, seq
+
                 // Extract and index file extension
                 if (p.p(/\.([a-z0-9]{3,4})$/i)) {
-                    const format = p[1]!.toLowerCase();
-                    i_readin('format', {val: format});
+                    format = p[1]!.toLowerCase();
+                    i_readin('name', {format});
                     
                     // Determine if it's a track
                     if (format.match(/^(mp3|wav|ogg|m4a|aac|flac|opus|webm|oga|mkv|mka|mp4)$/)) {
-                        i_readin('type',{val: 'track'});
+                        type = 'track'
+                        i_readin('name',{type});
                     }
                 }
                 
                 // Extract and index track number from start
                 if (p.p(/^(\d+)[\s.\-_]+/, '')) {
-                    const seq = parseInt(p[1]!, 10);
-                    i_readin('seq', {val: seq});
+                    seq = parseInt(p[1]!, 10);
+                    i_readin('name', {seq});
                 }
                 
                 // Clean up punctuation noise at the edges
@@ -219,7 +222,12 @@ class DirectorySelectivity {
                 
                 // Final cleaned name
                 const cleaned_name = p.s.trim();
-                i_readin('name', {val: p.s.trim()});
+                i_readin('name', {name: cleaned_name});
+
+                if (type == 'track') {
+                    // coherent thing to hoist
+                    i_readin('art',{track:cleaned_name,seq,format})
+                }
             }
             
             if (n.sc.nib === 'dir') {
@@ -227,49 +235,48 @@ class DirectorySelectivity {
                 //  extrapolate outwards to become D^^%readin:type,val:artist
                 // note D.replace() is happening, so we .bo() the previous time
                 //  during replace(), only the newly placed items are findable with .o()
+                
                 let said_album = 0
+                let said_artist = 0
+                let said_collection = 0
                 for (let oD of D.bo({Tree:3})) {
                     // D:Album/Tree:Track*
-                    if (oD.oa({readin:'type',val:'track'})) {
+                    if (oD.oa({readin:1,type:'track'})) {
                         // tracks imply we are an album
                         if (!said_album++) {
-                            i_readin('type',{val:'album'})
+                            i_readin('inners',{type:'album'})
                         }
-                        // < gappy %seq
-                        i_readin('track',{
-                            name: oD.o({val:1,readin:'name'},1)[0],
-                            seq:  oD.o({val:1,readin:'seq'},1)[0],
-                            oD,
-                            // < removable sleep debug
-                            thetime:  oD.o({thetime:1,readin:'name'},1)[0],
-                        })
                     }
-                }
-
-                // %artist
-                let said_artist = 0
-                for (let oD of D.bo({Tree:3})) {
-                    if (oD.oa({readin:'type',val:'album'})) {
+                    if (oD.oa({readin:1,type:'album'})) {
                         // albums imply we are an artist
                         if (!said_artist++) {
-                            i_readin('type',{val:'artist'})
+                            i_readin('inners',{type:'artist'})
                         }
-                        i_readin('album',{
-                            name: oD.o({val:1,readin:'name'},1)[0],
-                            oD,
-                            // < removable sleep debug
-                            thetime:  oD.o({thetime:1,readin:'name'},1)[0],
-                        })
+                    }
+                    if (oD.oa({readin:1,type:'artist'})) {
+                        // artists imply we are a collection
+                        if (!said_collection++) {
+                            i_readin('inners',{type:'collection'})
+                        }
                     }
                 }
-                // < we may never get to those two points
-                //   and they may be collections|areas|genres, eg "0 Classique"/"0 neo"
+                if (said_album && said_artist
+                    || (said_album || said_artist) && said_collection) {
+                    // an artist dir with a few loose tracks?
+                    D.o({readin:1,type:'album'}).map(n => D.drop(n))
+                    said_collection
+                        && D.o({readin:1,type:'artist'}).map(n => D.drop(n))
+                }
+
+
+
+                // < notice '0 chill' etc genre|classification|purpose directories
+                // if (p.p(/^0/i)) {
 
 
 
                 const cleaned_name = name.trim();
-                D.i({readin: 'name', val: cleaned_name, thetime: this.thetime});
-
+                i_readin('name', {name: cleaned_name, thetime: this.thetime});
             }
         });
 
@@ -314,6 +321,7 @@ class DirectorySelectivity {
 
             let odd_limbs = true
             let some = false
+            // let oD
             for (let oD of D.bo({Tree:3})) {
                 // ads build up locality as they hoist
                 let meta = {...meta_here, ...gather_meta(oD)}
@@ -340,7 +348,7 @@ class DirectorySelectivity {
                     // create the first %ads
                     //  for a whole something this oD is
                     //   certainly all tracks (!some, unless D** goes further?)
-                    some = ads('here')
+                    // some = ads('here')
                 }
 
                 odd_limbs = !odd_limbs
