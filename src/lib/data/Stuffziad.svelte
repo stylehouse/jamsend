@@ -6,11 +6,11 @@
     let { mem,stuffziad }: { mem:Modusmem, stuffziad: Stuffziad } = $props()
     mem = mem.further("Stuffziad:"+stuffziad.name)
 
-    // Track openness in the UI component to preserve across re-brackology()
-    let openness = $state(false)
-
+    // thaw|freeze our openness to persistent memory
+    let openness = $state(mem.get('openness') || false);
     function toggle() {
-        openness = !openness
+        openness = !openness;
+        mem.set('openness',openness)
     }
 
     // Get all Stuffziado values
@@ -41,11 +41,7 @@
         <span class="colon">:</span>
         
         {#if stuffziad.values.size !== 1}
-            <span class="count">∇{stuffziad.values.size}</span>
-        {/if}
-        
-        {#if stuffziad.values.size > 1}
-            <span class="arrow">{openness ? '▼' : '▶'}</span>
+            <span class="count {openness && 'open'}">∇{stuffziad.values.size}</span>
         {/if}
     </button>
 
@@ -69,6 +65,10 @@
 </div>
 
 <style>
+.open {
+    background: black;
+    min-height:2em;
+}
 .stuffziad {
     margin: 0.2em;
     border-radius: 2em;

@@ -16,6 +16,7 @@
 
     let anything = true
     
+    // thaw|freeze our openness to persistent memory
     let openness = $state(mem.get('openness') || false);
     function toggle() {
         openness = !openness;
@@ -40,7 +41,9 @@
 </script>
 
 {#if anything}
-<button class="btn {openness && 'open'}" onclick={toggle}> {inner_sizing} </button>
+<button class="btn" onclick={toggle}>
+    <span class="count {openness && 'open'}"> {inner_sizing} </span>
+</button>
 <span class="inner">
     {#if openness}
         {#each innered as inner}
@@ -51,6 +54,13 @@
 {/if}
 
 <style>
+    .open {
+        background: black;
+        min-height:2em;
+    }
+    .count {
+        display:block;
+    }
     .inner {
         display: block;
         filter:hue-rotate(33deg)
@@ -61,13 +71,9 @@
         border: none;
         cursor: pointer;
         padding: 0;
-        display: inline-flex;
         align-items: center;
         gap: 0.25em;
         color: rgb(156, 140, 217);
         font-size: 95%;
-        &.open {
-            text-decoration: underline;
-        }
     }
 </style>

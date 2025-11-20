@@ -6,10 +6,13 @@
     let { mem,stuffusion }:{ mem:Modusmem,stuffusion: Stuffusion } = $props()
     mem = mem.further("Stuffusion:"+stuffusion.name)
 
+    // < GOING nothing toggles here?
     // Track openness in the UI component to preserve across re-brackology()
-    let openness = $state(true)
+    // thaw|freeze our openness to persistent memory
+    let openness = $state(mem.get('openness') || true);
     function toggle() {
-        openness = !openness
+        openness = !openness;
+        mem.set('openness',openness)
     }
 </script>
 
@@ -23,10 +26,13 @@
         </span>
     {/if}
     {#if stuffusion.rows.length !== 1}
-        <span class="content count">x{stuffusion.row_count}</span>
+        <span title="Stuffusion row count" class="content count">x{stuffusion.row_count}</span>
     {/if}
-    {#if stuffusion.innered}
-        <Stuffzipper {mem} innered={stuffusion.innered} {stuffusion} ></Stuffzipper>
+    {#if openness}
+        {#if stuffusion.innered}
+            <Stuffzipper {mem} innered={stuffusion.innered}
+                {stuffusion} ></Stuffzipper>
+        {/if}
     {/if}
 </div>
 
