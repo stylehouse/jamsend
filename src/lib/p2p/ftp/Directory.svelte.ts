@@ -3,7 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Travel } from '$lib/mostly/Selection.svelte';
-import { erring, hak, Parserify } from '$lib/Y'
+import { erring, hak, Parserify, reverse } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
@@ -151,9 +151,10 @@ export class DirectoryModus extends Modus {
         })
 
         // then more richocheting around of percolating waves of stuff
-        for (let T of Se.sc.N) {
+        
+        for (let T of reverse(Se.sc.N)) {
             let D = T.sc.D
-            await DS.percolating_ads(D)
+            await DS.percolating_ads(D,T)
         }
     }
 
@@ -186,9 +187,12 @@ class DirectorySelectivity {
             }
         })
     }
-    // propagate D**%readin=$aspect about the tracks
+    // upwards, propagate D**%readin=$aspect about the tracks
     // Artist get %readin:type,val:artist
     async intelligible_name(Se:Selection, D:TheC, n:TheC, T:Travel) {
+
+
+
         let i_readin = (t:string,s:TheUniversal) => {
             D.i({readin: t, thetime: this.thetime, ...s})
         }
@@ -228,7 +232,10 @@ class DirectorySelectivity {
                 i_readin('name', {name: cleaned_name});
 
                 if (type == 'track') {
-                    // coherent thing to hoist
+                    // coherent enough!
+                    //  make %%art out of all this
+                    //   unlikely to be wrong at this level,
+                    //    we may regard more context when hoisting it as %%ads
                     i_readin('art',{track:cleaned_name,seq,format})
                 }
             }
@@ -283,7 +290,9 @@ class DirectorySelectivity {
             }
         });
     }
-    async percolating_ads(D:TheC) {
+
+    // upwards propagate more stuff
+    async percolating_ads(D:TheC,T:Travel) {
         // random flood of %ads hoisted about tracks
         // < do in a second traversal of D** and incorporate how the hierarchies have flopped out
         //    including from top-down
@@ -314,6 +323,7 @@ class DirectorySelectivity {
                     meta[type] = name
                 }
             }
+            gather_meta('collection')
             gather_meta('artist')
             gather_meta('album')
             gather_meta('track')
@@ -340,7 +350,7 @@ class DirectorySelectivity {
 
             D.i({ads:1,bloop:3})
 
-            if (hak(meta)) {
+            if (hak(meta) || T == T.c.top) {
                 // we could start advertising this thing!
                 if ('prand' || 'track') {
                     // starts with|as any %%art found here

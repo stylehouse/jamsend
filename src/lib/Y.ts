@@ -132,6 +132,10 @@ export class Parserify {
     }
 }
 
+
+export function reverse(s:Array<any>) {
+    return s.slice().reverse()
+}
 // some of the smallest structures
 // reversibly|diffily, create transform theory
 // phenom comes in waves
