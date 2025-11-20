@@ -32,7 +32,6 @@ export class DirectoryModus extends Modus {
     async main() {
         // switch on (and clear) the debug channel
         this.coms = _C()
-        console.log(`main:`)
         // this sty
         await this.have_time(async () => {
             this.reset_interval()
@@ -44,7 +43,6 @@ export class DirectoryModus extends Modus {
 
             // < look within $scope of the Tree (start with localList) for...
         })
-        console.log(`/main`)
     }
     // sleep when possible
     hard = false
@@ -152,6 +150,11 @@ export class DirectoryModus extends Modus {
             }
         })
 
+        // then more richocheting around of percolating waves of stuff
+        for (let T of Se.sc.N) {
+            let D = T.sc.D
+            await DS.percolating_ads(D)
+        }
     }
 
     // < keeping things around
@@ -279,7 +282,8 @@ class DirectorySelectivity {
                 i_readin('name', {name: cleaned_name, thetime: this.thetime});
             }
         });
-
+    }
+    async percolating_ads(D:TheC) {
         // random flood of %ads hoisted about tracks
         // < do in a second traversal of D** and incorporate how the hierarchies have flopped out
         //    including from top-down
@@ -299,64 +303,56 @@ class DirectorySelectivity {
         // < guess if we're "Artist - Album (1979)" based on the surroundings
         // haphazardly extend up, or spawn whole, %artist,album,track tuples
         await D.replace({ads: 1}, async () => {
-            // < what about when aD == D
-            let gather_meta = (aD:TheC) => {
-                let meta = {}
-                let gather_meta = (type:string) => {
-                    aD.bo({val:'artist',readin:'type'})
-                        && console.log("Trackfound: "+D.sc.name)
-                    let name = aD.oa({val:type,readin:'type'})
-                            && aD.oa({val:1,   readin:'name'},1)[0]
-                    if (name != null) {
-                        meta[type] = name
-                    }
+            // look at here
+            let meta = {}
+            let gather_meta = (type:string) => {
+                D.bo({type:type,readin:1})
+                    && console.log("Trackfound: "+D.sc.name)
+                let name = D.boa({type:type,readin:1})
+                        && D.boa({name:1,   readin:'name'},1)[0]
+                if (name != null) {
+                    meta[type] = name
                 }
-                gather_meta('artist')
-                gather_meta('album')
-                gather_meta('track')
-                return meta
             }
-            let meta_here = gather_meta(D)
+            gather_meta('artist')
+            gather_meta('album')
+            gather_meta('track')
 
+            // meta accumulates when hoisted, on ads
+            let i_ads = (t:string,sc={}) => {
+                // set ads twice for object property ordering...
+                //   because sc may contain it from below
+                //  ie every %thing,with,values is a thing primarily
+                D.i({ads:0,...meta,...sc,ads:t})
+            }
 
-            let odd_limbs = true
-            let some = false
-            // let oD
+            let some_inners = false
             for (let oD of D.bo({Tree:3})) {
                 // ads build up locality as they hoist
-                let meta = {...meta_here, ...gather_meta(oD)}
-                gather_meta
-                if (!hak(meta)) {
-                    // dir that doesn't lead to a track, or a non-track-looking blob
-                    console.log("dir that doesn't lead to a track, or a non-track-looking blob",D.sc.name)
-                    continue
-                }
-                if (meta.artist) debugger
-
-
-                // meta accumulates when hoisted, on ads
-                let ads = (t:string,sc={}) => {
-                    // set ads twice for object property ordering...
-                    //  every %thing,with,values is a thing primarily
-                    D.i({ads:0,...meta,...sc,ads:t,oD})
-                }
-
                 let few = 3
-                some = oD.oa({ads:1})?.map((n:TheC) => few-- && ads('beyond',n.sc))
-
-                if (!some || odd_limbs) {
-                    // create the first %ads
-                    //  for a whole something this oD is
-                    //   certainly all tracks (!some, unless D** goes further?)
-                    // some = ads('here')
-                }
-
-                odd_limbs = !odd_limbs
+                oD.oa({ads:1})?.map((n:TheC) => {
+                    if (n.sc.bloop) return
+                    if (few-- < 1) return
+                    i_ads('beyond',n.sc)
+                    some_inners = true
+                })
             }
 
-            // allow toplevel artists to be see, as we only see them in D/oD
-            if (some) {
+            D.i({ads:1,bloop:3})
 
+            if (hak(meta)) {
+                // we could start advertising this thing!
+                if ('prand' || 'track') {
+                    // starts with|as any %%art found here
+                    //  so individual track info as such
+                    // < folder.jpg?
+                    let arts = D.boa({readin:'art'})?.map((n:TheC) => ({...n.sc}))
+                        || [{noart:1}]
+                    for (let art of arts) {
+                        delete art.readin
+                        i_ads('here',art)
+                    }
+                }
             }
         });
     }

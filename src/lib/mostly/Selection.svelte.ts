@@ -181,28 +181,33 @@ export class Selection extends Travel {
         const Se = this
         Object.assign(Se.c,d)
         const n = Se.c.n
-        let topD:TheC
-
-        // get a new sheet of process-time
-        await n.replace(Se.c.process_sc,async () => {
-            topD = n.i(Se.c.process_sc)
-        })
-        // topD/* is now as it was last time
-
         // go through n**
         // the Selection is very similar but distinct from the Travel
         let Tr = new Travel()
+
+        // hang the top D%Tree off the given|top n
+        await n.replace(Se.c.process_sc,async () => {
+            Tr.sc.D = n.i(Se.c.process_sc)
+        })
+        // Tr.sc.D/* is now as it was last time
+        // remake flat list of all T** visited
+        Se.sc.N = []
+
         await Tr.dive({
             n,
             match_sc: Se.c.match_sc,
             each_fn: async (n:TheC,T:Travel) => {
                 // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
-                // n** can be created here, as we go
+                Se.sc.N.push(T)
+                // n/* can be created here, as we go
                 await Se.c.each_fn?.(n,T)
             },
             many_fn: async (n:TheC,N:TheN,T:Travel) => {
                 // build a tree!
-                let D:TheC = T.sc.D = T.sc.D || topD
+                let D:TheC = T.sc.D = T.sc.D
+                if (!D) throw "!top D"
+                if (T.c.top != Tr) throw "top!=Tr"
+
                 await D.replace(Se.c.trace_sc,async()=>{
                     for (const oT of N) {
                         // with T%n, get T%D
