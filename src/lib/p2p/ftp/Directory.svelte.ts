@@ -270,6 +270,16 @@ class DirectorySelectivity {
                         }
                     }
                 }
+
+                // < be more tentative, guess, configure what character
+                // notice '0 chill' etc genre|classification|purpose directories
+                if (p.p(/^(0|-) /i)) {
+                    if (!said_collection++) {
+                        i_readin('inners',{type:'collection'})
+                    }
+                }
+
+                // 
                 if (said_album && said_artist
                     || (said_album || said_artist) && said_collection) {
                     // an artist dir with a few loose tracks?
@@ -279,14 +289,7 @@ class DirectorySelectivity {
                 }
 
 
-
-                // < notice '0 chill' etc genre|classification|purpose directories
-                // if (p.p(/^0/i)) {
-
-
-
-                const cleaned_name = name.trim();
-                i_readin('name', {name: cleaned_name, thetime: this.thetime});
+                i_readin('name', {name: p.s.trim(), thetime: this.thetime});
             }
         });
     }
@@ -350,7 +353,7 @@ class DirectorySelectivity {
 
             D.i({ads:1,bloop:3})
 
-            if (hak(meta) || T == T.c.top) {
+            if (hak(meta)) {
                 // we could start advertising this thing!
                 if ('prand' || 'track') {
                     // starts with|as any %%art found here
