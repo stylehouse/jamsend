@@ -5,11 +5,15 @@
     type eitherzipperuzia = {stuffusion:Stuffusion} | {stuffziado:Stuffziado}
     let { mem,
         innered,
+        opener,
         // our client is either:
         stuffusion,
         stuffziado,
     }: { mem:Modusmem,
-        innered: TheN } & eitherzipperuzia = $props();
+        innered: TheN,
+        opener:object|null }
+        & eitherzipperuzia
+        = $props();
     
     let either = stuffusion || stuffziado
     mem = mem.further("Stuffzipper:"+either.name)
@@ -22,6 +26,7 @@
         openness = !openness;
         mem.set('openness',openness)
     }
+    opener?.hi(toggle)
 
     // some rows here, have yay many rows in them
     let inner_sizing = (stuffusion||stuffziado).inner_sizing

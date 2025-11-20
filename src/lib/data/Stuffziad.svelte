@@ -20,16 +20,33 @@
         return stuffziado.is_string ? "" : "objectify"
     }
     
+    function i_opener() {
+        let o;o = {
+            hi: (y:Function) => {
+                o.remote_toggle = y
+            },
+            toggle: () => {
+                o.remote_toggle?.()
+            },
+        }
+        return o
+    }
 </script>
 
 {#snippet ziado(stuffziado)}
     {#if stuffziado.is_C}
         <span class="count">C</span>
     {/if}
-    <span class="{ziadostyle(stuffziado)}">{stuffziado?.display_name}</span>
+
+
+    {@const opener = i_opener()}
+    <button class="btn" onclick={opener.toggle}>
+        <span class="{ziadostyle(stuffziado)}">{stuffziado?.display_name}</span>
+    </button>
+
     {#if stuffziado.innered}
         <ziadoin>
-            <Stuffzipper {mem} innered={stuffziado.innered} {stuffziado} ></Stuffzipper>
+            <Stuffzipper {mem} innered={stuffziado.innered} {stuffziado} {opener} ></Stuffzipper>
         </ziadoin>
     {/if}
 

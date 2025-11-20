@@ -336,7 +336,7 @@ class DirectorySelectivity {
                 // set ads twice for object property ordering...
                 //   because sc may contain it from below
                 //  ie every %thing,with,values is a thing primarily
-                D.i({ads:0,...meta,...sc,ads:t})
+                return D.i({ads:0,...meta,...sc,ads:t})
             }
 
             let some_inners = false
@@ -344,14 +344,11 @@ class DirectorySelectivity {
                 // ads build up locality as they hoist
                 let few = 3
                 oD.oa({ads:1})?.map((n:TheC) => {
-                    if (n.sc.bloop) return
                     if (few-- < 1) return
                     i_ads('beyond',n.sc)
                     some_inners = true
                 })
             }
-
-            D.i({ads:1,bloop:3})
 
             if (hak(meta)) {
                 // we could start advertising this thing!
