@@ -87,26 +87,62 @@ export class DirectoryModus extends Modus {
         console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
         n.coms.i({twas_thetime:this.thetime})
+
         
         let Se = new Selection()
         let DS = new DirectorySelectivity(this)
+        // for aiming...
+        let btw = `
+            set interlinkage is going on here
+            needs a scheme to wander around D** a reasonable amount per second
+            
+            > that comes from Se:Activation
+                so to target where we're randomly wandering,
+                another Selection:Activation building a D of paths to want to find
+                //    which does a weird resolve onto the D** of Selection:Valley
+                Act** we trace into
+                but treat goners as failed-to-find
+                and resurrect them as such after the resolve() of what's there
+                //   ie we'd climb down Se:Valley D** in another Se:Activation
+                //   another Selection.process() for targeting?
+                //    
+            
+            or, simply do that resurrect|make as half-there step to D**
+             from event handling
+              which could start out as waiting for thetime++ every 6 blobs we look at
+               and closing earlier branches of D** when more than 20 blobs are awake
+             and ensure D** wanted wake up and find instructionsnext time around
+            yes...
+             since we can afford to wake everything
+              lets not target Travels efficiently yet...
+              it wants a lovely but tricky asyncing
+               once more ballistic visuals are go
+
+
+            possibly_expand_nib(T)
+             adjusts according to %openity
+              which we replace when event handling
+
+        `
+
+        
         // look for new things in it
-        let topD
         await Se.process({
             n,
-            process_sc: {Travel:'readin'}, // initial $n/%Travel, singular
+            process_sc: {Se:'Valley'}, // initial $n/%Se, singular
 
 
             match_sc: {nib:1,name:1},    // climbing $n%nib,name**
-            each_fn: async (n:TheC,T:Travel) => {
+            each_fn: async (D:TheC,n:TheC,T:Travel) => {
+                let bD = T.sc.bD
                 if (n.sc.nib == 'dir') {
-                    // creates more $n/%nib,name**
-                    await DS.expand_nib(n)
+                    // valves for more $n/%nib,name**
+                    await DS.possibly_expand_nib(T)
                 }
             },
 
 
-            // re-describe each n** into D**
+            // re-describe each n/* into D/*%Tree
             //  $D/* fills with each Dyn/$n*
             //   the D is one step above this n
             // D** is thence always fillable with other stuff, not of pattern_sc
@@ -116,8 +152,8 @@ export class DirectoryModus extends Modus {
             //    like you'd work things out on paper
             trace_sc: {Tree:3},          // fabricating D%Tree**
             trace_fn: async (uD:TheC,n:TheC) => {
-                topD ||= uD
-                return uD.i({Tree:3,name:n.sc.name})
+                let D = uD.i({Tree:3,name:n.sc.name})
+                return D
             },
             // now for each of those, what can we see...
             traced_fn: async (D:TheC,bD:TheC,n:TheC,T:Travel) => {
@@ -145,25 +181,31 @@ export class DirectoryModus extends Modus {
 
                 if (T.sc.needs_doing) {
                     // no go?
-                    await DS.intelligible_name(Se,D,n,T)
+                    await DS.intelligible_name(T)
                 }
             }
         })
 
-        // then more richocheting around of percolating waves of stuff
         
-        for (let T of reverse(Se.sc.N)) {
-            let D = T.sc.D
-            await DS.percolating_ads(D,T)
-        }
+        // then more richocheting around of percolating waves of stuff
+        Se.reverse(async (T:Travel) => await DS.percolating_ads(T))
     }
 
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
     D_to_path(D) {
         let path = D.c.T.c.path
+        return path
     }
+    
+}
 
+class Frontier {
+    journey = 0
+    stumbles_along(D,T) {
+        // D is not closed, count it as a journey
+        this.journey += 1
+    }
 }
 class DirectorySelectivity {
     constructor (M) {
@@ -172,6 +214,56 @@ class DirectorySelectivity {
     get thetime() {
         return this.M.thetime
     }
+
+
+
+    //
+    async possibly_expand_nib(T:Travel) {
+        let {D,bD,n} = T.sc
+        let time = this.thetime
+
+        if (T == T.c.top) {
+            // establishes a cursor
+            //  incidence of this D being aimed somewhere should seek it out
+            let f = D.o({frontier:'expanditude',D})[0]
+            if (!f) {
+                
+            }
+            // f?.sc.D.c.path.map(T=>T.sc).map(({D}) => this.ensure_open(D))
+            T.sc.frontier = new Frontier()
+        }
+
+
+        if (D.sc.name == '- chill') {
+            if (this.thetime >2) {
+                await D.replace({openity:1},async () => {
+                    D.i({openity:2})
+                })
+            }
+        }
+
+        let openity = D.o({openity:1},1)[0] || 3
+        if (openity <3) {
+            return T.sc.not = 'chilling'
+        }
+        if (openity == 3) {
+            // it might open in time
+            T.c.top.sc.frontier
+        }
+
+
+        // < thence, what combination of these need to happen
+        // 
+        await this.expand_nib(n)
+        // this.collapse_nib(n)
+    }
+    async ensure_open(D) {
+        D.replace({openity:1},async () => {
+            D.i({openity:5})
+        })
+    }
+
+    
     async expand_nib(n:TheC) {
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
@@ -180,19 +272,27 @@ class DirectorySelectivity {
         let uDL = DL
         await n.replace({nib:1,name:1},async () => {
             for (const DL of uDL.directories) {
-                let di = await n.i({nib:'dir',name:DL.name,DL,thetime:this.thetime})
+                let di = n.i({nib:'dir',name:DL.name,DL,thetime:this.thetime})
             }
             for (const FL of uDL.files) {
-                await n.i({nib:'blob',name:FL.name,FL,thetime:this.thetime})
+                n.i({nib:'blob',name:FL.name,FL,thetime:this.thetime})
             }
         })
     }
+    async collapse_nib(n:TheC) {
+        const DL:DirectoryListing = n.sc.DL
+        DL.collapse()
+        // forget $n/**
+        await n.replace({nib:1,name:1},async () => {
+        })
+    }
+
+
+    // guessing, implying structure
     // upwards, propagate D**%readin=$aspect about the tracks
     // Artist get %readin:type,val:artist
-    async intelligible_name(Se:Selection, D:TheC, n:TheC, T:Travel) {
-
-
-
+    async intelligible_name(T:Travel) {
+        let {D,n} = T.sc
         let i_readin = (t:string,s:TheUniversal) => {
             D.i({readin: t, thetime: this.thetime, ...s})
         }
@@ -295,7 +395,8 @@ class DirectorySelectivity {
     }
 
     // upwards propagate more stuff
-    async percolating_ads(D:TheC,T:Travel) {
+    async percolating_ads(T:Travel) {
+        let {D} = T.sc
         // random flood of %ads hoisted about tracks
         // < do in a second traversal of D** and incorporate how the hierarchies have flopped out
         //    including from top-down
@@ -318,8 +419,6 @@ class DirectorySelectivity {
             // look at here
             let meta = {}
             let gather_meta = (type:string) => {
-                D.bo({type:type,readin:1})
-                    && console.log("Trackfound: "+D.sc.name)
                 let name = D.boa({type:type,readin:1})
                         && D.boa({name:1,   readin:'name'},1)[0]
                 if (name != null) {
@@ -336,7 +435,8 @@ class DirectorySelectivity {
                 // set ads twice for object property ordering...
                 //   because sc may contain it from below
                 //  ie every %thing,with,values is a thing primarily
-                return D.i({ads:0,...meta,...sc,ads:t})
+                return D.i({ads:0,...meta,...sc,ads:t,
+                     thetime:this.thetime})
             }
 
             let some_inners = false

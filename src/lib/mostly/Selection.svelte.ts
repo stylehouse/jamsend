@@ -1,6 +1,7 @@
 // Another Things/Thing thing!
 
 import { keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
+import { reverse } from "$lib/Y"
 
 const AI = `
 we need to hierarchise FileLists, and allow them to be opened several times:
@@ -61,7 +62,11 @@ export class Travel extends TheC {
         const T = this
         Object.assign(T.c,d)
         T.divide(true)
+        // all T** flatly
+        T.sc.N = []
         // top n
+        // < T.c.n should be T.sc.n already, becomes it soon in dive_start()
+        //  < check for other junk we copy down T**.c
         let C = T.c.n
         await T.dive_start(C)
         if (T.sc.not) return 
@@ -100,6 +105,8 @@ export class Travel extends TheC {
         }
         // visit here
         T.sc.n = C
+        // to re-traverse via .forward() and .reverse()
+        T.c.top.sc.N.push(T)
     }
     async dive_middle() {
         const T = this
@@ -150,6 +157,19 @@ export class Travel extends TheC {
         let X:TheX = top.X
         return X.i_refer(v,T,'visit_v')
     }
+    // < use Se.
+    async forward(y) {
+        for (let T of this.sc.N) {
+            if (T.sc.not) continue
+            await y(T)
+        }
+    }
+    async reverse(y) {
+        for (let T of reverse(this.sc.N)) {
+            if (T.sc.not) continue 
+            await y(T)
+        }
+    }
 
 
 }
@@ -185,23 +205,30 @@ export class Selection extends Travel {
         // the Selection is very similar but distinct from the Travel
         let Tr = new Travel()
 
+        // 
+
         // hang the top D%Tree off the given|top n
         await n.replace(Se.c.process_sc,async () => {
             Tr.sc.D = n.i(Se.c.process_sc)
         })
         // Tr.sc.D/* is now as it was last time
-        // remake flat list of all T** visited
-        Se.sc.N = []
+        // < not our only one of these? do we want one on a resolve() leash
+        //    that is following us down Se:Activation...
+
+        // Tr.sc.N is a flat list of all T** visited
+        Se.c.T = Tr
 
         await Tr.dive({
             n,
             match_sc: Se.c.match_sc,
+            // we have our D from being traced from above
             each_fn: async (n:TheC,T:Travel) => {
+                let D:TheC = T.sc.D
                 // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
-                Se.sc.N.push(T)
                 // n/* can be created here, as we go
-                await Se.c.each_fn?.(n,T)
+                await Se.c.each_fn?.(D,n,T)
             },
+            // we trace D for below
             many_fn: async (n:TheC,N:TheN,T:Travel) => {
                 // build a tree!
                 let D:TheC = T.sc.D = T.sc.D
@@ -269,6 +296,12 @@ export class Selection extends Travel {
             }
         })
 
+    }
+    async forward(y) {
+        return await this.c.T.forward(y)
+    }
+    async reverse(y) {
+        return await this.c.T.reverse(y)
     }
 
 }
