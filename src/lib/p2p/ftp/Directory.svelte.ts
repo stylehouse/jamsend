@@ -201,10 +201,31 @@ export class DirectoryModus extends Modus {
 }
 
 class Frontier {
+    async i_openity(D,openity:number) {
+        await D.replace({openity:1},async () => {
+            openity && D.i({openity})
+        })
+    }
+}
+class WanderingFrontier extends Frontier {
     journey = 0
-    stumbles_along(D,T) {
+    // flatlist endurance before everything doesn't want to open
+    energy = 4
+    async visit(D,T) {
         // D is not closed, count it as a journey
         this.journey += 1
+
+        await D.replace({frontierity:1}, async () => {
+            D.i({frontierity:this.journey})
+        })
+
+        if (this.energy && (this.energy < this.journey)) {
+            // from here on
+            await this.i_openity(D,2)
+        }
+        else {
+            await this.i_openity(D,3)
+        }
     }
 }
 class DirectorySelectivity {
@@ -214,33 +235,32 @@ class DirectorySelectivity {
     get thetime() {
         return this.M.thetime
     }
-
-
-
-    //
+    // for n%nib:dir only
+    // topD/%target=some/D+/or/just/path/dunno
+    // topD/%frontier=inpoint,name
+    //  D**/%frontier=inpoint,name
+    //   D%targeted
     async possibly_expand_nib(T:Travel) {
         let {D,bD,n} = T.sc
         let time = this.thetime
+        let top = T.c.top
 
-        if (T == T.c.top) {
-            // establishes a cursor
-            //  incidence of this D being aimed somewhere should seek it out
-            let f = D.o({frontier:'expanditude',D})[0]
-            if (!f) {
-                
+        if (!T.sc.frontier) {
+            if (T == T.c.top) {
+                // first time in, just wander
+                T.sc.frontier = new WanderingFrontier()
             }
-            // f?.sc.D.c.path.map(T=>T.sc).map(({D}) => this.ensure_open(D))
-            T.sc.frontier = new Frontier()
-        }
-
-
-        if (D.sc.name == '- chill') {
-            if (this.thetime >2) {
-                await D.replace({openity:1},async () => {
-                    D.i({openity:2})
-                })
+            else {
+                T.sc.frontier = T.up.sc.frontier
             }
         }
+        let F = T.sc.frontier as WanderingFrontier
+        await F.visit(D,T)
+
+
+
+        
+
 
         let openity = D.o({openity:1},1)[0] || 3
         if (openity <3) {
@@ -248,19 +268,16 @@ class DirectorySelectivity {
         }
         if (openity == 3) {
             // it might open in time
-            T.c.top.sc.frontier
         }
+
+
+        // F.i_openity(D,openity)
 
 
         // < thence, what combination of these need to happen
         // 
         await this.expand_nib(n)
         // this.collapse_nib(n)
-    }
-    async ensure_open(D) {
-        D.replace({openity:1},async () => {
-            D.i({openity:5})
-        })
     }
 
     

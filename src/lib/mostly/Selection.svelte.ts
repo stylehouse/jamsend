@@ -194,6 +194,7 @@ export class Selection extends Travel {
 
     each_fn?:Function
     trace_fn?:Function
+    traced_fn?:Function
     done_fn?:Function
 
     // a layer above Travel.dive()
