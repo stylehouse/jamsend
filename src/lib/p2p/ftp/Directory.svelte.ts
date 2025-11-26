@@ -220,7 +220,7 @@ class WanderingFrontier extends Frontier {
         this.journey += 1
 
         await D.replace({frontierity:1}, async () => {
-            D.i({frontierity:this.journey}).i({something:1})
+            D.i({frontierity:this.journey})
         })
 
         if (this.energy && (this.energy < this.journey)) {

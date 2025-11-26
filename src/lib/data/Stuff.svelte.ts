@@ -600,8 +600,10 @@ export class Stuffing {
     Stuff:Stuff
     groups = new SvelteMap()
     started = $state(false)
-    constructor(Stuff:Stuff) {
+    matches:Array<TheUniversal>
+    constructor(Stuff:Stuff,matches:Array<TheUniversal>) {
         this.Stuff = Stuff
+        this.matches = matches
         //  svelte docs: You can use $effect anywhere,
         //   not just at the top level of a component, 
         //   as long as it is called while a parent effect is running.
@@ -614,10 +616,22 @@ export class Stuffing {
             }
         })
     }
+    get_matching_rows() {
+        let matches = this.matches || []
+        if (!matches.length) matches = [{}]
+        let N = []
+        for (let sc of matches) {
+            for (let n of this.Stuff.o(sc)) {
+                if (N.includes(n)) continue
+                N.push(n)
+            }
+        }
+        return N
+    }
     // group like stuff
     brackology() {
         let groups = _C()
-        this.Stuff.o().forEach((n:TheC) => {
+        this.get_matching_rows().forEach((n:TheC) => {
             let ks = Object.keys(n.sc);
             let matchness = 0;
             let match = null;

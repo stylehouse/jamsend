@@ -13,15 +13,9 @@
         // hack to go %nib/%Tree**
         match = {Tree:1}
     }
-    // copy what to see, the %%other,stuff at each node
-    let D = _C({Filings:1})
-    for (let sc of see) {
-        C.o(sc).map((n:TheC) => D.i(n.sc))
-    }
-    // and display that
 </script>
-    Filings: {keyser(C)}
-    <Stuffing {mem} stuff={D} />
+    <span>{C.sc.name}</span>
+    <Stuffing {mem} stuff={C} matches={see} />
 
 <div>
     {#each inners as oC}
@@ -32,5 +26,10 @@
 <style>
     div {
         margin-left:2em;
+    }
+    span {
+        font-family: monospace;
+        width: 12em;
+        display:inline-block;
     }
 </style>

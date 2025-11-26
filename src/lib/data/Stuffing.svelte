@@ -1,9 +1,13 @@
 <script lang="ts">
     import Filings from '$lib/p2p/ftp/Filings.svelte';
-    import { Modusmem, Stuff,Stuffing } from './Stuff.svelte';
+    import { Modusmem, Stuff,Stuffing, type TheUniversal } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
-    let { mem,stuff }:{ mem:Modusmem, stuff:Stuff } = $props()
+    let { mem,stuff,matches }:{ 
+        mem:Modusmem, 
+        stuff:Stuff,
+        matches:Array<TheUniversal>,
+        } = $props()
     mem = mem.further("Stuffing")
     let stuff_length = $state(0)
     let stufflen = () => { stuff_length = stuff?.X?.z?.length || 0 }
@@ -18,7 +22,7 @@
         //  if in transaction that went async
         //   after starting to change stuff
         if (stuff.version) {
-            new_stuffing = new Stuffing(stuff)
+            new_stuffing = new Stuffing(stuff,matches)
             spinner = true
             // console.log(`Stuffing new...`)
             setTimeout(() => {
