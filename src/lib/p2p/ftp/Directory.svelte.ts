@@ -94,12 +94,12 @@ export class DirectoryModus extends Modus {
         await n.replace({Strata:1,see:1}, async () => {
             n.i({Strata:1,see:1}).is().i({openity:1})
             n.i({Strata:1,see:1}).is().i({frontierity:1})
+            n.i({Strata:1,see:1}).is().i({frontier:1})
         })
-        
 
-        
+
         let Se = new Selection()
-        let DS = new DirectorySelectivity(this)
+        let DS = new DirectorySelectivityUtils(this)
         // for aiming...
         let btw = `
             set interlinkage is going on here
@@ -138,7 +138,7 @@ export class DirectoryModus extends Modus {
         // look for new things in it
         await Se.process({
             n,
-            process_sc: {Se:'Valley',Tree:3}, // initial $n/%Se,Tree, singular
+            process_sc: {Se:'Valley',Tree:3,name:n.sc.name}, // initial $n/%Se,Tree, singular
                 // should be matched by trace_sc
 
 
@@ -204,16 +204,14 @@ export class DirectoryModus extends Modus {
         Se.reverse(async (T:Travel) => await DS.percolating_ads(T))
     }
 
-    // < keeping things around
-    // < findable orphaned D** via path (fragments) and filesizes
-    D_to_path(D) {
-        let path = D.c.T.c.path
-        return path
-    }
     
 }
 
-class Frontier {
+class Frontier extends Travel {
+    constructor(opt={}) {
+        // .c += opt
+        super(opt)
+    }
     async i_openity(D,openity:number) {
         await D.replace({openity:1},async () => {
             openity && D.i({openity})
@@ -223,7 +221,9 @@ class Frontier {
 class WanderingFrontier extends Frontier {
     journey = 0
     // flatlist endurance before everything doesn't want to open
-    energy = 4
+    energy = 5
+
+    give_up_fn?:Function
     async visit(D,T) {
         // D is not closed, count it as a journey
         this.journey += 1
@@ -231,8 +231,11 @@ class WanderingFrontier extends Frontier {
         await D.replace({frontierity:1}, async () => {
             D.i({frontierity:this.journey})
         })
-
-        if (this.energy && (this.energy < this.journey)) {
+        if (!this.energy) return
+        if (this.energy == this.journey) {
+            await this.c.give_up_fn?.(D,T)
+        }
+        if (this.energy <= this.journey) {
             // from here on
             await this.i_openity(D,2)
         }
@@ -241,8 +244,25 @@ class WanderingFrontier extends Frontier {
         }
     }
 }
-class DirectorySelectivity {
+
+class Dierarchy {
+    // < keeping things around
+    // < findable orphaned D** via path (fragments) and filesizes
+    D_to_path(D) {
+        let path = D.c.T.c.path
+        return path.map(T => T.sc.D.sc.name)
+    }
+    i_path(D,f) {
+        let i = 0
+        for (let bit of this.D_to_path(D)) {
+            f.i({path:bit,seq: i++})
+        }
+    }
+}
+class DirectorySelectivityUtils extends Dierarchy {
+    M:Modus
     constructor (M) {
+        super()
         this.M = M
     }
     get thetime() {
@@ -256,11 +276,19 @@ class DirectorySelectivity {
     async possibly_expand_nib(T:Travel) {
         let {D,bD,n} = T.sc
         let time = this.thetime
+        let topD = T.c.top.sc.D
 
         if (!T.sc.frontier) {
             if (T == T.c.top) {
                 // first time in, just wander
-                T.sc.frontier = new WanderingFrontier()
+                let F = T.sc.frontier = new WanderingFrontier({
+                    give_up_fn: async (D,T) => {
+                        await topD.replace({frontier:1,begins:1}, async () => {
+                            let f = topD.i({frontier:1,begins:1}).is()
+                            this.i_path(D,f)
+                        })
+                    }
+                })
             }
             else {
                 T.sc.frontier = T.up.sc.frontier
@@ -271,7 +299,6 @@ class DirectorySelectivity {
 
 
 
-        
 
 
         let openity = D.o({openity:1},1)[0] || 3
@@ -292,7 +319,7 @@ class DirectorySelectivity {
         // this.collapse_nib(n)
     }
     async resolved_nibs(D:TheC,N:Array<Travel>,goners:TheN) {
-
+        // 
     }
 
     

@@ -880,18 +880,6 @@ export class TheC extends Stuff {
         this.c ||= {}
         if (!this.sc) throw "!C.sc"
     }
-
-
-    // < a corruption? a mistake... the idea of: first class properties
-    //    where .sc.* is not overloadable, eg brackology()
-    //    we should mirror C** graphs effortlessly enough to pair meta and raw graphs...
-    // may be null, doesn't count as a key!
-    name?: string
-    // similar, but between 0-1
-    fraction?: number
-
-
-    // your modus
 }
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc
