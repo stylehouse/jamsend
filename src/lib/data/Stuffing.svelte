@@ -45,17 +45,41 @@
     })
 
     let stratum = $state()
-    let match = {Tree:1}
-    let see = [{openity:1},{frontierity:1}]
+    let match = null
+    let see = null
     function check_for_strata() {
         let N = []
-        // debugger
-        // Stuff/%nib/%Strata,match_sc=Tree     # what to find first
-        //              /*%Strata,see/*%the:1,Stuffing:1,matches:1
-        //           /%Tree                     # as per match_sc
-        stuff.o({nib:1}).map(n => {
-            N.push(...n.o({Tree:1}))
+        // Stuff/%nib/%Strata,match/%Tree:1     # what to find first
+        //           /*%Strata,see/*%the:1,Stuffing:1,matches:1
+        //           /%Tree                     # as per %Strata,match/*%*
+        match = null
+        see = null
+        stuff.o().map(n => {
+            if (!n.oa({Strata:1})) return
+            if (match) throw "< multi Strata"
+            n.o({Strata:1,match:1}).map(ma => {
+                ma.o().map(m => {
+                    if (match) throw "< multi basis Strata"
+                    match = {...m.sc}
+                })
+            })
+            // > or is it hide?
+            n.o({Strata:1,see:1}).map(se => {
+                // *%the:1,Stuffing:1,matches:1
+                se.o().map(m => {
+                    see ||= []
+                    see.push({...m.sc})
+                })
+            })
+            if (match && !see) throw "Strata!see"
+            if (see && !match) throw "Strata!match"
+
+            if (match) {
+                // find the first %Tree
+                N.push(...n.o(match))
+            }
         })
+        // may not
         stratum = N[0]
     }
 

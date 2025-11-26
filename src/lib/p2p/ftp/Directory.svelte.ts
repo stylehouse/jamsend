@@ -87,6 +87,15 @@ export class DirectoryModus extends Modus {
         console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
         n.coms.i({twas_thetime:this.thetime})
+        // advertise %Tree for UI:Strata
+        await n.replace({Strata:1,match:1}, async () => {
+            n.i({Strata:1,match:1}).is().i({Tree:1})
+        })
+        await n.replace({Strata:1,see:1}, async () => {
+            n.i({Strata:1,see:1}).is().i({openity:1})
+            n.i({Strata:1,see:1}).is().i({frontierity:1})
+        })
+        
 
         
         let Se = new Selection()

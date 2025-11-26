@@ -3,6 +3,7 @@ import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { KVStore } from "./IDB.svelte";
 import type { ThingIsms } from "./Things.svelte";
 import type { Travel } from "$lib/mostly/Selection.svelte";
+import { isar, map } from "$lib/Y";
 
 let spec = `
 
@@ -346,6 +347,41 @@ class StuffIO {
 //#endregion
 //#region Stuff.replace
 export class Stuff extends StuffIO {
+    // this C has Isness, C/* are there already and don't recycle them.
+    // marks this C as going to have inners already when resolve() commits
+    //  so don't resume its C/* from before
+    is() {
+        this.c.Isness = 1
+        return this
+    }
+    // replace one thing
+    // < GONER? silly?
+    async r(pattern_sc:TheUniversal,sc?:TheUniversal):Promise<TheC> {
+        if (!sc) {
+            // make an %all:1,wildcards:1 pattern
+            sc = pattern_sc
+            if (isar(sc)) {
+                pattern_sc = sc[0]
+            }
+            pattern_sc = map(() => 1, pattern_sc)
+        }
+        let C
+        await this.replace(pattern_sc, async () => {
+            let N = isar(sc) ? sc : [sc]
+            for (let s of N) {
+                C = this.i(s)
+            }
+        })
+        return C
+    }
+
+    // resolved C usually resume C/*
+    resume_X(a,b) {
+        if (!b.c.Isness) {
+            b.X = a.X
+        }
+    }
+
     // redo everything or a subset that we replace things around
     //  inside fn(),
     //   bo() can be used to look at the before time
@@ -382,12 +418,13 @@ export class Stuff extends StuffIO {
                 let pairs = await this.resolve(this.X,this.X_before,partial)
                 let resolved_pairs = ([a,b]) => {
                     if (a && b) {
-                        if (b.X?.z?.length) {
+                        let innered = b.X?.z?.length
+                        if (innered && !b.c.Isness) {
                             // < if they have b.i() already? post-hoc resolve()?
                             console.error("Ohno! something already in: "+keyser(this)
                                 +"\n eg: "+keyser(b.X.z[0]))
                         }
-                        b.X = a.X
+                        this.resume_X(a,b)
                     }
                     q.pairs_fn?.(a,b)
                 }
