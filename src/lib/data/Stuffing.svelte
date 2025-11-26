@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Filings from '$lib/p2p/ftp/Filings.svelte';
+    import Strata from '$lib/data/Strata.svelte';
     import { Modusmem, Stuff,Stuffing, type TheUniversal } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
@@ -25,9 +25,6 @@
             new_stuffing = new Stuffing(stuff,matches)
             spinner = true
             // console.log(`Stuffing new...`)
-            setTimeout(() => {
-                check_for_filings()
-            }, 11)
         }
         stufflen()
     })
@@ -40,28 +37,36 @@
             setTimeout(() => {
                 spinner = false
             }, 333)
+            setTimeout(() => {
+                check_for_strata()
+            }, 11)
         }
         stufflen()
     })
 
-    let filings = $state()
+    let stratum = $state()
     let match = {Tree:1}
     let see = [{openity:1},{frontierity:1}]
-    function check_for_filings() {
+    function check_for_strata() {
         let N = []
         // debugger
+        // Stuff/%nib/%Strata,match_sc=Tree     # what to find first
+        //              /*%Strata,see/*%the:1,Stuffing:1,matches:1
+        //           /%Tree                     # as per match_sc
         stuff.o({nib:1}).map(n => {
             N.push(...n.o({Tree:1}))
         })
-        filings = N[0]
+        stratum = N[0]
     }
 
 </script>
 
 {#if stuffing}
-    {#if filings}
-        filings!
-        <Filings mem={mem.further('Filings')} C={filings} {match} {see} ></Filings>
+    {#if stratum}
+        <div class="strata">
+            Strata!
+            <Strata mem={mem.further('Strata')} C={stratum} {match} {see} ></Strata>
+        </div>
     {/if}
     <div class="stuffing">
         <div class="content">
@@ -78,6 +83,9 @@
 
 
 <style>
+.strata {
+    display:block;
+}
 .stuffing {
     margin: 0.1em;
     border-radius: 4em;
