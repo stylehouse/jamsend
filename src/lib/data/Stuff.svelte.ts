@@ -193,7 +193,9 @@ class StuffIO {
         //  the below i_k and i_v also do i_z where they end up
         this.X.i_z(n);
 
-        Object.entries(n.sc || {}).forEach(([k, v]) => {
+        let keys = Object.entries(n.sc || {})
+        if (!keys.length) throw "i nothing"
+        keys.forEach(([k, v]) => {
             // the keys
             const kx = this.X.i_k(k, n);
             
@@ -667,7 +669,7 @@ export class Stuffing {
 
             // add columns
             // there may be odd ones out (many of them) from c.sc
-            let column_names = Object.keys(n.X.k)
+            let column_names = Object.keys(n.X.k || {})
             column_names.forEach((key) => {
                 const kx = n.X?.o_kv(key, 1)
                 if (!kx) throw "!kx"

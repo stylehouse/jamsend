@@ -129,7 +129,8 @@ export class DirectoryModus extends Modus {
         // look for new things in it
         await Se.process({
             n,
-            process_sc: {Se:'Valley'}, // initial $n/%Se, singular
+            process_sc: {Se:'Valley',Tree:3}, // initial $n/%Se,Tree, singular
+                // should be matched by trace_sc
 
 
             match_sc: {nib:1,name:1},    // climbing $n%nib,name**
