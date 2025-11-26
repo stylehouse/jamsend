@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Filings from '$lib/p2p/ftp/Filings.svelte';
     import { Modusmem, Stuff,Stuffing } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
@@ -20,6 +21,9 @@
             new_stuffing = new Stuffing(stuff)
             spinner = true
             // console.log(`Stuffing new...`)
+            setTimeout(() => {
+                check_for_filings()
+            }, 11)
         }
         stufflen()
     })
@@ -36,9 +40,25 @@
         stufflen()
     })
 
+    let filings = $state()
+    let match = {Tree:1}
+    let see = [{openity:1},{frontierity:1}]
+    function check_for_filings() {
+        let N = []
+        // debugger
+        stuff.o({nib:1}).map(n => {
+            N.push(...n.o({Tree:1}))
+        })
+        filings = N[0]
+    }
+
 </script>
 
 {#if stuffing}
+    {#if filings}
+        filings!
+        <Filings mem={mem.further('Filings')} C={filings} {match} {see} ></Filings>
+    {/if}
     <div class="stuffing">
         <div class="content">
             {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}

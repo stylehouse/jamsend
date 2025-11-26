@@ -195,6 +195,7 @@ export class Selection extends Travel {
     each_fn?:Function
     trace_fn?:Function
     traced_fn?:Function
+    resolved_fn?:Function
     done_fn?:Function
 
     // a layer above Travel.dive()
@@ -236,6 +237,8 @@ export class Selection extends Travel {
                 if (!D) throw "!top D"
                 if (T.c.top != Tr) throw "top!=Tr"
 
+                // D no longer there
+                let goners = []
                 await D.replace(Se.c.trace_sc,async()=>{
                     for (const oT of N) {
                         // with T%n, get T%D
@@ -249,6 +252,7 @@ export class Selection extends Travel {
                     // receive pairs of continuous-looking particles
                     pairs_fn:(a:TheC,b:TheC)=>{
                         if (a && !b) {
+                            goners.push(a)
                             console.log("Goner on "+keyser(T.sc.D)+": "+keyser(a))
                         }
                         if (b && !a) {
@@ -279,12 +283,17 @@ export class Selection extends Travel {
                 // have a look through resolved D%Tree
                 for (const oT of N) {
                     if (oT.sc.not) continue
-                    Se.c.traced_fn?.(
+                    await Se.c.traced_fn?.(
                         oT.sc.D,
                         oT.sc.bD,
                         oT.sc.n,
                         oT)
                 }
+                await Se.c.resolved_fn?.(
+                    T.sc.D,
+                    N,
+                    goners,
+                )
             },
             done_fn: async (n:TheC,T:Travel) => {
                 // the D** sphere!

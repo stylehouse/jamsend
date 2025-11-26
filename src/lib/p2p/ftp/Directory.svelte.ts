@@ -169,6 +169,9 @@ export class DirectoryModus extends Modus {
                     // return T.sc.not = 'sleepable'
                 }
             },
+            resolved_fn: async (D:TheC,N:Array<Travel>,goners:TheN) => {
+                await DS.resolved_nibs(D,N,goners)
+            },
 
 
             // everything that's going to be|wake inside (D|n)** is there|awake now
@@ -184,7 +187,7 @@ export class DirectoryModus extends Modus {
                     // no go?
                     await DS.intelligible_name(T)
                 }
-            }
+            },
         })
 
         
@@ -217,7 +220,7 @@ class WanderingFrontier extends Frontier {
         this.journey += 1
 
         await D.replace({frontierity:1}, async () => {
-            D.i({frontierity:this.journey})
+            D.i({frontierity:this.journey}).i({something:1})
         })
 
         if (this.energy && (this.energy < this.journey)) {
@@ -244,7 +247,6 @@ class DirectorySelectivity {
     async possibly_expand_nib(T:Travel) {
         let {D,bD,n} = T.sc
         let time = this.thetime
-        let top = T.c.top
 
         if (!T.sc.frontier) {
             if (T == T.c.top) {
@@ -279,6 +281,9 @@ class DirectorySelectivity {
         // 
         await this.expand_nib(n)
         // this.collapse_nib(n)
+    }
+    async resolved_nibs(D:TheC,N:Array<Travel>,goners:TheN) {
+
     }
 
     
