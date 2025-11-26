@@ -8,11 +8,10 @@
         match:TheUniversal,
         see:Array<TheUniversal>,
     } = $props()
+
+    // the interesting stuff to see
     let inners = C.o(match)
-    if (C.sc.nib) {
-        // hack to go %nib/%Tree**
-        match = {Tree:1}
-    }
+    
 </script>
     <span>{C.sc.name}</span>
     <Stuffing {mem} stuff={C} matches={see} />

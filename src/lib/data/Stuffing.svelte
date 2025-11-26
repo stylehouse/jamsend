@@ -1,12 +1,14 @@
 <script lang="ts">
     import Strata from '$lib/data/Strata.svelte';
+    import Modus from '$lib/mostly/Modus.svelte';
     import { Modusmem, Stuff,Stuffing, type TheUniversal } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
-    let { mem,stuff,matches }:{ 
+    let { mem,stuff,matches,M }:{ 
         mem:Modusmem, 
         stuff:Stuff,
         matches:Array<TheUniversal>,
+        M?:Modus
         } = $props()
     mem = mem.further("Stuffing")
     let stuff_length = $state(0)
@@ -37,9 +39,12 @@
             setTimeout(() => {
                 spinner = false
             }, 333)
-            setTimeout(() => {
-                check_for_strata()
-            }, 11)
+            if (M) {
+                // first layer of Stuffing inside Modus, look for %%Strata
+                setTimeout(() => {
+                    check_for_strata()
+                }, 11)
+            }
         }
         stufflen()
     })
@@ -88,7 +93,6 @@
 {#if stuffing}
     {#if stratum}
         <div class="strata">
-            Strata!
             <Strata mem={mem.further('Strata')} C={stratum} {match} {see} ></Strata>
         </div>
     {/if}

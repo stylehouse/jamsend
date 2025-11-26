@@ -71,7 +71,7 @@
             {/each}
 
     {#key redraw_version}
-        <Stuffing mem={M.imem('current')} stuff={M.current} />
+        <Stuffing mem={M.imem('current')} stuff={M.current} {M} />
         {#if M.coms} <Stuffing mem={M.imem('coms')} stuff={M.coms} />{/if}
     {/key}
     
