@@ -31,5 +31,7 @@
         font-family: monospace;
         width: 12em;
         display:inline-block;
+        padding-left: 2em;
+        text-indent: -2em; 
     }
 </style>
