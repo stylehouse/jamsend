@@ -94,7 +94,9 @@ export class DirectoryModus extends Modus {
         await n.replace({Strata:1,see:1}, async () => {
             n.i({Strata:1,see:1}).is().i({openity:1})
             n.i({Strata:1,see:1}).is().i({frontierity:1})
-            n.i({Strata:1,see:1}).is().i({frontier:1})
+            n.i({Strata:1,see:1}).is().i({journey:1}) // j, the toplevel list of places to go
+            n.i({Strata:1,see:1}).is().i({plodding:1}) // =j, stuff dribbling down
+            n.i({Strata:1,see:1}).is().i({toured:1}) // =j, for D** within the journey
         })
 
 
@@ -178,8 +180,8 @@ export class DirectoryModus extends Modus {
                     // return T.sc.not = 'sleepable'
                 }
             },
-            resolved_fn: async (D:TheC,N:Array<Travel>,goners:TheN) => {
-                await DS.resolved_nibs(D,N,goners)
+            resolved_fn: async (T:Travel,N:Array<Travel>,goners:TheN) => {
+                await DS.resolved_nibs(T,N,goners)
             },
 
 
@@ -248,17 +250,105 @@ class WanderingFrontier extends Frontier {
 class Dierarchy {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
+    D_to_name(D) {
+        return D.sc.name
+    }
     D_to_path(D) {
         let path = D.c.T.c.path
-        return path.map(T => T.sc.D.sc.name)
+        return path.map(T => this.D_to_name(T.sc.D))
     }
-    i_path(D,f) {
+    i_path(D,j) {
         let i = 0
         for (let bit of this.D_to_path(D)) {
-            f.i({path:bit,seq: i++})
+            j.i({path:bit,seq: i++})
         }
     }
+    // does the journey flow into here
+    async journeys_choose_D(T:Travel,oT:Travel) {
+        let D = T.sc.D
+        let seq = oT.c.path.length-1
+        let oD = oT.sc.D
+        let bit = this.D_to_name(oD)
+        
+        await oD.replace({journey:1},async () => {
+            for (let j of (T.sc.journeys||[])) {
+                // if we're currently within the parameters of the tour
+                let goes = j.oa({plodding:j,tour:1})
+
+                if (j.oa({path:bit,seq})) {
+                    // wants to go here
+                    oT.sc.journeys ||= []
+                    oT.sc.journeys.push(j)
+                }
+            }
+        })
+
+    }
+    // T%journeys/$j and D**%plodding go inward
+    async journeys_affect_D(T:Travel) {
+        let uD = T.up?.sc.D
+        let D = T.sc.D
+        for (let j of (T.sc.journeys||[])) {
+            // have moved, using a D** ephemeral
+            // gather plodding information
+            await D.replace({plodding:1},async () => {
+                let pls:TheN = uD?.oa({plodding:j})
+                if (!pls) {
+                    // when there is nothing,
+                    //  establish a shared energy budget for all D**
+                    D.i({plodding:j,enthusiasmus:{journey:0,energy:5}})
+                    // D** starts being inside the journey
+                    D.i({plodding:j,tour:{DN:[]}})
+                }
+                else {
+                    for (let pl of pls) {
+                        // whole lot of protocols carrying themselves into D**
+                        let en = pl.sc.enthusiasmus
+                        if (en) {
+                            // simulates going further
+                            en.journey += 1
+                            
+                            if (en.energy == en.journey) {
+                                // will be first next.
+                                await this.journey_gives_up(T)
+                            }
+                            if (en.energy <= en.journey) {
+                                // from here on
+                                await this.i_openity(D,2)
+                            }
+                            else {
+                                await this.i_openity(D,3)
+                            }
+                        }
+                        // copy into D**
+                        D.i(pl.sc)
+                    }
+                }
+            })
+
+
+
+
+        }
+    }
+    async journey_gives_up(T) {
+        let topD = T.c.top.sc.D
+        let D = T.sc.D
+        await topD.replace({journey:'auto',ends:1}, async () => {
+            let j = topD.i({journey:'auto',ends:1})
+            this.i_path(D,j)
+        })
+    }
+
+
+    async i_openity(D,openity:number) {
+        await D.replace({openity:1},async () => {
+            openity && D.i({openity})
+        })
+    }
+
 }
+type TheD = TheC
 class DirectorySelectivityUtils extends Dierarchy {
     M:Modus
     constructor (M) {
@@ -268,11 +358,17 @@ class DirectorySelectivityUtils extends Dierarchy {
     get thetime() {
         return this.M.thetime
     }
+    async resolved_nibs(T:Travel,N:Array<Travel>,goners:Array<TheD>) {
+        for (let oT of N) {
+            await this.journeys_choose_D(T,oT)
+            await this.journeys_affect_D(oT)
+        }
+
+        for (let go of goners) {
+            // < keep their D** hanging around, subsiding...
+        }
+    }
     // for n%nib:dir only
-    // topD/%target=some/D+/or/just/path/dunno
-    // topD/%frontier=inpoint,name
-    //  D**/%frontier=inpoint,name
-    //   D%targeted
     async possibly_expand_nib(T:Travel) {
         let {D,bD,n} = T.sc
         let time = this.thetime
@@ -280,22 +376,39 @@ class DirectorySelectivityUtils extends Dierarchy {
 
         if (!T.sc.frontier) {
             if (T == T.c.top) {
+                // where we aim to start doing it
+                if (!topD.oa({journey:1})) {
+                    // start at the top
+                    let j = topD.i({journey:'auto',begins:1})
+                    this.i_path(D,j)
+                }
+                T.sc.journeys = topD.o({journey:1})
+                // you might address the top of the %Tree
+                await this.journeys_affect_D(T)
+
                 // first time in, just wander
+                // < GOING in favour of the journey
                 let F = T.sc.frontier = new WanderingFrontier({
                     give_up_fn: async (D,T) => {
-                        await topD.replace({frontier:1,begins:1}, async () => {
-                            let f = topD.i({frontier:1,begins:1}).is()
-                            this.i_path(D,f)
+                        return
+                        await topD.replace({journey:'auto',ends:1}, async () => {
+                            let j = topD.i({journey:'auto',ends:1})
+                            this.i_path(D,j)
                         })
                     }
                 })
             }
             else {
+                let journeys = T.sc.journeys
+                // < %journeys already be aimed by T.up at resolved_fn
+
                 T.sc.frontier = T.up.sc.frontier
             }
         }
         let F = T.sc.frontier as WanderingFrontier
         await F.visit(D,T)
+
+        D.i({frontierity:"IS",time})
 
 
 
@@ -305,21 +418,10 @@ class DirectorySelectivityUtils extends Dierarchy {
         if (openity <3) {
             return T.sc.not = 'chilling'
         }
-        if (openity == 3) {
-            // it might open in time
-        }
 
-
-        // F.i_openity(D,openity)
-
-
-        // < thence, what combination of these need to happen
-        // 
+        // < sensible timings of:
         await this.expand_nib(n)
         // this.collapse_nib(n)
-    }
-    async resolved_nibs(D:TheC,N:Array<Travel>,goners:TheN) {
-        // 
     }
 
     
@@ -526,24 +628,6 @@ class DirectorySelectivityUtils extends Dierarchy {
         });
     }
 
-
-
-    // < GOING? the n%name -> D%Tree/%Trace=name,val=$v mark making
-    //   we simply write some strings in eg %Tree,name=... for now...
-    async D_reading_val(D,n,k) {
-        let needs_doing = false
-        let val = n.sc.name
-        await D.replace({reading:'name'},async () => {
-            let was = D.bo({val:1,reading:'name'},1)[0]
-            if (was != null && was != val) {
-                console.warn(`diff name reading: ${val} <~ ${was}`)
-            }
-            if (was == null || was != val) {
-                needs_doing = true
-            }
-            D.i({val,reading:'name'})
-        })
-    }
 }
 
 
@@ -959,29 +1043,3 @@ class FileSystemHandler {
 
 }
 
-
-
-    function Modus_testcase(this) {
-        console.log("Yup")
-        this.i({doing:"well",witharo:2})
-        this.i({doing:"well",witharo:3})
-        let thutch = _C({dog:"yaps"})
-        thutch.i({glab:3})
-        thutch.i({glab:5})
-        thutch.i({glabbioa:5})
-        this.i({thutch})
-
-
-
-        let di = this.oa({diffrance:1})[0]
-        let all = this.oa()
-        console.log("got out",all)
-        let diffrance = 6
-        if (di) {
-            diffrance = di.sc.diffrance + 1
-            this.drop(di)
-        }
-        this.i({diffrance})
-        this.o({lights:1}) || this.i({lights:3})
-
-    }

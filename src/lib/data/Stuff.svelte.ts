@@ -884,7 +884,7 @@ export class TheC extends Stuff {
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc
 export function _C(v={}):TheC {
-    if (!v.sc) return new TheC({c:{},sc:v})
+    if (!v.sc) return new TheC({c:{},sc:{...v}})
     if (!(v instanceof TheC)) return  new TheC(v)
     return v
 }

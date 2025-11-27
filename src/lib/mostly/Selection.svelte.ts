@@ -53,7 +53,9 @@ export class Travel extends TheC {
 
     // < GOING? have .sc.up...
     get up() {
-        return this.c.path.slice(-2)[0]
+        let depth = this.c.path.length -1
+        if (!depth) return
+        return this.c.path[depth-1]
     }
     
     // visitor of many ** to o()
@@ -198,6 +200,13 @@ export class Selection extends Travel {
     resolved_fn?:Function
     done_fn?:Function
 
+    est_D_T(D:TheC,T:Travel) {
+        if (D.c.T && D.c.T != T) throw "D~T"
+        if (T.sc.D) throw "TDD"
+        D.c.T = T
+        T.sc.D = D
+    }
+
     // a layer above Travel.dive()
     async process(d:Partial<Selection>) {
         const Se = this
@@ -211,7 +220,8 @@ export class Selection extends Travel {
 
         // hang the top D%Tree off the given|top n
         await n.replace(Se.c.process_sc,async () => {
-            Tr.sc.D = n.i(Se.c.process_sc)
+            let D = n.i(Se.c.process_sc)
+            this.est_D_T(D,Tr)
         })
         // Tr.sc.D/* is now as it was last time
         // < not our only one of these? do we want one on a resolve() leash
@@ -226,12 +236,13 @@ export class Selection extends Travel {
             // we have our D from being traced from above
             each_fn: async (n:TheC,T:Travel) => {
                 let D:TheC = T.sc.D
+
                 // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
                 // n/* can be created here, as we go
                 await Se.c.each_fn?.(D,n,T)
             },
             // we trace D for below
-            many_fn: async (n:TheC,N:TheN,T:Travel) => {
+            many_fn: async (n:TheC,N:Array<Travel>,T:Travel) => {
                 // build a tree!
                 let D:TheC = T.sc.D = T.sc.D
                 if (!D) throw "!top D"
@@ -241,12 +252,8 @@ export class Selection extends Travel {
                 let goners = []
                 await D.replace(Se.c.trace_sc,async()=>{
                     for (const oT of N) {
-                        // with T%n, get T%D
-                        let on = oT.sc.n
-                        let oD = oT.sc.D = await Se.c.trace_fn?.(D,oT.sc.n,oT)
-                        // < oD.c.n?
-                        // give DcT
-                        oD.c.T = oT
+                        let oD = await Se.c.trace_fn?.(D,oT.sc.n,oT)
+                        this.est_D_T(oD,oT)
                     }
                 },{
                     // receive pairs of continuous-looking particles
@@ -290,7 +297,7 @@ export class Selection extends Travel {
                         oT)
                 }
                 await Se.c.resolved_fn?.(
-                    T.sc.D,
+                    T,
                     N,
                     goners,
                 )

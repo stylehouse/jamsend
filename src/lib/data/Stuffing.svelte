@@ -49,6 +49,7 @@
         stufflen()
     })
 
+    let strata_version = $state(0)
     let stratum = $state()
     let match = null
     let see = null
@@ -86,6 +87,7 @@
         })
         // may not
         stratum = N[0]
+        strata_version++
     }
 
 </script>
@@ -93,7 +95,9 @@
 {#if stuffing}
     {#if stratum}
         <div class="strata">
-            <Strata mem={mem.further('Strata')} C={stratum} {match} {see} ></Strata>
+            {#key strata_version}
+                <Strata mem={mem.further('Strata')} C={stratum} {match} {see} ></Strata>
+            {/key}
         </div>
     {/if}
     <div class="stuffing">
