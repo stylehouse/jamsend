@@ -247,6 +247,12 @@ class WanderingFrontier extends Frontier {
     }
 }
 
+function Tdebug(T,title,say,etc) {
+    let indent = T.c.path.map(T=>'  ').join('')
+    let D = T.sc.D
+    console.log(`${title} ${indent} ${D.sc.name}\t${say||''}`,...[etc].filter(n=>n != null))
+}
+
 class Dierarchy {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
@@ -273,36 +279,62 @@ class Dierarchy {
         await oD.replace({journey:1},async () => {
             for (let j of (T.sc.journeys||[])) {
                 // if we're currently within the parameters of the tour
-                let goes = j.oa({plodding:j,tour:1})
+                //  so it should flood into yonders
+                let goes = D.o({plodding:j,tour:1})[0]
+                if (goes && goes.sc.ends) goes = null
 
-                if (j.oa({path:bit,seq})) {
+                // < seq=1 matches everything! what do we do about that...
+                //    use an exotic unicode character in the code
+                //     obscured by LieSurgery
+                let pathbit = j.o({path:1,seq}).filter(n=>n.sc.seq == seq)[0]
+
+                if (goes || pathbit) {
+                    // Tdebug(T,'journey goesto',`journey: ${keyser(j)} seq:${seq}`,pathbit)
                     // wants to go here
                     oT.sc.journeys ||= []
                     oT.sc.journeys.push(j)
                 }
             }
         })
-
     }
     // T%journeys/$j and D**%plodding go inward
     async journeys_affect_D(T:Travel) {
         let uD = T.up?.sc.D
         let D = T.sc.D
+        // all %plodding copy down, noting if they're opening, ending etc
+        let openness_suggestions:Array<number> = []
+        let journey_gives_up:Array<TheC> = []
         for (let j of (T.sc.journeys||[])) {
             // have moved, using a D** ephemeral
             // gather plodding information
             await D.replace({plodding:1},async () => {
+                // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
                 let pls:TheN = uD?.oa({plodding:j})
+
                 if (!pls) {
+                    if (T != T.c.top) throw "plodding T!top"
                     // when there is nothing,
                     //  establish a shared energy budget for all D**
                     D.i({plodding:j,enthusiasmus:{journey:0,energy:5}})
                     // D** starts being inside the journey
-                    D.i({plodding:j,tour:{DN:[]}})
+                    D.i({plodding:j,tour:{DN:[D]}})
                 }
                 else {
                     for (let pl of pls) {
                         // whole lot of protocols carrying themselves into D**
+                        let to = pl.sc.tour
+                        if (to) {
+                            if (to.ends) {
+                                // don't do any more %%plodding here
+                                openness_suggestions.push(2)
+                                return
+                            }
+                            // tour += D
+                            to.DN.push(D)
+                            // < is this where to check where the journey ends?
+                        }
+                    }
+                    for (let pl of pls) {
                         let en = pl.sc.enthusiasmus
                         if (en) {
                             // simulates going further
@@ -310,14 +342,14 @@ class Dierarchy {
                             
                             if (en.energy == en.journey) {
                                 // will be first next.
-                                await this.journey_gives_up(T)
+                                journey_gives_up.push(j)
                             }
                             if (en.energy <= en.journey) {
                                 // from here on
-                                await this.i_openity(D,2)
+                                openness_suggestions.push(2)
                             }
                             else {
-                                await this.i_openity(D,3)
+                                openness_suggestions.push(3)
                             }
                         }
                         // copy into D**
@@ -326,16 +358,33 @@ class Dierarchy {
                 }
             })
 
+            for (let j of journey_gives_up) {
+                // in addition to suggesting low-openness
+                await this.journey_gives_up(j,T)
+            }
 
-
-
+            let most_awake = openness_suggestions.sort().pop()
+            if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
+            await this.i_openity(D,most_awake)
         }
     }
-    async journey_gives_up(T) {
+    async stop_the_tour(j,T) {
+        let D = T.sc.D
+        let to = D.o({plodding:j,tour:1})[0]
+        if (!to) throw "cancel!to"
+        to.ends = D
+        // < later siblings of D
+    }
+    async journey_gives_up(j,T) {
         let topD = T.c.top.sc.D
         let D = T.sc.D
-        await topD.replace({journey:'auto',ends:1}, async () => {
-            let j = topD.i({journey:'auto',ends:1})
+        // note in %journey/%gaveup where it ends,
+        //  ~~ %journey/%ends at a non-meaningful point
+        //  which could become the next %journey,begins
+        this.stop_the_tour(j,T)
+        await j.replace({gaveup:1}, async () => {
+            // ~~ %journey/%path
+            let j = topD.i({gaveup:1})
             this.i_path(D,j)
         })
     }
