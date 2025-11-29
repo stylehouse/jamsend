@@ -290,6 +290,9 @@ export function iske(s) {
 }
 // Check if itemic, ie C
 export function isit(s) {
+    return isC(s)
+}
+export function isC(s) {
     return s instanceof TheC
 }
 

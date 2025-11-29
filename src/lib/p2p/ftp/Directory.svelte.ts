@@ -210,7 +210,6 @@ export class DirectoryModus extends Modus {
     }
     // the events, nudges
     further_journey() {
-        console.log("increase!!!")
         let D = this.T?.sc.D
         if (!D) throw "T event !D"
         for (let j of D.o({journey:1})) {

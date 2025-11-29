@@ -1,7 +1,8 @@
 // Another Things/Thing thing!
 
 import { keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { hak, Parserify, reverse } from "$lib/Y"
+import { hak, isar, isC, Parserify, reverse } from "$lib/Y"
+import type Modus from "./Modus.svelte"
 
 const AI = `
 we need to hierarchise FileLists, and allow them to be opened several times:
@@ -321,9 +322,12 @@ export class Selection extends Travel {
 //#endregion
 //#region Dierarchy
 
-function Tdebug(T,title,say,etc) {
+function Tdebug(T,title,say?,etc?) {
     let indent = T.c.path.map(T=>'  ').join('')
     let D = T.sc.D
+    if (etc && isar(etc) && isC(etc[0])) {
+        etc = etc.map(n=>keyser(n))
+    }
     console.log(`${title} ${indent} ${D.sc.name}\t${say||''}`,...[etc].filter(n=>n != null))
 }
 
@@ -383,6 +387,8 @@ class Dierarchy {
             // gather plodding information
             await D.replace({plodding:1},async () => {
                 // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
+
+                // o ^/%plodding
                 let pls:TheN = uD?.oa({plodding:j})
 
                 if (!pls) {
@@ -392,6 +398,8 @@ class Dierarchy {
                     D.i({plodding:j,enthusiasmus:{journey:0,energy:5}})
                     // D** starts being inside the journey
                     D.i({plodding:j,tour:{DN:[D]}})
+                    // < perhaps this should default later?
+                    openness_suggestions.push(3)
                 }
                 else {
                     for (let pl of pls) {
@@ -440,14 +448,8 @@ class Dierarchy {
             let most_awake = openness_suggestions.sort().pop()
             if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
             await this.i_openity(D,most_awake)
+            Tdebug(T,"openity","",most_awake)
         }
-    }
-    async stop_the_tour(j,T) {
-        let D = T.sc.D
-        let to = D.o({plodding:j,tour:1})[0]
-        if (!to) throw "cancel!to"
-        to.ends = D
-        // < later siblings of D
     }
     async journey_gives_up(j,T) {
         let topD = T.c.top.sc.D
@@ -455,12 +457,19 @@ class Dierarchy {
         // note in %journey/%gaveup where it ends,
         //  ~~ %journey/%ends at a non-meaningful point
         //  which could become the next %journey,begins
-        this.stop_the_tour(j,T)
+        await this.stop_the_tour(j,T)
         await j.replace({gaveup:1}, async () => {
             // ~~ %journey/%path
-            let j = topD.i({gaveup:1})
-            this.i_path(D,j)
+            let g = j.i({gaveup:1}).is()
+            this.i_path(D,g)
         })
+    }
+    async stop_the_tour(j,T) {
+        let D = T.sc.D
+        let to = D.o({plodding:j,tour:1})[0]
+        if (!to) throw "cancel!to"
+        to.ends = D
+        // < later siblings of D
     }
 
 
@@ -511,18 +520,18 @@ export class DirectorySelectivityUtils extends Dierarchy {
         }
         await this.journeys_affect_D(T)
 
-        D.i({frontierity:"IS",time})
+        await D.r({frontierity:"IS",time})
 
-
-
-
-
-        let openity = D.o({openity:1},1)[0] || 3
+        let opes = D.o({openity:1},1)
+        if (opes.length != 1) throw "no journey openity?"
+        let openity = opes[0] || 2
         if (openity <3) {
+            Tdebug(T,"We Shant")
             return T.sc.not = 'chilling'
         }
 
         // < sensible timings of:
+        Tdebug(T,"We shall","",D.o({openity:1}))
         await this.expand_nib(n)
         // this.collapse_nib(n)
     }
