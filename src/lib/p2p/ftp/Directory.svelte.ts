@@ -83,6 +83,8 @@ export class DirectoryModus extends Modus {
     // random challenges:
     //  are there any unawaited promises in my code?
     thetime = 0
+    // latest finished topT, works for Selection
+    T?:Travel
     async Travel_DLs(n:TheC) {
         console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
@@ -203,9 +205,18 @@ export class DirectoryModus extends Modus {
 
         
         // then more richocheting around of percolating waves of stuff
-        Se.reverse(async (T:Travel) => await DS.percolating_ads(T))
+        Se.c.T.reverse(async (T:Travel) => await DS.percolating_ads(T))
+        this.T = Se.c.T
     }
-
+    // the events, nudges
+    further_journey() {
+        console.log("increase!!!")
+        let D = this.T?.sc.D
+        if (!D) throw "T event !D"
+        for (let j of D.o({journey:1})) {
+            console.log("increase: ",j)
+        }
+    }
     
 }
 

@@ -1,7 +1,7 @@
 // Another Things/Thing thing!
 
 import { keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { reverse } from "$lib/Y"
+import { hak, Parserify, reverse } from "$lib/Y"
 
 const AI = `
 we need to hierarchise FileLists, and allow them to be opened several times:
@@ -315,12 +315,6 @@ export class Selection extends Travel {
         })
 
     }
-    async forward(y) {
-        return await this.c.T.forward(y)
-    }
-    async reverse(y) {
-        return await this.c.T.reverse(y)
-    }
 
 }
 
@@ -492,7 +486,6 @@ export class DirectorySelectivityUtils extends Dierarchy {
     async resolved_nibs(T:Travel,N:Array<Travel>,goners:Array<TheD>) {
         for (let oT of N) {
             await this.journeys_choose_D(T,oT)
-            await this.journeys_affect_D(oT)
         }
 
         for (let go of goners) {
@@ -505,24 +498,18 @@ export class DirectorySelectivityUtils extends Dierarchy {
         let time = this.thetime
         let topD = T.c.top.sc.D
 
-        if (!T.sc.frontier) {
-            if (T == T.c.top) {
-                // where we aim to start doing it
-                if (!topD.oa({journey:1})) {
-                    // start with a journey that begins immediately
-                    //  it wanders a while then gets tired
-                    let j = topD.i({journey:'auto',begins:1})
-                    this.i_path(D,j)
-                }
-                T.sc.journeys = topD.o({journey:1})
-                // you might address the top of the %Tree
-                await this.journeys_affect_D(T)
+        if (T == T.c.top) {
+            // where we aim to start doing it
+            if (!topD.oa({journey:1})) {
+                // start with a journey that begins immediately
+                //  it wanders a while then gets tired
+                let j = topD.i({journey:'auto',begins:1})
+                this.i_path(D,j)
             }
-            else {
-                let journeys = T.sc.journeys
-                // < %journeys already aimed by T.up at resolved_fn
-            }
+            // these instruct moves around extents
+            T.sc.journeys = topD.o({journey:1})
         }
+        await this.journeys_affect_D(T)
 
         D.i({frontierity:"IS",time})
 
@@ -540,7 +527,6 @@ export class DirectorySelectivityUtils extends Dierarchy {
         // this.collapse_nib(n)
     }
 
-    
     async expand_nib(n:TheC) {
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
