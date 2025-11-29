@@ -209,43 +209,6 @@ export class DirectoryModus extends Modus {
     
 }
 
-class Frontier extends Travel {
-    constructor(opt={}) {
-        // .c += opt
-        super(opt)
-    }
-    async i_openity(D,openity:number) {
-        await D.replace({openity:1},async () => {
-            openity && D.i({openity})
-        })
-    }
-}
-class WanderingFrontier extends Frontier {
-    journey = 0
-    // flatlist endurance before everything doesn't want to open
-    energy = 5
-
-    give_up_fn?:Function
-    async visit(D,T) {
-        // D is not closed, count it as a journey
-        this.journey += 1
-
-        await D.replace({frontierity:1}, async () => {
-            D.i({frontierity:this.journey})
-        })
-        if (!this.energy) return
-        if (this.energy == this.journey) {
-            await this.c.give_up_fn?.(D,T)
-        }
-        if (this.energy <= this.journey) {
-            // from here on
-            await this.i_openity(D,2)
-        }
-        else {
-            await this.i_openity(D,3)
-        }
-    }
-}
 
 function Tdebug(T,title,say,etc) {
     let indent = T.c.path.map(T=>'  ').join('')
@@ -427,35 +390,20 @@ class DirectorySelectivityUtils extends Dierarchy {
             if (T == T.c.top) {
                 // where we aim to start doing it
                 if (!topD.oa({journey:1})) {
-                    // start at the top
+                    // start with a journey that begins immediately
+                    //  it wanders a while then gets tired
                     let j = topD.i({journey:'auto',begins:1})
                     this.i_path(D,j)
                 }
                 T.sc.journeys = topD.o({journey:1})
                 // you might address the top of the %Tree
                 await this.journeys_affect_D(T)
-
-                // first time in, just wander
-                // < GOING in favour of the journey
-                let F = T.sc.frontier = new WanderingFrontier({
-                    give_up_fn: async (D,T) => {
-                        return
-                        await topD.replace({journey:'auto',ends:1}, async () => {
-                            let j = topD.i({journey:'auto',ends:1})
-                            this.i_path(D,j)
-                        })
-                    }
-                })
             }
             else {
                 let journeys = T.sc.journeys
-                // < %journeys already be aimed by T.up at resolved_fn
-
-                T.sc.frontier = T.up.sc.frontier
+                // < %journeys already aimed by T.up at resolved_fn
             }
         }
-        let F = T.sc.frontier as WanderingFrontier
-        await F.visit(D,T)
 
         D.i({frontierity:"IS",time})
 
