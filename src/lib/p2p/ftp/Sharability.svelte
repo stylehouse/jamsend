@@ -20,8 +20,12 @@
         if (!S) throw "What the hell S"
         S.modus = new DirectoryModus({S,F:S.F})
         S.i_action({
-            label:'journey++',
+            label:'j++',
             handler: () => S.modus.further_journey()
+        })
+        S.i_action({
+            label:'j--',
+            handler: () => S.modus.further_journey({go:'backwards'})
         })
         S.i_action({
             label:'Mo++',

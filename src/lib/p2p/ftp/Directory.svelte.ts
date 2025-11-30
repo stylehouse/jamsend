@@ -212,7 +212,7 @@ export class DirectoryModus extends Modus {
     }
     // the events, nudges
     async further_journey(opt) {
-        await this.Se.further_journey(opt)
+        await this.Se.journey_further(opt)
         this.main()
     }
     

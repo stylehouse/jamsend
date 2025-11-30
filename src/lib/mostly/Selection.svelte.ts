@@ -517,26 +517,51 @@ class Dierarchy extends SelectionItself {
         let to = D.o({plodding:j,tour:1})[0]
         if (!to) throw "cancel!to"
         to = to.sc.tour
+        // arrived here but don't like it
         let sameD = to.DN.pop()
         if (D != sameD) throw "stop D!D"
+
         to.ends = D
-        // < later siblings of D
+        // and the global %tour.ends tells later siblings of D, etc
     }
 
     // the events, nudges
-    async further_journey(opt) {
+    async journey_further(opt={}) {
         let D = this.c.T?.sc.D
         if (!D) throw "T event !D"
+
+        opt.go ||= 'forward'
+        let plan = PrevNextoid()
         for (let j of D.o({journey:'auto'})) {
-            // next first one to seek
+
+            // first next bit of D**, not in the current %tour.N
             let g = j.o({gaveup:1})[0]
 
-            await j.replace({path:1}, async () => {
-                g.o({path:1}).map(n => j.i(n.sc))
+            if (opt.go == 'forward') {
+                // /*%path -> /%previous/*%path
+                // and continually /%previous -> /%previous/%previous
+                await plan.next(j,g)
+            }
+            else if (opt.go == 'backwards') {
+                // /*%path <- /%previous/*%path
+                // and continually /%previous <- /%previous/%previous
+                await plan.prev(j,g)
+            }
+            else {
+                // < pick somewhere unexplored at random
+                throw `how go ${opt.go}`
+            }
+
+            // < part of... the global tour?
+            await j.replace({gaveup:1}, async () => {
+
             })
         }
     }
+    // hopping paginations through the tree
+    async journey_backwards(j) {
 
+    }
 
     async i_openity(D,openity:number) {
         await D.replace({openity:1},async () => {
@@ -544,6 +569,78 @@ class Dierarchy extends SelectionItself {
         })
     }
 
+}
+
+function PrevNextoid() {
+    let must = (N) => {
+        if (!N.length) throw "none"
+        return N
+    }
+    return {
+        next: async (j,g) => {
+            if (!g) {
+                // the forward button if no supplied target
+                g = j.o({forwardsly:1})[0]
+                if (!g) {
+                    console.warn(`no more nextness`)
+                    return
+                }
+            }
+            // push j/*%path to j/%previously/*
+            await j.replace({previously:1}, async () => {
+                let pr = j.i({previously:1}).is()
+                must(j.bo({path:1})).map(n => {
+                    pr.i(n.sc)
+                })
+                // push previously away
+                j.bo({previously:1}).map(prpr => {
+                    pr.i(prpr)
+                })
+            })
+
+            await j.replace({forwardsly:1}, async () => {
+                // where we just went already knows of a beyond
+                g.o({forwardsly:1}).map(fofo => {
+                    j.i(fofo)
+                })
+            })
+
+            await j.replace({path:1}, async () => {
+                g.o({path:1}).map(n => j.i(n.sc))
+            })
+        },
+        prev: async (j) => {
+            // pull previously
+            let g
+            await j.replace({previously:1}, async () => {
+                j.bo({previously:1}).map(pr => {
+                    g = pr
+                    pr.o({previously:1}).map(prpr => {
+                        j.i(prpr)
+                    })
+                })
+            })
+            if (!g) {
+                console.warn(`no more previousness`)
+                return
+            }
+
+            await j.replace({forwardsly:1}, async () => {
+                let fo = j.i({forwardsly:1}).is()
+                must(j.bo({path:1})).map(n => {
+                    fo.i(n.sc)
+                })
+                // push forwardsly away
+                j.bo({forwardsly:1}).map(fofo => {
+                    fo.i(fofo)
+                })
+            })
+
+            await j.replace({path:1}, async () => {
+                g.o({path:1}).map(n => j.i(n.sc))
+            })
+        },
+    }
 }
 //#endregion
 //#region DirectorySelectivityUtils
