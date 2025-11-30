@@ -212,7 +212,7 @@ export class DirectoryModus extends Modus {
     further_journey() {
         let D = this.T?.sc.D
         if (!D) throw "T event !D"
-        for (let j of D.o({journey:1})) {
+        for (let j of D.o({journey:'auto'})) {
             console.log("increase: ",j)
         }
     }

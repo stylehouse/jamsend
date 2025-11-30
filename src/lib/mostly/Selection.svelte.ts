@@ -330,7 +330,7 @@ function Tdebug(T,title,say?,etc?) {
     }
     console.log(`${title} ${indent} ${D.sc.name}\t${say||''}`,...[etc].filter(n=>n != null))
 }
-
+// toplevel *%journey -> T%journey[] -> %plodding
 class Dierarchy {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
@@ -350,30 +350,28 @@ class Dierarchy {
     // does the journey flow into here
     async journeys_choose_D(T:Travel,oT:Travel) {
         let D = T.sc.D
-        let seq = oT.c.path.length-1
+        let seq = oT.c.path.length - 1
         let oD = oT.sc.D
         let bit = this.D_to_name(oD)
         
-        await oD.replace({journey:1},async () => {
-            for (let j of (T.sc.journeys||[])) {
-                // if we're currently within the parameters of the tour
-                //  so it should flood into yonders
-                let goes = D.o({plodding:j,tour:1})[0]
-                if (goes && goes.sc.ends) goes = null
+        for (let j of (T.sc.journeys||[])) {
+            // if we're currently within the parameters of the tour
+            //  so it should flood into yonders
+            let goes = D.o({plodding:j,tour:1})[0]
+            if (goes && goes.sc.ends) goes = null
 
-                // < seq=1 matches everything! what do we do about that...
-                //    use an exotic unicode character in the code
-                //     obscured by LieSurgery
-                let pathbit = j.o({path:1,seq}).filter(n=>n.sc.seq == seq)[0]
+            // < seq=1 matches everything! what do we do about that...
+            //    use an exotic unicode character in the code
+            //     obscured by LieSurgery
+            let pathbit = j.o({path:1,seq}).filter(n=>n.sc.seq == seq)[0]
 
-                if (goes || pathbit) {
-                    // Tdebug(T,'journey goesto',`journey: ${keyser(j)} seq:${seq}`,pathbit)
-                    // wants to go here
-                    oT.sc.journeys ||= []
-                    oT.sc.journeys.push(j)
-                }
+            if (goes || pathbit) {
+                // Tdebug(T,'journey goesto',`journey: ${keyser(j)} seq:${seq}`,pathbit)
+                // wants to go here
+                oT.sc.journeys ||= []
+                oT.sc.journeys.push(j)
             }
-        })
+        }
     }
     // T%journeys/$j and D**%plodding go inward
     async journeys_affect_D(T:Travel) {
@@ -407,7 +405,7 @@ class Dierarchy {
                         let to = pl.sc.tour
                         if (to) {
                             if (to.ends) {
-                                // don't do any more %%plodding here
+                                // already ended elsewhere
                                 openness_suggestions.push(2)
                                 return
                             }
@@ -448,7 +446,7 @@ class Dierarchy {
             let most_awake = openness_suggestions.sort().pop()
             if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
             await this.i_openity(D,most_awake)
-            Tdebug(T,"openity","",most_awake)
+            // Tdebug(T,"openity","",most_awake)
         }
     }
     async journey_gives_up(j,T) {
@@ -468,6 +466,9 @@ class Dierarchy {
         let D = T.sc.D
         let to = D.o({plodding:j,tour:1})[0]
         if (!to) throw "cancel!to"
+        to = to.sc.tour
+        let sameD = to.DN.pop()
+        if (D != sameD) throw "stop D!D"
         to.ends = D
         // < later siblings of D
     }
@@ -526,12 +527,12 @@ export class DirectorySelectivityUtils extends Dierarchy {
         if (opes.length != 1) throw "no journey openity?"
         let openity = opes[0] || 2
         if (openity <3) {
-            Tdebug(T,"We Shant")
-            return T.sc.not = 'chilling'
+            // Tdebug(T,"We Shant")
+            return T.sc.not = 'unopenity'
         }
 
         // < sensible timings of:
-        Tdebug(T,"We shall","",D.o({openity:1}))
+        // Tdebug(T,"We shall","",D.o({openity:1}))
         await this.expand_nib(n)
         // this.collapse_nib(n)
     }
