@@ -184,7 +184,7 @@ export class Travel extends TheC {
 // maintain a mirroring of n** -> D**
 //  responding to changes in source n**
 // a Se is TheC, only extends Travel for this .c+ = opt thing, doesn't .dive() itself...
-export class Selection extends Travel {
+class SelectionItself extends Travel {
     constructor(opt={}) {
         // .c += opt
         super(opt)
@@ -331,7 +331,7 @@ function Tdebug(T,title,say?,etc?) {
     console.log(`${title} ${indent} ${D.sc.name}\t${say||''}`,...[etc].filter(n=>n != null))
 }
 // toplevel *%journey -> T%journey[] -> %plodding
-class Dierarchy {
+class Dierarchy extends SelectionItself {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
     D_to_name(D) {
@@ -473,6 +473,20 @@ class Dierarchy {
         // < later siblings of D
     }
 
+    // the events, nudges
+    async further_journey(opt) {
+        let D = this.c.T?.sc.D
+        if (!D) throw "T event !D"
+        for (let j of D.o({journey:'auto'})) {
+            // next first one to seek
+            let g = j.o({gaveup:1})[0]
+
+            await j.replace({path:1}, async () => {
+                g.o({path:1}).map(n => j.i(n.sc))
+            })
+        }
+    }
+
 
     async i_openity(D,openity:number) {
         await D.replace({openity:1},async () => {
@@ -485,14 +499,6 @@ class Dierarchy {
 //#region DirectorySelectivityUtils
 type TheD = TheC
 export class DirectorySelectivityUtils extends Dierarchy {
-    M:Modus
-    constructor (M) {
-        super()
-        this.M = M
-    }
-    get thetime() {
-        return this.M.thetime
-    }
     async resolved_nibs(T:Travel,N:Array<Travel>,goners:Array<TheD>) {
         for (let oT of N) {
             await this.journeys_choose_D(T,oT)
@@ -742,3 +748,7 @@ export class DirectorySelectivityUtils extends Dierarchy {
 
 }
 
+
+export class Selection extends DirectorySelectivityUtils {
+
+}

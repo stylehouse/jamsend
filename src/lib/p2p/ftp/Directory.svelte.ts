@@ -84,7 +84,8 @@ export class DirectoryModus extends Modus {
     //  are there any unawaited promises in my code?
     thetime = 0
     // latest finished topT, works for Selection
-    T?:Travel
+    Tr?:Travel
+    Se:Selection
     async Travel_DLs(n:TheC) {
         console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
@@ -103,7 +104,6 @@ export class DirectoryModus extends Modus {
 
 
         let Se = new Selection()
-        let DS = new DirectorySelectivityUtils(this)
         // for aiming...
         let btw = `
             set interlinkage is going on here
@@ -151,7 +151,7 @@ export class DirectoryModus extends Modus {
                 let bD = T.sc.bD
                 if (n.sc.nib == 'dir') {
                     // valves for more $n/%nib,name**
-                    await DS.possibly_expand_nib(T)
+                    await Se.possibly_expand_nib(T)
                 }
             },
 
@@ -183,7 +183,7 @@ export class DirectoryModus extends Modus {
                 }
             },
             resolved_fn: async (T:Travel,N:Array<Travel>,goners:TheN) => {
-                await DS.resolved_nibs(T,N,goners)
+                await Se.resolved_nibs(T,N,goners)
             },
 
 
@@ -198,23 +198,21 @@ export class DirectoryModus extends Modus {
 
                 if (T.sc.needs_doing) {
                     // no go?
-                    await DS.intelligible_name(T)
+                    await Se.intelligible_name(T)
                 }
             },
         })
 
         
         // then more richocheting around of percolating waves of stuff
-        Se.c.T.reverse(async (T:Travel) => await DS.percolating_ads(T))
-        this.T = Se.c.T
+        Se.c.T.reverse(async (T:Travel) => await Se.percolating_ads(T))
+        this.Tr = Se.c.T
+        this.Se = Se
     }
     // the events, nudges
-    further_journey() {
-        let D = this.T?.sc.D
-        if (!D) throw "T event !D"
-        for (let j of D.o({journey:'auto'})) {
-            console.log("increase: ",j)
-        }
+    async further_journey(opt) {
+        await this.Se.further_journey(opt)
+        this.main()
     }
     
 }
