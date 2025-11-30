@@ -104,6 +104,7 @@ export class DirectoryModus extends Modus {
 
 
         let Se = new Selection()
+        Se.thetime = this.thetime
         // for aiming...
         let btw = `
             set interlinkage is going on here

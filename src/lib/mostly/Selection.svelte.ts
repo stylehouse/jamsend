@@ -348,106 +348,156 @@ class Dierarchy extends SelectionItself {
         }
     }
     // does the journey flow into here
-    async journeys_choose_D(T:Travel,oT:Travel) {
+    // < GOING? of course it does, it needs to think about being there in there.
+    async journeys_choose_D(T:Travel,iT:Travel) {
         let D = T.sc.D
-        let seq = oT.c.path.length - 1
-        let oD = oT.sc.D
-        let bit = this.D_to_name(oD)
+        // the inner
+        let iD = iT.sc.D
+        let bit = this.D_to_name(iD)
         
         for (let j of (T.sc.journeys||[])) {
-            // if we're currently within the parameters of the tour
-            //  so it should flood into yonders
-            let goes = D.o({plodding:j,tour:1})[0]
-            if (goes && goes.sc.ends) goes = null
 
-            // < seq=1 matches everything! what do we do about that...
-            //    use an exotic unicode character in the code
-            //     obscured by LieSurgery
-            let pathbit = j.o({path:1,seq}).filter(n=>n.sc.seq == seq)[0]
 
-            if (goes || pathbit) {
+            if (1) {// || goes || pathbit) {
                 // Tdebug(T,'journey goesto',`journey: ${keyser(j)} seq:${seq}`,pathbit)
                 // wants to go here
-                oT.sc.journeys ||= []
-                oT.sc.journeys.push(j)
+                iT.sc.journeys ||= []
+                iT.sc.journeys.push(j)
             }
+
         }
     }
+    is_D_in_path(T,j):number {
+        let D = T.sc.D
+        let bit = this.D_to_name(D)
+        let seq = T.c.path.length - 1
+        // < seq=1 matches everything! what do we do about that...
+        //    use an exotic unicode character in the code, compile to an Any()?
+        //     obscured by LieSurgery
+        let path = j.o({path:1,seq:1})
+        let here = path[seq]
+        if (!here || here.sc.path != bit) return 0
+        if (path.length == T.c.path.length) return 2
+        return 1
+    }
     // T%journeys/$j and D**%plodding go inward
+    // < better T.c.top o %journey/%tour, less stuff spam...
     async journeys_affect_D(T:Travel) {
         let uD = T.up?.sc.D
         let D = T.sc.D
+
+
+
+
+
+
         // all %plodding copy down, noting if they're opening, ending etc
         let openness_suggestions:Array<number> = []
         let journey_gives_up:Array<TheC> = []
-        for (let j of (T.sc.journeys||[])) {
-            // have moved, using a D** ephemeral
-            // gather plodding information
-            await D.replace({plodding:1},async () => {
+        await D.replace({plodding:1},async () => {
+            for (let j of (T.sc.journeys||[])) {
+                // have moved, using a D** ephemeral
+                // gather plodding information
                 // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
 
                 // o ^/%plodding
-                let pls:TheN = uD?.oa({plodding:j})
+                let pls:TheN = uD?.oa({plodding:j}) || []
 
-                if (!pls) {
-                    if (T != T.c.top) throw "plodding T!top"
+                // D** must start centrally tracking this journey now...
+                //  here are two protocols for that...
+                if (!hak(pls)) {
+                    if (T != T.c.top) return
+                    // throw "plodding T!top"
+
                     // when there is nothing,
                     //  establish a shared energy budget for all D**
                     D.i({plodding:j,enthusiasmus:{journey:0,energy:5}})
-                    // D** starts being inside the journey
-                    D.i({plodding:j,tour:{DN:[D]}})
+                    // and something that thinks about arriving on the path
+                    let to = D.i({plodding:j,tour:{DN:[D]}})
+                    pls.push(to)
                     // < perhaps this should default later?
                     openness_suggestions.push(3)
                 }
-                else {
-                    for (let pl of pls) {
-                        // whole lot of protocols carrying themselves into D**
-                        let to = pl.sc.tour
-                        if (to) {
-                            if (to.ends) {
-                                // already ended elsewhere
-                                openness_suggestions.push(2)
-                                return
-                            }
-                            // tour += D
-                            to.DN.push(D)
-                            // < is this where to check where the journey ends?
+
+
+                for (let pl of pls) {
+                    // whole lot of protocols carrying themselves into D**
+                    let to = pl.sc.tour
+                    if (to) {
+                        // if we're currently within the parameters of the tour
+                        //  so it should flood into yonders
+
+                        // see if we match the in point
+                        let match = this.is_D_in_path(T,j)
+                        // < should be in a replace() but we already have one!
+                        let la = D.i({toured:'here',match})
+                        match == 2 && D.i({toured:'here',MATCHY:"MATCHY"})
+
+                        // flip flop operate
+                        if (to.ends) {
+                            // already ended elsewhere
+                            openness_suggestions.push(2)
+                            return
                         }
-                    }
-                    for (let pl of pls) {
-                        let en = pl.sc.enthusiasmus
-                        if (en) {
-                            // simulates going further
-                            en.journey += 1
-                            
-                            if (en.energy == en.journey) {
-                                // will be first next.
-                                journey_gives_up.push(j)
+                        if (!to.starts) {
+                            if (match == 1) {
+                                // we are going somewhere in here,
+                                //  but the tour group shouldn't start taking everything in yet
+
                             }
-                            if (en.energy <= en.journey) {
-                                // from here on
-                                openness_suggestions.push(2)
+                            else if (match == 2) {
+                                // it finds where it is going!
+                                Tdebug(T,"Starts!")
+                                to.starts = D
                             }
                             else {
-                                openness_suggestions.push(3)
+                                // looking past this elsewhere?
+
+                                Tdebug(T,"looking past this elsewhere?")
+                                // openness_suggestions.push(2)
+                                return
                             }
                         }
-                        // copy into D**
-                        D.i(pl.sc)
+                        openness_suggestions.push(3)
+                        // tour += D
+                        to.DN.push(D)
+                        // < is this where to check where the journey ends?
                     }
                 }
-            })
-
-            for (let j of journey_gives_up) {
-                // in addition to suggesting low-openness
-                await this.journey_gives_up(j,T)
+                for (let pl of pls) {
+                    let en = pl.sc.enthusiasmus
+                    if (en) {
+                        // simulates going further
+                        en.journey += 1
+                        
+                        if (en.energy == en.journey) {
+                            // will be first next.
+                            journey_gives_up.push(j)
+                        }
+                        if (en.energy <= en.journey) {
+                            // from here on
+                            openness_suggestions.push(2)
+                        }
+                        else {
+                            openness_suggestions.push(3)
+                        }
+                    }
+                    // copy into D**
+                    D.i(pl.sc)
+                }
             }
+        })
 
-            let most_awake = openness_suggestions.sort().pop()
-            if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
-            await this.i_openity(D,most_awake)
-            // Tdebug(T,"openity","",most_awake)
+        for (let j of journey_gives_up) {
+            // in addition to suggesting low-openness
+            await this.journey_gives_up(j,T)
         }
+
+        let most_awake = openness_suggestions.sort().pop() || -11
+        if (!most_awake) throw "should be an openity"
+        if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
+        await this.i_openity(D,most_awake)
+        // Tdebug(T,"openity","",most_awake)
     }
     async journey_gives_up(j,T) {
         let topD = T.c.top.sc.D
@@ -530,17 +580,16 @@ export class DirectorySelectivityUtils extends Dierarchy {
         await D.r({frontierity:"IS",time})
 
         let opes = D.o({openity:1},1)
-        if (opes.length != 1) throw "no journey openity?"
-        let openity = opes[0] || 2
+        let openity = opes[0] || 1
         if (openity <3) {
-            // Tdebug(T,"We Shant")
+            Tdebug(T,"We Shant")
+            this.collapse_nib(n)
             return T.sc.not = 'unopenity'
         }
 
         // < sensible timings of:
         // Tdebug(T,"We shall","",D.o({openity:1}))
         await this.expand_nib(n)
-        // this.collapse_nib(n)
     }
 
     async expand_nib(n:TheC) {
