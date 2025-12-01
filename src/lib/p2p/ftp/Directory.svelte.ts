@@ -2,7 +2,7 @@
 import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
-import { Selection, Travel } from '$lib/mostly/Selection.svelte';
+import { Selection, Tour, Travel } from '$lib/mostly/Selection.svelte';
 import { Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
@@ -155,6 +155,11 @@ export class DirectoryModus extends Modus {
                     // valves for more $n/%nib,name**
                     await this.possibly_expand_nib(T)
                 }
+                if (n.sc.nib == 'blob') {
+                    // say this is 5x easier than climbing directories
+                    let to:Tour = T.sc.to
+                    to.nice_boost += 0.8
+                }
             },
 
 
@@ -219,7 +224,7 @@ export class DirectoryModus extends Modus {
 
 
 
-    // for n%nib:dir only
+    // for n%nib:dir only, check %openity left by tour groups
     async possibly_expand_nib(T:Travel) {
         let {D,bD,n} = T.sc
         let time = this.thetime

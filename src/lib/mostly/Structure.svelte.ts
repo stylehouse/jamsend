@@ -1,6 +1,6 @@
 import type { TheC, TheUniversal } from "$lib/data/Stuff.svelte";
-import type { Selection, Travel } from "./Selection.svelte";
-import { hak, Parserify, reverse } from '$lib/Y'
+import type { Travel } from "./Selection.svelte";
+import { hak, Parserify } from '$lib/Y'
 
 export class Structure {
     // guessing, implying structure

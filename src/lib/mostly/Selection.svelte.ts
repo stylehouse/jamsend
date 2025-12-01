@@ -334,12 +334,15 @@ function Tdebug(T,title,say?,etc?) {
 }
 // toplevel T%D/%journey -> T%tour/#$journey 
 type Journey = TheC
-type Tour = TheUniversal & {
-    energy:number,
-    journey:number,
-    N:Array<TheD>,
-    starts?:TheD,
-    ends?:TheD,
+export class Tour {
+    energy:number = 5 // includes what we had to traverse seeking a path
+    distance:number = 0 // shared energy budget for all D**
+    N:Array<TheD> = []
+    match_boost:number = 0 // how much distance was path match, thus free
+    nice_boost:number = 0  // how much distance was nice going, thus free
+
+    starts?:TheD
+    ends?:TheD
 }
 type NotTo = boolean
 class Dierarchy extends SelectionItself {
@@ -371,20 +374,25 @@ class Dierarchy extends SelectionItself {
         if (path.length == T.c.path.length) return 2
         return 1
     }
-    // T** centrally tracking a journey for a Selection.process()
-    journey_to_tour(T:Travel,j:Journey) {
-        let Tr = T.c.top
-        // T** global, per journey, state
-        Tr.sc.tours ||= {}
-        Tr.sc.tours[j.sc.journey] ||= {}
-        let to = Tr.sc.tours[j.sc.journey]
-        return to
-    }
     // and mainly, deliver one bit of %openity advice to your Se.each_fn
     async i_openity(D,openity:number) {
         await D.replace({openity:1},async () => {
             openity && D.i({openity})
         })
+    }
+    // T** centrally tracking a journey for a Selection.process()
+    journey_to_tour(T:Travel,j:Journey,openness_suggestions:Array<number>) {
+        let Tr = T.c.top
+        if (!j.sc.journey) throw "!j.sc.journey"
+        // T** global, per journey, state
+        Tr.sc.tours ||= {}
+        if (!Tr.sc.tours[j.sc.journey]) {
+            Tr.sc.tours[j.sc.journey] = new Tour()
+            // top is always open
+            openness_suggestions.push(3)
+        }
+        let to = Tr.sc.tours[j.sc.journey]
+        return to
     }
 
     // two hooks from Selection.process()
@@ -405,13 +413,16 @@ class Dierarchy extends SelectionItself {
         if (T == T.c.top) {
             // where we aim to start doing it
             if (!D.oa({journey:1})) {
-                // start with a journey that begins immediately
-                //  it wanders a while then gets tired
-                let j = D.i({journey:'auto',begins:1})
-                this.i_path(D,j)
+                this.autovivify_journey(D)
             }
         }
         await this.journeys_affect_D(T)
+    }
+    autovivify_journey(D:TheD) {
+        // start with a journey that begins immediately
+        //  it wanders a while then gets tired
+        let j = D.i({journey:'auto',begins:1})
+        this.i_path(D,j)
     }
 
     // T%journeys/$j and D**%plodding go inward
@@ -429,13 +440,8 @@ class Dierarchy extends SelectionItself {
         await D.replace({tour:1},async () => {
             for (let j of journeys) {
                 // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
-                let to = this.journey_to_tour(T,j)
-                // < parameterise $to from j%* or j/%*
-
-                if (!hak(to)) {
-                    this.tour_initialises(T,to,openness_suggestions)
-                    if (!openness_suggestions.length) debugger
-                }
+                // > parameterise $to from j%* or j/%*
+                let to = T.sc.to = this.journey_to_tour(T,j,openness_suggestions)
 
                 // ...whole lot of protocols carrying themselves into D**
                 // which can elect to stop thinking about this tour here
@@ -459,15 +465,6 @@ class Dierarchy extends SelectionItself {
         if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
         await this.i_openity(D,most_awake)
         // Tdebug(T,"openity","",most_awake)
-    }
-    tour_initialises(T:Travel,to:Tour,openness_suggestions:Array<number>) {
-        if (T != T.c.top) throw "plodding T!top"
-        to.distance = 0 // includes what we had to traverse seeking a path
-        to.match_boost = 0 // how much distance was path match, thus free
-        to.energy = 5 // shared energy budget for all D**
-        to.N = []
-        // top is always open
-        openness_suggestions.push(3)
     }
     tour_seeking(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):NotTo {
         // already ended elsewhere
@@ -507,9 +504,9 @@ class Dierarchy extends SelectionItself {
     async tour_energy(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):Promise<NotTo> {
         // simulates going further
         to.distance += 1
-        let energy = to.energy + to.match_boost
+        let energy = to.energy + to.match_boost + to.nice_boost
         if (energy <= to.distance) {
-            if (energy == to.distance) {
+            if (!to.ends) {
                 // will be first next.
                 await this.tour_stops(D,j,to)
                 D.i({tour:j,exhaustion:1})
