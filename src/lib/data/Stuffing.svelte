@@ -53,6 +53,7 @@
     let stratum = $state()
     let match = null
     let see = null
+    let nameclick = null
     function check_for_strata() {
         let N = []
         // Stuff/%nib/%Strata,match/%Tree:1     # what to find first
@@ -60,6 +61,7 @@
         //           /%Tree                     # as per %Strata,match/*%*
         match = null
         see = null
+        nameclick = null
         stuff.o().map(n => {
             if (!n.oa({Strata:1})) return
             if (match) throw "< multi Strata"
@@ -77,8 +79,12 @@
                     see.push({...m.sc})
                 })
             })
+            n.o({Strata:1,nameclick_fn:1}).map(na => {
+                nameclick = na.sc.nameclick_fn
+            })
             if (match && !see) throw "Strata!see"
             if (see && !match) throw "Strata!match"
+            
 
             if (match) {
                 // find the first %Tree
@@ -96,7 +102,7 @@
     {#if stratum}
         <div class="strata">
             {#key strata_version}
-                <Strata mem={mem.further('Strata')} C={stratum} {match} {see} ></Strata>
+                <Strata mem={mem.further('Strata')} C={stratum} {match} {see} {nameclick} ></Strata>
             {/key}
         </div>
     {/if}

@@ -180,7 +180,7 @@ export class Travel extends TheC {
 //#endregion
 //#region Selection
 
-
+export type TheD = TheC
 // maintain a mirroring of n** -> D**
 //  responding to changes in source n**
 // a Se is TheC, only extends Travel for this .c+ = opt thing, doesn't .dive() itself...
@@ -240,7 +240,7 @@ class SelectionItself extends Travel {
             match_sc: Se.c.match_sc,
             // we have our D from being traced from above
             each_fn: async (n:TheC,T:Travel) => {
-                let D:TheC = T.sc.D
+                let D:TheD = T.sc.D
 
                 await Se.journey_each_fn?.(D,T)
 
@@ -251,7 +251,7 @@ class SelectionItself extends Travel {
             // we trace D for below
             many_fn: async (n:TheC,N:Array<Travel>,T:Travel) => {
                 // build a tree!
-                let D:TheC = T.sc.D = T.sc.D
+                let D:TheD = T.sc.D = T.sc.D
                 if (!D) throw "!top D"
                 if (T.c.top != Tr) throw "top!=Tr"
 
@@ -264,7 +264,7 @@ class SelectionItself extends Travel {
                     }
                 },{
                     // receive pairs of continuous-looking particles
-                    pairs_fn:(a:TheC,b:TheC)=>{
+                    pairs_fn:(a:TheD,b:TheD)=>{
                         if (a && !b) {
                             goners.push(a)
                             console.log("Goner on "+keyser(T.sc.D)+": "+keyser(a))
@@ -311,7 +311,7 @@ class SelectionItself extends Travel {
                 //  has a %Tree basis
                 //   ie D%Tree/D%Tree is itself
                 //   and D%Tree/C%such are hanging off it
-                let D:TheC = T.sc.D
+                let D:TheD = T.sc.D
                 // D**, other than its %Tree basis, updates itself
                 await Se.c.done_fn?.(D,n,T)
             }
@@ -447,12 +447,12 @@ class Dierarchy extends SelectionItself {
                 // which can elect to stop thinking about this tour here
 
                 let notour = this.tour_seeking(T,D,j,to,openness_suggestions)
-                if (notour) return
+                if (notour) continue
                 
                 // < is this where to check where the journey ends?
 
                 notour = await this.tour_energy(T,D,j,to,openness_suggestions)
-                if (notour) return
+                if (notour) continue
 
                 // tour += D
                 to.N.push(D)
@@ -645,7 +645,6 @@ function PrevNextoid() {
 }
 //#endregion
 //#region Structure
-type TheD = TheC
 class Structure extends Dierarchy {
 }
 

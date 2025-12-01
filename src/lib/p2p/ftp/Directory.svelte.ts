@@ -2,7 +2,7 @@
 import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
-import { Selection, Tour, Travel } from '$lib/mostly/Selection.svelte';
+import { Selection, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
@@ -101,6 +101,11 @@ export class DirectoryModus extends Modus {
             n.i({Strata:1,see:1}).is().i({journey:1}) // j, the toplevel list of places to go
             n.i({Strata:1,see:1}).is().i({tour:1}) // =j, for D** within the journey remarking on its state changes
         })
+        await n.replace({Strata:1,nameclick_fn:1}, async () => {
+            n.i({Strata:1,
+                nameclick_fn: async (D:TheC) => await this.nameclick(D),
+            })
+        })
 
 
         let Se = new Selection()
@@ -149,7 +154,7 @@ export class DirectoryModus extends Modus {
 
 
             match_sc: {nib:1,name:1},    // climbing $n%nib,name**
-            each_fn: async (D:TheC,n:TheC,T:Travel) => {
+            each_fn: async (D:TheD,n:TheC,T:Travel) => {
                 let bD = T.sc.bD
                 if (n.sc.nib == 'dir') {
                     // valves for more $n/%nib,name**
@@ -172,12 +177,12 @@ export class DirectoryModus extends Modus {
             //   and hopefully these new sort-of joins will +1 nicely
             //    like you'd work things out on paper
             trace_sc: {Tree:3},          // fabricating D%Tree**
-            trace_fn: async (uD:TheC,n:TheC) => {
+            trace_fn: async (uD:TheD,n:TheC) => {
                 let D = uD.i({Tree:3,name:n.sc.name})
                 return D
             },
             // now for each of those, what can we see...
-            traced_fn: async (D:TheC,bD:TheC,n:TheC,T:Travel) => {
+            traced_fn: async (D:TheD,bD:TheD,n:TheC,T:Travel) => {
                 if (!bD || bD.sc.name != D.sc.name) {
                     if (bD) {
                         console.warn(`process Renamed ${bD.sc.name} -> ${D.sc.name}`)
@@ -196,7 +201,7 @@ export class DirectoryModus extends Modus {
 
             // everything that's going to be|wake inside (D|n)** is there|awake now
             //  so you can write other stuff in places
-            done_fn: async (D:TheC,n:TheC,T:Travel) => {
+            done_fn: async (D:TheD,n:TheC,T:Travel) => {
                 if (n.sc.nib == null) throw "not o %nib"
                 if (n.sc.name == null) throw "not o %name"
                 D.X_before && console.warn("Still transacting "+keyser(D))
@@ -219,6 +224,16 @@ export class DirectoryModus extends Modus {
     // the events, nudges
     async further_journey(opt) {
         await this.Se.journey_further(opt)
+        this.main()
+    }
+    async nameclick(D:TheD) {
+        let Se = this.Se
+        let topD = Se.c.T.sc.D
+        let journey = 'funsies'
+        topD.replace({journey}, async () => {
+            let j = topD.i({journey,clicked:1})
+            Se.i_path(D,j)
+        })
         this.main()
     }
 
