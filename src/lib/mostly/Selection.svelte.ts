@@ -332,6 +332,14 @@ function Tdebug(T,title,say?,etc?) {
 }
 // toplevel T%D/%journey -> T%tour/#$journey 
 type Journey = TheC
+type Tour = TheUniversal & {
+    energy:number,
+    journey:number,
+    N:Array<TheD>,
+    starts?:TheD,
+    ends?:TheD,
+}
+type NotTo = boolean
 class Dierarchy extends SelectionItself {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
@@ -348,26 +356,6 @@ class Dierarchy extends SelectionItself {
             j.i({path:bit,seq: i++})
         }
     }
-    // does the journey flow into here
-    // < GOING? of course it does, it needs to think about being there in there.
-    async journeys_choose_D(T:Travel,iT:Travel) {
-        let D = T.sc.D
-        // the inner
-        let iD = iT.sc.D
-        let bit = this.D_to_name(iD)
-        
-        for (let j of (T.sc.journeys||[])) {
-
-
-            if (1) {// || goes || pathbit) {
-                // Tdebug(T,'journey goesto',`journey: ${keyser(j)} seq:${seq}`,pathbit)
-                // wants to go here
-                iT.sc.journeys ||= []
-                iT.sc.journeys.push(j)
-            }
-
-        }
-    }
     is_D_in_path(T:Travel,j:Journey):number {
         let D = T.sc.D
         let bit = this.D_to_name(D)
@@ -382,6 +370,11 @@ class Dierarchy extends SelectionItself {
         return 1
     }
 
+    // does the journey flow into here
+    async journeys_choose_D(T:Travel,iT:Travel) {
+        // < GOING? of course it does, it needs to think about being there in there.
+        //   there's plenty of time to decide to sleep
+    }
     // T** centrally tracking a journey
     journey_to_tour(T:Travel,j:Journey) {
         let Tr = T.c.top
@@ -391,6 +384,68 @@ class Dierarchy extends SelectionItself {
         let to = Tr.sc.tours[j.sc.journey]
         return to
     }
+    tour_initialises(T:Travel,to:Tour,openness_suggestions:Array<number>) {
+        if (T != T.c.top) throw "plodding T!top"
+        to.journey = 0 // includes what we had to traverse seeking a path
+        to.energy = 5 // shared energy budget for all D**
+        to.N = []
+        // top is always open
+        openness_suggestions.push(3)
+    }
+    tour_seeking(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):NotTo {
+        // already ended elsewhere
+        if (to.ends) {
+            openness_suggestions.push(2)
+            return true
+        }
+        // path seeking
+        // see if we match the in point
+        let match = this.is_D_in_path(T,j)
+        // flip flop operate
+
+        if (!to.starts) {
+            if (match == 1) {
+                // we are going somewhere in here,
+                //  but the tour group shouldn't start taking everything in yet
+                D.i({tour:j,wayto:1})
+            }
+            else if (match == 2) {
+                // it finds where it is going!
+                Tdebug(T,"Starts!")
+                D.i({tour:j,matches:1})
+                to.starts = D
+            }
+            else {
+                // looking past this elsewhere?
+                // < could be an interesting set to capture...
+                //    so too the set of D** this journey wasn't after
+                //     but other journeys were
+                openness_suggestions.push(2)
+                return true
+            }
+        }
+        return false
+    }
+    async tour_energy(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):Promise<NotTo> {
+        // simulates going further
+        to.journey += 1
+        if (to.energy <= to.journey) {
+            if (to.energy == to.journey) {
+                // will be first next.
+                await this.tour_stops(D,j,to)
+                D.i({tour:j,exhaustion:1})
+            }
+            else {
+                D.i({tour:j,exhausted:1})
+            }
+            openness_suggestions.push(2)
+            return true
+        }
+        else {
+            openness_suggestions.push(3)
+            return false
+        }
+    }
     // T%journeys/$j and D**%plodding go inward
     // < better T.c.top o %journey/%tour, less stuff spam...
     async journeys_affect_D(T:Travel) {
@@ -398,9 +453,9 @@ class Dierarchy extends SelectionItself {
         let uD = T.up?.sc.D
         let D = T.sc.D
 
+        let journeys = TD.o({journey:1})
         // openness advice is pumped out into here
         let openness_suggestions:Array<number> = []
-        let journeys = TD.o({journey:1})
         // D** within the journey remark on state changes i %tour,some:how
         //  noting if they're opening, ending etc
         await D.replace({tour:1},async () => {
@@ -410,68 +465,20 @@ class Dierarchy extends SelectionItself {
                 // < parameterise $to from j%* or j/%*
 
                 if (!hak(to)) {
-                    if (T != T.c.top) throw "plodding T!top"
-                    to.journey = 0 // includes what we had to traverse seeking a path
-                    to.energy = 5 // shared energy budget for all D**
-                    to.N = []
-                    // top is always open
-                    openness_suggestions.push(3)
+                    this.tour_initialises(T,to,openness_suggestions)
+                    if (!openness_suggestions.length) debugger
                 }
 
                 // ...whole lot of protocols carrying themselves into D**
+                // which can elect to stop thinking about this tour here
 
-                // already ended elsewhere
-                if (to.ends) {
-                    openness_suggestions.push(2)
-                    return
-                }
-
-                // path seeking
-                // see if we match the in point
-                let match = this.is_D_in_path(T,j)
-                // flip flop operate
-
-                if (!to.starts) {
-                    if (match == 1) {
-                        // we are going somewhere in here,
-                        //  but the tour group shouldn't start taking everything in yet
-                        D.i({tour:j,wayto:1})
-                    }
-                    else if (match == 2) {
-                        // it finds where it is going!
-                        Tdebug(T,"Starts!")
-                        D.i({tour:j,matches:1})
-                        to.starts = D
-                    }
-                    else {
-                        // looking past this elsewhere?
-                        // < could be an interesting set to capture...
-                        //    so too the set of D** this journey wasn't after
-                        //     but other journeys were
-                        openness_suggestions.push(2)
-                        return
-                    }
-                }
+                let notour = this.tour_seeking(T,D,j,to,openness_suggestions)
+                if (notour) return
                 
                 // < is this where to check where the journey ends?
 
-                // simulates going further
-                to.journey += 1
-                if (to.energy <= to.journey) {
-                    if (to.energy == to.journey) {
-                        // will be first next.
-                        await this.tour_stops(D,j,to)
-                        D.i({tour:j,exhaustion:1})
-                    }
-                    else {
-                        D.i({tour:j,exhausted:1})
-                    }
-                    openness_suggestions.push(2)
-                    return
-                }
-                else {
-                    openness_suggestions.push(3)
-                }
+                notour = await this.tour_energy(T,D,j,to,openness_suggestions)
+                if (notour) return
 
                 // tour += D
                 to.N.push(D)
@@ -485,8 +492,8 @@ class Dierarchy extends SelectionItself {
         await this.i_openity(D,most_awake)
         // Tdebug(T,"openity","",most_awake)
     }
-    
-    async tour_stops(D:TheC,j:TheC,to) {
+
+    async tour_stops(D:TheD,j:Journey,to:Tour) {
         await j.replace({gaveup:1}, async () => {
             // ~~ %journey/%path
             let g = j.i({gaveup:1}).is()
@@ -494,7 +501,6 @@ class Dierarchy extends SelectionItself {
         })
         to.ends = D
     }
-
     // the events, nudges
     // hopping paginations through the tree
     async journey_further(opt={}) {
@@ -508,6 +514,8 @@ class Dierarchy extends SelectionItself {
             // first next bit of D**, not in the current %tour.N
             let g = j.o({gaveup:1})[0]
 
+            // < we might start missing things if the %gaveup/%path
+            //    moves before where we %previous/%path
             if (opt.go == 'forward') {
                 // /*%path -> /%previous/*%path
                 // and continually /%previous -> /%previous/%previous
