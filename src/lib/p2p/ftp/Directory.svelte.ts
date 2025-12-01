@@ -2,8 +2,9 @@
 import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
-import { DirectorySelectivityUtils, Selection, Travel } from '$lib/mostly/Selection.svelte';
-import { erring, hak, Parserify, reverse } from '$lib/Y'
+import { Selection, Travel } from '$lib/mostly/Selection.svelte';
+import { Structure } from '$lib/mostly/Structure.svelte';
+import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
@@ -103,7 +104,8 @@ export class DirectoryModus extends Modus {
 
 
         let Se = new Selection()
-        Se.thetime = this.thetime
+        let St = new Structure()
+        St.thetime = Se.thetime = this.thetime
         // for aiming...
         let btw = `
             set interlinkage is going on here
@@ -151,7 +153,7 @@ export class DirectoryModus extends Modus {
                 let bD = T.sc.bD
                 if (n.sc.nib == 'dir') {
                     // valves for more $n/%nib,name**
-                    await Se.possibly_expand_nib(T)
+                    await this.possibly_expand_nib(T)
                 }
             },
 
@@ -183,7 +185,7 @@ export class DirectoryModus extends Modus {
                 }
             },
             resolved_fn: async (T:Travel,N:Array<Travel>,goners:TheN) => {
-                await Se.resolved_nibs(T,N,goners)
+                // nothing...? see also journey_resolved_fn 
             },
 
 
@@ -198,14 +200,14 @@ export class DirectoryModus extends Modus {
 
                 if (T.sc.needs_doing) {
                     // no go?
-                    await Se.intelligible_name(T)
+                    await St.intelligible_name(T)
                 }
             },
         })
 
         
         // then more richocheting around of percolating waves of stuff
-        Se.c.T.reverse(async (T:Travel) => await Se.percolating_ads(T))
+        Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
         this.Tr = Se.c.T
         this.Se = Se
     }
@@ -214,7 +216,54 @@ export class DirectoryModus extends Modus {
         await this.Se.journey_further(opt)
         this.main()
     }
-    
+
+
+
+    // for n%nib:dir only
+    async possibly_expand_nib(T:Travel) {
+        let {D,bD,n} = T.sc
+        let time = this.thetime
+        let topD = T.c.top.sc.D
+
+        
+        await D.r({frontierity:"IS",time})
+
+        // < watch this change like we do with %name?
+        let opes = D.o({openity:1},1)
+        let openity = opes[0] || 1
+        if (openity <3) {
+            // Tdebug(T,"We Shant")
+            this.collapse_nib(n)
+            return T.sc.not = 'unopenity'
+        }
+
+        // < sensible timings of:
+        // Tdebug(T,"We shall","",D.o({openity:1}))
+        await this.expand_nib(n)
+    }
+
+    async expand_nib(n:TheC) {
+        const DL:DirectoryListing = n.sc.DL
+        await DL.expand()
+
+        // i /*%nib:dir,...
+        let uDL = DL
+        await n.replace({nib:1,name:1},async () => {
+            for (const DL of uDL.directories) {
+                let di = n.i({nib:'dir',name:DL.name,DL,thetime:this.thetime})
+            }
+            for (const FL of uDL.files) {
+                n.i({nib:'blob',name:FL.name,FL,thetime:this.thetime})
+            }
+        })
+    }
+    async collapse_nib(n:TheC) {
+        const DL:DirectoryListing = n.sc.DL
+        DL.collapse()
+        // forget $n/**
+        await n.replace({nib:1,name:1},async () => {
+        })
+    }
 }
 
 
