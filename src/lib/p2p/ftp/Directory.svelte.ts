@@ -98,6 +98,9 @@ export class DirectoryModus extends Modus {
             n.i({Strata:1,see:1}).is().i({openity:1})
             n.i({Strata:1,see:1}).is().i({frontierity:1})
             n.i({Strata:1,see:1}).is().i({journey:1}) // j, the toplevel list of places to go
+            n.i({Strata:1,see:1}).is().i({tour:1}) // =j, for D** within the journey remarking on its state changes
+
+
             n.i({Strata:1,see:1}).is().i({plodding:1}) // =j, stuff dribbling down
             n.i({Strata:1,see:1}).is().i({toured:1}) // =j, for D** within the journey
         })

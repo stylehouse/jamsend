@@ -17,7 +17,7 @@
     <Stuffing {mem} stuff={C} matches={see} />
 
 <div>
-    {#each inners as oC}
+    {#each inners as oC (oC.sc.name)}
         <svelte:self {mem} C={oC} {match} {see} />
     {/each}
 </div>

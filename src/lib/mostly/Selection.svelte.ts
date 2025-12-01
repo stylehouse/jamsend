@@ -330,7 +330,8 @@ function Tdebug(T,title,say?,etc?) {
     }
     console.log(`${title} ${indent} ${D.sc.name}\t${say||''}`,...[etc].filter(n=>n != null))
 }
-// toplevel *%journey -> T%journey[] -> %plodding
+// toplevel T%D/%journey -> T%tour/#$journey 
+type Journey = TheC
 class Dierarchy extends SelectionItself {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
@@ -341,7 +342,7 @@ class Dierarchy extends SelectionItself {
         let path = D.c.T.c.path
         return path.map(T => this.D_to_name(T.sc.D))
     }
-    i_path(D,j) {
+    i_path(D,j:Journey) {
         let i = 0
         for (let bit of this.D_to_path(D)) {
             j.i({path:bit,seq: i++})
@@ -367,7 +368,7 @@ class Dierarchy extends SelectionItself {
 
         }
     }
-    is_D_in_path(T,j):number {
+    is_D_in_path(T:Travel,j:Journey):number {
         let D = T.sc.D
         let bit = this.D_to_name(D)
         let seq = T.c.path.length - 1
@@ -380,118 +381,103 @@ class Dierarchy extends SelectionItself {
         if (path.length == T.c.path.length) return 2
         return 1
     }
+
+    // T** centrally tracking a journey
+    journey_to_tour(T:Travel,j:Journey) {
+        let Tr = T.c.top
+        // T** global, per journey, state
+        Tr.sc.tours ||= {}
+        Tr.sc.tours[j.sc.journey] ||= {}
+        let to = Tr.sc.tours[j.sc.journey]
+        return to
+    }
     // T%journeys/$j and D**%plodding go inward
     // < better T.c.top o %journey/%tour, less stuff spam...
     async journeys_affect_D(T:Travel) {
+        let TD = T.c.top.sc.D
         let uD = T.up?.sc.D
         let D = T.sc.D
 
-
-
-
-
-
-        // all %plodding copy down, noting if they're opening, ending etc
+        // openness advice is pumped out into here
         let openness_suggestions:Array<number> = []
-        let journey_gives_up:Array<TheC> = []
-        await D.replace({plodding:1},async () => {
-            for (let j of (T.sc.journeys||[])) {
-                // have moved, using a D** ephemeral
-                // gather plodding information
+        let journeys = TD.o({journey:1})
+        // D** within the journey remark on state changes i %tour,some:how
+        //  noting if they're opening, ending etc
+        await D.replace({tour:1},async () => {
+            for (let j of journeys) {
                 // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
+                let to = this.journey_to_tour(T,j)
+                // < parameterise $to from j%* or j/%*
 
-                // o ^/%plodding
-                let pls:TheN = uD?.oa({plodding:j}) || []
-
-                // D** must start centrally tracking this journey now...
-                //  here are two protocols for that...
-                if (!hak(pls)) {
-                    if (T != T.c.top) return
-                    // throw "plodding T!top"
-
-                    // when there is nothing,
-                    //  establish a shared energy budget for all D**
-                    D.i({plodding:j,enthusiasmus:{journey:0,energy:5}})
-                    // and something that thinks about arriving on the path
-                    let to = D.i({plodding:j,tour:{DN:[D]}})
-                    pls.push(to)
-                    // < perhaps this should default later?
+                if (!hak(to)) {
+                    if (T != T.c.top) throw "plodding T!top"
+                    to.journey = 0 // includes what we had to traverse seeking a path
+                    to.energy = 5 // shared energy budget for all D**
+                    to.N = []
+                    // top is always open
                     openness_suggestions.push(3)
                 }
 
+                // ...whole lot of protocols carrying themselves into D**
 
-                for (let pl of pls) {
-                    // whole lot of protocols carrying themselves into D**
-                    let to = pl.sc.tour
-                    if (to) {
-                        // if we're currently within the parameters of the tour
-                        //  so it should flood into yonders
+                // already ended elsewhere
+                if (to.ends) {
+                    openness_suggestions.push(2)
+                    return
+                }
 
-                        // see if we match the in point
-                        let match = this.is_D_in_path(T,j)
-                        // < should be in a replace() but we already have one!
-                        let la = D.i({toured:'here',match})
-                        match == 2 && D.i({toured:'here',MATCHY:"MATCHY"})
+                // path seeking
+                // see if we match the in point
+                let match = this.is_D_in_path(T,j)
+                // flip flop operate
 
-                        // flip flop operate
-                        if (to.ends) {
-                            // already ended elsewhere
-                            openness_suggestions.push(2)
-                            return
-                        }
-                        if (!to.starts) {
-                            if (match == 1) {
-                                // we are going somewhere in here,
-                                //  but the tour group shouldn't start taking everything in yet
-
-                            }
-                            else if (match == 2) {
-                                // it finds where it is going!
-                                Tdebug(T,"Starts!")
-                                to.starts = D
-                            }
-                            else {
-                                // looking past this elsewhere?
-
-                                Tdebug(T,"looking past this elsewhere?")
-                                // openness_suggestions.push(2)
-                                return
-                            }
-                        }
-                        openness_suggestions.push(3)
-                        // tour += D
-                        to.DN.push(D)
-                        // < is this where to check where the journey ends?
+                if (!to.starts) {
+                    if (match == 1) {
+                        // we are going somewhere in here,
+                        //  but the tour group shouldn't start taking everything in yet
+                        D.i({tour:j,wayto:1})
+                    }
+                    else if (match == 2) {
+                        // it finds where it is going!
+                        Tdebug(T,"Starts!")
+                        D.i({tour:j,matches:1})
+                        to.starts = D
+                    }
+                    else {
+                        // looking past this elsewhere?
+                        // < could be an interesting set to capture...
+                        //    so too the set of D** this journey wasn't after
+                        //     but other journeys were
+                        openness_suggestions.push(2)
+                        return
                     }
                 }
-                for (let pl of pls) {
-                    let en = pl.sc.enthusiasmus
-                    if (en) {
-                        // simulates going further
-                        en.journey += 1
-                        
-                        if (en.energy == en.journey) {
-                            // will be first next.
-                            journey_gives_up.push(j)
-                        }
-                        if (en.energy <= en.journey) {
-                            // from here on
-                            openness_suggestions.push(2)
-                        }
-                        else {
-                            openness_suggestions.push(3)
-                        }
+                
+                // < is this where to check where the journey ends?
+
+                // simulates going further
+                to.journey += 1
+                if (to.energy <= to.journey) {
+                    if (to.energy == to.journey) {
+                        // will be first next.
+                        await this.tour_stops(D,j,to)
+                        D.i({tour:j,exhaustion:1})
                     }
-                    // copy into D**
-                    D.i(pl.sc)
+                    else {
+                        D.i({tour:j,exhausted:1})
+                    }
+                    openness_suggestions.push(2)
+                    return
                 }
+                else {
+                    openness_suggestions.push(3)
+                }
+
+                // tour += D
+                to.N.push(D)
+                openness_suggestions.push(3)
             }
         })
-
-        for (let j of journey_gives_up) {
-            // in addition to suggesting low-openness
-            await this.journey_gives_up(j,T)
-        }
 
         let most_awake = openness_suggestions.sort().pop() || -11
         if (!most_awake) throw "should be an openity"
@@ -499,33 +485,18 @@ class Dierarchy extends SelectionItself {
         await this.i_openity(D,most_awake)
         // Tdebug(T,"openity","",most_awake)
     }
-    async journey_gives_up(j,T) {
-        let topD = T.c.top.sc.D
-        let D = T.sc.D
-        // note in %journey/%gaveup where it ends,
-        //  ~~ %journey/%ends at a non-meaningful point
-        //  which could become the next %journey,begins
-        await this.stop_the_tour(j,T)
+    
+    async tour_stops(D:TheC,j:TheC,to) {
         await j.replace({gaveup:1}, async () => {
             // ~~ %journey/%path
             let g = j.i({gaveup:1}).is()
             this.i_path(D,g)
         })
-    }
-    async stop_the_tour(j,T) {
-        let D = T.sc.D
-        let to = D.o({plodding:j,tour:1})[0]
-        if (!to) throw "cancel!to"
-        to = to.sc.tour
-        // arrived here but don't like it
-        let sameD = to.DN.pop()
-        if (D != sameD) throw "stop D!D"
-
         to.ends = D
-        // and the global %tour.ends tells later siblings of D, etc
     }
 
     // the events, nudges
+    // hopping paginations through the tree
     async journey_further(opt={}) {
         let D = this.c.T?.sc.D
         if (!D) throw "T event !D"
@@ -557,10 +528,6 @@ class Dierarchy extends SelectionItself {
 
             })
         }
-    }
-    // hopping paginations through the tree
-    async journey_backwards(j) {
-
     }
 
     async i_openity(D,openity:number) {
@@ -679,7 +646,7 @@ export class DirectorySelectivityUtils extends Dierarchy {
         let opes = D.o({openity:1},1)
         let openity = opes[0] || 1
         if (openity <3) {
-            Tdebug(T,"We Shant")
+            // Tdebug(T,"We Shant")
             this.collapse_nib(n)
             return T.sc.not = 'unopenity'
         }

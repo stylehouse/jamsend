@@ -1,13 +1,14 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
 
-    interface ScrollabilityProps {
+    let { content,
+          maxHeight = "100vh",
+          class: className = ""
+        }:{
         content: Snippet<[]>;
         maxHeight?: string;
         class?: string;
-    }
-
-    let { content, maxHeight = "100vh", class: className = "" }: ScrollabilityProps = $props();
+    } = $props();
 
     let scrollElement: HTMLDivElement;
     let needsScroll = $state(false);
