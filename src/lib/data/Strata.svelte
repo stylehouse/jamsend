@@ -2,11 +2,12 @@
     import { _C, keyser, Modusmem, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
 
-    let {mem,C,match,see,nameclick}:{
+    let {mem,C,match,see,hide,nameclick}:{
         mem:Modusmem,
         C:TheC,
         match:TheUniversal,
         see:Array<TheUniversal>,
+        hide:Array<TheUniversal>,
         nameclick:Function,
     } = $props()
 
@@ -18,12 +19,12 @@
         <span onclick={() => nameclick(C)}  >{C.sc.name}</span>
     <!-- </button> -->
     <squidge>
-        <Stuffing {mem} stuff={C} matches={see} />
+        <Stuffing {mem} stuff={C} {see} {hide} />
     </squidge>
 
 <div>
     {#each inners as oC (oC.sc.name)}
-        <svelte:self {mem} C={oC} {match} {see} {nameclick} />
+        <svelte:self {mem} C={oC} {match} {see} {hide} {nameclick} />
     {/each}
 </div>
 

@@ -3,7 +3,8 @@ import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { KVStore } from "./IDB.svelte";
 import type { ThingIsms } from "./Things.svelte";
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { isar, map } from "$lib/Y";
+import { isar, map, throttle } from "$lib/Y";
+import { untrack } from "svelte";
 
 let spec = `
 
@@ -262,14 +263,14 @@ class StuffIO {
         }
 
         let amongst:TheN;
-        query_params.forEach(([t, v]) => {
+        query_params.forEach(([k, v]) => {
             // might have indexing, only for the first one
             if (!amongst) {
-                let x = q.X.o_kv(t,v);
+                let x = q.X.o_kv(k,v);
                 // start resulting with items here in x.z
                 //  x.z = the /$n at the end of whatever expression
                 (x && x.z || []).forEach(n => {
-                    if (this.n_matches_kv(n,t,v)) {
+                    if (this.n_matches_kv(n,k,v)) {
                         // includes result
                         if (!M.includes(n)) M.push(n)
                     }
@@ -278,7 +279,7 @@ class StuffIO {
             else {
                 // filter results we are already joined to
                 amongst.forEach(n => {
-                    if (!this.n_matches_kv(n,t,v)) {
+                    if (!this.n_matches_kv(n,k,v)) {
                         // disincludes results
                         M = M.filter(out => out != n)
                     }
@@ -316,6 +317,16 @@ class StuffIO {
         }
         
         return M
+    }
+    matches(sc:TheUniversal) {
+        let n:TheC = this
+        let query_params = Object.entries(sc || {})
+        for (let [k, v] of query_params) {
+            if (!this.n_matches_kv(n,k,v)) {
+                return false
+            }
+        }
+        return true
     }
     private n_matches_star(n:TheC) {
         if (n.c.drop) return false
@@ -637,10 +648,11 @@ export class Stuffing {
     Stuff:Stuff
     groups = new SvelteMap()
     started = $state(false)
-    matches:Array<TheUniversal>
-    constructor(Stuff:Stuff,matches:Array<TheUniversal>) {
+    matches?:Array<TheUniversal>
+    unmatches?:Array<TheUniversal>
+    constructor(Stuff:Stuff,opt) {
         this.Stuff = Stuff
-        this.matches = matches
+        Object.assign(this,opt)
         //  svelte docs: You can use $effect anywhere,
         //   not just at the top level of a component, 
         //   as long as it is called while a parent effect is running.

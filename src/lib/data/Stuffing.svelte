@@ -1,13 +1,15 @@
 <script lang="ts">
     import Strata from '$lib/data/Strata.svelte';
     import Modus from '$lib/mostly/Modus.svelte';
+    import { hak } from '$lib/Y';
     import { Modusmem, Stuff,Stuffing, type TheUniversal } from './Stuff.svelte';
     import Stuffusion from './Stuffusion.svelte'
 
-    let { mem,stuff,matches,M }:{ 
+    let { mem,stuff,see,hide,M }:{ 
         mem:Modusmem, 
         stuff:Stuff,
-        matches:Array<TheUniversal>,
+        see?:Array<TheUniversal>,
+        hide?:Array<TheUniversal>,
         M?:Modus
         } = $props()
     mem = mem.further("Stuffing")
@@ -24,7 +26,10 @@
         //  if in transaction that went async
         //   after starting to change stuff
         if (stuff.version) {
-            new_stuffing = new Stuffing(stuff,matches)
+            new_stuffing = new Stuffing(stuff,{
+                matches: see,
+                unmatches: hide,
+            })
             spinner = true
             // console.log(`Stuffing new...`)
         }
