@@ -454,7 +454,8 @@ class Dierarchy extends SelectionItself {
     }
     tour_initialises(T:Travel,to:Tour,openness_suggestions:Array<number>) {
         if (T != T.c.top) throw "plodding T!top"
-        to.journey = 0 // includes what we had to traverse seeking a path
+        to.distance = 0 // includes what we had to traverse seeking a path
+        to.match_boost = 0 // how much distance was path match, thus free
         to.energy = 5 // shared energy budget for all D**
         to.N = []
         // top is always open
@@ -476,6 +477,7 @@ class Dierarchy extends SelectionItself {
                 // we are going somewhere in here,
                 //  but the tour group shouldn't start taking everything in yet
                 D.i({tour:j,wayto:1})
+                to.match_boost += 1
             }
             else if (match == 2) {
                 // it finds where it is going!
@@ -496,9 +498,10 @@ class Dierarchy extends SelectionItself {
     }
     async tour_energy(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):Promise<NotTo> {
         // simulates going further
-        to.journey += 1
-        if (to.energy <= to.journey) {
-            if (to.energy == to.journey) {
+        to.distance += 1
+        let energy = to.energy + to.match_boost
+        if (energy <= to.distance) {
+            if (energy == to.distance) {
                 // will be first next.
                 await this.tour_stops(D,j,to)
                 D.i({tour:j,exhaustion:1})
