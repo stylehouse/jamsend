@@ -211,7 +211,7 @@ class SelectionItself extends Travel {
 
     // a layer above Travel.dive()
     async process(d:Partial<Selection>) {
-        const Se = this
+        const Se:Selection = this
         Object.assign(Se.c,d)
         const n = Se.c.n
         // go through n**
@@ -238,6 +238,8 @@ class SelectionItself extends Travel {
             // we have our D from being traced from above
             each_fn: async (n:TheC,T:Travel) => {
                 let D:TheC = T.sc.D
+
+                await Se.journey_each_fn(D,T)
 
                 // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
                 // n/* can be created here, as we go
@@ -369,13 +371,7 @@ class Dierarchy extends SelectionItself {
         if (path.length == T.c.path.length) return 2
         return 1
     }
-
-    // does the journey flow into here
-    async journeys_choose_D(T:Travel,iT:Travel) {
-        // < GOING? of course it does, it needs to think about being there in there.
-        //   there's plenty of time to decide to sleep
-    }
-    // T** centrally tracking a journey
+    // T** centrally tracking a journey for a Selection.process()
     journey_to_tour(T:Travel,j:Journey) {
         let Tr = T.c.top
         // T** global, per journey, state
@@ -383,6 +379,78 @@ class Dierarchy extends SelectionItself {
         Tr.sc.tours[j.sc.journey] ||= {}
         let to = Tr.sc.tours[j.sc.journey]
         return to
+    }
+    // and mainly, deliver one bit of %openity advice to your Se.each_fn
+    async i_openity(D,openity:number) {
+        await D.replace({openity:1},async () => {
+            openity && D.i({openity})
+        })
+    }
+
+    // two hooks from Selection.process()
+    // does the journey flow into here
+    async journeys_choose_D(T:Travel,iT:Travel) {
+        // < GOING? of course it does, it needs to think about being there in there.
+        //   there's plenty of time to decide to sleep
+    }
+    async journey_each_fn(D:TheD,T:Travel) {
+        if (T == T.c.top) {
+            // where we aim to start doing it
+            if (!D.oa({journey:1})) {
+                // start with a journey that begins immediately
+                //  it wanders a while then gets tired
+                let j = D.i({journey:'auto',begins:1})
+                this.i_path(D,j)
+            }
+        }
+        await this.journeys_affect_D(T)
+    }
+
+    // T%journeys/$j and D**%plodding go inward
+    // < better T.c.top o %journey/%tour, less stuff spam...
+    async journeys_affect_D(T:Travel) {
+        let TD = T.c.top.sc.D
+        let uD = T.up?.sc.D
+        let D = T.sc.D
+
+        let journeys = TD.o({journey:1})
+        // openness advice is pumped out into here
+        let openness_suggestions:Array<number> = []
+        // D** within the journey remark on state changes i %tour,some:how
+        //  noting if they're opening, ending etc
+        await D.replace({tour:1},async () => {
+            for (let j of journeys) {
+                // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
+                let to = this.journey_to_tour(T,j)
+                // < parameterise $to from j%* or j/%*
+
+                if (!hak(to)) {
+                    this.tour_initialises(T,to,openness_suggestions)
+                    if (!openness_suggestions.length) debugger
+                }
+
+                // ...whole lot of protocols carrying themselves into D**
+                // which can elect to stop thinking about this tour here
+
+                let notour = this.tour_seeking(T,D,j,to,openness_suggestions)
+                if (notour) return
+                
+                // < is this where to check where the journey ends?
+
+                notour = await this.tour_energy(T,D,j,to,openness_suggestions)
+                if (notour) return
+
+                // tour += D
+                to.N.push(D)
+                openness_suggestions.push(3)
+            }
+        })
+
+        let most_awake = openness_suggestions.sort().pop() || -11
+        if (!most_awake) throw "should be an openity"
+        if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
+        await this.i_openity(D,most_awake)
+        // Tdebug(T,"openity","",most_awake)
     }
     tour_initialises(T:Travel,to:Tour,openness_suggestions:Array<number>) {
         if (T != T.c.top) throw "plodding T!top"
@@ -446,52 +514,6 @@ class Dierarchy extends SelectionItself {
             return false
         }
     }
-    // T%journeys/$j and D**%plodding go inward
-    // < better T.c.top o %journey/%tour, less stuff spam...
-    async journeys_affect_D(T:Travel) {
-        let TD = T.c.top.sc.D
-        let uD = T.up?.sc.D
-        let D = T.sc.D
-
-        let journeys = TD.o({journey:1})
-        // openness advice is pumped out into here
-        let openness_suggestions:Array<number> = []
-        // D** within the journey remark on state changes i %tour,some:how
-        //  noting if they're opening, ending etc
-        await D.replace({tour:1},async () => {
-            for (let j of journeys) {
-                // Tdebug(T,'journey affect',`journey: ${keyser(j)}`)
-                let to = this.journey_to_tour(T,j)
-                // < parameterise $to from j%* or j/%*
-
-                if (!hak(to)) {
-                    this.tour_initialises(T,to,openness_suggestions)
-                    if (!openness_suggestions.length) debugger
-                }
-
-                // ...whole lot of protocols carrying themselves into D**
-                // which can elect to stop thinking about this tour here
-
-                let notour = this.tour_seeking(T,D,j,to,openness_suggestions)
-                if (notour) return
-                
-                // < is this where to check where the journey ends?
-
-                notour = await this.tour_energy(T,D,j,to,openness_suggestions)
-                if (notour) return
-
-                // tour += D
-                to.N.push(D)
-                openness_suggestions.push(3)
-            }
-        })
-
-        let most_awake = openness_suggestions.sort().pop() || -11
-        if (!most_awake) throw "should be an openity"
-        if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
-        await this.i_openity(D,most_awake)
-        // Tdebug(T,"openity","",most_awake)
-    }
 
     async tour_stops(D:TheD,j:Journey,to:Tour) {
         await j.replace({gaveup:1}, async () => {
@@ -501,6 +523,7 @@ class Dierarchy extends SelectionItself {
         })
         to.ends = D
     }
+
     // the events, nudges
     // hopping paginations through the tree
     async journey_further(opt={}) {
@@ -538,11 +561,6 @@ class Dierarchy extends SelectionItself {
         }
     }
 
-    async i_openity(D,openity:number) {
-        await D.replace({openity:1},async () => {
-            openity && D.i({openity})
-        })
-    }
 
 }
 
@@ -636,21 +654,10 @@ export class DirectorySelectivityUtils extends Dierarchy {
         let time = this.thetime
         let topD = T.c.top.sc.D
 
-        if (T == T.c.top) {
-            // where we aim to start doing it
-            if (!topD.oa({journey:1})) {
-                // start with a journey that begins immediately
-                //  it wanders a while then gets tired
-                let j = topD.i({journey:'auto',begins:1})
-                this.i_path(D,j)
-            }
-            // these instruct moves around extents
-            T.sc.journeys = topD.o({journey:1})
-        }
-        await this.journeys_affect_D(T)
-
+        
         await D.r({frontierity:"IS",time})
 
+        // < watch this change like we do with %name?
         let opes = D.o({openity:1},1)
         let openity = opes[0] || 1
         if (openity <3) {
