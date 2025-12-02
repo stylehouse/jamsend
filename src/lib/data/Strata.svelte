@@ -14,13 +14,13 @@
     let Se = $derived(strata.Se)
     let iterable = Se.c.T.sc.N
 </script>
-<!-- {#key strata.thetime} -->
-    Strata@{strata.thetime}
-    <div>
-        {#each strata.list as T (Se.D_to_uri(T.sc.D))}
-            <Stratum {M} {strata} {mem} {T}  />
-        {/each}
-    </div>
+
+Strata@{strata.thetime}
+<div>
+    {#each strata.by_order as namedT (namedT.name)}
+        <Stratum {M} {strata} {mem} {namedT} />
+    {/each}
+</div>
 
 <style>
     div {

@@ -3,6 +3,18 @@ import type { Selection, Travel } from "./Selection.svelte";
 import { hak, hashkv, Parserify } from '$lib/Y'
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
+// Stable wrapper that Svelte can key on and derive D from
+export class NamedT {
+    name: string
+    T = $state<Travel>()
+    constructor(name: string, T: Travel) {
+        this.name = name
+        this.T = T
+    }
+    update(T: Travel) {
+        this.T = T
+    }
+}
 // UI:Strata eats one of these to connect it to a Selection
 export abstract class Matchy {
     see?:Array<TheUniversal>
@@ -10,9 +22,10 @@ export abstract class Matchy {
 }
 export class Strata extends Matchy {
     Se?:Selection = $state()
-    names = $state(new SvelteMap())
 
-    list = $state(new SvelteSet())
+    by_name = new Map<string, NamedT>()
+    by_order = $state(new SvelteSet<NamedT>())
+
     thetime = $state(-1)
     nameclick_fn?:Function
     constructor (opt={}) {
@@ -22,16 +35,27 @@ export class Strata extends Matchy {
     update(opt={}) {
         Object.assign(this,opt)
         let Se = this.Se
-        this.list.clear()
+        
+        // Clear ordering (keeps NamedT objects alive)
+        this.by_order.clear()
+        
+        // Single flat loop through Se.c.T.sc.N
         for (let T of Se.c.T.sc.N) {
-            let key = Se.D_to_uri(T.sc.D)
-            this.names.set(key,T)
-
-            this.list.add(T)
+            let name = Se.D_to_uri(T.sc.D)
+            
+            // Get or create stable NamedT
+            let namedT = this.by_name.get(name)
+            if (!namedT) {
+                namedT = new NamedT(name, T)
+                this.by_name.set(name, namedT)
+            } else {
+                // Update existing with new T
+                namedT.update(T)
+            }
+            
+            // Add to ordered set (maintains Se.c.T.sc.N order)
+            this.by_order.add(namedT)
         }
-
-
-
     }
 }
 

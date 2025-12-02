@@ -1,35 +1,39 @@
 <script lang="ts">
-    import { _C, keyser, Modus, Modusmem, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
+    import { Modus, Modusmem } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
-    import type { Selection, TheD, Travel } from "$lib/mostly/Selection.svelte";
+    import type { NamedT, Selection, TheD, Travel } from "$lib/mostly/Selection.svelte";
     import type { Strata } from "$lib/mostly/Structure.svelte";
 
-    let {M,strata,mem,T}:{
-        M?:Modus,
-        strata:Strata,
-        mem:Modusmem,
-        T?:Travel,
+    let {M, strata, mem, namedT}: {
+        M?: Modus,
+        strata: Strata,
+        mem: Modusmem,
+        namedT: NamedT,
     } = $props()
     
-    let Se:Selection = strata.Se
+    let Se: Selection = strata.Se
+    // < make this a <button>
     let nameclick = strata.nameclick_fn || (() => {})
-    let D:TheD = T.sc.D
-    let indent = T.c.path.length-1
+    
+    // Derive from stable namedT
+    let T = $derived(namedT.T)
+    let D = $derived(T.sc.D)
+    let indent = $derived(T.c.path.length - 1)
+    let className = $derived(T.sc.not ? "not" : "")
 </script>
 
+<div style="margin-left: {indent}em" class={className}>
+    <span onclick={() => nameclick(D)}>{D.sc.name}</span>
+    <span>@{T.sc.thetime}</span>
+    <squidge>
+        <Stuffing {mem} stuff={D} matchy={strata} />
+    </squidge>
+</div>
 
-    <div style="margin-left: {indent}em">
-        <!-- <button > -->
-            <span onclick={() => nameclick(D)}  >{D.sc.name}</span>
-            <span>@{T.sc.thetime}</span>
-        <!-- </button> -->
-        <squidge>
-            {#key strata.thetime}
-                <Stuffing {mem} stuff={D} matchy={strata} />
-            {/key}
-        </squidge>
-    </div>
 <style>
+    .not {
+        opacity:0.5;
+    }
     button {
         display: inline-block;
         background: none;
