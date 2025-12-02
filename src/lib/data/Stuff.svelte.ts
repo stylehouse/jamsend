@@ -964,7 +964,39 @@ export class Modusmem {
         this.M.stashed.version ++
     }
 }
-abstract class TimeGallopia {
+// a culture of io
+// trivial n/%stuctures and their games
+abstract class TimeOffice {
+    // < these could be next to TheC.ago() ?
+    async i_wasLast(n:TheC,label:string,now=false) {
+        if (now) {
+            // set it
+            await n.replace({wasLast:label,at:1},async () => {
+                n.i({wasLast:label,at:now_in_seconds()})
+            })
+            return 0
+        }
+        else {
+            // measure ago
+            return n?.o({wasLast:label})[0]?.ago('at') || 0
+        }
+
+    }
+    async i_chaFrom(n:TheC,v:any,q:TheEmpirical) {
+        let ch = n.o({chaFrom:1})[0]
+        let was = ch?.sc.v
+        if (!ch || v != was) {
+            // it changed! or established
+            let previous_time = ch?.o({chaFrom:1})[0]?.ago('at')
+            await n.replace({chaFrom:1},async () => {
+                ch = n.i({chaFrom:1,was,v,at:now_in_seconds()})
+            })
+            await q?.v_pairs_fn?.(was,v,previous_time)
+        }
+    }
+
+}
+abstract class TimeGallopia extends TimeOffice{
     // M.stashed is persistent
     stashed:StashedModus = $state()
     stashed_mem:KVStore

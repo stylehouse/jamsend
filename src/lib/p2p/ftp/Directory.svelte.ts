@@ -1,6 +1,6 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
+import { _C, keyser, Modus, Stuff, TheC, type TheEmpirical, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
@@ -123,7 +123,9 @@ export class DirectoryModus extends Modus {
         
         this.a_Strata ||= new Strata({
             see: [],
-            hide: [{readin:1},{ads:1},{Tree:1}],
+            hide: [{readin:1},
+                {ads:1},
+                {Tree:1}],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
         this.a_Strata.update({Se,thetime:this.thetime})
@@ -141,28 +143,6 @@ export class DirectoryModus extends Modus {
         console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
         n.coms.i({twas_thetime:this.thetime})
-
-        // < GOING advertise %Tree for UI:Strata
-        // await n.replace({Strata:1,match:1}, async () => {
-        //     n.i({Strata:1,match:1}).is().i({Tree:1})
-        // })
-        // await n.replace({Strata:1,hide:1}, async () => {
-        //     n.i({Strata:1,hide:1}).is().i({ads:1})
-        //     n.i({Strata:1,hide:1}).is().i({Tree:1})
-        //     // n.i({Strata:1,hide:1}).is().i({Tree:1})
-        // })
-        // await n.replace({Strata:1,see:1}, async () => {
-        //     n.i({Strata:1,see:1}).is().i({openity:1})
-        //     n.i({Strata:1,see:1}).is().i({frontierity:1})
-        //     n.i({Strata:1,hide:1}).is().i({Tree:1})
-        //     n.i({Strata:1,see:1}).is().i({journey:1}) // j, the toplevel list of places to go
-        //     n.i({Strata:1,see:1}).is().i({tour:1}) // =j, for D** within the journey remarking on its state changes
-        // })
-        // await n.replace({Strata:1,nameclick_fn:1}, async () => {
-        //     n.i({Strata:1,
-        //         nameclick_fn: async (D:TheC) => await this.nameclick(D),
-        //     })
-        // })
 
 
         let Se = new Selection()
@@ -303,26 +283,49 @@ export class DirectoryModus extends Modus {
         let time = this.thetime
         let topD = T.c.top.sc.D
 
-        
-        await D.r({frontierity:"IS",time})
 
         // < watch this change like we do with %name?
-        let opes = D.o({openity:1},1)
-        let openity = opes[0] || 1
+        let op = D.o({openity:1})[0]
+        if (!op) throw "!%openity"
+        let openity = op.sc.openity || 1
+
+        // respond to %openity changing
+        await this.i_chaFrom(op,openity,{
+            v_pairs_fn: async (a,b,previous_time) => {
+                a ||= 0 // undefined isn't but null is <3
+                if (!b) throw "boo"
+                if (a <3 && b >= 3) {
+                    // on attaining %openity=3
+                    await this.expand_nib(T)
+                }
+                // < should be when we go <2
+                //  < or after a time of being <3
+                if (b <3 && a >= 3) {
+                    this.collapse_nib(T)
+                }
+            },
+        })
+
         if (openity <3) {
             // Tdebug(T,"We Shant")
-            this.collapse_nib(n)
             return T.sc.not = 'unopenity'
         }
 
-        // < sensible timings of:
-        // Tdebug(T,"We shall","",D.o({openity:1}))
-        await this.expand_nib(n)
+        let ago = await this.i_wasLast(D,'expanded')
+        if (ago > 16) {
+            // spontaneous refresh every 16s
+            await this.expand_nib(T)
+        }
     }
 
-    async expand_nib(n:TheC) {
+
+    async expand_nib(T:Travel) {
+        let {D,bD,n} = T.sc
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
+
+        // do think-chatter in D/*
+        await this.i_wasLast(D,'expanded',true)
 
         // i /*%nib:dir,...
         let uDL = DL
@@ -335,7 +338,8 @@ export class DirectoryModus extends Modus {
             }
         })
     }
-    async collapse_nib(n:TheC) {
+    async collapse_nib(T:Travel) {
+        let {D,bD,n} = T.sc
         const DL:DirectoryListing = n.sc.DL
         DL.collapse()
         // forget $n/**
