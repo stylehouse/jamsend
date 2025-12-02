@@ -355,6 +355,12 @@ class Dierarchy extends SelectionItself {
         let path = D.c.T.c.path
         return path.map(T => this.D_to_name(T.sc.D))
     }
+    // uniquely identify all D**, no rename continuity
+    D_to_uri(D) {
+        let path = this.D_to_path(D)
+        // < make / illegal in names. our DirectoryShare root %nib is name=/
+        return path.join("/")
+    }
     i_path(D,j:Journey) {
         let i = 0
         for (let bit of this.D_to_path(D)) {

@@ -2,6 +2,22 @@ import type { TheC, TheUniversal } from "$lib/data/Stuff.svelte";
 import type { Travel } from "./Selection.svelte";
 import { hak, Parserify } from '$lib/Y'
 
+// UI:Strata eats one of these to connect it to a Selection
+export abstract class Matchy {
+    see?:Array<TheUniversal>
+    hide?:Array<TheUniversal>
+}
+export class Strata extends Matchy {
+    Se?:Selection
+    nameclick_fn?:Function
+    constructor (opt) {
+        super()
+        Object.assign(this,opt)
+        console.log(this)
+    }
+}
+
+
 export class Structure {
     // guessing, implying structure
     // upwards, propagate D**%readin=$aspect about the tracks

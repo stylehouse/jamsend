@@ -1,33 +1,37 @@
 <script lang="ts">
-    import { _C, keyser, Modusmem, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
+    import { _C, keyser, Modus, Modusmem, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
+    import type { Selection } from "$lib/mostly/Selection.svelte";
+    import type { Strata } from "$lib/mostly/Structure.svelte";
 
-    let {mem,C,match,see,hide,nameclick}:{
+    let {M,strata,mem,C}:{
+        M?:Modus,
+        strata:Strata,
         mem:Modusmem,
-        C:TheC,
-        match:TheUniversal,
-        see:Array<TheUniversal>,
-        hide:Array<TheUniversal>,
-        nameclick:Function,
+        C?:TheC,
     } = $props()
-
+    
+    let Se:Selection = strata.Se
     // the interesting stuff to see
-    let inners = C.o(match)
+    let inners = $derived(
+        Se.c.T.sc.N.map(T => T.sc.D)
+    )
     
 </script>
+{#if C}
     <!-- <button > -->
         <span onclick={() => nameclick(C)}  >{C.sc.name}</span>
     <!-- </button> -->
     <squidge>
-        <Stuffing {mem} stuff={C} {see} {hide} />
+        <Stuffing {mem} stuff={C} matchy={strata} />
     </squidge>
-
-<div>
-    {#each inners as oC (oC.sc.name)}
-        <svelte:self {mem} C={oC} {match} {see} {hide} {nameclick} />
-    {/each}
-</div>
-
+{:else}
+    <div>
+        {#each inners as D (Se.D_to_uri(D))}
+            <svelte:self {M} {strata} {mem} C={D}  />
+        {/each}
+    </div>
+{/if}
 <style>
     button {
         display: inline-block;

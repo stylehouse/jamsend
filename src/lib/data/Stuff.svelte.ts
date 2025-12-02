@@ -5,6 +5,7 @@ import type { ThingIsms } from "./Things.svelte";
 import type { Travel } from "$lib/mostly/Selection.svelte";
 import { isar, map, throttle } from "$lib/Y";
 import { untrack } from "svelte";
+import type { Matchy, Strata } from "$lib/mostly/Structure.svelte";
 
 let spec = `
 
@@ -648,25 +649,28 @@ export class Stuffing {
     Stuff:Stuff
     groups = new SvelteMap()
     started = $state(false)
-    matches?:Array<TheUniversal>
-    unmatches?:Array<TheUniversal>
-    constructor(Stuff:Stuff,opt) {
+
+    matchy?:Matchy
+    constructor(Stuff:Stuff,matchy:Matchy) {
         this.Stuff = Stuff
-        Object.assign(this,opt)
+        this.matchy = matchy
         //  svelte docs: You can use $effect anywhere,
         //   not just at the top level of a component, 
         //   as long as it is called while a parent effect is running.
+        this.slowly_brackology = throttle(() => this.brackology(),200)
+
         $effect(() => {
             if (this.Stuff.version) {
                 // may drop out here, UI:Stuffing reacts to .started
                 if (this.Stuff.X_before) return //console.warn("Stuffing waits for X_before")
-                // console.log("reacting to Stuff++")
-                setTimeout(() => this.brackology(), 0)
+                console.log("reacting to Stuff++")
+                setTimeout(() => this.slowly_brackology(), 1)
+
             }
         })
     }
     get_matching_rows() {
-        let matches = this.matches || []
+        let matches = this.matchy?.see || []
         if (!matches.length) matches = [{}]
         let N = []
         for (let sc of matches) {
@@ -675,6 +679,16 @@ export class Stuffing {
                 N.push(n)
             }
         }
+            
+        let unmatches = this.matchy?.hide || []
+        let from = N.length
+        for (let sc of unmatches) {
+            N = N.filter((n:TheC) => !n.matches(sc))
+        }
+        let to = N.length
+
+        if (unmatches.length) console.log(`Stuffing unmatches ${from}->${to}: `,unmatches)
+
         return N
     }
     // group like stuff
@@ -1049,13 +1063,16 @@ abstract class TimeGallopia {
     }
 }
 
-export class Modus extends TimeGallopia {
+export abstract class Modus extends TimeGallopia {
     // belongs to a thing of a feature
     S:ThingIsms
     // < FeatureIsms. PF.F = F
     F:PeeringFeature
     
+    // < GOING?
     coms?:TheC|null = $state()
+    // suppose you will develop your *Modus while looking at a Strata
+    a_Strata?:Strata = $state()
 
     constructor(opt:Partial<Modus>) {
         super()

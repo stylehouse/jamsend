@@ -3,7 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
-import { Structure } from '$lib/mostly/Structure.svelte';
+import { Strata, Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
@@ -58,6 +58,7 @@ export class DirectoryModus extends Modus {
     async surf_nibs(DL) {
         if (!DL) throw "!DL"
         let was = null
+        let Se = null
         await this.replacies({
             base_sc: {nib:'dir',name:'/',DL:1},
             new_sc: () => ({DL,  est:now_in_seconds()}),
@@ -73,10 +74,19 @@ export class DirectoryModus extends Modus {
                 n.coms = this.coms?.i({into:"surf_DLs"})
                 // start recursing this %nib,DL**
                 await this.Travel_DLs(n)
+                // there's only one for now
+                Se = this.Se
             }
         })
         // these always change!?
         // if (DL != n.sc.DL) throw "~DL"
+
+        this.a_Strata = new Strata({
+            Se,
+            see: [],
+            hide: [{readin:1},{ads:1},{Tree:1}],
+            nameclick_fn: async (D:TheC) => await this.nameclick(D),
+        })
     }
 
     // a big development.
@@ -91,21 +101,28 @@ export class DirectoryModus extends Modus {
         console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
         n.coms.i({twas_thetime:this.thetime})
-        // advertise %Tree for UI:Strata
-        await n.replace({Strata:1,match:1}, async () => {
-            n.i({Strata:1,match:1}).is().i({Tree:1})
-        })
-        await n.replace({Strata:1,see:1}, async () => {
-            n.i({Strata:1,see:1}).is().i({openity:1})
-            n.i({Strata:1,see:1}).is().i({frontierity:1})
-            n.i({Strata:1,see:1}).is().i({journey:1}) // j, the toplevel list of places to go
-            n.i({Strata:1,see:1}).is().i({tour:1}) // =j, for D** within the journey remarking on its state changes
-        })
-        await n.replace({Strata:1,nameclick_fn:1}, async () => {
-            n.i({Strata:1,
-                nameclick_fn: async (D:TheC) => await this.nameclick(D),
-            })
-        })
+
+        // < GOING advertise %Tree for UI:Strata
+        // await n.replace({Strata:1,match:1}, async () => {
+        //     n.i({Strata:1,match:1}).is().i({Tree:1})
+        // })
+        // await n.replace({Strata:1,hide:1}, async () => {
+        //     n.i({Strata:1,hide:1}).is().i({ads:1})
+        //     n.i({Strata:1,hide:1}).is().i({Tree:1})
+        //     // n.i({Strata:1,hide:1}).is().i({Tree:1})
+        // })
+        // await n.replace({Strata:1,see:1}, async () => {
+        //     n.i({Strata:1,see:1}).is().i({openity:1})
+        //     n.i({Strata:1,see:1}).is().i({frontierity:1})
+        //     n.i({Strata:1,hide:1}).is().i({Tree:1})
+        //     n.i({Strata:1,see:1}).is().i({journey:1}) // j, the toplevel list of places to go
+        //     n.i({Strata:1,see:1}).is().i({tour:1}) // =j, for D** within the journey remarking on its state changes
+        // })
+        // await n.replace({Strata:1,nameclick_fn:1}, async () => {
+        //     n.i({Strata:1,
+        //         nameclick_fn: async (D:TheC) => await this.nameclick(D),
+        //     })
+        // })
 
 
         let Se = new Selection()
