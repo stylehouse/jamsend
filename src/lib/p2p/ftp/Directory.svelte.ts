@@ -49,6 +49,7 @@ export class DirectoryModus extends Modus {
             // < rewrite everything we're thinking about how to:
             await this.surf_nibs(this.S.list)
 
+            await this.agency_think()
             // Modus_testcase(this)
 
             // < look within $scope of the Tree (start with localList) for...
@@ -72,6 +73,24 @@ export class DirectoryModus extends Modus {
             topD.i({A:'auto'})
         })
         this.main()
+    }
+    async agency_think() {
+        let topD = this.Tr.sc.D
+        for (let n of topD.o({A:1})) {
+            // est timestamp
+            !n.oa({self:1,est:1})
+                && n.i({self:1,est:now_in_seconds()})
+
+            // two senses of time
+            let ro = n.o({self:1,round:1})[0]
+            let es = n.oa({self:1,est:1})[0]
+            await n.replace({self:1,round:1},async () => {
+                let round = Number(ro?.sc.round || 0) + 1
+                let delta = es && es.ago('est')
+                n.i({self:1,round,delta})
+            })
+            // n/* is empty
+        }
     }
 
     // < partition a travel into %nib**

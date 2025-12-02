@@ -3,6 +3,9 @@ import type { Selection, Travel } from "./Selection.svelte";
 import { hak, hashkv, Parserify } from '$lib/Y'
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
+
+//#endregion
+//#region Strata
 // Stable wrapper that Svelte can key on and derive D from
 export class NamedT {
     name: string
@@ -64,6 +67,8 @@ export class Structure {
     // guessing, implying structure
     // upwards, propagate D**%readin=$aspect about the tracks
     // Artist get %readin:type,val:artist
+//#endregion
+//#region %readin
     async intelligible_name(T:Travel) {
         let {D,n} = T.sc
         let i_readin = (t:string,s:TheUniversal) => {
@@ -167,6 +172,8 @@ export class Structure {
         });
     }
 
+//#endregion
+//#region %ads
     // upwards propagate more stuff
     async percolating_ads(T:Travel) {
         let {D} = T.sc
