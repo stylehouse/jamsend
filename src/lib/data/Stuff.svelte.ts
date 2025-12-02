@@ -982,12 +982,15 @@ abstract class TimeOffice {
         }
 
     }
+    // < arg a label as well?
     async i_chaFrom(n:TheC,v:any,q:TheEmpirical) {
         let ch = n.o({chaFrom:1})[0]
+
         let was = ch?.sc.v
+        n.debug?.({ch,was})
         if (!ch || v != was) {
             // it changed! or established
-            let previous_time = ch?.o({chaFrom:1})[0]?.ago('at')
+            let previous_time = ch?.ago('at')
             await n.replace({chaFrom:1},async () => {
                 ch = n.i({chaFrom:1,was,v,at:now_in_seconds()})
             })
@@ -1025,10 +1028,12 @@ abstract class TimeGallopia extends TimeOffice{
         }
         this.time_having = at
         
-        // doing the business
-        await fn()
-
-        this.time_having = null
+        try {
+            // doing the business
+            await fn()
+        } finally {
+            this.time_having = null
+        }
     }
 
     // when starting a new time, set the next

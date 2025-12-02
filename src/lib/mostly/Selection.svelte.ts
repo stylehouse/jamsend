@@ -329,7 +329,7 @@ class SelectionItself extends Travel {
 //#endregion
 //#region Dierarchy
 
-function Tdebug(T,title,say?,etc?) {
+export function Tdebug(T,title,say?,etc?) {
     let indent = T.c.path.map(T=>'  ').join('')
     let D = T.sc.D
     if (etc && isar(etc) && isC(etc[0])) {

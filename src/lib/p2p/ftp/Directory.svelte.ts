@@ -2,7 +2,7 @@
 import { KVStore } from '$lib/data/IDB.svelte'
 import { _C, keyser, Modus, Stuff, TheC, type TheEmpirical, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
-import { Selection, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
+import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
@@ -288,6 +288,14 @@ export class DirectoryModus extends Modus {
         let op = D.o({openity:1})[0]
         if (!op) throw "!%openity"
         let openity = op.sc.openity || 1
+        // < DEBUG
+        op.sc.name = D.sc.name
+
+        if (D.sc.name == 'Dialectic (copy 1)') {
+            op.debug = ({ch,a,b}) => {
+                Tdebug(T,"chaFrom",`${a}->${b}`,[ch])
+            }
+        }
 
         // respond to %openity changing
         await this.i_chaFrom(op,openity,{
@@ -296,11 +304,12 @@ export class DirectoryModus extends Modus {
                 if (!b) throw "boo"
                 if (a <3 && b >= 3) {
                     // on attaining %openity=3
-                    await this.expand_nib(T)
+                    await this.expand_nib(T,op)
                 }
                 // < should be when we go <2
                 //  < or after a time of being <3
                 if (b <3 && a >= 3) {
+                    Tdebug(T,"collapsing")
                     this.collapse_nib(T)
                 }
             },
@@ -311,21 +320,21 @@ export class DirectoryModus extends Modus {
             return T.sc.not = 'unopenity'
         }
 
-        let ago = await this.i_wasLast(D,'expanded')
+        let ago = await this.i_wasLast(op,'expanded')
         if (ago > 16) {
             // spontaneous refresh every 16s
-            await this.expand_nib(T)
+            await this.expand_nib(T,op)
         }
     }
 
 
-    async expand_nib(T:Travel) {
+    async expand_nib(T:Travel,op:TheC) {
         let {D,bD,n} = T.sc
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
 
         // do think-chatter in D/*
-        await this.i_wasLast(D,'expanded',true)
+        await this.i_wasLast(op,'expanded',true)
 
         // i /*%nib:dir,...
         let uDL = DL
