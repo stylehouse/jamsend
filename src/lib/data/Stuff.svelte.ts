@@ -982,24 +982,33 @@ abstract class TimeGallopia {
     //  graceful fail when already locked
     //  doesn't recycle C/** (replace() q.fresh)
     abstract current:TheC
+    time_having?:Error|null
     async have_time(fn:Function) {
-        if (this.current.X_before) return console.error("re-transacting Modus")
-        // what we replace is... everything. but this could select some rows
-        let pattern_sc = {}
-        await this.current.replace(pattern_sc,async () => {
-            // doing the business
-            await fn()
-        },{fresh:1})
+        let at = new Error().stack
+        if (this.time_having) {
+            console.error("re-transacting Modus",
+                {awaiting_stack:this.time_having,
+                 current_stack:at})
+            return
+        }
+        this.time_having = at
+        
+        // doing the business
+        await fn()
+
+        this.time_having = null
     }
 
     // when starting a new time, set the next
-    reset_interval() {
+    async reset_interval() {
         // the universal %interval persists through time, may be adjusted
-        let int = this.bo({mo:'main',interval:1})[0]
+        // our current %mo,interval row, a singleton
+        let n
+        let int = this.o({mo:'main',interval:1})[0]
         let interval = int?.sc.interval || 3.6
         let id; id = setTimeout(() => {
             // if we are still the current callback
-            if (n != this.oa({mo:'main',interval:1})[0]) return
+            if (n != this.o({mo:'main',interval:1})[0]) return
             // if the UI:Modus still exists
             if (this.stopped) return
             // UI:Sharability thing above can stop
@@ -1008,19 +1017,32 @@ abstract class TimeGallopia {
             this.main()
             
         },1000*interval)
-        let n = this.i({mo:'main',interval,id})
+
+        await this.current.replace({mo:'main',interval:1}, async () => {
+            n = this.i({mo:'main',interval,id})
+        })
     }
 
+
+    // < GOING, but is a primitive sketch of replace()
     // replacies() does a really simple resolve $n
-    //  or creates it
-    //  then it calls your middle_cb(n)
-    //  then this.i(n)
+    //  or creates $n afresh
+    // when it calls your middle_cb(n)
+    //  n already have|resolved n/*
+    //   and n.replace() can work
+    //  yet n.sc.* is still mutable
+    //   because it hasn't done this.i(n)
+    //      in contrast to replace() itself
+    //       where n/* isn't available until we commit (resolve)
+    // 
     // ie find the history (previous entry) of a particle by its look
-    //  for the toplevel Modus mind chunks
+    // 
     //
     // we usually want to consider a whole table of tuples we're replacing
     //  but it's easier to code for single lumps of action
     //  where a thing is defined and something is done with it over time
+    //   that MIGHT change its n.sc.*
+    //    seems it's better to put all changables into n/*!
     // 
     // much simpler and more limited than Stuff.replace()
     // < to work within the Modus.current.replace()
@@ -1033,6 +1055,8 @@ abstract class TimeGallopia {
         new_sc:Function|TheUniversal,
         middle_cb:Function
     }) {
+        // Modus.main() used to be in a Modus.current.replace({}, ...)
+        //    ie of everything, so we boa to see the prior complete state
         let N = this.boa(base_sc)
         if (!N) {
             // first time!
@@ -1045,8 +1069,7 @@ abstract class TimeGallopia {
 
 
         // console.log("replacies!",N.map(n => keyser(n)))
-        //  < why is it (still) having two %nib,name,DL initially?
-        //    this could otherwise have multiple C matching base_sc
+        // don't bother with multiple things
         if (N.length > 1) N = [N[0]]
 
 

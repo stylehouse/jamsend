@@ -44,7 +44,7 @@ export class DirectoryModus extends Modus {
         this.coms = _C()
         // this sty
         await this.have_time(async () => {
-            this.reset_interval()
+            await this.reset_interval()
 
             // < rewrite everything we're thinking about how to:
             await this.surf_nibs(this.S.list)
@@ -81,27 +81,27 @@ export class DirectoryModus extends Modus {
         if (!DL) throw "!DL"
         let was = null
         let Se = null
-        await this.replacies({
-            base_sc: {nib:'dir',name:'/',DL:1},
-            new_sc: () => ({DL,  est:now_in_seconds()}),
-            middle_cb: async (n:TheC) => {
-                if (was && was == n) {
-                    debugger
-                }
-                if (was) {
-                    debugger
-                }
-                was = n
-                // sub coms
-                n.coms = this.coms?.i({into:"surf_DLs"})
-                // start recursing this %nib,DL**
-                await this.Travel_DLs(n)
-                // there's only one for now
-                Se = this.Se
-            }
+        let C = this.current
+
+        await C.replace({nib:'dir'},async () => {
+            let n = C.i({nib:'dir',name:'/',DL})
+            // n/* is empty
         })
-        // these always change!?
-        // if (DL != n.sc.DL) throw "~DL"
+        // n/* have now resolved what they were
+        for (let n of C.o({nib:'dir'})) {
+            // hang info forever
+            !n.oa({self:1,est:1})
+                && n.i({self:1,est:now_in_seconds()})
+
+            // sub coms
+            n.coms = this.coms?.i({into:"surf_DLs"})
+
+            // the sprawly task of climbing n** -> D**
+            await this.Travel_DLs(n)
+            // there's only one for now
+            Se = this.Se
+        }
+        
         this.a_Strata ||= new Strata({
             see: [],
             hide: [{readin:1},{ads:1},{Tree:1}],
