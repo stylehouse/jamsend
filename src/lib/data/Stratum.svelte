@@ -10,8 +10,7 @@
         mem: Modusmem,
         namedT: NamedT,
     } = $props()
-    
-    let Se: Selection = strata.Se
+
     // < make this a <button>
     let nameclick = strata.nameclick_fn || (() => {})
     
@@ -24,7 +23,6 @@
 
 <div style="margin-left: {indent}em" class={className}>
     <span onclick={() => nameclick(D)}>{D.sc.name}</span>
-    <span>@{T.sc.thetime}</span>
     <squidge>
         <Stuffing {mem} stuff={D} matchy={strata} />
     </squidge>

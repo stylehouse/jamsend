@@ -37,6 +37,15 @@ export abstract class ThingIsms {
         this.actions = this.actions.filter(a => a.label != act.label)
         if (!removal) this.actions.push(act)
     }
+    i_actions(actions) {
+        for (let [k,v] of Object.entries(actions)) {
+            let c = typeof v == 'function' ? {handler:v} : v
+            this.i_action({
+                label:k,
+                ...c,
+            })
+        }
+    }
     
 
     // gizmos (eg Modus's brackology) within the thing can store memory

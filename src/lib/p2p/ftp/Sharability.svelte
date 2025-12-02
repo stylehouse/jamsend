@@ -20,22 +20,6 @@
         // really:
         if (!S) throw "What the hell S"
         S.modus = new DirectoryModus({S,F:S.F})
-        S.i_action({
-            label:'j++',
-            handler: () => S.modus.further_journey()
-        })
-        S.i_action({
-            label:'j--',
-            handler: () => S.modus.further_journey({go:'backwards'})
-        })
-        S.i_action({
-            label:'Mo++',
-            handler: () => S.modus.main()
-        })
-        S.i_action({
-            label:'hard',
-            handler: () => S.modus.toggle_gohard()
-        })
         console.log("Sharability onMount()!")
     })
     $effect(() => {

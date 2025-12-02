@@ -10,12 +10,8 @@
         strata:Strata,
         mem:Modusmem,
     } = $props()
-
-    let Se = $derived(strata.Se)
-    let iterable = Se.c.T.sc.N
 </script>
 
-Strata@{strata.thetime}
 <div>
     {#each strata.by_order as namedT (namedT.name)}
         <Stratum {M} {strata} {mem} {namedT} />

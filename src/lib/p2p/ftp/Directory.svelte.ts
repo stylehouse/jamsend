@@ -23,6 +23,15 @@ export class DirectoryModus extends Modus {
         super(opt)
         // the above super() / assign() doesn't set .F|S (javascript quirk?)
         Object.assign(this,opt)
+
+        this.S.i_actions({
+            'j++': () => this.further_journey(),
+            'j--': () => this.further_journey({go:'backwards'}),
+            'Mo++': () => this.main(),
+            'hard': () => this.toggle_gohard(),
+            'A++': () => this.do_A(),
+            'C++': () => this.do_C(),
+        })
     }
 
 
@@ -50,6 +59,19 @@ export class DirectoryModus extends Modus {
     toggle_gohard() {
         this.hard = !this.hard
         console.log("going hard: "+this.hard)
+    }
+    // start over!
+    do_C() {
+        this.current = _C()
+        this.main()
+    }
+    // start Agenting around!
+    async do_A() {
+        let topD = this.Tr.sc.D
+        await topD.replace({A:'auto'},async () => {
+            topD.i({A:'auto'})
+        })
+        this.main()
     }
 
     // < partition a travel into %nib**
@@ -239,7 +261,7 @@ export class DirectoryModus extends Modus {
         this.Se = Se
     }
     // the events, nudges
-    async further_journey(opt) {
+    async further_journey(opt?) {
         await this.Se.journey_further(opt)
         this.main()
     }
