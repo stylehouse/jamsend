@@ -4,6 +4,7 @@
     import { onMount } from "svelte";
     import { DirectoryModus, DirectoryShare, FileListing, type AnyShare } from './Directory.svelte';
     import FileList from './FileList.svelte';
+    import Scrollability from '../ui/Scrollability.svelte';
 
     // a DirectoryShare (Thing)
     // < or a RemoteShare (Thing)
@@ -51,7 +52,11 @@
 <p>I am a {S.constructor.name}</p>
 
     {#if S.modus}
-        <Modus M={S.modus}></Modus>
+        <Scrollability maxHeight="80vh" class="content-area">
+            {#snippet content()}
+                <Modus M={S.modus}></Modus>
+            {/snippet}
+        </Scrollability>
     {/if}
 
     {#if false && S.started}
