@@ -70,7 +70,7 @@ export class DirectoryModus extends Modus {
     async do_A() {
         let topD = this.Tr.sc.D
         await topD.replace({A:'auto'},async () => {
-            topD.i({A:'auto'})
+            topD.i({A:'auto'}).is()
         })
         this.main()
     }
