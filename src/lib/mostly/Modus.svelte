@@ -25,6 +25,9 @@
         M.stashed.things = 3
     }
 
+    let strata = $derived(M.a_Strata)
+
+
     onDestroy(() => {
         M.stop()
     })
@@ -36,11 +39,11 @@
     {#key redraw_version}
         <Stuffing mem={M.imem('current')} stuff={M.current} {M} />
         {#if M.coms} <Stuffing mem={M.imem('coms')} stuff={M.coms} />{/if}
+        {#if strata}
+            <Strata {M} {strata} mem={M.imem('Strata')} />
+        {/if}
     {/key}
 
-    {#if M.a_Strata}
-        <Strata {M} strata={M.a_Strata} mem={M.imem('Strata')} />
-    {/if}
 
 <style>
 </style>

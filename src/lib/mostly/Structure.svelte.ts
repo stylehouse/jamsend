@@ -1,6 +1,7 @@
 import type { TheC, TheUniversal } from "$lib/data/Stuff.svelte";
-import type { Travel } from "./Selection.svelte";
-import { hak, Parserify } from '$lib/Y'
+import type { Selection, Travel } from "./Selection.svelte";
+import { hak, hashkv, Parserify } from '$lib/Y'
+import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
 // UI:Strata eats one of these to connect it to a Selection
 export abstract class Matchy {
@@ -8,12 +9,29 @@ export abstract class Matchy {
     hide?:Array<TheUniversal>
 }
 export class Strata extends Matchy {
-    Se?:Selection
+    Se?:Selection = $state()
+    names = $state(new SvelteMap())
+
+    list = $state(new SvelteSet())
+    thetime = $state(-1)
     nameclick_fn?:Function
-    constructor (opt) {
+    constructor (opt={}) {
         super()
         Object.assign(this,opt)
-        console.log(this)
+    }
+    update(opt={}) {
+        Object.assign(this,opt)
+        let Se = this.Se
+        this.list.clear()
+        for (let T of Se.c.T.sc.N) {
+            let key = Se.D_to_uri(T.sc.D)
+            this.names.set(key,T)
+
+            this.list.add(T)
+        }
+
+
+
     }
 }
 

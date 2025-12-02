@@ -686,8 +686,7 @@ export class Stuffing {
             N = N.filter((n:TheC) => !n.matches(sc))
         }
         let to = N.length
-
-        if (unmatches.length) console.log(`Stuffing unmatches ${from}->${to}: `,unmatches)
+        // if (unmatches.length) console.log(`Stuffing unmatches ${from}->${to}: `,unmatches)
 
         return N
     }

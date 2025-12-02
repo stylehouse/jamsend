@@ -1,66 +1,29 @@
 <script lang="ts">
     import { _C, keyser, Modus, Modusmem, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
-    import type { Selection } from "$lib/mostly/Selection.svelte";
+    import type { Selection, TheD, Travel } from "$lib/mostly/Selection.svelte";
     import type { Strata } from "$lib/mostly/Structure.svelte";
+    import Stratum from "./Stratum.svelte";
 
-    let {M,strata,mem,C}:{
+    let {M,strata,mem}:{
         M?:Modus,
         strata:Strata,
         mem:Modusmem,
-        C?:TheC,
     } = $props()
-    
-    let Se:Selection = strata.Se
-    // the interesting stuff to see
-    let inners = $derived(
-        Se.c.T.sc.N.map(T => T.sc.D)
-    )
-    
+
+    let Se = $derived(strata.Se)
+    let iterable = Se.c.T.sc.N
 </script>
-{#if C}
-    <!-- <button > -->
-        <span onclick={() => nameclick(C)}  >{C.sc.name}</span>
-    <!-- </button> -->
-    <squidge>
-        <Stuffing {mem} stuff={C} matchy={strata} />
-    </squidge>
-{:else}
+<!-- {#key strata.thetime} -->
+    Strata@{strata.thetime}
     <div>
-        {#each inners as D (Se.D_to_uri(D))}
-            <svelte:self {M} {strata} {mem} C={D}  />
+        {#each strata.list as T (Se.D_to_uri(T.sc.D))}
+            <Stratum {M} {strata} {mem} {T}  />
         {/each}
     </div>
-{/if}
+
 <style>
-    button {
-        display: inline-block;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 0;
-        align-items: center;
-        gap: 0.25em;
-        color: rgb(156, 140, 217);
-        font-size: 100%;
-        line-height: 1em;
-    }
     div {
         margin-left:2em;
-    }
-    span {
-        font-family: monospace;
-        width: 12em;
-        display:inline-block;
-        padding-left: 2em;
-        text-indent: -2em; 
-        padding: 0;
-        align-items: left;
-        gap: 0.25em;
-    }
-    squidge {
-        display:inline-block;
-        margin-top:-0.4em;
-        margin-bottom:-0.4em;
     }
 </style>

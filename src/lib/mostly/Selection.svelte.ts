@@ -66,7 +66,7 @@ export class Travel extends TheC {
         Object.assign(T.c,d)
         T.divide(true)
         // all T** flatly
-        T.sc.N = []
+        T.sc.N = [T]
         // top n
         // < T.c.n should be T.sc.n already, becomes it soon in dive_start()
         //  < check for other junk we copy down T**.c
@@ -109,7 +109,9 @@ export class Travel extends TheC {
         // visit here
         T.sc.n = C
         // to re-traverse via .forward() and .reverse()
-        T.c.top.sc.N.push(T)
+        // < these is slightly breadth first...
+        //  < graph behaviour
+        // T.c.top.sc.N.push(T)
     }
     async dive_middle() {
         const T = this
@@ -130,6 +132,7 @@ export class Travel extends TheC {
             // establishes a column! aka ark, see iooia
             //  or not if looplicate
             if (oT.sc.n && !oT.sc.not) {
+                // into T/*T
                 N.push(oT)
             }
         }
@@ -141,6 +144,8 @@ export class Travel extends TheC {
 
         // recurse into $n/*
         for (const oT of N) {
+            // into topT/**T
+            T.c.top.sc.N.push(oT)
             await oT.dive_middle()
         }
 

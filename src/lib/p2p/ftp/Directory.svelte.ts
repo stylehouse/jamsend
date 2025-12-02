@@ -80,13 +80,12 @@ export class DirectoryModus extends Modus {
         })
         // these always change!?
         // if (DL != n.sc.DL) throw "~DL"
-
-        this.a_Strata = new Strata({
-            Se,
+        this.a_Strata ||= new Strata({
             see: [],
             hide: [{readin:1},{ads:1},{Tree:1}],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
+        this.a_Strata.update({Se,thetime:this.thetime})
     }
 
     // a big development.
@@ -235,6 +234,7 @@ export class DirectoryModus extends Modus {
         
         // then more richocheting around of percolating waves of stuff
         Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
+        Se.c.T.forward(async (T:Travel) => T.sc.thetime = this.thetime)
         this.Tr = Se.c.T
         this.Se = Se
     }
