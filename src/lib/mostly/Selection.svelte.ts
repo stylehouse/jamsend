@@ -366,6 +366,76 @@ class Dierarchy extends SelectionItself {
         // < make / illegal in names. our DirectoryShare root %nib is name=/
         return path.join("/")
     }
+    // AI
+    // find a D given j (or something with /*%path)
+    j_to_D(j: Journey): TheD | null {
+        // Get the path segments from the journey, ordered by sequence
+        const pathNodes = j.o({ path: 1, seq: 1 })
+        
+        if (!pathNodes || pathNodes.length === 0) {
+            return null
+        }
+        
+        // Sort by sequence number to ensure correct order
+        const sortedPath = pathNodes.slice().sort((a, b) => {
+            return (a.sc.seq || 0) - (b.sc.seq || 0)
+        })
+        
+        // Extract the path strings
+        const pathBits = sortedPath.map(node => node.sc.path)
+        
+        // Use path_to_D to resolve the path to a D
+        return this.path_to_D(pathBits)
+    }
+    // AI
+    // Convert a path array to its corresponding D
+    path_to_D(pathBits: string[]): TheD | null {
+        if (!pathBits || pathBits.length === 0) {
+            return null
+        }
+        
+        // Start from the top D
+        const T = this.c.T
+        if (!T) return null
+        
+        let currentD = T.sc.D
+        if (!currentD) return null
+        
+        // Traverse down the path
+        for (let i = 0; i < pathBits.length; i++) {
+            const expectedName = pathBits[i]
+            
+            // Check if current D matches the expected name
+            if (this.D_to_name(currentD) !== expectedName) {
+                // If we're at the top level, this might be okay
+                if (i > 0) return null
+            }
+            
+            // If this is the last segment, we've found it
+            if (i === pathBits.length - 1) {
+                return currentD
+            }
+            
+            // Otherwise, find the child D that matches the next segment
+            const nextBit = pathBits[i + 1]
+            const children = currentD.o(this.c.trace_sc)
+            
+            let found = false
+            for (const childD of children) {
+                if (this.D_to_name(childD) === nextBit) {
+                    currentD = childD
+                    found = true
+                    break
+                }
+            }
+            
+            if (!found) {
+                return null
+            }
+        }
+        
+        return currentD
+    }
     i_path(D,j:Journey) {
         let i = 0
         for (let bit of this.D_to_path(D)) {
@@ -577,6 +647,7 @@ class Dierarchy extends SelectionItself {
 
 }
 
+// < in Structure?
 function PrevNextoid() {
     let must = (N) => {
         if (!N.length) throw "none"

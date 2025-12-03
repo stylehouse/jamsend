@@ -48,7 +48,9 @@ export class DirectoryModus extends Modus {
 
             // < rewrite everything we're thinking about how to:
             await this.surf_nibs(this.S.list)
-
+            
+            // on that structure, hang motivation
+            this.Tr.sc.D.oa({A:'auto'}) || this.do_A()
             await this.agency_think()
             // Modus_testcase(this)
 
@@ -68,30 +70,123 @@ export class DirectoryModus extends Modus {
     }
     // start Agenting around!
     async do_A() {
-        let topD = this.Tr.sc.D
-        await topD.replace({A:'auto'},async () => {
-            topD.i({A:'auto'}).is()
+        await this.Tr.sc.D.replace({A:'auto'},async () => {
+            this.Tr.sc.D.i({A:'auto'}).is()
         })
         this.main()
     }
     async agency_think() {
-        let topD = this.Tr.sc.D
-        for (let n of topD.o({A:1})) {
+        for (let A of this.Tr.sc.D.o({A:1})) {
             // est timestamp
-            !n.oa({self:1,est:1})
-                && n.i({self:1,est:now_in_seconds()})
+            !A.oa({self:1,est:1})
+                && A.i({self:1,est:now_in_seconds()})
 
             // two senses of time
-            let ro = n.o({self:1,round:1})[0]
-            let es = n.oa({self:1,est:1})[0]
-            await n.replace({self:1,round:1},async () => {
+            let ro = A.o({self:1,round:1})[0]
+            let es = A.oa({self:1,est:1})[0]
+            await A.replace({self:1,round:1},async () => {
                 let round = Number(ro?.sc.round || 0) + 1
                 let delta = es && es.ago('est')
-                n.i({self:1,round,delta})
+                A.i({self:1,round,delta})
             })
-            // n/* is empty
+
+            // keep %wanting something
+            let wa = A.o({wanting:1})[0]
+                || A.i({wanting:1,method:'meander'})
+            
+            let method = wa.sc.method
+            if (method && this[method]) {
+                await this[method](A,wa)
+            }
+            else {
+                if (method) wa.i({error:`!method`})
+                // < refer other %wanting to central stuck-trol?
+                return
+            }
+
+            // percolate wa/ai/%path -> j/%path from this A
+            await this.i_journeys_o_aims(A,wa)
         }
     }
+    async i_journeys_o_aims(A,wa) {
+        let journey = 'A.'+wa.sc.method
+        // have *%journey first
+        let journeys = []
+        await this.Tr.sc.D.replace({journey}, async () => {
+            for (let ai of wa.o({aim:1})) {
+                // < are duplicate names ok? what to do about it?
+                let j = this.Tr.sc.D.i({journey})
+                journeys.push(j)
+            }
+        })
+        for (let ai of wa.o({aim:1})) {
+            let j = journeys.shift()
+            // < method this? see PrevNextoid
+            // i j/* o ai/*%path
+            await j.replace({path:1}, async () => {
+                for (let n of ai.o({path:1})) {
+                    j.i(n.sc)
+                }
+            })
+            // < note somehow this ai->j vectoring
+        }
+    }
+
+    // picks whole numbers 0-($n||1)
+    prandle(n) {
+        return Math.floor(Math.random()*n)
+    }
+    // do meandering
+    async meander(A:TheC,wa:TheC) {
+        // where we're looking
+        let D = wa.o({aim:1}).map(ai => this.Se.j_to_D(ai))[0]
+
+        let inners = null
+        if (D) {
+            Tdebug(D.c.T,"meandering into")
+            // something with a track advertised
+            let good = D.o({ads:'here',track:1})[0]
+            // < finding %ads:beyond, aim becomes for tracking down that track...
+            if (good) {
+                let sa = await wa.r({satisfied:1})
+                await sa.replace({satisfying:1}, async () => {
+                    sa.i({satisfying:1, ...good.sc})
+                })
+                return
+            }
+            // keep meandering into D**, until none found
+            // o D/*%Tree
+            inners = D.oa(this.Se.c.trace_sc)
+        }
+
+        // o **%nib,dirs
+        let dirs = inners || this.sleeping_dirs()
+        // pick one
+        let dir = dirs[this.prandle(dirs.length)]
+        if (!dir) {
+            console.warn("got nowhere down: "+this.Se.D_to_uri(D))
+            // throw out wa/%aim, try again from the top
+            await wa.replace({aim:1},async() => {
+            })
+        }
+
+        let ai = await wa.r({aim:1})
+        // < this could be r_path, return the old one?
+        await ai.replace({path:1}, async () => {
+            this.Se.i_path(dir,ai)
+        })
+        // and log how many times this process goes around:
+        wa.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
+        // %aim spawns a journey, we follow up our %aim next time
+    }
+    sleeping_dirs() {
+        return this.Tr!.sc.N
+            .filter(T => T.sc.n.sc.nib == 'dir')
+            .filter(T => T.sc.not) // closed|sleeping, ~~ %openity,v<3 without knowing it
+            .map(T => T.sc.D)
+    }
+
+
 
     // < partition a travel into %nib**
     //  < and deduplicate|DRY from having an extra toplevel %nib replace.
@@ -124,7 +219,7 @@ export class DirectoryModus extends Modus {
         this.a_Strata ||= new Strata({
             see: [],
             hide: [{readin:1},
-                {ads:1},
+                // {ads:1},
                 {Tree:1}],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
@@ -275,6 +370,10 @@ export class DirectoryModus extends Modus {
         this.main()
     }
 
+    // behavioural options
+    refresh_DL_seconds = 16
+    
+
 
 
     // for n%nib:dir only, check %openity left by tour groups
@@ -288,8 +387,6 @@ export class DirectoryModus extends Modus {
         let op = D.o_kv('openity')
         if (!op) throw "!%openity"
         let openity = op.sc.v || 1
-        // < DEBUG
-        Tdebug(T,`opey ${openity}`,'',op)
 
 
         // respond to %openity changing
@@ -315,9 +412,16 @@ export class DirectoryModus extends Modus {
             op.r({Shantity:1})
             return T.sc.not = 'unopenity'
         }
+        let user_is_looking = [T,T.up].some(T=>T?.sc.D.oa({tour:1,matched:1}))
+
+        await D.replace({busyas:1},async () => {
+            user_is_looking
+                && D.i({busyas:1})
+        })
 
         let ago = await op.i_wasLast('expanded')
-        if (ago > 16) {
+        
+        if (ago > this.refresh_DL_seconds) {
             // spontaneous refresh every 16s
             await this.expand_nib(T,op)
         }

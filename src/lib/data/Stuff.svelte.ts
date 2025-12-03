@@ -429,6 +429,10 @@ export class Stuff extends TimeOffice {
             }
             pattern_sc = map(() => 1, pattern_sc)
         }
+        else {
+            // the pattern|sc divided bunch of language
+            sc = {...pattern_sc,...sc}
+        }
         let C
         await this.replace(pattern_sc, async () => {
             let N = isar(sc) ? sc : [sc]
