@@ -345,15 +345,17 @@ class StuffIO {
         
         return n.sc[key] === value;
     }
+}
+
+// a culture of io
+// trivial n/%stuctures and their games
+abstract class TimeOffice extends StuffIO {
     // whole seconds of oldness getter
     ago(gk) {
         let time = this.sc[gk]
         if (time == null) return Infinity
         return now_in_seconds() - time
     }
-}
-
-class StuffGames extends StuffIO {
     // keep a value next to a key
     //  need some other id in the tuple
     //   just eg %openity=$v won't resolve to itself when it changes
@@ -362,23 +364,53 @@ class StuffGames extends StuffIO {
         let D = this as TheC
         let c = {}
         c[k] = 1
-        let n
         await D.replace(c,async () => {
             // v=0 shall not exist
-            n = v && D.i({...c,v})
+            v && D.i({...c,v})
         })
-        return n
     }
     o_kv(k:string) {
         let c = {}
         c[k] = 1
         return  this.o(c)[0]
     }
+    // < these could be next to TheC.ago() ?
+    async i_wasLast(label:string,now=false) {
+        if (now) {
+            // set it
+            await this.replace({wasLast:label,at:1},async () => {
+                this.i({wasLast:label,at:now_in_seconds()})
+            })
+            return 0
+        }
+        else {
+            // measure ago
+            return this?.o({wasLast:label})[0]?.ago('at') || 0
+        }
+
+    }
+    // < arg a label as well?
+    async i_chaFrom(v:any,q:TheEmpirical) {
+        let ch = this.o({chaFrom:1})[0]
+        let previous_time = ch?.ago('at')
+        let was = ch?.sc.v
+
+        await q?.pairs_fn?.(was,v,previous_time)
+
+        if (!ch || v != was) {
+            // it changed! or established
+            await this.replace({chaFrom:1},async () => {
+                ch = this.i({chaFrom:1,was,v,at:now_in_seconds()})
+            })
+            await q?.changing_pairs_fn?.(was,v,previous_time)
+        }
+    }
+
 }
 
 //#endregion
 //#region Stuff.replace
-export class Stuff extends StuffGames {
+export class Stuff extends TimeOffice {
     // this C has Isness, C/* are there already and don't recycle them.
     // marks this C as going to have inners already when resolve() commits
     //  so don't resume its C/* from before
@@ -983,41 +1015,6 @@ export class Modusmem {
         this.M.stashed.version ||= 0
         this.M.stashed.version ++
     }
-}
-// a culture of io
-// trivial n/%stuctures and their games
-abstract class TimeOffice {
-    // < these could be next to TheC.ago() ?
-    async i_wasLast(n:TheC,label:string,now=false) {
-        if (now) {
-            // set it
-            await n.replace({wasLast:label,at:1},async () => {
-                n.i({wasLast:label,at:now_in_seconds()})
-            })
-            return 0
-        }
-        else {
-            // measure ago
-            return n?.o({wasLast:label})[0]?.ago('at') || 0
-        }
-
-    }
-    // < arg a label as well?
-    async i_chaFrom(n:TheC,v:any,q:TheEmpirical) {
-        let ch = n.o({chaFrom:1})[0]
-
-        let was = ch?.sc.v
-        await q?.pairs_fn?.(was,v,previous_time)
-        if (!ch || v != was) {
-            // it changed! or established
-            let previous_time = ch?.ago('at')
-            await n.replace({chaFrom:1},async () => {
-                ch = n.i({chaFrom:1,was,v,at:now_in_seconds()})
-            })
-            await q?.changing_pairs_fn?.(was,v,previous_time)
-        }
-    }
-
 }
 abstract class TimeGallopia extends TimeOffice{
     // M.stashed is persistent

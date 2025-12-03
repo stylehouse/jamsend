@@ -293,7 +293,7 @@ export class DirectoryModus extends Modus {
 
 
         // respond to %openity changing
-        await this.i_chaFrom(op,openity,{
+        await op.i_chaFrom(openity,{
             changing_pairs_fn: async (a,b,previous_time) => {
                 a ||= 0 // undefined isn't but null is <3
                 if (!b) throw "boo"
@@ -316,7 +316,7 @@ export class DirectoryModus extends Modus {
             return T.sc.not = 'unopenity'
         }
 
-        let ago = await this.i_wasLast(op,'expanded')
+        let ago = await op.i_wasLast('expanded')
         if (ago > 16) {
             // spontaneous refresh every 16s
             await this.expand_nib(T,op)
@@ -329,8 +329,8 @@ export class DirectoryModus extends Modus {
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
 
-        // do think-chatter in D/*
-        await this.i_wasLast(op,'expanded',true)
+        // do think-chatter in D/*, under %openity since relevant...
+        await op.i_wasLast('expanded',true)
 
         // i /*%nib:dir,...
         let uDL = DL
