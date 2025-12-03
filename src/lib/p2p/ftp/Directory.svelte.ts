@@ -140,7 +140,7 @@ export class DirectoryModus extends Modus {
     Tr?:Travel
     Se:Selection
     async Travel_DLs(n:TheC) {
-        console.log(`Travel_DLs:`)
+        // console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
         n.coms.i({twas_thetime:this.thetime})
 
@@ -279,27 +279,22 @@ export class DirectoryModus extends Modus {
 
     // for n%nib:dir only, check %openity left by tour groups
     async possibly_expand_nib(T:Travel) {
-        let {D,bD,n} = T.sc
+        let {D}:{D:TheD} = T.sc
         let time = this.thetime
         let topD = T.c.top.sc.D
 
 
-        // < watch this change like we do with %name?
-        let op = D.o({openity:1})[0]
+        // watch this change like we do with D%name
+        let op = D.o_kv('openity')
         if (!op) throw "!%openity"
-        let openity = op.sc.openity || 1
+        let openity = op.sc.v || 1
         // < DEBUG
-        op.sc.name = D.sc.name
+        Tdebug(T,`opey ${openity}`,'',op)
 
-        if (D.sc.name == 'Dialectic (copy 1)') {
-            op.debug = ({ch,a,b}) => {
-                Tdebug(T,"chaFrom",`${a}->${b}`,[ch])
-            }
-        }
 
         // respond to %openity changing
         await this.i_chaFrom(op,openity,{
-            v_pairs_fn: async (a,b,previous_time) => {
+            changing_pairs_fn: async (a,b,previous_time) => {
                 a ||= 0 // undefined isn't but null is <3
                 if (!b) throw "boo"
                 if (a <3 && b >= 3) {
@@ -317,6 +312,7 @@ export class DirectoryModus extends Modus {
 
         if (openity <3) {
             // Tdebug(T,"We Shant")
+            op.r({Shantity:1})
             return T.sc.not = 'unopenity'
         }
 

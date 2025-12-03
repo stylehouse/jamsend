@@ -351,14 +351,34 @@ class StuffIO {
         if (time == null) return Infinity
         return now_in_seconds() - time
     }
-
-
 }
 
+class StuffGames extends StuffIO {
+    // keep a value next to a key
+    //  need some other id in the tuple
+    //   just eg %openity=$v won't resolve to itself when it changes
+    //  eg deliver one final-most bit of %openity advice to your Se.each_fn
+    async i_kv(k:string,v:any) {
+        let D = this as TheC
+        let c = {}
+        c[k] = 1
+        let n
+        await D.replace(c,async () => {
+            // v=0 shall not exist
+            n = v && D.i({...c,v})
+        })
+        return n
+    }
+    o_kv(k:string) {
+        let c = {}
+        c[k] = 1
+        return  this.o(c)[0]
+    }
+}
 
 //#endregion
 //#region Stuff.replace
-export class Stuff extends StuffIO {
+export class Stuff extends StuffGames {
     // this C has Isness, C/* are there already and don't recycle them.
     // marks this C as going to have inners already when resolve() commits
     //  so don't resume its C/* from before
@@ -663,7 +683,7 @@ export class Stuffing {
             if (this.Stuff.version) {
                 // may drop out here, UI:Stuffing reacts to .started
                 if (this.Stuff.X_before) return //console.warn("Stuffing waits for X_before")
-                console.log("reacting to Stuff++")
+                // console.log("reacting to Stuff++")
                 setTimeout(() => this.slowly_brackology(), 1)
 
             }
@@ -987,14 +1007,14 @@ abstract class TimeOffice {
         let ch = n.o({chaFrom:1})[0]
 
         let was = ch?.sc.v
-        n.debug?.({ch,was})
+        await q?.pairs_fn?.(was,v,previous_time)
         if (!ch || v != was) {
             // it changed! or established
             let previous_time = ch?.ago('at')
             await n.replace({chaFrom:1},async () => {
                 ch = n.i({chaFrom:1,was,v,at:now_in_seconds()})
             })
-            await q?.v_pairs_fn?.(was,v,previous_time)
+            await q?.changing_pairs_fn?.(was,v,previous_time)
         }
     }
 

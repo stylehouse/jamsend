@@ -385,12 +385,6 @@ class Dierarchy extends SelectionItself {
         if (path.length == T.c.path.length) return 2
         return 1
     }
-    // and mainly, deliver one bit of %openity advice to your Se.each_fn
-    async i_openity(D,openity:number) {
-        await D.replace({openity:1},async () => {
-            openity && D.i({openity})
-        })
-    }
     // T** centrally tracking a journey for a Selection.process()
     journey_to_tour(T:Travel,j:Journey,openness_suggestions:Array<number>) {
         let Tr = T.c.top
@@ -441,7 +435,7 @@ class Dierarchy extends SelectionItself {
     async journeys_affect_D(T:Travel) {
         let TD = T.c.top.sc.D
         let uD = T.up?.sc.D
-        let D = T.sc.D
+        let D = T.sc.D as TheC
 
         let journeys = TD.o({journey:1})
         // openness advice is pumped out into here
@@ -474,7 +468,7 @@ class Dierarchy extends SelectionItself {
         let most_awake = openness_suggestions.sort().pop() || -11
         if (!most_awake) throw "should be an openity"
         if (T != T.c.top && !most_awake) throw "there should be at least 1 %journey"
-        await this.i_openity(D,most_awake)
+        await D.i_kv('openity',most_awake)
         // Tdebug(T,"openity","",most_awake)
     }
     tour_seeking(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):NotTo {
@@ -497,7 +491,7 @@ class Dierarchy extends SelectionItself {
             }
             else if (match == 2) {
                 // it finds where it is going!
-                Tdebug(T,"Starts!")
+                // Tdebug(T,"%tour,matches!")
                 D.i({tour:j,matches:1})
                 to.starts = D
             }
