@@ -347,21 +347,22 @@ export class Tour {
     nice_boost:number = 0  // how much distance was nice going, thus free
 
     starts?:TheD
-    ends?:TheD
+    ends?:TheD // not included in N, is the next place to go
+        // < we don't check there's nothing new between this and N[-1] of our last process()
 }
 type NotTo = boolean
 class Dierarchy extends SelectionItself {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
-    D_to_name(D) {
+    D_to_name(D: TheD):string {
         return D.sc.name
     }
-    D_to_path(D) {
+    D_to_path(D: TheD):Array<string> {
         let path = D.c.T.c.path
         return path.map(T => this.D_to_name(T.sc.D))
     }
     // uniquely identify all D**, no rename continuity
-    D_to_uri(D) {
+    D_to_uri(D: TheD):string {
         let path = this.D_to_path(D)
         // < make / illegal in names. our DirectoryShare root %nib is name=/
         return path.join("/")

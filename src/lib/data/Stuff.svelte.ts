@@ -214,42 +214,72 @@ class StuffIO {
     }
 
     // look for these keys if $key=1, or the value as well.
+    //  good for iterating
     // the X/$k(/$v) /$n give us a list of $n
     //   which we then just grep for the rest of properties
     //  as opposed to:
     //   > thinking about going into particular X/$k/$v, depending on $key=1
-    //   > joining many reads on the X/$k/$v table, which is just uniq(/$n)
+    //   > joining many reads on the X/$k/$v table
     // o(...)[0] for the first row
-    // q||.one_column_mode =
-    //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
-    //  1 returns the first column mentioned in sc (javascript hashes are ordered)
-    //  0 returns the first value of the first column (in the query)
-    o(sc?:TheUniversal,q?:number|any):TheN|TheC|any|undefined {
+    o(sc?:TheUniversal,q?):TheN|TheC|any|undefined {
+        q ||= {}
         sc ||= {}
         // < q might be a Travel...?
-        if (typeof q == "number") q = {one_column_mode:q}
-        q ||= {}
         this.Xify()
 
         let M = this.o_query(sc,q)
         return this.o_results(M,sc,q)
     }
-    // return arrays, empty if no rows, good for iterating .forEach()
+    // from the previous time during replace()
+    //  which would have the complete set of stuff
+    //   while the new one is filling itself out
     bo(c?:TheUniversal,q?):TheN|TheC|any {
-        if (typeof q == "number") q = {one_column_mode:q}
         q ||= {}
         q.X ||= this.X_before
         if (!q.X) return []
         return this.o(c,q)
     }
+
+
     // returning null rather than empty arrays if no rows
-    //  less good for iterating .forEach(), more good for boolean logic
+    //  good for boolean logic
     oa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
         return nonemptyArray_or_null(this.o(c,q))
     }
     boa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
         return nonemptyArray_or_null(this.bo(c,q))
     }
+
+    // q||q.one_column_mode =
+    //  $k returns [v+] in that column, from the resultant /$n/.sc.$k
+    //  1 returns the first column mentioned in sc (javascript hashes are ordered)
+    //  0 returns the first value of the first column (in the query)
+    one_column_mode_q(q) {
+        if (typeof q == "number" || typeof q == "string") q = {one_column_mode:q}
+        q ||= {}
+        q.one_column_mode ??= 1
+        return q
+    }
+    o1(sc?:TheUniversal,q?:number):Array<any>|any|undefined {
+        q = this.one_column_mode_q(q)
+        sc ||= {}
+        // < q might be a Travel...?
+        this.Xify()
+
+        let M = this.o_query(sc,q)
+        return this.o_results(M,sc,q)
+    }
+    bo1(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+        q = this.one_column_mode_q(q)
+        return this.bo(c,q)
+    }
+    oa1(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+        return nonemptyArray_or_null(this.o1(c,q))
+    }
+    boa1(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+        return nonemptyArray_or_null(this.bo1(c,q))
+    }
+
 
     o_query(sc:TheUniversal,q:any) {
         q ||= {}
@@ -292,6 +322,7 @@ class StuffIO {
         return M
     }
     // make subsets of the results easier to get
+    //  could also do sorting or joining...
     o_results(M:TheN,sc:TheUniversal,q:any) {
         if (q.one_column_mode != null) {
             q.one_value_mode = false;

@@ -200,7 +200,7 @@ export class Structure {
             let meta = {}
             let gather_meta = (type:string) => {
                 let name = D.boa({type:type,readin:1})
-                        && D.boa({name:1,   readin:'name'},1)[0]
+                        && D.boa1({name:1,   readin:'name'})[0]
                 if (name != null) {
                     meta[type] = name
                 }
