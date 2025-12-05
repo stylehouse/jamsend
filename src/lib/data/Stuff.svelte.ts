@@ -213,6 +213,7 @@ class StuffIO {
         return n
     }
 
+
     // look for these keys if $key=1, or the value as well.
     //  good for iterating
     // the X/$k(/$v) /$n give us a list of $n
@@ -239,7 +240,6 @@ class StuffIO {
         if (!q.X) return []
         return this.o(c,q)
     }
-
 
     // returning null rather than empty arrays if no rows
     //  good for boolean logic

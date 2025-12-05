@@ -133,50 +133,65 @@ export class DirectoryModus extends Modus {
     }
 
     // picks whole numbers 0-($n||1)
+    // < determinism mode, testing
     prandle(n) {
         return Math.floor(Math.random()*n)
     }
     // do meandering
     async meander(A:TheC,wa:TheC) {
-        // where we're looking
-        let D = wa.o({aim:1}).map(ai => this.Se.j_to_D(ai))[0]
+        let loopy = 99
+        let dir:TheD
+        while (1) {
+            if (loopy-- < 0) throw "loopy"
 
-        let inners = null
-        if (D) {
-            Tdebug(D.c.T,"meandering into")
-            // something with a track advertised
-            let good = D.o({ads:'here',track:1})[0]
-            // < finding %ads:beyond, aim becomes for tracking down that track...
-            if (good) {
-                let sa = await wa.r({satisfied:1})
-                await sa.replace({satisfying:1}, async () => {
-                    sa.i({satisfying:1, ...good.sc})
-                })
+            // where we're looking
+            let D = wa.o({aim:1}).map(ai => this.Se.j_to_D(ai))[0]
+
+            if (D && D.o1({v:1,openity:1})[0] <3) {
+                // we must wait for a Selection.process() for this
+                // < do only that journey if the others are docile?
                 return
             }
-            // keep meandering into D**, until none found
-            // o D/*%Tree
-            inners = D.oa(this.Se.c.trace_sc)
-        }
 
-        // o **%nib,dirs
-        let dirs = inners || this.sleeping_dirs()
-        // pick one
-        let dir = dirs[this.prandle(dirs.length)]
-        if (!dir) {
-            console.warn("got nowhere down: "+this.Se.D_to_uri(D))
-            // throw out wa/%aim, try again from the top
-            await wa.replace({aim:1},async() => {
+            let inners = null
+            if (D) {
+                Tdebug(D.c.T,"meandering into")
+                // something with a track advertised
+                let good = D.o({ads:'here',track:1})[0]
+                // < finding %ads:beyond, aim becomes for tracking down that track...
+                if (good) {
+                    let sa = await wa.r({satisfied:1})
+                    await sa.replace({satisfying:1}, async () => {
+                        sa.i({satisfying:1, ...good.sc})
+                    })
+                    return
+                }
+                // keep meandering into D**, until none found
+                // o D/*%Tree
+                inners = D.oa(this.Se.c.trace_sc)
+            }
+
+            // o **%nib,dirs
+            let dirs = inners || this.sleeping_dirs()
+            // pick one
+            dir = dirs[this.prandle(dirs.length)]
+            if (!dir) {
+                console.warn("got nowhere down: "+this.Se.D_to_uri(D))
+                // throw out wa/%aim, try again from the top
+                await wa.replace({aim:1},async() => {
+                })
+                continue
+            }
+
+            let ai = await wa.r({aim:1})
+            // < this could be r_path, return the old one?
+            await ai.replace({path:1}, async () => {
+                this.Se.i_path(dir,ai)
             })
+            // and log how many times this process goes around:
+            wa.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
         }
 
-        let ai = await wa.r({aim:1})
-        // < this could be r_path, return the old one?
-        await ai.replace({path:1}, async () => {
-            this.Se.i_path(dir,ai)
-        })
-        // and log how many times this process goes around:
-        wa.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
         // %aim spawns a journey, we follow up our %aim next time
     }
     sleeping_dirs() {
@@ -219,7 +234,7 @@ export class DirectoryModus extends Modus {
         this.a_Strata ||= new Strata({
             see: [],
             hide: [{readin:1},
-                // {ads:1},
+                {ads:1},
                 {Tree:1}],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
