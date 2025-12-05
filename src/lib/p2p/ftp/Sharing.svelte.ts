@@ -1,12 +1,11 @@
 import { SvelteMap } from "svelte/reactivity";
 import { erring } from "$lib/Y";
-import { tick } from "svelte";
 
 import { PeeringFeature, PierFeature } from "../Peerily.svelte";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
-import { DirectoryListing, DirectoryModus, DirectoryShares } from "./Directory.svelte";
+import { DirectoryListing, DirectoryShares } from "./Directory.svelte";
 
 
 

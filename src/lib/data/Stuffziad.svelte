@@ -1,6 +1,5 @@
 <script lang="ts">
-    import Modus from '$lib/mostly/Modus.svelte';
-    import type { Modusmem } from './Stuff.svelte';
+    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
     let { mem,stuffziad }: { mem:Modusmem, stuffziad: Stuffziad } = $props()

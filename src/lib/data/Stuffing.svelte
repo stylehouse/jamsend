@@ -1,9 +1,9 @@
 <script lang="ts">
     import Strata from '$lib/data/Strata.svelte';
-    import Modus from '$lib/mostly/Modus.svelte';
-    import type { Matchy } from '$lib/mostly/Structure.svelte';
+    import type { Matchy } from '$lib/mostly/Structure.svelte.ts';
     import { hak } from '$lib/Y';
-    import { Modusmem, Stuff,Stuffing, type TheUniversal } from './Stuff.svelte';
+    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
+    import { Stuff,Stuffing, type TheUniversal } from './Stuff.svelte.ts';
     import Stuffusion from './Stuffusion.svelte'
 
     let { mem,stuff,matchy,M }:{ 

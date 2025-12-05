@@ -1,8 +1,7 @@
 <script lang="ts">
     import { throttle } from "$lib/Y";
     import type { KVStore } from "./IDB.svelte";
-    import { objectify } from "./Stuff.svelte";
-    import type { ThingIsms } from "./Things.svelte";
+    import type { ThingIsms } from "./Things.svelte.ts";
 
     type stashedHaver = Object & {stashed:Object,stashed_mem:KVStore}
     let {S,name,M}:{

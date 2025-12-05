@@ -1,7 +1,5 @@
 <script lang="ts">
-    import { _C, keyser, Modus, Modusmem, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
-    import Stuffing from "$lib/data/Stuffing.svelte";
-    import type { Selection, TheD, Travel } from "$lib/mostly/Selection.svelte";
+    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import type { Strata } from "$lib/mostly/Structure.svelte";
     import Stratum from "./Stratum.svelte";
 

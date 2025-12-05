@@ -1,9 +1,7 @@
 <script lang="ts">
-    import type { Modus } from "$lib/data/Stuff.svelte";
+    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import Stuffing from "$lib/data/Stuffing.svelte";
-    import { throttle } from "$lib/Y";
     import { onDestroy } from "svelte";
-    import NotPier from "../p2p/ui/repro-reactive-stashed-hierarchy/NotPier.svelte";
     import Strata from "$lib/data/Strata.svelte";
 
     let {M}:{M:Modus} = $props()

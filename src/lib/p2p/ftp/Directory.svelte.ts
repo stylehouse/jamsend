@@ -1,6 +1,7 @@
 
 import { KVStore } from '$lib/data/IDB.svelte'
-import { _C, keyser, Modus, Stuff, TheC, type TheEmpirical, type TheN, type TheUniversal } from '$lib/data/Stuff.svelte';
+import { Modus } from "$lib/mostly/Modus.svelte.ts";
+import { _C, keyser, TheC, type TheN } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
@@ -92,11 +93,11 @@ export class DirectoryModus extends Modus {
 
             // keep %wanting something
             let wa = A.o({wanting:1})[0]
-                || A.i({wanting:1,method:'meander'})
+                || A.i({wanting:1,method:'meander',then:'radioprep'})
             
             let method = wa.sc.method
             if (method && this[method]) {
-                await this[method](A,wa)
+                await this[method](A,wa,wa.sc.with)
             }
             else {
                 if (method) wa.i({error:`!method`})
@@ -106,10 +107,38 @@ export class DirectoryModus extends Modus {
 
             // percolate wa/ai/%path -> j/%path from this A
             await this.i_journeys_o_aims(A,wa)
+
+            // re-enter the wa so we can mutate sc
+            await A.r({wanting:1},wa)
+            for (let sa of wa.o({satisfied:1})) {
+                // change what this A is wanting
+                let next_method = wa.sc.then || "out_of_instructions"
+                let c = {method:next_method}
+                if (sa.sc.with) c.had = sa.sc.with
+                await A.r({wanting:1},c)
+            }
         }
     }
+    async out_of_instructions(A,wa) {
+        console.warn("out_of_instructions!")
+    }
+    async radioprep(A,wa,D) {
+        console.warn("Radioprep!", D)
+        wa.sc.then ||= "out_of_instructions"
+        wa.sc.countme ||= 0
+        wa.sc.countme++ <3
+            // || await wa.r({satisfied:1,with:D})
+    }
+
+    // name an A with a %wanting etc
+    name_A_thing(A,th) {
+        let thingsay = th.sc.method ? "."+th.sc.method
+            : "?"
+        return "A:"+A.sc.A+thingsay
+    }
     async i_journeys_o_aims(A,wa) {
-        let journey = 'A.'+wa.sc.method
+        // replace a particular journey that comes from this A
+        let journey = this.name_A_thing(A,wa)
         // have *%journey first
         let journeys = []
         await this.Tr.sc.D.replace({journey}, async () => {
@@ -128,7 +157,23 @@ export class DirectoryModus extends Modus {
                     j.i(n.sc)
                 }
             })
+            await j.replace({gaveup:1}, async () => {
+            })
             // < note somehow this ai->j vectoring
+        }
+    }
+
+    async is_meander_satisfied(A,wa,D) {
+        // something with a track advertised
+        let good = D.o({ads:'here',track:1})[0]
+        // < finding %ads:beyond, aim becomes for tracking down that track...
+        if (good) {
+            // random debug noises
+            await wa.replace({satisfying:1}, async () => {
+                wa.i({satisfying:1, ...good.sc})
+            })
+            // take to the next method
+            return true
         }
     }
 
@@ -156,14 +201,9 @@ export class DirectoryModus extends Modus {
             let inners = null
             if (D) {
                 Tdebug(D.c.T,"meandering into")
-                // something with a track advertised
-                let good = D.o({ads:'here',track:1})[0]
-                // < finding %ads:beyond, aim becomes for tracking down that track...
+                let good = await this.is_meander_satisfied(A,wa,D)
                 if (good) {
-                    let sa = await wa.r({satisfied:1})
-                    await sa.replace({satisfying:1}, async () => {
-                        sa.i({satisfying:1, ...good.sc})
-                    })
+                    let sa = await wa.r({satisfied:1,with:D})
                     return
                 }
                 // keep meandering into D**, until none found

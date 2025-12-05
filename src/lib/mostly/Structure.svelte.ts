@@ -3,7 +3,9 @@ import type { Selection, Travel } from "./Selection.svelte";
 import { hak, hashkv, Parserify } from '$lib/Y'
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
-
+export class Agency {
+    
+}
 //#endregion
 //#region Strata
 // Stable wrapper that Svelte can key on and derive D from

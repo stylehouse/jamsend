@@ -1,7 +1,9 @@
 <script lang="ts">
-    import { type TheN,Modusmem,Stuffusion,Stuffziado } from "./Stuff.svelte";
+    import { type TheN,Stuffusion,Stuffziado } from "./Stuff.svelte";
+    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import Stuffing from "./Stuffing.svelte";
 
+    // < ts fail
     type eitherzipperuzia = {stuffusion:Stuffusion} | {stuffziado:Stuffziado}
     let { mem,
         innered,

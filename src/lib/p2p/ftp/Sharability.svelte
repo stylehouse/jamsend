@@ -1,6 +1,5 @@
 <script lang="ts">
     import Modus from '../../mostly/Modus.svelte';
-    import { Modus as TheModus } from "$lib/data/Stuff.svelte";
     import { onMount } from "svelte";
     import { DirectoryModus, DirectoryShare, FileListing, type AnyShare } from './Directory.svelte';
     import FileList from './FileList.svelte';

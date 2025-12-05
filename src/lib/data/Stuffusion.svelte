@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { Modusmem, Stuffusion } from './Stuff.svelte';
+    import { Stuffusion } from './Stuff.svelte';
+    import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
     
