@@ -97,7 +97,7 @@ export class DirectoryModus extends Modus {
             
             let method = wa.sc.method
             if (method && this[method]) {
-                await this[method](A,wa,wa.sc.with)
+                await this[method](A,wa,wa.sc.had)
             }
             else {
                 if (method) wa.i({error:`!method`})
@@ -111,11 +111,20 @@ export class DirectoryModus extends Modus {
             // re-enter the wa so we can mutate sc
             await A.r({wanting:1},wa)
             for (let sa of wa.o({satisfied:1})) {
-                // change what this A is wanting
+                // take instructions
                 let next_method = wa.sc.then || "out_of_instructions"
                 let c = {method:next_method}
                 if (sa.sc.with) c.had = sa.sc.with
-                await A.r({wanting:1},c)
+                // change what this A is wanting
+                let nu = await A.r({wanting:1},c)
+                // < how better to express about avoiding|kind-of being resolved
+                // not resyncing nu/*
+                nu.empty()
+                // take %aim, ie keep pointers for the rest of A
+                // < this kind of transfer wants a deep clone ideally?
+                for (let ai of wa.o({aim:1})) {
+                    nu.i(ai)
+                }
             }
         }
     }
@@ -127,18 +136,22 @@ export class DirectoryModus extends Modus {
         wa.sc.then ||= "out_of_instructions"
         wa.sc.countme ||= 0
         wa.sc.countme++ <3
-            // || await wa.r({satisfied:1,with:D})
+            || await wa.r({satisfied:1,with:D})
     }
 
     // name an A with a %wanting etc
     name_A_thing(A,th) {
         let thingsay = th.sc.method ? "."+th.sc.method
             : "?"
-        return "A:"+A.sc.A+thingsay
+        return this.name_A_thing(A)+thingsay
+    }
+    // name an A
+    name_A(A) {
+        return "A:"+A.sc.A
     }
     async i_journeys_o_aims(A,wa) {
         // replace a particular journey that comes from this A
-        let journey = this.name_A_thing(A,wa)
+        let journey = this.name_A(A)
         // have *%journey first
         let journeys = []
         await this.Tr.sc.D.replace({journey}, async () => {

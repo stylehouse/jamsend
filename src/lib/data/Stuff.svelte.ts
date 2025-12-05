@@ -477,6 +477,10 @@ export class Stuff extends TimeOffice {
             b.X = a.X
         }
     }
+    empty() {
+        this.X = null
+        this.Xify()
+    }
 
     // redo everything or a subset that we replace things around
     //  inside fn(),
@@ -491,8 +495,7 @@ export class Stuff extends TimeOffice {
         //   so we can use it for locking, see have_time()
         this.Xify()
         this.X_before = this.X
-        this.X = null
-        this.Xify()
+        this.empty()
 
         // may select a subset to replace
         let partial:TheN|null = null
