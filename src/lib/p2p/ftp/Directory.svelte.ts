@@ -99,18 +99,8 @@ export class DirectoryModus extends Modus {
         }
     }
 
-    async is_meander_satisfied(A,wa,D) {
-        // something with a track advertised
-        let good = D.o({ads:'here',track:1})[0]
-        // < finding %ads:beyond, aim becomes for tracking down that track...
-        if (good) {
-            // random debug noises
-            await wa.replace({satisfying:1}, async () => {
-                wa.i({satisfying:1, ...good.sc})
-            })
-            // take to the next method
-            return true
-        }
+    get_sleeping_D_filter(D) {
+        return D.c.T.sc.n.sc.nib == 'dir'
     }
 
 

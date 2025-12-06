@@ -386,7 +386,7 @@ export abstract class Modus extends Agency {
             }
 
             // o **%nib,dirs
-            let dirs = inners || this.sleeping_dirs()
+            let dirs = inners || this.get_sleeping_T().map(T => T.sc.D)
             // pick one
             dir = dirs[this.prandle(dirs.length)]
             if (!dir) {
@@ -408,11 +408,11 @@ export abstract class Modus extends Agency {
 
         // %aim spawns a journey, we follow up our %aim next time
     }
-    sleeping_dirs() {
+    // dirs for directions
+    get_sleeping_T() {
         return this.Tr!.sc.N
-            .filter(T => T.sc.n.sc.nib == 'dir')
+            .filter(T => !this.get_sleeping_T_filter || this.get_sleeping_T_filter(T))
             .filter(T => T.sc.not) // closed|sleeping, ~~ %openity,v<3 without knowing it
-            .map(T => T.sc.D)
     }
 }
 
