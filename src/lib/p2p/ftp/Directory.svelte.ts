@@ -6,7 +6,7 @@ import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
-import { now_in_seconds, PeeringFeature, type PierFeature } from '../Peerily.svelte';
+import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 
 
@@ -76,61 +76,6 @@ export class DirectoryModus extends Modus {
         })
         this.main()
     }
-    async agency_think() {
-        for (let A of this.Tr.sc.D.o({A:1})) {
-            // est timestamp
-            !A.oa({self:1,est:1})
-                && A.i({self:1,est:now_in_seconds()})
-
-            // two senses of time
-            let ro = A.o({self:1,round:1})[0]
-            let es = A.oa({self:1,est:1})[0]
-            await A.replace({self:1,round:1},async () => {
-                let round = Number(ro?.sc.round || 0) + 1
-                let delta = es && es.ago('est')
-                A.i({self:1,round,delta})
-            })
-
-            // keep %wanting something
-            let wa = A.o({wanting:1})[0]
-                || A.i({wanting:1,method:'meander',then:'radioprep'})
-            
-            let method = wa.sc.method
-            if (method && this[method]) {
-                await this[method](A,wa,wa.sc.had)
-            }
-            else {
-                if (method) wa.i({error:`!method`})
-                // < refer other %wanting to central stuck-trol?
-                return
-            }
-
-            // percolate wa/ai/%path -> j/%path from this A
-            await this.i_journeys_o_aims(A,wa)
-
-            // re-enter the wa so we can mutate sc
-            await A.r({wanting:1},wa)
-            for (let sa of wa.o({satisfied:1})) {
-                // take instructions
-                let next_method = wa.sc.then || "out_of_instructions"
-                let c = {method:next_method}
-                if (sa.sc.with) c.had = sa.sc.with
-                // change what this A is wanting
-                let nu = await A.r({wanting:1},c)
-                // < how better to express about avoiding|kind-of being resolved
-                // not resyncing nu/*
-                nu.empty()
-                // take %aim, ie keep pointers for the rest of A
-                // < this kind of transfer wants a deep clone ideally?
-                for (let ai of wa.o({aim:1})) {
-                    nu.i(ai)
-                }
-            }
-        }
-    }
-    async out_of_instructions(A,wa) {
-        console.warn("out_of_instructions!")
-    }
     async radioprep(A,wa,D) {
         console.warn("Radioprep!", D)
         wa.sc.then ||= "out_of_instructions"
@@ -139,42 +84,6 @@ export class DirectoryModus extends Modus {
             || await wa.r({satisfied:1,with:D})
     }
 
-    // name an A with a %wanting etc
-    name_A_thing(A,th) {
-        let thingsay = th.sc.method ? "."+th.sc.method
-            : "?"
-        return this.name_A_thing(A)+thingsay
-    }
-    // name an A
-    name_A(A) {
-        return "A:"+A.sc.A
-    }
-    async i_journeys_o_aims(A,wa) {
-        // replace a particular journey that comes from this A
-        let journey = this.name_A(A)
-        // have *%journey first
-        let journeys = []
-        await this.Tr.sc.D.replace({journey}, async () => {
-            for (let ai of wa.o({aim:1})) {
-                // < are duplicate names ok? what to do about it?
-                let j = this.Tr.sc.D.i({journey})
-                journeys.push(j)
-            }
-        })
-        for (let ai of wa.o({aim:1})) {
-            let j = journeys.shift()
-            // < method this? see PrevNextoid
-            // i j/* o ai/*%path
-            await j.replace({path:1}, async () => {
-                for (let n of ai.o({path:1})) {
-                    j.i(n.sc)
-                }
-            })
-            await j.replace({gaveup:1}, async () => {
-            })
-            // < note somehow this ai->j vectoring
-        }
-    }
 
     async is_meander_satisfied(A,wa,D) {
         // something with a track advertised
@@ -190,68 +99,18 @@ export class DirectoryModus extends Modus {
         }
     }
 
-    // picks whole numbers 0-($n||1)
-    // < determinism mode, testing
-    prandle(n) {
-        return Math.floor(Math.random()*n)
-    }
-    // do meandering
-    async meander(A:TheC,wa:TheC) {
-        let loopy = 99
-        let dir:TheD
-        while (1) {
-            if (loopy-- < 0) throw "loopy"
-
-            // where we're looking
-            let D = wa.o({aim:1}).map(ai => this.Se.j_to_D(ai))[0]
-
-            if (D && D.o1({v:1,openity:1})[0] <3) {
-                // we must wait for a Selection.process() for this
-                // < do only that journey if the others are docile?
-                return
-            }
-
-            let inners = null
-            if (D) {
-                Tdebug(D.c.T,"meandering into")
-                let good = await this.is_meander_satisfied(A,wa,D)
-                if (good) {
-                    let sa = await wa.r({satisfied:1,with:D})
-                    return
-                }
-                // keep meandering into D**, until none found
-                // o D/*%Tree
-                inners = D.oa(this.Se.c.trace_sc)
-            }
-
-            // o **%nib,dirs
-            let dirs = inners || this.sleeping_dirs()
-            // pick one
-            dir = dirs[this.prandle(dirs.length)]
-            if (!dir) {
-                console.warn("got nowhere down: "+this.Se.D_to_uri(D))
-                // throw out wa/%aim, try again from the top
-                await wa.replace({aim:1},async() => {
-                })
-                continue
-            }
-
-            let ai = await wa.r({aim:1})
-            // < this could be r_path, return the old one?
-            await ai.replace({path:1}, async () => {
-                this.Se.i_path(dir,ai)
+    async is_meander_satisfied(A,wa,D) {
+        // something with a track advertised
+        let good = D.o({ads:'here',track:1})[0]
+        // < finding %ads:beyond, aim becomes for tracking down that track...
+        if (good) {
+            // random debug noises
+            await wa.replace({satisfying:1}, async () => {
+                wa.i({satisfying:1, ...good.sc})
             })
-            // and log how many times this process goes around:
-            wa.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
+            // take to the next method
+            return true
         }
-
-        // %aim spawns a journey, we follow up our %aim next time
-    }
-    sleeping_dirs() {
-        return this.Tr!.sc.N
-            .filter(T => T.sc.n.sc.nib == 'dir')
-            .filter(T => T.sc.not) // closed|sleeping, ~~ %openity,v<3 without knowing it
-            .map(T => T.sc.D)
     }
 
 
@@ -299,9 +158,6 @@ export class DirectoryModus extends Modus {
     // random challenges:
     //  are there any unawaited promises in my code?
     thetime = 0
-    // latest finished topT, works for Selection
-    Tr?:Travel
-    Se:Selection
     async Travel_DLs(n:TheC) {
         // console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
