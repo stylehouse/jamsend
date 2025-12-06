@@ -527,6 +527,7 @@ export class DirectoryModus extends Modus {
 
 
 
+//#endregion
 //#region *Listing
 // one file
 export class FileListing {
@@ -682,6 +683,7 @@ export class RemoteShare extends ThingIsms {
     async start() {}
 }
 
+//#endregion
 //#region DirectoryShare
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare extends ThingIsms {
@@ -802,6 +804,7 @@ export class DirectoryShare extends ThingIsms {
     }
 }
 
+//#endregion
 //#region DirectoryShares
 // Collection of DirectoryShares with persistence
 export class DirectoryShares extends ThingsIsms {

@@ -5,12 +5,81 @@ import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import type { PeeringFeature } from "$lib/p2p/Peerily.svelte";
 
-//#region Modus
-type StashedModus = Object & {
+abstract class ModusItself  {
+    // belongs to a thing of a feature
+    S:ThingIsms
+    // < FeatureIsms. PF.F = F
+    F:PeeringFeature
+    
+    // < GOING?
+    coms?:TheC|null = $state()
+    // suppose you will develop your *Modus while looking at a Strata
+    a_Strata?:Strata = $state()
 
+    constructor(opt:Partial<Modus>) {
+        // super()
+        Object.assign(this,opt)
+        this.init_stashed_mem?.()
+    }
+
+    // example. you subclass this
+    async main() {
+        await this.have_time(async () => {
+            // recreate bits
+        })
+    }
+    // see TimeGallopia for 
+    //  probably use replacies() to enliven some Stuff
+    stopped = false
+    stop() {
+        this.stopped = true
+    }
+
+
+    // the "I'm redoing the thing" process wrapper
+    // a layer on top of Stuff.replace():
+    //  graceful fail when already locked
+    //  doesn't recycle C/** (replace() q.fresh)
+    abstract current:TheC
+    time_having?:Error|null
+    async have_time(fn:Function) {
+        let at = new Error().stack
+        if (this.time_having) {
+            console.error("re-transacting Modus",
+                {awaiting_stack:this.time_having,
+                 current_stack:at})
+            return
+        }
+        this.time_having = at
+        
+        try {
+            // doing the business
+            await fn()
+        } finally {
+            this.time_having = null
+        }
+    }
+
+//#endregion
+//#region Memory
+
+
+
+    // M.stashed is persistent
+    stashed:StashedModus = $state()
+    stashed_mem:KVStore
+    init_stashed_mem() {
+        this.S.stashed_mem(this,`Modus:${objectify(this)}`)
+    }
+    // io into the .stashed.**
+    imem(key) {
+        return new Modusmem(this,[key])
+    }
 }
+
 // memory hole climbing accessors
-//  for any M.stashed haver, for now Modus
+// < generalise for all .stashed havers, is now just Modus
+type StashedModus = Object & {}
 export class Modusmem {
     M:Modus
     keys:Array<string>
@@ -46,43 +115,46 @@ export class Modusmem {
     }
 }
 
-abstract class TimeGallopia {
-    // M.stashed is persistent
-    stashed:StashedModus = $state()
-    stashed_mem:KVStore
-    init_stashed_mem() {
-        this.S.stashed_mem(this,`Modus:${objectify(this)}`)
-    }
-    // io into the .stashed.**
-    imem(key) {
-        return new Modusmem(this,[key])
-    }
 
 
-    // the "I'm redoing the thing" process wrapper
-    // a layer on top of Stuff.replace():
-    //  graceful fail when already locked
-    //  doesn't recycle C/** (replace() q.fresh)
-    abstract current:TheC
-    time_having?:Error|null
-    async have_time(fn:Function) {
-        let at = new Error().stack
-        if (this.time_having) {
-            console.error("re-transacting Modus",
-                {awaiting_stack:this.time_having,
-                 current_stack:at})
-            return
-        }
-        this.time_having = at
-        
-        try {
-            // doing the business
-            await fn()
-        } finally {
-            this.time_having = null
-        }
+
+abstract class ModusPretendingtobeaC extends ModusItself {
+    // Modus having .current, rather than being C
+    current:TheC = $state(_C())
+    // add to the Stuff
+    i(C:TheC|TheUniversal) {
+        return this.current.i(C)
+    }
+    drop(C:TheC) {
+        return this.current.drop(C)
     }
 
+    // retrieval (opening)
+    // for now or before
+    // return undefined if no rows, good for boolean logic
+    // look at this time's Stuff
+    o(c?:TheUniversal,q?) {
+        return this.current.o(c, q)
+    }
+    // < zo() would look at the previous time until the current one was commit to
+    // look at previous time
+    bo(c?:TheUniversal,q?) {
+        return this.current.bo(c, q)
+    }
+
+    oa(c?:TheUniversal,q?) {
+        return this.current.oa(c, q)
+    }
+    boa(c?:TheUniversal,q?) {
+        return this.current.boa(c, q)
+    }
+}
+
+
+//#endregion
+//#region ModusUtil
+
+abstract class TimeGallopia extends ModusPretendingtobeaC {
     // when starting a new time, set the next
     async reset_interval() {
         // the universal %interval persists through time, may be adjusted
@@ -170,70 +242,10 @@ abstract class TimeGallopia {
 }
 
 export abstract class Modus extends TimeGallopia {
-    // belongs to a thing of a feature
-    S:ThingIsms
-    // < FeatureIsms. PF.F = F
-    F:PeeringFeature
-    
-    // < GOING?
-    coms?:TheC|null = $state()
-    // suppose you will develop your *Modus while looking at a Strata
-    a_Strata?:Strata = $state()
+}
 
-    constructor(opt:Partial<Modus>) {
-        super()
-        Object.assign(this,opt)
-        this.init_stashed_mem?.()
-    }
-
-
-    // Modus having .current, rather than being C
-    current:TheC = $state(_C())
-    // add to the Stuff
-    i(C:TheC|TheUniversal) {
-        return this.current.i(C)
-    }
-    drop(C:TheC) {
-        return this.current.drop(C)
-    }
-
-    // retrieval (opening)
-    // for now or before
-    // return undefined if no rows, good for boolean logic
-    // look at this time's Stuff
-    o(c?:TheUniversal,q?) {
-        return this.current.o(c, q)
-    }
-    // < zo() would look at the previous time until the current one was commit to
-    // look at previous time
-    bo(c?:TheUniversal,q?) {
-        return this.current.bo(c, q)
-    }
-
-    oa(c?:TheUniversal,q?) {
-        return this.current.oa(c, q)
-    }
-    boa(c?:TheUniversal,q?) {
-        return this.current.boa(c, q)
-    }
-
-    // you subclass this
-    main() {
-        console.log("Disfrance")
-        this.i({diffrance:23})
-    }
-    // see TimeGallopia for 
-    //  probably use replacies() to enliven some Stuff
-
-
-
-
-    stopped = false
-    stop() {
-        this.stopped = true
-    }
-
-    static test_Modus() {
+function ModusTesting() {
+    function test_Modus() {
         let M = new Modus()
 
         M.i({unfinished:1})
@@ -249,7 +261,7 @@ export abstract class Modus extends TimeGallopia {
         return M
     }
 
-    static test_Stuff() {
+    function test_Stuff() {
         let M = new Modus()
         M.i({waffle:2,table:4})
         M.i({waffle:5,six:4})
@@ -265,8 +277,4 @@ export abstract class Modus extends TimeGallopia {
         console.log("Stuff",{empty_undef,two_one_one})
         return M
     }
-    
-
-
-
 }
