@@ -1,6 +1,6 @@
 // Another Things/Thing thing!
 
-import { keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
+import { keyser, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
 import { isar, isC, reverse } from "$lib/Y"
 
 const AI = `
@@ -541,6 +541,9 @@ class Dierarchy extends SelectionItself {
         await D.i_kv('openity',most_awake)
         // Tdebug(T,"openity","",most_awake)
     }
+    i_tour(D: TheD, j: Journey, props: TheUniversal) {
+        D.i({ tour: j.sc.journey, ...props })
+    }
     tour_seeking(T:Travel,D:TheD,j:Journey,to:Tour,openness_suggestions:Array<number>):NotTo {
         // already ended elsewhere
         if (to.ends) {
@@ -556,13 +559,13 @@ class Dierarchy extends SelectionItself {
             if (match == 1) {
                 // we are going somewhere in here,
                 //  but the tour group shouldn't start taking everything in yet
-                D.i({tour:j,wayto:1})
+                this.i_tour(D, j, {wayto:1})
                 to.match_boost += 1
             }
             else if (match == 2) {
                 // it finds where it is going!
                 // Tdebug(T,"%tour,matches!")
-                D.i({tour:j,matches:1})
+                this.i_tour(D, j, {matches:1})
                 to.starts = D
             }
             else {
@@ -584,10 +587,10 @@ class Dierarchy extends SelectionItself {
             if (!to.ends) {
                 // will be first next.
                 await this.tour_stops(D,j,to)
-                D.i({tour:j,exhaustion:1})
+                this.i_tour(D, j, {exhaustion:1})
             }
             else {
-                D.i({tour:j,exhausted:1})
+                this.i_tour(D, j, {exhausted:1})
             }
             openness_suggestions.push(2)
             return true
