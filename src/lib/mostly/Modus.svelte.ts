@@ -1,6 +1,6 @@
 
 import type { KVStore } from "$lib/data/IDB.svelte";
-import { _C, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
+import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
@@ -283,7 +283,13 @@ export abstract class Modus extends Agency {
             
             let method = wa.sc.method
             if (method && this[method]) {
-                await this[method](A,wa,wa.sc.had)
+                try {
+                    await this[method](A,wa,wa.sc.had)
+                } catch (error) {
+                    wa.i({error: error.message || String(error)})
+                    console.error(`Error in method ${method}:`, error)
+                    return
+                }
             }
             else {
                 if (method) wa.i({error:`!method`})
@@ -401,6 +407,9 @@ export abstract class Modus extends Agency {
                 await wa.replace({aim:1},async() => {
                 })
                 continue
+            }
+            if (dir == D) {
+                throw `loopily: ${keyser(D)}`
             }
 
             let ai = await wa.r({aim:1})

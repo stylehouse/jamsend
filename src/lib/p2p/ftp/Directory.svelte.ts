@@ -94,7 +94,7 @@ export class DirectoryModus extends Modus {
         }
     }
     async radioprep(A,wa,D) {
-        let n = D.c.T.sc.n
+        await this.S.getReader("Nonexisto")
 
         console.warn("Radioprep!", n.sc)
         // wa.sc.then ||= "out_of_instructions"
@@ -109,6 +109,9 @@ export class DirectoryModus extends Modus {
 
 
 
+
+//#endregion
+//#region n => D
     // < partition a travel into %nib**
     //  < and deduplicate|DRY from having an extra toplevel %nib replace.
     // look to (or initialise) and climb down into the top %DL
@@ -119,7 +122,7 @@ export class DirectoryModus extends Modus {
         let C = this.current
 
         await C.replace({nib:'dir'},async () => {
-            let n = C.i({nib:'dir',name:'/',DL})
+            let n = C.i({nib:'dir',name:DL.name,DL})
             // n/* is empty
         })
         // n/* have now resolved what they were
@@ -685,6 +688,7 @@ export class DirectoryShares extends ThingsIsms {
 
 //#region fs
 
+// < GOING eventually, move open handles to D**
 interface FileReader {
     size: number;
     iterate: (startFrom?: number) => AsyncGenerator<ArrayBuffer>;

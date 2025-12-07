@@ -387,54 +387,25 @@ class Dierarchy extends SelectionItself {
         // Use path_to_D to resolve the path to a D
         return this.path_to_D(pathBits)
     }
-    // AI
     // Convert a path array to its corresponding D
-    path_to_D(pathBits: string[]): TheD | null {
-        if (!pathBits || pathBits.length === 0) {
-            return null
-        }
+    path_to_D(path: string[]): TheD | null {
+        if (!path || path.length === 0) throw "!path"
         
         // Start from the top D
         const T = this.c.T
-        if (!T) return null
-        
-        let currentD = T.sc.D
-        if (!currentD) return null
+        let D = T?.sc.D
+        if (!D) throw "premature path_to_D"
+
+        let D_match = (D:TheD,bit:string) => this.D_to_name(D) == bit
         
         // Traverse down the path
-        for (let i = 0; i < pathBits.length; i++) {
-            const expectedName = pathBits[i]
-            
-            // Check if current D matches the expected name
-            if (this.D_to_name(currentD) !== expectedName) {
-                // If we're at the top level, this might be okay
-                if (i > 0) return null
-            }
-            
-            // If this is the last segment, we've found it
-            if (i === pathBits.length - 1) {
-                return currentD
-            }
-            
-            // Otherwise, find the child D that matches the next segment
-            const nextBit = pathBits[i + 1]
-            const children = currentD.o(this.c.trace_sc)
-            
-            let found = false
-            for (const childD of children) {
-                if (this.D_to_name(childD) === nextBit) {
-                    currentD = childD
-                    found = true
-                    break
-                }
-            }
-            
-            if (!found) {
-                return null
-            }
+        for (const bit of path) {
+            let next = D.o(this.c.trace_sc)
+                .find(D => D_match(D,bit)) // first one matching that
+            if (!next) return null
+            D = next
         }
-        
-        return currentD
+        return D
     }
     i_path(D,j:Journey) {
         let i = 0
