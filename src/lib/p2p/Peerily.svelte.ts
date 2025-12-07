@@ -618,7 +618,7 @@ export class Pier {
 
     send_stuff({crypto,data,buffer}) {
         if (!this.send_ready) {
-            if (!options.quiet) console.error(`${this} channel not ready, dropping emit`);
+            console.error(`${this} channel not ready, dropping emit`);
             return
         }
 

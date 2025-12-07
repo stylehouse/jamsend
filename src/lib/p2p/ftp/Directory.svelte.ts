@@ -76,17 +76,12 @@ export class DirectoryModus extends Modus {
         })
         this.main()
     }
-    async radioprep(A,wa,D) {
-        console.warn("Radioprep!", D)
-        wa.sc.then ||= "out_of_instructions"
-        wa.sc.countme ||= 0
-        wa.sc.countme++ <3
-            || await wa.r({satisfied:1,with:D})
+
+    i_auto_wanting(A) {
+        return A.i({wanting:1,method:'meander',then:'radioprep'})
     }
-
-
     async is_meander_satisfied(A,wa,D) {
-        // something with a track advertised
+        // something with a track
         let good = D.o({ads:'here',track:1})[0]
         // < finding %ads:beyond, aim becomes for tracking down that track...
         if (good) {
@@ -97,6 +92,15 @@ export class DirectoryModus extends Modus {
             // take to the next method
             return true
         }
+    }
+    async radioprep(A,wa,D) {
+        let n = D.c.T.sc.n
+
+        console.warn("Radioprep!", n.sc)
+        // wa.sc.then ||= "out_of_instructions"
+        wa.sc.countme ||= 0
+        wa.sc.countme++ <3
+            // || await wa.r({satisfied:1,with:D})
     }
 
     get_sleeping_D_filter(D) {
@@ -376,6 +380,7 @@ export class DirectoryModus extends Modus {
 //#endregion
 //#region *Listing
 // one file
+
 export class FileListing {
     up: DirectoryListing
     name: string;
@@ -386,6 +391,10 @@ export class FileListing {
         this.name = init.name;
         this.size = init.size;
         this.modified = init.modified instanceof Date ? init.modified : new Date(init.modified);
+    }
+
+    getReader() {
+
     }
 
     // Format size in human readable format (KB, MB, etc)
@@ -433,6 +442,10 @@ export class DirectoryListing {
     constructor(init: Partial<DirectoryListing> = {}) {
         Object.assign(this,init)
     }
+    getWriter(pathbit) {
+
+    }
+    
     async expand() {
         if (!this.handle) throw erring('No directory access')
         // if already expanded, it means return
@@ -475,6 +488,8 @@ export class DirectoryListing {
         this.expanded = false;
     }
 
+
+    // < GOING from here down? encode|communicate stuff somehow.
     // for sending only one directory-full at a time
     //  ie return a Partial<DirectoryListing> without any 2-inners
     //   ie dir/dir only, not their dir/dir/(dir|file)

@@ -723,9 +723,7 @@ function PrevNextoid() {
     }
 }
 //#endregion
-//#region Structure
-class Structure extends Dierarchy {
-}
+//#region 
 
 
 export class Selection extends Dierarchy {

@@ -153,7 +153,7 @@ abstract class ModusPretendingtobeaC extends ModusItself {
 
 
 //#endregion
-//#region ModusUtil
+//#region misc
 
 abstract class TimeGallopia extends ModusPretendingtobeaC {
     // Modus will be highly tested so is the center of virtualisations
@@ -259,7 +259,9 @@ export abstract class Modus extends Agency {
     // latest finished topT, works for Selection
     Tr?:Travel
     Se:Selection
+    
     // process job queue
+    declare i_auto_wanting:Function
     async agency_think() {
         for (let A of this.Tr.sc.D.o({A:1})) {
             // est timestamp
@@ -277,7 +279,7 @@ export abstract class Modus extends Agency {
 
             // keep %wanting something
             let wa = A.o({wanting:1})[0]
-                || A.i({wanting:1,method:'meander',then:'radioprep'})
+                || this.i_auto_wanting(A)
             
             let method = wa.sc.method
             if (method && this[method]) {
@@ -356,6 +358,10 @@ export abstract class Modus extends Agency {
 
 
 
+//#endregion
+//#region methods
+
+    declare is_meander_satisfied:Function
     // do meandering
     async meander(A:TheC,wa:TheC) {
         let loopy = 99
@@ -409,6 +415,7 @@ export abstract class Modus extends Agency {
         // %aim spawns a journey, we follow up our %aim next time
     }
     // dirs for directions
+    declare get_sleeping_T_filter:Function
     get_sleeping_T() {
         return this.Tr!.sc.N
             .filter(T => !this.get_sleeping_T_filter || this.get_sleeping_T_filter(T))

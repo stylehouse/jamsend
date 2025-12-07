@@ -91,6 +91,7 @@ export class PierSharing extends PierFeature {
 
 
 //#region sendFile
+    // < needs a redo for %nib** reality...
     // Send a file from the filesystem
     async sendFile(
         filename: string,
