@@ -384,6 +384,8 @@ export class DirectoryModus extends Modus {
 export class FileListing {
     up: DirectoryListing
     name: string;
+    share:DirectoryShare
+
     size: number;
     modified: Date;
     
@@ -391,10 +393,6 @@ export class FileListing {
         this.name = init.name;
         this.size = init.size;
         this.modified = init.modified instanceof Date ? init.modified : new Date(init.modified);
-    }
-
-    getReader() {
-
     }
 
     // Format size in human readable format (KB, MB, etc)
@@ -431,9 +429,11 @@ function sort_by_name(a:name_haver,b:name_haver,k?:string) {
 }
 // many files|dirs
 export class DirectoryListing {
+    up?: DirectoryListing
     handle:any
     name: string
-    up?: DirectoryListing
+
+
     files: FileListing[] = $state([])
     directories: DirectoryListing[] = $state([])
     
@@ -550,15 +550,20 @@ export class RemoteShare extends ThingIsms {
 export class DirectoryShare extends ThingIsms {
     fsHandler: FileSystemHandler
     
-    // State
     started = $state(false)
 
-    // private state
     modus?:Modus = $state()
 
-    // a single toplevel DL:'/',  DirectoryListing thing
     get list():DirectoryListing {
         return this.started && this.fsHandler.list
+    }
+    // anywhere within the toplevel
+    async getReader(filename: string) {
+        return await this.fsHandler.getFileReader(filename)
+    }
+    // Write file to this share's directory
+    async getWriter(filename: string) {
+        return await this.fsHandler.writeFileChunks(filename)
     }
     
     // was localList
@@ -654,15 +659,6 @@ export class DirectoryShare extends ThingIsms {
         await this.fsHandler.list.expand()
     }
 
-    // Get file reader from this share's directory
-    async getFileReader(filename: string) {
-        return await this.fsHandler.getFileReader(filename)
-    }
-
-    // Write file to this share's directory
-    async writeFileChunks(filename: string) {
-        return await this.fsHandler.writeFileChunks(filename)
-    }
 }
 
 //#endregion
@@ -741,7 +737,10 @@ class FileSystemHandler {
     post_start() {
         this.started = true
         // create a root DirectoryListing
-        this.list = new DirectoryListing({handle:this.handle,name:'/'})
+        this.list = new DirectoryListing({
+            handle:this.handle,
+            name:this.handle.name,
+        })
 
     }
     async stop() {
