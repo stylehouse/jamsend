@@ -29,11 +29,11 @@ abstract class ModusItself  {
             // recreate bits
         })
     }
-    // see TimeGallopia for 
-    //  probably use replacies() to enliven some Stuff
     stopped = false
+    declare do_stop:Function
     stop() {
         this.stopped = true
+        this.do_stop?.()
     }
 
 

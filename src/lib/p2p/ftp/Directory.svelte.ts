@@ -8,17 +8,20 @@ import { Strata, Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
+import type { SoundSystem } from './Audio.svelte';
 
 
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
 //  Selections/Selection are your collations
 
+
 // ftp as a view to work with
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
     F:PeeringSharing
     S:DirectoryShare//|AnyShare // the Thing we're hotwiring
+    gat:SoundSystem // temporarily just here
 
     constructor(opt:Partial<DirectoryModus>) {
         super(opt)
@@ -33,6 +36,10 @@ export class DirectoryModus extends Modus {
             'A++': () => this.do_A(),
             'C++': () => this.do_C(),
         })
+    }
+    do_stop() {
+        // on UI:Sharability destroy
+        this.gat?.close()
     }
 
 
@@ -58,6 +65,11 @@ export class DirectoryModus extends Modus {
             // < look within $scope of the Tree (start with localList) for...
         })
     }
+
+
+
+    // click button events
+
     // sleep when possible
     hard = false
     toggle_gohard() {
@@ -77,6 +89,10 @@ export class DirectoryModus extends Modus {
         this.main()
     }
 
+
+
+    // Agency parameterising and processing
+
     i_auto_wanting(A) {
         return A.i({wanting:1,method:'meander',then:'radioprep'})
     }
@@ -95,14 +111,27 @@ export class DirectoryModus extends Modus {
         }
     }
     async radioprep(A,wa,D) {
-        await this.S.getReader("Nonexisto")
+        let n = D.c.T.sc.n
+        if (n.sc.nib != 'blob') throw "!blob"
+        let u = D.c.T.up.sc.n
+        if (u.sc.nib != 'dir') throw "^!dir"
+        let DL:DirectoryListing = u.sc.DL
+        let reader = await DL.getReader(D.sc.name)
+        let seek = 0
+        let buffers = []
+        for await (const chunk of reader.iterate(seek)) {
+            buffers.push(chunk)
+            if (buffers.length > 5) continue
+        }
 
-        console.warn("Radioprep!", n.sc)
+        console.log("Hav your",buffers)
+
         // wa.sc.then ||= "out_of_instructions"
         wa.sc.countme ||= 0
         wa.sc.countme++ <3
             // || await wa.r({satisfied:1,with:D})
     }
+
 
 
 
@@ -443,8 +472,27 @@ export class DirectoryListing {
     constructor(init: Partial<DirectoryListing> = {}) {
         Object.assign(this,init)
     }
-    getWriter(pathbit) {
 
+    CHUNK_SIZE = 16 * 1024;
+    async getReader(pathbit) {
+        const fileHandle = await this.handle.getFileHandle(pathbit);
+        const file = await fileHandle.getFile();
+        
+        let chunkSize = CHUNK_SIZE
+        return {
+            size: file.size,
+            iterate: async function*(startFrom = 0) {
+                let offset = startFrom;
+                while (offset < file.size) {
+                    // Read file in chunks
+                    const chunk = file.slice(offset, offset + chunkSize);
+                    yield await chunk.arrayBuffer();
+                    offset += chunkSize;
+                }
+            }
+        };
+    }
+    async getWriter(pathbit) {
     }
     
     async expand() {
@@ -549,11 +597,13 @@ export class RemoteShare extends ThingIsms {
 //#region DirectoryShare
 // Individual share - like a PierFeature but for directories
 export class DirectoryShare extends ThingIsms {
+    // < GOING for %handle,A
     fsHandler: FileSystemHandler
     
     started = $state(false)
 
     modus?:Modus = $state()
+    gat:SoundSystem // temporarily just here
 
     get list():DirectoryListing {
         return this.started && this.fsHandler.list

@@ -360,7 +360,7 @@ class Dierarchy extends SelectionItself {
         let path = D.c.T.c.path
         return path.map(T => this.D_to_name(T.sc.D))
     }
-    // uniquely identify all D**, no rename continuity
+    // uniquely (%name already is) identify all D**, no rename continuity
     D_to_uri(D: TheD):string {
         let path = this.D_to_path(D)
         return path.join("/")
