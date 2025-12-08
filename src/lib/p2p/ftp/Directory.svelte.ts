@@ -51,7 +51,7 @@ export class DirectoryModus extends Modus {
             await this.surf_nibs(this.S.list)
             
             // on that structure, hang motivation
-            this.Tr.sc.D.oa({A:'auto'}) || this.do_A()
+            this.Tr.sc.D.oa({A:'auto'}) || await this.do_A()
             await this.agency_think()
             // Modus_testcase(this)
 
@@ -80,15 +80,16 @@ export class DirectoryModus extends Modus {
     i_auto_wanting(A) {
         return A.i({wanting:1,method:'meander',then:'radioprep'})
     }
+    // when wanting to gallop into open country
+    get_sleeping_D_filter(D) {
+        return D.c.T.sc.n.sc.nib == 'dir'
+    }
+    // looking for something
     async is_meander_satisfied(A,wa,D) {
         // something with a track
-        let good = D.o({ads:'here',track:1})[0]
         // < finding %ads:beyond, aim becomes for tracking down that track...
+        let good = D.o({ads:'here',track:1})[0]
         if (good) {
-            // random debug noises
-            await wa.replace({satisfying:1}, async () => {
-                wa.i({satisfying:1, ...good.sc})
-            })
             // take to the next method
             return true
         }
@@ -101,10 +102,6 @@ export class DirectoryModus extends Modus {
         wa.sc.countme ||= 0
         wa.sc.countme++ <3
             // || await wa.r({satisfied:1,with:D})
-    }
-
-    get_sleeping_D_filter(D) {
-        return D.c.T.sc.n.sc.nib == 'dir'
     }
 
 
@@ -122,10 +119,11 @@ export class DirectoryModus extends Modus {
         let C = this.current
 
         await C.replace({nib:'dir'},async () => {
-            let n = C.i({nib:'dir',name:DL.name,DL})
+            let n = C.i({nib:'dir',name:this.S.name,DL})
             // n/* is empty
         })
-        // n/* have now resolved what they were
+        // n/* is now resumed
+
         for (let n of C.o({nib:'dir'})) {
             // hang info forever
             !n.oa({self:1,est:1})
@@ -143,7 +141,7 @@ export class DirectoryModus extends Modus {
         this.a_Strata ||= new Strata({
             see: [],
             hide: [{readin:1},
-                {ads:1},
+                {ads:1,album:1},
                 {Tree:1}],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
@@ -270,8 +268,8 @@ export class DirectoryModus extends Modus {
 
         
         // then more richocheting around of percolating waves of stuff
-        Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
-        Se.c.T.forward(async (T:Travel) => T.sc.thetime = this.thetime)
+        await Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
+        await Se.c.T.forward(async (T:Travel) => T.sc.thetime = this.thetime)
         this.Tr = Se.c.T
         this.Se = Se
     }

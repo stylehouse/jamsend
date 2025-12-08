@@ -271,7 +271,7 @@ class SelectionItself extends Travel {
                     pairs_fn:(a:TheD,b:TheD)=>{
                         if (a && !b) {
                             goners.push(a)
-                            console.log("Goner on "+keyser(T.sc.D)+": "+keyser(a))
+                            // console.log("Goner on "+keyser(T.sc.D)+": "+keyser(a))
                         }
                         if (b && !a) {
                             // D/b is new!
@@ -280,7 +280,7 @@ class SelectionItself extends Travel {
                             let inside_a_new_D = !T.sc.bD
                             if (!inside_a_new_D) {
                                 // announce only that a D is new, ignoring everything in it, which is also new
-                                console.log("New on "+keyser(T.sc.D)+": "+keyser(b))
+                                // console.log("New on "+keyser(T.sc.D)+": "+keyser(b))
                             }
                         }
                         if (a && b) {
@@ -363,12 +363,15 @@ class Dierarchy extends SelectionItself {
     // uniquely identify all D**, no rename continuity
     D_to_uri(D: TheD):string {
         let path = this.D_to_path(D)
-        // < make / illegal in names. our DirectoryShare root %nib is name=/
+        return path.join("/")
+    }
+    j_to_uri(j: Journey):string {
+        let path = this.j_to_path(j)
         return path.join("/")
     }
     // AI
     // find a D given j (or something with /*%path)
-    j_to_D(j: Journey): TheD | null {
+    j_to_path(j: Journey): Array<string> | null {
         // Get the path segments from the journey, ordered by sequence
         const pathNodes = j.o({ path: 1, seq: 1 })
         
@@ -382,10 +385,12 @@ class Dierarchy extends SelectionItself {
         })
         
         // Extract the path strings
-        const pathBits = sortedPath.map(node => node.sc.path)
-        
+        return sortedPath.map(node => node.sc.path)
+    }
+    j_to_D(j: Journey): TheD | null {
         // Use path_to_D to resolve the path to a D
-        return this.path_to_D(pathBits)
+        let path = this.j_to_path(j)
+        return this.path_to_D(path)
     }
     // Convert a path array to its corresponding D
     path_to_D(path: string[]): TheD | null {
@@ -399,11 +404,22 @@ class Dierarchy extends SelectionItself {
         let D_match = (D:TheD,bit:string) => this.D_to_name(D) == bit
         
         // Traverse down the path
+        let first = true
         for (const bit of path) {
-            let next = D.o(this.c.trace_sc)
+            if (first) {
+                // starting with the top!
+                //  within the context of a Selection this bit of uri is pointless
+                //   because we already have a single toplevel n%nib:dir,DL => D%Tree
+                first = false
+                if (!D_match(D,bit)) {
+                    throw "!match first bit of path"
+                    return null
+                }
+                continue
+            }
+            D = D.o(this.c.trace_sc)
                 .find(D => D_match(D,bit)) // first one matching that
-            if (!next) return null
-            D = next
+            if (!D) return null
         }
         return D
     }
@@ -426,13 +442,14 @@ class Dierarchy extends SelectionItself {
         if (path.length == T.c.path.length) return 2
         return 1
     }
-    // T** centrally tracking a journey for a Selection.process()
+    // centrally tracking a tour per journey per Selection.process()
     journey_to_tour(T:Travel,j:Journey,openness_suggestions:Array<number>) {
         let Tr = T.c.top
         if (!j.sc.journey) throw "!j.sc.journey"
         // T** global, per journey, state
         Tr.sc.tours ||= {}
         if (!Tr.sc.tours[j.sc.journey]) {
+            // top initialises
             Tr.sc.tours[j.sc.journey] = new Tour()
             // top is always open
             openness_suggestions.push(3)
@@ -478,7 +495,7 @@ class Dierarchy extends SelectionItself {
         let uD = T.up?.sc.D
         let D = T.sc.D as TheC
 
-        let journeys = TD.o({journey:1})
+        let journeys = T.up?.sc.journeys || TD.o({journey:1})
         // openness advice is pumped out into here
         let openness_suggestions:Array<number> = []
         // D** within the journey remark on state changes i %tour,some:how
@@ -502,6 +519,10 @@ class Dierarchy extends SelectionItself {
 
                 // tour += D
                 to.N.push(D)
+                // D/* may continue this journey
+                T.sc.journeys ||= []
+                T.sc.journeys.push(j)
+                // when it wakes up
                 openness_suggestions.push(3)
             }
         })

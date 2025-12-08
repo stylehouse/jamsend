@@ -284,6 +284,11 @@ export abstract class Modus extends Agency {
             let method = wa.sc.method
             if (method && this[method]) {
                 try {
+                    await wa.replace({error:1}, async () => {
+                    })
+                    await wa.replace({see:1}, async () => {
+                    })
+
                     await this[method](A,wa,wa.sc.had)
                 } catch (error) {
                     wa.i({error: error.message || String(error)})
@@ -370,35 +375,47 @@ export abstract class Modus extends Agency {
     declare is_meander_satisfied:Function
     // do meandering
     async meander(A:TheC,wa:TheC) {
-        let loopy = 99
+        let loopy = 11
         let dir:TheD
         while (1) {
-            if (loopy-- < 0) throw "loopy"
+            if (loopy-- < 0) return wa.i({error:'loooopy'})
 
             // where we're looking
-            let D = wa.o({aim:1}).map(ai => this.Se.j_to_D(ai))[0]
+            let ai = wa.o({aim:1})[0]
+            let D
+            if (ai) {
+                D = this.Se.j_to_D(ai)
 
-            if (D && D.o1({v:1,openity:1})[0] <3) {
-                // we must wait for a Selection.process() for this
-                // < do only that journey if the others are docile?
-                return
+                let ope = D && D.o1({v:1,openity:1})[0]
+                let aim = this.Se.j_to_uri(ai)
+                wa.i({see:'Din',aim,ope})
+                if (D && ope <3) {
+                    // we must wait for a Selection.process() for this
+                    // < do only that journey if the others are docile?
+                    return
+                }
             }
+
 
             let inners = null
             if (D) {
-                Tdebug(D.c.T,"meandering into")
                 let good = await this.is_meander_satisfied(A,wa,D)
                 if (good) {
-                    let sa = await wa.r({satisfied:1,with:D})
+                    await wa.r({satisfied:1,with:D})
                     return
                 }
+                Tdebug(D.c.T,"meandering into")
                 // keep meandering into D**, until none found
                 // o D/*%Tree
                 inners = D.oa(this.Se.c.trace_sc)
             }
 
             // o **%nib,dirs
-            let dirs = inners || this.get_sleeping_T().map(T => T.sc.D)
+            let dirs = inners
+            if (!dirs) {
+                dirs = this.get_sleeping_T().map(T => T.sc.D)
+
+            }
             // pick one
             dir = dirs[this.prandle(dirs.length)]
             if (!dir) {
@@ -412,7 +429,7 @@ export abstract class Modus extends Agency {
                 throw `loopily: ${keyser(D)}`
             }
 
-            let ai = await wa.r({aim:1})
+            ai = await wa.r({aim:1})
             // < this could be r_path, return the old one?
             await ai.replace({path:1}, async () => {
                 this.Se.i_path(dir,ai)
