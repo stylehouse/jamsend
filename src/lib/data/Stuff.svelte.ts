@@ -997,12 +997,15 @@ function inner_sizing(innered) {
 // data dumper
 // < recursion
 export function objectify(v:any):string {
-    return String(
+    let s = String(
         typeof v == 'number' || typeof v == 'string' ? v
         : v == null ? 'null'
         : v.constructor == Array ? `[${v.map(n => objectify(n)).join(',')}]`
         : `${v.constructor.name}()`
     )
+    let where = 77
+    if (s.length > 100) s = s.slice(0,where)+"..."+(s.length-where)
+    return s
 }
 
 export function name_numbered_for_uniqueness_in_Set(name,set) {
