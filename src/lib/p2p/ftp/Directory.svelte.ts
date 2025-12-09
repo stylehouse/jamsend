@@ -140,8 +140,10 @@ export class DirectoryModus extends Modus {
             let toosmall = []
             let toosmall_size = 0
             aud.on_recording = async (blob:Blob) => {
+                console.log(`aud rec ${seq} is ${blob.size}`)
                 if (blob.size < 5000) {
                     // small frames are likely noise
+                    debugger
                     toosmall.push(await blob.arrayBuffer())
                     toosmall_size += blob.size
                     // < know if the stream is finishing and accept tiny last bits
@@ -153,13 +155,14 @@ export class DirectoryModus extends Modus {
                 if (toosmall.length) {
                     buffer = [...toosmall,buffer]
                     toosmall_size = 0
+                    toosmall = []
                 }
 
 
                 // track exactly how long the preview is
                 let bud = this.gat.new_audiolet()
-                bud.load(buffer)
-                let duration = aud.duration()
+                await bud.load(buffer)
+                let duration = bud.duration()
                 let c = {}
                 if (seq == 0) {
                     // and exactly how far into the source it starts
@@ -168,6 +171,7 @@ export class DirectoryModus extends Modus {
                 }
                 // generate %record/*%preview
                 re.i({preview:1,seq,...c,duration,type,buffer})
+                console.log(`aud rec ${seq} `)
                 seq++
             }
 
@@ -188,8 +192,7 @@ export class DirectoryModus extends Modus {
         wa.i({see:'aud',along:aud.along()})
         aud.stopped
             && wa.i({see:'aud',stopped:1})
-        aud.playing
-            && wa.i({see:'aud',dura:aud.duration()})
+        wa.i({see:'aud',dura:aud.duration()})
 
         // wa.sc.then ||= "out_of_instructions"
         wa.sc.countme ||= 0
