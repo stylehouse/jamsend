@@ -8,7 +8,7 @@ import { Strata, Structure } from '$lib/mostly/Structure.svelte';
 import { erring } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
-import type { SoundSystem } from './Audio.svelte';
+import type { Audiolet, SoundSystem } from './Audio.svelte';
 
 
 // these One/Many things are given to a Things/Thing UI
@@ -111,25 +111,48 @@ export class DirectoryModus extends Modus {
         }
     }
     async radioprep(A,wa,D) {
-        let n = D.c.T.sc.n
-        if (n.sc.nib != 'blob') throw "!blob"
-        let u = D.c.T.up.sc.n
-        if (u.sc.nib != 'dir') throw "^!dir"
-        let DL:DirectoryListing = u.sc.DL
-        let reader = await DL.getReader(D.sc.name)
-        let seek = 0
-        let buffers = []
-        for await (const chunk of reader.iterate(seek)) {
-            buffers.push(chunk)
-            if (buffers.length > 5) continue
+        if (!wa.oa({buffers:1})) {
+            let DL = this.D_to_DL(D)
+            let reader = await DL.getReader(D.sc.name)
+            let seek = 0
+            let buffers = []
+            for await (const chunk of reader.iterate(seek)) {
+                buffers.push(chunk)
+                if (buffers.length > 5) continue
+            }
+            wa.i({buffers})
         }
 
-        console.log("Hav your",buffers)
+        if (!wa.oa({aud:1})) {
+            let aud = this.gat.new_audiolet({id:3})
+            let buffers = wa.o1({buffers:1})[0]
+            aud.play_this_data(buffers)
+
+            wa.i({aud})
+        }
+
+        let aud:Audiolet = wa.o1({aud:1})[0]
+
+        wa.i({see:'aud',along:aud.along()})
+        aud.playing
+            && wa.i({see:'aud',dura:aud.duration()})
 
         // wa.sc.then ||= "out_of_instructions"
         wa.sc.countme ||= 0
         wa.sc.countme++ <3
             // || await wa.r({satisfied:1,with:D})
+    }
+
+
+    D_to_DL(D:TheD):DirectoryListing {
+        let n = D.c.T.sc.n
+        if (n.sc.nib == 'blob') {
+            let u = D.c.T.up.sc.n
+            if (u.sc.nib != 'dir') throw "^!dir"
+            n = u
+        }
+        if (n.sc.nib != 'dir') throw "!dir"
+        return n.sc.DL
     }
 
 
