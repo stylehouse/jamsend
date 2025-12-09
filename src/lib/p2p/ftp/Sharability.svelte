@@ -13,7 +13,7 @@
     // so we have a filesystem tree to display|grow
     //  along with the Modus that will be handling whatever the bot should handle
     let M:DirectoryModus
-    let gat:SoundSystem
+    let gat:SoundSystem = $state()
     onMount(() => {
         // S.modus = TheModus.test_Stuff()
         // S.i_action({label:'test',handler: () => S.modus = TheModus.test_Stuff() })

@@ -65,11 +65,11 @@ export class Audiolet {
     }
     setupAudiolet() {
         // Create gain node for fades
-        this.gainNode = this.gat.AC.createGain();
-        this.gainNode.connect(this.gat.AC.destination);
+        this.gainNode = this.gat.AC!.createGain();
+        this.gainNode.connect(this.gat.AC!.destination);
         this.gainNode.gain.value = 1;
     }
-    stopped = false
+    stopped = true
     playing?:AudioBufferSourceNode
     start_time?:ACtime
     stop() {
@@ -81,36 +81,36 @@ export class Audiolet {
         return this.gat.now() - this.start_time
     }
     duration():number {
-        return this.playing.buffer.duration * 1000
+        return this.playing?.buffer.duration * 1000 || 0
     }
-    async play_this_data(encoded) {
+    async load(encoded:Array<ArrayBuffer>) {
         let stretch = await this.decode_stretch(encoded)
-
         stretch.onended = () => {
             console.log("stretch ended")
+            this.stop_time = this.gat.now()
+            this.stopped = true
         }
-
         this.playing = stretch
-        let playFrom = 0
-        this.playing.start(0,playFrom)
-        this.start_time = this.gat.now()
         // < plan_next()
-        
+    }
+    play(playFrom=0) {
+        if (!this.stopped) this.stop()
+        console.log(`aud play`)
+        this.playing.start(0,playFrom)
+        this.start_time = this.gat.now() - playFrom
+        this.stopped = false
     }
 
 
 
     async decode_stretch(encoded) {
-        let n_chunks = encoded.length
         encoded = this.flatten_ArrayBuffers(encoded)
-        const decoded = await this.gat.AC.decodeAudioData(encoded.buffer);
+        const decoded = await this.gat.AC!.decodeAudioData(encoded.buffer);
         const stretch = this.stretchify_decode(decoded)
-        // stash this here, becomes stretch_size
-        stretch.length = n_chunks
         return stretch
     }
     stretchify_decode(decoded) {
-        const stretch = this.gat.AC.createBufferSource();
+        const stretch = this.gat.AC!.createBufferSource();
         stretch.buffer = decoded;
         stretch.connect(this.gainNode);
         return stretch

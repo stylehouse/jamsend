@@ -126,14 +126,19 @@ export class DirectoryModus extends Modus {
         if (!wa.oa({aud:1})) {
             let aud = this.gat.new_audiolet({id:3})
             let buffers = wa.o1({buffers:1})[0]
-            aud.play_this_data(buffers)
+            await aud.load(buffers)
+            // < rewire to a MediaRecorder
+            aud.play(1000)
 
             wa.i({aud})
         }
 
         let aud:Audiolet = wa.o1({aud:1})[0]
 
+
         wa.i({see:'aud',along:aud.along()})
+        aud.stopped
+            && wa.i({see:'aud',stopped:1})
         aud.playing
             && wa.i({see:'aud',dura:aud.duration()})
 
