@@ -39,6 +39,7 @@
                 {#if compat_mode}
                     <h3>BROWSER IS TOO OLD</h3>
                     <p>You don't seem to allow Directory writing access. Sorry.</p>
+                    <p>Try with Chrome.</p>
                 {/if}
                 
                 <Sharability {S}></Sharability>

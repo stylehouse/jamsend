@@ -11,21 +11,21 @@
     } = $props()
 
     let save_stash = throttle(() => {
-        console.log(`saving stashedHaver ${name}`)
         let it = JSON.stringify(M.stashed)
         M.stashed_mem.put(it)
+        console.log(`stashedHaver ${name} saved`)
     },200)
 
     $effect(async () => {
         if (!M.stashed) {
             let json = await M.stashed_mem.get()
             M.stashed = json && JSON.parse(json) || {}
-            if(json) {
-                console.log(`stashedHaver ${name} loaded`,M.stashed)
+            if (json) {
+                console.log(`stashedHaver ${name} loaded`)
             }
         }
         if (Object.entries(M.stashed)) {
-            console.log(`stashedHaver save...`)
+            console.log(`stashedHaver ${name} saving...`)
             save_stash()
         }
     })

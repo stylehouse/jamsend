@@ -15,7 +15,7 @@ import type { Audiolet, SoundSystem } from './Audio.svelte';
 // Shares/Share is the filesystem terminal
 //  Selections/Selection are your collations
 
-
+const TRIAL_LISTEN = 20
 // ftp as a view to work with
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
@@ -111,30 +111,79 @@ export class DirectoryModus extends Modus {
         }
     }
     async radioprep(A,wa,D) {
+        if (!this.gat.AC_ready) return wa.i({error:"!AC"})
+
         if (!wa.oa({buffers:1})) {
             let DL = this.D_to_DL(D)
             let reader = await DL.getReader(D.sc.name)
+            // must decode from the start
             let seek = 0
+            // we want a good amount of it
+            let total_chunks = this.D_to_FL(D).size / CHUNK_SIZE
+            let want_chunks = total_chunks * 0.4 + this.prandle(20)
+            let want_size = want_chunks * CHUNK_SIZE
             let buffers = []
             for await (const chunk of reader.iterate(seek)) {
                 buffers.push(chunk)
-                if (buffers.length > 5) continue
+                if (buffers.length >= want_chunks) break
             }
-            wa.i({buffers})
+            wa.i({buffers,want_chunks,want_size})
         }
 
+        
         if (!wa.oa({aud:1})) {
             let aud = this.gat.new_audiolet({id:3})
+            aud.setupRecorder()
+            let re = wa.i({record:1})
+            let seq = 0
+            let offset = null
+            let toosmall = []
+            let toosmall_size = 0
+            aud.on_recording = async (blob:Blob) => {
+                if (blob.size < 5000) {
+                    // small frames are likely noise
+                    toosmall.push(await blob.arrayBuffer())
+                    toosmall_size += blob.size
+                    // < know if the stream is finishing and accept tiny last bits
+                }
+
+                let type = blob.type // eg "audio/webm;codecs=opus"
+                let buffer = await blob.arrayBuffer()
+
+                if (toosmall.length) {
+                    buffer = [...toosmall,buffer]
+                    toosmall_size = 0
+                }
+
+
+                // track exactly how long the preview is
+                let bud = this.gat.new_audiolet()
+                bud.load(buffer)
+                let duration = aud.duration()
+                let c = {}
+                if (seq == 0) {
+                    // and exactly how far into the source it starts
+                    if (!offset) throw "!offset"
+                    c.offset = offset
+                }
+                // generate %record/*%preview
+                re.i({preview:1,seq,...c,duration,type,buffer})
+                seq++
+            }
+
             let buffers = wa.o1({buffers:1})[0]
             await aud.load(buffers)
-            // < rewire to a MediaRecorder
-            aud.play(1000)
+            offset = aud.duration() - TRIAL_LISTEN
+            aud.play(offset)
+
 
             wa.i({aud})
+            // forget the encoded source buffers now
+            await wa.r({buffers:1},{ok:1})
         }
 
-        let aud:Audiolet = wa.o1({aud:1})[0]
 
+        let aud = wa.o1({aud:1})[0]
 
         wa.i({see:'aud',along:aud.along()})
         aud.stopped
@@ -147,8 +196,14 @@ export class DirectoryModus extends Modus {
         wa.sc.countme++ <3
             // || await wa.r({satisfied:1,with:D})
     }
+    async buffering() {
+        
+    }
 
 
+    D_to_FL(D:TheD):FileListing {
+        return D.c.T.sc.n.sc.FL
+    }
     D_to_DL(D:TheD):DirectoryListing {
         let n = D.c.T.sc.n
         if (n.sc.nib == 'blob') {
@@ -198,7 +253,7 @@ export class DirectoryModus extends Modus {
         this.a_Strata ||= new Strata({
             see: [],
             hide: [{readin:1},
-                {ads:1,album:1},
+                {ads:1},
                 {Tree:1}],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
@@ -501,7 +556,6 @@ export class DirectoryListing {
         Object.assign(this,init)
     }
 
-    CHUNK_SIZE = 16 * 1024;
     async getReader(pathbit) {
         const fileHandle = await this.handle.getFileHandle(pathbit);
         const file = await fileHandle.getFile();

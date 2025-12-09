@@ -159,7 +159,7 @@ abstract class TimeGallopia extends ModusPretendingtobeaC {
     // Modus will be highly tested so is the center of virtualisations
     // < determinism mode, testing
     // picks whole numbers 0-($n||1)
-    prandle(n) {
+    prandle(n:number) {
         return Math.floor(Math.random()*n)
     }
 
