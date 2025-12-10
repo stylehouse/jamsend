@@ -71,7 +71,32 @@ export class Structure {
     // Artist get %readin:type,val:artist
 //#endregion
 //#region %readin
+    // iterates %Tree downwardly, ie D/* can be informed about how to do this
+    async detect_fs_schemes(T:Travel) {
+        let {D,n} = T.sc
+        if (T.depth == 1 && D.sc.name == '.jamsend') {
+            T.c.no_readin = true
+            // < this is really just another %readin scheme
+            T.c.fs_scheme = "appcache"
+        }
+        else if (T.c.fs_scheme == "appcache") {
+            if (D.sc.name == 'radiostock') {
+                T.c.fs_scheme = "radiostock"
+            }
+        }
+        else if (T.c.fs_scheme == "radiostock") {
+            T.c.fs_scheme = "stock"
+        }
+
+        await D.replace({fs_scheme: 1}, async () => {
+            if (T.c.fs_scheme) {
+                D.i({fs_scheme:T.c.fs_scheme})
+            }
+        })
+    }
+    // iterates %Tree upwardly, ie D/* have just done this
     async intelligible_name(T:Travel) {
+        if (T.c.no_readin) return
         let {D,n} = T.sc
         let i_readin = (t:string,s:TheUniversal) => {
             D.i({readin: t, thetime: this.thetime, ...s})

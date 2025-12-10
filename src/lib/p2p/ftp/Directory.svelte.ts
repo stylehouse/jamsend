@@ -124,6 +124,7 @@ export class DirectoryModus extends Modus {
     // when wanting to gallop into open country
     get_sleeping_D_filter(D) {
         return D.c.T.sc.n.sc.nib == 'dir'
+            && !D.c.T.c.no_readin
     }
     // looking for something
     async is_meander_satisfied(A,wa,D) {
@@ -218,6 +219,7 @@ export class DirectoryModus extends Modus {
                 if (ope <3) return console.log("stocks low openity")
                 
                 console.log("stocks ready!")
+                wa.i({see:"stocks ready"})
             }
             else {
                 if (!wa.oa({waits:"aims"})) {
@@ -241,7 +243,7 @@ export class DirectoryModus extends Modus {
     }
     async aim_for(wa,path):TheD|null {
         path = [this.Tr.sc.D.sc.name, ...path]
-
+        // journey at it
         let ai = await wa.r({aim:1})
         await ai.replace({path:1}, async () => {
             this.Se.i_path_path(ai,path)
@@ -353,6 +355,8 @@ export class DirectoryModus extends Modus {
                 if (n.sc.nib == 'dir') {
                     // valves for more $n/%nib,name**
                     await this.possibly_expand_nib(T)
+                    // magic structures
+                    await St.detect_fs_schemes(T)
                 }
                 if (n.sc.nib == 'blob') {
                     // say this is 5x easier than climbing directories

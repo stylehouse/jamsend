@@ -53,9 +53,12 @@ export class Travel extends TheC {
 
     // < GOING? have .sc.up...
     get up() {
-        let depth = this.c.path.length -1
+        let depth = this.depth
         if (!depth) return
         return this.c.path[depth-1]
+    }
+    get depth() {
+        return this.c.path.length -1
     }
     
     // visitor of many ** to o()
