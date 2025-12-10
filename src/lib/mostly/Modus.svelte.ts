@@ -453,9 +453,7 @@ abstract class Agency extends TimeGallopia {
     gat:SoundSystem
     TRIAL_LISTEN = 20
     // for radio
-    async record_preview(A,wa,D) {
-        let aud = this.gat.new_audiolet()
-
+    async aud_eats_buffers(wa,aud) {
         // load original encoded buffers
         let buffers = wa.o1({buffers:1})[0]
         if (!buffers) throw "!buffers"
@@ -465,6 +463,10 @@ abstract class Agency extends TimeGallopia {
         catch (er) {
             throw `original encoded buffers fail: ${er}`
         }
+    }
+    async record_preview(A,wa,D) {
+        let aud = this.gat.new_audiolet()
+        await this.aud_eats_buffers(wa,aud)
 
         let offset = aud.duration() - this.TRIAL_LISTEN
         let uri = this.Se.D_to_uri(D)
@@ -515,6 +517,48 @@ abstract class Agency extends TimeGallopia {
             }
             let duration = bud.duration()
             duration -= pre_duration
+            // generate %record/*%preview
+            re.i({preview:1,seq,duration,type,buffer})
+            seq++
+        }
+
+
+        aud.play(offset)
+        return aud
+    }
+
+
+    async record_preview_individuated(A,wa,D) {
+        let aud = this.gat.new_audiolet()
+        await this.aud_eats_buffers(wa,aud)
+
+        let offset = aud.duration() - this.TRIAL_LISTEN
+        let uri = this.Se.D_to_uri(D)
+        let re = wa.i({record:1,offset,uri})
+
+        // receive transcoded buffers
+        aud.setupRecorder(true)
+        let seq = 0
+        let toosmall:Array<ArrayBuffer> = []
+        let toosmall_size = 0
+        aud.on_recording = async (blob:Blob) => {
+            let type = blob.type // eg "audio/webm;codecs=opus"
+            let buffer = await blob.arrayBuffer()
+            let buffers = [buffer]
+            // track exactly how long the preview is
+            // < probably could leave this to the client
+            //    they might be back for more...
+            //     from $aud's offset+duration
+            //      which we know already?
+            let bud = this.gat.new_audiolet()
+            try {
+                await bud.load(buffer)
+            }
+            catch (er) {
+                throw `transcode-load fail: ${er}`
+            }
+            let duration = bud.duration()
+            // duration -= pre_duration
             // generate %record/*%preview
             re.i({preview:1,seq,duration,type,buffer})
             seq++

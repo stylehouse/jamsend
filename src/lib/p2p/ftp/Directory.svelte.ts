@@ -122,10 +122,10 @@ export class DirectoryModus extends Modus {
         if (!wa.oa({buffers:1})) {
             let DL = this.D_to_DL(D)
             let reader = await DL.getReader(D.sc.name)
+            let total_chunks = this.D_to_FL(D).size / CHUNK_SIZE
             // must decode from the start
             let seek = 0
             // we want a good amount of it
-            let total_chunks = this.D_to_FL(D).size / CHUNK_SIZE
             let want_chunks = total_chunks * 0.4 + this.prandle(20)
             let want_size = want_chunks * CHUNK_SIZE
             let buffers = []
@@ -136,9 +136,10 @@ export class DirectoryModus extends Modus {
             wa.i({buffers,want_chunks,want_size})
         }
 
-        
+        let auds_was = wa.o1({aud:1})
         if (!wa.oa({aud:1})) {
-            let aud = await this.record_preview(A,wa,D)
+            // let aud = await this.record_preview(A,wa,D)
+            let aud = await this.record_preview_individuated(A,wa,D)
             // hold on to this while it's happening
             wa.i({aud})
             // forget the encoded source buffers now
@@ -146,17 +147,31 @@ export class DirectoryModus extends Modus {
         }
 
         // watch the aud progress
-        let aud = wa.o1({aud:1})[0]
+        let auds:Array<Audiolet> = wa.o1({aud:1})
+        let alive = 0
+        await wa.replace({active_aud:1},async () => {
+            for (let aud of auds) {
+                if (!aud.stopped) {
+                    alive++
 
-        wa.i({see:'aud',along:aud.along()})
-        aud.stopped
-            && wa.i({see:'aud',stopped:1})
-        wa.i({see:'aud',dura:aud.duration()})
+                    // non-first time:
+                    if (auds_was.includes(aud)) {
+                        // while calling this regularly...
+                        // < and perhaps not every time through here?
+                        aud.encode_segmentation()
+                        console.log(`requested segment`)
+                    }
+                }
+                else {
+                    wa.i({see:'aud',stopped:1})
+                }
+                wa.i({see:'audtime',along:aud.along(),duration:aud.duration()})
+            }
+        })
 
-
-
-        if (wa.o({record:1})?.some(re => re.o({preview:1}))) {
+        if (wa.o({record:1})?.some(re => re.o({preview:1})) && !alive) {
             console.log("Could replicate to the preview stash now...")
+            wa.r({afa:"Could replicate to the preview stash now...",stopped:1})
         }
 
 

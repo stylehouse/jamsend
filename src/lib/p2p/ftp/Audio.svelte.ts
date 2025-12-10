@@ -50,7 +50,7 @@ export class SoundSystem {
     }
 
     // the many sound feeds
-    new_audiolet(opt={}) {
+    new_audiolet(opt={}):Audiolet {
         let aud = new Audiolet({gat:this,...opt})
         if (!aud.gat) throw "!aud.gat"
         return aud
@@ -63,7 +63,7 @@ export class Audiolet {
     gat:SoundSystem
     gainNode: GainNode
     gainNode2: GainNode
-    gainNode2: outputNode
+    outputNode: MediaStreamAudioDestinationNode
     bitrate?
     constructor(opt={}) {
         Object.assign(this,opt)
@@ -85,8 +85,8 @@ export class Audiolet {
     }
 
     mediaRecorder?: MediaRecorder
-    on_recording?:Function
-    setupRecorder() {
+    declare on_recording:Function
+    setupRecorder(no_segmenting=false) {
         // don't hear it
         this.gainNode2.disconnect()
         // this thing doesn't allow connections from it
@@ -119,7 +119,15 @@ export class Audiolet {
             }
         };
 
-        this.mediaRecorder.start(segment_duration*1000);
+        no_segmenting ? this.mediaRecorder.start()
+            : this.mediaRecorder.start(segment_duration*1000)
+    }
+    encode_segmentation() {
+        if (!this.mediaRecorder) return
+        this.mediaRecorder.stop()
+        this.mediaRecorder.start()
+        // < is that like this but with playable chunks?
+        // this.mediaRecorder.requestData()
     }
 
 
