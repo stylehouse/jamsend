@@ -92,12 +92,14 @@ export class DirectoryModus extends Modus {
     // Agency parameterising and processing
 
     i_auto_wanting(A) {
-        // < a flaw: uri->D must be findable immediately
-        //    lacks the ability to explore whether it exists
-        //     then determine it doesn't and ...
-        let uri = 'music/19 - FLUXION - Multidirectional II.ogg'
-        let D = this.Se.uri_to_D(uri)
-        return A.i({wanting:1,method:'radioprep',had:D})
+        if (1) {
+            // < a flaw: uri->D must be findable immediately
+            //    lacks the ability to explore whether it exists
+            //     then determine it doesn't and ...
+            let uri = 'music/06 Locust Heat.mp3'
+            let D = this.Se.uri_to_D(uri)
+            return A.i({wanting:1,method:'radioprep',had:D})
+        }
         return A.i({wanting:1,method:'meander',then:'radioprep'})
     }
     // when wanting to gallop into open country

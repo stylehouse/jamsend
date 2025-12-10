@@ -455,16 +455,31 @@ abstract class Agency extends TimeGallopia {
     // for radio
     async record_preview(A,wa,D) {
         let aud = this.gat.new_audiolet()
+
+        // load original encoded buffers
+        let buffers = wa.o1({buffers:1})[0]
+        if (!buffers) throw "!buffers"
+        try {
+            await aud.load(buffers)
+        }
+        catch (er) {
+            throw `original encoded buffers fail: ${er}`
+        }
+
+        let offset = aud.duration() - this.TRIAL_LISTEN
+        let uri = this.Se.D_to_uri(D)
+        let re = wa.i({record:1,offset,uri})
+
+        // receive transcoded buffers
         aud.setupRecorder()
-        let re
         let seq = 0
-        let offset = null
-        let toosmall = []
+        let toosmall:Array<ArrayBuffer> = []
         let toosmall_size = 0
         aud.on_recording = async (blob:Blob) => {
             if (blob.size < 500) {
                 // tiny frame noises?
                 // < GOING? we could be tidier by .stop() .start()
+                //   but sometimes we get here with tiny bits (260 byte headers?) before re exists
                 debugger
                 // toosmall.push(await blob.arrayBuffer())
                 // toosmall_size += blob.size
@@ -492,7 +507,12 @@ abstract class Agency extends TimeGallopia {
             // track exactly how long the preview is
             // < probably could leave this to the client
             let bud = this.gat.new_audiolet()
-            await bud.load(buffers)
+            try {
+                await bud.load(buffers)
+            }
+            catch (er) {
+                throw `transcode-load fail: ${er}`
+            }
             let duration = bud.duration()
             duration -= pre_duration
             // generate %record/*%preview
@@ -501,11 +521,6 @@ abstract class Agency extends TimeGallopia {
         }
 
 
-        let buffers = wa.o1({buffers:1})[0]
-        await aud.load(buffers)
-        offset = aud.duration() - this.TRIAL_LISTEN
-        let uri = this.Se.D_to_uri(D)
-        re = wa.i({record:1,offset,uri})
         aud.play(offset)
         return aud
     }

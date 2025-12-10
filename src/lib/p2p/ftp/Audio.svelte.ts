@@ -115,7 +115,7 @@ export class Audiolet {
         this.mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
                 // these are ~35kb chunks of webm usually
-                this.on_recording?.(event.data);
+                this.on_recording(event.data);
             }
         };
 
