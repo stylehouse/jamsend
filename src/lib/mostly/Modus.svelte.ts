@@ -6,29 +6,23 @@ import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { Tdebug } from "./Selection.svelte";
 
-abstract class ModusItself  {
+abstract class ModusItself extends TheC  {
     // belongs to a thing of a feature
     S:ThingIsms
     // < FeatureIsms. PF.F = F
     F:PeeringFeature
     
-    // < GOING?
-    coms?:TheC|null = $state()
     // suppose you will develop your *Modus while looking at a Strata
     a_Strata?:Strata = $state()
-
+    current:TheC
     constructor(opt:Partial<Modus>) {
-        // super()
+        super({sc:{ImAModus:1}})
         Object.assign(this,opt)
+        // < GOING
+        this.current = this
         this.init_stashed_mem?.()
     }
 
-    // example. you subclass this
-    async main() {
-        await this.have_time(async () => {
-            // recreate bits
-        })
-    }
     stopped = false
     declare do_stop:Function
     stop() {
@@ -38,9 +32,24 @@ abstract class ModusItself  {
 
 
     // the "I'm redoing the thing" process wrapper
-    // a layer on top of Stuff.replace():
-    //  graceful fail when already locked
-    //  doesn't recycle C/** (replace() q.fresh)
+    declare main_fn:Function
+    async main() {
+        await this.have_time(async () => {
+            await this.reset_interval()
+
+            // the actual main
+            await this.do_main()
+            
+            // on that structure, hang motivation
+            this.oa({A:'auto'}) || await this.do_A()
+            await this.agency_think()
+            // Modus_testcase(this)
+
+            // < look within $scope of the Tree (start with localList) for...
+        })
+    }
+
+
     abstract current:TheC
     time_having?:Error|null
     async have_time(fn:Function) {
@@ -121,7 +130,7 @@ export class Modusmem {
 
 abstract class ModusPretendingtobeaC extends ModusItself {
     // Modus having .current, rather than being C
-    current:TheC = $state(_C())
+    current:TheC
     // add to the Stuff
     i(C:TheC|TheUniversal) {
         return this.current.i(C)
@@ -155,7 +164,7 @@ abstract class ModusPretendingtobeaC extends ModusItself {
 //#endregion
 //#region misc
 
-abstract class TimeGallopia extends ModusPretendingtobeaC {
+abstract class TimeGallopia extends ModusItself {
     // Modus will be highly tested so is the center of virtualisations
     // < determinism mode, testing
     // picks whole numbers 0-($n||1)
@@ -260,7 +269,7 @@ abstract class Agency extends TimeGallopia {
     // process job queue
     declare i_auto_wanting:Function
     async agency_think() {
-        for (let A of this.Tr.sc.D.o({A:1})) {
+        for (let A of this.current.o({A:1})) {
             // est timestamp
             !A.oa({self:1,est:1})
                 && A.i({self:1,est:now_in_seconds()})
@@ -432,7 +441,7 @@ abstract class Agency extends TimeGallopia {
             ai = await wa.r({aim:1})
             // < this could be r_path, return the old one?
             await ai.replace({path:1}, async () => {
-                this.Se.i_path(dir,ai)
+                this.Se.i_path(ai,dir)
             })
             // and log how many times this process goes around:
             wa.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
@@ -573,7 +582,7 @@ abstract class Agency extends TimeGallopia {
         return aud
     }
     
-    
+
 
 }
 export abstract class Modus extends Agency {

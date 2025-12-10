@@ -386,13 +386,9 @@ class Dierarchy extends SelectionItself {
         // Extract the path strings
         return sortedPath.map(node => node.sc.path)
     }
-    // < a flaw: uri->D must be findable immediately
-    //    lacks the ability to explore whether it exists
-    //     then determine it doesn't and ...
     uri_to_D(uri: Uri): TheD | null {
         let path = uri.split("/")
         let D = this.path_to_D(path)
-        if (!D) throw "a flaw: uri->D must be findable immediately"
         return D
     }
     j_to_D(j: Journey): TheD | null {
@@ -430,9 +426,12 @@ class Dierarchy extends SelectionItself {
         }
         return D
     }
-    i_path(D,j:Journey) {
+    i_path(j:Journey,D:TheD) {
+        this.i_path_path(j,this.D_to_path(D))
+    }
+    i_path_path(j:Journey,path) {
         let i = 0
-        for (let bit of this.D_to_path(D)) {
+        for (let bit of path) {
             j.i({path:bit,seq: i++})
         }
     }
@@ -492,7 +491,7 @@ class Dierarchy extends SelectionItself {
         // start with a journey that begins immediately
         //  it wanders a while then gets tired
         let j = D.i({journey:'auto',begins:1})
-        this.i_path(D,j)
+        this.i_path(j,D)
     }
 
     // T%journeys/$j and D**%plodding go inward
@@ -604,7 +603,7 @@ class Dierarchy extends SelectionItself {
         await j.replace({gaveup:1}, async () => {
             // ~~ %journey/%path
             let g = j.i({gaveup:1}).is()
-            this.i_path(D,g)
+            this.i_path(g,D)
         })
         to.ends = D
     }

@@ -33,6 +33,7 @@ export class DirectoryModus extends Modus {
             'hard': () => this.toggle_gohard(),
             'A++': () => this.do_A(),
             'C++': () => this.do_C(),
+            'G': () => this.do_Gravitations(),
         })
     }
     do_stop() {
@@ -45,24 +46,16 @@ export class DirectoryModus extends Modus {
     // UI:Sharability(DirectoryShare) reacts here once DirectoryShare.started
     //  < GOING is DirectoryShare.refresh() and so forth
     // < and slowly dispatch everything else...
-    async main() {
-        // switch on (and clear) the debug channel
-        this.coms = _C()
-        // this sty
-        await this.have_time(async () => {
-            await this.reset_interval()
 
-            // < rewrite everything we're thinking about how to:
-            await this.surf_nibs(this.S.list)
-            
-            // on that structure, hang motivation
-            this.Tr.sc.D.oa({A:'auto'}) || await this.do_A()
-            await this.agency_think()
-            // Modus_testcase(this)
+    do_Gravitations() {
+        let topD = this.Tr.sc.D
 
-            // < look within $scope of the Tree (start with localList) for...
-        })
+
+        // < locate Piers we can feed radio
+        //  < ping this same process in each
+        // they don't have to have their shares working to get radio
     }
+
 
 
 
@@ -79,7 +72,7 @@ export class DirectoryModus extends Modus {
         let journey = 'funsies'
         topD.replace({journey}, async () => {
             let j = topD.i({journey,clicked:1})
-            Se.i_path(D,j)
+            Se.i_path(j,D)
         })
         this.main()
     }
@@ -96,23 +89,37 @@ export class DirectoryModus extends Modus {
     }
     // start Agenting around!
     async do_A() {
-        await this.Tr.sc.D.replace({A:'auto'},async () => {
-            this.Tr.sc.D.i({A:'auto'}).is()
+        await this.replace({A:'auto'},async () => {
+            this.i({A:'auto'}).is()
+            this.i({A:'home'}).is().i({wanting:1,method:'stocks'})
         })
         this.main()
     }
 
 
 
-    // Agency parameterising and processing
 
+    async do_main() {
+        // < rewrite everything we're thinking about how to:
+        await this.surf_nibs(this.S.list)
+    }
+    // Agency parameterising and processing
     i_auto_wanting(A) {
         if (1) {
-            let uri = 'music/06 Locust Heat.mp3'
-            let D = this.Se.uri_to_D(uri)
+            let D = this.missable_D_targeting('music/06 Locust Heat.mp3')
+            if (!D) return A.i({wanting:1,method:'out_of_instructions',a_flaw:"uri->D must be findable immediately"})
+                
             return A.i({wanting:1,method:'radiopreview',had:D})
         }
         return A.i({wanting:1,method:'meander',then:'radiopreview'})
+    }
+    missable_D_targeting(uri) {
+        let D = this.Se.uri_to_D(uri)
+        // < a flaw unresolvable just yet: uri->D must be findable immediately
+        //    lacks the ability to explore whether it exists
+        //     then determine it doesn't and ...
+        //    so we need to wa:lookup%then=whatever
+        return D
     }
     // when wanting to gallop into open country
     get_sleeping_D_filter(D) {
@@ -197,12 +204,51 @@ export class DirectoryModus extends Modus {
         wa.i({interesting:5})
         // < want to put it on disk already
         //    so there's more immediately tons of material they could be blasted with
-        
-    }
-    async buffering() {
-        
-    }
 
+    }
+    // parallel to the above, radio pools in the unsatisfiable task of stocks
+    async stocks(A,wa) {
+        if (!A.oa({stock_cache:1})) {
+            let name = '.jamsend'
+            // try target it
+            let D = await this.aim_for(wa,[name])
+            if (D) {
+                // found that directory
+                let ope = D && D.o1({v:1,openity:1})[0]
+                if (ope <3) return console.log("stocks low openity")
+                
+                console.log("stocks ready!")
+            }
+            else {
+                if (!wa.oa({waits:"aims"})) {
+                    wa.i({waits:"aims"})
+                    // let go on to find that directory, or
+                }
+                else {
+                    if (!wa.oa({waits:"made it"})) {
+                        // assume we must make it
+                        let DL = this.D_to_DL(this.Tr.sc.D)
+                        await DL.makeDirectory(name)
+
+                        wa.i({waits:"made it"})
+                    }
+                    else {
+                        wa.i({error:"persistingly unmade"})
+                    }
+                }
+            }
+        }
+    }
+    async aim_for(wa,path):TheD|null {
+        path = [this.Tr.sc.D.sc.name, ...path]
+
+        let ai = await wa.r({aim:1})
+        await ai.replace({path:1}, async () => {
+            this.Se.i_path_path(ai,path)
+        })
+        // until it exists?
+        return this.Se.j_to_D(ai)
+    }
 
 
 
@@ -230,9 +276,6 @@ export class DirectoryModus extends Modus {
             !n.oa({self:1,est:1})
                 && n.i({self:1,est:now_in_seconds()})
 
-            // sub coms
-            n.coms = this.coms?.i({into:"surf_DLs"})
-
             // the sprawly task of climbing n** -> D**
             await this.Travel_DLs(n)
             // there's only one for now
@@ -257,7 +300,6 @@ export class DirectoryModus extends Modus {
     async Travel_DLs(n:TheC) {
         // console.log(`Travel_DLs:`)
         let thetime = this.thetime += 1
-        n.coms.i({twas_thetime:this.thetime})
 
 
         let Se = new Selection()
@@ -565,6 +607,21 @@ export class DirectoryListing {
     }
     async getWriter(pathbit) {
     }
+    async makeDirectory(pathbit) {
+        try {
+            await this.handle.getDirectoryHandle(pathbit, { create: true })
+        } catch (err) {
+            throw erring(`Failed to create file "${pathbit}"`, err)
+        }
+    }
+    async deleteEntry(pathbit) {
+        try {
+            await this.handle.removeEntry(pathbit, { recursive: false })
+        } catch (err) {
+            throw erring(`Failed to delete "${pathbit}"`, err)
+        }
+    }
+    
     
     async expand() {
         if (!this.handle) throw erring('No directory access')
