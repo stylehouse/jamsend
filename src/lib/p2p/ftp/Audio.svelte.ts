@@ -127,6 +127,7 @@ export class Audiolet {
     stopped = true
     playing?:AudioBufferSourceNode
     playing_next?:AudioBufferSourceNode
+    playing_last?:AudioBufferSourceNode
     start_time?:ACtime
     stop_time?:ACtime
     stop() {
@@ -134,6 +135,7 @@ export class Audiolet {
         this.stop_time = this.gat.now()
         this.stopped = true
         this.playing?.stop()
+        this.playing_last = this.playing
         delete this.playing
         if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             // https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/stop_event
@@ -146,7 +148,7 @@ export class Audiolet {
         return this.gat.now() - this.start_time
     }
     duration():number {
-        return (this.playing || this.playing_next)?.buffer?.duration || 0
+        return (this.playing || this.playing_next || this.playing_last)?.buffer?.duration || 0
     }
     async load(encoded:Array<ArrayBuffer>) {
         let stretch = await this.decode_stretch(encoded)
@@ -161,6 +163,9 @@ export class Audiolet {
     play(offset=0) {
         this.stop()
         console.log(`aud play`)
+        if (!this.playing_next) {
+            throw "< clone already decoded this.playing_last ?"
+        }
         this.playing = this.playing_next
         delete this.playing_next
         this.playing.start(0,offset)

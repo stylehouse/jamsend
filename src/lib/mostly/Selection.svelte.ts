@@ -350,6 +350,7 @@ export class Tour {
         // < we don't check there's nothing new between this and N[-1] of our last process()
 }
 type NotTo = boolean
+type Uri = string
 class Dierarchy extends SelectionItself {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
@@ -371,24 +372,25 @@ class Dierarchy extends SelectionItself {
     }
     // AI
     // find a D given j (or something with /*%path)
-    j_to_path(j: Journey): Array<string> | null {
+    j_to_path(j: Journey): Array<string> {
         // Get the path segments from the journey, ordered by sequence
-        const pathNodes = j.o({ path: 1, seq: 1 })
+        const pas = j.oa({ path: 1, seq: 1 })
         
-        if (!pathNodes || pathNodes.length === 0) {
-            return null
-        }
+        if (!pas) throw "!%path"
         
         // Sort by sequence number to ensure correct order
-        const sortedPath = pathNodes.slice().sort((a, b) => {
+        const sortedPath = pas.slice().sort((a, b) => {
             return (a.sc.seq || 0) - (b.sc.seq || 0)
         })
         
         // Extract the path strings
         return sortedPath.map(node => node.sc.path)
     }
+    uri_to_D(uri: Uri): TheD | null {
+        let path = uri.split("/")
+        return this.path_to_D(path)
+    }
     j_to_D(j: Journey): TheD | null {
-        // Use path_to_D to resolve the path to a D
         let path = this.j_to_path(j)
         return this.path_to_D(path)
     }

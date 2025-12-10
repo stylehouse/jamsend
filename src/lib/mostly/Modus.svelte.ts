@@ -252,9 +252,6 @@ abstract class TimeGallopia extends ModusPretendingtobeaC {
 //#endregion
 //#region Agency
 abstract class Agency extends TimeGallopia {
-}
-
-export abstract class Modus extends Agency {
     // we assume you 
     // latest finished topT, works for Selection
     Tr?:Travel
@@ -440,13 +437,82 @@ export abstract class Modus extends Agency {
 
         // %aim spawns a journey, we follow up our %aim next time
     }
-    // dirs for directions
+    // for directions off the known territory
     declare get_sleeping_T_filter:Function
     get_sleeping_T() {
         return this.Tr!.sc.N
             .filter(T => !this.get_sleeping_T_filter || this.get_sleeping_T_filter(T))
             .filter(T => T.sc.not) // closed|sleeping, ~~ %openity,v<3 without knowing it
     }
+
+//#endregion
+//#region Audio misc
+
+    // Audio things temporarily just here
+    //  Modus.stop() happens reliably, avoiding zombie sounds
+    gat:SoundSystem
+    TRIAL_LISTEN = 20
+    // for radio
+    async record_preview(A,wa,D) {
+        let aud = this.gat.new_audiolet()
+        aud.setupRecorder()
+        let re
+        let seq = 0
+        let offset = null
+        let toosmall = []
+        let toosmall_size = 0
+        aud.on_recording = async (blob:Blob) => {
+            if (blob.size < 500) {
+                // tiny frame noises?
+                // < GOING? we could be tidier by .stop() .start()
+                debugger
+                // toosmall.push(await blob.arrayBuffer())
+                // toosmall_size += blob.size
+            }
+
+            let type = blob.type // eg "audio/webm;codecs=opus"
+            let buffer = await blob.arrayBuffer()
+            let buffers = [buffer]
+
+            // buffer we've saved for a moment because it 
+            if (toosmall.length) {
+                buffers = [...toosmall,...buffers]
+                toosmall_size = 0
+                toosmall = []
+            }
+
+            let prebufs = re.o({preview:1})
+            let pre_duration = 0
+            for (let pr of prebufs) {
+                pre_duration += pr.sc.duration
+            }
+            buffers = [...prebufs.map(pr => pr.sc.buffer), ...buffers]
+
+
+            // track exactly how long the preview is
+            // < probably could leave this to the client
+            let bud = this.gat.new_audiolet()
+            await bud.load(buffers)
+            let duration = bud.duration()
+            duration -= pre_duration
+            // generate %record/*%preview
+            re.i({preview:1,seq,duration,type,buffer})
+            seq++
+        }
+
+
+        let buffers = wa.o1({buffers:1})[0]
+        await aud.load(buffers)
+        offset = aud.duration() - this.TRIAL_LISTEN
+        let uri = this.Se.D_to_uri(D)
+        re = wa.i({record:1,offset,uri})
+        aud.play(offset)
+        return aud
+    }
+    
+
+}
+export abstract class Modus extends Agency {
 }
 
 function ModusTesting() {

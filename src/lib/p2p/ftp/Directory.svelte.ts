@@ -15,13 +15,11 @@ import type { Audiolet, SoundSystem } from './Audio.svelte';
 // Shares/Share is the filesystem terminal
 //  Selections/Selection are your collations
 
-const TRIAL_LISTEN = 20
 // ftp as a view to work with
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
     F:PeeringSharing
     S:DirectoryShare//|AnyShare // the Thing we're hotwiring
-    gat:SoundSystem // temporarily just here
 
     constructor(opt:Partial<DirectoryModus>) {
         super(opt)
@@ -94,6 +92,12 @@ export class DirectoryModus extends Modus {
     // Agency parameterising and processing
 
     i_auto_wanting(A) {
+        // < a flaw: uri->D must be findable immediately
+        //    lacks the ability to explore whether it exists
+        //     then determine it doesn't and ...
+        let uri = 'music/19 - FLUXION - Multidirectional II.ogg'
+        let D = this.Se.uri_to_D(uri)
+        return A.i({wanting:1,method:'radioprep',had:D})
         return A.i({wanting:1,method:'meander',then:'radioprep'})
     }
     // when wanting to gallop into open country
@@ -132,60 +136,7 @@ export class DirectoryModus extends Modus {
 
         
         if (!wa.oa({aud:1})) {
-            let aud = this.gat.new_audiolet({id:3})
-            aud.setupRecorder()
-            let re
-            let seq = 0
-            let offset = null
-            let toosmall = []
-            let toosmall_size = 0
-            aud.on_recording = async (blob:Blob) => {
-                if (blob.size < 500) {
-                    // tiny frame noises?
-                    // < GOING? we could be tidier by .stop() .start()
-                    debugger
-                    // toosmall.push(await blob.arrayBuffer())
-                    // toosmall_size += blob.size
-                }
-
-                let type = blob.type // eg "audio/webm;codecs=opus"
-                let buffer = await blob.arrayBuffer()
-                let buffers = [buffer]
-
-                // buffer we've saved for a moment because it 
-                if (toosmall.length) {
-                    buffers = [...toosmall,...buffers]
-                    toosmall_size = 0
-                    toosmall = []
-                }
-
-                let prebufs = re.o({preview:1})
-                let pre_duration = 0
-                for (let pr of prebufs) {
-                    pre_duration += pr.sc.duration
-                }
-                buffers = [...prebufs.map(pr => pr.sc.buffer), ...buffers]
-
-
-                // track exactly how long the preview is
-                // < probably could leave this to the client
-                let bud = this.gat.new_audiolet()
-                await bud.load(buffers)
-                let duration = bud.duration()
-                duration -= pre_duration
-                // generate %record/*%preview
-                re.i({preview:1,seq,duration,type,buffer})
-                seq++
-            }
-
-
-            let buffers = wa.o1({buffers:1})[0]
-            await aud.load(buffers)
-            offset = aud.duration() - TRIAL_LISTEN
-            let uri = this.Se.D_to_uri(D)
-            re = wa.i({record:1,offset,uri})
-            aud.play(offset)
-
+            let aud = await this.record_preview(A,wa,D)
             // hold on to this while it's happening
             wa.i({aud})
             // forget the encoded source buffers now
