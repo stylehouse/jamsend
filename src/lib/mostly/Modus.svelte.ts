@@ -302,8 +302,11 @@ abstract class Agency extends TimeGallopia {
             // percolate wa/ai/%path -> j/%path from this A
             await this.i_journeys_o_aims(A,wa)
 
-            // re-enter the wa so we can mutate sc
+            // wa can mutate sc eg %then
+            //  so keep writing it down
             await A.r({wanting:1},wa)
+
+            // wa can mutate
             for (let sa of wa.o({satisfied:1})) {
                 // take instructions
                 let next_method = wa.sc.then || "out_of_instructions"
@@ -464,6 +467,8 @@ abstract class Agency extends TimeGallopia {
             throw `original encoded buffers fail: ${er}`
         }
     }
+
+    // < GOING? see small decodable chunks
     async record_preview(A,wa,D) {
         let aud = this.gat.new_audiolet()
         await this.aud_eats_buffers(wa,aud)
@@ -527,7 +532,7 @@ abstract class Agency extends TimeGallopia {
         return aud
     }
 
-
+    // small decodable chunks better for feeding to the radio-tuning noise phenomena
     async record_preview_individuated(A,wa,D) {
         let aud = this.gat.new_audiolet()
         await this.aud_eats_buffers(wa,aud)
@@ -564,10 +569,10 @@ abstract class Agency extends TimeGallopia {
             seq++
         }
 
-
         aud.play(offset)
         return aud
     }
+    
     
 
 }

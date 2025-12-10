@@ -68,6 +68,21 @@ export class DirectoryModus extends Modus {
 
     // click button events
 
+    // the events, nudges
+    async further_journey(opt?) {
+        await this.Se.journey_further(opt)
+        this.main()
+    }
+    async nameclick(D:TheD) {
+        let Se = this.Se
+        let topD = Se.c.T.sc.D
+        let journey = 'funsies'
+        topD.replace({journey}, async () => {
+            let j = topD.i({journey,clicked:1})
+            Se.i_path(D,j)
+        })
+        this.main()
+    }
     // sleep when possible
     hard = false
     toggle_gohard() {
@@ -93,14 +108,11 @@ export class DirectoryModus extends Modus {
 
     i_auto_wanting(A) {
         if (1) {
-            // < a flaw: uri->D must be findable immediately
-            //    lacks the ability to explore whether it exists
-            //     then determine it doesn't and ...
             let uri = 'music/06 Locust Heat.mp3'
             let D = this.Se.uri_to_D(uri)
-            return A.i({wanting:1,method:'radioprep',had:D})
+            return A.i({wanting:1,method:'radiopreview',had:D})
         }
-        return A.i({wanting:1,method:'meander',then:'radioprep'})
+        return A.i({wanting:1,method:'meander',then:'radiopreview'})
     }
     // when wanting to gallop into open country
     get_sleeping_D_filter(D) {
@@ -116,8 +128,10 @@ export class DirectoryModus extends Modus {
             return true
         }
     }
-    async radioprep(A,wa,D) {
+    async radiopreview(A,wa,D) {
         if (!this.gat.AC_ready) return wa.i({error:"!AC"})
+        // wa can mutate
+        wa.sc.then = "radiodistribution"
 
         if (!wa.oa({buffers:1})) {
             let DL = this.D_to_DL(D)
@@ -149,55 +163,46 @@ export class DirectoryModus extends Modus {
         // watch the aud progress
         let auds:Array<Audiolet> = wa.o1({aud:1})
         let alive = 0
-        await wa.replace({active_aud:1},async () => {
-            for (let aud of auds) {
-                if (!aud.stopped) {
-                    alive++
+        for (let aud of auds) {
+            if (!aud.stopped) {
+                alive++
 
-                    // non-first time:
-                    if (auds_was.includes(aud)) {
-                        // while calling this regularly...
-                        // < and perhaps not every time through here?
-                        aud.encode_segmentation()
-                        console.log(`requested segment`)
-                    }
+                // non-first time:
+                if (auds_was.includes(aud)) {
+                    // while calling this regularly...
+                    // < and perhaps not every time through here?
+                    aud.encode_segmentation()
+                    console.log(`requested segment`)
                 }
-                else {
-                    wa.i({see:'aud',stopped:1})
-                }
-                wa.i({see:'audtime',along:aud.along(),duration:aud.duration()})
             }
-        })
-
-        if (wa.o({record:1})?.some(re => re.o({preview:1})) && !alive) {
-            console.log("Could replicate to the preview stash now...")
-            wa.r({afa:"Could replicate to the preview stash now...",stopped:1})
+            else {
+                // done!
+                wa.i({see:'aud',stopped:1})
+            }
+            wa.i({see:'audtime',along:aud.along(),duration:aud.duration()})
         }
 
 
-        // wa.sc.then ||= "out_of_instructions"
-        wa.sc.countme ||= 0
-        wa.sc.countme++ <3
-            // || await wa.r({satisfied:1,with:D})
+        if (wa.oa({record:1}) && !alive) {
+            // all done!
+            // < or do we: await A.r({goods:1}) .i(rec),
+            //    and always naturally distribute %goods to Piers?
+            let recs = wa.o({record:1})
+            if (recs[1]) throw `many recs`
+            let rec = recs[0]
+            await wa.r({satisfied:1,with:rec})
+        }
+    }
+    async radiodistribution(A,wa,rec) {
+        wa.i({interesting:5})
+        // < want to put it on disk already
+        //    so there's more immediately tons of material they could be blasted with
+        
     }
     async buffering() {
         
     }
 
-
-    D_to_FL(D:TheD):FileListing {
-        return D.c.T.sc.n.sc.FL
-    }
-    D_to_DL(D:TheD):DirectoryListing {
-        let n = D.c.T.sc.n
-        if (n.sc.nib == 'blob') {
-            let u = D.c.T.up.sc.n
-            if (u.sc.nib != 'dir') throw "^!dir"
-            n = u
-        }
-        if (n.sc.nib != 'dir') throw "!dir"
-        return n.sc.DL
-    }
 
 
 
@@ -369,21 +374,6 @@ export class DirectoryModus extends Modus {
         this.Tr = Se.c.T
         this.Se = Se
     }
-    // the events, nudges
-    async further_journey(opt?) {
-        await this.Se.journey_further(opt)
-        this.main()
-    }
-    async nameclick(D:TheD) {
-        let Se = this.Se
-        let topD = Se.c.T.sc.D
-        let journey = 'funsies'
-        topD.replace({journey}, async () => {
-            let j = topD.i({journey,clicked:1})
-            Se.i_path(D,j)
-        })
-        this.main()
-    }
 
     // behavioural options
     refresh_DL_seconds = 16
@@ -470,6 +460,21 @@ export class DirectoryModus extends Modus {
         await n.replace({nib:1,name:1},async () => {
         })
     }
+
+    D_to_FL(D:TheD):FileListing {
+        return D.c.T.sc.n.sc.FL
+    }
+    D_to_DL(D:TheD):DirectoryListing {
+        let n = D.c.T.sc.n
+        if (n.sc.nib == 'blob') {
+            let u = D.c.T.up.sc.n
+            if (u.sc.nib != 'dir') throw "^!dir"
+            n = u
+        }
+        if (n.sc.nib != 'dir') throw "!dir"
+        return n.sc.DL
+    }
+
 }
 
 

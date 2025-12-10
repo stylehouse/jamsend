@@ -386,9 +386,14 @@ class Dierarchy extends SelectionItself {
         // Extract the path strings
         return sortedPath.map(node => node.sc.path)
     }
+    // < a flaw: uri->D must be findable immediately
+    //    lacks the ability to explore whether it exists
+    //     then determine it doesn't and ...
     uri_to_D(uri: Uri): TheD | null {
         let path = uri.split("/")
-        return this.path_to_D(path)
+        let D = this.path_to_D(path)
+        if (!D) throw "a flaw: uri->D must be findable immediately"
+        return D
     }
     j_to_D(j: Journey): TheD | null {
         let path = this.j_to_path(j)
