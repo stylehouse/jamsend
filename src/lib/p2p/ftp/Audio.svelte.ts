@@ -93,7 +93,16 @@ export class Audiolet {
         this.outputNode = this.gat.AC.createMediaStreamDestination()
         this.gainNode.connect(this.outputNode)
 
-        // make entirely-decodable chunks
+        // < make entirely-decodable chunks
+        //   perhaps of sets of these chunks when they reach 10s total duration
+        //    we shall make them playable from their starts
+        //    by quickly doing mediaRecorder.stop() and .start() again
+        //    we want to test that for gappiness 
+        //     as well as generating tiny chunks
+        // https://w3c.github.io/mediacapture-record/
+        //   When multiple Blobs are returned (because of timeslice or requestData()),
+        //    the individual Blobs need not be playable,
+        //    but the combination of all the Blobs from a completed recording MUST be playable.
         let segment_duration = 2
         const options = {
             mimeType: 'audio/webm;codecs=opus',
@@ -109,7 +118,7 @@ export class Audiolet {
                 this.on_recording?.(event.data);
             }
         };
-        // https://w3c.github.io/mediacapture-record/#dom-mediarecorder-start:~:text=timeslice%20milliseconds
+
         this.mediaRecorder.start(segment_duration*1000);
     }
 
@@ -143,6 +152,7 @@ export class Audiolet {
         let stretch = await this.decode_stretch(encoded)
         stretch.onended = () => {
             console.log("stretch ended")
+            this.on_ended?.()
             this.stop()
         }
         this.playing_next = stretch

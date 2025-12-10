@@ -134,65 +134,78 @@ export class DirectoryModus extends Modus {
         if (!wa.oa({aud:1})) {
             let aud = this.gat.new_audiolet({id:3})
             aud.setupRecorder()
-            let re = wa.i({record:1})
+            let re
             let seq = 0
             let offset = null
             let toosmall = []
             let toosmall_size = 0
             aud.on_recording = async (blob:Blob) => {
-                console.log(`aud rec ${seq} is ${blob.size}`)
-                if (blob.size < 5000) {
-                    // small frames are likely noise
+                if (blob.size < 500) {
+                    // tiny frame noises?
+                    // < GOING? we could be tidier by .stop() .start()
                     debugger
-                    toosmall.push(await blob.arrayBuffer())
-                    toosmall_size += blob.size
-                    // < know if the stream is finishing and accept tiny last bits
+                    // toosmall.push(await blob.arrayBuffer())
+                    // toosmall_size += blob.size
                 }
 
                 let type = blob.type // eg "audio/webm;codecs=opus"
                 let buffer = await blob.arrayBuffer()
+                let buffers = [buffer]
 
+                // buffer we've saved for a moment because it 
                 if (toosmall.length) {
-                    buffer = [...toosmall,buffer]
+                    buffers = [...toosmall,...buffers]
                     toosmall_size = 0
                     toosmall = []
                 }
 
+                let prebufs = re.o({preview:1})
+                let pre_duration = 0
+                for (let pr of prebufs) {
+                    pre_duration += pr.sc.duration
+                }
+                buffers = [...prebufs.map(pr => pr.sc.buffer), ...buffers]
+
 
                 // track exactly how long the preview is
+                // < probably could leave this to the client
                 let bud = this.gat.new_audiolet()
-                await bud.load(buffer)
+                await bud.load(buffers)
                 let duration = bud.duration()
-                let c = {}
-                if (seq == 0) {
-                    // and exactly how far into the source it starts
-                    if (!offset) throw "!offset"
-                    c.offset = offset
-                }
+                duration -= pre_duration
                 // generate %record/*%preview
-                re.i({preview:1,seq,...c,duration,type,buffer})
-                console.log(`aud rec ${seq} `)
+                re.i({preview:1,seq,duration,type,buffer})
                 seq++
             }
+
 
             let buffers = wa.o1({buffers:1})[0]
             await aud.load(buffers)
             offset = aud.duration() - TRIAL_LISTEN
+            let uri = this.Se.D_to_uri(D)
+            re = wa.i({record:1,offset,uri})
             aud.play(offset)
 
-
+            // hold on to this while it's happening
             wa.i({aud})
             // forget the encoded source buffers now
             await wa.r({buffers:1},{ok:1})
         }
 
-
+        // watch the aud progress
         let aud = wa.o1({aud:1})[0]
 
         wa.i({see:'aud',along:aud.along()})
         aud.stopped
             && wa.i({see:'aud',stopped:1})
         wa.i({see:'aud',dura:aud.duration()})
+
+
+
+        if (wa.o({record:1})?.some(re => re.o({preview:1}))) {
+            console.log("Could replicate to the preview stash now...")
+        }
+
 
         // wa.sc.then ||= "out_of_instructions"
         wa.sc.countme ||= 0
