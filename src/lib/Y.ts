@@ -1,5 +1,15 @@
 import { TheC } from "./data/Stuff.svelte";
 
+export async function sha256(data: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
+// slow down calls to a function
 export function throttle(func, interval_ms = 200) {
     let isWaiting = false;
     let nextArgs:null|Array<any> = null;
@@ -255,7 +265,7 @@ export function grap(c, s?:any) {
 };
 
 // removing .filter, y=[n+]|&n{1}|$n
-export function grop(N, y?) {
+export function grop(y?,N) {
     const out = [];
     
     // expets is|includes

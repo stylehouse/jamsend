@@ -5,16 +5,17 @@ import { _C, keyser, TheC, type TheN } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-import { erring } from '$lib/Y'
+import { erring, grap, grop, sha256 } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 import type { Audiolet, SoundSystem } from './Audio.svelte';
-
 
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
 //  Selections/Selection are your collations
 
+//#endregion
+//#region DirectoryModus
 // ftp as a view to work with
 //  makes guesswork to provide defaults, remote plots may inject
 export class DirectoryModus extends Modus {
@@ -91,7 +92,7 @@ export class DirectoryModus extends Modus {
     async do_A() {
         await this.replace({A:'auto'},async () => {
             this.i({A:'auto'}).is()
-            this.i({A:'home'}).is().i({wanting:1,method:'stocks'})
+            this.i({A:'home'}).is().i({wanting:1,method:'radiostock'})
         })
         this.main()
     }
@@ -136,6 +137,10 @@ export class DirectoryModus extends Modus {
             return true
         }
     }
+
+
+//#endregion
+//#region radio
     async radiopreview(A,wa,D) {
         if (!this.gat.AC_ready) return wa.i({error:"!AC"})
         // wa can mutate
@@ -201,60 +206,321 @@ export class DirectoryModus extends Modus {
             await wa.r({satisfied:1,with:rec})
         }
     }
+    // advertise them
     async radiodistribution(A,wa,rec) {
-        wa.i({interesting:5})
+        let rs = this.o({io:'radiostock'})[0]
+        if (!rs) {
+            wa.i({see:"waits for %io:radiostock"})
+            return
+        }
+        if (rec) {
+            rs.sc.i(rec)
+            wa.sc.then = 'rest'
+            wa.r({satisfied:'record taken!'})
+        }
         // < want to put it on disk already
         //    so there's more immediately tons of material they could be blasted with
 
     }
-    // parallel to the above, radio pools in the unsatisfiable task of stocks
-    async stocks(A,wa) {
+    async rest(A,wa) {
+        wa.i({see:"At rest"})
+    }
+
+    // parallel to the above, radio pools into the unsatisfiable task of keeping stock
+    async radiostock(A,wa) {
+        // the .jamsend/radiostock/ directory D
+        let sD
+        // advertise an API in Modus!
+        this.r({io:'radiostock'},{
+            i: (re:TheC) => {
+                // first it comes into the cache here, available to Piers
+                A.i(re)
+                this.whittle_N(A.o({record:1}),keep_things)
+                if (sD) {
+                    this.record_to_disk(re,sD)
+                }
+            },
+            o: (previous:TheC) => {
+                // previous thing they got makes sort of a cursor
+                let them = A.o({record:1})
+                if (!previous || !them.includes(previous)) {
+                    return them[0]
+                }
+                while (them[0] && them[0] != previous) {
+                    them.shift()
+                }
+                if (them[0] != previous) {
+                    // they had the last one?
+                    them = A.o({record:1})
+                }
+            },
+        })
+
+        // and may cache on the filesystem for spanglier startups
+        let stock_path = ['.jamsend','radiostock']
         if (!A.oa({stock_cache:1})) {
             console.log("stock_cache ...aim_to_open")
-            let D = await this.aim_to_open(wa,['.jamsend','radiostock'])
+            let D = await this.aim_to_open(wa,stock_path)
             if (D) {
+                // importantly, not ope<3,
                 A.i({stock_cache:D})
             }
         }
+        sD = A.o1({stock_cache:1})[0]
+        if (!sD) return
+        
+        // whittle to 20 things
+        let keep_things = 20
+        await this.whittle_stock(sD,keep_things)
 
-        let sD = A.o1({stock_cache:1})[0]
-        if (sD && !wa.oa({fossicking:1})) {
-            // < fossick in the partition of the stock caches
-            wa.i({see:"fossick"})
+        // load some
+        let had = A.o({record:1})
+        if (had.length < keep_things) {
+            let to_load = 5 // not to much work per A
+            // keep_things - A.o({record:1}).length
+            
+            for await (const re of this.load_random_records(sD, to_load,had)) {
+                A.i(re)
+            }
+        }
+
+        
+
+        // < have an extra /$cachelet:nowname/ directory to partition it a bit
+        // let nowname = this.latest_stock_cachelet_name()
+        // wa.i({see:"fossick",the:nowname})
+    }
+
+
+
+
+//#endregion
+//#region record <->
+    async record_to_name(re:TheC) {
+        let entropy = `${re.sc.offset}: ${re.sc.uri}`
+        const hash = await sha256(entropy);
+        return `${hash.slice(0,16)}.webms`
+    }
+    async record_to_tsname(re:TheC) {
+        let name = await this.record_to_name(re)
+        return `${now_in_seconds()}-${name}`
+    }
+
+    // <AI>
+    async record_to_disk(re:TheC,sD:TheD) {
+        let name = await this.record_to_tsname(re)
+        try {
+            // Encode record to binary format
+            const encoded = await this.encodeRecordToDisk(re);
+            
+            // Get writer for the stock directory
+            const DL = this.D_to_DL(sD);
+            const writer = await DL.getWriter(name);
+            
+            // Write encoded data
+            await writer.write(encoded);
+            await writer.close();
+            
+            console.log(`Wrote record to disk: ${name}`);
+        } catch (err) {
+            console.error(`Failed to write record to disk:`, err);
+            throw err;
+        }
+    }
+    async record_from_disk(name: string, sD: TheD): Promise<TheC> {
+        try {
+            // Get reader for the stock directory
+            const DL = this.D_to_DL(sD);
+            const reader = await DL.getReader(name);
+            
+            // Read entire file
+            const chunks: ArrayBuffer[] = [];
+            for await (const chunk of reader.iterate(0)) {
+                chunks.push(chunk);
+            }
+            
+            // Combine chunks
+            const totalSize = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+            const combined = new Uint8Array(totalSize);
+            let offset = 0;
+            for (const chunk of chunks) {
+                combined.set(new Uint8Array(chunk), offset);
+                offset += chunk.byteLength;
+            }
+            
+            // Decode from disk format
+            const { metadata, buffers } = await this.decodeRecordFromDisk(combined.buffer);
+            
+            // Reconstruct record TheC
+            const re = _C({
+                record: 1,
+                offset: metadata.offset,
+                uri: metadata.uri
+            });
+            
+            // Reconstruct preview entries with buffers
+            metadata.previews.forEach((previewMeta, idx) => {
+                re.i({
+                    preview: 1,
+                    seq: previewMeta.seq,
+                    duration: previewMeta.duration,
+                    type: previewMeta.type,
+                    buffer: buffers[idx]
+                });
+            });
+            
+            console.log(`Loaded record from disk: ${name}`);
+            return re;
+        } catch (err) {
+            console.error(`Failed to read record from disk:`, err);
+            throw err;
+        }
+    }
+    // Helper to load random records from stock directory
+    async *load_random_records(sD: TheD, count: number, had:TheN): AsyncGenerator<TheC[]> {
+        const DL = this.D_to_DL(sD);
+        
+        // Get all .webms files
+        if (!DL.expanded) throw "we usually rely on %aim to get in there"
+        let webmsFiles = DL.files.filter((FL:FileListing) => FL.name.endsWith('.webms'))
+        if (webmsFiles.length === 0) return
+        // not the already loaded
+        for (let re of had) {
+            let name = await this.record_to_name(re)
+            grop((FL:FileListing) => FL.name.includes(name), webmsFiles)
         }
         
 
+        
+        // Load random selection
+        for (let i = 0; i < count && i < webmsFiles.length; i++) {
+            const randomIdx = this.prandle(webmsFiles.length);
+            const FL = webmsFiles[randomIdx];
+            grop((oFL:FileListing) => oFL == FL, webmsFiles)
+            
+            try {
+                const re = await this.record_from_disk(FL.name, sD);
+                yield re;
+            } catch (err) {
+                console.warn(`Failed to load ${FL.name}:`, err);
+            }
+        }
     }
-    async junk() {
-            let name = '.jamsend'
-            // try target it
-            let D = await this.aim_for(wa,[name])
-            if (D) {
-                // found that directory
-                let ope = D && D.o1({v:1,openity:1})[0]
-                if (ope <3) return console.log("stocks low openity")
-                
-                console.log("stocks ready!")
-                wa.i({see:"stocks ready"})
+    // the .webms format
+    // Encoder: Serialize record to disk format
+    async encodeRecordToDisk(re: TheC): Promise<ArrayBuffer> {
+        // Extract preview buffers and create metadata
+        const previews = re.o({preview: 1});
+        
+        // Build metadata object (everything except the actual buffers)
+        const metadata = {
+            offset: re.sc.offset,
+            uri: re.sc.uri,
+            previews: previews.map(pr => ({
+                seq: pr.sc.seq,
+                duration: pr.sc.duration,
+                type: pr.sc.type,
+                // Store buffer size for reconstruction
+                size: pr.sc.buffer.byteLength
+            }))
+        };
+        
+        // Encode metadata as JSON with escaped newline
+        const jsonStr = JSON.stringify(metadata);
+        const jsonWithNewline = jsonStr + '\n';
+        const jsonBytes = new TextEncoder().encode(jsonWithNewline);
+        
+        // Concatenate all preview buffers
+        const buffers = previews.map(pr => pr.sc.buffer);
+        const totalBufferSize = buffers.reduce((sum, buf) => sum + buf.byteLength, 0);
+        
+        // Create final combined buffer
+        const combined = new Uint8Array(jsonBytes.byteLength + totalBufferSize);
+        combined.set(jsonBytes, 0);
+        
+        let offset = jsonBytes.byteLength;
+        for (const buffer of buffers) {
+            combined.set(new Uint8Array(buffer), offset);
+            offset += buffer.byteLength;
+        }
+        
+        return combined.buffer;
+    }
+    // Decoder: Parse disk format back to record structure
+    async decodeRecordFromDisk(data: ArrayBuffer): Promise<{metadata: any, buffers: ArrayBuffer[]}> {
+        const bytes = new Uint8Array(data);
+        
+        // Find the newline that separates JSON from buffers
+        let newlineIndex = -1;
+        for (let i = 0; i < bytes.length; i++) {
+            if (bytes[i] === 0x0A) { // '\n'
+                newlineIndex = i;
+                break;
             }
-            else {
-                if (!wa.oa({waits:"aims"})) {
-                    wa.i({waits:"aims"})
-                    // let go on to find that directory, or
-                }
-                else {
-                    if (!wa.oa({waits:"made it"})) {
-                        // assume we must make it
-                        let DL = this.D_to_DL(this.Tr.sc.D)
-                        await DL.makeDirectory(name)
+        }
+        
+        if (newlineIndex === -1) {
+            throw new Error('Invalid record format: no newline separator found');
+        }
+        
+        // Extract and parse JSON metadata
+        const jsonBytes = bytes.slice(0, newlineIndex);
+        const jsonStr = new TextDecoder().decode(jsonBytes);
+        const metadata = JSON.parse(jsonStr);
+        
+        // Extract buffers based on sizes in metadata
+        const buffers: ArrayBuffer[] = [];
+        let offset = newlineIndex + 1;
+        
+        for (const previewMeta of metadata.previews) {
+            const size = previewMeta.size;
+            if (offset + size > bytes.length) {
+                throw new Error('Invalid record format: buffer size mismatch');
+            }
+            
+            const buffer = data.slice(offset, offset + size);
+            buffers.push(buffer);
+            offset += size;
+        }
+        
+        return { metadata, buffers };
+    }
+    // </AI>
 
-                        wa.i({waits:"made it"})
-                    }
-                    else {
-                        wa.i({error:"persistingly unmade"})
-                    }
-                }
-            }
+
+
+
+
+
+
+
+    // < GOING?
+    latest_stock_cachelet_name() {
+        let s = now_in_seconds()
+        return Math.floor(s / 1000) * 1000
+    }
+
+    whittle_N(N:TheN,to:number) {
+        to ||= 20
+        while (N.length > to) {
+            let n:TheC = N.shift()
+            // < drop() is weird... meant for the host
+            n.drop(n)
+        }
+    }
+
+    async whittle_stock(D:TheD,to:number) {
+        to ||= 20
+        let N = D.o({Tree:1})
+        let goners = []
+        while (N.length > to) {
+            goners.push(N.shift())
+        }
+        for (let oD of goners) {
+            let DL = this.D_to_DL(oD)
+            console.log("whittle_stock() deletes "+oD.sc.name)
+            await DL.deleteEntry(oD.sc.name)
+        }
     }
     // `mkdir -p` via wa, ie returning every 3s
     //   to try and extract what we're after, or aim further at it
@@ -672,7 +938,11 @@ export class DirectoryListing {
             }
         };
     }
-    async getWriter(pathbit) {
+    async getWriter(pathbit):Promise<FileSystemWritableFileStream> {
+        if (!this.handle) throw erring('No directory access')
+        const fileHandle = await this.handle.getFileHandle(pathbit, { create: true });
+        const writable = await fileHandle.createWritable();
+        return writable;
     }
     async makeDirectory(pathbit) {
         try {

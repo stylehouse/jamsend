@@ -354,8 +354,11 @@ abstract class Agency extends TimeGallopia {
         // have *%journey first
         let journeys = []
         await this.Tr.sc.D.replace({journey}, async () => {
+            let i = 0
+            let origijourney = journey
             for (let ai of wa.o({aim:1})) {
                 // < are duplicate names ok? what to do about it?
+                journey = origijourney+(i++ ? "+"+i : "")
                 let j = this.Tr.sc.D.i({journey})
                 journeys.push(j)
             }
