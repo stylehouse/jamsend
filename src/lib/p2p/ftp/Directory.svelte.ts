@@ -210,6 +210,22 @@ export class DirectoryModus extends Modus {
     // parallel to the above, radio pools in the unsatisfiable task of stocks
     async stocks(A,wa) {
         if (!A.oa({stock_cache:1})) {
+            console.log("stock_cache ...aim_to_open")
+            let D = await this.aim_to_open(wa,['.jamsend','radiostock'])
+            if (D) {
+                A.i({stock_cache:D})
+            }
+        }
+
+        let sD = A.o1({stock_cache:1})[0]
+        if (sD && !wa.oa({fossicking:1})) {
+            // < fossick in the partition of the stock caches
+            wa.i({see:"fossick"})
+        }
+        
+
+    }
+    async junk() {
             let name = '.jamsend'
             // try target it
             let D = await this.aim_for(wa,[name])
@@ -239,10 +255,57 @@ export class DirectoryModus extends Modus {
                     }
                 }
             }
+    }
+    // `mkdir -p` via wa, ie returning every 3s
+    //   to try and extract what we're after, or aim further at it
+    // path doesn't include the share name
+    async aim_to_open(wa,path) {
+        path = [this.Tr.sc.D.sc.name, ...path]
+        let apath = []
+        let at
+        let D
+        let uD
+        for (let pathbit of path) {
+            apath.push(pathbit)
+            at = apath.join('/')
+
+            D = await this.aim_for(wa,apath)
+            if (!D) {
+                if (uD) {
+                    // assume we must make it
+                    let DL = this.D_to_DL(uD)
+                    await DL.makeDirectory(pathbit)
+                    wa.i({see:"aim_to_open mkdir",at})
+                    
+                }
+                else {
+                    debugger
+                    wa.i({see:"aim_to_open HOW",at})
+                }
+                // you wait for the aim to fill it in
+                return
+            }
+
+            // found that directory
+            let ope = D && D.o1({v:1,openity:1})[0]
+            // must be awake
+            if (ope <3) {
+                wa.i({see:"aim_to_open waits to open",at})
+                // you wait for the aim to fill it in
+                return
+            }
+
+            uD = D
         }
+        wa.i({see:"aim_to_open OK",at})
+
+        // // track where we're up to along path
+        // let ao_sc = {aimope:path.join('/')}
+        // let ao = wa.o(ao_sc)[0]?.sc || {seq:-1}
+        // let seq = ao.seq + 1
+        return D
     }
     async aim_for(wa,path):TheD|null {
-        path = [this.Tr.sc.D.sc.name, ...path]
         // journey at it
         let ai = await wa.r({aim:1})
         await ai.replace({path:1}, async () => {
