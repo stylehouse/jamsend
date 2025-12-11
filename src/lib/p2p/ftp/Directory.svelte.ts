@@ -106,10 +106,13 @@ export class DirectoryModus extends Modus {
     }
     // Agency parameterising and processing
     i_auto_wanting(A) {
-        if (1) {
+        if (0) {
             let D = this.missable_D_targeting('music/06 Locust Heat.mp3')
-            if (!D) return A.i({wanting:1,method:'out_of_instructions',a_flaw:"uri->D must be findable immediately"})
-                
+            if (!D) {
+                A.i({wanting:1,method:'out_of_instructions',
+                    a_flaw:"uri->D must be findable immediately"})
+                return
+            }   
             return A.i({wanting:1,method:'radiopreview',had:D})
         }
         return A.i({wanting:1,method:'meander',then:'radiopreview'})
@@ -184,8 +187,12 @@ export class DirectoryModus extends Modus {
                 if (auds_was.includes(aud)) {
                     // while calling this regularly...
                     // < and perhaps not every time through here?
-                    aud.encode_segmentation()
-                    console.log(`requested segment`)
+                    if (aud.left >= 1) {
+                        // try to avoid tiny tail-end segments
+                        // < seems aud.load decode errors are possible with 110-byte buffers that way...
+                        aud.encode_segmentation()
+                        console.log(`requested segment`)
+                    }
                 }
             }
             else {
@@ -214,9 +221,9 @@ export class DirectoryModus extends Modus {
             return
         }
         if (rec) {
-            rs.sc.i(rec)
+            await rs.sc.i(rec)
             wa.sc.then = 'rest'
-            wa.r({satisfied:'record taken!'})
+            await wa.r({satisfied:'record taken!'})
         }
         // < want to put it on disk already
         //    so there's more immediately tons of material they could be blasted with
@@ -232,13 +239,14 @@ export class DirectoryModus extends Modus {
         let sD
         // advertise an API in Modus!
         this.r({io:'radiostock'},{
-            i: (re:TheC) => {
+            i: async (re:TheC) => {
                 // first it comes into the cache here, available to Piers
                 A.i(re)
                 this.whittle_N(A.o({record:1}),keep_things)
-                if (sD) {
-                    this.record_to_disk(re,sD)
-                }
+                // silently fail
+                //  storage is likely to be ready before %record made
+                if (sD) return
+                await this.record_to_disk(re,sD)
             },
             o: (previous:TheC) => {
                 // previous thing they got makes sort of a cursor
@@ -377,7 +385,7 @@ export class DirectoryModus extends Modus {
         }
     }
     // Helper to load random records from stock directory
-    async *load_random_records(sD: TheD, count: number, had:TheN): AsyncGenerator<TheC[]> {
+    async *load_random_records(sD: TheD, count: number, had:TheN): AsyncGenerator<TheC> {
         const DL = this.D_to_DL(sD);
         
         // Get all .webms files

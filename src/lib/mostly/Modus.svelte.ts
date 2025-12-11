@@ -339,10 +339,11 @@ abstract class Agency extends TimeGallopia {
     }
 
     // name an A with a %wanting etc
+    // < GONE?
     name_A_thing(A,th) {
         let thingsay = th.sc.method ? "."+th.sc.method
             : "?"
-        return this.name_A_thing(A)+thingsay
+        return this.name_A(A)+thingsay
     }
     // name an A
     name_A(A) {
@@ -416,7 +417,7 @@ abstract class Agency extends TimeGallopia {
                     await wa.r({satisfied:1,with:D})
                     return
                 }
-                Tdebug(D.c.T,"meandering into")
+                // Tdebug(D.c.T,"meandering into")
                 // keep meandering into D**, until none found
                 // o D/*%Tree
                 inners = D.oa(this.Se.c.trace_sc)
@@ -584,6 +585,9 @@ abstract class Agency extends TimeGallopia {
         aud.play(offset)
         return aud
     }
+
+
+
     
 
 

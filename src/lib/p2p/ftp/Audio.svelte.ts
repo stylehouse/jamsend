@@ -153,10 +153,19 @@ export class Audiolet {
     }
     along() {
         if (this.start_time == null) return 0
+        if (this.stop_time != null) return this.duration() // assume it stopped at the end
         return this.gat.now() - this.start_time
     }
+    most_relevant_playing_instance() {
+        return this.playing || this.playing_next || this.playing_last
+    }
     duration():number {
-        return (this.playing || this.playing_next || this.playing_last)?.buffer?.duration || 0
+        return this.most_relevant_playing_instance()?.buffer?.duration || 0
+    }
+    left() {
+        if (this.stopped) return 0
+        if (!this.pl)
+        return this.playing && this.duration() - this.along()
     }
     async load(encoded:Array<ArrayBuffer>) {
         let stretch = await this.decode_stretch(encoded)
