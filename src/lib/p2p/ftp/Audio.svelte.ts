@@ -162,10 +162,10 @@ export class Audiolet {
     duration():number {
         return this.most_relevant_playing_instance()?.buffer?.duration || 0
     }
-    left() {
+    left():number {
         if (this.stopped) return 0
         if (!this.pl)
-        return this.playing && this.duration() - this.along()
+        return this.duration() - this.along()
     }
     async load(encoded:Array<ArrayBuffer>) {
         let stretch = await this.decode_stretch(encoded)

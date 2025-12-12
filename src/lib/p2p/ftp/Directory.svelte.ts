@@ -187,7 +187,7 @@ export class DirectoryModus extends Modus {
                 if (auds_was.includes(aud)) {
                     // while calling this regularly...
                     // < and perhaps not every time through here?
-                    if (aud.left >= 1) {
+                    if (aud.left() >= 1) {
                         // try to avoid tiny tail-end segments
                         // < seems aud.load decode errors are possible with 110-byte buffers that way...
                         aud.encode_segmentation()
@@ -245,7 +245,7 @@ export class DirectoryModus extends Modus {
                 this.whittle_N(A.o({record:1}),keep_things)
                 // silently fail
                 //  storage is likely to be ready before %record made
-                if (sD) return
+                if (!sD) return
                 await this.record_to_disk(re,sD)
             },
             o: (previous:TheC) => {
@@ -363,7 +363,9 @@ export class DirectoryModus extends Modus {
             const re = _C({
                 record: 1,
                 offset: metadata.offset,
-                uri: metadata.uri
+                uri: metadata.uri,
+                // mark it as having come from disk
+                radiostock: name,
             });
             
             // Reconstruct preview entries with buffers

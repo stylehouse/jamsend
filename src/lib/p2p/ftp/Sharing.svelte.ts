@@ -440,20 +440,6 @@ class TransferManager {
 
 //#region ->Peering
 
-// eg, whole, not streaming chunks:
-//   // Read and write files in the directory
-//   async function workWithFiles(dirHandle) {
-//     // Create/write a file
-//     const newFileHandle = await dirHandle.getFileHandle('recording.wav', { create: true });
-//     const writable = await newFileHandle.createWritable();
-//     await writable.write(audioData);
-//     await writable.close();
-  
-//     // Read a file
-//     const fileHandle = await dirHandle.getFileHandle('recording.wav');
-//     const file = await fileHandle.getFile();
-//     const contents = await file.arrayBuffer();
-//   }
 
 
 
