@@ -24,7 +24,8 @@ export class PeeringSharing extends PeeringFeature {
     constructor(opt) {
         super(opt)
         this.trust_name = 'ftp'
-        this.UI_component = Shares // gives us a .modus
+        // our UI gives this and our shares/...S a .modus (via UI:Modus)
+        this.UI_component = Shares
         this.IDB_Schema(7, [
             // these two are /$share/$handle
             'shares',        // for Things:DirectoryShares

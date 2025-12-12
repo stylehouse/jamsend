@@ -16,6 +16,13 @@
     let gat:SoundSystem = $state()
     onMount(() => {
         if (!S) throw "!S"
+        // < better way to instantiate Modus?
+        //    above us, doing eg this:
+        //     <Modus S={F} M={new SharesModus({F})} />
+        //    causes
+        //     in constructor / init_stashed_mem() / on gizmo_mem.set()
+        //      Svelte error: state_unsafe_mutation Updating state inside a derived or a
+        //   but doing construction in modus_init() from here is ok...
         M = S.modus = S.modus_init()
         gat = M.gat = new SoundSystem({M})
     })

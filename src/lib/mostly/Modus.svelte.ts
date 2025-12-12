@@ -24,7 +24,7 @@ abstract class ModusItself extends TheC  {
         // < Modus doesn't use F at all,
         this.F ||= this.PF?.F
         this.F ||= this.S?.F
-        this.S ||= this.F
+        this.S ||= this.F || this.PF
 
 
         // < GOING
