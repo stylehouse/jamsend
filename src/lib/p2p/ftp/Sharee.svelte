@@ -4,8 +4,8 @@
     import FileList from './FileList.svelte';
     
     // the global Peerily and PeeringFeature object
-    let { pier,F } = $props();
-    let sharing:PierSharing = F;
+    let { pier,PF } = $props();
+    let sharing:PierSharing = PF;
 
     // Convert transfer objects to FileListing-like objects
     let transfers = $derived(
@@ -44,6 +44,7 @@
 
 </script>
 
+I am a Sharee
 <div class="file-sharing">
     <div class="lists-container">
         <FileList 
@@ -52,7 +53,7 @@
             onFileClick={click_push}
             onRefreshClick={() => sharing.refresh_localList()} >
             {#snippet list_awaits()}
-                <button onclick={() => F.start()}>open share</button>
+                <button onclick={() => PF.start()}>open share</button>
             {/snippet}
             {#snippet compat()}
                 {#if compat_mode}

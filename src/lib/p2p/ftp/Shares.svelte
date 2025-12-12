@@ -3,9 +3,10 @@
     import type { Peering } from '../Peerily.svelte';
     import Things from '../../data/Things.svelte'
     import type { PeeringSharing } from './Sharing.svelte';
-    import { DirectoryShare, FileListing } from './Directory.svelte';
-    import FileList from './FileList.svelte';
-    import Sharability from './Sharability.svelte';
+    import { DirectoryModus, DirectoryShare } from './Directory.svelte';
+    import { SharesModus } from '$lib/mostly/Radio.svelte';
+    import Thingstashed from '$lib/data/Thingstashed.svelte';
+    import Modus from '$lib/mostly/Modus.svelte';
     // the fairly-global Peering and PeeringFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
 
@@ -20,17 +21,19 @@
 
 
 
-    // always have this in there...
     let compat_mode = $state()
-    $effect(() => {
-        if (!('showDirectoryPicker' in window)) {
-            compat_mode = true
-        }
-    })
+    $effect(() => { compat_mode = !('showDirectoryPicker' in window) })
 </script>
 
+<h2>The plot here.</h2>
+
+{#each F.gizmos as [name, M] (name)}
+    <Thingstashed {F} {name} {M} />
+{/each}
+
+<Modus S={F}></Modus>
+
 <h2>Expect big shares</h2>
-    
     <Things
             Ss={F.shares}
             type="share" 
@@ -41,8 +44,9 @@
                     <p>You don't seem to allow Directory writing access. Sorry.</p>
                     <p>Try with Chrome.</p>
                 {/if}
-                
-                <Sharability {S}></Sharability>
+
+
+                <Modus {S} ></Modus>
                 
             {/snippet}
     </Things>

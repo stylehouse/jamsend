@@ -3,7 +3,7 @@ import type { KVStore } from "$lib/data/IDB.svelte";
 import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
-import { now_in_seconds, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
+import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { Tdebug } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -11,6 +11,7 @@ abstract class ModusItself extends TheC  {
     S:ThingIsms
     // < FeatureIsms. PF.F = F
     F:PeeringFeature
+    PF:PierFeature
     
     // suppose you will develop your *Modus while looking at a Strata
     a_Strata?:Strata = $state()
@@ -18,8 +19,17 @@ abstract class ModusItself extends TheC  {
     constructor(opt:Partial<Modus>) {
         super({sc:{ImAModus:1}})
         Object.assign(this,opt)
+        // < .S should be the many-er one thing we're on
+        //    something we can put action buttons on?
+        // < Modus doesn't use F at all,
+        this.F ||= this.PF?.F
+        this.F ||= this.S?.F
+        this.S ||= this.F
+
+
         // < GOING
         this.current = this
+
         this.init_stashed_mem?.()
     }
 
@@ -79,7 +89,7 @@ abstract class ModusItself extends TheC  {
     stashed:StashedModus = $state()
     stashed_mem:KVStore
     init_stashed_mem() {
-        this.S.stashed_mem(this,`Modus:${objectify(this)}`)
+        this.S.stashed_mem(this,`Modus=${objectify(this)}`)
     }
     // io into the .stashed.**
     imem(key) {

@@ -1,5 +1,8 @@
 
 import { KVStore } from '$lib/data/IDB.svelte';
+import { objectify } from '$lib/data/Stuff.svelte';
+import type { ThingAction } from '$lib/data/Things.svelte';
+import type Modus from '$lib/mostly/Modus.svelte';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
@@ -1056,16 +1059,35 @@ export class Pier {
 //#region *Feature
 
 // data models...
-
-
+// < replace this with TheC, etc
+export abstract class ActionsAndModus {
+    modus?:Modus = $state()
+    // eg Shares does a bunch of i_action() on each Share
+    actions?: ThingAction[] = $state()
+    i_action(act:ThingAction,removal=false) {
+        this.actions ||= []
+        this.actions = this.actions.filter(a => a.label != act.label)
+        if (!removal) this.actions.push(act)
+    }
+    i_actions(actions) {
+        for (let [k,v] of Object.entries(actions)) {
+            let c = typeof v == 'function' ? {handler:v} : v
+            this.i_action({
+                label:k,
+                ...c,
+            })
+        }
+    }
+}
 // one of these, page-globally
 //  the main, for-itself UI of the feature as a whole
 // < describes how to onramp the feature
-export abstract class PeeringFeature {
+export abstract class PeeringFeature extends ActionsAndModus {
     P:Peerily
     // < rename this class PeeringFeature
     eer:Peering
     constructor(opt) {
+        super()
         Object.assign(this, opt)
     }
     // creates a single value set|get IndexedDB storager
@@ -1089,6 +1111,26 @@ export abstract class PeeringFeature {
         this.IDB_version = version
     }
 
+    // a
+    // gizmos register each Modus anywhere within, can store strings
+    gizmos = $state(new SvelteMap())
+    gizmo_mem = new SvelteMap()
+    stashed_mem(M:Modus|Object,name:string) {
+        let key = `PeeringFeature=${objectify(this)}/${name}`
+        // we keep a read+writer for each key in the KVStore
+        let mem = this.gizmo_mem.get(key)
+        if (!mem) {
+            mem = this.spawn_KVStore(`gizmo`,key)
+            this.gizmo_mem.set(key,mem)
+        }
+        // an invisible UI:Thingstashed will come for M.stashed
+        this.gizmos.set(name,M)
+        // and use M.stashed_mem, the KVStore
+        M.stashed_mem = mem
+    }
+
+
+
         // < have (Peering|Pier)${this.trust_name} objects
         //    passed in svelte.config.ts?
 
@@ -1108,7 +1150,7 @@ export abstract class PeeringFeature {
 //   eg for PierSharing this would be a small net io dial
 //   < click to do a join onto the various tables, eg find that user's downloads
 type BidiTrustication = {local:TrustedTrust,remote:TrustedTrust}
-export abstract class PierFeature {
+export abstract class PierFeature extends ActionsAndModus {
     P:Peerily
     F:PeeringFeature
     // who we're about
@@ -1117,6 +1159,7 @@ export abstract class PierFeature {
     // < their perm.local.* (to here) may include arbitrary signed data
     perm:BidiTrustication = {}
     constructor(opt) {
+        super()
         Object.assign(this, opt)
         this.eer = this.Pier.eer
         if (!this.eer) throw "where eer"

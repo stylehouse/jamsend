@@ -9,7 +9,7 @@
     let { mem,stuff,matchy,M }:{ 
         mem:Modusmem, 
         stuff:Stuff,
-        matchy:Matchy
+        matchy?:Matchy
         hide?:Array<TheUniversal>,
         M?:Modus
         } = $props()

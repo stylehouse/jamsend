@@ -1062,7 +1062,8 @@ export class RemoteListing extends DirectoryListing {
         // < ask PF.send
     }
 }
-// < pass a bunch of Directory|Remote specifics in to Sharability.svelte
+
+// < RemoteShare as a directory revealing process isn't invented yet
 export type AnyShare = RemoteShare | DirectoryShare
 export class RemoteShare extends ThingIsms {
     async start() {}
@@ -1077,8 +1078,9 @@ export class DirectoryShare extends ThingIsms {
     
     started = $state(false)
 
-    modus?:Modus = $state()
-    gat:SoundSystem = $state() // temporarily just here
+    modus_init() {
+        return new DirectoryModus({S:this})
+    }
 
     get list():DirectoryListing {
         return this.started && this.fsHandler.list

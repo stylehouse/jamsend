@@ -6,17 +6,25 @@ import { PeeringFeature, PierFeature } from "../Peerily.svelte";
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
 import { DirectoryListing, DirectoryShares } from "./Directory.svelte";
+import type Modus from "$lib/mostly/Modus.svelte.ts";
+import { ShareeModus, SharesModus } from "$lib/mostly/Radio.svelte";
 
 
 
 
 // the F
 export class PeeringSharing extends PeeringFeature {
+    // a Things of super complicated directory handling, locating music, encoding it
+    //  produces S.modus/%io:radiostock
     shares: DirectoryShares
+    modus_init() {
+        return new SharesModus({S:this})
+    }
+
     constructor(opt) {
         super(opt)
         this.trust_name = 'ftp'
-        this.UI_component = Shares
+        this.UI_component = Shares // gives us a .modus
         this.IDB_Schema(7, [
             // these two are /$share/$handle
             'shares',        // for Things:DirectoryShares
@@ -46,15 +54,22 @@ export class PeeringSharing extends PeeringFeature {
 type percentage = number
 // the PF (per Pier)
 export class PierSharing extends PierFeature {
+    // < keep?
+    tm:TransferManager
+    modus_init() {
+        return new ShareeModus({S:this})
+    }
+
     constructor(opt) {
         super(opt)
         this.UI_component = Sharee
         console.warn("Got PierSharing!")
         this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
-
-    tm:TransferManager
     
+
+    // < DUBIOUS from here down
+
     // < figure out how to do navigation and population
     // listings here + there
     remoteList: DirectoryListing | null = $state()

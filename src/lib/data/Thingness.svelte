@@ -68,10 +68,6 @@
         </div>
     </div>
 
-    {#each S.gizmos as [name, M] (name)}
-        <Thingstashed {S} {name} {M} />
-    {/each}
-
     
         <div class="status-section">
     {#if showStatus}

@@ -45,7 +45,7 @@
                 {/each}
             </div>
 
-        <!-- apps on the  -->
+        <!-- F features on Peering  -->
             <div class=bitsies>
                 {#each eer.features as [k,F] (k)}
                     <div class=bitsies>

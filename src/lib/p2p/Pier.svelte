@@ -31,9 +31,9 @@
     <Trusticles {pier} />
 
     <div class=bitsies>
-        {#each pier.features as [k,F] (k)}
+        {#each pier.features as [k,PF] (k)}
             <div class=bitsies>
-                <svelte:component this={F.UI_component} {pier} {F} />
+                <svelte:component this={PF.UI_component} {pier} {PF} />
             </div>
         {/each}
     </div>
