@@ -29,8 +29,8 @@ export class SoundSystem {
             }
         } catch (er) {
             console.error("Failed to initialize AudioContext:", er);
-            return false;
         }
+        return false;
     }
     async AC_OK() {
         if (this.AC.state === 'suspended') {

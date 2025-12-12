@@ -9,6 +9,7 @@
 	import QrCode from "svelte-qrcode"
     import { throttle } from "$lib/Y";
     import { PeeringSharing } from "./ftp/Sharing.svelte";
+    import GatEnabler from "./ui/GatEnabler.svelte";
     
 
     let errors = $state(new SvelteSet())
@@ -124,6 +125,9 @@
                 <option>figaro</option>
                 <option>figaro</option>
             </select>
+        </span>
+        <span>
+            <GatEnabler />
         </span>
     </pan>
 

@@ -1078,18 +1078,10 @@ export class DirectoryShare extends ThingIsms {
     started = $state(false)
 
     modus?:Modus = $state()
-    gat:SoundSystem // temporarily just here
+    gat:SoundSystem = $state() // temporarily just here
 
     get list():DirectoryListing {
         return this.started && this.fsHandler.list
-    }
-    // anywhere within the toplevel
-    async getReader(filename: string) {
-        return await this.fsHandler.getFileReader(filename)
-    }
-    // Write file to this share's directory
-    async getWriter(filename: string) {
-        return await this.fsHandler.writeFileChunks(filename)
     }
     
     // was localList
@@ -1201,7 +1193,6 @@ export class DirectoryShares extends ThingsIsms {
     async thingsify(opt) {
         return new DirectoryShare(opt)
     }
-    // < what becomes of this object? should it be a saved stash situation?
     async autovivify(opt) {
         opt.name = 'music'
     }
