@@ -4,7 +4,6 @@
 
     let { gat }: { gat: SoundSystem } = $props();
     onMount(async () => {
-        console.log("AC: somewhere")
         // < murk. something like an uncatchable throw happens to this try_init() call
         //    which does AC_OK() which attempts AC.resume()...
         //    basically calls to AC_OK() may disappear without a trace

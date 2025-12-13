@@ -360,6 +360,7 @@ abstract class Agency extends TimeGallopia {
         return "A:"+A.sc.A
     }
     async i_journeys_o_aims(A,wa) {
+        if (!this.Tr) return
         // replace a particular journey that comes from this A
         let journey = this.name_A(A)
         // have *%journey first

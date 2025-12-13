@@ -9,6 +9,8 @@
     import Scrollability from "$lib/p2p/ui/Scrollability.svelte";
     import GatHaving from "$lib/p2p/ui/GatHaving.svelte";
     import { objectify } from "$lib/data/Stuff.svelte";
+    import { ThingsIsms,ThingIsms } from "$lib/data/Things.svelte.ts";
+    import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
@@ -85,7 +87,10 @@
 
 
     let strata = $derived(M.a_Strata)
-
+    // get handled by UI:Thing(s)
+    let no_actions = S instanceof ThingsIsms
+        || S instanceof ThingIsms
+    let actions = $derived(no_actions ? null : S.actions)
 
 </script>
 
@@ -96,6 +101,7 @@
     <button onclick={tog_draw}>{drawingness}</button>
     <button onclick={stashy}>stashy</button>
     <button onclick={lets_redraw}>redraw</button>
+    actions:{!no_actions}{#if actions}<ActionButtons {actions} />{/if}
 </p>
 <Scrollability maxHeight="80vh" class="content-area">
     {#snippet content()}

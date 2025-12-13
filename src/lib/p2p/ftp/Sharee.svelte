@@ -30,16 +30,12 @@
     function click_pull(file: FileListing) {
         sharing.pull(file.name)
     }
-    let actions = $derived(PF.actions)
 </script>
 
 I am a Sharee
 
 
 
-<div class="custom-actions">
-    <ActionButtons {actions} />
-</div>
 <Modus S={PF} do_start=1></Modus>
 
 

@@ -65,6 +65,9 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
 
     // Things are like a Thing[] with extra steps
     things = $state(new SvelteMap<string, ThingIsms>())
+    get asArray(): ThingIsms[] {
+        return Array.from(this.things.values())
+    }
 
     // subclass this: how to spawn individual ThingIsms
     async thingsify(opt) {

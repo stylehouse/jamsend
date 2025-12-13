@@ -359,7 +359,7 @@ export class DirectoryModus extends Modus {
                 });
             });
             
-            console.log(`Loaded record from disk: ${name}`);
+            // console.log(`Loaded record from disk: ${name}`);
             return re;
         } catch (err) {
             console.error(`Failed to read record from disk:`, err);
