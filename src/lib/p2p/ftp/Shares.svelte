@@ -36,7 +36,7 @@
 <div class="custom-actions">
     <ActionButtons {actions} />
 </div>
-<Modus S={F}></Modus>
+<Modus S={F} do_start=1></Modus>
 
 <h2>Expect big shares</h2>
     <Things

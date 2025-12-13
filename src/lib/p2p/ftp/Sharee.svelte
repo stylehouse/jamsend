@@ -40,7 +40,7 @@ I am a Sharee
 <div class="custom-actions">
     <ActionButtons {actions} />
 </div>
-<Modus S={PF}></Modus>
+<Modus S={PF} do_start=1></Modus>
 
 
 <div class="file-sharing">

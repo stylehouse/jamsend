@@ -5,6 +5,8 @@
 
 import {Modus} from "./Modus.svelte.ts"
 
+
+
 //  makes guesswork to provide defaults, remote plots may inject
 export class SharesModus extends Modus {
     declare S:PeeringSharing
@@ -27,21 +29,28 @@ export class SharesModus extends Modus {
         this.gat?.close()
     }
     async do_A() {
-        await this.replace({A:'auto'},async () => {
-            this.i({A:'home'}).is().i({wanting:1,method:'radiobroadcaster'})
+        await this.replace({A:'gate'},async () => {
+            this.i({A:'gate'}).is().i({wanting:1,method:'radiobroadcaster'})
         })
         
     }
 
     async do_main() {
         console.log(`Main SharesModus!`)
-        
+        await this.r({Seee:2})
     }
 
 }
 export class ShareeModus extends Modus {
+    async do_A() {
+        await this.replace({A:'punt'},async () => {
+            this.i({A:'punt'}).is().i({wanting:1,method:'radioterminal'})
+        })
+        
+    }
 
     async do_main() {
         console.log(`Main ShareeModus!`)
+        await this.r({Seee:6})
     }
 }

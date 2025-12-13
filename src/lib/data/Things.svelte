@@ -2,9 +2,11 @@
     import { onMount, type Snippet } from 'svelte';
     import Thing from './Thing.svelte'
     import Thingness from './Thingness.svelte'
+    import type { DirectoryShares } from '$lib/p2p/ftp/Directory.svelte';
 
+    type TheSs = DirectoryShares // and whatever other Things:* we invent before dissolving into pure Stuff
     interface ThingsProps {
-        Ss: any // The collection (DirectoryShares, etc) with .things SvelteMap
+        Ss: TheSs // The collection (DirectoryShares, etc) with .things SvelteMap
         type: string           // e.g. "share", "playlist", "bookmark"
         title?: string        // Display title
         placeholder?: string   // Placeholder for add input

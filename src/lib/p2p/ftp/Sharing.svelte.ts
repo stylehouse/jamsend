@@ -40,14 +40,11 @@ export class PeeringSharing extends PeeringFeature {
     }
 
     // < who|where|when hits start? the UI?
+    started = $state(false)
     async start() {
-        try {
-            await this.shares.start()
-
-            console.log(`File sharing started with ${this.shares.things.size} shares`)
-        } catch (err) {
-            throw erring("Failed to start file sharing", err);
-        }
+        // this is started by UI:Things
+        // await this.shares.start()
+        this.started = true
     }
 
 }
@@ -76,10 +73,12 @@ export class PierSharing extends PierFeature {
     remoteList: DirectoryListing | null = $state()
 
     // then, maybe via ui,
+    started = $state(false)
     async start() {
         try {
             // < resume against what we had? another Thing to store?
             this.tm = new TransferManager({sharing:this})
+            this.started = true
 
             console.log(`PierSharing:`, this.list);
         } catch (err) {
