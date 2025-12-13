@@ -947,6 +947,11 @@ export class DirectoryListing {
         try {
             await this.handle.removeEntry(pathbit, { recursive: false })
         } catch (err) {
+            if (err.name == "NotFoundError") {
+                // D** lags behind reality?
+                console.warn(`double-deleted`)
+                return
+            }
             throw erring(`Failed to delete "${pathbit}"`, err)
         }
     }
