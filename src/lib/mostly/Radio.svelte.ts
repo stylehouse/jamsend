@@ -52,6 +52,10 @@ export class ShareeModus extends Modus {
     declare S:PierSharing
     declare F:PeeringSharing
     declare PF:PierSharing
+    constructor(opt:Partial<SharesModus>) {
+        super(opt)
+        this.PF = this.S
+    }
     async do_A() {
         await this.replace({A:'punt'},async () => {
             this.i({A:'punt'}).is().i({wanting:1,method:'radioterminal'})
@@ -60,7 +64,7 @@ export class ShareeModus extends Modus {
     }
 
     async do_main() {
-        console.log(`Main ShareeModus!`,this.F)
+        console.log(`Main ShareeModus!`,JSON.stringify(this.PF.perm))
         await this.r({Seee:6})
     }
     async radioterminal(A,wa) {
