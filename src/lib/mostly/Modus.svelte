@@ -101,7 +101,7 @@
     <button onclick={tog_draw}>{drawingness}</button>
     <button onclick={stashy}>stashy</button>
     <button onclick={lets_redraw}>redraw</button>
-    actions:{!no_actions}{#if actions}<ActionButtons {actions} />{/if}
+    {#if actions}<ActionButtons {actions} />{/if}
 </p>
 <Scrollability maxHeight="80vh" class="content-area">
     {#snippet content()}

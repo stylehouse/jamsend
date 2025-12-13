@@ -3,7 +3,9 @@
 //#region DirectoryModus
 // ftp as a view to work with
 
+import type { DirectoryShare } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
+import { grep, map } from "$lib/Y.ts"
 import {Modus} from "./Modus.svelte.ts"
 
 
@@ -44,10 +46,7 @@ export class SharesModus extends Modus {
     }
 
     async radiobroadcaster(A,wa) {
-        console.log("Having in: ",this.S.shares.asArray)
-
     }
-
 }
 export class ShareeModus extends Modus {
     declare S:PierSharing
@@ -61,7 +60,39 @@ export class ShareeModus extends Modus {
     }
 
     async do_main() {
-        console.log(`Main ShareeModus!`)
+        console.log(`Main ShareeModus!`,this.F)
         await this.r({Seee:6})
+    }
+    async radioterminal(A,wa) {
+        // copy %io:radiostock interfaces here
+        await A.replace({io:'radiostock'}, async () => {
+            map((M) => 
+                    map((io) => 
+                        A.i(io.sc),
+                     M.o({io:'radiostock'}))
+                ,
+                grep(map((share) =>
+                    share.modus,
+                this.F.shares.asArray()))
+            )
+        })
+
+        let sources = A.oa({io:'radiostock'})
+        if (!sources) return wa.i({waits:"no stock"})
+        
+        
+        
+        if (!A.oa({record:1})) {
+            for (let io of sources) {
+                let rec = io.sc.o()
+                if (rec) A.i(rec)
+            }
+        }
+        if (!A.oa({record:1})) {
+            return wa.i({waits:"no records"})
+        }
+        // now it's not single linear feed, we want them:
+        //  - given plenty of %recording
+
     }
 }

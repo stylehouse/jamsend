@@ -231,16 +231,17 @@ export class DirectoryModus extends Modus {
             o: (previous:TheC) => {
                 // previous thing they got makes sort of a cursor
                 let them = A.o({record:1})
-                if (!previous || !them.includes(previous)) {
-                    return them[0]
+                if (!them.length) return
+                if (!previous) return them[0]
+                let ri = them.indexOf(previous)
+                if (ri < 0) return them[0]
+                let it = them[ri+1]
+                if (!it) {
+                    // no new %record is available so don't return one (via wrap around)
+                    //  it is up to the broadcaster to repeat something
+                    return
                 }
-                while (them[0] && them[0] != previous) {
-                    them.shift()
-                }
-                if (them[0] != previous) {
-                    // they had the last one?
-                    them = A.o({record:1})
-                }
+                return it
             },
         })
 
