@@ -406,6 +406,7 @@ abstract class Agency extends TimeGallopia {
 
             // where we're looking
             let ai = wa.o({aim:1})[0]
+            let supposed_path = ai && this.Se.j_to_uri(ai) || "??"
             let D
             if (ai) {
                 D = this.Se.j_to_D(ai)
@@ -443,7 +444,7 @@ abstract class Agency extends TimeGallopia {
             // pick one
             dir = dirs[this.prandle(dirs.length)]
             if (!dir) {
-                console.warn("got nowhere down: "+this.Se.D_to_uri(D))
+                console.log("cul-de-sac: "+supposed_path)
                 // throw out wa/%aim, try again from the top
                 await wa.replace({aim:1},async() => {
                 })
