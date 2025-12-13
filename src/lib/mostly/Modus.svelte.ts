@@ -407,6 +407,9 @@ abstract class Agency extends TimeGallopia {
 
     declare is_meander_satisfied:Function
     // do meandering
+    // may not find very small collections of music
+    //  where everything playable is within journey:auto's from-the-top-ness, so we avoid it
+    // may not find tracks not in a directory, because we want directory then track
     async meander(A:TheC,wa:TheC) {
         let loopy = 11
         let dir:TheD

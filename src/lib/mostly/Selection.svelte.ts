@@ -485,7 +485,9 @@ class Dierarchy extends SelectionItself {
         if (T == T.c.top) {
             // where we aim to start doing it
             if (!D.oa({journey:1})) {
-                this.autovivify_journey(D)
+                // < messing with w:meander's agenda by waking the only 
+                // just be journeyless until j++ may do a from-the-top thing
+                // this.autovivify_journey(D)
             }
         }
         await this.journeys_affect_D(T)

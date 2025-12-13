@@ -1,6 +1,6 @@
 
 //#endregion
-//#region DirectoryModus
+//#region *Modus
 // ftp as a view to work with
 
 import type { DirectoryShare } from "$lib/p2p/ftp/Directory.svelte.ts"
@@ -96,3 +96,8 @@ export class ShareeModus extends Modus {
 
     }
 }
+
+
+//#endregion
+//#region radio*
+    // < hoist things from Directory

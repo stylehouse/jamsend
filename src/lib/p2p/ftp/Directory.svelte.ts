@@ -22,6 +22,10 @@ export class DirectoryModus extends Modus {
     F:PeeringSharing
     S:DirectoryShare//|AnyShare // the Thing we're hotwiring
 
+    // into this Selection.process()
+    Se:Selection
+    Tr:Travel
+
     constructor(opt:Partial<DirectoryModus>) {
         super(opt)
         // the above super() / assign() doesn't set .F|S (javascript quirk?)
@@ -57,9 +61,14 @@ export class DirectoryModus extends Modus {
 
 
     // click button events
-
+    // < manual directory browsing, w:meander takes care of it for us
     // the events, nudges
     async further_journey(opt?) {
+        let D = this.Tr.sc.D
+        if (!D.oa({journey:1})) {
+            this.Se.autovivify_journey(D)
+            return
+        }
         await this.Se.journey_further(opt)
         this.main()
     }
