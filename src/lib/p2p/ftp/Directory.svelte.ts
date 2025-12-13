@@ -128,6 +128,12 @@ export class DirectoryModus extends Modus {
         if (!this.gat.AC_ready) return wa.i({error:"!AC"})
         // wa can mutate
         wa.sc.then = "radiodistribution"
+        wa.c.error_fn = async (er) => {
+            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
+            // re-wander due to corrupt-seeming data
+            this.reset_wants(A)
+            return true
+        }
 
         if (!wa.oa({buffers:1})) {
             let DL = this.D_to_DL(D)
@@ -148,7 +154,6 @@ export class DirectoryModus extends Modus {
 
         let auds_was = wa.o1({aud:1})
         if (!wa.oa({aud:1})) {
-            // let aud = await this.record_preview(A,wa,D)
             let aud = await this.record_preview_individuated(A,wa,D)
             // hold on to this while it's happening
             wa.i({aud})

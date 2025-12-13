@@ -4,6 +4,7 @@ import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
+import { erring } from "$lib/Y";
 import { Tdebug } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -308,6 +309,10 @@ abstract class Agency extends TimeGallopia {
                     await this[method](A,wa,wa.sc.had)
                 } catch (error) {
                     wa.i({error: error.message || String(error)})
+                    if (wa.c.error_fn) {
+                        let ok = await wa.c.error_fn(error)
+                        if (ok) return
+                    }
                     console.error(`Error in method ${method}:`, error)
                     return
                 }
@@ -343,6 +348,10 @@ abstract class Agency extends TimeGallopia {
                 }
             }
         }
+    }
+    async reset_wants(A) {
+        await A.replace({wanting:1},async () => {})
+        return A.i({wanting:1,method:'meander',then:'radiopreview'})
     }
     async out_of_instructions(A,wa) {
         console.warn("out_of_instructions!")
@@ -489,72 +498,9 @@ abstract class Agency extends TimeGallopia {
             await aud.load(buffers)
         }
         catch (er) {
-            throw `original encoded buffers fail: ${er}`
+            // w:radiopreview catches this and goes back to w:meander
+            throw erring(`original encoded buffers fail`,er)
         }
-    }
-
-    // < GOING? see small decodable chunks
-    async record_preview(A,wa,D) {
-        let aud = this.gat.new_audiolet()
-        await this.aud_eats_buffers(wa,aud)
-
-        let offset = aud.duration() - this.TRIAL_LISTEN
-        let uri = this.Se.D_to_uri(D)
-        let re = wa.i({record:1,offset,uri,pub:String(this.F.eer.Id)})
-
-        // receive transcoded buffers
-        aud.setupRecorder()
-        let seq = 0
-        let toosmall:Array<ArrayBuffer> = []
-        let toosmall_size = 0
-        aud.on_recording = async (blob:Blob) => {
-            if (blob.size < 500) {
-                // tiny frame noises?
-                // < GOING? we could be tidier by .stop() .start()
-                //   but sometimes we get here with tiny bits (260 byte headers?) before re exists
-                debugger
-                // toosmall.push(await blob.arrayBuffer())
-                // toosmall_size += blob.size
-            }
-
-            let type = blob.type // eg "audio/webm;codecs=opus"
-            let buffer = await blob.arrayBuffer()
-            let buffers = [buffer]
-
-            // buffer we've saved for a moment because it 
-            if (toosmall.length) {
-                buffers = [...toosmall,...buffers]
-                toosmall_size = 0
-                toosmall = []
-            }
-
-            let prebufs = re.o({preview:1})
-            let pre_duration = 0
-            for (let pr of prebufs) {
-                pre_duration += pr.sc.duration
-            }
-            buffers = [...prebufs.map(pr => pr.sc.buffer), ...buffers]
-
-
-            // track exactly how long the preview is
-            // < probably could leave this to the client
-            let bud = this.gat.new_audiolet()
-            try {
-                await bud.load(buffers)
-            }
-            catch (er) {
-                throw `transcode-load fail: ${er}`
-            }
-            let duration = bud.duration()
-            duration -= pre_duration
-            // generate %record/*%preview
-            re.i({preview:1,seq,duration,type,buffer})
-            seq++
-        }
-
-
-        aud.play(offset)
-        return aud
     }
 
     // small decodable chunks better for feeding to the radio-tuning noise phenomena
