@@ -456,7 +456,10 @@ export class Pier {
 
     // their pretty and full pubkey
     pub:Prekey|null
-    Ud?:Idento 
+    Ud?:Idento
+    get name() {
+        return this.Ud.toString()
+    }
 
     eer:Peering
     con:DataConnection
@@ -1163,6 +1166,12 @@ export abstract class PierFeature extends ActionsAndModus {
         Object.assign(this, opt)
         this.eer = this.Pier.eer
         if (!this.eer) throw "where eer"
+    }
+
+    // as a key-level depth-injecting accessor|specifier, ~~ imem()
+    stashed_mem(M:Modus|Object,name:string) {
+        let key = `Pier=${this.name}/${name}`
+        let mem = this.F.stashed_mem(M,key)
     }
     
     UI_component:Component

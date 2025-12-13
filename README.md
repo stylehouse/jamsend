@@ -51,7 +51,7 @@ Is the main|single object doing p2p. It persists to localStorage info mentioned 
 
 ### Things
 
-Are persisted to IndexedDB. They CRUD, start|stop, and integrate with the *Things*/*Thing* UI generics which have specifics imposed by their client, eg *Sharability*.
+Are persisted to IndexedDB. They CRUD, start|stop, and integrate with the *Things*/*Thing* UI generics which have specifics imposed by their client, eg *Shares*.
 
 Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Things* UI, which takes care of getting each *Thing* happening, including autovivifying the first one. It's important that this list of things uses IndexedDB because that's how to persist the *FileSystemDirectoryHandle* permission we acquire across page reloads.
 
@@ -61,7 +61,7 @@ Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Thi
 
 *TheC* extends *Stuff*, which allows them to contain each other (eg C/C, C/C/C, etc), and thus insert and select them.
 
-*Stuffing* puts them on the screen in a space efficient way, similar to how your mind compresses information.
+*Stuffing* puts them on the screen in a space esfficient way, similar to how your mind compresses information.
 
 About here is the frontier, but probably:
 

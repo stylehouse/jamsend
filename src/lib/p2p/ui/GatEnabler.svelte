@@ -11,14 +11,11 @@
             const { gat } = e.detail;
             if (!gat) return;
             
-            console.log("AC: have gat received")
             if (gat.AC_ready) {
-                console.log("AC: have is fine")
                 return
             }
 
             gats.push(gat);
-            console.log("AC: have Need user")
             // Need user interaction, show button
             showButton = true;
         };

@@ -194,7 +194,7 @@ abstract class TimeGallopia extends ModusItself {
             if (n != this.o({mo:'main',interval:1})[0]) return
             // if the UI:Modus still exists
             if (this.stopped) return
-            // UI:Sharability thing above can stop
+            // thing above can stop
             if (!this.S.started) return
 
             this.main()
@@ -498,7 +498,7 @@ abstract class Agency extends TimeGallopia {
 
         let offset = aud.duration() - this.TRIAL_LISTEN
         let uri = this.Se.D_to_uri(D)
-        let re = wa.i({record:1,offset,uri})
+        let re = wa.i({record:1,offset,uri,pub:String(this.F.eer.Id)})
 
         // receive transcoded buffers
         aud.setupRecorder()

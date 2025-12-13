@@ -38,15 +38,11 @@ export class DirectoryModus extends Modus {
         })
     }
     do_stop() {
-        // on UI:Sharability destroy
+        // on UI:Modus destroy
         this.gat?.close()
     }
 
 
-    // refresh the top level, etc
-    // UI:Sharability(DirectoryShare) reacts here once DirectoryShare.started
-    //  < GOING is DirectoryShare.refresh() and so forth
-    // < and slowly dispatch everything else...
 
     do_Gravitations() {
         let topD = this.Tr.sc.D
@@ -100,30 +96,14 @@ export class DirectoryModus extends Modus {
 
 
 
+    // refresh the top level, etc
     async do_main() {
         // < rewrite everything we're thinking about how to:
         await this.surf_nibs(this.S.list)
     }
     // Agency parameterising and processing
     i_auto_wanting(A) {
-        if (0) {
-            let D = this.missable_D_targeting('music/06 Locust Heat.mp3')
-            if (!D) {
-                A.i({wanting:1,method:'out_of_instructions',
-                    a_flaw:"uri->D must be findable immediately"})
-                return
-            }   
-            return A.i({wanting:1,method:'radiopreview',had:D})
-        }
         return A.i({wanting:1,method:'meander',then:'radiopreview'})
-    }
-    missable_D_targeting(uri) {
-        let D = this.Se.uri_to_D(uri)
-        // < a flaw unresolvable just yet: uri->D must be findable immediately
-        //    lacks the ability to explore whether it exists
-        //     then determine it doesn't and ...
-        //    so we need to wa:lookup%then=whatever
-        return D
     }
     // when wanting to gallop into open country
     get_sleeping_D_filter(D) {
@@ -426,6 +406,7 @@ export class DirectoryModus extends Modus {
         const metadata = {
             offset: re.sc.offset,
             uri: re.sc.uri,
+            pub: re.sc.pub,
             previews: previews.map(pr => ({
                 seq: pr.sc.seq,
                 duration: pr.sc.duration,

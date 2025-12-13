@@ -1,7 +1,8 @@
 <script lang="ts">
     import { PierSharing } from '$lib/p2p/ftp/Sharing.svelte';
+    import Modus from '$lib/mostly/Modus.svelte';
+    import ActionButtons from '../ui/ActionButtons.svelte';
     import type { FileListing } from './Directory.svelte';
-    import FileList from './FileList.svelte';
     
     // the global Peerily and PeeringFeature object
     let { pier,PF } = $props();
@@ -29,39 +30,21 @@
     function click_pull(file: FileListing) {
         sharing.pull(file.name)
     }
-    function huh() {
-        // < do
-        console.log('stuffs:', [sharing.localList,sharing.remoteList]);
-    }
-    // always have this in there...
-    let compat_mode = $state()
-    $effect(() => {
-        if (!('showDirectoryPicker' in window)) {
-            compat_mode = true
-        }
-    })
-    $inspect("sharing.list", sharing.list)
-
+    let actions = $derived(PF.actions)
 </script>
 
 I am a Sharee
+
+
+
+<div class="custom-actions">
+    <ActionButtons {actions} />
+</div>
+<Modus S={PF}></Modus>
+
+
 <div class="file-sharing">
     <div class="lists-container">
-        <FileList 
-            title="Local Files" 
-            list={sharing.list} 
-            onFileClick={click_push}
-            onRefreshClick={() => sharing.refresh_localList()} >
-            {#snippet list_awaits()}
-                <button onclick={() => PF.start()}>open share</button>
-            {/snippet}
-            {#snippet compat()}
-                {#if compat_mode}
-                    <h3>THE COMPAT MODE SPEECH</h3>
-                    <p>You don't seem to allow Directory writing access. Sorry.</p>
-                {/if}
-            {/snippet}
-        </FileList>
         {#if transfers.length > 0}
             <div class="transfers">
                 <h3>Active Transfers</h3>
@@ -82,13 +65,6 @@ I am a Sharee
                 {/each}
             </div>
         {/if}
-
-        <FileList 
-            title="Remote Files" 
-            list={sharing.remoteList}
-            onFileClick={click_pull}
-            onRefreshClick={() => sharing.refresh_remoteList()}
-        />
     </div>
 </div>
 

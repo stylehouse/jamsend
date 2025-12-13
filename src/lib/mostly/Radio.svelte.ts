@@ -23,12 +23,19 @@ export class SharesModus extends Modus {
         })
     }
     do_stop() {
-        // on UI:Sharability destroy
+        // on UI:Modus destroy
         this.gat?.close()
+    }
+    async do_A() {
+        await this.replace({A:'auto'},async () => {
+            this.i({A:'home'}).is().i({wanting:1,method:'radiobroadcaster'})
+        })
+        
     }
 
     async do_main() {
         console.log(`Main SharesModus!`)
+        
     }
 
 }

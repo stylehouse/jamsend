@@ -6,7 +6,7 @@
     onMount(async () => {
         console.log("AC: somewhere")
         // < murk. something like an uncatchable throw happens to this try_init() call
-        //    does AC_OK() which attempts AC.resume()...
+        //    which does AC_OK() which attempts AC.resume()...
         //    basically calls to AC_OK() may disappear without a trace
         //     but the first time it comes with a warning: 
         //       The AudioContext was not allowed to start.
@@ -19,32 +19,13 @@
         await gat.init()
     }
     async function check_it() {
-        console.log("AC: checkery")
         if (!gat.AC_ready) {
-            console.log("AC: sending to")
             window.dispatchEvent(new CustomEvent('AudioContext_wanted', { 
                 detail: { gat } 
             }));
         }
         else {
-            console.log("AC: immediately ready")
+            // console.log("AC: immediately ready")
         }
     }
 </script>
-
-{#if !gat?.AC_ready}
-    <div class="audio-warning">
-        <p>tap to unmute</p>
-    </div>
-{/if}
-
-<style>
-    .audio-warning {
-        padding: 0.5rem;
-        background: #fff3cd;
-        border: 1px solid #ffc107;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
-    }
-</style>

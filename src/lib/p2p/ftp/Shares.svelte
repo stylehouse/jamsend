@@ -7,8 +7,10 @@
     import { SharesModus } from '$lib/mostly/Radio.svelte';
     import Thingstashed from '$lib/data/Thingstashed.svelte';
     import Modus from '$lib/mostly/Modus.svelte';
+    import ActionButtons from '../ui/ActionButtons.svelte';
     // the fairly-global Peering and PeeringFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
+    let actions = $derived(F.actions)
 
     onMount(async () => {
         // < Things might F.shares.start()
@@ -31,6 +33,9 @@
     <Thingstashed {F} {name} {M} />
 {/each}
 
+<div class="custom-actions">
+    <ActionButtons {actions} />
+</div>
 <Modus S={F}></Modus>
 
 <h2>Expect big shares</h2>
