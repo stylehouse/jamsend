@@ -5,7 +5,7 @@ import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { erring } from "$lib/Y";
-import { Tdebug } from "./Selection.svelte";
+import { Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
     // belongs to a thing of a feature
@@ -294,23 +294,23 @@ abstract class Agency extends TimeGallopia {
                 A.i({self:1,round,delta})
             })
 
-            // keep %wanting something
-            let wa = A.o({wanting:1})[0]
+            // keep %w something
+            let w = A.o({w:1})[0]
                 || this.i_auto_wanting(A)
             
-            let method = wa.sc.method
+            let method = w.sc.method
             if (method && this[method]) {
                 try {
-                    await wa.replace({error:1}, async () => {
+                    await w.replace({error:1}, async () => {
                     })
-                    await wa.replace({see:1}, async () => {
+                    await w.replace({see:1}, async () => {
                     })
 
-                    await this[method](A,wa,wa.sc.had)
+                    await this[method](A,w,w.sc.had)
                 } catch (error) {
-                    wa.i({error: error.message || String(error)})
-                    if (wa.c.error_fn) {
-                        let ok = await wa.c.error_fn(error)
+                    w.i({error: error.message || String(error)})
+                    if (w.c.error_fn) {
+                        let ok = await w.c.error_fn(error)
                         if (ok) return
                     }
                     console.error(`Error in method ${method}:`, error)
@@ -318,46 +318,46 @@ abstract class Agency extends TimeGallopia {
                 }
             }
             else {
-                if (method) wa.i({error:`!method`})
-                // < refer other %wanting to central stuck-trol?
+                if (method) w.i({error:`!method`})
+                // < refer other %w to central stuck-trol?
                 return
             }
 
-            // percolate wa/ai/%path -> j/%path from this A
-            await this.i_journeys_o_aims(A,wa)
+            // percolate w/ai/%path -> j/%path from this A
+            await this.i_journeys_o_aims(A,w)
 
-            // wa can mutate sc eg %then
+            // w can mutate sc eg %then
             //  so keep writing it down
-            await A.r({wanting:1},wa)
+            await A.r({w:1},w)
 
-            // wa can mutate
-            for (let sa of wa.o({satisfied:1})) {
+            // w can mutate
+            for (let sa of w.o({satisfied:1})) {
                 // take instructions
-                let next_method = wa.sc.then || "out_of_instructions"
+                let next_method = w.sc.then || "out_of_instructions"
                 let c = {method:next_method}
                 if (sa.sc.with) c.had = sa.sc.with
                 // change what this A is wanting
-                let nu = await A.r({wanting:1},c)
+                let nu = await A.r({w:1},c)
                 // < how better to express about avoiding|kind-of being resolved
                 // not resyncing nu/*
                 nu.empty()
                 // take %aim, ie keep pointers for the rest of A
                 // < this kind of transfer wants a deep clone ideally?
-                for (let ai of wa.o({aim:1})) {
+                for (let ai of w.o({aim:1})) {
                     nu.i(ai)
                 }
             }
         }
     }
     async reset_wants(A) {
-        await A.replace({wanting:1},async () => {})
-        return A.i({wanting:1,method:'meander',then:'radiopreview'})
+        await A.replace({w:1},async () => {})
+        return A.i({w:1,method:'meander',then:'radiopreview'})
     }
-    async out_of_instructions(A,wa) {
+    async out_of_instructions(A,w) {
         console.warn("out_of_instructions!")
     }
 
-    // name an A with a %wanting etc
+    // name an A with a %w etc
     // < GONE?
     name_A_thing(A,th) {
         let thingsay = th.sc.method ? "."+th.sc.method
@@ -368,7 +368,7 @@ abstract class Agency extends TimeGallopia {
     name_A(A) {
         return "A:"+A.sc.A
     }
-    async i_journeys_o_aims(A,wa) {
+    async i_journeys_o_aims(A,w) {
         if (!this.Tr) return
         // replace a particular journey that comes from this A
         let journey = this.name_A(A)
@@ -377,14 +377,14 @@ abstract class Agency extends TimeGallopia {
         await this.Tr.sc.D.replace({journey}, async () => {
             let i = 0
             let origijourney = journey
-            for (let ai of wa.o({aim:1})) {
+            for (let ai of w.o({aim:1})) {
                 // < are duplicate names ok? what to do about it?
                 journey = origijourney+(i++ ? "+"+i : "")
                 let j = this.Tr.sc.D.i({journey})
                 journeys.push(j)
             }
         })
-        for (let ai of wa.o({aim:1})) {
+        for (let ai of w.o({aim:1})) {
             let j = journeys.shift()
             // < method this? see PrevNextoid
             // i j/* o ai/*%path
@@ -410,14 +410,14 @@ abstract class Agency extends TimeGallopia {
     // may not find very small collections of music
     //  where everything playable is within journey:auto's from-the-top-ness, so we avoid it
     // may not find tracks not in a directory, because we want directory then track
-    async meander(A:TheC,wa:TheC) {
+    async meander(A:TheC,w:TheC) {
         let loopy = 11
         let dir:TheD
         while (1) {
-            if (loopy-- < 0) return wa.i({error:'loooopy'})
+            if (loopy-- < 0) return w.i({error:'loooopy'})
 
             // where we're looking
-            let ai = wa.o({aim:1})[0]
+            let ai = w.o({aim:1})[0]
             let supposed_path = ai && this.Se.j_to_uri(ai) || "??"
             let D
             if (ai) {
@@ -425,7 +425,7 @@ abstract class Agency extends TimeGallopia {
 
                 let ope = D && D.o1({v:1,openity:1})[0]
                 let aim = this.Se.j_to_uri(ai)
-                wa.i({see:'Din',aim,ope})
+                w.i({see:'Din',aim,ope})
                 if (D && ope <3) {
                     // we must wait for a Selection.process() for this
                     // < do only that journey if the others are docile?
@@ -436,9 +436,9 @@ abstract class Agency extends TimeGallopia {
 
             let inners = null
             if (D) {
-                let good = await this.is_meander_satisfied(A,wa,D)
+                let good = await this.is_meander_satisfied(A,w,D)
                 if (good) {
-                    await wa.r({satisfied:1,with:D})
+                    await w.r({satisfied:1,with:D})
                     return
                 }
                 // Tdebug(D.c.T,"meandering into")
@@ -457,8 +457,8 @@ abstract class Agency extends TimeGallopia {
             dir = dirs[this.prandle(dirs.length)]
             if (!dir) {
                 console.log("cul-de-sac: "+supposed_path)
-                // throw out wa/%aim, try again from the top
-                await wa.replace({aim:1},async() => {
+                // throw out w/%aim, try again from the top
+                await w.replace({aim:1},async() => {
                 })
                 continue
             }
@@ -466,13 +466,13 @@ abstract class Agency extends TimeGallopia {
                 throw `loopily: ${keyser(D)}`
             }
 
-            ai = await wa.r({aim:1})
+            ai = await w.r({aim:1})
             // < this could be r_path, return the old one?
             await ai.replace({path:1}, async () => {
                 this.Se.i_path(ai,dir)
             })
             // and log how many times this process goes around:
-            wa.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
+            w.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
         }
 
         // %aim spawns a journey, we follow up our %aim next time
@@ -493,9 +493,9 @@ abstract class Agency extends TimeGallopia {
     gat:SoundSystem
     TRIAL_LISTEN = 20
     // for radio
-    async aud_eats_buffers(wa,aud) {
+    async aud_eats_buffers(w,aud) {
         // load original encoded buffers
-        let buffers = wa.o1({buffers:1})[0]
+        let buffers = w.o1({buffers:1})[0]
         if (!buffers) throw "!buffers"
         try {
             await aud.load(buffers)
@@ -507,13 +507,13 @@ abstract class Agency extends TimeGallopia {
     }
 
     // small decodable chunks better for feeding to the radio-tuning noise phenomena
-    async record_preview_individuated(A,wa,D) {
+    async record_preview_individuated(A,w,D) {
         let aud = this.gat.new_audiolet()
-        await this.aud_eats_buffers(wa,aud)
+        await this.aud_eats_buffers(w,aud)
 
         let offset = aud.duration() - this.TRIAL_LISTEN
         let uri = this.Se.D_to_uri(D)
-        let re = wa.i({record:1,offset,uri})
+        let re = w.i({record:1,offset,uri})
 
         // receive transcoded buffers
         aud.setupRecorder(true)

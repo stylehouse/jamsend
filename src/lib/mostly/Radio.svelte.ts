@@ -34,7 +34,7 @@ export class SharesModus extends Modus {
     }
     async do_A() {
         await this.replace({A:'gate'},async () => {
-            this.i({A:'gate'}).is().i({wanting:1,method:'radiostockade'})
+            this.i({A:'gate'}).is().i({w:1,method:'radiostockade'})
         })
         
     }
@@ -44,7 +44,7 @@ export class SharesModus extends Modus {
     }
 
 
-    async radiostockade(A,wa) {
+    async radiostockade(A,w) {
         // < what to do as|with the bunch of music shares? redundancy?
     }
 }
@@ -63,15 +63,15 @@ export class ShareeModus extends Modus {
     async do_A() {
         await this.replace({A:'punt'},async () => {
             let A = this.i({A:'punt'}).is()
-            // < so perm can change over time, do this every time, replacing %wanting?
+            // < so perm can change over time, do this every time, replacing %w?
             let perm = this.PF.perm
             if (perm.local) {
                 // we grant them read access
-                A.i({wanting:1,method:'radiobroadcaster'})
+                A.i({w:1,method:'radiobroadcaster'})
             }
             if (perm.remote) {
                 // they grant us read access
-                A.i({wanting:1,method:'radioterminal'})
+                A.i({w:1,method:'radioterminal'})
             }
             if (perm.local && perm.remote) {
                 // < may both be on, share DJing, syncing many Pier's?
@@ -105,22 +105,22 @@ export class ShareeModus extends Modus {
             console.log("Landed in yondo: ",data)
         },
     }
-    async radioterminal(A,wa) {
+    async radioterminal(A,w) {
         // we're hungry for %record
         let recs = A.o({record:1})
         let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
         if (fresh.length < 5) {
-            wa.i({see:'acquiring more...'})
+            w.i({see:'acquiring more...'})
             this.PF.emit('orecord')
         }
         if (!A.oa({record:1})) {
-            return wa.i({waits:"no records"})
+            return w.i({waits:"no records"})
         }
-        
+
 
         //  at half way through it, turns into %stream
     }
-    async radiobroadcaster(A,wa) {
+    async radiobroadcaster(A,w) {
         // we provide %record and %stream
         //  %stream should let people join for the first 10s
 
@@ -138,7 +138,7 @@ export class ShareeModus extends Modus {
         })
 
         let sources = A.oa({io:'radiostock'})
-        if (!sources) return wa.i({waits:"no stock"})
+        if (!sources) return w.i({waits:"no stock"})
         
         
         
@@ -149,7 +149,7 @@ export class ShareeModus extends Modus {
             }
         }
         if (!A.oa({record:1})) {
-            return wa.i({waits:"no records"})
+            return w.i({waits:"no records"})
         }
 
         // %

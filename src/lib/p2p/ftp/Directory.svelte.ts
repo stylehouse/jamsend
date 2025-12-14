@@ -97,7 +97,7 @@ export class DirectoryModus extends Modus {
     async do_A() {
         await this.replace({A:'auto'},async () => {
             this.i({A:'auto'}).is()
-            this.i({A:'home'}).is().i({wanting:1,method:'radiostock'})
+            this.i({A:'home'}).is().i({w:1,method:'radiostock'})
         })
         this.main()
     }
@@ -112,15 +112,15 @@ export class DirectoryModus extends Modus {
     }
     // Agency parameterising and processing
     i_auto_wanting(A) {
-        return A.i({wanting:1,method:'meander',then:'radiopreview'})
+        return A.i({w:1,method:'meander',then:'radiopreview'})
     }
-    // when wanting to gallop into open country
+    // when w to gallop into open country
     get_sleeping_D_filter(D) {
         return D.c.T.sc.n.sc.nib == 'dir'
             && !D.c.T.c.no_readin
     }
     // looking for something
-    async is_meander_satisfied(A,wa,D) {
+    async is_meander_satisfied(A,w,D) {
         // something with a track
         // < finding %ads:beyond, aim becomes for tracking down that track...
         let good = D.o({ads:'here',track:1})[0]
@@ -133,18 +133,18 @@ export class DirectoryModus extends Modus {
 
 //#endregion
 //#region radio
-    async radiopreview(A,wa,D) {
-        if (!this.gat.AC_ready) return wa.i({error:"!AC"})
-        // wa can mutate
-        wa.sc.then = "radiodistribution"
-        wa.c.error_fn = async (er) => {
+    async radiopreview(A,w,D) {
+        if (!this.gat.AC_ready) return w.i({error:"!AC"})
+        // w can mutate
+        w.sc.then = "radiodistribution"
+        w.c.error_fn = async (er) => {
             if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
             // re-wander due to corrupt-seeming data
             this.reset_wants(A)
             return true
         }
 
-        if (!wa.oa({buffers:1})) {
+        if (!w.oa({buffers:1})) {
             let DL = this.D_to_DL(D)
             let reader = await DL.getReader(D.sc.name)
             let total_chunks = this.D_to_FL(D).size / CHUNK_SIZE
@@ -158,20 +158,20 @@ export class DirectoryModus extends Modus {
                 buffers.push(chunk)
                 if (buffers.length >= want_chunks) break
             }
-            wa.i({buffers,want_chunks,want_size})
+            w.i({buffers,want_chunks,want_size})
         }
 
-        let auds_was = wa.o1({aud:1})
-        if (!wa.oa({aud:1})) {
-            let aud = await this.record_preview_individuated(A,wa,D)
+        let auds_was = w.o1({aud:1})
+        if (!w.oa({aud:1})) {
+            let aud = await this.record_preview_individuated(A,w,D)
             // hold on to this while it's happening
-            wa.i({aud})
+            w.i({aud})
             // forget the encoded source buffers now
-            await wa.r({buffers:1},{ok:1})
+            await w.r({buffers:1},{ok:1})
         }
 
         // watch the aud progress
-        let auds:Array<Audiolet> = wa.o1({aud:1})
+        let auds:Array<Audiolet> = w.o1({aud:1})
         let alive = 0
         for (let aud of auds) {
             if (!aud.stopped) {
@@ -191,44 +191,44 @@ export class DirectoryModus extends Modus {
             }
             else {
                 // done!
-                wa.i({see:'aud',stopped:1})
+                w.i({see:'aud',stopped:1})
             }
-            wa.i({see:'audtime',along:aud.along(),duration:aud.duration()})
+            w.i({see:'audtime',along:aud.along(),duration:aud.duration()})
         }
 
 
-        if (wa.oa({record:1}) && !alive) {
+        if (w.oa({record:1}) && !alive) {
             // all done!
             // < or do we: await A.r({goods:1}) .i(rec),
             //    and always naturally distribute %goods to Piers?
-            let recs = wa.o({record:1})
+            let recs = w.o({record:1})
             if (recs[1]) throw `many recs`
             let rec = recs[0]
-            await wa.r({satisfied:1,with:rec})
+            await w.r({satisfied:1,with:rec})
         }
     }
     // advertise them
-    async radiodistribution(A,wa,rec) {
+    async radiodistribution(A,w,rec) {
         let rs = this.o({io:'radiostock'})[0]
         if (!rs) {
-            wa.i({see:"waits for %io:radiostock"})
+            w.i({see:"waits for %io:radiostock"})
             return
         }
         if (rec) {
             await rs.sc.i(rec)
-            wa.sc.then = 'rest'
-            await wa.r({satisfied:'record taken!'})
+            w.sc.then = 'rest'
+            await w.r({satisfied:'record taken!'})
         }
         // < want to put it on disk already
         //    so there's more immediately tons of material they could be blasted with
 
     }
-    async rest(A,wa) {
-        wa.i({see:"At rest"})
+    async rest(A,w) {
+        w.i({see:"At rest"})
     }
 
     // parallel to the above, radio pools into the unsatisfiable task of keeping stock
-    async radiostock(A,wa) {
+    async radiostock(A,w) {
         // the .jamsend/radiostock/ directory D
         let sD
         // advertise an API in Modus!
@@ -263,7 +263,7 @@ export class DirectoryModus extends Modus {
         let stock_path = ['.jamsend','radiostock']
         if (!A.oa({stock_cache:1})) {
             console.log("stock_cache ...aim_to_open")
-            let D = await this.aim_to_open(wa,stock_path)
+            let D = await this.aim_to_open(w,stock_path)
             if (D) {
                 // importantly, not ope<3,
                 A.i({stock_cache:D})
@@ -291,7 +291,7 @@ export class DirectoryModus extends Modus {
 
         // < have an extra /$cachelet:nowname/ directory to partition it a bit
         // let nowname = this.latest_stock_cachelet_name()
-        // wa.i({see:"fossick",the:nowname})
+        // w.i({see:"fossick",the:nowname})
     }
 
 
@@ -528,10 +528,10 @@ export class DirectoryModus extends Modus {
             await DL.deleteEntry(oD.sc.name)
         }
     }
-    // `mkdir -p` via wa, ie returning every 3s
+    // `mkdir -p` via w, ie returning every 3s
     //   to try and extract what we're after, or aim further at it
     // path doesn't include the share name
-    async aim_to_open(wa,path) {
+    async aim_to_open(w,path) {
         path = [this.Tr.sc.D.sc.name, ...path]
         let apath = []
         let at
@@ -541,18 +541,18 @@ export class DirectoryModus extends Modus {
             apath.push(pathbit)
             at = apath.join('/')
 
-            D = await this.aim_for(wa,apath)
+            D = await this.aim_for(w,apath)
             if (!D) {
                 if (uD) {
                     // assume we must make it
                     let DL = this.D_to_DL(uD)
                     await DL.makeDirectory(pathbit)
-                    wa.i({see:"aim_to_open mkdir",at})
+                    w.i({see:"aim_to_open mkdir",at})
                     
                 }
                 else {
                     debugger
-                    wa.i({see:"aim_to_open HOW",at})
+                    w.i({see:"aim_to_open HOW",at})
                 }
                 // you wait for the aim to fill it in
                 return
@@ -562,24 +562,24 @@ export class DirectoryModus extends Modus {
             let ope = D && D.o1({v:1,openity:1})[0]
             // must be awake
             if (ope <3) {
-                wa.i({see:"aim_to_open waits to open",at})
+                w.i({see:"aim_to_open waits to open",at})
                 // you wait for the aim to fill it in
                 return
             }
 
             uD = D
         }
-        wa.i({see:"aim_to_open OK",at})
+        w.i({see:"aim_to_open OK",at})
 
         // // track where we're up to along path
         // let ao_sc = {aimope:path.join('/')}
-        // let ao = wa.o(ao_sc)[0]?.sc || {seq:-1}
+        // let ao = w.o(ao_sc)[0]?.sc || {seq:-1}
         // let seq = ao.seq + 1
         return D
     }
-    async aim_for(wa,path):TheD|null {
+    async aim_for(w,path):TheD|null {
         // journey at it
-        let ai = await wa.r({aim:1})
+        let ai = await w.r({aim:1})
         await ai.replace({path:1}, async () => {
             this.Se.i_path_path(ai,path)
         })
