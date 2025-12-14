@@ -109,10 +109,13 @@ export class ShareeModus extends Modus {
     async radiobroadcaster(A,w) {
         w.sc.unemits ||= {
             orecord: ({prev_uri}) => {
+                w.i({did_something:1})
                 this.PF.emit('irecord',{Expression:6})
             }
         }
         w.sc.morestuff = 333
+
+        if (!w.oa({lately:2})) w.i({lately:2})
 
         // we provide %record and %stream
         //  %stream should let people join for the first 10s
@@ -132,7 +135,6 @@ export class ShareeModus extends Modus {
 
         let sources = A.oa({io:'radiostock'})
         if (!sources) return w.i({waits:"no stock"})
-        
         
         
         if (!A.oa({record:1})) {

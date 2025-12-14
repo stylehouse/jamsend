@@ -325,10 +325,6 @@ abstract class Agency extends TimeGallopia {
                 // percolate w%unemits -> PF.unemit.*
                 await this.i_unemits_o_Aw(A,w)
 
-                // w can mutate sc eg %then
-                //  so keep writing it down
-                await A.r({w:w.sc.w},w)
-
                 // w can mutate
                 for (let sa of w.o({satisfied:1})) {
                     // take instructions
@@ -349,6 +345,12 @@ abstract class Agency extends TimeGallopia {
                     A.drop(w)
                 }
             }
+            // w can mutate sc eg %then
+            //  so keep writing it down
+            let ws = A.o({w:1})
+            await A.replace({w:1},async () => {
+                ws.map(w => A.i(w.sc))
+            })
         }
     }
     async out_of_instructions(A,w) {

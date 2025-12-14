@@ -883,6 +883,7 @@ export class Pier {
         if (!this.stashed.trust) return
         let trust = this.stashed.trust.filter(t => t.to)
         if (!trust.length) return
+        this.said_trust = true
 
         for (const t of trust) {
             await this.verify_trust(t,true)
