@@ -34,18 +34,18 @@ export class SharesModus extends Modus {
     }
     async do_A() {
         await this.replace({A:'gate'},async () => {
-            this.i({A:'gate'}).is().i({wanting:1,method:'radiobroadcaster'})
+            this.i({A:'gate'}).is().i({wanting:1,method:'radiostockade'})
         })
         
     }
 
     async do_main() {
-        console.log(`Main SharesModus!`)
         await this.r({Seee:2})
-
     }
 
-    async radiobroadcaster(A,wa) {
+
+    async radiostockade(A,wa) {
+        // < what to do as|with the bunch of music shares? redundancy?
     }
 }
 export class ShareeModus extends Modus {
@@ -55,25 +55,81 @@ export class ShareeModus extends Modus {
     constructor(opt:Partial<SharesModus>) {
         super(opt)
         this.PF = this.S
+        this.S.i_actions({
+            'Radio': () => this.turn_knob(),
+        })
+        this.radio_unemits()
     }
     async do_A() {
         await this.replace({A:'punt'},async () => {
-            this.i({A:'punt'}).is().i({wanting:1,method:'radioterminal'})
+            let A = this.i({A:'punt'}).is()
+            // < so perm can change over time, do this every time, replacing %wanting?
+            let perm = this.PF.perm
+            if (perm.local) {
+                // we grant them read access
+                A.i({wanting:1,method:'radiobroadcaster'})
+            }
+            if (perm.remote) {
+                // they grant us read access
+                A.i({wanting:1,method:'radioterminal'})
+            }
+            if (perm.local && perm.remote) {
+                // < may both be on, share DJing, syncing many Pier's?
+                A.sc.both = 1
+            }
         })
         
     }
 
-    async do_main() {
-        console.log(`Main ShareeModus!`,JSON.stringify(this.PF.perm))
-        await this.r({Seee:6})
+    radio_unemits() {
+        Object.assign(this.PF.unemits, {
+            orecord: (data,{P,Pier}) => {
+                console.log("wants record: ",data)
+                this.PF.emit('irecord',{Expression:1})
+            },
+            irecord: (data,{P,Pier}) => {
+                console.log("got record: ",data)
+            },
+        })
+    }
+    turn_knob() {
+
+    }
+    // async do_main() {
+    //     console.log(`Main ShareeModus!`,JSON.stringify(this.PF.perm))
+    //     await this.r({Seee:6})
+    // }
+    unemits = {
+        orecord: (data,{P,Pier}) => {
+
+            console.log("Landed in yondo: ",data)
+        },
     }
     async radioterminal(A,wa) {
+        // we're hungry for %record
+        let recs = A.o({record:1})
+        let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
+        if (fresh.length < 5) {
+            wa.i({see:'acquiring more...'})
+            this.PF.emit('orecord')
+        }
+        if (!A.oa({record:1})) {
+            return wa.i({waits:"no records"})
+        }
+        
+
+        //  at half way through it, turns into %stream
+    }
+    async radiobroadcaster(A,wa) {
+        // we provide %record and %stream
+        //  %stream should let people join for the first 10s
+
         // copy %io:radiostock interfaces here
         await A.replace({io:'radiostock'}, async () => {
             map((M) => 
-                    map((io) => 
-                        A.i(io.sc),
-                     M.o({io:'radiostock'}))
+                map((io) => 
+                    A.i(io.sc),
+                    M.o({io:'radiostock'}))
                 ,
                 grep(map((share) =>
                     share.modus,
@@ -95,8 +151,8 @@ export class ShareeModus extends Modus {
         if (!A.oa({record:1})) {
             return wa.i({waits:"no records"})
         }
-        // now it's not single linear feed, we want them:
-        //  - given plenty of %recording
+
+        // %
 
     }
 }

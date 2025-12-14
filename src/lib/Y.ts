@@ -217,7 +217,7 @@ export function map(...args) {
 
 // Filter array or object by predicate
 
-export function grep(c:Array<any>|Object, s?:any) {
+export function grep(c:Array<any>|Object, s?:any):Array<any>|Object {
     // no function greps for true
     // see also nex(), for not-null
     if (arguments.length == 1) {

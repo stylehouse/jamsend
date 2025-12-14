@@ -48,8 +48,8 @@ abstract class ModusItself extends TheC  {
         await this.have_time(async () => {
             await this.reset_interval()
 
-            // the actual main
-            await this.do_main()
+            // the actual main, or it may all be %A
+            await this.do_main?.()
             
             // on that structure, hang motivation
             this.oa({A:'auto'}) || await this.do_A()
