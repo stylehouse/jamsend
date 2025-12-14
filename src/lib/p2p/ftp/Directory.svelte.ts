@@ -45,7 +45,7 @@ export class DirectoryModus extends Modus {
         // on UI:Modus destroy
         this.gat?.close()
     }
-
+    
 
 
     do_Gravitations() {
@@ -90,18 +90,24 @@ export class DirectoryModus extends Modus {
     }
     // start over!
     do_C() {
-        this.current = _C()
+        this.empty()
         this.main()
     }
-    // start Agenting around!
+    // Agency parameterising and processing
+    // < it could want these A.is() or not, depending on how resetty we're trying to be
+    //    we might just be changing parameters on things from .perm
     async do_A() {
-        await this.replace({A:'auto'},async () => {
-            this.i({A:'auto'}).is()
-            this.i({A:'home'}).is().i({w:1,method:'radiostock'})
+        await this.replace({A:1},async () => {
+            this.i({A:'auto'}).is().i({w:'meander',then:'radiopreview'})
+            this.i({A:'home'}).is().i({w:'radiostock'})
         })
         this.main()
     }
-
+    // in response to eg decode errors, just try again from the top
+    async reset_wants(A) {
+        await A.replace({w:1},async () => {})
+        return A.i({w:'meander',then:'radiopreview'})
+    }
 
 
 
@@ -109,10 +115,6 @@ export class DirectoryModus extends Modus {
     async do_main() {
         // < rewrite everything we're thinking about how to:
         await this.surf_nibs(this.S.list)
-    }
-    // Agency parameterising and processing
-    i_auto_wanting(A) {
-        return A.i({w:1,method:'meander',then:'radiopreview'})
     }
     // when w to gallop into open country
     get_sleeping_D_filter(D) {

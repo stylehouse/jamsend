@@ -294,73 +294,70 @@ abstract class Agency extends TimeGallopia {
                 A.i({self:1,round,delta})
             })
 
-            // keep %w something
-            let w = A.o({w:1})[0]
-                || this.i_auto_wanting(A)
-            
-            let method = w.sc.method
-            if (method && this[method]) {
-                try {
-                    await w.replace({error:1}, async () => {
-                    })
-                    await w.replace({see:1}, async () => {
-                    })
+            for (let w of A.o({w:1})) {
+                let method = w.sc.w
+                if (method && this[method]) {
+                    try {
+                        await w.replace({error:1}, async () => {
+                        })
+                        await w.replace({see:1}, async () => {
+                        })
 
-                    await this[method](A,w,w.sc.had)
-                } catch (error) {
-                    w.i({error: error.message || String(error)})
-                    if (w.c.error_fn) {
-                        let ok = await w.c.error_fn(error)
-                        if (ok) return
+                        await this[method](A,w,w.sc.had)
+                    } catch (error) {
+                        w.i({error: error.message || String(error)})
+                        if (w.c.error_fn) {
+                            let ok = await w.c.error_fn(error)
+                            if (ok) return
+                        }
+                        console.error(`Error in method ${method}:`, error)
+                        return
                     }
-                    console.error(`Error in method ${method}:`, error)
+                }
+                else {
+                    if (method) w.i({error:`!method`})
+                    // < refer other %w to central stuck-trol?
                     return
                 }
-            }
-            else {
-                if (method) w.i({error:`!method`})
-                // < refer other %w to central stuck-trol?
-                return
-            }
 
-            // percolate w/ai/%path -> j/%path from this A
-            await this.i_journeys_o_aims(A,w)
+                // percolate w/ai/%path -> j/%path from this A
+                await this.i_journeys_o_aims(A,w)
+                // percolate w%unemits -> PF.unemit.*
+                await this.i_unemits_o_Aw(A,w)
 
-            // w can mutate sc eg %then
-            //  so keep writing it down
-            await A.r({w:1},w)
+                // w can mutate sc eg %then
+                //  so keep writing it down
+                await A.r({w:w.sc.w},w)
 
-            // w can mutate
-            for (let sa of w.o({satisfied:1})) {
-                // take instructions
-                let next_method = w.sc.then || "out_of_instructions"
-                let c = {method:next_method}
-                if (sa.sc.with) c.had = sa.sc.with
-                // change what this A is wanting
-                let nu = await A.r({w:1},c)
-                // < how better to express about avoiding|kind-of being resolved
-                // not resyncing nu/*
-                nu.empty()
-                // take %aim, ie keep pointers for the rest of A
-                // < this kind of transfer wants a deep clone ideally?
-                for (let ai of w.o({aim:1})) {
-                    nu.i(ai)
+                // w can mutate
+                for (let sa of w.o({satisfied:1})) {
+                    // take instructions
+                    let next_method = w.sc.then || "out_of_instructions"
+                    let c = {w:next_method}
+                    if (sa.sc.with) c.had = sa.sc.with
+
+                    // change what this A is wanting
+                    let nu = A.i(c)
+                    // < how better to express about avoiding|kind-of being resolved
+                    // not resyncing nu/*
+                    nu.empty()
+                    // take %aim, ie keep pointers for the rest of A
+                    // < this kind of transfer wants a deep clone ideally?
+                    for (let ai of w.o({aim:1})) {
+                        nu.i(ai)
+                    }
+                    A.drop(w)
                 }
             }
         }
-    }
-    async reset_wants(A) {
-        await A.replace({w:1},async () => {})
-        return A.i({w:1,method:'meander',then:'radiopreview'})
     }
     async out_of_instructions(A,w) {
         console.warn("out_of_instructions!")
     }
 
     // name an A with a %w etc
-    // < GONE?
     name_A_thing(A,th) {
-        let thingsay = th.sc.method ? "."+th.sc.method
+        let thingsay = th.sc.w ? "."+th.sc.w
             : "?"
         return this.name_A(A)+thingsay
     }
@@ -396,6 +393,31 @@ abstract class Agency extends TimeGallopia {
             await j.replace({gaveup:1}, async () => {
             })
             // < note somehow this ai->j vectoring
+        }
+    }
+    // percolate w%unemits -> PF.unemit.*
+    // instead of addressing PF.emit()s to a %w,
+    //  suppose each message type will be belong to one %w
+    async i_unemits_o_Aw(A,w) {
+        if (!w.sc.unemits) return
+        for (let [type,handler] of Object.entries(w.sc.unemits)) {
+            // type becomes+unbecomes type=ftp.$k when PF.emit is used
+            this.PF.unemits[type] = (data,{P,Pier}) => {
+                let served = false
+                // find and serve to all handlers
+                this.o({A:1}).map(A => {
+                    A.o({w:1}).map(w => {
+                        let handler = w.sc.unemits?.[type]
+                        if (handler) {
+                            served = true
+                            handler(data,{P,Pier})
+                        }
+                    })
+                })
+                if (!served) {
+                    return console.warn(`${this} unemit Aw !handler for message type:`, data);
+                }
+            }
         }
     }
 

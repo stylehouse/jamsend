@@ -78,8 +78,8 @@ export class PierSharing extends PierFeature {
         try {
             // < resume against what we had? another Thing to store?
             this.tm = new TransferManager({sharing:this})
-            this.started = true
 
+            this.started = true
             console.log(`PierSharing:`, this.list);
         } catch (err) {
             throw erring("Failed to start file sharing", err);

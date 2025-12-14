@@ -768,14 +768,14 @@ export class Pier {
                 // check permit
                 let t = this.trust.get(trust_name)
                     || this.trusted.get(trust_name)
-                if (!t) throw `${this} unemit !permit to feature: ${trust_name}`
+                if (!t) throw `unemit !permit to feature: ${trust_name}`
 
                 let PF = this.features.get(trust_name)
                 handy.PF = PF
                 handler = PF.unemits[data.type]
             }
             if (!handler) {
-                return console.warn(`${this} unemit !handler for message type:`, data);
+                return console.warn(`unemit !handler for message type:`, data);
             }
         }
         handler(data,handy);
@@ -1181,7 +1181,8 @@ export abstract class PierFeature extends ActionsAndModus {
     // routing messages to this Pier feature on the other end
     abstract unemits:Object
     async emit(type,data={},options={}) {
-        if (!this.unemits[type]) throw `emit handler unknown to self: ${type}`
+        // < GOING? handlers can come from w existing, we might not have but want to talk to
+        // if (!this.unemits[type]) throw `emit handler unknown to self: ${type}`
         type = `${this.F.trust_name}.${type}`
         await this.Pier.emit(type,data,options)
     }
