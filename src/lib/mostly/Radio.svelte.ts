@@ -75,7 +75,7 @@ export class ShareeModus extends Modus {
             }
             if (perm.local && perm.remote) {
                 // < may both be on, share DJing, syncing many Pier's?
-                A.sc.both = 1
+                A.i({is_both_listener_and_source:1})
             }
         })
     }
@@ -87,7 +87,7 @@ export class ShareeModus extends Modus {
     async radioterminal(A,w) {
         w.sc.unemits ||= {
             irecord: ({Expression}) => {
-                w.i({received:Expression})
+                A.i({record:Expression})
             }
         }
 
@@ -114,6 +114,7 @@ export class ShareeModus extends Modus {
             }
         }
         w.sc.morestuff = 333
+        w.i({awesome:2})
 
         if (!w.oa({lately:2})) w.i({lately:2})
 

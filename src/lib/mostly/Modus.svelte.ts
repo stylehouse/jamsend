@@ -52,7 +52,7 @@ abstract class ModusItself extends TheC  {
             await this.do_main?.()
             
             // on that structure, hang motivation
-            this.oa({A:'auto'}) || await this.do_A()
+            this.oa({A:1}) || await this.do_A()
             await this.agency_think()
             // Modus_testcase(this)
 

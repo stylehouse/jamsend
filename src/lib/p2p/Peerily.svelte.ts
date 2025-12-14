@@ -596,7 +596,7 @@ export class Pier {
         return this.con.dataChannel?.bufferedAmount
     }
     get send_ready() {
-        return this.con.dataChannel.readyState == "open"
+        return this.con.dataChannel?.readyState == "open"
     }
 
     // resume streaming largenesses
