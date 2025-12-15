@@ -232,7 +232,7 @@ export class DirectoryModus extends Modus {
     // parallel to the above, radio pools into the unsatisfiable task of keeping stock
     async radiostock(A,w) {
         // the .jamsend/radiostock/ directory D
-        let sD
+        let stockD
         // advertise an API in Modus!
         this.r({io:'radiostock'},{
             i: async (re:TheC) => {
@@ -241,8 +241,8 @@ export class DirectoryModus extends Modus {
                 this.whittle_N(A.o({record:1}),keep_things)
                 // silently fail
                 //  storage is likely to be ready before %record made
-                if (!sD) return
-                await this.record_to_disk(re,sD)
+                if (!stockD) return
+                await this.record_to_disk(re,stockD)
             },
             o: (previous:TheC) => {
                 // previous thing they got makes sort of a cursor
@@ -262,17 +262,8 @@ export class DirectoryModus extends Modus {
         })
 
         // and may cache on the filesystem for spanglier startups
-        let stock_path = ['.jamsend','radiostock']
-        if (!A.oa({stock_cache:1})) {
-            console.log("stock_cache ...aim_to_open")
-            let D = await this.aim_to_open(w,stock_path)
-            if (D) {
-                // importantly, not ope<3,
-                A.i({stock_cache:D})
-            }
-        }
-        sD = A.o1({stock_cache:1})[0]
-        if (!sD) return
+        stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
+        if (!stockD) return // also when ope<3
 
         // load some
         let keep_things = 20
@@ -281,13 +272,13 @@ export class DirectoryModus extends Modus {
             let to_load = 5 // not to much work per A
             // keep_things - A.o({record:1}).length
             
-            for await (const re of this.load_random_records(sD, to_load,had)) {
+            for await (const re of this.load_random_records(stockD, to_load,had)) {
                 A.i(re)
             }
         }
         
         // whittle to 20 things
-        await this.whittle_stock(w,sD,keep_things)
+        await this.whittle_stock(w,stockD,keep_things)
 
         
 
@@ -543,9 +534,20 @@ export class DirectoryModus extends Modus {
     //   to try and extract what we're after, or aim further at it
     // path doesn't include the share name
     async aim_to_open(w,path) {
+        let is_awake = (D:TheD) => {
+            let ope = D && D.o1({v:1,openity:1})[0]
+            if (ope <3 || !D) return // watch out for null <3 == true
+            return true
+        }
+
         path = [this.Tr.sc.D.sc.name, ...path]
         let apath = []
-        let at
+        let at = path.join('/')
+        if (w.oa({aimed:at})) {
+            // faster now it has landed? the %aim just hangs around
+            let D = this.Se.path_to_D(path)
+            if (is_awake(D)) return D
+        }
         let D
         let uD
         for (let pathbit of path) {
@@ -570,9 +572,8 @@ export class DirectoryModus extends Modus {
             }
 
             // found that directory
-            let ope = D && D.o1({v:1,openity:1})[0]
             // must be awake
-            if (ope <3) {
+            if (!is_awake(D)) {
                 w.i({see:"aim_to_open waits to open",at})
                 // you wait for the aim to fill it in
                 return
@@ -580,6 +581,7 @@ export class DirectoryModus extends Modus {
 
             uD = D
         }
+        w.r({aimed:at})
         w.i({see:"aim_to_open OK",at})
 
         // // track where we're up to along path

@@ -62,7 +62,7 @@ export class ShareeModus extends Modus {
         })
     }
     async do_A(hard=false) {
-        console.log("do_A")
+        // console.log("do_A")
         let A
         await this.replace({A:1},async () => {
             A = this.i({A:'punt'})
@@ -99,6 +99,7 @@ export class ShareeModus extends Modus {
 
         // we're hungry for %record
         let recs = A.o({record:1})
+        // a join to the recently table on uri
         let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
         if (fresh.length < 5) {
             w.i({see:'acquiring more...'})
@@ -113,6 +114,7 @@ export class ShareeModus extends Modus {
         //  at half way through it, turns into %stream
     }
     async radiobroadcaster(A,w) {
+        // speaking to the other about what we have
         w.sc.unemits ||= {
             orecord: ({prev_uri}) => {
                 w.i({did_something:1})
