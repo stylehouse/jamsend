@@ -34,9 +34,10 @@
         // do the first drawing almost immediately, but after M.stashed appears
         do_drawing = false
         setTimeout(() => {
+            if (S.modus != M) return
             do_drawing = init_do_drawing
             // allow it to change over time via stashed
-            if (M.stashed.do_drawing != null) {
+            if (M.stashed?.do_drawing != null) {
                 do_drawing = M.stashed.do_drawing
             }
         },550)

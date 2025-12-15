@@ -276,7 +276,7 @@ export class DirectoryModus extends Modus {
         
         // whittle to 20 things
         let keep_things = 20
-        await this.whittle_stock(sD,keep_things)
+        await this.whittle_stock(w,sD,keep_things)
 
         // load some
         let had = A.o({record:1})
@@ -321,6 +321,8 @@ export class DirectoryModus extends Modus {
             // Get writer for the stock directory
             const DL = this.D_to_DL(sD);
             const writer = await DL.getWriter(name);
+            // force a refresh
+            sD.i({was_operated_on:1,by:'record_to_disk()'})
             
             // Write encoded data
             await writer.write(encoded);
@@ -517,17 +519,24 @@ export class DirectoryModus extends Modus {
         }
     }
 
-    async whittle_stock(D:TheD,to:number) {
+    async whittle_stock(w:TheC,D:TheD,to:number) {
         to ||= 20
         let N = D.o({Tree:1})
         let goners = []
         while (N.length > to) {
             goners.push(N.shift())
         }
+        let DDL = this.D_to_DL(D) // is it
         for (let oD of goners) {
-            let DL = this.D_to_DL(oD)
+            let DL = this.D_to_DL(oD) // goes up to D(%nib=dir) because oD(%nib=blob)
+            if (DL != DDL) throw "DL!DDL"
             console.log("whittle_stock() deletes "+oD.sc.name)
             await DL.deleteEntry(oD.sc.name)
+        }
+        if (goners.length) {
+            // refresh the directory we just deleted from
+            D.i({was_operated_on:1,by:'whittle_stock()'})
+            w.i({see:"whittle_stock() x"+goners.length})
         }
     }
     // `mkdir -p` via w, ie returning every 3s
@@ -623,9 +632,11 @@ export class DirectoryModus extends Modus {
         
         this.a_Strata ||= new Strata({
             see: [],
-            hide: [{readin:1},
+            hide: [
+                {readin:1},
                 {ads:1},
-                {Tree:1}],
+                {Tree:1},
+            ],
             nameclick_fn: async (D:TheC) => await this.nameclick(D),
         })
         this.a_Strata.update({Se,thetime:this.thetime})
@@ -800,18 +811,26 @@ export class DirectoryModus extends Modus {
             op.r({Shantity:1})
             return T.sc.not = 'unopenity'
         }
-        let user_is_looking = [T,T.up].some(T=>T?.sc.D.oa({tour:1,matched:1}))
+        let user_is_looking = [T,T.up].some(T=>T?.sc.D.oa({tour:1,matches:1}))
 
         await D.replace({busyas:1},async () => {
             user_is_looking
                 && D.i({busyas:1})
         })
 
-        let ago = await op.i_wasLast('expanded')
-        
-        if (ago > this.refresh_DL_seconds) {
+        // when we know something changed, that other process drops this off:
+        let need = D.oa({was_operated_on:1})
+        if (!need) {
+            let ago = await op.i_wasLast('expanded')
+            need = ago > this.refresh_DL_seconds
+        }
+        if (need) {
             // spontaneous refresh every 16s
             await this.expand_nib(T,op)
+            // do think-chatter in D/*, under %openity since relevant...
+            await op.i_wasLast('expanded',true)
+            await D.replace({was_operated_on:1},async () => {
+            })
         }
     }
 
@@ -821,8 +840,6 @@ export class DirectoryModus extends Modus {
         const DL:DirectoryListing = n.sc.DL
         await DL.expand()
 
-        // do think-chatter in D/*, under %openity since relevant...
-        await op.i_wasLast('expanded',true)
 
         // i /*%nib:dir,...
         let uDL = DL

@@ -32,6 +32,36 @@ abstract class ModusItself extends TheC  {
         this.current = this
 
         this.init_stashed_mem?.()
+
+        $effect(() => {
+            this.when_to_do_A()
+        })
+    }
+
+    when_to_do_A() {
+        // every S with .modus has a S.started
+        if (!this.S.started) {
+            return
+        }
+        if (this.PF) {
+            // listen to .perm changes
+            let important = this.PF?.perm;
+            important && Object.entries(important)
+            this.PF && console.log("perm: effect: ",this.PF.diag_perm())
+        }
+        setTimeout(() => {
+        //     // we can't keep other executions away from our A.replace()
+        //     //  so hope this only happens away from execution!
+        //     // < some kind of job queue
+        //     //    eg having all Modus on the page merge their intervals into a common rhythm
+        //     //    and having misc like this await for a clearing
+        //     //    so things time share bits of the A...
+            (async () => {
+                this.PF && console.log("perm: effect-then: ",this.PF.diag_perm())
+                this.do_A()
+                // do main?
+            })()
+        },0)
     }
 
     stopped = false
@@ -52,7 +82,7 @@ abstract class ModusItself extends TheC  {
             await this.do_main?.()
             
             // on that structure, hang motivation
-            this.oa({A:1}) || await this.do_A()
+            // this.oa({A:1}) || await this.do_A()
             await this.agency_think()
             // Modus_testcase(this)
 

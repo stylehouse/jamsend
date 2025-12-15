@@ -61,6 +61,7 @@ export class ShareeModus extends Modus {
         })
     }
     async do_A() {
+        console.log("do_A")
         await this.replace({A:1},async () => {
             let A = this.i({A:'punt'}).is()
             // < so perm can change over time, do this every time, replacing %w?
@@ -114,6 +115,12 @@ export class ShareeModus extends Modus {
             }
         }
         w.sc.morestuff = 333
+        await w.replace({permsies:1}, async () => {
+            this.PF.perm.local
+                && w.i({permsies:'local',is:this.PF.perm.local})
+            this.PF.perm.remote
+                && w.i({permsies:'remote',is:this.PF.perm.remote})
+        })
         w.i({awesome:2})
 
         if (!w.oa({lately:2})) w.i({lately:2})

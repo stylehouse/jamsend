@@ -1054,6 +1054,10 @@ export class Pier {
             if (before.local && !PF.perm.local) PF.loses_perm_local?.()
             if (before.remote && !PF.perm.remote) PF.loses_perm_remote?.()
         })
+
+        this.features.forEach((PF,k) => {
+            console.log("perm: refresh: "+PF.diag_perm())
+        })
     }
 }
 
@@ -1161,7 +1165,7 @@ export abstract class PierFeature extends ActionsAndModus {
     eer:Peering
     Pier:Pier
     // < their perm.local.* (to here) may include arbitrary signed data
-    perm:BidiTrustication = {}
+    perm:BidiTrustication = $state({})
     constructor(opt) {
         super()
         Object.assign(this, opt)
@@ -1177,7 +1181,14 @@ export abstract class PierFeature extends ActionsAndModus {
     
     UI_component:Component
 
-
+    diag_perm() {
+        if (!this.perm) return "{}"
+        let N = []
+        for (let [direction,t] of Object.entries(this.perm)) {
+            N.push(`${direction}: ${t ? t.to : '-'}`)
+        }
+        return N.join(",  ")
+    }
     
     // routing messages to this Pier feature on the other end
     abstract unemits:Object
