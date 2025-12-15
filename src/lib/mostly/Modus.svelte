@@ -32,33 +32,35 @@
         gat = M.gat = new SoundSystem({M})
         
         // do the first drawing almost immediately, but after M.stashed appears
-        do_drawing = false
-        setTimeout(() => {
-            if (S.modus != M) return
-            do_drawing = init_do_drawing
-            // allow it to change over time via stashed
-            if (M.stashed?.do_drawing != null) {
-                do_drawing = M.stashed.do_drawing
-            }
-        },550)
+        do_drawing = null
 
         if (do_start) {
             // if S isn't a Thing, nothing will try to start it
             await S.start()
         }
     })
+
+    let start_drawing = 0
     $effect(() => {
-        if (S.started) {
-            console.log(`making started -> main() ${objectify(S)}`)
+        if (S.started && M.stashed && (!S.emit || S.perm)) {
+            // doesn't react to M.stashed.* or S.perm.*
+            //  S.perm 
+            console.log(`started|stashed|perm -> main() ${objectify(S)}`)
+            if (S.modus != M) debugger
+
+            // start drawing as intended
+            do_drawing = init_do_drawing
+            // allow it to change over time via stashed
+            if (M.stashed?.do_drawing != null) {
+                do_drawing = M.stashed.do_drawing
+            }
+             
             S.modus.main()
         }
     })
     onDestroy(() => {
         M.stop()
     })
-
-
-
 
     let redraw_version = $state(1)
     let lets_redraw = () => {
@@ -67,21 +69,17 @@
         redraw_version++
     }
     $effect(() => {
-        if (M.current.version) {
-            if (M.current.X_before) return
-            // setTimeout(() => lets_redraw(), 140)
+        if (do_drawing != null && M.stashed) {
+            M.stashed.do_drawing = do_drawing
         }
     })
-    function stashy() {
-        M.stashed.things = 3
-    }
     let drawingness = $state()
     function tog_draw() {
         // turns off the Stuffing compute
         do_drawing = !do_drawing
     }
     $effect(() => {
-        drawingness = do_drawing ? "hide" : "draw"
+        drawingness = do_drawing ? "hide" : "show"
     })
 
 
@@ -100,7 +98,6 @@
     I am a {M.constructor.name} 
     {#if gat}with a gat. <GatHaving {gat}/>{/if}
     <button onclick={tog_draw}>{drawingness}</button>
-    <button onclick={stashy}>stashy</button>
     <button onclick={lets_redraw}>redraw</button>
     {#if actions}<ActionButtons {actions} />{/if}
 </p>

@@ -275,8 +275,9 @@ export class DirectoryModus extends Modus {
         if (!sD) return
 
         // load some
+        let keep_things = 20
         let had = A.o({record:1})
-        if (had.length < keep_things) {
+        if (had.length < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
             // keep_things - A.o({record:1}).length
             
@@ -286,7 +287,6 @@ export class DirectoryModus extends Modus {
         }
         
         // whittle to 20 things
-        let keep_things = 20
         await this.whittle_stock(w,sD,keep_things)
 
         

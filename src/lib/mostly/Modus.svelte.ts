@@ -44,16 +44,14 @@ abstract class ModusItself extends TheC  {
             return
         }
         if (this.PF) {
-            // listen to .perm changes
+            // listen to .perm.* changes
             let important = this.PF?.perm;
             important && Object.entries(important)
-            this.PF && console.log("perm: effect: ",this.PF.diag_perm())
         }
         this.i_elvis(async () => {
-            this.PF && console.log("perm: effect-then: ",this.PF.diag_perm())
             // downloads any relevant perms by replacing the A/w situation
             await this.do_A()
-            // do main?
+            this.main()
         })
     }
 
@@ -103,13 +101,13 @@ abstract class ModusItself extends TheC  {
 
             await this.reset_interval()
 
-            // the actual main, or it may all be %A
+            // the actual main
+            // < or it may all be %A
             await this.do_main?.()
             
             // on that structure, hang motivation
             // this.oa({A:1}) || await this.do_A()
             await this.agency_think()
-            // Modus_testcase(this)
 
             // < look within $scope of the Tree (start with localList) for...
         })
