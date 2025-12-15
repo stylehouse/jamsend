@@ -4,7 +4,7 @@ import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring } from "$lib/Y";
+import { erring, throttle } from "$lib/Y";
 import { Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -66,7 +66,7 @@ abstract class ModusItself extends TheC  {
 
     // the "I'm redoing the thing" process wrapper
     declare main_fn:Function
-    // main() is a time of instability in M**
+    // during main() is a time of instability in M**
     //   mingling threads of execution can cause eg double replace()
     //  so event handlers may post their jobs into this queue
     //  so they can happen just before next main(), thus stable and poised for affect
@@ -78,8 +78,9 @@ abstract class ModusItself extends TheC  {
     needs_your_attention:Function[] = []
     i_elvis(fn) {
         this.needs_your_attention.push(fn)
-        // < and request main() ASAP?
+        // and request main() ASAP
         //  < model wants, progress, which journeys are actively doing stuff
+        this.main()
     }
     async o_elvis(fn) {
         for (let fn of this.needs_your_attention) {
@@ -87,7 +88,16 @@ abstract class ModusItself extends TheC  {
         }
         this.needs_your_attention = []
     }
-    async main() {
+
+    main_throttle:Function
+    main() {
+        // suggest we do main() ASAP
+        let main = this.main_throttle = this.main_throttle || throttle(() => {
+            this.the_main()
+        },200)
+        main()
+    }
+    async the_main() {
         await this.have_time(async () => {
             await this.o_elvis()
 

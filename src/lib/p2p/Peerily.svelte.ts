@@ -604,7 +604,7 @@ export class Pier {
     send_queue = []
     process_emit_queue() {
         // < etc
-        console.log(`process_emit_queue()`)
+        // console.log(`process_emit_queue()`)
         while (!this.send_paused && this.send_queue.length > 0) {
             const { crypto,data,buffer, resolve } = this.send_queue.shift()!;
             
@@ -633,7 +633,7 @@ export class Pier {
         buffer && this.con.send(buffer)
 
         if (typeof data == 'string') data = {data}
-        console.log("emit()"+(buffer ? " BUFFER":""),{...data,crypto})
+        // console.log("emit()"+(buffer ? " BUFFER":""),{...data,crypto})
     }
 
     async emit(type,data={},
@@ -754,7 +754,7 @@ export class Pier {
         this.handleMessage(eventual_data)
     }
     handleMessage(data) {
-        console.log(`unemits ${data.type}:`,data)
+        // console.log(`unemits ${data.type}:`,data)
         // extra args to the handler for convenient environment grabbing
         let handy = {P:this.P,Pier:this}
 
