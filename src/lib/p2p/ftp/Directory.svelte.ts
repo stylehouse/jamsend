@@ -135,6 +135,7 @@ export class DirectoryModus extends Modus {
 
 //#endregion
 //#region radio
+
     async radiopreview(A,w,D) {
         if (!this.gat.AC_ready) return w.i({error:"!AC"})
         // w can mutate
@@ -145,25 +146,10 @@ export class DirectoryModus extends Modus {
             this.reset_wants(A)
             return true
         }
-
         if (!w.oa({buffers:1})) {
-            let DL = this.D_to_DL(D)
-            let reader = await DL.getReader(D.sc.name)
-            let total_chunks = this.D_to_FL(D).size / CHUNK_SIZE
-            // must decode from the start
-            let seek = 0
-            // we want a good amount of it
-            let want_chunks = total_chunks * 0.4 + this.prandle(20)
-            let want_size = want_chunks * CHUNK_SIZE
-            let buffers = []
-            for await (const chunk of reader.iterate(seek)) {
-                buffers.push(chunk)
-                if (buffers.length >= want_chunks) break
-            }
-            w.i({buffers,want_chunks,want_size})
+            await this.radiopreview_i_buffers(A,w,D)
         }
 
-        let auds_was = w.o1({aud:1})
         if (!w.oa({aud:1})) {
             let aud = await this.record_preview_individuated(A,w,D)
             // hold on to this while it's happening
@@ -172,34 +158,9 @@ export class DirectoryModus extends Modus {
             await w.r({buffers:1},{ok:1})
         }
 
-        // watch the aud progress
-        let auds:Array<Audiolet> = w.o1({aud:1})
-        let alive = 0
-        for (let aud of auds) {
-            if (!aud.stopped) {
-                alive++
+        this.watch_auds_progressing()
 
-                // non-first time:
-                if (auds_was.includes(aud)) {
-                    // while calling this regularly...
-                    // < and perhaps not every time through here?
-                    if (aud.left() >= 1) {
-                        // try to avoid tiny tail-end segments
-                        // < seems aud.load decode errors are possible with 110-byte buffers that way...
-                        aud.encode_segmentation()
-                        console.log(`requested segment`)
-                    }
-                }
-            }
-            else {
-                // done!
-                w.i({see:'aud',stopped:1})
-            }
-            w.i({see:'audtime',along:aud.along(),duration:aud.duration()})
-        }
-
-
-        if (w.oa({record:1}) && !alive) {
+        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
             // all done!
             // < or do we: await A.r({goods:1}) .i(rec),
             //    and always naturally distribute %goods to Piers?
@@ -211,19 +172,14 @@ export class DirectoryModus extends Modus {
     }
     // advertise them
     async radiodistribution(A,w,rec) {
+        w.sc.then = 'rest'
+
         let rs = this.o({io:'radiostock'})[0]
-        if (!rs) {
-            w.i({see:"waits for %io:radiostock"})
-            return
-        }
+        if (!rs) return w.i({waits:"%io:radiostock"})
         if (rec) {
             await rs.sc.i(rec)
-            w.sc.then = 'rest'
             await w.r({satisfied:'record taken!'})
         }
-        // < want to put it on disk already
-        //    so there's more immediately tons of material they could be blasted with
-
     }
     async rest(A,w) {
         w.i({see:"At rest"})
@@ -279,15 +235,7 @@ export class DirectoryModus extends Modus {
         
         // whittle to 20 things
         await this.whittle_stock(w,stockD,keep_things)
-
-        
-
-        // < have an extra /$cachelet:nowname/ directory to partition it a bit
-        // let nowname = this.latest_stock_cachelet_name()
-        // w.i({see:"fossick",the:nowname})
     }
-
-
 
 
 //#endregion
@@ -530,74 +478,12 @@ export class DirectoryModus extends Modus {
             w.i({see:"whittle_stock() x"+goners.length})
         }
     }
-    // `mkdir -p` via w, ie returning every 3s
-    //   to try and extract what we're after, or aim further at it
-    // path doesn't include the share name
-    async aim_to_open(w,path) {
-        let is_awake = (D:TheD) => {
-            let ope = D && D.o1({v:1,openity:1})[0]
-            if (ope <3 || !D) return // watch out for null <3 == true
-            return true
-        }
 
-        path = [this.Tr.sc.D.sc.name, ...path]
-        let apath = []
-        let at = path.join('/')
-        if (w.oa({aimed:at})) {
-            // faster now it has landed? the %aim just hangs around
-            let D = this.Se.path_to_D(path)
-            if (is_awake(D)) return D
-        }
-        let D
-        let uD
-        for (let pathbit of path) {
-            apath.push(pathbit)
-            at = apath.join('/')
-
-            D = await this.aim_for(w,apath)
-            if (!D) {
-                if (uD) {
-                    // assume we must make it
-                    let DL = this.D_to_DL(uD)
-                    await DL.makeDirectory(pathbit)
-                    w.i({see:"aim_to_open mkdir",at})
-                    
-                }
-                else {
-                    debugger
-                    w.i({see:"aim_to_open HOW",at})
-                }
-                // you wait for the aim to fill it in
-                return
-            }
-
-            // found that directory
-            // must be awake
-            if (!is_awake(D)) {
-                w.i({see:"aim_to_open waits to open",at})
-                // you wait for the aim to fill it in
-                return
-            }
-
-            uD = D
-        }
-        w.r({aimed:at})
-        w.i({see:"aim_to_open OK",at})
-
-        // // track where we're up to along path
-        // let ao_sc = {aimope:path.join('/')}
-        // let ao = w.o(ao_sc)[0]?.sc || {seq:-1}
-        // let seq = ao.seq + 1
-        return D
-    }
-    async aim_for(w,path):TheD|null {
-        // journey at it
-        let ai = await w.r({aim:1})
-        await ai.replace({path:1}, async () => {
-            this.Se.i_path_path(ai,path)
+    aim_to_open(w,path) {
+        this.Se.aim_to_open(w,path,async (D,pathbit) => {
+            let DL = this.D_to_DL(D)
+            await DL.makeDirectory(pathbit)
         })
-        // until it exists?
-        return this.Se.j_to_D(ai)
     }
 
 
@@ -951,16 +837,15 @@ export class DirectoryListing {
         const fileHandle = await this.handle.getFileHandle(pathbit);
         const file = await fileHandle.getFile();
         
-        let chunkSize = CHUNK_SIZE
         return {
             size: file.size,
             iterate: async function*(startFrom = 0) {
                 let offset = startFrom;
                 while (offset < file.size) {
                     // Read file in chunks
-                    const chunk = file.slice(offset, offset + chunkSize);
+                    const chunk = file.slice(offset, offset + CHUNK_SIZE);
                     yield await chunk.arrayBuffer();
-                    offset += chunkSize;
+                    offset += CHUNK_SIZE;
                 }
             }
         };

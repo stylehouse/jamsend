@@ -576,6 +576,22 @@ abstract class Agency extends TimeGallopia {
     gat:SoundSystem
     TRIAL_LISTEN = 20
     // for radio
+    async radiopreview_i_buffers(A,w,D) {
+        let DL = this.D_to_DL(D)
+        let reader = await DL.getReader(D.sc.name)
+        let total_chunks = this.D_to_FL(D).size / CHUNK_SIZE
+        // must decode from the start
+        // but can end around 0.3-0.7 of the it
+        let want_chunks = total_chunks * 0.3
+            + total_chunks * 0.4 * this.prandle(1)
+        let want_size = want_chunks * CHUNK_SIZE
+        let buffers = []
+        for await (const chunk of reader.iterate(0)) {
+            buffers.push(chunk)
+            if (buffers.length >= want_chunks) break
+        }
+        w.i({buffers,want_chunks,want_size})
+    }
     async aud_eats_buffers(w,aud) {
         // load original encoded buffers
         let buffers = w.o1({buffers:1})[0]
@@ -630,6 +646,35 @@ abstract class Agency extends TimeGallopia {
         return aud
     }
 
+    async watch_auds_progressing() {
+        // watch the aud progress
+        let auds:Array<Audiolet> = w.o1({aud:1})
+        let alive = 0
+        for (let aud of auds) {
+            if (!aud.stopped) {
+                alive++
+                let left = aud.left()
+                w.i({see:'aud',playing:1,left})
+
+                // non-first time:
+                if (auds_was.includes(aud)) {
+                    // while calling this regularly...
+                    // < and perhaps not every time through here?
+                    if (aud.left() >= 1) {
+                        // try to avoid tiny tail-end segments
+                        // < seems aud.load decode errors are possible with 110-byte buffers that way...
+                        aud.encode_segmentation()
+                        // console.log(`requested segment`)
+                    }
+                }
+            }
+            else {
+                // done!
+                w.i({see:'aud',stopped:1})
+            }
+            w.i({see:'audtime',along:aud.along(),duration:aud.duration()})
+        }
+    }
 
 
     

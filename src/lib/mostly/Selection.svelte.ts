@@ -451,6 +451,10 @@ class Dierarchy extends SelectionItself {
         if (path.length == T.c.path.length) return 2
         return 1
     }
+
+
+//#endregion
+//#region journey
     // centrally tracking a tour per journey per Selection.process()
     journey_to_tour(T:Travel,j:Journey,openness_suggestions:Array<number>) {
         let Tr = T.c.top
@@ -651,9 +655,80 @@ class Dierarchy extends SelectionItself {
     }
 
 
+//#endregion
+//#region works
+    
+    // `mkdir -p` via w, ie returning every 3s
+    //   to try and extract what we're after, or aim further at it
+    // path doesn't include the share name
+    async aim_to_open(w,path,spawn_fn) {
+        let is_awake = (D:TheD) => {
+            let ope = D && D.o1({v:1,openity:1})[0]
+            if (ope <3 || !D) return // watch out for null <3 == true
+            return true
+        }
+
+        path = [this.c.T.sc.D.sc.name, ...path]
+        let apath = []
+        let at = path.join('/')
+        if (w.oa({aimed:at})) {
+            // faster now it has landed? the %aim just hangs around
+            let D = this.Se.path_to_D(path)
+            if (is_awake(D)) return D
+        }
+        let D
+        let uD
+        for (let pathbit of path) {
+            apath.push(pathbit)
+            at = apath.join('/')
+
+            D = await this.aim_for(w,apath)
+            if (!D) {
+                if (uD) {
+                    // assume we must make it
+                    // < they micro-process() it into the %Tree and return a D already, somehow...
+                    await spawn_fn(uD)
+                    w.i({see:"aim_to_open mkdir",at})
+                    
+                }
+                else {
+                    throw "none found"
+                }
+                // you wait for the aim to fill it in
+                return
+            }
+
+            // found that directory
+            // must be awake
+            if (!is_awake(D)) {
+                w.i({see:"aim_to_open waits to open",at})
+                // you wait for the aim to fill it in
+                return
+            }
+
+            uD = D
+        }
+        w.r({aimed:at})
+        w.i({see:"aim_to_open OK",at})
+
+        // // track where we're up to along path
+        // let ao_sc = {aimope:path.join('/')}
+        // let ao = w.o(ao_sc)[0]?.sc || {seq:-1}
+        // let seq = ao.seq + 1
+        return D
+    }
+    async aim_for(w,path):TheD|null {
+        // journey at it
+        let ai = await w.r({aim:1})
+        await ai.replace({path:1}, async () => {
+            this.i_path_path(ai,path)
+        })
+        // until it exists?
+        return this.j_to_D(ai)
+    }
 }
 
-// < in Structure?
+// < in Structure? pertinent to journey...
 function PrevNextoid() {
     let must = (N) => {
         if (!N.length) throw "none"
