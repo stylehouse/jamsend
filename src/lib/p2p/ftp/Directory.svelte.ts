@@ -273,10 +273,6 @@ export class DirectoryModus extends Modus {
         }
         sD = A.o1({stock_cache:1})[0]
         if (!sD) return
-        
-        // whittle to 20 things
-        let keep_things = 20
-        await this.whittle_stock(w,sD,keep_things)
 
         // load some
         let had = A.o({record:1})
@@ -288,6 +284,10 @@ export class DirectoryModus extends Modus {
                 A.i(re)
             }
         }
+        
+        // whittle to 20 things
+        let keep_things = 20
+        await this.whittle_stock(w,sD,keep_things)
 
         
 
