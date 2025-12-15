@@ -320,6 +320,21 @@ abstract class TimeGallopia extends ModusItself {
             this.i(n)
         }
     }
+
+    async self_timekeeping(C:TheC) {
+        // est timestamp
+        !C.oa({self:1,est:1})
+            && C.i({self:1,est:now_in_seconds()})
+
+        // two senses of time
+        let ro = C.o({self:1,round:1})[0]
+        let es = C.oa({self:1,est:1})[0]
+        await C.replace({self:1,round:1},async () => {
+            let round = Number(ro?.sc.round || 0) + 1
+            let delta = es && es.ago('est')
+            C.i({self:1,round,delta})
+        })
+    }
 }
 
 //#endregion
@@ -334,20 +349,11 @@ abstract class Agency extends TimeGallopia {
     declare i_auto_wanting:Function
     async agency_think() {
         for (let A of this.current.o({A:1})) {
-            // est timestamp
-            !A.oa({self:1,est:1})
-                && A.i({self:1,est:now_in_seconds()})
-
-            // two senses of time
-            let ro = A.o({self:1,round:1})[0]
-            let es = A.oa({self:1,est:1})[0]
-            await A.replace({self:1,round:1},async () => {
-                let round = Number(ro?.sc.round || 0) + 1
-                let delta = es && es.ago('est')
-                A.i({self:1,round,delta})
-            })
+            await this.self_timekeeping(A)
 
             for (let w of A.o({w:1})) {
+                await this.self_timekeeping(w)
+
                 let method = w.sc.w
                 if (method && this[method]) {
                     try {

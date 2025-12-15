@@ -58,12 +58,17 @@ export class ShareeModus extends Modus {
         this.PF = this.S
         this.S.i_actions({
             'Radio': () => this.turn_knob(),
+            'Mo++': () => this.main(),
         })
     }
-    async do_A() {
+    async do_A(hard=false) {
         console.log("do_A")
+        let A
         await this.replace({A:1},async () => {
-            let A = this.i({A:'punt'}).is()
+            A = this.i({A:'punt'})
+            if (hard) A.is() // prevents replacing the contents
+        })
+        await A.replace({w:1},async () => {
             // < so perm can change over time, do this every time, replacing %w?
             let perm = this.PF.perm
             if (perm.local) {
