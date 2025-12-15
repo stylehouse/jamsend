@@ -49,19 +49,12 @@ abstract class ModusItself extends TheC  {
             important && Object.entries(important)
             this.PF && console.log("perm: effect: ",this.PF.diag_perm())
         }
-        setTimeout(() => {
-        //     // we can't keep other executions away from our A.replace()
-        //     //  so hope this only happens away from execution!
-        //     // < some kind of job queue
-        //     //    eg having all Modus on the page merge their intervals into a common rhythm
-        //     //    and having misc like this await for a clearing
-        //     //    so things time share bits of the A...
-            (async () => {
-                this.PF && console.log("perm: effect-then: ",this.PF.diag_perm())
-                this.do_A()
-                // do main?
-            })()
-        },0)
+        this.i_elvis(async () => {
+            this.PF && console.log("perm: effect-then: ",this.PF.diag_perm())
+            // downloads any relevant perms by replacing the A/w situation
+            await this.do_A()
+            // do main?
+        })
     }
 
     stopped = false
@@ -71,11 +64,33 @@ abstract class ModusItself extends TheC  {
         this.do_stop?.()
     }
 
-
     // the "I'm redoing the thing" process wrapper
     declare main_fn:Function
+    // main() is a time of instability in M**
+    //   mingling threads of execution can cause eg double replace()
+    //  so event handlers may post their jobs into this queue
+    //  so they can happen just before next main(), thus stable and poised for affect
+    // < better job queue?
+    //    eg having all Modus on the page merge their intervals into a common rhythm
+    //    and having misc like this await for a clearing
+    //   time sharing is easier than space sharing?
+    //    though %Tree** separates a lot of the computation...
+    needs_your_attention:Function[] = []
+    i_elvis(fn) {
+        this.needs_your_attention.push(fn)
+        // < and request main() ASAP?
+        //  < model wants, progress, which journeys are actively doing stuff
+    }
+    async o_elvis(fn) {
+        for (let fn of this.needs_your_attention) {
+            await fn()
+        }
+        this.needs_your_attention = []
+    }
     async main() {
         await this.have_time(async () => {
+            await this.o_elvis()
+
             await this.reset_interval()
 
             // the actual main, or it may all be %A
