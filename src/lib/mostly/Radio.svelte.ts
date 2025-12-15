@@ -1,17 +1,122 @@
-
-//#endregion
-//#region *Modus
-// ftp as a view to work with
-
-import type { DirectoryShare } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
 import { grep, map } from "$lib/Y.ts"
 import {Modus} from "./Modus.svelte.ts"
 
 
+//#endregion
+//#region RadioModus
 
+export class RadioModus extends Modus {
+    // purely radioey, bound to
+
+    async radiopreview(A,w,D) {
+        if (!this.gat.AC_ready) return w.i({error:"!AC"})
+        // w can mutate
+        w.sc.then = "radiodistribution"
+        w.c.error_fn = async (er) => {
+            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
+            // re-wander due to corrupt-seeming data
+            this.reset_wants(A,w)
+            return true
+        }
+        if (!w.oa({buffers:1})) {
+            await this.radiopreview_i_buffers(A,w,D)
+        }
+
+        if (!w.oa({aud:1})) {
+            let aud = await this.record_preview_individuated(A,w,D)
+            // hold on to this while it's happening
+            w.i({aud})
+            // forget the encoded source buffers now
+            await w.r({buffers:1},{ok:1})
+        }
+
+        this.watch_auds_progressing()
+
+        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
+            // all done!
+            // < or do we: await A.r({goods:1}) .i(rec),
+            //    and always naturally distribute %goods to Piers?
+            let recs = w.o({record:1})
+            if (recs[1]) throw `many recs`
+            let rec = recs[0]
+            await w.r({satisfied:1,with:rec})
+        }
+    }
+    // advertise them
+    async radiodistribution(A,w,rec) {
+        w.sc.then = 'rest'
+
+        let rs = this.o({io:'radiostock'})[0]
+        if (!rs) return w.i({waits:"%io:radiostock"})
+        if (rec) {
+            await rs.sc.i(rec)
+            await w.r({satisfied:'record taken!'})
+        }
+    }
+    async rest(A,w) {
+        w.i({see:"At rest"})
+    }
+
+    // parallel to the above, radio pools into the unsatisfiable task of keeping stock
+    async radiostock(A,w) {
+        // the .jamsend/radiostock/ directory D
+        let stockD
+        // advertise an API in Modus!
+        this.r({io:'radiostock'},{
+            i: async (re:TheC) => {
+                // first it comes into the cache here, available to Piers
+                A.i(re)
+                this.whittle_N(A.o({record:1}),keep_things)
+                // silently fail
+                //  storage is likely to be ready before %record made
+                if (!stockD) return
+                await this.record_to_disk(re,stockD)
+            },
+            o: (previous:TheC) => {
+                // previous thing they got makes sort of a cursor
+                let them = A.o({record:1})
+                if (!them.length) return
+                if (!previous) return them[0]
+                let ri = them.indexOf(previous)
+                if (ri < 0) return them[0]
+                let it = them[ri+1]
+                if (!it) {
+                    // no new %record is available so don't return one (via wrap around)
+                    //  it is up to the broadcaster to repeat something
+                    return
+                }
+                return it
+            },
+        })
+
+        // and may cache on the filesystem for spanglier startups
+        stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
+        if (!stockD) return // also when ope<3
+
+        // load some
+        let keep_things = 20
+        let had = A.o({record:1})
+        if (had.length < keep_things * 0.8) {
+            let to_load = 5 // not to much work per A
+            // keep_things - A.o({record:1}).length
+            
+            for await (const re of this.load_random_records(stockD, to_load,had)) {
+                A.i(re)
+            }
+        }
+        
+        // whittle to 20 things
+        await this.whittle_stock(w,stockD,keep_things)
+    }
+
+}
+
+
+//#endregion
+//#region M:Shares
 //  makes guesswork to provide defaults, remote plots may inject
-export class SharesModus extends Modus {
+export class SharesModus extends RadioModus {
     declare S:PeeringSharing
     declare F:PeeringSharing
 
@@ -49,7 +154,9 @@ export class SharesModus extends Modus {
         // < what to do as|with the bunch of music shares? redundancy?
     }
 }
-export class ShareeModus extends Modus {
+//#endregion
+//#region M:Sharee
+export class ShareeModus extends RadioModus {
     declare S:PierSharing
     declare F:PeeringSharing
     declare PF:PierSharing
@@ -167,7 +274,3 @@ export class ShareeModus extends Modus {
     }
 }
 
-
-//#endregion
-//#region radio*
-    // < hoist things from Directory

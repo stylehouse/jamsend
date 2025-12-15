@@ -9,6 +9,7 @@ import { erring, grap, grop, sha256 } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 import type { Audiolet, SoundSystem } from './Audio.svelte';
+import { RadioModus } from '$lib/mostly/Radio.svelte';
 
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
@@ -18,9 +19,11 @@ import type { Audiolet, SoundSystem } from './Audio.svelte';
 //#region DirectoryModus
 // ftp as a view to work with
 //  makes guesswork to provide defaults, remote plots may inject
-export class DirectoryModus extends Modus {
-    F:PeeringSharing
-    S:DirectoryShare//|AnyShare // the Thing we're hotwiring
+export class DirectoryModus extends RadioModus {
+    // js quirk: our constructor() / super() / assign() doesn't set .F|S
+    //  unless 'declare', because they are in the parent class also
+    declare F:PeeringSharing
+    declare S:DirectoryShare//|AnyShare // the Thing we're hotwiring
 
     // into this Selection.process()
     Se:Selection
@@ -28,8 +31,6 @@ export class DirectoryModus extends Modus {
 
     constructor(opt:Partial<DirectoryModus>) {
         super(opt)
-        // the above super() / assign() doesn't set .F|S (javascript quirk?)
-        Object.assign(this,opt)
 
         this.S.i_actions({
             'j++': () => this.further_journey(),
@@ -96,17 +97,19 @@ export class DirectoryModus extends Modus {
     // Agency parameterising and processing
     // < it could want these A.is() or not, depending on how resetty we're trying to be
     //    we might just be changing parameters on things from .perm
+    //    see do_A(hard=false) and reset_wants(A)
     async do_A() {
         await this.replace({A:1},async () => {
-            this.i({A:'auto'}).is().i({w:'meander',then:'radiopreview'})
-            this.i({A:'home'}).is().i({w:'radiostock'})
+            this.i({A:'auto'}).i({w:'meander',then:'radiopreview'})
+            this.i({A:'home'}).i({w:'radiostock'})
         })
         this.main()
     }
     // in response to eg decode errors, just try again from the top
     async reset_wants(A) {
-        await A.replace({w:1},async () => {})
-        return A.i({w:'meander',then:'radiopreview'})
+        await A.replace({w:1},async () => {
+            A.i({w:'meander',then:'radiopreview'})
+        })
     }
 
 
@@ -130,111 +133,6 @@ export class DirectoryModus extends Modus {
             // take to the next method
             return true
         }
-    }
-
-
-//#endregion
-//#region radio
-
-    async radiopreview(A,w,D) {
-        if (!this.gat.AC_ready) return w.i({error:"!AC"})
-        // w can mutate
-        w.sc.then = "radiodistribution"
-        w.c.error_fn = async (er) => {
-            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
-            // re-wander due to corrupt-seeming data
-            this.reset_wants(A)
-            return true
-        }
-        if (!w.oa({buffers:1})) {
-            await this.radiopreview_i_buffers(A,w,D)
-        }
-
-        if (!w.oa({aud:1})) {
-            let aud = await this.record_preview_individuated(A,w,D)
-            // hold on to this while it's happening
-            w.i({aud})
-            // forget the encoded source buffers now
-            await w.r({buffers:1},{ok:1})
-        }
-
-        this.watch_auds_progressing()
-
-        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
-            // all done!
-            // < or do we: await A.r({goods:1}) .i(rec),
-            //    and always naturally distribute %goods to Piers?
-            let recs = w.o({record:1})
-            if (recs[1]) throw `many recs`
-            let rec = recs[0]
-            await w.r({satisfied:1,with:rec})
-        }
-    }
-    // advertise them
-    async radiodistribution(A,w,rec) {
-        w.sc.then = 'rest'
-
-        let rs = this.o({io:'radiostock'})[0]
-        if (!rs) return w.i({waits:"%io:radiostock"})
-        if (rec) {
-            await rs.sc.i(rec)
-            await w.r({satisfied:'record taken!'})
-        }
-    }
-    async rest(A,w) {
-        w.i({see:"At rest"})
-    }
-
-    // parallel to the above, radio pools into the unsatisfiable task of keeping stock
-    async radiostock(A,w) {
-        // the .jamsend/radiostock/ directory D
-        let stockD
-        // advertise an API in Modus!
-        this.r({io:'radiostock'},{
-            i: async (re:TheC) => {
-                // first it comes into the cache here, available to Piers
-                A.i(re)
-                this.whittle_N(A.o({record:1}),keep_things)
-                // silently fail
-                //  storage is likely to be ready before %record made
-                if (!stockD) return
-                await this.record_to_disk(re,stockD)
-            },
-            o: (previous:TheC) => {
-                // previous thing they got makes sort of a cursor
-                let them = A.o({record:1})
-                if (!them.length) return
-                if (!previous) return them[0]
-                let ri = them.indexOf(previous)
-                if (ri < 0) return them[0]
-                let it = them[ri+1]
-                if (!it) {
-                    // no new %record is available so don't return one (via wrap around)
-                    //  it is up to the broadcaster to repeat something
-                    return
-                }
-                return it
-            },
-        })
-
-        // and may cache on the filesystem for spanglier startups
-        stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
-        if (!stockD) return // also when ope<3
-
-        // load some
-        let keep_things = 20
-        let had = A.o({record:1})
-        if (had.length < keep_things * 0.8) {
-            let to_load = 5 // not to much work per A
-            // keep_things - A.o({record:1}).length
-            
-            for await (const re of this.load_random_records(stockD, to_load,had)) {
-                A.i(re)
-            }
-        }
-        
-        // whittle to 20 things
-        await this.whittle_stock(w,stockD,keep_things)
     }
 
 
