@@ -753,6 +753,8 @@ export class Pier {
         this.reset_unemit_state()
         this.handleMessage(eventual_data)
     }
+    // < DDOS mitigation? don't retry messages forever
+    retry_untrusted_messages_until_ts?:number
     handleMessage(data) {
         // console.log(`unemits ${data.type}:`,data)
         // extra args to the handler for convenient environment grabbing
@@ -763,6 +765,17 @@ export class Pier {
         if (!handler) {
             // might route to a feature
             if (type.includes('.')) {
+                if (!this.heard_trust) {
+                    // wait for trust to arrive, but don't make an infinite loop
+                    if (now_in_seconds() > (this.retry_untrusted_messages_until_ts || Infinity)) {
+                        throw "too late to handleMessage, haven't heard_trust"
+                    }
+                    this.retry_untrusted_messages_until_ts ||= now_in_seconds() + 9.1114
+                    setTimeout(() => {
+                        this.handleMessage(data)
+                    },1000)
+                    return
+                }
                 let [trust_name, ...inner_type] = type.split('.')
                 data.type = inner_type.join('.')
                 // check permit
