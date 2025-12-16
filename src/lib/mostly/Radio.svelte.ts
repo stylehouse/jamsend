@@ -22,7 +22,11 @@ export class RadioModus extends Modus {
 
     // radio pools into the unsatisfiable task of keeping stock
     async radiostock(A,w) {
-        // advertise an API in Modus!
+        // races to keep stock ahead of pointers
+        // < needs timeout? await Pier.promise_destroy?
+        let co = await w.r({consumers:1,of:'radiostock'})
+
+        // advertise an API of this Modus
         this.r({io:'radiostock'},{
             i: async (re:TheC) => {
                 // first it comes into the cache here, available to Piers
@@ -31,23 +35,21 @@ export class RadioModus extends Modus {
                 //                              (see Cpromise() for knowing when)
                 //  and lose /%in_progress
             },
-            o: async (previous:TheC) => {
-                // previous thing they got makes sort of a cursor
+            o: async (client:TheC) => {
                 let them = A.o({record:1})
                 if (!them.length) return
-                if (!previous) return them[0]
-                let ri = them.indexOf(previous)
-                if (ri < 0) return them[0]
-                let it = them[ri+1]
-                if (!it) {
+                
+                let current = await this.co_cursor_N(co,client,them)
+                if (!current) {
                     // no new %record is available so don't return one (via wrap around)
-                    //  the broadcaster shall stay ahead usually
-                    // < GOING here, just checking it works...
-                    debugger
+                    //  the broadcaster shall stay ahead of terminals usually
+
+                    // this chases the other A back into making more %record
                     await this.unrest()
+
                     return
                 }
-                return it
+                return current
             },
         })
 
@@ -133,6 +135,32 @@ export class RadioModus extends Modus {
             await w.r({satisfied:1})
         }
     }
+
+
+    async co_cursor_N(co:TheC,client:any,N:TheN) {
+        // previous thing they got makes a cursor
+        let cursor = co.o({client})[0]
+        let current
+        if (!cursor || !cursor.sc.current) {
+            current = N[0]
+        }
+        else {
+            let ri = N.findIndex((rec) => rec == cursor.sc.current)
+            if (ri < 0) {
+                // not found, start over, likely all new
+                current = N[0]
+            }
+            else {
+                current = N[ri+1]
+            }
+        }
+        if (current) {
+            // save new cursor
+            await co.r({client,current})
+        }
+        // or stay where we were, returning undefined from the next index into N
+        return current
+    }
     // tell anyone awaiting to reread C/*
     async Cpromise(C:TheC) {
         let resolve = C.c.fulfil
@@ -141,6 +169,7 @@ export class RadioModus extends Modus {
             C.c.fulfil = resolve
         })
     }
+
 
     //#endregion
     //#region aud misc
@@ -583,18 +612,33 @@ export class ShareeModus extends RadioModus {
         if (!sources) return w.i({waits:"no stock"})
         
         
-        if (!A.oa({record:1})) {
-            for (let io of sources) {
-                let rec = await io.sc.o()
-                if (rec) A.i(rec)
-            }
+        while (A.o({record:1}).length < 3) {
+            let it = await this.pull_sources(A,w)
+            w.i({see:'pull_sources()',it})
+            if (!it) break
         }
+
+
         if (!A.oa({record:1})) {
             return w.i({waits:"no records"})
         }
 
         // %
 
+    }
+    async pull_sources(A,w) {
+        for (let io of A.oa({io:'radiostock'})) {
+            // our stream of %records shall be
+            let rec = await io.sc.o(A)
+            if (rec) {
+                A.i(rec)
+                w.i({see:"new radiostock!!!"})
+                return rec
+            }
+            else {
+                w.i({see:"no new radiostock"})
+            }
+        }
     }
 }
 
