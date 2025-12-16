@@ -348,6 +348,8 @@ abstract class Agency extends TimeGallopia {
     // process job queue
     declare i_auto_wanting:Function
     async agency_think() {
+        let AwN = []
+        let AN = []
         for (let A of this.current.o({A:1})) {
             await this.self_timekeeping(A)
 
@@ -378,32 +380,39 @@ abstract class Agency extends TimeGallopia {
                     // < refer other %w to central stuck-trol?
                     return
                 }
-
-                // percolate w/ai/%path -> j/%path from this A
-                await this.i_journeys_o_aims(A,w)
-                // percolate w%unemits -> PF.unemit.*
-                await this.i_unemits_o_Aw(A,w)
-
-                // w can mutate
-                for (let sa of w.o({satisfied:1})) {
-                    // take instructions
-                    let next_method = w.sc.then || "out_of_instructions"
-                    let c = {w:next_method}
-                    if (sa.sc.with) c.had = sa.sc.with
-
-                    // change what this A is wanting
-                    let nu = A.i(c)
-                    // < how better to express about avoiding|kind-of being resolved
-                    // not resyncing nu/*
-                    nu.empty()
-                    // take %aim, ie keep pointers for the rest of A
-                    // < this kind of transfer wants a deep clone ideally?
-                    for (let ai of w.o({aim:1})) {
-                        nu.i(ai)
-                    }
-                    A.drop(w)
-                }
+                AwN.push({A,w})
             }
+            AN.push(A)
+        }
+
+        // percolate w/ai/%path -> j/%path from this A
+        await this.i_journeys_o_aims(AwN)
+        for (let {A,w} of AwN) {
+            // percolate w%unemits -> PF.unemit.*
+            await this.i_unemits_o_Aw(A,w)
+        }
+        for (let {A,w} of AwN) {
+            // w can mutate
+            for (let sa of w.o({satisfied:1})) {
+                // take instructions
+                let next_method = w.sc.then || "out_of_instructions"
+                let c = {w:next_method}
+                if (sa.sc.with) c.had = sa.sc.with
+
+                // change what this A is wanting
+                let nu = A.i(c)
+                // < how better to express about avoiding|kind-of being resolved
+                // not resyncing nu/*
+                nu.empty()
+                // take %aim, ie keep pointers for the rest of A
+                // < this kind of transfer wants a deep clone ideally?
+                for (let ai of w.o({aim:1})) {
+                    nu.i(ai)
+                }
+                A.drop(w)
+            }
+        }
+        for (let A of AN) {
             // w can mutate sc eg %then
             //  so keep writing it down
             let ws = A.o({w:1})
@@ -423,37 +432,47 @@ abstract class Agency extends TimeGallopia {
     name_A(A) {
         return "A:"+A.sc.A
     }
-    async i_journeys_o_aims(A,w) {
+    async i_journeys_o_aims(AwN) {
         if (!this.Tr) return
         // replace a particular journey that comes from this A
         // have *%journey first
 
-        let topD = this.Tr.sc.D
-        let aims = w.o({aim:1})
 
+        let topD = this.Tr.sc.D
         let journeys = []
         await topD.replace({journey:1,oaims:1}, async () => {
-            let i = 0
-            for (let ai of aims) {
-                // < are duplicate names ok? what to do about it?
-                let journey = this.name_A(A)+(i++ ? "+"+i : "")
-                let j = topD.i({journey,oaims:1})
-                journeys.push(j)
+            for (let A of this.current.o({A:1})) {
+                for (let w of A.o({w:1})) {
+
+                    let i = 0
+                    for (let ai of w.o({aim:1})) {
+                        // < are duplicate names ok? what to do about it?
+                        let journey = this.name_A(A)+(i++ ? "+"+i : "")
+                        let j = topD.i({journey,oaims:1})
+                        journeys.push(j)
+                    }
+                }
             }
         })
-        for (let ai of aims) {
-            let j = journeys.shift()
-            // < method this? see PrevNextoid
-            // i j/* o ai/*%path
-            console.log(`j:${j.sc.journey} ai path:${this.Se.j_to_uri(ai)}`)
-            await j.replace({path:1}, async () => {
-                for (let n of ai.o({path:1})) {
-                    j.i(n.sc)
+
+        for (let A of this.current.o({A:1})) {
+            for (let w of A.o({w:1})) {
+
+                for (let ai of w.o({aim:1})) {
+                    let j = journeys.shift()
+                    // < method this? see PrevNextoid
+                    // i j/* o ai/*%path
+                    // console.log(`j:${j.sc.journey} ai path:${this.Se.j_to_uri(ai)}`)
+                    await j.replace({path:1}, async () => {
+                        for (let n of ai.o({path:1})) {
+                            j.i(n.sc)
+                        }
+                    })
+                    await j.replace({gaveup:1}, async () => {
+                    })
+                    // < note somehow this ai->j vectoring
                 }
-            })
-            await j.replace({gaveup:1}, async () => {
-            })
-            // < note somehow this ai->j vectoring
+            }
         }
     }
 

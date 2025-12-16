@@ -100,8 +100,8 @@ export class DirectoryModus extends RadioModus {
     //    see do_A(hard=false) and reset_wants(A)
     async do_A() {
         await this.replace({A:1},async () => {
-            this.i({A:'auto'}).i({w:'meander',then:'radiopreview'})
-            this.i({A:'home'}).i({w:'radiostock'})
+            this.i({A:'hunting'}).is().i({w:'meander',then:'radiopreview'})
+            this.i({A:'stocking'}).is().i({w:'radiostock'})
         })
         this.main()
     }
