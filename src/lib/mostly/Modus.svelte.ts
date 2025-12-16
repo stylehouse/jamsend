@@ -359,10 +359,9 @@ abstract class Agency extends TimeGallopia {
                 let method = w.sc.w
                 if (method && this[method]) {
                     try {
-                        await w.replace({error:1}, async () => {
-                        })
-                        await w.replace({see:1}, async () => {
-                        })
+                        await w.r({waits:1},{})
+                        await w.r({error:1},{})
+                        await w.r({see:1},{})
 
                         await this[method](A,w,w.sc.had)
                     } catch (error) {

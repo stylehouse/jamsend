@@ -457,7 +457,7 @@ export class Stuff extends TimeOffice {
             pattern_sc = map(() => 1, pattern_sc)
         }
         else {
-            if (Object.keys(sc)) {
+            if (Object.keys(sc).length) {
                 // the pattern|sc divided bunch of language
                 sc = {...pattern_sc,...sc}
             }

@@ -1,4 +1,4 @@
-import { _C, type TheC, type TheN } from "$lib/data/Stuff.svelte.ts"
+import { _C, TheC, type TheN } from "$lib/data/Stuff.svelte.ts"
 import type { Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
@@ -17,64 +17,13 @@ const PREVIEW_DURATION = 20;                  // 20s samples
 export class RadioModus extends Modus {
     // purely radioey, bound to
 
-    // parallel to the above, radio pools into the unsatisfiable task of keeping stock
-    async radiostock(A,w) {
-        // the .jamsend/radiostock/ directory D
-        let stockD
-        let keep_things = 20
-        // advertise an API in Modus!
-        this.r({io:'radiostock'},{
-            i: async (re:TheC) => {
-                // first it comes into the cache here, available to Piers
-                A.i(re)
-                this.whittle_N(A.o({record:1}),keep_things)
-                // silently fail
-                //  storage is likely to be ready before %record made
-                if (!stockD) return
-                await this.record_to_disk(re,stockD)
-            },
-            o: (previous:TheC) => {
-                // previous thing they got makes sort of a cursor
-                let them = A.o({record:1})
-                if (!them.length) return
-                if (!previous) return them[0]
-                let ri = them.indexOf(previous)
-                if (ri < 0) return them[0]
-                let it = them[ri+1]
-                if (!it) {
-                    // no new %record is available so don't return one (via wrap around)
-                    //  it is up to the broadcaster to repeat something
-                    return
-                }
-                return it
-            },
-        })
-
-        // and may cache on the filesystem for spanglier startups
-        stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
-        if (!stockD) return // also when ope<3
-
-        // load some
-        let had = A.o({record:1})
-        if (had.length < keep_things * 0.8) {
-            let to_load = 5 // not to much work per A
-            // keep_things - A.o({record:1}).length
-            
-            for await (const re of this.load_random_records(stockD, to_load,had)) {
-                A.i(re)
-            }
-        }
-        
-        // whittle to 20 things
-        await this.whittle_stock(w,stockD,keep_things)
-    }
 
     //#endregion
     //#region radiopreview
     async radiopreview(A,w,D) {
         if (!this.gat.AC_ready) return w.i({error:"!AC"})
         // w can mutate
-        w.sc.then = "radiodistribution"
+        w.sc.then = "rest"
         w.c.error_fn = async (er) => {
             if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
             // re-wander due to corrupt-seeming data
@@ -82,44 +31,45 @@ export class RadioModus extends Modus {
             this.reset_wants(A,w)
             return true
         }
+
         if (!w.oa({buffers:1})) {
             await this.radiopreview_i_buffers(A,w,D)
         }
 
-        // < new system for telling if an aud is really new
-        //   low along() doesnt work because it includes skipped time
-        //   perhaps w.bo({aud}) looks at w/* as it was at end of run?
-        let auds_was = w.o1({aud:1})
+        let radiostock = this.o({io:'radiostock'})[0]
+        if (!radiostock) return w.i({waits:"%io:radiostock"})
+
         if (!w.oa({aud:1})) {
             let aud = await this.record_preview_individuated(A,w,D)
             // hold on to this while it's happening
             w.i({aud})
             // forget the encoded source buffers now
             await w.r({buffers:1},{ok:1})
+            w.c.on_repr = async (re,pr) => {
+                this.Cpromise(re);
+                if (pr.sc.seq == 0) {
+                    // we can start streaming this very very soon...
+                    //  supposing latency is stable, they should be able to start playing it now?
+                    await radiostock.sc.i(re)
+                    w.i({see:'record taken!'})
+                }
+            }
         }
 
-        this.watch_auds_progressing(A,w,D,auds_was)
+        this.watch_auds_progressing(A,w,D)
 
         if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
             // all done!
-            // < or do we: await A.r({goods:1}) .i(rec),
-            //    and always naturally distribute %goods to Piers?
-            let recs = w.o({record:1})
-            if (recs[1]) throw `many recs`
-            let rec = recs[0]
-            // await w.r({satisfied:1,with:rec})
+            await w.r({satisfied:1})
         }
     }
-    // advertise them
-    async radiodistribution(A,w,rec) {
-        w.sc.then = 'rest'
-
-        let rs = this.o({io:'radiostock'})[0]
-        if (!rs) return w.i({waits:"%io:radiostock"})
-        if (rec) {
-            await rs.sc.i(rec)
-            await w.r({satisfied:'record taken!'})
-        }
+    // tell anyone awaiting to reread C/*
+    async Cpromise(C:TheC) {
+        let resolve = C.c.fulfil
+        resolve?.() 
+        C.c.promise = new Promise((resolve) => {
+            C.c.fulfil = resolve
+        })
     }
 
     // parallel to the above, radio pools into the unsatisfiable task of keeping stock
@@ -132,11 +82,9 @@ export class RadioModus extends Modus {
             i: async (re:TheC) => {
                 // first it comes into the cache here, available to Piers
                 A.i(re)
-                this.whittle_N(A.o({record:1}),keep_things)
-                // silently fail
-                //  storage is likely to be ready before %record made
-                if (!stockD) return
-                await this.record_to_disk(re,stockD)
+                // it's the same C, so we "have" new /*%preview as they come in
+                //                              (see Cpromise() for knowing when)
+                //  and lose /%in_progress
             },
             o: (previous:TheC) => {
                 // previous thing they got makes sort of a cursor
@@ -154,23 +102,31 @@ export class RadioModus extends Modus {
                 return it
             },
         })
-
         // and may cache on the filesystem for spanglier startups
         stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
         if (!stockD) return // also when ope<3
 
-        // load some
+        // our records...
         let had = A.o({record:1})
+        for (let re of had) {
+            if (!re.oa({in_radiostock:1})) {
+                // wants saving to disk once whole
+                if (!re.oa({in_progress:1})) {
+                    await this.record_to_disk(re,stockD)
+                }
+            }
+        }
+
+        // load some
         if (had.length < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
-            // keep_things - A.o({record:1}).length
-            
             for await (const re of this.load_random_records(stockD, to_load,had)) {
                 A.i(re)
             }
         }
         
         // whittle to 20 things
+        this.whittle_N(A.o({record:1}),keep_things)
         await this.whittle_stock(w,stockD,keep_things)
     }
 
@@ -217,6 +173,7 @@ export class RadioModus extends Modus {
         let offset = aud.duration() - PREVIEW_DURATION
         let uri = this.Se.D_to_uri(D)
         let re = w.i({record:1,offset,uri})
+        re.i({in_progress:1})
 
         // receive transcoded buffers
         aud.setupRecorder(true)
@@ -240,15 +197,21 @@ export class RadioModus extends Modus {
             let duration = bud.duration()
             // duration -= pre_duration
             // generate %record/*%preview
-            re.i({preview:1,seq,duration,type,buffer})
+            let pr = re.i({preview:1,seq,duration,type,buffer})
             seq++
+            w.c.on_repr(re,pr)
+        }
+        aud.on_stop = async () => {
+            // loose about async timing this
+            //  radiostock simply waits for it to disappear
+            re.r({in_progress:1},{})
         }
 
         aud.play(offset)
         return aud
     }
 
-    async watch_auds_progressing(A,w,D,auds_was) {
+    async watch_auds_progressing(A,w,D) {
         // watch the aud progress
         let auds:Array<Audiolet> = w.o1({aud:1})
         let alive = 0
@@ -325,6 +288,8 @@ export class RadioModus extends Modus {
                 await writer.write(encoded);
                 await writer.close();
                 
+                // avoid doing it again
+                re.i({in_radiostock:name})
                 console.log(`Wrote record to disk: ${name}`);
             } catch (err) {
                 console.error(`Failed to write record to disk:`, err);
@@ -360,9 +325,9 @@ export class RadioModus extends Modus {
                     record: 1,
                     offset: metadata.offset,
                     uri: metadata.uri,
-                    // mark it as having come from disk
-                    radiostock: name,
                 });
+                // mark it as having come from disk
+                re.i({in_radiostock:name})
                 
                 // Reconstruct preview entries with buffers
                 metadata.previews.forEach((previewMeta, idx) => {
@@ -583,30 +548,22 @@ export class ShareeModus extends RadioModus {
                 this.PF.emit('irecord',{Expression:6})
             }
         }
-        w.sc.morestuff = 333
-        await w.replace({permsies:1}, async () => {
-            this.PF.perm.local
-                && w.i({permsies:'local',is:this.PF.perm.local})
-            this.PF.perm.remote
-                && w.i({permsies:'remote',is:this.PF.perm.remote})
-        })
-        w.i({awesome:2})
 
-        if (!w.oa({lately:2})) w.i({lately:2})
+
+
 
         // we provide %record and %stream
         //  %stream should let people join for the first 10s
 
         // copy %io:radiostock interfaces here
         await A.replace({io:'radiostock'}, async () => {
-            map((M) => 
-                map((io) => 
-                    A.i(io.sc),
-                    M.o({io:'radiostock'}))
-                ,
-                grep(map((share) =>
-                    share.modus,
-                this.F.shares.asArray()))
+            map(
+                (M) => 
+                    map((io) => A.i(io.sc),
+                        M.o({io:'radiostock'})),
+                // < this.F.MN accessor for reading all minds of the PeeringFeature?
+                grep(map((share) => share.modus,
+                    this.F.shares.asArray()))
             )
         })
 

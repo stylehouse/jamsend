@@ -150,7 +150,7 @@ export class Audiolet {
         if (!this.mediaRecorder) return
         this.mediaRecorder.stop()
         this.mediaRecorder.start()
-        // < is that like this but with playable chunks?
+        // is like this but with playable chunks:
         // this.mediaRecorder.requestData()
     }
 
@@ -162,6 +162,7 @@ export class Audiolet {
     playing_last?:AudioBufferSourceNode
     start_time?:ACtime
     stop_time?:ACtime
+    on_stop?:Function
     stop() {
         if (this.stopped) return
         this.stop_time = this.gat.now()
@@ -170,6 +171,7 @@ export class Audiolet {
         this.playing_last = this.playing
         delete this.playing
         this.mediaRecorder_onstop()
+        this.on_stop?.()
     }
     start_offset:number
     progress() {
