@@ -17,11 +17,11 @@ const PREVIEW_DURATION = 20;                  // 20s samples
 export class RadioModus extends Modus {
     // purely radioey, bound to
 
+    // the next two methods occur in parallel in the same Modus
+    //  M/%spare_worker=A:hunting indicates capacity to make more records
+
     // radio pools into the unsatisfiable task of keeping stock
     async radiostock(A,w) {
-        // the .jamsend/radiostock/ directory D
-        let stockD
-        let keep_things = 20
         // advertise an API in Modus!
         this.r({io:'radiostock'},{
             i: async (re:TheC) => {
@@ -31,7 +31,7 @@ export class RadioModus extends Modus {
                 //                              (see Cpromise() for knowing when)
                 //  and lose /%in_progress
             },
-            o: (previous:TheC) => {
+            o: async (previous:TheC) => {
                 // previous thing they got makes sort of a cursor
                 let them = A.o({record:1})
                 if (!them.length) return
@@ -41,13 +41,25 @@ export class RadioModus extends Modus {
                 let it = them[ri+1]
                 if (!it) {
                     // no new %record is available so don't return one (via wrap around)
-                    //  it is up to the broadcaster to repeat something
+                    //  the broadcaster shall stay ahead usually
+                    // < GOING here, just checking it works...
+                    debugger
+                    await this.unrest()
                     return
                 }
                 return it
             },
         })
+
+        if ('only what we made') return
+
         // and may cache on the filesystem for spanglier startups
+        await this.radiostock_caching(A,w)
+    }
+    async radiostock_caching(A,w) {
+        // the .jamsend/radiostock/ directory D
+        let stockD
+        let keep_things = 20
         stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
         if (!stockD) return // also when ope<3
 
@@ -86,7 +98,7 @@ export class RadioModus extends Modus {
             if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
             // re-wander due to corrupt-seeming data
             // < make note. a lot of music out there has decode problems, perhaps not always fatal?
-            this.reset_wants(A,w)
+            await this.reset_Aw(A,w)
             return true
         }
 
@@ -573,7 +585,7 @@ export class ShareeModus extends RadioModus {
         
         if (!A.oa({record:1})) {
             for (let io of sources) {
-                let rec = io.sc.o()
+                let rec = await io.sc.o()
                 if (rec) A.i(rec)
             }
         }

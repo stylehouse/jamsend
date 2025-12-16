@@ -431,48 +431,44 @@ abstract class Agency extends TimeGallopia {
     name_A(A) {
         return "A:"+A.sc.A
     }
+    // < io tupling use
     async i_journeys_o_aims(AwN) {
         if (!this.Tr) return
         // replace a particular journey that comes from this A
-        // have *%journey first
-
-
-        let topD = this.Tr.sc.D
-        let journeys = []
-        await topD.replace({journey:1,oaims:1}, async () => {
-            for (let A of this.current.o({A:1})) {
-                for (let w of A.o({w:1})) {
-
-                    let i = 0
-                    for (let ai of w.o({aim:1})) {
-                        // < are duplicate names ok? what to do about it?
-                        let journey = this.name_A(A)+(i++ ? "+"+i : "")
-                        let j = topD.i({journey,oaims:1})
-                        journeys.push(j)
-                    }
-                }
-            }
-        })
-
-        for (let A of this.current.o({A:1})) {
-            for (let w of A.o({w:1})) {
-
-                for (let ai of w.o({aim:1})) {
-                    let j = journeys.shift()
-                    // < method this? see PrevNextoid
-                    // i j/* o ai/*%path
-                    // console.log(`j:${j.sc.journey} ai path:${this.Se.j_to_uri(ai)}`)
-                    await j.replace({path:1}, async () => {
-                        for (let n of ai.o({path:1})) {
-                            j.i(n.sc)
-                        }
-                    })
-                    await j.replace({gaveup:1}, async () => {
-                    })
-                    // < note somehow this ai->j vectoring
-                }
+        // have *%journey ideas first
+        let AwjN = []
+        for (let c of AwN) {
+            let {A,w} = c
+            let i = 0
+            for (let ai of w.o({aim:1})) {
+                // < are duplicate names ok? what to do about it?
+                c.journey = this.name_A(A)+(i++ ? "+"+i : "")
+                AwjN.push({...c,ai})
             }
         }
+        let topD = this.Tr.sc.D
+        // replace D/*%journey
+        await topD.replace({journey:1,oaims:1}, async () => {
+            for (let c of AwjN) {
+                c.j = topD.i({journey:c.journey,oaims:1})
+            }
+        })
+        // then replace what is in %journey
+        for (let c of AwjN) {
+            let {A,w,j,ai} = c
+
+            // < method this? see PrevNextoid
+            // i j/* o ai/*%path
+            // console.log(`j:${j.sc.journey} ai path:${this.Se.j_to_uri(ai)}`)
+            await j.replace({path:1}, async () => {
+                for (let n of ai.o({path:1})) {
+                    j.i(n.sc)
+                }
+            })
+            await j.r({gaveup:1},{})
+            // < note somehow this ai->j vectoring
+        }
+
     }
 
     // percolate w%unemits -> PF.unemit.*
@@ -507,8 +503,19 @@ abstract class Agency extends TimeGallopia {
 //#endregion
 //#region methods
 
+    // eg M/%spare_worker=A:hunting indicates capacity to make more records
     async rest(A,w) {
         w.i({see:"At rest"})
+        await this.r({spare_worker:A})
+    }
+    // look for and engage one of them, supposing they just need reset
+    async unrest():Promise<TheC|undefined> {
+        for (let A of this.o1({spare_worker:1})) {
+            await this.reset_Aw(A)
+            await this.r({spare_worker:A},{})
+            A.i({was_reset:1})
+            return A
+        }
     }
     async out_of_instructions(A,w) {
         console.warn("out_of_instructions!")
