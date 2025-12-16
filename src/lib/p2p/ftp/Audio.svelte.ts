@@ -85,6 +85,7 @@ export class Audiolet {
     }
 
     mediaRecorder?: MediaRecorder
+    segment_duration?:number
     declare on_recording:Function
     setupRecorder(no_segmenting=false) {
         // don't hear it
@@ -103,7 +104,7 @@ export class Audiolet {
         //   When multiple Blobs are returned (because of timeslice or requestData()),
         //    the individual Blobs need not be playable,
         //    but the combination of all the Blobs from a completed recording MUST be playable.
-        let segment_duration = 2
+        this.segment_duration = 2
         const options = {
             mimeType: 'audio/webm;codecs=opus',
             audioBitsPerSecond: this.getBitrate(),
@@ -119,8 +120,31 @@ export class Audiolet {
             }
         };
 
-        no_segmenting ? this.mediaRecorder.start()
-            : this.mediaRecorder.start(segment_duration*1000)
+        this.mediaRecorder.start()
+        // this just sets chunk size in terms of duration, they aren't individually playable
+            // : this.mediaRecorder.start(segment_duration*1000)
+    }
+    segmentation_intervalId:number
+    mediaRecorder_onplay() {
+        if (!this.mediaRecorder) return
+        let every = this.segment_duration * 1000
+        if (!every) throw "!segment_duration"
+        this.segmentation_intervalId = setInterval(() => {
+            if (this.progress() > 1 && this.left() > 1) {
+                // try to avoid tiny tail-end segments
+                // < seems aud.load decode errors are possible with 110-byte buffers that way...
+                this.encode_segmentation()
+                // console.log(`requested segment`)
+            }
+        }, every)
+    }
+    mediaRecorder_onstop() {
+        if (!this.mediaRecorder) return
+        if (this.mediaRecorder.state !== 'inactive') {
+            // https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/stop_event
+            this.mediaRecorder.stop();
+        }
+        clearInterval(this.segmentation_intervalId)
     }
     encode_segmentation() {
         if (!this.mediaRecorder) return
@@ -145,11 +169,11 @@ export class Audiolet {
         this.playing?.stop()
         this.playing_last = this.playing
         delete this.playing
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            // https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/stop_event
-            this.mediaRecorder.stop();
-            // this.requestData()
-        }
+        this.mediaRecorder_onstop()
+    }
+    start_offset:number
+    progress() {
+        return this.along() - this.start_offset
     }
     along() {
         if (this.start_time == null) return 0
@@ -186,9 +210,11 @@ export class Audiolet {
         this.playing = this.playing_next
         delete this.playing_next
         this.playing.start(0,offset)
+        this.start_offset = offset
         this.start_time = this.gat.now() - offset
         this.stop_time = null
         this.stopped = false
+        this.mediaRecorder_onplay()
     }
 
 

@@ -107,7 +107,7 @@ export class RadioModus extends Modus {
             let recs = w.o({record:1})
             if (recs[1]) throw `many recs`
             let rec = recs[0]
-            await w.r({satisfied:1,with:rec})
+            // await w.r({satisfied:1,with:rec})
         }
     }
     // advertise them
@@ -257,18 +257,6 @@ export class RadioModus extends Modus {
                 alive++
                 let left = aud.left()
                 w.i({see:'aud',playing:1,left})
-
-                // non-first time:
-                if (auds_was.includes(aud)) {
-                    // while calling this regularly...
-                    // < and perhaps not every time through here?
-                    if (aud.left() >= 1) {
-                        // try to avoid tiny tail-end segments
-                        // < seems aud.load decode errors are possible with 110-byte buffers that way...
-                        aud.encode_segmentation()
-                        // console.log(`requested segment`)
-                    }
-                }
             }
             else {
                 // done!
