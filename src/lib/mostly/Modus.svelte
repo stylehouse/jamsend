@@ -11,6 +11,8 @@
     import { objectify } from "$lib/data/Stuff.svelte";
     import { ThingsIsms,ThingIsms } from "$lib/data/Things.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
+    import { PierFeature } from "$lib/p2p/Peerily.svelte";
+    import { ShareeModus } from "./Radio.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
@@ -42,7 +44,8 @@
 
     let start_drawing = 0
     $effect(() => {
-        if (S.started && M.stashed && (!S.emit || S.perm)) {
+        let Pier = S instanceof PierFeature && S.Pier
+        if (S.started && M.stashed && (!Pier || Pier.heard_trust)) {
             // doesn't react to M.stashed.* or S.perm.*
             //  S.perm 
             console.log(`started|stashed|perm -> main() ${objectify(S)}`)

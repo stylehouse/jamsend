@@ -61,7 +61,6 @@ export class PierSharing extends PierFeature {
     constructor(opt) {
         super(opt)
         this.UI_component = Sharee
-        console.warn("Got PierSharing!")
         this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
     

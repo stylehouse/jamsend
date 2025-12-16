@@ -806,6 +806,7 @@ export class Pier {
         },
     }
 
+    //#region hello
     // hello comes first, gives full pubkey
     said_hello = false
     say_hello() {
@@ -851,6 +852,7 @@ export class Pier {
 
 
 
+    //#region trust
     // trusting them to access the $TrustName service
     //  so that busy servers dont have to hold lots of auth data,
     //   the client holds on to signed trust certs
@@ -859,6 +861,7 @@ export class Pier {
     //   can only grant trust to someone currently online to receive it
     //   server must retain revoked trust
     said_trust = false
+    heard_trust = $state(false)
     // what they say we can trust them with
     stated_trust:SvelteMap<TrustName,TrustedTrust> = $state(new SvelteMap())
     // what we actually trust them with, after revocations
@@ -880,15 +883,14 @@ export class Pier {
 
     // client reminds server what abilities they're allowed
     async say_trust() {
-        if (!this.stashed.trust) return
-        let trust = this.stashed.trust.filter(t => t.to)
-        if (!trust.length) return
-        this.said_trust = true
+        let trust = this.stashed.trust?.filter(t => t.to) || []
 
         for (const t of trust) {
             await this.verify_trust(t,true)
         }
+        // even if empty, things wait for to hear_trust
         this.emit('trust',{trust})
+        this.said_trust = true
 
         // assume that's going to work for now...
         //  they won't send a NotTrust if you're lying
@@ -911,6 +913,8 @@ export class Pier {
         for (const t of trust) {
             this.stated_trust.set(t.to,t)
         }
+        // PF.modus may now begin
+        this.heard_trust = true
         this.update_trust()
     }
 
@@ -1175,7 +1179,7 @@ export abstract class PierFeature extends ActionsAndModus {
 
     // as a key-level depth-injecting accessor|specifier, ~~ imem()
     stashed_mem(M:Modus|Object,name:string) {
-        let key = `Pier=${this.name}/${name}`
+        let key = `Pier=${this.Pier.name}/${name}`
         let mem = this.F.stashed_mem(M,key)
     }
     
