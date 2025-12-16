@@ -1,8 +1,9 @@
-import type { TheC, TheN } from "$lib/data/Stuff.svelte.ts"
+import { _C, type TheC, type TheN } from "$lib/data/Stuff.svelte.ts"
 import type { Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
-import { grep, grop, map } from "$lib/Y.ts"
+import { now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
+import { grep, grop, map, sha256 } from "$lib/Y.ts"
 import {Modus} from "./Modus.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
 
@@ -11,11 +12,65 @@ const PREVIEW_DURATION = 20;                  // 20s samples
 
 
 //#endregion
-//#region RadioModus
+//#region radiostock
 
 export class RadioModus extends Modus {
     // purely radioey, bound to
 
+    // parallel to the above, radio pools into the unsatisfiable task of keeping stock
+    async radiostock(A,w) {
+        // the .jamsend/radiostock/ directory D
+        let stockD
+        let keep_things = 20
+        // advertise an API in Modus!
+        this.r({io:'radiostock'},{
+            i: async (re:TheC) => {
+                // first it comes into the cache here, available to Piers
+                A.i(re)
+                this.whittle_N(A.o({record:1}),keep_things)
+                // silently fail
+                //  storage is likely to be ready before %record made
+                if (!stockD) return
+                await this.record_to_disk(re,stockD)
+            },
+            o: (previous:TheC) => {
+                // previous thing they got makes sort of a cursor
+                let them = A.o({record:1})
+                if (!them.length) return
+                if (!previous) return them[0]
+                let ri = them.indexOf(previous)
+                if (ri < 0) return them[0]
+                let it = them[ri+1]
+                if (!it) {
+                    // no new %record is available so don't return one (via wrap around)
+                    //  it is up to the broadcaster to repeat something
+                    return
+                }
+                return it
+            },
+        })
+
+        // and may cache on the filesystem for spanglier startups
+        stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
+        if (!stockD) return // also when ope<3
+
+        // load some
+        let had = A.o({record:1})
+        if (had.length < keep_things * 0.8) {
+            let to_load = 5 // not to much work per A
+            // keep_things - A.o({record:1}).length
+            
+            for await (const re of this.load_random_records(stockD, to_load,had)) {
+                A.i(re)
+            }
+        }
+        
+        // whittle to 20 things
+        await this.whittle_stock(w,stockD,keep_things)
+    }
+
+    //#endregion
+    //#region radiopreview
     async radiopreview(A,w,D) {
         if (!this.gat.AC_ready) return w.i({error:"!AC"})
         // w can mutate
@@ -34,7 +89,7 @@ export class RadioModus extends Modus {
         // < new system for telling if an aud is really new
         //   low along() doesnt work because it includes skipped time
         //   perhaps w.bo({aud}) looks at w/* as it was at end of run?
-        let auds_was = w.o({aud:1})
+        let auds_was = w.o1({aud:1})
         if (!w.oa({aud:1})) {
             let aud = await this.record_preview_individuated(A,w,D)
             // hold on to this while it's happening
