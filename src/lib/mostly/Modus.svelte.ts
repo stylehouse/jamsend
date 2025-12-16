@@ -5,7 +5,7 @@ import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { erring, throttle } from "$lib/Y";
-import { Tdebug, Travel } from "./Selection.svelte";
+import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
     // belongs to a thing of a feature
@@ -412,9 +412,6 @@ abstract class Agency extends TimeGallopia {
             })
         }
     }
-    async out_of_instructions(A,w) {
-        console.warn("out_of_instructions!")
-    }
 
     // name an A with a %w etc
     name_A_thing(A,th) {
@@ -429,23 +426,26 @@ abstract class Agency extends TimeGallopia {
     async i_journeys_o_aims(A,w) {
         if (!this.Tr) return
         // replace a particular journey that comes from this A
-        let journey = this.name_A(A)
         // have *%journey first
+
+        let topD = this.Tr.sc.D
+        let aims = w.o({aim:1})
+
         let journeys = []
-        await this.Tr.sc.D.replace({journey}, async () => {
+        await topD.replace({journey:1,oaims:1}, async () => {
             let i = 0
-            let origijourney = journey
-            for (let ai of w.o({aim:1})) {
+            for (let ai of aims) {
                 // < are duplicate names ok? what to do about it?
-                journey = origijourney+(i++ ? "+"+i : "")
-                let j = this.Tr.sc.D.i({journey})
+                let journey = this.name_A(A)+(i++ ? "+"+i : "")
+                let j = topD.i({journey,oaims:1})
                 journeys.push(j)
             }
         })
-        for (let ai of w.o({aim:1})) {
+        for (let ai of aims) {
             let j = journeys.shift()
             // < method this? see PrevNextoid
             // i j/* o ai/*%path
+            console.log(`j:${j.sc.journey} ai path:${this.Se.j_to_uri(ai)}`)
             await j.replace({path:1}, async () => {
                 for (let n of ai.o({path:1})) {
                     j.i(n.sc)
@@ -456,6 +456,7 @@ abstract class Agency extends TimeGallopia {
             // < note somehow this ai->j vectoring
         }
     }
+
     // percolate w%unemits -> PF.unemit.*
     // instead of addressing PF.emit()s to a %w,
     //  suppose each message type will be belong to one %w
@@ -488,6 +489,13 @@ abstract class Agency extends TimeGallopia {
 //#endregion
 //#region methods
 
+    async rest(A,w) {
+        w.i({see:"At rest"})
+    }
+    async out_of_instructions(A,w) {
+        console.warn("out_of_instructions!")
+    }
+
     declare is_meander_satisfied:Function
     // do meandering
     // may not find very small collections of music
@@ -508,7 +516,6 @@ abstract class Agency extends TimeGallopia {
 
                 let ope = D && D.o1({v:1,openity:1})[0]
                 let aim = this.Se.j_to_uri(ai)
-                w.i({see:'Din',aim,ope})
                 if (D && ope <3) {
                     // we must wait for a Selection.process() for this
                     // < do only that journey if the others are docile?

@@ -66,9 +66,6 @@ export class RadioModus extends Modus {
             await w.r({satisfied:'record taken!'})
         }
     }
-    async rest(A,w) {
-        w.i({see:"At rest"})
-    }
 
     // parallel to the above, radio pools into the unsatisfiable task of keeping stock
     async radiostock(A,w) {

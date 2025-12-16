@@ -68,7 +68,7 @@ class TheX {
     vs?: []
     z?: TheN
 
-    // tried to make .z state but... it loses the first row? but is reactive
+    // < tried to make .z state but... it loses the first row? but is reactive
     serial_i = $state(1)
     bump_version() {
         this.serial_i = this.serial_i*1 + 1
@@ -439,7 +439,7 @@ abstract class TimeOffice extends StuffIO {
 //#endregion
 //#region Stuff.replace
 export class Stuff extends TimeOffice {
-    // this C has Isness, C/* are there already and don't recycle them.
+    // assert this C has Isness, C/* are there already and don't recycle them.
     // marks this C as going to have inners already when resolve() commits
     //  so don't resume its C/* from before
     is() {
@@ -447,7 +447,6 @@ export class Stuff extends TimeOffice {
         return this
     }
     // replace one thing
-    // < GONER? silly?
     async r(pattern_sc:TheUniversal,sc?:TheUniversal):Promise<TheC> {
         if (!sc) {
             // make an %all:1,wildcards:1 pattern
@@ -458,8 +457,16 @@ export class Stuff extends TimeOffice {
             pattern_sc = map(() => 1, pattern_sc)
         }
         else {
-            // the pattern|sc divided bunch of language
-            sc = {...pattern_sc,...sc}
+            if (Object.keys(sc)) {
+                // the pattern|sc divided bunch of language
+                sc = {...pattern_sc,...sc}
+            }
+            else {
+                // r({such:1},{}) replaces it with nothing!
+                // see also drop(), to hide it from o
+                // < figure out the subtleties of either approach to removal
+                sc = []
+            }
         }
         let C
         await this.replace(pattern_sc, async () => {
@@ -623,7 +630,6 @@ export class Stuff extends TimeOffice {
 
 
 
-        let matchi = 1
         // /$v:neu /$k/$v:stringval /$n=old
         Object.entries(Over.X.neu||{}).forEach(([i,_neux]) => {
             let n = Over.X.neus[i]
