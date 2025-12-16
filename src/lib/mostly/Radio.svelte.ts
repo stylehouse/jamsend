@@ -17,62 +17,7 @@ const PREVIEW_DURATION = 20;                  // 20s samples
 export class RadioModus extends Modus {
     // purely radioey, bound to
 
-
-    //#endregion
-    //#region radiopreview
-    async radiopreview(A,w,D) {
-        if (!this.gat.AC_ready) return w.i({error:"!AC"})
-        // w can mutate
-        w.sc.then = "rest"
-        w.c.error_fn = async (er) => {
-            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
-            // re-wander due to corrupt-seeming data
-            // < make note. a lot of music out there has decode problems, perhaps not always fatal?
-            this.reset_wants(A,w)
-            return true
-        }
-
-        if (!w.oa({buffers:1})) {
-            await this.radiopreview_i_buffers(A,w,D)
-        }
-
-        let radiostock = this.o({io:'radiostock'})[0]
-        if (!radiostock) return w.i({waits:"%io:radiostock"})
-
-        if (!w.oa({aud:1})) {
-            let aud = await this.record_preview_individuated(A,w,D)
-            // hold on to this while it's happening
-            w.i({aud})
-            // forget the encoded source buffers now
-            await w.r({buffers:1},{ok:1})
-            w.c.on_repr = async (re,pr) => {
-                this.Cpromise(re);
-                if (pr.sc.seq == 0) {
-                    // we can start streaming this very very soon...
-                    //  supposing latency is stable, they should be able to start playing it now?
-                    await radiostock.sc.i(re)
-                    w.i({see:'record taken!'})
-                }
-            }
-        }
-
-        this.watch_auds_progressing(A,w,D)
-
-        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
-            // all done!
-            await w.r({satisfied:1})
-        }
-    }
-    // tell anyone awaiting to reread C/*
-    async Cpromise(C:TheC) {
-        let resolve = C.c.fulfil
-        resolve?.() 
-        C.c.promise = new Promise((resolve) => {
-            C.c.fulfil = resolve
-        })
-    }
-
-    // parallel to the above, radio pools into the unsatisfiable task of keeping stock
+    // radio pools into the unsatisfiable task of keeping stock
     async radiostock(A,w) {
         // the .jamsend/radiostock/ directory D
         let stockD
@@ -128,6 +73,61 @@ export class RadioModus extends Modus {
         // whittle to 20 things
         this.whittle_N(A.o({record:1}),keep_things)
         await this.whittle_stock(w,stockD,keep_things)
+    }
+
+
+    //#endregion
+    //#region radiopreview
+    async radiopreview(A,w,D) {
+        if (!this.gat.AC_ready) return w.i({error:"!AC"})
+        // w can mutate
+        w.sc.then = "rest"
+        w.c.error_fn = async (er) => {
+            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
+            // re-wander due to corrupt-seeming data
+            // < make note. a lot of music out there has decode problems, perhaps not always fatal?
+            this.reset_wants(A,w)
+            return true
+        }
+
+        if (!w.oa({buffers:1})) {
+            await this.radiopreview_i_buffers(A,w,D)
+        }
+
+        let radiostock = this.o({io:'radiostock'})[0]
+        if (!radiostock) return w.i({waits:"%io:radiostock"})
+
+        if (!w.oa({aud:1})) {
+            let aud = await this.record_preview_individuated(A,w,D)
+            // hold on to this while it's happening
+            w.i({aud})
+            // forget the encoded source buffers now
+            await w.r({buffers:1},{ok:1})
+            w.c.on_repr = async (re,pr) => {
+                this.Cpromise(re);
+                if (pr.sc.seq == 0) {
+                    // we can start streaming this very very soon...
+                    //  supposing latency is stable, they should be able to start playing it now?
+                    await radiostock.sc.i(re)
+                    w.i({see:'record taken!'})
+                }
+            }
+        }
+
+        this.watch_auds_progressing(A,w,D)
+
+        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
+            // all done!
+            await w.r({satisfied:1})
+        }
+    }
+    // tell anyone awaiting to reread C/*
+    async Cpromise(C:TheC) {
+        let resolve = C.c.fulfil
+        resolve?.() 
+        C.c.promise = new Promise((resolve) => {
+            C.c.fulfil = resolve
+        })
     }
 
     //#endregion
