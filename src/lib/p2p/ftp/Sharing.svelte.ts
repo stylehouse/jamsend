@@ -203,7 +203,7 @@ export class PierSharing extends PierFeature {
     }
 //#region unemits
     unemits = {
-        whatsup: (data,{P,Pier}) => {
+        whatsup: async (data,{P,Pier}) => {
             console.log("Landed in yondo: ",data)
         },
 

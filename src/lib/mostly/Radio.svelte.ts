@@ -34,6 +34,15 @@ export class RadioModus extends Modus {
                 // it's the same C, so we "have" new /*%preview as they come in
                 //                              (see Cpromise() for knowing when)
                 //  and lose /%in_progress
+
+                // have a downstream Modus waiting for this
+                let some
+                for (let ex of w.o({excitable:'radiostock i'})) {
+                    let M = some = ex.sc.client
+                    if (!(M instanceof Modus)) throw "client!Modus"
+                    M.main()
+                }
+                some && w.r({excitable:'radiostock i'})
             },
             o: async (client:TheC) => {
                 let them = A.o({record:1})
@@ -46,14 +55,14 @@ export class RadioModus extends Modus {
 
                     // this chases the other A back into making more %record
                     await this.unrest()
-
+                    w.r({excitable:'radiostock i',client})
                     return
                 }
                 return current
             },
         })
 
-        if ('only what we made') return
+        // if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -134,40 +143,6 @@ export class RadioModus extends Modus {
             // all done!
             await w.r({satisfied:1})
         }
-    }
-
-
-    async co_cursor_N(co:TheC,client:any,N:TheN) {
-        // previous thing they got makes a cursor
-        let cursor = co.o({client})[0]
-        let current
-        if (!cursor || !cursor.sc.current) {
-            current = N[0]
-        }
-        else {
-            let ri = N.findIndex((rec) => rec == cursor.sc.current)
-            if (ri < 0) {
-                // not found, start over, likely all new
-                current = N[0]
-            }
-            else {
-                current = N[ri+1]
-            }
-        }
-        if (current) {
-            // save new cursor
-            await co.r({client,current})
-        }
-        // or stay where we were, returning undefined from the next index into N
-        return current
-    }
-    // tell anyone awaiting to reread C/*
-    async Cpromise(C:TheC) {
-        let resolve = C.c.fulfil
-        resolve?.() 
-        C.c.promise = new Promise((resolve) => {
-            C.c.fulfil = resolve
-        })
     }
 
 
@@ -560,20 +535,23 @@ export class ShareeModus extends RadioModus {
     }
     async radioterminal(A,w) {
         w.sc.unemits ||= {
-            irecord: ({Expression}) => {
+            irecord: async ({Expression}) => {
                 A.i({record:Expression})
             }
         }
 
         // we're hungry for %record
         let recs = A.o({record:1})
+
         // a join to the recently table on uri
+        // < should be on artist+track
         let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
         if (fresh.length < 5) {
             w.i({see:'acquiring more...'})
-            this.PF.emit('orecord')
+            await this.PF.emit('orecord')
         }
 
+        w.i({see:'well...'})
         if (!A.oa({record:1})) {
             return w.i({waits:"no records"})
         }
@@ -581,12 +559,21 @@ export class ShareeModus extends RadioModus {
 
         //  at half way through it, turns into %stream
     }
+
+
+
     async radiobroadcaster(A,w) {
         // speaking to the other about what we have
+        //  just one other to track for
+        let co = await w.r({consumers:1,of:'radiostock'})
         w.sc.unemits ||= {
-            orecord: ({prev_uri}) => {
-                w.i({did_something:1})
-                this.PF.emit('irecord',{Expression:6})
+            orecord: async ({}) => {
+                this.pull_broadcast(A,w)
+                let them = A.o({record:1})
+                // we'll remedy this elsewhere
+                if (!them.length) return w.i({they:"Asked for more, we had none"})
+                let current = await this.co_cursor_N(co,A,them)
+                w.i({they:"Asked for more, we had:",current})
             }
         }
 
@@ -612,8 +599,10 @@ export class ShareeModus extends RadioModus {
         if (!sources) return w.i({waits:"no stock"})
         
         
+        
+        
         while (A.o({record:1}).length < 3) {
-            let it = await this.pull_sources(A,w)
+            let it = await this.pull_stock(A,w)
             w.i({see:'pull_sources()',it})
             if (!it) break
         }
@@ -626,10 +615,19 @@ export class ShareeModus extends RadioModus {
         // %
 
     }
-    async pull_sources(A,w) {
+    // desk to machine (terminal)
+    async pull_broadcast(A,w) {
+
+        w.i({they_wanted_some:1})
+        this.PF.emit('irecord',{Expression:6})
+        // < and if also a terminal, hotwire the arrival handlers
+    }
+
+    // shelf to DJ desk
+    async pull_stock(A,w) {
         for (let io of A.oa({io:'radiostock'})) {
             // our stream of %records shall be
-            let rec = await io.sc.o(A)
+            let rec = await io.sc.o(this)
             if (rec) {
                 A.i(rec)
                 w.i({see:"new radiostock!!!"})

@@ -751,11 +751,21 @@ export class Pier {
         // we have it all
         let eventual_data = this.next_unemit.data
         this.reset_unemit_state()
-        this.handleMessage(eventual_data)
+        await this.handleMessage(eventual_data)
     }
     // < DDOS mitigation? don't retry messages forever
     retry_untrusted_messages_until_ts?:number
-    handleMessage(data) {
+    retriable_handleMessage(data) {
+        // wait for trust to arrive, but don't make an infinite loop
+        if (now_in_seconds() > (this.retry_untrusted_messages_until_ts || Infinity)) {
+            throw "too late to handleMessage, haven't heard_trust"
+        }
+        this.retry_untrusted_messages_until_ts ||= now_in_seconds() + 9.1114
+        setTimeout(() => {
+            this.handleMessage(data)
+        },1000)
+    }
+    async handleMessage(data) {
         // console.log(`unemits ${data.type}:`,data)
         // extra args to the handler for convenient environment grabbing
         let handy = {P:this.P,Pier:this}
@@ -766,15 +776,7 @@ export class Pier {
             // might route to a feature
             if (type.includes('.')) {
                 if (!this.heard_trust) {
-                    // wait for trust to arrive, but don't make an infinite loop
-                    if (now_in_seconds() > (this.retry_untrusted_messages_until_ts || Infinity)) {
-                        throw "too late to handleMessage, haven't heard_trust"
-                    }
-                    this.retry_untrusted_messages_until_ts ||= now_in_seconds() + 9.1114
-                    setTimeout(() => {
-                        this.handleMessage(data)
-                    },1000)
-                    return
+                    return this.retriable_handleMessage(data)
                 }
                 let [trust_name, ...inner_type] = type.split('.')
                 data.type = inner_type.join('.')
@@ -791,7 +793,7 @@ export class Pier {
                 return console.warn(`unemit !handler for message type:`, data);
             }
         }
-        handler(data,handy);
+        await handler(data,handy);
     }
 
 //#endregion
@@ -805,15 +807,15 @@ export class Pier {
         this.trusted.clear()
     }
     handlers = {
-        hello: (data) => {
+        hello: async (data) => {
             console.log("they say hi: ",data)
             this.hear_hello(data)
         },
-        trust: (data) => {
+        trust: async (data) => {
             console.log("they say trust: ",data)
             this.hear_trust(data)
         },
-        trusted: (data) => {
+        trusted: async (data) => {
             console.log("they say trusted: ",data)
             this.hear_trusted(data)
         },

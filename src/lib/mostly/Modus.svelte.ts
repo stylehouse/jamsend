@@ -235,6 +235,40 @@ abstract class TimeGallopia extends ModusItself {
     prandle(n:number) {
         return Math.floor(Math.random()*n)
     }
+    
+    
+    async co_cursor_N(co:TheC,client:any,N:TheN) {
+        // previous thing they got makes a cursor
+        let cursor = co.o({client})[0]
+        let current
+        if (!cursor || !cursor.sc.current) {
+            current = N[0]
+        }
+        else {
+            let ri = N.findIndex((rec) => rec == cursor.sc.current)
+            if (ri < 0) {
+                // not found, start over, likely all new
+                current = N[0]
+            }
+            else {
+                current = N[ri+1]
+            }
+        }
+        if (current) {
+            // save new cursor
+            await co.r({client,current})
+        }
+        // or stay where we were, returning undefined from the next index into N
+        return current
+    }
+    // tell anyone awaiting to reread C/*
+    async Cpromise(C:TheC) {
+        let resolve = C.c.fulfil
+        resolve?.() 
+        C.c.promise = new Promise((resolve) => {
+            C.c.fulfil = resolve
+        })
+    }
 
     // when starting a new time, set the next
     async reset_interval() {
@@ -478,18 +512,18 @@ abstract class Agency extends TimeGallopia {
         if (!w.sc.unemits) return
         for (let [type,handler] of Object.entries(w.sc.unemits)) {
             // type becomes+unbecomes type=ftp.$k when PF.emit is used
-            this.PF.unemits[type] = (data,{P,Pier}) => {
+            this.PF.unemits[type] = async (data,{P,Pier}) => {
                 let served = false
                 // find and serve to all handlers
-                this.o({A:1}).map(A => {
-                    A.o({w:1}).map(w => {
+                for (let A of this.o({A:1})) {
+                    for (let w of A.o({w:1})) {
                         let handler = w.sc.unemits?.[type]
                         if (handler) {
                             served = true
-                            handler(data,{P,Pier})
+                            await handler(data,{P,Pier})
                         }
-                    })
-                })
+                    }
+                }
                 if (!served) {
                     return console.warn(`${this} unemit Aw !handler for message type:`, data);
                 }
