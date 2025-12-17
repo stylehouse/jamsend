@@ -194,22 +194,48 @@ export class RadioModus extends Modus {
         // receive transcoded buffers
         aud.setupRecorder(true)
         let seq = 0
+
+        let tinybits = []
+        let deal_tinybits = async (blob,buffers) => {
+            if (tinybits.length) {
+                // < am still figuring out what to do about these blob.size=110 bits
+                //   can be any seq?
+                //    durations were 0=2.28 1=1.98, 2=0.36
+                //   might be...
+                //    the segmentation interval drifting from when on_recording actually happens
+                //     indicating we should segment a timeout from on_recording?
+                debugger
+                for (let blob of tinybits) {    
+                    let buffer = await blob.arrayBuffer()
+                    buffers.push(buffer)
+                }
+                return false
+            }
+            tinybits.push(blob)
+            return 'to pend this blob'
+        }
         aud.on_recording = async (blob:Blob) => {
+            let buffers:ArrayBuffer[] = []
+            if (blob.size < 250 && await deal_tinybits(blob,buffers)) return
             let type = blob.type // eg "audio/webm;codecs=opus"
             let buffer = await blob.arrayBuffer()
-            let buffers = [buffer]
+            buffers.push(buffer)
             // track exactly how long the preview is
             // < probably could leave this to the client
             //    they might be back for more...
             //     from $aud's offset+duration
             //      which we know already?
             let bud = this.gat.new_audiolet()
+            // pull out this bit of aud guts so we store the meddled-with %buffer
+            buffer = bud.flatten_ArrayBuffers(buffers)
             try {
-                await bud.load(buffer)
+                await bud.load([buffer])
             }
             catch (er) {
                 throw `transcode-load fail: ${er}`
             }
+
+
             let duration = bud.duration()
             // duration -= pre_duration
             // generate %record/*%preview
