@@ -800,8 +800,9 @@ export class Pier {
 //#region Pier protocols
     reset_protocol_state() {
         this.said_hello = false
-
         this.said_trust = false
+        this.heard_trust = false
+        this.retry_untrusted_messages_until_ts = null
         this.stated_trust.clear()
         this.trust.clear()
         this.trusted.clear()
