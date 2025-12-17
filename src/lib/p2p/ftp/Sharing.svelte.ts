@@ -20,7 +20,7 @@ export class PeeringSharing extends PeeringFeature {
     modus_init() {
         return new SharesModus({S:this})
     }
-    every_Modus() {
+    every_Modus():Modus[] {
         return [this.modus, ...this.shares.asArray()
             .map(share => share.modus).filter(M=>M)]
     }

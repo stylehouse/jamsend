@@ -50,7 +50,7 @@ export class RadioModus extends Modus {
                 let them = A.o({record:1})
                 if (!them.length) return
                 
-                let current = await this.co_cursor_N(co,client,them)
+                let current = await this.co_cursor_N_advance(co,client,them)
                 if (!current) {
                     // no new %record is available so don't return one (via wrap around)
                     //  the broadcaster shall stay ahead of terminals usually
@@ -554,18 +554,12 @@ export class ShareeModus extends RadioModus {
         // a join to the recently table on uri
         // < should be on artist+track
         let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
-        console.log("The fresh ",{fresh,recs})
         if (fresh.length < 5) {
+            console.log("term: orecord?")
             w.i({see:'acquiring more...'})
             await this.PF.emit('orecord')
         }
 
-        w.i({see:'well...'})
-
-        w.i({see:'are we?'})
-        A.o({record:1}) .map(n => {
-            w.i({see:"rec: "+keyser(n)})
-        })
         if (!A.oa({record:1})) {
             return w.i({waits:"no records"})
         }
@@ -579,76 +573,78 @@ export class ShareeModus extends RadioModus {
 //#endregion
 //#region radiobroadcaster
     // desk to machine (terminal)
-    async pull_broadcast(A,w) {
-        
-        w.i({they_wanted_some:1})
-        this.PF.emit('irecord',{Expression:6})
-
-
-        // < and if also a terminal, hotwire the arrival handlers
-    }
+    // < and if also a terminal, hotwire the arrival handlers
     async radiobroadcaster(A,w) {
-        // speaking, on Pier, to the other Pier
         //  just one other to track for
         let co = await w.r({consumers:1,of:'%record'})
+        // speaking, on Pier, to the other Pier
+        let Pier = this.PF.Pier
+        let sendeth = async (rec) => {
+            this.PF.emit('irecord',{Expression:rec.sc.uri})
+            // save new cursor, in case we came through %excitable without moving the cursor
+            await this.co_cursor_save(co,A,rec)
+            if (rec.oa({in_progress:1})) {
+                // < saddle up C.c.promise
+                w.i({streaming_records:rec})
+            }
+        }
         w.sc.unemits ||= {
-            orecord: async (data,{P,Pier}) => {
+            orecord: async (data,{P,Pier:samePier}) => {
+                if (samePier != Pier) throw "Pier?"
                 let them = A.o({record:1})
-                if (!them.length) return
+                // if (!them.length) return
                 
-                let current = await this.co_cursor_N(co,Pier,them)
+                // < also, consider whether this is the same uri we just played here
+                //   and advance again if so, or if it happens a lot just accept playing a tiny collection
+                let current = await this.co_cursor_N_advance(co,A,them)
                 if (!current) {
+                    console.log("broad: orecord: none")
                     // no new %record is available so don't return one (via wrap around)
-                    if (!w.oa({chasing:1})) {
-                        // the broadcaster shall stay well ahead of terminals usually
-                        console.warn("o fail without already wanting more")
-                    }
-                    // this chases the other A back into making more %record
-                    await this.unrest()
+                    // this sendeth() the next new %record, when it gets here
                     w.r({excitable:'radiostock i'})
                     return
                 }
-                return current
-
-                // let rec = await this.pull_broadcast(A,w)
-                // let them = A.o({record:1})
-                // // we'll remedy this elsewhere
-                // if (!them.length) return w.i({they:"Asked for more, we had none"})
-                // let current = await this.co_cursor_N(co,A,them)
-                // w.i({they:"Asked for more, we had:",current})
+                console.log("broad: orecord: sent more")
+                w.i({see:"sent more"})
+                await sendeth(current)
             }
         }
-
-
-
 
         // we provide %record and %stream
         //  %stream should let people join for the first 10s
 
         // copy %io:radiostock interfaces here
-        await A.replace({io:'radiostock'}, async () => {
-            // reading all minds of the PeeringFeature
-            for (let M of this.F.every_Modus()) {
-                for (let io of M.o({io:'radiostock'})) {
-                    A.i(io.sc)
+        await this.Miome(A,{io:'radiostock'})
+        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"})
+        
+        // what we have to play
+        let them = A.o({record:1})
+        // find how far from the end the furthest cursor is
+
+        let left = await this.co_cursor_N_least_left(co,them)
+        let total = them.length
+        await w.r({stocklevels:1,left,total})
+        console.log(`broad: ${left} of ${total}`)
+
+        let KEEP_AHEAD = 5
+        if (left < KEEP_AHEAD) {
+            let dif = KEEP_AHEAD - left
+            // receive a new one time
+            let it = await this.pull_stock(A,w)
+            if (it && dif > 1) await this.pull_stock(A,w)
+            if (it) {
+                console.log("broad: got more")
+                let ex = w.oa({excitable:'radiostock i'})
+                if (ex) {
+                    ex.drop()
+                    console.log("broad:      excitable")
+                    await sendeth(it)
                 }
             }
-        })
-        let sources = A.oa({io:'radiostock'})
-        if (!sources) return w.i({waits:"no stock"})
-        
-        let them = A.o({record:1})
-        
-
-        while (A.o({record:1}).length < 3) {
-            let it = await this.pull_stock(A,w)
-            w.i({see:'pull_sources()',it})
-            if (!it) break
-        }
-
-
-        if (!A.oa({record:1})) {
-            return w.i({waits:"no records"})
+            else {
+                console.log("broad: want more")
+                w.i({see:"want more"})
+            }
         }
 
         // %
@@ -662,6 +658,9 @@ export class ShareeModus extends RadioModus {
             let rec = await io.sc.o(this)
             if (rec) {
                 A.i(rec)
+                if (rec.oa({in_progress:1})) {
+                    debugger
+                }
                 w.i({see:"new radiostock!!!"})
                 return rec
             }

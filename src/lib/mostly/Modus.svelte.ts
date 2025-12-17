@@ -1,10 +1,10 @@
 
 import type { KVStore } from "$lib/data/IDB.svelte";
-import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
+import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte";
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring, throttle } from "$lib/Y";
+import { erring, hak, throttle } from "$lib/Y";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -201,30 +201,66 @@ abstract class TimeGallopia extends ModusItself {
         return Math.floor(Math.random()*n)
     }
     
-    
-    async co_cursor_N(co:TheC,client:any,N:TheN) {
+
+    // these track progress of reading out N
+    //  eg the *%record coming from radiostock
+    //   but could also be %record/*%preview perhaps...
+    //    avoiding a Selection.process() to synchronise mostly one-time things is good
+
+    // -1|0 lead to N[0], but -1 means we have|haven't consumed that 0th thing...
+    resolve_cursor(N,cursor) {
+        if (!cursor || !cursor.sc.current) return -1
+        // < this looks growthy:
+        let ri = N.findIndex((rec) => rec == cursor.sc.current)
+        // not found, start over, likely all new
+        if (ri < 0) return -1
+        return ri
+    }
+    async co_cursor_save(co:TheC,client:any,current:any) {
+        // save new cursor
+        await co.r({client,current})
+    }
+    async co_cursor_N_advance(co:TheC,client:any,N:TheN) {
         // previous thing they got makes a cursor
         let cursor = co.o({client})[0]
-        let current
-        if (!cursor || !cursor.sc.current) {
-            current = N[0]
-        }
-        else {
-            let ri = N.findIndex((rec) => rec == cursor.sc.current)
-            if (ri < 0) {
-                // not found, start over, likely all new
-                current = N[0]
-            }
-            else {
-                current = N[ri+1]
-            }
-        }
-        if (current) {
-            // save new cursor
-            await co.r({client,current})
-        }
+        let ni = this.resolve_cursor(N,cursor)
+        let current = ni < 0 ? N[0] : N[ni+1]
+        // save new cursor
+        await this.co_cursor_save(co,client,current)
         // or stay where we were, returning undefined from the next index into N
         return current
+    }
+    // find how far from the end the furthest cursor is
+    async co_cursor_N_least_left(co:TheC,N:TheN) {
+        let cursors = co.o({client:1})
+        let far:Object = {}
+        for (let cursor of cursors) {
+            let ni = this.resolve_cursor(N,cursor)
+            let consumed = ni + 1 // -1 becomes 0
+            let behindity = N.length - consumed
+            far[behindity] ||= []
+            far[behindity].push(cursor)
+
+        }
+        let furthest = Object.keys(far).map(n=>n*1).sort().shift()
+        // if no cursors, is N.length behind
+        return furthest || N.length
+    }
+
+    // these relate to M<->M data interface
+
+    // take on a shared oM/%io:something
+    // low ceremony, copy %something from some other Modus of F into this one
+    async Miome(A,sc:TheUniversal) {
+        await A.replace(sc, async () => {
+            // reading all minds of the PeeringFeature
+            for (let M of this.F.every_Modus()) {
+                for (let io of M.o(sc)) {
+                    // without /*
+                    A.i(io.sc)
+                }
+            }
+        })
     }
     // tell anyone awaiting to reread C/*
     async Cpromise(C:TheC) {
