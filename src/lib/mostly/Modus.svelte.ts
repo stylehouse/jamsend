@@ -190,41 +190,6 @@ export class Modusmem {
 }
 
 
-
-
-abstract class ModusPretendingtobeaC extends ModusItself {
-    // Modus having .current, rather than being C
-    current:TheC
-    // add to the Stuff
-    i(C:TheC|TheUniversal) {
-        return this.current.i(C)
-    }
-    drop(C:TheC) {
-        return this.current.drop(C)
-    }
-
-    // retrieval (opening)
-    // for now or before
-    // return undefined if no rows, good for boolean logic
-    // look at this time's Stuff
-    o(c?:TheUniversal,q?) {
-        return this.current.o(c, q)
-    }
-    // < zo() would look at the previous time until the current one was commit to
-    // look at previous time
-    bo(c?:TheUniversal,q?) {
-        return this.current.bo(c, q)
-    }
-
-    oa(c?:TheUniversal,q?) {
-        return this.current.oa(c, q)
-    }
-    boa(c?:TheUniversal,q?) {
-        return this.current.boa(c, q)
-    }
-}
-
-
 //#endregion
 //#region misc
 

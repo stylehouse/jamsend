@@ -1089,6 +1089,10 @@ export class Pier {
 // < replace this with TheC, etc
 export abstract class ActionsAndModus {
     modus?:Modus = $state()
+    // subclass this to find every this.shares.*.modus as well
+    every_Modus() {
+        return [this.modus]
+    }
     // eg Shares does a bunch of i_action() on each Share
     actions?: ThingAction[] = $state()
     i_action(act:ThingAction,removal=false) {

@@ -1,9 +1,9 @@
-import { _C, TheC, type TheN } from "$lib/data/Stuff.svelte.ts"
+import { _C, keyser, TheC, type TheN } from "$lib/data/Stuff.svelte.ts"
 import type { Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
 import { now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-import { grep, grop, map, sha256 } from "$lib/Y.ts"
+import { erring, grep, grop, map, sha256 } from "$lib/Y.ts"
 import {Modus} from "./Modus.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
 
@@ -15,7 +15,9 @@ const PREVIEW_DURATION = 20;                  // 20s samples
 //#region radiostock
 
 export class RadioModus extends Modus {
-    // purely radioey, bound to
+    // Audio things haver
+    //  Modus.stop() happens reliably, avoiding zombie sounds
+    gat:SoundSystem
 
     // the next two methods occur in parallel in the same Modus
     //  M/%spare_worker=A:hunting indicates capacity to make more records
@@ -42,7 +44,7 @@ export class RadioModus extends Modus {
                     if (!(M instanceof Modus)) throw "client!Modus"
                     M.main()
                 }
-                some && w.r({excitable:'radiostock i'})
+                some && w.i({was_excitable:'radiostock i'})
             },
             o: async (client:TheC) => {
                 let them = A.o({record:1})
@@ -127,6 +129,7 @@ export class RadioModus extends Modus {
             // forget the encoded source buffers now
             await w.r({buffers:1},{ok:1})
             w.c.on_repr = async (re,pr) => {
+                // makes wave of re.c.promise
                 this.Cpromise(re);
                 if (pr.sc.seq == 0) {
                     // we can start streaming this very very soon...
@@ -146,11 +149,6 @@ export class RadioModus extends Modus {
     }
 
 
-    //#endregion
-    //#region aud misc
-    // Audio things temporarily just here
-    //  Modus.stop() happens reliably, avoiding zombie sounds
-    gat:SoundSystem
     // for radio
     async radiopreview_i_buffers(A,w,D) {
         let DL = this.D_to_DL(D)
@@ -168,23 +166,25 @@ export class RadioModus extends Modus {
         }
         w.i({buffers,want_chunks,want_size})
     }
-    async aud_eats_buffers(w,aud) {
+    async aud_eats_buffers(w,aud,D) {
         // load original encoded buffers
         let buffers = w.o1({buffers:1})[0]
+        let uri = this.Se.D_to_uri(D)
+        
         if (!buffers) throw "!buffers"
         try {
             await aud.load(buffers)
         }
         catch (er) {
             // w:radiopreview catches this and goes back to w:meander
-            throw erring(`original encoded buffers fail`,er)
+            throw erring(`original encoded buffers fail: ${uri}`,er)
         }
     }
 
     // small decodable chunks better for feeding to the radio-tuning noise phenomena
     async record_preview_individuated(A,w,D) {
         let aud = this.gat.new_audiolet()
-        await this.aud_eats_buffers(w,aud)
+        await this.aud_eats_buffers(w,aud,D)
 
         let offset = aud.duration() - PREVIEW_DURATION
         let uri = this.Se.D_to_uri(D)
@@ -502,7 +502,13 @@ export class ShareeModus extends RadioModus {
         this.S.i_actions({
             'Radio': () => this.turn_knob(),
             'Mo++': () => this.main(),
+            'C++': () => this.hard_reset(),
         })
+    }
+    async hard_reset() {
+        this.empty();
+        await this.do_A();
+        this.main()
     }
     async do_A(hard=false) {
         // console.log("do_A")
@@ -530,6 +536,8 @@ export class ShareeModus extends RadioModus {
     }
     
 
+//#endregion
+//#region radioterminal
     turn_knob() {
 
     }
@@ -546,12 +554,18 @@ export class ShareeModus extends RadioModus {
         // a join to the recently table on uri
         // < should be on artist+track
         let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
+        console.log("The fresh ",{fresh,recs})
         if (fresh.length < 5) {
             w.i({see:'acquiring more...'})
             await this.PF.emit('orecord')
         }
 
         w.i({see:'well...'})
+
+        w.i({see:'are we?'})
+        A.o({record:1}) .map(n => {
+            w.i({see:"rec: "+keyser(n)})
+        })
         if (!A.oa({record:1})) {
             return w.i({waits:"no records"})
         }
@@ -562,18 +576,46 @@ export class ShareeModus extends RadioModus {
 
 
 
+//#endregion
+//#region radiobroadcaster
+    // desk to machine (terminal)
+    async pull_broadcast(A,w) {
+        
+        w.i({they_wanted_some:1})
+        this.PF.emit('irecord',{Expression:6})
+
+
+        // < and if also a terminal, hotwire the arrival handlers
+    }
     async radiobroadcaster(A,w) {
-        // speaking to the other about what we have
+        // speaking, on Pier, to the other Pier
         //  just one other to track for
-        let co = await w.r({consumers:1,of:'radiostock'})
+        let co = await w.r({consumers:1,of:'%record'})
         w.sc.unemits ||= {
-            orecord: async ({}) => {
-                this.pull_broadcast(A,w)
+            orecord: async (data,{P,Pier}) => {
                 let them = A.o({record:1})
-                // we'll remedy this elsewhere
-                if (!them.length) return w.i({they:"Asked for more, we had none"})
-                let current = await this.co_cursor_N(co,A,them)
-                w.i({they:"Asked for more, we had:",current})
+                if (!them.length) return
+                
+                let current = await this.co_cursor_N(co,Pier,them)
+                if (!current) {
+                    // no new %record is available so don't return one (via wrap around)
+                    if (!w.oa({chasing:1})) {
+                        // the broadcaster shall stay well ahead of terminals usually
+                        console.warn("o fail without already wanting more")
+                    }
+                    // this chases the other A back into making more %record
+                    await this.unrest()
+                    w.r({excitable:'radiostock i'})
+                    return
+                }
+                return current
+
+                // let rec = await this.pull_broadcast(A,w)
+                // let them = A.o({record:1})
+                // // we'll remedy this elsewhere
+                // if (!them.length) return w.i({they:"Asked for more, we had none"})
+                // let current = await this.co_cursor_N(co,A,them)
+                // w.i({they:"Asked for more, we had:",current})
             }
         }
 
@@ -585,22 +627,19 @@ export class ShareeModus extends RadioModus {
 
         // copy %io:radiostock interfaces here
         await A.replace({io:'radiostock'}, async () => {
-            map(
-                (M) => 
-                    map((io) => A.i(io.sc),
-                        M.o({io:'radiostock'})),
-                // < this.F.MN accessor for reading all minds of the PeeringFeature?
-                grep(map((share) => share.modus,
-                    this.F.shares.asArray()))
-            )
+            // reading all minds of the PeeringFeature
+            for (let M of this.F.every_Modus()) {
+                for (let io of M.o({io:'radiostock'})) {
+                    A.i(io.sc)
+                }
+            }
         })
-
         let sources = A.oa({io:'radiostock'})
         if (!sources) return w.i({waits:"no stock"})
         
+        let them = A.o({record:1})
         
-        
-        
+
         while (A.o({record:1}).length < 3) {
             let it = await this.pull_stock(A,w)
             w.i({see:'pull_sources()',it})
@@ -614,13 +653,6 @@ export class ShareeModus extends RadioModus {
 
         // %
 
-    }
-    // desk to machine (terminal)
-    async pull_broadcast(A,w) {
-
-        w.i({they_wanted_some:1})
-        this.PF.emit('irecord',{Expression:6})
-        // < and if also a terminal, hotwire the arrival handlers
     }
 
     // shelf to DJ desk
