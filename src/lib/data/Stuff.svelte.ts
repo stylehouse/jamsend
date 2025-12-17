@@ -977,9 +977,9 @@ export type TheN = TheC[]
 //#endregion
 //#region f
 
-export function keyser(n:TheC) {
+export function keyser(n:TheC|Object) {
     let la:Array<string> = []
-    Object.entries(n.sc).forEach(([k,v]) => {
+    Object.entries(n.sc || n).forEach(([k,v]) => {
         la.push(k+":"+objectify(v))
     })
     return la.join(", ")

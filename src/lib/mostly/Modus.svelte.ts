@@ -4,7 +4,7 @@ import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring, hak, throttle } from "$lib/Y";
+import { erring, grep, hak, iske, throttle } from "$lib/Y";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -201,6 +201,45 @@ abstract class TimeGallopia extends ModusItself {
         return Math.floor(Math.random()*n)
     }
     
+    
+    // < if there's one of these, main() might aim better
+    async Modus_intendienthay(A,w) {
+        let inte = await this.r({intendienthay:1})
+        inte.i({theA:A.sc.A, thew:w.sc.w})
+        this.main()
+    }
+
+    // locate the more up to date version of a C
+    //   for giving lexically scoped variables (eg A/w/wh/rr)
+    //    to handlers that get set once,
+    //    then asyncily want to rr.i() or so
+    //     perhaps since it has been replaced by main()
+    //  by knowing the .o() path from Modus
+    refresh_C(N) {
+        let where = this
+        let i = 0
+        for (let into of N) {
+            let sc = {}
+            if (i == 1 && into.sc.w) {
+                // support changey w%*, but only one w is allowed
+                sc.w = into.sc.w
+            }
+            else {
+                sc = {...into.sc}
+            }
+            sc = grep((v,k) => iske(v), sc)
+            // console.log(`so it could be `,sc)
+            let possible = where.o(sc)
+            if (possible.length > 1) throw "multitude"
+            if (possible.length < 1) throw "not found"
+
+            where = possible[0]
+            i++
+        }
+        return where
+    }
+
+
 
     // these track progress of reading out N
     //  eg the *%record coming from radiostock
@@ -230,6 +269,15 @@ abstract class TimeGallopia extends ModusItself {
         // or stay where we were, returning undefined from the next index into N
         return current
     }
+    // doesn't move it, looks at the next thing
+    async co_cursor_N_next(co:TheC,client:any,N:TheN) {
+        // previous thing they got makes a cursor
+        let cursor = co.o({client})[0]
+        let ni = this.resolve_cursor(N,cursor)
+        let current = ni < 0 ? N[0] : N[ni+1]
+        // or stay where we were, returning undefined from the next index into N
+        return current
+    }
     // find how far from the end the furthest cursor is
     async co_cursor_N_least_left(co:TheC,N:TheN) {
         let cursors = co.o({client:1})
@@ -246,6 +294,8 @@ abstract class TimeGallopia extends ModusItself {
         // if no cursors, is N.length behind
         return furthest || N.length
     }
+
+
 
     // these relate to M<->M data interface
 
@@ -270,6 +320,9 @@ abstract class TimeGallopia extends ModusItself {
             C.c.fulfil = resolve
         })
     }
+
+
+
 
     // when starting a new time, set the next
     async reset_interval() {

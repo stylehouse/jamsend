@@ -19,6 +19,36 @@ export class RadioModus extends Modus {
     //  Modus.stop() happens reliably, avoiding zombie sounds
     gat:SoundSystem
 
+    // side note,
+    //  about the falling-ness of this** C
+    //  we A.r(w) every time
+    //   so you can't capture w and then expect w.i() to operate on the current time of it
+    //   unless you use refresh_C()
+    //  so functions created only the first time
+    //    eg w:radiobroadcaster / unemits / orecord
+    //   capture values of w that get lost in the past
+    //  %record though (aka rec, re)
+    //    just sit there!
+    //  in w:radiobroadcaster you can put this:
+        // // an experiment into using refresh_C() at loose times
+        // if (w.oa({self:1,round:2})) {
+        //     let i = 1
+        //     setInterval(() => {
+        //         let tick = "b"+i
+        //         rr = this.refresh_C([A,w,wh,rr])
+        //         rr.i({tock:tick})
+        //         io.sc.ticking(tick)
+        //         i++
+        //     },400)
+        // }
+    //  and in its w.sc.unemits.orecord, put this:
+        //  io.sc.ticking("out of timeity")
+    //  and in w:radiostock io.o(client), put this:
+        // ticking: async (say) => {
+        //     w = this.refresh_C([A,w])
+        //     w.i({tick:say})
+        // }
+
     // the next two methods occur in parallel in the same Modus
     //  M/%spare_worker=A:hunting indicates capacity to make more records
 
@@ -31,6 +61,7 @@ export class RadioModus extends Modus {
         // advertise an API of this Modus
         this.r({io:'radiostock'},{
             i: async (re:TheC) => {
+                w = this.refresh_C([A,w])
                 // first it comes into the cache here, available to Piers
                 A.i(re)
                 // it's the same C, so we "have" new /*%preview as they come in
@@ -38,19 +69,16 @@ export class RadioModus extends Modus {
                 //  and lose /%in_progress
 
                 // have a downstream Modus waiting for this
-                let some
-                for (let ex of w.o({excitable:'radiostock i'})) {
-                    let M = some = ex.sc.client
-                    if (!(M instanceof Modus)) throw "client!Modus"
-                    M.main()
-                }
-                some && w.i({was_excitable:'radiostock i'})
+                w.o({excitable:'radiostock i'})
+                    .map(ex => ex.sc.client)
+                    .map(M => M.main())
+                    .length && w.r({excitable:'radiostock i'},{})
             },
             o: async (client:TheC) => {
+                w = this.refresh_C([A,w])
                 let them = A.o({record:1})
-                if (!them.length) return
                 
-                let current = await this.co_cursor_N_advance(co,client,them)
+                let current = await this.co_cursor_N_next(co,client,them)
                 if (!current) {
                     // no new %record is available so don't return one (via wrap around)
                     //  the broadcaster shall stay ahead of terminals usually
@@ -60,11 +88,12 @@ export class RadioModus extends Modus {
                     w.r({excitable:'radiostock i',client})
                     return
                 }
+                await this.co_cursor_save(co,client,current)
                 return current
             },
         })
 
-        // if ('only what we made') return
+        if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -129,6 +158,8 @@ export class RadioModus extends Modus {
             // forget the encoded source buffers now
             await w.r({buffers:1},{ok:1})
             w.c.on_repr = async (re,pr) => {
+                w = this.refresh_C([A,w])
+                radiostock = this.refresh_C([radiostock])
                 // makes wave of re.c.promise
                 this.Cpromise(re);
                 if (pr.sc.seq == 0) {
@@ -570,7 +601,14 @@ export class ShareeModus extends RadioModus {
     async radioterminal(A,w) {
         w.sc.unemits ||= {
             irecord: async ({Expression}) => {
-                A.i({record:Expression})
+                let re = A.i({record:Expression})
+                // re.i({dooooooooooings:'it'})
+                // re.i({dooooooewooings:'it'})
+                // re.i({doooaooowooings:'it'})
+                // re.i({doooeooooooings:'it'})
+                // re.i({doooootooooings:'it'})
+                // re.i({dowooooooooings:'it'})
+                // re.i({dooooooooyyings:'it'})
             }
         }
 
@@ -600,39 +638,60 @@ export class ShareeModus extends RadioModus {
 //#region radiobroadcaster
     // desk to machine (terminal)
     // < and if also a terminal, hotwire the arrival handlers
+    
     async radiobroadcaster(A,w) {
         //  just one other to track for
         let co = await w.r({consumers:1,of:'%record'})
         // speaking, on Pier, to the other Pier
         let Pier = this.PF.Pier
+        
+        let wh = await w.r({was_sent:1})
+        let rr = await wh.r({these_records:1})
         let sendeth = async (rec) => {
+            A = this.refresh_C([A])
+            co = this.refresh_C([A,w,co])
+            rr = this.refresh_C([A,w,wh,rr])
+
+            // send it
             this.PF.emit('irecord',{Expression:rec.sc.uri})
+            await rr.r({excitable:1},{})
+            rr.i(rec)
             // save new cursor, in case we came through %excitable without moving the cursor
             await this.co_cursor_save(co,A,rec)
+
             if (rec.oa({in_progress:1})) {
                 // < saddle up C.c.promise
-                w.i({streaming_records:rec})
             }
         }
         w.sc.unemits ||= {
             orecord: async (data,{P,Pier:samePier}) => {
                 if (samePier != Pier) throw "Pier?"
+                A = this.refresh_C([A])
+                co = this.refresh_C([A,w,co])
+                rr = this.refresh_C([A,w,wh,rr])
                 let them = A.o({record:1})
-                // if (!them.length) return
-                
-                // < also, consider whether this is the same uri we just played here
-                //   and advance again if so, or if it happens a lot just accept playing a tiny collection
-                let current = await this.co_cursor_N_advance(co,A,them)
-                if (!current) {
-                    console.log("broad: orecord: none")
-                    // no new %record is available so don't return one (via wrap around)
-                    // this sendeth() the next new %record, when it gets here
-                    w.r({excitable:'radiostock i'})
-                    return
+                rr.i({gota:"orecord"})
+                let have_one = await this.co_cursor_N_next(co,A,them)
+                if (have_one) {
+                    if ('do sends out of time') {
+                        console.log("broad: orecord: sent more")
+                        wh.i({see:"unemit:orecord"})
+                        await sendeth(current)
+                    }
+                    else {
+                        // can send immediately
+                        await rr.r({send_one_pls:1})
+                        console.log("broad: orecord: send_one_pls")
+                        // < but seem to have to be in main() to w.i()? ie advance cursor
+                        this.main()
+                    }
                 }
-                console.log("broad: orecord: sent more")
-                w.i({see:"sent more"})
-                await sendeth(current)
+                else {
+                    // can send when one arrives
+                    console.log("broad: orecord: excitable")
+                    rr.r({excitable:1})
+                }
+                return
             }
         }
 
@@ -642,11 +701,23 @@ export class ShareeModus extends RadioModus {
         // copy %io:radiostock interfaces here
         await this.Miome(A,{io:'radiostock'})
         if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"})
-        
+        let io = A.o({io:'radiostock'})[0]
+
         // what we have to play
         let them = A.o({record:1})
-        // find how far from the end the furthest cursor is
 
+        // dispatchily,
+        if (rr.oa({send_one_pls:1})) {
+            let current = await this.co_cursor_N_next(co,A,them)
+            if (current) {
+                sendeth(current)
+                rr.r({send_one_pls:1},{})
+            }
+        }
+        
+
+        // managerially,
+        // find how far from the end the furthest cursor is
         let left = await this.co_cursor_N_least_left(co,them)
         let total = them.length
         await w.r({stocklevels:1,left,total})
@@ -660,10 +731,10 @@ export class ShareeModus extends RadioModus {
             if (it && dif > 1) await this.pull_stock(A,w)
             if (it) {
                 console.log("broad: got more")
-                let ex = w.oa({excitable:'radiostock i'})
-                if (ex) {
-                    ex.drop()
+                if (rr.oa({excitable:1})) {
+                    rr.r({excitable:1},{})
                     console.log("broad:      excitable")
+                    rr.i({see:"excitable"})
                     await sendeth(it)
                 }
             }
@@ -685,7 +756,7 @@ export class ShareeModus extends RadioModus {
             if (rec) {
                 A.i(rec)
                 if (rec.oa({in_progress:1})) {
-                    debugger
+                    // debugger
                 }
                 w.i({see:"new radiostock!!!"})
                 return rec
