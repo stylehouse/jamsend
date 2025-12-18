@@ -418,8 +418,7 @@ export class DirectoryModus extends RadioModus {
             await this.expand_nib(T,op)
             // do think-chatter in D/*, under %openity since relevant...
             await op.i_wasLast('expanded',true)
-            await D.replace({was_operated_on:1},async () => {
-            })
+            await D.r({was_operated_on:1},{})
         }
     }
 

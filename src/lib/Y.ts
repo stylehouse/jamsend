@@ -295,172 +295,207 @@ export function grop(y?,N) {
 };
 
 // can be a key (object property name)
-export function iske(s) {
+export function iske(s): boolean {
     return typeof s == 'string' || typeof s == 'number'
 }
 // Check if itemic, ie C
-export function isit(s) {
+export function isit(s: any): boolean {
     return isC(s)
 }
-export function isC(s) {
+export function isC(s: any): boolean {
     return s instanceof TheC
 }
-
-// Check if function
-export function isfu(s) {
+// function
+export function isfu(s: any): boolean {
     return typeof s === 'function';
 }
-
-// Check if array
-export function isar(s) {
+// array
+export function isar(s: any): boolean {
     return Array.isArray(s);
+}
+// hash
+export function isha(s: any): boolean {
+    return s && typeof s === 'object' && !isar(s);
+}
+// string
+export function isst(s: any): boolean {
+    return typeof s === 'string';
 }
 
 // s=Object number of keys, or has a d=key
 export function hak(s, d?:string) {
     if (!s) return 0;
-    return d == null ? Object.keys(s).length : s.hasOwnProperty(d);
+    if (d != null) return s.hasOwnProperty(d)
+    return Object.keys(s).length
 }
 
 //#region data transforms
 
 
-    # null-fatal peel
-    window.peli = &l{
-        !(isst(l) || isar(l) || isha(l)) and throw "!peli", l
-        return peel(l)
+// Null-fatal peel
+export function peli(l: any): Record<string, any> {
+    if (!(isst(l) || isar(l) || isha(l))) {
+        throw erring("!peli", String(l));
     }
-    # looks like something to peel,
-    #  supposing it will always be 
-    window.peelish = &s,sep,kep{
-        sep ||= ','
-        kep ||= ':'
-        return isst(s) && (s.includes(sep) || s.includes(kep))
-    }
-  // ex*()
-    self.ex = &sc{
-        !s || typeof s != 'object' and throw "ex!s"
-        !c || typeof c != 'object' and throw "ex!c"
-        each kv c {
-            s [k] = v
-        }
-        # ex(s,c+)
-        arguments[2] && [...arguments].slice(2).map(c => ex(s,c))
-        return s
-    }
-    # ex with array merge
-    #  eg s|c.via=[one|two] -> s.via=[one,two]
-    self.mex = &scq{
-        q ||= {}
-        if (q.ek) {
-            # fatal to want change
-        }
-        c = exable(c,s)
-        return ex(s,c)
-    }
-    # selective extend
-    window.sex = &scqe{
-        # < Babz for parsing arguments
-        e == 1 and $y = k => c[k] && 1
-        q = peli(q)
-        each kv q {
-            hak(c,k) && (!y || y(k)) and s [k] = c[k]
-        }
-        return s
-    }
-    # selectively not extending
-    #  nex(c,s,c) extends what isnt in c.* yet
-    self.nex = &scq{
-        q = peli(q)
-        each kv c {
-            hak(q,k) and continue
-            s [k] = v
-        }
-        return s
-    }
-    # text only
-    self.tex = &sc{
-        each kv c {
-            iskeyish(v) and s [k] = c[k]
-        }
-        return s
-    }
-    # defined only
-    self.dex = &sc{
-        each kv c {
-            v != null and s [k] = c[k]
-        }
-        return s
-    }
-    # selective ex, taking out (unless $k:0)
-    #  as in consuming arguments from a c
-    window.tax = &s,c,take{
-        !c and return s
-        !isha(s) and throw "tax s?",s
-        !isha(c) and throw "tax c?",c
-        take = peli(take)
-        each k,remove take {
-            !hak(c,k) and continue
-            remove and s[k] = delete c[k]
-            else { s[k] = c[k] }
-        }
-        return s
+    return peel(l);
+}
+
+// Extend object s with properties from c
+export function ex(s: Record<string, any>, c: Record<string, any>, ...rest: Record<string, any>[]): Record<string, any> {
+    if (!s || typeof s !== 'object') throw erring("ex!s");
+    if (!c || typeof c !== 'object') throw erring("ex!c");
+    
+    for (const k in c) {
+        s[k] = c[k];
     }
     
-    # hash from 'k:v' or , v=1 if not given
-    #  < nestings of the : and , separators
-    window.peel = &s,sep,kep{
-        s == null || s == '' and return {}
-        # < peel token might include [keys], maybe json
-        isar(s) and return hashkv(s.map(k => [k,1]))
-        # clones supplied hash
-        #  this is not for eg &uptonode c arg
-        #   allows giving a c to read details from after
-        isha(s) and return ex({},s)
+    // Handle additional arguments
+    if (rest.length) {
+        rest.forEach(extra => ex(s, extra));
+    }
+    
+    return s;
+}
+
+// < too hard|weird: mex() - ex with array merge
+
+// Selective extend
+export function sex(s: Record<string, any>, c: Record<string, any>, q: any, e?: number): Record<string, any> {
+    let y: ((k: string) => boolean) | null = null;
+    
+    if (e === 1) {
+        y = k => c[k] && true;
+    }
+    
+    q = peli(q);
+    
+    for (const k in q) {
+        if (hak(c, k) && (!y || y(k))) {
+            s[k] = c[k];
+        }
+    }
+    
+    return s;
+}
+
+
+// Selectively not extending
+//  eg nex(c,s,c) extends what isnt in c.* yet
+export function nex(s: Record<string, any>, c: Record<string, any>, q?: any): Record<string, any> {
+    q = peli(q);
+    
+    for (const k in c) {
+        if (hak(q, k)) continue;
+        s[k] = c[k];
+    }
+    
+    return s;
+}
+
+// Text/keyish only
+export function tex(s: Record<string, any>, c: Record<string, any>): Record<string, any> {
+    for (const k in c) {
+        const v = c[k];
+        if (iske(v)) {
+            s[k] = c[k];
+        }
+    }
+    
+    return s;
+}
+// Defined only (not null/undefined)
+export function dex(s: Record<string, any>, c: Record<string, any>): Record<string, any> {
+    for (const k in c) {
+        const v = c[k];
+        if (v != null) {
+            s[k] = c[k];
+        }
+    }
+    
+    return s;
+}
+// Selective ex, taking out (unless k:0)
+// Consumes arguments from c
+export function tax(s: Record<string, any>, c: Record<string, any>, take: any): Record<string, any> {
+    if (!c) return s;
+    if (!isha(s)) throw erring("tax s?", String(s));
+    if (!isha(c)) throw erring("tax c?", String(c));
+    
+    take = peli(take);
+    
+    for (const k in take) {
+        const remove = take[k];
+        if (!hak(c, k)) continue;
         
-        if (isst(s)) {
-            # shortcut?
-            sep ||= ','
-            kep ||= ':'
-            if (!peelish(s,sep,kep)) {
-                return hashkv(s)
-            } 
-            # < sep|kep?
-            # < rebuild for k:that:go:deeply,
-            #   or that@link to indentedchunk later
-            #    or link object anywhere, if A:L..A:peel
-            #    < rebuild a subset of yaml mostly,
-            return G&peel,s
+        if (remove) {
+            s[k] = c[k];
+            delete c[k];
+        } else {
+            s[k] = c[k];
         }
-        throw "not peely", s
     }
-    # ke:va,ys:lue string into hash
-    # the keys have more of a hi energy
-    peel: %acgt:s d
-        d = d || {};
-        $c = {};
-        !s.length and return c
-        $m = s.split(d.sep || ',');
-        each in m {
-            n = n.split(d.hie || ':');
-            $k = n.shift();
-            $v = n.length == 1 ? n[0]
-                : n.length > 1 ? n.join(d.hie || ':')
+    
+    return s;
+}
+    
+// Hash from 'k:v' or comma-separated, v=1 if not given
+// Handles nestings of the : and , separators
+export function peel(s: any, sep?: string, kep?: string): Record<string, any> {
+    if (s == null || s === '') return {};
+    
+    // Array: convert to hash with values as 1
+    if (isar(s)) {
+        return hashkv(s.map(k => [k, 1]));
+    }
+    
+    // Clone supplied hash
+    if (isha(s)) {
+        return ex({}, s);
+    }
+    
+    if (isst(s)) {
+        sep = sep || ',';
+        kep = kep || ':';
+        
+        // Parse the string
+        const c: Record<string, any> = {};
+        const parts = s.split(sep);
+        
+        for (const part of parts) {
+            const kvParts = part.split(kep);
+            const k = kvParts.shift();
+            if (!k) continue;
+            
+            const v = kvParts.length === 1 ? kvParts[0]
+                : kvParts.length > 1 ? kvParts.join(kep)
                 : 1;
-            v && typeof v == 'string' && v.match(/^-?\d+\.\d+$/) and v = v * 1
-            c[k] = v;
+            
+            // Convert numeric strings to numbers
+            if (v && typeof v === 'string' && v.match(/^-?\d+\.?\d*$/)) {
+                c[k] = parseFloat(v);
+            } else {
+                c[k] = v;
+            }
         }
-        return c
+        return c;
+    }
     
-    # hash into ke:va,ys:lue
-    depeel: %acgt:s d
-        d = d || {};
-        $ks = Object.keys(s).sort();
-        $hs = [];
-        each ik ks {
-            $set = k;
-            s[k] != '1' and set += (d.hie||":")+s[k]
-            hs.push(set);
+    throw erring("not peely", String(s));
+}
+
+// Hash into ke:va,ys:lue string
+export function depeel(s: Record<string, any>, d?: { sep?: string; hie?: string }): string {
+    d = d || {};
+    const ks = Object.keys(s).sort();
+    const hs: string[] = [];
+    
+    for (const k of ks) {
+        let set = k;
+        if (s[k] !== '1' && s[k] !== 1) {
+            set += (d.hie || ':') + s[k];
         }
-        return hs.join(d.sep||",");
+        hs.push(set);
+    }
     
+    return hs.join(d.sep || ',');
+}
