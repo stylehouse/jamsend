@@ -321,3 +321,146 @@ export function hak(s, d?:string) {
     if (!s) return 0;
     return d == null ? Object.keys(s).length : s.hasOwnProperty(d);
 }
+
+//#region data transforms
+
+
+    # null-fatal peel
+    window.peli = &l{
+        !(isst(l) || isar(l) || isha(l)) and throw "!peli", l
+        return peel(l)
+    }
+    # looks like something to peel,
+    #  supposing it will always be 
+    window.peelish = &s,sep,kep{
+        sep ||= ','
+        kep ||= ':'
+        return isst(s) && (s.includes(sep) || s.includes(kep))
+    }
+  // ex*()
+    self.ex = &sc{
+        !s || typeof s != 'object' and throw "ex!s"
+        !c || typeof c != 'object' and throw "ex!c"
+        each kv c {
+            s [k] = v
+        }
+        # ex(s,c+)
+        arguments[2] && [...arguments].slice(2).map(c => ex(s,c))
+        return s
+    }
+    # ex with array merge
+    #  eg s|c.via=[one|two] -> s.via=[one,two]
+    self.mex = &scq{
+        q ||= {}
+        if (q.ek) {
+            # fatal to want change
+        }
+        c = exable(c,s)
+        return ex(s,c)
+    }
+    # selective extend
+    window.sex = &scqe{
+        # < Babz for parsing arguments
+        e == 1 and $y = k => c[k] && 1
+        q = peli(q)
+        each kv q {
+            hak(c,k) && (!y || y(k)) and s [k] = c[k]
+        }
+        return s
+    }
+    # selectively not extending
+    #  nex(c,s,c) extends what isnt in c.* yet
+    self.nex = &scq{
+        q = peli(q)
+        each kv c {
+            hak(q,k) and continue
+            s [k] = v
+        }
+        return s
+    }
+    # text only
+    self.tex = &sc{
+        each kv c {
+            iskeyish(v) and s [k] = c[k]
+        }
+        return s
+    }
+    # defined only
+    self.dex = &sc{
+        each kv c {
+            v != null and s [k] = c[k]
+        }
+        return s
+    }
+    # selective ex, taking out (unless $k:0)
+    #  as in consuming arguments from a c
+    window.tax = &s,c,take{
+        !c and return s
+        !isha(s) and throw "tax s?",s
+        !isha(c) and throw "tax c?",c
+        take = peli(take)
+        each k,remove take {
+            !hak(c,k) and continue
+            remove and s[k] = delete c[k]
+            else { s[k] = c[k] }
+        }
+        return s
+    }
+    
+    # hash from 'k:v' or , v=1 if not given
+    #  < nestings of the : and , separators
+    window.peel = &s,sep,kep{
+        s == null || s == '' and return {}
+        # < peel token might include [keys], maybe json
+        isar(s) and return hashkv(s.map(k => [k,1]))
+        # clones supplied hash
+        #  this is not for eg &uptonode c arg
+        #   allows giving a c to read details from after
+        isha(s) and return ex({},s)
+        
+        if (isst(s)) {
+            # shortcut?
+            sep ||= ','
+            kep ||= ':'
+            if (!peelish(s,sep,kep)) {
+                return hashkv(s)
+            } 
+            # < sep|kep?
+            # < rebuild for k:that:go:deeply,
+            #   or that@link to indentedchunk later
+            #    or link object anywhere, if A:L..A:peel
+            #    < rebuild a subset of yaml mostly,
+            return G&peel,s
+        }
+        throw "not peely", s
+    }
+    # ke:va,ys:lue string into hash
+    # the keys have more of a hi energy
+    peel: %acgt:s d
+        d = d || {};
+        $c = {};
+        !s.length and return c
+        $m = s.split(d.sep || ',');
+        each in m {
+            n = n.split(d.hie || ':');
+            $k = n.shift();
+            $v = n.length == 1 ? n[0]
+                : n.length > 1 ? n.join(d.hie || ':')
+                : 1;
+            v && typeof v == 'string' && v.match(/^-?\d+\.\d+$/) and v = v * 1
+            c[k] = v;
+        }
+        return c
+    
+    # hash into ke:va,ys:lue
+    depeel: %acgt:s d
+        d = d || {};
+        $ks = Object.keys(s).sort();
+        $hs = [];
+        each ik ks {
+            $set = k;
+            s[k] != '1' and set += (d.hie||":")+s[k]
+            hs.push(set);
+        }
+        return hs.join(d.sep||",");
+    
