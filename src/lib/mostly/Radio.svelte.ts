@@ -3,7 +3,7 @@ import type { Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
 import { now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-import { erring, grep, grop, map, sha256 } from "$lib/Y.ts"
+import { erring, ex, grep, grop, map, sex, sha256, tex } from "$lib/Y.ts"
 import {Modus} from "./Modus.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
 
@@ -93,7 +93,7 @@ export class RadioModus extends Modus {
             },
         })
 
-        if ('only what we made') return
+        // if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -316,18 +316,15 @@ export class RadioModus extends Modus {
             let s = keyser(c)
             let h = await sha256(s)
             h = h.slice(0,16)
-            console.log(`entropiate: ${h} == ${s}`)
+            // console.log(`entropia: ${h} == ${s}`)
             return h
-        }
-        async record_to_name(re:TheC) {
-            let entropy = `${re.sc.offset}: ${re.sc.uri}`
-            const hash = await sha256(entropy);
-            return `${hash.slice(0,16)}.webms`
         }
         async record_to_radiostock_name(re:TheC) {
             if (!re.sc.enid) throw "ohno!"
             return `${now_in_seconds()}-${re.sc.enid}.webms`
         }
+
+
     
         // <AI>
         // Helper to load random records from stock directory
@@ -411,28 +408,11 @@ export class RadioModus extends Modus {
                     offset += chunk.byteLength;
                 }
                 
-                // Decode from disk format
-                const { metadata, buffers } = await this.decodeRecordFromDisk(combined.buffer);
+                // Decode from .webms format -> C%record
+                const re = await this.decodeRecordFromDisk(combined.buffer);
                 
-                // Reconstruct record TheC
-                const re = _C({
-                    record: 1,
-                    offset: metadata.offset,
-                    uri: metadata.uri,
-                });
                 // mark it as having come from disk
                 re.i({in_radiostock:name})
-                
-                // Reconstruct preview entries with buffers
-                metadata.previews.forEach((previewMeta, idx) => {
-                    re.i({
-                        preview: 1,
-                        seq: previewMeta.seq,
-                        duration: previewMeta.duration,
-                        type: previewMeta.type,
-                        buffer: buffers[idx]
-                    });
-                });
                 
                 // console.log(`Loaded record from disk: ${name}`);
                 return re;
@@ -441,6 +421,8 @@ export class RadioModus extends Modus {
                 throw err;
             }
         }
+
+
         // the .webms format
         // Encoder: Serialize record to disk format
         async encodeRecordToDisk(re: TheC): Promise<ArrayBuffer> {
@@ -448,18 +430,10 @@ export class RadioModus extends Modus {
             const previews = re.o({preview: 1});
             
             // Build metadata object (everything except the actual buffers)
-            const metadata = {
-                offset: re.sc.offset,
-                uri: re.sc.uri,
-                pub: re.sc.pub,
-                previews: previews.map(pr => ({
-                    seq: pr.sc.seq,
-                    duration: pr.sc.duration,
-                    type: pr.sc.type,
-                    // Store buffer size for reconstruction
-                    size: pr.sc.buffer.byteLength
-                }))
-            };
+            const metadata = tex({},re.sc)
+            metadata.previews = previews.map(pr =>
+                ex(tex({},pr.sc), {size: pr.sc.buffer.byteLength})
+            )
             
             // Encode metadata as JSON with escaped newline
             const jsonStr = JSON.stringify(metadata);
@@ -483,7 +457,7 @@ export class RadioModus extends Modus {
             return combined.buffer;
         }
         // Decoder: Parse disk format back to record structure
-        async decodeRecordFromDisk(data: ArrayBuffer): Promise<{metadata: any, buffers: ArrayBuffer[]}> {
+        async decodeRecordFromDisk(data: ArrayBuffer): Promise<TheC> {
             const bytes = new Uint8Array(data);
             
             // Find the newline that separates JSON from buffers
@@ -518,8 +492,18 @@ export class RadioModus extends Modus {
                 buffers.push(buffer);
                 offset += size;
             }
+
+            // Reconstruct %record
+            const re = _C(tex({},metadata));
+            // Reconstruct /*%preview entries with buffers
+            metadata.previews.forEach((previewMeta:Object, idx:number) => {
+                re.i({
+                    ...previewMeta,
+                    buffer: buffers[idx],
+                });
+            });
             
-            return { metadata, buffers };
+            return re
         }
         // </AI>
     

@@ -360,7 +360,7 @@ export function ex(s: Record<string, any>, c: Record<string, any>, ...rest: Reco
 // < too hard|weird: mex() - ex with array merge
 
 // Selective extend
-export function sex(s: Record<string, any>, c: Record<string, any>, q: any, e?: number): Record<string, any> {
+export function sex(s: Record<string, any>, c: Record<string, any>, q?: any, e?: number): Record<string, any> {
     let y: ((k: string) => boolean) | null = null;
     
     if (e === 1) {

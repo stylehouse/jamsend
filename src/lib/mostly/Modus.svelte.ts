@@ -499,12 +499,14 @@ abstract class Agency extends TimeGallopia {
                 A.drop(w)
             }
         }
+        // < test effects of this... not sure
+        const KEEP_WHOLE_w = true
         for (let A of AN) {
             // w can mutate sc eg %then
             //  so keep writing it down
             let ws = A.o({w:1})
             await A.replace({w:1},async () => {
-                ws.map(w => A.i(w.sc))
+                ws.map(w => A.i(KEEP_WHOLE_w ? w : w.sc))
             })
         }
     }
