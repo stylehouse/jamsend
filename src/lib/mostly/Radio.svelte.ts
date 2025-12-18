@@ -93,7 +93,7 @@ export class RadioModus extends Modus {
             },
         })
 
-        // if ('only what we made') return
+        if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -219,7 +219,7 @@ export class RadioModus extends Modus {
 
         let offset = aud.duration() - PREVIEW_DURATION
         let uri = this.Se.D_to_uri(D)
-        let re = w.i({record:1,offset,uri})
+        let re = w.i({record:1, ...await this.entropiate({offset,uri})})
         re.i({in_progress:1})
 
         // receive transcoded buffers
@@ -309,14 +309,24 @@ export class RadioModus extends Modus {
 
     //#endregion
     //#region record <->
+        async entropiate(c) {
+            return { enid: await this.entropia(c), ...c }
+        }
+        async entropia(c) {
+            let s = keyser(c)
+            let h = await sha256(s)
+            h = h.slice(0,16)
+            console.log(`entropiate: ${h} == ${s}`)
+            return h
+        }
         async record_to_name(re:TheC) {
             let entropy = `${re.sc.offset}: ${re.sc.uri}`
             const hash = await sha256(entropy);
             return `${hash.slice(0,16)}.webms`
         }
-        async record_to_tsname(re:TheC) {
-            let name = await this.record_to_name(re)
-            return `${now_in_seconds()}-${name}`
+        async record_to_radiostock_name(re:TheC) {
+            if (!re.sc.enid) throw "ohno!"
+            return `${now_in_seconds()}-${re.sc.enid}.webms`
         }
     
         // <AI>
@@ -357,7 +367,7 @@ export class RadioModus extends Modus {
             }
         }
         async record_to_disk(re:TheC,sD:TheD) {
-            let name = await this.record_to_tsname(re)
+            let name = await this.record_to_radiostock_name(re)
             try {
                 // Encode record to binary format
                 const encoded = await this.encodeRecordToDisk(re);
