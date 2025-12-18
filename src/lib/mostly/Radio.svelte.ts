@@ -93,7 +93,7 @@ export class RadioModus extends Modus {
             },
         })
 
-        if ('only what we made') return
+        // if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -157,7 +157,7 @@ export class RadioModus extends Modus {
             w.i({aud})
             // forget the encoded source buffers now
             await w.r({buffers:1},{ok:1})
-            w.c.on_repr = async (re,pr) => {
+            w.c.on_recordpreview = async (re,pr) => {
                 w = this.refresh_C([A,w])
                 radiostock = this.refresh_C([radiostock])
                 // makes wave of re.c.promise
@@ -272,12 +272,15 @@ export class RadioModus extends Modus {
             // generate %record/*%preview
             let pr = re.i({preview:1,seq,duration,type,buffer})
             seq++
-            w.c.on_repr(re,pr)
+            await w.c.on_recordpreview(re,pr)
         }
         aud.on_stop = async () => {
             // loose about async timing this
             //  radiostock simply waits for it to disappear
             re.r({in_progress:1},{})
+            // < assure the final on_recording() ?
+            //     it might be causing the tinybits
+            //    and delete %in_progress when that final %preview is in
         }
 
         aud.play(offset)
@@ -319,29 +322,37 @@ export class RadioModus extends Modus {
         // <AI>
         // Helper to load random records from stock directory
         async *load_random_records(sD: TheD, count: number, had:TheN): AsyncGenerator<TheC> {
-            const DL = this.D_to_DL(sD);
+            // Get all .webms files from D/* (the Tree children)
+            let webmsFiles = sD.o({Tree: 1, name: 1})
+                .filter((D: TheD) => D.sc.name.endsWith('.webms'))
             
-            // Get all .webms files
-            if (!DL.expanded) throw "we usually rely on %aim to get in there"
-            let webmsFiles = DL.files.filter((FL:FileListing) => FL.name.endsWith('.webms'))
             if (webmsFiles.length === 0) return
-            // not the already loaded
-            for (let re of had) {
-                let name = await this.record_to_name(re)
-                grop((FL:FileListing) => FL.name.includes(name), webmsFiles)
+            
+            // Filter out ones we've already loaded
+            let unloaded = webmsFiles.filter((D: TheD) => !D.oa({warmed_up: 1}))
+            
+            if (unloaded.length === 0) {
+                // console.log("All .webms files in stock already loaded")
+                return
             }
             
             // Load random selection
-            for (let i = 0; i < count && i < webmsFiles.length; i++) {
-                const randomIdx = this.prandle(webmsFiles.length);
-                const FL = webmsFiles[randomIdx];
-                grop((oFL:FileListing) => oFL == FL, webmsFiles)
+            for (let i = 0; i < count && i < unloaded.length; i++) {
+                const randomIdx = this.prandle(unloaded.length);
+                const D = unloaded[randomIdx];
+                
+                // Remove from unloaded so we don't pick it again this iteration
+                unloaded = unloaded.filter((oD: TheD) => oD !== D)
                 
                 try {
-                    const re = await this.record_from_disk(FL.name, sD);
+                    const re = await this.record_from_disk(D.sc.name, sD);
+                    
+                    // Mark this file as warmed up
+                    D.i({warmed_up: 1})
+                    
                     yield re;
                 } catch (err) {
-                    console.warn(`Failed to load ${FL.name}:`, err);
+                    console.warn(`Failed to load ${D.sc.name}:`, err);
                 }
             }
         }
@@ -669,17 +680,19 @@ export class ShareeModus extends RadioModus {
                 A = this.refresh_C([A])
                 co = this.refresh_C([A,w,co])
                 rr = this.refresh_C([A,w,wh,rr])
+
                 let them = A.o({record:1})
                 rr.i({gota:"orecord"})
-                let have_one = await this.co_cursor_N_next(co,A,them)
-                if (have_one) {
+
+                let current = await this.co_cursor_N_next(co,A,them)
+                if (current) {
                     if ('do sends out of time') {
                         console.log("broad: orecord: sent more")
                         wh.i({see:"unemit:orecord"})
                         await sendeth(current)
                     }
                     else {
-                        // can send immediately
+                        // can send immediately once in time, which is locked and throttled
                         await rr.r({send_one_pls:1})
                         console.log("broad: orecord: send_one_pls")
                         // < but seem to have to be in main() to w.i()? ie advance cursor
@@ -706,12 +719,13 @@ export class ShareeModus extends RadioModus {
         // what we have to play
         let them = A.o({record:1})
 
-        // dispatchily,
+        // dispatchily
+        // < GOING? redundant given we can do sends out of time when they ask
         if (rr.oa({send_one_pls:1})) {
             let current = await this.co_cursor_N_next(co,A,them)
             if (current) {
-                sendeth(current)
-                rr.r({send_one_pls:1},{})
+                await sendeth(current)
+                await rr.r({send_one_pls:1},{})
             }
         }
         
@@ -730,16 +744,12 @@ export class ShareeModus extends RadioModus {
             let it = await this.pull_stock(A,w)
             if (it && dif > 1) await this.pull_stock(A,w)
             if (it) {
-                console.log("broad: got more")
                 if (rr.oa({excitable:1})) {
-                    rr.r({excitable:1},{})
-                    console.log("broad:      excitable")
-                    rr.i({see:"excitable"})
+                    await rr.r({excitable:1},{})
                     await sendeth(it)
                 }
             }
             else {
-                console.log("broad: want more")
                 w.i({see:"want more"})
             }
         }

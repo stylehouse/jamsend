@@ -313,7 +313,7 @@ abstract class TimeGallopia extends ModusItself {
         })
     }
     // tell anyone awaiting to reread C/*
-    async Cpromise(C:TheC) {
+    Cpromise(C:TheC) {
         let resolve = C.c.fulfil
         resolve?.() 
         C.c.promise = new Promise((resolve) => {
