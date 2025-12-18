@@ -500,7 +500,7 @@ abstract class Agency extends TimeGallopia {
             }
         }
         // < test effects of this... not sure
-        const KEEP_WHOLE_w = true
+        const KEEP_WHOLE_w = false
         for (let A of AN) {
             // w can mutate sc eg %then
             //  so keep writing it down

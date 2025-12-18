@@ -1,4 +1,4 @@
-import { _C, keyser, TheC, type TheN } from "$lib/data/Stuff.svelte.ts"
+import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
 import type { Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
@@ -93,7 +93,7 @@ export class RadioModus extends Modus {
             },
         })
 
-        // if ('only what we made') return
+        if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -605,8 +605,19 @@ export class ShareeModus extends RadioModus {
     }
     async radioterminal(A,w) {
         w.sc.unemits ||= {
-            irecord: async ({Expression}) => {
-                let re = A.i({record:Expression})
+            irecord: async ({re,pr,buffer}:{re:TheUniversal,pr:TheUniversal}) => {
+                A = this.refresh_C([A])
+                w = this.refresh_C([A,w])
+                if (!re.record) throw "!%record"
+                
+                // < test|tour places we did eg A.r(resc)
+                //    because without the sc arg it changes resc.*=1
+                //   so it doesn't just ensure a %record exists...
+                re = await A.r(re,re)
+                pr = re.i({...pr,buffer})
+                // console.log(`irecord got: ${re.sc.enid} at ${pr.sc.seq}`)
+
+                if (!w.oa({nowPlaying:1})) this.main()
                 // re.i({dooooooooooings:'it'})
                 // re.i({dooooooewooings:'it'})
                 // re.i({doooaooowooings:'it'})
@@ -618,18 +629,62 @@ export class ShareeModus extends RadioModus {
         }
 
         // we're hungry for %record
-        let recs = A.o({record:1})
+        let o_playable = () => {
+            // < a join to the recently table on uri ?
+            //    cursor should work fine for keeping us along...
+            //   a desperate fugue of reruns may have to be another layer...
+            return A.o({record:1})
+            //grep(re => !w.oa({recently_heard:1,uri:re.sc.uri}),
+            //)
+        }
 
-        // a join to the recently table on uri
-        // < should be on artist+track
-        let fresh = grep(re => !A.oa({recently:1,uri:re.sc.uri}), recs)
-        if (fresh.length < 5) {
+        // engage one
+        let hear = async (re) => {
+            // and something to exist for all the auds in a sequence...
+            let he = w.i({hearing:1})
+            he.i(re)
+            let progress = async () => {
+                // pull the next %preview as aud, linked list of them
+                
+            }
+
+            // < make real
+
+
+            w.r({nowPlaying:he,uri:re.sc.uri})
+        }
+
+
+        let co = await w.r({consumers:1,of:'radiostock'})
+        let next = async () => {
+            // < should be on artist+track
+            let them = o_playable()
+            let current = await this.co_cursor_N_next(co,co,them)
+            if (current) {
+                await hear(current)
+                await this.co_cursor_save(co,co,current)
+                return current
+            }
+            else {
+                // route hunger to the cursor-nearing-end code
+                // this.main()
+            }
+        }
+
+        if (!w.oa({nowPlaying:1})) {
+            let rec = await next()
+        }
+
+        let them = o_playable()
+        let left = await this.co_cursor_N_least_left(co,them)
+        let KEEP_AHEAD = 5
+        if (left < KEEP_AHEAD) {
             console.log("term: orecord?")
             w.i({see:'acquiring more...'})
             await this.PF.emit('orecord')
         }
 
-        if (!A.oa({record:1})) {
+        if (!w.oa({record:1})) {
             return w.i({waits:"no records"})
         }
 
@@ -644,6 +699,56 @@ export class ShareeModus extends RadioModus {
     // desk to machine (terminal)
     // < and if also a terminal, hotwire the arrival handlers
     
+    // transmit once, keeps transmitting while re.c.promise more /* */
+    async transmit_record(A,w,re) {
+        let sending = async (pr) => {
+            let buffer = pr.sc.buffer
+            if (!buffer) throw "!buffer"
+            if (!buffer instanceof ArrayBuffer) throw "~buffer"
+            await this.PF.emit('irecord',{
+                re: tex({},re.sc),
+                pr: tex({},pr.sc),
+                buffer,
+            })
+        }
+        // < put this on w/listeners/$who or so
+        //  < and separate the transmitter (PF) from the broadcaster (F)
+        let co = _C({name:"through record chunks"})
+        let spooling = 0
+        let spoolia = async () => {
+            let them = [...re.o({preview:1}), ...re.o({stream:1})]
+            let current = await this.co_cursor_N_next(co,co,them)
+            spooling ++
+            if (current) {
+                if (!current.sc.buffer) {
+                    // < tidy re/*%stream after a while?
+                    //    and spawn a new streamer if the listening party is so far ahead
+                    //    that the chunks just after the %preview is already de-buffered
+                    throw "ohno, hit dropped %record memory"
+                }
+                console.log(`soundpooling ${spooling}`)
+                await sending(current)
+                await this.co_cursor_save(co,co,current)
+                return true
+            }
+        }
+        // all %preview that are there
+        while (await spoolia()) { 1 }
+
+        // then wait for %stream, or more %preview...
+        (async () => {
+            while (re.c.promise) {
+                // < or once %record has .c.drop?
+                if (this.stopped) break
+                await re.c.promise
+                await spoolia()
+                if (!re.c.promise) {
+                    // < clue about being the end?
+                }
+            }
+        })()
+    }
+
     async radiobroadcaster(A,w) {
         //  just one other to track for
         let co = await w.r({consumers:1,of:'%record'})
@@ -652,19 +757,21 @@ export class ShareeModus extends RadioModus {
         
         let wh = await w.r({was_sent:1})
         let rr = await wh.r({these_records:1})
-        let sendeth = async (rec) => {
+        let sendeth = async (re) => {
             A = this.refresh_C([A])
+            w = this.refresh_C([A,w])
             co = this.refresh_C([A,w,co])
             rr = this.refresh_C([A,w,wh,rr])
+            // console.log("sendeth: "+re.sc.enid)
 
-            // send it
-            this.PF.emit('irecord',{Expression:rec.sc.uri})
+            // send it, which can be drawn out
+            await this.transmit_record(A,w,re)
             await rr.r({excitable:1},{})
-            rr.i(rec)
+            rr.i(re)
             // save new cursor, in case we came through %excitable without moving the cursor
-            await this.co_cursor_save(co,A,rec)
+            await this.co_cursor_save(co,A,re)
 
-            if (rec.oa({in_progress:1})) {
+            if (re.oa({in_progress:1})) {
                 // < saddle up C.c.promise
             }
         }
@@ -696,7 +803,7 @@ export class ShareeModus extends RadioModus {
                 else {
                     // can send when one arrives
                     console.log("broad: orecord: excitable")
-                    rr.r({excitable:1})
+                    await rr.r({excitable:1})
                 }
                 return
             }
@@ -739,7 +846,6 @@ export class ShareeModus extends RadioModus {
             if (it && dif > 1) await this.pull_stock(A,w)
             if (it) {
                 if (rr.oa({excitable:1})) {
-                    await rr.r({excitable:1},{})
                     await sendeth(it)
                 }
             }

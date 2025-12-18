@@ -935,6 +935,7 @@ export type TheUniversal = {
     n: TheC,
     name: string,
     needs_doing: boolean,
+    buffer: ArrayBuffer
 } & any
 export type TheEmpirical = {
     // whether it has been deleted, the index remains
