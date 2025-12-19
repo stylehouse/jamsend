@@ -148,15 +148,7 @@ export class DirectoryModus extends RadioModus {
         return Math.floor(s / 1000) * 1000
     }
 
-    whittle_N(N:TheN,to:number) {
-        to ||= 20
-        while (N.length > to) {
-            let n:TheC = N.shift()
-            // < drop() is weird... meant for the host
-            n.drop(n)
-        }
-    }
-
+    // < generalise this, DL-ify like aim_to_open()
     async whittle_stock(w:TheC,D:TheD,to:number) {
         to ||= 20
         let N = D.o({Tree:1})

@@ -162,6 +162,10 @@ export class Audiolet {
     playing_last?:AudioBufferSourceNode
     start_time?:ACtime
     stop_time?:ACtime
+    // fires if stopping by reaching the end
+    on_ended?:Function
+    // fires after the above, once this.stopped
+    //  and if someone calls stop() before the end
     on_stop?:Function
     stop() {
         if (this.stopped) return

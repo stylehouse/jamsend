@@ -201,6 +201,18 @@ abstract class TimeGallopia extends ModusItself {
         return Math.floor(Math.random()*n)
     }
     
+    // garbage collect items from the front (oldest)
+    whittle_N(N:TheN,to:number) {
+        to ||= 20
+        let goners = []
+        while (N.length > to) {
+            let n:TheC = N.shift() // removes them from your array
+            // < drop() is weird... meant for the host
+            n.drop(n)
+            goners.push(n)
+        }
+        return goners
+    }
     
     // < if there's one of these, main() might aim better
     async Modus_intendienthay(A,w) {

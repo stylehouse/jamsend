@@ -93,7 +93,7 @@ export class RadioModus extends Modus {
             },
         })
 
-        if ('only what we made') return
+        // if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -638,21 +638,6 @@ export class ShareeModus extends RadioModus {
             //)
         }
 
-        // engage one
-        let hear = async (re) => {
-            // and something to exist for all the auds in a sequence...
-            let he = w.i({hearing:1})
-            he.i(re)
-            let progress = async () => {
-                // pull the next %preview as aud, linked list of them
-                
-            }
-
-            // < make real
-
-
-            w.r({nowPlaying:he,uri:re.sc.uri})
-        }
 
 
         let co = await w.r({consumers:1,of:'radiostock'})
@@ -661,7 +646,7 @@ export class ShareeModus extends RadioModus {
             let them = o_playable()
             let current = await this.co_cursor_N_next(co,co,them)
             if (current) {
-                await hear(current)
+                await this.radio_hear(A,w,current)
                 await this.co_cursor_save(co,co,current)
                 return current
             }
@@ -692,12 +677,170 @@ export class ShareeModus extends RadioModus {
         //  at half way through it, turns into %stream
     }
 
+    // think about where re is up to (this au)
+    async radio_hearing_progress(A,w,re,he,au) {
+        if (au.sc.stopping && !au.sc.next) {
+            console.warn("au is stopping and there's no more")
+        }
+        if (!au.sc.next) {
+            // < do we notice this when aud starts?
+        }
+        return au.sc.next
+    }
+    // engage one re
+    async radio_hear(A,w,re) {
+        const DECODE_AHEAD = 2
+        // and something to exist for all the auds in a sequence...
+        let he = w.i({hearing:1})
+        he.i(re)
+        let what = () => `${re.sc.uri}`
+
+        // thinking %hearing/*%aud, advancing reactions like play() etc
+        let listening = async () => {
+            let aus = he.o({aud:1})
+            // where is playhead
+            let plau = he.o({playing:1,aud:1})[0]
+            let au_play = (au) => {
+                let aud:Audiolet = au.sc.aud
+                // < sense at certain times from the end
+                aud.on_ended = async () => {
+                    au.sc.stopping = 1
+                    console.log(`aud->aud stopping: \t${what()}`)
+                    await listening()
+                }
+                aud.play()
+                au.sc.playing = 1
+            }
+
+            if (!plau) {
+                // first one
+                let au = aus[0]
+                if (!au) throw "!au"
+                plau = au
+                au_play(au)
+            }
+            else {
+                // garbage collect auds from the front (oldest)
+                let goners = this.whittle_N(aus,10)
+                if (goners.some(au => au.sc.playing)) throw `aud whittle_N still %playing`
+                if (aus[0]) aus[0].sc.next = null
+
+                if (plau.sc.stopping) {
+                    plau.sc.playing = null
+                    
+                    let neau = await this.radio_hearing_progress(A,w,re,he,plau)
+                    if (neau) {
+                        console.log(`plau hops`)
+                        au_play(neau)
+                    }
+                    else {
+                        console.log(`plau ENDS`)
+                    }
+                    
+                    plau.sc.stopping = null
+                }
+                else {
+                    console.log(`plau continues`)
+                }
+            }
+
+            // keep decoding more aud ahead
+            let progress_decoding = DECODE_AHEAD
+            let ah = plau
+            while (ah && progress_decoding-- > 0) {
+                ah = ah.sc.next
+                if (!ah) progress()
+            }
+            
+            // update the index in he (he.X) so we can find %playing via .o()
+            //  using the rarer key playing before the populous aud
+            await he.replace({aud:1}, async () => {
+                // au values are referred to for a linked list
+                //  so keep the whole C, not just C.sc
+                aus.map(au => he.i(au))
+            })
+        }
+
+        let enqueue_i = 0
+        // %preview -> aud, aud<->aud,
+        //  but not necessarily playing it yet
+        let enqueue = async (pr) => {
+            // for a linked list of aud
+            let what = () => `${re.sc.uri}\npr%${keyser(pr.sc)}`
+            console.log(`radio chunk: ${enqueue_i}\t${what()}`)
+            if (enqueue_i != pr.sc.seq) throw `seq!=enqueue_i`
+            enqueue_i++
+            
+            let aud = this.gat.new_audiolet()
+            try {
+                await aud.load(pr.sc.buffer)
+            }
+            catch (er) {
+                // < recovery? mark %record as trouble?
+                throw erring(`radio chunk decode error: ${what()}`,er)
+            }
+
+            // now pop it into hearing, the decoded stuff...
+            //   these are all Selection.process() computations really
+            //    being able to iterate a list, and how that list can change
+            let au = he.i({aud})
+
+            // au%next=->, au%prev=<- linkage
+            this.linkedlist_frontiering(he,'decode_frontier',au)
+
+            // figure out what to do now looking at he/*%aud
+            await listening()
+        }
+
+        // find next %preview and enqueue it
+        let progress = async () => {
+            // pull the next %record/*%preview
+            let them = this.get_record_audiobits(re)
+            let current = await this.co_cursor_N_next(he,he,them)
+            
+            if (current) {
+                try {
+                    await enqueue(current)
+                }
+                catch (er) {
+                    // < recovery? mark %record as trouble?
+                    throw erring(`radio chunk enqueue error: ${what()}`,er)
+                }
+
+                await this.co_cursor_save(he,he,current)
+            }
+            else {
+                console.log(`soundheating ${re.sc.uri} done!?`)
+            }
+        }
+
+        // start decoding
+        //  which spurs playing
+        //   which sets up continuity
+        await progress()
+
+        await w.r({nowPlaying:he,uri:re.sc.uri})
+    }
+
+    // au%next=->, au%prev=<- linkage via the host he
+    linkedlist_frontiering(he,name,au) {
+        let laau = he.sc[name]
+        if (laau) {
+            if (laau.sc.next) throw `already au%next`
+            laau.sc.next = au
+            au.sc.prev = laau;
+        }
+        he.sc[name] = au
+    }
 
 
 //#endregion
 //#region radiobroadcaster
     // desk to machine (terminal)
     // < and if also a terminal, hotwire the arrival handlers
+    get_record_audiobits(re) {
+        return [...re.o({preview:1}), ...re.o({stream:1})]
+    }
     
     // transmit once, keeps transmitting while re.c.promise more /* */
     async transmit_record(A,w,re) {
@@ -716,7 +859,7 @@ export class ShareeModus extends RadioModus {
         let co = _C({name:"through record chunks"})
         let spooling = 0
         let spoolia = async () => {
-            let them = [...re.o({preview:1}), ...re.o({stream:1})]
+            let them = this.get_record_audiobits(re)
             let current = await this.co_cursor_N_next(co,co,them)
             spooling ++
             if (current) {
