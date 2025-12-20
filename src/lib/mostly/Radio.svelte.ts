@@ -333,6 +333,9 @@ export class RadioModus extends Modus {
             if (!re.sc.enid) throw "ohno!"
             return `${now_in_seconds()}-${re.sc.enid}.webms`
         }
+        get_record_audiobits(re) {
+            return [...re.o({preview:1}), ...re.o({stream:1})]
+        }
 
 
     
@@ -638,31 +641,37 @@ export class ShareeModus extends RadioModus {
             irecord: async ({re:resc,pr:prsc,buffer}:{re:TheUniversal,pr:TheUniversal}) => {
                 A = this.refresh_C([A])
                 w = this.refresh_C([A,w])
+                this.check_sanity(A)
                 if (!resc.record) throw "!%record"
                 if (prsc.seq == 0 && A.oa({record:1,enid:resc.enid})) {
                     console.warn(`irecord DUP ${resc.enid} at ${prsc.seq}`)
+                    debugger
                 }
                 
                 // < test|tour places we did eg A.r(resc)
                 //    because without the sc arg it makes pattern_sc.* = 1
                 //   see replace() / IN_ORDER
-                // in case of 
-                let re = A.oa(resc)?.[0]
-                    || await A.r(resc,resc)
+                // in case of
+                let exactly = (sc) => map(v => String(v),sc)
+                let re = A.o({record:1,enid:resc.enid})[0]
+                    || await A.r(exactly(resc),resc)
                 // < dealing with repeat transmissions. this should be re.i()
                 //   some cursors need to wait at the end?
                 // string '1' is not a wildcard
-                if (re.oa({seq:String(prsc.seq)})) {
+                this.check_sanity(A)
+                if (re.oa({preview:1,seq:String(prsc.seq)})) {
                     console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
                     w.i({warning:'irecord DUP'})
                     return
                 }
-                let pr = await re.r(
-                    {seq:String(prsc.seq)},
+                let pr = re.o({preview:1,...exactly(prsc)})[0]
+                    || await re.r(
+                    exactly(sex({preview:1},prsc,'seq')),
                     {...prsc,buffer}
                 )
                 V.irec && console.log(`irecord     ${re.sc.enid} at ${pr.sc.seq}`)
 
+                this.check_sanity(A)
                 if (!w.oa({nowPlaying:1})) this.main()
                 // re.i({dooooooooooings:'it'})
                 // re.i({dooooooewooings:'it'})
@@ -673,6 +682,10 @@ export class ShareeModus extends RadioModus {
                 // re.i({dooooooooyyings:'it'})
             }
         }
+        w.c.spinner ||= setInterval(() => {
+            if (this.stopped) return clearInterval(w.c.spinner)
+            this.check_sanity(A)
+        }, 100)
         // < should we have hidden state like this?
         //   depends on KEEP_WHOLE_w to not lose w.c at the end of every time
         //    which perhaps we should...
@@ -718,7 +731,8 @@ export class ShareeModus extends RadioModus {
 
         let co = await w.r({consumers:1,of:'radiostock'})
         let la = null
-        let next = async () => {
+        let next = async (loop) => {
+            if (loop > 3) throw "loop"
             // < should be on artist+track
             let them = o_playable()
             let current = await this.co_cursor_N_next(co,1,them)
@@ -734,8 +748,12 @@ export class ShareeModus extends RadioModus {
             }
             else {
                 // route hunger to the cursor-nearing-end code
-                // this.main()
                 console.warn("terminal hunger")
+                // let everything play again! this is odd though.
+                // < make these cases studyable in the wild
+                //    it here we suggest uploading some screeds
+                w.r({hearing:1},{})
+                await next(loop + 1)
             }
         }
 
@@ -764,6 +782,25 @@ export class ShareeModus extends RadioModus {
         // < have a way to modulate around a mix of them
         //    radio_hear() just wanders off...
     }
+    // brute force checking all our %record/%preview are sequential...
+    check_sanity(A) {
+        for (let re of A.o({record: 1})) {
+            let want_seq = 0
+            let prs = this.get_record_audiobits(re)
+            for (let pr of prs) {
+                if (pr.sc.seq != want_seq) {
+                    A.c.onestop ||= 0
+                    if (!A.c.onestop) {
+                        console.error(`out of seq: ${re.sc.enid} at ${want_seq} != ${pr.sc.seq}`,
+                            prs.map(keyser)
+                        )
+                        debugger
+                    }
+                }
+                want_seq++
+            }
+        }
+    }
 //#endregion
 //#region < radio_hive
 
@@ -772,16 +809,6 @@ export class ShareeModus extends RadioModus {
 
 //#endregion
 //#region radio_hear
-    // think about where re is up to (this au)
-    async radio_hearing_progress(A,w,re,he,au) {
-        if (au.sc.stopping && !au.sc.next) {
-            console.warn("au is stopping and there's no more")
-        }
-        if (!au.sc.next) {
-            // < do we notice this when aud starts?
-        }
-        return au.sc.next
-    }
     // engage one re
     async radio_hear(A,w,re) {
         // and something to exist for all the auds in a sequence...
@@ -838,7 +865,7 @@ export class ShareeModus extends RadioModus {
                 if (plau.sc.stopping) {
                     delete plau.sc.playing
                     
-                    let neau = await this.radio_hearing_progress(A,w,re,he,plau)
+                    let neau = plau.sc.next
                     if (neau) {
                         V.plau && console.log(`plau hops -> ${neau.sc.seq}`)
                         au_play(neau)
@@ -922,6 +949,7 @@ export class ShareeModus extends RadioModus {
             if (current) {
                 let bit = 'enqueue'
                 try {
+                    console.log(`progress() ${what()} ${current.sc.seq}!`)
                     // contains decoding
                     await enqueue(current)
                     await this.co_cursor_save(he,he,current)
@@ -974,17 +1002,14 @@ export class ShareeModus extends RadioModus {
 //#region radiobroadcaster
     // desk to machine (terminal)
     // < and if also a terminal, hotwire the arrival handlers
-    get_record_audiobits(re) {
-        return [...re.o({preview:1}), ...re.o({stream:1})]
-    }
     
     // transmit once, keeps transmitting while re.c.promise more /* */
     async transmit_record(A,w,re) {
-        console.log(`transmit_record(${re.sc.enid})`)
         let sending = async (pr) => {
             let buffer = pr.sc.buffer
             if (!buffer) throw "!buffer"
             if (!buffer instanceof ArrayBuffer) throw "~buffer"
+            console.log(`transmit_record(${re.sc.enid}) sending(seq=${pr.sc.seq})`)
             await this.PF.emit('irecord',{
                 re: tex({},re.sc),
                 pr: tex({},pr.sc),
@@ -1158,8 +1183,11 @@ export class ShareeModus extends RadioModus {
                 if (rr.oa({excitable:1})) {
                     // < dunno.. they ask often?
                     //    leaving off to debug other stuff
-                    
-                    await sendeth(it)
+                    // < we would also need to hold their latest client number
+                    //   which would be fine with a bit more Selection.process() around...
+                    console.log(`broad: excitable, zen`)
+                    w.i({see:"excitable, zen"})
+                    // await sendeth(it)
                 }
             }
             else {
