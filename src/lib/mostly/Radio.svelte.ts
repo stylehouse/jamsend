@@ -63,6 +63,11 @@ export class RadioModus extends Modus {
             i: async (re:TheC) => {
                 w = this.refresh_C([A,w])
                 // first it comes into the cache here, available to Piers
+                if (A.oa({record:1,enid:re.sc.enid})) {
+                    console.log(`radiostock.i() DUP ${re.sc.enid} (dropped)`)
+                    return
+                }
+                
                 A.i(re)
                 // it's the same C, so we "have" new /*%preview as they come in
                 //                              (see Cpromise() for knowing when)
@@ -116,11 +121,13 @@ export class RadioModus extends Modus {
             }
         }
 
+        let radiostock = this.o({io:'radiostock'})[0]
+        if (!radiostock) return w.i({waits:"%io:radiostock"})
         // load some
         if (had.length < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
             for await (const re of this.load_random_records(stockD, to_load,had)) {
-                A.i(re)
+                await radiostock.sc.i(re)
             }
         }
         
@@ -347,9 +354,8 @@ export class RadioModus extends Modus {
             for (let i = 0; i < count && i < unloaded.length; i++) {
                 const randomIdx = this.prandle(unloaded.length);
                 const D = unloaded[randomIdx];
-                
                 // Remove from unloaded so we don't pick it again this iteration
-                unloaded = unloaded.filter((oD: TheD) => oD !== D)
+                grop(D,unloaded)
                 
                 try {
                     const re = await this.record_from_disk(D.sc.name, sD);

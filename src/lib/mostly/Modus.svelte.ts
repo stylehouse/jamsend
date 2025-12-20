@@ -4,7 +4,7 @@ import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring, grep, hak, iske, throttle } from "$lib/Y";
+import { erring, grep, hak, iske, tex, throttle } from "$lib/Y";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -239,7 +239,7 @@ abstract class TimeGallopia extends ModusItself {
             else {
                 sc = {...into.sc}
             }
-            sc = grep((v,k) => iske(v), sc)
+            sc = tex({}, sc)
             // console.log(`so it could be `,sc)
             let possible = where.o(sc)
             if (possible.length > 1) throw "multitude"
