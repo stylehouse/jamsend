@@ -4,6 +4,8 @@ import type { Travel } from "$lib/mostly/Selection.svelte";
 import { isar, map, throttle } from "$lib/Y";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
+const OPTIMISE_FOR_DX = true
+
 let spec = `
 
 what Stuff is (~~ brackio)
@@ -154,6 +156,7 @@ class StuffIO {
     X:TheX = $state()
     // while doing replace(), hops everything over to:
     X_before?:TheX
+    replace_having?:Error["stack"]
     Xify() {
         this.X ||= new TheX()
         // via Stuff.replace(), X is a page that turns, keep version
@@ -495,7 +498,27 @@ export class Stuff extends TimeOffice {
     //   o() will only have what we've added so far
     //  
     async replace(pattern_sc:TheUniversal,fn:Function,q?:any) {
-        if (this.X_before) throw `already X_before, still doing another replace()`
+        // < is perhaps workable if the patterns don't overlap?
+        let problemo = 'nested replace() transactions'
+        if (OPTIMISE_FOR_DX) {
+            // < possibly expensive?
+            // note where we're coming from
+            const stack = `pattern_sc = ${keyser(pattern_sc)}\n`
+                + new Error().stack
+            if (this.replace_having) {
+                if (!this.X_before) throw "insanity"
+                console.error(problemo, {
+                    awaiting_stack: this.replace_having.split("\n"),
+                    current_stack: stack.split("\n"),
+                })
+                throw problemo
+            }
+            this.replace_having = stack
+        }
+        if (this.X_before) {
+            throw problemo
+        }
+        
         q ||= {}
         // move it aside and regerate another X
         //  ensuring we have an X_before the first time
@@ -527,8 +550,10 @@ export class Stuff extends TimeOffice {
                         let innered = b.X?.z?.length
                         if (innered && !b.c.Isness) {
                             // < if they have b.i() already? post-hoc resolve()?
-                            console.error("Ohno! something already in: "+keyser(this)
-                                +"\n eg: "+keyser(b.X.z[0]))
+                            console.error(`C.replace() resolved n have /*:\n`
+                                    +`  C: ${keyser(this)}\n`
+                                    +`    n: ${keyser(b)}\n`
+                                    +b.X.z.map(s => `      s: ${keyser(s)}\n`).join(''))
                         }
                         this.resume_X(a,b)
                     }
@@ -561,6 +586,7 @@ export class Stuff extends TimeOffice {
 
         } finally {
             this.X_before = undefined
+            this.replace_having = undefined
             // something probably changed
             //  chase up observers, eg Stuffing, who aren't waiting
             this.X?.bump_version()

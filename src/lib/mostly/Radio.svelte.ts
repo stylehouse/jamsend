@@ -710,6 +710,14 @@ export class ShareeModus extends RadioModus {
         }
 
 
+        let thefun = async () => {
+            await w.replace({otherstuff:1}, async () => {
+                throw "never gets here because nested replace()"
+            })
+        }
+        await w.replace({boring:1}, async () => {
+            await thefun()
+        })
 
         let co = await w.r({consumers:1,of:'radiostock'})
         let la = null
@@ -860,6 +868,7 @@ export class ShareeModus extends RadioModus {
                 // au values are referred to for a linked list
                 //  so keep the whole C, not just C.sc
                 aus.map(au => he.i(au))
+
             })
 
             if (!plau) return
