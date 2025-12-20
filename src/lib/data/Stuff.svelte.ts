@@ -368,8 +368,8 @@ class StuffIO {
             return false;
         }
         
-        // wildcard where {$k:1}
-        if (value == 1) return true
+        // wildcard {$k:1} but not {$k:"1"}
+        if (value == 1 && typeof value == 'number') return true
         
         return n.sc[key] === value;
     }
@@ -538,11 +538,16 @@ export class Stuff extends TimeOffice {
             }
 
             if (partial) {
+                // as if we .i(), so new rows are at the end
+                const IN_ORDER = true
+                let X_new = this.X
+                if (IN_ORDER) this.empty()
                 // put everything else back in
                 this.bo().forEach(n => {
                     if (partial?.includes(n)) return
                     this.i(n)
                 })
+                if (IN_ORDER) X_new.z?.map(n => this.i(n))
             }
             
             return result

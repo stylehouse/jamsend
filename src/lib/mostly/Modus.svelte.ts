@@ -253,6 +253,9 @@ abstract class TimeGallopia extends ModusItself {
 
 
 
+//#endregion
+//#region cursor
+
     // these track progress of reading out N
     //  eg the *%record coming from radiostock
     //   but could also be %record/*%preview perhaps...
@@ -269,7 +272,7 @@ abstract class TimeGallopia extends ModusItself {
     }
     async co_cursor_save(co:TheC,client:any,current:any) {
         // save new cursor
-        await co.r({client,current})
+        await co.r({client},{client,current})
     }
     async co_cursor_N_advance(co:TheC,client:any,N:TheN) {
         // previous thing they got makes a cursor
@@ -512,7 +515,8 @@ abstract class Agency extends TimeGallopia {
             }
         }
         // < test effects of this... not sure
-        const KEEP_WHOLE_w = false
+        // it's on now! see KEEP_WHOLE_w in comments for dependos
+        const KEEP_WHOLE_w = true
         for (let A of AN) {
             // w can mutate sc eg %then
             //  so keep writing it down

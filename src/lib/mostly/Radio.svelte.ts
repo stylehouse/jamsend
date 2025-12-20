@@ -572,6 +572,8 @@ export class ShareeModus extends RadioModus {
         await this.do_A();
         this.main()
     }
+    // describe the minds regarding trust
+    // < rename perm... it's both pieces of trust, theirs and ours...
     async do_A(hard=false) {
         // console.log("do_A")
         let A
@@ -611,16 +613,21 @@ export class ShareeModus extends RadioModus {
                 if (!resc.record) throw "!%record"
                 
                 // < test|tour places we did eg A.r(resc)
-                //    because without the sc arg it changes resc.*=1
-                //   so it doesn't just ensure a %record exists...
+                //    because without the sc arg it makes pattern_sc.* = 1
+                //   see replace() / IN_ORDER
                 let re = await A.r(resc,resc)
                 // < dealing with repeat transmissions. this should be re.i()
                 //   some cursors need to wait at the end?
+                // string '1' is not a wildcard
+                if (re.oa({seq:String(prsc.seq)})) {
+                    throw "stopped happening!"
+                    console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
+                }
                 let pr = await re.r(
-                    sex({},prsc,'enid,seq'),
+                    {seq:String(prsc.seq)},
                     {...prsc,buffer}
                 )
-                console.log(`irecord got: ${re.sc.enid} at ${pr.sc.seq}`)
+                console.log(`irecord     ${re.sc.enid} at ${pr.sc.seq}`)
 
                 if (!w.oa({nowPlaying:1})) this.main()
                 // re.i({dooooooooooings:'it'})
@@ -632,6 +639,36 @@ export class ShareeModus extends RadioModus {
                 // re.i({dooooooooyyings:'it'})
             }
         }
+        // < should we have hidden state like this?
+        //   depends on KEEP_WHOLE_w to not lose w.c at the end of every time
+        //    which perhaps we should...
+        // our cursor id on the broadcaster, so we can restart
+        w.c.cursor ||= this.prandle(9000000000)
+        let emit_orecord = async () => {
+            await this.PF.emit('orecord',{client:w.c.cursor})
+        }
+        // < times...
+        w.c.rec_end_nearing = () => {
+            // < any %record/*%seq=$here,end_seq=$later can indicate the end?
+            //    so radiostock can warn you to emit:ostream well before the end
+            // < if it was %preview, then commission %stream
+            //   if it was %stream, go 
+            
+            // < in other cases we may be on much
+            // < would be the %stream to completion coming
+            //   want to play another %record from the start!
+        }
+        w.c.next_nearing = () => {
+            // < just the first bit of radio_hear
+        }
+        // record is finished
+        w.c.next_is_go = () => {
+            // < there's a %mixage operating this procedure?
+            //    callback clustering
+            console.log("term: next_is_go")
+            next()
+        }
+        // < 
 
         // we're hungry for %record
         let o_playable = () => {
@@ -667,7 +704,7 @@ export class ShareeModus extends RadioModus {
         if (left < KEEP_AHEAD) {
             console.log("term: orecord?")
             w.i({see:'acquiring more...'})
-            await this.PF.emit('orecord')
+            await emit_orecord()
         }
         if (!them.length) {
             return w.i({waits:"no records"})
@@ -680,11 +717,21 @@ export class ShareeModus extends RadioModus {
             let rec = await next()
         }
 
+        
+
+
         // < at half way through *%preview, order %stream
         // < have a way to modulate around a mix of them
         //    radio_hear() just wanders off...
     }
+//#endregion
+//#region < radio_hive
 
+// < better calmer radio_hear(), cytoscape friendly
+
+
+//#endregion
+//#region radio_hear
     // think about where re is up to (this au)
     async radio_hearing_progress(A,w,re,he,au) {
         if (au.sc.stopping && !au.sc.next) {
@@ -700,7 +747,7 @@ export class ShareeModus extends RadioModus {
         // and something to exist for all the auds in a sequence...
         let he = w.i({hearing:1})
         he.i(re)
-        let what = () => `${re.sc.uri}`
+        let what = () => `${re.sc.enid}`
 
         // thinking %hearing/*%aud, advancing reactions like play() etc
         let listening = async () => {
@@ -712,14 +759,19 @@ export class ShareeModus extends RadioModus {
                 // < sense at certain times from the end
                 aud.on_ended = async () => {
                     au.sc.stopping = 1
-                    console.log(`aud->aud stopping ${au.sc.seq}: \t${what()}`)
+                    console.log(`aud->aud stopping ${au.sc.seq} after ${au.sc.aud.along()}`)
                     // < get listening() to ambiently progress()
                     //   instead of having a pause while we decode...
                     listening()
                 }
-                // < temporarily
-                // aud.play()
-                setTimeout(() => aud.on_ended(), 2000)
+                if (0 && 'temporarily') {
+                    setTimeout(() => aud.on_ended(), 2000)
+                }
+                else {
+                    aud.play()
+                }
+                setTimeout(() => aud.stop(), 333)
+                
                 console.log(`plau now ${au.sc.pr.sc.seq}`)
                 au.sc.playing = 1
             }
@@ -777,19 +829,8 @@ export class ShareeModus extends RadioModus {
                 // progress()
             // < get listening() to ambiently progress()
             // return
-            // time to decode the aud%next
+            // time to decode the next aud
             let needs_nexties = !plau.sc.next
-            // let ah = plau
-            // let progress_decoding = 2
-            // while (progress_decoding-- > 0) {
-            //     ah = ah.sc.next
-            //     if (!ah) {
-            //         // we may come from aud.on_ended(), out of time
-            //         // we may come from progress() itself
-            //         needs_nexties = true
-            //         break
-            //     }
-            // }
             if (needs_nexties) {
                 console.log(`plau=${plau.sc.seq} wants nexties ${what()}`)
                 progress()
@@ -805,7 +846,7 @@ export class ShareeModus extends RadioModus {
         let enqueue = async (pr) => {
             // for a linked list of aud
             let what = () => `${re.sc.uri}\npr%${keyser(pr.sc)}`
-            console.log(`radio enqueue: ${enqueue_i}\t${what()}`)
+            console.log(`radio enqueue ${enqueue_i}: \t${pr.sc.seq}`)
             if (enqueue_i != pr.sc.seq) throw `seq!=enqueue_i`
             enqueue_i++
             
@@ -851,9 +892,9 @@ export class ShareeModus extends RadioModus {
             }
             else {
                 console.log(`soundheating ${re.sc.uri} done!?`)
+                w.c.next_is_go()
             }
         }
-        let slow_progress = throttle(() => progress(), 300)
 
         // start decoding
         //  which spurs playing
@@ -915,7 +956,7 @@ export class ShareeModus extends RadioModus {
                     //    that the chunks just after the %preview is already de-buffered
                     throw "ohno, hit dropped %record memory"
                 }
-                console.log(`soundpooling ${spooling}`)
+                // console.log(`soundpooling ${spooling}`)
                 await sending(current)
                 await this.co_cursor_save(co,co,current)
                 return true
@@ -938,53 +979,49 @@ export class ShareeModus extends RadioModus {
         })()
     }
 
-    only_orecord_n_times = 1
     async radiobroadcaster(A,w) {
         //  just one other to track for
         let co = await w.r({consumers:1,of:'%record'})
         // speaking, on Pier, to the other Pier
         let Pier = this.PF.Pier
         
-        let wh = await w.r({was_sent:1})
-        let rr = await wh.r({these_records:1})
-        let sendeth = async (re) => {
+        let rr = await w.r({was_sent:1})
+        // let rr = await wh.r({these_records:1})
+        let sendeth = async (re,client:number) => {
             A = this.refresh_C([A])
             w = this.refresh_C([A,w])
             co = this.refresh_C([A,w,co])
-            rr = this.refresh_C([A,w,wh,rr])
+            rr = this.refresh_C([A,w,rr])
             console.log("sendeth: "+re.sc.enid)
 
             // < this should be after we transmit_record(), for rollbackity
             //    need to throttle many unemit:orecord rushing here before we complete sendeth()
             //   
             // save new cursor, in case we came through %excitable without moving the cursor
-            await this.co_cursor_save(co,A,re)
+            await this.co_cursor_save(co,client,re)
 
             // send it, which can be drawn out
             await this.transmit_record(A,w,re)
             await rr.r({excitable:1},{})
-            rr.i(re)
+            rr.i({enid:re.sc.enid})
         }
         w.sc.unemits ||= {
-            orecord: async (data,{P,Pier:samePier}) => {
+            orecord: async ({client},{P,Pier:samePier}) => {
                 if (samePier != Pier) throw "Pier?"
                 A = this.refresh_C([A])
                 co = this.refresh_C([A,w,co])
-                rr = this.refresh_C([A,w,wh,rr])
-                if (this.only_orecord_n_times-- <= 0) {
-                    return console.log("broad: give up")
-                }
+                rr = this.refresh_C([A,w,rr])
 
                 let them = A.o({record:1})
                 rr.i({gota:"orecord"})
 
 
-                let current = await this.co_cursor_N_next(co,A,them)
+                let current = await this.co_cursor_N_next(co,client,them)
                 if (current) {
                     if ('do sends out of time') {
                         console.log(`broad: orecord: sent more ${current.sc.enid}`)
-                        wh.i({see:"unemit:orecord"})
-                        await sendeth(current)
+                        w.i({see:"unemit:orecord"})
+                        await sendeth(current,client)
                     }
                     else {
                         // can send immediately once in time, which is locked and throttled
