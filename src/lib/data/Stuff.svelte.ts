@@ -500,16 +500,21 @@ export class Stuff extends TimeOffice {
     async replace(pattern_sc:TheUniversal,fn:Function,q?:any) {
         // < is perhaps workable if the patterns don't overlap?
         let problemo = 'nested replace() transactions'
+        let stacken = () => {
+            // < more sanity checks
+            const stack = `pattern_sc = ${keyser(pattern_sc)}\n`
+                + new Error().stack.split("\n").slice(2).join("\n")
+            return stack.split("\n")
+        }
         if (OPTIMISE_FOR_DX) {
             // < possibly expensive?
             // note where we're coming from
-            const stack = `pattern_sc = ${keyser(pattern_sc)}\n`
-                + new Error().stack
+            const stack = stacken()
             if (this.replace_having) {
                 if (!this.X_before) throw "insanity"
                 console.error(problemo, {
-                    awaiting_stack: this.replace_having.split("\n"),
-                    current_stack: stack.split("\n"),
+                    awaiting_stack: this.replace_having,
+                    current_stack: stack,
                 })
                 throw problemo
             }
@@ -545,21 +550,23 @@ export class Stuff extends TimeOffice {
 
                 // make a series of pairs of $n across time
                 let pairs = await this.resolve(this.X,this.X_before,partial)
-                let resolved_pairs = ([a,b]) => {
+                for (let [a,b] of pairs) {
                     if (a && b) {
                         let innered = b.X?.z?.length
                         if (innered && !b.c.Isness) {
                             // < if they have b.i() already? post-hoc resolve()?
                             console.error(`C.replace() resolved n have /*:\n`
-                                    +`  C: ${keyser(this)}\n`
-                                    +`    n: ${keyser(b)}\n`
-                                    +b.X.z.map(s => `      s: ${keyser(s)}\n`).join(''))
+                                +`  C: ${keyser(this)}\n`
+                                +`    n: ${keyser(b)}\n`
+                                +(b.X.z.map(s => `      s: ${keyser(s)}\n`).join(''))
+                                +`via:\n`
+                                +(stacken().join("\n"))
+                            )
                         }
                         this.resume_X(a,b)
                     }
-                    q.pairs_fn?.(a,b)
+                    await q.pairs_fn?.(a,b)
                 }
-                pairs.forEach(resolved_pairs)
             }
 
             if (partial) {

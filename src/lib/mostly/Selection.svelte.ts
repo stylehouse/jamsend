@@ -271,7 +271,7 @@ class SelectionItself extends Travel {
                     }
                 },{
                     // receive pairs of continuous-looking particles
-                    pairs_fn:(a:TheD,b:TheD)=>{
+                    pairs_fn:async (a:TheD,b:TheD)=>{
                         if (a && !b) {
                             goners.push(a)
                             // console.log("Goner on "+keyser(T.sc.D)+": "+keyser(a))

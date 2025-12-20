@@ -362,6 +362,7 @@ export class RadioModus extends Modus {
                     if (re) {
                         // Mark this file as warmed up
                         D.i({warmed_up: 1})
+                        console.log(`warmed up radiostock: ${D.sc.name}`)
                         
                         yield re;
                     }
@@ -709,15 +710,6 @@ export class ShareeModus extends RadioModus {
             //)
         }
 
-
-        let thefun = async () => {
-            await w.replace({otherstuff:1}, async () => {
-                throw "never gets here because nested replace()"
-            })
-        }
-        await w.replace({boring:1}, async () => {
-            await thefun()
-        })
 
         let co = await w.r({consumers:1,of:'radiostock'})
         let la = null
@@ -1071,7 +1063,7 @@ export class ShareeModus extends RadioModus {
                 return
             }
             this.sent_re_client_enids[`${client} ${re.sc.enid}`] = true
-            console.log("sendeth: "+re.sc.enid)
+            console.log(`broad: orecord: sendeth: ${re.sc.enid} to ${client}`)
             
 
             // < this should be after we transmit_record(), for rollbackity
@@ -1093,13 +1085,11 @@ export class ShareeModus extends RadioModus {
                 w = this.refresh_C([A,w])
                 co = this.refresh_C([A,w,co])
                 rr = this.refresh_C([A,w,rr])
-                console.log(`broad: orecord: spawned`)
                 // serve an entire orecord before releasing...
                 await this.c_mutex(w,'orecord', async () => {
                     w = this.refresh_C([A,w])
                     co = this.refresh_C([A,w,co])
                     rr = this.refresh_C([A,w,rr])
-                    console.log(`broad: orecord: begins`)
                     let them = A.o({record:1})
                     rr.i({gota:"orecord"})
 
@@ -1108,25 +1098,14 @@ export class ShareeModus extends RadioModus {
 
                     let current = await this.co_cursor_N_next(co,client,them)
                     if (current) {
-                        if ('do sends out of time') {
-                            console.log(`broad: orecord: sent more ${current.sc.enid}`)
-                            w.i({see:"unemit:orecord"})
-                            await sendeth(current,client)
-                        }
-                        else {
-                            // can send immediately once in time, which is locked and throttled
-                            await rr.r({send_one_pls:1})
-                            console.log("broad: orecord: send_one_pls")
-                            // < but seem to have to be in main() to w.i()? ie advance cursor
-                            this.main()
-                        }
+                        w.i({see:"unemit:orecord"})
+                        await sendeth(current,client)
                     }
                     else {
                         // can send when one arrives
                         console.log("broad: orecord: excitable")
                         await rr.r({excitable:1})
                     }
-                    console.log(`broad: orecord: ends`)
                 })
             }
         }
@@ -1161,7 +1140,8 @@ export class ShareeModus extends RadioModus {
                 if (rr.oa({excitable:1})) {
                     // < dunno.. they ask often?
                     //    leaving off to debug other stuff
-                    // await sendeth(it)
+                    
+                    await sendeth(it)
                 }
             }
             else {

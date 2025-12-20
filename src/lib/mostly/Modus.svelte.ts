@@ -37,21 +37,27 @@ abstract class ModusItself extends TheC  {
             this.when_to_do_A()
         })
     }
-
+    
+    // < better coordinate whether we can start doing main() yet? nah
+    // is_starting_impossible?:Function
+    on_first_have_time?:Function
     when_to_do_A() {
         // every S with .modus has a S.started
-        if (!this.S.started) {
-            return
-        }
+        if (!this.S.started) return
+        // doesn't react to M.stashed.*
+        if (!this.stashed) return
+        //  or PF.perm.*
         if (this.PF) {
+            // but it requires we hear their trust before M.started
+            if (!this.PF.Pier.heard_trust) return
             // listen to .perm.* changes
             let important = this.PF?.perm;
             important && Object.entries(important)
         }
         this.i_elvis(async () => {
             // downloads any relevant perms by replacing the A/w situation
+            console.log(`${objectify(this)} re-A`)
             await this.do_A()
-            this.main()
         })
     }
 
@@ -96,6 +102,10 @@ abstract class ModusItself extends TheC  {
         main()
     }
     async the_main() {
+        if (this.on_first_have_time) {
+            this.on_first_have_time()
+            this.on_first_have_time = undefined
+        }
         await this.have_time(async () => {
             await this.o_elvis()
 
@@ -522,7 +532,10 @@ abstract class Agency extends TimeGallopia {
             //  so keep writing it down
             let ws = A.o({w:1})
             await A.replace({w:1},async () => {
-                ws.map(w => A.i(KEEP_WHOLE_w ? w : w.sc))
+                ws.map(w => {
+                    KEEP_WHOLE_w ? A.i(w).is()
+                        : A.i(w.sc)
+                })
             })
         }
     }

@@ -35,19 +35,7 @@
         
         // do the first drawing almost immediately, but after M.stashed appears
         do_drawing = null
-
-        if (do_start) {
-            // if S isn't a Thing, nothing will try to start it
-            await S.start()
-        }
-    })
-
-    let start_drawing = 0
-    $effect(() => {
-        let Pier = S instanceof PierFeature && S.Pier
-        if (S.started && M.stashed && (!Pier || Pier.heard_trust)) {
-            // doesn't react to M.stashed.* or S.perm.*
-            //  S.perm 
+        M.on_first_have_time = () => {
             console.log(`started|stashed|perm -> main() ${objectify(S)}`)
             if (S.modus != M) debugger
 
@@ -57,10 +45,14 @@
             if (M.stashed?.do_drawing != null) {
                 do_drawing = M.stashed.do_drawing
             }
-             
-            S.modus.main()
+        }
+
+        if (do_start) {
+            // if S isn't a Thing, nothing will try to start it
+            await S.start()
         }
     })
+
     onDestroy(() => {
         M.stop()
     })
@@ -76,16 +68,9 @@
             M.stashed.do_drawing = do_drawing
         }
     })
-    let drawingness = $state()
-    function tog_draw() {
-        // turns off the Stuffing compute
-        do_drawing = !do_drawing
-    }
-    $effect(() => {
-        drawingness = do_drawing ? "hide" : "show"
-    })
-
-
+    // turns off the Stuffing compute
+    let tog_draw = () => do_drawing = !do_drawing
+    let drawingness = $derived(do_drawing ? "hide" : "show")
 
 
     let strata = $derived(M.a_Strata)
