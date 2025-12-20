@@ -374,7 +374,7 @@ class StuffIO {
         // wildcard {$k:1} but not {$k:"1"}
         if (value == 1 && typeof value == 'number') return true
         
-        return n.sc[key] === value;
+        return n.sc[key] == value;
     }
 }
 
