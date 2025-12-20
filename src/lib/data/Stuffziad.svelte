@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
+    import { Stuffziado } from "./Stuff.svelte";
     import Stuffziad from './Stuffziad.svelte'
     import Stuffzipper from './Stuffzipper.svelte';
     let { mem,stuffziad }: { mem:Modusmem, stuffziad: Stuffziad } = $props()
@@ -30,9 +31,11 @@
         }
         return o
     }
+    // < ts|vscode-svelte-plugin bug?
+    //    stuffziado has a weird type, even if you rename and cast it
 </script>
 
-{#snippet ziado(stuffziado)}
+{#snippet ziado(stuffziado:Stuffziado)}
     {#if stuffziado.is_C}
         <span class="count">C</span>
     {/if}
@@ -40,7 +43,9 @@
 
     {@const opener = i_opener()}
     <button class="btn" onclick={opener.toggle}>
-        <span class="{ziadostyle(stuffziado)}">{stuffziado?.display_name}</span>
+        <span class="{ziadostyle(stuffziado)}"
+            title="stuffziado.display_name, a textual description of a value"
+            >{stuffziado?.display_name}</span>
     </button>
 
     {#if stuffziado.innered}
@@ -54,29 +59,30 @@
 <div class="stuffziad">
     <button class="btn" onclick={toggle}>
         <span class="name">{stuffziad.name}</span>
-        <span class="colon">:</span>
+        {#if !stuffziad.is_one}<span class="colon">:</span>{/if}
         
         {#if stuffziad.values.size !== 1}
             <span class="count {openness && 'open'}">∇{stuffziad.values.size}</span>
         {/if}
     </button>
-
-    {#if openness && stuffziad.values.size > 1}
-        <div class="values">
-            {#each stuffziados as stuffziado (stuffziado.name)}
-                <div class="stuffziado">
-                    {@render ziado(stuffziado)}
-                    {#if stuffziado.rows.length != 1}
-                        <span class="count">x{stuffziado.rows.length}</span>
-                    {/if}
-                </div>
-            {/each}
-        </div>
-    {:else if stuffziad.values.size === 1}
-        {@const stuffziado = stuffziados[0]}
-        <span class="inline">
-            {@render ziado(stuffziado)}
-        </span>
+    {#if !stuffziad.is_one}
+        {#if openness && stuffziad.values.size > 1}
+            <div class="values">
+                {#each stuffziados as stuffziado (stuffziado.name)}
+                    <div class="stuffziado">
+                        {@render ziado(stuffziado)}
+                        {#if stuffziado.rows.length != 1}
+                            <span class="count">x{stuffziado.rows.length}</span>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+        {:else if stuffziad.values.size === 1}
+            {@const stuffziado = stuffziados[0]}
+            <span class="inline">
+                {@render ziado(stuffziado)}
+            </span>
+        {/if}
     {/if}
 </div>
 

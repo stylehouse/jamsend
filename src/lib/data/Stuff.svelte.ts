@@ -890,6 +890,9 @@ export class Stuffing {
                     const stuffziado = new Stuffziado(stuffziad, val_name, rows)
                     stuffziado.value = val
                     stuffziado.display_name = display_name
+                    if (display_name == '1') {
+                        stuffziado.is_one = true
+                    }
                     // note some interesting features
                     let innerables = [...rows]
                     if (typeof val == 'object') {
@@ -908,6 +911,9 @@ export class Stuffing {
                     
                     stuffziad.values.set(stuffziado.name, stuffziado)
                 })
+                if (Array.from(stuffziad.values.values()).every(stuffziado => stuffziado.is_one)) {
+                    stuffziad.is_one = true;
+                }
 
                 stuffusion.columns.set(stuffziad.name,stuffziad)
             })
@@ -946,17 +952,20 @@ export class Stuffuzia {
 
 // a group of rows, name is keys and maybe serial number
 export class Stuffusion extends Stuffuzia {
-    columns = new SvelteMap()
+    columns = new SvelteMap<string, Stuffziad>()
 }
 // a group of k:v, name is the key
 export class Stuffziad extends Stuffuzia {
-    values = new SvelteMap()
+    values = new SvelteMap<string, Stuffziado>()
+    is_one?: boolean // meaning all our stuffziado.is_one
 }
 // single value, name is serial number?
 export class Stuffziado extends Stuffuzia {
     value: any
     is_string?: boolean
     is_C?: boolean
+    display_name?: string
+    is_one?: boolean
 }
 
 
