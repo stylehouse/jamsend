@@ -200,7 +200,7 @@ export class Audiolet {
     async load(encoded:Array<ArrayBuffer>) {
         let stretch = await this.decode_stretch(encoded)
         stretch.onended = () => {
-            console.log("stretch ended")
+            // console.log("stretch ended")
             this.on_ended?.()
             this.stop()
         }
@@ -209,7 +209,7 @@ export class Audiolet {
     }
     play(offset=0) {
         this.stop()
-        console.log(`aud play`)
+        // console.log(`aud play`)
         if (!this.playing_next) {
             throw "< clone already decoded this.playing_last ?"
         }

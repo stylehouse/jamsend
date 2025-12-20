@@ -9,7 +9,10 @@ import type { TheD } from "./Selection.svelte.ts"
 
 export const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer etc
 const PREVIEW_DURATION = 20;                  // 20s samples
-
+const V = {
+    plau: false,
+    irec: false
+}
 
 //#endregion
 //#region radiostock
@@ -637,26 +640,28 @@ export class ShareeModus extends RadioModus {
                 w = this.refresh_C([A,w])
                 if (!resc.record) throw "!%record"
                 if (prsc.seq == 0 && A.oa({record:1,enid:resc.enid})) {
-                    throw "stopped happening!"
-                    console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
+                    console.warn(`irecord DUP ${resc.enid} at ${prsc.seq}`)
                 }
                 
                 // < test|tour places we did eg A.r(resc)
                 //    because without the sc arg it makes pattern_sc.* = 1
                 //   see replace() / IN_ORDER
-                let re = await A.r(resc,resc)
+                // in case of 
+                let re = A.oa(resc)?.[0]
+                    || await A.r(resc,resc)
                 // < dealing with repeat transmissions. this should be re.i()
                 //   some cursors need to wait at the end?
                 // string '1' is not a wildcard
                 if (re.oa({seq:String(prsc.seq)})) {
-                    throw "stopped happening!"
                     console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
+                    w.i({warning:'irecord DUP'})
+                    return
                 }
                 let pr = await re.r(
                     {seq:String(prsc.seq)},
                     {...prsc,buffer}
                 )
-                console.log(`irecord     ${re.sc.enid} at ${pr.sc.seq}`)
+                V.irec && console.log(`irecord     ${re.sc.enid} at ${pr.sc.seq}`)
 
                 if (!w.oa({nowPlaying:1})) this.main()
                 // re.i({dooooooooooings:'it'})
@@ -796,7 +801,7 @@ export class ShareeModus extends RadioModus {
                 // < sense at certain times from the end
                 aud.on_ended = async () => {
                     au.sc.stopping = 1
-                    console.log(`aud->aud stopping ${au.sc.seq} after ${au.sc.aud.along()}`)
+                    V.plau && console.log(`aud->aud stopping ${au.sc.seq} after ${au.sc.aud.along()}`)
                     // < get listening() to ambiently progress()
                     //   instead of having a pause while we decode...
                     listening()
@@ -809,7 +814,7 @@ export class ShareeModus extends RadioModus {
                 }
                 // setTimeout(() => progress(), 333)
                 
-                console.log(`plau now ${au.sc.pr.sc.seq}`)
+                V.plau && console.log(`plau now ${au.sc.pr.sc.seq}`)
                 au.sc.playing = 1
             }
 
@@ -819,7 +824,7 @@ export class ShareeModus extends RadioModus {
                 if (!au) throw "!au"
                 plau = au
                 // < or hook up to... something
-                console.log(`plau ENGAGES`)
+                V.plau && console.log(`plau ENGAGES`)
                 au_play(au)
             }
             else {
@@ -835,14 +840,14 @@ export class ShareeModus extends RadioModus {
                     
                     let neau = await this.radio_hearing_progress(A,w,re,he,plau)
                     if (neau) {
-                        console.log(`plau hops -> ${neau.sc.seq}`)
+                        V.plau && console.log(`plau hops -> ${neau.sc.seq}`)
                         au_play(neau)
                         delete plau.sc.stopping
                         await he.r({plau:1},{seq:plau.sc.seq})
 
                     }
                     else {
-                        console.log(`plau ENDS`)
+                        V.plau && console.log(`plau ENDS`)
                         await he.r({plau:1},{ENDED:1})
                         await progress()
                     }
@@ -850,7 +855,7 @@ export class ShareeModus extends RadioModus {
                     plau = neau
                 }
                 else {
-                    console.log(`plau continues`)
+                    V.plau && console.log(`plau continues`)
                 }
             }
 
@@ -871,11 +876,11 @@ export class ShareeModus extends RadioModus {
             // time to decode the next aud
             let needs_nexties = !plau.sc.next
             if (needs_nexties) {
-                console.log(`plau=${plau.sc.seq} wants nexties ${what()}`)
+                V.plau && console.log(`plau=${plau.sc.seq} wants nexties ${what()}`)
                 progress()
             }
             else {
-                console.log(`plau has future ${what()}`)
+                V.plau && console.log(`plau has future ${what()}`)
             }
         }
 
@@ -885,7 +890,7 @@ export class ShareeModus extends RadioModus {
         let enqueue = async (pr) => {
             // for a linked list of aud
             let what = () => `${re.sc.uri}\npr%${keyser(pr.sc)}`
-            console.log(`radio enqueue ${enqueue_i}: \t${pr.sc.seq}`)
+            V.plau && console.log(`radio enqueue ${enqueue_i}: \t${pr.sc.seq}`)
             if (enqueue_i != pr.sc.seq) throw `seq!=enqueue_i`
             enqueue_i++
             
@@ -930,13 +935,13 @@ export class ShareeModus extends RadioModus {
                 }
             }
             else {
-                console.log(`progress() ${what()} done!?`)
+                V.plau && console.log(`progress() ${what()} done!?`)
                 if (he.oa({plau:1,ENDED:1})) {
                     // having just i %ENDED and needs_nexties=true
                     w.c.next_is_go()
                 }
                 else {
-                    console.log(`progress() ${what()} out-of-bits !%ENDED`)
+                    V.plau && console.log(`progress() ${what()} out-of-bits !%ENDED`)
                 }
             }
         }
@@ -948,7 +953,7 @@ export class ShareeModus extends RadioModus {
 
         let no = await w.r({nowPlaying:he,uri:re.sc.uri})
         no.c.wake_fn = () => {
-            // will be attended while we are the %nowPlaying
+            // will be attended while we are the %nowPlaying ?
             console.log(`thinkybout ${re.sc.uri} `)
         }
     }
@@ -973,8 +978,6 @@ export class ShareeModus extends RadioModus {
         return [...re.o({preview:1}), ...re.o({stream:1})]
     }
     
-    // < test the efficacy of this... born in chaos
-    sent_re_client_enids = {}
     // transmit once, keeps transmitting while re.c.promise more /* */
     async transmit_record(A,w,re) {
         console.log(`transmit_record(${re.sc.enid})`)
@@ -1045,6 +1048,10 @@ export class ShareeModus extends RadioModus {
         }
     }
 
+    sent_re_client_quota_default = 2
+    sent_re_client_quota = {}
+    // < test the efficacy of this... born in chaos
+    sent_re_client_enids = {}
     async radiobroadcaster(A,w) {
         //  just one other to track for
         let co = await w.r({consumers:1,of:'%record'})
@@ -1058,6 +1065,17 @@ export class ShareeModus extends RadioModus {
             w = this.refresh_C([A,w])
             co = this.refresh_C([A,w,co])
             rr = this.refresh_C([A,w,rr])
+            if (this.sent_re_client_quota_default) {
+                if (this.sent_re_client_quota[client] == null) {
+                    this.sent_re_client_quota[client] =
+                        this.sent_re_client_quota_default
+                }
+                this.sent_re_client_quota[client]--
+                if (this.sent_re_client_quota_default <= 0) {
+                    console.warn("sendeth: quota exhausted, ends "+re.sc.enid)
+                    return
+                }
+            }
             if (this.sent_re_client_enids[`${client} ${re.sc.enid}`]) {
                 console.warn("sendeth: DUP "+re.sc.enid)
                 return
