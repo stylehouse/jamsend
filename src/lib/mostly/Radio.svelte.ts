@@ -353,11 +353,12 @@ export class RadioModus extends Modus {
                 
                 try {
                     const re = await this.record_from_disk(D.sc.name, sD);
-                    
-                    // Mark this file as warmed up
-                    D.i({warmed_up: 1})
-                    
-                    yield re;
+                    if (re) {
+                        // Mark this file as warmed up
+                        D.i({warmed_up: 1})
+                        
+                        yield re;
+                    }
                 } catch (err) {
                     console.warn(`Failed to load ${D.sc.name}:`, err);
                 }
@@ -387,7 +388,7 @@ export class RadioModus extends Modus {
                 throw err;
             }
         }
-        async record_from_disk(name: string, sD: TheD): Promise<TheC> {
+        async record_from_disk(name: string, sD: TheD): Promise<TheC|undefined> {
             try {
                 // Get reader for the stock directory
                 const DL = this.D_to_DL(sD);
@@ -401,6 +402,10 @@ export class RadioModus extends Modus {
                 
                 // Combine chunks
                 const totalSize = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+                if (totalSize == 0) {
+                    await this.tidy_crswap(sD,name)
+                    return
+                }
                 const combined = new Uint8Array(totalSize);
                 let offset = 0;
                 for (const chunk of chunks) {
@@ -420,6 +425,19 @@ export class RadioModus extends Modus {
                 console.error(`Failed to read record from disk:`, err);
                 throw err;
             }
+        }
+        async tidy_crswap(sD,name) {
+            const DL = this.D_to_DL(sD);
+            // investigate zero-length radiostocks
+            let crswapFiles = sD.o({Tree: 1, name: 1})
+                .filter((D: TheD) => D.sc.name.endsWith(name+'.crswap'))
+            for (let oD of crswapFiles) {
+                console.log("tidy_crswap() deletes "+oD.sc.name)
+                await DL.deleteEntry(oD.sc.name)
+            }
+            console.log("tidy_crswap() deletes "+name)
+            await DL.deleteEntry(name)
+            sD.i({was_operated_on:1,by:'tidy_crswap()'})
         }
 
 
