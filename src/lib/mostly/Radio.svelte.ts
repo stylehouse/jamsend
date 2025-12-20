@@ -730,20 +730,18 @@ export class ShareeModus extends RadioModus {
 
 
         let co = await w.r({consumers:1,of:'radiostock'})
+        let client = 1
         let la = null
         let next = async (loop) => {
             if (loop > 3) throw "loop"
             // < should be on artist+track
             let them = o_playable()
-            let current = await this.co_cursor_N_next(co,1,them)
-            if (la && current == la) {
-                debugger
-            }
-            current = await this.co_cursor_N_next(co,1,them)
-            la = current
+
+            let current = await this.co_cursor_N_next(co,client,them)
+
             if (current) {
                 await this.radio_hear(A,w,current)
-                await this.co_cursor_save(co,1,current)
+                await this.co_cursor_save(co,client,current)
                 return current
             }
             else {
@@ -752,8 +750,9 @@ export class ShareeModus extends RadioModus {
                 // let everything play again! this is odd though.
                 // < make these cases studyable in the wild
                 //    it here we suggest uploading some screeds
-                w.r({hearing:1},{})
-                await next(loop + 1)
+                await w.r({hearing:1},{})
+                await co.r({client},{})
+                next(loop + 1)
             }
         }
 
@@ -1095,8 +1094,7 @@ export class ShareeModus extends RadioModus {
                     this.sent_re_client_quota[client] =
                         this.sent_re_client_quota_default
                 }
-                this.sent_re_client_quota[client]--
-                if (this.sent_re_client_quota_default <= 0) {
+                if (this.sent_re_client_quota[client]-- <= 0) {
                     console.warn("sendeth: quota exhausted, ends "+re.sc.enid)
                     return
                 }
