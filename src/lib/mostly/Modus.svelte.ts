@@ -132,9 +132,9 @@ abstract class ModusItself extends TheC  {
     async have_time(fn:Function) {
         let at = new Error().stack
         if (this.time_having) {
-            console.error("re-transacting Modus",
-                {awaiting_stack:this.time_having,
-                 current_stack:at})
+            // console.error("re-transacting Modus",
+            //     {awaiting_stack:this.time_having,
+            //      current_stack:at})
             return
         }
         this.time_having = at
@@ -265,6 +265,26 @@ abstract class TimeGallopia extends ModusItself {
         return where
     }
 
+    // < test the efficacy of this... born in chaos
+    //   similarities with refresh_C()...
+    async c_mutex(w,t,do_fn) {
+        if (w.c[`${t}_promise`]) {
+            await w.c[`${t}_promise`]
+        }
+        let release
+        w.c[`${t}_promise`] = new Promise((resolve) => release = resolve)
+        try {
+            await do_fn()
+        }
+        catch (er) {
+            throw erring("c_mutex:"+t,er)
+        }
+        finally {
+            delete w.c[`${t}_promise`] 
+            release()
+        }
+    }
+
 
 
 //#endregion
@@ -342,14 +362,43 @@ abstract class TimeGallopia extends ModusItself {
         })
     }
     // tell anyone awaiting to reread C/*
+    // < C.c.promise doesn't seem to exist by the time a C%record/%stream happens
+    //   so the latter part of these is neutered, just use a callback
     Cpromise(C:TheC) {
+        C.c.promised?.()
+        return
         let resolve = C.c.fulfil
         resolve?.() 
         C.c.promise = new Promise((resolve) => {
             C.c.fulfil = resolve
         })
     }
-
+    // you run this once to introduce your streaming object (re%record) to the rest of your process
+    Cpromised(C:TheC,spool_fn:Function) {
+        C.c.promised = () => {
+            // could wander off after Modus stops, which is always does before dying
+            if (this.stopped) return
+            spool_fn()
+        }
+        return
+        // then wait for %stream, or more %preview...
+        (async () => {
+            while (re.c.promise) {
+                // could wander off after Modus stops, which is always does before dying
+                if (this.stopped) break
+                // < or once %record has .c.drop?
+                await re.c.promise
+                
+                if (re.o({they_want_streaming:1})) {
+                    debugger
+                }
+                await spoolia()
+                if (!re.c.promise) {
+                    // < clue about being the end?
+                }
+            }
+        })()
+    }
 
 
 
@@ -462,8 +511,53 @@ abstract class Agency extends TimeGallopia {
     Tr?:Travel
     Se:Selection
     
-    // process job queue
-    declare i_auto_wanting:Function
+    // process job, w
+    async Aw_think(A,w) {
+        let method = w.sc.w
+        if (method && this[method]) {
+            try {
+                await w.r({waits:1},{})
+                await w.r({error:1},{})
+                await w.r({see:1},{})
+
+                await this[method](A,w,w.sc.had)
+            } catch (error) {
+                w.i({error: error.message || String(error)})
+                if (w.c.error_fn) {
+                    let ok = await w.c.error_fn(error)
+                    if (ok) return
+                }
+                console.error(`Error in method ${method}:`, error)
+                // 
+            }
+        }
+        else {
+            if (method) w.i({error:`!method`})
+            // < refer other %w to central stuck-trol?
+            return
+        }
+    }
+    // w can mutate
+    async Aw_satisfied(A,w,sa) {
+        // take instructions
+        let next_method = w.sc.then || "out_of_instructions"
+        let c = {w:next_method}
+        if (sa.sc.with) c.had = sa.sc.with
+
+        // change what this A is wanting
+        let nu = A.i(c)
+        // < how better to express about avoiding|kind-of being resolved
+        // not resyncing nu/*
+        nu.empty()
+        // take %aim, ie keep pointers for the rest of A
+        // < this kind of transfer wants a deep clone ideally?
+        for (let ai of w.o({aim:1})) {
+            nu.i(ai)
+        }
+        A.drop(w)
+    }
+
+    // all A/w think
     async agency_think() {
         let AwN = []
         let AN = []
@@ -473,34 +567,14 @@ abstract class Agency extends TimeGallopia {
             for (let w of A.o({w:1})) {
                 await this.self_timekeeping(w)
 
-                let method = w.sc.w
-                if (method && this[method]) {
-                    try {
-                        await w.r({waits:1},{})
-                        await w.r({error:1},{})
-                        await w.r({see:1},{})
-
-                        await this[method](A,w,w.sc.had)
-                    } catch (error) {
-                        w.i({error: error.message || String(error)})
-                        if (w.c.error_fn) {
-                            let ok = await w.c.error_fn(error)
-                            if (ok) return
-                        }
-                        console.error(`Error in method ${method}:`, error)
-                        return
-                    }
-                }
-                else {
-                    if (method) w.i({error:`!method`})
-                    // < refer other %w to central stuck-trol?
-                    return
-                }
+                await this.Aw_think(A,w)
                 AwN.push({A,w})
             }
             AN.push(A)
         }
-
+        this.agency_officing(AwN,AN)
+    }
+    async agency_officing(AwN,AN) {
         // percolate w/ai/%path -> j/%path from this A
         await this.i_journeys_o_aims(AwN)
         for (let {A,w} of AwN) {
@@ -510,22 +584,7 @@ abstract class Agency extends TimeGallopia {
         for (let {A,w} of AwN) {
             // w can mutate
             for (let sa of w.o({satisfied:1})) {
-                // take instructions
-                let next_method = w.sc.then || "out_of_instructions"
-                let c = {w:next_method}
-                if (sa.sc.with) c.had = sa.sc.with
-
-                // change what this A is wanting
-                let nu = A.i(c)
-                // < how better to express about avoiding|kind-of being resolved
-                // not resyncing nu/*
-                nu.empty()
-                // take %aim, ie keep pointers for the rest of A
-                // < this kind of transfer wants a deep clone ideally?
-                for (let ai of w.o({aim:1})) {
-                    nu.i(ai)
-                }
-                A.drop(w)
+                await this.Aw_satisfied(A,w,sa)
             }
         }
         // < test effects of this... not sure
@@ -631,13 +690,15 @@ abstract class Agency extends TimeGallopia {
         w.i({see:"At rest"})
         await this.r({spare_worker:A})
     }
+    // < specify radiostock worker, radiostream worker
+    //    and handle resource contention
     // look for and engage one of them, supposing they just need reset
     async unrest():Promise<TheC|undefined> {
         for (let A of this.o1({spare_worker:1})) {
-            await this.reset_Aw(A)
+            await A.c.reset_Aw()
             await this.r({spare_worker:A},{})
             A.i({was_reset:1})
-            return A
+            this.main()
         }
     }
     async out_of_instructions(A,w) {

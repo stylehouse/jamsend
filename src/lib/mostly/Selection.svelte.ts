@@ -658,7 +658,10 @@ class Dierarchy extends SelectionItself {
 //#endregion
 //#region works
     
-    // `mkdir -p` via w, ie returning every 3s
+    // recursive directory something-if-not-exist thinger
+    //  used by DirectoryModus.aim_to_open() ~~ `mkdir -p`
+    //  used by w:radiostreaming to open a file
+    // leaves w/%aim, ie returning every 3s
     //   to try and extract what we're after, or aim further at it
     // path doesn't include the share name
     async aim_to_open(

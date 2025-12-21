@@ -8,10 +8,10 @@ import {Modus} from "./Modus.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
 
 export const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer etc
-const PREVIEW_DURATION = 20;                  // 20s samples
+const PREVIEW_DURATION = 21.58;
 const V = {
-    plau: false,
-    irec: false
+    plau: 1,
+    irec: 1
 }
 
 //#endregion
@@ -99,17 +99,26 @@ export class RadioModus extends Modus {
                     // no new %record is available so don't return one (via wrap around)
                     //  the broadcaster shall stay ahead of terminals usually
 
+                    await w.r({excitable:'radiostock i',client})
                     // this chases the other A back into making more %record
                     await this.unrest()
-                    w.r({excitable:'radiostock i',client})
                     return
                 }
                 await this.co_cursor_save(co,client,current)
                 return current
             },
+            // this interface serves to start streams
+            //  zapped through from broadcaster
+            ostream: async (re:TheC) => {
+                this.o({A:'streaming'}).map(A => {
+                    A.o({w:'radiostreaming'}).map(w => {
+                        w.c.ostream(re)
+                    })
+                })
+            },
         })
 
-        // if ('only what we made') return
+        if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -147,6 +156,87 @@ export class RadioModus extends Modus {
         await this.whittle_stock(w,stockD,keep_things)
     }
 
+    //#endregion
+    //#region radiostreaming
+    async radiostreaming(A,w) {
+        // await need
+        w.c.ostream = async (re) => {
+            for (let st of w.o({streamable:1})) {
+                st.c.stop?.()
+            }
+            let {enid} = re.sc
+            // we do the work in w/* rather than under w/st/*, so:
+            w.empty()
+            w.i({streamable:1,re,enid})
+            this.main()
+        }
+
+        let st = w.o({streamable:1})[0]
+        if (!st) return w.i({see:"At rest"})
+
+        // process a %streamable,re
+        let re = st.sc.re
+        let uri = re.sc.uri
+        let enid = re.sc.enid
+        let path = uri.split('/')
+        // resolve ourselves to this Se
+        // < pick between many DirectoryShare depending on uri at io.ostream?
+        let topname = path.shift()
+        if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
+
+
+        // recursive directory something-if-not-exist thinger
+        let D = await this.Se.aim_to_open(w,path,async (uD,pathbit) => {
+            throw `radiostreaming:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
+        })
+        if (!D) return
+
+        if (!w.oa({buffers:1})) {
+            console.log(`radiostreaming:${enid} loads`)
+            re.i({they_want_streaming:1})
+            await this.radiostreaming_i_buffers(A,w,D)
+        }
+
+        if (!w.oa({aud:1})) {
+            let offset = re.sc.offset
+                + re.o1({preview:1},'duration')
+                    .reduce((sum,s) => sum + s,0)
+            if (offset < 0.43) throw "low offset..."
+            let from_seq = re.o1({preview:1},'seq').pop() + 1
+            let aud = await this.record_preview_individuated(A,w,D,{
+                get_offset: () => offset,
+                keyword: 'stream', // it's %record/%stream
+                record: re, // continuing in
+                from_seq
+            })
+            // hold on to this while it's happening
+            w.i({aud})
+            // forget the encoded source buffers now
+            await w.r({buffers:1},{ok:1})
+
+            // makes wave of re.c.promise
+            // < stash such concerns at a lower level...
+            w.c.on_recording = async (re,pr) => {
+                let also = pr.sc.EOstream ? ",EOstream" : ""
+                console.log(`radiostreaming:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
+                this.Cpromise(re);
+            }
+        }
+
+        this.watch_auds_progressing(A,w,D)
+
+        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
+            // all done!
+            await w.r({satisfied:1})
+        }
+
+        // stop
+        st.c.stop = () => {
+            w.o1({aud:1}).map(aud => aud.stop())
+        }
+    }
+
+
 
     //#endregion
     //#region radiopreview
@@ -158,7 +248,7 @@ export class RadioModus extends Modus {
             if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
             // re-wander due to corrupt-seeming data
             // < make note. a lot of music out there has decode problems, perhaps not always fatal?
-            await this.reset_Aw(A,w)
+            await A.c.reset_Aw?.()
             return true
         }
 
@@ -170,15 +260,18 @@ export class RadioModus extends Modus {
         if (!radiostock) return w.i({waits:"%io:radiostock"})
 
         if (!w.oa({aud:1})) {
-            let aud = await this.record_preview_individuated(A,w,D)
+            let aud = await this.record_preview_individuated(A,w,D,{
+                get_offset: (aud) => aud.duration() - PREVIEW_DURATION,
+            })
             // hold on to this while it's happening
             w.i({aud})
             // forget the encoded source buffers now
             await w.r({buffers:1},{ok:1})
-            w.c.on_recordpreview = async (re,pr) => {
+            w.c.on_recording = async (re,pr) => {
                 w = this.refresh_C([A,w])
                 radiostock = this.refresh_C([radiostock])
                 // makes wave of re.c.promise
+                // < temporarily re.c.promised()
                 this.Cpromise(re);
                 if (pr.sc.seq == 0) {
                     // we can start streaming this very very soon...
@@ -215,6 +308,15 @@ export class RadioModus extends Modus {
         }
         w.i({buffers,want_chunks,want_size})
     }
+    async radiostreaming_i_buffers(A,w,D) {
+        let DL = this.D_to_DL(D)
+        let reader = await DL.getReader(D.sc.name)
+        let buffers = []
+        for await (const chunk of reader.iterate(0)) {
+            buffers.push(chunk)
+        }
+        w.i({buffers})
+    }
     async aud_eats_buffers(w,aud,D) {
         // load original encoded buffers
         let buffers = w.o1({buffers:1})[0]
@@ -231,18 +333,27 @@ export class RadioModus extends Modus {
     }
 
     // small decodable chunks better for feeding to the radio-tuning noise phenomena
-    async record_preview_individuated(A,w,D) {
+    async record_preview_individuated(A,w,D,q) {
         let aud = this.gat.new_audiolet()
         await this.aud_eats_buffers(w,aud,D)
 
-        let offset = aud.duration() - PREVIEW_DURATION
+        // what are the re/pr%$keyword
+        q.keyword ||= 'preview'
+        let keywordc = {}
+        let EOkeywordc = {}
+        keywordc[q.keyword] = 1
+        EOkeywordc['EO'+q.keyword] = 1
+
+        let offset = Math.max(0,q.get_offset(aud))
+
         let uri = this.Se.D_to_uri(D)
-        let re = w.i({record:1, ...await this.entropiate({offset,uri})})
+        let re = q.record
+        re ||= w.i({record:1, ...await this.entropiate({offset,uri})})
         re.i({in_progress:1})
 
         // receive transcoded buffers
         aud.setupRecorder(true)
-        let seq = 0
+        let seq = q.from_seq || 0
 
         let tinybits = []
         let deal_tinybits = async (blob,buffers) => {
@@ -250,24 +361,32 @@ export class RadioModus extends Modus {
                 // < am still figuring out what to do about these blob.size=110 bits
                 //   can be any seq?
                 //    durations were 0=2.28 1=1.98, 2=0.36
-                //   might be...
+                //   its not...
                 //    the segmentation interval drifting from when on_recording actually happens
                 //     indicating we should segment a timeout from on_recording?
-                debugger
+                //   might be...
+                // debugger
+                console.warn(`aud.on_recording dealing in tinybits`)
+                if (tinybits.length > 1) throw "many tinybits"
+
                 for (let blob of tinybits) {    
                     let buffer = await blob.arrayBuffer()
                     buffers.push(buffer)
                 }
                 return false
             }
+            console.warn(`aud.on_recording found tinybits`)
             tinybits.push(blob)
             return 'to pend this blob'
         }
-        aud.on_recording = async (blob:Blob) => {
+        let ignore_one_tinybit
+        aud.on_recording = async (blob:Blob,loop) => {
             let buffers:ArrayBuffer[] = []
+            if (blob.size < 250) return
             if (blob.size < 250 && await deal_tinybits(blob,buffers)) return
             let type = blob.type // eg "audio/webm;codecs=opus"
             let buffer = await blob.arrayBuffer()
+            if (!buffers.length)
             buffers.push(buffer)
             // track exactly how long the preview is
             // < probably could leave this to the client
@@ -281,6 +400,21 @@ export class RadioModus extends Modus {
                 await bud.load([buffer])
             }
             catch (er) {
+                if (buffers.length == 2) {
+                    // omit the tiny blob and try again?
+                    ignore_one_tinybit = buffers[0]
+                    if (aud.stopped) {
+                        debugger
+                    }
+                    console.warn(`transcode-load fail with tinybits.\n`
+                        +` will omit the tinybit and try again?`)
+                    if (loop == 1) {
+                        // that didn't work
+                        console.warn("pop it on the next one?")
+                        throw "transcode-load fail with tinybits loop?"
+                    }
+                    return await aud.on_recording(blob,1)
+                }
                 throw `transcode-load fail: ${er}`
             }
 
@@ -288,9 +422,15 @@ export class RadioModus extends Modus {
             let duration = bud.duration()
             // duration -= pre_duration
             // generate %record/*%preview
-            let pr = re.i({preview:1,seq,duration,type,buffer})
+            let prsc = {...keywordc,seq,duration,type,buffer}
+            if (aud.left() && aud.left() < 0.4) {
+                console.warn(`A tiny amount of aud left: ${aud.left()}`)
+            }
+            // mark ending
+            if (aud.stopped) ex(prsc,EOkeywordc)
+            let pr = re.i(prsc)
             seq++
-            await w.c.on_recordpreview(re,pr)
+            await w.c.on_recording(re,pr)
         }
         aud.on_stop = async () => {
             // loose about async timing this
@@ -299,6 +439,18 @@ export class RadioModus extends Modus {
             // < assure the final on_recording() ?
             //     it might be causing the tinybits
             //    and delete %in_progress when that final %preview is in
+            let hmm = (fn) => {
+                setTimeout(() => {
+                    if (!re.oa({...EOkeywordc})) {
+                        fn()
+                    }
+                },333)
+            }
+            // give two tries, with time to catch up after being paused in debugger...
+            // < what else to give that to
+            hmm(() => hmm(() => {
+                throw `didn't get a final on_recording after stopped`
+            }))
         }
 
         aud.play(offset)
@@ -649,8 +801,14 @@ export class ShareeModus extends RadioModus {
                 if (!resc.record) throw "!%record"
                 if (prsc.seq == 0 && A.oa({record:1,enid:resc.enid})) {
                     console.warn(`irecord DUP ${resc.enid} at ${prsc.seq}`)
-                    debugger
+                    // < if they reload and resend cached stuff to us.
                 }
+                let keyword = prsc.preview ? 'preview'
+                    : prsc.stream ? 'stream'
+                    : null
+                if (!keyword) throw "no pr%keyword we know"
+                let keywordc = {}
+                keywordc[keyword] = 1
                 
                 // < test|tour places we did eg A.r(resc)
                 //    because without the sc arg it makes pattern_sc.* = 1
@@ -663,17 +821,17 @@ export class ShareeModus extends RadioModus {
                 //   some cursors need to wait at the end?
                 // string '1' is not a wildcard
                 this.check_sanity(A)
-                if (re.oa({preview:1,seq:String(prsc.seq)})) {
+                if (re.oa({...keywordc,seq:String(prsc.seq)})) {
                     console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
                     w.i({warning:'irecord DUP'})
                     return
                 }
-                let pr = re.o({preview:1,...exactly(prsc)})[0]
+                let pr = re.o({...keywordc,...exactly(prsc)})[0]
                     || await re.r(
-                    exactly(sex({preview:1},prsc,'seq')),
+                    exactly({...keywordc,seq:prsc.seq}),
                     {...prsc,buffer}
                 )
-                V.irec && console.log(`irecord     ${re.sc.enid} at ${pr.sc.seq}`)
+                V.irec && console.log(`irecord   re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`)
 
                 this.check_sanity(A)
                 if (!w.oa({nowPlaying:1})) this.main()
@@ -719,6 +877,15 @@ export class ShareeModus extends RadioModus {
             //    callback clustering
             console.log("term: next_is_go")
             next()
+        }
+        // record is finished
+        w.c.more_is_go = (re) => {
+            // < there's a %mixage operating this procedure?
+            //    callback clustering
+            console.log("term: more_is_go(), ordering *%stream...")
+            // tell them to engage a stream
+            this.PF.emit('ostream',{enid:re.sc.enid})
+
         }
         // < 
 
@@ -783,7 +950,6 @@ export class ShareeModus extends RadioModus {
             let now = w.o({nowPlaying:1})[0]
             console.log(`skipped track ${before.sc.enid} -> ${now.sc.enid}`)
         }
-        this.V = true
 
         let them = o_playable()
         let left = await this.co_cursor_N_least_left(co,them)
@@ -886,6 +1052,10 @@ export class ShareeModus extends RadioModus {
 //   clients (perhaps out of M.main() time) describe their claim to reality...
 //    the reaction to ending an aud of playing the next re/* aud would continue
 //     but if the last one it wouldn't call w.c.next_is_go()
+//   both ends of the deal
+//    could be sharing some embryo of experience
+//     which would help tidy when moved past
+//    
 
 
 //#endregion
@@ -914,7 +1084,7 @@ export class ShareeModus extends RadioModus {
             let plau = he.o({playing:1,aud:1})[0]
             let au_play = (au) => {
                 let aud:Audiolet = au.sc.aud
-                // < sense at certain times from the end
+                // which is...
                 aud.on_ended = async () => {
                     let samehe = this.refresh_C([A,w,he])
                     if (he != samehe) {
@@ -929,7 +1099,7 @@ export class ShareeModus extends RadioModus {
                     }
 
                     au.sc.stopping = 1
-                    V.plau && console.log(`aud->aud stopping ${au.sc.seq} after ${au.sc.aud.along()}`)
+                    V.plau>1 && console.log(`aud @${au.sc.seq} ended after ${au.sc.aud.along()}`)
                     // < get listening() to ambiently progress()
                     //   instead of having a pause while we decode...
                     listening()
@@ -968,7 +1138,7 @@ export class ShareeModus extends RadioModus {
                     
                     let neau = plau.sc.next
                     if (neau) {
-                        V.plau && console.log(`plau hops -> ${neau.sc.seq}`)
+                        V.plau>1 && console.log(`plau hops -> ${neau.sc.seq}`)
                         au_play(neau)
                         delete plau.sc.stopping
                         await he.r({plau:1},{seq:plau.sc.seq})
@@ -986,6 +1156,9 @@ export class ShareeModus extends RadioModus {
                     V.plau && console.log(`plau continues`)
                 }
             }
+
+            // sense at certain times from the end
+            await streamability()
 
             // update the index in he (he.X) so we can find %playing via .o()
             //  using the rarer key playing before the populous aud
@@ -1007,11 +1180,9 @@ export class ShareeModus extends RadioModus {
                 V.plau && console.log(`plau=${plau.sc.seq} wants nexties ${what()}`)
                 await progress()
             }
-            else {
-                V.plau && console.log(`plau has future ${what()}`)
-            }
         }
 
+        let found_stream = false
         let enqueue_i = 0
         // %preview -> aud, aud<->aud,
         //  but not necessarily playing it yet
@@ -1021,6 +1192,15 @@ export class ShareeModus extends RadioModus {
             V.plau && console.log(`radio enqueue ${enqueue_i}: \t${pr.sc.seq}`)
             if (enqueue_i != pr.sc.seq) throw `seq!=enqueue_i`
             enqueue_i++
+            if (pr.sc.stream) {
+                if (!found_stream) {
+                    console.log(`radio enqueue: %preview turns to %stream`)
+                    if (!he.oa({asked_for_stream:1})) {
+                        console.warn("didnt ask for stream")
+                    }
+                    found_stream = true
+                }
+            }
             
             let aud = this.gat.new_audiolet()
             try {
@@ -1075,6 +1255,45 @@ export class ShareeModus extends RadioModus {
             }
         }
 
+        let streamability = async () => {
+            if (he.oa({we_want_streaming:1})) return
+            // where is playhead
+            let plau = he.o({aud:1,playing:1})[0]
+            let plpr = plau?.sc.pr
+            if (!plpr) return
+
+            // terminal hunger may cause re with /%stream to come back without he%we_want_streaming
+            if (re.oa({stream:1})) {
+                if (!re.oa({we_want_streaming:1})) {
+                    throw "we have re/%stream already, but we didn't ask?"
+                }
+                // it may not be streaming still on the remote...
+                // < having clients constantly return orecord, even when not hungry
+                //    knowing if its alive, knowing the offset we want
+            }
+            // is the last %preview audiobit now final?
+            // < earlier warning? we know total duration when w:radiopreview decodes it
+
+            let lapr = re.o({preview:1}).pop()
+            if (!lapr?.sc.EOpreview) return
+
+            // how far will we be next time we have time to think about streamability()
+
+            // how much time do we have left
+            // we get called soon after a new %aud,playing, so include it all in...
+            let left = re.o1({preview:1},'duration')
+                .slice(plpr.sc.seq)
+                .reduce((sum,s) => sum + s,0)
+            // now we can calibrate for windspeed etc
+            console.log(`streamability ${what()}: ${Number(left).toFixed(1)} left`)
+            if (left < 16) {
+                he.i({we_want_streaming:1})
+                re.i({we_want_streaming:1})
+                w.c.more_is_go(re)
+            }
+        }
+
+
         // start decoding
         //  which spurs playing
         //   which sets up continuity
@@ -1111,17 +1330,21 @@ export class ShareeModus extends RadioModus {
 
 
 //#endregion
-//#region radiobroadcaster
+//#region emit:irecord
     // desk to machine (terminal)
     // < and if also a terminal, hotwire the arrival handlers
     
     // transmit once, keeps transmitting while re.c.promise more /* */
     async transmit_record(A,w,re) {
+        let blah = (pr) => {
+            let keyword = Object.keys(pr.sc)[0]
+            return `transmit_record re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`
+        }
         let sending = async (pr) => {
             let buffer = pr.sc.buffer
             if (!buffer) throw "!buffer"
             if (!buffer instanceof ArrayBuffer) throw "~buffer"
-            console.log(`transmit_record(${re.sc.enid}) sending(seq=${pr.sc.seq})`)
+            console.log(`${blah(pr)} send`)
             await this.PF.emit('irecord',{
                 re: tex({},re.sc),
                 pr: tex({},pr.sc),
@@ -1152,39 +1375,12 @@ export class ShareeModus extends RadioModus {
         // all %preview that are there
         while (await spoolia()) { 1 }
 
-        // then wait for %stream, or more %preview...
-        (async () => {
-            while (re.c.promise) {
-                // < or once %record has .c.drop?
-                if (this.stopped) break
-                await re.c.promise
-                await spoolia()
-                if (!re.c.promise) {
-                    // < clue about being the end?
-                }
-            }
-        })()
+        this.Cpromised(re,() => spoolia())
     }
 
-    // < test the efficacy of this... born in chaos
-    async c_mutex(w,t,do_fn) {
-        if (w.c[`${t}_promise`]) {
-            await w.c[`${t}_promise`]
-        }
-        let release
-        w.c[`${t}_promise`] = new Promise((resolve) => release = resolve)
-        try {
-            await do_fn()
-        }
-        catch (er) {
-            throw erring("c_mutex:"+t,er)
-        }
-        finally {
-            delete w.c[`${t}_promise`] 
-            release()
-        }
-    }
 
+//#endregion
+//#region radiobroadcaster
     sent_re_client_quota_default = 0
     sent_re_client_quota = {}
     // < test the efficacy of this... born in chaos
@@ -1261,6 +1457,17 @@ export class ShareeModus extends RadioModus {
                         await rr.r({excitable:1})
                     }
                 })
+            },
+            ostream: async ({enid},{P,Pier:samePier}) => {
+                if (!enid) throw "enid?"
+                if (samePier != Pier) throw "Pier?"
+                A = this.refresh_C([A]) as TheC
+
+                // tell F...w:radiostock to engage a stream
+                let re = A.o({record:1,enid})[0]
+                if (!re) throw `don't know re=${enid}`
+                console.log("broad: ostream: is go: "+enid)
+                io.sc.ostream(re)
             }
         }
 
@@ -1288,8 +1495,8 @@ export class ShareeModus extends RadioModus {
         if (left < KEEP_AHEAD) {
             let dif = KEEP_AHEAD - left
             // receive a new one time
-            let it = await this.pull_stock(A,w)
-            if (it && dif > 1) await this.pull_stock(A,w)
+            let it = await this.pull_stock(A,w,io)
+            if (it && dif > 1) await this.pull_stock(A,w,io)
             if (it) {
                 if (rr.oa({excitable:1})) {
                     // < dunno.. they ask often?
@@ -1311,22 +1518,21 @@ export class ShareeModus extends RadioModus {
     }
 
     // shelf to DJ desk
-    async pull_stock(A,w) {
-        for (let io of A.oa({io:'radiostock'})) {
-            // our stream of %records shall be
-            let rec = await io.sc.o(this)
-            if (rec) {
-                A.i(rec)
-                if (rec.oa({in_progress:1})) {
-                    // debugger
-                }
-                w.i({see:"new radiostock!!!"})
-                return rec
-            }
-            else {
-                w.i({see:"no new radiostock"})
-            }
+    async pull_stock(A,w,io) {
+        // our stream of %records shall be
+        let rec = await io.sc.o(this)
+        if (rec) {
+            A.i(rec)
+            let very = rec.oa({in_progress:1}) ? "very " : ""
+            w.i({see:very+"new radiostock!!!"})
+            return rec
+        }
+        else {
+            w.i({see:"no new radiostock"})
         }
     }
+
+    
+
 }
 

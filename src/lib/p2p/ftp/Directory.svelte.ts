@@ -92,19 +92,20 @@ export class DirectoryModus extends RadioModus {
     // Agency parameterising and processing
     // < it could want these A.is() or not, depending on how resetty we're trying to be
     //    we might just be changing parameters on things from .perm
-    //    see do_A(hard=false) and reset_Aw(A)
+    //    see do_A(hard=false) and reset_Aw()
     async do_A() {
         await this.replace({A:1},async () => {
-            await this.reset_Aw(
-                this.i({A:'hunting'}).is()
-            )
+            let st = this.i({A:'streaming'}).is()
+            st.i({w:'radiostreaming'})
+
+            let hu = this.i({A:'hunting'}).is()
+            // in response to eg decode errors, just try again from the top
+            hu.c.reset_Aw = async () =>
+                await hu.r({w:1},{w:'meander',then:'radiopreview'})
+            await hu.c.reset_Aw()
             this.i({A:'stocking'}).is().i({w:'radiostock'})
         })
         this.main()
-    }
-    // in response to eg decode errors, just try again from the top
-    async reset_Aw(A) {
-        await A.r({w:1},{w:'meander',then:'radiopreview'})
     }
 
 

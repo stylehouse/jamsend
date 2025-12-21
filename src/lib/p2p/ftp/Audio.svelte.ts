@@ -111,7 +111,7 @@ export class Audiolet {
         };
         
         let stream = this.outputNode.stream
-        console.log("stream",stream)
+        // console.log("stream",stream)
         this.mediaRecorder = new MediaRecorder(stream, options);
         this.mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
