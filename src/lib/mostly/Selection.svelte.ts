@@ -661,7 +661,11 @@ class Dierarchy extends SelectionItself {
     // `mkdir -p` via w, ie returning every 3s
     //   to try and extract what we're after, or aim further at it
     // path doesn't include the share name
-    async aim_to_open(w,path,spawn_fn) {
+    async aim_to_open(
+        w: TheC, 
+        path: string[], 
+        spawn_fn: (parentD: TheD, pathbit: string) => Promise<void>
+    ): Promise<TheD | undefined> {
         let is_awake = (D:TheD) => {
             let ope = D && D.o1({v:1,openity:1})[0]
             if (ope <3 || !D) return // watch out for null <3 == true
@@ -687,7 +691,7 @@ class Dierarchy extends SelectionItself {
                 if (uD) {
                     // assume we must make it
                     // < they micro-process() it into the %Tree and return a D already, somehow...
-                    await spawn_fn(uD)
+                    await spawn_fn(uD,pathbit)
                     w.i({see:"aim_to_open mkdir",at})
                     
                 }
