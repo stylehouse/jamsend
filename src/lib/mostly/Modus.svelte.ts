@@ -62,7 +62,7 @@ abstract class ModusItself extends TheC  {
     }
 
     stopped = false
-    declare do_stop:Function
+    declare do_stop?:Function
     stop() {
         this.stopped = true
         this.do_stop?.()
@@ -101,11 +101,13 @@ abstract class ModusItself extends TheC  {
         },200)
         main()
     }
+    V = false // verbose
     async the_main() {
         if (this.on_first_have_time) {
             this.on_first_have_time()
             this.on_first_have_time = undefined
         }
+        this.V && console.log(`${objectify(this)} --->`)
         await this.have_time(async () => {
             await this.o_elvis()
 
@@ -121,6 +123,7 @@ abstract class ModusItself extends TheC  {
 
             // < look within $scope of the Tree (start with localList) for...
         })
+        this.V && console.log(`${objectify(this)} ///`)
     }
 
 
@@ -237,7 +240,7 @@ abstract class TimeGallopia extends ModusItself {
     //    then asyncily want to rr.i() or so
     //     perhaps since it has been replaced by main()
     //  by knowing the .o() path from Modus
-    refresh_C(N) {
+    refresh_C(N,vanish_ok=false) {
         let where = this
         let i = 0
         for (let into of N) {
@@ -253,6 +256,7 @@ abstract class TimeGallopia extends ModusItself {
             // console.log(`so it could be `,sc)
             let possible = where.o(sc)
             if (possible.length > 1) throw "multitude"
+            if (possible.length < 1 && vanish_ok) return
             if (possible.length < 1) throw "not found"
 
             where = possible[0]

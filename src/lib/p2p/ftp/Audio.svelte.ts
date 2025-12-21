@@ -63,7 +63,7 @@ export class Audiolet {
     gat:SoundSystem
     gainNode: GainNode
     gainNode2: GainNode
-    outputNode: MediaStreamAudioDestinationNode
+    outputNode?: MediaStreamAudioDestinationNode
     bitrate?
     constructor(opt={}) {
         Object.assign(this,opt)

@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte";
     import type { DirectoryShare } from "$lib/p2p/ftp/Directory.svelte";
-    import type { Modus as SomeModus , Modusmem } from "$lib/mostly/Modus.svelte.ts";
+    import type { Modus as SomeModus } from "$lib/mostly/Modus.svelte.ts";
     import Stuffing from "$lib/data/Stuffing.svelte";
     import { onDestroy, onMount } from "svelte";
     import Strata from "$lib/data/Strata.svelte";
@@ -11,8 +11,6 @@
     import { objectify } from "$lib/data/Stuff.svelte";
     import { ThingsIsms,ThingIsms } from "$lib/data/Things.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
-    import { PierFeature } from "$lib/p2p/Peerily.svelte";
-    import { ShareeModus } from "./Radio.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
@@ -31,7 +29,7 @@
         //      Svelte error: state_unsafe_mutation Updating state inside a derived or a
         //   but doing construction in modus_init() from here is ok...
         M = S.modus = S.modus_init()
-        gat = M.gat = new SoundSystem({M})
+        gat = M.gat
         
         // do the first drawing almost immediately, but after M.stashed appears
         do_drawing = null

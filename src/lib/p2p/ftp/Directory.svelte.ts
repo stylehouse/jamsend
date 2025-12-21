@@ -42,11 +42,6 @@ export class DirectoryModus extends RadioModus {
             'G': () => this.do_Gravitations(),
         })
     }
-    do_stop() {
-        // on UI:Modus destroy
-        this.gat?.close()
-    }
-    
 
 
     do_Gravitations() {

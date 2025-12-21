@@ -1,5 +1,5 @@
 import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
-import type { Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
+import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
 import { now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
@@ -21,6 +21,14 @@ export class RadioModus extends Modus {
     // Audio things haver
     //  Modus.stop() happens reliably, avoiding zombie sounds
     gat:SoundSystem
+    constructor(opt:Partial<Modus>) {
+        super(opt)
+        this.gat = new SoundSystem({M:this})
+    }
+    do_stop() {
+        // on UI:Modus destroy
+        this.gat?.close()
+    }
 
     // side note,
     //  about the falling-ness of this** C
@@ -562,11 +570,6 @@ export class SharesModus extends RadioModus {
             'Mo++': () => this.main(),
         })
     }
-    // < move?
-    do_stop() {
-        // on UI:Modus destroy
-        this.gat?.close()
-    }
     async do_A() {
         await this.replace({A:1},async () => {
             this.i({A:'gate'}).is().i({w:'radiostockade'})
@@ -634,8 +637,9 @@ export class ShareeModus extends RadioModus {
 //#endregion
 //#region radioterminal
     turn_knob() {
-
+        this.do_skip_track_fn()
     }
+    do_skip_track_fn:Function
     async radioterminal(A,w) {
         w.sc.unemits ||= {
             irecord: async ({re:resc,pr:prsc,buffer}:{re:TheUniversal,pr:TheUniversal}) => {
@@ -723,7 +727,9 @@ export class ShareeModus extends RadioModus {
             // < a join to the recently table on uri ?
             //    cursor should work fine for keeping us along...
             //   a desperate fugue of reruns may have to be another layer...
-            return A.o({record:1})
+            let recs = A.o({record:1})
+            this.check_record_ordering(recs)
+            return recs
             //grep(re => !w.oa({recently_heard:1,uri:re.sc.uri}),
             //)
         }
@@ -732,16 +738,30 @@ export class ShareeModus extends RadioModus {
         let co = await w.r({consumers:1,of:'radiostock'})
         let client = 1
         let la = null
-        let next = async (loop) => {
+        let next = async (loop=0) => {
             if (loop > 3) throw "loop"
-            // < should be on artist+track
-            let them = o_playable()
 
+            let ohno_start_over = async () => {
+                await w.r({hearing:1},{})
+                await co.r({client},{})
+                await next(loop + 1)
+            }
+            // < unique artist+track
+            let them = o_playable()
+            console.log(`radio_hear(), re${this.say_cursor(them,client,co)}`)
             let current = await this.co_cursor_N_next(co,client,them)
 
             if (current) {
+                let dohe = w.oa({hearing:current.sc.enid})
+                if (dohe) {
+                    // isn't supposed to reoccur until them run out
+                    console.warn(`double hearingradio_hear(${current.sc.enid})`)
+                    return ohno_start_over()
+                }
+
                 await this.radio_hear(A,w,current)
                 await this.co_cursor_save(co,client,current)
+                console.log(`radio_hear(${current.sc.enid}), re${this.say_cursor(them,client,co)} now!`)
                 return current
             }
             else {
@@ -750,11 +770,20 @@ export class ShareeModus extends RadioModus {
                 // let everything play again! this is odd though.
                 // < make these cases studyable in the wild
                 //    it here we suggest uploading some screeds
-                await w.r({hearing:1},{})
-                await co.r({client},{})
-                next(loop + 1)
+                return ohno_start_over()
             }
         }
+
+        this.do_skip_track_fn = async () => {
+            let before = w.o({nowPlaying:1})[0]
+
+            await next()
+            this.main()
+            
+            let now = w.o({nowPlaying:1})[0]
+            console.log(`skipped track ${before.sc.enid} -> ${now.sc.enid}`)
+        }
+        this.V = true
 
         let them = o_playable()
         let left = await this.co_cursor_N_least_left(co,them)
@@ -769,8 +798,9 @@ export class ShareeModus extends RadioModus {
 
         if (!this.gat.AC_ready) return w.i({error:"!AC",waits:1})
 
-        // kick things off!
-        if (!w.oa({nowPlaying:1})) {
+        // kick things off the first time
+        //  or if the current aud seems wasted
+        if (!this.nowPlaying_is_ok(w)) {
             let rec = await next()
         }
 
@@ -780,6 +810,52 @@ export class ShareeModus extends RadioModus {
         // < at half way through *%preview, order %stream
         // < have a way to modulate around a mix of them
         //    radio_hear() just wanders off...
+    }
+    nowPlaying_is_ok(w) {
+        let ok = false
+        for (let no of w.o({nowPlaying:1})) {
+            // Check if there's a currently playing aud
+            let plau = no.o({playing:1, aud:1})[0]
+            if (plau) {
+                let aud:Audiolet = plau.sc.aud
+                // Check if the audiolet is not stopped
+                if (!aud.stopped) {
+                    ok = true
+                    break
+                }
+            }
+        }
+        return ok
+    }
+    // < something occasionally reorders %record!?
+    check_record_ordering(recs) {
+        let should_numbo = 0
+        let wonk = []
+        recs
+            .map((re:TheC) => {
+                if (re.c.numbo == null) {
+                    re.c.numbo = should_numbo
+                }
+                else {
+                    if (re.c.numbo != should_numbo) {
+                        wonk.push(`${re.sc.enid} should be ${should_numbo} not ${re.c.numbo}`)
+                    }
+                }
+                should_numbo++
+            })
+        if (wonk.length) {
+            let indice = 0
+            console.warn(`your *%record is reordering itself:\n`
+                +(recs.map(re => ` - ${indice++} ${re.sc.enid}`).join("\n"))
+                +`\n ie:\n`
+                +(wonk.join("\n"))
+            )
+        }
+    }
+    say_cursor(them,client,co) {
+        let cursor = co.o({client})[0]
+        let zi = !cursor ? 0 : them.indexOf(cursor.sc.current)
+        return `@${zi+1}/${them.length}`
     }
     // brute force checking all our %record/%preview are sequential...
     check_sanity(A) {
@@ -804,21 +880,34 @@ export class ShareeModus extends RadioModus {
 //#region < radio_hive
 
 // < better calmer radio_hear(), cytoscape friendly
+//   doing c_mutex() on an A or w... seems good huh
+//    maybe a stack of mutexes
+//   clients (perhaps out of M.main() time) describe their claim to reality...
+//    the reaction to ending an aud of playing the next re/* aud would continue
+//     but if the last one it wouldn't call w.c.next_is_go()
 
 
 //#endregion
 //#region radio_hear
     // engage one re
+    // < GOING? I mean it looks so bad. see radio_hive
     async radio_hear(A,w,re) {
         // and something to exist for all the auds in a sequence...
         let dohe = w.oa({hearing:re.sc.enid})
-        if (dohe) throw "double hearing"
+        if (dohe) throw "double hearing "+re.sc.enid
         let he = w.i({hearing:re.sc.enid})
         he.i(re)
         let what = () => `${re.sc.enid}`
 
         // thinking %hearing/*%aud, advancing reactions like play() etc
         let listening = async () => {
+            let samehe = this.refresh_C([A,w,he],true)
+            if (!samehe || he != samehe) {
+                // Modus can't have .stopped or .gat will destroy audiosources
+                console.error(`zombified radio_hear(${what()}), dropping`)
+                return
+            }
+
             let aus = he.o({aud:1})
             // where is playhead
             let plau = he.o({playing:1,aud:1})[0]
@@ -826,6 +915,18 @@ export class ShareeModus extends RadioModus {
                 let aud:Audiolet = au.sc.aud
                 // < sense at certain times from the end
                 aud.on_ended = async () => {
+                    let samehe = this.refresh_C([A,w,he])
+                    if (he != samehe) {
+                        // Modus can't have .stopped or .gat will destroy audiosources
+                        console.error(`zombified radio_hear() he on_ended, dropping`)
+                        return
+                    }
+                    if (!w.oa({nowPlaying:he})) {
+                        debugger
+                        console.error(`zombified nowPlaying on_ended, dropping`)
+                        return
+                    }
+
                     au.sc.stopping = 1
                     V.plau && console.log(`aud->aud stopping ${au.sc.seq} after ${au.sc.aud.along()}`)
                     // < get listening() to ambiently progress()
@@ -903,7 +1004,7 @@ export class ShareeModus extends RadioModus {
             let needs_nexties = !plau.sc.next
             if (needs_nexties) {
                 V.plau && console.log(`plau=${plau.sc.seq} wants nexties ${what()}`)
-                progress()
+                await progress()
             }
             else {
                 V.plau && console.log(`plau has future ${what()}`)
@@ -948,7 +1049,7 @@ export class ShareeModus extends RadioModus {
             if (current) {
                 let bit = 'enqueue'
                 try {
-                    console.log(`progress() ${what()} ${current.sc.seq}!`)
+                    V.plau && console.log(`progress() ${what()} ${current.sc.seq}!`)
                     // contains decoding
                     await enqueue(current)
                     await this.co_cursor_save(he,he,current)
@@ -978,15 +1079,26 @@ export class ShareeModus extends RadioModus {
         //   which sets up continuity
         await progress()
 
-        let no = await w.r({nowPlaying:he,uri:re.sc.uri})
+        // < ideally with mixage
+        // switch off any currently heard auds
+        for (let he of w.o1({nowPlaying:1})) {
+            // < where is playhead seems too complicated
+            for (let aud of he.o1({aud:1}) as Audiolet[]) {
+                aud.on_ended = undefined
+                aud.stop()
+            }
+        }
+
+        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid})
         no.c.wake_fn = () => {
             // will be attended while we are the %nowPlaying ?
             console.log(`thinkybout ${re.sc.uri} `)
         }
     }
 
+    // < just use another co_cursor?
     // au%next=->, au%prev=<- linkage via the host he
-    linkedlist_frontiering(he,name,au) {
+    linkedlist_frontiering(he:TheC,name:string,au:TheC) {
         let laau = he.sc[name]
         if (laau) {
             if (laau.sc.next) throw `already au%next`
@@ -1072,7 +1184,7 @@ export class ShareeModus extends RadioModus {
         }
     }
 
-    sent_re_client_quota_default = 2
+    sent_re_client_quota_default = 0
     sent_re_client_quota = {}
     // < test the efficacy of this... born in chaos
     sent_re_client_enids = {}
