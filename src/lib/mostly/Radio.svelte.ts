@@ -801,6 +801,7 @@ export class ShareeModus extends RadioModus {
         // kick things off the first time
         //  or if the current aud seems wasted
         if (!this.nowPlaying_is_ok(w)) {
+            console.log(">>>>>>>>>>>>>>>>>>")
             let rec = await next()
         }
 
@@ -813,9 +814,9 @@ export class ShareeModus extends RadioModus {
     }
     nowPlaying_is_ok(w) {
         let ok = false
-        for (let no of w.o({nowPlaying:1})) {
+        for (let he of w.o1({nowPlaying:1})) {
             // Check if there's a currently playing aud
-            let plau = no.o({playing:1, aud:1})[0]
+            let plau = he.o({playing:1, aud:1})[0]
             if (plau) {
                 let aud:Audiolet = plau.sc.aud
                 // Check if the audiolet is not stopped
