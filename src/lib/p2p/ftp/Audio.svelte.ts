@@ -117,26 +117,24 @@ export class Audiolet {
             if (event.data.size > 0) {
                 // these are ~35kb chunks of webm usually
                 this.on_recording(event.data);
+                segment_later()
             }
         };
+        // moved segmentation control from an interval to a time after each ondata
+        // < seems aud.load decode errors are possible with 110-byte buffers that way...
+        let segment_later = () => {
+            let is = this.segmentation_timeoutId
+            is && clearTimeout(is)
+            this.segmentation_timeoutId = 
+                setTimeout(() => this.encode_segmentation(),
+                (this.segment_duration||2) * 1000)
+
+        }
+        segment_later()
 
         this.mediaRecorder.start()
         // this just sets chunk size in terms of duration, they aren't individually playable
-            // : this.mediaRecorder.start(segment_duration*1000)
-    }
-    segmentation_intervalId:number
-    mediaRecorder_onplay() {
-        if (!this.mediaRecorder) return
-        let every = this.segment_duration * 1000
-        if (!every) throw "!segment_duration"
-        this.segmentation_intervalId = setInterval(() => {
-            if (this.progress() > 1 && this.left() > 1) {
-                // try to avoid tiny tail-end segments
-                // < seems aud.load decode errors are possible with 110-byte buffers that way...
-                this.encode_segmentation()
-                // console.log(`requested segment`)
-            }
-        }, every)
+            // : this.mediaRecordaer.start(segment_duration*1000)
     }
     mediaRecorder_onstop() {
         if (!this.mediaRecorder) return
@@ -144,10 +142,14 @@ export class Audiolet {
             // https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/stop_event
             this.mediaRecorder.stop();
         }
-        clearInterval(this.segmentation_intervalId)
+        clearInterval(this.segmentation_timeoutId)
     }
+    segmentation_timeoutId:number
     encode_segmentation() {
         if (!this.mediaRecorder) return
+        // try to avoid tiny tail-end segments
+        if (this.left() < 1) return
+
         this.mediaRecorder.stop()
         this.mediaRecorder.start()
         // is like this but with playable chunks:
@@ -220,7 +222,6 @@ export class Audiolet {
         this.start_time = this.gat.now() - offset
         this.stop_time = null
         this.stopped = false
-        this.mediaRecorder_onplay()
     }
 
 
