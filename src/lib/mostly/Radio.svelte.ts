@@ -527,6 +527,15 @@ export class ShareeModus extends RadioModus {
             if (loop > 3) throw "loop"
 
             let ohno_start_over = async () => {
+                for (let re of A.o({record:1})) {
+                    // don't trust leftover A/re/*%stream
+                    // < refactor to be able to request more streaming
+                    //    for a re we know aren't streaming
+                    //      or being actively given to us
+                    //       as we orecord about where we're at
+                    //     which is a quality we don't track anywhere atm
+                    await re.r({stream:1},{})
+                }
                 await w.r({hearing:1},{})
                 await co.r({client},{})
                 await next(loop + 1)
