@@ -657,8 +657,9 @@ export class ShareeModus extends RadioModus {
             let behind = now_in_seconds_with_ms() - pr.sc.irecord_ts
             if (last_live_edge_delay) {
                 let delta = behind - last_live_edge_delay
-                if (behind < 5 || 1) {
-                    console.log(`live edge: ${behind}, delta: ${delta}`)
+                if (behind < 5) {
+                    (behind < 1 ? console.warn : console.log)
+                        (`live edge: ${behind}, delta: ${delta}`)
 
                 }
             }
@@ -857,9 +858,9 @@ export class ShareeModus extends RadioModus {
 
 
                     V.plau && console.log(`progress() ${what()} ${current.sc.seq}!`)
-                    // contains decoding
-                    await enqueue(current)
                     await this.co_cursor_save(he,he,current)
+                    // contains decoding, if undecodable the he is doomed
+                    await enqueue(current)
                     bit = 'listening'
                     // figure out what to do now looking at he/*%aud
                     //  plays initially, then operates from callbacks.
@@ -893,7 +894,6 @@ export class ShareeModus extends RadioModus {
         // periodically emit:orecord {ack_seq,want_streaming?}
         let last_ack_seq = 0
         let streamability = async () => {
-            console.log(`streamability`)
             // where is playhead
             let plau = he.o({aud:1,playing:1})[0]
             let pr = plau?.sc.pr

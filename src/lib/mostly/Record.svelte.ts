@@ -262,11 +262,10 @@ export class RecordModus extends Modus {
                 let wonk = []
                 if (pr.sc.seq != want_seq) {
                     A.c.onestop ||= 0
-                    if (!A.c.onestop) {
+                    if (!A.c.onestop++) {
                         wonk.push(`out of seq: ${re.sc.enid} at ${want_seq} != ${pr.sc.seq}`,
-                            prs.map(keyser)
+                            ...prs.map(keyser)
                         )
-                        debugger
                     }
                 }
                 if (pr.sc.preview && section == 'stream') wonk.push('EOpreview %preview')
