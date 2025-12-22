@@ -205,6 +205,21 @@ export class RadioModus extends RecordModus {
         })
         if (!D) return
 
+        // we have to figure out what the last %preview,seq= is
+        //  so just wait.
+        // < could start, but avoid Cpromise until %preview++ done
+        //    and we can re-seq all the %stream accordingly
+        let ip = re.o({in_progress:1})[0]
+        if (ip) {
+            console.log(`radiostreaming:${enid}: waiting until %previews++ done`)
+            ip.c.on_finish = () => {
+                // < aim at w better
+                this.main()
+            }
+            return
+        }
+        
+
         if (!w.oa({buffers:1})) {
             console.log(`radiostreaming:${enid} loads`)
             re.i({they_want_streaming:1})
@@ -212,9 +227,7 @@ export class RadioModus extends RecordModus {
         }
 
         if (!w.oa({aud:1})) {
-            let offset = re.sc.offset
-                + re.o1({preview:1},'duration')
-                    .reduce((sum,s) => sum + s,0)
+            let offset = re.sc.offset + re.sc.preview_duration
             if (offset < 0.43) throw "low offset..."
             let from_seq = re.o1({preview:1},'seq').pop() + 1
             let aud = await this.record_preview_individuated(A,w,D,{

@@ -81,7 +81,7 @@ export class RecordModus extends Modus {
              ...await this.entropiate({offset,uri}),
              ...c
         })
-        re.i({in_progress:1})
+        let ip = re.i({in_progress:1})
 
         // receive transcoded buffers
         aud.setupRecorder(true)
@@ -174,6 +174,7 @@ export class RecordModus extends Modus {
         aud.on_stop = async () => {
             // loose about async timing this
             //  radiostock simply waits for it to disappear
+            ip.c.on_finish?.()
             re.r({in_progress:1},{})
             // < assure the final on_recording() ?
             //     it might be causing the tinybits
