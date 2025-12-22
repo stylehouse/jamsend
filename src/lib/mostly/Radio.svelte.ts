@@ -442,7 +442,17 @@ export class ShareeModus extends RadioModus {
                 V.irec && console.log(`irecord   re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`)
 
                 this.check_record_sanity(A)
+                
+                // now...
                 if (!w.oa({nowPlaying:1})) this.main()
+                
+                // this may be for %nowPlaying
+                //  which may be following the live edge too closely
+                //   to get around to enqueue() (decode) this piece in time.
+                let no = w.o({nowPlaying:1,enid:re.sc.enid}).pop()
+                if (no) {
+                    await no.c.hear_wake_fn()
+                }
                 // re.i({dooooooooooings:'it'})
                 // re.i({dooooooewooings:'it'})
                 // re.i({doooaooowooings:'it'})
@@ -637,7 +647,7 @@ export class ShareeModus extends RadioModus {
             let behind = now_in_seconds_with_ms() - pr.sc.irecord_ts
             if (last_live_edge_delay) {
                 let delta = behind - last_live_edge_delay
-                if (behind < 5) {
+                if (behind < 5 || 1) {
                     console.log(`live edge: ${behind}, delta: ${delta}`)
 
                 }
@@ -709,6 +719,7 @@ export class ShareeModus extends RadioModus {
                 // if (aus[0]) {
                 //     delete aus[0].sc.prev
                 // }
+                let pr = plau.sc.pr
 
                 if (plau.sc.stopping) {
                     delete plau.sc.playing
@@ -725,10 +736,14 @@ export class ShareeModus extends RadioModus {
                         // < if we are on the last decoded (in enqueue()) au
                         //    go decode more and return to this
                         //    irecord could excite the decode|enqueue
-                        if (!1) 1
+                        if (pr.sc.EOpreview) console.error(`run out of %preview @${pr.sc.seq}`)
+                        if (!pr.sc.EOpreview && !pr.sc.EOstream) {
+                            console.error(`run out of re/*, not marked as end: @${pr.sc.seq}`)
+                        }
                         V.plau && console.log(`plau ENDS`)
                         await he.r({plau:1},{ENDED:1})
                         await progress()
+                        return
                     }
                     
                     plau = neau
@@ -804,7 +819,7 @@ export class ShareeModus extends RadioModus {
 
         // find next %preview and enqueue it
         let currently_ending = null
-        let progress = async () => {
+        let progress = async (soft=false) => {
             // pull the next %record/*%preview
             let them = this.get_record_audiobits(re)
             let current = await this.co_cursor_N_next(he,he,them)
@@ -835,6 +850,9 @@ export class ShareeModus extends RadioModus {
                     await this.co_cursor_save(he,he,current)
                     bit = 'listening'
                     // figure out what to do now looking at he/*%aud
+                    //  plays initially, then operates from callbacks.
+                    //  we should only observe nothing needing doing from here once %playing
+                    //   
                     await listening()
                 }
                 catch (er) {
@@ -843,6 +861,10 @@ export class ShareeModus extends RadioModus {
                 }
             }
             else {
+                if (soft) {
+                    V.plau && console.log(`progress() ${what()} casual noop`)
+                    return
+                }
                 V.plau && console.log(`progress() ${what()} done!?`)
                 if (he.oa({plau:1,ENDED:1})) {
                     // having just i %ENDED and needs_nexties=true
@@ -909,9 +931,10 @@ export class ShareeModus extends RadioModus {
         }
 
         let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid})
-        no.c.wake_fn = () => {
+        no.c.hear_wake_fn = async () => {
             // will be attended while we are the %nowPlaying ?
             console.log(`thinkybout ${re.sc.uri} `)
+            await progress()
         }
     }
 
