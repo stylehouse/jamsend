@@ -44,7 +44,7 @@
     {@const opener = i_opener()}
     <button class="btn" onclick={opener.toggle}>
         <span class="{ziadostyle(stuffziado)}"
-            title="stuffziado.display_name, a textual description of a value"
+            title="stuffziado.display_name, a text description of a value"
             >{stuffziado?.display_name}</span>
     </button>
 

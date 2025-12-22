@@ -9,7 +9,8 @@ import { erring, grap, grop, sha256 } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import type { PeeringSharing, PierSharing } from './Sharing.svelte';
 import type { Audiolet, SoundSystem } from './Audio.svelte';
-import { CHUNK_SIZE, RadioModus } from '$lib/mostly/Radio.svelte';
+import { RadioModus } from '$lib/mostly/Radio.svelte';
+import { CHUNK_SIZE } from '$lib/mostly/Record.svelte';
 
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
