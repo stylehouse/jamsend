@@ -163,16 +163,24 @@ export class RadioModus extends RecordModus {
     //#region radiostreaming
     async radiostreaming(A,w) {
         // await need
-        w.c.ostream = async (re) => {
+        w.c.ostream = async (re,q) => {
             let {enid} = re.sc
-            if (w.oa({streamable:1,re,enid})) {
-                // don't reset when we don't need to
-                console.log(`Already streaming ${enid}`)
+            let st = w.o({streamable:1,re,enid})[0]
+            if (st) {
+                if (q?.unstream) {
+                    st.c.stop()
+                    console.log(`unstream, stops: ${enid}`)
+                }
+                else {
+                    console.log(`Already streaming ${enid}`)
+                }
                 return
             }
             for (let st of w.o({streamable:1})) {
                 st.c.stop?.()
             }
+            // < we could deputise st as a kind of w, and Travel the %aim hoisting etc
+            //    w is an instance of the soul of A
             // we do the work in w/* rather than under w/st/*, so:
             w.empty()
             w.i({streamable:1,re,enid})
@@ -188,14 +196,29 @@ export class RadioModus extends RecordModus {
         let enid = re.sc.enid
         let path = uri.split('/')
         // resolve ourselves to this Se
-        // < pick between many DirectoryShare depending on uri at io.ostream?
+        // < pick between many DirectoryShare depending on uri at io.orecord?
         let topname = path.shift()
         if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
         // depend on that need to keep feeding %records
+        let not_relevant = false
         let is_still_relevant = () => {
             w = this.refresh_C([A,w])
             let wenid = w.o1({streamable:1},'enid')[0]
-            return enid == wenid
+            return !not_relevant && enid == wenid
+        }
+        // stop
+        st.c.stop = () => {
+            not_relevant = true
+            w.o1({aud:1}).map(aud => aud.stop())
+        }
+        let check_for_abandonment = (pr) => {
+            // find closest one of these behind us and give up if we are > 10 seq away
+            let audienced = Object.values(re.c.client_ack_seq)
+                .some(seq => seq > pr.sc.seq-10 && seq < pr.sc.seq+2)
+            if (!audienced) {
+                console.log(`radiostreaming:${enid} %stream abandoned`)
+                st.c.stop()
+            }
         }
 
 
@@ -248,6 +271,7 @@ export class RadioModus extends RecordModus {
                 let also = pr.sc.EOstream ? ",EOstream" : ""
                 console.log(`radiostreaming:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
                 this.Cpromise(re);
+                check_for_abandonment(pr)
             }
         }
 
@@ -258,11 +282,6 @@ export class RadioModus extends RecordModus {
             await w.r({satisfied:1})
         }
 
-        // stop
-        st.c.stop = () => {
-
-            w.o1({aud:1}).map(aud => aud.stop())
-        }
     }
 
 
@@ -431,6 +450,16 @@ export class ShareeModus extends RadioModus {
                 if (!keyword) throw "no pr%keyword we know"
                 let keywordc = {}
                 keywordc[keyword] = 1
+
+                if (keyword == 'stream') {
+                    // if we terminal hungered, may get high-seq streams we didn't want yet
+                    //  until our low orecord ack_seq indicate lack of interest in that later stream
+                    let he = w.o({hearing:resc.enid})[0]
+                    if (!he?.oa({we_want_streaming:1})) {
+                        console.warn(`terminal hungered high-seq %stream? @${prsc.seq} dropped`)
+                        return
+                    }
+                }
                 
                 // < test|tour places we did eg A.r(resc)
                 //    because without the sc arg it makes pattern_sc.* = 1
@@ -1087,7 +1116,13 @@ export class ShareeModus extends RadioModus {
                         // it's a remote cursor report, allowing more re/* to send
                         let re = A.o({record:1,enid})[0]
                         re.c.client_ack_seq ||= {}
+                        let was = re.c.client_ack_seq[client]
                         re.c.client_ack_seq[client] = ack_seq
+                        if (was && was > ack_seq) {
+                            console.warn(`broad: orecord: ack_seq dropped from ${was}`)
+                            // cancelling the %stream
+                            io.sc.ostream(re,{unstream:1})
+                        }
                         console.log("broad: orecord: ack_seq="+ack_seq)
                         this.Cpromise(re)
                         return
