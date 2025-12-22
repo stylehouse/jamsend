@@ -107,10 +107,12 @@ export class RecordModus extends Modus {
             return 'to pend this blob'
         }
         let ignore_one_tinybit
+        let is_still_relevant = true
         aud.on_recording = async (blob:Blob,loop) => {
             // should we even be doing this anymore
             if (q.is_still_relevant && !q.is_still_relevant()) {
                 console.error("lost relevance")
+                is_still_relevant = false
                 return
             }
             let buffers:ArrayBuffer[] = []
@@ -181,7 +183,9 @@ export class RecordModus extends Modus {
             // give two tries, with time to catch up after being paused in debugger...
             // < what else to give that to
             hmm(() => hmm(() => {
-                throw `didn't get a final on_recording after stopped`
+                if (is_still_relevant) {
+                    throw `didn't get a final on_recording after stopped`
+                }
             }))
         }
 
