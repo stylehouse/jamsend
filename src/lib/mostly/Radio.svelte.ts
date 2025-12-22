@@ -8,9 +8,10 @@ import {Modus} from "./Modus.svelte.ts"
 import { RecordModus } from "./Record.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
 
-const PREVIEW_DURATION = 21.58;
+const PREVIEW_DURATION = 21.58 // seconds of preview
+const STAY_AHEAD_OF_ACK_SEQ = 4 // many re/pr to load head
 const V = {
-    plau: 0,
+    plau: 1,
     irec: 1
 }
 
@@ -109,8 +110,8 @@ export class RadioModus extends RecordModus {
                 await this.co_cursor_save(co,client,current)
                 return current
             },
-            // this interface serves to start streams
-            //  zapped through from broadcaster
+            // this interface starts streams
+            //  zapped a subtype of broadcaster's unemit:orecord
             ostream: async (re:TheC) => {
                 this.o({A:'streaming'}).map(A => {
                     A.o({w:'radiostreaming'}).map(w => {
@@ -471,10 +472,6 @@ export class ShareeModus extends RadioModus {
         //    which perhaps we should...
         // our cursor id on the broadcaster, so we can restart
         w.c.cursor ||= this.prandle(9000000000)
-        let emit_orecord = async () => {
-            console.log(`term: orecord? we are ${w.c.cursor}`)
-            await this.PF.emit('orecord',{client:w.c.cursor})
-        }
         // < times...
         w.c.rec_end_nearing = () => {
             // < any %record/*%seq=$here,end_seq=$later can indicate the end?
@@ -496,16 +493,6 @@ export class ShareeModus extends RadioModus {
             console.log("term: next_is_go")
             next()
         }
-        // record is finished
-        w.c.more_is_go = (re) => {
-            // < there's a %mixage operating this procedure?
-            //    callback clustering
-            console.log("term: more_is_go(), ordering *%stream...")
-            // tell them to engage a stream
-            this.PF.emit('ostream',{enid:re.sc.enid})
-
-        }
-        // < 
 
         // we're hungry for %record
         let o_playable = () => {
@@ -582,7 +569,8 @@ export class ShareeModus extends RadioModus {
         let KEEP_AHEAD = 5
         if (left < KEEP_AHEAD) {
             w.i({see:'acquiring more...'})
-            await emit_orecord()
+            console.log(`term: orecord? we are`)
+            await this.PF.emit('orecord',{client:w.c.cursor})
         }
         if (!them.length) {
             return w.i({waits:"no records"})
@@ -839,6 +827,8 @@ export class ShareeModus extends RadioModus {
                     let behind = now_in_seconds_with_ms() - pr.sc.irecord_ts
                     if (behind < 3) {
                         // wait for the next main() if it's very recently arrived
+                        // to stay back from "live edge" or end of time or buffer underrun
+                        console.warn("backing away from end of time")
                         return
                     }
                 }
@@ -884,43 +874,47 @@ export class ShareeModus extends RadioModus {
                 }
             }
         }
-
+        // < get this number down
+        //    via 
+        const MIN_LEFT_TO_WANT_STREAMING = 16
+        // periodically emit:orecord {ack_seq,want_streaming?}
+        let last_ack_seq = 0
         let streamability = async () => {
-            if (he.oa({we_want_streaming:1})) return
+            console.log(`streamability`)
             // where is playhead
             let plau = he.o({aud:1,playing:1})[0]
-            let plpr = plau?.sc.pr
-            if (!plpr) return
+            let pr = plau?.sc.pr
+            if (!pr) return
 
-            // terminal hunger may cause re with /%stream to come back without he%we_want_streaming
-            if (re.oa({stream:1})) {
-                if (!he.oa({we_want_streaming:1})) {
-                    throw "we have re/%stream already, but we didn't ask?"
-                }
-                // it may not be streaming still on the remote...
-                // < having clients constantly return orecord, even when not hungry
-                //    knowing if its alive, knowing the offset we want
+            // send a remote cursor report every other seq, allowing more re/* to send
+            if (last_ack_seq+1 < pr.sc.seq) {
+                await this.PF.emit('orecord',
+                    {client:w.c.cursor, enid:re.sc.enid, ack_seq:pr.sc.seq})
+                last_ack_seq = pr.sc.seq
             }
-            // is the last %preview audiobit now final?
-            // < earlier warning? we know total duration when w:radiopreview decodes it
 
-            let lapr = re.o({preview:1}).pop()
-            if (!lapr?.sc.EOpreview) return
+            if (he.oa({we_want_streaming:1})) return
 
             // how far will we be next time we have time to think about streamability()
-
-            // how much time do we have left
-            // we get called soon after a new %aud,playing, so include it all in...
-            let left = re.o1({preview:1},'duration')
-                .slice(plpr.sc.seq)
+            //  playing time remaining, via seq durations so far
+            let played_re_time = re.o1({preview:1},'duration')
+                .slice(0,pr.sc.seq+2)
                 .reduce((sum,s) => sum + s,0)
-            // now we can calibrate for windspeed etc
-            console.log(`streamability ${what()}: ${Number(left).toFixed(1)} left`)
-            if (left < 16) {
+            if (!re.sc.preview_duration) throw "!re.sc.preview_duration"
+            let left = re.sc.preview_duration - played_re_time
+            console.log(`streamability(): left: ${left}`) 
+            if (left < MIN_LEFT_TO_WANT_STREAMING) {
+                console.log("term: nearing end of %preview, ordering *%stream...")
+                await this.PF.emit('orecord',
+                    {client:w.c.cursor, enid:re.sc.enid, want_streaming:1})
                 he.i({we_want_streaming:1})
-                re.i({we_want_streaming:1})
-                w.c.more_is_go(re)
             }
+
+            // < GONE using EOpreview, see 
+            // is the last %preview audiobit now final?
+            // < earlier warning? we know total duration when w:radiopreview decodes it
+            let lapr = re.o({preview:1}).pop()
+            if (!lapr?.sc.EOpreview) return
         }
 
 
@@ -942,7 +936,6 @@ export class ShareeModus extends RadioModus {
         let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid})
         no.c.hear_wake_fn = async () => {
             // will be attended while we are the %nowPlaying ?
-            console.log(`thinkybout ${re.sc.uri} `)
             await progress()
         }
     }
@@ -965,8 +958,8 @@ export class ShareeModus extends RadioModus {
     // desk to machine (terminal)
     // < and if also a terminal, hotwire the arrival handlers
     
-    // transmit once, keeps transmitting while re.c.promise more /* */
-    async transmit_record(A,w,re) {
+    // transmit once, keeps transmitting while re.c.promise more /* 
+    async transmit_record(A,w,re,client:number) {
         let blah = (pr) => {
             let keyword = Object.keys(pr.sc)[0]
             return `transmit_record re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`
@@ -988,18 +981,24 @@ export class ShareeModus extends RadioModus {
         let spooling = 0
         let spoolia = async () => {
             let them = this.get_record_audiobits(re)
-            let current = await this.co_cursor_N_next(co,co,them)
+            let pr = await this.co_cursor_N_next(co,co,them)
             spooling ++
-            if (current) {
-                if (!current.sc.buffer) {
+            if (pr) {
+                let last_ack_seq = re.c.client_ack_seq?.[client] || 0
+                let not_too_far_ahead = last_ack_seq + STAY_AHEAD_OF_ACK_SEQ
+                if (pr.sc.seq > not_too_far_ahead) {
+                    console.log(`cooling the spooling @${pr.sc.seq}`)
+                    return
+                }
+                if (!pr.sc.buffer) {
                     // < tidy re/*%stream after a while?
                     //    and spawn a new streamer if the listening party is so far ahead
                     //    that the chunks just after the %preview is already de-buffered
                     throw "ohno, hit dropped %record memory"
                 }
                 // console.log(`soundpooling ${spooling}`)
-                await sending(current)
-                await this.co_cursor_save(co,co,current)
+                await sending(pr)
+                await this.co_cursor_save(co,co,pr)
                 return true
             }
         }
@@ -1024,7 +1023,7 @@ export class ShareeModus extends RadioModus {
         
         let rr = await w.r({was_sent:1})
         // let rr = await wh.r({these_records:1})
-        let sendeth = async (re,client:number) => {
+        let sendeth = async (A,w,co,rr,re,client:number) => {
             A = this.refresh_C([A])
             w = this.refresh_C([A,w])
             co = this.refresh_C([A,w,co])
@@ -1046,6 +1045,8 @@ export class ShareeModus extends RadioModus {
             this.sent_re_client_enids[`${client} ${re.sc.enid}`] = true
             console.log(`broad: orecord: sendeth: ${re.sc.enid} to ${client}`)
             
+            // < see: don't trust leftover A/re/*%stream
+            await re.r({stream:1},{})
 
             // < this should be after we transmit_record(), for rollbackity
             //    need to throttle many unemit:orecord rushing here before we complete sendeth()
@@ -1055,32 +1056,52 @@ export class ShareeModus extends RadioModus {
 
 
             // send it, which can be drawn out
-            await this.transmit_record(A,w,re)
+            await this.transmit_record(A,w,re,client)
             await rr.r({excitable:1},{})
             rr.i({enid:re.sc.enid})
         }
         w.sc.unemits ||= {
-            orecord: async ({client},{P,Pier:samePier}) => {
+            orecord: async ({client,ack_seq,enid,want_streaming},{P,Pier:samePier}) => {
                 if (samePier != Pier) throw "Pier?"
-                A = this.refresh_C([A])
-                w = this.refresh_C([A,w])
-                co = this.refresh_C([A,w,co])
-                rr = this.refresh_C([A,w,rr])
                 // serve an entire orecord before releasing...
                 await this.c_mutex(w,'orecord', async () => {
                     w = this.refresh_C([A,w])
                     co = this.refresh_C([A,w,co])
                     rr = this.refresh_C([A,w,rr])
+                    if (ack_seq) {
+                        // for more re/pr, whatever pr type
+                        if (!enid) throw "enid?"
+                        // it's a remote cursor report, allowing more re/* to send
+                        let re = A.o({record:1,enid})[0]
+                        re.c.client_ack_seq ||= {}
+                        re.c.client_ack_seq[client] = ack_seq
+                        console.log("broad: orecord: ack_seq="+ack_seq)
+                        this.Cpromise(re)
+                        return
+                    }
+                    if (want_streaming) {
+                        // ordering re/pr%stream after the bunch of pr%preview
+                        if (!enid) throw "enid?"
+                        // tell F...w:radiostock to engage a stream
+                        let re = A.o({record:1,enid})[0]
+                        if (!re) throw `don't know re=${enid}`
+                        console.log("broad: orecord: want_streaming: "+enid)
+                        io.sc.ostream(re)
+                    }
+                    // for more re
+
+
+
                     let them = A.o({record:1})
                     rr.i({gota:"orecord"})
 
-
+                    // they might be saying a few things...
 
 
                     let current = await this.co_cursor_N_next(co,client,them)
                     if (current) {
                         w.i({see:"unemit:orecord"})
-                        await sendeth(current,client)
+                        await sendeth(A,w,co,rr,current,client)
                     }
                     else {
                         // can send when one arrives
@@ -1089,17 +1110,6 @@ export class ShareeModus extends RadioModus {
                     }
                 })
             },
-            ostream: async ({enid},{P,Pier:samePier}) => {
-                if (!enid) throw "enid?"
-                if (samePier != Pier) throw "Pier?"
-                A = this.refresh_C([A]) as TheC
-
-                // tell F...w:radiostock to engage a stream
-                let re = A.o({record:1,enid})[0]
-                if (!re) throw `don't know re=${enid}`
-                console.log("broad: ostream: is go: "+enid)
-                io.sc.ostream(re)
-            }
         }
 
         // we provide %record and %stream

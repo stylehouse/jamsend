@@ -75,7 +75,12 @@ export class RecordModus extends Modus {
 
         let uri = this.Se.D_to_uri(D)
         let re = q.record
-        re ||= w.i({record:1, ...await this.entropiate({offset,uri})})
+        let c = q.keyword != 'preview' ? {}
+            : {preview_duration: aud.duration() - offset}
+        re ||= w.i({record:1,
+             ...await this.entropiate({offset,uri}),
+             ...c
+        })
         re.i({in_progress:1})
 
         // receive transcoded buffers
