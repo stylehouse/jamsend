@@ -64,6 +64,9 @@ type Pubkey = Sighex
 type Prikey = Sighex
 
 // the global internet time, UTC in whole seconds
+export function now_in_seconds_with_ms() {
+    return Math.floor(Date.now()) / 1000
+}
 export function now_in_seconds() {
     return Math.floor(Date.now() / 1000)
 }

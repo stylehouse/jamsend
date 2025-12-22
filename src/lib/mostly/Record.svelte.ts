@@ -108,6 +108,11 @@ export class RecordModus extends Modus {
         }
         let ignore_one_tinybit
         aud.on_recording = async (blob:Blob,loop) => {
+            // should we even be doing this anymore
+            if (q.is_still_relevant && !q.is_still_relevant()) {
+                console.error("lost relevance")
+                return
+            }
             let buffers:ArrayBuffer[] = []
             if (blob.size < 250) return
             if (blob.size < 250 && await deal_tinybits(blob,buffers)) return
@@ -241,17 +246,39 @@ export class RecordModus extends Modus {
         for (let re of A.o({record: 1})) {
             let want_seq = 0
             let prs = this.get_record_audiobits(re)
+            let section = 'preview'
+            let wonky = []
             for (let pr of prs) {
+                let wonk = []
                 if (pr.sc.seq != want_seq) {
                     A.c.onestop ||= 0
                     if (!A.c.onestop) {
-                        console.error(`out of seq: ${re.sc.enid} at ${want_seq} != ${pr.sc.seq}`,
+                        wonk.push(`out of seq: ${re.sc.enid} at ${want_seq} != ${pr.sc.seq}`,
                             prs.map(keyser)
                         )
                         debugger
                     }
                 }
+                if (pr.sc.preview && section == 'stream') wonk.push('EOpreview %preview')
+                if (pr.sc.stream && section == 'preview') wonk.push('!EOpreview %stream')
+                if (section == 'done') wonk.push(`should be done`)
+                if (pr.sc.EOpreview) {
+                    if (section != 'preview') wonk.push('EO!preview')
+                    section = 'stream'
+                }
+                if (pr.sc.EOstream) {
+                    if (section != 'stream') wonk.push('EO!stream')
+                    section = 'done'
+                }
+                wonk.map(msg => wonky.push(`@${pr.sc.seq}: ${msg}`))
                 want_seq++
+            }
+            if (wonky.length) {
+                console.warn(`your re=${re.sc.enid} /*%preview is looking weird:\n`
+                    +(prs.map(keyser).join("\n"))
+                    +`\n ie:\n`
+                    +(wonky.join("\n"))
+                )
             }
         }
     }

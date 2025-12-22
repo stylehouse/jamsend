@@ -2,7 +2,7 @@ import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.
 import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
 import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
-import { now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
+import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
 import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import {Modus} from "./Modus.svelte.ts"
 import { RecordModus } from "./Record.svelte.ts"
@@ -10,7 +10,7 @@ import type { TheD } from "./Selection.svelte.ts"
 
 const PREVIEW_DURATION = 21.58;
 const V = {
-    plau: 1,
+    plau: 0,
     irec: 1
 }
 
@@ -163,10 +163,15 @@ export class RadioModus extends RecordModus {
     async radiostreaming(A,w) {
         // await need
         w.c.ostream = async (re) => {
+            let {enid} = re.sc
+            if (w.oa({streamable:1,re,enid})) {
+                // don't reset when we don't need to
+                console.log(`Already streaming ${enid}`)
+                return
+            }
             for (let st of w.o({streamable:1})) {
                 st.c.stop?.()
             }
-            let {enid} = re.sc
             // we do the work in w/* rather than under w/st/*, so:
             w.empty()
             w.i({streamable:1,re,enid})
@@ -185,6 +190,12 @@ export class RadioModus extends RecordModus {
         // < pick between many DirectoryShare depending on uri at io.ostream?
         let topname = path.shift()
         if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
+        // depend on that need to keep feeding %records
+        let is_still_relevant = () => {
+            w = this.refresh_C([A,w])
+            let wenid = w.o1({streamable:1},'enid')[0]
+            return enid == wenid
+        }
 
 
         // recursive directory something-if-not-exist thinger
@@ -209,7 +220,8 @@ export class RadioModus extends RecordModus {
                 get_offset: () => offset,
                 keyword: 'stream', // it's %record/%stream
                 record: re, // continuing in
-                from_seq
+                from_seq,
+                is_still_relevant,
             })
             // hold on to this while it's happening
             w.i({aud})
@@ -234,6 +246,7 @@ export class RadioModus extends RecordModus {
 
         // stop
         st.c.stop = () => {
+
             w.o1({aud:1}).map(aud => aud.stop())
         }
     }
@@ -424,7 +437,7 @@ export class ShareeModus extends RadioModus {
                 let pr = re.o({...keywordc,...exactly(prsc)})[0]
                     || await re.r(
                     exactly({...keywordc,seq:prsc.seq}),
-                    {...prsc,buffer}
+                    {...prsc,buffer,irecord_ts:now_in_seconds_with_ms()}
                 )
                 V.irec && console.log(`irecord   re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`)
 
@@ -523,7 +536,6 @@ export class ShareeModus extends RadioModus {
 
                 await this.radio_hear(A,w,current)
                 await this.co_cursor_save(co,client,current)
-                console.log(`radio_hear(${current.sc.enid}), re${this.say_cursor(them,client,co)} now!`)
                 return current
             }
             else {
@@ -616,6 +628,23 @@ export class ShareeModus extends RadioModus {
         he.i(re)
         let what = () => `${re.sc.enid}`
 
+        let last_live_edge_delay = 0
+        let check_live_edge_delta = (pr) => {
+            // when playing, check how far behind the live edge we are
+            //  defined by our unemit:irecord, tells us how far behind the source material
+            //   playing into the MediaRecord at the other end we are
+            // we also try to stay 3s behind seq=0 at progress()
+            let behind = now_in_seconds_with_ms() - pr.sc.irecord_ts
+            if (last_live_edge_delay) {
+                let delta = behind - last_live_edge_delay
+                if (behind < 5) {
+                    console.log(`live edge: ${behind}, delta: ${delta}`)
+
+                }
+            }
+            last_live_edge_delay = behind
+        }
+
         // thinking %hearing/*%aud, advancing reactions like play() etc
         let listening = async () => {
             let samehe = this.refresh_C([A,w,he],true)
@@ -630,6 +659,8 @@ export class ShareeModus extends RadioModus {
             let plau = he.o({playing:1,aud:1})[0]
             let au_play = (au) => {
                 let aud:Audiolet = au.sc.aud
+                let pr = au.sc.pr
+                check_live_edge_delta(pr)
                 // which is...
                 aud.on_ended = async () => {
                     let samehe = this.refresh_C([A,w,he])
@@ -691,6 +722,10 @@ export class ShareeModus extends RadioModus {
 
                     }
                     else {
+                        // < if we are on the last decoded (in enqueue()) au
+                        //    go decode more and return to this
+                        //    irecord could excite the decode|enqueue
+                        if (!1) 1
                         V.plau && console.log(`plau ENDS`)
                         await he.r({plau:1},{ENDED:1})
                         await progress()
@@ -741,7 +776,7 @@ export class ShareeModus extends RadioModus {
             if (pr.sc.stream) {
                 if (!found_stream) {
                     console.log(`radio enqueue: %preview turns to %stream`)
-                    if (!he.oa({asked_for_stream:1})) {
+                    if (!he.oa({we_want_streaming:1})) {
                         console.warn("didnt ask for stream")
                     }
                     found_stream = true
@@ -768,14 +803,32 @@ export class ShareeModus extends RadioModus {
         }
 
         // find next %preview and enqueue it
+        let currently_ending = null
         let progress = async () => {
             // pull the next %record/*%preview
             let them = this.get_record_audiobits(re)
             let current = await this.co_cursor_N_next(he,he,them)
-            
+
             if (current) {
+                let pr = current
+                if (pr.sc.seq == 0) {
+                    let behind = now_in_seconds_with_ms() - pr.sc.irecord_ts
+                    if (behind < 3) {
+                        // wait for the next main() if it's very recently arrived
+                        return
+                    }
+                }
+
                 let bit = 'enqueue'
                 try {
+                    if (currently_ending) {
+                        debugger
+                    }
+                    if (current.sc.EOstream) {
+                        currently_ending = true
+                    }
+
+
                     V.plau && console.log(`progress() ${what()} ${current.sc.seq}!`)
                     // contains decoding
                     await enqueue(current)
@@ -810,7 +863,7 @@ export class ShareeModus extends RadioModus {
 
             // terminal hunger may cause re with /%stream to come back without he%we_want_streaming
             if (re.oa({stream:1})) {
-                if (!re.oa({we_want_streaming:1})) {
+                if (!he.oa({we_want_streaming:1})) {
                     throw "we have re/%stream already, but we didn't ask?"
                 }
                 // it may not be streaming still on the remote...
