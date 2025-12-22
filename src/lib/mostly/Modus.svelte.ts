@@ -688,17 +688,22 @@ abstract class Agency extends TimeGallopia {
     // eg M/%spare_worker=A:hunting indicates capacity to make more records
     async rest(A,w) {
         w.i({see:"At rest"})
-        await this.r({spare_worker:A})
+        await A.r({resting:1})
     }
     // < specify radiostock worker, radiostream worker
     //    and handle resource contention
     // look for and engage one of them, supposing they just need reset
     async unrest():Promise<TheC|undefined> {
-        for (let A of this.o1({spare_worker:1})) {
+        for (let A of this.o({A:1})) {
+            if (!A.oa({resting:1})) continue
             await A.c.reset_Aw()
-            await this.r({spare_worker:A},{})
-            A.i({was_reset:1})
+            await A.r({resting:1},{})
+
+            let was_reset = (A.o1({was_reset:1})[0] || 0) + 1
+            await A.r({was_reset})
+            
             this.main()
+            return true
         }
     }
     async out_of_instructions(A,w) {

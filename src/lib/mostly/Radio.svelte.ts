@@ -8,8 +8,10 @@ import {Modus} from "./Modus.svelte.ts"
 import { RecordModus } from "./Record.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
 
-const PREVIEW_DURATION = 21.58 // seconds of preview
-const STAY_AHEAD_OF_ACK_SEQ = 4 // many re/pr to load head
+const PREVIEW_DURATION = 33 // seconds of preview
+// < get this number down
+const MIN_LEFT_TO_WANT_STREAMING = 22
+const STAY_AHEAD_OF_ACK_SEQ = 4 // many re/pr to load ahead
 const V = {
     plau: 1,
     irec: 1
@@ -121,7 +123,7 @@ export class RadioModus extends RecordModus {
             },
         })
 
-        if ('only what we made') return
+        // if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -208,15 +210,17 @@ export class RadioModus extends RecordModus {
         }
         // stop
         st.c.stop = () => {
+            console.error("stream stop called")
             not_relevant = true
             w.o1({aud:1}).map(aud => aud.stop())
         }
         let check_for_abandonment = (pr) => {
+            if (!re.c.client_ack_seq) return
             // find closest one of these behind us and give up if we are > 10 seq away
-            let audienced = Object.values(re.c.client_ack_seq)
+            let audienced = Object.values(re.c.client_ack_seq || {})
                 .some(seq => seq > pr.sc.seq-10 && seq < pr.sc.seq+2)
             if (!audienced) {
-                console.log(`radiostreaming:${enid} %stream abandoned`)
+                console.log(`radiostreaming:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
                 st.c.stop()
             }
         }
@@ -227,6 +231,14 @@ export class RadioModus extends RecordModus {
             throw `radiostreaming:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
         })
         if (!D) return
+
+        
+
+        if (!w.oa({buffers:1})) {
+            console.log(`radiostreaming:${enid} loads`)
+            re.i({they_want_streaming:1})
+            await this.radiostreaming_i_buffers(A,w,D)
+        }
 
         // we have to figure out what the last %preview,seq= is
         //  so just wait.
@@ -242,13 +254,6 @@ export class RadioModus extends RecordModus {
             return
         }
         
-
-        if (!w.oa({buffers:1})) {
-            console.log(`radiostreaming:${enid} loads`)
-            re.i({they_want_streaming:1})
-            await this.radiostreaming_i_buffers(A,w,D)
-        }
-
         if (!w.oa({aud:1})) {
             let offset = re.sc.offset + re.sc.preview_duration
             if (offset < 0.43) throw "low offset..."
@@ -611,7 +616,7 @@ export class ShareeModus extends RadioModus {
         let KEEP_AHEAD = 5
         if (left < KEEP_AHEAD) {
             w.i({see:'acquiring more...'})
-            console.log(`term: orecord? we are`)
+            console.log(`orecord pls`)
             await this.PF.emit('orecord',{client:w.c.cursor})
         }
         if (!them.length) {
@@ -686,9 +691,9 @@ export class ShareeModus extends RadioModus {
             let behind = now_in_seconds_with_ms() - pr.sc.irecord_ts
             if (last_live_edge_delay) {
                 let delta = behind - last_live_edge_delay
-                if (behind < 5) {
-                    (behind < 1 ? console.warn : console.log)
-                        (`live edge: ${behind}, delta: ${delta}`)
+                if (behind < 15) {
+                    (behind < 3.141 ? console.warn : console.log)
+                        (`live edge: ${behind.toFixed(3)}, delta: ${delta.toFixed(3)}`)
 
                 }
             }
@@ -749,7 +754,7 @@ export class ShareeModus extends RadioModus {
                 if (!au) throw "!au"
                 plau = au
                 // < or hook up to... something
-                V.plau && console.log(`plau ENGAGES`)
+                V.plau>1 && console.log(`plau ENGAGES`)
                 au_play(au)
             }
             else {
@@ -789,7 +794,7 @@ export class ShareeModus extends RadioModus {
                     plau = neau
                 }
                 else {
-                    V.plau && console.log(`plau continues`)
+                    V.plau>1 && console.log(`plau continues`)
                 }
             }
 
@@ -807,13 +812,8 @@ export class ShareeModus extends RadioModus {
 
             if (!plau) return
 
-                // progress()
-            // < get listening() to ambiently progress()
-            // return
             // time to decode the next aud
-            let needs_nexties = !plau.sc.next
-            if (needs_nexties) {
-                V.plau && console.log(`plau=${plau.sc.seq} wants nexties ${what()}`)
+            if (!plau.sc.next) {
                 await progress()
             }
         }
@@ -917,9 +917,6 @@ export class ShareeModus extends RadioModus {
                 }
             }
         }
-        // < get this number down
-        //    via 
-        const MIN_LEFT_TO_WANT_STREAMING = 16
         // periodically emit:orecord {ack_seq,want_streaming?}
         let last_ack_seq = 0
         let streamability = async () => {
@@ -944,7 +941,7 @@ export class ShareeModus extends RadioModus {
                 .reduce((sum,s) => sum + s,0)
             if (!re.sc.preview_duration) throw "!re.sc.preview_duration"
             let left = re.sc.preview_duration - played_re_time
-            console.log(`streamability(): left: ${left}`) 
+            console.log(`streamability(): left: ${left.toFixed(2)}`) 
             if (left < MIN_LEFT_TO_WANT_STREAMING) {
                 console.log("term: nearing end of %preview, ordering *%stream...")
                 await this.PF.emit('orecord',
@@ -1026,10 +1023,17 @@ export class ShareeModus extends RadioModus {
             let pr = await this.co_cursor_N_next(co,co,them)
             spooling ++
             if (pr) {
+                // don't get too far ahead
+                // by what they ack_seq
                 let last_ack_seq = re.c.client_ack_seq?.[client] || 0
                 let not_too_far_ahead = last_ack_seq + STAY_AHEAD_OF_ACK_SEQ
                 if (pr.sc.seq > not_too_far_ahead) {
                     console.log(`cooling the spooling @${pr.sc.seq}`)
+                    return
+                }
+                // don't transmit unstable %stream yet
+                //  but when it is Cpromised it'll get far in front of them
+                if (pr.sc.unstable) {
                     return
                 }
                 if (!pr.sc.buffer) {
@@ -1115,13 +1119,17 @@ export class ShareeModus extends RadioModus {
                         if (!enid) throw "enid?"
                         // it's a remote cursor report, allowing more re/* to send
                         let re = A.o({record:1,enid})[0]
+                        if (!re) throw `don't know re=${enid}`
                         re.c.client_ack_seq ||= {}
                         let was = re.c.client_ack_seq[client]
                         re.c.client_ack_seq[client] = ack_seq
                         if (was && was > ack_seq) {
                             console.warn(`broad: orecord: ack_seq dropped from ${was}`)
-                            // cancelling the %stream
-                            io.sc.ostream(re,{unstream:1})
+                            // we may just be looping the %preview section if sluggish...
+                            if (was - 20 > ack_seq) {
+                                // long ago, cancelling the %stream
+                                io.sc.ostream(re,{unstream:1})
+                            }
                         }
                         console.log("broad: orecord: ack_seq="+ack_seq)
                         this.Cpromise(re)
