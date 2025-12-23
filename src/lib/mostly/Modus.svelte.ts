@@ -132,9 +132,9 @@ abstract class ModusItself extends TheC  {
     async have_time(fn:Function) {
         let at = new Error().stack
         if (this.time_having) {
-            // console.error("re-transacting Modus",
-            //     {awaiting_stack:this.time_having,
-            //      current_stack:at})
+            console.error("re-transacting Modus",
+                {awaiting_stack:this.time_having,
+                 current_stack:at})
             return
         }
         this.time_having = at

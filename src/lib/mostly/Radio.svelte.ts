@@ -706,7 +706,7 @@ export class ShareeModus extends RadioModus {
         let what = () => `${re.sc.enid}`
 
         let last_live_edge_delay = 0
-        let check_live_edge_delta = (pr) => {
+        let check_live_edge_delta = (pr,aud:Audiolet) => {
             // when playing, check how far behind the live edge we are
             //  defined by our unemit:irecord, tells us how far behind the source material
             //   playing into the MediaRecord at the other end we are
@@ -717,7 +717,13 @@ export class ShareeModus extends RadioModus {
                 if (behind < 15) {
                     (behind < 3.141 ? console.warn : console.log)
                         (`live edge: ${behind.toFixed(3)}, delta: ${delta.toFixed(3)}`)
-
+                    if (behind < 3.141) {
+                        // getting close enough to break soon! better freak them out
+                        // < make it seem like this weakness comes from physics
+                        // aud.playing_next.
+                        console.warn(`having a melty one because we are drifting towards the end of time`)
+                        aud.playing_next.playbackRate.value = 0.8
+                    }
                 }
             }
             last_live_edge_delay = behind
@@ -739,7 +745,7 @@ export class ShareeModus extends RadioModus {
             let au_play = (au) => {
                 let aud:Audiolet = au.sc.aud
                 let pr = au.sc.pr
-                check_live_edge_delta(pr)
+                check_live_edge_delta(pr,aud)
                 // which is...
                 aud.on_ended = async () => {
                     let samehe = this.refresh_C([A,w,he],true)
@@ -749,7 +755,6 @@ export class ShareeModus extends RadioModus {
                         return
                     }
                     if (!w.oa({nowPlaying:he})) {
-                        debugger
                         console.error(`zombified nowPlaying on_ended, dropping`)
                         return
                     }
@@ -760,13 +765,7 @@ export class ShareeModus extends RadioModus {
                     //   instead of having a pause while we decode...
                     listening()
                 }
-                if (0 && 'temporarily') {
-                    setTimeout(() => aud.on_ended(), 2000)
-                }
-                else {
-                    aud.play()
-                }
-                // setTimeout(() => progress(), 333)
+                aud.play()
                 
                 V.plau && console.log(`plau now ${au.sc.pr.sc.seq}`)
                 au.sc.playing = 1
