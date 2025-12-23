@@ -256,10 +256,9 @@ abstract class TimeGallopia extends ModusItself {
             // console.log(`so it could be `,sc)
             let possible = where.o(sc)
             if (possible.length > 1) throw "multitude"
-            if (possible.length < 1 && vanish_ok) return
-            if (possible.length < 1) throw "not found"
-
             where = possible[0]
+            if (!where && vanish_ok) return
+            if (!where) throw "not found"
             i++
         }
         return where

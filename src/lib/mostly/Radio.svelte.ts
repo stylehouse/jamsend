@@ -218,7 +218,7 @@ export class RadioModus extends RecordModus {
             if (!re.c.client_ack_seq) return
             // find closest one of these behind us and give up if we are > 10 seq away
             let audienced = Object.values(re.c.client_ack_seq || {})
-                .some(seq => seq > pr.sc.seq-10 && seq < pr.sc.seq+2)
+                .some(seq => seq > pr.sc.seq-15 && seq < pr.sc.seq+2)
             if (!audienced) {
                 console.log(`radiostreaming:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
                 st.c.stop()
@@ -241,17 +241,31 @@ export class RadioModus extends RecordModus {
         }
 
         // we have to figure out what the last %preview,seq= is
-        //  so just wait.
-        // < could start, but avoid Cpromise until %preview++ done
-        //    and we can re-seq all the %stream accordingly
-        let ip = re.o({in_progress:1})[0]
+        //  so arrange to get told before we do any i re/%stream
+        //   but then have a bunch of them at once, getting live edge ahead!
+        // wait for %preview++ done so we can re-seq all the %stream accordingly
+        let ip = re.o({in_progress:'preview'})[0]
+        let saved_up_chunksc:TheUniversal[] = []
         if (ip) {
             console.log(`radiostreaming:${enid}: waiting until %previews++ done`)
-            ip.c.on_finish = () => {
-                // < aim at w better
-                this.main()
+            // we save up our chunks of recording
+            w.c.on_i_chunksc = (ore:TheC,prsc:TheUniversal) => {
+                if (ore != re) throw "~re"
+                saved_up_chunksc.push(prsc)
             }
-            return
+            // then when they're done they send their last %preview
+            ip.c.on_finish = async (pr:TheC) => {
+                // release
+                w.c.on_i_chunksc = undefined
+                // which we re-number our %stream,seq to
+                let seq = pr.sc.seq
+                for (let prsc of saved_up_chunksc) {
+                    seq++
+                    let pr = re.i({...prsc, seq})
+                    w.c.on_recording(re,pr)
+                }
+                w.sc.seq = seq
+            }
         }
         
         if (!w.oa({aud:1})) {
@@ -718,7 +732,7 @@ export class ShareeModus extends RadioModus {
                 check_live_edge_delta(pr)
                 // which is...
                 aud.on_ended = async () => {
-                    let samehe = this.refresh_C([A,w,he])
+                    let samehe = this.refresh_C([A,w,he],true)
                     if (he != samehe) {
                         // Modus can't have .stopped or .gat will destroy audiosources
                         console.error(`zombified radio_hear() he on_ended, dropping`)
@@ -1029,11 +1043,6 @@ export class ShareeModus extends RadioModus {
                 let not_too_far_ahead = last_ack_seq + STAY_AHEAD_OF_ACK_SEQ
                 if (pr.sc.seq > not_too_far_ahead) {
                     console.log(`cooling the spooling @${pr.sc.seq}`)
-                    return
-                }
-                // don't transmit unstable %stream yet
-                //  but when it is Cpromised it'll get far in front of them
-                if (pr.sc.unstable) {
                     return
                 }
                 if (!pr.sc.buffer) {

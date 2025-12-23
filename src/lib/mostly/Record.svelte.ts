@@ -81,11 +81,11 @@ export class RecordModus extends Modus {
              ...await this.entropiate({offset,uri}),
              ...c
         })
-        let ip = re.i({in_progress:1})
+        let ip = re.i({in_progress:q.keyword})
 
         // receive transcoded buffers
         aud.setupRecorder(true)
-        let seq = q.from_seq || 0
+        w.sc.seq = q.from_seq || 0
 
         let tinybits = []
         let deal_tinybits = async (blob,buffers) => {
@@ -113,6 +113,7 @@ export class RecordModus extends Modus {
         }
         let ignore_one_tinybit
         let is_still_relevant = true
+        let lastest_pr:TheC|undefined
         aud.on_recording = async (blob:Blob,loop) => {
             // should we even be doing this anymore
             if (q.is_still_relevant && !q.is_still_relevant()) {
@@ -161,21 +162,29 @@ export class RecordModus extends Modus {
             let duration = bud.duration()
             // duration -= pre_duration
             // generate %record/*%preview
-            let prsc = {...keywordc,seq,duration,type,buffer}
+            let prsc = {...keywordc,seq:w.sc.seq,duration,type,buffer}
+            w.sc.seq++
             if (aud.left() && aud.left() < 0.4) {
                 console.warn(`A tiny amount of aud left: ${aud.left()}`)
             }
             // mark ending
             if (aud.stopped) ex(prsc,EOkeywordc)
-            let pr = re.i(prsc)
-            seq++
-            await w.c.on_recording(re,pr)
+            if (w.c.on_i_chunksc) {
+                w.c.on_i_chunksc(re,prsc)
+            }
+            else {
+                let pr = re.i(prsc)
+                lastest_pr = pr
+                await w.c.on_recording(re,pr)
+            }
         }
         aud.on_stop = async () => {
             // loose about async timing this
             //  radiostock simply waits for it to disappear
-            ip.c.on_finish?.()
-            re.r({in_progress:1},{})
+            setTimeout(() => {
+                ip.c.on_finish?.(lastest_pr)
+            },111)
+            re.drop(ip)
             // < assure the final on_recording() ?
             //     it might be causing the tinybits
             //    and delete %in_progress when that final %preview is in
