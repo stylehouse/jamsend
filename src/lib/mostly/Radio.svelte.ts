@@ -226,7 +226,7 @@ export class RadioModus extends RecordModus {
             if (!re.c.client_ack_seq) return
             // find closest one of these behind us and give up if we are > 10 seq away
             let audienced = Object.values(re.c.client_ack_seq || {})
-                .some(seq => seq > pr.sc.seq-15 && seq < pr.sc.seq+2)
+                .some(seq => (seq+20) > pr.sc.seq * 0.34 && seq < pr.sc.seq+2)
             if (!audienced) {
                 console.log(`radiostreaming:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
                 st.c.stop()
@@ -302,18 +302,8 @@ export class RadioModus extends RecordModus {
             }
         }
 
-        this.watch_auds_progressing(A,w,D)
+        await this.watch_auds_progressing(A,w,D)
 
-        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
-            if (!w.oa({looks_nearly_satisfied:1})) {
-                // go one more main() round, in case of late on_recording, before shunting off...
-                w.i({looks_nearly_satisfied:1})
-            }
-            else {
-                // all done!
-                await w.r({satisfied:1})
-            }
-        }
 
     }
 
@@ -363,12 +353,7 @@ export class RadioModus extends RecordModus {
             }
         }
 
-        this.watch_auds_progressing(A,w,D)
-
-        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
-            // all done!
-            await w.r({satisfied:1})
-        }
+        await this.watch_auds_progressing(A,w,D)
     }
 
 
@@ -472,7 +457,7 @@ export class ShareeModus extends RadioModus {
             irecord: async ({re:resc,pr:prsc,buffer}:{re:TheUniversal,pr:TheUniversal}) => {
                 A = this.refresh_C([A])
                 w = this.refresh_C([A,w])
-                this.check_record_sanity(A)
+                this.check_all_records_sanity(A)
                 if (!resc.record) throw "!%record"
                 if (prsc.seq == 0 && A.oa({record:1,enid:resc.enid})) {
                     console.warn(`irecord DUP ${resc.enid} at ${prsc.seq}`)
@@ -505,7 +490,7 @@ export class ShareeModus extends RadioModus {
                 // < dealing with repeat transmissions. this should be re.i()
                 //   some cursors need to wait at the end?
                 // string '1' is not a wildcard
-                this.check_record_sanity(A)
+                this.check_all_records_sanity(A)
                 if (re.oa({...keywordc,seq:String(prsc.seq)})) {
                     console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
                     w.i({warning:'irecord DUP'})
@@ -518,7 +503,7 @@ export class ShareeModus extends RadioModus {
                 )
                 V.irec && console.log(`irecord   re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`)
 
-                this.check_record_sanity(A)
+                this.check_all_records_sanity(A)
                 
                 // now...
                 if (!w.oa({nowPlaying:1})) this.main()
@@ -541,7 +526,7 @@ export class ShareeModus extends RadioModus {
         }
         w.c.spinner ||= setInterval(() => {
             if (this.stopped) return clearInterval(w.c.spinner)
-            this.check_record_sanity(A)
+            this.check_all_records_sanity(A)
         }, 100)
         // < should we have hidden state like this?
         //   depends on KEEP_WHOLE_w to not lose w.c at the end of every time
@@ -1111,7 +1096,7 @@ export class ShareeModus extends RadioModus {
         
         let rr = await w.r({was_sent:1})
         // let rr = await wh.r({these_records:1})
-        let sendeth = async (A,w,co,rr,re,client:number) => {
+        let sendeth = async (A,w,co,rr,client:number,re) => {
             A = this.refresh_C([A])
             w = this.refresh_C([A,w])
             co = this.refresh_C([A,w,co])
@@ -1147,6 +1132,36 @@ export class ShareeModus extends RadioModus {
             await this.transmit_record(A,w,re,client)
             await rr.r({excitable:1},{})
             rr.i({enid:re.sc.enid})
+        }
+        let dealeth = async (A,w,co,rr,client,loopy=0) => {
+            let them = A.o({record:1})
+
+            // they might be saying a few things...
+            let re = await this.co_cursor_N_next(co,client,them)
+            if (re) {
+                // hang on, is it all banged up?
+                // < and WHY. eg, I've recently seen them double-seq++ing, all %preview
+                if (this.is_record_disordered(re)) {
+                    console.log(`ignoring disordered re=${re.sc.enid}`)
+                    A.drop(re)
+                    re = null
+                    if (loopy <3) {
+                        dealeth(A,w,co,rr,loopy++)
+                        return
+                    }
+                }
+            }
+            if (re) {
+                w.i({see:"unemit:orecord"})
+                await sendeth(A,w,co,rr,client,re)
+            }
+            else {
+                // can send when one arrives
+                console.log("broad: orecord: excitable")
+                await rr.r({excitable:1})
+
+                io?.sc.ohhi()
+            }
         }
         w.sc.unemits ||= {
             orecord: async ({client,ack_seq,enid,want_streaming},{P,Pier:samePier}) => {
@@ -1187,27 +1202,9 @@ export class ShareeModus extends RadioModus {
                         io.sc.ostream(re)
                     }
                     // for more re
-
-
-
-                    let them = A.o({record:1})
                     rr.i({gota:"orecord"})
 
-                    // they might be saying a few things...
-
-
-                    let current = await this.co_cursor_N_next(co,client,them)
-                    if (current) {
-                        w.i({see:"unemit:orecord"})
-                        await sendeth(A,w,co,rr,current,client)
-                    }
-                    else {
-                        // can send when one arrives
-                        console.log("broad: orecord: excitable")
-                        await rr.r({excitable:1})
-
-                        io?.sc.ohhi()
-                    }
+                    dealeth(A,w,co,rr,client)
                 })
             },
         }

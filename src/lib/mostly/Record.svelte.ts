@@ -217,17 +217,42 @@ export class RecordModus extends Modus {
         // watch the aud progress
         let auds:Array<Audiolet> = w.o1({aud:1})
         let alive = 0
+        let watching = await w.r({watching_auds:1})
         for (let aud of auds) {
             if (!aud.stopped) {
                 alive++
                 let left = aud.left()
                 w.i({see:'aud',playing:1,left})
+                watching.i({aud,left})
+
+                // check that left is going down over time
+                //  not sure why they'd hang there, not stopped but not playing...
+                let N = watching.o({aud,left:1})
+                let lefts = N.map(au => au.sc.left)
+                let minmaxsame = Math.min(lefts) == Math.max(lefts)
+                if (N.length > 4 && minmaxsame) {
+                    console.error(`watched aud isn't rolling...`)
+                    if (A.sc.A == 'radiostreaming') debugger
+                    A.c.reset_aw()
+                }
+                this.whittle_N(N,5)
             }
             else {
                 // done!
                 w.i({see:'aud',stopped:1})
             }
             w.i({see:'audtime',along:aud.along(),duration:aud.duration()})
+        }
+
+        if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
+            if (!w.oa({looks_nearly_satisfied:1})) {
+                // go one more main() round, in case of late on_recording, before shunting off...
+                w.i({looks_nearly_satisfied:1})
+            }
+            else {
+                // all done!
+                await w.r({satisfied:1})
+            }
         }
     }
 
@@ -260,50 +285,56 @@ export class RecordModus extends Modus {
             )
         }
     }
-    say_cursor(them,client,co) {
+    say_cursor(them:TheN,client:any,co:TheC) {
         let cursor = co.o({client})[0]
         let zi = !cursor ? 0 : them.indexOf(cursor.sc.current)
         return `@${zi+1}/${them.length}`
     }
     // brute force checking all our %record/%preview are sequential...
-    check_record_sanity(A) {
+    check_all_records_sanity(A:TheC) {
+        let ungood = []
         for (let re of A.o({record: 1})) {
-            let want_seq = 0
-            let prs = this.get_record_audiobits(re)
-            let section = 'preview'
-            let wonky = []
-            for (let pr of prs) {
-                let wonk = []
-                if (pr.sc.seq != want_seq) {
-                    A.c.onestop ||= 0
-                    if (!A.c.onestop++) {
-                        wonk.push(`out of seq: ${re.sc.enid} at ${want_seq} != ${pr.sc.seq}`,
-                            ...prs.map(keyser)
-                        )
-                    }
-                }
-                if (pr.sc.preview && section == 'stream') wonk.push('EOpreview %preview')
-                if (pr.sc.stream && section == 'preview') wonk.push('!EOpreview %stream')
-                if (section == 'done') wonk.push(`should be done`)
-                if (pr.sc.EOpreview) {
-                    if (section != 'preview') wonk.push('EO!preview')
-                    section = 'stream'
-                }
-                if (pr.sc.EOstream) {
-                    if (section != 'stream') wonk.push('EO!stream')
-                    section = 'done'
-                }
-                wonk.map(msg => wonky.push(`@${pr.sc.seq}: ${msg}`))
-                want_seq++
-            }
-            if (wonky.length) {
-                console.warn(`your re=${re.sc.enid} /*%preview is looking weird:\n`
-                    +(prs.map(keyser).join("\n"))
-                    +`\n ie:\n`
-                    +(wonky.join("\n"))
-                )
-            }
+            this.is_record_disordered(re)
         }
+        return ungood
+    }
+    is_record_disordered(re:TheC):boolean {
+        let want_seq = 0
+        let prs = this.get_record_audiobits(re)
+        let section = 'preview'
+        let wonky = []
+        for (let pr of prs) {
+            let wonk = []
+            if (pr.sc.seq != want_seq) {
+                if (!wonky.length) {
+                    wonk.push(`out of seq: ${re.sc.enid} at ${want_seq} != ${pr.sc.seq}`,
+                        ...prs.map(keyser)
+                    )
+                }
+            }
+            if (pr.sc.preview && section == 'stream') wonk.push('EOpreview %preview')
+            if (pr.sc.stream && section == 'preview') wonk.push('!EOpreview %stream')
+            if (section == 'done') wonk.push(`should be done`)
+            if (pr.sc.EOpreview) {
+                if (section != 'preview') wonk.push('EO!preview')
+                section = 'stream'
+            }
+            if (pr.sc.EOstream) {
+                if (section != 'stream') wonk.push('EO!stream')
+                section = 'done'
+            }
+            wonk.map(msg => wonky.push(`@${pr.sc.seq}: ${msg}`))
+            want_seq++
+        }
+        if (wonky.length) {
+            console.warn(`your re=${re.sc.enid} /*%preview is looking weird:\n`
+                +(prs.map(keyser).join("\n"))
+                +`\n ie:\n`
+                +(wonky.join("\n"))
+            )
+            return true
+        }
+        return false
     }
     
     

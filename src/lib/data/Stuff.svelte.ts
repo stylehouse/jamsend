@@ -175,7 +175,7 @@ class StuffIO {
         if (!n) return
         if (!n.sc) throw "!drop(C)"
         n.c.drop = 1
-        this.X.bump_version()
+        this.X?.bump_version()
     }
 
     // attachment, materialisation. indexes build up, forming X/.../$n to be with
