@@ -112,18 +112,24 @@ export class RadioModus extends RecordModus {
                 await this.co_cursor_save(co,client,current)
                 return current
             },
-            // this interface starts streams
+            // starts streams
             //  zapped a subtype of broadcaster's unemit:orecord
-            ostream: async (re:TheC) => {
+            ostream: async (re:TheC,q) => {
                 this.o({A:'streaming'}).map(A => {
                     A.o({w:'radiostreaming'}).map(w => {
-                        w.c.ostream(re)
+                        w.c.ostream(re,q)
                     })
                 })
             },
+            // shoves the DirectoryShare.modus in case it loses its interval
+            // < why does it do that
+            ohhi: async () => {
+                // mostly going for A:hunting, but everything likes staying alive
+                this.main()
+            },
         })
 
-        // if ('only what we made') return
+        if ('only what we made') return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -1128,7 +1134,7 @@ export class ShareeModus extends RadioModus {
                         if (!enid) throw "enid?"
                         // it's a remote cursor report, allowing more re/* to send
                         let re = A.o({record:1,enid})[0]
-                        if (!re) throw `don't know re=${enid}`
+                        if (!re) return console.warn(`orecord: don't know re=${enid}`)
                         re.c.client_ack_seq ||= {}
                         let was = re.c.client_ack_seq[client]
                         re.c.client_ack_seq[client] = ack_seq
@@ -1149,7 +1155,7 @@ export class ShareeModus extends RadioModus {
                         if (!enid) throw "enid?"
                         // tell F...w:radiostock to engage a stream
                         let re = A.o({record:1,enid})[0]
-                        if (!re) throw `don't know re=${enid}`
+                        if (!re) return console.warn(`orecord: don't know re=${enid}`)
                         console.log("broad: orecord: want_streaming: "+enid)
                         io.sc.ostream(re)
                     }
@@ -1172,6 +1178,8 @@ export class ShareeModus extends RadioModus {
                         // can send when one arrives
                         console.log("broad: orecord: excitable")
                         await rr.r({excitable:1})
+
+                        io.sc.ohhi()
                     }
                 })
             },
