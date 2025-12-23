@@ -11,7 +11,7 @@ import type { TheD } from "./Selection.svelte.ts"
 const PREVIEW_DURATION = 33 // seconds of preview
 // < get this number down
 const MIN_LEFT_TO_WANT_STREAMING = 22
-const STAY_AHEAD_OF_ACK_SEQ = 4 // many re/pr to load ahead
+const STAY_AHEAD_OF_ACK_SEQ = 7 // many re/pr to load ahead
 const V = {
     plau: 1,
     irec: 1
@@ -217,6 +217,8 @@ export class RadioModus extends RecordModus {
         // stop
         st.c.stop = () => {
             console.error("stream stop called")
+            // < figure out how to keep the %record without muddling it with non-continuing %stream
+            re.r({stream:1},{})
             not_relevant = true
             w.o1({aud:1}).map(aud => aud.stop())
         }
@@ -455,6 +457,7 @@ export class ShareeModus extends RadioModus {
 //#endregion
 //#region radioterminal
     turn_knob() {
+        if (!this.do_skip_track_fn) return console.error(`you don't skip track`)
         this.do_skip_track_fn()
     }
     do_skip_track_fn:Function
