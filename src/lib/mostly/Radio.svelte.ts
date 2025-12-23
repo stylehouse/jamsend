@@ -725,6 +725,7 @@ export class ShareeModus extends RadioModus {
 
         // thinking %hearing/*%aud, advancing reactions like play() etc
         let listening = async () => {
+            await this.c_mutex(w,'radio_hear:listening', async () => {
             let samehe = this.refresh_C([A,w,he],true)
             if (!samehe || he != samehe) {
                 // Modus can't have .stopped or .gat will destroy audiosources
@@ -839,6 +840,7 @@ export class ShareeModus extends RadioModus {
             if (!plau.sc.next) {
                 await progress()
             }
+            })
         }
 
         let found_stream = false
@@ -883,6 +885,7 @@ export class ShareeModus extends RadioModus {
         // find next %preview and enqueue it
         let currently_ending = null
         let progress = async (soft=false) => {
+            await this.c_mutex(w,'radio_hear:progressing', async () => {
             // pull the next %record/*%preview
             let them = this.get_record_audiobits(re)
             let current = await this.co_cursor_N_next(he,he,them)
@@ -939,6 +942,7 @@ export class ShareeModus extends RadioModus {
                     V.plau && console.log(`progress() ${what()} out-of-bits !%ENDED`)
                 }
             }
+            })
         }
         // periodically emit:orecord {ack_seq,want_streaming?}
         let last_ack_seq = 0
