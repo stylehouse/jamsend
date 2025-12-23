@@ -108,7 +108,8 @@ abstract class ModusItself extends TheC  {
             this.on_first_have_time = undefined
         }
         this.V && console.log(`${objectify(this)} --->`)
-        await this.have_time(async () => {
+        this.c_mutex(this,'Modus.main()?',
+            async () => {
             await this.o_elvis()
 
             await this.reset_interval()
@@ -130,6 +131,8 @@ abstract class ModusItself extends TheC  {
     abstract current:TheC
     time_having?:Error|null
     async have_time(fn:Function) {
+
+
         let at = new Error().stack
         if (this.time_having) {
             // < weirdly, %mo=main,interval:3.6 stops working!
@@ -276,11 +279,18 @@ abstract class TimeGallopia extends ModusItself {
     // < test the efficacy of this... born in chaos
     //   similarities with refresh_C()...
     async c_mutex(w,t,do_fn) {
-        if (w.c[`${t}_promise`]) {
-            await w.c[`${t}_promise`]
+        // Initialize queue if needed
+        if (!w.c[`${t}_queue`]) {
+            w.c[`${t}_queue`] = Promise.resolve()
         }
+        
+        // Chain onto the end of the queue
+        const myTurn = w.c[`${t}_queue`]
+        
+        // Create the next promise in the chain
         let release
-        w.c[`${t}_promise`] = new Promise((resolve) => release = resolve)
+        w.c[`${t}_queue`] = new Promise((resolve) => release = resolve)
+        
         try {
             await do_fn()
         }
@@ -372,9 +382,12 @@ abstract class TimeGallopia extends ModusItself {
     // tell anyone awaiting to reread C/*
     // < C.c.promise doesn't seem to exist by the time a C%record/%stream happens
     //   so the latter part of these is neutered, just use a callback
-    Cpromise(C:TheC) {
-        C.c.promised?.()
-        return
+    async Cpromise(C:TheC) {
+        if (C.c.promised) {
+            await C.c.promised()
+            return true
+        }
+        return false
         let resolve = C.c.fulfil
         resolve?.() 
         C.c.promise = new Promise((resolve) => {
@@ -383,7 +396,10 @@ abstract class TimeGallopia extends ModusItself {
     }
     // you run this once to introduce your streaming object (re%record) to the rest of your process
     Cpromised(C:TheC,spool_fn:Function) {
-        C.c.promised = () => {
+        if (C.c.promised) {
+            debugger
+        }
+        C.c.promised = async () => {
             // could wander off after Modus stops, which is always does before dying
             if (this.stopped) return
             spool_fn()
@@ -505,8 +521,8 @@ abstract class TimeGallopia extends ModusItself {
         let es = C.oa({self:1,est:1})[0]
         await C.replace({self:1,round:1},async () => {
             let round = Number(ro?.sc.round || 0) + 1
-            let delta = es && es.ago('est')
-            C.i({self:1,round,delta})
+            let age = es && es.ago('est')
+            C.i({self:1,round,age})
         })
     }
 }

@@ -125,7 +125,7 @@ export class RadioModus extends RecordModus {
             // < why does it do that
             ohhi: async () => {
                 // mostly going for A:hunting, but everything likes staying alive
-                this.main()
+                setTimeout(() => this.main(), 250)
             },
         })
 
@@ -297,7 +297,7 @@ export class RadioModus extends RecordModus {
             w.c.on_recording = async (re,pr) => {
                 let also = pr.sc.EOstream ? ",EOstream" : ""
                 console.log(`radiostreaming:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
-                this.Cpromise(re);
+                await this.Cpromise(re);
                 check_for_abandonment(pr)
             }
         }
@@ -343,7 +343,7 @@ export class RadioModus extends RecordModus {
                 radiostock = this.refresh_C([radiostock])
                 // makes wave of re.c.promise
                 // < temporarily re.c.promised()
-                this.Cpromise(re);
+                await this.Cpromise(re);
                 if (pr.sc.seq == 0) {
                     // we can start streaming this very very soon...
                     //  supposing latency is stable, they should be able to start playing it now?
@@ -1078,7 +1078,7 @@ export class ShareeModus extends RadioModus {
         // all %preview that are there
         while (await spoolia()) { 1 }
 
-        this.Cpromised(re,() => spoolia())
+        this.Cpromised(re,async () => await spoolia())
     }
 
 
@@ -1093,6 +1093,7 @@ export class ShareeModus extends RadioModus {
         let co = await w.r({consumers:1,of:'%record'})
         // speaking, on Pier, to the other Pier
         let Pier = this.PF.Pier
+        let io
         
         let rr = await w.r({was_sent:1})
         // let rr = await wh.r({these_records:1})
@@ -1189,7 +1190,10 @@ export class ShareeModus extends RadioModus {
                             }
                         }
                         console.log("broad: orecord: ack_seq="+ack_seq)
-                        this.Cpromise(re)
+                        let promising = await this.Cpromise(re)
+                        if (!promising) {
+                            console.warn(`lost track of what we're feeding them`)
+                        }
                         return
                     }
                     if (want_streaming) {
@@ -1215,7 +1219,7 @@ export class ShareeModus extends RadioModus {
         // copy %io:radiostock interfaces here
         await this.Miome(A,{io:'radiostock'})
         if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"})
-        let io = A.o({io:'radiostock'})[0]
+        io = A.o({io:'radiostock'})[0]
 
         // what we have to play
         let them = A.o({record:1})

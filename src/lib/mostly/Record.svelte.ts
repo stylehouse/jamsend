@@ -117,6 +117,11 @@ export class RecordModus extends Modus {
             if (q.is_still_relevant && !q.is_still_relevant()) {
                 is_still_relevant = false
             }
+            if (!w.oa({aud})) {
+                console.warn(`became not the only aud!?`)
+                debugger
+                is_still_relevant = false
+            }
             return is_still_relevant
         }
         let lastest_pr:TheC|undefined
@@ -124,8 +129,12 @@ export class RecordModus extends Modus {
             // should we even be doing this anymore
             if (!check_relevance()) {
                 console.error(`re=${re.sc.enid} %${q.keyword}  lost relevance`)
+                aud.stop()
                 return
             }
+            this.c_mutex(w,'on_recording',async() => {
+
+
             let buffers:ArrayBuffer[] = []
             if (blob.size < 250) return
             if (blob.size < 250 && await deal_tinybits(blob,buffers)) return
@@ -182,8 +191,12 @@ export class RecordModus extends Modus {
                 lastest_pr = pr
                 await w.c.on_recording(re,pr)
             }
+            })
         }
         aud.on_stop = async () => {
+            if (!check_relevance()) {
+                return
+            }
             // loose about async timing this
             //  radiostock simply waits for it to disappear
             setTimeout(() => {
@@ -223,19 +236,20 @@ export class RecordModus extends Modus {
                 alive++
                 let left = aud.left()
                 w.i({see:'aud',playing:1,left})
-                watching.i({aud,left})
+                watching.i({aud,left,est:now_in_seconds()})
 
                 // check that left is going down over time
                 //  not sure why they'd hang there, not stopped but not playing...
                 let N = watching.o({aud,left:1})
                 let lefts = N.map(au => au.sc.left)
-                let minmaxsame = Math.min(lefts) == Math.max(lefts)
-                if (N.length > 4 && minmaxsame) {
+                let minmaxsame = Math.min(...lefts) == Math.max(...lefts)
+
+                if (N.length > 4 && minmaxsame && N[0].ago('est') > 5) {
                     console.error(`watched aud isn't rolling...`)
                     if (A.sc.A == 'radiostreaming') debugger
-                    A.c.reset_aw()
+                    A.c.reset_Aw()
                 }
-                this.whittle_N(N,5)
+                this.whittle_N(N,9)
             }
             else {
                 // done!
