@@ -149,9 +149,18 @@ export class Audiolet {
         if (!this.mediaRecorder) return
         // try to avoid tiny tail-end segments
         if (this.left() < 1) return
+        // https://w3c.github.io/mediacapture-record/#dom-mediarecorder-pause
+        //  3.2. Stop gathering data into blob (but keep it available
+        //       so that recording can be resumed in the future).
+        // unsure what they mean by "MediaRecorder context object"
+        //  and "but keep it available", suppose the influx doesn't stop?
+        // < also, can we just do a whole aud per chunk
+        //    aimed at an offset, stop at chunk end, is that more accurate?
 
+        this.mediaRecorder.pause()
         this.mediaRecorder.stop()
         this.mediaRecorder.start()
+        this.mediaRecorder.resume()
         // is like this but with playable chunks:
         // this.mediaRecorder.requestData()
     }
