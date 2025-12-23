@@ -204,7 +204,7 @@ export class RecordModus extends Modus {
             // < what else to give that to
             hmm(() => hmm(() => {
                 if (check_relevance()) {
-                    throw `didn't get a final on_recording after stopped`
+                    console.warn(`didn't get a final on_recording after stopped`)
                 }
             }))
         }

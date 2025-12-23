@@ -13,7 +13,7 @@ const PREVIEW_DURATION = 33 // seconds of preview
 const MIN_LEFT_TO_WANT_STREAMING = 22
 const STAY_AHEAD_OF_ACK_SEQ = 7 // many re/pr to load ahead
 const V = {
-    plau: 1,
+    plau: 2,
     irec: 1
 }
 
@@ -305,8 +305,14 @@ export class RadioModus extends RecordModus {
         this.watch_auds_progressing(A,w,D)
 
         if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
-            // all done!
-            await w.r({satisfied:1})
+            if (!w.oa({looks_nearly_satisfied:1})) {
+                // go one more main() round, in case of late on_recording, before shunting off...
+                w.i({looks_nearly_satisfied:1})
+            }
+            else {
+                // all done!
+                await w.r({satisfied:1})
+            }
         }
 
     }
@@ -650,9 +656,20 @@ export class ShareeModus extends RadioModus {
 
         // kick things off the first time
         //  or if the current aud seems wasted
+        // < do a subsequent call lossy throttle on this more elegantly
+        if (w.o({nowPlayingShunted:1})[0]?.ago('at') > 10) {
+            await w.r({nowPlayingShunted:1},{})
+        }
         if (!this.nowPlaying_is_ok(w)) {
-            console.log(">>>>>>>>>>>>>>>>>>")
-            let rec = await next()
+            if (w.oa({nowPlayingShunted:1})) {
+                let ago = w.o({nowPlayingShunted:1})[0]?.ago('at')
+                console.log(`>>>>>>>>>>> too often, just ${ago} ago`)
+            }
+            else {
+                w.i({nowPlayingShunted:1,at:now_in_seconds()})
+                console.log(">>>>>>>>>>>>>>>>>>")
+                let rec = await next()
+            }
         }
 
         
@@ -755,7 +772,7 @@ export class ShareeModus extends RadioModus {
                         return
                     }
                     if (!w.oa({nowPlaying:he})) {
-                        console.error(`zombified nowPlaying on_ended, dropping`)
+                        console.error(`zombified nowPlaying=${he.sc.hearing} on_ended, dropping`)
                         return
                     }
 
@@ -837,7 +854,7 @@ export class ShareeModus extends RadioModus {
 
             // time to decode the next aud
             if (!plau.sc.next) {
-                await progress()
+                setTimeout(() => progress(), 345)
             }
             })
         }
@@ -1045,6 +1062,8 @@ export class ShareeModus extends RadioModus {
         let co = _C({name:"through record chunks"})
         let spooling = 0
         let spoolia = async () => {
+        await this.c_mutex(w,'spoolia', async () => {
+
             let them = this.get_record_audiobits(re)
             let pr = await this.co_cursor_N_next(co,co,them)
             spooling ++
@@ -1068,6 +1087,8 @@ export class ShareeModus extends RadioModus {
                 await this.co_cursor_save(co,co,pr)
                 return true
             }
+
+        })
         }
         // all %preview that are there
         while (await spoolia()) { 1 }
@@ -1185,7 +1206,7 @@ export class ShareeModus extends RadioModus {
                         console.log("broad: orecord: excitable")
                         await rr.r({excitable:1})
 
-                        io.sc.ohhi()
+                        io?.sc.ohhi()
                     }
                 })
             },

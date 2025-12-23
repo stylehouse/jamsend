@@ -132,12 +132,21 @@ abstract class ModusItself extends TheC  {
     async have_time(fn:Function) {
         let at = new Error().stack
         if (this.time_having) {
+            // < weirdly, %mo=main,interval:3.6 stops working!
+            let still = this.time_having
+            setTimeout(() => {
+                if (still == this.time_having) {
+                    console.error("unblocking zombified modus time",still.at)
+                    this.time_having = null
+                    this.main()
+                }
+            },666)
             console.error("re-transacting Modus",
-                {awaiting_stack:this.time_having,
+                {awaiting_stack:this.time_having.at,
                  current_stack:at})
             return
         }
-        this.time_having = at
+        this.time_having = {at}
         
         try {
             // doing the business
