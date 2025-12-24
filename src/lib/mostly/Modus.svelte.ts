@@ -108,7 +108,7 @@ abstract class ModusItself extends TheC  {
             this.on_first_have_time = undefined
         }
         this.V && console.log(`${objectify(this)} --->`)
-        this.c_mutex(this,'Modus.main()?',
+        await this.c_mutex(this,'Modus.main()?',
             async () => {
             await this.o_elvis()
 
@@ -396,9 +396,6 @@ abstract class TimeGallopia extends ModusItself {
     }
     // you run this once to introduce your streaming object (re%record) to the rest of your process
     Cpromised(C:TheC,spool_fn:Function) {
-        if (C.c.promised) {
-            debugger
-        }
         C.c.promised = async () => {
             // could wander off after Modus stops, which is always does before dying
             if (this.stopped) return

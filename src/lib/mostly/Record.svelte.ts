@@ -132,7 +132,7 @@ export class RecordModus extends Modus {
                 aud.stop()
                 return
             }
-            this.c_mutex(w,'on_recording',async() => {
+            await this.c_mutex(w,'on_recording',async() => {
 
 
             let buffers:ArrayBuffer[] = []
@@ -306,11 +306,12 @@ export class RecordModus extends Modus {
     }
     // brute force checking all our %record/%preview are sequential...
     check_all_records_sanity(A:TheC) {
-        let ungood = []
         for (let re of A.o({record: 1})) {
-            this.is_record_disordered(re)
+            if (this.is_record_disordered(re)) {
+                console.warn(`dropping disordered re=${re.sc.enid}`)
+                A.drop(re)
+            }
         }
-        return ungood
     }
     is_record_disordered(re:TheC):boolean {
         let want_seq = 0
