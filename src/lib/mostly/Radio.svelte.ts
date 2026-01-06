@@ -565,9 +565,9 @@ export class ShareeModus extends RadioModus {
             // < a join to the recently table on uri ?
             //    cursor should work fine for keeping us along...
             //   a desperate fugue of reruns may have to be another layer...
-            let recs = A.o({record:1})
-            this.check_record_ordering(recs)
-            return recs
+            let reN = A.o({record:1})
+            this.check_record_ordering(reN)
+            return reN
             //grep(re => !w.oa({recently_heard:1,uri:re.sc.uri}),
             //)
         }
@@ -857,7 +857,7 @@ export class ShareeModus extends RadioModus {
             // for a linked list of aud
             let what = () => `${re.sc.uri}\npr%${keyser(pr.sc)}`
             V.plau && console.log(`radio enqueue ${enqueue_i}: \t${pr.sc.seq}`)
-            if (enqueue_i != pr.sc.seq) throw `seq!=enqueue_i`
+            if (enqueue_i != pr.sc.seq) return console.warn(`seq!=enqueue_i`)
             enqueue_i++
             if (pr.sc.stream) {
                 if (!found_stream) {

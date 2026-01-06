@@ -39,6 +39,19 @@ abstract class ModusItself extends TheC  {
         })
     }
     
+
+    // A are background, containers
+    //  /w are foreground, doers of work, changier
+    // they call methods on M.*
+    // which may be dynamically loaded in this component:
+    UI_component?:Component
+    // this way:
+    on_code_change?:Function
+    eatfunc(hash) {
+        Object.assign(this,hash)
+        this.on_code_change?.()
+    }
+    
     // < better coordinate whether we can start doing main() yet? nah
     // is_starting_impossible?:Function
     on_first_have_time?:Function
@@ -69,6 +82,8 @@ abstract class ModusItself extends TheC  {
         this.do_stop?.()
     }
 
+
+
     // the "I'm redoing the thing" process wrapper
     declare main_fn:Function
     // during main() is a time of instability in M**
@@ -94,6 +109,9 @@ abstract class ModusItself extends TheC  {
         this.needs_your_attention = []
     }
 
+
+
+
     main_throttle:Function
     main() {
         // suggest we do main() ASAP
@@ -109,8 +127,9 @@ abstract class ModusItself extends TheC  {
             this.on_first_have_time = undefined
         }
         this.V && console.log(`${objectify(this)} --->`)
-        await this.c_mutex(this,'Modus.main()?',
-            async () => {
+        await this.c_mutex(this,'Modus.main()?',async () => {
+            
+
             await this.o_elvis()
 
             await this.reset_interval()
@@ -280,17 +299,14 @@ abstract class TimeGallopia extends ModusItself {
     // < test the efficacy of this... born in chaos
     //   similarities with refresh_C()...
     async c_mutex(w,t,do_fn) {
-        // Initialize queue if needed
-        if (!w.c[`${t}_queue`]) {
-            w.c[`${t}_queue`] = Promise.resolve()
+        if (w.c[`${t}_promise`]) {
+            await w.c[`${t}_promise`]
+            return this.c_mutex(w,t,do_fn)
         }
-        
-        // Chain onto the end of the queue
-        const myTurn = w.c[`${t}_queue`]
-        
+
         // Create the next promise in the chain
         let release
-        w.c[`${t}_queue`] = new Promise((resolve) => release = resolve)
+        w.c[`${t}_promise`] = new Promise((resolve) => release = resolve)
         
         try {
             await do_fn()
@@ -533,17 +549,6 @@ abstract class Agency extends TimeGallopia {
     // latest finished topT, works for Selection
     Tr?:Travel
     Se:Selection
-
-    // A are background, containers
-    //  /w are foreground, doers of work, changier
-    // they call methods on M.*
-    // which may be dynamically loaded in this component:
-    UI_component?:Component
-    // this way:
-    eatfunc(hash) {
-        Object.assign(this,hash)
-        this.on_code_change?.()
-    }
 
     // process job, w
     async Aw_think(A,w) {

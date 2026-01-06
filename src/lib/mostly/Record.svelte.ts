@@ -119,7 +119,6 @@ export class RecordModus extends Modus {
             }
             if (!w.oa({aud})) {
                 console.warn(`became not the only aud!?`)
-                debugger
                 is_still_relevant = false
             }
             return is_still_relevant
@@ -275,25 +274,28 @@ export class RecordModus extends Modus {
 
     
     // < something occasionally reorders %record!?
-    check_record_ordering(recs) {
+    check_record_ordering(reN) {
         let should_numbo = 0
         let wonk = []
-        recs
+        reN
             .map((re:TheC) => {
-                if (re.c.numbo == null) {
-                    re.c.numbo = should_numbo
+                re.o({buffer:1})
+            .map((pr:TheC) => {
+                if (pr.c.numbo == null) {
+                    pr.c.numbo = should_numbo
                 }
                 else {
-                    if (re.c.numbo != should_numbo) {
-                        wonk.push(`${re.sc.enid} should be seq=${should_numbo} not ${re.c.numbo}`)
+                    if (pr.c.numbo != should_numbo) {
+                        wonk.push(`${pr.sc.enid} should be seq=${should_numbo} not ${pr.c.numbo}`)
                     }
                 }
                 should_numbo++
             })
+            })
         if (wonk.length) {
             let indice = 0
             console.warn(`your *%record is reordering itself:\n`
-                +(recs.map(re => ` - ${indice++} ${re.sc.enid}`).join("\n"))
+                +(reN.map(re => ` - ${indice++} ${re.sc.enid}`).join("\n"))
                 +`\n ie:\n`
                 +(wonk.join("\n"))
             )
