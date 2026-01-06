@@ -4,9 +4,11 @@ import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
 import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
 import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
 import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+import type { Component } from "svelte"
 import {Modus} from "./Modus.svelte.ts"
 import { RecordModus } from "./Record.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
+import Radios from "../../ghost/Radios.svelte"
 
 const PREVIEW_DURATION = 33 // seconds of preview
 // < get this number down
@@ -411,6 +413,7 @@ export class ShareeModus extends RadioModus {
             'Mo++': () => this.main(),
             'C++': () => this.hard_reset(),
         })
+        this.UI_component = Radios
     }
     async hard_reset() {
         this.empty();
@@ -436,6 +439,7 @@ export class ShareeModus extends RadioModus {
             if (perm.remote) {
                 // they grant us read access
                 A.i({w:'radioterminal'})
+                // A.i({w:'broadcaster'})
             }
             if (perm.local && perm.remote) {
                 // < may both be on, share DJing, syncing many Pier's?
@@ -443,6 +447,7 @@ export class ShareeModus extends RadioModus {
             }
         })
     }
+
     
 
 //#endregion
@@ -1258,7 +1263,6 @@ export class ShareeModus extends RadioModus {
         // %
 
     }
-
     // shelf to DJ desk
     async pull_stock(A,w,io) {
         // our stream of %records shall be

@@ -80,13 +80,19 @@
 </script>
 
 {#if M}
-<p>
-    I am a {M.constructor.name} 
-    {#if gat}with a gat. <GatHaving {gat}/>{/if}
-    <button onclick={tog_draw}>{drawingness}</button>
-    <button onclick={lets_redraw}>redraw</button>
-    {#if actions}<ActionButtons {actions} />{/if}
-</p>
+    <p>
+        I am a {M.constructor.name} 
+        {#if gat}with a gat. <GatHaving {gat}/>{/if}
+        <button onclick={tog_draw}>{drawingness}</button>
+        <button onclick={lets_redraw}>redraw</button>
+        {#if actions}<ActionButtons {actions} />{/if}
+    </p>
+    {#if M.UI_component}
+        <p>
+            UI'd
+            <svelte:component this={M.UI_component} {M} ></svelte:component>
+        </p>
+    {/if}
 <Scrollability maxHeight="80vh" class="content-area">
     {#snippet content()}
     {#if do_drawing}

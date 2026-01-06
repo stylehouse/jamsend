@@ -5,6 +5,7 @@ import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { erring, grep, hak, iske, tex, throttle } from "$lib/Y";
+import type { Component } from "svelte";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
 abstract class ModusItself extends TheC  {
@@ -527,11 +528,23 @@ abstract class TimeGallopia extends ModusItself {
 //#endregion
 //#region Agency
 abstract class Agency extends TimeGallopia {
-    // we assume you 
+    // < target A:tree for this main-branch thing? call it D?
+    //   we assume you have a main Selection.process() hosted here
     // latest finished topT, works for Selection
     Tr?:Travel
     Se:Selection
-    
+
+    // A are background, containers
+    //  /w are foreground, doers of work, changier
+    // they call methods on M.*
+    // which may be dynamically loaded in this component:
+    UI_component?:Component
+    // this way:
+    eatfunc(hash) {
+        Object.assign(this,hash)
+        this.on_code_change?.()
+    }
+
     // process job, w
     async Aw_think(A,w) {
         let method = w.sc.w
