@@ -230,34 +230,36 @@ export class RecordModus extends Modus {
         let auds:Array<Audiolet> = w.o1({aud:1})
         let alive = 0
         let watching = await w.r({watching_auds:1})
-        for (let aud of auds) {
-            if (!aud.stopped) {
-                alive++
-                let left = aud.left()
-                w.i({see:'aud',playing:1,left})
-                watching.i({aud,left,est:now_in_seconds()})
+        await watching.replace({aud:1,left:1}, async () => {
+            for (let aud of auds) {
+                if (!aud.stopped) {
+                    alive++
+                    let left = aud.left()
+                    w.i({see:'aud',playing:1,left})
+                    watching.i({aud,left,est:now_in_seconds()})
 
-                // check that left is going down over time
-                //  not sure why they'd hang there, not stopped but not playing...
-                let N = watching.o({aud,left:1})
-                let lefts = N.map(au => au.sc.left)
-                let minmaxsame = Math.min(...lefts) == Math.max(...lefts)
+                    // check that left is going down over time
+                    //  not sure why they'd hang there, not stopped but not playing...
+                    let N = watching.o({aud,left:1})
+                    let lefts = N.map(au => au.sc.left)
+                    let minmaxsame = Math.min(...lefts) == Math.max(...lefts)
 
-                if (N.length > 4 && minmaxsame && N[0].ago('est') > 5) {
-                    console.error(`watched aud isn't rolling...`)
-                    if (A.sc.A == 'radiostreaming') debugger
-                    A.c.reset_Aw?.()
-                    // < only w/%error ever gets tidied up?
-                    A.i({error:`watched aud isn't rolling...`})
+                    if (N.length > 4 && minmaxsame && N[0].ago('est') > 5) {
+                        console.error(`watched aud isn't rolling...`)
+                        if (A.sc.A == 'radiostreaming') debugger
+                        A.c.reset_Aw?.()
+                        // < only w/%error ever gets tidied up?
+                        A.i({error:`watched aud isn't rolling...`})
+                    }
+                    this.whittle_N(N,9)
                 }
-                this.whittle_N(N,9)
+                else {
+                    // done!
+                    w.i({see:'aud',stopped:1})
+                }
+                w.i({see:'audtime',along:aud.along(),duration:aud.duration()})
             }
-            else {
-                // done!
-                w.i({see:'aud',stopped:1})
-            }
-            w.i({see:'audtime',along:aud.along(),duration:aud.duration()})
-        }
+        })
 
         if (w.oa({record:1}) && !w.oa({see:'aud',playing:1})) {
             if (!w.oa({looks_nearly_satisfied:1})) {

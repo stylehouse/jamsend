@@ -525,14 +525,12 @@ export class Stuff extends TimeOffice {
         }
         
         q ||= {}
-        // move it aside and regerate another X
-        //  ensuring we have an X_before the first time
-        //   so we can use it for locking, see have_time()
-        this.Xify()
+        // move it aside and regenerate another X
+        this.Xify() // always have an X_before, including the first time
         this.X_before = this.X
         this.empty()
 
-        // may select a subset to replace
+        // may select a subset to resume everything else around
         let partial:TheN|null = null
         if (Object.keys(pattern_sc).length) {
             partial = this.bo(pattern_sc)
