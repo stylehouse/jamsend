@@ -11,6 +11,7 @@
     import { objectify } from "$lib/data/Stuff.svelte";
     import { ThingsIsms,ThingIsms } from "$lib/data/Things.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
+    import Agency from "../../ghost/Agency.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
@@ -77,6 +78,9 @@
         || S instanceof ThingIsms
     let actions = $derived(no_actions ? null : S.actions)
 
+    // putting this in $derived() avoids error when M is undefined
+    let UI_component = $derived(M.UI_component)
+
 </script>
 
 {#if M}
@@ -87,10 +91,11 @@
         <button onclick={lets_redraw}>redraw</button>
         {#if actions}<ActionButtons {actions} />{/if}
     </p>
-    {#if M.UI_component}
+    <Agency {M} ></Agency>
+    {#if UI_component}
         <p>
             UI'd
-            <svelte:component this={M.UI_component} {M} ></svelte:component>
+            <svelte:component this={UI_component} {M} ></svelte:component>
         </p>
     {/if}
 <Scrollability maxHeight="80vh" class="content-area">
