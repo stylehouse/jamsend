@@ -246,7 +246,9 @@ export class RecordModus extends Modus {
                 if (N.length > 4 && minmaxsame && N[0].ago('est') > 5) {
                     console.error(`watched aud isn't rolling...`)
                     if (A.sc.A == 'radiostreaming') debugger
-                    A.c.reset_Aw()
+                    A.c.reset_Aw?.()
+                    // < only w/%error ever gets tidied up?
+                    A.i({error:`watched aud isn't rolling...`})
                 }
                 this.whittle_N(N,9)
             }
@@ -273,39 +275,12 @@ export class RecordModus extends Modus {
 //#region sanity
 
     
-    // < something occasionally reorders %record!?
-    check_record_ordering(reN) {
-        let should_numbo = 0
-        let wonk = []
-        reN
-            .map((re:TheC) => {
-                re.o({buffer:1})
-            .map((pr:TheC) => {
-                if (pr.c.numbo == null) {
-                    pr.c.numbo = should_numbo
-                }
-                else {
-                    if (pr.c.numbo != should_numbo) {
-                        wonk.push(`${pr.sc.enid} should be seq=${should_numbo} not ${pr.c.numbo}`)
-                    }
-                }
-                should_numbo++
-            })
-            })
-        if (wonk.length) {
-            let indice = 0
-            console.warn(`your *%record is reordering itself:\n`
-                +(reN.map(re => ` - ${indice++} ${re.sc.enid}`).join("\n"))
-                +`\n ie:\n`
-                +(wonk.join("\n"))
-            )
-        }
-    }
     say_cursor(them:TheN,client:any,co:TheC) {
         let cursor = co.o({client})[0]
         let zi = !cursor ? 0 : them.indexOf(cursor.sc.current)
         return `@${zi+1}/${them.length}`
     }
+    // < something occasionally reorders %record!?
     // brute force checking all our %record/%preview are sequential...
     check_all_records_sanity(A:TheC) {
         for (let re of A.o({record: 1})) {

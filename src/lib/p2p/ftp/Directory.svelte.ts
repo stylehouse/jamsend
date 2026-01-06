@@ -101,8 +101,9 @@ export class DirectoryModus extends RadioModus {
 
             let hu = this.i({A:'hunting'}).is()
             // in response to eg decode errors, just try again from the top
-            hu.c.reset_Aw = async () =>
+            hu.c.reset_Aw = async () => {
                 await hu.r({w:1},{w:'meander',then:'radiopreview'})
+            }
             await hu.c.reset_Aw()
             this.i({A:'stocking'}).is().i({w:'radiostock'})
         })

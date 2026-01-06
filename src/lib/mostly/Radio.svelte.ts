@@ -565,9 +565,8 @@ export class ShareeModus extends RadioModus {
             // < a join to the recently table on uri ?
             //    cursor should work fine for keeping us along...
             //   a desperate fugue of reruns may have to be another layer...
-            let reN = A.o({record:1})
-            this.check_record_ordering(reN)
-            return reN
+            this.check_all_records_sanity(A)
+            return A.o({record:1})
             //grep(re => !w.oa({recently_heard:1,uri:re.sc.uri}),
             //)
         }
@@ -580,6 +579,7 @@ export class ShareeModus extends RadioModus {
             if (loop > 3) throw "loop"
 
             let ohno_start_over = async () => {
+                console.warn(`out of current, starting over?`)
                 for (let re of A.o({record:1})) {
                     // don't trust leftover A/re/*%stream
                     // < refactor to be able to request more streaming
