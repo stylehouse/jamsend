@@ -8,7 +8,7 @@ import type { Component } from "svelte"
 import {Modus} from "./Modus.svelte.ts"
 import { RecordModus } from "./Record.svelte.ts"
 import type { TheD } from "./Selection.svelte.ts"
-import Radios from "../../ghost/Radios.svelte"
+import Radios from "$lib/ghost/Radios.svelte"
 
 
 export class RadioModus extends RecordModus {

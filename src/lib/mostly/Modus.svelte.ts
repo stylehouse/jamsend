@@ -112,8 +112,8 @@ abstract class ModusItself extends TheC  {
             await this.do_main?.()
             
             // angency itself
+            // we this.do_A() to i M/A/w when starting up and changing trust
             // on that structure, hang motivation
-            // this.oa({A:1}) || await this.do_A()
             await this.agency_think()
 
             // < look within $scope of the Tree (start with localList) for...

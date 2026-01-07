@@ -11,7 +11,7 @@
     import { objectify } from "$lib/data/Stuff.svelte";
     import { ThingsIsms,ThingIsms } from "$lib/data/Things.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
-    import Agency from "../../ghost/Agency.svelte";
+    import Agency from "$lib/ghost/Agency.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
