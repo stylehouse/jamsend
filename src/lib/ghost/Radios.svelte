@@ -9,6 +9,10 @@
    
     let {M} = $props()
 
+    // $share/.jamsend/radiostock/*.webms
+    const IGNORE_RADIOSTOCK_CACHE = false 
+    const RADIOSTOCK_CACHE_LIMIT = 20 // items, they are timestamped
+
     const PREVIEW_DURATION = 33 // seconds of preview
     // < get this number down
     const MIN_LEFT_TO_WANT_STREAMING = 22
@@ -990,7 +994,7 @@
             },
         })
 
-        if ('only what we made') return
+        if (IGNORE_RADIOSTOCK_CACHE) return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -998,7 +1002,7 @@
     async radiostock_caching(A,w) {
         // the .jamsend/radiostock/ directory D
         let stockD
-        let keep_things = 20
+        let keep_things = RADIOSTOCK_CACHE_LIMIT
         stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
         if (!stockD) return // also when ope<3
 

@@ -1,5 +1,6 @@
 <script lang="ts">
-    import Call from "$lib/Call.svelte"
-</script>
+    import A from "$lib/p2p/A.svelte";
 
-<Call />
+    
+</script>
+<A />
