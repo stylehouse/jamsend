@@ -276,7 +276,7 @@
 
 
 //#endregion
-//#region radio_hear
+//#region radio_hear listening
     // engage one re
     // < GOING? I mean it looks so bad. see radio_hive
     async radio_hear(A,w,re) {
@@ -285,6 +285,8 @@
         if (dohe) throw "double hearing "+re.sc.enid
         let he = w.i({hearing:re.sc.enid})
         he.i(re)
+        this.whittle_N(w.o({hearing:1}),5)
+        
         let what = () => `${re.sc.enid}`
 
         let last_live_edge_delay = 0
@@ -391,7 +393,7 @@
                             console.error(`run out of re/*, not marked as end: @${pr.sc.seq}`)
                         }
                         V.plau && console.log(`plau ENDS`)
-                        await he.r({plau:1},{ENDED:1})
+                        await he.r({plau:1},{ended_ts:now_in_seconds_with_ms()})
                         await progress()
                         return
                     }
@@ -424,6 +426,10 @@
             })
         }
 
+
+
+//#endregion
+//#region radio_hear enqueue
         let found_stream = false
         let enqueue_i = 0
         // %preview -> aud, aud<->aud,
@@ -461,6 +467,17 @@
 
             // au%next=->, au%prev=<- linkage
             this.linkedlist_frontiering(he,'decode_frontier',au)
+
+            // yet they are in order, we can cull earlier ones:
+            let gone_auN = this.whittle_N(he.o({aud:1,pr:1}),10)
+            for (let au of gone_auN) {
+                if (!au.sc.aud.playing_last) {
+                    console.warn(`whittle never played he/au: ${re.sc.enid}@${seq}`)
+                }
+                if (!au.sc.aud.stopped) {
+                    console.warn(`whittle playing he/au: ${re.sc.enid}@${seq}`)
+                }
+            }
         }
 
         // find next %preview and enqueue it
@@ -515,16 +532,19 @@
                     return
                 }
                 V.plau && console.log(`progress() ${what()} done!?`)
-                if (he.oa({plau:1,ENDED:1})) {
-                    // having just i %ENDED and needs_nexties=true
+                if (he.oa({plau:1,ended_ts:1})) {
+                    // having just i %ended_ts and needs_nexties=true
                     w.c.next_is_go()
                 }
                 else {
-                    V.plau && console.log(`progress() ${what()} out-of-bits !%ENDED`)
+                    V.plau && console.log(`progress() ${what()} out-of-bits !%ended_ts`)
                 }
             }
             })
         }
+
+//#endregion
+//#region radio_hear top
         // periodically emit:orecord {ack_seq,want_streaming?}
         let last_ack_seq = 0
         let streamability = async () => {
@@ -585,6 +605,8 @@
             // will be attended while we are the %nowPlaying ?
             await progress()
         }
+
+        this.whittle_N(he.o({aud:1,pr:1}),10)
     },
 
     // < just use another co_cursor?
@@ -598,6 +620,18 @@
         }
         he.sc[name] = au
     },
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //#endregion
