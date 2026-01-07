@@ -1,5 +1,27 @@
-import type Modus from "$lib/mostly/Modus.svelte";
 import { isar } from "$lib/Y";
+import {Modus} from "$lib/mostly/Modus.svelte.ts"
+import Radios from "$lib/ghost/Radios.svelte"
+
+export class RecordModus extends Modus {
+    // is ghost/Record
+}
+
+export class RadioModus extends RecordModus {
+    // Audio things haver
+    //  Modus.stop() happens reliably, avoiding zombie sounds
+    gat:SoundSystem
+    constructor(opt:Partial<Modus>) {
+        super(opt)
+        this.gat = new SoundSystem({M:this})
+        // and all this application code:
+        this.UI_component = Radios
+    }
+    do_stop() {
+        // on UI:Modus destroy
+        this.gat?.close()
+    }
+    
+}
 
 export class SoundSystem {
     M: Modus

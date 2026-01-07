@@ -1,5 +1,7 @@
 import { TheC } from "./data/Stuff.svelte";
 
+export const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer etc
+
 export async function sha256(data: string): Promise<string> {
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(data);

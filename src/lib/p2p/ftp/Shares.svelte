@@ -4,7 +4,6 @@
     import Things from '../../data/Things.svelte'
     import type { PeeringSharing } from './Sharing.svelte';
     import { DirectoryModus, DirectoryShare } from './Directory.svelte';
-    import { SharesModus } from '$lib/mostly/Radio.svelte';
     import Thingstashed from '$lib/data/Thingstashed.svelte';
     import Modus from '$lib/mostly/Modus.svelte';
     import ActionButtons from '../ui/ActionButtons.svelte';

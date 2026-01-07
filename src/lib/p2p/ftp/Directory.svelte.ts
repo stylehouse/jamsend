@@ -5,12 +5,10 @@ import { _C, keyser, TheC, type TheN } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-import { erring, grap, grop, sha256 } from '$lib/Y'
+import { CHUNK_SIZE, erring, grap, grop, sha256 } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
-import type { PeeringSharing, PierSharing } from './Sharing.svelte';
-import type { Audiolet, SoundSystem } from './Audio.svelte';
-import { RadioModus } from '$lib/mostly/Radio.svelte';
-import { CHUNK_SIZE } from '$lib/mostly/Record.svelte';
+import { type PeeringSharing, type PierSharing } from './Sharing.svelte';
+import { RadioModus } from './Audio.svelte';
 
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
@@ -187,7 +185,7 @@ export class DirectoryModus extends RadioModus {
     //  < and deduplicate|DRY from having an extra toplevel %nib replace.
     // look to (or initialise) and climb down into the top %DL
     async surf_nibs(DL) {
-        if (!DL) throw "!DL"
+        if (!DL) return console.warn("!DL")
         let was = null
         let Se = null
         let C = this.current

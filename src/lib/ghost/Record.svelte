@@ -1,19 +1,21 @@
-import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
-import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
-import type { FileListing } from "$lib/p2p/ftp/Directory.svelte.ts"
-import type { PeeringSharing, PierSharing } from "$lib/p2p/ftp/Sharing.svelte.ts"
-import { now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
-import {Modus} from "./Modus.svelte.ts"
-import type { TheD } from "./Selection.svelte.ts"
+<script lang="ts">
+    import { onMount } from "svelte";
 
-// all about the re%record and its /pr%preview|stream
-//  the only type of file we move atm
+    import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
+    import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
+    import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
+    import { CHUNK_SIZE, erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+   
+    let {M} = $props()
 
-export const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer etc
+    // all about the re%record and its /pr%preview|stream
+    //  the only type of file we move atm
 
 
-export class RecordModus extends Modus {
+    onMount(() => {
+        M.main()
+    })
+    M.eatfunc({
 
     // for radio
     async radiopreview_i_buffers(A,w,D) {
@@ -31,7 +33,7 @@ export class RecordModus extends Modus {
             if (buffers.length >= want_chunks) break
         }
         w.i({buffers,want_chunks,want_size})
-    }
+    },
     async radiostreaming_i_buffers(A,w,D) {
         let DL = this.D_to_DL(D)
         let reader = await DL.getReader(D.sc.name)
@@ -40,7 +42,7 @@ export class RecordModus extends Modus {
             buffers.push(chunk)
         }
         w.i({buffers})
-    }
+    },
     async aud_eats_buffers(w,aud,D) {
         // load original encoded buffers
         let buffers = w.o1({buffers:1})[0]
@@ -54,7 +56,7 @@ export class RecordModus extends Modus {
             // w:radiopreview catches this and goes back to w:meander
             throw erring(`original encoded buffers fail: ${uri}`,er)
         }
-    }
+    },
 
 
 //#endregion
@@ -223,7 +225,7 @@ export class RecordModus extends Modus {
 
         aud.play(offset)
         return aud
-    }
+    },
 
     async watch_auds_progressing(A,w,D) {
         // watch the aud progress
@@ -271,7 +273,7 @@ export class RecordModus extends Modus {
                 await w.r({satisfied:1})
             }
         }
-    }
+    },
 
 //#endregion
 //#region sanity
@@ -281,7 +283,7 @@ export class RecordModus extends Modus {
         let cursor = co.o({client})[0]
         let zi = !cursor ? 0 : them.indexOf(cursor.sc.current)
         return `@${zi+1}/${them.length}`
-    }
+    },
     // < something occasionally reorders %record!?
     // brute force checking all our %record/%preview are sequential...
     check_all_records_sanity(A:TheC) {
@@ -291,7 +293,7 @@ export class RecordModus extends Modus {
                 A.drop(re)
             }
         }
-    }
+    },
     is_record_disordered(re:TheC):boolean {
         let want_seq = 0
         let prs = this.get_record_audiobits(re)
@@ -329,7 +331,7 @@ export class RecordModus extends Modus {
             return true
         }
         return false
-    }
+    },
     
     
         //#endregion
@@ -338,21 +340,21 @@ export class RecordModus extends Modus {
 
             async entropiate(c) {
                 return { enid: await this.entropia(c), ...c }
-            }
+            },
             async entropia(c) {
                 let s = keyser(c)
                 let h = await sha256(s)
                 h = h.slice(0,16)
                 // console.log(`entropia: ${h} == ${s}`)
                 return h
-            }
+            },
             async record_to_radiostock_name(re:TheC) {
                 if (!re.sc.enid) throw "ohno!"
                 return `${now_in_seconds()}-${re.sc.enid}.webms`
-            }
+            },
             get_record_audiobits(re) {
                 return [...re.o({preview:1}), ...re.o({stream:1})]
-            }
+            },
     
     
         
@@ -393,7 +395,7 @@ export class RecordModus extends Modus {
                         console.warn(`Failed to load ${D.sc.name}:`, err);
                     }
                 }
-            }
+            },
             async record_to_disk(re:TheC,sD:TheD) {
                 let name = await this.record_to_radiostock_name(re)
                 try {
@@ -417,7 +419,7 @@ export class RecordModus extends Modus {
                     console.error(`Failed to write record to disk:`, err);
                     throw err;
                 }
-            }
+            },
             async record_from_disk(name: string, sD: TheD): Promise<TheC|undefined> {
                 try {
                     // Get reader for the stock directory
@@ -455,7 +457,7 @@ export class RecordModus extends Modus {
                     console.error(`Failed to read record from disk:`, err);
                     throw err;
                 }
-            }
+            },
             async tidy_crswap(sD,name) {
                 const DL = this.D_to_DL(sD);
                 // investigate zero-length radiostocks
@@ -468,7 +470,7 @@ export class RecordModus extends Modus {
                 console.log("tidy_crswap() deletes "+name)
                 await DL.deleteEntry(name)
                 sD.i({was_operated_on:1,by:'tidy_crswap()'})
-            }
+            },
     
     
             // the .webms format
@@ -503,7 +505,7 @@ export class RecordModus extends Modus {
                 }
                 
                 return combined.buffer;
-            }
+            },
             // Decoder: Parse disk format back to record structure
             async decodeRecordFromDisk(data: ArrayBuffer): Promise<TheC> {
                 const bytes = new Uint8Array(data);
@@ -552,7 +554,8 @@ export class RecordModus extends Modus {
                 });
                 
                 return re
-            }
+            },
             // </AI>
         
-}
+    })
+</script>

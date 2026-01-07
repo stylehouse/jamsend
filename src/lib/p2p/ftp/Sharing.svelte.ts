@@ -1,17 +1,111 @@
 import { SvelteMap } from "svelte/reactivity";
-import { erring } from "$lib/Y";
 
-import { PeeringFeature, PierFeature } from "../Peerily.svelte";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
 import { DirectoryListing, DirectoryShares } from "./Directory.svelte";
-import type Modus from "$lib/mostly/Modus.svelte.ts";
-import { ShareeModus, SharesModus } from "$lib/mostly/Radio.svelte";
+type percentage = number
+import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
+import { PeeringFeature, PierFeature,
+         now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
+import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+import { RadioModus } from "./Audio.svelte";
+
+//#endregion
+//#region M:Shares
+//  makes guesswork to provide defaults, remote plots may inject
+export class SharesModus extends RadioModus {
+    declare S:PeeringSharing
+    declare F:PeeringSharing
+
+    constructor(opt:Partial<SharesModus>) {
+        super(opt)
+        this.F = this.S
+        // the above super() / assign() doesn't set .F|S (javascript quirk?)
+        // Object.assign(this,opt)
+        if (!this.S) throw "Oh no F"
+
+        this.S.i_actions({
+            'R++': () => this.further_journey(),
+            'R--': () => this.further_journey({go:'backwards'}),
+            'Mo++': () => this.main(),
+        })
+    }
+    async do_A() {
+        await this.replace({A:1},async () => {
+            this.i({A:'gate'}).is().i({w:'radiostockade'})
+        })
+        
+    }
+
+    async do_main() {
+        await this.r({Seee:2})
+    }
+
+
+    async radiostockade(A,w) {
+        // < what to do as|with the bunch of music shares? redundancy?
+    }
+}
+//#endregion
+//#region M:Sharee
+export class ShareeModus extends RadioModus {
+    declare S:PierSharing
+    declare F:PeeringSharing
+    declare PF:PierSharing
+    constructor(opt:Partial<SharesModus>) {
+        super(opt)
+        this.PF = this.S
+
+        this.S.i_actions({
+            'Radio': () => this.turn_knob(),
+            'Mo++': () => this.main(),
+            'C++': () => this.hard_reset(),
+        })
+    }
+    async hard_reset() {
+        this.empty();
+        await this.do_A();
+        this.main()
+    }
+    // describe the minds regarding trust
+    // < rename perm... it's both pieces of trust, theirs and ours...
+    async do_A(hard=false) {
+        // console.log("do_A")
+        let A
+        await this.replace({A:1},async () => {
+            A = this.i({A:'punt'})
+            if (hard) A.is() // prevents replacing the contents
+        })
+        await A.replace({w:1},async () => {
+            // < so perm can change over time, do this every time, replacing %w?
+            let perm = this.PF.perm
+            if (perm.local) {
+                // we grant them read access
+                A.i({w:'radiobroadcaster'})
+            }
+            if (perm.remote) {
+                // they grant us read access
+                A.i({w:'radioterminal'})
+                // A.i({w:'broadcaster'})
+            }
+            if (perm.local && perm.remote) {
+                // < may both be on, share DJing, syncing many Pier's?
+                A.i({is_both_listener_and_source:1})
+            }
+        })
+    }
+
+    
+
+    
+
+}
 
 
 
-
+//#endregion PeeringSharing
+//#region PeeringSharing
 // the F
 export class PeeringSharing extends PeeringFeature {
     // a Things of super complicated directory handling, locating music, encoding it
@@ -53,7 +147,8 @@ export class PeeringSharing extends PeeringFeature {
 
 }
 
-type percentage = number
+//#endregion
+//#region PierSharing
 // the PF (per Pier)
 export class PierSharing extends PierFeature {
     // < keep?

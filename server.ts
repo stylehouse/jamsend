@@ -1,6 +1,9 @@
-import { Server } from 'socket.io';
+// < GONER is using socket.io at all.
+//    it is now a static site with a WebRTC swarm.
+//  < production build for that
+// import { Server } from 'socket.io';
 import { handler } from './build/handler.js';
-import { init_an_io } from './src/lib/ws-server/ws-server';
+// import { init_an_io } from './src/lib/abandoned/ws-server/ws-server';
 import express from 'express';
 import { createServer } from 'http';
 
@@ -8,9 +11,8 @@ const app = express();
 const server = createServer(app);
 
 // Initialize Socket.IO
-const io = new Server(server);
-
-init_an_io(io)
+// const io = new Server(server);
+// init_an_io(io)
 
 // requests for eg /_app/immutable/entry/app.6lm5gro6.js
 // which are in this directory
