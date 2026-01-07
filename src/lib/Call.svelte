@@ -1,11 +1,11 @@
 <script lang="ts">
     import { onDestroy } from "svelte";
     import { MS_PER_SIMULATION_TIME } from "./abandoned/audio/Common.svelte";
-    import GatherTestAudiolet from "./ui/DebugAudiolet.svelte";
-    import Meta from "./ui/Meta.svelte";
-    import StarField from "./ui/StarField.svelte";
+    import GatherTestAudiolet from "./abandoned/ui/DebugAudiolet.svelte";
+    import Meta from "./abandoned/ui/Meta.svelte";
+    import StarField from "./abandoned/ui/StarField.svelte";
     import { Gather } from "./abandoned/audio/Gather.svelte";
-    import DebugGat from "./ui/DebugGat.svelte";
+    import DebugGat from "./abandoned/ui/DebugGat.svelte";
 
     let errorMessage = $state("");
 
