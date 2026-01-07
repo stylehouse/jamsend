@@ -685,7 +685,7 @@
                     //    that the chunks just after the %preview is already de-buffered
                     throw "ohno, hit dropped %record memory"
                 }
-                // console.log(`soundpooling ${spooling}`)
+                console.log(`soundpooling ${spooling} goes ${re.sc.enid}@${pr.sc.seq}`)
                 await sending(pr)
                 await this.co_cursor_save(co,co,pr)
                 return true

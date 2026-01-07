@@ -442,13 +442,6 @@ abstract class TimeOffice extends StuffIO {
 //#endregion
 //#region Stuff.replace
 export class Stuff extends TimeOffice {
-    // assert this C has Isness, C/* are there already and don't recycle them.
-    // marks this C as going to have inners already when resolve() commits
-    //  so don't resume its C/* from before
-    is() {
-        this.c.Isness = 1
-        return this
-    }
     // replace one thing
     async r(pattern_sc:TheUniversal,sc?:TheUniversal):Promise<TheC> {
         if (!sc) {
@@ -487,9 +480,18 @@ export class Stuff extends TimeOffice {
             b.X = a.X
         }
     }
+    // in case C/* are recycled after you .r() something to begin from scratch
     empty() {
         this.X = null
         this.Xify()
+        return this
+    }
+    // assert this C has Isness, C/* are there already and don't recycle them.
+    // marks this C as going to have inners already when resolve() commits
+    //  so don't resume its C/* from before
+    is() {
+        this.c.Isness = 1
+        return this
     }
 
     // redo everything or a subset that we replace things around
