@@ -5,7 +5,7 @@
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
     import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
-    import Record from "./Record.svelte";
+    import Record from "./Records.svelte";
    
     let {M} = $props()
 
