@@ -37,7 +37,7 @@
         }
         this.needs_your_attention = []
     },
-
+    
 
 
 
@@ -46,6 +46,24 @@
 
 
 
+
+    // all A/w think
+    async agency_think() {
+        let AwN = []
+        let AN = []
+        for (let A of this.current.o({A:1})) {
+            await this.self_timekeeping(A)
+
+            for (let w of A.o({w:1})) {
+                await this.self_timekeeping(w)
+
+                await this.Aw_think(A,w)
+                AwN.push({A,w})
+            }
+            AN.push(A)
+        }
+        this.agency_officing(AwN,AN)
+    },
     // process job, w
     async Aw_think(A,w) {
         let method = w.sc.w
@@ -72,43 +90,7 @@
             return
         }
     },
-    // w can mutate
-    async Aw_satisfied(A,w,sa) {
-        // take instructions
-        let next_method = w.sc.then || "out_of_instructions"
-        let c = {w:next_method}
-        if (sa.sc.with) c.had = sa.sc.with
 
-        // change what this A is wanting
-        let nu = A.i(c)
-        // < how better to express about avoiding|kind-of being resolved
-        // not resyncing nu/*
-        nu.empty()
-        // take %aim, ie keep pointers for the rest of A
-        // < this kind of transfer wants a deep clone ideally?
-        for (let ai of w.o({aim:1})) {
-            nu.i(ai)
-        }
-        A.drop(w)
-    },
-
-    // all A/w think
-    async agency_think() {
-        let AwN = []
-        let AN = []
-        for (let A of this.current.o({A:1})) {
-            await this.self_timekeeping(A)
-
-            for (let w of A.o({w:1})) {
-                await this.self_timekeeping(w)
-
-                await this.Aw_think(A,w)
-                AwN.push({A,w})
-            }
-            AN.push(A)
-        }
-        this.agency_officing(AwN,AN)
-    },
     async agency_officing(AwN,AN) {
         // percolate w/ai/%path -> j/%path from this A
         await this.i_journeys_o_aims(AwN)
@@ -136,6 +118,25 @@
                 })
             })
         }
+    },
+    // w can mutate
+    async Aw_satisfied(A,w,sa) {
+        // take instructions
+        let next_method = w.sc.then || "out_of_instructions"
+        let c = {w:next_method}
+        if (sa.sc.with) c.had = sa.sc.with
+
+        // change what this A is wanting
+        let nu = A.i(c)
+        // < how better to express about avoiding|kind-of being resolved
+        // not resyncing nu/*
+        nu.empty()
+        // take %aim, ie keep pointers for the rest of A
+        // < this kind of transfer wants a deep clone ideally?
+        for (let ai of w.o({aim:1})) {
+            nu.i(ai)
+        }
+        A.drop(w)
     },
 
 
