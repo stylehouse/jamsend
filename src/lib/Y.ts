@@ -42,6 +42,7 @@ export function throttle(func, interval_ms = 200) {
 // add an enclosing context onto an error
 //  used by catch(err) {...} everywhere
 // you should throw them as it doesn't collect them.
+// < pass data in third arg? or 2nd if not Error|string?
 export function erring(label: string, err?: Error | string): Error {
     if (!err) {
         // same as just: throw "the label"
@@ -383,11 +384,11 @@ export function sex(s: Record<string, any>, c: Record<string, any>, q?: any, e?:
 
 // Selectively not extending
 //  eg nex(c,s,c) extends what isnt in c.* yet
-export function nex(s: Record<string, any>, c: Record<string, any>, q?: any): Record<string, any> {
-    q = peli(q);
+export function nex(s: Record<string, any>, c: Record<string, any>, avoid_c?: any): Record<string, any> {
+    avoid_c = peli(avoid_c);
     
     for (const k in c) {
-        if (hak(q, k)) continue;
+        if (hak(avoid_c, k)) continue;
         s[k] = c[k];
     }
     

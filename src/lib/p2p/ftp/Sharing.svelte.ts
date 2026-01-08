@@ -32,9 +32,9 @@ export class SharesModus extends RadioModus {
         })
     }
     async do_A() {
-        await this.replace({A:1},async () => {
-            this.i({A:'gate'}).is().i({w:'radiostockade'})
-        })
+        await this.r({A:1},{})
+        this.i({A:'ragate'})
+        this.i({A:'raglance'})
         
     }
 
@@ -43,9 +43,6 @@ export class SharesModus extends RadioModus {
     }
 
 
-    async radiostockade(A,w) {
-        // < what to do as|with the bunch of music shares? redundancy?
-    }
 }
 //#endregion
 //#region M:Sharee

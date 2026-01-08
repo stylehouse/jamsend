@@ -10,6 +10,10 @@
         mem: Modusmem,
         namedT: NamedT,
     } = $props()
+    // < get our intention to close+open this here to merge into D**
+    //    which could automatically (but still adjustibly) hide %fs_scheme=appcache
+    //    and the while-depth defined swatch of Strata.update() / N that includes it**
+    mem = mem.further("T="+namedT.name)
 
     // < make this a <button>
     let nameclick = strata.nameclick_fn || (() => {})

@@ -1,10 +1,13 @@
 <script lang="ts">
+    import { keyser, type TheN } from "$lib/data/Stuff.svelte";
+    import {Modus} from "$lib/mostly/Modus.svelte.ts";
+    import { erring, nex } from "$lib/Y";
     import { onMount } from "svelte";
 
     let {M} = $props()
 
     onMount(() => {
-        M.main()
+        M.main() // < GOING?
     })
     M.eatfunc({
 
@@ -25,6 +28,19 @@
          that M/%io:radiostock interface
           so this protocol needs to talk-to|address the M?
            nah, just start from the A:*, search path of M...
+          except for that one case of i_elvis now
+           which does do_A() before agency_think()
+           and shall simply point to '' at the A level?
+        I think...
+          < agency_think() wants to be a Selection.process()
+             of current events' journeys wanting to be D**
+            or just a Travel? not even
+        to keep it simple,
+         A%elvis,Aw,... are put by your wild i_elvis()
+         they route into A/w
+
+
+        <  e%elvis:etype,uri,qua,v ...
 
     `,
     // during main() is a time of instability in M**
@@ -37,20 +53,119 @@
     //   time sharing is easier than space sharing?
     //    though %Tree** separates a lot of the computation...
     needs_your_attention: [] as Function[],
-    i_elvis(fn) {
-        this.needs_your_attention.push(fn)
-        // and request main() ASAP
-        //  < model wants, progress, which journeys are actively doing stuff
-        this.main()
+    i_elvis(t,c) {
+        setTimeout(() => {
+            // this is the address scheme
+            if (c.Aw == null) throw "%elvis,!Aw"
+            c = {elvis:t,...c}
+            if (c.Aw == '') {
+                // see handle_elvising_to_Modus(), not in any A, doing whatever else afterwards
+                this.i(c)
+            }
+            else {
+                // deliver it to an A now
+                let [Aname,...more] = c.Aw.split("/")
+                let A = this.o({A:Aname})[0]
+                if (!A) throw `!A %elvis=${t},Aw=${c.Aw}`
+                // gives eg A:way/%elvis to w:way if no more %Aw
+                c.Aw = more.length ? more.join("/") : Aname
+                A.i(c)
+            }
+            // and request main() ASAP
+            //  < model wants, progress, which journeys are actively doing stuff
+            this.main()
+        },333)
     },
-    async o_elvis(fn) {
-        for (let fn of this.needs_your_attention) {
-            await fn()
-        }
-        this.needs_your_attention = []
-    },
-    
 
+    async handle_elvising_to_Modus() {
+        // for the sake of singularity, here's elvising Modus:
+        for (let e of this.o({elvis:1})) {
+            if (e.sc.fn) {
+                await e.sc.fn()
+            }
+            else {
+                throw "at Modus, e!does"
+            }
+            e.drop(e)
+        }
+    },
+
+    // apply any A%elvis,Aw schemes to a set of A/w*
+    // returns which of these w now have %elvis to handle, routed from A
+    async elvised_A_w(A,wN:TheN) {
+        let yes = [] as TheN
+        let find_w = async (e) => {
+            let [wname,...more] = e.sc.Aw.split("/")
+            if (more.length) throw "more Aw"
+
+            for (let w of wN){
+                if (w.sc.w == wname) {
+                    yes.push(w)
+                    // transfer %elvis onto the %w
+                    w.i(nex({},e.sc,'Aw'))
+                    e.drop(e)
+                    return
+                }
+            }
+            throw `A:${A.sc.A} /!w %elvis=${e.sc.elvis},Aw=${e.sc.Aw}`
+        }
+        for (let e of A.o({elvis:1})) {
+            await find_w(e)
+        }
+        return yes
+    },
+
+    // application code services all awaiting w%elvis
+    o_elvis(w,t) {
+        let them = w.o({elvis:t})
+        for (let e of them) {
+            e.c.served = true
+        }
+        return them
+    },
+    // checks expected o_elvis() happened
+    elvised_completely(A,w) {
+        let them = w.o({elvis:1})
+        for (let e of them.filter(e => e.c.served)) {
+            e.drop(e)
+        }
+        for (let e of them.filter(e => !e.c.served)) {
+            throw `A:${A.sc.A}/w:${w.sc.w}/%elvis=${e.sc.elvis} not served`
+        }
+    },
+
+    // on SharesModus are two undeveloped w for testing elvising
+    async ragate(A,w) {
+        // < what to do as|with the bunch of music shares? redundancy?
+        if (w.o1({round:1,self:1})[0] % 2) {
+            this.i_elvis('yap',{Aw:'raglance',te:'some'})
+            this.i_elvis('yap',{Aw:'raglance',te:'lots'})
+            setTimeout(() => {
+                this.i_elvis('yap',{Aw:'raglance',te:'grunge'})
+            },34)
+            setTimeout(() => {
+                this.i_elvis('yap',{Aw:'raglance',te:'rowing'})
+            },88)
+            setTimeout(() => {
+                this.i_elvis('yap',{Aw:'raglance',te:'mountains'})
+            },133)
+            setTimeout(() => {
+                this.i_elvis('yap',{Aw:'raglance',te:'lots'})
+                this.i_elvis('yap',{Aw:'raglance',te:'grunge'})
+                this.i_elvis('yap',{Aw:'raglance',te:'eek'})
+            },600)
+            setTimeout(() => {
+                this.i_elvis('yap',{Aw:'raglance',te:'grunge'})
+            },933)
+        }
+        
+    },
+    async raglance(A,w) {
+        // < what to do as|with the bunch of music shares? redundancy?
+        for (let e of this.o_elvis(w,'yap')) {
+            w.i({see:"thisyap",that:`goes ${e.sc.te}`})
+        }
+    },
 
 
 //#endregion
@@ -61,18 +176,31 @@
 
     // all A/w think
     async agency_think() {
+        await this.handle_elvising_to_Modus()
+
+        let AN = this.o({A:1})
+        // if some A have pending events, concentrate on them
+        let eventedAN = AN.filter(A => A.oa({elvis:1}))
+        AN = eventedAN.length ? eventedAN : AN
         let AwN = []
-        let AN = []
-        for (let A of this.o({A:1})) {
+        for (let A of AN) {
             await this.self_timekeeping(A)
 
-            for (let w of A.o({w:1})) {
+            // gives eg A:way an w:way if empty
+            let wN = A.oa({w:1}) || [A.i({w:A.sc.A})]
+            // if some A/w attract pending events, concentrate on them
+            let eventedwN = await this.elvised_A_w(A,wN)
+            wN = eventedwN.length ? eventedwN : wN
+
+            for (let w of wN) {
                 await this.self_timekeeping(w)
 
                 await this.Aw_think(A,w)
                 AwN.push({A,w})
             }
-            AN.push(A)
+            // javascript facts: this for AN is not done enumerating
+            //  if you do this we never leave this loop:
+            // AN.push(A)
         }
         this.agency_officing(AwN,AN)
     },
@@ -86,6 +214,9 @@
                 await w.r({see:1},{})
 
                 await this[method](A,w,w.sc.had)
+
+                // in-method-error-throwing problems of officing
+                this.elvised_completely(A,w)
             } catch (error) {
                 w.i({error: error.message || String(error)})
                 if (w.c.error_fn) {
@@ -355,5 +486,8 @@
 
 
     
-    })
+    }
+    // < get it able to at least consume Modus.* types:
+    //  as Modus
+     )
 </script>

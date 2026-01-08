@@ -50,9 +50,6 @@ abstract class ModusItself extends TheC  {
         this.on_code_change?.()
     }
     
-    // < better coordinate whether we can start doing main() yet? nah
-    // is_starting_impossible?:Function
-    on_first_have_time?:Function
     when_to_do_A() {
         // every S with .modus has a S.started
         if (!this.S.started) return
@@ -66,11 +63,11 @@ abstract class ModusItself extends TheC  {
             let important = this.PF?.perm;
             important && Object.entries(important)
         }
-        this.i_elvis(async () => {
+        this.i_elvis('do',{Aw:'',fn:async () => {
             // downloads any relevant perms by replacing the A/w situation
             console.log(`${objectify(this)} re-A`)
             await this.do_A()
-        })
+        }})
     }
 
     stopped = false
@@ -94,6 +91,7 @@ abstract class ModusItself extends TheC  {
         main()
     }
     V = false // verbose
+    on_first_have_time?:Function
     async the_main() {
         if (this.on_first_have_time) {
             this.on_first_have_time()
@@ -101,9 +99,6 @@ abstract class ModusItself extends TheC  {
         }
         this.V && console.log(`${objectify(this)} --->`)
         await this.c_mutex(this,'Modus.main()?',async () => {
-            // angency preamble
-            await this.o_elvis()
-
             await this.reset_interval()
 
             // < GOING the main function?

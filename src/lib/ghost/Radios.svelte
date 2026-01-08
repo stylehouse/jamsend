@@ -17,13 +17,12 @@
     // < get this number down
     const MIN_LEFT_TO_WANT_STREAMING = 22
     const STAY_AHEAD_OF_ACK_SEQ = 7 // many re/pr to load ahead
-    const V = {
-        plau: 2,
-        irec: 1
-    }
+    const V = {}
+    V.plau = 2
+    V.irec = 1
 
     onMount(() => {
-        M.main()
+        M.main() // < GOING?
     })
     M.eatfunc({
 

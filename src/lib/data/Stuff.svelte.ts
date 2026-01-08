@@ -577,6 +577,7 @@ export class Stuff extends TimeOffice {
                 // put everything else back in
                 this.bo().forEach(n => {
                     if (partial?.includes(n)) return
+                    // keeping n.c.etc as it is, but already ignoring n.c.drop
                     this.i(n)
                 })
                 if (IN_ORDER) X_new.z?.map(n => this.i(n))
