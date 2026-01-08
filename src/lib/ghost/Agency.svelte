@@ -15,6 +15,18 @@
         
 //#endregion
 //#region elvis
+    elvospec: `
+        right. heading into the electronic hole.
+        where do we go, from M**
+         into M/A/w basically
+          but it may have put an %e somewhere for something
+           to set off a progress() or next()
+        would replace the:
+         that M/%io:radiostock interface
+          so this protocol needs to talk-to|address the M?
+           nah, just start from the A:*, search path of M...
+
+    `,
     // during main() is a time of instability in M**
     //   mingling threads of execution can cause eg double replace()
     //  so event handlers may post their jobs into this queue
@@ -51,7 +63,7 @@
     async agency_think() {
         let AwN = []
         let AN = []
-        for (let A of this.current.o({A:1})) {
+        for (let A of this.o({A:1})) {
             await this.self_timekeeping(A)
 
             for (let w of A.o({w:1})) {

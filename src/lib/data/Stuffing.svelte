@@ -26,7 +26,7 @@
         // we have to wait for the new version
         //  if in transaction that went async
         //   after starting to change stuff
-        if (stuff.version) {
+        if (stuff?.version) {
             new_stuffing = new Stuffing(stuff,matchy)
             spinner = true
             // console.log(`Stuffing new...`)

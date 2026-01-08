@@ -59,7 +59,7 @@
     let redraw_version = $state(1)
     let lets_redraw = () => {
         let N = M.o()
-        // console.log("reacting to M.current.version=="+M.current.version, N)
+        // console.log("reacting to M.version=="+M.version, N)
         redraw_version++
     }
     $effect(() => {
@@ -103,7 +103,7 @@
     {#if do_drawing}
     {#key redraw_version}
 
-        <Stuffing mem={M.imem('current')} stuff={M.current} {M} />
+        <Stuffing mem={M.imem('current')} stuff={M} {M} />
 
         {#if M.coms} <Stuffing mem={M.imem('coms')} stuff={M.coms} />{/if}
 

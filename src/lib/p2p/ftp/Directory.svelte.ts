@@ -188,15 +188,14 @@ export class DirectoryModus extends RadioModus {
         if (!DL) return console.warn("!DL")
         let was = null
         let Se = null
-        let C = this.current
 
-        await C.replace({nib:'dir'},async () => {
-            let n = C.i({nib:'dir',name:this.S.name,DL})
+        await this.replace({nib:'dir'},async () => {
+            let n = this.i({nib:'dir',name:this.S.name,DL})
             // n/* is empty
         })
         // n/* is now resumed
 
-        for (let n of C.o({nib:'dir'})) {
+        for (let n of this.o({nib:'dir'})) {
             // hang info forever
             !n.oa({self:1,est:1})
                 && n.i({self:1,est:now_in_seconds()})

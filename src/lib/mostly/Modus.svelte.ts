@@ -8,6 +8,9 @@ import { erring, grep, hak, iske, tex, throttle } from "$lib/Y";
 import type { Component } from "svelte";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
+//#endregion
+//#region Modus
+
 abstract class ModusItself extends TheC  {
     // belongs to a thing of a feature
     S:ThingIsms
@@ -17,7 +20,6 @@ abstract class ModusItself extends TheC  {
     
     // suppose you will develop your *Modus while looking at a Strata
     a_Strata?:Strata = $state()
-    current:TheC
     constructor(opt:Partial<Modus>) {
         super({sc:{ImAModus:1}})
         Object.assign(this,opt)
@@ -27,10 +29,6 @@ abstract class ModusItself extends TheC  {
         this.F ||= this.PF?.F
         this.F ||= this.S?.F
         this.S ||= this.F || this.PF
-
-
-        // < GOING
-        this.current = this
 
         this.init_stashed_mem?.()
 
@@ -122,36 +120,6 @@ abstract class ModusItself extends TheC  {
     }
 
 
-    abstract current:TheC
-    time_having?:Error|null
-    async have_time(fn:Function) {
-
-
-        let at = new Error().stack
-        if (this.time_having) {
-            // < weirdly, %mo=main,interval:3.6 stops working!
-            let still = this.time_having
-            setTimeout(() => {
-                if (still == this.time_having) {
-                    console.error("unblocking zombified modus time",still.at)
-                    this.time_having = null
-                    this.main()
-                }
-            },666)
-            console.error("re-transacting Modus",
-                {awaiting_stack:this.time_having.at,
-                 current_stack:at})
-            return
-        }
-        this.time_having = {at}
-        
-        try {
-            // doing the business
-            await fn()
-        } finally {
-            this.time_having = null
-        }
-    }
 
 //#endregion
 //#region Memory
@@ -288,7 +256,7 @@ abstract class TimeGallopia extends ModusItself {
             await do_fn()
         }
         catch (er) {
-            throw erring("c_mutex:"+t,er)
+            throw erring("c_mutex: "+t,er)
         }
         finally {
             delete w.c[`${t}_promise`] 
@@ -435,10 +403,25 @@ abstract class TimeGallopia extends ModusItself {
             
         },1000*interval)
 
-        await this.current.replace({mo:'main',interval:1}, async () => {
+        await this.replace({mo:'main',interval:1}, async () => {
             n = this.i({mo:'main',interval,id})
         })
     }
+    async self_timekeeping(C:TheC) {
+        // est timestamp
+        !C.oa({self:1,est:1})
+            && C.i({self:1,est:now_in_seconds()})
+
+        // two senses of time
+        let ro = C.o({self:1,round:1})[0]
+        let es = C.oa({self:1,est:1})[0]
+        await C.replace({self:1,round:1},async () => {
+            let round = Number(ro?.sc.round || 0) + 1
+            let age = es && es.ago('est')
+            C.i({self:1,round,age})
+        })
+    }
+
 
 
     // < GOING, but is a primitive sketch of replace()
@@ -462,7 +445,7 @@ abstract class TimeGallopia extends ModusItself {
     //    seems it's better to put all changables into n/*!
     // 
     // much simpler and more limited than Stuff.replace()
-    // < to work within the Modus.current.replace()
+    // < to work within the Modus.replace()
     //    to resolve some of the X.z at once...
     //   basically by holding off goners indefinitely
     // establish a single bunch of stuff
@@ -472,7 +455,7 @@ abstract class TimeGallopia extends ModusItself {
         new_sc:Function|TheUniversal,
         middle_cb:Function
     }) {
-        // Modus.main() used to be in a Modus.current.replace({}, ...)
+        // Modus.main() used to be in a Modus.replace({}, ...)
         //    ie of everything, so we boa to see the prior complete state
         let N = this.boa(base_sc)
         if (!N) {
@@ -501,20 +484,6 @@ abstract class TimeGallopia extends ModusItself {
         }
     }
 
-    async self_timekeeping(C:TheC) {
-        // est timestamp
-        !C.oa({self:1,est:1})
-            && C.i({self:1,est:now_in_seconds()})
-
-        // two senses of time
-        let ro = C.o({self:1,round:1})[0]
-        let es = C.oa({self:1,est:1})[0]
-        await C.replace({self:1,round:1},async () => {
-            let round = Number(ro?.sc.round || 0) + 1
-            let age = es && es.ago('est')
-            C.i({self:1,round,age})
-        })
-    }
 }
 
 //#endregion
