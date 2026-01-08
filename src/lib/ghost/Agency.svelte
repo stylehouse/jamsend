@@ -137,26 +137,23 @@
     // on SharesModus are two undeveloped w for testing elvising
     async ragate(A,w) {
         // < what to do as|with the bunch of music shares? redundancy?
+        return
         if (w.o1({round:1,self:1})[0] % 2) {
             this.i_elvis('yap',{Aw:'raglance',te:'some'})
             this.i_elvis('yap',{Aw:'raglance',te:'lots'})
-            setTimeout(() => {
-                this.i_elvis('yap',{Aw:'raglance',te:'grunge'})
-            },34)
-            setTimeout(() => {
-                this.i_elvis('yap',{Aw:'raglance',te:'rowing'})
-            },88)
-            setTimeout(() => {
-                this.i_elvis('yap',{Aw:'raglance',te:'mountains'})
-            },133)
-            setTimeout(() => {
-                this.i_elvis('yap',{Aw:'raglance',te:'lots'})
-                this.i_elvis('yap',{Aw:'raglance',te:'grunge'})
-                this.i_elvis('yap',{Aw:'raglance',te:'eek'})
-            },600)
-            setTimeout(() => {
-                this.i_elvis('yap',{Aw:'raglance',te:'grunge'})
-            },933)
+            // Helper to schedule test messages
+            const yap = (delay: number, te: string | string[]) => {
+                setTimeout(() => {
+                    const tes = Array.isArray(te) ? te : [te]
+                    tes.forEach(t => this.i_elvis('yap', {Aw: 'raglance', te: t}))
+                }, delay)
+            }
+            // Compressed test data
+            yap(34, 'grunge')
+            yap(88, 'rowing')
+            yap(133, 'mountains')
+            yap(600, ['lots', 'grunge', 'eek'])
+            yap(933, 'grunge')
         }
         
     },

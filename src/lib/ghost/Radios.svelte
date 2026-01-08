@@ -664,33 +664,34 @@
         let co = _C({name:"through record chunks"})
         let spooling = 0
         let spoolia = async () => {
-        await this.c_mutex(w,'spoolia', async () => {
+            let some = false
+            await this.c_mutex(w,'spoolia', async () => {
 
-            let them = this.get_record_audiobits(re)
-            let pr = await this.co_cursor_N_next(co,co,them)
-            spooling ++
-            if (pr) {
-                // don't get too far ahead
-                // by what they ack_seq
-                let last_ack_seq = re.c.client_ack_seq?.[client] || 0
-                let not_too_far_ahead = last_ack_seq + STAY_AHEAD_OF_ACK_SEQ
-                if (pr.sc.seq > not_too_far_ahead) {
-                    console.log(`cooling the spooling @${pr.sc.seq}`)
-                    return
+                let them = this.get_record_audiobits(re)
+                let pr = await this.co_cursor_N_next(co,co,them)
+                spooling ++
+                if (pr) {
+                    // don't get too far ahead
+                    // by what they ack_seq
+                    let last_ack_seq = re.c.client_ack_seq?.[client] || 0
+                    let not_too_far_ahead = last_ack_seq + STAY_AHEAD_OF_ACK_SEQ
+                    if (pr.sc.seq > not_too_far_ahead) {
+                        console.log(`cooling the spooling @${pr.sc.seq}`)
+                        return
+                    }
+                    if (!pr.sc.buffer) {
+                        // < tidy re/*%stream after a while?
+                        //    and spawn a new streamer if the listening party is so far ahead
+                        //    that the chunks just after the %preview is already de-buffered
+                        throw "ohno, hit dropped %record memory"
+                    }
+                    console.log(`soundpooling ${spooling} goes ${re.sc.enid}@${pr.sc.seq}`)
+                    await sending(pr)
+                    await this.co_cursor_save(co,co,pr)
+                    some = true
                 }
-                if (!pr.sc.buffer) {
-                    // < tidy re/*%stream after a while?
-                    //    and spawn a new streamer if the listening party is so far ahead
-                    //    that the chunks just after the %preview is already de-buffered
-                    throw "ohno, hit dropped %record memory"
-                }
-                console.log(`soundpooling ${spooling} goes ${re.sc.enid}@${pr.sc.seq}`)
-                await sending(pr)
-                await this.co_cursor_save(co,co,pr)
-                return true
-            }
-
-        })
+            })
+            return some
         }
         // all %preview that are there
         while (await spoolia()) { 1 }
@@ -1011,7 +1012,10 @@
             if (!re.oa({in_radiostock:1})) {
                 // wants saving to disk once whole
                 if (!re.oa({in_progress:1})) {
-                    await this.record_to_disk(re,stockD)
+                    // little delay, sometimes %EOpreview is not determined during last aud.on_recording
+                    setTimeout(async () => {
+                        await this.record_to_disk(re,stockD)
+                    },500)
                 }
             }
         }

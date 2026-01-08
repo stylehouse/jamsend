@@ -120,7 +120,7 @@
                 is_still_relevant = false
             }
             if (!w.oa({aud})) {
-                console.warn(`became not the only aud!?`)
+                console.warn(`re=${re.sc.enid} %${q.keyword} no longer am at w/%aud`)
                 is_still_relevant = false
             }
             return is_still_relevant
@@ -203,7 +203,8 @@
             setTimeout(() => {
                 ip.c.on_finish?.(lastest_pr)
             },111)
-            re.drop(ip)
+            re.drop(ip) // no longer %in_progress
+
             // < assure the final on_recording() ?
             //     it might be causing the tinybits
             //    and delete %in_progress when that final %preview is in
@@ -212,11 +213,20 @@
                     if (!re.oa({...EOkeywordc})) {
                         fn()
                     }
-                },333)
+                },133)
             }
             // give two tries, with time to catch up after being paused in debugger...
             // < what else to give that to
             hmm(() => hmm(() => {
+                console.warn(`re=${re.sc.enid} didn't get %EO${q.keyword} after stopped`)
+                if (q.keyword == 'preview') {
+                    // < these occasionally slip by without an EOpreview?
+                    //    may replicate out to cache|transmit before we notice and fix this
+                    //   sometimes %EOpreview is not determined during last aud.on_recording
+                    re.drop(lastest_pr)
+                    ex(lastest_pr.sc,EOkeywordc)
+                    re.i(lastest_pr.sc)
+                }
                 if (check_relevance()) {
                     console.warn(`didn't get a final on_recording after stopped`)
                 }
