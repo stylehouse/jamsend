@@ -375,6 +375,11 @@
         w.i({see:"At rest"})
         await A.r({resting:1})
     },
+
+    // assuming you're w:rahunting in A:rahunting
+    async Areset(A) {
+        await A.r({w:1},{})
+    },
     // < specify radiostock worker, radiostream worker
     //    and handle resource contention
     // look for and engage one of them, supposing they just need reset
@@ -400,6 +405,10 @@
     //  where everything playable is within journey:auto's from-the-top-ness, so we avoid it
     // may not find tracks not in a directory, because we want directory then track
     async meander(A:TheC,w:TheC) {
+        if (A.sc.meander_then) {
+            w.sc.then = A.sc.meander_then
+        }
+
         let loopy = 11
         let dir:TheD
         while (1) {

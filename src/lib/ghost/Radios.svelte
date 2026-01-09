@@ -29,13 +29,13 @@
 
 
 //#endregion
-//#region radioterminal
+//#region raterminal
     turn_knob() {
         if (!this.do_skip_track_fn) return console.error(`you don't skip track`)
         this.do_skip_track_fn()
     },
     // do_skip_track_fn:Function
-    async radioterminal(A,w) {
+    async raterminal(A,w) {
         w.sc.unemits ||= {
             irecord: async ({re:resc,pr:prsc,buffer}:{re:TheUniversal,pr:TheUniversal}) => {
                 A = this.refresh_C([A])
@@ -701,9 +701,9 @@
 
 
 //#endregion
-//#region radiobroadcaster
+//#region racaster
     // < test the efficacy of this... born in chaos
-    async radiobroadcaster(A,w) {
+    async racaster(A,w) {
         if (this.sent_re_client_quota_default == null) {
             this.sent_re_client_quota_default = 0
             this.sent_re_client_quota = {}
@@ -906,11 +906,11 @@
     //   so you can't capture C and then expect C.i() to operate on the current time of it
     //   unless you use refresh_C()
     //  so functions created only the first time
-    //    eg w:radiobroadcaster / unemits / orecord
+    //    eg w:racaster / unemits / orecord
     //   capture values of C that get buried in the past
     //  %record though (aka rec, re)
     //    just sit there!
-    //  in w:radiobroadcaster you can put this:
+    //  in w:racaster you can put this:
         // // an experiment into using refresh_C() at loose times
         // if (w.oa({self:1,round:2})) {
         //     let i = 1
@@ -980,8 +980,8 @@
             // starts streams
             //  zapped a subtype of broadcaster's unemit:orecord
             ostream: async (re:TheC,q) => {
-                this.o({A:'streaming'}).map(A => {
-                    A.o({w:'radiostreaming'}).map(w => {
+                this.o({A:'rastream'}).map(A => {
+                    A.o({w:'rastream'}).map(w => {
                         w.c.ostream(re,q)
                     })
                 })
@@ -1036,8 +1036,8 @@
     },
 
     //#endregion
-    //#region radiostreaming
-    async radiostreaming(A,w) {
+    //#region rastream
+    async rastream(A,w) {
         // await need
         w.c.ostream = async (re,q) => {
             let {enid} = re.sc
@@ -1096,7 +1096,7 @@
             let audienced = Object.values(re.c.client_ack_seq || {})
                 .some(seq => (seq+20) > pr.sc.seq * 0.34 && seq < pr.sc.seq+2)
             if (!audienced) {
-                console.log(`radiostreaming:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
+                console.log(`rastream:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
                 st.c.stop()
             }
         }
@@ -1104,14 +1104,14 @@
 
         // recursive directory something-if-not-exist thinger
         let D = await this.Se.aim_to_open(w,path,async (uD,pathbit) => {
-            throw `radiostreaming:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
+            throw `rastream:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
         })
         if (!D) return
 
         
 
         if (!w.oa({buffers:1})) {
-            console.log(`radiostreaming:${enid} loads`)
+            console.log(`rastream:${enid} loads`)
             re.i({they_want_streaming:1})
             await this.radiostreaming_i_buffers(A,w,D)
         }
@@ -1123,7 +1123,7 @@
         let ip = re.o({in_progress:'preview'})[0]
         let saved_up_chunksc:TheUniversal[] = []
         if (ip) {
-            console.log(`radiostreaming:${enid}: waiting until %previews++ done`)
+            console.log(`rastream:${enid}: waiting until %previews++ done`)
             // we save up our chunks of recording
             w.c.on_i_chunksc = (ore:TheC,prsc:TheUniversal) => {
                 if (ore != re) throw "~re"
@@ -1164,7 +1164,7 @@
             // < stash such concerns at a lower level...
             w.c.on_recording = async (re,pr) => {
                 let also = pr.sc.EOstream ? ",EOstream" : ""
-                console.log(`radiostreaming:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
+                console.log(`rastream:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
                 await this.Cpromise(re);
                 check_for_abandonment(pr)
             }
@@ -1178,7 +1178,16 @@
 
 
     //#endregion
-    //#region radiopreview
+    //#region hunt, radiopreview
+    async rahunting(A,w,D) {
+        // in response to eg decode errors, just try again from the top
+        A.c.reset_Aw = async () => await this.Areset(A)
+        // we are done immediately, and move on to...
+        w.i({satisfied:1})
+        w.sc.then = 'meander'
+        A.sc.meander_then = 'radiopreview'
+    },
+    
     async radiopreview(A,w,D) {
         if (!this.gat.AC_ready) return w.i({error:"!AC",waits:1})
         // w can mutate

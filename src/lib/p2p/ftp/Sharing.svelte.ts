@@ -35,7 +35,6 @@ export class SharesModus extends RadioModus {
         await this.r({A:1},{})
         this.i({A:'ragate'})
         this.i({A:'raglance'})
-        
     }
 
     async do_main() {
@@ -58,6 +57,7 @@ export class ShareeModus extends RadioModus {
             'Radio': () => this.turn_knob(),
             'Mo++': () => this.main(),
             'C++': () => this.hard_reset(),
+            'A++': () => this.do_A(),
         })
     }
     async hard_reset() {
@@ -67,30 +67,25 @@ export class ShareeModus extends RadioModus {
     }
     // describe the minds regarding trust
     // < rename perm... it's both pieces of trust, theirs and ours...
-    async do_A(hard=false) {
-        // console.log("do_A")
-        let A
-        await this.replace({A:1},async () => {
-            A = this.i({A:'punt'})
-            if (hard) A.is() // prevents replacing the contents
-        })
-        await A.replace({w:1},async () => {
-            // < so perm can change over time, do this every time, replacing %w?
-            let perm = this.PF.perm
-            if (perm.local) {
-                // we grant them read access
-                A.i({w:'radiobroadcaster'})
-            }
-            if (perm.remote) {
-                // they grant us read access
-                A.i({w:'radioterminal'})
-                // A.i({w:'broadcaster'})
-            }
-            if (perm.local && perm.remote) {
-                // < may both be on, share DJing, syncing many Pier's?
-                A.i({is_both_listener_and_source:1})
-            }
-        })
+    async do_A() {
+        await this.r({A:1},{})
+        let A = this.i({A:'punt'})
+
+        // < so perm can change over time, do this every time, replacing %w?
+        let perm = this.PF.perm
+        if (perm.local) {
+            // we grant them read access, they receive
+            A.i({w:'racaster'})
+        }
+        if (perm.remote) {
+            // they grant us read access, we receive
+            A.i({w:'raterminal'})
+        }
+        if (perm.local && perm.remote) {
+            // < may both be on, share DJing, syncing many Pier's?
+            A.i({is_both_listener_and_source:1})
+        }
+        this.main()
     }
 
     
