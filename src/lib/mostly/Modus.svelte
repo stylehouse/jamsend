@@ -17,6 +17,8 @@
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
     do_drawing ||= true // < store this?
     let init_do_drawing = do_drawing
+    // drawing also covers:
+    let do_strata = $state()
 
     let M:SomeModus = $state()
     let gat:SoundSystem = $state()
@@ -34,16 +36,20 @@
         
         // do the first drawing almost immediately, but after M.stashed appears
         do_drawing = null
-        M.on_first_have_time = () => {
+        M.on_first_main = () => {
             console.log(`started|stashed|perm -> main() ${objectify(S)}`)
             if (S.modus != M) debugger
 
             // start drawing as intended
             do_drawing = init_do_drawing
             // allow it to change over time via stashed
-            if (M.stashed?.do_drawing != null) {
+            if (M.stashed.do_drawing != null) {
                 do_drawing = M.stashed.do_drawing
             }
+            if (M.stashed.do_strata != null) {
+                do_strata = M.stashed.do_strata
+            }
+            do_strata ??= true
         }
 
         if (do_start) {
@@ -67,12 +73,20 @@
             M.stashed.do_drawing = do_drawing
         }
     })
+    $effect(() => {
+        if (do_strata != null && M.stashed) {
+            M.stashed.do_strata = do_strata
+        }
+    })
     // turns off the Stuffing compute
     let tog_draw = () => do_drawing = !do_drawing
+    let tog_strata = () => do_strata = !do_strata
     let drawingness = $derived(do_drawing ? "hide" : "show")
+    let strataness = $derived(do_strata ? "-strata" : "strata")
 
 
     let strata = $derived(M.a_Strata)
+
     // get handled by UI:Thing(s)
     let no_actions = S instanceof ThingsIsms
         || S instanceof ThingIsms
@@ -88,6 +102,7 @@
         I am a {M.constructor.name} 
         {#if gat}with a gat. <GatHaving {gat}/>{/if}
         <button onclick={tog_draw}>{drawingness}</button>
+        <button onclick={tog_strata}>{strataness}</button>
         <button onclick={lets_redraw}>redraw</button>
         {#if actions}<ActionButtons {actions} />{/if}
     </p>

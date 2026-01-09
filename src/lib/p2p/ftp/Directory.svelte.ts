@@ -201,16 +201,22 @@ export class DirectoryModus extends RadioModus {
             Se = this.Se
         }
         
-        this.a_Strata ||= new Strata({
-            see: [],
-            hide: [
-                {readin:1},
-                {ads:1},
-                {Tree:1},
-            ],
-            nameclick_fn: async (D:TheC) => await this.nameclick(D),
-        })
-        this.a_Strata.update({Se,thetime:this.thetime})
+        // < awkward controlling the process sourcing material for UI
+        if (this.stashed?.do_strata === false) {
+            this.a_Strata = null
+        }
+        else {
+            this.a_Strata ||= new Strata({
+                see: [],
+                hide: [
+                    {readin:1},
+                    {ads:1},
+                    {Tree:1},
+                ],
+                nameclick_fn: async (D:TheC) => await this.nameclick(D),
+            })
+            this.a_Strata.update({Se,thetime:this.thetime})
+        }
     }
 
     // a big development.

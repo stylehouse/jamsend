@@ -66,10 +66,14 @@ abstract class ModusItself extends TheC  {
         this.i_elvis('do',{Aw:'',fn:async () => {
             // downloads any relevant perms by replacing the A/w situation
             console.log(`${objectify(this)} re-A`)
+            // because we go in there to do_A()
+            //  we can't stop calls to main() before we are ready...
+            // < surely that's not right...
+            this.started = true
             await this.do_A()
         }})
     }
-
+    started = false
     stopped = false
     declare do_stop?:Function
     stop() {
@@ -91,12 +95,8 @@ abstract class ModusItself extends TheC  {
         main()
     }
     V = false // verbose
-    on_first_have_time?:Function
+    on_first_main?:Function
     async the_main() {
-        if (this.on_first_have_time) {
-            this.on_first_have_time()
-            this.on_first_have_time = undefined
-        }
         this.V && console.log(`${objectify(this)} --->`)
         await this.c_mutex(this,'Modus.main()?',async () => {
             await this.reset_interval()
@@ -111,6 +111,10 @@ abstract class ModusItself extends TheC  {
 
             // < look within $scope of the Tree (start with localList) for...
         })
+        if (this.started && this.on_first_main) {
+            this.on_first_main()
+            this.on_first_main = undefined
+        }
         this.V && console.log(`${objectify(this)} ///`)
     }
 
