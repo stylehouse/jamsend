@@ -1185,7 +1185,7 @@
         // we are done immediately, and move on to...
         w.i({satisfied:1})
         w.sc.then = 'meander'
-        A.sc.meander_then = 'radiopreview'
+        A.c.meander_then = 'radiopreview'
     },
     
     async radiopreview(A,w,D) {

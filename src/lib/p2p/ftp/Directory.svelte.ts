@@ -94,21 +94,21 @@ export class DirectoryModus extends RadioModus {
     //    but trust changes can be totally Modus-resetting for now
     async do_A() {
         await this.r({A:1},{})
+        this.i({A:'Directory'})
         
         this.i({A:'rastream'})
 
         this.i({A:'rahunting'})
 
         this.i({A:'radiostock'})
+
         this.main()
     }
-
 
 
     // refresh the top level, etc
     async do_main() {
         // < rewrite everything we're thinking about how to:
-        await this.surf_nibs(this.S.list)
     }
     // when w to gallop into open country
     get_sleeping_D_filter(D) {
@@ -179,27 +179,29 @@ export class DirectoryModus extends RadioModus {
     // < partition a travel into %nib**
     //  < and deduplicate|DRY from having an extra toplevel %nib replace.
     // look to (or initialise) and climb down into the top %DL
-    async surf_nibs(DL) {
+    async Directory(A,w) {
+        // we're on a DirectoryShare, it has a toplevel DirectoryListing
+        let DL = this.S.list
         if (!DL) return console.warn("!DL")
-        let was = null
         let Se = null
 
-        await this.replace({nib:'dir'},async () => {
-            let n = this.i({nib:'dir',name:this.S.name,DL})
-            // n/* is empty
-        })
-        // n/* is now resumed
-
-        for (let n of this.o({nib:'dir'})) {
-            // hang info forever
-            !n.oa({self:1,est:1})
-                && n.i({self:1,est:now_in_seconds()})
-
-            // the sprawly task of climbing n** -> D**
-            await this.Travel_DLs(n)
-            // there's only one for now
-            Se = this.Se
+        if (await this.w_ambiently_sleeping(w,4)) return
+        w.i({see:'tha happening'})
+        // every time a %journey changes, we get pinged
+        for (let e of this.o_elvis(w,'putjourney')) {
+            e.sc.reply && this.i_elvis(w,'noop',{A:e.sc.reply,reply_to:e})
         }
+
+        let n = await w.r({nib:'dir'},{name:this.S.name,DL})
+        // hang info forever
+        !n.oa({self:1,est:1})
+            && n.i({self:1,est:now_in_seconds()})
+
+        // the sprawly task of climbing n** -> D**
+        await this.Travel_DLs(n)
+
+        // this is the main Selection about DirectoryModus
+        Se = this.Se
         
         // < awkward controlling the process sourcing material for UI
         if (this.stashed?.do_strata === false) {
@@ -352,6 +354,8 @@ export class DirectoryModus extends RadioModus {
 
 
 
+//#endregion
+//#region possibly_expand_nib
     // for n%nib:dir only, check %openity left by tour groups
     async possibly_expand_nib(T:Travel) {
         let {D}:{D:TheD} = T.sc

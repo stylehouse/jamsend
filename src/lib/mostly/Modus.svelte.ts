@@ -63,7 +63,7 @@ abstract class ModusItself extends TheC  {
             let important = this.PF?.perm;
             important && Object.entries(important)
         }
-        this.i_elvis('do',{Aw:'',fn:async () => {
+        this.Modus_i_elvis('do',{Aw:'',fn:async () => {
             // downloads any relevant perms by replacing the A/w situation
             console.log(`${objectify(this)} re-A`)
             // because we go in there to do_A()

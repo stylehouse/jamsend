@@ -53,34 +53,49 @@
     //   time sharing is easier than space sharing?
     //    though %Tree** separates a lot of the computation...
     needs_your_attention: [] as Function[],
-    i_elvis(t,c) {
+    i_elvis(w,t,c) {
         setTimeout(() => {
             // this is the address scheme
+            if (c.A) {
+                // given by object, derive a path of names (Aw)
+                let w = c.A
+                // < A is TheA, w is also and has w.up=A
+                let A = w.up || w
+                c.Aw = A.sc.A
+                if (w != A) {
+                    // they're pointing to a specific w by object
+                    c.Aw += '/'+w.sc.w
+                }
+                delete c.A
+            }
             if (c.Aw == null) throw "%elvis,!Aw"
             c = {elvis:t,...c}
-            if (c.Aw == '') {
-                // see handle_elvising_to_Modus(), not in any A, doing whatever else afterwards
-                this.i(c)
-            }
-            else {
-                // deliver it to an A now
-                let [Aname,...more] = c.Aw.split("/")
-                let A = this.o({A:Aname})[0]
-                if (!A) throw `!A %elvis=${t},Aw=${c.Aw}`
-                // gives eg A:way/%elvis to w:way if no more %Aw
-                c.Aw = more.length ? more.join("/") : Aname
-                A.i(c)
-            }
+
+            // deliver it to an A now
+            let [Aname,...more] = c.Aw.split("/")
+            let A = this.o({A:Aname})[0]
+            if (!A) throw `!A %elvis=${t},Aw=${c.Aw}`
+            // gives eg A:way/%elvis to w:way if no more %Aw
+            c.Aw = more.length ? more.join("/") : Aname
+            A.i(c)
             // and request main() ASAP
             //  < model wants, progress, which journeys are actively doing stuff
             this.main()
         },333)
     },
 
+    // the odd case of elvising to Modus itself ? used to do_A()
+    Modus_i_elvis(t,c) {
+        setTimeout(() => {
+            this.i({elvis:t,...c})
+            this.main()
+        },333)
+    },
+    // serve the above, not in any A, doing whatever else afterwards
     async handle_elvising_to_Modus() {
         // for the sake of singularity, here's elvising Modus:
         for (let e of this.o({elvis:1})) {
-            if (e.sc.fn) {
+            if (e.sc.elvis == 'do' && e.sc.fn) {
                 await e.sc.fn()
             }
             else {
@@ -98,14 +113,20 @@
             let [wname,...more] = e.sc.Aw.split("/")
             if (more.length) throw "more Aw"
 
+            let itis = (w) => {
+                yes.push(w)
+                // transfer %elvis onto the %w
+                w.i(nex({},e.sc,'Aw'))
+                e.drop(e)
+            }
             for (let w of wN){
                 if (w.sc.w == wname) {
-                    yes.push(w)
-                    // transfer %elvis onto the %w
-                    w.i(nex({},e.sc,'Aw'))
-                    e.drop(e)
-                    return
+                    return itis(w)
                 }
+            }
+            if (wN.length == 1) {
+                // in the case of one A/w, we assume it has just changed into w:meander or so
+                return itis(wN[0])
             }
             throw `A:${A.sc.A} /!w %elvis=${e.sc.elvis},Aw=${e.sc.Aw}`
         }
@@ -120,12 +141,14 @@
         let them = w.o({elvis:t})
         for (let e of them) {
             e.c.served = true
+            w.i({see:'e',elviserved:t,e})
         }
         return them
     },
     // checks expected o_elvis() happened
     elvised_completely(A,w) {
         let them = w.o({elvis:1})
+        them.length && this.o_elvis(w,'noop')
         for (let e of them.filter(e => e.c.served)) {
             e.drop(e)
         }
@@ -139,13 +162,13 @@
         // < what to do as|with the bunch of music shares? redundancy?
         return
         if (w.o1({round:1,self:1})[0] % 2) {
-            this.i_elvis('yap',{Aw:'raglance',te:'some'})
-            this.i_elvis('yap',{Aw:'raglance',te:'lots'})
+            this.i_elvis(w,'yap',{Aw:'raglance',te:'some'})
+            this.i_elvis(w,'yap',{Aw:'raglance',te:'lots'})
             // Helper to schedule test messages
             const yap = (delay: number, te: string | string[]) => {
                 setTimeout(() => {
                     const tes = Array.isArray(te) ? te : [te]
-                    tes.forEach(t => this.i_elvis('yap', {Aw: 'raglance', te: t}))
+                    tes.forEach(t => this.i_elvis(w,'yap', {Aw: 'raglance', te: t}))
                 }, delay)
             }
             // Compressed test data
@@ -203,6 +226,8 @@
     },
     // process job, w
     async Aw_think(A,w) {
+        // < make these TheA? which does this:
+        w.up = A
         let method = w.sc.w
         if (method && this[method]) {
             try {
@@ -229,6 +254,20 @@
             // < refer other %w to central stuck-trol?
             return
         }
+    },
+
+    // return true if a w doesn't need to happen
+
+    async w_ambiently_sleeping(w,times:number=4) {
+        await w.r({self:1,sleeping:1},{})
+        // has an event to process
+        if (w.oa({elvis:1})) return false
+        // h
+        let round = w.o1({round:1,self:1})
+        if (round == 1) return false
+        if (!(round % times)) return false
+        w.i({self:1,sleeping:`not the ${times}-1 time`})
+        return true
     },
 
     async agency_officing(AwN,AN) {
@@ -300,22 +339,36 @@
         // replace a particular journey that comes from this A
         // have *%journey ideas first
         let AwjN = []
+        let topD = this.Tr.sc.D
+        // < why are there no %journeys at this point? huh?
+        for (let j of topD.o({journey:1,oaims:1})) {
+            let was = j.oa({path:1}) ? this.Se.j_to_uri(j) : '??'
+            // console.log(`${this.constructor.name} journeys were: ${j.sc.journey} to ${was}`)
+        }
+
         for (let c of AwN) {
             let {A,w} = c
             let i = 0
             for (let ai of w.o({aim:1})) {
                 // < are duplicate names ok? what to do about it?
-                c.journey = this.name_A(A)+(i++ ? "+"+i : "")
-                AwjN.push({...c,ai})
+                let jc = {...c,ai}
+                jc.journey = this.name_A(A)+(i++ ? "+"+i : "")
+                AwjN.push(jc)
+
+
+                let to = ai.o1({summary:1})[0]
+                jc.path_was = to
+                await ai.r({summary:this.Se.j_to_uri(ai),of_where:'its going'})
+                jc.path_now = ai.o1({summary:1})[0]
             }
         }
-        let topD = this.Tr.sc.D
         // replace D/*%journey
         await topD.replace({journey:1,oaims:1}, async () => {
             for (let c of AwjN) {
                 c.j = topD.i({journey:c.journey,oaims:1})
             }
         })
+
         // then replace what is in %journey
         for (let c of AwjN) {
             let {A,w,j,ai} = c
@@ -324,10 +377,18 @@
             // i j/* o ai/*%path
             // console.log(`j:${j.sc.journey} ai path:${this.Se.j_to_uri(ai)}`)
             await j.replace({path:1}, async () => {
+                // < i_j_j(j,j)
                 for (let n of ai.o({path:1})) {
                     j.i(n.sc)
                 }
             })
+            // a tiny Selection.process() watching path change
+            if (c.path_now != c.path_was) {
+                console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
+                // < also eg w:rastock/%waits:A:Directory should there and back
+                this.i_elvis(w,'putjourney',{Aw:'Directory',from:w.sc.w,reply:A})
+            }
+
             await j.r({gaveup:1},{})
             // < note somehow this ai->j vectoring
         }
@@ -405,8 +466,8 @@
     //  where everything playable is within journey:auto's from-the-top-ness, so we avoid it
     // may not find tracks not in a directory, because we want directory then track
     async meander(A:TheC,w:TheC) {
-        if (A.sc.meander_then) {
-            w.sc.then = A.sc.meander_then
+        if (A.c.meander_then) {
+            w.sc.then = A.c.meander_then
         }
 
         let loopy = 11
