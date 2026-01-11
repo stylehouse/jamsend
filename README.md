@@ -43,9 +43,9 @@ To use *prod.sh*, see *Peer_OPTIONS*, but we no longer use socket.io which it ma
 
 AI says: Besides p2p and audio, we need a sophisticated, reactive data structure and UI framework, with a focus on managing dynamic, hierarchical data (like directory listings) and visualizing it in a way that responds to frequent updates.
 
-Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then what is more meaningful: what we do with *TheC*.
+Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then  *TheC*. Start reading the code [data/Stuff](src/lib/data/Stuff.svelte.ts).
 
-If you want to write new code, the src/lib/ghost/\*.svelte is the best place to build things because it'll update the Modus live without restarting anything, but they need to be included by a Modus, which are included by some kind of *\*Feature*, so do a whole lot of searches and readings, you probably want to add another %w=yourmethod to some M.do_A().
+To write code, the src/lib/ghost/\*.svelte is the best place to build things because it'll update the Modus live without restarting anything, but they need to be included by a Modus, which are included by some kind of *\*Feature*, so do a whole lot of searches and readings, you probably want to add another %w=yourmethod to some M.do_A().
 
 ### Peerily...
 
@@ -98,10 +98,11 @@ And now these are the important user-mind things to persist in *Modusmem* and be
 - machine should be more feminine and competent
 - C and everything in Stuff.svelte.ts
 - Stuff.replace() and Stuff.resolve() are important to adapt to and study academically, makes a pattern more suited to [merge](https://en.wikipedia.org/wiki/Merge_(linguistics))
-- Selection.process() as a care factory
+- Selection.process() as a care factory for intersecting realities
 
 ## goals
 
+- paying $3/hr programmers
 - get funding
 - shared directories
 - climbing directories, properly randomly selecting, transcoding in ffmpeg-wasm

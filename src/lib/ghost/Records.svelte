@@ -5,6 +5,7 @@
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
     import { CHUNK_SIZE, erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { parseBuffer } from "music-metadata";
    
     let {M} = $props()
 
@@ -51,6 +52,7 @@
         let uri = this.Se.D_to_uri(D)
         
         if (!buffers) throw "!buffers"
+        // decode the stream
         try {
             await aud.load(buffers)
         }
@@ -58,13 +60,24 @@
             // w:radiopreview catches this and goes back to w:meander
             throw erring(`original encoded buffers fail: ${uri}`,er)
         }
+        // decode the metadata
+        try {
+            // < don't sometimes have to concat %buffers=[buffer,buffer]
+            let buffer = aud.flatten_ArrayBuffers(buffers)
+            let metadata = await parseBuffer(buffer)
+            aud.metadata = metadata
+        }
+        catch (er) {
+            // w:radiopreview catches this and goes back to w:meander
+            throw erring(`original encoded buffers fail to extract meta: ${uri}`,er)
+        }
     },
 
 
 //#endregion
 //#region record
     // small decodable chunks better for feeding to the radio-tuning noise phenomena
-    async record_preview_individuated(A,w,D,q) {
+    async record_preview(A,w,D,q) {
         let aud = this.gat.new_audiolet()
         await this.aud_eats_buffers(w,aud,D)
 
@@ -81,10 +94,16 @@
         let re = q.record
         let c = q.keyword != 'preview' ? {}
             : {preview_duration: aud.duration() - offset}
+        if (q.keyword == 'preview') {
+            c.meta = sex({},aud.metadata.common,'artist,album,title,year')
+            c.title = `${c.meta.artist} - ${c.meta.title}`
+            console.log(`got meta: ${c.title}`,aud.metadata.common)
+        }
         re ||= w.i({record:1,
              ...await this.entropiate({offset,uri}),
              ...c
         })
+
         let ip = re.i({in_progress:q.keyword})
 
         // receive transcoded buffers

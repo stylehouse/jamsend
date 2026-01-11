@@ -603,13 +603,20 @@
             }
         }
 
-        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid})
+        let no = await this.i_nowPlaying(A,w,he,re)
+
         no.c.hear_wake_fn = async () => {
             // will be attended while we are the %nowPlaying ?
             await progress()
         }
 
         this.whittle_N(he.o({aud:1,pr:1}),10)
+    },
+    async i_nowPlaying(A,w,he,re) {
+        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,
+            ...re.sc.meta
+        })
+        return no
     },
 
     // < just use another co_cursor?
@@ -654,7 +661,7 @@
             if (!buffer instanceof ArrayBuffer) throw "~buffer"
             console.log(`${blah(pr)} send`)
             await this.PF.emit('irecord',{
-                re: tex({},re.sc),
+                re: sex(tex({},re.sc),re.sc,'meta'),
                 pr: tex({},pr.sc),
                 buffer,
             })
@@ -1148,7 +1155,7 @@
             let offset = re.sc.offset + re.sc.preview_duration
             if (offset < 0.43) throw "low offset..."
             let from_seq = re.o1({preview:1},'seq').pop() + 1
-            let aud = await this.record_preview_individuated(A,w,D,{
+            let aud = await this.record_preview(A,w,D,{
                 get_offset: () => offset,
                 keyword: 'stream', // it's %record/%stream
                 record: re, // continuing in
@@ -1208,7 +1215,7 @@
         if (!radiostock) return w.i({waits:"%io:radiostock"})
 
         if (!w.oa({aud:1})) {
-            let aud = await this.record_preview_individuated(A,w,D,{
+            let aud = await this.record_preview(A,w,D,{
                 get_offset: (aud) => aud.duration() - PREVIEW_DURATION,
             })
             // hold on to this while it's happening

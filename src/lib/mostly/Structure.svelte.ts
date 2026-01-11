@@ -202,6 +202,12 @@ export class Structure {
 //#endregion
 //#region %ads
     // upwards propagate more stuff
+    // < and downwards, so tracks know (guessed) artist etc
+    // < then once we tag read tracks we have guess adjustment
+    // < do this in a separate C-sphere, not D** for discovery but... I** for intelligence?
+    //    activity in any sphere uses the same n|D|etc sphere mapping part of Selection.process()
+    //     with a bunch of specifics, or maybe causes D** inflation ad hoc?
+    //     it gets to become an ideal compute relationer
     async percolating_ads(T:Travel) {
         let {D} = T.sc
         // random flood of %ads hoisted about tracks

@@ -13,6 +13,8 @@ import { RadioModus } from './Audio.svelte';
 // these One/Many things are given to a Things/Thing UI
 // Shares/Share is the filesystem terminal
 //  Selections/Selection are your collations
+// < refactor this using io expr, eg i|o the/%struc/%ture{>240}
+const GUESS_METADATA = false
 
 //#endregion
 //#region DirectoryModus
@@ -84,8 +86,9 @@ export class DirectoryModus extends RadioModus {
         console.log("going hard: "+this.hard)
     }
     // start over!
-    do_C() {
+    async do_C() {
         this.empty()
+        await this.do_A()
         this.main()
     }
     // Agency parameterising and processing
@@ -98,7 +101,8 @@ export class DirectoryModus extends RadioModus {
         
         this.i({A:'rastream'})
 
-        this.i({A:'rahunting'})
+        this.i({A:'Alice Records'}).i({w:'rahunting'})
+        this.i({A:'Bob Records'}).i({w:'rahunting'})
 
         this.i({A:'radiostock'})
 
@@ -119,11 +123,7 @@ export class DirectoryModus extends RadioModus {
     async is_meander_satisfied(A,w,D) {
         // something with a track
         // < finding %ads:beyond, aim becomes for tracking down that track...
-        let good = D.o({ads:'here',track:1})[0]
-        if (good) {
-            // take to the next method
-            return true
-        }
+        return D.oa({readin:'art',track:1})
     }
 
 
@@ -342,7 +342,7 @@ export class DirectoryModus extends RadioModus {
 
         
         // then more richocheting around of percolating waves of stuff
-        await Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
+        GUESS_METADATA && await Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
         await Se.c.T.forward(async (T:Travel) => T.sc.thetime = this.thetime)
         this.Tr = Se.c.T
         this.Se = Se
