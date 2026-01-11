@@ -45,9 +45,9 @@ abstract class ModusItself extends TheC  {
     UI_component?:Component
     // this way:
     on_code_change?:Function
-    eatfunc(hash) {
+    async eatfunc(hash) {
         Object.assign(this,hash)
-        this.on_code_change?.()
+        await this.on_code_change?.()
     }
     
     when_to_do_A() {

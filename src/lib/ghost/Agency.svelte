@@ -8,10 +8,8 @@
     const V = {}
     V.w = 2
 
-    onMount(() => {
-        // M.main() // < GOING?
-    })
-    M.eatfunc({
+    onMount(async () => {
+    await M.eatfunc({
 
 
 
@@ -225,7 +223,7 @@
             await this.self_timekeeping(A)
 
             // gives eg A:way an w:way if empty
-            let wN = A.oa({w:1}) || [A.i({w:A.sc.A})]
+            let wN = this.procure_ways(A)
             // if some A/w attract pending events, concentrate on them
             let eventedwN = await this.elvised_A_w(A,wN)
             wN = eventedwN.length ? eventedwN : wN
@@ -244,11 +242,28 @@
         }
         this.agency_officing(AwN,AN)
     },
+    procure_ways(A):TheN {
+        let wN = A.oa({w:1})
+        if (!wN) {
+            if (A.c.template_w_sc) {
+                // one other w may be reset to, see Areset(A)
+                wN = [A.i({...A.c.template_w_sc})]
+            }
+            if (!wN) {
+                wN = [A.i({w:A.sc.A})]
+            }
+        }
+        if (wN[0]) A.c.template_w_sc ||= {...wN[0].sc}
+        return wN
+    },
+
     // process job, w
     async Aw_think(A,w) {
         // < make these TheA? which does this:
         w.up = A
         A.M = this
+
+
 
         let method = w.sc.w
         if (method && this[method]) {
@@ -464,9 +479,11 @@
         await A.r({resting:1})
     },
 
-    // assuming you're w:rahunting in A:rahunting
+    // just dropping the w should bring them back!
     async Areset(A) {
-        await A.r({w:1},{})
+        await this.c_mutex(this,'Areset',async () => {
+            await A.r({w:1},{})
+        })
     },
     // < specify radiostock worker, radiostream worker
     //    and handle resource contention
@@ -584,8 +601,8 @@
 
 
     
-    }
+    })
+    })
     // < get it able to at least consume Modus.* types:
     //  as Modus
-     )
 </script>

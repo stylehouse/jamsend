@@ -21,12 +21,19 @@
     V.plau = 2
     V.irec = 1
 
-    onMount(() => {
-        // M.main() // < GOING?
-    })
-    M.eatfunc({
+    onMount(async () => {
+    await M.eatfunc({
 
-
+        async on_code_change() {
+            // < bounces!?
+            this.on_code_change = async () => {}
+            return
+            // prove you can reset Bob
+            //  he drops stuff if he's busy, ouch!
+            this.o({A:1}).filter(A => A.sc.A.startsWith('Bob'))
+                .map(async A => await this.Areset(A))
+            console.warn("meta~!gets4rrrrrrrrr4t !!!",this.o({A:1}).map(C => keyser(C)))
+        },
 
 //#endregion
 //#region raterminal
@@ -1243,6 +1250,7 @@
 
 
 
+    })
     })
 </script>
 

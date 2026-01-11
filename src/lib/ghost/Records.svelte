@@ -15,10 +15,8 @@
     V.radiostock = 2
 
 
-    onMount(() => {
-        // M.main() // < GOING?
-    })
-    M.eatfunc({
+    onMount(async () => {
+    await M.eatfunc({
 
     // for radio
     async radiopreview_i_buffers(A,w,D) {
@@ -594,5 +592,6 @@
             },
             // </AI>
         
+    })
     })
 </script>
