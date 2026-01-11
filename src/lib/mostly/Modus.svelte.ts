@@ -201,13 +201,6 @@ abstract class TimeGallopia extends ModusItself {
         }
         return goners
     }
-    
-    // < if there's one of these, main() might aim better
-    async Modus_intendienthay(A,w) {
-        let inte = await this.r({intendienthay:1})
-        inte.i({theA:A.sc.A, thew:w.sc.w})
-        this.main()
-    }
 
     // locate the more up to date version of a C
     //   for giving lexically scoped variables (eg A/w/wh/rr)

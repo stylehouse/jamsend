@@ -10,7 +10,7 @@
     let {M} = $props()
 
     // $share/.jamsend/radiostock/*.webms
-    const IGNORE_RADIOSTOCK_CACHE = false 
+    const IGNORE_RADIOSTOCK_CACHE = true 
     const RADIOSTOCK_CACHE_LIMIT = 20 // items, they are timestamped
 
     const PREVIEW_DURATION = 33 // seconds of preview
@@ -22,7 +22,7 @@
     V.irec = 1
 
     onMount(() => {
-        M.main() // < GOING?
+        // M.main() // < GOING?
     })
     M.eatfunc({
 
@@ -89,7 +89,7 @@
                 this.check_all_records_sanity(A)
                 
                 // now...
-                if (!w.oa({nowPlaying:1})) this.main()
+                if (!w.oa({nowPlaying:1})) this.i_elvis(w,'noop',{A:w})
                 
                 // this may be for %nowPlaying
                 //  which may be following the live edge too closely
@@ -202,7 +202,7 @@
             let before = w.o({nowPlaying:1})[0]
 
             await next()
-            this.main()
+            this.i_elvis(w,'noop',{A:w})
             
             let now = w.o({nowPlaying:1})[0]
             console.log(`skipped track ${before.sc.enid} -> ${now.sc.enid}`)
@@ -881,7 +881,7 @@
     // shelf to DJ desk
     async pull_stock(A,w,io) {
         // our stream of %records shall be
-        let rec = await io.sc.o(this)
+        let rec = await io.sc.o(w)
         if (rec) {
             A.i(rec)
             let very = rec.oa({in_progress:1}) ? "very " : ""
@@ -957,7 +957,7 @@
                 // have a downstream Modus waiting for this
                 w.o({excitable:'radiostock i'})
                     .map(ex => ex.sc.client)
-                    .map(M => M.main())
+                    .map(ow => this.i_elvis(w,'noop',{A:ow}))
                     .length && w.r({excitable:'radiostock i'},{})
             },
             o: async (client:TheC) => {
@@ -1060,7 +1060,7 @@
             // we do the work in w/* rather than under w/st/*, so:
             w.empty()
             w.i({streamable:1,re,enid})
-            this.main()
+            this.i_elvis(w,'noop',{A:w,because:'got ostream'})
         }
 
         let st = w.o({streamable:1})[0]

@@ -5,9 +5,11 @@
     import { onMount } from "svelte";
 
     let {M} = $props()
+    const V = {}
+    V.w = 2
 
     onMount(() => {
-        M.main() // < GOING?
+        // M.main() // < GOING?
     })
     M.eatfunc({
 
@@ -54,13 +56,17 @@
     //    though %Tree** separates a lot of the computation...
     needs_your_attention: [] as Function[],
     i_elvis(w,t,c) {
+        console.log(`Modus ${this.constructor.name} has ${this.S.constructor.name}`)
+        
         setTimeout(() => {
             // this is the address scheme
+            let given_A // might be a w
+            let to_A
             if (c.A) {
                 // given by object, derive a path of names (Aw)
-                let w = c.A
+                let w = given_A = c.A
                 // < A is TheA, w is also and has w.up=A
-                let A = w.up || w
+                let A = to_A = w.up || w
                 c.Aw = A.sc.A
                 if (w != A) {
                     // they're pointing to a specific w by object
@@ -71,17 +77,30 @@
             if (c.Aw == null) throw "%elvis,!Aw"
             c = {elvis:t,...c}
 
-            // deliver it to an A now
+            // deliver it to an A
             let [Aname,...more] = c.Aw.split("/")
-            let A = this.o({A:Aname})[0]
+            // which could be on another Modus, they should have F/M*/A* unique names
+            let A
+            for (let M of this.F.every_Modus()) {
+                A = M.o({A:Aname})[0]
+                if (A) break
+            }
+            if (!A) {
+                // however, we don't know which PF it might be for from an F/M...
+                //  so rely on them passing w which can .up.M to find Modus
+                A = to_A.M.o({A:Aname})[0]
+            }
             if (!A) throw `!A %elvis=${t},Aw=${c.Aw}`
             // gives eg A:way/%elvis to w:way if no more %Aw
+            //  if there's only one A:way/w it'll deliver it there regardless
+            //   since eg we can get e:noop returned while %satisfied changes w
             c.Aw = more.length ? more.join("/") : Aname
             A.i(c)
+
             // and request main() ASAP
             //  < model wants, progress, which journeys are actively doing stuff
             this.main()
-        },333)
+        },11)
     },
 
     // the odd case of elvising to Modus itself ? used to do_A()
@@ -89,7 +108,7 @@
         setTimeout(() => {
             this.i({elvis:t,...c})
             this.main()
-        },333)
+        },11)
     },
     // serve the above, not in any A, doing whatever else afterwards
     async handle_elvising_to_Modus() {
@@ -193,7 +212,6 @@
 
 
 
-
     // all A/w think
     async agency_think() {
         await this.handle_elvising_to_Modus()
@@ -215,6 +233,8 @@
             for (let w of wN) {
                 await this.self_timekeeping(w)
 
+                let verb = eventedwN.length ? 'elvis' : 'think'
+                V.w>1 && console.log(`${verb} A:${A.sc.A} / w:${w.sc.w}`)
                 await this.Aw_think(A,w)
                 AwN.push({A,w})
             }
@@ -228,6 +248,8 @@
     async Aw_think(A,w) {
         // < make these TheA? which does this:
         w.up = A
+        A.M = this
+
         let method = w.sc.w
         if (method && this[method]) {
             try {
@@ -307,6 +329,10 @@
 
         // change what this A is wanting
         let nu = A.i(c)
+        nu.up = A
+        // want to attend it immediately
+        this.i_elvis(w,'noop',{A:nu,way_thenced:1})
+        // < GOING? we're not replacing w anymore? just drop and insert
         // < how better to express about avoiding|kind-of being resolved
         // not resyncing nu/*
         nu.empty()
@@ -342,7 +368,7 @@
         let topD = this.Tr.sc.D
         // < why are there no %journeys at this point? huh?
         for (let j of topD.o({journey:1,oaims:1})) {
-            let was = j.oa({path:1}) ? this.Se.j_to_uri(j) : '??'
+            // let was = j.oa({path:1}) ? this.Se.j_to_uri(j) : '??'
             // console.log(`${this.constructor.name} journeys were: ${j.sc.journey} to ${was}`)
         }
 
@@ -384,7 +410,7 @@
             })
             // a tiny Selection.process() watching path change
             if (c.path_now != c.path_was) {
-                console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
+                V.w && console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
                 // < also eg w:rastock/%waits:A:Directory should there and back
                 this.i_elvis(w,'putjourney',{Aw:'Directory',from:w.sc.w,reply:A})
             }
@@ -434,6 +460,7 @@
     // eg M/%spare_worker=A:hunting indicates capacity to make more records
     async rest(A,w) {
         w.i({see:"At rest"})
+        w.r({aim:1},{})
         await A.r({resting:1})
     },
 
@@ -453,7 +480,7 @@
             let was_reset = (A.o1({was_reset:1})[0] || 0) + 1
             await A.r({was_reset})
             
-            this.main()
+            this.main() // < can it aim at A/* ?
             return true
         }
     },
@@ -469,6 +496,10 @@
         if (A.c.meander_then) {
             w.sc.then = A.c.meander_then
         }
+        if (!A.c.meandered_before) {
+            console.log("Initial w:meander")
+        }
+        A.c.meandered_before = true
 
         let loopy = 11
         let dir:TheD

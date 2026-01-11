@@ -10,10 +10,12 @@
 
     // all about the re%record and its /pr%preview|stream
     //  the only type of file we move atm
+    const V = {}
+    V.radiostock = 2
 
 
     onMount(() => {
-        M.main()
+        // M.main() // < GOING?
     })
     M.eatfunc({
 
@@ -220,6 +222,9 @@
             hmm(() => hmm(() => {
                 console.warn(`re=${re.sc.enid} didn't get %EO${q.keyword} after stopped`)
                 if (q.keyword == 'preview') {
+                    if (!lastest_pr) {
+                        throw "never got a preview!"
+                    }
                     // < these occasionally slip by without an EOpreview?
                     //    may replicate out to cache|transmit before we notice and fix this
                     //   sometimes %EOpreview is not determined during last aud.on_recording
@@ -397,7 +402,7 @@
                         if (re) {
                             // Mark this file as warmed up
                             D.i({warmed_up: 1})
-                            console.log(`warmed up radiostock: ${D.sc.name}`)
+                            V.radiostock && console.log(`warmed up radiostock: ${D.sc.name}`)
                             
                             yield re;
                         }
@@ -424,7 +429,7 @@
                     
                     // avoid doing it again
                     re.i({in_radiostock:name})
-                    console.log(`Wrote record to disk: ${name}`);
+                    V.radiostock && console.log(`Wrote record to disk: ${name}`);
                 } catch (err) {
                     console.error(`Failed to write record to disk:`, err);
                     throw err;
@@ -468,9 +473,12 @@
                     throw err;
                 }
             },
+            // tidy up zero-length radiostocks
+            //  caused by chrome crashing while writing
+            //   it journals to this other file then moves into place
+            //    like preparing a new branch in git then just changing a link to it
             async tidy_crswap(sD,name) {
                 const DL = this.D_to_DL(sD);
-                // investigate zero-length radiostocks
                 let crswapFiles = sD.o({Tree: 1, name: 1})
                     .filter((D: TheD) => D.sc.name.endsWith(name+'.crswap'))
                 for (let oD of crswapFiles) {
