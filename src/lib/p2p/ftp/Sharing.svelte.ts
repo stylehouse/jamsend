@@ -69,7 +69,10 @@ export class ShareeModus extends RadioModus {
     // < rename perm... it's both pieces of trust, theirs and ours...
     async do_A() {
         await this.r({A:1},{})
-        let A = this.i({A:'punt'})
+        let V = this.i({A:'visual'})
+        V.i({w:'cytotermicaster'})
+        
+        let A = this.i({A:'audio'})
 
         // < so perm can change over time, do this every time, replacing %w?
         let perm = this.PF.perm

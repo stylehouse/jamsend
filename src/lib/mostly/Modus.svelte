@@ -94,6 +94,7 @@
 
     // putting this in $derived() avoids error when M is undefined
     let UI_component = $derived(M.UI_component)
+    let VJ = $derived(M.VJ)
 
 </script>
 
@@ -106,6 +107,13 @@
         <button onclick={lets_redraw}>redraw</button>
         {#if actions}<ActionButtons {actions} />{/if}
     </p>
+    {#if VJ}
+        <p>
+            VJ'd
+            <svelte:component this={VJ.sc.UI_component} {VJ} {M} ></svelte:component>
+        </p>
+    {/if}
+    
     <Agency {M} ></Agency>
     {#if UI_component}
         <p>

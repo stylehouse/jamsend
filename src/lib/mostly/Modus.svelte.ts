@@ -17,6 +17,8 @@ abstract class ModusItself extends TheC  {
     // < FeatureIsms. PF.F = F
     F:PeeringFeature
     PF:PierFeature
+    // possible %UI_component haver
+    VJ?:TheC = $state()
     
     // suppose you will develop your *Modus while looking at a Strata
     a_Strata?:Strata = $state()
