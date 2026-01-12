@@ -105,6 +105,7 @@ export class DirectoryModus extends RadioModus {
         this.i({A:'Bob Records'}).i({w:'rahunting'})
 
         this.i({A:'radiostock'})
+        this.i({A:'rapiracy'})
 
         this.main()
     }

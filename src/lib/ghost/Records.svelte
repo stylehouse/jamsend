@@ -21,7 +21,7 @@
     const MIN_GAIN_DB = -20
 
     const V = {}
-    V.radiostock = 2
+    V.radiostock = 0
 
     onMount(async () => {
         // Import needles now, onMount only ever runs in the browser

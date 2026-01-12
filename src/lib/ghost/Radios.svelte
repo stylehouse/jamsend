@@ -24,8 +24,8 @@
     const STAY_AHEAD_OF_ACK_SEQ = 7 // many re/pr to load ahead
 
     const V = {}
-    V.plau = 2
-    V.irec = 1
+    V.plau = 0
+    V.irec = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -850,7 +850,7 @@
                         io.sc.ostream(re)
                     }
                     // for more re
-                    rr.i({gota:"orecord"})
+                    // rr.i({gota:"orecord"})
 
                     dealeth(A,w,co,rr,client)
                 })

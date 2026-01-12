@@ -57,6 +57,9 @@
         console.log(`Modus ${this.constructor.name} has ${this.S.constructor.name}`)
         
         setTimeout(() => {
+            // by default, just a w wants to wake itself
+            t ||= 'noop'
+            c ||= {A:w}
             // this is the address scheme
             let given_A // might be a w
             let to_A
