@@ -91,7 +91,7 @@
 
                         if (!io) throw "can't opiracy"
                         let pub = this.PF.Pier.Ud+''
-                        console.log(`got unemit opiracy: ${uri}`)
+                        // console.log(`got unemit opiracy: ${uri}`)
                         await io.sc.o_descripted(pub,uri)
                     })
                 },
@@ -100,9 +100,9 @@
                     await this.c_mutex(w,'i_descripted', async () => {
                         w = this.refresh_C([A,w])
 
-                        console.log("The piracy download: ",N)
-
-                        let de = await w.r({uri:1,descripted:1})
+                        // console.log("The piracy download: ",N)
+                        let de = await w.r({uri,descripted:1})
+                        de.empty()
                         for (let fasc of N) {
                             let fa = de.i(tex({},fasc))
                             for (let nisc of fasc.nibula) {
@@ -224,11 +224,15 @@
                 let nibula = []
                 rd.i({factoid:1,uri:path.join('/'),nibula})
                 for (let Di of D.o({Tree:1})) {
-                    let ni = D.c.T.sc.n
-                    if (ni.sc.nib == 'blob' && !D.oa({readin:1,type:'track'})) {
-                        // ignore .cue, .log and other junk
-                        // < albumart requires SafetyNet
-                        continue
+                    let ni = Di.c.T.sc.n
+                    if (ni.sc.nib == 'blob') {
+                        let istrack = Di.oa({readin:1,type:'track'})
+                        console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
+                        if (!istrack) {
+                            // ignore .cue, .log and other junk
+                            // < albumart requires SafetyNet
+                            continue
+                        }
                     }
                     nibula.push(sex({},ni.sc,'nib,name'))
                 }
@@ -239,6 +243,7 @@
             io.sc.i_descripted(rd)
             w.i({see:"did something about",thisdescripted:rd})
 
+            if ('endless replies') return
             w.drop(rd)
             await w.r({aim:1,category:'updir'},{})
             await w.r({aim:1,category:'dir'},{})
