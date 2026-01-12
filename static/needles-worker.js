@@ -1,0 +1,1 @@
+../node_modules/@domchristie/needles/dist/needles-worker.js

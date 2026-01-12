@@ -6,16 +6,28 @@
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
     import { CHUNK_SIZE, erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import { parseBuffer } from "music-metadata";
+    // import {LoudnessMeter} from "@domchristie/needles"
+    // Conditionally import needles only in browser
+    let LoudnessMeter;
    
     let {M} = $props()
-
     // all about the re%record and its /pr%preview|stream
     //  the only type of file we move atm
+    // < Heist originals
+
+    // Target loudness in LUFS
+    const TARGET_LUFS = -8.0
+    const MAX_GAIN = 6.0
+    const MIN_GAIN_DB = -20
+
     const V = {}
     V.radiostock = 2
 
-
     onMount(async () => {
+        // Import needles now, onMount only ever runs in the browser
+        const needles = await import('@domchristie/needles');
+        LoudnessMeter = needles.LoudnessMeter;
+
     await M.eatfunc({
 
     // for radio
@@ -44,12 +56,17 @@
         }
         w.i({buffers})
     },
-    async aud_eats_buffers(w,aud,D) {
+//#endregion
+//#region load, meta, LUFS
+    // this is the %record-producing aud buffer load wrapper
+    //  see also radio_hear() / enqueue() / aud.load()
+    async aud_eats_buffers(w,aud:Audiolet,D) {
         // load original encoded buffers
         let buffers = w.o1({buffers:1})[0]
         let uri = this.Se.D_to_uri(D)
         
         if (!buffers) throw "!buffers"
+
         // decode the stream
         try {
             await aud.load(buffers)
@@ -58,6 +75,7 @@
             // w:radiopreview catches this and goes back to w:meander
             throw erring(`original encoded buffers fail: ${uri}`,er)
         }
+
         // decode the metadata
         try {
             // < don't sometimes have to concat %buffers=[buffer,buffer]
@@ -69,6 +87,65 @@
             // w:radiopreview catches this and goes back to w:meander
             throw erring(`original encoded buffers fail to extract meta: ${uri}`,er)
         }
+
+        // measure LUFS loudness
+        //  saves you adjusting the volume for almost every track
+        //   to remain very near how you want it
+        //   music is as loud as it wants to be, usually -9dB
+        //    but classical is -18dB, pop -4dB, glitch -1dB
+        let audioBuffer = aud.playing_next.buffer
+        // let before = now_in_seconds_with_ms()
+        await this.aud_knows_loudness(aud,audioBuffer)
+        // let delta = now_in_seconds_with_ms() - before
+        // console.log(`loudnessMeter took ${delta.toFixed(3)} to say ${aud.loudness}`)
+
+    },
+    async aud_knows_loudness(aud:Audiolet,audioBuffer:AudioBufferSourceNode) {
+        const offlineCtx = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            audioBuffer.length,
+            audioBuffer.sampleRate
+        );
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+
+        
+        var loudnessMeter = LoudnessMeter({
+            source: source,
+            modes: ['integrated'],
+            workerUri: 'needles-worker.js'
+        })
+
+        let finished
+        let promise = new Promise((resolve) => finished = resolve)
+
+        loudnessMeter.on('dataavailable', function (event) {
+            aud.loudness = event.data.value
+            finished()
+        })
+
+        loudnessMeter.start()
+        return promise
+    },
+    // radio_hear() runs 
+    async aud_applies_loudness(A,w,re,aud) {
+        let loudness = re.sc.loudness
+        if (loudness == null) {
+            console.warn(`aud!loudness ${re.sc.enid}`)
+            return 1
+        }
+        // Calculate gain needed to reach target LUFS
+        const gainDb = TARGET_LUFS - loudness;
+        // Apply safety limits
+        const limitedGainDb = Math.max(MIN_GAIN_DB, Math.min(gainDb, this.dbToLinear(MAX_GAIN)));
+        // Convert to linear gain
+        const linearGain = this.dbToLinear(limitedGainDb);
+        
+        // up from silence
+        aud.gainNode.gain.setValueAtTime(linearGain, this.gat.now()/1000)
+    },
+    dbToLinear(db: number): number {
+        return Math.pow(10, db / 20);
     },
 
 
@@ -95,7 +172,8 @@
         if (q.keyword == 'preview') {
             c.meta = sex({},aud.metadata.common,'artist,album,title,year')
             c.title = `${c.meta.artist} - ${c.meta.title}`
-            console.log(`got meta: ${c.title}`,aud.metadata.common)
+            // console.log(`got meta: ${c.title}`,aud.metadata.common)
+            c.loudness = aud.loudness
         }
         re ||= w.i({record:1,
              ...await this.entropiate({offset,uri}),

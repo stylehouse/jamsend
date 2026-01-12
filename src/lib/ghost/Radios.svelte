@@ -9,22 +9,27 @@
     import Cytoscaping from "./Cytoscaping.svelte";
    
     let {M} = $props()
+    // making moves to provision and consume radio
 
     // $share/.jamsend/radiostock/*.webms
     const IGNORE_RADIOSTOCK_CACHE = true 
     const RADIOSTOCK_CACHE_LIMIT = 20 // items, they are timestamped
 
+    // < get these numbers down, which involves lots of testing?
+    //   adapt to slow cpu, which might be measured by punctuality of a callback?
+    //    want in-the-wild performance reports
+    //   PREVIEW_DURATION is the hardest to increase if not reaching...
     const PREVIEW_DURATION = 33 // seconds of preview
-    // < get this number down
     const MIN_LEFT_TO_WANT_STREAMING = 22
     const STAY_AHEAD_OF_ACK_SEQ = 7 // many re/pr to load ahead
+
     const V = {}
     V.plau = 2
     V.irec = 1
 
     onMount(async () => {
     await M.eatfunc({
-
+        
         async on_code_change() {
             // < bounces!?
             this.on_code_change = async () => {}
@@ -360,10 +365,14 @@
                     //   instead of having a pause while we decode...
                     listening()
                 }
+                this.aud_applies_loudness(A,w,re,aud)
                 aud.play()
+                au.sc.playing = 1
                 
                 V.plau && console.log(`plau now ${au.sc.pr.sc.seq}`)
-                au.sc.playing = 1
+                for (let no of w.o({nowPlaying:1})) {
+                    no.r({record_bit:1},{...pr.sc})
+                }
             }
 
             if (!plau) {

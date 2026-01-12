@@ -240,7 +240,7 @@
             //  if you do this we never leave this loop:
             // AN.push(A)
         }
-        this.agency_officing(AwN,AN)
+        await this.agency_officing(AwN,AN)
     },
     procure_ways(A):TheN {
         let wN = A.oa({w:1})

@@ -22,7 +22,7 @@ export class RadioModus extends RecordModus {
     }
     
 }
-
+type LUFS = number
 export class SoundSystem {
     M: Modus
 
@@ -230,6 +230,9 @@ export class Audiolet {
         if (!this.pl)
         return this.duration() - this.along()
     }
+    // wrappers around load() may give us:
+    loudness?: LUFS
+    metadata?: {artist:string,album:string,title:string,year:string}
     async load(encoded:Array<ArrayBuffer>) {
         let stretch = await this.decode_stretch(encoded)
         stretch.onended = () => {
