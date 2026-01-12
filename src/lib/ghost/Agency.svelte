@@ -6,7 +6,7 @@
 
     let {M} = $props()
     const V = {}
-    V.w = 2
+    V.w = 0
 
     onMount(async () => {
     await M.eatfunc({

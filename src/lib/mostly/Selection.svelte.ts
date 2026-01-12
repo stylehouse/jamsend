@@ -667,7 +667,8 @@ class Dierarchy extends SelectionItself {
     async aim_to_open(
         w: TheC, 
         path: string[], 
-        spawn_fn: (parentD: TheD, pathbit: string) => Promise<void>
+        spawn_fn: (parentD: TheD, pathbit: string) => Promise<void>,
+        category = 'five', // so these %aim can be replaced away if you have many categories
     ): Promise<TheD | undefined> {
         let is_awake = (D:TheD) => {
             let ope = D && D.o1({v:1,openity:1})[0]
@@ -689,7 +690,7 @@ class Dierarchy extends SelectionItself {
             apath.push(pathbit)
             at = apath.join('/')
 
-            D = await this.aim_for(w,apath)
+            D = await this.aim_for(w,apath,category)
             if (!D) {
                 if (uD) {
                     // assume we must make it
@@ -724,9 +725,9 @@ class Dierarchy extends SelectionItself {
         // let seq = ao.seq + 1
         return D
     }
-    async aim_for(w,path):TheD|null {
+    async aim_for(w,path,category):TheD|null {
         // journey at it
-        let ai = await w.r({aim:1})
+        let ai = await w.r({aim:1,category})
         await ai.replace({path:1}, async () => {
             this.i_path_path(ai,path)
         })

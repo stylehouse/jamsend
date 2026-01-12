@@ -13,14 +13,22 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#endregion
+//#region w:cytotermicaster
         // on the PF Sharee
         async cytotermicaster(A,w) {
             w.i({see:"Some great visuals"})
 
             // "takes over" doing visuals for the Modus
-            this.VJ = await w.r({VJ:w,UI_component:Cytoscape})
+            this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
             for (let e of this.o_elvis(w,'IamyourUI')) {
                 await w.r(sex({cytool:1},e.sc,'node_edger'))
+            }
+            if (!w.oa({cytool:1,node_edger:1})) {
+                // < redesign this for times when the UI won't re-elvis us...
+                if (M.node_edger) {
+                    await w.r({cytool:1,node_edger:M.node_edger})
+                }
             }
             if (!w.oa({cytool:1,node_edger:1})) return w.i({waits:'for UI'})
 
@@ -40,10 +48,10 @@
                     }
                 }
                 else {
-                    await w.r({uri,wants_descripted:1})
+                    await w.r({uri,wants_descripted:1},{})
                     // we have the info!
 
-                    w.i({see:"haveit",theinfo:"descripted"})
+                    w.i({see:"haveitall",theinfo:"descripted"})
                 }
             }
         },
@@ -82,8 +90,9 @@
                         w = this.refresh_C([A,w])
 
                         if (!io) throw "can't opiracy"
+                        let pub = this.PF.Pier.Ud+''
                         console.log(`got unemit opiracy: ${uri}`)
-                        io.sc.opiracy(uri)
+                        await io.sc.o_descripted(pub,uri)
                     })
                 },
                 i_descripted: async ({uri,N}:{uri:string}) => {
@@ -91,7 +100,7 @@
                     await this.c_mutex(w,'i_descripted', async () => {
                         w = this.refresh_C([A,w])
 
-                        let de = await w.r({uri:1,descripted:1})
+                        let de = await w.r({uri,descripted:1})
                         de.i({info:3})
                         de.i({info:6,above:1})
                         de.i({info:9,nearer:1})
@@ -104,21 +113,69 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#endregion
+//#region w:rapiracy
         // in a DirectoryModus, a shipping clerk
         async rapiracy(A,w) {
-            this.r({io:'radiopiracy'},{
-                opiracy: async (uri) => {
+            let io = this.r({io:'radiopiracy'},{
+                o_descripted: async (pub,uri) => {
                     w = this.refresh_C([A,w])
 
-                    w.i({request_descripted:uri})
+                    w.r({request_descripted:uri,pub})
                     this.i_elvis(w)
+                },
+                // at the end of this w, we return the result through here:
+                i_descripted: async (rd) => {
+                    let N = rd.o({factoid:1}).map(de => fa.sc)
+
+                    let pub = this.pub
+                    let Pier = this.F.eer.Piers.get(pub)
+                    if (!Pier) throw `!Pier ${pub}`
+                    // and also use this particular feature's emit
+                    //  to get it to the corresponding feature on the other end
+                    let PF = Pier.features.get(this.F.trust_name)
+                    PF.emit('i_descripted',{uri:rd.sc.uri,N})
                 },
             })
 
-            for (let rd of w.o({request_descripted:1})) {
-                w.i({see:"gotta do something about",thisdescripted:rd})
-            }
-        }
+            let rd = w.o({request_descripted:1})[0]
+            if (!rd) return
+
+            let uri = rd.sc.uri
+            let path = uri.split('/')
+            // resolve ourselves to this Se
+            // < pick between many DirectoryShare depending on uri at io.orecord?
+            let topname = path.shift()
+            if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
+
+            w.i({see:"gotta do something about",thisdescripted:rd})
+        },
 
         
 

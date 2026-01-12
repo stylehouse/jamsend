@@ -26,6 +26,8 @@
     const V = {}
     V.plau = 0
     V.irec = 0
+    V.tx = 0
+    V.rastream = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -226,7 +228,7 @@
         let KEEP_AHEAD = 5
         if (left < KEEP_AHEAD) {
             w.i({see:'acquiring more...'})
-            console.log(`orecord pls`)
+            V.tx && console.log(`orecord pls`)
             await this.PF.emit('orecord',{client:w.c.cursor})
         }
         if (!them.length) {
@@ -315,8 +317,9 @@
             if (last_live_edge_delay) {
                 let delta = behind - last_live_edge_delay
                 if (behind < 15) {
-                    (behind < 3.141 ? console.warn : console.log)
-                        (`live edge: ${behind.toFixed(3)}, delta: ${delta.toFixed(3)}`)
+                    let say = `live edge: ${behind.toFixed(3)}, delta: ${delta.toFixed(3)}`
+                    behind < 3.141 ? console.warn(say)
+                        : V.tx && console.log(say)
                     if (behind < 3.141) {
                         // getting close enough to break soon! better freak them out
                         // < make it seem like this weakness comes from physics
@@ -676,7 +679,7 @@
             let buffer = pr.sc.buffer
             if (!buffer) throw "!buffer"
             if (!buffer instanceof ArrayBuffer) throw "~buffer"
-            console.log(`${blah(pr)} send`)
+            V.tx && console.log(`${blah(pr)} send`)
             await this.PF.emit('irecord',{
                 re: sex(tex({},re.sc),re.sc,'meta'),
                 pr: tex({},pr.sc),
@@ -700,7 +703,7 @@
                     let last_ack_seq = re.c.client_ack_seq?.[client] || 0
                     let not_too_far_ahead = last_ack_seq + STAY_AHEAD_OF_ACK_SEQ
                     if (pr.sc.seq > not_too_far_ahead) {
-                        console.log(`cooling the spooling @${pr.sc.seq}`)
+                        V.tx && console.log(`cooling the spooling @${pr.sc.seq}`)
                         return
                     }
                     if (!pr.sc.buffer) {
@@ -709,7 +712,7 @@
                         //    that the chunks just after the %preview is already de-buffered
                         throw "ohno, hit dropped %record memory"
                     }
-                    console.log(`soundpooling ${spooling} goes ${re.sc.enid}@${pr.sc.seq}`)
+                    V.tx && console.log(`soundpooling ${spooling} goes ${re.sc.enid}@${pr.sc.seq}`)
                     await sending(pr)
                     await this.co_cursor_save(co,co,pr)
                     some = true
@@ -761,7 +764,7 @@
                 return
             }
             this.sent_re_client_enids[`${client} ${re.sc.enid}`] = true
-            console.log(`broad: orecord: sendeth: ${re.sc.enid} to ${client}`)
+            V.tx && console.log(`broad: orecord: sendeth: ${re.sc.enid} to ${client}`)
             
             // < see: don't trust leftover A/re/*%stream
             await re.r({stream:1},{})
@@ -802,7 +805,7 @@
             }
             else {
                 // can send when one arrives
-                console.log("broad: orecord: excitable")
+                V.tx && console.log("broad: orecord: excitable")
                 await rr.r({excitable:1})
 
                 io?.sc.ohhi()
@@ -833,7 +836,7 @@
                                 io.sc.ostream(re,{unstream:1})
                             }
                         }
-                        console.log("broad: orecord: ack_seq="+ack_seq)
+                        V.tx && console.log("broad: orecord: ack_seq="+ack_seq)
                         let promising = await this.Cpromise(re)
                         if (!promising) {
                             console.warn(`lost track of what we're feeding them`)
@@ -846,7 +849,7 @@
                         // tell F...w:radiostock to engage a stream
                         let re = A.o({record:1,enid})[0]
                         if (!re) return console.warn(`orecord: don't know re=${enid}`)
-                        console.log("broad: orecord: want_streaming: "+enid)
+                        V.tx && console.log("broad: orecord: want_streaming: "+enid)
                         io.sc.ostream(re)
                     }
                     // for more re
@@ -875,7 +878,7 @@
         let left = await this.co_cursor_N_least_left(co,them)
         let total = them.length
         await w.r({stocklevels:1,left,total})
-        console.log(`broad: has ${left} left of ${total}`)
+        V.tx && console.log(`broad: has ${left} left of ${total}`)
 
         let KEEP_AHEAD = 5
         if (left < KEEP_AHEAD) {
@@ -1120,7 +1123,7 @@
             let audienced = Object.values(re.c.client_ack_seq || {})
                 .some(seq => (seq+20) > pr.sc.seq * 0.34 && seq < pr.sc.seq+2)
             if (!audienced) {
-                console.log(`rastream:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
+                V.rastream && console.log(`rastream:${enid} stream @${pr.sc.seq} abandoned`, re.c.client_ack_seq)
                 st.c.stop()
             }
         }
@@ -1135,7 +1138,7 @@
         
 
         if (!w.oa({buffers:1})) {
-            console.log(`rastream:${enid} loads`)
+            V.rastream && console.log(`rastream:${enid} loads`)
             re.i({they_want_streaming:1})
             await this.radiostreaming_i_buffers(A,w,D)
         }
@@ -1147,7 +1150,7 @@
         let ip = re.o({in_progress:'preview'})[0]
         let saved_up_chunksc:TheUniversal[] = []
         if (ip) {
-            console.log(`rastream:${enid}: waiting until %previews++ done`)
+            V.rastream && console.log(`rastream:${enid}: waiting until %previews++ done`)
             // we save up our chunks of recording
             w.c.on_i_chunksc = (ore:TheC,prsc:TheUniversal) => {
                 if (ore != re) throw "~re"

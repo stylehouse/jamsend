@@ -17,9 +17,10 @@
     let w = VJ.sc.VJ
     // < put interface on M?
     let node_edger = {}
+    M.node_edger = node_edger
     M.i_elvis(w,'IamyourUI',{A:w,node_edger,thingsing:'L'})
 
 </script>
 
 
-<h3>WHICH EXISTS</h3>
+<h3>Cytoscape</h3>
