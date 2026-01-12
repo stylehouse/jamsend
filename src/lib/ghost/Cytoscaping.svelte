@@ -44,11 +44,11 @@
                     if (!w.oa({uri,wants_descripted:1})) {
                         console.log(`want o_descripted`)
                         await this.PF.emit('o_descripted',{uri:np.sc.uri})
-                        w.i({uri,wants_descripted:1})
+                        w.i({desc:1,uri,wants_descripted:1})
                     }
                 }
                 else {
-                    await w.r({uri,wants_descripted:1},{})
+                    await w.r({desc:1,uri,wants_descripted:1},{})
                     // we have the info!
 
                     w.i({see:"haveitall",theinfo:"descripted"})
@@ -100,10 +100,15 @@
                     await this.c_mutex(w,'i_descripted', async () => {
                         w = this.refresh_C([A,w])
 
-                        let de = await w.r({uri,descripted:1})
-                        de.i({info:3})
-                        de.i({info:6,above:1})
-                        de.i({info:9,nearer:1})
+                        console.log("The piracy download: ",N)
+
+                        let de = await w.r({uri:1,descripted:1})
+                        for (let fasc of N) {
+                            let fa = de.i(tex({},fasc))
+                            for (let nisc of fasc.nibula) {
+                                fa.i(nisc)
+                            }
+                        }
                         this.i_elvis(w)
                     })
                 },
@@ -139,34 +144,59 @@
 
 
 
-//#endregion
-//#region w:rapiracy
+
+        
+
+
         // in a DirectoryModus, a shipping clerk
         async rapiracy(A,w) {
-            let io = this.r({io:'radiopiracy'},{
+            let io = await this.r({io:'radiopiracy'},{
                 o_descripted: async (pub,uri) => {
                     w = this.refresh_C([A,w])
 
-                    w.r({request_descripted:uri,pub})
+                    w.r({request_descripted:1,uri,pub})
                     this.i_elvis(w)
                 },
                 // at the end of this w, we return the result through here:
                 i_descripted: async (rd) => {
-                    let N = rd.o({factoid:1}).map(de => fa.sc)
-
-                    let pub = this.pub
+                    // < encoding C for sends...
+                    let N = rd.o({factoid:1}).map(fa=>fa.sc)
+                    
+                    let pub = rd.sc.pub
                     let Pier = this.F.eer.Piers.get(pub)
                     if (!Pier) throw `!Pier ${pub}`
                     // and also use this particular feature's emit
                     //  to get it to the corresponding feature on the other end
                     let PF = Pier.features.get(this.F.trust_name)
-                    PF.emit('i_descripted',{uri:rd.sc.uri,N})
+                    await PF.emit('i_descripted',{uri:rd.sc.uri,N})
                 },
             })
 
-            let rd = w.o({request_descripted:1})[0]
-            if (!rd) return
+            // respond to one request for sending blobs
+            let rs = w.o({request_shipping:1})[0]
+            if (rs) {
+                await this.rapiracy_shipping(A,w,io,rs)
+            }
 
+            // respond to one request for visions of the directory tree
+            let rd = w.o({request_descripted:1})[0]
+            if (rd) {
+                await this.rapiracy_descripted(A,w,io,rd)
+            }
+
+        },
+
+
+        // in a DirectoryModus, a shipping clerk
+        async rapiracy_shipping(A,w,io,rs) {
+            w.i({see:'piracy',want_to_ship:1}).i(rs)
+        },
+
+
+        // in a DirectoryModus, a shipping clerk
+        async rapiracy_descripted(A,w,io,rd) {
+
+            // wake up the targeted share %Tree
             let uri = rd.sc.uri
             let path = uri.split('/')
             // resolve ourselves to this Se
@@ -174,7 +204,44 @@
             let topname = path.shift()
             if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
 
-            w.i({see:"gotta do something about",thisdescripted:rd})
+            // path, or one of these, shall be what to download...
+            let dir = path.slice(0,path.length-1);
+            let up_dir = path.slice(0,path.length-2);
+
+            let uD = up_dir.length && await this.Se.aim_to_open(w,up_dir,async () => {},'updir')
+            let D = await this.Se.aim_to_open(w,dir,async (uD,pathbit) => {
+                throw `rastream:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
+            },'dir')
+            if (!D) return
+
+
+
+            // describe available sets of things to nab
+            rd.o({factoid:1}).map(fa => rd.drop(fa))
+            
+            let dirlisting = (path,D) => {
+                let n = D.c.T.sc.n
+                let nibula = []
+                rd.i({factoid:1,uri:path.join('/'),nibula})
+                for (let Di of D.o({Tree:1})) {
+                    let ni = D.c.T.sc.n
+                    if (ni.sc.nib == 'blob' && !D.oa({readin:1,type:'track'})) {
+                        // ignore .cue, .log and other junk
+                        // < albumart requires SafetyNet
+                        continue
+                    }
+                    nibula.push(sex({},ni.sc,'nib,name'))
+                }
+            }
+            uD && dirlisting(up_dir,uD)
+            dirlisting(dir,D)
+
+            io.sc.i_descripted(rd)
+            w.i({see:"did something about",thisdescripted:rd})
+
+            w.drop(rd)
+            await w.r({aim:1,category:'updir'},{})
+            await w.r({aim:1,category:'dir'},{})
         },
 
         
