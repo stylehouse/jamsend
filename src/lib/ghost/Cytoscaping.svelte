@@ -105,7 +105,7 @@
                         de.empty()
                         for (let fasc of N) {
                             let fa = de.i(tex({},fasc))
-                            for (let nisc of fasc.nibula) {
+                            for (let nisc of fasc.nibulae) {
                                 fa.i(nisc)
                             }
                         }
@@ -148,6 +148,8 @@
         
 
 
+//#endregion
+//#region w:rapiracy
         // in a DirectoryModus, a shipping clerk
         async rapiracy(A,w) {
             let io = await this.r({io:'radiopiracy'},{
@@ -221,20 +223,20 @@
             
             let dirlisting = (path,D) => {
                 let n = D.c.T.sc.n
-                let nibula = []
-                rd.i({factoid:1,uri:path.join('/'),nibula})
+                let nibulae = []
+                rd.i({factoid:1,uri:[topname,...path].join('/'),nibulae})
                 for (let Di of D.o({Tree:1})) {
                     let ni = Di.c.T.sc.n
                     if (ni.sc.nib == 'blob') {
                         let istrack = Di.oa({readin:1,type:'track'})
-                        console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
+                        // console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
                         if (!istrack) {
                             // ignore .cue, .log and other junk
                             // < albumart requires SafetyNet
                             continue
                         }
                     }
-                    nibula.push(sex({},ni.sc,'nib,name'))
+                    nibulae.push(sex({},ni.sc,'nib,name'))
                 }
             }
             uD && dirlisting(up_dir,uD)

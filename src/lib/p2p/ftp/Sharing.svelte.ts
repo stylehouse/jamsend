@@ -35,6 +35,7 @@ export class SharesModus extends RadioModus {
         await this.r({A:1},{})
         this.i({A:'ragate'})
         this.i({A:'raglance'})
+        console.log(`do_A() for ${this.constructor.name}`)
     }
 
     async do_main() {
@@ -88,6 +89,7 @@ export class ShareeModus extends RadioModus {
             // < may both be on, share DJing, syncing many Pier's?
             A.i({is_both_listener_and_source:1})
         }
+        console.log(`do_A() for ${this.constructor.name}`)
         this.main()
     }
 

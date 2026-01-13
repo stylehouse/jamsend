@@ -107,6 +107,7 @@ export class DirectoryModus extends RadioModus {
         this.i({A:'radiostock'})
         this.i({A:'rapiracy'})
 
+        console.log(`do_A() for ${this.constructor.name}`)
         this.main()
     }
 
