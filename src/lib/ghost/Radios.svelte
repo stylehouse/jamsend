@@ -1191,7 +1191,7 @@
             // < stash such concerns at a lower level...
             w.c.on_recording = async (re,pr) => {
                 let also = pr.sc.EOstream ? ",EOstream" : ""
-                console.log(`rastream:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
+                V.rastream &&  console.log(`rastream:${enid} %stream,seq=${pr.sc.seq}${also} is in!`)
                 await this.Cpromise(re);
                 check_for_abandonment(pr)
             }

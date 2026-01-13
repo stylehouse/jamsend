@@ -180,7 +180,7 @@ export class Structure {
                 // notice '0 chill' etc genre|classification|purpose directories
                 if (p.p(/^(0|-) /i)) {
                     if (!said_collection++) {
-                        i_readin('inners',{type:'collection'})
+                        i_readin('name',{type:'collection'})
                     }
                 }
 

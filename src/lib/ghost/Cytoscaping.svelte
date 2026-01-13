@@ -100,12 +100,12 @@
                     await this.c_mutex(w,'i_descripted', async () => {
                         w = this.refresh_C([A,w])
 
-                        // console.log("The piracy download: ",N)
+                        console.log("The piracy download: ",N)
                         let de = await w.r({uri,descripted:1})
                         de.empty()
                         for (let fasc of N) {
                             let fa = de.i(tex({},fasc))
-                            for (let nisc of fasc.nibulae) {
+                            for (let nisc of fasc.N) {
                                 fa.i(nisc)
                             }
                         }
@@ -162,7 +162,10 @@
                 // at the end of this w, we return the result through here:
                 i_descripted: async (rd) => {
                     // < encoding C for sends...
-                    let N = rd.o({factoid:1}).map(fa=>fa.sc)
+                    let N = rd.o({factoid:1}).map(fa=>{
+                        console.log("A factoid: "+keyser(fa.sc))
+                        return fa.sc
+                    })
                     
                     let pub = rd.sc.pub
                     let Pier = this.F.eer.Piers.get(pub)
@@ -195,6 +198,17 @@
         },
 
 
+        async drift_up_D(D,y) {
+            let upD = D
+            let ups = 0
+            while (1) {
+                await y(upD,ups)
+                ups++
+                upD = upD.c.T.up?.sc.D
+                if (!upD || upD == this.Se.c.T.sc.D) break
+            }
+        },
+
         // in a DirectoryModus, a shipping clerk
         async rapiracy_descripted(A,w,io,rd) {
 
@@ -206,46 +220,60 @@
             let topname = path.shift()
             if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
 
-            // path, or one of these, shall be what to download...
+            // awake the %Tree where we want things
             let dir = path.slice(0,path.length-1);
-            let up_dir = path.slice(0,path.length-2);
-
-            let uD = up_dir.length && await this.Se.aim_to_open(w,up_dir,async () => {},'updir')
             let D = await this.Se.aim_to_open(w,dir,async (uD,pathbit) => {
                 throw `rastream:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
-            },'dir')
+            },'descripted')
             if (!D) return
 
 
 
             // describe available sets of things to nab
-            rd.o({factoid:1}).map(fa => rd.drop(fa))
-            
-            let dirlisting = (path,D) => {
-                let n = D.c.T.sc.n
-                let nibulae = []
-                rd.i({factoid:1,uri:[topname,...path].join('/'),nibulae})
-                for (let Di of D.o({Tree:1})) {
-                    let ni = Di.c.T.sc.n
-                    if (ni.sc.nib == 'blob') {
-                        let istrack = Di.oa({readin:1,type:'track'})
-                        // console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
-                        if (!istrack) {
-                            // ignore .cue, .log and other junk
-                            // < albumart requires SafetyNet
-                            continue
-                        }
-                    }
-                    nibulae.push(sex({},ni.sc,'nib,name'))
-                }
+            for (let fa of rd.o({factoid:1})) {
+                rd.drop(fa)
             }
-            uD && dirlisting(up_dir,uD)
-            dirlisting(dir,D)
+
+            // tell which are collection directories
+            await this.drift_up_D(D,async (D,ups) => {
+                let uri = this.Se.D_to_uri(D)
+                let c:any = {factoid:1,uri,N:[]}
+                console.log(`descripted the ${uri}:`,rd.o().map(keyser))
+
+
+                if (D.oa({readin:1,type:'collection'})) {
+                    // this is a music-type grouping
+                    //  they may or may not believe in replicating it
+                    c.N.push({readin:1,type:'collection'})
+                    console.log("A readin:1,type:'collection factoid: "+keyser(c))
+                }
+                else if (ups <2) {
+                    // the deepest two levels have /*%nib listed
+                    let N = D.o({Tree:1})
+                    if (N.length > 100) N = N.slice(0,100)
+
+                    for (let Di of N) {
+                        let ni = Di.c.T.sc.n
+                        if (ni.sc.nib == 'blob') {
+                            let istrack = Di.oa({readin:1,type:'track'})
+                            // console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
+                            if (!istrack) {
+                                // ignore .cue, .log and other junk
+                                // < albumart requires SafetyNet
+                                //    relying on the usual music art sources could work
+                                continue
+                            }
+                        }
+                        c.N.push(sex({},ni.sc,'nib,name'))
+                    }
+                }
+                if (c.N.length) rd.i(c)
+            })
 
             io.sc.i_descripted(rd)
             w.i({see:"did something about",thisdescripted:rd})
 
-            if ('endless replies') return
+            // if ('endless replies') return
             w.drop(rd)
             await w.r({aim:1,category:'updir'},{})
             await w.r({aim:1,category:'dir'},{})
