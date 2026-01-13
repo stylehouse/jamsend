@@ -3,13 +3,95 @@ import { SvelteMap } from "svelte/reactivity";
 // UI
 import Shares from "./Shares.svelte";
 import Sharee from "./Sharee.svelte";
-import { DirectoryListing, DirectoryShares } from "./Directory.svelte";
+import { DirectoryListing, DirectoryShare, DirectoryShares } from "./Directory.svelte";
 type percentage = number
 import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
 import { PeeringFeature, PierFeature,
          now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
 import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { RadioModus } from "./Audio.svelte";
+import type { Travel } from "$lib/mostly/Selection.svelte";
+
+//#endregion
+//#region DirectoryModus
+// ftp as a view to work with
+//  makes guesswork to provide defaults, remote plots may inject
+export class DirectoryModus extends RadioModus {
+    // js quirk: our constructor() / super() / assign() doesn't set .F|S
+    //  unless 'declare', because they are in the parent class also
+    declare F:PeeringSharing
+    declare S:DirectoryShare//|AnyShare // the Thing we're hotwiring
+
+    // into this Selection.process()
+    Se:Selection
+    Tr:Travel
+    thetime = 0
+
+    constructor(opt:Partial<DirectoryModus>) {
+        super(opt)
+
+        this.S.i_actions({
+            'j++': () => this.further_journey(),
+            'j--': () => this.further_journey({go:'backwards'}),
+            'Mo++': () => this.main(),
+            'hard': () => this.toggle_gohard(),
+            'A++': () => this.do_A(),
+        })
+    }
+
+
+
+
+    // click button events
+    // < manual directory browsing, w:meander takes care of it for us
+    // the events, nudges
+    async further_journey(opt?) {
+        let D = this.Tr.sc.D
+        if (!D.oa({journey:1})) {
+            this.Se.autovivify_journey(D)
+            return
+        }
+        await this.Se.journey_further(opt)
+        this.main()
+    }
+    async nameclick(D:TheD) {
+        let Se = this.Se
+        let topD = Se.c.T.sc.D
+        let journey = 'funsies'
+        topD.replace({journey}, async () => {
+            let j = topD.i({journey,clicked:1})
+            Se.i_path(j,D)
+        })
+        this.main()
+    }
+    // sleep when possible
+    hard = false
+    toggle_gohard() {
+        this.hard = !this.hard
+        console.log("going hard: "+this.hard)
+    }
+    // Agency parameterising and processing
+    // < it could want these A.is() or not, depending on how resetty we're trying to be
+    //    we might just be changing parameters on things from .perm
+    //    but trust changes can be totally Modus-resetting for now
+    async do_A() {
+        await this.r({A:1},{})
+        this.i({A:'Directory'})
+        
+        this.i({A:'rastream'})
+
+        this.i({A:'Alice Records'}).i({w:'rahunting'})
+        this.i({A:'Bob Records'}).i({w:'rahunting'})
+
+        this.i({A:'radiostock'})
+        this.i({A:'rapiracy'})
+
+        console.log(`do_A() for ${this.constructor.name}`)
+        this.main()
+    }
+
+}
+
 
 //#endregion
 //#region M:Shares

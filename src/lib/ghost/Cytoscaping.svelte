@@ -17,8 +17,6 @@
 //#region w:cytotermicaster
         // on the PF Sharee
         async cytotermicaster(A,w) {
-            w.i({see:"Some great visuals"})
-
             // "takes over" doing visuals for the Modus
             this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
             for (let e of this.o_elvis(w,'IamyourUI')) {
@@ -31,6 +29,8 @@
                 }
             }
             if (!w.oa({cytool:1,node_edger:1})) return w.i({waits:'for UI'})
+
+
 
             let {np,io} = await this.termicaster_resources(A,w)
             // np frontend and io backend.
@@ -50,10 +50,14 @@
                 else {
                     await w.r({desc:1,uri,wants_descripted:1},{})
                     // we have the info!
-
-                    w.i({see:"haveitall",theinfo:"descripted"})
                 }
             }
+
+            // < replicate all that into another structure
+            // < Selection.process() that
+            // < add+remove things from cytoscape!
+
+            //
         },
 
 

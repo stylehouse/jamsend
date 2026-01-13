@@ -2,8 +2,8 @@
     import { onMount } from 'svelte';
     import type { Peering } from '../Peerily.svelte';
     import Things from '../../data/Things.svelte'
-    import type { PeeringSharing } from './Sharing.svelte';
-    import { DirectoryModus, DirectoryShare } from './Directory.svelte';
+    import { DirectoryModus, type PeeringSharing } from './Sharing.svelte';
+    import { DirectoryShare } from './Directory.svelte';
     import Thingstashed from '$lib/data/Thingstashed.svelte';
     import Modus from '$lib/mostly/Modus.svelte';
     import ActionButtons from '../ui/ActionButtons.svelte';

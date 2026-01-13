@@ -7,6 +7,7 @@
     import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Records from "./Records.svelte";
     import Cytoscaping from "./Cytoscaping.svelte";
+    import Directory from "./Directory.svelte";
    
     let {M} = $props()
     // making moves to provision and consume radio
@@ -1269,3 +1270,4 @@
 
 <Records {M} ></Records>
 <Cytoscaping {M} ></Cytoscaping>
+<Directory {M}></Directory>
