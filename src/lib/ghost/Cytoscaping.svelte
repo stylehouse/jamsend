@@ -53,13 +53,50 @@
                 }
             }
 
-            // < replicate all that into another structure
-            // < Selection.process() that
-            // < add+remove things from cytoscape!
-
-            //
+            await this.termicaster_knows(A,w)
         },
 
+        // < replicate all that into another structure
+        // < Selection.process() that
+        // < add+remove things from cytoscape!
+        async termicaster_knows(A,w) {
+            // make C/nodes/edges
+            let C = await w.r({Cytotermia:'knows'})
+            C.empty()
+            for (let de of w.o({uri:1,descripted:1})) {
+                let path = de.sc.uri.split('/')
+                // path made of %bit,seq
+                map((bit,seq) => seq != 0 && C.i({bit,seq,de}), path)
+                let la
+                for (let bi of C.o({bit:1})) {
+                    if (la) la.i({con:1,left_of:bi})
+                    la = bi
+                }
+
+                for (let fa of de.o({factoid:1,uri:1})) {
+                    // a shorter uri
+                    let path = fa.sc.uri.split('/')
+                    let about = C.o({bit:path.slice(-1)[0],seq:path.length-1})[0]
+                    if (!about) throw "factoid not on the path"
+                    if (!about.sc.de.sc.uri.includes(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
+                    
+                    let la
+                    for (let ni of fa.o({})) {
+                        if (ni.sc.nib == 'dir') {
+                        }
+                        let gh = C.i(ni.sc)
+                        gh.i({con:1,aligned_of:about})
+                        if (la) la.i({con:1,above:gh})
+                    }
+                }
+
+
+            }
+
+
+
+
+        },
 
 
         // we'll be connected to one or both of
