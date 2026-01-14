@@ -243,7 +243,18 @@
             //  if you do this we never leave this loop:
             // AN.push(A)
         }
-        await this.agency_officing(AwN,AN)
+        
+        // wrapped in mutex for each w involved
+        let soupup = async (N) => {
+            let fn = N[0]
+            if (typeof fn == 'function') return await fn()
+            await this.c_mutex(fn,'Aw_think', async () => {
+                await soupup(N.slice(1))
+            })
+        }
+        // soupup([...AwN.map(c => c.w), async () => {
+            await this.agency_officing(AwN,AN)
+        // }])
     },
     procure_ways(A):TheN {
         let wN = A.oa({w:1})
@@ -271,14 +282,16 @@
         let method = w.sc.w
         if (method && this[method]) {
             try {
-                await w.r({waits:1},{})
-                await w.r({error:1},{})
-                await w.r({see:1},{})
+                await this.c_mutex(w,'Aw_think', async () => {
+                    await w.r({waits:1},{})
+                    await w.r({error:1},{})
+                    await w.r({see:1},{})
 
-                await this[method](A,w,w.sc.had)
+                    await this[method](A,w,w.sc.had)
 
-                // in-method-error-throwing problems of officing
-                this.elvised_completely(A,w)
+                    // in-method-error-throwing problems of officing
+                    this.elvised_completely(A,w)
+                })
             } catch (error) {
                 w.i({error: error.message || String(error)})
                 if (w.c.error_fn) {

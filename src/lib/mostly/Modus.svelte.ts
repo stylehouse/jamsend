@@ -236,10 +236,15 @@ abstract class TimeGallopia extends ModusItself {
 
     // < test the efficacy of this... born in chaos
     //   similarities with refresh_C()...
-    async c_mutex(w,t,do_fn) {
+    async c_mutex(w,name,do_fn) {
+        // < just w should be the lock identifier, name identifies the client|caller
+        //   but this 
+        // < make name more meaningful. we give it to erring() so far...
+        // < make it TheC.mutex(), lose name
+        let t = name;//'mutex'
         if (w.c[`${t}_promise`]) {
             await w.c[`${t}_promise`]
-            return this.c_mutex(w,t,do_fn)
+            return await this.c_mutex(w,t,do_fn)
         }
 
         // Create the next promise in the chain
@@ -250,11 +255,11 @@ abstract class TimeGallopia extends ModusItself {
             await do_fn()
         }
         catch (er) {
-            throw erring("c_mutex: "+t,er)
+            throw erring("c_mutex: "+name,er)
         }
         finally {
             delete w.c[`${t}_promise`] 
-            release()
+            await release()
         }
     }
 
