@@ -217,6 +217,10 @@ export function map(...args) {
     
     return waves.slice(-1)[0];
 }
+export function armap(...args) {
+    let s = map(...args)
+    return isar(s) ? s : Object.values(s)
+}
 
 // Filter array or object by predicate
 

@@ -275,12 +275,15 @@ class SelectionItself extends Travel {
 
                 let goners:TheD[] = []
                 let neus:TheD[] = []
+                let q = {}
+                if (Se.c.resolve_strict) q.strict= 1
                 await D.replace(Se.c.trace_sc,async()=>{
                     for (const oT of N) {
                         let oD = await Se.c.trace_fn?.(D,oT.sc.n,oT)
                         this.est_D_T(oD,oT)
                     }
                 },{
+                    strict: Se.c.resolve_strict,
                     // receive pairs of continuous-looking particles
                     pairs_fn:async (a:TheD,b:TheD)=>{
                         if (a && !b) {

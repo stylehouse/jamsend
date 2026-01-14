@@ -68,7 +68,7 @@
 
         let C = await this.termicaster_knows(A,w)
         
-        this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+        await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
 
         
     },
@@ -150,9 +150,10 @@
             //    nid being D's index of the foreign n.sc, the identity it is tracking
             //   and hopefully these new sort-of joins will +1 nicely
             //    like you'd work things out on paper
-            trace_sc: {Gra:1},          // fabricating D%Tree**
+            trace_sc: {Gra:2},          // fabricating D%Tree**
+            resolve_strict: 1,
             trace_fn: async (uD:TheD,n:TheC) => {
-                let D = uD.i({Gra:1,...n.sc})
+                let D = uD.i({Gra:2,...n.sc})
                 return D
             },
             // now for each of those, what can we see...
@@ -212,6 +213,10 @@
                         data.name = D.sc.name
                         data.class = D.sc.nib == 'dir' ? 'ayethree' : 'ayetwo'
                     }
+                    if (D.sc.type) {
+                        data.dir = 1
+                        data.name = D.sc.type
+                    }
                 }
                 D.c.T.sc.adding = {group,id:id_of(D),data}
             }
@@ -224,7 +229,9 @@
         let removing = []
         await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(T.sc.adding))
         await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(T.sc.removing))
-        // console.log("Cytochangeup",{adding,removing})
+        if (adding.length || removing.length) {
+            console.log("Cytochangeup",{adding,removing})
+        }
         node_edger.remove(removing)
 
         for (let add of adding) {
@@ -283,7 +290,11 @@
                         w = this.refresh_C([A,w])
 
                         console.log("The piracy download: ",N)
-                        let de = await w.r({uri,descripted:1})
+                        // has to be two-arg r() for not being pattern={uri:1}
+                        let was = w.o({uri:1,descripted:1})
+                        let de = await w.r({uri},{descripted:1})
+                        let now = w.o({uri:1,descripted:1})
+                        console.log(`i_descripted ${was.length} -> ${now.length}`)
                         de.empty()
                         for (let fasc of N) {
                             let fa = de.i(tex({},fasc))

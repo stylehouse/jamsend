@@ -1,7 +1,7 @@
 import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { isar, map, throttle } from "$lib/Y";
+import { armap, isar, map, throttle } from "$lib/Y";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
 const OPTIMISE_FOR_DX = true
@@ -549,7 +549,7 @@ export class Stuff extends TimeOffice {
                 // so by default, replacing a C keeps its C/**
 
                 // make a series of pairs of $n across time
-                let pairs = await this.resolve(this.X,this.X_before,partial)
+                let pairs = await this.resolve(this.X,this.X_before,partial,q)
                 for (let [a,b] of pairs) {
                     if (a && b) {
                         let innered = b.X?.z?.length
@@ -607,7 +607,7 @@ export class Stuff extends TimeOffice {
     //   n/* or n.sc.*.*
     // < we could resolve gradually, even one-at-a-time
     // make a series of pairs of $n across time
-    async resolve(X:TheX,oldX:TheX,partial:TheN|null) {
+    async resolve(X:TheX,oldX:TheX,partial:TheN|null,q={}) {
         if (!oldX?.z?.length) {
             // everything is new
             return (X.z||[]).map(n => [null,n])
@@ -727,6 +727,13 @@ export class Stuff extends TimeOffice {
                     //    lots of permuting?
                     // or just accept the first one?
                     //  they are sorted for uniqueness, won't re-claim...
+                    if (q.strict) {
+                        // be likely to drop and recreate things
+                        let valuesOf = (n) => armap(v=>v+'',n.sc).join(',')
+                        if (valuesOf(n) != valuesOf(oldn)) {
+                            return
+                        }
+                    }
                     claim(oldn,n)
                 })
             })
