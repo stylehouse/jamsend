@@ -97,7 +97,7 @@ And now these are the important user-mind things to persist in *Modusmem* and be
 
 - machine should be more feminine and competent
 - C and everything in Stuff.svelte.ts
-- Stuff.replace() and Stuff.resolve() are important to adapt to and study academically, makes a pattern more suited to [merge](https://en.wikipedia.org/wiki/Merge_(linguistics))
+- Stuff.replace() and Stuff.resolve() (aka re-identity) are important to adapt to and study academically, for a design pattern more suited to [merge](https://en.wikipedia.org/wiki/Merge_(linguistics))
 - Selection.process() as a care factory for intersecting realities
 
 ## goals
@@ -120,6 +120,6 @@ And now these are the important user-mind things to persist in *Modusmem* and be
 
 This project is licensed under the terms of the **GNU Affero General Public License v3.0 or later**. The full text of the license can be found in the [LICENSE](LICENSE) file.
 
-Also you must release everything you build with it that is useful, eg makes money, entirely enough to be as useful as it is for you. Don't hold back! You're about to die!
+Also you must release everything you build with it that is useful, eg makes money, entirely enough to be as useful as it is for you, with luscious writes about how it all is. Don't hold back! You're about to die!
 
 Copyright (c) 2025 github.com/stylehouse

@@ -196,8 +196,12 @@ class SelectionItself extends Travel {
         // .c += opt
         super(opt)
     }
-    // what the top D looks like (it is n/D)
-    process_sc:TheUniversal
+    // if D is given
+    process_D?:TheD
+    // what the top D looks like, if we put it at n/D,
+    //  and match_sc excludes it as we dive n**
+    process_sc?:TheUniversal
+
     // n** to travel
     declare match_sc:TheUniversal
     // what D** looks like (its tree basis, sans epiphytes)
@@ -228,13 +232,19 @@ class SelectionItself extends Travel {
         // the Selection is very similar but distinct from the Travel
         let Tr = new Travel()
 
-        // 
-
-        // hang the top D%Tree off the given|top n
-        await n.replace(Se.c.process_sc,async () => {
-            let D = n.i(Se.c.process_sc)
-            this.est_D_T(D,Tr)
-        })
+        let INFINITE_RESOURCES = false
+        if (Se.c.process_D) {
+            INFINITE_RESOURCES = true
+            // they keep the top D somewhere
+            this.est_D_T(Se.c.process_D,Tr)
+        }
+        else {
+            // hang the top D%Tree off the given|top n
+            await n.replace(Se.c.process_sc,async () => {
+                let D = n.i(Se.c.process_sc)
+                this.est_D_T(D,Tr)
+            })
+        }
         // Tr.sc.D/* is now as it was last time
         // < not our only one of these? do we want one on a resolve() leash
         //    that is following us down Se:Activation...
@@ -249,7 +259,9 @@ class SelectionItself extends Travel {
             each_fn: async (n:TheC,T:Travel) => {
                 let D:TheD = T.sc.D
 
-                await Se.journey_each_fn?.(D,T)
+                if (!INFINITE_RESOURCES) {
+                    await Se.journey_each_fn?.(D,T)
+                }
 
                 // console.log(`🔥 ${T.c.path.length} we ${keyser(n)}`)
                 // n/* can be created here, as we go
@@ -262,8 +274,8 @@ class SelectionItself extends Travel {
                 if (!D) throw "!top D"
                 if (T.c.top != Tr) throw "top!=Tr"
 
-                // D no longer there
-                let goners:TheD = []
+                let goners:TheD[] = []
+                let neus:TheD[] = []
                 await D.replace(Se.c.trace_sc,async()=>{
                     for (const oT of N) {
                         let oD = await Se.c.trace_fn?.(D,oT.sc.n,oT)
@@ -279,6 +291,7 @@ class SelectionItself extends Travel {
                         if (b && !a) {
                             // D/b is new!
                             if (b.c.T.up != T) debugger
+                            neus.push(b)
                             // this b means before, ie the previous creation of D
                             let inside_a_new_D = !T.sc.bD
                             if (!inside_a_new_D) {
@@ -310,8 +323,10 @@ class SelectionItself extends Travel {
                         oT.sc.n,
                         oT)
                 }
-                await this.journey_resolved_fn?.(T,N,goners)
-                await Se.c.resolved_fn?.(T,N,goners)
+                if (!INFINITE_RESOURCES) {
+                    await this.journey_resolved_fn?.(T,N,goners)
+                }
+                await Se.c.resolved_fn?.(T,N,goners,neus)
             },
             done_fn: async (n:TheC,T:Travel) => {
                 // the D** sphere!

@@ -7,6 +7,7 @@
     import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
+    import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte";
    
     let {M} = $props()
 
@@ -15,88 +16,155 @@
 
 //#endregion
 //#region w:cytotermicaster
-        // on the PF Sharee
-        async cytotermicaster(A,w) {
-            // "takes over" doing visuals for the Modus
-            this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
-            for (let e of this.o_elvis(w,'IamyourUI')) {
-                await w.r(sex({cytool:1},e.sc,'node_edger'))
+    // on the PF Sharee
+    async cytotermicaster(A,w) {
+        // "takes over" doing visuals for the Modus
+        this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
+        for (let e of this.o_elvis(w,'IamyourUI')) {
+            await w.r(sex({cytool:1},e.sc,'node_edger'))
+        }
+        if (!w.oa({cytool:1,node_edger:1})) {
+            // < redesign this for times when the UI won't re-elvis us...
+            if (M.node_edger) {
+                await w.r({cytool:1,node_edger:M.node_edger})
             }
-            if (!w.oa({cytool:1,node_edger:1})) {
-                // < redesign this for times when the UI won't re-elvis us...
-                if (M.node_edger) {
-                    await w.r({cytool:1,node_edger:M.node_edger})
+        }
+        let cynoed = w.o({cytool:1,node_edger:1})[0]
+        if (!cynoed) return w.i({waits:'for UI'})
+
+
+
+        let {np,io} = await this.termicaster_resources(A,w)
+        // np frontend and io backend.
+        // these two things talk to each other at either end
+        //  ie their nowPlaying attracts our radiopiracy
+        // when we have both they're doing different work, independently
+        if (np) {
+            let uri = np.sc.uri
+            let de = w.o({uri,descripted:1})[0]
+            if (!de) {
+                // ask for it
+                if (!w.oa({uri,wants_descripted:1})) {
+                    console.log(`want o_descripted`)
+                    await this.PF.emit('o_descripted',{uri:np.sc.uri})
+                    w.i({desc:1,uri,wants_descripted:1})
                 }
             }
-            if (!w.oa({cytool:1,node_edger:1})) return w.i({waits:'for UI'})
+            else {
+                await w.r({desc:1,uri,wants_descripted:1},{})
+                // hang info forever
+                // < have the last few of these, trailing off in 30s
+                //  < unless user is interacting with them
+                !de.oa({self:1,est:1})
+                    && de.i({self:1,est:now_in_seconds()})
+                // we have the info!
+            }
+        }
 
+        let C = await this.termicaster_knows(A,w)
+        
+        this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+    },
 
+    // replicate all that into another structure of C/nodes/edges
+    async termicaster_knows(A,w) {
+        let C = await w.r({Cytotermia:'knows'})
+        C.empty()
+        for (let de of w.o({uri:1,descripted:1})) {
+            let path = de.sc.uri.split('/')
+            // path made of %bit,seq
+            map((bit,seq) => seq != 0 && C.i({bit,seq,de}), path)
+            let la
+            for (let bi of C.o({bit:1})) {
+                if (la) la.i({con:1,left_of:bi})
+                la = bi
+            }
 
-            let {np,io} = await this.termicaster_resources(A,w)
-            // np frontend and io backend.
-            // these two things talk to each other at either end
-            //  ie their nowPlaying attracts our radiopiracy
-            // when we have both they're doing different work, independently
-            if (np) {
-                let uri = np.sc.uri
-                if (uri != w.o1({uri:1,descripted:1})[0]) {
-                    // ask for it
-                    if (!w.oa({uri,wants_descripted:1})) {
-                        console.log(`want o_descripted`)
-                        await this.PF.emit('o_descripted',{uri:np.sc.uri})
-                        w.i({desc:1,uri,wants_descripted:1})
+            for (let fa of de.o({factoid:1,uri:1})) {
+                // a shorter uri
+                let path = fa.sc.uri.split('/')
+                let about = C.o({bit:path.slice(-1)[0],seq:path.length-1})[0]
+                if (!about) throw "factoid not on the path"
+                if (!about.sc.de.sc.uri.includes(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
+                
+                let la
+                for (let ni of fa.o({})) {
+                    if (ni.sc.nib == 'dir') {
                     }
-                }
-                else {
-                    await w.r({desc:1,uri,wants_descripted:1},{})
-                    // we have the info!
+                    let gh = C.i(ni.sc)
+                    gh.i({con:1,aligned_of:about})
+                    if (la) la.i({con:1,above:gh})
                 }
             }
+        }
+        return C
+    },
+    async termicaster_cytologising(A,w,C,node_edger) {
+        let Se = new Selection()
+        // the top D that everything will be traced to, ongoingly
+        node_edger.D = await w.r({Se:'cytology'})
+        // for aiming...
+        let btw = `
+            hmm
+        `
 
-            await this.termicaster_knows(A,w)
-        },
+        
+        // look for new things in it
+        await Se.process({
+            n:C,
+            // we want a liberal match_sc so we have to host the top D somewhere else
+            process_D: node_edger.D,
 
-        // < replicate all that into another structure
+            match_sc: {},    // climbing everything
+            each_fn: async (D:TheD,n:TheC,T:Travel) => {
+                let bD = T.sc.bD
+
+            },
+
+            // re-describe each n/* into D/*%Tree
+            //  $D/* fills with each Dyn/$n*
+            //   the D is one step above this n
+            // D** is thence always fillable with other stuff, not of pattern_sc
+            // < resolve() maybe could n.sc <-> D.sc.nid, a copy of n.sc
+            //    nid being D's index of the foreign n.sc, the identity it is tracking
+            //   and hopefully these new sort-of joins will +1 nicely
+            //    like you'd work things out on paper
+            trace_sc: {Gra:1},          // fabricating D%Tree**
+            trace_fn: async (uD:TheD,n:TheC) => {
+                let D = uD.i({Gra:1,...n.sc})
+                return D
+            },
+            // now for each of those, what can we see...
+            traced_fn: async (D:TheD,bD:TheD,n:TheC,T:Travel) => {
+                if (!bD || bD.sc.name != D.sc.name) {
+                    if (bD) {
+                        console.warn(`process Renamed ${bD.sc.name} -> ${D.sc.name}`)
+                    }
+                    T.sc.needs_doing = true
+                }
+            },
+            resolved_fn: async (T:Travel,N:Travel[],goners:TheD,neus:TheD) => {
+                // nothing...? see also journey_resolved_fn 
+            },
+
+
+            // everything that's going to be|wake inside (D|n)** is there|awake now
+            //  so you can write other stuff in places
+            done_fn: async (D:TheD,n:TheC,T:Travel) => {
+                D.X_before && console.warn("Still transacting "+keyser(D))
+            },
+        })
         // < Selection.process() that
         // < add+remove things from cytoscape!
-        async termicaster_knows(A,w) {
-            // make C/nodes/edges
-            let C = await w.r({Cytotermia:'knows'})
-            C.empty()
-            for (let de of w.o({uri:1,descripted:1})) {
-                let path = de.sc.uri.split('/')
-                // path made of %bit,seq
-                map((bit,seq) => seq != 0 && C.i({bit,seq,de}), path)
-                let la
-                for (let bi of C.o({bit:1})) {
-                    if (la) la.i({con:1,left_of:bi})
-                    la = bi
-                }
 
-                for (let fa of de.o({factoid:1,uri:1})) {
-                    // a shorter uri
-                    let path = fa.sc.uri.split('/')
-                    let about = C.o({bit:path.slice(-1)[0],seq:path.length-1})[0]
-                    if (!about) throw "factoid not on the path"
-                    if (!about.sc.de.sc.uri.includes(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
-                    
-                    let la
-                    for (let ni of fa.o({})) {
-                        if (ni.sc.nib == 'dir') {
-                        }
-                        let gh = C.i(ni.sc)
-                        gh.i({con:1,aligned_of:about})
-                        if (la) la.i({con:1,above:gh})
-                    }
-                }
+        
+        // then more richocheting around of percolating waves of stuff
+        // GUESS_METADATA && await Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
+        // await Se.c.T.forward(async (T:Travel) => T.sc.thetime = this.thetime)
+        this.Tr = Se.c.T
+        this.Se = Se
+    },
 
-
-            }
-
-
-
-
-        },
 
 
         // we'll be connected to one or both of

@@ -237,7 +237,7 @@
                     // return T.sc.not = 'sleepable'
                 }
             },
-            resolved_fn: async (T:Travel,N:Array<Travel>,goners:TheN) => {
+            resolved_fn: async (T:Travel,N:Travel[],goners:TheD,neus:TheD) => {
                 // nothing...? see also journey_resolved_fn 
             },
 

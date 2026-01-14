@@ -8,6 +8,7 @@
     // and everything, interactively
     import cola from 'cytoscape-cola'
     import { onMount } from "svelte";
+    import { throttle } from "$lib/Y";
     let layeng = cola
     let layeng_name = 'cola'
     cytoscape.use(layeng)
@@ -23,7 +24,7 @@
         'height': '50',
         'font-size': '18',
         'font-weight': 'bold',
-        'label': `data(data.name)`,
+        'label': `data(name)`,
         'text-valign': 'center',
         'text-wrap': 'wrap',
         'text-max-width': '140',
@@ -167,22 +168,10 @@
     M.node_edger = node_edger
     M.i_elvis(w,'IamyourUI',{A:w,node_edger,thingsing:'L'})
 
-    let ele = null;
-    let cy = null;
-    onMount(() => {
-        cy = cytoscape({
-            container: ele,
-            // style: GraphStyles,
-        });
-        cy.on('select', 'node', () => selection_changed())
-        
-        let graph = test_graph()
-        load_graph(graph)
-        layout()
-    });
 
     function selection_changed() {
         window.eles = cy.$('node:selected')
+        console.log(`cytoscape selected nodes:`,window.eles)
     }
 
 
@@ -213,6 +202,19 @@
         }
     }
 
+    let ele = null;
+    let cy = null;
+    onMount(() => {
+        cy = cytoscape({
+            container: ele,
+            style: GraphStyles,
+        });
+        cy.on('select', 'node', () => selection_changed())
+        
+        let graph = test_graph()
+        load_graph(graph)
+        layout()
+    });
     let lay
     function layout() {
         lay = cy.layout({
@@ -234,16 +236,21 @@
 
 
 
+    //#endregion
+    //#region dealing
+
+
     function test_graph() {
         return {
             nodes: [
                 { id: 'n4', name: "inner", parent: 'n37' },
                 { id: 'n35', name: "rere", parent: 'n38' },
-                { id: 'n37', name: "med", parent: 'n38' },
-                { id: 'n38', name: "out" },
+                { id: 'n37', name: "med",class:'ayefour', parent: 'n38' },
+                { id: 'n38', name: "out",class:'ayefour' },
             ],
             edges: [
                 { id: 'e0', source: 'n35', target: 'n37', label: 'yad' },
+                { id: 'e1', source: 'n35', target: 'n38', label: 'yad' },
             ],
         }
     }
@@ -264,10 +271,26 @@
         } } ))
     }
 
+    node_edger.cy = cy
+    node_edger.add = (N) => {
+        cy.add(N)
+        on_graph_change()
+    }
+    node_edger.remove = (N) => {
+        cy.remove(N)
+        on_graph_change()
+    }
+    let on_graph_change = throttle(() => {
+        if (!lay) layout()
+        run_layout()
+    },100)
+
+
+
 
 </script>
 
-<button onclick={() => layout}>layout</button>
+<button onclick={() => layout()}>layout</button>
 <button onclick={() => run_layout()}>...</button>
 
 <h3>Cytoscape</h3>
