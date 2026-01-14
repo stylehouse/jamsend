@@ -138,6 +138,7 @@ export class ShareeModus extends RadioModus {
 
         this.S.i_actions({
             'Radio': () => this.turn_knob(),
+            'recyto': () => this.recyto(),
             'Mo++': () => this.main(),
             'C++': () => this.hard_reset(),
             'A++': () => this.do_A(),

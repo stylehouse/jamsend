@@ -140,9 +140,7 @@ export class Travel extends TheC {
         }
 
         // consider $n/*
-        if (T.c.many_fn) {
-            await T.c.many_fn(T.sc.n, N, T)
-        }
+        await T.c.many_fn?.(T.sc.n, N, T)
 
         // recurse into $n/*
         for (const oT of N) {
@@ -205,6 +203,7 @@ class SelectionItself extends Travel {
     // n** to travel
     declare match_sc:TheUniversal
     // what D** looks like (its tree basis, sans epiphytes)
+    // the big replace() is limited to the trace_sc
     trace_sc:TheUniversal
 
     each_fn?:Function
@@ -324,7 +323,7 @@ class SelectionItself extends Travel {
                         oT)
                 }
                 if (!INFINITE_RESOURCES) {
-                    await this.journey_resolved_fn?.(T,N,goners)
+                    await this.journey_resolved_fn?.(T,N,goners,neus)
                 }
                 await Se.c.resolved_fn?.(T,N,goners,neus)
             },
@@ -490,7 +489,7 @@ class Dierarchy extends SelectionItself {
     //  typescript insists on making these property definition form
     //   since they are declared in the super class
     // does the journey flow into here
-    journey_resolved_fn = async (T:Travel,N:Array<Travel>,goners:Array<TheD>) => {
+    journey_resolved_fn = async (T:Travel,N:Travel[],goners:TheD[],neus:TheD[]) => {
         for (let oT of N) {
             // < GOING? of course it does, it needs to think about being there in there.
             //   there's plenty of time to decide to sleep

@@ -4,7 +4,7 @@
     import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-    import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { erring, ex, grap, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte";
@@ -17,6 +17,11 @@
 //#endregion
 //#region w:cytotermicaster
     // on the PF Sharee
+    async recyto() {
+        this.node_edger.cy.remove('*')
+        this.node_edger.D.empty()
+        this.main()
+    },
     async cytotermicaster(A,w) {
         // "takes over" doing visuals for the Modus
         this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
@@ -64,6 +69,8 @@
         let C = await this.termicaster_knows(A,w)
         
         this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+
+        
     },
 
     // replicate all that into another structure of C/nodes/edges
@@ -107,9 +114,23 @@
         let btw = `
             hmm
         `
-
         
-        // look for new things in it
+        
+        // Selection.process() that
+        // look for new things|holes in it
+        let n_to_D = new Map()
+        let id_of = (D) => {
+            let id = D.o1({Dip:1})[0]
+            if (!id) {
+                // the eg %left_of=n needs to locate itself in the D**, where ids are
+                //  a sphere hop, also written n//D, ie some kind of lateral /
+                let n = D
+                D = n_to_D.get(n)
+                id = D.o1({Dip:1})[0]
+            }
+            if (!id) throw "!id"
+            return 'id_'+id
+        }
         await Se.process({
             n:C,
             // we want a liberal match_sc so we have to host the top D somewhere else
@@ -118,7 +139,7 @@
             match_sc: {},    // climbing everything
             each_fn: async (D:TheD,n:TheC,T:Travel) => {
                 let bD = T.sc.bD
-
+                n_to_D.set(n,D)
             },
 
             // re-describe each n/* into D/*%Tree
@@ -143,26 +164,78 @@
                     T.sc.needs_doing = true
                 }
             },
-            resolved_fn: async (T:Travel,N:Travel[],goners:TheD,neus:TheD) => {
+            resolved_fn: async (T:Travel,N:Travel[],goners:TheD[],neus:TheD[]) => {
+                let upD = T.sc.D
+                // all this other stuff we put in D**
+                //  isn't part of our basis of trace_sc %Gra
+                //  so never appear as D here, via goners etc...
+                // assign ids like 0_1_22_3
+                let Dip = upD.o({Dip:1})[0] || upD.i({Dip:'1',i:0})
+                if (Dip.sc.Dip == '1' && T != Se.c.T) throw "Dip=1 not top T"
+
+                for (let D of goners) {
+                    let group = D.sc.con ? 'edges' : 'nodes'
+                    D.c.T.sc.removing = {group,id:id_of(D)}
+                }
+                for (let D of neus) {
+                    // assign ids like 0_1_22_3
+                    if (D.oa({Dip:1})) throw "neu already %Dip"
+                    D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
+                    // come back once we have them all
+                    D.c.T.sc.is_neu = true
+                }
                 // nothing...? see also journey_resolved_fn 
             },
-
-
-            // everything that's going to be|wake inside (D|n)** is there|awake now
-            //  so you can write other stuff in places
-            done_fn: async (D:TheD,n:TheC,T:Travel) => {
-                D.X_before && console.warn("Still transacting "+keyser(D))
-            },
         })
-        // < Selection.process() that
-        // < add+remove things from cytoscape!
-
         
-        // then more richocheting around of percolating waves of stuff
-        // GUESS_METADATA && await Se.c.T.reverse(async (T:Travel) => await St.percolating_ads(T))
-        // await Se.c.T.forward(async (T:Travel) => T.sc.thetime = this.thetime)
+        // now everything has ids
+        await Se.c.T.forward(async (T:Travel) => {
+            let D = T.sc.D
+            if (T.sc.is_neu) {
+                let group = D.sc.con ? 'edges' : 'nodes'
+                let data:any = {}
+                if (D.sc.con) {
+                    // an edge
+                    let uD = D.c.T.up.sc.D
+                    let on = D.sc.left_of || D.sc.aligned_of
+                    if (!on) throw "edge type?"
+                    data.source = id_of(uD)
+                    data.target = id_of(on)
+                    data.label = D.sc.left_of ? "left" : 'aligned'
+                }
+                else {
+                    if (D.sc.bit) {
+                        data.name = D.sc.bit
+                        data.class = 'ayefour'
+                    }
+                    if (D.sc.nib) {
+                        data.name = D.sc.name
+                        data.class = D.sc.nib == 'dir' ? 'ayethree' : 'ayetwo'
+                    }
+                }
+                D.c.T.sc.adding = {group,id:id_of(D),data}
+            }
+        })
         this.Tr = Se.c.T
         this.Se = Se
+
+        // add+remove things from cytoscape!
+        let adding = []
+        let removing = []
+        await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(T.sc.adding))
+        await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(T.sc.removing))
+        // console.log("Cytochangeup",{adding,removing})
+        node_edger.remove(removing)
+
+        for (let add of adding) {
+            add.data.id = add.id
+        }
+        let adding_nodes = grop(add => add.group == 'nodes', adding)
+        node_edger.add(adding_nodes)
+        node_edger.add(adding)
+
+
+        
     },
 
 
