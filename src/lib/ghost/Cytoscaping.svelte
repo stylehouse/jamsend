@@ -7,7 +7,7 @@
     import { erring, ex, grap, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
-    import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte";
+    import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
    
     let {M} = $props()
 
@@ -23,6 +23,9 @@
         this.main()
     },
     async cytotermicaster(A,w) {
+        let {np,io} = await this.termicaster_resources(A,w)
+        if (!np) return w.i({see:'sitting still'})
+
         // "takes over" doing visuals for the Modus
         this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
         for (let e of this.o_elvis(w,'IamyourUI')) {
@@ -39,7 +42,8 @@
 
 
 
-        let {np,io} = await this.termicaster_resources(A,w)
+
+
         // np frontend and io backend.
         // these two things talk to each other at either end
         //  ie their nowPlaying attracts our radiopiracy
@@ -66,21 +70,66 @@
             }
         }
 
-        let C = await this.termicaster_knows(A,w)
-        
+        let C = 0 ? await this.termicaster_knows(A,w)
+            : await this.termicaster_testdata_knows(A,w)
+
         await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
     },
+
+    async termicaster_testdata_knows(A,w) {
+        let C = await w.r({Cytotermia:'fabricated'})
+        C.empty()
+        let upbits = (path,onwards) => {
+            let bits = grep(map((bit,seq) => {
+                if (seq != 0) {
+                    // may reuse the bit already there from another de
+                    return C.o({bit,seq:String(seq)})[0]
+                        || C.i({bit,seq})
+                }
+            }, path))
+            let la
+            let first
+            for (let bi of bits) {
+                if (la) la.i({con:1,left_of:bi})
+                la = bi
+                first ||= bi
+            }
+            if (onwards) {
+                if (w.o1({round:1,self:1})[0] % 3) {
+                }
+                else {
+                    let le = C.i({nib:'dir',name:'lemond'})
+                    le.i({con:1,aligned_of:first})
+                    le.i({con:1,aligned_of:la})
+                }
+            }
+        }
+        upbits(['music','0 chill','Clayborn','Monk'])
+        upbits(['music','0 chill','Ooh','Dog'], true)
+
+        return C
+    },
+
 
     // replicate all that into another structure of C/nodes/edges
     async termicaster_knows(A,w) {
         let C = await w.r({Cytotermia:'knows'})
         C.empty()
-        for (let de of w.o({uri:1,descripted:1})) {
+        let deN = w.o({uri:1,descripted:1})
+        this.whittle_N(deN,2)
+        for (let de of deN) {
             let path = de.sc.uri.split('/')
             // path made of %bit,seq
-            map((bit,seq) => seq != 0 && C.i({bit,seq,de}), path)
+
+            let bits = grep(map((bit,seq) => {
+                if (seq != 0) {
+                    // may reuse the bit already there from another de
+                    return C.o({bit,seq:String(seq)})[0]
+                        || C.i({bit,seq,de})
+                }
+            }, path))
             let la
-            for (let bi of C.o({bit:1})) {
+            for (let bi of bits) {
                 if (la) la.i({con:1,left_of:bi})
                 la = bi
             }
@@ -88,16 +137,21 @@
             for (let fa of de.o({factoid:1,uri:1})) {
                 // a shorter uri
                 let path = fa.sc.uri.split('/')
-                let about = C.o({bit:path.slice(-1)[0],seq:path.length-1})[0]
-                if (!about) throw "factoid not on the path"
-                if (!about.sc.de.sc.uri.includes(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
+                // skip the top level music/ dir, bits already has
+                //  and length = last indice - 1
+                let bit = bits[path.length-2]
+                if (!bit) throw "factoid not on the path"
+                if (!bit.sc.de.sc.uri.startsWith(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
                 
                 let la
                 for (let ni of fa.o({})) {
                     if (ni.sc.nib == 'dir') {
                     }
+                    else {
+                        continue
+                    }
                     let gh = C.i(ni.sc)
-                    gh.i({con:1,aligned_of:about})
+                    gh.i({con:1,aligned_of:bit})
                     if (la) la.i({con:1,above:gh})
                 }
             }
@@ -112,6 +166,8 @@
         let btw = `
             hmm
         `
+        let trace_sc = {Gra:2}
+        console.log(`Gra`)
         
         
         // Selection.process() that
@@ -128,6 +184,17 @@
             }
             if (!id) throw "!id"
             return 'id_'+id
+        }
+        let do_removing = async (T,D) => {
+            T.sc.removing ||= []
+            new Travel().dive({
+                n:D,
+                match_sc: trace_sc,
+                each_fn: async (n:TheC,nT:Travel) => {
+                    console.log(`-- at ${nT.c.path.length}, ${id_of(n)}: ${keyser(n)}`)
+                    T.sc.removing.push({id:id_of(n)})
+                },
+            })
         }
         await Se.process({
             n:C,
@@ -148,7 +215,7 @@
             //    nid being D's index of the foreign n.sc, the identity it is tracking
             //   and hopefully these new sort-of joins will +1 nicely
             //    like you'd work things out on paper
-            trace_sc: {Gra:2},          // fabricating D%Tree**
+            trace_sc,          // fabricating D%Tree**
             resolve_strict: 1,
             trace_fn: async (uD:TheD,n:TheC) => {
                 let D = uD.i({Gra:2,...n.sc})
@@ -171,15 +238,18 @@
                 // assign ids like 0_1_22_3
                 let Dip = upD.o({Dip:1})[0] || upD.i({Dip:'1',i:0})
                 if (Dip.sc.Dip == '1' && T != Se.c.T) throw "Dip=1 not top T"
+                if (!goners.length && !neus.length) return
+
+
 
                 for (let D of goners) {
-                    let group = D.sc.con ? 'edges' : 'nodes'
-                    D.c.T.sc.removing = {group,id:id_of(D)}
+                    await do_removing(T,D)
                 }
                 for (let D of neus) {
                     // assign ids like 0_1_22_3
                     if (D.oa({Dip:1})) throw "neu already %Dip"
                     D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
+                    console.log(`++ at ${T.c.path.length}, ${id_of(D)}: ${keyser(D)}`)
                     // come back once we have them all
                     D.c.T.sc.is_neu = true
                 }
@@ -208,6 +278,7 @@
                         data.class = 'ayefour'
                     }
                     if (D.sc.nib) {
+                        // return
                         data.name = D.sc.name
                         data.class = D.sc.nib == 'dir' ? 'ayethree' : 'ayetwo'
                     }
@@ -216,7 +287,8 @@
                         data.name = D.sc.type
                     }
                 }
-                D.c.T.sc.adding = {group,id:id_of(D),data}
+                T.sc.adding ||= []
+                T.sc.adding.push({group,id:id_of(D),data})
             }
         })
         this.Tr = Se.c.T
@@ -225,8 +297,8 @@
         // add+remove things from cytoscape!
         let adding = []
         let removing = []
-        await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(T.sc.adding))
-        await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(T.sc.removing))
+        await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(...T.sc.adding))
+        await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(...T.sc.removing))
         if (adding.length || removing.length) {
             console.log("Cytochangeup",{adding,removing})
         }

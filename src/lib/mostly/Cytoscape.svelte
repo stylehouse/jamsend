@@ -204,12 +204,13 @@
         });
         cy.on("select", "node", () => selection_changed());
 
-        let graph = test_graph();
-        load_graph(graph);
+        // let graph = test_graph();
+        // load_graph(graph);
         layout();
     });
     let lay;
     function layout() {
+        lay?.stop(); 
         lay = cy.layout({
             ...get_layout_options(),
         });
@@ -274,7 +275,9 @@
     };
     node_edger.remove = (N) => {
         if (!N.length) return
-        cy.remove(N);
+        for (let c of N) {
+            cy.getElementById(c.id).remove()
+        }
         on_graph_change();
     };
     let on_graph_change = throttle(() => {

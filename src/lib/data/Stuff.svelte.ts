@@ -1,7 +1,7 @@
 import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { armap, isar, map, throttle } from "$lib/Y";
+import { armap, isar, map, tex, throttle } from "$lib/Y";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
 const OPTIMISE_FOR_DX = true
@@ -728,7 +728,7 @@ export class Stuff extends TimeOffice {
                     // or just accept the first one?
                     //  they are sorted for uniqueness, won't re-claim...
                     if (q.strict) {
-                        // be likely to drop and recreate things
+                        // be more likely to drop and recreate things
                         let valuesOf = (n) => armap(v=>v+'',n.sc).join(',')
                         if (valuesOf(n) != valuesOf(oldn)) {
                             return

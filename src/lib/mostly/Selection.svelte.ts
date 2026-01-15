@@ -227,6 +227,7 @@ class SelectionItself extends Travel {
         const Se:Selection = this
         Object.assign(Se.c,d)
         const n = Se.c.n
+        if (!n) throw `!n`
         // go through n**
         // the Selection is very similar but distinct from the Travel
         let Tr = new Travel()
@@ -244,6 +245,7 @@ class SelectionItself extends Travel {
                 this.est_D_T(D,Tr)
             })
         }
+        if (!Tr.sc.D) throw `!D`
         // Tr.sc.D/* is now as it was last time
         // < not our only one of these? do we want one on a resolve() leash
         //    that is following us down Se:Activation...
