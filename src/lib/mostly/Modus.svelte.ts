@@ -4,7 +4,7 @@ import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring, grep, hak, iske, tex, throttle } from "$lib/Y";
+import { erring, grep, hak, iske, map, tex, throttle } from "$lib/Y";
 import type { Component } from "svelte";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
@@ -212,23 +212,26 @@ abstract class TimeGallopia extends ModusItself {
     //  by knowing the .o() path from Modus
     refresh_C(N,vanish_ok=false) {
         let where = this
+        let were = [where]
         let i = 0
         for (let into of N) {
             let sc = {}
             if (i == 1 && into.sc.w) {
                 // support changey w%*, but only one w is allowed
+                // < warn about it until w acks that this happens, via test data?
                 sc.w = into.sc.w
             }
             else {
                 sc = {...into.sc}
             }
-            sc = tex({}, sc)
+            sc = map(v=>String(v),tex({}, sc))
             // console.log(`so it could be `,sc)
             let possible = where.o(sc)
             if (possible.length > 1) throw "multitude"
+            if (!possible[0]) throw "not found"
             where = possible[0]
             if (!where && vanish_ok) return
-            if (!where) throw "not found"
+            were.push(where)
             i++
         }
         return where

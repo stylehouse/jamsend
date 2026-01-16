@@ -1075,7 +1075,7 @@
             if (!uri) throw "req load !uri"
             let rd = await radiopiracy.sc.o_descripted('',uri)
             rd.sc.return_fn = async () => {
-                console.log(`Got descripted local return: ${keyser(rd)}`)
+                // console.log(`Got descripted local return: ${keyser(rd)}`)
                 if (rd.sc.failed) {
                     let stockDL = this.D_to_DL(stockD)
                     let name = re.o1({in_radiostock:1})[0]
@@ -1086,6 +1086,11 @@
                 else {
                     await radiostock.sc.i(re)
                 }
+                req = this.refresh_C([A,w,req])
+                req.sc.finished = true
+            }
+            if (req.sc.finished) {
+                w.drop(req)
             }
         }
         
@@ -1117,7 +1122,6 @@
             o() {
                 return w.o(({...reqc}))
             },
-
         }
     },
 

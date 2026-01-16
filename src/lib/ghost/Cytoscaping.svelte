@@ -16,12 +16,15 @@
 
 //#endregion
 //#region w:cytotermicaster
-    // on the PF Sharee
+    // tell everything to cytoscape again
     async recyto() {
         this.node_edger.cy.remove('*')
         this.node_edger.D.empty()
         this.main()
     },
+    
+    // on the PF Sharee
+    // take nowPlaying somewhere interesting
     async cytotermicaster(A,w) {
         let {np,io} = await this.termicaster_resources(A,w)
 
@@ -791,6 +794,7 @@
         // if ('endless replies') return
         w.drop(rd)
         await w.r({aim:1,category:aim_name},{})
+        await w.r({aimed:1,category:aim_name},{})
     },
 
         
