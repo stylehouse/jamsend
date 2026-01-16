@@ -4,7 +4,7 @@
     import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-    import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { erring, ex, exactly, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Records from "./Records.svelte";
     import Cytoscaping from "./Cytoscaping.svelte";
     import Directory from "./Directory.svelte";
@@ -86,7 +86,6 @@
                 //    because without the sc arg it makes pattern_sc.* = 1
                 //   see replace() / IN_ORDER
                 // in case of
-                let exactly = (sc) => map(v => String(v),sc)
                 let re = A.o({record:1,enid:resc.enid})[0]
                     || await A.r(exactly(resc),resc)
                 // < dealing with repeat transmissions. this should be re.i()
@@ -1020,7 +1019,7 @@
             // shoves the DirectoryShare.modus in case it loses its interval
             // < why does it do that
             ohhi: async () => {
-                // mostly going for A:hunting, but everything likes staying alive
+                // mostly going for providers but everything likes staying alive
                 setTimeout(() => this.main(), 250)
             },
         })
@@ -1036,6 +1035,16 @@
         let keep_things = RADIOSTOCK_CACHE_LIMIT
         stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
         if (!stockD) return // also when ope<3
+        // gc for something we do...
+        console.log("Was in rs caching")
+        // < it doesn't like elvising this in or anything... it's impossible to get rid of?
+        // for (let e of this.o_elvis(w,'finished_load_random_records')) {
+        //     let req = e.sc.req
+        //     debugger
+        //     w.drop(req)
+        //     req.sc.elvissaid='go'
+        // }
+        
 
         // our records...
         let had = A.o({record:1})
@@ -1062,6 +1071,9 @@
         // load some
 
         let reqy = await this.requesty_serial(w,'load_random_records')
+        // < nothing can delete these?
+        // < it doesn't like elvising this in
+        await w.r({requesty_load_random_records:1,finished:1},{})
         let having = had.length + reqy.pending
         if (having < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
@@ -1069,7 +1081,14 @@
                 await reqy.i({re})
             }
         }
+
         for (let req of reqy.o()) {
+            if (req.sc.finished) {
+                debugger
+                w.drop(req)
+                req.sc.tolditto='go'
+                continue
+            }
             let re = req.sc.re
             let uri = re.sc.uri
             if (!uri) throw "req load !uri"
@@ -1088,15 +1107,13 @@
                 else {
                     await radiostock.sc.i(re)
                 }
+                // this.i_elvis(w,'finished_load_random_records',{req})
+                // return
                 // < use elvis instead of this magic:
                 setTimeout(() => {
                     req = this.refresh_C([A,w,req])
                     req.sc.finished = true
                 },200)
-            }
-            if (req.sc.finished) {
-                debugger
-                w.drop(req)
             }
         }
         
@@ -1113,6 +1130,7 @@
         reqc['requesty_'+t] = 1
         let req_serial:TheC
         let ison = async () => {
+            console.log(`requesty_serial(w,${t})`)
             req_serial = w.o({...reqserialc})[0]
             req_serial ||= await w.r({...reqserialc,i:1})
             req_serial.sc.i ||= 7

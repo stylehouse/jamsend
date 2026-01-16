@@ -446,7 +446,7 @@
             // a tiny Selection.process() watching path change
             if (c.path_now != c.path_was) {
                 V.w && console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
-                // < also eg w:rastock/%waits:A:Directory should there and back
+                // < also eg w:radiostock/%waits:A:Directory should there and back
                 this.i_elvis(w,'putjourney',{Aw:'Directory',from:w.sc.w,reply:A})
             }
 

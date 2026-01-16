@@ -4,7 +4,7 @@ import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring, grep, hak, iske, map, tex, throttle } from "$lib/Y";
+import { erring, exactly, grep, hak, iske, map, tex, throttle } from "$lib/Y";
 import type { Component } from "svelte";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 
@@ -224,13 +224,13 @@ abstract class TimeGallopia extends ModusItself {
             else {
                 sc = {...into.sc}
             }
-            sc = map(v=>String(v),tex({}, sc))
+            sc = exactly(sc)
             // console.log(`so it could be `,sc)
             let possible = where.o(sc)
             if (possible.length > 1) throw "multitude"
+            if (!possible[0] && vanish_ok) return
             if (!possible[0]) throw "not found"
             where = possible[0]
-            if (!where && vanish_ok) return
             were.push(where)
             i++
         }

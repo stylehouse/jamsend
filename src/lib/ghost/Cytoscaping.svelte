@@ -685,6 +685,7 @@
             await this.rapiracy_shipping(A,w,io,rs)
         }
 
+        w.i({see:"This io: ",that:io})
         // respond to all requests for visions of the directory tree
         let req_serial = w.o({req_serial:1})[0]
         req_serial ||= await w.r({req_serial:1,i:1})
@@ -758,33 +759,8 @@
                 rd.sc.failed = 'not found'
                 failed_at = null
             }
+            await this.rapiracy_descripted_drift_fn(A,w,D,c,ups)
 
-            if (D.oa({readin:1,type:'collection'})) {
-                // this is a music-type grouping
-                //  they may or may not believe in replicating it
-                c.N.push({readin:1,type:'collection'})
-                console.log("A readin:1,type:'collection factoid: "+keyser(c))
-            }
-            else if (ups <2) {
-                // the deepest two levels have /*%nib listed
-                let N = D.o({Tree:1})
-                if (N.length > 100) N = N.slice(0,100)
-
-                for (let Di of N) {
-                    let ni = Di.c.T.sc.n
-                    if (ni.sc.nib == 'blob') {
-                        let istrack = Di.oa({readin:1,type:'track'})
-                        // console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
-                        if (!istrack) {
-                            // ignore .cue, .log and other junk
-                            // < albumart requires SafetyNet
-                            //    relying on the usual music art sources could work
-                            continue
-                        }
-                    }
-                    c.N.push(sex({},ni.sc,'nib,name'))
-                }
-            }
             if (c.N.length) rd.i(c)
         })
 
@@ -796,7 +772,34 @@
         await w.r({aim:1,category:aim_name},{})
         await w.r({aimed:1,category:aim_name},{})
     },
+    async rapiracy_descripted_drift_fn(A,w,D,c,ups) {
+        if (D.oa({readin:1,type:'collection'})) {
+            // this is a music-type grouping
+            //  they may or may not believe in replicating it
+            c.N.push({readin:1,type:'collection'})
+            console.log("A readin:1,type:'collection factoid: "+keyser(c))
+        }
+        else if (ups <2) {
+            // the deepest two levels have /*%nib listed
+            let N = D.o({Tree:1})
+            if (N.length > 100) N = N.slice(0,100)
 
+            for (let Di of N) {
+                let ni = Di.c.T.sc.n
+                if (ni.sc.nib == 'blob') {
+                    let istrack = Di.oa({readin:1,type:'track'})
+                    // console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
+                    if (!istrack) {
+                        // ignore .cue, .log and other junk
+                        // < albumart requires SafetyNet
+                        //    relying on the usual music art sources could work
+                        continue
+                    }
+                }
+                c.N.push(sex({},ni.sc,'nib,name'))
+            }
+        }
+    },
         
 
     })

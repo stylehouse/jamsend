@@ -10,6 +10,9 @@ export async function sha256(data: string): Promise<string> {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex;
 }
+export function exactly(sc) {
+    return map(v=>String(v),tex({}, sc))
+}
 
 export function indent(d) {
     if (d == 0) throw "d!>0"
