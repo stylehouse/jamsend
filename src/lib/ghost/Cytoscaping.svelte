@@ -74,7 +74,9 @@
         let C = 0 ? await this.termicaster_knows(A,w)
             : await this.termicaster_testdata_knows(A,w)
 
-        await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+        await this.termicaster_test_cytologising(A,w,C)
+        
+        // await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
     },
 
 //#endregion
@@ -128,6 +130,24 @@
     },
 //#endregion
 //#region test loader
+    async termicaster_test_cytologising(A,w,C) {
+        let It = await w.r({Itica:1})
+        await It.replace({Gra:1},async () => {
+            for (let n of C.o()) {
+                let Iti = It.i({Gra:1,...n.sc})
+                Iti.c.n = n
+            }
+        })
+        for (let Iti of It.o()) {
+            await Iti.replace({Gra:1},async () => {
+                for (let n of Iti.c.n.o()) {
+                    let Itii = Iti.i({Gra:1,...n.sc})
+                    Itii.c.n = n
+                }
+            })
+        }
+    },
+
     async termicaster_testdata_knows(A,w) {
         let C = await w.r({Cytotermia:'fabricated'})
         C.empty()
