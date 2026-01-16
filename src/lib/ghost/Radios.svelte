@@ -1073,7 +1073,9 @@
             let re = req.sc.re
             let uri = re.sc.uri
             if (!uri) throw "req load !uri"
+            // < should this call happen only once...
             let rd = await radiopiracy.sc.o_descripted('',uri)
+            //    unless we're waiting long for:
             rd.sc.return_fn = async () => {
                 // console.log(`Got descripted local return: ${keyser(rd)}`)
                 if (rd.sc.failed) {
@@ -1086,10 +1088,14 @@
                 else {
                     await radiostock.sc.i(re)
                 }
-                req = this.refresh_C([A,w,req])
-                req.sc.finished = true
+                // < use elvis instead of this magic:
+                setTimeout(() => {
+                    req = this.refresh_C([A,w,req])
+                    req.sc.finished = true
+                },200)
             }
             if (req.sc.finished) {
+                debugger
                 w.drop(req)
             }
         }
