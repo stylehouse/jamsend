@@ -764,7 +764,7 @@
             if (c.N.length) rd.i(c)
         })
 
-        io.sc.i_descripted(rd)
+        await io.sc.i_descripted(rd)
         w.i({see:"did something about",thisdescripted:rd})
 
         // if ('endless replies') return
