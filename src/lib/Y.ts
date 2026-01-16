@@ -11,6 +11,13 @@ export async function sha256(data: string): Promise<string> {
     return hashHex;
 }
 
+export function indent(d) {
+    if (d == 0) throw "d!>0"
+    if (isar(d)) d = d.length
+    // 1:'',2:'  ',3:'    '..., ie you could give d=T.c.path
+    return new Array(1*d).join('  ')
+}
+
 // slow down calls to a function
 export function throttle(func, interval_ms = 200) {
     let isWaiting = false;

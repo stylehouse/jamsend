@@ -4,7 +4,7 @@
     import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-    import { erring, ex, grap, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { erring, ex, grap, grep, grop, indent, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
@@ -23,8 +23,8 @@
         this.main()
     },
     async cytotermicaster(A,w) {
-        let {np,io} = await this.termicaster_resources(A,w)
-        if (!np) return w.i({see:'sitting still'})
+        let raterm = this.o({A:'audio'})[0]?.oa({w:'raterminal'})
+        if (!raterm) return w.i({see:'sitting still'})
 
         // "takes over" doing visuals for the Modus
         this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
@@ -42,6 +42,7 @@
 
 
 
+        let {np,io} = await this.termicaster_resources(A,w)
 
 
         // np frontend and io backend.
@@ -76,41 +77,8 @@
         await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
     },
 
-    async termicaster_testdata_knows(A,w) {
-        let C = await w.r({Cytotermia:'fabricated'})
-        C.empty()
-        let upbits = (path,onwards) => {
-            let bits = grep(map((bit,seq) => {
-                if (seq != 0) {
-                    // may reuse the bit already there from another de
-                    return C.o({bit,seq:String(seq)})[0]
-                        || C.i({bit,seq})
-                }
-            }, path))
-            let la
-            let first
-            for (let bi of bits) {
-                if (la) la.i({con:1,left_of:bi})
-                la = bi
-                first ||= bi
-            }
-            if (onwards) {
-                if (w.o1({round:1,self:1})[0] % 3) {
-                }
-                else {
-                    let le = C.i({nib:'dir',name:'lemond'})
-                    le.i({con:1,aligned_of:first})
-                    le.i({con:1,aligned_of:la})
-                }
-            }
-        }
-        upbits(['music','0 chill','Clayborn','Monk'])
-        upbits(['music','0 chill','Ooh','Dog'], true)
-
-        return C
-    },
-
-
+//#endregion
+//#region loader
     // replicate all that into another structure of C/nodes/edges
     async termicaster_knows(A,w) {
         let C = await w.r({Cytotermia:'knows'})
@@ -121,7 +89,7 @@
             let path = de.sc.uri.split('/')
             // path made of %bit,seq
 
-            let bits = grep(map((bit,seq) => {
+            let bits:TheC[] = grep(map((bit,seq) => {
                 if (seq != 0) {
                     // may reuse the bit already there from another de
                     return C.o({bit,seq:String(seq)})[0]
@@ -158,16 +126,62 @@
         }
         return C
     },
+//#endregion
+//#region test loader
+    async termicaster_testdata_knows(A,w) {
+        let C = await w.r({Cytotermia:'fabricated'})
+        C.empty()
+        if (C.o().length) debugger
+        C.i({nib:'blah',name:"Latit"})
+        let upbits = (path,onwards) => {
+            let bits = grep(map((bit,seq) => {
+                if (seq != 0) {
+                    // may reuse the bit already there from another de
+                    // return C.o({bit,seq:String(seq)})[0] ||
+                    return C.i({bit,seq})
+                }
+            }, path))
+            let la
+            let first
+            for (let bi of bits) {
+                if (la) la.i({con:1,left_of:bi})
+                la = bi
+                first ||= bi
+            }
+            if (onwards) {
+                if (1 || w.o1({round:1,self:1})[0] % 3) {
+                }
+                else {
+                    let le = C.i({nib:'dir',name:'lemond'})
+                    le.i({con:1,aligned_of:first})
+                    le.i({con:1,aligned_of:la})
+                }
+            }
+        }
+        upbits(['music','0 chill','One','Two'])
+        upbits(['music','0 chill','Tahi','Rua'], true)
+        return C
+    },
+
+
+//#endregion
+//#region cytologising
     async termicaster_cytologising(A,w,C,node_edger) {
         let Se = new Selection()
         // the top D that everything will be traced to, ongoingly
+        if (node_edger.cy.freshie) {
+            await w.r({Se:'cytology'},{})
+            node_edger.cy.freshie = false
+        }
+        console.log(`Gra`)
+        console.log(`Gra`)
+        console.log(`Gra`)
         node_edger.D = await w.r({Se:'cytology'})
         // for aiming...
         let btw = `
             hmm
         `
         let trace_sc = {Gra:2}
-        console.log(`Gra`)
         
         
         // Selection.process() that
@@ -191,7 +205,7 @@
                 n:D,
                 match_sc: trace_sc,
                 each_fn: async (n:TheC,nT:Travel) => {
-                    console.log(`-- at ${nT.c.path.length}, ${id_of(n)}: ${keyser(n)}`)
+                    console.log(`-- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n)}`)
                     T.sc.removing.push({id:id_of(n)})
                 },
             })
@@ -204,21 +218,18 @@
             match_sc: {},    // climbing everything
             each_fn: async (D:TheD,n:TheC,T:Travel) => {
                 let bD = T.sc.bD
+                console.log(indent(T.c.path)+`D${bD?"++":"  "} ${keyser(D)}` )
                 n_to_D.set(n,D)
             },
 
-            // re-describe each n/* into D/*%Tree
-            //  $D/* fills with each Dyn/$n*
-            //   the D is one step above this n
-            // D** is thence always fillable with other stuff, not of pattern_sc
-            // < resolve() maybe could n.sc <-> D.sc.nid, a copy of n.sc
-            //    nid being D's index of the foreign n.sc, the identity it is tracking
-            //   and hopefully these new sort-of joins will +1 nicely
-            //    like you'd work things out on paper
-            trace_sc,          // fabricating D%Tree**
-            resolve_strict: 1,
-            trace_fn: async (uD:TheD,n:TheC) => {
+            trace_sc,          // fabricating D%Gra**
+            resolve_strict: 0,
+            trace_fn: async (uD:TheD,n:TheC,T:Travel) => {
                 let D = uD.i({Gra:2,...n.sc})
+                if (D.sc.bit == '0 chill') {
+                    console.log(indent(T.c.path)+` <-------`)
+                    // D: ${keyser(n.sc)}`,D.o().map(keyser))
+                }
                 return D
             },
             // now for each of those, what can we see...
@@ -249,7 +260,7 @@
                     // assign ids like 0_1_22_3
                     if (D.oa({Dip:1})) throw "neu already %Dip"
                     D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
-                    console.log(`++ at ${T.c.path.length}, ${id_of(D)}: ${keyser(D)}`)
+                    console.log(`resolved_fn ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D)}`)
                     // come back once we have them all
                     D.c.T.sc.is_neu = true
                 }
@@ -293,7 +304,7 @@
         })
         this.Tr = Se.c.T
         this.Se = Se
-
+            // return
         // add+remove things from cytoscape!
         let adding = []
         let removing = []
@@ -317,6 +328,8 @@
 
 
 
+//#endregion
+//#region resources
     // we'll be connected to one or both of
     async termicaster_resources(A,w) {
         let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]

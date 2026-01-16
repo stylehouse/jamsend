@@ -1,7 +1,7 @@
 <script lang="ts">
     import cytoscape from "cytoscape";
     // these are apparently the best at either hierarchical
-    // import dagre from "cytoscape-dagre";
+    import dagre from "cytoscape-dagre";
     //   or force-directed, compound graphs
     //    and "fairly rich set of constraint types" https://github.com/iVis-at-Bilkent/cytoscape.js-fcose
     import fcose from "cytoscape-fcose";
@@ -184,6 +184,7 @@
             animationDuration: 2,
             nodeSeparation: 375,
             nodeDimensionsIncludeLabels: true,
+            randomize: false,
 
             // other options, may affect things
             //  eg cytoscape.js-klay / README / API
@@ -202,8 +203,8 @@
             container: ele,
             style: GraphStyles,
         });
+        cy.freshie = true
         cy.on("select", "node", () => selection_changed());
-
         // let graph = test_graph();
         // load_graph(graph);
         layout();

@@ -310,7 +310,7 @@ class SelectionItself extends Travel {
                             let z = a.c.T.sc.bD
                             if (z?.c.T.sc.bD) {
                                 // can forget x to save memory
-                                delete z.c.T.sc.bD
+                                z.c.T.sc.bD = null
                             }
                         }
                     }
