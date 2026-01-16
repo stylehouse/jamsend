@@ -11,6 +11,9 @@
    
     let {M} = $props()
     // making moves to provision and consume radio
+    // < raterm infers when %irecord_ts is near live edge
+    //    from pr steadily arriving almost late
+    // < make tidier and more official
 
     // $share/.jamsend/radiostock/*.webms
     const IGNORE_RADIOSTOCK_CACHE = false 

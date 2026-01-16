@@ -23,6 +23,8 @@
         this.main()
     },
     async cytotermicaster(A,w) {
+        let {np,io} = await this.termicaster_resources(A,w)
+
         let raterm = this.o({A:'audio'})[0]?.oa({w:'raterminal'})
         if (!raterm) return w.i({see:'sitting still'})
 
@@ -41,8 +43,6 @@
         if (!cynoed) return w.i({waits:'for UI'})
 
 
-
-        let {np,io} = await this.termicaster_resources(A,w)
 
 
         // np frontend and io backend.
@@ -80,6 +80,10 @@
     },
 
 //#endregion
+
+
+
+
 //#region loader
     // replicate all that into another structure of C/nodes/edges
     async termicaster_knows(A,w) {
@@ -129,6 +133,10 @@
         return C
     },
 //#endregion
+
+
+
+
 //#region test loader
     async termicaster_test_cytologising(A,w,C) {
         console.log(`termicaster_test_cytologising /*`)
@@ -192,6 +200,11 @@
     },
 
 //#endregion
+
+
+
+
+
 //#region test resolve()
 
 
@@ -367,6 +380,11 @@
     },
 
 //#endregion
+
+
+
+
+
 //#region cytologising
     async termicaster_cytologising(A,w,C,node_edger) {
         let Se = new Selection()
@@ -407,7 +425,7 @@
                 n:D,
                 match_sc: trace_sc,
                 each_fn: async (n:TheC,nT:Travel) => {
-                    console.log(`-- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n)}`)
+                    console.log(`cyto -- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n)}`)
                     T.sc.removing.push({id:id_of(n)})
                 },
             })
@@ -420,18 +438,14 @@
             match_sc: {},    // climbing everything
             each_fn: async (D:TheD,n:TheC,T:Travel) => {
                 let bD = T.sc.bD
-                console.log(indent(T.c.path)+`D${bD?"++":"  "} ${keyser(D)}` )
+                // console.log(indent(T.c.path)+`D${bD?"++":"  "} ${keyser(D)}` )
                 n_to_D.set(n,D)
             },
 
             trace_sc,          // fabricating D%Gra**
-            resolve_strict: 0,
+            resolve_strict: 1,
             trace_fn: async (uD:TheD,n:TheC,T:Travel) => {
                 let D = uD.i({Gra:2,...n.sc})
-                if (D.sc.bit == '0 chill') {
-                    console.log(indent(T.c.path)+` <-------`)
-                    // D: ${keyser(n.sc)}`,D.o().map(keyser))
-                }
                 return D
             },
             // now for each of those, what can we see...
@@ -462,7 +476,7 @@
                     // assign ids like 0_1_22_3
                     if (D.oa({Dip:1})) throw "neu already %Dip"
                     D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
-                    console.log(`resolved_fn ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D)}`)
+                    console.log(`cyto ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D)}`)
                     // come back once we have them all
                     D.c.T.sc.is_neu = true
                 }
@@ -565,7 +579,7 @@
 
                     if (!io) throw "can't opiracy"
                     let pub = this.PF.Pier.Ud+''
-                    // console.log(`got unemit opiracy: ${uri}`)
+                    console.log(`got unemit opiracy: ${uri}`)
                     await io.sc.o_descripted(pub,uri)
                 })
             },
@@ -633,9 +647,9 @@
         let io = await this.r({io:'radiopiracy'},{
             o_descripted: async (pub,uri) => {
                 w = this.refresh_C([A,w])
-
-                w.r({request_descripted:1,uri,pub})
-                this.i_elvis(w)
+                console.log(`o_descripted io'd`)
+                let rd = await w.r({uri,pub},{request_descripted:1})
+                this.i_elvis(w,'noop',{handle:rd})
             },
             // at the end of this w, we return the result through here:
             i_descripted: async (rd) => {
@@ -644,6 +658,7 @@
                     console.log("A factoid: "+keyser(fa.sc))
                     return fa.sc
                 })
+                console.log(`i_descripted io'd`)
                 
                 let pub = rd.sc.pub
                 let Pier = this.F.eer.Piers.get(pub)
@@ -661,10 +676,14 @@
             await this.rapiracy_shipping(A,w,io,rs)
         }
 
-        // respond to one request for visions of the directory tree
-        let rd = w.o({request_descripted:1})[0]
-        if (rd) {
+        // respond to all requests for visions of the directory tree
+        let req_serial = w.o({req_serial:1})[0]
+        req_serial ||= await w.r({req_serial:1,i:1})
+        req_serial.sc.i ||= 7
+        for (let rd of w.o({request_descripted:1})) {
+            rd.sc.req_i ||= req_serial.sc.i++
             await this.rapiracy_descripted(A,w,io,rd)
+
         }
 
     },
@@ -697,14 +716,19 @@
         // < pick between many DirectoryShare depending on uri at io.orecord?
         let topname = path.shift()
         if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
+        // this becomes %aim,category=aim_name
+        //  so we can remove just this requests' workpiece
+        let aim_name = `descripted:${rd.sc.req_i}`
 
         // awake the %Tree where we want things
         let dir = path.slice(0,path.length-1);
+        let failed_at = null
         let D = await this.Se.aim_to_open(w,dir,async (uD,pathbit) => {
-            throw `rastream:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
-        },'descripted')
-        if (!D) return
-
+            failed_at = {uD,pathbit}
+            // throw `rapiracy_descripted: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
+        },aim_name)
+        if (!D && !failed_at) return
+        D ||= failed_at.uD
 
 
         // describe available sets of things to nab
@@ -718,6 +742,13 @@
             let c:any = {factoid:1,uri,N:[]}
             console.log(`descripted the ${uri}:`,rd.o().map(keyser))
 
+            if (failed_at) {
+                // remark once on the deepest D about Not Found
+                let {uD,pathbit} = failed_at
+                c.N.push({failed:'not found',bit:pathbit})
+                rd.sc.failed = 'not found'
+                failed_at = null
+            }
 
             if (D.oa({readin:1,type:'collection'})) {
                 // this is a music-type grouping
@@ -753,8 +784,7 @@
 
         // if ('endless replies') return
         w.drop(rd)
-        await w.r({aim:1,category:'updir'},{})
-        await w.r({aim:1,category:'dir'},{})
+        await w.r({aim:1,category:aim_name},{})
     },
 
         

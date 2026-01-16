@@ -31,6 +31,9 @@
           except for that one case of i_elvis now
            which does do_A() before agency_think()
            and shall simply point to '' at the A level?
+         emit, perhaps
+          would be handy to know where to put it on the other side
+          perhaps one signs a map of what interfaces Pier is granted to
         I think...
           < agency_think() wants to be a Selection.process()
              of current events' journeys wanting to be D**
@@ -57,9 +60,10 @@
         console.log(`Modus ${this.constructor.name} has ${this.S.constructor.name}`)
         
         setTimeout(() => {
-            // by default, just a w wants to wake itself
+            // by default, w wants to wake itself, probably from out of time
             t ||= 'noop'
-            c ||= {A:w}
+            c ||= {}
+            if (!(c.A || c.Aw)) c.A = w
             // this is the address scheme
             let given_A // might be a w
             let to_A
