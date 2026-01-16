@@ -650,6 +650,7 @@
                 console.log(`o_descripted io'd`)
                 let rd = await w.r({uri,pub},{request_descripted:1})
                 this.i_elvis(w,'noop',{handle:rd})
+                return rd
             },
             // at the end of this w, we return the result through here:
             i_descripted: async (rd) => {
@@ -659,14 +660,19 @@
                     return fa.sc
                 })
                 console.log(`i_descripted io'd`)
-                
-                let pub = rd.sc.pub
-                let Pier = this.F.eer.Piers.get(pub)
-                if (!Pier) throw `!Pier ${pub}`
-                // and also use this particular feature's emit
-                //  to get it to the corresponding feature on the other end
-                let PF = Pier.features.get(this.F.trust_name)
-                await PF.emit('i_descripted',{uri:rd.sc.uri,N})
+
+                if (rd.sc.return_fn) {
+                    await rd.sc.return_fn()
+                }
+                else {
+                    let pub = rd.sc.pub
+                    let Pier = this.F.eer.Piers.get(pub)
+                    if (!Pier) throw `!Pier ${pub}`
+                    // and also use this particular feature's emit
+                    //  to get it to the corresponding feature on the other end
+                    let PF = Pier.features.get(this.F.trust_name)
+                    await PF.emit('i_descripted',{uri:rd.sc.uri,N})
+                }
             },
         })
 
@@ -683,7 +689,6 @@
         for (let rd of w.o({request_descripted:1})) {
             rd.sc.req_i ||= req_serial.sc.i++
             await this.rapiracy_descripted(A,w,io,rd)
-
         }
 
     },
@@ -725,6 +730,7 @@
         let failed_at = null
         let D = await this.Se.aim_to_open(w,dir,async (uD,pathbit) => {
             failed_at = {uD,pathbit}
+            console.warn(`rapiracy_descripted: not found: ${uri}`)
             // throw `rapiracy_descripted: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
         },aim_name)
         if (!D && !failed_at) return

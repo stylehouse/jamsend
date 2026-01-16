@@ -1051,19 +1051,74 @@
             }
         }
 
+        // rapiracy checks the source still exists
+        await this.Miome(A,{io:'radiopiracy'})
+        let radiopiracy = A.o({io:'radiopiracy'})[0]
+        if (!radiopiracy) return w.i({waits:"%io:radiopiracy"})
+        // we take it from ourselves
         let radiostock = this.o({io:'radiostock'})[0]
         if (!radiostock) return w.i({waits:"%io:radiostock"})
+        
         // load some
-        if (had.length < keep_things * 0.8) {
+
+        let reqy = await this.requesty_serial(w,'load_random_records')
+        let having = had.length + reqy.pending
+        if (having < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
             for await (const re of this.load_random_records(stockD, to_load,had)) {
-                await radiostock.sc.i(re)
+                await reqy.i({re})
+            }
+        }
+        for (let req of reqy.o()) {
+            let re = req.sc.re
+            let uri = re.sc.uri
+            if (!uri) throw "req load !uri"
+            let rd = await radiopiracy.sc.o_descripted('',uri)
+            rd.sc.return_fn = async () => {
+                console.log(`Got descripted local return: ${keyser(rd)}`)
+                if (rd.sc.failed) {
+                    let stockDL = this.D_to_DL(stockD)
+                    let name = re.o1({in_radiostock:1})[0]
+                    if (!name) throw "loaded record !/%in_radiostock"
+                    console.warn("radiostock_caching() drops source-gone "+name)
+                    await stockDL.deleteEntry(name)
+                }
+                else {
+                    await radiostock.sc.i(re)
+                }
             }
         }
         
         // whittle to 20 things
         this.whittle_N(A.o({record:1}),keep_things)
         await this.whittle_stock(w,stockD,keep_things)
+    },
+
+
+    async requesty_serial(w,t) {
+        let reqserialc = {}
+        reqserialc['requesty_'+t+'_serial'] = 1
+        let reqc = {}
+        reqc['requesty_'+t] = 1
+        let req_serial:TheC
+        let ison = async () => {
+            req_serial = w.o({...reqserialc})[0]
+            req_serial ||= await w.r({...reqserialc,i:1})
+            req_serial.sc.i ||= 7
+            ison = async () => {}
+        }
+        return {
+            pending: w.o(({...reqc})).length,
+            async i(c) {
+                await ison()
+                let req = await w.r({...reqc,...c},{...c})
+                req.sc.req_i ||= req_serial.sc.i++
+            },
+            o() {
+                return w.o(({...reqc}))
+            },
+
+        }
     },
 
     //#endregion
@@ -1132,10 +1187,12 @@
             }
         }
 
-
         // recursive directory something-if-not-exist thinger
         let D = await this.Se.aim_to_open(w,path,async (uD,pathbit) => {
-            throw `rastream:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
+            w.i({error:'Not Found',pathbit})
+            w.drop(st)
+            console.warn(`rastream:${enid}: not found: ${uri}`)
+            // throw `rastream:${enid}: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
         })
         if (!D) return
 

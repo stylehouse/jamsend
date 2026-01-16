@@ -496,7 +496,7 @@
                         const re = await this.record_from_disk(D.sc.name, sD);
                         if (re) {
                             // Mark this file as warmed up
-                            D.i({warmed_up: 1})
+                            D.i({warmed_up:1})
                             V.radiostock && console.log(`warmed up radiostock: ${D.sc.name}`)
                             
                             yield re;
