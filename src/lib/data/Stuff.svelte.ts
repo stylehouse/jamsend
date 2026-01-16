@@ -714,8 +714,8 @@ export class Stuff extends TimeOffice {
                 if (!neux?.k) throw `algo!?k`
                 let rated = neux.i_k(unambiguity,null,'unambiguity')
                 if (!rated.z.length) throw `algo!?z`
-                rated.z.forEach((oldn) => {
-                    if (claimed.includes(oldn)) return
+                for (let oldn of rated.z) {
+                    if (claimed.includes(oldn)) continue
                     // < I fade out here. maybe with a better io notation...
                     //   sorting through arrangements any more is...
                     //    one of those has-been-done academic things
@@ -735,7 +735,9 @@ export class Stuff extends TimeOffice {
                         }
                     }
                     claim(oldn,n)
-                })
+                    // once n is claimed, stop claiming oldn for it
+                    break
+                }
             })
         })
 

@@ -71,12 +71,12 @@
             }
         }
 
-        let C = 0 ? await this.termicaster_knows(A,w)
+        let C = 1 ? await this.termicaster_knows(A,w)
             : await this.termicaster_testdata_knows(A,w)
 
-        await this.termicaster_test_cytologising(A,w,C)
+        // await this.termicaster_test_cytologising(A,w,C)
         
-        // await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+        await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
     },
 
 //#endregion
@@ -250,9 +250,11 @@
             vx.z.forEach((n:TheC,i:number) => {
                 // any neu%nib:dir could match any old%nib:dir
                 // via /$v:neu /$k/$v:stringval /$n=old
-                let nkvx = Over.X.i_v(n,null,'neu')
-                    .i_k(k).i_v(v,null)
-                old_z.forEach(oldn => nkvx.i_z(oldn))
+                let nkvx = Over.X.i_v(n,null,'neu') .i_k(k).i_v(v,null)
+                for (let oldn of old_z) {
+                    nkvx.i_z(oldn)
+                    console.log(`into k=${k}, v=${v}, for: ${keyser(n)}`)
+                }
             })
         })
 
@@ -272,6 +274,10 @@
                 // /$ambiguity=0.234 /$n=neu for ordering matches amognst all $neu
                 Over.X.i_k(unambiguity,n,'unambiguity')
 
+                // console.log(`unam k=${k}, v=${v}, unam=${unambiguity}, for:`)
+                // for (let n of rated.z) {
+                //     console.log(`  - ${keyser(n)}`)
+                // }
             })
         })
         let sort_unambiguity = (X) => {
@@ -284,10 +290,15 @@
         let unfound:Array<TheC> = [...(X.z||[])]
         // $oldn that become paired with a $neu
         let claimed:Array<TheC> = []
+        let claiming:Array<TheC> = []
         let claim = (oldn,n) => {
+            if (claiming.includes(n)) {
+                console.error(`resolve() multi b deals`)
+            }
             pairs.push([oldn,n])
             unfound = unfound.filter(m => m != n)
             claimed.push(oldn)
+            claiming.push(n)
         }
 
         // sort by unambiguity
@@ -303,7 +314,13 @@
                 if (!neux?.k) throw `algo!?k`
                 let rated = neux.i_k(unambiguity,null,'unambiguity')
                 if (!rated.z.length) throw `algo!?z`
-                rated.z.forEach((oldn) => {
+
+                // console.log(`unam k=${k}, v=${v}, unam=${unambiguity}, for:`)
+                // for (let n of rated.z) {
+                //     console.log(`  - ${keyser(n)}`)
+                // }
+
+                for (let oldn of rated.z) {
                     if (claimed.includes(oldn)) return
                     // < I fade out here. maybe with a better io notation...
                     //   sorting through arrangements any more is...
@@ -324,7 +341,9 @@
                         }
                     }
                     claim(oldn,n)
-                })
+                    // once n is claimed, stop claiming oldn for it
+                    break
+                }
             })
         })
 
