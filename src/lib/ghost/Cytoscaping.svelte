@@ -13,7 +13,7 @@
     let {M} = $props()
     let V = {}
     V.descripted = 0
-    V.cyto = 1
+    V.cyto = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -42,7 +42,7 @@
 
 
 
-        let C = 0 ? await this.termicaster_knows(A,w)
+        let C = 1 ? await this.termicaster_knows(A,w)
             : await this.termicaster_testdata_knows(A,w)
 
         // await this.termicaster_test_cytologising(A,w,C)
@@ -101,15 +101,12 @@
             let {uri,descripted} = re.sc
             V.descripted && console.log(`elvis:i_descripted: ${uri}`,descripted)
             await this.i_descripted(w,uri,descripted)
-            w.i({see:"thisyap",uri,descripted})
+            w.i({see:"heard context about",uri})
         }
 
 
-        // np frontend and io backend.
-        // these two things talk to each other at either end
-        //  ie their nowPlaying attracts our radiopiracy
-        // when we have both they're doing different work, independently
         let uri = np.sc.uri
+        // find the %uri,descripted for that uri
         let de = w.o({uri,descripted:1})[0]
         if (!de) {
             // ask for it
@@ -128,12 +125,35 @@
                 && de.i({self:1,est:now_in_seconds()})
             // we have the info!
         }
+
+        // < a big fat-edged snake going from thing to thing we play...
+        for (let de of w.o({uri,descripted:1})) {
+            if (de.sc.uri != uri) {
+                // starts getting old
+                !de.oa({self:1,olded:1})
+                    && de.i({self:1,olded:now_in_seconds()})
+                let age = de.o({self:1,olded:1})[0].ago('olded')
+                if (age > 15) {
+                    w.drop(de)
+                }
+            }
+            else {
+                // is selected again, cancels getting old
+                !de.r({self:1,olded:1},{})
+            }
+        }
+
     },
 
 
 
     // we'll be acting as one or both of
     async termicaster_resources(A,w) {
+        // np frontend and io backend.
+        // these two things talk to each other at either end
+        //  ie their nowPlaying attracts our radiopiracy
+        // when we have both they're doing different work, independently
+
         // the frontend, listening to the music
         let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
         w.i({see:1,raterm})
@@ -220,7 +240,7 @@
         let C = await w.r({Cytotermia:'knows'})
         C.empty()
         let deN = w.o({uri:1,descripted:1})
-        this.whittle_N(deN,2)
+        this.whittle_N(deN,3)
         for (let de of deN) {
             let path = de.sc.uri.split('/')
             // path made of %bit,seq
