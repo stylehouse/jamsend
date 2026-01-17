@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
+    import { _C, keyser, objectify, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
     import { erring, ex, grap, grep, grop, indent, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
@@ -414,7 +414,6 @@
 
 //#region cytologising
     async termicaster_cytologising(A,w,C,node_edger) {
-        let Se = new Selection()
         this.thetime ||= 0
         let thetime = this.thetime += 1
         // the top D that everything will be traced to, ongoingly
@@ -428,13 +427,24 @@
         let btw = `
             hmm
         `
+        let q = {node_edger}
+
+        await this.cytologising_Selection(A,w,C,q)
+
+        await this.cytologising_edge_nodes(A,w,C,q)
+    },
+
+    async cytologising_Selection(A,w,C,q) {
+        let Se = new Selection()
+
+
         let trace_sc = {Gra:2}
         
         
         // Selection.process() that
         // look for new things|holes in it
         let n_to_D = new Map()
-        let id_of = (D) => {
+        C.c.id_of = (D) => {
             let id = D.o1({Dip:1})[0]
             if (!id) {
                 // the eg %left_of=n needs to locate itself in the D**, where ids are
@@ -446,18 +456,7 @@
             if (!id) throw "!id"
             return 'id_'+id
         }
-        let do_removing = async (T,D) => {
-            T.sc.removing ||= []
-            new Travel().dive({
-                n:D,
-                match_sc: trace_sc,
-                each_fn: async (n:TheC,nT:Travel) => {
-                    V.cyto && console.log(`cyto -- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n,-2)}`)
-                    T.sc.removing.push({id:id_of(n)})
-                },
-            })
-        }
-        function some_edge(D) {
+        C.c.some_edge = (D) => {
             if (!D.sc.con) throw "D!%Con"
             let on = D.sc.left_of || D.sc.aligned_of || D.sc.to
             if (!on) throw "edge type?"
@@ -466,7 +465,7 @@
         await Se.process({
             n:C,
             // we want a liberal match_sc so we have to host the top D somewhere else
-            process_D: node_edger.D,
+            process_D: q.node_edger.D,
 
             match_sc: {},    // climbing everything
             each_fn: async (D:TheD,n:TheC,T:Travel) => {
@@ -487,7 +486,7 @@
                     //    so when we add the edge we can define it by where it is connected
                     //   it is not a problem now because our C|D is nodes/edges
                     //    so we have resolved and assigned the nodes before looking at edges
-                    D.sc.target_objectified = objectify(some_edge(D))
+                    D.sc.target_objectified = objectify(C.c.some_edge(D))
                 }
                 return D
             },
@@ -513,22 +512,48 @@
 
 
                 for (let D of goners) {
-                    await do_removing(T,D)
+                    T.sc.removing ||= []
+                    await new Travel().dive({
+                        n:D,
+                        match_sc: trace_sc,
+                        each_fn: async (n:TheC,nT:Travel) => {
+                            V.cyto && console.log(`cyto -- ${indent(T.c.path)} ${C.c.id_of(n)}: ${keyser(n,-2)}`)
+                            T.sc.removing.push({id:C.c.id_of(n)})
+                        },
+                    })
                 }
                 for (let D of neus) {
                     // assign ids like 0_1_22_3
                     if (D.oa({Dip:1})) throw "neu already %Dip"
                     D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
-                    V.cyto && console.log(`cyto ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D,-2)}`)
+                    V.cyto && console.log(`cyto ++ ${indent(T.c.path)} ${C.c.id_of(D)}: ${keyser(D,-2)}`)
                     // come back once we have them all
                     D.c.T.sc.is_neu = true
                 }
                 // nothing...? see also journey_resolved_fn 
             },
         })
+        // < is it to early to commit to Se? should we pass it via q?
+        this.Tr = Se.c.T
+        this.Se = Se
+    },
 
+//#endregion
+
+
+
+
+
+
+
+
+
+//#region _edge_nodes
+    async cytologising_edge_nodes(A,w,C,q) {
+        // node_edger.constraints_config
         let are_the_name = ['bit','type','nowplay']
         // now everything has ids
+        let Se = this.Se
         await Se.c.T.forward(async (T:Travel) => {
             let D = T.sc.D
 
@@ -538,9 +563,9 @@
                 if (D.sc.con) {
                     // an edge
                     let uD = D.c.T.up.sc.D
-                    let on = some_edge(D)
-                    data.source = id_of(uD)
-                    data.target = id_of(on)
+                    let on = C.c.some_edge(D)
+                    data.source = C.c.id_of(uD)
+                    data.target = C.c.id_of(on)
                     data.label = D.sc.label != null ? D.sc.label
                         : D.sc.left_of ? "left" : 'aligned'
                     data.class = D.sc.class
@@ -568,28 +593,26 @@
                     }
                 }
                 T.sc.adding ||= []
-                T.sc.adding.push({group,id:id_of(D),data})
+                T.sc.adding.push({group,id:C.c.id_of(D),data})
             }
         })
-        this.Tr = Se.c.T
-        this.Se = Se
             // return
         // add+remove things from cytoscape!
-        let adding = []
-        let removing = []
+        let adding:TheEmpirical[] = []
+        let removing:TheEmpirical[] = []
         await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(...T.sc.adding))
         await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(...T.sc.removing))
         if (adding.length || removing.length) {
             V.cyto && console.log("Cytochangeup",{adding,removing})
         }
-        node_edger.remove(removing)
+        q.node_edger.remove(removing)
 
         for (let add of adding) {
             add.data.id = add.id
         }
         let adding_nodes = grop(add => add.group == 'nodes', adding)
-        node_edger.add(adding_nodes)
-        node_edger.add(adding)
+        q.node_edger.add(adding_nodes)
+        q.node_edger.add(adding)
 
 
         

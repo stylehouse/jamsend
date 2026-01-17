@@ -175,7 +175,7 @@
         let name = layeng_name;
 
         // all the constraints merged into a tree as per fcose doc / API
-        let concon = {}; //constraints_config
+        let concon = node_edger.constraints_config
 
         return {
             name,
