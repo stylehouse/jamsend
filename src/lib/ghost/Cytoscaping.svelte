@@ -49,6 +49,14 @@
         if (!cynoed) return w.i({waits:'for UI'})
 
 
+        // pinged from nowPlaying with this attached:
+        for (let e of this.o_elvis(w,'i_descripted')) {
+            let re = e.sc.re
+            let {uri,descripted} = re.sc
+            V.descripted && console.log(`elvis:i_descripted: ${uri}`,N)
+            await this.i_descripted(w,uri,descripted)
+            w.i({see:"thisyap",uri,descripted})
+        }
 
 
         // np frontend and io backend.
@@ -140,23 +148,28 @@
                     w = this.refresh_C([A,w])
 
                     V.descripted && console.log("i_descripted: ",N)
-                    // has to be two-arg r() for not being pattern={uri:1}
-                    let was = w.o({uri:1,descripted:1})
-                    let de = await w.r({uri},{descripted:1})
-                    let now = w.o({uri:1,descripted:1})
-                    V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)
-                    de.empty()
-                    for (let fasc of N) {
-                        let fa = de.i(tex({},fasc))
-                        for (let nisc of fasc.N) {
-                            fa.i(nisc)
-                        }
-                    }
+                    await this.i_descripted(w,uri,N)
                     this.i_elvis(w)
                 })
             },
         }
         return {np,io}
+    },
+    // enter a bunch of notes about a uri
+    //  to be fed to nowPlaying visuals
+    async i_descripted(w,uri,N) {
+        // has to be two-arg r() for not being pattern={uri:1}
+        let was = w.o({uri:1,descripted:1})
+        let de = await w.r({uri},{descripted:1})
+        let now = w.o({uri:1,descripted:1})
+        V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)
+        de.empty()
+        for (let fasc of N) {
+            let fa = de.i(tex({},fasc))
+            for (let nisc of fasc.N) {
+                fa.i(nisc)
+            }
+        }
     },
 
 
@@ -491,6 +504,7 @@
             // at the end of this w, we return the result through here:
             i_descripted: async (rd) => {
                 // < encoding C for sends...
+                let uri = rd.sc.uri
                 let N = rd.o({factoid:1}).map(fa=>{
                     V.descripted>1 && console.log("A factoid: "+keyser(fa.sc))
                     return fa.sc
@@ -498,7 +512,7 @@
                 V.descripted && console.log(`i_descripted io'd`)
 
                 if (rd.sc.return_fn) {
-                    await rd.sc.return_fn()
+                    await rd.sc.return_fn({uri,N})
                 }
                 else {
                     let pub = rd.sc.pub
@@ -507,7 +521,7 @@
                     // and also use this particular feature's emit
                     //  to get it to the corresponding feature on the other end
                     let PF = Pier.features.get(this.F.trust_name)
-                    await PF.emit('i_descripted',{uri:rd.sc.uri,N})
+                    await PF.emit('i_descripted',{uri,N})
                 }
             },
         })

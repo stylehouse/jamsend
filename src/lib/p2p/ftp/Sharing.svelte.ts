@@ -243,6 +243,9 @@ export class PierSharing extends PierFeature {
         this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
     
+    every_Modus():Modus[] {
+        return [this.modus, ...this.F.every_Modus()]
+    }
 
     // < DUBIOUS from here down
 

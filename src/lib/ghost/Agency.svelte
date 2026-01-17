@@ -85,8 +85,10 @@
             // deliver it to an A
             let [Aname,...more] = c.Aw.split("/")
             // which could be on another Modus, they should have F/M*/A* unique names
+            // < it can't pick a Pier modus from the Feature though...
+            //    you've got to give something that replies, eg see return_fn
             let A
-            for (let M of this.F.every_Modus()) {
+            for (let M of this.S.every_Modus()) {
                 A = M.o({A:Aname})[0]
                 if (A) break
             }

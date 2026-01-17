@@ -334,7 +334,7 @@ abstract class TimeGallopia extends ModusItself {
     async Miome(A,sc:TheUniversal) {
         await A.replace(sc, async () => {
             // reading all minds of the PeeringFeature
-            for (let M of this.F.every_Modus()) {
+            for (let M of this.S.every_Modus()) {
                 for (let io of M.o(sc)) {
                     // without /*
                     A.i(io.sc)

@@ -16,7 +16,7 @@
     // < make tidier and more official
 
     // $share/.jamsend/radiostock/*.webms
-    const IGNORE_RADIOSTOCK_CACHE = false 
+    const IGNORE_RADIOSTOCK_CACHE = true 
     const RADIOSTOCK_CACHE_LIMIT = 20 // items, they are timestamped
 
     // < get these numbers down, which involves lots of testing?
@@ -628,6 +628,10 @@
 
         let no = await this.i_nowPlaying(A,w,he,re)
 
+        if (re.sc.descripted) {
+            this.i_elvis(w,'i_descripted',{Aw:'visual/cytotermicaster',re})
+        }
+
         no.c.hear_wake_fn = async () => {
             // will be attended while we are the %nowPlaying ?
             await progress()
@@ -684,7 +688,7 @@
             if (!buffer instanceof ArrayBuffer) throw "~buffer"
             V.tx && console.log(`${blah(pr)} send`)
             await this.PF.emit('irecord',{
-                re: sex(tex({},re.sc),re.sc,'meta'),
+                re: sex(tex({},re.sc),re.sc,'meta,descripted'),
                 pr: tex({},pr.sc),
                 buffer,
             })
@@ -1061,8 +1065,6 @@
 
         // rapiracy checks the source still exists
         await this.Miome(A,{io:'radiopiracy'})
-        let tradiopiracy = this.o({io:'radiopiracy'})[0]
-        w.i({see:'any way',tradiopiracy})
         let radiopiracy = A.o({io:'radiopiracy'})[0]
         if (!radiopiracy) return w.i({waits:"%io:radiopiracy"})
         // we take it from ourselves
@@ -1111,8 +1113,8 @@
                 // return
                 // < use elvis instead of this magic:
                 setTimeout(() => {
-                    req = this.refresh_C([A,w,req])
-                    req.sc.finished = true
+                    req = this.refresh_C([A,w,req],true)
+                    if (req) req.sc.finished = true
                 },200)
             }
         }
@@ -1164,9 +1166,14 @@
             await this.radiopreview_i_buffers(A,w,D)
         }
 
+        // where to put re%record when it exists
         let radiostock = this.o({io:'radiostock'})[0]
         if (!radiostock) return w.i({waits:"%io:radiostock"})
-
+        // rapiracy shows a bit of the source environment
+        await this.Miome(A,{io:'radiopiracy'})
+        let radiopiracy = A.o({io:'radiopiracy'})[0]
+        if (!radiopiracy) return w.i({waits:"%io:radiopiracy"})
+        let reqy = await this.requesty_serial(w,'rapiracy_descripted')
         if (!w.oa({aud:1})) {
             let aud = await this.record_preview(A,w,D,{
                 get_offset: (aud) => aud.duration() - PREVIEW_DURATION,
@@ -1175,6 +1182,11 @@
             w.i({aud})
             // forget the encoded source buffers now
             await w.r({buffers:1},{ok:1})
+
+            let uri = this.Se.D_to_uri(D)
+            await reqy.i({uri})
+
+            // react to new chunks
             w.c.on_recording = async (re,pr) => {
                 w = this.refresh_C([A,w])
                 radiostock = this.refresh_C([radiostock])
@@ -1190,6 +1202,39 @@
             }
         }
 
+        // the trips to rapiracy
+        for (let req of reqy.o()) {
+            if (req.sc.finished) {
+                w.drop(req)
+                req.sc.tolditto='go'
+                continue
+            }
+            let uri = req.sc.uri
+            if (!uri) throw "req load !uri"
+            // < should this call happen only once...
+            let rd = await radiopiracy.sc.o_descripted('',uri)
+            //    unless we're waiting long for:
+            rd.sc.return_fn = async ({uri:same_uri,N}) => {
+                if (uri != same_uri) throw "other uri"
+                if (rd.sc.failed) {
+                    throw "failed our own radiopreview / rapiracy_descripted"
+                }
+                else {
+                    // attach this storable metadata here
+                    //  as it goes to emit:i_descripted
+                    let re = w.o({record:1})[0]
+                    re.sc.descripted = N
+                }
+                // < use elvis instead of this magic:
+                setTimeout(() => {
+                    req = this.refresh_C([A,w,req],true)
+                    if (req) req.sc.finished = true
+                },200)
+            }
+        }
+        
+
+
         await this.watch_auds_progressing(A,w,D)
     },
     //#endregion
@@ -1199,7 +1244,7 @@
 
 
 
-    
+
 
 
     //#region rastream
@@ -1339,8 +1384,6 @@
         }
 
         await this.watch_auds_progressing(A,w,D)
-
-
     },
 
 
