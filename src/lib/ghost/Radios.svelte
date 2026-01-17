@@ -970,7 +970,7 @@
         let co = await w.r({consumers:1,of:'radiostock'})
 
         // advertise an API of this Modus
-        this.r({io:'radiostock'},{
+        await this.r({io:'radiostock'},{
             i: async (re:TheC) => {
                 w = this.refresh_C([A,w])
                 // first it comes into the cache here, available to Piers
@@ -1036,7 +1036,6 @@
         stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
         if (!stockD) return // also when ope<3
         // gc for something we do...
-        console.log("Was in rs caching")
         // < it doesn't like elvising this in or anything... it's impossible to get rid of?
         // for (let e of this.o_elvis(w,'finished_load_random_records')) {
         //     let req = e.sc.req
@@ -1062,6 +1061,8 @@
 
         // rapiracy checks the source still exists
         await this.Miome(A,{io:'radiopiracy'})
+        let tradiopiracy = this.o({io:'radiopiracy'})[0]
+        w.i({see:'any way',tradiopiracy})
         let radiopiracy = A.o({io:'radiopiracy'})[0]
         if (!radiopiracy) return w.i({waits:"%io:radiopiracy"})
         // we take it from ourselves
@@ -1084,7 +1085,6 @@
 
         for (let req of reqy.o()) {
             if (req.sc.finished) {
-                debugger
                 w.drop(req)
                 req.sc.tolditto='go'
                 continue

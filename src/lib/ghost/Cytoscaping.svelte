@@ -685,7 +685,6 @@
             await this.rapiracy_shipping(A,w,io,rs)
         }
 
-        w.i({see:"This io: ",that:io})
         // respond to all requests for visions of the directory tree
         let req_serial = w.o({req_serial:1})[0]
         req_serial ||= await w.r({req_serial:1,i:1})
