@@ -12,7 +12,7 @@
     let {M} = $props()
     let V = {}
     V.descripted = 0
-    V.cyto = 0
+    V.cyto = 1
 
     onMount(async () => {
     await M.eatfunc({
@@ -29,12 +29,28 @@
     // on the PF Sharee
     // take nowPlaying somewhere interesting
     async cytotermicaster(A,w) {
-        let {np,io} = await this.termicaster_resources(A,w)
+        let {np} = await this.termicaster_resources(A,w)
+        // queries|receives context
+        np && await this.cytotermi_nowPlaying_descripted(A,w,np)
 
         let raterm = this.o({A:'audio'})[0]?.oa({w:'raterminal'})
         if (!raterm) return w.i({see:'sitting still'})
 
-        // "takes over" doing visuals for the Modus
+        let cynoed = await this.cynoed(A,w)
+        if (!cynoed) return w.i({waits:'for UI'})
+
+
+
+        let C = 1 ? await this.termicaster_knows(A,w)
+            : await this.termicaster_testdata_knows(A,w)
+
+        // await this.termicaster_test_cytologising(A,w,C)
+        
+        await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+    },
+    
+    // "takes over" doing visuals for the Modus
+    async cynoed(A,w) {
         this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
         for (let e of this.o_elvis(w,'IamyourUI')) {
             await w.r(sex({cytool:1},e.sc,'node_edger'))
@@ -45,15 +61,17 @@
                 await w.r({cytool:1,node_edger:M.node_edger})
             }
         }
-        let cynoed = w.o({cytool:1,node_edger:1})[0]
-        if (!cynoed) return w.i({waits:'for UI'})
 
+        return w.o({cytool:1,node_edger:1})[0]
+    },
 
+    // hears from A:audio
+    async cytotermi_nowPlaying_descripted(A,w,np) {
         // pinged from nowPlaying with this attached:
         for (let e of this.o_elvis(w,'i_descripted')) {
             let re = e.sc.re
             let {uri,descripted} = re.sc
-            V.descripted && console.log(`elvis:i_descripted: ${uri}`,N)
+            V.descripted && console.log(`elvis:i_descripted: ${uri}`,descripted)
             await this.i_descripted(w,uri,descripted)
             w.i({see:"thisyap",uri,descripted})
         }
@@ -63,40 +81,32 @@
         // these two things talk to each other at either end
         //  ie their nowPlaying attracts our radiopiracy
         // when we have both they're doing different work, independently
-        if (np) {
-            let uri = np.sc.uri
-            let de = w.o({uri,descripted:1})[0]
-            if (!de) {
-                // ask for it
-                if (!w.oa({uri,wants_descripted:1})) {
-                    V.descripted && console.log(`want o_descripted`)
-                    await this.PF.emit('o_descripted',{uri:np.sc.uri})
-                    w.i({desc:1,uri,wants_descripted:1})
-                }
-            }
-            else {
-                await w.r({desc:1,uri,wants_descripted:1},{})
-                // hang info forever
-                // < have the last few of these, trailing off in 30s
-                //  < unless user is interacting with them
-                !de.oa({self:1,est:1})
-                    && de.i({self:1,est:now_in_seconds()})
-                // we have the info!
+        let uri = np.sc.uri
+        let de = w.o({uri,descripted:1})[0]
+        if (!de) {
+            // ask for it
+            if (!w.oa({uri,wants_descripted:1})) {
+                V.descripted && console.log(`want o_descripted`)
+                await this.PF.emit('o_descripted',{uri:np.sc.uri})
+                w.i({desc:1,uri,wants_descripted:1})
             }
         }
-
-        let C = 1 ? await this.termicaster_knows(A,w)
-            : await this.termicaster_testdata_knows(A,w)
-
-        // await this.termicaster_test_cytologising(A,w,C)
-        
-        await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+        else {
+            await w.r({desc:1,uri,wants_descripted:1},{})
+            // hang info forever
+            // < have the last few of these, trailing off in 30s
+            //  < unless user is interacting with them
+            !de.oa({self:1,est:1})
+                && de.i({self:1,est:now_in_seconds()})
+            // we have the info!
+        }
     },
 
-//#endregion
 
 
 //#endregion
+
+
 //#region resources
     // we'll be acting as one or both of
     async termicaster_resources(A,w) {
@@ -113,12 +123,12 @@
         // the backend, sending music yonder
         let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
         w.i({see:1,racast})
-        let io
+        let radiopiracy
         if (racast) {
             // copy %io:radiopiracy interfaces here
             await this.Miome(A,{io:'radiopiracy'})
             if (!A.oa({io:'radiopiracy'})) throw "not there!"
-            io = A.o({io:'radiopiracy'})[0]
+            radiopiracy = A.o({io:'radiopiracy'})[0]
         }
 
         // when we have both they're doing different work, independently
@@ -136,10 +146,10 @@
                 await this.c_mutex(w,'o_descripted', async () => {
                     w = this.refresh_C([A,w])
 
-                    if (!io) throw "can't opiracy"
+                    if (!radiopiracy) throw "can't opiracy"
                     let pub = this.PF.Pier.Ud+''
                     V.descripted && console.log(`got unemit opiracy: ${uri}`)
-                    await io.sc.o_descripted(pub,uri)
+                    await radiopiracy.sc.o_descripted(pub,uri)
                 })
             },
             i_descripted: async ({uri,N}:{uri:string}) => {
@@ -153,7 +163,7 @@
                 })
             },
         }
-        return {np,io}
+        return {np,radiopiracy}
     },
     // enter a bunch of notes about a uri
     //  to be fed to nowPlaying visuals
@@ -171,6 +181,12 @@
             }
         }
     },
+
+
+
+
+//#endregion
+
 
 
 

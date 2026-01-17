@@ -595,7 +595,7 @@
                 .reduce((sum,s) => sum + s,0)
             if (!re.sc.preview_duration) throw "!re.sc.preview_duration"
             let left = re.sc.preview_duration - played_re_time
-            console.log(`streamability(): left: ${left.toFixed(2)}`) 
+            V.rastream && console.log(`streamability(): left: ${left.toFixed(2)}`) 
             if (left < MIN_LEFT_TO_WANT_STREAMING) {
                 console.log("term: nearing end of %preview, ordering *%stream...")
                 await this.PF.emit('orecord',
