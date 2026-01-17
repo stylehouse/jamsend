@@ -32,7 +32,7 @@
     async cytotermicaster(A,w) {
         let {np} = await this.termicaster_resources(A,w)
         // queries|receives context
-        np && await this.cytotermi_nowPlaying_descripted(A,w,np)
+        np && await this.cytotermi_may_descripted(A,w,np)
 
         let raterm = this.o({A:'audio'})[0]?.oa({w:'raterminal'})
         if (!raterm) return w.i({see:'sitting still'})
@@ -41,11 +41,10 @@
         if (!cynoed) return w.i({waits:'for UI'})
 
 
+        let C = 1 ? await this.cytotermi_knows(A,w)
+            : await this.cytotermi_testdata_knows(A,w)
 
-        let C = 1 ? await this.termicaster_knows(A,w)
-            : await this.termicaster_testdata_knows(A,w)
-
-        // await this.termicaster_test_cytologising(A,w,C)
+        // await this.cytotermi_test_cytologising(A,w,C)
 
         // maintain %Se:cytology**
         await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
@@ -64,7 +63,7 @@
             this.a_Strata = w.sc.a_Strata ||= new Strata({
                 see: [],
                 hide: [
-                    {Dip:1},
+                    // {Dip:1},
                 ],
                 nameclick_fn: async (D:TheC) => await this.nameclick(D),
             })
@@ -94,7 +93,7 @@
     },
 
     // hears from A:audio
-    async cytotermi_nowPlaying_descripted(A,w,np) {
+    async cytotermi_may_descripted(A,w,np) {
         // pinged from nowPlaying with this attached:
         for (let e of this.o_elvis(w,'i_descripted')) {
             let re = e.sc.re
@@ -162,6 +161,7 @@
             let no = raterm.o({nowPlaying:1})[0]
             // copy it here, shallowly except for %nowPlaying:he
             np = no && await w.r({...no.sc})
+            await this.cytotermi_nowPlaying_i_snake(A,w)
         }
 
         // the backend, sending music yonder
@@ -236,9 +236,15 @@
 
 //#region loader
     // replicate all that into another structure of C/nodes/edges
-    async termicaster_knows(A,w) {
+    async cytotermi_knows(A,w) {
         let C = await w.r({Cytotermia:'knows'})
         C.empty()
+        await this.cytotermi_descripted(A,w,C)
+        await this.cytotermi_nowPlaying_o_snake(A,w,C)
+        return C
+    },
+
+    async cytotermi_descripted(A,w,C) {
         let deN = w.o({uri:1,descripted:1})
         this.whittle_N(deN,3)
         for (let de of deN) {
@@ -246,7 +252,7 @@
             // path made of %bit,seq
 
             let bits:TheC[] = grep(map((bit,seq) => {
-                if (seq != 0) {
+                if (1 || seq != 0) {
                     // may reuse the bit already there from another de
                     return C.o({bit,seq:String(seq)})[0]
                         || C.i({bit,seq,de})
@@ -261,9 +267,8 @@
             for (let fa of de.o({factoid:1,uri:1})) {
                 // a shorter uri
                 let path = fa.sc.uri.split('/')
-                // skip the top level music/ dir, bits already has
-                //  and length = last indice - 1
-                let bit = bits[path.length-2]
+                // length = last indice + 1
+                let bit = bits[path.length-1]
                 if (!bit) throw "factoid not on the path"
                 if (!bit.sc.de.sc.uri.startsWith(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
                 
@@ -280,7 +285,27 @@
                 }
             }
         }
-        return C
+    },
+    async cytotermi_nowPlaying_i_snake(A,w) {
+        let no = w.o({nowPlaying:1})[0]
+        if (no) {
+            let snake = w.o({nowPlaying_snake:1})
+            this.whittle_N(snake,5)
+            let la = snake.slice(-1)[0]
+            if (!la || la.sc.uri != no.sc.uri) {
+                w.i(sex({nowPlaying_snake:1},no.sc,'uri,artist,title'))
+            }
+        }
+    },
+    async cytotermi_nowPlaying_o_snake(A,w,C) {
+        let snake = w.o({nowPlaying_snake:1})
+        // put it in the graph
+        let la
+        for (let sn of snake) {
+            let nowplay = C.i({nowplay:`${sn.sc.artist} - ${sn.sc.title}`})
+            if (la) la.i({con:1,to:nowplay})
+            la = nowplay
+        }
     },
 //#endregion
 
@@ -288,7 +313,7 @@
 
 
 //#region test loader
-    async termicaster_test_cytologising(A,w,C) {
+    async cytotermi_test_cytologising(A,w,C) {
         console.log(`termicaster_test_cytologising /*`)
         let It = await w.r({Itica:1})
         this.original_resolve = this.resolve
@@ -315,7 +340,7 @@
         It.resolve = this.original_resolve
     },
 
-    async termicaster_testdata_knows(A,w) {
+    async cytotermi_testdata_knows(A,w) {
         let C = await w.r({Cytotermia:'fabricated'})
         C.empty()
         if (C.o().length) debugger
@@ -414,7 +439,7 @@
         }
         function some_edge(D) {
             if (!D.sc.con) throw "D!%Con"
-            let on = D.sc.left_of || D.sc.aligned_of
+            let on = D.sc.left_of || D.sc.aligned_of || D.sc.to
             if (!on) throw "edge type?"
             return on
         }
@@ -482,7 +507,7 @@
             },
         })
 
-        
+        let are_the_name = ['bit','type','nowplay']
         // now everything has ids
         await Se.c.T.forward(async (T:Travel) => {
             let D = T.sc.D
@@ -499,18 +524,25 @@
                     data.label = D.sc.left_of ? "left" : 'aligned'
                 }
                 else {
+                    let the_name = grep(k => D.sc[k],are_the_name)[0]
+                    if (D.sc.name != null) {
+                        data.name = D.sc.name
+                    }
+                    if (the_name != null) {
+                        data.name = D.sc[the_name]
+                    }
                     if (D.sc.bit) {
-                        data.name = D.sc.bit
                         data.class = 'ayefour'
                     }
                     if (D.sc.nib) {
                         // return
-                        data.name = D.sc.name
                         data.class = D.sc.nib == 'dir' ? 'ayethree' : 'ayetwo'
                     }
                     if (D.sc.type) {
                         data.dir = 1
-                        data.name = D.sc.type
+                    }
+                    if (D.sc.nowplay) {
+                        data.dir = 1
                     }
                 }
                 T.sc.adding ||= []
