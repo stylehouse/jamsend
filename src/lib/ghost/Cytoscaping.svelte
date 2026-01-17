@@ -23,7 +23,7 @@
     // tell everything to cytoscape again
     async recyto() {
         this.node_edger.cy.remove('*')
-        this.node_edger.D.empty()
+        this.node_edger.D?.empty()
         this.main()
     },
     
@@ -252,11 +252,12 @@
             // path made of %bit,seq
 
             let bits:TheC[] = grep(map((bit,seq) => {
-                if (1 || seq != 0) {
-                    // may reuse the bit already there from another de
-                    return C.o({bit,seq:String(seq)})[0]
-                        || C.i({bit,seq,de})
-                }
+                // you can find any %bit,uri
+                let uri = path.slice(0,seq+1).join('/')
+                // may reuse the bit already there from another de
+                //  it'll get an extra edges where merged, which looks nice...
+                return C.o({bit,seq:String(seq),uri})[0]
+                    || C.i({bit,seq,uri,de})
             }, path))
             let la
             for (let bi of bits) {
@@ -303,6 +304,10 @@
         let la
         for (let sn of snake) {
             let nowplay = C.i({nowplay:`${sn.sc.artist} - ${sn.sc.title}`})
+            // link to the track
+            let bit = C.o({bit:1,uri:sn.sc.uri})[0]
+            if (bit) nowplay.i({con:1,to:bit})
+            // link to last bit of snake
             if (la) la.i({con:1,to:nowplay})
             la = nowplay
         }
