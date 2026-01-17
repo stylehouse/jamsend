@@ -790,33 +790,34 @@
         }
         let dealeth = async (A,w,co,rr,client,loopy=0) => {
             let them = A.o({record:1})
-
-            // they might be saying a few things...
-            let re = await this.co_cursor_N_next(co,client,them)
-            if (re) {
-                // hang on, is it all banged up?
-                // < and WHY. eg, I've recently seen them double-seq++ing, all %preview
-                if (this.is_record_disordered(re)) {
-                    console.log(`ignoring disordered re=${re.sc.enid}`)
-                    A.drop(re)
-                    re = null
-                    if (loopy <3) {
-                        dealeth(A,w,co,rr,loopy++)
-                        return
+            await this.c_mutex(w,'dealeth', async () => {
+                // they might be saying a few things...
+                let re = await this.co_cursor_N_next(co,client,them)
+                if (re) {
+                    // hang on, is it all banged up?
+                    // < and WHY. eg, I've recently seen them double-seq++ing, all %preview
+                    if (this.is_record_disordered(re)) {
+                        console.log(`ignoring disordered re=${re.sc.enid}`)
+                        A.drop(re)
+                        re = null
+                        if (loopy <3) {
+                            dealeth(A,w,co,rr,loopy++)
+                            return
+                        }
                     }
                 }
-            }
-            if (re) {
-                w.i({see:"unemit:orecord"})
-                await sendeth(A,w,co,rr,client,re)
-            }
-            else {
-                // can send when one arrives
-                V.tx && console.log("broad: orecord: excitable")
-                await rr.r({excitable:1})
+                if (re) {
+                    w.i({see:"unemit:orecord"})
+                    await sendeth(A,w,co,rr,client,re)
+                }
+                else {
+                    // can send when one arrives
+                    V.tx && console.log("broad: orecord: excitable")
+                    await rr.r({excitable:1})
 
-                io?.sc.ohhi()
-            }
+                    io?.sc.ohhi()
+                }
+            })
         }
         w.sc.unemits ||= {
             orecord: async ({client,ack_seq,enid,want_streaming},{P,Pier:samePier}) => {
