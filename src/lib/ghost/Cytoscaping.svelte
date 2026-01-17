@@ -10,6 +10,9 @@
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
    
     let {M} = $props()
+    let V = {}
+    V.descripted = 0
+    V.cyto = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -58,7 +61,7 @@
             if (!de) {
                 // ask for it
                 if (!w.oa({uri,wants_descripted:1})) {
-                    console.log(`want o_descripted`)
+                    V.descripted && console.log(`want o_descripted`)
                     await this.PF.emit('o_descripted',{uri:np.sc.uri})
                     w.i({desc:1,uri,wants_descripted:1})
                 }
@@ -83,6 +86,79 @@
     },
 
 //#endregion
+
+
+//#endregion
+//#region resources
+    // we'll be acting as one or both of
+    async termicaster_resources(A,w) {
+        // the frontend, listening to the music
+        let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
+        w.i({see:1,raterm})
+        let np
+        if (raterm) {
+            let no = raterm.o({nowPlaying:1})[0]
+            // copy it here, shallowly except for %nowPlaying:he
+            np = no && await w.r({...no.sc})
+        }
+
+        // the backend, sending music yonder
+        let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
+        w.i({see:1,racast})
+        let io
+        if (racast) {
+            // copy %io:radiopiracy interfaces here
+            await this.Miome(A,{io:'radiopiracy'})
+            if (!A.oa({io:'radiopiracy'})) throw "not there!"
+            io = A.o({io:'radiopiracy'})[0]
+        }
+
+        // when we have both they're doing different work, independently
+        // our raterm emit:o_descripted ->
+        //  their unemit:o_descripted ->
+        //   %io=radiopiracy,o_descripted()
+        //    ...creates a job somewhere
+        //    comes back via the i_* of the above, etc
+        // the emit+unemit is moving betweens Piers
+
+
+        w.sc.unemits ||= {
+            o_descripted: async ({uri}:{uri:string}) => {
+                w = this.refresh_C([A,w])
+                await this.c_mutex(w,'o_descripted', async () => {
+                    w = this.refresh_C([A,w])
+
+                    if (!io) throw "can't opiracy"
+                    let pub = this.PF.Pier.Ud+''
+                    V.descripted && console.log(`got unemit opiracy: ${uri}`)
+                    await io.sc.o_descripted(pub,uri)
+                })
+            },
+            i_descripted: async ({uri,N}:{uri:string}) => {
+                w = this.refresh_C([A,w])
+                await this.c_mutex(w,'i_descripted', async () => {
+                    w = this.refresh_C([A,w])
+
+                    V.descripted && console.log("i_descripted: ",N)
+                    // has to be two-arg r() for not being pattern={uri:1}
+                    let was = w.o({uri:1,descripted:1})
+                    let de = await w.r({uri},{descripted:1})
+                    let now = w.o({uri:1,descripted:1})
+                    V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)
+                    de.empty()
+                    for (let fasc of N) {
+                        let fa = de.i(tex({},fasc))
+                        for (let nisc of fasc.N) {
+                            fa.i(nisc)
+                        }
+                    }
+                    this.i_elvis(w)
+                })
+            },
+        }
+        return {np,io}
+    },
+
 
 
 
@@ -145,7 +221,8 @@
         console.log(`termicaster_test_cytologising /*`)
         let It = await w.r({Itica:1})
         this.original_resolve = this.resolve
-        It.resolve = this.test_resolve
+        // GONE had a forked resolve() function here
+        It.resolve = this.test_resolve || this.resolve
         await It.replace({Gra:1},async () => {
             for (let n of C.o()) {
                 let Iti = It.i({Gra:1,...n.sc})
@@ -208,182 +285,6 @@
 
 
 
-//#region test resolve()
-
-
-    // < fix what seems to be dealing b multiple times in pairs...
-    async test_resolve(X:TheX,oldX:TheX,partial:TheN|null,q={}) {
-        if (!oldX?.z?.length) {
-            // everything is new
-            return (X.z||[]).map(n => [null,n])
-        }
-        // partial may be a set of old things we're replacing
-        //  if partial, there's other stuff in oldX we're not replacing
-        // but X is always the new stuff only
-        let partsof = (N:TheN) => {
-            return N.filter(n => !partial || partial.includes(n))
-        }
-        // debuggery
-        let coms = this.coms
-
-        // collect islands of same k+v
-        let Over = _C({})
-        Over.Xify()
-
-        let kv_iter = (X,fn) => {
-            Object.entries(X.k||{}).forEach(([k,kx]) => {
-                kx = kx as TheX
-                // eg k=nib, we're dividing nib=dir|blob
-                Object.entries(kx.v).forEach(([i,vx]) => {
-                    let v = kx.vs[i]
-                    fn(k,kx,v,vx)
-                })
-            })
-        }
-
-        // iterate the new k/v structure
-
-        kv_iter(X,(k,kx,v,vx) => {
-            // eg k=nib,v=dir
-
-            // expect some string property will be more disambiguating
-            // < ref matching. would be slower. do on the remainder?
-            let vtype = typeof v == 'object' ? 'ref' : 'string'
-            if (vtype == 'ref') return
-
-            // look for the same k/v
-            let oldvx = oldX.o_kv(k,v,{notwild:1})
-            if (!oldvx) return // none
-
-            if (!oldvx.z.length) throw `should always be some /$n`
-            let old_z = partsof(oldvx.z)
-            if (!old_z.length) {
-                // may share kv with the out-group
-                // < an odd occasion to study in testing
-                // console.warn("Perhaps your replace() pattern_sc doesn't match the new atoms?",{X,partial})
-                return
-            }
-            vx.z.forEach((n:TheC,i:number) => {
-                // any neu%nib:dir could match any old%nib:dir
-                // via /$v:neu /$k/$v:stringval /$n=old
-                let nkvx = Over.X.i_v(n,null,'neu') .i_k(k).i_v(v,null)
-                for (let oldn of old_z) {
-                    nkvx.i_z(oldn)
-                    console.log(`into k=${k}, v=${v}, for: ${keyser(n)}`)
-                }
-            })
-        })
-
-
-
-        // /$v:neu /$k/$v:stringval /$n=old
-        Object.entries(Over.X.neu||{}).forEach(([i,_neux]) => {
-            let n = Over.X.neus[i]
-            let neux = _neux as TheX
-            kv_iter(neux,(k,kx,v,vx) => {
-                let possible = vx.z
-                let unambiguity = 1 / possible.length
-                // for %nib:dir x20 matching less than %name:veryunique x1
-                // /$neu /$ambiguity=0.234 /$n=old
-                let rated = neux.i_k(unambiguity,null,'unambiguity')
-                rated.z = [...vx.z]
-                // /$ambiguity=0.234 /$n=neu for ordering matches amognst all $neu
-                Over.X.i_k(unambiguity,n,'unambiguity')
-
-                // console.log(`unam k=${k}, v=${v}, unam=${unambiguity}, for:`)
-                // for (let n of rated.z) {
-                //     console.log(`  - ${keyser(n)}`)
-                // }
-            })
-        })
-        let sort_unambiguity = (X) => {
-            return Object.keys(X.unambiguity||{}).sort().reverse()
-        }
-
-        // pairs of [oldn,n], eventual result
-        let pairs = []
-        // $neu dwindling to actual new items
-        let unfound:Array<TheC> = [...(X.z||[])]
-        // $oldn that become paired with a $neu
-        let claimed:Array<TheC> = []
-        let claiming:Array<TheC> = []
-        let claim = (oldn,n) => {
-            if (claiming.includes(n)) {
-                console.error(`resolve() multi b deals`)
-            }
-            pairs.push([oldn,n])
-            unfound = unfound.filter(m => m != n)
-            claimed.push(oldn)
-            claiming.push(n)
-        }
-
-        // sort by unambiguity
-        // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
-        let ratings = sort_unambiguity(Over.X)
-        ratings.forEach((unambiguity) => {
-            let x = Over.X.unambiguity[unambiguity]
-            x.z.forEach((n:TheC) => {
-                if (!unfound.includes(n)) return
-
-                // /$v:neu
-                let neux = Over.X.i_v(n,null,'neu')
-                if (!neux?.k) throw `algo!?k`
-                let rated = neux.i_k(unambiguity,null,'unambiguity')
-                if (!rated.z.length) throw `algo!?z`
-
-                // console.log(`unam k=${k}, v=${v}, unam=${unambiguity}, for:`)
-                // for (let n of rated.z) {
-                //     console.log(`  - ${keyser(n)}`)
-                // }
-
-                for (let oldn of rated.z) {
-                    if (claimed.includes(oldn)) return
-                    // < I fade out here. maybe with a better io notation...
-                    //   sorting through arrangements any more is...
-                    //    one of those has-been-done academic things
-                    // let oldnx = Over.X.i_v(oldn,n,'old')
-                    // if (oldnx.z.length > 1) coms&&coms.i({ambiguo:n,neu:keyser(n),oldn,old:keyser(oldn)})
-                    // < pile up neux/$maybe=oldn from many vx
-                    //    to union many takes on $oldn with decreasing pickiness
-                    //     depending on everyone else's contest...
-                    //    lots of permuting?
-                    // or just accept the first one?
-                    //  they are sorted for uniqueness, won't re-claim...
-                    if (q.strict) {
-                        // be more likely to drop and recreate things
-                        let valuesOf = (n) => armap(v=>v+'',n.sc).join(',')
-                        if (valuesOf(n) != valuesOf(oldn)) {
-                            return
-                        }
-                    }
-                    claim(oldn,n)
-                    // once n is claimed, stop claiming oldn for it
-                    break
-                }
-            })
-        })
-
-        // what's left in X_before (that we are partial to replacing)
-        let gone = partsof(oldX.z||[])
-            .filter(oldn => !claimed.includes(oldn))
-        
-        // log it all
-        if (0 && coms) {
-            pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
-            unfound.forEach((n) => coms.i({spawn:keyser(n)}))
-            gone.forEach((n) => coms.i({gone:keyser(n)}))
-        }
-
-        // new stuff
-        unfound.forEach((n) => pairs.push([null,n]))
-        // gone stuff
-        gone.forEach((oldn) => pairs.push([oldn,null]))
-
-        return pairs
-    },
-
-//#endregion
-
 
 
 
@@ -396,9 +297,7 @@
             await w.r({Se:'cytology'},{})
             node_edger.cy.freshie = false
         }
-        console.log(`Gra`)
-        console.log(`Gra`)
-        console.log(`Gra`)
+        V.cyto && console.log(`Gra`)
         node_edger.D = await w.r({Se:'cytology'})
         // for aiming...
         let btw = `
@@ -428,7 +327,7 @@
                 n:D,
                 match_sc: trace_sc,
                 each_fn: async (n:TheC,nT:Travel) => {
-                    console.log(`cyto -- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n)}`)
+                    V.cyto && console.log(`cyto -- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n)}`)
                     T.sc.removing.push({id:id_of(n)})
                 },
             })
@@ -479,7 +378,7 @@
                     // assign ids like 0_1_22_3
                     if (D.oa({Dip:1})) throw "neu already %Dip"
                     D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
-                    console.log(`cyto ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D)}`)
+                    V.cyto && console.log(`cyto ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D)}`)
                     // come back once we have them all
                     D.c.T.sc.is_neu = true
                 }
@@ -530,7 +429,7 @@
         await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(...T.sc.adding))
         await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(...T.sc.removing))
         if (adding.length || removing.length) {
-            console.log("Cytochangeup",{adding,removing})
+            V.cyto && console.log("Cytochangeup",{adding,removing})
         }
         node_edger.remove(removing)
 
@@ -543,72 +442,6 @@
 
 
         
-    },
-
-
-
-//#endregion
-//#region resources
-    // we'll be connected to one or both of
-    async termicaster_resources(A,w) {
-        let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
-        w.i({see:1,raterm})
-        let np
-        if (raterm) {
-            let no = raterm.o({nowPlaying:1})[0]
-            // copy it here, shallowly except for %nowPlaying:he
-            np = no && await w.r({...no.sc})
-        }
-
-
-        let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
-        w.i({see:1,racast})
-        let io
-        if (racast) {
-            // copy %io:radiopiracy interfaces here
-            await this.Miome(A,{io:'radiopiracy'})
-            if (!A.oa({io:'radiopiracy'})) throw "not there!"
-            io = A.o({io:'radiopiracy'})[0]
-        }
-
-        // when we have both they're doing different work, independently
-
-
-        w.sc.unemits ||= {
-            o_descripted: async ({uri}:{uri:string}) => {
-                w = this.refresh_C([A,w])
-                await this.c_mutex(w,'o_descripted', async () => {
-                    w = this.refresh_C([A,w])
-
-                    if (!io) throw "can't opiracy"
-                    let pub = this.PF.Pier.Ud+''
-                    console.log(`got unemit opiracy: ${uri}`)
-                    await io.sc.o_descripted(pub,uri)
-                })
-            },
-            i_descripted: async ({uri,N}:{uri:string}) => {
-                w = this.refresh_C([A,w])
-                await this.c_mutex(w,'i_descripted', async () => {
-                    w = this.refresh_C([A,w])
-
-                    console.log("The piracy download: ",N)
-                    // has to be two-arg r() for not being pattern={uri:1}
-                    let was = w.o({uri:1,descripted:1})
-                    let de = await w.r({uri},{descripted:1})
-                    let now = w.o({uri:1,descripted:1})
-                    console.log(`i_descripted ${was.length} -> ${now.length}`)
-                    de.empty()
-                    for (let fasc of N) {
-                        let fa = de.i(tex({},fasc))
-                        for (let nisc of fasc.N) {
-                            fa.i(nisc)
-                        }
-                    }
-                    this.i_elvis(w)
-                })
-            },
-        }
-        return {np,io}
     },
 
 
@@ -650,7 +483,7 @@
         let io = await this.r({io:'radiopiracy'},{
             o_descripted: async (pub,uri) => {
                 w = this.refresh_C([A,w])
-                console.log(`o_descripted io'd`)
+                V.descripted && console.log(`o_descripted io'd`)
                 let rd = await w.r({uri,pub},{request_descripted:1})
                 this.i_elvis(w,'noop',{handle:rd})
                 return rd
@@ -659,10 +492,10 @@
             i_descripted: async (rd) => {
                 // < encoding C for sends...
                 let N = rd.o({factoid:1}).map(fa=>{
-                    console.log("A factoid: "+keyser(fa.sc))
+                    V.descripted>1 && console.log("A factoid: "+keyser(fa.sc))
                     return fa.sc
                 })
-                console.log(`i_descripted io'd`)
+                V.descripted && console.log(`i_descripted io'd`)
 
                 if (rd.sc.return_fn) {
                     await rd.sc.return_fn()
@@ -749,7 +582,7 @@
         await this.drift_up_D(D,async (D,ups) => {
             let uri = this.Se.D_to_uri(D)
             let c:any = {factoid:1,uri,N:[]}
-            console.log(`descripted the ${uri}:`,rd.o().map(keyser))
+            V.descripted && console.log(`descripted the ${uri}:`,rd.o().map(keyser))
 
             if (failed_at) {
                 // remark once on the deepest D about Not Found
@@ -776,7 +609,6 @@
             // this is a music-type grouping
             //  they may or may not believe in replicating it
             c.N.push({readin:1,type:'collection'})
-            console.log("A readin:1,type:'collection factoid: "+keyser(c))
         }
         else if (ups <2) {
             // the deepest two levels have /*%nib listed

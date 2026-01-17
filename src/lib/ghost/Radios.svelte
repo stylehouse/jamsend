@@ -1074,7 +1074,7 @@
         let reqy = await this.requesty_serial(w,'load_random_records')
         // < nothing can delete these?
         // < it doesn't like elvising this in
-        await w.r({requesty_load_random_records:1,finished:1},{})
+        // await w.r({requesty_load_random_records:1,finished:1},{})
         let having = had.length + reqy.pending
         if (having < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
