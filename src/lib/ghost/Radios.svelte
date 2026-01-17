@@ -1123,33 +1123,85 @@
     },
 
 
-    async requesty_serial(w,t) {
-        let reqserialc = {}
-        reqserialc['requesty_'+t+'_serial'] = 1
-        let reqc = {}
-        reqc['requesty_'+t] = 1
-        let req_serial:TheC
-        let ison = async () => {
-            console.log(`requesty_serial(w,${t})`)
-            req_serial = w.o({...reqserialc})[0]
-            req_serial ||= await w.r({...reqserialc,i:1})
-            req_serial.sc.i ||= 7
-            ison = async () => {}
-        }
-        return {
-            pending: w.o(({...reqc})).length,
-            async i(c) {
-                await ison()
-                let req = await w.r({...reqc,...c},{...c})
-                req.sc.req_i ||= req_serial.sc.i++
-            },
-            o() {
-                return w.o(({...reqc}))
-            },
-        }
-    },
 
     //#endregion
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    //#region hunt, radiopreview
+    async rahunting(A,w,D) {
+        // in response to eg decode errors, just try again from the top
+        A.c.reset_Aw = async () => await this.Areset(A)
+        // we are done immediately, and move on to...
+        w.i({satisfied:1})
+        w.sc.then = 'meander'
+        A.c.meander_then = 'radiopreview'
+    },
+    
+    async radiopreview(A,w,D) {
+        if (!this.gat.AC_ready) return w.i({error:"!AC",waits:1})
+        // w can mutate
+        w.sc.then = "rest"
+        w.c.error_fn = async (er) => {
+            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
+            // re-wander due to corrupt-seeming data
+            // < make note. a lot of music out there has decode problems, perhaps not always fatal?
+            await A.c.reset_Aw?.()
+            return true
+        }
+
+        if (!w.oa({buffers:1})) {
+            await this.radiopreview_i_buffers(A,w,D)
+        }
+
+        let radiostock = this.o({io:'radiostock'})[0]
+        if (!radiostock) return w.i({waits:"%io:radiostock"})
+
+        if (!w.oa({aud:1})) {
+            let aud = await this.record_preview(A,w,D,{
+                get_offset: (aud) => aud.duration() - PREVIEW_DURATION,
+            })
+            // hold on to this while it's happening
+            w.i({aud})
+            // forget the encoded source buffers now
+            await w.r({buffers:1},{ok:1})
+            w.c.on_recording = async (re,pr) => {
+                w = this.refresh_C([A,w])
+                radiostock = this.refresh_C([radiostock])
+                // makes wave of re.c.promise
+                // < temporarily re.c.promised()
+                await this.Cpromise(re);
+                if (pr.sc.seq == 0) {
+                    // we can start streaming this very very soon...
+                    //  supposing latency is stable, they should be able to start playing it now?
+                    await radiostock.sc.i(re)
+                    w.i({see:'record taken!'})
+                }
+            }
+        }
+
+        await this.watch_auds_progressing(A,w,D)
+    },
+    //#endregion
+
+
+
+
+
+
+    
+
+
     //#region rastream
     async rastream(A,w) {
         // await need
@@ -1294,61 +1346,6 @@
 
 
     //#endregion
-    //#region hunt, radiopreview
-    async rahunting(A,w,D) {
-        // in response to eg decode errors, just try again from the top
-        A.c.reset_Aw = async () => await this.Areset(A)
-        // we are done immediately, and move on to...
-        w.i({satisfied:1})
-        w.sc.then = 'meander'
-        A.c.meander_then = 'radiopreview'
-    },
-    
-    async radiopreview(A,w,D) {
-        if (!this.gat.AC_ready) return w.i({error:"!AC",waits:1})
-        // w can mutate
-        w.sc.then = "rest"
-        w.c.error_fn = async (er) => {
-            if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
-            // re-wander due to corrupt-seeming data
-            // < make note. a lot of music out there has decode problems, perhaps not always fatal?
-            await A.c.reset_Aw?.()
-            return true
-        }
-
-        if (!w.oa({buffers:1})) {
-            await this.radiopreview_i_buffers(A,w,D)
-        }
-
-        let radiostock = this.o({io:'radiostock'})[0]
-        if (!radiostock) return w.i({waits:"%io:radiostock"})
-
-        if (!w.oa({aud:1})) {
-            let aud = await this.record_preview(A,w,D,{
-                get_offset: (aud) => aud.duration() - PREVIEW_DURATION,
-            })
-            // hold on to this while it's happening
-            w.i({aud})
-            // forget the encoded source buffers now
-            await w.r({buffers:1},{ok:1})
-            w.c.on_recording = async (re,pr) => {
-                w = this.refresh_C([A,w])
-                radiostock = this.refresh_C([radiostock])
-                // makes wave of re.c.promise
-                // < temporarily re.c.promised()
-                await this.Cpromise(re);
-                if (pr.sc.seq == 0) {
-                    // we can start streaming this very very soon...
-                    //  supposing latency is stable, they should be able to start playing it now?
-                    await radiostock.sc.i(re)
-                    w.i({see:'record taken!'})
-                }
-            }
-        }
-
-        await this.watch_auds_progressing(A,w,D)
-    },
-
 
 
 

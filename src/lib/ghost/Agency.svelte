@@ -483,6 +483,34 @@
     },
 
 
+//#endregion
+//#region util
+    async requesty_serial(w,t) {
+        let reqserialc = {}
+        reqserialc['requesty_'+t+'_serial'] = 1
+        let reqc = {}
+        reqc['requesty_'+t] = 1
+        let req_serial:TheC
+        let ison = async () => {
+            console.log(`requesty_serial(w,${t})`)
+            req_serial = w.o({...reqserialc})[0]
+            req_serial ||= await w.r({...reqserialc,i:1})
+            req_serial.sc.i ||= 7
+            ison = async () => {}
+        }
+        return {
+            pending: w.o(({...reqc})).length,
+            async i(c) {
+                await ison()
+                let req = await w.r({...reqc,...c},{...c})
+                req.sc.req_i ||= req_serial.sc.i++
+            },
+            o() {
+                return w.o(({...reqc}))
+            },
+        }
+    },
+
 
 
 
