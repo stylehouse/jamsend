@@ -1035,10 +1035,16 @@ export type TheN = TheC[]
 //#endregion
 //#region f
 
-export function keyser(n:TheC|Object) {
+export function keyser(n:TheC|Object,loop=false) {
     let la:Array<string> = []
     Object.entries(n.sc || n).forEach(([k,v]) => {
-        la.push(k+":"+objectify(v))
+        if (loop) {
+            // we've got to stop zooming down into v
+            la.push(k)
+        }
+        else {
+            la.push(k+":"+objectify(v,true))
+        }
     })
     return la.join(", ")
 }
@@ -1060,11 +1066,15 @@ function inner_sizing(innered) {
 
 // data dumper
 // < recursion
-export function objectify(v:any):string {
+export function objectify(v:any,loop=false):string {
     let s = String(
         typeof v == 'number' || typeof v == 'string' ? v
         : v == null ? 'null'
-        : v.constructor == Array ? `[${v.map(n => objectify(n)).join(',')}]`
+        : v.constructor == Array ? `[${
+            loop ? "x"+v.length
+                : v.map(n => objectify(n,true)).join(',')
+        }]`
+        : v.constructor == TheC ? `${keyser(v,loop)}`
         : `${v.constructor.name}()`
     )
     let where = 77

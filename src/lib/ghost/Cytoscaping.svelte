@@ -282,8 +282,8 @@
             let bits = grep(map((bit,seq) => {
                 if (seq != 0) {
                     // may reuse the bit already there from another de
-                    // return C.o({bit,seq:String(seq)})[0] ||
-                    return C.i({bit,seq})
+                    return C.o({bit,seq:String(seq)})[0]
+                        || C.i({bit,seq})
                 }
             }, path))
             let la
@@ -294,7 +294,7 @@
                 first ||= bi
             }
             if (onwards) {
-                if (1 || w.o1({round:1,self:1})[0] % 3) {
+                if (w.o1({round:1,self:1})[0] % 3) {
                 }
                 else {
                     let le = C.i({nib:'dir',name:'lemond'})

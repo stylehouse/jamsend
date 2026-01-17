@@ -37,7 +37,7 @@
 
 {#snippet ziado(stuffziado:Stuffziado)}
     {#if stuffziado.is_C}
-        <span class="count">C</span>
+        <span class="shiningsymbol">%</span>
     {/if}
 
 
@@ -122,6 +122,11 @@
     & .count {
         color: rgb(156, 140, 217);
         font-size: 85%;
+    }
+    & .shiningsymbol {
+        color: rgb(83, 255, 15);
+        font-size: 162%;
+        line-height:67%;
     }
 
     & .arrow {
