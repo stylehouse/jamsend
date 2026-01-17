@@ -9,8 +9,9 @@
     import cola from "cytoscape-cola";
     import { onMount } from "svelte";
     import { throttle } from "$lib/Y";
-    let layeng = cola;
-    let layeng_name = "cola";
+    import { keyser } from "$lib/data/Stuff.svelte";
+    let layeng = fcose;
+    let layeng_name = "fcose";
     cytoscape.use(layeng);
 
     //#endregion
@@ -33,6 +34,22 @@
                 color: "darkred",
             },
         },
+        {
+            selector: 'node[class="blob"]',
+            style: {
+                height: "70",
+                width: "120",
+                "background-color": "black",
+            },
+        },
+        {
+            selector: 'node[class="collection"]',
+            style: {
+                width: "70",
+                height: "90",
+                "background-color": "black",
+            },
+        },
 
         {
             selector: 'node[class="ayefour"]',
@@ -46,7 +63,7 @@
             selector: 'node[class="ayethree"]',
             style: {
                 width: "70",
-                height: "90",
+                height: "290",
                 "background-color": "chocolate",
             },
         },
@@ -175,7 +192,7 @@
         let name = layeng_name;
 
         // all the constraints merged into a tree as per fcose doc / API
-        let concon = node_edger.constraints_config
+        let concon = node_edger.constraints_config || {}
 
         return {
             name,
@@ -210,6 +227,7 @@
         layout();
     });
     let lay;
+    let relayout = throttle(() => layout(),200)
     function layout() {
         lay?.stop(); 
         lay = cy.layout({
@@ -269,6 +287,18 @@
         );
     }
 
+    let constraints_memo = ''
+    node_edger.constraints = (concon) => {
+        let memo = JSON.stringify(concon)
+        console.log(`Got concon`)
+        if (memo == constraints_memo) return
+        constraints_memo = memo
+        console.log(`Changed concon: ${memo}`)
+        // setTimeout(() => {
+            node_edger.constraints_config = concon
+            relayout()
+        // },111)
+    }
     node_edger.add = (N) => {
         if (!N.length) return
         cy.add(N);
@@ -301,5 +331,6 @@
         height: 100%;
         min-height: 50em;
         min-width: 40em;
+        background: hsl(0, 29%, 45%)
     }
 </style>

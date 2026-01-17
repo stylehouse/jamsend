@@ -265,10 +265,16 @@
                 if (la) la.i({con:1,left_of:bi,class:'along'})
                 la = bi
             }
+            la.sc.class = 'blob'
 
             for (let fa of de.o({factoid:1,uri:1})) {
                 // a shorter uri
                 let bit = C.o({bit:1,uri:fa.sc.uri})[0]
+
+                if (fa.oa({readin:1,type:'collection'})) {
+                    bit.sc.name = bit.sc.bit.match(/^(?:[-0] )(.+)$/)[1]
+                    bit.sc.class = 'collection'
+                }
 
                 // let path = fa.sc.uri.split('/')
                 // // length = last indice + 1
@@ -550,7 +556,10 @@
 
 //#region _edge_nodes
     async cytologising_edge_nodes(A,w,C,q) {
-        // node_edger.constraints_config
+        // also pushing to cytoscape via layout(), which we do every time
+        let concon = {}
+
+
         let are_the_name = ['bit','type','nowplay']
         // now everything has ids
         let Se = this.Se
@@ -568,15 +577,27 @@
                     data.target = C.c.id_of(on)
                     data.label = D.sc.label != null ? D.sc.label
                         : D.sc.left_of ? "left" : 'aligned'
+                    
                     data.class = D.sc.class
+
+                    if (D.sc.left_of) {
+                        let ar = concon['relativePlacementConstraint'] ||= []
+                        let c = {
+                            left: C.c.id_of(uD),
+                            right: C.c.id_of(D.sc.left_of),
+                            gap: 22,
+                        }
+                        console.log(` a left-right: ${c.left} -> ${c.right}`)
+                        ar.push(c)
+                    }
                 }
                 else {
                     let the_name = grep(k => D.sc[k],are_the_name)[0]
-                    if (D.sc.name != null) {
-                        data.name = D.sc.name
-                    }
                     if (the_name != null) {
                         data.name = D.sc[the_name]
+                    }
+                    if (D.sc.name != null) {
+                        data.name = D.sc.name
                     }
                     if (D.sc.bit) {
                         data.class = 'ayefour'
@@ -590,6 +611,9 @@
                     }
                     if (D.sc.nowplay) {
                         data.dir = 1
+                    }
+                    if (D.sc.class) {
+                        data.class = D.sc.class
                     }
                 }
                 T.sc.adding ||= []
@@ -605,7 +629,6 @@
         if (adding.length || removing.length) {
             V.cyto && console.log("Cytochangeup",{adding,removing})
         }
-        q.node_edger.remove(removing)
 
         for (let add of adding) {
             add.data.id = add.id
@@ -614,8 +637,11 @@
         q.node_edger.add(adding_nodes)
         q.node_edger.add(adding)
 
-
+        q.node_edger.constraints(concon)
         
+        setTimeout(() => {
+            q.node_edger.remove(removing)
+        }, 400)
     },
 
 
