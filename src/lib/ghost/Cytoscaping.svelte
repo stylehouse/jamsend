@@ -256,32 +256,37 @@
                 let uri = path.slice(0,seq+1).join('/')
                 // may reuse the bit already there from another de
                 //  it'll get an extra edges where merged, which looks nice...
+                if (seq == 0) return
                 return C.o({bit,seq:String(seq),uri})[0]
                     || C.i({bit,seq,uri,de})
             }, path))
             let la
             for (let bi of bits) {
-                if (la) la.i({con:1,left_of:bi})
+                if (la) la.i({con:1,left_of:bi,class:'along'})
                 la = bi
             }
 
             for (let fa of de.o({factoid:1,uri:1})) {
                 // a shorter uri
-                let path = fa.sc.uri.split('/')
-                // length = last indice + 1
-                let bit = bits[path.length-1]
-                if (!bit) throw "factoid not on the path"
-                if (!bit.sc.de.sc.uri.startsWith(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
+                let bit = C.o({bit:1,uri:fa.sc.uri})[0]
+
+                // let path = fa.sc.uri.split('/')
+                // // length = last indice + 1
+                // let bit = bits[path.length-1]
+                // if (!bit) throw "factoid not on the path"
+                // if (!bit.sc.de.sc.uri.startsWith(fa.sc.uri)) throw `not a/b/c != b/b/c safe`
                 
                 let la
                 for (let ni of fa.o({})) {
+                    // < don't graph all these? wants putting in a box or something
+                        continue
                     if (ni.sc.nib == 'dir') {
                     }
                     else {
                         continue
                     }
                     let gh = C.i(ni.sc)
-                    gh.i({con:1,aligned_of:bit})
+                    gh.i({con:1,aligned_of:bit,label:'facto'})
                     if (la) la.i({con:1,above:gh})
                 }
             }
@@ -303,13 +308,23 @@
         // put it in the graph
         let la
         for (let sn of snake) {
-            let nowplay = C.i({nowplay:`${sn.sc.artist} - ${sn.sc.title}`})
-            // link to the track
-            let bit = C.o({bit:1,uri:sn.sc.uri})[0]
-            if (bit) nowplay.i({con:1,to:bit})
-            // link to last bit of snake
-            if (la) la.i({con:1,to:nowplay})
-            la = nowplay
+            if ('just link what has played') {
+                let bit = C.o({bit:1,uri:sn.sc.uri})[0]
+                if (!bit) continue
+                // link to next bit they listened to
+                if (la) la.i({con:1,to:bit,class:'outward'})
+                la = bit
+            }
+            else {
+                // draws the snake to the side of everything
+                let nowplay = C.i({nowplay:`${sn.sc.artist} - ${sn.sc.title}`})
+                // link to the track
+                let bit = C.o({bit:1,uri:sn.sc.uri})[0]
+                if (bit) nowplay.i({con:1,to:bit,class:'outward'})
+                // link to last bit of snake
+                if (la) la.i({con:1,to:nowplay,class:'outward'})
+                la = nowplay
+            }
         }
     },
 //#endregion
@@ -526,7 +541,9 @@
                     let on = some_edge(D)
                     data.source = id_of(uD)
                     data.target = id_of(on)
-                    data.label = D.sc.left_of ? "left" : 'aligned'
+                    data.label = D.sc.label != null ? D.sc.label
+                        : D.sc.left_of ? "left" : 'aligned'
+                    data.class = D.sc.class
                 }
                 else {
                     let the_name = grep(k => D.sc[k],are_the_name)[0]

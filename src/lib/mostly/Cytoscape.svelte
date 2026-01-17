@@ -89,7 +89,6 @@
                 width: "3",
                 "target-arrow-shape": "triangle",
                 "line-color": "darkred",
-                "target-arrow-color": "darkred",
                 //'font-weight': 'bold'
             },
         },
@@ -97,8 +96,8 @@
             selector: 'edge[class="along"]',
             style: {
                 color: "lightblue",
-                "line-color": "lightblue",
-                "target-arrow-color": "lightblue",
+                "line-color": "gold",
+                "target-arrow-color": "gold",
             },
         },
         {
@@ -151,6 +150,7 @@
             selector: 'edge[class="outward"]',
             style: {
                 "line-color": "#842",
+                "width":"2em"
             },
         },
     ];
