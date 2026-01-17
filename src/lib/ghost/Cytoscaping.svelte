@@ -8,6 +8,7 @@
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
+    import { Strata, Structure } from '$lib/mostly/Structure.svelte';
    
     let {M} = $props()
     let V = {}
@@ -41,13 +42,39 @@
 
 
 
-        let C = 1 ? await this.termicaster_knows(A,w)
+        let C = 0 ? await this.termicaster_knows(A,w)
             : await this.termicaster_testdata_knows(A,w)
 
         // await this.termicaster_test_cytologising(A,w,C)
-        
+
+        // maintain %Se:cytology**
         await this.termicaster_cytologising(A,w,C,cynoed.sc.node_edger)
+
+
+        // which is the main Selection about cytotermicaster
+        //  it now contains what should be in the graph
+        //  and dispatches changes
+        let Se = this.Se
+
+        // and flat-list it for debugging...
+        if (this.stashed?.do_strata === false) {
+            this.a_Strata = null
+        }
+        else {
+            this.a_Strata = w.sc.a_Strata ||= new Strata({
+                see: [],
+                hide: [
+                    {Dip:1},
+                ],
+                nameclick_fn: async (D:TheC) => await this.nameclick(D),
+            })
+            this.a_Strata.update({Se,thetime:this.thetime})
+        }
     },
+//#endregion
+
+
+//#region resources
     
     // "takes over" doing visuals for the Modus
     async cynoed(A,w) {
@@ -59,6 +86,7 @@
             // < redesign this for times when the UI won't re-elvis us...
             if (M.node_edger) {
                 await w.r({cytool:1,node_edger:M.node_edger})
+                await this.recyto()
             }
         }
 
@@ -104,10 +132,6 @@
 
 
 
-//#endregion
-
-
-//#region resources
     // we'll be acting as one or both of
     async termicaster_resources(A,w) {
         // the frontend, listening to the music
@@ -186,8 +210,6 @@
 
 
 //#endregion
-
-
 
 
 
@@ -303,8 +325,15 @@
                 }
             }
         }
-        upbits(['music','0 chill','One','Two'])
-        upbits(['music','0 chill','Tahi','Rua'], true)
+        if (w.o1({round:1,self:1}) <3 ) {
+            upbits(['music','0 chill','One','Two'])
+            upbits(['music','0 chill','Tahi','Rua'])
+        }
+        else {
+            upbits(['music','0 chill','One','Two'])
+            upbits(['music','0 chill','Mexi','Co'])
+
+        }
         return C
     },
 
@@ -321,6 +350,8 @@
 //#region cytologising
     async termicaster_cytologising(A,w,C,node_edger) {
         let Se = new Selection()
+        this.thetime ||= 0
+        let thetime = this.thetime += 1
         // the top D that everything will be traced to, ongoingly
         if (node_edger.cy.freshie) {
             await w.r({Se:'cytology'},{})
@@ -356,7 +387,7 @@
                 n:D,
                 match_sc: trace_sc,
                 each_fn: async (n:TheC,nT:Travel) => {
-                    V.cyto && console.log(`cyto -- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n)}`)
+                    V.cyto && console.log(`cyto -- ${indent(T.c.path)} ${id_of(n)}: ${keyser(n,-2)}`)
                     T.sc.removing.push({id:id_of(n)})
                 },
             })
@@ -407,7 +438,7 @@
                     // assign ids like 0_1_22_3
                     if (D.oa({Dip:1})) throw "neu already %Dip"
                     D.i({Dip:Dip.sc.Dip+'_'+(Dip.sc.i++),i:0})
-                    V.cyto && console.log(`cyto ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D)}`)
+                    V.cyto && console.log(`cyto ++ ${indent(T.c.path)} ${id_of(D)}: ${keyser(D,-2)}`)
                     // come back once we have them all
                     D.c.T.sc.is_neu = true
                 }
@@ -447,6 +478,14 @@
                 }
                 T.sc.adding ||= []
                 T.sc.adding.push({group,id:id_of(D),data})
+            }
+            else {
+                if (T.up && T.up.sc.D.sc.bit == 'Mexi') {
+                    console.log(` ~~~ twas inside Mexi: ${keyser(D,-2)}`)
+                    if (T.up.sc.is_neu) {
+                        console.log(` ~~~ twas a non-new inside a new`)
+                    }
+                }
             }
         })
         this.Tr = Se.c.T

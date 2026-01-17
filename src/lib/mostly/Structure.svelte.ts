@@ -46,7 +46,7 @@ export class Strata extends Matchy {
         
         // Single flat loop through Se.c.T.sc.N
         for (let T of Se.c.T.sc.N) {
-            let name = Se.D_to_uri(T.sc.D)
+            let name = Se.D_to_uri(T.sc.D,true)
             
             // Get or create stable NamedT
             let namedT = this.by_name.get(name)

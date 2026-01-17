@@ -23,10 +23,11 @@
     let D = $derived(T.sc.D)
     let indent = $derived(T.c.path.length - 1)
     let className = $derived(T.sc.not ? "not" : "")
+    let name = $derived(M.Se.D_to_name(D,true))
 </script>
 
 <div style="margin-left: {indent}em" class={className}>
-    <span onclick={() => nameclick(D)}>{D.sc.name}</span>
+    <span onclick={() => nameclick(D)}>{name}</span>
     <squidge>
         <Stuffing {mem} stuff={D} matchy={strata} />
     </squidge>

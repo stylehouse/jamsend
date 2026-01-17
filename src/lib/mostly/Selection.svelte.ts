@@ -374,16 +374,24 @@ type Uri = string
 class Dierarchy extends SelectionItself {
     // < keeping things around
     // < findable orphaned D** via path (fragments) and filesizes
-    D_to_name(D: TheD):string {
+    D_to_name(D: TheD,loose=false):string {
+        if (D.sc.name == null) {
+            if (loose) {
+                return keyser(D.sc)
+            }
+            else {
+                throw `making uri with name==null?`
+            }
+        }
         return D.sc.name
     }
-    D_to_path(D: TheD):Array<string> {
+    D_to_path(D: TheD,loose=false):Array<string> {
         let path = D.c.T.c.path
-        return path.map(T => this.D_to_name(T.sc.D))
+        return path.map(T => this.D_to_name(T.sc.D,loose))
     }
     // uniquely (%name already is) identify all D**, no rename continuity
-    D_to_uri(D: TheD):string {
-        let path = this.D_to_path(D)
+    D_to_uri(D: TheD,loose=false):string {
+        let path = this.D_to_path(D,loose)
         return path.join("/")
     }
     j_to_uri(j: Journey):string {

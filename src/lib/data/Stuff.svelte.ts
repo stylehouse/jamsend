@@ -895,7 +895,7 @@ export class Stuffing {
                     let rows = vx?.z || []
                     
                     // Create a Stuffziado for each distinct value
-                    let display_name = objectify(val)
+                    let display_name = objectify(val,-1)
                     let val_name = name_numbered_for_uniqueness_in_Set(display_name, stuffziad.values)
                     const stuffziado = new Stuffziado(stuffziad, val_name, rows)
                     stuffziado.value = val
@@ -1035,15 +1035,16 @@ export type TheN = TheC[]
 //#endregion
 //#region f
 
-export function keyser(n:TheC|Object,loop=false) {
+export function keyser(n:TheC|Object,loop=0) {
     let la:Array<string> = []
     Object.entries(n.sc || n).forEach(([k,v]) => {
-        if (loop) {
+        if (loop>0) {
             // we've got to stop zooming down into v
             la.push(k)
         }
         else {
-            la.push(k+":"+objectify(v,true))
+
+            la.push(k+":"+objectify(v,loop+1))
         }
     })
     return la.join(", ")
@@ -1066,15 +1067,15 @@ function inner_sizing(innered) {
 
 // data dumper
 // < recursion
-export function objectify(v:any,loop=false):string {
+export function objectify(v:any,loop=0):string {
     let s = String(
         typeof v == 'number' || typeof v == 'string' ? v
         : v == null ? 'null'
         : v.constructor == Array ? `[${
-            loop ? "x"+v.length
-                : v.map(n => objectify(n,true)).join(',')
+            loop>0 ? "x"+v.length
+                : v.map(n => objectify(n,loop+1)).join(',')
         }]`
-        : v.constructor == TheC ? `${keyser(v,loop)}`
+        : v.constructor == TheC ? `${keyser(v,loop+1)}`
         : `${v.constructor.name}()`
     )
     let where = 77
