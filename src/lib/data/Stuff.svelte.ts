@@ -1067,7 +1067,7 @@ function inner_sizing(innered) {
 
 // data dumper
 // < recursion
-export function objectify(v:any,loop=0):string {
+export function objectify(v:any,loop=-1):string {
     let s = String(
         typeof v == 'number' || typeof v == 'string' ? v
         : v == null ? 'null'

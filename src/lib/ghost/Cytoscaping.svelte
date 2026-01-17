@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
+    import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
     import { erring, ex, grap, grep, grop, indent, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
@@ -392,6 +392,12 @@
                 },
             })
         }
+        function some_edge(D) {
+            if (!D.sc.con) throw "D!%Con"
+            let on = D.sc.left_of || D.sc.aligned_of
+            if (!on) throw "edge type?"
+            return on
+        }
         await Se.process({
             n:C,
             // we want a liberal match_sc so we have to host the top D somewhere else
@@ -400,7 +406,6 @@
             match_sc: {},    // climbing everything
             each_fn: async (D:TheD,n:TheC,T:Travel) => {
                 let bD = T.sc.bD
-                // console.log(indent(T.c.path)+`D${bD?"++":"  "} ${keyser(D)}` )
                 n_to_D.set(n,D)
             },
 
@@ -408,6 +413,17 @@
             resolve_strict: 1,
             trace_fn: async (uD:TheD,n:TheC,T:Travel) => {
                 let D = uD.i({Gra:2,...n.sc})
+                if (D.sc.con) {
+                    // when we point at an object it is ignored by resolve()
+                    // < right!?
+                    // make a mark about what the C target looked like,
+                    //  and hopefully that's enough?
+                    // < otherwise we need to resolve all Dip for nodes, then edges...
+                    //    so when we add the edge we can define it by where it is connected
+                    //   it is not a problem now because our C|D is nodes/edges
+                    //    so we have resolved and assigned the nodes before looking at edges
+                    D.sc.target_objectified = objectify(some_edge(D))
+                }
                 return D
             },
             // now for each of those, what can we see...
@@ -445,18 +461,19 @@
                 // nothing...? see also journey_resolved_fn 
             },
         })
+
         
         // now everything has ids
         await Se.c.T.forward(async (T:Travel) => {
             let D = T.sc.D
+
             if (T.sc.is_neu) {
                 let group = D.sc.con ? 'edges' : 'nodes'
                 let data:any = {}
                 if (D.sc.con) {
                     // an edge
                     let uD = D.c.T.up.sc.D
-                    let on = D.sc.left_of || D.sc.aligned_of
-                    if (!on) throw "edge type?"
+                    let on = some_edge(D)
                     data.source = id_of(uD)
                     data.target = id_of(on)
                     data.label = D.sc.left_of ? "left" : 'aligned'
@@ -478,14 +495,6 @@
                 }
                 T.sc.adding ||= []
                 T.sc.adding.push({group,id:id_of(D),data})
-            }
-            else {
-                if (T.up && T.up.sc.D.sc.bit == 'Mexi') {
-                    console.log(` ~~~ twas inside Mexi: ${keyser(D,-2)}`)
-                    if (T.up.sc.is_neu) {
-                        console.log(` ~~~ twas a non-new inside a new`)
-                    }
-                }
             }
         })
         this.Tr = Se.c.T
