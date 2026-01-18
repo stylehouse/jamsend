@@ -518,8 +518,10 @@
                 let req = await w.r({...reqc,...c},{...c})
                 req.sc.req_i ||= req_serial.sc.i++
             },
-            o() {
-                return w.o(({...reqc}))
+            o(sc={}) {
+                // you can use sc to check for existing workpiece id before you .i()
+                //  if your quest has a bouncy beginning (tries to i many times)
+                return w.o(({...reqc,...sc}))
             },
         }
     },

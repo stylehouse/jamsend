@@ -1103,7 +1103,6 @@
         for (let req of reqy.o()) {
             if (req.sc.finished) {
                 w.drop(req)
-                req.sc.tolditto='go'
                 continue
             }
             let re = req.sc.re
@@ -1221,7 +1220,6 @@
         for (let req of reqy.o()) {
             if (req.sc.finished) {
                 w.drop(req)
-                req.sc.tolditto='go'
                 continue
             }
             let uri = req.sc.uri

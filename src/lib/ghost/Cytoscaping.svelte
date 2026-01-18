@@ -32,6 +32,12 @@
     // take nowPlaying somewhere interesting
     async cytotermicaster(A,w) {
         let {np} = await this.termicaster_resources(A,w)
+
+
+        await this.cytotermi_pirating(A,w)
+
+
+        
         // queries|receives context
         np && await this.cytotermi_may_descripted(A,w,np)
 
@@ -94,7 +100,21 @@
     },
 
     // hears from A:audio
+    async find_D_by_cytoid(id) {
+        id = id.replace('id_', '')
+        let it
+        await this.Tr.forward(async (T:Travel) => {
+            let D = T.sc.D
+            if (D.o1({Dip:1})[0] === id) {
+                it = D
+                // < stop this horse, make T.forwards
+            }
+        })
+        return it
+    },
+
     async cytotermi_may_descripted(A,w,np) {
+        // < only o_elvis when np exists and this is called, seems to be working out?
         // pinged from nowPlaying with this attached:
         for (let e of this.o_elvis(w,'i_descripted')) {
             let re = e.sc.re
@@ -103,7 +123,6 @@
             await this.i_descripted(w,uri,descripted)
             w.i({see:"heard context about",uri})
         }
-
 
         let uri = np.sc.uri
         // find the %uri,descripted for that uri
@@ -126,7 +145,6 @@
             // we have the info!
         }
 
-        // < a big fat-edged snake going from thing to thing we play...
         for (let de of w.o({uri,descripted:1})) {
             if (de.sc.uri != uri) {
                 // starts getting old
@@ -231,6 +249,86 @@
 
 
 //#endregion
+
+
+
+
+
+
+
+
+//#region pirating
+    // replicate all that into another structure of C/nodes/edges
+    async cytotermi_pirating(A,w) {
+        let reqy = await this.requesty_serial(w,'pirating')
+        // serve descripted at selected nodes
+        for (let e of this.o_elvis(w,'eles_selection')) {
+            let el = e.sc.eles[0]
+            let D = await this.find_D_by_cytoid(el.id())
+            if (reqy.o({D}).length) {
+                console.log(`dup pirating selection`)
+                continue
+            }
+            reqy.i({D})
+            w.i({see:1,hasSelection:keyser(D)})
+            setTimeout(() => {
+                M.node_edger.enheist({lets:"Control",things:3})
+            },22)
+        }
+        for (let req of reqy.o()) {
+            if (req.sc.finished) {
+                console.log(`pirating finished!`)
+                w.drop(req)
+                continue
+            }
+            let lost = (where) => {
+                w.i({see:'pirating',lost:where})
+                req.sc.finished = true
+            }
+            let D = req.sc.D
+            if (!(D.sc.Gra && D.sc.bit)) {
+                lost("D!%Gra,bit")
+                continue
+            }
+            if (!(D.sc.de)) {
+                lost("D!%de%url,descripted")
+                break
+            }
+            let pls = await req.r({places:1,uri:D.sc.de.sc.uri})
+            pls.empty()
+            for (let fa of D.sc.de.o({factoid:1})) {
+                let pl = pls.i({place:1,uri:fa.sc.uri})
+                for (let ni of fa.o({})) {
+                    pl.i({thingsos:1,...ni.sc})
+                }
+            }
+            // < construct several concentric scopes of stuff we could heist
+            //    ie just a %uri,descripted to slurp into a local share
+            //   need an extra %uri,descripted for the blob we might've selected
+            //    if D.sc.de.sc.uri is longer than any we have
+            //   and if blob we should look at the %record?
+            //    and suggest renaming it Artist - Title.flac
+            // < it thunks over to UI so they might adjust their re-categorisation
+            //    as Thing:Heist? for durability...
+            //     they'd be thought-through by cytotermi_piracy
+            //   
+            await w.r(pls)
+            // req.sc.finished = true
+        }
+        this.whittle_N(w.o({places:1}),2)
+        
+    },
+    
+
+
+
+
+//#endregion
+
+
+
+
+
 
 
 

@@ -9,7 +9,7 @@
     import cola from "cytoscape-cola";
     import { onMount } from "svelte";
     import { throttle } from "$lib/Y";
-    import { keyser } from "$lib/data/Stuff.svelte";
+    import { keyser, objectify } from "$lib/data/Stuff.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
@@ -229,10 +229,20 @@
     M.node_edger = node_edger;
     M.i_elvis(w, "IamyourUI", { A: w, node_edger, thingsing: "L" });
 
+    let heist = $state()
     function selection_changed() {
-        window.eles = cy.$("node:selected");
-        console.log(`cytoscape selected nodes:`, window.eles);
+        let eles = cy.$("node:selected");
+        if (!eles[0]) {
+            heist = null
+        }
+        else {
+            M.i_elvis(w, "eles_selection", {eles})
+        }
     }
+    node_edger.enheist = (hi) => {
+        heist = hi
+    }
+
 
     function get_layout_options() {
         // name = dagre|fcose|circle|grid etc
@@ -375,6 +385,10 @@
 <h3>Cytoscape</h3>
 
 <div class="graph" bind:this={ele}></div>
+
+{#if heist}
+    <h3>heist: ${objectify(heist)}</h3>
+{/if}
 
 <style>
     .graph {
