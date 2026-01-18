@@ -296,10 +296,10 @@
     }
     node_edger.constraints = (concon) => {
         let memo = JSON.stringify(concon)
-        console.log(`Got concon`)
+        // console.log(`Got concon`)
         if (memo == constraints_memo) return
         constraints_memo = memo
-        console.log(`Changed concon: ${memo}`)
+        // console.log(`Changed concon: ${memo}`)
         // setTimeout(() => {
             node_edger.constraints_config = concon
             relayout()

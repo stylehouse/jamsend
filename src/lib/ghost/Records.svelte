@@ -4,7 +4,7 @@
     import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-    import { CHUNK_SIZE, erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { CHUNK_SIZE, erring, ex, grep, grop, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import { parseBuffer } from "music-metadata";
     // import {LoudnessMeter} from "@domchristie/needles"
     // Conditionally import needles only in browser
@@ -657,7 +657,7 @@
                 }
     
                 // Reconstruct %record
-                const re = _C(tex({},metadata));
+                const re = _C(nex({},metadata,'previews'));
                 // Reconstruct /*%preview entries with buffers
                 metadata.previews.forEach((previewMeta:Object, idx:number) => {
                     re.i({

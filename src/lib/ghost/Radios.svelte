@@ -643,6 +643,7 @@
         let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
             ...re.sc.meta
         })
+        
         return no
     },
 
