@@ -640,7 +640,7 @@
         this.whittle_N(he.o({aud:1,pr:1}),10)
     },
     async i_nowPlaying(A,w,he,re) {
-        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,
+        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
             ...re.sc.meta
         })
         return no

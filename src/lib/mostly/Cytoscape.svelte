@@ -22,7 +22,14 @@
             style: {
                 width: "50",
                 height: "50",
-                "font-size": "18",
+                "font-size": (ele) => {
+                    let name = ele.data('name')
+                    if (name == 'null') return "18"
+                    let len = name.length
+                    let size = Math.max(22,36 - len) * 0.8
+                    // console.log(`Had text: ${len} -> ${size}: ${name}`)
+                    return size
+                },
                 "font-weight": "bold",
                 label: `data(name)`,
                 "text-valign": "center",
@@ -31,13 +38,13 @@
                 "background-color": "gold",
                 "border-color": "orange",
                 "border-width": "3",
-                color: "darkred",
+                color: "#6f3bf5",
             },
         },
         {
             selector: 'node[class="blob"]',
             style: {
-                height: "70",
+                height: "90",
                 width: "120",
                 "background-color": "black",
             },
@@ -48,15 +55,22 @@
                 width: "70",
                 height: "90",
                 "background-color": "black",
+                color: "lightblue",
             },
         },
 
         {
             selector: 'node[class="ayefour"]',
             style: {
-                width: "90",
+                "width": "133",
                 height: "70",
-                "background-color": "saddlebrown",
+
+                // "text-wrap": "none",
+                // shape: "rectangle",
+                color: "pink",
+                "line-color": "lightblue",
+                "background-color": "darkblue",
+                "border-color": "black",
             },
         },
         {
@@ -104,17 +118,17 @@
                 "text-background-opacity": "1",
                 "text-background-padding": "1",
                 width: "3",
-                "target-arrow-shape": "triangle",
-                "line-color": "darkred",
+                // "line-color": "darkred",
                 //'font-weight': 'bold'
+                "line-color": "gold",
+                "target-arrow-color": "gold",
+                "target-arrow-shape": "triangle",
             },
         },
         {
             selector: 'edge[class="along"]',
             style: {
                 color: "lightblue",
-                "line-color": "gold",
-                "target-arrow-color": "gold",
             },
         },
         {
@@ -152,21 +166,9 @@
             },
         },
         {
-            selector: 'edge[class="texty"]',
-            style: {
-                "line-color": "#33f",
-            },
-        },
-        {
-            selector: 'edge[class="textybroke"]',
-            style: {
-                "line-color": "#66e",
-            },
-        },
-        {
             selector: 'edge[class="outward"]',
             style: {
-                "line-color": "#842",
+                "line-color": "#846",
                 "width":"2em"
             },
         },

@@ -319,7 +319,7 @@
                 let bit = C.o({bit:1,uri:sn.sc.uri})[0]
                 if (!bit) continue
                 // link to next bit they listened to
-                if (la) la.i({con:1,to:bit,class:'outward'})
+                if (la) la.i({con:1,to:bit,class:'outward',label:''})
                 la = bit
             }
             else {
@@ -591,7 +591,7 @@
                     data.source = C.c.id_of(uD)
                     data.target = C.c.id_of(on)
                     data.label = D.sc.label != null ? D.sc.label
-                        : D.sc.left_of ? "left" : 'aligned'
+                        : D.sc.left_of ? "" : 'aligned'
                     
                     data.class = D.sc.class
 
@@ -623,6 +623,9 @@
                 }
                 T.sc.adding ||= []
                 T.sc.adding.push({group,id:C.c.id_of(D),data})
+            }
+            else {
+                // < what if class changes
             }
         })
             // return
