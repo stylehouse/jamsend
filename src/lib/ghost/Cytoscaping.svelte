@@ -308,21 +308,34 @@
 
     async cytotermi_sustain_blob_bits(A,w,C) {
         // sustain blob bits for longer than descripted,
-        //  as they make a more please %nowSnaking
+        //  as they make a more pleasing %nowSnaking
+        // load in %bit,uri that exist
         for (let bi of C.o({bit:1,uri:1})) {
             if (bi.sc.class != 'blob') continue
             let uri = bi.sc.uri
-            await w.r({blob_bit:bi.sc.bit,uri},{uri})
+            let bl = await w.r({blob_bit:bi.sc.bit,uri},{uri})
+            bl.empty()
             // console.log(`blob sustain: ${uri}`)
         }
         let blobs = w.o({blob_bit:1})
         for (let bl of blobs) {
             let uri = bl.sc.uri
             if (C.oa({bit:bl.sc.blob_bit,uri})) continue
+            if (this.i_self_est(bl) > 15) {
+                // too old to be a loose unconnected %blob_bit
+                w.drop(bl)
+                continue
+            }
             C.i({bit:bl.sc.blob_bit,uri,class:'blob'})
             // console.log(`blob sustained: ${uri}`)
         }
-        this.whittle_N(blobs,19)
+        this.whittle_N(blobs,15)
+    },
+    i_self_est(n) {
+        // hang info forever
+        let is = n.o({self:1,est:1})[0]
+        is ||= n.i({self:1,est:now_in_seconds()})
+        return is.ago('est')
     },
     async cytotermi_nowPlaying(A,w,C) {
         // %nowPlaying copies here in _resources(), but not fast enough
@@ -349,7 +362,7 @@
         let no = w.o({nowPlaying:1})[0]
         if (no) {
             let snake = w.o({nowSnaking:1})
-            this.whittle_N(snake,5)
+            this.whittle_N(snake,15)
             let la = snake.slice(-1)[0]
             if (!la || la.sc.uri != no.sc.uri) {
                 w.i(sex({nowSnaking:1},no.sc,'uri,artist,title'))
