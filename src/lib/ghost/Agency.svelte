@@ -7,6 +7,7 @@
     let {M} = $props()
     const V = {}
     V.w = 0
+    V.elvis = 1
 
     onMount(async () => {
     await M.eatfunc({
@@ -90,7 +91,7 @@
             let from = this.say_Aw(w)
             let say = from
             if (from != c.Aw) say += ` -> ${c.Aw }`
-            console.log(`🕺 ${say} e:${c.elvis} ${keyser(nex({},c,'elvis,Aw'))} `)
+            V.elvis && console.log(`🕺 ${say} e:${c.elvis} ${keyser(nex({},c,'elvis,Aw'))} `)
 
             // deliver it to an A
             let [Aname,...more] = c.Aw.split("/")

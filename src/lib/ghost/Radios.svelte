@@ -29,7 +29,6 @@
 
     const V = {}
     V.plau = 0
-    V.irec = 0
     V.tx = 0
     V.rastream = 0
 
@@ -102,7 +101,7 @@
                     exactly({...keywordc,seq:prsc.seq}),
                     {...prsc,buffer,irecord_ts:now_in_seconds_with_ms()}
                 )
-                V.irec && console.log(`irecord   re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`)
+                V.tx && console.log(`irecord   re=${re.sc.enid}%${keyword},seq=${pr.sc.seq}`)
 
                 this.check_all_records_sanity(A)
                 
@@ -187,10 +186,12 @@
                 }
                 await w.r({hearing:1},{})
                 await co.r({client},{})
-                await next(loop + 1)
+                // this must not remain sync or it'll mutex
+                this.i_elvis(w,'recover_party')
             }
             // < unique artist+track
             let them = o_playable()
+            // co = this.refresh_C([A,w,co])
             console.log(`radio_hear(), re${this.say_cursor(them,client,co)}`)
             let current = await this.co_cursor_N_next(co,client,them)
 
@@ -223,7 +224,7 @@
             this.i_elvis(w,'noop',{A:w})
             
             let now = w.o({nowPlaying:1})[0]
-            console.log(`skipped track ${before.sc.enid} -> ${now.sc.enid}`)
+            console.log(`skipped track ${before?.sc.enid} -> ${now?.sc.enid}`)
         }
 
         let them = o_playable()
@@ -245,6 +246,10 @@
         // < do a subsequent call lossy throttle on this more elegantly
         if (w.o({nowPlayingShunted:1})[0]?.ago('at') > 10) {
             await w.r({nowPlayingShunted:1},{})
+        }
+        for (let e of this.o_elvis(w,'recover_party')) {
+            w.i({see:'recovering from dead air'})
+            await w.r({nowPlaying:1},{})
         }
         if (!this.nowPlaying_is_ok(w)) {
             if (w.oa({nowPlayingShunted:1})) {
@@ -306,7 +311,7 @@
         if (dohe) throw "double hearing "+re.sc.enid
         let he = w.i({hearing:re.sc.enid})
         he.i(re)
-        this.whittle_N(w.o({hearing:1}),5)
+        this.whittle_N(w.o({hearing:1}),3)
         
         let what = () => `${re.sc.enid}`
 

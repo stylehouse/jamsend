@@ -313,14 +313,14 @@
             if (bi.sc.class != 'blob') continue
             let uri = bi.sc.uri
             await w.r({blob_bit:bi.sc.bit,uri},{uri})
-            console.log(`blob sustain: ${uri}`)
+            // console.log(`blob sustain: ${uri}`)
         }
         let blobs = w.o({blob_bit:1})
         for (let bl of blobs) {
             let uri = bl.sc.uri
             if (C.oa({bit:bl.sc.blob_bit,uri})) continue
             C.i({bit:bl.sc.blob_bit,uri,class:'blob'})
-            console.log(`blob sustained: ${uri}`)
+            // console.log(`blob sustained: ${uri}`)
         }
         this.whittle_N(blobs,19)
     },
@@ -366,12 +366,12 @@
             if ('just link what has played') {
                 let bit = C.o({bit:1,uri:sn.sc.uri})[0]
                 if (!bit) {
-                    console.log(`!snake @ ${sn.sc.uri}`)
+                    // console.log(`!snake @ ${sn.sc.uri}`)
                     continue
                 }
                 // link to next bit they listened to
                 if (la) {
-                    console.log(`snake @ ${sn.sc.uri}`)
+                    // console.log(`snake @ ${sn.sc.uri}`)
                     la.i({con:1,to:bit,snaking:1,class:'outward',label:''})
                 }
                 la = bit
