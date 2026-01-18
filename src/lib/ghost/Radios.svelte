@@ -643,7 +643,7 @@
         let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
             ...re.sc.meta
         })
-        
+
         return no
     },
 
@@ -1083,6 +1083,12 @@
         if (having < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
             for await (const re of this.load_random_records(stockD, to_load,had)) {
+                // if it's not a repeat
+                if (A.oa({record:1,enid:re.sc.enid})) {
+                    console.log(`load_random_records() DUP ${re.sc.enid} (dropped)`)
+                    continue
+                }
+                // put it through checking that the source still exists
                 await reqy.i({re})
             }
         }
