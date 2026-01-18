@@ -62,7 +62,8 @@
         return `A:${A.sc.A||'???'}/w:${w.sc.w||'???'}`
     },
     i_elvis(w,t,c) {
-        
+        // < interesting, needs trimming
+        // let stack = new Error().stack
         setTimeout(() => {
             // by default, w wants to wake itself, probably from out of time
             t ||= 'noop'
@@ -89,7 +90,7 @@
             let from = this.say_Aw(w)
             let say = from
             if (from != c.Aw) say += ` -> ${c.Aw }`
-            console.log(`🕺 ${say} e:${c.elvis} ${keyser(nex({},c,'elvis,Aw'))} `,new Error().stack)
+            console.log(`🕺 ${say} e:${c.elvis} ${keyser(nex({},c,'elvis,Aw'))} `)
 
             // deliver it to an A
             let [Aname,...more] = c.Aw.split("/")

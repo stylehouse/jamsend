@@ -643,6 +643,8 @@
         let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
             ...re.sc.meta
         })
+        // this structure is just for cyto excitement, hosted here for moment accuracy
+        await this.cytotermi_nowSnaking_i(A,w)
 
         return no
     },

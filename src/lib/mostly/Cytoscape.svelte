@@ -41,23 +41,8 @@
                 color: "#6f3bf5",
             },
         },
-        {
-            selector: 'node[class="blob"]',
-            style: {
-                height: "90",
-                width: "120",
-                "background-color": "black",
-            },
-        },
-        {
-            selector: 'node[class="collection"]',
-            style: {
-                width: "70",
-                height: "90",
-                "background-color": "black",
-                color: "lightblue",
-            },
-        },
+
+        
 
         {
             selector: 'node[class="ayefour"]',
@@ -117,7 +102,7 @@
                 "text-background-color": "#003355",
                 "text-background-opacity": "1",
                 "text-background-padding": "1",
-                width: "3",
+                width: "6",
                 // "line-color": "darkred",
                 //'font-weight': 'bold'
                 "line-color": "gold",
@@ -125,6 +110,62 @@
                 "target-arrow-shape": "triangle",
             },
         },
+
+
+        {
+            selector: 'node[class="blob"]',
+            style: {
+                height: "90",
+                width: "120",
+                "background-color": "black",
+            },
+        },
+        {
+            selector: 'node[class="collection"]',
+            style: {
+                width: "70",
+                height: "90",
+                "background-color": "black",
+                color: "lightblue",
+            },
+        },
+
+
+
+        // the Playing pointer
+        {
+            selector: 'node[class="anno"]',
+            style: {
+                "width": "90",
+                "color": "black",
+                "border-width": "0",
+                "background-opacity": "0.1",
+                "background":"none",
+            },
+        },
+        {
+            selector: 'edge[class="anno"]',
+            style: {
+                "color": "black",
+                "line-color": "black",
+                "target-arrow-color": "black",
+                "width":"1em"
+            },
+        },
+
+
+
+        // the %nowSnaking route
+        {
+            selector: 'edge[class="outward"]',
+            style: {
+                // "line-color": "gold",
+                "width":"1em",
+                "opacity":"0.5",
+            },
+        },
+
+
         {
             selector: 'edge[class="along"]',
             style: {
@@ -163,13 +204,6 @@
                 "line-color": "lightblue",
                 "background-color": "darkblue",
                 "border-color": "gray",
-            },
-        },
-        {
-            selector: 'edge[class="outward"]',
-            style: {
-                "line-color": "#846",
-                "width":"2em"
             },
         },
     ];

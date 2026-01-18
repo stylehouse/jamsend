@@ -160,9 +160,9 @@
         let np
         if (raterm) {
             let no = raterm.o({nowPlaying:1})[0]
+            // < GOING? just look up %see,raterm
             // copy it here, shallowly except for %nowPlaying:he
             np = no && await w.r({...no.sc})
-            await this.cytotermi_nowPlaying_i_snake(A,w)
         }
 
         // the backend, sending music yonder
@@ -240,8 +240,14 @@
     async cytotermi_knows(A,w) {
         let C = await w.r({Cytotermia:'knows'})
         C.empty()
+        // this is all primarily about %bits of uri we know, drawn here
+        // < merge %bit and the %record it is for, if it's a blob
+        //    merge %bit and %artist! ie where that space is all about artist
         await this.cytotermi_descripted(A,w,C)
-        await this.cytotermi_nowPlaying_o_snake(A,w,C)
+        await this.cytotermi_sustain_blob_bits(A,w,C)
+        // annotate %bits
+        await this.cytotermi_nowPlaying(A,w,C)
+        await this.cytotermi_nowSnaking_o(A,w,C)
         return C
     },
 
@@ -299,27 +305,72 @@
             }
         }
     },
-    async cytotermi_nowPlaying_i_snake(A,w) {
+
+    async cytotermi_sustain_blob_bits(A,w,C) {
+        // sustain blob bits for longer than descripted,
+        //  as they make a more please %nowSnaking
+        for (let bi of C.o({bit:1,uri:1})) {
+            if (bi.sc.class != 'blob') continue
+            let uri = bi.sc.uri
+            await w.r({blob_bit:bi.sc.bit,uri},{uri})
+            console.log(`blob sustain: ${uri}`)
+        }
+        let blobs = w.o({blob_bit:1})
+        for (let bl of blobs) {
+            let uri = bl.sc.uri
+            if (C.oa({bit:bl.sc.blob_bit,uri})) continue
+            C.i({bit:bl.sc.blob_bit,uri,class:'blob'})
+            console.log(`blob sustained: ${uri}`)
+        }
+        this.whittle_N(blobs,19)
+    },
+    async cytotermi_nowPlaying(A,w,C) {
+        // %nowPlaying copies here in _resources(), but not fast enough
+        let raterm = w.o1({raterm:1,see:1})[0]
+        if (!raterm) throw "!raterm"
+        let no = raterm.o({nowPlaying:1})[0]
+        if (!no) return
+        let bit = C.o({bit:1,uri:no.sc.uri})[0]
+        if (!bit) return
+
+        // link to next bit they listened to
+        let playing = C.i({sign:1,name:"Playing",class:"anno"})
+        playing.i({con:1,to:bit,class:'anno',label:''})
+    },
+
+//#endregion
+//#region nowSnaking
+    // this structure is just for cyto excitement
+    //  hosted in w:raterminal for moment accuracy
+    async cytotermi_nowSnaking_i(A,w) {
         let no = w.o({nowPlaying:1})[0]
         if (no) {
-            let snake = w.o({nowPlaying_snake:1})
+            let snake = w.o({nowSnaking:1})
             this.whittle_N(snake,5)
             let la = snake.slice(-1)[0]
             if (!la || la.sc.uri != no.sc.uri) {
-                w.i(sex({nowPlaying_snake:1},no.sc,'uri,artist,title'))
+                w.i(sex({nowSnaking:1},no.sc,'uri,artist,title'))
             }
         }
     },
-    async cytotermi_nowPlaying_o_snake(A,w,C) {
-        let snake = w.o({nowPlaying_snake:1})
+    async cytotermi_nowSnaking_o(A,w,C) {
+        let raterm = w.o1({raterm:1,see:1})[0]
+        if (!raterm) throw "!raterm"
+        let snake = raterm.o({nowSnaking:1})
         // put it in the graph
         let la
         for (let sn of snake) {
             if ('just link what has played') {
                 let bit = C.o({bit:1,uri:sn.sc.uri})[0]
-                if (!bit) continue
+                if (!bit) {
+                    console.log(`!snake @ ${sn.sc.uri}`)
+                    continue
+                }
                 // link to next bit they listened to
-                if (la) la.i({con:1,to:bit,class:'outward',label:''})
+                if (la) {
+                    console.log(`snake @ ${sn.sc.uri}`)
+                    la.i({con:1,to:bit,snaking:1,class:'outward',label:''})
+                }
                 la = bit
             }
             else {
