@@ -3,7 +3,8 @@
 # Configuration
 DEST_PATH="/usr/local/bin/chrome-limit.sh"
 SERVICE_PATH="/etc/systemd/system/chrome-limit.service"
-MEM_THRESHOLD=33.3
+# for a 32G machine
+MEM_THRESHOLD=21
 
 # 1. INSTALLATION LOGIC
 if [[ "$0" != "$DEST_PATH" ]]; then
