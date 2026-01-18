@@ -593,7 +593,7 @@
                 const previews = re.o({preview: 1});
                 
                 // Build metadata object (everything except the actual buffers)
-                const metadata = tex({},re.sc)
+                const metadata = sex(tex({},re.sc),re.sc,'descripted,meta')
                 metadata.previews = previews.map(pr =>
                     ex(tex({},pr.sc), {size: pr.sc.buffer.byteLength})
                 )

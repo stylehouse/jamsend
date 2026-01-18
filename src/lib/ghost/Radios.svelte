@@ -16,7 +16,7 @@
     // < make tidier and more official
 
     // $share/.jamsend/radiostock/*.webms
-    const IGNORE_RADIOSTOCK_CACHE = true 
+    const IGNORE_RADIOSTOCK_CACHE = false 
     const RADIOSTOCK_CACHE_LIMIT = 20 // items, they are timestamped
 
     // < get these numbers down, which involves lots of testing?
