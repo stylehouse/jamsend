@@ -288,6 +288,10 @@
     }
 
     let constraints_memo = ''
+    node_edger.reset_constraints = () => {
+        node_edger.constraints_config = {}
+        constraints_memo = ''
+    }
     node_edger.constraints = (concon) => {
         let memo = JSON.stringify(concon)
         console.log(`Got concon`)

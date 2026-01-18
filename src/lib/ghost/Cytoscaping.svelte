@@ -22,6 +22,7 @@
 //#region w:cytotermicaster
     // tell everything to cytoscape again
     async recyto() {
+        this.node_edger.reset_constraints()
         this.node_edger.cy.remove('*')
         this.node_edger.D?.empty()
         this.main()
@@ -566,12 +567,26 @@
         await Se.c.T.forward(async (T:Travel) => {
             let D = T.sc.D
 
+            let uD = D.c.T.up?.sc.D
+            // an edge that is also a constraint
+            if (D.sc.left_of) {
+                if (!uD) throw "edge not in a node"
+                let ar = concon['relativePlacementConstraint'] ||= []
+                let c = {
+                    left: C.c.id_of(uD),
+                    right: C.c.id_of(D.sc.left_of),
+                    gap: 22,
+                }
+                // console.log(` a left-right: ${c.left} -> ${c.right}`)
+                ar.push(c)
+            }
+
             if (T.sc.is_neu) {
                 let group = D.sc.con ? 'edges' : 'nodes'
                 let data:any = {}
                 if (D.sc.con) {
-                    // an edge
-                    let uD = D.c.T.up.sc.D
+                    if (!uD) throw "edge not in a node"
+                    // has the other node in some property:
                     let on = C.c.some_edge(D)
                     data.source = C.c.id_of(uD)
                     data.target = C.c.id_of(on)
@@ -580,16 +595,6 @@
                     
                     data.class = D.sc.class
 
-                    if (D.sc.left_of) {
-                        let ar = concon['relativePlacementConstraint'] ||= []
-                        let c = {
-                            left: C.c.id_of(uD),
-                            right: C.c.id_of(D.sc.left_of),
-                            gap: 22,
-                        }
-                        console.log(` a left-right: ${c.left} -> ${c.right}`)
-                        ar.push(c)
-                    }
                 }
                 else {
                     let the_name = grep(k => D.sc[k],are_the_name)[0]
@@ -639,9 +644,9 @@
 
         q.node_edger.constraints(concon)
         
-        setTimeout(() => {
+        // setTimeout(() => {
             q.node_edger.remove(removing)
-        }, 400)
+        // }, 400)
     },
 
 
