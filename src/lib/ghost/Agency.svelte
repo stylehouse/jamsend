@@ -56,8 +56,12 @@
     //   time sharing is easier than space sharing?
     //    though %Tree** separates a lot of the computation...
     needs_your_attention: [] as Function[],
+    say_Aw(w) {
+        let A = w.up
+        return `${A.sc.A||'???'}/${w.sc.w||'???'}`
+        return `A:${A.sc.A||'???'}/w:${w.sc.w||'???'}`
+    },
     i_elvis(w,t,c) {
-        console.log(`Modus ${this.constructor.name} has ${this.S.constructor.name}`)
         
         setTimeout(() => {
             // by default, w wants to wake itself, probably from out of time
@@ -81,6 +85,11 @@
             }
             if (c.Aw == null) throw "%elvis,!Aw"
             c = {elvis:t,...c}
+
+            let from = this.say_Aw(w)
+            let say = from
+            if (from != c.Aw) say += ` -> ${c.Aw }`
+            console.log(`🕺 ${say} e:${c.elvis} ${keyser(nex({},c,'elvis,Aw'))} `,new Error().stack)
 
             // deliver it to an A
             let [Aname,...more] = c.Aw.split("/")
