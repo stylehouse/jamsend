@@ -322,7 +322,7 @@ abstract class TimeGallopia extends ModusItself {
         }
         let furthest = Object.keys(far).map(n=>n*1).sort().shift()
         // if no cursors, is N.length behind
-        return furthest || N.length
+        return furthest ?? N.length
     }
 
 

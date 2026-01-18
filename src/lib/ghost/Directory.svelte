@@ -297,7 +297,7 @@
                 // < should be when we go <2
                 //  < or after a time of being <3
                 if (b <3 && a >= 3) {
-                    Tdebug(T,"collapsing")
+                    // Tdebug(T,"collapsing")
                     this.collapse_nib(T)
                 }
             },
