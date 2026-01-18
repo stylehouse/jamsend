@@ -152,6 +152,17 @@
                 "width":"1em"
             },
         },
+        // and what its pointing to
+        {
+            selector: 'node.nowplaying',
+            style: {
+                "width": "90",
+                "color": "black",
+                "border-width": "3em",
+                "background-opacity": "0.1",
+                "background":"none",
+            },
+        },
 
 
 

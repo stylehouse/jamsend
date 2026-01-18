@@ -333,6 +333,9 @@
         let bit = C.o({bit:1,uri:no.sc.uri})[0]
         if (!bit) return
 
+        // give a changable class...
+        bit.sc.cla = 'nowplaying'
+
         // link to next bit they listened to
         let playing = C.i({sign:1,name:"Playing",class:"anno"})
         playing.i({con:1,to:bit,class:'anno',label:''})
@@ -616,9 +619,10 @@
         // now everything has ids
         let Se = this.Se
         await Se.c.T.forward(async (T:Travel) => {
-            let D = T.sc.D
+            let D = T.sc.D // copy of C
+            let bD = T.sc.bD // previous time
 
-            let uD = D.c.T.up?.sc.D
+            let uD = D.c.T.up?.sc.D // above
             // an edge that is also a constraint
             if (D.sc.left_of) {
                 if (!uD) throw "edge not in a node"
@@ -630,6 +634,16 @@
                 }
                 // console.log(` a left-right: ${c.left} -> ${c.right}`)
                 ar.push(c)
+            }
+
+            if (D.sc.cla || bD?.sc.cla) {
+                // a changable class!
+                // < make multiple
+                if (D.sc.cla != bD?.sc.cla) {
+                    let N = T.sc.classing ||= []
+                    if (bD?.sc.cla) N.push({id:C.c.id_of(D),unclass:bD.sc.cla})
+                    if (D.sc.cla) N.push({id:C.c.id_of(D),enclass:D.sc.cla})
+                }
             }
 
             if (T.sc.is_neu) {
@@ -675,18 +689,17 @@
                 T.sc.adding ||= []
                 T.sc.adding.push({group,id:C.c.id_of(D),data})
             }
-            else {
-                // < what if class changes
-            }
         })
             // return
         // add+remove things from cytoscape!
         let adding:TheEmpirical[] = []
         let removing:TheEmpirical[] = []
+        let classing:TheEmpirical[] = []
         await Se.c.T.forward(async (T:Travel) => T.sc.adding && adding.push(...T.sc.adding))
         await Se.c.T.forward(async (T:Travel) => T.sc.removing && removing.push(...T.sc.removing))
-        if (adding.length || removing.length) {
-            V.cyto && console.log("Cytochangeup",{adding,removing})
+        await Se.c.T.forward(async (T:Travel) => T.sc.classing && classing.push(...T.sc.classing))
+        if (adding.length || removing.length || classing.length) {
+            V.cyto && console.log("Cytochangeup",{adding,removing,classing})
         }
 
         for (let add of adding) {
@@ -695,6 +708,15 @@
         let adding_nodes = grop(add => add.group == 'nodes', adding)
         q.node_edger.add(adding_nodes)
         q.node_edger.add(adding)
+
+        q.node_edger.add(adding)
+
+        for (let c of classing) {
+            if (!c.id) throw "classing!id"
+            let ele = q.node_edger.cy.getElementById(c.id)
+            c.unclass && ele.removeClass(c.unclass)
+            c.enclass && ele.addClass(c.enclass)
+        }
 
         q.node_edger.constraints(concon)
         
