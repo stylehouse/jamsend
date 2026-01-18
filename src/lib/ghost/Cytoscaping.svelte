@@ -258,7 +258,7 @@
 
 
 //#region pirating
-    // replicate all that into another structure of C/nodes/edges
+    // 🏴‍☠️ replication station
     async cytotermi_pirating(A,w) {
         let reqy = await this.requesty_serial(w,'pirating')
         // serve descripted at selected nodes
@@ -277,7 +277,6 @@
         }
         for (let req of reqy.o()) {
             if (req.sc.finished) {
-                console.log(`pirating finished!`)
                 w.drop(req)
                 continue
             }
@@ -352,10 +351,13 @@
     async cytotermi_descripted(A,w,C) {
         let deN = w.o({uri:1,descripted:1})
         this.whittle_N(deN,3)
-        for (let de of deN) {
-            let path = de.sc.uri.split('/')
-            // path made of %bit,seq
 
+        // these are in descending order of recency?
+        let gen_class = ['', 'slightood','quiteood']
+        for (let de of deN.reverse()) {
+            let path = de.sc.uri.split('/')
+
+            // path made of %bit,seq
             let bits:TheC[] = grep(map((bit,seq) => {
                 // you can find any %bit,uri
                 let uri = path.slice(0,seq+1).join('/')
@@ -365,12 +367,28 @@
                 return C.o({bit,seq:String(seq),uri})[0]
                     || C.i({bit,seq,uri,de})
             }, path))
+
+            // link them
             let la
             for (let bi of bits) {
                 if (la) la.i({con:1,left_of:bi,class:'along'})
                 la = bi
             }
             la.sc.class = 'blob'
+            la.sc.blob = 1
+
+            // shade them
+            // by how recent this de was
+            let clas = gen_class[0]
+            gen_class[1] && gen_class.shift()
+            for (let bi of bits) {
+                if (clas) bi.sc.de == de && this.i_cla(bi,clas)
+            }
+
+            
+
+
+            
 
             for (let fa of de.o({factoid:1,uri:1})) {
                 // a shorter uri
@@ -379,6 +397,7 @@
                 if (fa.oa({readin:1,type:'collection'})) {
                     bit.sc.name = bit.sc.bit.match(/^(?:[-0] )(.+)$/)[1]
                     bit.sc.class = 'collection'
+                    bit.sc.collection = 1
                 }
 
                 // let path = fa.sc.uri.split('/')
@@ -400,6 +419,16 @@
                     gh.i({con:1,aligned_of:bit,label:'facto'})
                     if (la) la.i({con:1,above:gh})
                 }
+            }
+
+
+            // tilt anything two levels deep
+            la = null
+            for (let bi of bits) {
+                if (la && !la.sc.collection && !bi.sc.blob) {
+                    this.i_cla(bi,'tilted')
+                }
+                la = bi
             }
         }
     },
@@ -424,7 +453,8 @@
                 w.drop(bl)
                 continue
             }
-            C.i({bit:bl.sc.blob_bit,uri,class:'blob'})
+            let bi = C.i({bit:bl.sc.blob_bit,uri,class:'blob'})
+            this.i_cla(bi,'quiteood')
             // console.log(`blob sustained: ${uri}`)
         }
         this.whittle_N(blobs,15)
@@ -434,6 +464,11 @@
         let is = n.o({self:1,est:1})[0]
         is ||= n.i({self:1,est:now_in_seconds()})
         return is.ago('est')
+    },
+    // give a changable class...
+    i_cla(n,k) {
+        let had = n.sc.cla
+        n.sc.cla = (had ? `${had} ` : ``)+k
     },
     async cytotermi_nowPlaying(A,w,C) {
         // %nowPlaying copies here in _resources(), but not fast enough
@@ -445,7 +480,7 @@
         if (!bit) return
 
         // give a changable class...
-        bit.sc.cla = 'nowplaying'
+        this.i_cla(bit,'nowplaying')
 
         // link to next bit they listened to
         let playing = C.i({sign:1,name:"Playing",class:"anno"})
@@ -747,16 +782,6 @@
                 ar.push(c)
             }
 
-            if (D.sc.cla || bD?.sc.cla) {
-                // a changable class!
-                // < make multiple
-                if (D.sc.cla != bD?.sc.cla) {
-                    let N = T.sc.classing ||= []
-                    if (bD?.sc.cla) N.push({id:C.c.id_of(D),unclass:bD.sc.cla})
-                    if (D.sc.cla) N.push({id:C.c.id_of(D),enclass:D.sc.cla})
-                }
-            }
-
             if (T.sc.is_neu) {
                 let group = D.sc.con ? 'edges' : 'nodes'
                 let data:any = {}
@@ -770,7 +795,7 @@
                         : D.sc.left_of ? "" : 'aligned'
                     
                     data.class = D.sc.class
-
+                    
                 }
                 else {
                     let the_name = grep(k => D.sc[k],are_the_name)[0]
@@ -784,7 +809,7 @@
                         data.class = 'ayefour'
                     }
                     if (D.sc.nib) {
-                        // return
+                        // < going?
                         data.class = D.sc.nib == 'dir' ? 'ayethree' : 'ayetwo'
                     }
                     if (D.sc.type) {
@@ -794,11 +819,22 @@
                         data.dir = 1
                     }
                     if (D.sc.class) {
+
                         data.class = D.sc.class
                     }
                 }
                 T.sc.adding ||= []
                 T.sc.adding.push({group,id:C.c.id_of(D),data})
+            }
+
+            if (D.sc.cla || bD?.sc.cla) {
+                // a changable class!
+                // < make multiple
+                if (D.sc.cla != bD?.sc.cla) {
+                    let N = T.sc.classing ||= []
+                    if (bD?.sc.cla) N.push({id:C.c.id_of(D),unclass:bD.sc.cla})
+                    if (D.sc.cla) N.push({id:C.c.id_of(D),enclass:D.sc.cla})
+                }
             }
         })
             // return

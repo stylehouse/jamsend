@@ -22,6 +22,7 @@
             style: {
                 width: "50",
                 height: "50",
+                // all node labels (name) are scaled
                 "font-size": (ele) => {
                     let name = ele.data('name')
                     if (name == 'null') return "18"
@@ -36,28 +37,12 @@
                 "text-wrap": "wrap",
                 "text-max-width": "140",
                 "background-color": "gold",
-                "border-color": "orange",
-                "border-width": "3",
                 color: "#6f3bf5",
             },
         },
 
         
-
-        {
-            selector: 'node[class="ayefour"]',
-            style: {
-                "width": "133",
-                height: "70",
-
-                // "text-wrap": "none",
-                // shape: "rectangle",
-                color: "pink",
-                "line-color": "lightblue",
-                "background-color": "darkblue",
-                "border-color": "black",
-            },
-        },
+        // < going?
         {
             selector: 'node[class="ayethree"]',
             style: {
@@ -74,6 +59,8 @@
                 "background-color": "goldenrod",
             },
         },
+
+
 
         {
             selector: "node:selected",
@@ -117,7 +104,31 @@
             style: {
                 height: "90",
                 width: "120",
-                "background-color": "black",
+                color: "black",
+                "background-color": "#b394ff",
+            },
+        },
+        // any other directory level
+        // < why does node.ayefour not match? move everything to i_cla?
+        {
+            selector: 'node[class="ayefour"]',
+            style: {
+                "width": "133",
+                height: "70",
+
+                // "text-wrap": "none",
+                // shape: "rectangle",
+                color: "pink",
+                "text-rotation": "14deg",
+                "line-color": "lightblue",
+                "background-color": "darkblue",
+                "border-color": "black",
+            },
+        },
+        {
+            selector: 'node.tilted',
+            style: {
+                "text-rotation": "30deg",
             },
         },
         {
@@ -127,6 +138,8 @@
                 height: "90",
                 "background-color": "black",
                 color: "lightblue",
+                "border-color": "orange",
+                "border-width": "3",
             },
         },
 
@@ -137,18 +150,17 @@
             selector: 'node[class="anno"]',
             style: {
                 "width": "90",
-                "color": "black",
+                "color": "hsl(0, 29%, 45%)",
                 "border-width": "0",
                 "background-opacity": "0.1",
-                "background":"none",
             },
         },
         {
             selector: 'edge[class="anno"]',
             style: {
-                "color": "black",
-                "line-color": "black",
-                "target-arrow-color": "black",
+                "color": "hsl(0, 29%, 45%)",
+                "line-color": "hsl(0, 29%, 45%)",
+                "target-arrow-color": "hsl(0, 29%, 45%)",
                 "width":"1em"
             },
         },
@@ -158,15 +170,13 @@
             style: {
                 "width": "90",
                 "color": "black",
-                "border-width": "3em",
+                "border-color": "orange",
+                "border-width": "6em",
                 "background-opacity": "0.1",
                 "background":"none",
             },
         },
-
-
-
-        // the %nowSnaking route
+        // the %nowSnaking route also leading there
         {
             selector: 'edge[class="outward"]',
             style: {
@@ -175,6 +185,15 @@
                 "opacity":"0.5",
             },
         },
+
+        // wilting in time
+        {selector: 'node.slightood',
+        style: {"background-blacken":"0.5"}},
+        {selector: 'node.quiteood',
+        style: {"background-blacken":"0.7"}},
+
+
+
 
 
         {
@@ -396,6 +415,7 @@
         height: 100%;
         min-height: 50em;
         min-width: 40em;
-        background: hsl(0, 29%, 45%)
+        background: black;
+        color: #b394ff;
     }
 </style>
