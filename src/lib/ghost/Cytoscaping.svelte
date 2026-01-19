@@ -110,6 +110,14 @@
         })
         return it
     },
+    async cytotermi_does_titles(A,w,re) {
+        setTimeout(() => {
+            let {meta,enid} = re.sc
+            let {artist,title} = meta
+            M.node_edger.titles({artist,title,enid})
+            M.node_edger.jamming(true)
+        },M.node_edger ? 1 : 120)
+    },
 
     async cytotermi_may_descripted(A,w) {
         // pinged from raterm/%nowPlaying with this attached:
@@ -121,13 +129,17 @@
                 await this.i_descripted(w,uri,descripted)
                 w.i({see:"heard context about",uri})
             }
+            this.cytotermi_does_titles(A,w,re)
         }
 
         // %nowPlaying copies here in _resources(), but not fast enough
         let raterm = w.o1({raterm:1,see:1})[0]
         if (!raterm) throw "!raterm"
         let no = raterm.o({nowPlaying:1})[0]
-        if (!no) return w.i({see:"raterm !%nowPlaying"})
+        if (!no) {
+            M.node_edger?.jamming(false)
+            return w.i({see:"raterm !%nowPlaying"})
+        }
         let uri = no.sc.uri
         // find the %uri,descripted for that uri
         let de = w.o({uri,descripted:1})[0]

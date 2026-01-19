@@ -219,6 +219,10 @@
                 return ohno_start_over()
             }
         }
+        for (let e of this.o_elvis(w,'recover_party')) {
+            w.i({see:'recovering from dead air'})
+            await w.r({nowPlaying:1},{})
+        }
 
         this.do_skip_track_fn = async () => {
             let before = w.o({nowPlaying:1})[0]
@@ -249,10 +253,6 @@
         // < do a subsequent call lossy throttle on this more elegantly
         if (w.o({nowPlayingShunted:1})[0]?.ago('at') > 10) {
             await w.r({nowPlayingShunted:1},{})
-        }
-        for (let e of this.o_elvis(w,'recover_party')) {
-            w.i({see:'recovering from dead air'})
-            await w.r({nowPlaying:1},{})
         }
         if (!this.nowPlaying_is_ok(w)) {
             if (w.oa({nowPlayingShunted:1})) {
@@ -649,10 +649,21 @@
         this.whittle_N(he.o({aud:1,pr:1}),10)
     },
 
+    async i_nowPlaying(A,w,he,re) {
+        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
+            ...re.sc.meta
+        })
+        // this structure is just for cyto excitement, hosted here for moment accuracy
+        await this.cytotermi_nowSnaking_i(A,w)
+
+        return no
+    },
+
 
     // being listened to becomes fatal to %record
     //  death circuitry
     // thinks about radio_hear() happening just now
+    // < want this kind of timeline-qua data graphed nicely
     async raterminal_recordWear(A,w,re,no) {
         let rw = await w.r({recordWear:1})
         
@@ -719,19 +730,11 @@
             let re = we.sc.re
             let same_re = A.o({record:1,enid:re.sc.enid})[0]
             if (same_re && same_re != re) throw "how'd cullable re"
-            console.log(`dropping is done if any`)
+            V.tx && console.log(`dropping worn out record: ${re.sc.enid}`)
             A.drop(re)
+            // keep a tiny trace:
+            await rw.r({wore_out:re.sc.enid,title:re.sc.title})
         }
-    },
-
-    async i_nowPlaying(A,w,he,re) {
-        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
-            ...re.sc.meta
-        })
-        // this structure is just for cyto excitement, hosted here for moment accuracy
-        await this.cytotermi_nowSnaking_i(A,w)
-
-        return no
     },
 
     // < just use another co_cursor?
