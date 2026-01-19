@@ -104,7 +104,7 @@
         w.i({see:'tha happening'})
         // every time a %journey changes, we get pinged
         for (let e of this.o_elvis(w,'putjourney')) {
-            e.sc.reply && this.i_elvis(w,'noop',{A:e.sc.reply,reply_to:e})
+            e.sc.reply && this.i_elvis(w,'noop',{A:e.sc.reply})
         }
 
         let n = await w.r({nib:'dir'},{name:this.S.name,DL})

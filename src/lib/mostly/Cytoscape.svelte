@@ -119,7 +119,7 @@
                 // "text-wrap": "none",
                 // shape: "rectangle",
                 color: "pink",
-                "text-rotation": "14deg",
+                "text-rotation": "9deg",
                 "line-color": "lightblue",
                 "background-color": "darkblue",
                 "border-color": "black",
@@ -128,7 +128,7 @@
         {
             selector: 'node.tilted',
             style: {
-                "text-rotation": "30deg",
+                "text-rotation": "26deg",
             },
         },
         {

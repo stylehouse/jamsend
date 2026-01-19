@@ -31,17 +31,15 @@
     // on the PF Sharee
     // take nowPlaying somewhere interesting
     async cytotermicaster(A,w) {
-        let {np} = await this.termicaster_resources(A,w)
+        let {raterm} = await this.termicaster_resources(A,w)
 
 
         await this.cytotermi_pirating(A,w)
 
 
-        
         // queries|receives context
-        np && await this.cytotermi_may_descripted(A,w,np)
+        raterm && await this.cytotermi_may_descripted(A,w)
 
-        let raterm = this.o({A:'audio'})[0]?.oa({w:'raterminal'})
         if (!raterm) return w.i({see:'sitting still'})
 
         let cynoed = await this.cynoed(A,w)
@@ -113,25 +111,31 @@
         return it
     },
 
-    async cytotermi_may_descripted(A,w,np) {
-        // < only o_elvis when np exists and this is called, seems to be working out?
-        // pinged from nowPlaying with this attached:
-        for (let e of this.o_elvis(w,'i_descripted')) {
+    async cytotermi_may_descripted(A,w) {
+        // pinged from raterm/%nowPlaying with this attached:
+        for (let e of this.o_elvis(w,'i_nowPlaying')) {
             let re = e.sc.re
             let {uri,descripted} = re.sc
-            V.descripted && console.log(`elvis:i_descripted: ${uri}`,descripted)
-            await this.i_descripted(w,uri,descripted)
-            w.i({see:"heard context about",uri})
+            V.descripted && console.log(`elvis:i_nowPlaying: ${uri}`,descripted)
+            if (descripted) {
+                await this.i_descripted(w,uri,descripted)
+                w.i({see:"heard context about",uri})
+            }
         }
 
-        let uri = np.sc.uri
+        // %nowPlaying copies here in _resources(), but not fast enough
+        let raterm = w.o1({raterm:1,see:1})[0]
+        if (!raterm) throw "!raterm"
+        let no = raterm.o({nowPlaying:1})[0]
+        if (!no) return w.i({see:"raterm !%nowPlaying"})
+        let uri = no.sc.uri
         // find the %uri,descripted for that uri
         let de = w.o({uri,descripted:1})[0]
         if (!de) {
             // ask for it
             if (!w.oa({uri,wants_descripted:1})) {
                 V.descripted && console.log(`want o_descripted`)
-                await this.PF.emit('o_descripted',{uri:np.sc.uri})
+                await this.PF.emit('o_descripted',{uri})
                 w.i({desc:1,uri,wants_descripted:1})
             }
         }
@@ -177,10 +181,7 @@
         w.i({see:1,raterm})
         let np
         if (raterm) {
-            let no = raterm.o({nowPlaying:1})[0]
-            // < GOING? just look up %see,raterm
-            // copy it here, shallowly except for %nowPlaying:he
-            np = no && await w.r({...no.sc})
+            // ...
         }
 
         // the backend, sending music yonder
@@ -226,13 +227,13 @@
                 })
             },
         }
-        return {np,radiopiracy}
+        return {raterm,racast,radiopiracy}
     },
     // enter a bunch of notes about a uri
     //  to be fed to nowPlaying visuals
     async i_descripted(w,uri,N) {
-        // has to be two-arg r() for not being pattern={uri:1}
         let was = w.o({uri:1,descripted:1})
+        // !!!!! has to be two-arg r() for not being pattern={uri:1}
         let de = await w.r({uri},{descripted:1})
         let now = w.o({uri:1,descripted:1})
         V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)

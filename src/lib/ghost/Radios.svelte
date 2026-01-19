@@ -27,6 +27,9 @@
     const MIN_LEFT_TO_WANT_STREAMING = 22
     const STAY_AHEAD_OF_ACK_SEQ = 7 // many re/pr to load ahead
 
+    const LISTENING_FOR_LONG_ENOUGH = 3
+    const LISTENING_FOR_LONG_ENOUGH_DELAY = 19
+
     const V = {}
     V.plau = 0
     V.tx = 0
@@ -93,7 +96,7 @@
                 this.check_all_records_sanity(A)
                 if (re.oa({...keywordc,seq:String(prsc.seq)})) {
                     console.log(`irecord DUP ${re.sc.enid} at ${prsc.seq}`)
-                    w.i({warning:'irecord DUP'})
+                    w.i({see:'tx',warning:'irecord DUP'})
                     return
                 }
                 let pr = re.o({...keywordc,...exactly(prsc)})[0]
@@ -262,6 +265,7 @@
                 let rec = await next()
             }
         }
+        this.whittle_N(A.o({record:1}),21)
 
         
 
@@ -632,10 +636,10 @@
         }
 
         let no = await this.i_nowPlaying(A,w,he,re)
+        // notifies the UI
+        this.i_elvis(w,'i_nowPlaying',{Aw:'visual/cytotermicaster',re,no})
 
-        if (re.sc.descripted) {
-            this.i_elvis(w,'i_descripted',{Aw:'visual/cytotermicaster',re})
-        }
+        this.raterminal_recordWear(A,w,re,no)
 
         no.c.hear_wake_fn = async () => {
             // will be attended while we are the %nowPlaying ?
@@ -644,6 +648,82 @@
 
         this.whittle_N(he.o({aud:1,pr:1}),10)
     },
+
+
+    // being listened to becomes fatal to %record
+    //  death circuitry
+    // thinks about radio_hear() happening just now
+    async raterminal_recordWear(A,w,re,no) {
+        let rw = await w.r({recordWear:1})
+        
+        for (let we of rw.o({wear:1,is_nowPlaying:1})) {
+            // stop listening to that
+            let played_time = now_in_seconds_with_ms() - we.sc.started
+            we.sc.played_time ||= 0
+            we.sc.played_time += played_time
+            delete we.sc.started
+            delete we.sc.is_nowPlaying
+        }
+
+
+        // start listening to
+        let started = now_in_seconds_with_ms()
+        let we = await rw.r({wear:re.sc.enid},{is_nowPlaying:1,started,re})
+        if (we.sc.re != re) {
+            console.warn(`re object changed since last nowPlaying, according to %recordWear`)
+        }
+
+        let wears = rw.o({wear:1})
+        await rw.replace({wearing_out:1},async () => {
+            for (let we of wears) {
+                if (we.sc.is_nowPlaying) continue
+                let re = we.sc.re
+                let same_re = re && A.o({record:1,enid:re.sc.enid})[0]
+                if (same_re && same_re != re) throw "how'd re"
+                if (!same_re || !re) {
+                    // the A:audio/%record has been whittled
+                    if (re) {
+                        // have this once here, then forget it
+                        delete we.sc.re
+                        we.sc.gone_since ||= now_in_seconds_with_ms()
+                    }
+                    let gone_for = now_in_seconds_with_ms() - we.sc.gone_since
+                    // $we could go soonish...
+                    rw.i({wearing_out:1,
+                        enid:we.sc.wear,
+                        gone_for
+                    })
+                    if (gone_for > 120) {
+                        rw.drop(we)
+                    }
+                }
+                else {
+                    // the A:audio/%record exists
+                    let listened_for = we.sc.played_time
+                    if (listened_for < LISTENING_FOR_LONG_ENOUGH) continue
+                    we.sc.almost_going_since ||= now_in_seconds_with_ms()
+                    let almost_going_for = now_in_seconds_with_ms() - we.sc.almost_going_since
+                    if (almost_going_for > LISTENING_FOR_LONG_ENOUGH_DELAY) {
+                        we.sc.cullable_since ||= now_in_seconds_with_ms()
+                    }
+                    rw.i({wearing_out:1,
+                        enid:we.sc.wear,
+                        title:re.sc.title,
+                        ...grep({listened_for,almost_going_for})
+                    })
+                }
+            }
+        })
+
+        for (let we of rw.o({wear:1,cullable_since:1,re:1})) {
+            let re = we.sc.re
+            let same_re = A.o({record:1,enid:re.sc.enid})[0]
+            if (same_re && same_re != re) throw "how'd cullable re"
+            console.log(`dropping is done if any`)
+            A.drop(re)
+        }
+    },
+
     async i_nowPlaying(A,w,he,re) {
         let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
             ...re.sc.meta
