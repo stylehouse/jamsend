@@ -310,7 +310,7 @@
             }
             let lost = (where) => {
                 w.i({see:'pirating fail',lost:where})
-                req.sc.please_give_up = 1
+                req.sc.please_give_up = `lost: ${where}`
                 // req.sc.finished = 1
             }
             // the radio receiver
@@ -341,29 +341,47 @@
 
             // produce something we can hang UI input off|to
             req.oa({gatherable:1})
-                || await this.cytotermi_pirating_descripted(A,w,de)
+                || await this.cytotermi_pirating_descripted(A,w,req,de)
                 
                 
         }
         // this.whittle_N(w.o({places:1}),2)
         
     },
-    async cytotermi_pirating_descripted(A,w,de) {
+    async cytotermi_pirating_descripted(A,w,req,de) {
         // < many i %bit
+        let uri = de.sc.uri
+        let pls = await req.r({places:1,uri})
+        pls.empty()
+        let pathbits = []
+        for (let bit of uri.split('/')) {
+            pathbits.push(bit)
+            let this_uri = pathbits.join('/')
+
+            let pl = pls.i({
+                place: 1, 
+                bit, 
+                uri: this_uri,
+            })
+
+            for (let fa of de.o({factoid:1,uri:this_uri})) {
+                if (fa.oa({type:'collection'})) {
+                    pl.sc.collection = 1
+                }
+                else {
+                    pl.i({unknown_fa:1}).i(fa)
+                }
+            }
+
+        }
+
         //    become %collection, %blob
+
         // a mutex set of radiobuttons moves up the %dirs
         // %collections may or not be believed in
         // if just the file, the artist name wants to be included
         // offer to put artist/ on the front of anything if it doesn't seem to exist?
 
-        let pls = await req.r({places:1,uri})
-        pls.empty()
-        for (let fa of de.o({factoid:1})) {
-            let pl = pls.i({place:1,uri:fa.sc.uri})
-            for (let ni of fa.o({})) {
-                pl.i({thingsos:1,...ni.sc})
-            }
-        }
         // < construct several concentric scopes of stuff we could heist
         //    ie just a %uri,descripted to slurp into a local share
         //   need an extra %uri,descripted for the blob we might've selected
