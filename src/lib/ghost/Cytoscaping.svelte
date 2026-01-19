@@ -38,9 +38,9 @@
         if (!raterm) return w.i({see:'sitting still'})
 
         // help the user
-        await this.cytotermi_pirating(A,w)
+        await this.cytotermi_pirating(A,w,raterm)
         // queries|receives context
-        await this.cytotermi_may_descripted(A,w)
+        await this.cytotermi_may_descripted(A,w,raterm)
         
         let cynoed = await this.cynoed(A,w)
         if (!cynoed) return w.i({waits:'for UI'})
@@ -119,7 +119,7 @@
         },M.node_edger ? 1 : 120)
     },
 
-    async cytotermi_may_descripted(A,w) {
+    async cytotermi_may_descripted(A,w,raterm) {
         // pinged from raterm/%nowPlaying with this attached:
         for (let e of this.o_elvis(w,'i_nowPlaying')) {
             let re = e.sc.re
@@ -131,8 +131,6 @@
             }
             this.cytotermi_does_titles(A,w,re)
         }
-
-        let raterm = w.o1({raterm:1,see:1})[0]
         if (!raterm) throw "!raterm"
         let no = raterm.o({nowPlaying:1})[0]
         if (!no) {
@@ -194,7 +192,7 @@
         raterm && console.log("Is raterm")
         !raterm && console.log("Ain't raterm")
 
-        
+
 
         // the backend, sending music yonder
         let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
@@ -272,7 +270,7 @@
 
 //#region pirating
     // 🏴‍☠️ replication station
-    async cytotermi_pirating(A,w) {
+    async cytotermi_pirating(A,w,raterm) {
         let reqy = await this.requesty_serial(w,'pirating')
         // < GOING maybe.
         // serve descripted at selected nodes
@@ -312,48 +310,73 @@
             }
             let lost = (where) => {
                 w.i({see:'pirating fail',lost:where})
-                debugger
-                req.sc.finished = true
+                req.sc.please_give_up = 1
+                // req.sc.finished = 1
             }
             // the radio receiver
             let enid = req.sc.enid
-            let re = req.sc.re ||= this.o({A:'audio'})[0]?.o({record:1,enid})[0]
+            let Aaudio = raterm.up
+            if (Aaudio.sc.A != 'audio') throw "!A:audio"
+            if (!req.sc.re) {
+                // the %requesty object can be in the UI!
+                let con = _C({invisible_stuffing_container:1})
+                con.i(req)
+                M.node_edger.enheist(con)
+            }
+            let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
             if (!re) {
                 lost('record')
                 continue
             }
 
             let uri = re.sc.uri
-            let no = w.o({uri,descripted:1})
-
-
-
-            let pls = await req.r({places:1,uri})
-            pls.empty()
-            for (let fa of no.sc.de.o({factoid:1})) {
-                let pl = pls.i({place:1,uri:fa.sc.uri})
-                for (let ni of fa.o({})) {
-                    pl.i({thingsos:1,...ni.sc})
-                }
+            if (!re.sc.record || !uri) throw "what %record"
+            let de = w.o({uri,descripted:1})[0]
+            if (!de) {
+                // < could ask for it again
+                lost('descripted')
+                continue
             }
-            // < construct several concentric scopes of stuff we could heist
-            //    ie just a %uri,descripted to slurp into a local share
-            //   need an extra %uri,descripted for the blob we might've selected
-            //    if D.sc.de.sc.uri is longer than any we have
-            //   and if blob we should look at the %record?
-            //    and suggest renaming it Artist - Title.flac
-            // < it thunks over to UI so they might adjust their re-categorisation
-            //    as Thing:Heist? for durability...
-            //     they'd be thought-through by cytotermi_piracy
-            //   
-            // await w.r(pls)
-            // req.sc.finished = true
+
+
+            // produce something we can hang UI input off|to
+            req.oa({gatherable:1})
+                || await this.cytotermi_pirating_descripted(A,w,de)
+                
+                
         }
         // this.whittle_N(w.o({places:1}),2)
         
     },
-    
+    async cytotermi_pirating_descripted(A,w,de) {
+        // < many i %bit
+        //    become %collection, %blob
+        // a mutex set of radiobuttons moves up the %dirs
+        // %collections may or not be believed in
+        // if just the file, the artist name wants to be included
+        // offer to put artist/ on the front of anything if it doesn't seem to exist?
 
+        let pls = await req.r({places:1,uri})
+        pls.empty()
+        for (let fa of de.o({factoid:1})) {
+            let pl = pls.i({place:1,uri:fa.sc.uri})
+            for (let ni of fa.o({})) {
+                pl.i({thingsos:1,...ni.sc})
+            }
+        }
+        // < construct several concentric scopes of stuff we could heist
+        //    ie just a %uri,descripted to slurp into a local share
+        //   need an extra %uri,descripted for the blob we might've selected
+        //    if D.sc.de.sc.uri is longer than any we have
+        //   and if blob we should look at the %record?
+        //    and suggest renaming it Artist - Title.flac
+        // < it thunks over to UI so they might adjust their re-categorisation
+        //    as Thing:Heist? for durability...
+        //     they'd be thought-through by cytotermi_piracy
+        //   
+        // await w.r(pls)
+        // req.sc.finished = true
+    },
 
 
 

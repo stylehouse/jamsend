@@ -10,6 +10,7 @@
     import { onMount } from "svelte";
     import { throttle } from "$lib/Y";
     import { keyser, objectify } from "$lib/data/Stuff.svelte";
+    import Stuffing from "$lib/data/Stuffing.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
@@ -359,12 +360,28 @@
     //#endregion
     //#region heist etc
     // we:
+    let mem = M.imem("heisting")
+    let uimem = mem.further('UI')
+
     let surf = () => M.turn_knob()
-    let quit_fullscreen = $state(false)
-    let esc = () => quit_fullscreen = !quit_fullscreen
+    
+    // persist your esc-ness
+    let quit_fullscreen = $state(uimem.get('quit_fullscreen') ?? false)
+    let esc = () => {
+        quit_fullscreen = !quit_fullscreen
+        uimem.set('quit_fullscreen',quit_fullscreen)
+    }
+    
+
+    let heist = $state()
     let nab = () => {
+        heist = null
         M.i_elvis(w, "nab_this", {enid})
     }
+    node_edger.enheist = (hi) => {
+        heist = hi
+    }
+
 
     let artist = $state()
     let title = $state()
@@ -389,7 +406,6 @@
     let fullscreen = $derived(jamming && !quit_fullscreen)
 
 
-    let heist = $state()
     function selection_changed() {
         let eles = cy.$("node:selected");
         if (!eles[0]) {
@@ -398,9 +414,6 @@
         else {
             M.i_elvis(w, "eles_selection", {eles})
         }
-    }
-    node_edger.enheist = (hi) => {
-        heist = hi
     }
     
 </script>
@@ -426,6 +439,7 @@
 </div>
 {#if heist}
     <h3>heist: ${objectify(heist)}</h3>
+    <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
 {/if}
 
 <style>
