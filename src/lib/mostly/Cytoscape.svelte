@@ -115,9 +115,6 @@
             style: {
                 "width": "133",
                 height: "70",
-
-                // "text-wrap": "none",
-                // shape: "rectangle",
                 color: "pink",
                 "text-rotation": "9deg",
                 "line-color": "lightblue",
@@ -172,8 +169,6 @@
                 "color": "black",
                 "border-color": "orange",
                 "border-width": "6em",
-                "background-opacity": "0.1",
-                "background":"none",
             },
         },
         // the %nowSnaking route also leading there
@@ -213,27 +208,6 @@
             style: {
                 "line-color": "white",
                 "target-arrow-color": "orange",
-            },
-        },
-
-        {
-            selector: "node[data.dir]",
-            style: {
-                shape: "ellipse",
-                width: "8em",
-                "background-color": "pink",
-            },
-        },
-        {
-            selector: "node[data.texty]",
-            style: {
-                width: (ele) => (ele.data("data.texty") ?? 2) * 0.5 + 1 + "em",
-                "text-wrap": "none",
-                shape: "rectangle",
-                color: "lightblue",
-                "line-color": "lightblue",
-                "background-color": "darkblue",
-                "border-color": "gray",
             },
         },
     ];
@@ -383,18 +357,37 @@
     }, 100);
 
     //#endregion
-    //#region heist
+    //#region heist etc
+    // we:
+    let surf = () => M.turn_knob()
+    let quit_fullscreen = $state(false)
+    let esc = () => quit_fullscreen = !quit_fullscreen
+    let nab = () => {
+        M.i_elvis(w, "nab_this", {enid})
+    }
+
     let artist = $state()
     let title = $state()
     let enid = $state() // ticket back, to nab -> heist
     node_edger.titles = (c) => {
         [{artist,title,enid}] = [c];
     }
-    // < fullscreen cyto, banners if true
+
+
     let jamming = $state()
     node_edger.jamming = (whether) => {
         jamming = whether
     }
+    // < F:Trust, always there, also throws up fullscreening on load
+    //    depending also on the same !quit_fullscreen
+    //   shows them induction text maybe
+    //   processes idzeug maybe
+    //   and lets you select which peer to listen to, if multiple...
+    //   and jumps out of the way just as the stream comes in
+    //   
+    // < once jamming, or
+    let fullscreen = $derived(jamming && !quit_fullscreen)
+
 
     let heist = $state()
     function selection_changed() {
@@ -418,16 +411,17 @@
 
 <h3>Cytoscape {jamming && 'jamming'} {title}</h3>
 
-<div class="hoist" class:jamming={jamming}>
-    <div class="contain" class:jamming={jamming}>
+<div class="hoist" class:jamming={fullscreen}>
+    <div class="contain" class:jamming={fullscreen}>
         <div class="graph" bind:this={ele}></div>
 
-        <div class='banner' class:jamming={jamming}>
-            <div class='scroll-text'>{artist}</div>
+        <div class='uiing'>
+            <button onclick={() => nab()}>nab</button>
+            {#if title}<span class='np'>{artist} - {title}</span>{/if}
+            <button onclick={() => surf()} class='big'>or not</button>
+            <button onclick={() => esc()} class='small'>etc</button>
         </div>
-        <div class='banner right' class:jamming={jamming}>
-            <div class='scroll-text'>{title}</div>
-        </div>
+        
     </div>
 </div>
 {#if heist}
@@ -435,88 +429,56 @@
 {/if}
 
 <style>
+    div {
+        background:black;
+    }
+    .np {
+        font-size:1.6em;
+    }
+    button.big {
+        font-size:1.6em;
+    }
+    button.small {
+        font-size:0.5em;
+    }
     .contain {
         position:relative;
-        width: calc(100% - 2em);
-        height: calc(100% - 2em);
-        border: 1em solid greenyellow;
-        border-radius:2em;
+        width: 100%;
+        height: 100%;
     }
     .hoist.jamming {
         position:fixed;
-        top:-1em;
-        left:-1em;
+        top:0;
+        left:0;
         z-index:20000;
         width: 100%;
-        height: calc(100% + 2em);
+        height: 100%;
     }
+        /* width: calc(100% + 2em);
+        height: calc(100% + 0);
+        border: 1em solid greenyellow;
+        border-radius:2em; */
     .graph {
         width: 100%;
-        height: 100%;
+        height: 94%;
         min-height: 50em;
         min-width: 40em;
         background: black;
         color: #b394ff;
     }
-    .banner {
-        position:relative;
-        top:0;
+    .uiing {
+        max-width: 100%;
+        position:absolute;
+        bottom:0;
         left:0;
-        width:10vw;
-        height:100%;
-        background-color:rgba(43, 33, 109,0.8);
-        border-radius:2em;
-        margin:-0.7em;
-        line-height:5vw;
-        overflow:hidden;
+        font-size:2em;
+        margin:1em;
+        border-radius:3em;
     }
-    .banner.jamming {
-        position: fixed;
-        z-index: 10;
-        background-color: rgba(43, 33, 109, 0.95);
-    }
-    .banner.right {
-        left:initial;
-        right:0em;
+    .uiing button {
+        padding:0.7em;
     }
 
 
 
-    .scroll-text {
-        position: absolute;
-        font-size: 9vw;
-        font-weight: 900;
-        white-space: nowrap;
-        color: gold;
-        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
-        letter-spacing: -0.02em;
-    }
-    .banner .scroll-text {
-        transform-origin: left top;
-        transform: rotate(-90deg) translateX(-100%);
-        left: 3vw;
-        animation: scroll-down 15s linear infinite;
-    }
-    .banner.right .scroll-text {
-        transform-origin: right top;
-        transform: rotate(90deg) translateX(100%);
-        right: 3vw;
-        animation: scroll-up 15s linear infinite;
-    }
-    @keyframes scroll-down {
-        0% {
-            top: -20%;
-        }
-        100% {
-            top: 120%;
-        }
-    }
-    @keyframes scroll-up {
-        0% {
-            top: 120%;
-        }
-        100% {
-            top: -20%;
-        }
-    }
 </style>

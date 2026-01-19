@@ -34,14 +34,14 @@
         let {raterm} = await this.termicaster_resources(A,w)
 
 
-        await this.cytotermi_pirating(A,w)
-
-
-        // queries|receives context
-        raterm && await this.cytotermi_may_descripted(A,w)
 
         if (!raterm) return w.i({see:'sitting still'})
 
+        // help the user
+        await this.cytotermi_pirating(A,w)
+        // queries|receives context
+        await this.cytotermi_may_descripted(A,w)
+        
         let cynoed = await this.cynoed(A,w)
         if (!cynoed) return w.i({waits:'for UI'})
 
@@ -132,7 +132,6 @@
             this.cytotermi_does_titles(A,w,re)
         }
 
-        // %nowPlaying copies here in _resources(), but not fast enough
         let raterm = w.o1({raterm:1,see:1})[0]
         if (!raterm) throw "!raterm"
         let no = raterm.o({nowPlaying:1})[0]
@@ -140,6 +139,7 @@
             M.node_edger?.jamming(false)
             return w.i({see:"raterm !%nowPlaying"})
         }
+
         let uri = no.sc.uri
         // find the %uri,descripted for that uri
         let de = w.o({uri,descripted:1})[0]
@@ -191,10 +191,10 @@
         // the frontend, listening to the music
         let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
         w.i({see:1,raterm})
-        let np
-        if (raterm) {
-            // ...
-        }
+        raterm && console.log("Is raterm")
+        !raterm && console.log("Ain't raterm")
+
+        
 
         // the backend, sending music yonder
         let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
@@ -274,6 +274,7 @@
     // 🏴‍☠️ replication station
     async cytotermi_pirating(A,w) {
         let reqy = await this.requesty_serial(w,'pirating')
+        // < GOING maybe.
         // serve descripted at selected nodes
         for (let e of this.o_elvis(w,'eles_selection')) {
             let el = e.sc.eles[0]
@@ -282,33 +283,54 @@
                 console.log(`dup pirating selection`)
                 continue
             }
-            reqy.i({D})
+            // < touch the graph?
+            //   it isn't clearly wired back through time yet
             w.i({see:1,hasSelection:keyser(D)})
+            continue
+            reqy.i({D})
             setTimeout(() => {
                 M.node_edger.enheist({lets:"Control",things:3})
             },22)
         }
+        for (let e of this.o_elvis(w,'nab_this')) {
+            let enid = e.sc.enid
+            if (reqy.o({enid}).length) {
+                console.log(`dup pirating selection`)
+                continue
+            }
+            reqy.i({enid})
+        }
+
+        
+
+        // process the above
+        
         for (let req of reqy.o()) {
             if (req.sc.finished) {
                 w.drop(req)
                 continue
             }
             let lost = (where) => {
-                w.i({see:'pirating',lost:where})
+                w.i({see:'pirating fail',lost:where})
+                debugger
                 req.sc.finished = true
             }
-            let D = req.sc.D
-            if (!(D.sc.Gra && D.sc.bit)) {
-                lost("D!%Gra,bit")
+            // the radio receiver
+            let enid = req.sc.enid
+            let re = req.sc.re ||= this.o({A:'audio'})[0]?.o({record:1,enid})[0]
+            if (!re) {
+                lost('record')
                 continue
             }
-            if (!(D.sc.de)) {
-                lost("D!%de%url,descripted")
-                break
-            }
-            let pls = await req.r({places:1,uri:D.sc.de.sc.uri})
+
+            let uri = re.sc.uri
+            let no = w.o({uri,descripted:1})
+
+
+
+            let pls = await req.r({places:1,uri})
             pls.empty()
-            for (let fa of D.sc.de.o({factoid:1})) {
+            for (let fa of no.sc.de.o({factoid:1})) {
                 let pl = pls.i({place:1,uri:fa.sc.uri})
                 for (let ni of fa.o({})) {
                     pl.i({thingsos:1,...ni.sc})
@@ -324,10 +346,10 @@
             //    as Thing:Heist? for durability...
             //     they'd be thought-through by cytotermi_piracy
             //   
-            await w.r(pls)
+            // await w.r(pls)
             // req.sc.finished = true
         }
-        this.whittle_N(w.o({places:1}),2)
+        // this.whittle_N(w.o({places:1}),2)
         
     },
     
