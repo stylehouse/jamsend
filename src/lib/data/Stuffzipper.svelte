@@ -45,6 +45,11 @@
             anything = false
         }
     }
+    function inner_is_from_val(inner) {
+        if (!stuffziado) return false
+        let in_rows = stuffziado.rows.includes(inner)
+        return !in_rows
+    }
 </script>
 
 {#if anything}
@@ -54,6 +59,18 @@
 <span class="inner">
     {#if openness}
         {#each innered as inner}
+            {@const in_that_val = inner_is_from_val(inner)}
+            {#if in_that_val}
+                <span title="
+rows after any of these slashes are from stuffziado's value itself
+    value/*
+rows before are those being grouped by the stuffusion, a level up,
+ with key,value that match this stuffziado
+ie opening what looks like the A:ragate property amongst a bunch of other A:*
+ gives you A:ragate/*, like a where clause.
+
+ "> / </span>
+            {/if}
             <Stuffing {mem} stuff={inner} />
         {/each}
     {/if}

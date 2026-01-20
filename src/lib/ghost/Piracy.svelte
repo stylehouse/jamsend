@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { _C, keyser, objectify, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
+    import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
     import { erring, ex, grap, grep, grop, indent, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
@@ -89,14 +89,18 @@
 
 
             // produce something we can hang UI input off|to
-            req.oa({gatherable:1})
-                || await this.cytotermi_pirating_descripted(A,w,req,de)
-                
-                
+            if (!req.oa({gatherable:1})) {
+                await this.cytotermi_pirating_descripted(A,w,req,de)
+
+            }
         }
+
+
         // this.whittle_N(w.o({places:1}),2)
         
     },
+
+
     async cytotermi_pirating_descripted(A,w,req,de) {
         // < many i %bit
         let uri = de.sc.uri
@@ -111,11 +115,18 @@
                 place: 1, 
                 bit, 
                 uri: this_uri,
+                yervory:1,
             })
 
             for (let fa of de.o({factoid:1,uri:this_uri})) {
                 if (fa.oa({type:'collection'})) {
                     pl.sc.collection = 1
+                }
+                else if (fa.oa({type:'dir'})) {
+                    pl.i({nib:'dir',name:fa.sc.name})
+                }
+                else if (fa.oa({type:'blob'})) {
+                    pl.i({nib:'blob',name:fa.sc.name})
                 }
                 else {
                     pl.i({unknown_fa:1}).i(fa)
@@ -124,6 +135,7 @@
 
         }
 
+        console.log(`🏴‍☠️ questing ${req.sc.re.sc.title}`)
         //    become %collection, %blob
 
         // a mutex set of radiobuttons moves up the %dirs
@@ -143,8 +155,44 @@
         //   
         // await w.r(pls)
         // req.sc.finished = true
+
+
     },
 
+
+    
+    // < put this in ragate to have a look
+    // await this.Stuffusion_innersmuddle(A,w)
+    async Stuffusion_innersmuddle(A,w) {
+        await this.r({testo:1},{})
+        let te = this.i({testo:1})
+        let toru = _C({toru:1})
+        toru.i({say:'toruvian'})
+        toru.i({say:'toruvian'})
+        let wha = _C({wha:1})
+        wha.i({say:'whavian'})
+        wha.i({say:'whavian'})
+        let tahi = te.i({Tahi:1,toru,wha})
+        tahi.i({rua:1}).i({etc:1})
+        console.log(`\n`)
+    },
+    on_code_change() {
+        // < you can't just pop it in Stuff.regroup from here?
+        // faster code loading by hot-wiring in functions from ghosts
+        //  to Stuff.*, which usually has to reload the page to change
+        // at the start of Stuff.regroup(), add:
+        // if (window.replacement_regroup
+        //      && window.replacement_regroup != this.regroup) {
+        //     this.regroup = window.replacement_regroup
+        //     return this.regroup(groups)
+        // }
+        // and here uncomment:
+        // window.replacement_regroup = this.replacement_regroup
+        // this.main()
+    },
+    replacement_regroup(groups:TheC) {
+        // etc
+    },
 
 
 //#endregion

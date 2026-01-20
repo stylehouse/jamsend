@@ -197,6 +197,8 @@
     // on SharesModus are two undeveloped w for testing elvising
     async ragate(A,w) {
         // < what to do as|with the bunch of music shares? redundancy?
+            w.i({see:"This big thing","Tis all":1})
+            // await this.Stuffusion_innersmuddle(A,w)
         return
         if (w.o1({round:1,self:1})[0] % 2) {
             this.i_elvis(w,'yap',{Aw:'raglance',te:'some'})
