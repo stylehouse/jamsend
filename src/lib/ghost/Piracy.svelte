@@ -25,24 +25,6 @@
     // running on M:Sharee/A:visual/w:cytotermicaster
     async cytotermi_pirating(A,w,raterm) {
         let reqy = await this.requesty_serial(w,'pirating')
-        // < GOING maybe.
-        // serve descripted at selected nodes
-        for (let e of this.o_elvis(w,'eles_selection')) {
-            let el = e.sc.eles[0]
-            let D = await this.find_D_by_cytoid(el.id())
-            if (reqy.o({D}).length) {
-                console.log(`dup pirating selection...`)
-                continue
-            }
-            // < touch the graph?
-            //   it isn't clearly wired back through time yet
-            w.i({see:1,hasSelection:keyser(D)})
-            continue
-            reqy.i({D})
-            setTimeout(() => {
-                M.node_edger.enheist({lets:"Control",things:3})
-            },22)
-        }
         for (let e of this.o_elvis(w,'nab_this')) {
             let enid = e.sc.enid
             if (!enid) {
@@ -73,12 +55,7 @@
             let enid = req.sc.enid
             let Aaudio = raterm.up
             if (Aaudio.sc.A != 'audio') throw "!A:audio"
-            if (!req.sc.re) {
-                // the %requesty object can be in the UI!
-                let con = _C({invisible_stuffing_container:1})
-                con.i(req)
-                M.node_edger.enheist(con)
-            }
+
             let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
             if (!re) {
                 lost('record')
@@ -87,12 +64,28 @@
 
             let uri = re.sc.uri
             if (!re.sc.record || !uri) throw "what %record"
-            let de = w.o({uri,descripted:1})[0]
+            let de = req.sc.de ||= w.o({uri,descripted:1})[0]
             if (!de) {
                 // < could ask for it again
                 lost('descripted')
                 continue
             }
+
+            // it's likely to work now
+            //  since we gather req%re,de
+            //   their sources can disappear while the user thinks
+            // the %requesty_ object can be in the UI!
+            let con = _C({invisible_stuffing_container:1})
+            con.i(req)
+            con.c.abandon_piracy = () => {
+                M.node_edger.enheist(null)
+                req.sc.finished = "abandoned by UI"
+                // we need to shoot another %elvis:nab_this
+                //  before the %finished->drop() this loop-bit comes around
+                w.drop(req)
+            }
+            M.node_edger.enheist(con)
+            
 
 
             // produce something we can hang UI input off|to

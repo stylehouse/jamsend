@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import { throttle } from "$lib/Y";
     import Pirating from "./Pirating.svelte";
+    import { _C } from "$lib/data/Stuff.svelte";
 
     import cytoscape from "cytoscape";
     // these are apparently the best at either hierarchical
@@ -163,7 +164,7 @@
                 "width":"1em"
             },
         },
-        // and what its pointing to
+        // and what its pointing to (the sun)
         {
             selector: 'node.nowplaying',
             style: {
@@ -171,6 +172,7 @@
                 "color": "black",
                 "border-color": "orange",
                 "border-width": "6em",
+                "z-index": -206,
             },
         },
         // the %nowSnaking route also leading there
@@ -359,12 +361,22 @@
     }, 100);
 
     //#endregion
-    //#region heist etc
+
+
+
+    //#region UI
     // we:
     let mem = M.imem("heisting")
     let uimem = mem.further('UI')
 
-    let surf = () => M.turn_knob()
+    let or_not = () => {
+        if (heist) {
+            heist.c.abandon_piracy()
+        }
+        else {
+            M.turn_knob()
+        }
+    }
     
     // persist your esc-ness
     let quit_fullscreen = $state(uimem.get('quit_fullscreen') ?? false)
@@ -376,7 +388,6 @@
 
     let heist = $state()
     let nab = () => {
-        heist = null
         M.i_elvis(w, "nab_this", {enid})
     }
     node_edger.enheist = (hi) => {
@@ -423,24 +434,28 @@
 <button onclick={() => run_layout()}>...</button>
 <button onclick={() => cy.fit()}>fit()</button>
 
-<h3>Cytoscape {jamming && 'jamming'} {title}</h3>
 
 <div class="hoist" class:jamming={fullscreen}>
     <div class="contain" class:jamming={fullscreen}>
         <div class="graph" bind:this={ele}></div>
 
-        <div class='uiing'>
-            <button onclick={() => nab()}>nab</button>
-            {#if title}<span class='np'>{artist} - {title}</span>{/if}
-            <button onclick={() => surf()} class='big'>or not</button>
-            <button onclick={() => esc()} class='small'>etc</button>
-            {#if heist}
-                <div class='heisting'>
-                 <Pirating {M} {mem} {heist}></Pirating>
+        {#if jamming}
+            <div class='uiing'>
+                <div class='controls'>
+                    <button onclick={() => nab()}>nab</button>
+                    {#if title}<span class='np'>{artist} - {title}</span>{/if}
+                    <span>
+                        <button onclick={() => or_not()} class='big'>or not</button>
+                        <button onclick={() => esc()} class='small'>etc</button>
+                    </span>
                 </div>
-            {/if}
-        </div>
-        
+                {#if heist}
+                    <div class='heisting'>
+                        <Pirating {M} {mem} {heist}></Pirating>
+                    </div>
+                {/if}
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -449,13 +464,13 @@
         background:black;
     }
     .np {
-        font-size:1.6em;
+        font-size:2em;
     }
     button.big {
         font-size:1.6em;
     }
     button.small {
-        font-size:0.5em;
+        font-size:0.75em;
     }
     .contain {
         position:relative;
@@ -483,15 +498,28 @@
         color: #b394ff;
     }
     .uiing {
-        max-width: 100%;
+        width: 100%;
         position:absolute;
         bottom:0;
         left:0;
-        margin:1em;
         border-radius:3em;
+        display: flex;
+        flex-direction: column;
     }
     .uiing button {
         padding:0.7em;
+    }
+    .controls {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .controls > span:last-of-type {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
     }
 
     .heisting {

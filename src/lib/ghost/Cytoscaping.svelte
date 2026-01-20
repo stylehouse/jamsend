@@ -27,6 +27,10 @@
         this.node_edger.D?.empty()
         this.main()
     },
+    // push everything possible to the UI in case it has reloaded
+    async recytoui(A,w) {
+        await this.cytotermi_does_titles(A,w)
+    },
     
     // on the PF Sharee
     // take nowPlaying somewhere interesting
@@ -85,6 +89,7 @@
         this.VJ ||= await w.r({VJ:w,UI_component:Cytoscape})
         for (let e of this.o_elvis(w,'IamyourUI')) {
             await w.r(sex({cytool:1},e.sc,'node_edger'))
+            await this.recytoui(A,w)
         }
         if (!w.oa({cytool:1,node_edger:1})) {
             // < redesign this for times when the UI won't re-elvis us...
@@ -96,29 +101,30 @@
 
         return w.o({cytool:1,node_edger:1})[0]
     },
-
-    // hears from A:audio
-    async find_D_by_cytoid(id) {
-        id = id.replace('id_', '')
-        let it
-        await this.Tr.forward(async (T:Travel) => {
-            let D = T.sc.D
-            if (D.o1({Dip:1})[0] === id) {
-                it = D
-                // < stop this horse, make T.forwards
-            }
-        })
-        return it
-    },
     async cytotermi_does_titles(A,w,re) {
-        setTimeout(() => {
+        setTimeout(async () => {
+            let no = await this.cyto_are_we_jamming(A,w)
+            if (!no) return
+            let he = no.sc.nowPlaying
+            let re = he.o({record:1})[0]
             let {meta,enid} = re.sc
             let {artist,title} = meta
             M.node_edger.titles({artist,title,enid})
-            M.node_edger.jamming(true)
         },M.node_edger ? 1 : 120)
     },
+    // push state of UI-engagement, depends on nowPlaying
+    //  which stays on for the duration
+    async cyto_are_we_jamming(A,w) {
+        let raterm = w.o1({raterm:1,see:1})[0]
+        if (!raterm) return
+        let no = raterm.o({nowPlaying:1})[0]
+        M.node_edger?.jamming(no ? true : false)
+        return no
+    },
 
+
+
+    // hears from A:audio
     async cytotermi_may_descripted(A,w,raterm) {
         // pinged from raterm/%nowPlaying with this attached:
         for (let e of this.o_elvis(w,'i_nowPlaying')) {
@@ -129,12 +135,12 @@
                 await this.i_descripted(w,uri,descripted)
                 w.i({see:"heard context about",uri})
             }
-            this.cytotermi_does_titles(A,w,re)
+            this.cytotermi_does_titles(A,w)
         }
         if (!raterm) throw "!raterm"
         let no = raterm.o({nowPlaying:1})[0]
         if (!no) {
-            M.node_edger?.jamming(false)
+            await this.cyto_are_we_jamming(A,w)
             return w.i({see:"raterm !%nowPlaying"})
         }
 
@@ -553,6 +559,43 @@
         return C
     },
 
+    // GOING
+    // < use the graph ids?
+    async graph_and_back(A,w,raterm) {
+        let hi = {
+            async find_D_by_cytoid(id) {
+                id = id.replace('id_', '')
+                let it
+                await this.Tr.forward(async (T:Travel) => {
+                    let D = T.sc.D
+                    if (D.o1({Dip:1})[0] === id) {
+                        it = D
+                        // < stop this horse, make T.forwards
+                    }
+                })
+                return it
+            },
+        };
+        // < GOING maybe.
+        // serve descripted at selected nodes
+        for (let e of this.o_elvis(w,'eles_selection')) {
+            let el = e.sc.eles[0]
+            let D = await this.find_D_by_cytoid(el.id())
+            if (reqy.o({D}).length) {
+                console.log(`dup pirating selection...`)
+                continue
+            }
+            // < touch the graph?
+            //   it isn't clearly wired back through time yet
+            w.i({see:1,hasSelection:keyser(D)})
+            continue
+            reqy.i({D})
+            setTimeout(() => {
+                M.node_edger.enheist({lets:"Control",things:3})
+            },22)
+        }
+    },
+    
 //#endregion
 
 

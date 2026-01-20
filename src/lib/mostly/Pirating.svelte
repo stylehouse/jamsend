@@ -11,13 +11,8 @@
 
 
 </script>
-
-        <h3>heist: ${objectify(heist)}</h3>
-
-
-    <Scrollability maxHeight="10vh" class="content-area">
+    <Scrollability maxHeight="60vh" class="content-area">
         {#snippet content()}
-        <h3>heist: ${objectify(heist)}</h3>
-        <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
+            <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
         {/snippet}
     </Scrollability>
