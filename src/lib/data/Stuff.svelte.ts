@@ -1066,7 +1066,6 @@ function inner_sizing(innered) {
 }
 
 // data dumper
-// < recursion
 export function objectify(v:any,loop=-1):string {
     let s = String(
         typeof v == 'number' || typeof v == 'string' ? v
@@ -1076,6 +1075,7 @@ export function objectify(v:any,loop=-1):string {
                 : v.map(n => objectify(n,loop+1)).join(',')
         }]`
         : v.constructor == TheC ? `${keyser(v,loop+1)}`
+        : v.constructor == Boolean ? `${v}`
         : `${v.constructor.name}()`
     )
     let where = 77

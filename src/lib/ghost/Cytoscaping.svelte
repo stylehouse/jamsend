@@ -195,8 +195,6 @@
         // the frontend, listening to the music
         let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
         w.i({see:1,raterm})
-        raterm && console.log("Is raterm")
-        !raterm && console.log("Ain't raterm")
 
 
 

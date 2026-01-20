@@ -36,6 +36,18 @@
             }
             reqy.i({enid})
         }
+        for (let e of this.o_elvis(w,'nab_specifically')) {
+            let {req,pl,pls} = e.sc
+            let areq = reqy.o({enid:req.sc.enid})[0]
+            if (req != areq) throw "~req"
+            let apls = req.o({places:1})[0]
+            if (pls != apls) {
+                req.i({rogue_place:1}).i(apls)
+            }
+            req.i({wants_place:pl})
+            // throw erring("~pls")
+            req.sc.consent = 1
+        }
 
         
 
@@ -80,8 +92,8 @@
             con.c.abandon_piracy = () => {
                 M.node_edger.enheist(null)
                 req.sc.finished = "abandoned by UI"
-                // we need to shoot another %elvis:nab_this
-                //  before the %finished->drop() this loop-bit comes around
+                // drop() incase we get another %elvis:nab_this
+                //  before the %finished->drop() comes around
                 w.drop(req)
             }
             M.node_edger.enheist(con)
@@ -89,10 +101,17 @@
 
 
             // produce something we can hang UI input off|to
-            if (!req.oa({gatherable:1})) {
+            if (!req.oa({places:1})) {
                 await this.cytotermi_pirating_descripted(A,w,req,de)
-
             }
+
+            if (req.sc.consent) {
+                indent(33).split(' ').map(n => w.i({see:1,PiratingTime:1}))
+            }
+
+            console.log(`🏴‍☠️ questing ${req.sc.re.sc.title}`)
+
+            
         }
 
 
@@ -100,42 +119,6 @@
         
     },
 
-
-    async cytotermi_pirating_descripted(A,w,req,de) {
-        // < many i %bit
-        let uri = de.sc.uri
-        let pls = await req.r({places:1,uri})
-        pls.empty()
-        let pathbits = []
-        for (let bit of uri.split('/')) {
-            pathbits.push(bit)
-            let this_uri = pathbits.join('/')
-
-            let pl = pls.i({
-                place: 1, 
-                bit, 
-                uri: this_uri,
-                yervory:1,
-            })
-
-            for (let fa of de.o({factoid:1,uri:this_uri})) {
-                if (fa.oa({type:'collection'})) {
-                    pl.sc.collection = 1
-                }
-                else if (fa.oa({type:'dir'})) {
-                    pl.i({nib:'dir',name:fa.sc.name})
-                }
-                else if (fa.oa({type:'blob'})) {
-                    pl.i({nib:'blob',name:fa.sc.name})
-                }
-                else {
-                    pl.i({unknown_fa:1}).i(fa)
-                }
-            }
-
-        }
-
-        console.log(`🏴‍☠️ questing ${req.sc.re.sc.title}`)
         //    become %collection, %blob
 
         // a mutex set of radiobuttons moves up the %dirs
@@ -157,6 +140,80 @@
         // req.sc.finished = true
 
 
+
+    async cytotermi_pirating_descripted(A,w,req,de) {
+        // < many i %bit
+        let uri = de.sc.uri
+        let pls = req.i({places:1,uri})
+
+        // inflate this uri into %place,bit,uri,etc
+        let pathbits = []
+        for (let bit of uri.split('/')) {
+            pathbits.push(bit)
+            let this_uri = pathbits.join('/')
+
+            let pl = pls.i({
+                place: 1, 
+                bit, 
+                uri: this_uri,
+            })
+        }
+
+
+        let la
+        for (let pl of pls.o({place:1}).reverse()) {
+            for (let fa of de.o({factoid:1,uri:pl.sc.uri})) {
+                for (let ni of fa.o()) {
+                    if (ni.sc.type == 'collection') {
+                        pl.sc.collection = 1
+                        pl.sc.real_name = ni.sc.real_name
+                    }
+                    else if (ni.sc.nib == 'dir') {
+                        // the place has a directory in it
+                        // < go these with a little recursion,
+                        //   i_descripted can enumerate them
+                        // pl.i({uri:fa.sc.uri,nib:'dir',name:ni.sc.name})
+                    }
+                    else if (ni.sc.nib == 'blob') {
+                        // the place has a blob in it
+                        let its_uri = pl.sc.uri+'/'+ni.sc.name
+                        if (la.sc.uri == its_uri) {
+                            // this blob is the previous %place
+                            //  since we're going backwards
+                            //  that is the end of the descripted uri
+                            // in case we want to change the filename
+                            //   which is only a one-file (this one) option
+                            //  here is the file extension
+                            if (ni.sc.format) la.sc.format = ni.sc.format
+                            // a few things are blobs, don't get confused
+                            la.sc.blob = 1
+                            la.sc.heistable = 1
+                        }
+                        pl.sc.heistable = 1
+                        pl.i({place:1,bit:ni.sc.name,uri:its_uri})
+                    }
+                    else {
+                        pl.i({unknown_fa_bit:1,fa,uri:fa.sc.uri})
+                            .i(ni)
+                    }
+                }
+            }
+            la = pl
+        }
+        la.sc.music_share = 1
+        pls.drop(la)
+        for (let pl of pls.o({place:1})) {
+            let many = pl.o({place:1}).length
+            if (many) pl.sc.many = many
+            if (!pl.sc.collection && !pl.sc.blob) pl.sc.directory = 1
+            if (pl.sc.blob) {
+                // only %blob amongst /*%place
+                if (pl.sc.format) {
+                    pl.sc.suggested_rename = req.sc.re.sc.title+"."+pl.sc.format
+                }
+
+            }
+        }
     },
 
 
@@ -347,7 +404,11 @@
         if (D.oa({readin:1,type:'collection'})) {
             // this is a music-type grouping
             //  they may or may not believe in replicating it
-            c.N.push({readin:1,type:'collection'})
+            c.N.push({
+                readin:1,
+                type:'collection',
+                real_name:D.o1({name:1,readin:1})[0]
+            })
         }
         else if (ups <2) {
             // the deepest two levels have /*%nib listed
@@ -356,6 +417,7 @@
 
             for (let Di of N) {
                 let ni = Di.c.T.sc.n
+                let s = sex({},ni.sc,'nib,name')
                 if (ni.sc.nib == 'blob') {
                     let istrack = Di.oa({readin:1,type:'track'})
                     // console.log(`${path.join('/')} the ${istrack?"track":"???"} ${ni.sc.name}`)
@@ -365,8 +427,10 @@
                         //    relying on the usual music art sources could work
                         continue
                     }
+                    let format = Di.o1({format:1,readin:'name'})[0]
+                    if (format) s.format = format
                 }
-                c.N.push(sex({},ni.sc,'nib,name'))
+                c.N.push(s)
             }
         }
     },

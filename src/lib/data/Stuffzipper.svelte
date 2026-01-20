@@ -45,6 +45,7 @@
             anything = false
         }
     }
+    // < val/* should come out of a slightly different valve...
     function inner_is_from_val(inner) {
         if (!stuffziado) return false
         let in_rows = stuffziado.rows.includes(inner)
@@ -62,6 +63,7 @@
             {@const in_that_val = inner_is_from_val(inner)}
             {#if in_that_val}
                 <span title="
+
 rows after any of these slashes are from stuffziado's value itself
     value/*
 rows before are those being grouped by the stuffusion, a level up,

@@ -385,22 +385,27 @@
         uimem.set('quit_fullscreen',quit_fullscreen)
     }
 
-
-    let heist = $state()
-    let nab = () => {
-        M.i_elvis(w, "nab_this", {enid})
-    }
-    node_edger.enheist = (hi) => {
-        heist = hi
-    }
-
-
     let artist = $state()
     let title = $state()
     let enid = $state() // ticket back, to nab -> heist
     node_edger.titles = (c) => {
         [{artist,title,enid}] = [c];
     }
+
+    let heist = $state()
+    let nab = () => {
+        if (enid) {
+            M.i_elvis(w, "nab_this", {enid})
+            setTimeout(() => {
+                M.i_elvis(w, "nab_this", {enid})
+            },133)
+        }
+    }
+    node_edger.enheist = (hi) => {
+        heist = hi
+    }
+
+
 
 
     let jamming = $state()
@@ -451,7 +456,7 @@
                 </div>
                 {#if heist}
                     <div class='heisting'>
-                        <Pirating {M} {mem} {heist}></Pirating>
+                        <Pirating {M} {mem} {heist} {w}></Pirating>
                     </div>
                 {/if}
             </div>
