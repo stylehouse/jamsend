@@ -1,4 +1,8 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+    import { throttle } from "$lib/Y";
+    import Pirating from "./Pirating.svelte";
+
     import cytoscape from "cytoscape";
     // these are apparently the best at either hierarchical
     import dagre from "cytoscape-dagre";
@@ -7,13 +11,10 @@
     import fcose from "cytoscape-fcose";
     // and everything, interactively
     import cola from "cytoscape-cola";
-    import { onMount } from "svelte";
-    import { throttle } from "$lib/Y";
-    import { keyser, objectify } from "$lib/data/Stuff.svelte";
-    import Stuffing from "$lib/data/Stuffing.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
+    
 
     //#endregion
     //#region GraphStyles
@@ -371,7 +372,7 @@
         quit_fullscreen = !quit_fullscreen
         uimem.set('quit_fullscreen',quit_fullscreen)
     }
-    
+
 
     let heist = $state()
     let nab = () => {
@@ -433,14 +434,15 @@
             {#if title}<span class='np'>{artist} - {title}</span>{/if}
             <button onclick={() => surf()} class='big'>or not</button>
             <button onclick={() => esc()} class='small'>etc</button>
+            {#if heist}
+                <div class='heisting'>
+                 <Pirating {M} {mem} {heist}></Pirating>
+                </div>
+            {/if}
         </div>
         
     </div>
 </div>
-{#if heist}
-    <h3>heist: ${objectify(heist)}</h3>
-    <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
-{/if}
 
 <style>
     div {
@@ -485,7 +487,6 @@
         position:absolute;
         bottom:0;
         left:0;
-        font-size:2em;
         margin:1em;
         border-radius:3em;
     }
@@ -493,6 +494,9 @@
         padding:0.7em;
     }
 
+    .heisting {
+        position:relative;
+    }
 
 
 </style>

@@ -8,6 +8,7 @@
     import Records from "./Records.svelte";
     import Cytoscaping from "./Cytoscaping.svelte";
     import Directory from "./Directory.svelte";
+    import Piracy from "./Piracy.svelte";
    
     let {M} = $props()
     // making moves to provision and consume radio
@@ -725,6 +726,9 @@
                 }
             }
         })
+
+        // keep wearing out the same five tracks until more come
+        if (A.o({record:1}).length < 6) return
 
         for (let we of rw.o({wear:1,cullable_since:1,re:1})) {
             let re = we.sc.re
@@ -1494,4 +1498,5 @@
 
 <Records {M} ></Records>
 <Cytoscaping {M} ></Cytoscaping>
+<Piracy {M} ></Piracy>
 <Directory {M}></Directory>
