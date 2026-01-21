@@ -30,11 +30,15 @@
     //     |     i_pull <----r # reply from the below io.sc.o_pull
     //     |      |        . |
     //     o------r        . |
-    //            V i_push . V o_pull
-    //                 piracy (back end)
+    //            V i_push . V o_push
+    //       local     piracy (back end)   serve
     // 
-    // the leftmost edge is after we io.sc.i_push
-    //  to ask for more unemit:i_pull via emit:o_pull
+    // the downloader
+    //  begins that emit:o_pull
+    //  later gets unemit:i_pull about it
+    //  to feed io.sc.i_push
+    //  the leftmost edge
+    //   asks for more via emit:o_pull
     //
     // there's also the time before kicking off the first emit:o_pull up there
     //  when we io.sc.o_push to get the receiving directory ready
@@ -97,29 +101,17 @@
                 })
             },
             // they request more blob
-            o_pull: async ({uri}:{uri:string}) => {
+            o_pull: async ({uri,seek}:{uri:string}) => {
                 if (!racast) throw `racast unemits o_pull`
                 w = this.refresh_C([A,w])
-                await this.c_mutex(w,'o_descripted', async () => {
-                    w = this.refresh_C([A,w])
+                await this.termicaster_unemits_o_pull(A,w,{uri,seek})
 
-                    if (!radiopiracy) throw "can't opiracy"
-                    let pub = this.PF.Pier.Ud+''
-                    V.descripted && console.log(`got unemit opiracy: ${uri}`)
-                    await radiopiracy.sc.o_pull(pub,uri)
-                })
             },
             // we are receiving blob
-            i_pull: async ({uri,N}:{uri:string}) => {
+            i_pull: async ({uri,buffer,seq,size,error}:{uri:string}) => {
                 if (!raterm) throw `raterm unemits i_pull`
                 w = this.refresh_C([A,w])
-                await this.c_mutex(w,'i_descripted', async () => {
-                    w = this.refresh_C([A,w])
-
-                    V.descripted && console.log("i_descripted: ",N)
-                    await this.i_descripted(w,uri,N)
-                    this.i_elvis(w)
-                })
+                await this.termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error})
             },
         }
         return {raterm,racast,radiopiracy}
@@ -140,7 +132,6 @@
             }
         }
     },
-
 
 
 //#endregion
@@ -320,7 +311,37 @@
 
 
 
+//#region step 6 spooling
+    // local,remote <-> serve
+    async cytotermi_heist_engages_remote(A,w,req,he,local,remote) {
+        // round trip per...
+        //  < ask for each one one, keep going
+        //   < not found
+    },
+    // serve
+    async termicaster_unemits_o_pull(A,w,{uri,seek}) {
+        // we'll be serving this object to them, they are up to seek
+        //  remember we're on per-Pier everything here in the frontend.
+    },
+    // local
+    async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error}) {
+        // we get some download
+        w.o({requesty_pirating:1})
+        
+    },
+//#endregion
+
+
+
+
+
+
+
+
+
+
 //#region step 5 heist
+    // < req/%see dropping ~~ w/%see?
     async cytotermi_pirating_heist(A,w,req) {
         // turns off this UI, tidies
         req.drop(req.o({places:1})[0])
@@ -329,36 +350,48 @@
         // full of blobs to get
         let he = req.o({heist:1})[0]
 
-        // chat to local rapiracy:
+
+
+        // talks to local rapiracy about receiving:
         let radiopiracy = A.o({io:'radiopiracy'})[0]
-        // < could this be req.oi({local_placement:1},{eph:1...})
-        let local = req.o({local_placement:1})[0]
-            || req.i({
-                local_placement:1,
-                eph:1,
-                path: he.sc.destination_directories.split('/'),
-            })
+        // make a workpiece|request about getting the local directory ready
+        // < could this be req.oi({local:1},{eph:1...})
+        let local = req.o({local:1})[0] || req.i({
+            local:1,
+            eph:1,
+            path: he.sc.destination_directories.split('/'),
+        })
+        // < GOING?
+        local.sc.w = w
         if (!radiopiracy) {
-            w.i({see:`you need to open a share`})
-            // there's one autovivified we just need to attract user interaction to
-            //  via the ThingAction it has waiting for a relevant moment...
-            //   the user can avoid looking at tons of UI if we replicate it here
-            let share = this.F.shares.asArray()[0]
-            if (!share) {
-                // < how now
-                throw "no autoviv share?"
-            }
-            if (share.started) {
-                throw "share started !radiopiracy"
-            }
-            let open = share.actions.filter(act => act.label == 'open share')[0]
-            await req.r({needs:"a share",action:open})
-            return
+            return await this.cytotermi_pirating_heist_loadshares(A,w,req)
         }
         await req.r({needs:"a share"},{})
+        // local rapiracy has a working share!
+
+
+
         // the make-directory phase of a push
         // we get e:noop back when it exists
-        local.sc.req ||= radiopiracy.sc.o_push(w,local)
+        local.sc.req ||= radiopiracy.sc.i_push(local)
+        if (!local.sc.ready) {
+            return await req.r({needs:"local ready"})
+        }
+        await req.r({needs:"local ready"},{})
+        // local directory is ready! 
+
+
+
+        // now bother the remote about it
+        let remote = req.o({remote:1})[0] || req.i({
+            remote:1,
+            eph:1,
+            remote,
+        })
+
+        await this.cytotermi_heist_engages(A,w,req,he,local,remote)
+
+
         he.i({Have:"radiopi"})
 
 
@@ -366,13 +399,27 @@
         //  < aim to open he.sc.destination_directories
         //  < match what may be partial
         //   < sha256sum check for resumed files 
-        // < chat to remote rapiracy:
-        let remote = await req.r({remote_placement:1,eph:1})
-        //  < send one, keep going
-        //   < not found
         
         console.log(`🏴‍☠️ cytotermi_pirating_heist ${he.sc.destination_directories}`)
     },
+    async cytotermi_pirating_heist_loadshares(A,w,req) {
+        w.i({see:`you need to open a share`})
+        // there's one autovivified we just need to attract user interaction to
+        //  via the ThingAction it has waiting for a relevant moment...
+        //   the user can avoid looking at tons of UI if we replicate it here
+        let share = this.F.shares.asArray()[0]
+        if (!share) {
+            // < how now
+            throw "no autoviv share?"
+        }
+        if (share.started) {
+            throw "share started !radiopiracy"
+        }
+        let open = share.actions.filter(act => act.label == 'open share')[0]
+        // -> UI
+        await req.r({needs:"a share",action:open})
+    },
+
 
 
 //#endregion
@@ -619,8 +666,8 @@
     // in a DirectoryModus, a shipping clerk
     // in the backend, producing %uri,descripted
     async rapiracy(A,w) {
+        let i_push_reqy = await this.requesty_serial(w,'i_push')
         let o_push_reqy = await this.requesty_serial(w,'o_push')
-        let o_pull_reqy = await this.requesty_serial(w,'o_pull')
         let io = await this.r({io:'radiopiracy'},{
             o_descripted: async (pub,uri) => {
                 w = this.refresh_C([A,w])
@@ -653,37 +700,46 @@
                 }
             },
 
-            // the make-directory phase of a download
-            o_push: async (fe_w,local) => {
+            // receiving a download, via the %local object
+            i_push: async (local) => {
                 w = this.refresh_C([A,w])
-                let uri = local.sc.path.join('/')
-                if (o_push_reqy.o({uri}).length) {
-                    console.log(`dup o_push ${uri}`)
-                    return
+                let i_push_reqy = await this.requesty_serial(w,'i_push')
+
+                if (i_push_reqy.o({local}).length) {
+                    return console.log(`dup i_push`)
                 }
-                // < reqy.r({uri},{w...}) would sublate the above block
-                //    we would just pointlessly e:noop ourselves on dup in this case...
-                let req = o_push_reqy.i({uri,w:fe_w,local})
+                let req = i_push_reqy.i({local})
                 this.i_elvis(w,'noop',{handle:req})
                 return req
             },
-            // the download is coming in
-            i_push: async (rd) => {
-                
-            },
-
             // the download is being sourced here
             //  next door in A:Directory
-            o_pull: async (rd) => {
-
+            o_push: async (serve) => {
+                w = this.refresh_C([A,w])
+                let o_push_reqy = await this.requesty_serial(w,'o_push')
+                
+                // serve is a requesty from an unemit:o_pull
+                //  which we base another request off
+                if (o_push_reqy.o({serve}).length) {
+                    return console.log(`dup o_push`)
+                }
+                // < reqy.r({serve},{...}) would sublate the above block
+                //    we would just pointlessly e:noop ourselves on dup in this case...
+                // < reqy.r({uri},{...}) would join parties of downloaders
+                //    signed smuggling can happen
+                //     participation required for reputation
+                let req = o_push_reqy.i({serve})
+                this.i_elvis(w,'noop',{handle:req})
+                return req
             },
         })
 
-        for (let req of o_push_reqy.o()) {
-            await this.rapiracy_o_push_reqy(A,w,io,req)
+        // these requests take time to start happening and want to park when up blown
+        for (let req of i_push_reqy.o()) {
+            await this.rapiracy_i_push_reqy(A,w,req)
         }
-        for (let req of o_pull_reqy.o()) {
-            await this.rapiracy_o_pull_reqy(A,w,io,req)
+        for (let req of o_push_reqy.o()) {
+            await this.rapiracy_o_push_reqy(A,w,req)
         }
 
         // < port this to requesty_serial()
@@ -699,17 +755,28 @@
 
 
     // in a DirectoryModus, a shipping clerk to push|pull
-    async rapiracy_o_push_reqy(A,w,io,req) {
-        w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+    async rapiracy_i_push_reqy(A,w,req) {
+        let local = req.sc.local
+        // create the directory
+        let Dest = await this.aim_to_open(w,local.sc.path)
+        if (!Dest) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+
+        // < also check it's not full of stuff!?
+
+        local.sc.ready = 1
+        // < interface to writer as buffers appear
+    },
+    async rapiracy_o_push_reqy(A,w,req) {
+        let serve = req.sc.serve
+        w.i({see:'piracy',sending:1,uri:serve.sc.uri})
 
         
     },
-    async rapiracy_o_pull_reqy(A,w,io,req) {
-        w.i({see:'piracy',hoisting:1,uri:req.sc.uri})
 
-        
-    },
+//#endregion
 
+
+//#region %descripted
 
     async drift_up_D(D,y) {
         let upD = D
