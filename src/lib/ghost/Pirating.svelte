@@ -162,6 +162,7 @@
         // process the above
         
         for (let req of reqy.o()) {
+            await req.r({see:1},{})
             if (await this.cytotermi_pirating_plan(A,w,req,raterm)) {
                 continue
             }
@@ -314,14 +315,13 @@
 //#region step 6 spooling
     // local,remote <-> serve
     async cytotermi_heist_engages_remote(A,w,req,he,local,remote) {
-        // round trip per...
-        //  < ask for each one one, keep going
-        //   < not found
+        // ask for each one one, keep going
         let blobs = he.o()
         if (blobs.some(bl => !bl.sc.blob)) throw "*!%blob"
+
+        // advance he/*%blob with he%progress=i
         let now = blobs[he.sc.progress||0]
         if (now.sc.heisted) {
-            // advance blobs
             he.sc.progress ||= 0
             he.sc.progress += 1
             now = blobs[he.sc.progress]
@@ -330,23 +330,59 @@
                 he.sc.heisted = 1
             }
         }
+        if (now) {
+            // ask for this
+            await this.termicaster_emit_o_pull(A,w,req,he,local,remote,now)
+
+        }
 
         console.log(`🌀${he.sc.progress} `,now)
-
-
+    },
+    async termicaster_emit_o_pull(A,w,req,he,local,remote,now) {
 
     },
+
+
     // serve
+    // we're on per-Pier everything here in the frontend
     async termicaster_unemits_o_pull(A,w,{uri,seek}) {
-        // we'll be serving this object to them, they are up to seek
-        //  remember we're on per-Pier everything here in the frontend.
+        // we'll be serving this object to them, or already are
+        //  they are up to seek
         // hold a request for this uri, last activity timeout
+        
+
+
     },
+    // the response to o_pull, once backend is ticking
+    async termicaster_emit_i_pull(A,w,req,he,local,remote,now) {
+
+    },
+    // the backend of the serve side
+    //  via %io:rapiracy from the frontend of serve, so yay!
+    async rapiracy_o_push_reqy(A,w,req) {
+        let serve = req.sc.serve
+        w.i({see:'piracy',sending:1,uri:serve.sc.uri})
+
+        
+    },
+
+
     // local
     async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error}) {
         // we get some download
         w.o({requesty_pirating:1})
+        // we asked for it in engages_remote
         
+    },
+    // in a DirectoryModus, a shipping clerk to push|pull
+    async rapiracy_i_push_reqy(A,w,req) {
+        let local = req.sc.local
+        // create the directory
+        let Dest = await this.aim_to_open(w,local.sc.path)
+        if (!Dest) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+        // < also check it's not full of stuff!?
+        local.sc.ready = 1
+        // < interface to writer as buffers appear
     },
 //#endregion
 
@@ -392,13 +428,12 @@
 
 
 
-        // the make-directory phase of a push
+        // start with making the directory it's going to
         // we get e:noop back when it exists
         local.sc.req ||= radiopiracy.sc.i_push(local)
         if (!local.sc.ready) {
-            return await req.r({needs:"local ready"})
+            return await req.i({see:1,needs:"local ready"})
         }
-        await req.r({needs:"local ready"},{})
         // local directory is ready! 
 
 
@@ -412,7 +447,7 @@
         await this.cytotermi_heist_engages_remote(A,w,req,he,local,remote)
 
 
-        req.i({Have:"radiopi"})
+        req.i({see:"radiopi"})
         
 
 
@@ -435,7 +470,7 @@
         }
         let open = share.actions.filter(act => act.label == 'open share')[0]
         // -> UI
-        await req.r({needs:"a share",action:open})
+        req.i({see:1,needs:"a share",action:open})
     },
 
 
@@ -772,24 +807,6 @@
     },
 
 
-    // in a DirectoryModus, a shipping clerk to push|pull
-    async rapiracy_i_push_reqy(A,w,req) {
-        let local = req.sc.local
-        // create the directory
-        let Dest = await this.aim_to_open(w,local.sc.path)
-        if (!Dest) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
-
-        // < also check it's not full of stuff!?
-
-        local.sc.ready = 1
-        // < interface to writer as buffers appear
-    },
-    async rapiracy_o_push_reqy(A,w,req) {
-        let serve = req.sc.serve
-        w.i({see:'piracy',sending:1,uri:serve.sc.uri})
-
-        
-    },
 
 //#endregion
 

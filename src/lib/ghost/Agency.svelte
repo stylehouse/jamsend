@@ -643,7 +643,7 @@
                 else {
                     console.log("cul-de-sac: "+supposed_path)
                     // throw out w/%aim, try again from the top
-                    await w.replace({aim:1},{})
+                    await w.r({aim:1},{})
                     continue
                 }
             }
