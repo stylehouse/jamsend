@@ -153,80 +153,65 @@
         // process the above
         
         for (let req of reqy.o()) {
-            if (req.sc.finished) {
-                w.drop(req)
+            if (await this.cytotermi_pirating_basic(A,w,req,raterm)) {
                 continue
             }
-            let lost = (where) => {
-                w.i({see:'pirating fail',lost:where})
-                req.sc.please_give_up = `lost: ${where}`
-                // req.sc.finished = 1
-            }
-            // the radio receiver
-            let enid = req.sc.enid
-            let Aaudio = raterm.up
-            if (Aaudio.sc.A != 'audio') throw "!A:audio"
-
-            let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
-            if (!re) {
-                lost('record')
-                continue
-            }
-
-            let uri = re.sc.uri
-            if (!re.sc.record || !uri) throw "what %record"
-            let de = req.sc.de ||= w.o({uri,descripted:1})[0]
-            if (!de) {
-                // < could ask for it again
-                lost('descripted')
-                continue
-            }
-
-            // it's likely to work now
-            //  since we gather req%re,de
-            //   their sources can disappear while the user thinks
-            // the %requesty_ object can be in the UI!
-            let con = _C({invisible_stuffing_container:1})
-            con.i(req)
-            con.c.abandon_piracy = () => {
-                M.node_edger.enheist(null)
-                req.sc.finished = "abandoned by UI"
-                // drop() incase we get another %elvis:nab_this
-                //  before the %finished->drop() comes around
-                w.drop(req)
-            }
-            M.node_edger.enheist(con)
-            
 
 
             // produce something we can hang UI input off|to
+            req.sc.cv ||= 1
+            if (req.sc.cv < 2) {
+                if (req.oa({places:1})) throw "already"
+                await this.cytotermi_pirating_descripted(A,w,req)
+                req.sc.cv = 2
+            }
+            if (req.sc.cv <3) {
+                if (req.oa({wants_place:1})) {
+                    req.sc.cv = 3
+                }
+                else {
+                    // awaiting input
+                    console.log(`🏴‍☠️ awaits hierarchy editing ${req.sc.re.sc.title}`)
+                    w.i({see:1,PiratingTime:1})
+                }
+            }
+            if (req.sc.cv <3) {
+            }
+            else {
+                if (req.sc.cv < 4) {
+                    if (!req.oa({wants_place:1})) throw "!ready"
+                    if (req.oa({heist:1})) throw "already"
+                    // input -> downloader
+                    console.log(`🏴‍☠️ cytotermi_pirating_how ${req.sc.re.sc.title}`)
+                    await this.cytotermi_pirating_how(A,w,req)
+                    if (!req.oa({heist:1})) throw "!just"
+                    req.sc.cv = 4
+                }
+                if (req.sc.cv < 5) {
+                    if (!req.oa({heist:1})) throw "!ready"
+                    // downloader progresses
+                    await this.cytotermi_pirating_heist(A,w,req)
+                }
+            }
+            if (req.sc.cv < 7) {
+                // waits for progress
+            }
+            else {
+                if (req.sc.cv < 8) {
+                    if (!req.oa({solved:1})) throw "!ready"
+                    // is done..?
+                    req.sc.finished = "is done"
 
-            if (!req.oa({places:1})) {
-                await this.cytotermi_pirating_descripted(A,w,req,de)
-            }
-            else if (!req.oa({wants_place:1})) {
-                // awaiting input
-                console.log(`🏴‍☠️ awaits hierarchy editing ${req.sc.re.sc.title}`)
-                indent(33).split(' ').map(n => w.i({see:1,PiratingTime:1}))
-            }
-            else if (!req.oa({heist:1})) {
-                // input -> downloader
-                console.log(`🏴‍☠️ cytotermi_pirating_how ${req.sc.re.sc.title}`)
-                await this.cytotermi_pirating_how(A,w,req)
-            }
-            else if (!req.oa({solved:1})) {
-                // downloader...
-                await this.cytotermi_pirating_heist(A,w,req)
+                }
             }
 
-            console.log(`🏴‍☠️ questing ${req.sc.re.sc.title}`)
+            console.log(`🏴‍☠️ questing @${req.sc.cv} ${req.sc.re.sc.title}`)
 
             
         }
 
 
         // this.whittle_N(w.o({places:1}),2)
-        
     },
 
         //    become %collection, %blob
@@ -259,9 +244,70 @@
 
 
 
+//#region step 0 plan
+    async cytotermi_pirating_basic(A,w,req,raterm) {
+        if (req.sc.finished) {
+            w.drop(req)
+            return true
+        }
+
+        let lost = (where) => {
+            w.i({see:'pirating fail',lost:where})
+            req.sc.please_give_up = `lost: ${where}`
+            // req.sc.finished = 1
+        }
+        // the radio receiver
+        let enid = req.sc.enid
+        let Aaudio = raterm.up
+        if (Aaudio.sc.A != 'audio') throw "!A:audio"
+
+        let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
+        if (!re) {
+            lost('record')
+            return true
+        }
+
+        let uri = re.sc.uri
+        if (!re.sc.record || !uri) throw "what %record"
+        let de = req.sc.de ||= w.o({uri,descripted:1})[0]
+        if (!de) {
+            // < could ask for it again
+            lost('descripted')
+            return true
+        }
+
+        // it's likely to work now
+        //  since we gather req%re,de
+        //   their sources can disappear while the user thinks
+        // the %requesty_ object can be in the UI!
+        let con = _C({invisible_stuffing_container:1})
+        con.i(req)
+        con.c.abandon_piracy = () => {
+            M.node_edger.enheist(null)
+            req.sc.finished = "abandoned by UI"
+            // drop() incase we get another %elvis:nab_this
+            //  before the %finished->drop() comes around
+            w.drop(req)
+        }
+        M.node_edger.enheist(con)
+    },
+//#endregion
+
+
+
+
+
+
+
+
+
+
 //#region step 3 heist
     async cytotermi_pirating_heist(A,w,req) {
-        // these are full of options
+        // turns off this UI
+        let pls = req.o({places:1})[0]
+        req.drop(pls)
+        // full of blobs to get
         let he = req.o({heist:1})[0]
 
         // chat to local rapiracy:
@@ -402,8 +448,9 @@
 
 
 //#region step 1 pls
-    async cytotermi_pirating_descripted(A,w,req,de) {
-        // < many i %bit
+    // many i %bit
+    async cytotermi_pirating_descripted(A,w,req) {
+        let de = req.sc.de
         let uri = de.sc.uri
         let pls = req.i({places:1,uri})
 
