@@ -51,8 +51,8 @@
 {/snippet}
 {#snippet collection(pl)}
     <span class="collection">
-        {@render toggler(pl,'use_category',true)}
-        <label for={`tog-${pl.sc.uri}-use_category`}>
+        {@render toggler(pl,'use_collection',true)}
+        <label for={`tog-${pl.sc.uri}-use_collection`}>
             {pl.sc.real_name ?? pl.sc.bit}
         </label>
     </span>

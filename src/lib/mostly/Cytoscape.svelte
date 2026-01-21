@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { throttle } from "$lib/Y";
-    import Pirating from "./Pirating.svelte";
+    import Pirate from "./Pirate.svelte";
     import { _C } from "$lib/data/Stuff.svelte";
 
     import cytoscape from "cytoscape";
@@ -456,7 +456,7 @@
                 </div>
                 {#if heist}
                     <div class='heisting'>
-                        <Pirating {M} {mem} {heist} {w}></Pirating>
+                        <Pirate {M} {mem} {heist} {w}></Pirate>
                     </div>
                 {/if}
             </div>

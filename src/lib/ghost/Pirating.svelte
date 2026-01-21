@@ -38,15 +38,8 @@
         }
         for (let e of this.o_elvis(w,'nab_specifically')) {
             let {req,pl,pls} = e.sc
-            let areq = reqy.o({enid:req.sc.enid})[0]
-            if (req != areq) throw "~req"
-            let apls = req.o({places:1})[0]
-            if (pls != apls) {
-                req.i({rogue_place:1}).i(apls)
-            }
-            req.i({wants_place:pl})
-            // throw erring("~pls")
-            req.sc.consent = 1
+            let wp = await req.r({wants_place:1})
+            wp.empty().i(pl)
         }
 
         
@@ -104,9 +97,15 @@
             if (!req.oa({places:1})) {
                 await this.cytotermi_pirating_descripted(A,w,req,de)
             }
-
-            if (req.sc.consent) {
+            else if (!req.oa({wants_place:1})) {
+                // awaiting input
+                console.log(`🏴‍☠️ awaits hierarchy editing ${req.sc.re.sc.title}`)
                 indent(33).split(' ').map(n => w.i({see:1,PiratingTime:1}))
+            }
+            else if (!req.oa({heisting:1})) {
+                // input -> downloader
+                console.log(`🏴‍☠️ cytotermi_pirating_how ${req.sc.re.sc.title}`)
+                await this.cytotermi_pirating_how(A,w,req,de)
             }
 
             console.log(`🏴‍☠️ questing ${req.sc.re.sc.title}`)
@@ -138,9 +137,114 @@
         //   
         // await w.r(pls)
         // req.sc.finished = true
+//#endregion
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region step 2 how
+    async cytotermi_pirating_how(A,w,req) {
+        // these are full of options
+        let pls = req.o({places:1})[0]
+        // this one specifically is the set of downloads
+        let wp = req.o({wants_place:1})[0].o()[0]
+
+        pls.sc.funtimes ||= 0
+        pls.sc.funtimes += 1
+        pls.X.bump_version()
+
+        // we can only download a list of blobs to a directory
+        //  they know their source uri
+        let he = await req.r({heist:1})
+        he.empty()
+        let path = []
+
+        // these are randomly on a pl%blob
+        // note we put %place first because its guaranteed to be indexed
+        //  the %disbelieve_directories=1 gets set after it is input
+        let disbelieve_directories = pls.o1({place:1,disbelieve_directories:1})[0]
+        let only_categories = pls.o1({place:1,only_categories:1})[0]
+        if (only_categories) {
+            "place in those categories but not directories"
+            // outweighs the "don't use categories" checkbox
+            pls.sc.disbelieve_categories = false
+            disbelieve_directories = true
+        }
+        else if (disbelieve_directories) {
+            "collect random tracks in one place"
+            pls.sc.disbelieve_categories = true
+        }
+        
+        for (let pl of pls.o({place:1})) {
+            // < rename to collategories. collections aka categories
+            if (pl.sc.collection && !pls.sc.disbelieve_categories) {
+                pl.sc.use_collection ??= true // leaves false
+                if (pl.sc.use_collection) {
+                    // is /^- \w+/
+                    path.push(pl.sc.bit)
+                }
+            }
+            else if (pl.sc.directory && !disbelieve_directories) {
+                if (!pl.sc.disbelieve_directory) {
+                    path.push(pl.sc.bit)
+                }
+                if (pl == wp) {
+                    // o %place/%place since this is pointed to
+                    //  otherwise we're just copying the directory structure
+                    for (let ipl of pl.o({place:1})) {
+                        if (!ipl.sc.blob) throw "ipl!%blob"
+                        he.i(sex({blob:1},pl.sc,'bit,uri'))
+                    }
+
+                }
+            }
+            else if (pl.sc.blob && wp == pl) {
+                // if we are wanting the blob
+                he.i({blob:1,uri:pl.sc.uri,
+                    bit: pl.sc.lets_rename ? pl.sc.suggested_rename
+                        : pl.sc.bit,
+                })
+            }
+        }
+
+        he.sc.destination_directories = path.join('/')
+    },
+
+
+//#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region step 1 pls
     async cytotermi_pirating_descripted(A,w,req,de) {
         // < many i %bit
         let uri = de.sc.uri
@@ -190,7 +294,8 @@
                             la.sc.heistable = 1
                         }
                         pl.sc.heistable = 1
-                        pl.i({place:1,bit:ni.sc.name,uri:its_uri})
+                        // i %place/%place
+                        pl.i({place:1,bit:ni.sc.name,uri:its_uri,blob:1})
                     }
                     else {
                         pl.i({unknown_fa_bit:1,fa,uri:fa.sc.uri})

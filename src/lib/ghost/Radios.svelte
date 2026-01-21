@@ -8,7 +8,7 @@
     import Records from "./Records.svelte";
     import Cytoscaping from "./Cytoscaping.svelte";
     import Directory from "./Directory.svelte";
-    import Piracy from "./Piracy.svelte";
+    import Pirating from "./Pirating.svelte";
    
     let {M} = $props()
     // making moves to provision and consume radio
@@ -1498,5 +1498,5 @@
 
 <Records {M} ></Records>
 <Cytoscaping {M} ></Cytoscaping>
-<Piracy {M} ></Piracy>
+<Pirating {M} ></Pirating>
 <Directory {M}></Directory>
