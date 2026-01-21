@@ -6,6 +6,7 @@
     import Scrollability from "$lib/p2p/ui/Scrollability.svelte";
     import type { Modusmem } from "./Modus.svelte.ts";
     import Modus from "./Modus.svelte";
+    import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
     
     let {M,mem,w,heist}:{M:Modus,mem:Modusmem,heist:TheC} = $props()
     // we give one C to Stuffing
@@ -17,13 +18,18 @@
     // and its /* split into:
     let collections:TheN = $state()
     let places:TheN = $state()
+    let share_act:ThingAction = $state()
     $effect(() => {
         if (req?.version) {
             setTimeout(() => {
-                // console.log(`UI:heist`,req)
+                // pick places
                 pls = req.o({places:1})[0]
-                places = pls?.o({place:1}) || []
-                collections = grop(pl => pl.sc.collection, places)
+                places = pls?.o({place:1}) || null
+                collections = places && grop(pl => pl.sc.collection, places)
+
+
+                // responses
+                share_act = req.o1({action:1,needs:"a share"})[0]
             },1)
         }
     })
@@ -68,6 +74,21 @@
     {#snippet content()}
         <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
         <div>
+        {#if share_act}
+            <span class="collections inrow" title="
+            a collection is meta-biographical directory
+                eg a directory for a genre
+            they will have a dash prepended to sort topward etc.
+            ">
+                Your shares are not opened so we can't download it anywhere.
+                <span class="arow">
+                    Can you please
+                    <ActionButtons actions={[share_act]} />
+                </span>
+            </span>
+
+
+        {/if}
         {#if places}
             {#if collections?.length}
                 <span class="collections inrow" title="

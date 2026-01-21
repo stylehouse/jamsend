@@ -244,7 +244,7 @@
 
 
 
-//#region step 0 plan
+//#region step 1 plan
     async cytotermi_pirating_basic(A,w,req,raterm) {
         if (req.sc.finished) {
             w.drop(req)
@@ -302,17 +302,18 @@
 
 
 
-//#region step 3 heist
+//#region step 5 heist
     async cytotermi_pirating_heist(A,w,req) {
-        // turns off this UI
-        let pls = req.o({places:1})[0]
-        req.drop(pls)
+        // turns off this UI, tidies
+        req.drop(req.o({places:1})[0])
+        req.drop(req.o({wants_place:1})[0])
+
         // full of blobs to get
         let he = req.o({heist:1})[0]
 
         // chat to local rapiracy:
-        // < could this be req.oi({local_placement:1},{eph:1...})
         let radiopiracy = A.o({io:'radiopiracy'})[0]
+        // < could this be req.oi({local_placement:1},{eph:1...})
         let local = req.o({local_placement:1})[0]
             || req.i({
                 local_placement:1,
@@ -320,10 +321,23 @@
                 path: he.sc.destination_directories.split('/'),
             })
         if (!radiopiracy) {
-            console.warn(`you need to open a share`)
             w.i({see:`you need to open a share`})
+            // there's one autovivified we just need to attract user interaction to
+            //  via the ThingAction it has waiting for a relevant moment...
+            //   the user can avoid looking at tons of UI if we replicate it here
+            let share = this.F.shares.asArray()[0]
+            if (!share) {
+                // < how now
+                throw "no autoviv share?"
+            }
+            if (share.started) {
+                throw "share started !radiopiracy"
+            }
+            let open = share.actions.filter(act => act.label == 'open share')[0]
+            await req.r({needs:"a share",action:open})
             return
         }
+        await req.r({needs:"a share"},{})
         he.i({Have:"radiopi"})
 
 
@@ -358,7 +372,7 @@
 
 
 
-//#region step 2 how
+//#region step 4 how
     async cytotermi_pirating_how(A,w,req) {
         // these are full of options
         let pls = req.o({places:1})[0]
@@ -447,7 +461,7 @@
 
 
 
-//#region step 1 pls
+//#region step 2 %places
     // many i %bit
     async cytotermi_pirating_descripted(A,w,req) {
         let de = req.sc.de

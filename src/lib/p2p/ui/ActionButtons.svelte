@@ -6,8 +6,7 @@
         actions?: ThingAction[]
     }
 
-    let { 
-        S, 
+    let {
         actions
     }: ThingnessProps = $props()
 
