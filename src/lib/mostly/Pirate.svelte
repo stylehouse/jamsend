@@ -24,7 +24,8 @@
             setTimeout(() => {
                 // pick places
                 pls = req.o({places:1})[0]
-                places = pls?.o({place:1}) || null
+                let ok = pls && !pls.sc.finished
+                places = ok && pls.o({place:1}) || null
                 collections = places && grop(pl => pl.sc.collection, places)
 
 

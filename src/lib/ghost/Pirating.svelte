@@ -317,11 +317,30 @@
         // round trip per...
         //  < ask for each one one, keep going
         //   < not found
+        let blobs = he.o()
+        if (blobs.some(bl => !bl.sc.blob)) throw "*!%blob"
+        let now = blobs[he.sc.progress||0]
+        if (now.sc.heisted) {
+            // advance blobs
+            he.sc.progress ||= 0
+            he.sc.progress += 1
+            now = blobs[he.sc.progress]
+            if (!now) {
+                delete he.sc.progress
+                he.sc.heisted = 1
+            }
+        }
+
+        console.log(`🌀${he.sc.progress} `,now)
+
+
+
     },
     // serve
     async termicaster_unemits_o_pull(A,w,{uri,seek}) {
         // we'll be serving this object to them, they are up to seek
         //  remember we're on per-Pier everything here in the frontend.
+        // hold a request for this uri, last activity timeout
     },
     // local
     async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error}) {
@@ -344,8 +363,10 @@
     // < req/%see dropping ~~ w/%see?
     async cytotermi_pirating_heist(A,w,req) {
         // turns off this UI, tidies
-        req.drop(req.o({places:1})[0])
-        req.drop(req.o({wants_place:1})[0])
+        let pls = req.o({places:1})[0]
+        pls.sc.finished = 1
+        // req.drop(req.o({places:1})[0])
+        // req.drop(req.o({wants_place:1})[0])
 
         // full of blobs to get
         let he = req.o({heist:1})[0]
@@ -386,20 +407,17 @@
         let remote = req.o({remote:1})[0] || req.i({
             remote:1,
             eph:1,
-            remote,
         })
 
-        await this.cytotermi_heist_engages(A,w,req,he,local,remote)
+        await this.cytotermi_heist_engages_remote(A,w,req,he,local,remote)
 
 
-        he.i({Have:"radiopi"})
+        req.i({Have:"radiopi"})
+        
 
 
-
-        //  < aim to open he.sc.destination_directories
         //  < match what may be partial
         //   < sha256sum check for resumed files 
-        
         console.log(`🏴‍☠️ cytotermi_pirating_heist ${he.sc.destination_directories}`)
     },
     async cytotermi_pirating_heist_loadshares(A,w,req) {
@@ -491,7 +509,7 @@
                     //  otherwise we're just copying the directory structure
                     for (let ipl of pl.o({place:1})) {
                         if (!ipl.sc.blob) throw "ipl!%blob"
-                        he.i(sex({blob:1},pl.sc,'bit,uri'))
+                        he.i(sex({blob:1},ipl.sc,'bit,uri'))
                     }
 
                 }
