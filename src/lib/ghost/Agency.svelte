@@ -583,6 +583,11 @@
         }
         A.c.meandered_before = true
 
+        let found_anything = false
+        if (w.sc.seems_to_be_empty) {
+            if (await this.w_ambiently_sleeping(w,6)) return
+        }
+
         let loopy = 11
         let dir:TheD
         while (1) {
@@ -622,17 +627,27 @@
             let dirs = inners
             if (!dirs) {
                 dirs = this.get_sleeping_T().map(T => T.sc.D)
+                    // stay out of .jamsend/
+                    .filter(D => !D.oa({fs_scheme:1}))
 
             }
             // pick one
             dir = dirs[this.prandle(dirs.length)]
             if (!dir) {
-                console.log("cul-de-sac: "+supposed_path)
-                // throw out w/%aim, try again from the top
-                await w.replace({aim:1},async() => {
-                })
-                continue
+                if (!found_anything) {
+                    w.sc.seems_to_be_empty = true
+                    // < more of a mutter than a warn, for blaming the user
+                    console.warn(`empty share: ${this.S.name}`)
+                    break
+                }
+                else {
+                    console.log("cul-de-sac: "+supposed_path)
+                    // throw out w/%aim, try again from the top
+                    await w.replace({aim:1},{})
+                    continue
+                }
             }
+            found_anything = true
             if (dir == D) {
                 throw `loopily: ${keyser(D)}`
             }
@@ -644,6 +659,9 @@
             })
             // and log how many times this process goes around:
             w.i({meanderings:1,uri:this.Se.D_to_uri(dir)})
+        }
+        if (found_anything) {
+            delete w.sc.seems_to_be_empty
         }
 
         // %aim spawns a journey, we follow up our %aim next time

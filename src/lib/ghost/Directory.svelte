@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { _C, keyser, TheC, type TheN } from '$lib/data/Stuff.svelte';
+    import { _C, keyser, objectify, TheC, type TheN } from '$lib/data/Stuff.svelte';
     import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
     import { now_in_seconds, PeeringFeature } from '$lib/p2p/Peerily.svelte';
@@ -81,6 +81,7 @@
     async aim_to_open(w,path) {
         return await this.Se.aim_to_open(w,path,async (D,pathbit) => {
             let DL = this.D_to_DL(D)
+            D.i({was_operated_on:1,by:'aim_to_open()'})
             await DL.makeDirectory(pathbit)
         })
     },
@@ -305,9 +306,10 @@
 
         if (openity <3) {
             // Tdebug(T,"We Shant")
-            op.r({Shantity:1})
+            await op.r({Shantity:1})
             return T.sc.not = 'unopenity'
         }
+        await op.r({Shantity:1},{})
         let user_is_looking = [T,T.up].some(T=>T?.sc.D.oa({tour:1,matches:1}))
 
         await D.replace({busyas:1},async () => {
@@ -322,7 +324,9 @@
             need = ago > REFRESH_DL_SECONDS
         }
         if (need) {
-            // spontaneous refresh every 16s
+            // spontaneous refresh every little while
+            let uri = this.Se.D_to_uri(T.sc.D)
+            console.log(`🫧 reexpanding ${uri}`)
             await this.expand_nib(T,op)
             // do think-chatter in D/*, under %openity since relevant...
             await op.i_wasLast('expanded',true)

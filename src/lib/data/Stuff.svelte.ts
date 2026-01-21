@@ -416,7 +416,10 @@ abstract class TimeOffice extends StuffIO {
         }
         else {
             // measure ago
-            return this?.o({wasLast:label})[0]?.ago('at') || 0
+            let was = this?.o({wasLast:label})[0]
+            if (was?.sc.at) return was.ago('at') || 0
+            // no was, was last infinitely long ago
+            return Infinity
         }
 
     }

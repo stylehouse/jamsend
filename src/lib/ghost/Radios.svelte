@@ -258,7 +258,7 @@
         if (!this.nowPlaying_is_ok(w)) {
             if (w.oa({nowPlayingShunted:1})) {
                 let ago = w.o({nowPlayingShunted:1})[0]?.ago('at')
-                console.log(`>>>>>>>>>>> too often, just ${ago} ago`)
+                console.log(`>>>>>>>>>>> quite often, just ${ago} ago`)
             }
             else {
                 w.i({nowPlayingShunted:1,at:now_in_seconds()})
