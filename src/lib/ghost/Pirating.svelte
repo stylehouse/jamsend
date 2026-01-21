@@ -19,9 +19,26 @@
 
 //#endregion
 //#region api
+    
+    // we'll be acting as either side (per Pier) or end (UI or backend) of...
+    //  lines through the vertical dots are emits or unemits, only one is given
+    // io is %io:radiopiracy, r is a reply branching back, -o is a corner
+    //            cytotermicaster (UI end)
+    //                     .
+    //     o-->  o_pull -----o # an emit o_pull arrives there
+    //     |               . |
+    //     |     i_pull <----r # reply from the below io.sc.o_pull
+    //     |      |        . |
+    //     o------r        . |
+    //            V i_push . V o_pull
+    //                 piracy (back end)
+    // 
+    // the leftmost edge is after we io.sc.i_push
+    //  to ask for more unemit:i_pull via emit:o_pull
+    //
+    // there's also the time before kicking off the first emit:o_pull up there
+    //  when we io.sc.o_push to get the receiving directory ready
 
-
-    // we'll be acting as one or both
     async termicaster_resources(A,w) {
         // np frontend and io backend.
         // these two things talk to each other at either end
@@ -79,7 +96,7 @@
                     this.i_elvis(w)
                 })
             },
-            // < in progress
+            // they request more blob
             o_pull: async ({uri}:{uri:string}) => {
                 if (!racast) throw `racast unemits o_pull`
                 w = this.refresh_C([A,w])
@@ -89,9 +106,10 @@
                     if (!radiopiracy) throw "can't opiracy"
                     let pub = this.PF.Pier.Ud+''
                     V.descripted && console.log(`got unemit opiracy: ${uri}`)
-                    await radiopiracy.sc.o_descripted(pub,uri)
+                    await radiopiracy.sc.o_pull(pub,uri)
                 })
             },
+            // we are receiving blob
             i_pull: async ({uri,N}:{uri:string}) => {
                 if (!raterm) throw `raterm unemits i_pull`
                 w = this.refresh_C([A,w])
@@ -153,7 +171,7 @@
         // process the above
         
         for (let req of reqy.o()) {
-            if (await this.cytotermi_pirating_basic(A,w,req,raterm)) {
+            if (await this.cytotermi_pirating_plan(A,w,req,raterm)) {
                 continue
             }
 
@@ -182,8 +200,8 @@
                     if (!req.oa({wants_place:1})) throw "!ready"
                     if (req.oa({heist:1})) throw "already"
                     // input -> downloader
-                    console.log(`🏴‍☠️ cytotermi_pirating_how ${req.sc.re.sc.title}`)
-                    await this.cytotermi_pirating_how(A,w,req)
+                    console.log(`🏴‍☠️ cytotermi_pirating_selections ${req.sc.re.sc.title}`)
+                    await this.cytotermi_pirating_selections(A,w,req)
                     if (!req.oa({heist:1})) throw "!just"
                     req.sc.cv = 4
                 }
@@ -245,7 +263,7 @@
 
 
 //#region step 1 plan
-    async cytotermi_pirating_basic(A,w,req,raterm) {
+    async cytotermi_pirating_plan(A,w,req,raterm) {
         if (req.sc.finished) {
             w.drop(req)
             return true
@@ -338,6 +356,9 @@
             return
         }
         await req.r({needs:"a share"},{})
+        // the make-directory phase of a push
+        // we get e:noop back when it exists
+        local.sc.req ||= radiopiracy.sc.o_push(w,local)
         he.i({Have:"radiopi"})
 
 
@@ -373,7 +394,7 @@
 
 
 //#region step 4 how
-    async cytotermi_pirating_how(A,w,req) {
+    async cytotermi_pirating_selections(A,w,req) {
         // these are full of options
         let pls = req.o({places:1})[0]
         // this one specifically is the set of downloads
@@ -598,6 +619,8 @@
     // in a DirectoryModus, a shipping clerk
     // in the backend, producing %uri,descripted
     async rapiracy(A,w) {
+        let o_push_reqy = await this.requesty_serial(w,'o_push')
+        let o_pull_reqy = await this.requesty_serial(w,'o_pull')
         let io = await this.r({io:'radiopiracy'},{
             o_descripted: async (pub,uri) => {
                 w = this.refresh_C([A,w])
@@ -630,45 +653,40 @@
                 }
             },
 
-            // the make-directory phase of a push
-            o_push: async (local) => {
+            // the make-directory phase of a download
+            o_push: async (fe_w,local) => {
                 w = this.refresh_C([A,w])
-                V.descripted && console.log(`o_descripted io'd`)
-                let rd = await w.r({uri,pub},{request_descripted:1})
-                this.i_elvis(w,'noop',{handle:rd})
-                return rd
+                let uri = local.sc.path.join('/')
+                if (o_push_reqy.o({uri}).length) {
+                    console.log(`dup o_push ${uri}`)
+                    return
+                }
+                // < reqy.r({uri},{w...}) would sublate the above block
+                //    we would just pointlessly e:noop ourselves on dup in this case...
+                let req = o_push_reqy.i({uri,w:fe_w,local})
+                this.i_elvis(w,'noop',{handle:req})
+                return req
             },
-            // at the end of this w, we return the result through here:
+            // the download is coming in
             i_push: async (rd) => {
-                // < encoding C for sends...
-                let uri = rd.sc.uri
-                let N = rd.o({factoid:1}).map(fa=>{
-                    V.descripted>1 && console.log("A factoid: "+keyser(fa.sc))
-                    return fa.sc
-                })
-                V.descripted && console.log(`i_descripted io'd`)
+                
+            },
 
-                if (rd.sc.return_fn) {
-                    await rd.sc.return_fn({uri,N})
-                }
-                else {
-                    let pub = rd.sc.pub
-                    let Pier = this.F.eer.Piers.get(pub)
-                    if (!Pier) throw `!Pier ${pub}`
-                    // and also use this particular feature's emit
-                    //  to get it to the corresponding feature on the other end
-                    let PF = Pier.features.get(this.F.trust_name)
-                    await PF.emit('i_descripted',{uri,N})
-                }
+            // the download is being sourced here
+            //  next door in A:Directory
+            o_pull: async (rd) => {
+
             },
         })
 
-        // respond to one request for sending blobs
-        let rs = w.o({request_shipping:1})[0]
-        if (rs) {
-            await this.rapiracy_shipping(A,w,io,rs)
+        for (let req of o_push_reqy.o()) {
+            await this.rapiracy_o_push_reqy(A,w,io,req)
+        }
+        for (let req of o_pull_reqy.o()) {
+            await this.rapiracy_o_pull_reqy(A,w,io,req)
         }
 
+        // < port this to requesty_serial()
         // respond to all requests for visions of the directory tree
         let req_serial = w.o({req_serial:1})[0]
         req_serial ||= await w.r({req_serial:1,i:1})
@@ -677,13 +695,19 @@
             rd.sc.req_i ||= req_serial.sc.i++
             await this.rapiracy_descripted(A,w,io,rd)
         }
-
     },
 
 
-    // in a DirectoryModus, a shipping clerk
-    async rapiracy_shipping(A,w,io,rs) {
-        w.i({see:'piracy',want_to_ship:1}).i(rs)
+    // in a DirectoryModus, a shipping clerk to push|pull
+    async rapiracy_o_push_reqy(A,w,io,req) {
+        w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+
+        
+    },
+    async rapiracy_o_pull_reqy(A,w,io,req) {
+        w.i({see:'piracy',hoisting:1,uri:req.sc.uri})
+
+        
     },
 
 
