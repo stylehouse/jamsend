@@ -17,9 +17,115 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#endregion
+//#region api
+
+
+    // we'll be acting as one or both
+    async termicaster_resources(A,w) {
+        // np frontend and io backend.
+        // these two things talk to each other at either end
+        //  ie their nowPlaying attracts our radiopiracy
+        // when we have both they're doing different work, independently
+
+        // the frontend, listening to the music
+        let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
+        w.i({see:1,raterm})
 
 
 
+        // the backend, sending music yonder
+        let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
+        w.i({see:1,racast})
+
+        // copy %io:radiopiracy interfaces here
+        //  anyone with exactly one
+        await this.Miome(A,{io:'radiopiracy'})
+        if (!A.oa({io:'radiopiracy'})) w.i({see:"!%io:radiopiracy"})
+        let radiopiracy = A.o({io:'radiopiracy'})[0]
+
+        // when we have both they're doing different work, independently
+        // our raterm emit:o_descripted ->
+        //  their unemit:o_descripted ->
+        //   %io=radiopiracy,o_descripted()
+        //    ...creates a job somewhere
+        //    comes back via the i_* of the above, etc
+        // the emit+unemit is moving betweens Piers
+
+        // we unemits at the frontend, for Pier
+        // we're o - on the backend being asked about uri
+        // we're i - front receiving result
+        w.sc.unemits ||= {
+            o_descripted: async ({uri}:{uri:string}) => {
+                if (!racast) throw `racast unemits o_descripted`
+                w = this.refresh_C([A,w])
+                await this.c_mutex(w,'o_descripted', async () => {
+                    w = this.refresh_C([A,w])
+
+                    if (!radiopiracy) throw "can't opiracy"
+                    let pub = this.PF.Pier.Ud+''
+                    V.descripted && console.log(`got unemit opiracy: ${uri}`)
+                    await radiopiracy.sc.o_descripted(pub,uri)
+                })
+            },
+            i_descripted: async ({uri,N}:{uri:string}) => {
+                if (!raterm) throw `raterm unemits i_descripted`
+                w = this.refresh_C([A,w])
+                await this.c_mutex(w,'i_descripted', async () => {
+                    w = this.refresh_C([A,w])
+
+                    V.descripted && console.log("i_descripted: ",N)
+                    await this.i_descripted(w,uri,N)
+                    this.i_elvis(w)
+                })
+            },
+            // < in progress
+            o_pull: async ({uri}:{uri:string}) => {
+                if (!racast) throw `racast unemits o_pull`
+                w = this.refresh_C([A,w])
+                await this.c_mutex(w,'o_descripted', async () => {
+                    w = this.refresh_C([A,w])
+
+                    if (!radiopiracy) throw "can't opiracy"
+                    let pub = this.PF.Pier.Ud+''
+                    V.descripted && console.log(`got unemit opiracy: ${uri}`)
+                    await radiopiracy.sc.o_descripted(pub,uri)
+                })
+            },
+            i_pull: async ({uri,N}:{uri:string}) => {
+                if (!raterm) throw `raterm unemits i_pull`
+                w = this.refresh_C([A,w])
+                await this.c_mutex(w,'i_descripted', async () => {
+                    w = this.refresh_C([A,w])
+
+                    V.descripted && console.log("i_descripted: ",N)
+                    await this.i_descripted(w,uri,N)
+                    this.i_elvis(w)
+                })
+            },
+        }
+        return {raterm,racast,radiopiracy}
+    },
+    // enter a bunch of notes about a uri
+    //  to be fed to nowPlaying visuals
+    async i_descripted(w,uri,N) {
+        let was = w.o({uri:1,descripted:1})
+        // !!!!! has to be two-arg r() for not being pattern={uri:1}
+        let de = await w.r({uri},{descripted:1})
+        let now = w.o({uri:1,descripted:1})
+        V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)
+        de.empty()
+        for (let fasc of N) {
+            let fa = de.i(tex({},fasc))
+            for (let nisc of fasc.N) {
+                fa.i(nisc)
+            }
+        }
+    },
+
+
+
+//#endregion
 //#region pirating front
     // 🏴‍☠️ replication station
     // running on M:Sharee/A:visual/w:cytotermicaster
@@ -94,6 +200,7 @@
 
 
             // produce something we can hang UI input off|to
+
             if (!req.oa({places:1})) {
                 await this.cytotermi_pirating_descripted(A,w,req,de)
             }
@@ -102,10 +209,14 @@
                 console.log(`🏴‍☠️ awaits hierarchy editing ${req.sc.re.sc.title}`)
                 indent(33).split(' ').map(n => w.i({see:1,PiratingTime:1}))
             }
-            else if (!req.oa({heisting:1})) {
+            else if (!req.oa({heist:1})) {
                 // input -> downloader
                 console.log(`🏴‍☠️ cytotermi_pirating_how ${req.sc.re.sc.title}`)
-                await this.cytotermi_pirating_how(A,w,req,de)
+                await this.cytotermi_pirating_how(A,w,req)
+            }
+            else if (!req.oa({solved:1})) {
+                // downloader...
+                await this.cytotermi_pirating_heist(A,w,req)
             }
 
             console.log(`🏴‍☠️ questing ${req.sc.re.sc.title}`)
@@ -139,6 +250,51 @@
         // req.sc.finished = true
 //#endregion
 
+
+
+
+
+
+
+
+
+
+//#region step 3 heist
+    async cytotermi_pirating_heist(A,w,req) {
+        // these are full of options
+        let he = req.o({heist:1})[0]
+
+        // chat to local rapiracy:
+        // < could this be req.oi({local_placement:1},{eph:1...})
+        let radiopiracy = A.o({io:'radiopiracy'})[0]
+        let local = req.o({local_placement:1})[0]
+            || req.i({
+                local_placement:1,
+                eph:1,
+                path: he.sc.destination_directories.split('/'),
+            })
+        if (!radiopiracy) {
+            console.warn(`you need to open a share`)
+            w.i({see:`you need to open a share`})
+            return
+        }
+        he.i({Have:"radiopi"})
+
+
+
+        //  < aim to open he.sc.destination_directories
+        //  < match what may be partial
+        //   < sha256sum check for resumed files 
+        // < chat to remote rapiracy:
+        let remote = await req.r({remote_placement:1,eph:1})
+        //  < send one, keep going
+        //   < not found
+        
+        console.log(`🏴‍☠️ cytotermi_pirating_heist ${he.sc.destination_directories}`)
+    },
+
+
+//#endregion
 
 
 
@@ -222,6 +378,7 @@
         }
 
         he.sc.destination_directories = path.join('/')
+        
     },
 
 
@@ -390,6 +547,38 @@
             },
             // at the end of this w, we return the result through here:
             i_descripted: async (rd) => {
+                // < encoding C for sends...
+                let uri = rd.sc.uri
+                let N = rd.o({factoid:1}).map(fa=>{
+                    V.descripted>1 && console.log("A factoid: "+keyser(fa.sc))
+                    return fa.sc
+                })
+                V.descripted && console.log(`i_descripted io'd`)
+
+                if (rd.sc.return_fn) {
+                    await rd.sc.return_fn({uri,N})
+                }
+                else {
+                    let pub = rd.sc.pub
+                    let Pier = this.F.eer.Piers.get(pub)
+                    if (!Pier) throw `!Pier ${pub}`
+                    // and also use this particular feature's emit
+                    //  to get it to the corresponding feature on the other end
+                    let PF = Pier.features.get(this.F.trust_name)
+                    await PF.emit('i_descripted',{uri,N})
+                }
+            },
+
+            // the make-directory phase of a push
+            o_push: async (local) => {
+                w = this.refresh_C([A,w])
+                V.descripted && console.log(`o_descripted io'd`)
+                let rd = await w.r({uri,pub},{request_descripted:1})
+                this.i_elvis(w,'noop',{handle:rd})
+                return rd
+            },
+            // at the end of this w, we return the result through here:
+            i_push: async (rd) => {
                 // < encoding C for sends...
                 let uri = rd.sc.uri
                 let N = rd.o({factoid:1}).map(fa=>{
