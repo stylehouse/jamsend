@@ -693,13 +693,18 @@ class Dierarchy extends SelectionItself {
         w: TheC, 
         path: string[], 
         spawn_fn: (parentD: TheD, pathbit: string) => Promise<void>,
-        category = 'five', // so these %aim can be replaced away if you have many categories
+        category, // so these %aim can be replaced away if you have many categories
     ): Promise<TheD | undefined> {
         let is_awake = (D:TheD) => {
             let ope = D && D.o1({v:1,openity:1})[0]
             if (ope <3 || !D) return // watch out for null <3 == true
             return true
         }
+        
+        if (!category && w.c.category) {
+            category = w.c.category
+        }
+        category ||= 1
 
         path = [this.c.T.sc.D.sc.name, ...path]
         let apath = []

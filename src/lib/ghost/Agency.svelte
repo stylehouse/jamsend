@@ -1,12 +1,12 @@
 <script lang="ts">
     import { keyser, type TheN } from "$lib/data/Stuff.svelte";
     import {Modus} from "$lib/mostly/Modus.svelte.ts";
-    import { erring, nex } from "$lib/Y";
+    import { erring, grop, nex } from "$lib/Y";
     import { onMount } from "svelte";
 
     let {M} = $props()
     const V = {}
-    V.w = 1
+    V.w = 0
     V.elvis = 1
 
     onMount(async () => {
@@ -302,9 +302,7 @@
         if (method && this[method]) {
             try {
                 await this.c_mutex(w,'Aw_think', async () => {
-                    await w.r({waits:1},{})
-                    await w.r({error:1},{})
-                    await w.r({see:1},{})
+                    await this.w_forgets_problems(w)
 
                     await this[method](A,w,w.sc.had)
 
@@ -326,6 +324,12 @@
             // < refer other %w to central stuck-trol?
             return
         }
+    },
+    // it may be a req of requesty_serial()
+    async w_forgets_problems(w) {
+        await w.r({waits:1},{})
+        await w.r({error:1},{})
+        await w.r({see:1},{})
     },
 
     // return true if a w doesn't need to happen
@@ -513,12 +517,17 @@
             req_serial.sc.i ||= 7
             ison = async () => {}
         }
+        let M = this
         return {
             pending: w.o(({...reqc})).length,
-            async i(c) {
+            async i(c,sc={}) {
                 await ison()
-                let req = await w.r({...reqc,...c},{...c})
+                let req = await w.r({...reqc,...c},{...c,...sc})
                 req.sc.req_i ||= req_serial.sc.i++
+                // this becomes req/*%aim,category, with others (work pieces) of this reqy
+                //  so they can hoist up to w, from here.
+                //  we can drop our %aim (we tend not to) or get req%finished and they'll vanish
+                req.c.category = `reqy:${t}`
                 return req
             },
             o(sc={}) {
@@ -526,6 +535,47 @@
                 //  if your quest has a bouncy beginning (tries to i many times)
                 return w.o(({...reqc,...sc}))
             },
+            async do(fn) {
+                // worker culture
+                let N = this.o()
+                for (let req of N) {
+                    // pre-run prep
+                    if (req.sc.finished) {
+                        w.drop(req)
+                        grop(req,N)
+                        continue
+                    }
+                    // they forget their problems like w
+                    await M.w_forgets_problems(req)
+                    
+                    await req.r({see:1},{})
+                    // < hoist req/%aim to w somehow.
+                    //   at the end of all %requesty_pirating
+                }
+                // < being req should be noted in the stack
+                let categories = []
+                for (let req of N) {
+
+                    // the middle, work being done
+                    await fn(req)
+
+                    req.c.category && !categories.includes(req.c.category)
+                        && categories.push(req.c.category)
+                }
+
+                for (let category of categories) {
+                    await w.r({aim:1,category},{})
+                    await w.r({aimed:1,category},{})
+                }
+                for (let req of N) {
+                    req.o({aim:1}).map(ai => w.i(ai))
+                    req.o({aimed:1}).map(ai => w.i(ai))
+                    // < hoist them, and %error, from req as an indexed thing, under w
+
+                }
+
+                return N
+            }
         }
     },
 

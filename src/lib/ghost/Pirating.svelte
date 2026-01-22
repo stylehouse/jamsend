@@ -147,11 +147,8 @@
 
         // process the above
         
-        for (let req of reqy.o()) {
-            await req.r({see:1},{})
-            if (await this.cytotermi_pirating_plan(A,w,req,raterm)) {
-                continue
-            }
+        await reqy.do(async (req) => {
+            this.cytotermi_pirating_plan(A,w,req,raterm)
 
 
             // produce something we can hang UI input off|to
@@ -204,7 +201,7 @@
             console.log(`🏴‍☠️ questing @${req.sc.cv} ${req.sc.re.sc.title}`)
 
             
-        }
+        })
 
 
         // this.whittle_N(w.o({places:1}),2)
@@ -242,11 +239,6 @@
 
 //#region step 1 plan
     async cytotermi_pirating_plan(A,w,req,raterm) {
-        if (req.sc.finished) {
-            w.drop(req)
-            return true
-        }
-
         let lost = (where) => {
             w.i({see:'pirating fail',lost:where})
             req.sc.please_give_up = `lost: ${where}`
@@ -335,7 +327,6 @@
                 he.sc.heisted = 1
                 req.sc.cv = 7
                 await req.r({solved: 1})
-                await local.c.on_finished()
                 console.log(`✅ Heist complete!`)
                 return
             }
@@ -347,7 +338,7 @@
 
         console.log(`heist ${he.sc.progress}/${blobs.length} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
     },
-    // keeps asking for now at greater seek
+    // in time, keeps asking for more of now
     async cytotermi_heist_now(A,w,req,he,local,remote,blob) {
         if (!blob.sc.uri.includes('/')) throw "what blob uri"
         // < seek use. for resuming downloads?
@@ -372,6 +363,13 @@
                 pulled_size,
             })
             blob.sc.pulled_size = pulled_size
+        }
+        if (blob.sc.progress_pct) {
+            req.i({see:1,
+                downloading:1,
+                blobbit:blob.sc.bit,
+                progress:blob.sc.progress_pct,
+            })
         }
     },
 
@@ -417,8 +415,9 @@
         serve.sc.last_activity = now_in_seconds()
         // how far ahead they're telling us to send
         serve.sc.pulled_size = pulled_size
-        // how much buffer.length serve has put through emit:i_pull
+        // sum buffer.byteLength put through emit:i_pull
         serve.sc.pushed_size ||= 0 
+        console.log(`Got pulled_size=${pulled_size}`)
 
         // the return journey
         serve.c.emit_i_pull = async (data) => {
@@ -445,15 +444,10 @@
         let topname = path.shift()
         if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
         let filename = path.pop()
-        // this becomes %aim,category=aim_name
-        //  so we can remove just this requests' workpiece
-        // < hoist them, and %error, from req as an indexed thing, under w
-        let aim_name = `o_push:${req.sc.req_i}`
-
 
 
         // recursive directory something-if-not-exist thinger
-        let D = await this.Se.aim_to_open(w,path,async (uD,pathbit) => {
+        let D = await this.Se.aim_to_open(req,path,async (uD,pathbit) => {
             // all is lost
             req.sc.finished = 'error'
             req.i({see:1,error:'Not Found',pathbit})
@@ -461,17 +455,13 @@
                 uri,
                 error:`Not Found: ${pathbit}`,
             })
-        },aim_name)
+        })
         if (!D) return req.i({see:'opening...'})
-        let dead = async () => {
-            await w.r({aim:1,category:aim_name},{})
-            await w.r({aimed:1,category:aim_name},{})
-        }
 
         if (!serve.sc.reader) {
             let DL = this.D_to_DL(D)
             let reader = serve.sc.reader = await DL.getReader(filename)
-            let seek = serve.sc.seek
+            let seek = serve.sc.seek || 0
             serve.sc.total_size = reader.size
             let seq = 0
             let used_seq = false
@@ -481,7 +471,6 @@
                 for await (const buffer of reader.iterate(seek)) {
                     if (used_seq) throw `need to mutex reader`
                     used_seq = true
-                    console.log(`reader keeps going @${seq}  ${uri}`)
                     
                     await serve.c.emit_i_pull({
                         uri,
@@ -491,8 +480,9 @@
                     })
                     used_seq = false
                     seq++
-                    serve.sc.pushed_size += buffer.length
+                    serve.sc.pushed_size += buffer.byteLength
                     oncely_c = {}
+                    console.log(`reader keeps going @${seq}  ${serve.sc.pushed_size}/${serve.sc.total_size}`)
 
                     await this.serve_pulled_pushed(serve)
                     if (serve.sc.finished) return
@@ -503,7 +493,6 @@
                     eof: true
                 })
                 serve.sc.finished = true
-                await dead()
             },0)
         }
         
@@ -539,14 +528,15 @@
         if (total_size != null) blob.sc.total_size = total_size
 
         // we get some download
-        blob.sc.received_size += buffer.length
+        if (!buffer.byteLength) debugger
+        blob.sc.received_size += buffer.byteLength
         // they come in order (sanity)
         blob.sc.seq_expected ||= 0
         if (seq != blob.sc.seq_expected) throw `seq expected ${blob.sc.seq}, got ${seq}, ${uri}`
         blob.sc.seq_expected += 1
 
         // now!
-        if (!blob.sc.writer) local.c.getWriter(blob)
+        if (!blob.sc.writer) await local.c.getWriter(blob)
 
         await blob.sc.writer.write(buffer)
         if (blob.sc.total_size) {
@@ -560,11 +550,7 @@
     async rapiracy_i_push_reqy(A,w,req) {
         let local = req.sc.local
         // create the directory
-        // this becomes %aim,category=aim_name
-        //  so we can remove just this requests' workpiece
-        // < hoist them, and %error, from req as an indexed thing, under w
-        let aim_name = `i_push:${req.sc.req_i}`
-        let D = await this.aim_to_open(w,local.sc.path)
+        let D = await this.aim_to_open(req,local.sc.path)
         if (!D) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
         let DL = this.D_to_DL(D)
         // interface to get blob writers in this directory
@@ -574,13 +560,6 @@
         }
         // < also check it's not full of stuff!?
         local.sc.ready = 1
-        local.c.on_finished = async () => {
-            dead()
-        }
-        let dead = async () => {
-            await w.r({aim:1,category:aim_name},{})
-            await w.r({aimed:1,category:aim_name},{})
-        }
     },
 //#endregion
 
@@ -644,9 +623,6 @@
 
         await this.cytotermi_heist_engages_remote(A,w,req,he,local,remote)
 
-
-        req.i({see:"radiopi"})
-        
 
 
         //  < match what may be partial
@@ -923,11 +899,13 @@
             o_descripted: async (pub,uri) => {
                 w = this.refresh_C([A,w])
                 V.descripted && console.log(`o_descripted io'd`)
-                let rd = await w.r({uri,pub},{request_descripted:1})
+                let o_descripted_reqy = await this.requesty_serial(w,'o_descripted')
+                let rd = await o_descripted_reqy.i({uri,pub})
                 this.i_elvis(w,'noop',{handle:rd})
                 return rd
             },
-            // at the end of this w, we return the result through here:
+            // at the end of this w, we return the result through here,
+            // as a way to spread code out and create this symmetry nice
             i_descripted: async (rd) => {
                 // < encoding C for sends...
                 let uri = rd.sc.uri
@@ -986,22 +964,18 @@
         })
 
         // these requests take time to start happening and want to park when up blown
-        for (let req of i_push_reqy.o()) {
+        await i_push_reqy.do(async (req) => {
             await this.rapiracy_i_push_reqy(A,w,req)
-        }
-        for (let req of o_push_reqy.o()) {
+        })
+        await o_push_reqy.do(async (req) => {
             await this.rapiracy_o_push_reqy(A,w,req)
-        }
+        })
 
-        // < port this to requesty_serial()
         // respond to all requests for visions of the directory tree
-        let req_serial = w.o({req_serial:1})[0]
-        req_serial ||= await w.r({req_serial:1,i:1})
-        req_serial.sc.i ||= 7
-        for (let rd of w.o({request_descripted:1})) {
-            rd.sc.req_i ||= req_serial.sc.i++
-            await this.rapiracy_descripted(A,w,io,rd)
-        }
+        let o_descripted_reqy = await this.requesty_serial(w,'o_descripted')
+        await o_descripted_reqy.do(async (req) => {
+            await this.rapiracy_descripted(A,w,io,req)
+        })
     },
 
 
@@ -1050,18 +1024,15 @@
         // < pick between many DirectoryShare depending on uri at io.orecord?
         let topname = path.shift()
         if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
-        // this becomes %aim,category=aim_name
-        //  so we can remove just this requests' workpiece
-        let aim_name = `descripted:${rd.sc.req_i}`
-
+        
         // awake the %Tree where we want things
         let dir = path.slice(0,path.length-1);
         let failed_at = null
-        let D = await this.Se.aim_to_open(w,dir,async (uD,pathbit) => {
+        let D = await this.Se.aim_to_open(rd,dir,async (uD,pathbit) => {
             failed_at = {uD,pathbit}
             console.warn(`rapiracy_descripted: not found: ${uri}`)
             // throw `rapiracy_descripted: not found: ${uri}\n  had ${uD.sc.name} but not ${pathbit}`
-        },aim_name)
+        })
         if (!D && !failed_at) return
         D ||= failed_at.uD
 
@@ -1093,9 +1064,7 @@
         w.i({see:"did something about",thisdescripted:rd})
 
         // if ('endless replies') return
-        w.drop(rd)
-        await w.r({aim:1,category:aim_name},{})
-        await w.r({aimed:1,category:aim_name},{})
+        rd.sc.finished = true
     },
     async rapiracy_descripted_drift_fn(A,w,D,c,ups) {
         if (D.oa({readin:1,type:'collection'})) {
