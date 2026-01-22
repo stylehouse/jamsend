@@ -297,7 +297,7 @@
 
 
         // respond to %openity changing
-        await op.i_chaFrom(openity,{
+        await op.i_chaFrom('openity',openity,{
             changing_pairs_fn: async (a,b,previous_time) => {
                 a ||= 0 // undefined isn't but null is <3
                 if (!b) throw "boo"

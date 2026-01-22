@@ -424,8 +424,9 @@ abstract class TimeOffice extends StuffIO {
 
     }
     // < arg a label as well?
-    async i_chaFrom(v:any,q:TheEmpirical) {
-        let ch = this.o({chaFrom:1})[0]
+    async i_chaFrom(t:string,v:any,q:TheEmpirical) {
+        let c = {chaFrom:t}
+        let ch = this.o(c)[0]
         let previous_time = ch?.ago('at')
         let was = ch?.sc.v
 
@@ -433,8 +434,8 @@ abstract class TimeOffice extends StuffIO {
 
         if (!ch || v != was) {
             // it changed! or established
-            await this.replace({chaFrom:1},async () => {
-                ch = this.i({chaFrom:1,was,v,at:now_in_seconds()})
+            await this.replace(c,async () => {
+                ch = this.i({...c,was,v,at:now_in_seconds()})
             })
             await q?.changing_pairs_fn?.(was,v,previous_time)
         }

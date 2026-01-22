@@ -373,17 +373,19 @@
         return blob.sc.pipeline_bytes || 200 * 1000 // 200KB default
     },
     // speed control via continuous acking|reiterating the emit:o_pull
-    async blob_could_emit_o_pull(blob,remote) {
+    // runs in time to initiate the heist/blob
+    //  and our of time in every unemit:i_pull we download
+    async blob_could_emit_o_pull(blob) {
         // keep telling them we want more
         // < manual speed control, shared equally amongst Piers
         const PIPELINE_BYTES = this.calculate_pipeline(blob)
-        let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
-        let recently_asked = blob.sc.pulled_size != null
-            && ahead_of_received < blob.sc.pulled_size
-
+        const PIPELINE_LOW_THRESHOLD = 0.5
+        const buffer_headroom = (blob.sc.pulled_size || 0) - blob.sc.received_size
+        const buffer_low = buffer_headroom < (PIPELINE_BYTES * PIPELINE_LOW_THRESHOLD)
+        
         if (!recently_asked) {
             // put this another PIPELINE_BYTES ahead so we don't do this too often?
-            let pulled_size = ahead_of_received + PIPELINE_BYTES
+            let pulled_size = blob.sc.received_size + PIPELINE_BYTES
             await this.PF.emit('o_pull', {
                 uri: blob.sc.uri,
                 // seek: blob.sc.seek,
@@ -391,7 +393,6 @@
             })
             blob.sc.pulled_size = pulled_size
             console.log(`up pulled to: ${pulled_size}`)
-            return true
         }
     },
 //#endregion
@@ -446,7 +447,9 @@
         // blob.sc.seek ||= 0
         blob.sc.received_size ||= 0
 
-        await this.blob_could_emit_o_pull(blob,remote)
+        await this.blob_could_emit_o_pull(blob)
+        // and feed the UI something:
+        
 
         if (blob.sc.progress_pct) {
             req.i({see:1,
@@ -623,7 +626,7 @@
                 (blob.sc.received_size / blob.sc.total_size) * 100
             )
         }
-        await this.blob_could_emit_o_pull(blob,remote)
+        await this.blob_could_emit_o_pull(blob)
     },
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
