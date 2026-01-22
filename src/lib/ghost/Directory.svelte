@@ -27,10 +27,15 @@
 
 
     // refresh the top level, etc
+    // < GONER? all A now
     async do_main() {
         // < rewrite everything we're thinking about how to:
     },
+
+
+
     // when w to gallop into open country
+    // < GONER? nothing calling this:
     get_sleeping_D_filter(D) {
         return D.c.T.sc.n.sc.nib == 'dir'
             && !D.c.T.c.no_readin

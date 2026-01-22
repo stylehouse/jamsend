@@ -696,7 +696,7 @@
                 if (!found_anything) {
                     w.sc.seems_to_be_empty = true
                     // < more of a mutter than a warn, for blaming the user
-                    console.warn(`empty share: ${this.S.name}`)
+                    console.warn(`slowly meandering possibly empty share: ${this.S.name}`)
                     break
                 }
                 else {

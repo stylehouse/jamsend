@@ -73,13 +73,13 @@
 
 <Scrollability maxHeight="60vh" class="content-area">
     {#snippet content()}
-        <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
         <div>
         {#if share_act}
+        {/if}
+        
+        {#if share_act}
             <span class="collections inrow" title="
-            a collection is meta-biographical directory
-                eg a directory for a genre
-            they will have a dash prepended to sort topward etc.
+            Access to (some part of) your filesystem is required.
             ">
                 Your shares are not opened so we can't download it anywhere.
                 <span class="arow">
@@ -87,9 +87,8 @@
                     <ActionButtons actions={[share_act]} />
                 </span>
             </span>
-
-
         {/if}
+
         {#if places}
             {#if collections?.length}
                 <span class="collections inrow" title="
@@ -176,6 +175,9 @@
                 {/each}
             </span>
         {/if}
+
+
+        <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
         </div>
     {/snippet}
 </Scrollability>

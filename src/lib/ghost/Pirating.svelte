@@ -27,8 +27,8 @@
     // io is %io:radiopiracy, r is a reply branching back, -o is a corner
     //              cytotermicaster (UI end)
     //                     .
-    //        heist:       .
-    //     o-->  o_pull -----o         # create reqy:serve_pull for {url}
+    //        heist:       .       # creates $local
+    //     o-->  o_pull -----o         # create $serve = reqy:serve_pull for {url}
     //     |               . |
     //     |     i_pull <----r     # finds req/local,serve,(heist/blob%(url))
     //     |      |        . |
@@ -45,7 +45,7 @@
     //   asks for more via emit:o_pull
     //
     // there's also the time before kicking off the first emit:o_pull up there
-    //  when we io.sc.o_push to get the receiving directory ready
+    //  when we io.sc.i_push to get the receiving directory ready
 
     async termicaster_resources(A,w) {
         // np frontend and io backend.
@@ -150,7 +150,8 @@
         // process the above
         
         await reqy.do(async (req) => {
-            this.cytotermi_pirating_plan(A,w,req,raterm)
+            let give_up = this.cytotermi_pirating_plan(A,w,req,raterm)
+            if (give_up) return
 
 
             // produce something we can hang UI input off|to
@@ -182,10 +183,13 @@
                     if (!req.oa({heist:1})) throw "!just"
                     req.sc.cv = 4
                 }
-                if (req.sc.cv < 5) {
+                if (req.sc.cv < 6) {
                     if (!req.oa({heist:1})) throw "!ready"
                     // downloader progresses
                     await this.cytotermi_pirating_heist(A,w,req)
+                    // now we've said something
+
+                    req.sc.cv = 5
                 }
             }
             if (req.sc.cv < 7) {
@@ -239,7 +243,7 @@
 
 
 
-//#region step 1 plan
+//#region misc
     async cytotermi_pirating_plan(A,w,req,raterm) {
         let lost = (where) => {
             w.i({see:'pirating fail',lost:where})
@@ -281,18 +285,8 @@
         }
         M.node_edger.enheist(con)
     },
-//#endregion
 
 
-
-
-
-
-
-
-
-
-//#region step 6 spooling
     // things we do
     // in unemit:i_pull, find its heist
     async o_heist_blob(A,w,uri) {
@@ -378,12 +372,46 @@
         // Default pipeline size if we don't have measurements yet
         return blob.sc.pipeline_bytes || 200 * 1000 // 200KB default
     },
+    // speed control via continuous acking|reiterating the emit:o_pull
+    async blob_could_emit_o_pull(blob,remote) {
+        // keep telling them we want more
+        // < manual speed control, shared equally amongst Piers
+        const PIPELINE_BYTES = this.calculate_pipeline(blob)
+        let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
+        let recently_asked = blob.sc.pulled_size != null
+            && ahead_of_received < blob.sc.pulled_size
+
+        if (!recently_asked) {
+            // put this another PIPELINE_BYTES ahead so we don't do this too often?
+            let pulled_size = ahead_of_received + PIPELINE_BYTES
+            await this.PF.emit('o_pull', {
+                uri: blob.sc.uri,
+                // seek: blob.sc.seek,
+                pulled_size,
+            })
+            blob.sc.pulled_size = pulled_size
+            console.log(`up pulled to: ${pulled_size}`)
+            return true
+        }
+    },
+//#endregion
+
+
+
+
+
+
+
+
+
+
+//#region step 6 spooling
 
 
     // local,remote <-> serve
     async cytotermi_heist_engages_remote(A,w,req,he,local,remote) {
         // ask for each one one, keep going
-        let blobs = he.o()
+        let blobs = he.o({blob:1})
         if (blobs.some(bl => !bl.sc.blob)) throw "*!%blob"
 
         if (he.sc.heisted) return
@@ -418,7 +446,7 @@
         // blob.sc.seek ||= 0
         blob.sc.received_size ||= 0
 
-        await this.blob_could_emit_o_pull(A,w,req,blob)
+        await this.blob_could_emit_o_pull(blob,remote)
 
         if (blob.sc.progress_pct) {
             req.i({see:1,
@@ -426,28 +454,6 @@
                 blobbit:blob.sc.bit,
                 progress:blob.sc.progress_pct,
             })
-        }
-    },
-    // speed control via continuous acking|reiterating the emit:o_pull
-    async blob_could_emit_o_pull(A,w,req,blob) {
-        // keep telling them we want more
-        // < manual speed control, shared equally amongst Piers
-        const PIPELINE_BYTES = this.calculate_pipeline(blob)
-        let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
-        let recently_asked = blob.sc.pulled_size != null
-            && ahead_of_received < blob.sc.pulled_size
-
-        if (!recently_asked) {
-            // put this another PIPELINE_BYTES ahead so we don't do this too often?
-            let pulled_size = ahead_of_received + PIPELINE_BYTES
-            await this.PF.emit('o_pull', {
-                uri: blob.sc.uri,
-                // seek: blob.sc.seek,
-                pulled_size,
-            })
-            blob.sc.pulled_size = pulled_size
-            console.log(`up pulled to: ${pulled_size}`)
-            return true
         }
     },
 
@@ -617,7 +623,7 @@
                 (blob.sc.received_size / blob.sc.total_size) * 100
             )
         }
-        await this.blob_could_emit_o_pull(A,w,req,blob)
+        await this.blob_could_emit_o_pull(blob,remote)
     },
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
