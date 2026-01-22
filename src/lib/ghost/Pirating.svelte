@@ -344,7 +344,7 @@
         // ask for this
         await this.cytotermi_heist_now(A,w,req,he,local,remote,now)
 
-        console.log(`🌀${he.sc.progress}/${blobs.length} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
+        console.log(`heist ${he.sc.progress}/${blobs.length} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
     },
     // keeps asking for now at greater seek
     async cytotermi_heist_now(A,w,req,he,local,remote,blob) {
@@ -374,29 +374,62 @@
         }
     },
 
+    
+
 
     // serve
+    async serve_pulled_pushed(serve:TheC,releasor=false) {
+        let go = serve.sc.pushed_size < serve.sc.pulled_size
+        if (!go) {
+            // as either
+            if (!serve.sc.push_pending) {
+                // create a stopper
+                serve.sc.push_pending_go
+                serve.sc.push_pending = new Promise((resolve) => {
+                    serve.sc.push_pending_go = resolve
+                })
+            }
+        }
+        if (releasor) {
+            if (go) {
+                if (!serve.sc.push_pending) {
+                    serve.sc.push_pending_go()
+                    delete serve.sc.push_pending_go
+                    delete serve.sc.push_pending
+                }
+            }
+        }
+        else {
+            if (serve.sc.push_pending) {
+                await serve.sc.push_pending
+            }
+        }
+    },
     // we're on per-Pier everything here in the frontend
     async termicaster_unemits_o_pull(A,w,{uri,pulled_size}) {
         // we'll be serving this object to them, or already are
-        //  they are up to seek
         let serve_pull_reqy = await this.requesty_serial(w,'serve_pull')
         let serve = serve_pull_reqy.o({uri})[0]
             || serve_pull_reqy.i({uri})
 
         // hold a request for this uri, last activity timeout
         serve.sc.last_activity = now_in_seconds()
+        // how far ahead they're telling us to send
         serve.sc.pulled_size = pulled_size
-        // have a route back to them
-        serve.c.emit_i_pull = await (data) => {
-            if (serve.sc.total_size && !serve.sc.total_size_sent) {
-                data.total_size = serve.sc.total_size
-            }
+        // how much buffer.length serve has put through emit:i_pull
+        serve.sc.pushed_size ||= 0 
+
+        // the return journey
+        serve.c.emit_i_pull = async (data) => {
             await this.PF.emit('i_pull', data)
         }
+
         // < maybe wake up the backend reader faster here
         let radiopiracy = A.o({io:'radiopiracy'})[0]
         let req = await radiopiracy.sc.o_push(serve)
+
+        // apply backpressure
+        this.serve_pulled_pushed(serve,true)
     },
     // side, back
     //  via %io:rapiracy from the frontend of serve, so yay!
@@ -422,23 +455,85 @@
         if (!serve.sc.reader) {
             let DL = this.D_to_DL(D)
             let reader = serve.sc.reader = await DL.getReader(filename)
+            let seek = serve.sc.seek
             serve.sc.total_size = reader.size
+            let seq = 0
+            let used_seq = false
+            let oncely_c = {total_size: serve.sc.total_size}
+            setTimeout(async () => {
+                for await (const buffer of reader.iterate(seek)) {
+                    if (used_seq) throw `need to mutex reader`
+                    used_seq = true
+                    
+                    await serve.c.emit_i_pull('i_pull', {
+                        uri,
+                        buffer,
+                        seq,
+                        ...oncely_c,
+                    })
+                    used_seq = false
+                    seq++
+                    serve.sc.pushed_size += buffer.length
+                    oncely_c = {}
 
+                    await this.serve_pulled_pushed(serve)
+                    if (serve.sc.finished) return
+                }
+                // Reached end of file
+                await serve.c.emit_i_pull('i_pull', {
+                    uri,
+                    eof: true
+                })
+                serve.sc.finished = true
+            },0)
         }
         
     },
 
 
     // local side, front
-    async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error,eof}) {
-        let {req,heist,blob,local,remote} = await this.o_heist_blob(A,w,uri)
-        if (!req) throw "dunno"
+    async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,total_size,error,eof}) {
+        // we asked for it in cytotermi_heist_engages_remote()
+        let found = await this.o_heist_blob(A,w,uri)
+        if (!found) return console.warn(`Received i_pull for unknown uri: ${uri}`)
+        let {req,heist,blob,local,remote} = found
+        if (error) {
+            blob.sc.download_error = error
+            req.i({error,in:'unemits i_pull',uri,blob})
+            // Mark as failed but continue with other files?
+            blob.sc.heisted = true
+            this.i_elvis(w, 'noop')
+            return
+        }
+        if (eof) {
+            // continue with other files
+            blob.sc.heisted = true
+            blow.sc.writer.close()
+            delete blow.sc.writer
+            this.i_elvis(w, 'noop')
+            // is a separate unemit:i_pull with only {uri,eof}
+            //  after the last bufferful one
+            return
+        }
+
+        if (total_size != null) blob.sc.total_size = total_size
+
         // we get some download
         blob.sc.received_size += buffer.length
+        // they come in order (sanity)
+        blob.sc.seq_expected ||= 0
+        if (seq != blob.sc.seq_expected) throw `seq expected ${blob.sc.seq}, got ${seq}, ${uri}`
+        blob.sc.seq_expected += 1
 
-        w.o({requesty_pirating:1})
-        // we asked for it in engages_remote
-        
+        // now!
+        if (!blob.sc.writer) local.c.getWriter(blob)
+
+        await blob.sc.writer.write(buffer)
+        if (blob.sc.total_size) {
+            blob.sc.progress_pct = Math.round(
+                (blob.sc.received_size / blob.sc.total_size) * 100
+            )
+        }
     },
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
@@ -448,13 +543,13 @@
         let D = await this.aim_to_open(w,local.sc.path)
         if (!D) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
         let DL = this.D_to_DL(D)
+        // interface to get blob writers in this directory
         local.c.getWriter = async (now) => {
             if (now.sc.writer) throw `already now%writer`
             now.sc.writer = await DL.getWriter(now.sc.bit)
         }
         // < also check it's not full of stuff!?
         local.sc.ready = 1
-        // < interface to writer as buffers appear
     },
 //#endregion
 

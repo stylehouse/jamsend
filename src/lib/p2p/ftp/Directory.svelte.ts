@@ -66,7 +66,7 @@ function sort_by_name(a:name_haver,b:name_haver,k?:string) {
 // many files|dirs
 export class DirectoryListing {
     up?: DirectoryListing
-    handle:any
+    handle:FileSystemDirectoryHandle
     name: string
 
 
@@ -82,7 +82,9 @@ export class DirectoryListing {
     async getReader(pathbit) {
         const fileHandle = await this.handle.getFileHandle(pathbit);
         const file = await fileHandle.getFile();
-        
+        // < never needs closing? isn't file.stream
+        //   a bunch of separate sequential reads...
+        //    assuming it hasn't been changed meanwhile etc
         return {
             size: file.size,
             iterate: async function*(startFrom = 0) {
@@ -363,7 +365,7 @@ interface FileReader {
     iterate: (startFrom?: number) => AsyncGenerator<ArrayBuffer>;
 }
 
-type FileSystemDirectoryHandle = any
+// type FileSystemDirectoryHandle = any
 class FileSystemHandler {
     // handle for the root directory of the share
     handle:FileSystemDirectoryHandle|null

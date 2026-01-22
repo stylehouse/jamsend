@@ -578,14 +578,21 @@
         if (A.c.meander_then) {
             w.sc.then = A.c.meander_then
         }
-        if (!A.c.meandered_before) {
-            console.log("Initial w:meander")
-        }
-        A.c.meandered_before = true
 
+        // check we're finding anything, avoid spinning in edge cases
+        // anything includes directories
         let found_anything = false
         if (w.sc.seems_to_be_empty) {
             if (await this.w_ambiently_sleeping(w,6)) return
+        }
+        const GIVE_UP = 16
+        if (w.o({meanderings:1}).length > GIVE_UP) {
+            // meanderings build up as we keep looking but not finding,
+            //  engage hopelessness to conserve cpu time
+            console.warn(`share seems trackless? giving up`)
+            w.sc.then = 'rest'
+            await w.r({satisfied:1})
+            return
         }
 
         let loopy = 11
@@ -612,6 +619,7 @@
 
             let inners = null
             if (D) {
+                // this function is key, it is satisfied with D%track
                 let good = await this.is_meander_satisfied(A,w,D)
                 if (good) {
                     await w.r({satisfied:1,with:D})

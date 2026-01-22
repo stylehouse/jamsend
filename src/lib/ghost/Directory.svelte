@@ -321,12 +321,13 @@
         let need = D.oa({was_operated_on:1})
         if (!need) {
             let ago = await op.i_wasLast('expanded')
-            need = ago > REFRESH_DL_SECONDS
+            need = ago > REFRESH_DL_SECONDS ? [_C({by:'refresh time'})] : null
         }
         if (need) {
             // spontaneous refresh every little while
+            let because = need.map(n => n.sc.by).join(',')
             let uri = this.Se.D_to_uri(T.sc.D)
-            console.log(`🫧 reexpanding ${uri}`)
+            console.log(`🫧 reexpanding (${because}) ${uri}`)
             await this.expand_nib(T,op)
             // do think-chatter in D/*, under %openity since relevant...
             await op.i_wasLast('expanded',true)
