@@ -37,7 +37,11 @@
     },
     // looking for something
     async is_meander_satisfied(A,w,D) {
-        // something with a track
+        // something that is a track
+        if (D.c.T.sc.n.sc.FL?.size == 0) {
+            console.warn("empty file somewhere named: "+D.sc.name)
+            return
+        }
         // < finding %ads:beyond, aim becomes for tracking down that track...
         return D.oa({readin:'art',track:1})
     },

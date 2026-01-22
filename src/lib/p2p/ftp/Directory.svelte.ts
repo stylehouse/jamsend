@@ -87,11 +87,11 @@ export class DirectoryListing {
         //    assuming it hasn't been changed meanwhile etc
         return {
             size: file.size,
-            iterate: async function*(startFrom = 0) {
+            iterate: async function*(startFrom = 0, chunkSize = CHUNK_SIZE) {
                 let offset = startFrom;
                 while (offset < file.size) {
                     // Read file in chunks
-                    const chunk = file.slice(offset, offset + CHUNK_SIZE);
+                    const chunk = file.slice(offset, offset + chunkSize);
                     yield await chunk.arrayBuffer();
                     offset += CHUNK_SIZE;
                 }

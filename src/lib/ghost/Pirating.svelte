@@ -9,10 +9,12 @@
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
+    import { DirectoryModus } from "$lib/p2p/ftp/Sharing.svelte";
    
     let {M} = $props()
     let V = {}
     V.descripted = 0 // also in Cytoscaping
+    V.serve = 1
 
     onMount(async () => {
     await M.eatfunc({
@@ -307,6 +309,75 @@
         }
         return null
     },
+    // pauses the sender until you o_pull more pulled_size to it
+    async serve_pulled_pushed(serve:TheC,releasor=false) {
+        let go = serve.sc.pushed_size < serve.sc.pulled_size
+        if (!go) {
+            // as either
+            if (!serve.sc.push_pending) {
+                // create a stopper
+                serve.sc.push_pending_go
+                serve.sc.push_pending = new Promise((resolve) => {
+                    serve.sc.push_pending_go = resolve
+                })
+                V.serve && console.log(`🔓 Backpressure released for ${serve.sc.uri}`)
+            }
+        }
+        if (releasor) {
+            if (go) {
+                if (serve.sc.push_pending) {
+                    V.serve && console.log(`⏸️  Backpressure waiting for ${serve.sc.uri}`)
+                    serve.sc.push_pending_go()
+                    delete serve.sc.push_pending_go
+                    delete serve.sc.push_pending
+                }
+            }
+        }
+        else {
+            if (serve.sc.push_pending) {
+                await serve.sc.push_pending
+            }
+        }
+    },
+    // AI: Calculate bandwidth and optimal pipeline size
+    calculate_pipeline(blob) {
+        const now = now_in_seconds_with_ms()
+        
+        // Initialize bandwidth tracking
+        if (!blob.sc.bw_samples) {
+            blob.sc.bw_samples = []
+            blob.sc.last_chunk_time = now-1
+            blob.sc.last_chunk_size ||= 0
+        }
+        
+        // Calculate instantaneous bandwidth from last chunk
+        const time_delta = now - blob.sc.last_chunk_time
+        if (time_delta > 0 && blob.sc.last_chunk_size > 0) {
+            const bytes_per_sec = blob.sc.last_chunk_size / time_delta
+            const kBps = bytes_per_sec / 1000
+            
+            // Keep last 10 samples for smoothing
+            blob.sc.bw_samples.push(kBps)
+            if (blob.sc.bw_samples.length > 10) {
+                blob.sc.bw_samples.shift()
+            }
+            
+            // Calculate average kBps
+            const avg_kBps = blob.sc.bw_samples.reduce((a, b) => a + b, 0) / blob.sc.bw_samples.length
+            blob.sc.avg_kBps = Math.round(avg_kBps)
+            
+            // Calculate pipeline size based on bandwidth
+            // Want ~2 seconds of buffer at current speed
+            // But minimum 50KB, maximum 5MB
+            const two_sec_buffer = avg_kBps * 1000 * 2
+            blob.sc.pipeline_bytes = Math.max(50 * 1000, Math.min(5 * 1000 * 1000, two_sec_buffer))
+        }
+        
+        blob.sc.last_chunk_time = now
+        
+        // Default pipeline size if we don't have measurements yet
+        return blob.sc.pipeline_bytes || 200 * 1000 // 200KB default
+    },
 
 
     // local,remote <-> serve
@@ -315,15 +386,16 @@
         let blobs = he.o()
         if (blobs.some(bl => !bl.sc.blob)) throw "*!%blob"
 
+        if (he.sc.heisted) return
         // advance he/*%blob with he%progress=i
         he.sc.progress ||= 0
         let now = blobs[he.sc.progress]
         if (now.sc.heisted) {
             he.sc.progress += 1
             now = blobs[he.sc.progress]
-
             if (!now) {
-                delete he.sc.progress
+                // < weirdly oscillate here being satisfied we've ended.
+                he.sc.progress -= 1
                 he.sc.heisted = 1
                 req.sc.cv = 7
                 await req.r({solved: 1})
@@ -341,29 +413,13 @@
     // in time, keeps asking for more of now
     async cytotermi_heist_now(A,w,req,he,local,remote,blob) {
         if (!blob.sc.uri.includes('/')) throw "what blob uri"
+
         // < seek use. for resuming downloads?
         // blob.sc.seek ||= 0
         blob.sc.received_size ||= 0
 
-        // keep telling them we want more every...
-        const PIPELINE_BYTES = 5   *1000
-        let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
-        let recently_asked = blob.sc.pulled_size != null
-            && ahead_of_received < blob.sc.pulled_size
+        await this.blob_could_emit_o_pull(A,w,req,blob)
 
-        // Check if waiting for response
-        if (recently_asked) {
-            req.i({see:1,downloading: `recently asked for ${blob.sc.pulled_size}`})
-        }
-        else {
-            let pulled_size = ahead_of_received
-            await this.PF.emit('o_pull', {
-                uri: blob.sc.uri,
-                // seek: blob.sc.seek,
-                pulled_size,
-            })
-            blob.sc.pulled_size = pulled_size
-        }
         if (blob.sc.progress_pct) {
             req.i({see:1,
                 downloading:1,
@@ -372,38 +428,34 @@
             })
         }
     },
+    // speed control via continuous acking|reiterating the emit:o_pull
+    async blob_could_emit_o_pull(A,w,req,blob) {
+        // keep telling them we want more
+        // < speed control
+        const PIPELINE_BYTES = 1   *1000*1000
+        // < check this out at some point...
+        // const PIPELINE_BYTES = this.calculate_pipeline(blob)
+        let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
+        let recently_asked = blob.sc.pulled_size != null
+            && ahead_of_received < blob.sc.pulled_size
+
+        if (!recently_asked) {
+            let pulled_size = ahead_of_received
+            await this.PF.emit('o_pull', {
+                uri: blob.sc.uri,
+                // seek: blob.sc.seek,
+                pulled_size,
+            })
+            blob.sc.pulled_size = pulled_size
+            console.log(`up pulled to: ${pulled_size}`)
+            return true
+        }
+    },
 
     
 
 
     // serve
-    async serve_pulled_pushed(serve:TheC,releasor=false) {
-        let go = serve.sc.pushed_size < serve.sc.pulled_size
-        if (!go) {
-            // as either
-            if (!serve.sc.push_pending) {
-                // create a stopper
-                serve.sc.push_pending_go
-                serve.sc.push_pending = new Promise((resolve) => {
-                    serve.sc.push_pending_go = resolve
-                })
-            }
-        }
-        if (releasor) {
-            if (go) {
-                if (serve.sc.push_pending) {
-                    serve.sc.push_pending_go()
-                    delete serve.sc.push_pending_go
-                    delete serve.sc.push_pending
-                }
-            }
-        }
-        else {
-            if (serve.sc.push_pending) {
-                await serve.sc.push_pending
-            }
-        }
-    },
     // we're on per-Pier everything here in the frontend
     async termicaster_unemits_o_pull(A,w,{uri,pulled_size}) {
         // we'll be serving this object to them, or already are
@@ -417,7 +469,7 @@
         serve.sc.pulled_size = pulled_size
         // sum buffer.byteLength put through emit:i_pull
         serve.sc.pushed_size ||= 0 
-        console.log(`Got pulled_size=${pulled_size}`)
+        console.log(`📤 Pull request for ${uri} -> ${pulled_size}`)
 
         // the return journey
         serve.c.emit_i_pull = async (data) => {
@@ -466,33 +518,41 @@
             let seq = 0
             let used_seq = false
             let oncely_c = {total_size: serve.sc.total_size}
-            console.log(`reader started`)
             setTimeout(async () => {
-                for await (const buffer of reader.iterate(seek)) {
-                    if (used_seq) throw `need to mutex reader`
-                    used_seq = true
-                    
+                try {
+                    let chunkSize = 369_936
+                    for await (const buffer of reader.iterate(seek,chunkSize)) {
+                        if (used_seq) throw `need to mutex reader`
+                        used_seq = true
+                        
+                        await serve.c.emit_i_pull({
+                            uri,
+                            buffer,
+                            seq,
+                            ...oncely_c,
+                        })
+                        used_seq = false
+                        seq++
+                        serve.sc.pushed_size += buffer.byteLength
+                        oncely_c = {}
+                        // console.log(`reader keeps going @${seq}  ${serve.sc.pushed_size}/${serve.sc.total_size}`)
+
+                        await this.serve_pulled_pushed(serve)
+                        if (serve.sc.finished) return
+                    }
+                    // Reached end of file
                     await serve.c.emit_i_pull({
                         uri,
-                        buffer,
-                        seq,
-                        ...oncely_c,
+                        eof: true
                     })
-                    used_seq = false
-                    seq++
-                    serve.sc.pushed_size += buffer.byteLength
-                    oncely_c = {}
-                    console.log(`reader keeps going @${seq}  ${serve.sc.pushed_size}/${serve.sc.total_size}`)
-
-                    await this.serve_pulled_pushed(serve)
-                    if (serve.sc.finished) return
+                    serve.sc.finished = true
+                } catch (err) {
+                    console.error(`❌ Reader error for ${filename}:`, err)
+                    await serve.c.emit_i_pull({
+                        uri,
+                        error: err.message || 'Read error'
+                    })
                 }
-                // Reached end of file
-                await serve.c.emit_i_pull({
-                    uri,
-                    eof: true
-                })
-                serve.sc.finished = true
             },0)
         }
         
@@ -507,8 +567,10 @@
         if (!found) return console.warn(`Received i_pull for unknown uri: ${uri}`,data)
         let {req,heist,blob,local,remote} = found
         if (error) {
+            console.error(`❌ Download error for ${blob.sc.bit}: ${error}`)
             blob.sc.download_error = error
-            req.i({error,in:'unemits i_pull',uri,blob})
+            // note a req/%error would be dropped after the round it occurs, see w_forgets_problems()
+            req.i({failed:error,in:'unemits i_pull',uri,blob})
             // Mark as failed but continue with other files?
             blob.sc.heisted = true
             this.i_elvis(w, 'noop')
@@ -527,31 +589,50 @@
 
         if (total_size != null) blob.sc.total_size = total_size
 
-        // we get some download
-        if (!buffer.byteLength) debugger
-        blob.sc.received_size += buffer.byteLength
         // they come in order (sanity)
         blob.sc.seq_expected ||= 0
         if (seq != blob.sc.seq_expected) throw `seq expected ${blob.sc.seq}, got ${seq}, ${uri}`
         blob.sc.seq_expected += 1
 
         // now!
-        if (!blob.sc.writer) await local.c.getWriter(blob)
+        if (!blob.sc.writer) {
+            await local.c.getWriter(blob)
+            V.serve && console.log(`✍️  Writer opened for ${blob.sc.bit}`)
+        }
+        if (buffer.byteLength <= 0) throw `buffer nothing`
 
         await blob.sc.writer.write(buffer)
+        // we get some download
+        if (!buffer.byteLength) debugger
+        blob.sc.received_size += buffer.byteLength
+        // Store chunk size for bandwidth calculation
+        blob.sc.last_chunk_size = buffer.byteLength
+
+        this.calculate_pipeline(blob)
+        let speed = blob.sc.avg_kBps ? `@ ${blob.sc.avg_kBps} kBps` : ''
+        V.serve && console.log(`💾 Wrote chunk ${seq} for ${blob.sc.bit} (${blob.sc.progress_pct}%) ${speed}`)
+
+
         if (blob.sc.total_size) {
             blob.sc.progress_pct = Math.round(
                 (blob.sc.received_size / blob.sc.total_size) * 100
             )
         }
+        await this.blob_could_emit_o_pull(A,w,req,blob)
     },
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
     async rapiracy_i_push_reqy(A,w,req) {
         let local = req.sc.local
+        // if code has reloaded this.constructor != DirectoryModus when it is
+        if (this.constructor.name != 'DirectoryModus') throw `not DirectoryModus`
+        let path = local.sc.destdirs.length ? local.sc.destdirs.split('/')
+            // points at the root of the share:
+            : []
         // create the directory
-        let D = await this.aim_to_open(req,local.sc.path)
+        let D = await this.aim_to_open(req,path)
         if (!D) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+
         let DL = this.D_to_DL(D)
         // interface to get blob writers in this directory
         local.c.getWriter = async (now) => {
@@ -593,7 +674,7 @@
         let local = req.o({local:1})[0] || req.i({
             local:1,
             eph:1,
-            path: he.sc.destination_directories.split('/'),
+            destdirs: he.sc.destination_directories,
         })
         // < GOING?
         local.sc.w = w
@@ -607,7 +688,7 @@
 
         // start with making the directory it's going to
         // we get e:noop back when it exists
-        local.sc.req ||= radiopiracy.sc.i_push(local)
+        local.sc.req ||= await radiopiracy.sc.i_push(local)
         if (!local.sc.ready) {
             return await req.i({see:1,needs:"local ready"})
         }
@@ -621,6 +702,7 @@
             eph:1,
         })
 
+        if (!he.oa({blob:1})) return req.i({error:"No he/%blob?"})
         await this.cytotermi_heist_engages_remote(A,w,req,he,local,remote)
 
 
