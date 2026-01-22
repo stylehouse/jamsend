@@ -741,7 +741,6 @@ class Dierarchy extends SelectionItself {
 
             uD = D
         }
-        // < GOING? %aim plurality is messy?
         await w.r({aimed:at,category})
         w.i({see:"aim_to_open OK",at})
 

@@ -6,7 +6,7 @@
 
     let {M} = $props()
     const V = {}
-    V.w = 0
+    V.w = 1
     V.elvis = 1
 
     onMount(async () => {
@@ -519,6 +519,7 @@
                 await ison()
                 let req = await w.r({...reqc,...c},{...c})
                 req.sc.req_i ||= req_serial.sc.i++
+                return req
             },
             o(sc={}) {
                 // you can use sc to check for existing workpiece id before you .i()

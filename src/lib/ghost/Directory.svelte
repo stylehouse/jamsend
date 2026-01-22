@@ -10,11 +10,12 @@
     //  Selections/Selection are your collations
     // < refactor this using io expr, eg i|o the/%struc/%ture{>240}
     const GUESS_METADATA = false
-    const REFRESH_DL_SECONDS = 16
+    const REFRESH_DL_SECONDS = 36
 
     let {M} = $props()
     const V = {}
     V.w = 0
+    V.fs = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -327,7 +328,7 @@
             // spontaneous refresh every little while
             let because = need.map(n => n.sc.by).join(',')
             let uri = this.Se.D_to_uri(T.sc.D)
-            console.log(`🫧 reexpanding (${because}) ${uri}`)
+            V.fs && console.log(`🫧 reexpanding (${because}) ${uri}`)
             await this.expand_nib(T,op)
             // do think-chatter in D/*, under %openity since relevant...
             await op.i_wasLast('expanded',true)

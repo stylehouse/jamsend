@@ -103,17 +103,17 @@
                 })
             },
             // they request more blob
-            o_pull: async ({uri,seek}:{uri:string}) => {
+            o_pull: async (data) => {
                 if (!racast) throw `racast unemits o_pull`
                 w = this.refresh_C([A,w])
-                await this.termicaster_unemits_o_pull(A,w,{uri,seek})
+                await this.termicaster_unemits_o_pull(A,w,data)
 
             },
             // we are receiving blob
-            i_pull: async ({uri,buffer,seq,size,error}:{uri:string}) => {
+            i_pull: async (data) => {
                 if (!raterm) throw `raterm unemits i_pull`
                 w = this.refresh_C([A,w])
-                await this.termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error})
+                await this.termicaster_unemits_i_pull(A,w,data)
             },
         }
         return {raterm,racast,radiopiracy}
@@ -304,7 +304,7 @@
     async o_heist_blob(A,w,uri) {
         for (let req of w.o({requesty_pirating: 1})) {
             for (let heist of req.o({heist: 1})) {
-                for (let blob of req.o({blob: 1})) {
+                for (let blob of heist.o({blob: 1})) {
                     if (blob.sc.uri == uri) {
                         let local = req.o({local:1})[0]
                         let remote = req.o({remote:1})[0]
@@ -335,6 +335,7 @@
                 he.sc.heisted = 1
                 req.sc.cv = 7
                 await req.r({solved: 1})
+                await local.c.on_finished()
                 console.log(`✅ Heist complete!`)
                 return
             }
@@ -392,7 +393,7 @@
         }
         if (releasor) {
             if (go) {
-                if (!serve.sc.push_pending) {
+                if (serve.sc.push_pending) {
                     serve.sc.push_pending_go()
                     delete serve.sc.push_pending_go
                     delete serve.sc.push_pending
@@ -410,7 +411,7 @@
         // we'll be serving this object to them, or already are
         let serve_pull_reqy = await this.requesty_serial(w,'serve_pull')
         let serve = serve_pull_reqy.o({uri})[0]
-            || serve_pull_reqy.i({uri})
+        serve ||= await serve_pull_reqy.i({uri})
 
         // hold a request for this uri, last activity timeout
         serve.sc.last_activity = now_in_seconds()
@@ -428,7 +429,7 @@
         let radiopiracy = A.o({io:'radiopiracy'})[0]
         let req = await radiopiracy.sc.o_push(serve)
 
-        // apply backpressure
+        // %pulled_size affects backpressure
         this.serve_pulled_pushed(serve,true)
     },
     // side, back
@@ -441,16 +442,31 @@
         
         let uri = serve.sc.uri
         let path = uri.split('/')
+        let topname = path.shift()
+        if (topname != this.Se.c.T.sc.D.sc.name) throw `< many shares? ${topname} unknown`
         let filename = path.pop()
+        // this becomes %aim,category=aim_name
+        //  so we can remove just this requests' workpiece
+        // < hoist them, and %error, from req as an indexed thing, under w
+        let aim_name = `o_push:${req.sc.req_i}`
+
+
 
         // recursive directory something-if-not-exist thinger
         let D = await this.Se.aim_to_open(w,path,async (uD,pathbit) => {
             // all is lost
             req.sc.finished = 'error'
             req.i({see:1,error:'Not Found',pathbit})
-            serve.emit_i_pull({uri,error:`Not Found: ${pathbit}`})
-        })
+            serve.c.emit_i_pull({
+                uri,
+                error:`Not Found: ${pathbit}`,
+            })
+        },aim_name)
         if (!D) return req.i({see:'opening...'})
+        let dead = async () => {
+            await w.r({aim:1,category:aim_name},{})
+            await w.r({aimed:1,category:aim_name},{})
+        }
 
         if (!serve.sc.reader) {
             let DL = this.D_to_DL(D)
@@ -460,12 +476,14 @@
             let seq = 0
             let used_seq = false
             let oncely_c = {total_size: serve.sc.total_size}
+            console.log(`reader started`)
             setTimeout(async () => {
                 for await (const buffer of reader.iterate(seek)) {
                     if (used_seq) throw `need to mutex reader`
                     used_seq = true
+                    console.log(`reader keeps going @${seq}  ${uri}`)
                     
-                    await serve.c.emit_i_pull('i_pull', {
+                    await serve.c.emit_i_pull({
                         uri,
                         buffer,
                         seq,
@@ -480,11 +498,12 @@
                     if (serve.sc.finished) return
                 }
                 // Reached end of file
-                await serve.c.emit_i_pull('i_pull', {
+                await serve.c.emit_i_pull({
                     uri,
                     eof: true
                 })
                 serve.sc.finished = true
+                await dead()
             },0)
         }
         
@@ -492,10 +511,11 @@
 
 
     // local side, front
-    async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,total_size,error,eof}) {
+    async termicaster_unemits_i_pull(A,w,data) {
+        let {uri,buffer,seq,total_size,error,eof} = data
         // we asked for it in cytotermi_heist_engages_remote()
         let found = await this.o_heist_blob(A,w,uri)
-        if (!found) return console.warn(`Received i_pull for unknown uri: ${uri}`)
+        if (!found) return console.warn(`Received i_pull for unknown uri: ${uri}`,data)
         let {req,heist,blob,local,remote} = found
         if (error) {
             blob.sc.download_error = error
@@ -508,8 +528,8 @@
         if (eof) {
             // continue with other files
             blob.sc.heisted = true
-            blow.sc.writer.close()
-            delete blow.sc.writer
+            blob.sc.writer.close()
+            delete blob.sc.writer
             this.i_elvis(w, 'noop')
             // is a separate unemit:i_pull with only {uri,eof}
             //  after the last bufferful one
@@ -540,6 +560,10 @@
     async rapiracy_i_push_reqy(A,w,req) {
         let local = req.sc.local
         // create the directory
+        // this becomes %aim,category=aim_name
+        //  so we can remove just this requests' workpiece
+        // < hoist them, and %error, from req as an indexed thing, under w
+        let aim_name = `i_push:${req.sc.req_i}`
         let D = await this.aim_to_open(w,local.sc.path)
         if (!D) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
         let DL = this.D_to_DL(D)
@@ -550,6 +574,13 @@
         }
         // < also check it's not full of stuff!?
         local.sc.ready = 1
+        local.c.on_finished = async () => {
+            dead()
+        }
+        let dead = async () => {
+            await w.r({aim:1,category:aim_name},{})
+            await w.r({aimed:1,category:aim_name},{})
+        }
     },
 //#endregion
 
