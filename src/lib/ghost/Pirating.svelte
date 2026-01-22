@@ -23,15 +23,17 @@
     // we'll be acting as either side (per Pier) or end (UI or backend) of...
     //  lines through the vertical dots are emits or unemits, only one is given
     // io is %io:radiopiracy, r is a reply branching back, -o is a corner
-    //            cytotermicaster (UI end)
+    //              cytotermicaster (UI end)
     //                     .
-    //     o-->  o_pull -----o # an emit o_pull arrives there
+    //        heist:       .
+    //     o-->  o_pull -----o         # create reqy:serve_pull for {url}
     //     |               . |
-    //     |     i_pull <----r # reply from the below io.sc.o_pull
+    //     |     i_pull <----r     # finds req/local,serve,(heist/blob%(url))
     //     |      |        . |
     //     o------r        . |
-    //            V i_push . V o_push
-    //       local     piracy (back end)   serve
+    //            |        . |
+    //            V i_push . V o_push  # create reqy:i|o_push for {local|serve}
+    //                  piracy (back end)  
     // 
     // the downloader
     //  begins that emit:o_pull
@@ -116,22 +118,6 @@
         }
         return {raterm,racast,radiopiracy}
     },
-    // enter a bunch of notes about a uri
-    //  to be fed to nowPlaying visuals
-    async i_descripted(w,uri,N) {
-        let was = w.o({uri:1,descripted:1})
-        // !!!!! has to be two-arg r() for not being pattern={uri:1}
-        let de = await w.r({uri},{descripted:1})
-        let now = w.o({uri:1,descripted:1})
-        V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)
-        de.empty()
-        for (let fasc of N) {
-            let fa = de.i(tex({},fasc))
-            for (let nisc of fasc.N) {
-                fa.i(nisc)
-            }
-        }
-    },
 
 
 //#endregion
@@ -210,7 +196,7 @@
                 if (req.sc.cv < 8) {
                     if (!req.oa({solved:1})) throw "!ready"
                     // is done..?
-                    req.sc.finished = "is done"
+                    // req.sc.finished = "is done"
 
                 }
             }
@@ -313,6 +299,24 @@
 
 
 //#region step 6 spooling
+    // things we do
+    // in unemit:i_pull, find its heist
+    async o_heist_blob(A,w,uri) {
+        for (let req of w.o({requesty_pirating: 1})) {
+            for (let heist of req.o({heist: 1})) {
+                for (let blob of req.o({blob: 1})) {
+                    if (blob.sc.uri == uri) {
+                        let local = req.o({local:1})[0]
+                        let remote = req.o({remote:1})[0]
+                        return {req,heist,blob,local,remote}
+                    }
+                }
+            }
+        }
+        return null
+    },
+
+
     // local,remote <-> serve
     async cytotermi_heist_engages_remote(A,w,req,he,local,remote) {
         // ask for each one one, keep going
@@ -320,66 +324,134 @@
         if (blobs.some(bl => !bl.sc.blob)) throw "*!%blob"
 
         // advance he/*%blob with he%progress=i
-        let now = blobs[he.sc.progress||0]
+        he.sc.progress ||= 0
+        let now = blobs[he.sc.progress]
         if (now.sc.heisted) {
-            he.sc.progress ||= 0
             he.sc.progress += 1
             now = blobs[he.sc.progress]
+
             if (!now) {
                 delete he.sc.progress
                 he.sc.heisted = 1
+                req.sc.cv = 7
+                await req.r({solved: 1})
+                console.log(`✅ Heist complete!`)
+                return
             }
         }
-        if (now) {
-            // ask for this
-            await this.termicaster_emit_o_pull(A,w,req,he,local,remote,now)
+        if (!now) throw `!now`
+        
+        // ask for this
+        await this.cytotermi_heist_now(A,w,req,he,local,remote,now)
 
-        }
-
-        console.log(`🌀${he.sc.progress} `,now)
+        console.log(`🌀${he.sc.progress}/${blobs.length} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
     },
-    async termicaster_emit_o_pull(A,w,req,he,local,remote,now) {
+    // keeps asking for now at greater seek
+    async cytotermi_heist_now(A,w,req,he,local,remote,blob) {
+        if (!blob.sc.uri.includes('/')) throw "what blob uri"
+        // < seek use. for resuming downloads?
+        // blob.sc.seek ||= 0
+        blob.sc.received_size ||= 0
 
+        // keep telling them we want more every...
+        const PIPELINE_BYTES = 5   *1000
+        let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
+        let recently_asked = blob.sc.pulled_size != null
+            && ahead_of_received < blob.sc.pulled_size
+
+        // Check if waiting for response
+        if (recently_asked) {
+            req.i({see:1,downloading: `recently asked for ${blob.sc.pulled_size}`})
+        }
+        else {
+            let pulled_size = ahead_of_received
+            await this.PF.emit('o_pull', {
+                uri: blob.sc.uri,
+                // seek: blob.sc.seek,
+                pulled_size,
+            })
+            blob.sc.pulled_size = pulled_size
+        }
     },
 
 
     // serve
     // we're on per-Pier everything here in the frontend
-    async termicaster_unemits_o_pull(A,w,{uri,seek}) {
+    async termicaster_unemits_o_pull(A,w,{uri,pulled_size}) {
         // we'll be serving this object to them, or already are
         //  they are up to seek
+        let serve_pull_reqy = await this.requesty_serial(w,'serve_pull')
+        let serve = serve_pull_reqy.o({uri})[0]
+            || serve_pull_reqy.i({uri})
+
         // hold a request for this uri, last activity timeout
-        
-
-
+        serve.sc.last_activity = now_in_seconds()
+        serve.sc.pulled_size = pulled_size
+        // have a route back to them
+        serve.c.emit_i_pull = await (data) => {
+            if (serve.sc.total_size && !serve.sc.total_size_sent) {
+                data.total_size = serve.sc.total_size
+            }
+            await this.PF.emit('i_pull', data)
+        }
+        // < maybe wake up the backend reader faster here
+        let radiopiracy = A.o({io:'radiopiracy'})[0]
+        let req = await radiopiracy.sc.o_push(serve)
     },
-    // the response to o_pull, once backend is ticking
-    async termicaster_emit_i_pull(A,w,req,he,local,remote,now) {
-
-    },
-    // the backend of the serve side
+    // side, back
     //  via %io:rapiracy from the frontend of serve, so yay!
     async rapiracy_o_push_reqy(A,w,req) {
+        // this is the serve from the frontend in the above function
         let serve = req.sc.serve
-        w.i({see:'piracy',sending:1,uri:serve.sc.uri})
+        w.i({see:'piracy',sending:1,...sex({},serve.sc,'pulled_size,uri')})
+        // stay up to serve.sc.pulled_size
+        
+        let uri = serve.sc.uri
+        let path = uri.split('/')
+        let filename = path.pop()
 
+        // recursive directory something-if-not-exist thinger
+        let D = await this.Se.aim_to_open(w,path,async (uD,pathbit) => {
+            // all is lost
+            req.sc.finished = 'error'
+            req.i({see:1,error:'Not Found',pathbit})
+            serve.emit_i_pull({uri,error:`Not Found: ${pathbit}`})
+        })
+        if (!D) return req.i({see:'opening...'})
+
+        if (!serve.sc.reader) {
+            let DL = this.D_to_DL(D)
+            let reader = serve.sc.reader = await DL.getReader(filename)
+            serve.sc.total_size = reader.size
+
+        }
         
     },
 
 
-    // local
-    async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error}) {
+    // local side, front
+    async termicaster_unemits_i_pull(A,w,{uri,buffer,seq,size,error,eof}) {
+        let {req,heist,blob,local,remote} = await this.o_heist_blob(A,w,uri)
+        if (!req) throw "dunno"
         // we get some download
+        blob.sc.received_size += buffer.length
+
         w.o({requesty_pirating:1})
         // we asked for it in engages_remote
         
     },
+    // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
     async rapiracy_i_push_reqy(A,w,req) {
         let local = req.sc.local
         // create the directory
-        let Dest = await this.aim_to_open(w,local.sc.path)
-        if (!Dest) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+        let D = await this.aim_to_open(w,local.sc.path)
+        if (!D) return w.i({see:'piracy',making_dir:1,uri:req.sc.uri})
+        let DL = this.D_to_DL(D)
+        local.c.getWriter = async (now) => {
+            if (now.sc.writer) throw `already now%writer`
+            now.sc.writer = await DL.getWriter(now.sc.bit)
+        }
         // < also check it's not full of stuff!?
         local.sc.ready = 1
         // < interface to writer as buffers appear
@@ -812,6 +884,24 @@
 
 
 //#region %descripted
+
+    // decompresses a re.sc.descripted=fasc[] into %uri,descripted/%factoid,.../%nittygritty
+    // enter a bunch of notes about a uri
+    //  to be fed to nowPlaying visuals
+    async i_descripted(w,uri,N) {
+        let was = w.o({uri:1,descripted:1})
+        // !!!!! has to be two-arg r() for not being pattern={uri:1}
+        let de = await w.r({uri},{descripted:1})
+        let now = w.o({uri:1,descripted:1})
+        V.descripted && console.log(`i_descripted ${was.length} -> ${now.length}`)
+        de.empty()
+        for (let fasc of N) {
+            let fa = de.i(tex({},fasc))
+            for (let nisc of fasc.N) {
+                fa.i(nisc)
+            }
+        }
+    },
 
     async drift_up_D(D,y) {
         let upD = D
