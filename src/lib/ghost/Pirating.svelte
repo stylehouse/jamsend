@@ -431,16 +431,15 @@
     // speed control via continuous acking|reiterating the emit:o_pull
     async blob_could_emit_o_pull(A,w,req,blob) {
         // keep telling them we want more
-        // < speed control
-        const PIPELINE_BYTES = 1   *1000*1000
-        // < check this out at some point...
-        // const PIPELINE_BYTES = this.calculate_pipeline(blob)
+        // < manual speed control, shared equally amongst Piers
+        const PIPELINE_BYTES = this.calculate_pipeline(blob)
         let ahead_of_received = blob.sc.received_size + PIPELINE_BYTES
         let recently_asked = blob.sc.pulled_size != null
             && ahead_of_received < blob.sc.pulled_size
 
         if (!recently_asked) {
-            let pulled_size = ahead_of_received
+            // put this another PIPELINE_BYTES ahead so we don't do this too often?
+            let pulled_size = ahead_of_received + PIPELINE_BYTES
             await this.PF.emit('o_pull', {
                 uri: blob.sc.uri,
                 // seek: blob.sc.seek,

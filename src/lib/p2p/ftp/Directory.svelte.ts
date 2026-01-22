@@ -93,7 +93,7 @@ export class DirectoryListing {
                     // Read file in chunks
                     const chunk = file.slice(offset, offset + chunkSize);
                     yield await chunk.arrayBuffer();
-                    offset += CHUNK_SIZE;
+                    offset += chunkSize;
                 }
             }
         };
