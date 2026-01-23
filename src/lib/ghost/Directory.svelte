@@ -115,7 +115,16 @@
         w.i({see:'tha happening'})
         // every time a %journey changes, we get pinged
         for (let e of this.o_elvis(w,'putjourney')) {
-            e.sc.reply && this.i_elvis(w,'noop',{A:e.sc.reply})
+            if (e.sc.reply) {
+                let vv = e.sc.reply
+                // < develop fallible, lazy elvis
+                if (!vv.sc.w || vv.up.oa({w:vv.sc.w})) {
+                    this.i_elvis(w,'noop',{A:vv})
+                }
+                else {
+                    console.warn(`dropping elvis reply, ${this.say_Aw(w)} -> ${this.say_Aw(vv)} is no more`)
+                }
+            }
         }
 
         let n = await w.r({nib:'dir'},{name:this.S.name,DL})

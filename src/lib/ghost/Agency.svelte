@@ -145,6 +145,9 @@
     // apply any A%elvis,Aw schemes to a set of A/w*
     // returns which of these w now have %elvis to handle, routed from A
     async elvised_A_w(A,wN:TheN) {
+        if (A.o({w:1}).length != 1) {
+            console.warn(`strange number of A:${A.sc.A}/*%w:`,A.o({w:1}))
+        }
         let yes = [] as TheN
         let find_w = async (e) => {
             let [wname,...more] = e.sc.Aw.split("/")
@@ -466,7 +469,7 @@
             if (c.path_now != c.path_was) {
                 V.w && console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
                 // < also eg w:radiostock/%waits:A:Directory should there and back
-                this.i_elvis(w,'putjourney',{Aw:'Directory',from:w.sc.w,reply:A})
+                this.i_elvis(w,'putjourney',{Aw:'Directory',reply:w})
             }
 
             await j.r({gaveup:1},{})
@@ -538,11 +541,11 @@
             async do(fn) {
                 // worker culture
                 let N = this.o()
+                let drop = []
                 for (let req of N) {
                     // pre-run prep
                     if (req.sc.finished) {
-                        w.drop(req)
-                        grop(req,N)
+                        drop.push(req)
                         continue
                     }
                     // they forget their problems like w
@@ -552,6 +555,11 @@
                     // < hoist req/%aim to w somehow.
                     //   at the end of all %requesty_pirating
                 }
+                for (let req of drop) {
+                    grop(req,N)
+                    w.drop(req)
+                }
+                
                 // < being req should be noted in the stack
                 let categories = []
                 for (let req of N) {

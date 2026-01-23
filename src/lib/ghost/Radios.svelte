@@ -691,7 +691,8 @@
                 if (we.sc.is_nowPlaying) continue
                 let re = we.sc.re
                 let same_re = re && A.o({record:1,enid:re.sc.enid})[0]
-                if (same_re && same_re != re) throw "how'd re"
+                if (re && A.o({record:1,enid:re.sc.enid}).length > 1) console.warn(`multiple %record,enid=${re.sc.enid}`)
+                if (re && same_re && same_re != re) console.warn(`other existent %record,enid=${re.sc.enid}`)
                 if (!same_re || !re) {
                     // the A:audio/%record has been whittled
                     if (re) {
@@ -733,7 +734,7 @@
         for (let we of rw.o({wear:1,cullable_since:1,re:1})) {
             let re = we.sc.re
             let same_re = A.o({record:1,enid:re.sc.enid})[0]
-            if (same_re && same_re != re) throw "how'd cullable re"
+            // if (same_re && same_re != re) throw "how'd cullable re"
             V.tx && console.log(`dropping worn out record: ${re.sc.enid}`)
             A.drop(re)
             // keep a tiny trace:

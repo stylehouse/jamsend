@@ -7,6 +7,7 @@
     import type { Modusmem } from "./Modus.svelte.ts";
     import Modus from "./Modus.svelte";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
+    import type { ThingAction } from "$lib/data/Things.svelte.ts";
     
     let {M,mem,w,heist}:{M:Modus,mem:Modusmem,heist:TheC} = $props()
     // we give one C to Stuffing
@@ -18,19 +19,26 @@
     // and its /* split into:
     let collections:TheN = $state()
     let places:TheN = $state()
+
     let share_act:ThingAction = $state()
+
+    let blob_monitoring:TheC = $state()
+
     $effect(() => {
         if (req?.version) {
             setTimeout(() => {
-                // pick places
+                // nab form
                 pls = req.o({places:1})[0]
                 let ok = pls && !pls.sc.finished
                 places = ok && pls.o({place:1}) || null
                 collections = places && grop(pl => pl.sc.collection, places)
 
-
-                // responses
+                // needs to open a share
                 share_act = req.o1({action:1,needs:"a share"})[0]
+
+                // progress heist
+                // < kBps styling nice
+                blob_monitoring = req.o({blob_monitoring:1})[0]
             },1)
         }
     })
@@ -74,7 +82,14 @@
 <Scrollability maxHeight="60vh" class="content-area">
     {#snippet content()}
         <div>
-        {#if share_act}
+        {#if blob_monitoring}
+            {@const {progress_tally,bit,progress_pct,avg_kBps} = blob_monitoring.sc}
+            <span class="arow">
+                <span class="metric">{progress_tally}</span>
+                <!-- <b>{bit}</b> -->
+                <span class="metric">{progress_pct}%</span>
+                <!-- <span class="metric">{avg_kBps}kB/s</span> -->
+            </span>
         {/if}
         
         {#if share_act}
@@ -135,7 +150,11 @@
                             <!-- directories have many items inside, you nab them all -->
                             <span class="arow" style="margin-left:0.5em;">
                                 <details>
-                                    <summary> {pl.sc.many} items: </summary>
+                                    <summary> 
+                                        <span class="metric">
+                                            x{pl.sc.many}
+                                        </span>
+                                         items: </summary>
                                     {#each pl.o({place:1}).slice(0,300) as ipl (ipl.sc.uri)}
                                         <span class="arow">
                                             {@render item(ipl)}
@@ -189,6 +208,10 @@
         filter:invert(1);
         transform-origin:right;
         margin:0.2em;
+    }
+    .metric {
+        color: rgb(156, 140, 217);
+        font-size: 1.4em;
     }
     button {
         padding:0.3em;

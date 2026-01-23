@@ -291,12 +291,12 @@
     // in unemit:i_pull, find its heist
     async o_heist_blob(A,w,uri) {
         for (let req of w.o({requesty_pirating: 1})) {
-            for (let heist of req.o({heist: 1})) {
-                for (let blob of heist.o({blob: 1})) {
+            for (let he of req.o({heist: 1})) {
+                for (let blob of he.o({blob: 1})) {
                     if (blob.sc.uri == uri) {
                         let local = req.o({local:1})[0]
                         let remote = req.o({remote:1})[0]
-                        return {req,heist,blob,local,remote}
+                        return {req,he,blob,local,remote}
                     }
                 }
             }
@@ -375,7 +375,7 @@
     // speed control via continuous acking|reiterating the emit:o_pull
     // runs in time to initiate the heist/blob
     //  and our of time in every unemit:i_pull we download
-    async blob_could_emit_o_pull(blob) {
+    async blob_could_emit_o_pull(req,he,blob) {
         // keep telling them we want more
         // < manual speed control, shared equally amongst Piers
         const PIPELINE_BYTES = this.calculate_pipeline(blob)
@@ -383,7 +383,7 @@
         const buffer_headroom = (blob.sc.pulled_size || 0) - blob.sc.received_size
         const buffer_low = buffer_headroom < (PIPELINE_BYTES * PIPELINE_LOW_THRESHOLD)
         
-        if (!recently_asked) {
+        if (buffer_low) {
             // put this another PIPELINE_BYTES ahead so we don't do this too often?
             let pulled_size = blob.sc.received_size + PIPELINE_BYTES
             await this.PF.emit('o_pull', {
@@ -392,8 +392,19 @@
                 pulled_size,
             })
             blob.sc.pulled_size = pulled_size
-            console.log(`up pulled to: ${pulled_size}`)
         }
+        await this.blob_monitoring(req,he,blob)
+    },
+    // 
+    async blob_monitoring(req,he,blob) {
+        // comes off any unemit:i_pull (downloads), so throttle UI hassling to 1/s
+        if (await req.i_wasLast('did_blob_monitoring') < 2) return
+        await req.i_wasLast('did_blob_monitoring',true)
+        
+        await req.r({blob_monitoring:1},
+            sex(sex({},he.sc,'progress_tally'),
+                blob.sc,'bit,progress_pct,avg_kBps')
+        )
     },
 //#endregion
 
@@ -416,15 +427,20 @@
         if (blobs.some(bl => !bl.sc.blob)) throw "*!%blob"
 
         if (he.sc.heisted) return
-        // advance he/*%blob with he%progress=i
-        he.sc.progress ||= 0
-        let now = blobs[he.sc.progress]
+        // progress he/*%blob with he%upto_index=i
+        he.sc.upto_index ||= 0
+        let tally = () => {
+            he.sc.progress_tally = `${he.sc.upto_index}/${blobs.length}`
+        }
+        let now = blobs[he.sc.upto_index]
+        tally()
         if (now.sc.heisted) {
-            he.sc.progress += 1
-            now = blobs[he.sc.progress]
+            he.sc.upto_index += 1
+            now = blobs[he.sc.upto_index]
+            tally()
             if (!now) {
-                // < weirdly oscillate here being satisfied we've ended.
-                he.sc.progress -= 1
+                // < not weirdly oscillate here being satisfied we've ended.
+                he.sc.upto_index -= 1
                 he.sc.heisted = 1
                 req.sc.cv = 7
                 await req.r({solved: 1})
@@ -447,17 +463,8 @@
         // blob.sc.seek ||= 0
         blob.sc.received_size ||= 0
 
-        await this.blob_could_emit_o_pull(blob)
+        await this.blob_could_emit_o_pull(req,he,blob)
         // and feed the UI something:
-        
-
-        if (blob.sc.progress_pct) {
-            req.i({see:1,
-                downloading:1,
-                blobbit:blob.sc.bit,
-                progress:blob.sc.progress_pct,
-            })
-        }
     },
 
     
@@ -573,7 +580,7 @@
         // we asked for it in cytotermi_heist_engages_remote()
         let found = await this.o_heist_blob(A,w,uri)
         if (!found) return console.warn(`Received i_pull for unknown uri: ${uri}`,data)
-        let {req,heist,blob,local,remote} = found
+        let {req,he,blob,local,remote} = found
         if (error) {
             console.error(`❌ Download error for ${blob.sc.bit}: ${error}`)
             blob.sc.download_error = error
@@ -626,7 +633,7 @@
                 (blob.sc.received_size / blob.sc.total_size) * 100
             )
         }
-        await this.blob_could_emit_o_pull(blob)
+        await this.blob_could_emit_o_pull(req,he,blob)
     },
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
@@ -985,11 +992,12 @@
     async rapiracy(A,w) {
         let i_push_reqy = await this.requesty_serial(w,'i_push')
         let o_push_reqy = await this.requesty_serial(w,'o_push')
+        let o_descripted_reqy = await this.requesty_serial(w,'o_descripted')
         let io = await this.r({io:'radiopiracy'},{
             o_descripted: async (pub,uri) => {
                 w = this.refresh_C([A,w])
-                V.descripted && console.log(`o_descripted io'd`)
                 let o_descripted_reqy = await this.requesty_serial(w,'o_descripted')
+                V.descripted && console.log(`o_descripted io'd`)
                 let rd = await o_descripted_reqy.i({uri,pub})
                 this.i_elvis(w,'noop',{handle:rd})
                 return rd
@@ -1060,9 +1068,7 @@
         await o_push_reqy.do(async (req) => {
             await this.rapiracy_o_push_reqy(A,w,req)
         })
-
         // respond to all requests for visions of the directory tree
-        let o_descripted_reqy = await this.requesty_serial(w,'o_descripted')
         await o_descripted_reqy.do(async (req) => {
             await this.rapiracy_descripted(A,w,io,req)
         })
