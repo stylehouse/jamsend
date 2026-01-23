@@ -150,7 +150,7 @@
         // process the above
         
         await reqy.do(async (req) => {
-            let give_up = this.cytotermi_pirating_plan(A,w,req,raterm)
+            let give_up = await this.cytotermi_pirating_plan(A,w,req,raterm)
             if (give_up) return
 
 
