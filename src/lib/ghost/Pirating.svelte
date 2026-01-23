@@ -486,6 +486,19 @@
 
         // hold a request for this uri, last activity timeout
         serve.sc.last_activity = now_in_seconds()
+        if (pulled_size < serve.sc.pulled_size) {
+            // < get the server to repeat itself when we heist the same thing twice?
+            //   or make o_pull|i_pull session identiveness uri and a client number...
+            //  client otherwise would have to either:
+            //   - reconnect Pier, resetting A** including serve request queue
+            //      which isnt hard
+            //   - wait for it to time out
+            // < make rapiracy server objects time out!
+            console.warn("pulled_size decreased, starting over...")
+            serve.sc.pushed_size = 0
+            // no more of the old reader:
+            serve.sc.reader = null
+        }
         // how far ahead they're telling us to send
         serve.sc.pulled_size = pulled_size
         // sum buffer.byteLength put through emit:i_pull
@@ -543,6 +556,10 @@
                 try {
                     let chunkSize = 369_936
                     for await (const buffer of reader.iterate(seek,chunkSize)) {
+                        if (serve.sc.reader != reader) {
+                            console.warn(`reader retired`)
+                            return
+                        }
                         if (used_seq) throw `need to mutex reader`
                         used_seq = true
                         

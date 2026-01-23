@@ -450,7 +450,7 @@
         {#if jamming}
             <div class='uiing'>
                 <div class='controls'>
-                    <button onclick={() => YES()}>yeah</button>
+                    <button onclick={() => YES()} disabled={heist && true}>yeah</button>
                     {#if title}<span class='np'>{artist} - {title}</span>{/if}
                     <span>
                         <button onclick={() => esc()} class='small'>etc</button>
