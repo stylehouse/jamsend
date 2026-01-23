@@ -369,10 +369,15 @@
     let mem = M.imem("heisting")
     let uimem = mem.further('UI')
 
-    let NO = () => {
+    
+    node_edger.deheist = () => {
         if (heist) heist.c.abandon_piracy()
+    }
+    let NO = () => {
+        node_edger.deheist()
         M.turn_knob()
     }
+
     
     // persist your esc-ness
     let quit_fullscreen = $state(uimem.get('quit_fullscreen') ?? false)

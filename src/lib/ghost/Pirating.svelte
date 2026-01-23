@@ -192,15 +192,19 @@
                     req.sc.cv = 5
                 }
             }
+
+
             if (req.sc.cv < 7) {
                 // waits for progress
+                if (req.oa({solved:1})) {
+                    req.sc.cv = 7
+                }
             }
             else {
                 if (req.sc.cv < 8) {
                     if (!req.oa({solved:1})) throw "!ready"
                     // is done..?
-                    // req.sc.finished = "is done"
-
+                    req.sc.finished = "is done"
                 }
             }
 
@@ -278,12 +282,17 @@
         con.i(req)
         con.c.abandon_piracy = () => {
             M.node_edger.enheist(null)
-            req.sc.finished = "abandoned by UI"
+            req.sc.finished ||= "abandoned by UI"
             // drop() incase we get another %elvis:nab_this
             //  before the %finished->drop() comes around
             w.drop(req)
         }
         M.node_edger.enheist(con)
+
+        // and talk to UI:Pirate when it arrives
+        req.c.set_checkbox_defaults_setter = (set_fn) => {
+            req.c.set_checkbox_defaults = set_fn
+        }
     },
 
 
@@ -396,15 +405,12 @@
         await this.blob_monitoring(req,he,blob)
     },
     // 
-    async blob_monitoring(req,he,blob) {
+    async blob_monitoring(req,he,blob,definitely=false) {
         // comes off any unemit:i_pull (downloads), so throttle UI hassling to 1/s
-        if (await req.i_wasLast('did_blob_monitoring') < 2) return
+        if (!definitely && await req.i_wasLast('did_blob_monitoring') < 2) return
         await req.i_wasLast('did_blob_monitoring',true)
         
-        await req.r({blob_monitoring:1},
-            sex(sex({},he.sc,'progress_tally'),
-                blob.sc,'bit,progress_pct,avg_kBps')
-        )
+        await req.r({blob_monitoring:1},sex({},blob.sc,'bit,progress_pct,avg_kBps'))
     },
 //#endregion
 
@@ -429,20 +435,21 @@
         if (he.sc.heisted) return
         // progress he/*%blob with he%upto_index=i
         he.sc.upto_index ||= 0
-        let tally = () => {
+        let tally = async () => {
             he.sc.progress_tally = `${he.sc.upto_index}/${blobs.length}`
         }
         let now = blobs[he.sc.upto_index]
-        tally()
+        await this.blob_monitoring(req,he,now,true)
+        if (!now) throw `!now`
+        await tally()
         if (now.sc.heisted) {
             he.sc.upto_index += 1
             now = blobs[he.sc.upto_index]
-            tally()
+            await tally()
             if (!now) {
                 // < not weirdly oscillate here being satisfied we've ended.
                 he.sc.upto_index -= 1
                 he.sc.heisted = 1
-                req.sc.cv = 7
                 await req.r({solved: 1})
                 console.log(`✅ Heist complete!`)
                 return
@@ -464,7 +471,6 @@
         blob.sc.received_size ||= 0
 
         await this.blob_could_emit_o_pull(req,he,blob)
-        // and feed the UI something:
     },
 
     
@@ -781,32 +787,47 @@
         he.empty()
         let path = []
 
-        // these are randomly on a pl%blob
+        // some checkboxes are randomly on a pl%blob
         // note we put %place first because its guaranteed to be indexed
         //  the %disbelieve_directories=1 gets set after it is input
-        let disbelieve_directories = pls.o1({place:1,disbelieve_directories:1})[0]
-        let only_categories = pls.o1({place:1,only_categories:1})[0]
+        let disbelieve_directories = pls.o1({place:1,disbelieve_directories:1})[0] && true
+        let disbelieve_categories = pls.sc.disbelieve_categories
+        // mutates in here in a non default setting way
+        let soft_disbelieve_directories = disbelieve_directories
+        let soft_disbelieve_categories = disbelieve_categories
+        // note... pls.o1({place:1,only_categories:1})
+        //   will match only_categories=false, yet give you that place=1
+        //   and... pls.o1({only_categories:1,place:1})
+        //     will not find anything as %only_categories wasn't around
+        //      when .i(%place) built indexes of pl
+        //      and .o() uses indexes for the first column.
+        //      
+        let only_categories = pls.o1({place:1,only_categories:1},'only_categories')[0] && true
         if (only_categories) {
             "place in those categories but not directories"
             // outweighs the "don't use categories" checkbox
-            pls.sc.disbelieve_categories = false
-            disbelieve_directories = true
+            soft_disbelieve_categories = false
+            soft_disbelieve_directories = true
         }
         else if (disbelieve_directories) {
             "collect random tracks in one place"
-            pls.sc.disbelieve_categories = true
+            soft_disbelieve_categories = true
         }
         
+        let lets_rename = null
         for (let pl of pls.o({place:1})) {
+            if (pl.sc.lets_rename != null) {
+                lets_rename = pl.sc.lets_rename
+            }
             // < rename to collategories. collections aka categories
-            if (pl.sc.collection && !pls.sc.disbelieve_categories) {
+            if (pl.sc.collection && !soft_disbelieve_categories) {
                 pl.sc.use_collection ??= true // leaves false
                 if (pl.sc.use_collection) {
                     // is /^- \w+/
                     path.push(pl.sc.bit)
                 }
             }
-            else if (pl.sc.directory && !disbelieve_directories) {
+            else if (pl.sc.directory && !soft_disbelieve_directories) {
                 if (!pl.sc.disbelieve_directory) {
                     path.push(pl.sc.bit)
                 }
@@ -831,6 +852,14 @@
 
         he.sc.destination_directories = path.join('/')
         
+        let defaults = {
+            disbelieve_categories,
+            disbelieve_directories,
+            lets_rename,
+            only_categories,
+        }
+        // console.log(`Toggly heist defaults after:`,defaults)
+        req.c.set_checkbox_defaults(defaults)
     },
 
 

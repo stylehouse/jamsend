@@ -19,6 +19,7 @@
     //  so we have an extra container layer here
     let req = $derived(heist.o()[0])
     let show_req = $state()
+    let interesting_title:string = $state()
 
     let pls // the req/%places
     // and its /* split into:
@@ -28,11 +29,13 @@
     let share_act:ThingAction = $state()
     
     type TheC = Object
-    let interesting_title:string = $state()
+    let progress_tally:TheC = $state()
     let blob_monitoring:TheC = $state()
 
     $effect(() => {
         if (req?.version) {
+            // this happens whenever we A:visual/**
+            //  regularly attending to the req, in A time
             setTimeout(() => {
                 // as soon as you get interested in one, can't rely on np for titling
                 let re = req.sc.re
@@ -52,6 +55,20 @@
 
                 // progress heist
                 // < kBps styling nice
+                let he = req.o({heist:1})[0]
+                progress_tally = he ? he.sc.progress_tally : ''
+                if (he?.sc.heisted) {
+                    if (!req.sc.finished) {
+                        console.log(`heist almost up...`)
+                    }
+                    else {
+                        console.log(`heist is fading into the past`)
+                        setTimeout(() => {
+                            M.node_edger.deheist()
+                        },2000)
+                    }
+                }
+
                 blob_monitoring = req.o({blob_monitoring:1})[0]
             },1)
         }
@@ -61,12 +78,32 @@
         M.i_elvis(w, "nab_specifically", { req,pl,pls });
 
     }
+    function togglific_default(pl,k,checked) {
+        // console.log(`Toggly heist default: ${k} -> ${checked}`)
+        pl.sc[k] = checked
+    }
     function togglific(pl,k,e) {
         let is = e.target.checked
         // console.log(`togglific ${keyser(pl)} -> ${is}`)
+        // console.log(`Toggly heist is: ${k} -> ${is}`)
         pl.sc[k] = is
     }
+    // set default checkbox states, some persist forever as user prefs
+    let checkbox_defaults = mem.get('checkbox_defaults') || {}
+    // console.log(`Toggly heist defaults:`,checkbox_defaults)
+    // a weird interface:
+    req.c.set_checkbox_defaults_setter((c) => {
+        // update defaults when %places -> %heist
+        checkbox_defaults = c
+        mem.set('checkbox_defaults',c)
+    })
+    function togfault(k,def) {
+        def = checkbox_defaults[k] ?? def
+        return def
+    }
     let show_req_Stuffing = _C({})
+
+
     
 </script>
 
@@ -76,6 +113,7 @@
 {/snippet}
 {#snippet toggler(pl,k,checked=false,given_id='')}
     {@const id = given_id || `tog-${pl.sc.uri}-${k}`}
+    {@const defaults_to_pl = togglific_default(pl,k,checked)}
     <input type="checkbox"
         onchange={(e) => togglific(pl,k,e)}
         {id} {checked} /> 
@@ -146,7 +184,8 @@
                         {/each}
                     </span>
                     <span class="arow">
-                        {@render toggler(pls,'disbelieve_categories',false,'disbelieve')}
+                        {@render toggler(pls,'disbelieve_categories',
+                                    togfault('disbelieve_categories',false),'disbelieve')}
                         <label for='disbelieve'>disbelieve categories</label>
                     </span>
                 </span>
@@ -190,7 +229,8 @@
                         {#if pl.sc.blob}
                             <!-- the one single file -->
                             <span class="arow">
-                                {@render toggler(pl,'disbelieve_directories',false)}
+                                {@render toggler(pl,'disbelieve_directories',
+                                           togfault('disbelieve_directories',false))}
                                 <label for={`tog-${pl.sc.uri}-disbelieve_directories`}>
                                     disbelieve directories altogether
                                 </label>
@@ -198,14 +238,16 @@
                             </span>
                             {#if pl.sc.suggested_rename}
                                 <span class="arow">
-                                    {@render toggler(pl,'lets_rename',false)}
+                                    {@render toggler(pl,'lets_rename',
+                                               togfault('lets_rename',false))}
                                     <label for={`tog-${pl.sc.uri}-lets_rename`}>
                                         rename to: <b>{pl.sc.suggested_rename}</b>
                                     </label>
                                 </span>
                             {/if}
                             <span class="arow">
-                                {@render toggler(pl,'only_categories',false)}
+                                {@render toggler(pl,'only_categories',
+                                           togfault('only_categories',false))}
                                 <label for={`tog-${pl.sc.uri}-only_categories`}>
                                     place in those categories but not directories
                                 </label>
@@ -253,9 +295,11 @@
     }
     button {
         padding:0.3em;
-        transform:scale(2.2);
-        transform-origin:left;
-        
+        transform:scale(2.2) rotate(9deg);
+        transform-origin:bottom;
+    }
+    .bitsie > button {
+        float: right;
     }
     .slash {
         padding: 0.3em;
