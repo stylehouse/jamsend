@@ -137,13 +137,14 @@
                 console.log(`dup pirating re ${enid}`)
                 continue
             }
-            reqy.i({enid})
+            await reqy.i({enid})
         }
         for (let e of this.o_elvis(w,'nab_specifically')) {
             let {req,pl,pls} = e.sc
             let wp = await req.r({wants_place:1})
             wp.empty().i(pl)
         }
+        await this.receive_resumable_heists(A,w)
 
         
 
@@ -167,7 +168,7 @@
                 }
                 else {
                     // awaiting input
-                    console.log(`🏴‍☠️ awaits hierarchy editing ${req.sc.re.sc.title}`)
+                    console.log(`🏴‍☠️ awaits hierarchy editing`)
                     w.i({see:1,PiratingTime:1})
                 }
             }
@@ -178,9 +179,12 @@
                     if (!req.oa({wants_place:1})) throw "!ready"
                     if (req.oa({heist:1})) throw "already"
                     // input -> downloader
-                    console.log(`🏴‍☠️ cytotermi_pirating_selections ${req.sc.re.sc.title}`)
+                    console.log(`🏴‍☠️ cytotermi_pirating_selections`)
                     await this.cytotermi_pirating_selections(A,w,req)
-                    if (!req.oa({heist:1})) throw "!just"
+                    let he = req.o({heist:1})[0]
+                    if (!he) throw "!just"
+
+                    await this.resumable_heist(he)
                     req.sc.cv = 4
                 }
                 if (req.sc.cv < 6) {
@@ -204,11 +208,12 @@
                 if (req.sc.cv < 8) {
                     if (!req.oa({solved:1})) throw "!ready"
                     // is done..?
+
                     req.sc.finished = "is done"
                 }
             }
 
-            console.log(`🏴‍☠️ questing @${req.sc.cv} ${req.sc.re.sc.title}`)
+            console.log(`🏴‍☠️ questing @${req.sc.cv}`)
 
             
         })
@@ -256,22 +261,25 @@
         }
         // the radio receiver
         let enid = req.sc.enid
-        let Aaudio = raterm.up
-        if (Aaudio.sc.A != 'audio') throw "!A:audio"
+        if (enid) {
+            // don't always need to have the %record, see resumable_heist()
+            let Aaudio = raterm.up
+            if (Aaudio.sc.A != 'audio') throw "!A:audio"
 
-        let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
-        if (!re) {
-            lost('record')
-            return true
-        }
+            let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
+            if (!re) {
+                lost('record')
+                return true
+            }
 
-        let uri = re.sc.uri
-        if (!re.sc.record || !uri) throw "what %record"
-        let de = req.sc.de ||= w.o({uri,descripted:1})[0]
-        if (!de) {
-            // < could ask for it again
-            lost('descripted')
-            return true
+            let uri = re.sc.uri
+            if (!re.sc.record || !uri) throw "what %record"
+            let de = req.sc.de ||= w.o({uri,descripted:1})[0]
+            if (!de) {
+                // < could ask for it again
+                lost('descripted')
+                return true
+            }
         }
 
         // it's likely to work now
@@ -287,6 +295,7 @@
             //  before the %finished->drop() comes around
             w.drop(req)
         }
+        // < does it work not continuously handing it over like this?
         M.node_edger.enheist(con)
 
         // and talk to UI:Pirate when it arrives
@@ -412,6 +421,86 @@
         
         await req.r({blob_monitoring:1},sex({},blob.sc,'bit,progress_pct,avg_kBps'))
     },
+
+
+//#endregion
+//#region step 5.7 resume
+    // come from UI:Cytoscape ModusMem
+    //  via elvis so we receive them in time
+    async receive_resumable_heists(A,w) {
+        for (let e of this.o_elvis(w,'resume_heist')) {
+            let reqy = await this.requesty_serial(w,'pirating')
+            let req = await reqy.i({resumed:1})
+            let he = req.i(tex({heist:1,resumed:1},e.sc.heice))
+            for (let fasc of e.sc.heice.N) {
+                he.i({blob:1,...fasc})
+            }
+            console.log(`🏴‍☠️ received resumable heist`)
+            req.sc.cv = 4
+        }
+    },
+    // when you have one
+    async resumable_heist(he) {
+        if (!he) return M.node_edger.set_resumable_heist(null)
+        if (he.sc.resumed) return
+        let heice = sex({},he.sc,'upto_index,destination_directories,total_size')
+        heice.N = he.o({blob:1}).map(blob => sex({},blob.sc,'uri,bit'))
+        M.node_edger.set_resumable_heist(heice)
+    },
+    // AI
+    async check_existing_downloads(he,local) {
+        if (!local.sc.ready) return
+        
+        let path = he.sc.destination_directories.length 
+            ? he.sc.destination_directories.split('/') 
+            : []
+        
+        // Navigate to destination
+        let topname = this.Se.c.T.sc.D.sc.name
+        let Se = this.Se
+        let D = Se.c.T.sc.D
+        
+        for (let pathbit of path) {
+            let nextD = D.o({Tree:1, name:pathbit})[0]
+            if (!nextD) {
+                // Directory doesn't exist yet, nothing to check
+                return
+            }
+            D = nextD
+        }
+        
+        let DL = this.D_to_DL(D)
+        
+        // Check each blob in the heist
+        for (let blob of he.o({blob:1})) {
+            let name = blob.sc.bit
+            let fileD = D.o({Tree:1, name})[0]
+            
+            if (!fileD) {
+                // File doesn't exist, fresh download
+                continue
+            }
+            
+            let size = fileD.c.T.sc.n.sc.FL?.size
+            
+            if (size == null) {
+                // Can't determine size, skip
+                continue
+            }
+            
+            
+            if (size && size == blob.sc.total_size) {
+                // Complete download already exists!
+                console.log(`✅ File already complete: ${name}`)
+                blob.sc.heisted = true
+                blob.sc.received_size = size
+            }
+            else {
+                console.warn(`🧹 Cleaning up partial blob: ${name}`)
+                await this.tidy_crswap(D, name)
+            }
+        }
+    },
 //#endregion
 
 
@@ -454,6 +543,7 @@
                 console.log(`✅ Heist complete!`)
                 return
             }
+            await this.resumable_heist(he)
         }
         if (!now) throw `!now`
         
@@ -661,6 +751,7 @@
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
     async rapiracy_i_push_reqy(A,w,req) {
+        // this isn't req%requesty_pirating
         let local = req.sc.local
         // if code has reloaded this.constructor != DirectoryModus when it is
         if (this.constructor.name != 'DirectoryModus') throw `not DirectoryModus`
@@ -677,11 +768,19 @@
             if (now.sc.writer) throw `already now%writer`
             now.sc.writer = await DL.getWriter(now.sc.bit)
         }
-        // < also check it's not full of stuff!?
+        // < show user what is there if not simply resuming a heist
+        //    or using a big-pile-up hierarchy
+        // < we should check when we know a blob%total_size
+        //   since we may have lost the heist...
+        //    and music gatherers might make feedback
         local.sc.ready = 1
+        local.c.check_resuming_heist = async (he) => {
+            // Check for existing/partial downloads before starting
+            await this.check_existing_downloads(he,local)
+            he.sc.resumed_is_go = true
+        }
     },
 //#endregion
-
 
 
 
@@ -696,7 +795,7 @@
     async cytotermi_pirating_heist(A,w,req) {
         // turns off this UI, tidies
         let pls = req.o({places:1})[0]
-        pls.sc.finished = 1
+        if (pls) pls.sc.finished = 1
         // req.drop(req.o({places:1})[0])
         // req.drop(req.o({wants_place:1})[0])
 
@@ -714,6 +813,7 @@
             eph:1,
             destdirs: he.sc.destination_directories,
         })
+        
         // < GOING?
         local.sc.w = w
         if (!radiopiracy) {
@@ -722,16 +822,18 @@
         await req.r({needs:"a share"},{})
         // local rapiracy has a working share!
 
-
-
         // start with making the directory it's going to
         // we get e:noop back when it exists
         local.sc.req ||= await radiopiracy.sc.i_push(local)
         if (!local.sc.ready) {
             return await req.i({see:1,needs:"local ready"})
         }
-        // local directory is ready! 
+        // local directory is ready!
 
+        if (he.sc.resumed && !he.sc.resumed_is_go) {
+            // also bother the local backend about existing downloads
+            await local.c.check_resuming_heist(he)
+        }
 
 
         // now bother the remote about it

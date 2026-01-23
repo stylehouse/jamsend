@@ -370,14 +370,6 @@
     let uimem = mem.further('UI')
 
     
-    node_edger.deheist = () => {
-        if (heist) heist.c.abandon_piracy()
-    }
-    let NO = () => {
-        node_edger.deheist()
-        M.turn_knob()
-    }
-
     
     // persist your esc-ness
     let quit_fullscreen = $state(uimem.get('quit_fullscreen') ?? false)
@@ -405,6 +397,23 @@
     }
     node_edger.enheist = (hi) => {
         heist = hi
+    }
+    node_edger.deheist = () => {
+        node_edger.set_resumable_heist(null)
+        if (heist) heist.c.abandon_piracy()
+    }
+    let NO = () => {
+        node_edger.deheist()
+        M.turn_knob()
+    }
+
+    // savable
+    onMount(() => {
+        let heice = mem.get('resumable_heist')
+        heice && M.i_elvis(w, 'resume_heist', {heice})
+    })
+    node_edger.set_resumable_heist = (heice) => {
+        mem.set('resumable_heist',heice)
     }
 
 

@@ -571,9 +571,12 @@
             // tidy up zero-length radiostocks
             //  caused by chrome crashing while writing
             //   it journals to this other file then moves into place
-            //    like preparing a new branch in git then just changing a link to it
+            //    like preparing a new git branch then just changing a link to it
             async tidy_crswap(sD,name) {
                 const DL = this.D_to_DL(sD);
+                // delete any .crswap that ends like this.
+                //  it doesn't have to be there though, we'll still delete name
+                // < is there junk prepended? why the endsWith?
                 let crswapFiles = sD.o({Tree: 1, name: 1})
                     .filter((D: TheD) => D.sc.name.endsWith(name+'.crswap'))
                 for (let oD of crswapFiles) {

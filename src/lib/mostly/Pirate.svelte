@@ -39,8 +39,7 @@
             setTimeout(() => {
                 // as soon as you get interested in one, can't rely on np for titling
                 let re = req.sc.re
-                if (!re) throw "always have re"
-                interesting_title = re.sc.title
+                interesting_title = re ? re.sc.title : "resumed"
                 // you can Stuffing the reqy
                 show_req = show_req_Stuffing.sc.show_req
 
