@@ -369,13 +369,9 @@
     let mem = M.imem("heisting")
     let uimem = mem.further('UI')
 
-    let or_not = () => {
-        if (heist) {
-            heist.c.abandon_piracy()
-        }
-        else {
-            M.turn_knob()
-        }
+    let NO = () => {
+        if (heist) heist.c.abandon_piracy()
+        M.turn_knob()
     }
     
     // persist your esc-ness
@@ -393,9 +389,10 @@
     }
 
     let heist = $state()
-    let nab = () => {
+    let YES = () => {
         if (enid) {
             M.i_elvis(w, "nab_this", {enid})
+            // < do we need this nudge
             setTimeout(() => {
                 M.i_elvis(w, "nab_this", {enid})
             },133)
@@ -424,6 +421,7 @@
 
 
     function selection_changed() {
+        return
         let eles = cy.$("node:selected");
         if (!eles[0]) {
             heist = null
@@ -447,11 +445,11 @@
         {#if jamming}
             <div class='uiing'>
                 <div class='controls'>
-                    <button onclick={() => nab()}>nab</button>
+                    <button onclick={() => YES()}>yeah</button>
                     {#if title}<span class='np'>{artist} - {title}</span>{/if}
                     <span>
-                        <button onclick={() => or_not()} class='big'>or not</button>
                         <button onclick={() => esc()} class='small'>etc</button>
+                        <button onclick={() => NO()} class='big'>nah</button>
                     </span>
                 </div>
                 {#if heist}
@@ -476,6 +474,7 @@
     }
     button.small {
         font-size:0.75em;
+        opacity:0.05;
     }
     .contain {
         position:relative;
@@ -496,6 +495,7 @@
         border-radius:2em; */
     .graph {
         width: 100%;
+        top:6%;
         height: 94%;
         min-height: 50em;
         min-width: 40em;
@@ -505,7 +505,7 @@
     .uiing {
         width: 100%;
         position:absolute;
-        bottom:0;
+        top:0;
         left:0;
         border-radius:3em;
         display: flex;

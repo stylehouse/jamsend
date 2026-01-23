@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, untrack } from "svelte";
     import { grop, throttle } from "$lib/Y";
-    import { keyser, objectify, TheC, type TheN } from "$lib/data/Stuff.svelte";
+    import { _C, type TheN } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
     import Scrollability from "$lib/p2p/ui/Scrollability.svelte";
     import type { Modusmem } from "./Modus.svelte.ts";
@@ -9,11 +9,16 @@
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
     import type { ThingAction } from "$lib/data/Things.svelte.ts";
     
+    // < elegance... this is not the he%heist but some meaningless container
+    //   containing req, facilitating pirating, which commissions he once actionable
+    // point is... this component is lifecycled with req
+    //  ie when user clicks NO, it vanishes
     let {M,mem,w,heist}:{M:Modus,mem:Modusmem,heist:TheC} = $props()
     // we give one C to Stuffing
     //  it usually takes many
     //  so we have an extra container layer here
     let req = $derived(heist.o()[0])
+    let show_req = $state()
 
     let pls // the req/%places
     // and its /* split into:
@@ -21,12 +26,21 @@
     let places:TheN = $state()
 
     let share_act:ThingAction = $state()
-
+    
+    type TheC = Object
+    let interesting_title:string = $state()
     let blob_monitoring:TheC = $state()
 
     $effect(() => {
         if (req?.version) {
             setTimeout(() => {
+                // as soon as you get interested in one, can't rely on np for titling
+                let re = req.sc.re
+                if (!re) throw "always have re"
+                interesting_title = re.sc.title
+                // you can Stuffing the reqy
+                show_req = show_req_Stuffing.sc.show_req
+
                 // nab form
                 pls = req.o({places:1})[0]
                 let ok = pls && !pls.sc.finished
@@ -52,6 +66,8 @@
         // console.log(`togglific ${keyser(pl)} -> ${is}`)
         pl.sc[k] = is
     }
+    let show_req_Stuffing = _C({})
+    
 </script>
 
 
@@ -82,15 +98,23 @@
 <Scrollability maxHeight="60vh" class="content-area">
     {#snippet content()}
         <div>
-        {#if blob_monitoring}
-            {@const {progress_tally,bit,progress_pct,avg_kBps} = blob_monitoring.sc}
-            <span class="arow">
+
+        <span class="arow theoneline">
+            heisting
+            {#if blob_monitoring}
+                {@const {progress_tally,bit,progress_pct,avg_kBps} = blob_monitoring.sc}
+                ...
                 <span class="metric">{progress_tally}</span>
                 <!-- <b>{bit}</b> -->
-                <span class="metric">{progress_pct}%</span>
+                <span class="metric small">{progress_pct}%</span>
                 <!-- <span class="metric">{avg_kBps}kB/s</span> -->
+            {:else}
+                <b>{interesting_title}</b>
+            {/if}
+            <span class="rightward">
+                {@render toggler(show_req_Stuffing,'show_req',false)}
             </span>
-        {/if}
+        </span>
         
         {#if share_act}
             <span class="collections inrow" title="
@@ -196,7 +220,9 @@
         {/if}
 
 
-        <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
+        {#if show_req}
+            <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
+        {/if}
         </div>
     {/snippet}
 </Scrollability>
@@ -209,9 +235,21 @@
         transform-origin:right;
         margin:0.2em;
     }
+    .theoneline {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+    .theoneline > .rightward {
+        float: right;
+        opacity:0.05;
+    }
     .metric {
         color: rgb(156, 140, 217);
         font-size: 1.4em;
+    }
+    .small {
+        font-size: 0.7em;
     }
     button {
         padding:0.3em;
@@ -228,7 +266,7 @@
         font-size:1.3em;
     }
     div {
-        padding: 2em;
+        padding: 1em;
         font-size:1.5em;
     }
     .collections {
