@@ -22,7 +22,7 @@
 
 
     let compat_mode = $state()
-    $effect(() => { compat_mode = !('showDirectoryPicker' in window) })
+    $effect(() => { compat_mode = F.directory_compat_mode = !('showDirectoryPicker' in window) })
 </script>
 
 <h2>The plot here.</h2>

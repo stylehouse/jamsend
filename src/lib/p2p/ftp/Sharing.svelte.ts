@@ -188,8 +188,10 @@ export class ShareeModus extends RadioModus {
 //#region PeeringSharing
 // the F
 export class PeeringSharing extends PeeringFeature {
+    // if their browser is refusing the directory api, fail
+    directory_compat_mode = $state()
     // a Things of super complicated directory handling, locating music, encoding it
-    //  produces S.modus/%io:radiostock
+    //  produces S.modus/%io:radiostock|radiopiracy
     shares: DirectoryShares
     modus_init() {
         return new SharesModus({S:this})

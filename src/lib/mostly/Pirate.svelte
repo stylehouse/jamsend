@@ -103,7 +103,7 @@
     let show_req_Stuffing = _C({})
 
 
-    
+    // < test M.F.directory_compat_mode
 </script>
 
 
@@ -135,7 +135,6 @@
 <Scrollability maxHeight="60vh" class="content-area">
     {#snippet content()}
         <div>
-
         <span class="arow theoneline">
             heisting
             {#if blob_monitoring}
@@ -162,6 +161,15 @@
                     Can you please
                     <ActionButtons actions={[share_act]} />
                 </span>
+            </span>
+        {/if}
+        {#if M.F.directory_compat_mode}
+            <span class="collections inrow" title="
+            Access to (some part of) your filesystem is required.
+            ">
+                <h3>BROWSER IS TOO OLD</h3>
+                <p>You don't seem to allow Directory writing access. Sorry.</p>
+                <p>Try with Chrome.</p>
             </span>
         {/if}
 
