@@ -410,6 +410,7 @@
     // savable
     onMount(() => {
         let heice = mem.get('resumable_heist')
+        node_edger.set_resumable_heist(null)
         heice && M.i_elvis(w, 'resume_heist', {heice})
     })
     node_edger.set_resumable_heist = (heice) => {

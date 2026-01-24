@@ -221,26 +221,6 @@
 
         // this.whittle_N(w.o({places:1}),2)
     },
-
-        //    become %collection, %blob
-
-        // a mutex set of radiobuttons moves up the %dirs
-        // %collections may or not be believed in
-        // if just the file, the artist name wants to be included
-        // offer to put artist/ on the front of anything if it doesn't seem to exist?
-
-        // < construct several concentric scopes of stuff we could heist
-        //    ie just a %uri,descripted to slurp into a local share
-        //   need an extra %uri,descripted for the blob we might've selected
-        //    if D.sc.de.sc.uri is longer than any we have
-        //   and if blob we should look at the %record?
-        //    and suggest renaming it Artist - Title.flac
-        // < it thunks over to UI so they might adjust their re-categorisation
-        //    as Thing:Heist? for durability...
-        //     they'd be thought-through by cytotermi_piracy
-        //   
-        // await w.r(pls)
-        // req.sc.finished = true
 //#endregion
 
 
@@ -431,21 +411,28 @@
         for (let e of this.o_elvis(w,'resume_heist')) {
             let reqy = await this.requesty_serial(w,'pirating')
             let req = await reqy.i({resumed:1})
-            let he = req.i(tex({heist:1,resumed:1},e.sc.heice))
+            let heice = e.sc.heice
+            let he = req.i(tex({heist:1,resumed:1},heice))
             for (let fasc of e.sc.heice.N) {
                 he.i({blob:1,...fasc})
             }
-            console.log(`🏴‍☠️ received resumable heist`)
+            if (he.sc.destination_directories == null
+                || !he.oa({blob:1})) {
+                throw `resume looks malformed, dropping`
+            }
+            console.log(`🏴‍☠️ received resumable heist`,heice)
             req.sc.cv = 4
         }
     },
     // when you have one
     async resumable_heist(he) {
-        if (!he) return M.node_edger.set_resumable_heist(null)
-        if (he.sc.resumed) return
-        let heice = sex({},he.sc,'upto_index,destination_directories,total_size')
-        heice.N = he.o({blob:1}).map(blob => sex({},blob.sc,'uri,bit'))
+        if (!he) return
+        M.node_edger.set_resumable_heist(null)
+        // if (he.sc.resumed) return
+        let heice = sex({},he.sc,'destination_directories')
+        heice.N = he.o({blob:1}).map(blob => sex({},blob.sc,'uri,bit,total_size'))
         M.node_edger.set_resumable_heist(heice)
+        console.log(`🏴‍☠️ stored resumable heist`,heice)
     },
     // AI
     async check_existing_downloads(he,local) {
@@ -458,8 +445,14 @@
         // Navigate to destination
         let topname = this.Se.c.T.sc.D.sc.name
         let Se = this.Se
+        // < use aim_to_open
+        //   keeping operations at one level where they can be tested
+        // < moreover make this a feature in the local backend,
+        //    so we don't have to have the heist to resume half downloaded stuff
+        //  < mark in-progress directories for easy detection
+        //   < notice small holes in music collections via ambient data matching
+        //    < notice big holes in music collections via graph and stats
         let D = Se.c.T.sc.D
-        
         for (let pathbit of path) {
             let nextD = D.o({Tree:1, name:pathbit})[0]
             if (!nextD) {
@@ -469,31 +462,32 @@
             D = nextD
         }
         
-        let DL = this.D_to_DL(D)
+        let ohno = (t) => console.warn(`resuming heist: ${t}, `
+            +`at ${he.sc.destination_directories}/${D.sc.name}`)
         
         // Check each blob in the heist
         for (let blob of he.o({blob:1})) {
             let name = blob.sc.bit
-            let fileD = D.o({Tree:1, name})[0]
+            let blobD = D.o({Tree:1, name})[0]
             
-            if (!fileD) {
-                // File doesn't exist, fresh download
-                continue
-            }
+            if (!blobD) continue
             
-            let size = fileD.c.T.sc.n.sc.FL?.size
-            
+            let size = blobD.c.T.sc.n.sc.FL?.size
             if (size == null) {
-                // Can't determine size, skip
+                ohno(`never happens? resuming FL.size==null`)
                 continue
             }
-            
+            if (blob.sc.total_size == null) {
+                ohno(`we have a blob but don't know the total_size of it`)
+            }
             
             if (size && size == blob.sc.total_size) {
                 // Complete download already exists!
                 console.log(`✅ File already complete: ${name}`)
                 blob.sc.heisted = true
                 blob.sc.received_size = size
+                // < simpler than setting he%upto_index?
+                he.drop(blob)
             }
             else {
                 console.warn(`🧹 Cleaning up partial blob: ${name}`)
@@ -550,7 +544,8 @@
         // ask for this
         await this.cytotermi_heist_now(A,w,req,he,local,remote,now)
 
-        console.log(`heist ${he.sc.progress}/${blobs.length} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
+        // < this 
+        console.log(`heist ${he.sc.progress_tally} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
     },
     // in time, keeps asking for more of now
     async cytotermi_heist_now(A,w,req,he,local,remote,blob) {
@@ -715,11 +710,28 @@
             return
         }
 
-        if (total_size != null) blob.sc.total_size = total_size
+        if (total_size != null) {
+            if (blob.sc.total_size && blob.sc.total_size != total_size) throw "~ i_pull total_size"
+            blob.sc.total_size = total_size
+            // now we know how big the file should be we can tell if we finished it last time
+            await this.resumable_heist(he)
+        }
 
         // they come in order (sanity)
         blob.sc.seq_expected ||= 0
-        if (seq != blob.sc.seq_expected) throw `seq expected ${blob.sc.seq}, got ${seq}, ${uri}`
+        if (seq != blob.sc.seq_expected) {
+            let msg = `seq expected ${blob.sc.seq_expected}, got ${seq}, ${uri}`
+            if (he.sc.resumed) {
+                msg = `resumed heist: ${msg}`
+                if (blob.sc.seq_expected < 10) {
+                    // the last of the last heist session's o_pull's i_pulls are still arriving
+                    console.log(`last heist session was quite recent, i_pulls are still arriving`)
+                    return
+                }
+            }
+            console.warn(msg)
+            return
+        }
         blob.sc.seq_expected += 1
 
         // now!
@@ -913,6 +925,8 @@
         let disbelieve_categories = pls.sc.disbelieve_categories
         // mutates in here in a non default setting way
         let soft_disbelieve_directories = disbelieve_directories
+            // only applies to the blob nab, nab directory does directories
+            && wp.sc.blob
         let soft_disbelieve_categories = disbelieve_categories
         // note... pls.o1({place:1,only_categories:1})
         //   will match only_categories=false, yet give you that place=1
