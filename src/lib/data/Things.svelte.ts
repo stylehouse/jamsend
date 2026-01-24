@@ -14,6 +14,8 @@ export type ThingAction = {
 
 // aka S
 export abstract class ThingIsms extends ActionsAndModus {
+    // this.up.storeName is our type of thing, eg share
+    up?: ThingsIsms
     // Thing must have a unique name
     //  and that's all that's required to create a new one
     name: string = $state()
@@ -35,7 +37,7 @@ export abstract class ThingIsms extends ActionsAndModus {
 
     
     stashed_mem(M:Modus|Object,name:string) {
-        let key = `Thing=${this.name}/${name}`
+        let key = `Thing:${this.up.storeName}=${this.name}/${name}`
         let mem = this.F.stashed_mem(M,key)
     }
 
@@ -80,6 +82,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
             opt.F = this.F
             thing = await this.thingsify(opt)
             this.things.set(opt.name, thing)
+            thing.up = this
         }
         return thing
     }

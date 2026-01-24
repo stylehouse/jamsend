@@ -11,11 +11,143 @@ import { DirectoryModus, type PeeringSharing, type PierSharing } from './Sharing
 import { RadioModus } from './Audio.svelte';
 
 
+//#region DirectoryShare
+// Individual share - like a PierFeature but for directories
+export class DirectoryShare extends ThingIsms {
+    // < GOING for %handle,A
+    fsHandler: FileSystemHandler
+    
+    started = $state(false)
+
+    modus_init() {
+        return new DirectoryModus({S:this})
+    }
+
+    get list():DirectoryListing {
+        return this.started && this.fsHandler.list
+    }
+    
+    // was localList
+    
+    persisted_handle:KVStore
+    constructor(opt) {
+        super(opt)
+        let {name,F}:{name:string,F:PeeringFeature} = opt
+
+        this.persisted_handle = F.spawn_KVStore(`share handle`,name)
+        
+        this.fsHandler = new FileSystemHandler({
+            share: this,
+            storeDirectoryHandle: async (handle) => {
+                await this.persisted_handle.put(handle)
+            },
+            restoreDirectoryHandle: async () => {
+                const handle = await this.persisted_handle.get()
+                if (!handle) return null
+
+                try {
+                    // Verify the handle is still valid
+                    const permission = await handle.queryPermission({ mode: 'readwrite' })
+                    
+                    if (permission === 'granted') {
+                        return handle
+                    } else if (permission === 'prompt') {
+                        // Try to request permission again
+                        const newPermission = await handle.requestPermission({ mode: 'readwrite' })
+                        if (newPermission === 'granted') {
+                            return handle
+                        }
+                    }
+                    
+                } catch (err) {
+                    console.warn('Directory handle validation failed:', err)
+                    // < huh?
+                }
+                // maybe drop this stored object?
+                await this.persisted_handle.delete()
+                return null
+            },
+        })
+    }
+    async start() {
+        try {
+            await this.fsHandler.start()
+            this.start_post(true)
+        } catch (err) {
+            throw erring(`Failed to start share "${this.name}"`, err)
+        }
+    }
+    // user interaction required
+    async click_start() {
+        await this.fsHandler.requestDirectoryAccess()
+        this.start_post()
+
+    }
+    async start_post(retriable=false) {
+        if (this.fsHandler.started) {
+            this.started = true
+            console.log(`DirectoryShare "${this.name}" started`)
+        }
+        else {
+            if (retriable) {
+                // the handle failed to resume, perhaps it is new
+                this.i_action({label:'open share', class:'big', handler: async () => {
+                        await this.click_start()
+                        this.i_action({label:'open share'},true)
+                    }})
+            }
+            else {
+                throw erring(`Share not starting! "${this.name}"`)
+            }
+        }
+
+
+    }
+    async stop() {
+        try {
+            await this.fsHandler.stop()
+            this.started = false
+            console.log(`DirectoryShare "${this.name}" stopped`)
+        } catch (err) {
+            throw erring(`Failed to stop share "${this.name}"`, err)
+        }
+    }
+
+    // < used by FileList, which is perhaps not the future...
+    async refresh() {
+        if (!this.started) return
+        // only does the top level
+        await this.fsHandler.list.expand()
+    }
+
+}
+
+//#endregion
+//#region DirectoryShares
+// Collection of DirectoryShares with persistence
+export class DirectoryShares extends ThingsIsms {
+    started = $state(false)
+    constructor(opt) {
+        super(opt)
+        this.set_table(`shares`)
+    }
+
+
+    async thingsify(opt) {
+        return new DirectoryShare(opt)
+    }
+    async autovivify(opt) {
+        opt.name = 'music'
+    }
+}
+
+//#endregion
 
 
 //#endregion
 //#region *Listing
 // one file
+// < GOING, AI produced and ancient
 
 export class FileListing {
     up: DirectoryListing
@@ -225,136 +357,6 @@ export class RemoteShare extends ThingIsms {
 }
 
 //#endregion
-//#region DirectoryShare
-// Individual share - like a PierFeature but for directories
-export class DirectoryShare extends ThingIsms {
-    // < GOING for %handle,A
-    fsHandler: FileSystemHandler
-    
-    started = $state(false)
-
-    modus_init() {
-        return new DirectoryModus({S:this})
-    }
-
-    get list():DirectoryListing {
-        return this.started && this.fsHandler.list
-    }
-    
-    // was localList
-    
-    persisted_handle:KVStore
-    constructor(opt) {
-        super(opt)
-        let {name,F}:{name:string,F:PeeringFeature} = opt
-
-        this.persisted_handle = F.spawn_KVStore(`share handle`,name)
-        
-        this.fsHandler = new FileSystemHandler({
-            share: this,
-            storeDirectoryHandle: async (handle) => {
-                await this.persisted_handle.put(handle)
-            },
-            restoreDirectoryHandle: async () => {
-                const handle = await this.persisted_handle.get()
-                if (!handle) return null
-
-                try {
-                    // Verify the handle is still valid
-                    const permission = await handle.queryPermission({ mode: 'readwrite' })
-                    
-                    if (permission === 'granted') {
-                        return handle
-                    } else if (permission === 'prompt') {
-                        // Try to request permission again
-                        const newPermission = await handle.requestPermission({ mode: 'readwrite' })
-                        if (newPermission === 'granted') {
-                            return handle
-                        }
-                    }
-                    
-                } catch (err) {
-                    console.warn('Directory handle validation failed:', err)
-                    // < huh?
-                }
-                // maybe drop this stored object?
-                await this.persisted_handle.delete()
-                return null
-            },
-        })
-    }
-    async start() {
-        try {
-            await this.fsHandler.start()
-            this.start_post(true)
-        } catch (err) {
-            throw erring(`Failed to start share "${this.name}"`, err)
-        }
-    }
-    // user interaction required
-    async click_start() {
-        await this.fsHandler.requestDirectoryAccess()
-        this.start_post()
-
-    }
-    async start_post(retriable=false) {
-        if (this.fsHandler.started) {
-            this.started = true
-            console.log(`DirectoryShare "${this.name}" started`)
-        }
-        else {
-            if (retriable) {
-                // the handle failed to resume, perhaps it is new
-                this.i_action({label:'open share', class:'big', handler: async () => {
-                        await this.click_start()
-                        this.i_action({label:'open share'},true)
-                    }})
-            }
-            else {
-                throw erring(`Share not starting! "${this.name}"`)
-            }
-        }
-
-
-    }
-    async stop() {
-        try {
-            await this.fsHandler.stop()
-            this.started = false
-            console.log(`DirectoryShare "${this.name}" stopped`)
-        } catch (err) {
-            throw erring(`Failed to stop share "${this.name}"`, err)
-        }
-    }
-
-    // < used by FileList, which is perhaps not the future...
-    async refresh() {
-        if (!this.started) return
-        // only does the top level
-        await this.fsHandler.list.expand()
-    }
-
-}
-
-//#endregion
-//#region DirectoryShares
-// Collection of DirectoryShares with persistence
-export class DirectoryShares extends ThingsIsms {
-    started = $state(false)
-    constructor(opt) {
-        super(opt)
-        this.set_table(`shares`)
-    }
-
-
-    async thingsify(opt) {
-        return new DirectoryShare(opt)
-    }
-    async autovivify(opt) {
-        opt.name = 'music'
-    }
-}
-
 
 
 //#region fs
