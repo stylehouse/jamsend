@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { Idento, Peerily, PeeringFeature, type StashedPeering } from "./Peerily.svelte";
     import { Peering as Peering_type } from "./Peerily.svelte";
     import Peering from "./Peering.svelte";
@@ -53,9 +53,8 @@
         //  < name it something easy to grep out of the json, hidden in the dom?
         console.log("stashed JSON: "+localStorage.Astash)
     })
-    onDestroy(() => {
-        P.stop()
-    })
+    onDestroy(() => P.stop())
+    onMount(() => P.startup())
 
 
     let whoto = $state("ef281478ab8a9620")
@@ -72,10 +71,6 @@
     let Id:Idento
     let Ud:Idento
     let link = $state()
-    $effect(() => {
-        // escape reactivity:
-        setTimeout(() => P.startup(), 0)
-    })
     async function sharing() {
         if (link) return link = null
         // already in the address bar, can become QR code

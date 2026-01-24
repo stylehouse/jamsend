@@ -103,9 +103,6 @@ abstract class ModusItself extends TheC  {
         await this.c_mutex(this,'Modus.main()?',async () => {
             await this.reset_interval()
 
-            // < GOING the main function?
-            await this.do_main?.()
-            
             // angency itself
             // we this.do_A() to i M/A/w when starting up and changing trust
             // on that structure, hang motivation

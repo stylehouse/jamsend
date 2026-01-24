@@ -3,6 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte';
 import { objectify } from '$lib/data/Stuff.svelte';
 import type { ThingAction } from '$lib/data/Things.svelte';
 import type Modus from '$lib/mostly/Modus.svelte';
+import type { Trusting } from '$lib/Trust.svelte';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
@@ -183,6 +184,7 @@ export class Idento extends IdentoCrypto {
 //   so we proxy everything
 export class Peering {
     P:Peerily
+    Trusting:Trusting
     Id:Idento
     stashed:StashedPeering = $state()
     Peer:PeerJS
@@ -294,6 +296,7 @@ export class Peerily {
         }
         this.addresses.clear()
     }
+
     // arrive at the webpage! who are we? who do we want?
     async startup() {
         let eer = await this.listen_to_yourself()
@@ -1134,7 +1137,7 @@ export abstract class PeeringFeature extends ActionsAndModus {
     }
     // Database name based on the Idento and feature
     get IDB_DB_name() {
-        return `${this.eer.Id}_${this.trust_name}`;
+        return [this.eer?.Id,this.trust_name].filter(n=>n).join('_')
     }
 
     // defined during F.new()

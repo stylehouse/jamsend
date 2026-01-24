@@ -27,10 +27,6 @@
 
 
     // refresh the top level, etc
-    // < GONER? all A now
-    async do_main() {
-        // < rewrite everything we're thinking about how to:
-    },
 
 
 

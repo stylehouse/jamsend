@@ -120,10 +120,6 @@ export class SharesModus extends RadioModus {
         console.log(`do_A() for ${this.constructor.name}`)
     }
 
-    async do_main() {
-        await this.r({Seee:2})
-    }
-
 
 }
 //#endregion

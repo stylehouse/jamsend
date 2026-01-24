@@ -2,11 +2,7 @@ import { isar } from "$lib/Y";
 import {Modus} from "$lib/mostly/Modus.svelte.ts"
 import Radios from "$lib/ghost/Radios.svelte"
 
-export class RecordModus extends Modus {
-    // is ghost/Record
-}
-
-export class RadioModus extends RecordModus {
+export class RadioModus extends Modus {
     // Audio things haver
     //  Modus.stop() happens reliably, avoiding zombie sounds
     gat:SoundSystem

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
 	import QrCode from "svelte-qrcode"
     import { Idento, Peerily, PeeringFeature, type StashedPeering,
@@ -9,6 +9,7 @@
     import { throttle } from "$lib/Y";
     import { PeeringSharing } from "./ftp/Sharing.svelte";
     import GatEnabler from "./ui/GatEnabler.svelte";
+    import Trust from "$lib/Trust.svelte";
 
     let spec = `
     more modern A.svelte
@@ -18,15 +19,39 @@
     
     it seems... the only Thingstashed is in Shares!
      and everything else is hung off it
-    < F:Trust
-      can it exist outside of a Peering? (an identity)
-       does it need to?
-        Idento genesis is fast
-        then Intro fades to Trust once it takes over the screen
-         then Trust fades to Sharee** in once it takes over the screen
-      because ideally it would do Things of Peering/Pier
-       now we have them.
-     < M:Trust runs the game of your intro etc
+    F:Trust
+      it can exist outside of a Peering!
+    < supplant P.stashed with M.stashed
+       use Things to make tables of:
+        Peerings - your idents
+        Piers - your contacts
+        Trust - your abilities
+
+    < it takes the screen.
+      Peerings autovivifies (gives you an identity) or you have one
+       then the concept is pitched
+      Piers want to hear from you
+      Trust lets you
+       start the conversation with that
+       where an invite can be upgraded to trust proper
+       which lasts forever
+        < unless the start of its signature is in the revoke database D:
+          or they could TTL
+       
+      
+    
+    Pier.name
+        isn't anywhere
+        we kinda could grab a signature or something
+         "forge their signature"
+        to use as an avatar for them
+        as there's a drawer full of them to activate features of
+        so the PF should be limited to ... etc
+      
+    then Trust fades to Sharee** in once it takes over the screen
+    
+    things to leave half done:
+     < do Things of Peering/Pier
     `
     
 
@@ -42,12 +67,12 @@
     //  < more hidden-in-the-dom storage as well
     //    for people that want to save the app as a document
     function load_stash() {
-        console.log(`loading Astash`)
-        P.stash = JSON.parse(localStorage.Astash)
+        console.log(`loading Vstash`)
+        P.stash = JSON.parse(localStorage.Vstash)
     }
     let save_stash = throttle(() => {
-        console.log(`saving Astash`)
-        localStorage.Astash = JSON.stringify(P.stash)
+        console.log(`saving Vstash`)
+        localStorage.Vstash = JSON.stringify(P.stash)
     },200)
     let on_Peering = (eer:Peering_type) => {
         // < switch features on|off on different Peerings
@@ -61,7 +86,7 @@
     // P.stash persists
     // < identity per ?id=..., which we namespace into which stash...
     $effect(() => {
-        if (!localStorage.Astash) return
+        if (!localStorage.Vstash) return
         load_stash()
     })
     $effect(() => {
@@ -69,7 +94,7 @@
         save_stash()
         // for debugging whether Pier.stashed.leg++ still works
         //  < name it something easy to grep out of the json, hidden in the dom?
-        console.log("stashed JSON: "+localStorage.Astash)
+        console.log("stashed JSON: "+localStorage.Vstash)
     })
     onDestroy(() => {
         P.stop()
@@ -82,7 +107,8 @@
         // P.connect_pubkey(whoto)
     }
 
-
+    // we'll get Trusting to spur this:
+    // onMount(() => P.startup())
     
 
 
@@ -90,10 +116,6 @@
     let Id:Idento
     let Ud:Idento
     let link = $state()
-    $effect(() => {
-        // escape reactivity:
-        setTimeout(() => P.startup(), 0)
-    })
     async function sharing() {
         if (link) return link = null
         // already in the address bar, can become QR code
@@ -105,10 +127,10 @@
 
     async function showstash() {
         console.log("P.stash",P.stash)
-        let data = JSON.parse(localStorage.Astash)
+        let data = JSON.parse(localStorage.Vstash)
         let bit = data.Peerings[0]?.Piers[0]
-        console.log("localStorage.Astash.Peerings[0].Piers[0]",bit)
-        console.log("localStorage.Astash",data)
+        console.log("localStorage.Vstash.Peerings[0].Piers[0]",bit)
+        console.log("localStorage.Vstash",data)
     }
     async function dropstashedPeerings() {
         P.stash.Peerings = []
@@ -152,6 +174,8 @@
     <button onclick={tryit}>go</button>
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
+
+    <Trust {P} /> 
 
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
