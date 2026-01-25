@@ -6,10 +6,10 @@
     import Modus from "./mostly/Modus.svelte";
     import { OurPeering, OurPier, Trusting } from "./Trust.svelte.ts";
     import Things from "./data/Things.svelte";
-    import type { Peering } from "./p2p/Peerily.svelte.ts";
+    import type { Peerily } from "./p2p/Peerily.svelte.ts";
     import Trust from "./ghost/Trust.svelte";
 
-    let {P}:{P:Peering} = $props()
+    let {P}:{P:Peerily} = $props()
     let F:Trusting = $state()
     onMount(() => {
         F = P.Trusting = new Trusting({P})

@@ -133,10 +133,9 @@ export type storableIdento = {pub:string,key:string}
 export class Idento extends IdentoCrypto {
     // url bit with a pubkey
     prepub_only = false
-    from_hex(pubkey,prikey?) {
+    from_hex(pubkey) {
         this.prepub_only = pubkey.length == 16
         this.publicKey = dehex(pubkey)
-        if (prikey) this.publicKey = dehex(prikey)
         return this
     }
 
@@ -184,7 +183,6 @@ export class Idento extends IdentoCrypto {
 //   so we proxy everything
 export class Peering {
     P:Peerily
-    Trusting:Trusting
     Id:Idento
     stashed:StashedPeering = $state()
     Peer:PeerJS
@@ -276,7 +274,9 @@ export class Peering {
 //#region Peerily (P)
 // the main|single object of our p2p business, over all Peerings
 export class Peerily {
+    // < GOING in favour on Trusting
     stash:TheStash = $state({})
+    Trusting:Trusting
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
