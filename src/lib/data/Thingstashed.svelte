@@ -7,9 +7,11 @@
     type stashedHaver = Object & {stashed:Object,stashed_mem:KVStore}
     let {F,name,M}:{
         F:PeeringFeature,
-        name:string,
+        name?:string,
         M:stashedHaver,
     } = $props()
+    // for debug
+    name ||= M.constructor.name
 
     let save_stash = throttle(() => {
         let it = JSON.stringify(M.stashed)

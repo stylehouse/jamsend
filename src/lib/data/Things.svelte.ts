@@ -35,10 +35,21 @@ export abstract class ThingIsms extends ActionsAndModus {
     started?: boolean = $state()
     no_autostart?: boolean
 
-    
-    stashed_mem(M:Modus|Object,name:string) {
-        let key = `Thing:${this.up.storeName}=${this.name}/${name}`
+    // < when Thing wants to have .stashed we have a double-naming problem
+    //   S.stashed_mem is the method that gets the store
+    //      accumulating context from a chain of S.*.stashed_mem(M,longerkey)
+    //    it is also
+    //     the resulting KVStore
+    i_stashed_mem(M:Modus|Object,name:string) {
+        let key = `Thing:${this.up.storeName}=${this.name}`
+        if (name != null) key += `/${name}`
+        if (M == null) M = this
         let mem = this.F.stashed_mem(M,key)
+    }
+    // there's a P/F/(M|S/M)/A/w/n//D hierarchy, potentially large keys
+    // this is also the property name they use for the KVStore, at and below M
+    stashed_mem(M:Modus|Object,name:string) {
+        this.i_stashed_mem(M,name)
     }
 
 

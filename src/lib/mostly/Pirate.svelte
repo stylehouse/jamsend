@@ -136,7 +136,7 @@
     {#snippet content()}
         <div>
         <span class="arow theoneline">
-            heisting
+            <span class="slash">⤓</span>
             {#if blob_monitoring}
                 {@const {progress_tally,bit,progress_pct,avg_kBps} = blob_monitoring.sc}
                 ...
@@ -240,8 +240,7 @@
                                            togfault('disbelieve_directories',false))}
                                 <label for={`tog-${pl.sc.uri}-disbelieve_directories`}>
                                     disbelieve directories altogether
-                                </label>
-                                , collect random tracks in one place
+                                </label>, collect random tracks in one place
                             </span>
                             {#if pl.sc.suggested_rename}
                                 <span class="arow">

@@ -1149,7 +1149,6 @@ export abstract class PeeringFeature extends ActionsAndModus {
         this.IDB_version = version
     }
 
-    // a
     // gizmos register each Modus anywhere within, can store strings
     gizmos = $state(new SvelteMap())
     gizmo_mem = new SvelteMap()

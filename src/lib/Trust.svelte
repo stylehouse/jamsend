@@ -4,7 +4,8 @@
     // all F must host data:
     import Thingstashed from "./data/Thingstashed.svelte";
     import Modus from "./mostly/Modus.svelte";
-    import { Trusting } from "./Trust.svelte.ts";
+    import { OurPeering, Trusting } from "./Trust.svelte.ts";
+    import Things from "./data/Things.svelte";
 
     let {P} = $props()
     let F = $state()
@@ -17,6 +18,11 @@
     let increase = () => {
         M.i_elvis(w, "increase", { thingsing: "L" });
     }
+    let grip = (S) => {
+        console.log("Grip: ",S)
+        setTimeout(() => S.stashed.fings = 3,1300)
+    }
+
 
 </script>
 
@@ -24,7 +30,28 @@
 {#if F}
     <button onclick={increase} >increase</button>
 
-    <Modus S={F} do_start=1 do_stash=1></Modus>
+    <Modus S={F} do_start=1></Modus>
 
-    and that's all.
+    <h3>Our Peerings</h3>
+    <Things
+            Ss={F.OurPeerings}
+            type="ourpeering" 
+        >
+            {#snippet thing(S:OurPeering)}
+                <p>a Peering</p>
+                { grip(S) }
+
+                <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
+                {#if S.started}
+                    <Thingstashed {F} M={S} />
+                {/if}
+            {/snippet}
+    </Things>
+    <h3>Our Piers</h3>
+
+    
+    {#if M}
+        <!-- is usually handled by F.gizmos -->
+        <Thingstashed {F} {M} />
+    {/if}
 {/if}

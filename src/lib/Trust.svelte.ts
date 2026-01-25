@@ -5,6 +5,8 @@ import { PeeringFeature, Pier } from "./p2p/Peerily.svelte";
 import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { tick } from "svelte";
 
+//#endregion
+//#region F:Trusting
 // PeeringFeature can hopefully operate without this.eer
 export class Trusting extends PeeringFeature {
     w?:TheC = $state() // give w:Trusting to UI:Trust
@@ -23,12 +25,18 @@ export class Trusting extends PeeringFeature {
             'Pier',
             'Trust',
             'gizmo',        // for named Things:** with .stashed via UI:Thingstashed
+                            // including those Peering|Pier things .stashed
+                            // < more elegant storage
         ])
-        // this.OurPeerings = new OurPeerings({F:this})
-        // this.OurPiers = new OurPiers({F:this})
+        this.i_actions({
+            'Trust++': () => 1,
+            'Trust--': () => 1,
+        })
+        this.OurPeerings = new OurPeerings({F:this})
+        this.OurPiers = new OurPiers({F:this})
     }
-    // OurPeerings:OurPeerings
-    // OurPiers:OurPiers
+    OurPeerings:OurPeerings
+    OurPiers:OurPiers
 
     async start() {
         console.log(`M:Trusting is on...`)
@@ -38,8 +46,86 @@ export class Trusting extends PeeringFeature {
 
 
 
+//#endregion
+//#region OurP*
+
+// they both have S.stashed, not in a Modus
+//  we just have one M:Trusting that can think for them
+// < turn up in gizmos for UI:Thingstashed but should be...
+abstract class stashedHavingThingIsms extends ThingIsms {
+    // M.stashed is persistent
+    stashed:StashedModus = $state()
+    stashed_mem:KVStore
+}
+
+//    present as an officey place separate to the being of them
+//    maybe with an arrow connecting them
+export class OurPeerings extends ThingsIsms {
+    started = $state(false)
+    constructor(opt) {
+        super(opt)
+        this.set_table(`Peering`)
+    }
 
 
+    async thingsify(opt) {
+        return new OurPeering(opt)
+    }
+    async autovivify(opt) {
+        opt.name = 'generated'
+    }
+}
+// < see if they're online then activate certain protocols etc?
+export class OurPeering extends stashedHavingThingIsms {
+    started = $state(false)
+
+    async start() {
+        try {
+            this.i_stashed_mem()
+            3
+            this.started = true
+        } catch (err) {
+            throw erring(`Failed to start OurPeering "${this.name}"`, err)
+        }
+    }
+}
+
+
+export class OurPiers extends ThingsIsms {
+    started = $state(false)
+    constructor(opt) {
+        super(opt)
+        this.set_table(`Pier`)
+    }
+
+
+    async thingsify(opt) {
+        return new OurPier(opt)
+    }
+    async autovivify(opt) {
+        // < instance tyrant
+        opt.name = 'instance tyrant'
+    }
+}
+// < see if they're online then activate certain protocols etc?
+export class OurPier extends stashedHavingThingIsms {
+    started = $state(false)
+
+    async start() {
+        try {
+        } catch (err) {
+            throw erring(`Failed to start OurPier "${this.name}"`, err)
+        }
+    }
+}
+
+
+
+
+
+
+//#endregion
+//#region M:Trusting
 export class TrustingModus extends Modus {
     declare S:Trusting
     declare F:Trusting
@@ -77,35 +163,3 @@ export class TrustingModus extends Modus {
     }
 }
 
-
-//#region >
-// < these. too much work for right now.
-//    present as an officey place separate to the being of them
-//    maybe with an arrow connecting them
-export class OurPeerings extends ThingsIsms {
-    started = $state(false)
-    constructor(opt) {
-        super(opt)
-        this.set_table(`OurPeerings`)
-    }
-
-
-    async thingsify(opt) {
-        return new OurPeering(opt)
-    }
-    async autovivify(opt) {
-        // < generate one
-        opt.name = 'prepub'
-    }
-}
-// < see if they're online then activate certain protocols etc?
-export class OurPeering extends ThingIsms {
-    started = $state(false)
-
-    async start() {
-        try {
-        } catch (err) {
-            throw erring(`Failed to start share "${this.name}"`, err)
-        }
-    }
-}

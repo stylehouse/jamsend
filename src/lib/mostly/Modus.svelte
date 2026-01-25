@@ -15,7 +15,7 @@
     import Thingstashed from "$lib/data/Thingstashed.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
-    let {S,do_start,do_stash,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
+    let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
     do_drawing ||= true // < store this?
     let init_do_drawing = do_drawing
     // drawing also covers:
@@ -108,10 +108,6 @@
         <button onclick={lets_redraw}>redraw</button>
         {#if actions}<ActionButtons {actions} />{/if}
     </p>
-    {#if do_stash}
-        <!-- is usually handled by F.gizmos -->
-        <Thingstashed F={M.S.F||M.F} name={M.constructor.name} {M} />
-    {/if}
     {#if VJ}
         <p>
             VJ'd
