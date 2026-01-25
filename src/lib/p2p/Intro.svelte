@@ -9,7 +9,7 @@
     import { throttle } from "$lib/Y";
     import { PeeringSharing } from "./ftp/Sharing.svelte";
     import GatEnabler from "./ui/GatEnabler.svelte";
-    import Trust from "$lib/Trust.svelte";
+    import Trusting from "$lib/Trusting.svelte";
 
     let spec = `
     more modern A.svelte
@@ -175,7 +175,7 @@
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
 
-    <Trust {P} /> 
+    <Trusting {P} /> 
 
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}

@@ -3,7 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte';
 import { objectify } from '$lib/data/Stuff.svelte';
 import type { ThingAction } from '$lib/data/Things.svelte';
 import type Modus from '$lib/mostly/Modus.svelte';
-import type { Trusting } from '$lib/Trust.svelte';
+import type { Trusting } from '$lib/Trusting.svelte';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'

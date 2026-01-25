@@ -28,10 +28,6 @@ export class Trusting extends PeeringFeature {
                             // including those Peering|Pier things .stashed
                             // < more elegant storage
         ])
-        this.i_actions({
-            'Trust++': () => 1,
-            'Trust--': () => 1,
-        })
         this.OurPeerings = new OurPeerings({F:this})
         this.OurPiers = new OurPiers({F:this})
     }
@@ -56,6 +52,17 @@ abstract class stashedHavingThingIsms extends ThingIsms {
     // M.stashed is persistent
     stashed:StashedModus = $state()
     stashed_mem:KVStore
+
+    // also they need to call i_started_mem():
+    started = $state(false)
+    async start() {
+        try {
+            this.i_stashed_mem()
+            this.started = true
+        } catch (err) {
+            throw erring(`Failed to start ${this.constructor.name} "${this.name}"`, err)
+        }
+    }
 }
 
 //    present as an officey place separate to the being of them
@@ -77,17 +84,6 @@ export class OurPeerings extends ThingsIsms {
 }
 // < see if they're online then activate certain protocols etc?
 export class OurPeering extends stashedHavingThingIsms {
-    started = $state(false)
-
-    async start() {
-        try {
-            this.i_stashed_mem()
-            3
-            this.started = true
-        } catch (err) {
-            throw erring(`Failed to start OurPeering "${this.name}"`, err)
-        }
-    }
 }
 
 
@@ -105,18 +101,12 @@ export class OurPiers extends ThingsIsms {
     async autovivify(opt) {
         // < instance tyrant
         opt.name = 'instance tyrant'
+        opt.the_cia = true
     }
 }
 // < see if they're online then activate certain protocols etc?
 export class OurPier extends stashedHavingThingIsms {
-    started = $state(false)
-
-    async start() {
-        try {
-        } catch (err) {
-            throw erring(`Failed to start OurPier "${this.name}"`, err)
-        }
-    }
+    // does almost nothing...
 }
 
 
@@ -132,34 +122,26 @@ export class TrustingModus extends Modus {
     constructor(opt:Partial<TrustingModus>) {
         super(opt)
         this.F = this.S
+        this.S.i_actions({
+            'Trust++': () => 1,
+            'Trust--': () => 1,
+            'Mo++': () => this.main(),
+        })
     }
     async start() {
         await this.do_A()
         this.started = true
         await tick()
         // < what's this waiting for?
-        //   only the first seems necessary but I want to be sure
-        setTimeout(async () => this.main(), 20)
-        // setTimeout(async () => this.main(), 820)
-        // setTimeout(async () => this.main(), 2400)
+        //    20ms usually avoids fatal errors about !M.stashed
+        setTimeout(async () => this.main(), 220)
     }
     async do_A() {
         await this.r({A:1},{})
         this.i({A:'Trusting'})
         console.log(`do_A() for ${this.constructor.name}`)
     }
-    async Trusting(A,w) {
-        await w.r({Trustastic:1,day:1,to:1,be:1,alive:1})
-        this.F.w = w
 
-        console.log(`Verily trusting: ${keyser({})}`)
-
-        for (let e of this.o_elvis(w,'increase')) {
-            this.stashed.friv ||= 0
-            this.stashed.friv++
-            w.i(tex({an:"event came in"},nex({},e.sc,'elvis')))
-        }
-        await w.r({friv:this.stashed?.friv,five:'able'})
-    }
+    // see ghost/Trusting
 }
 

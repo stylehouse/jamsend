@@ -50,6 +50,8 @@ abstract class ModusItself extends TheC  {
     async eatfunc(hash) {
         Object.assign(this,hash)
         await this.on_code_change?.()
+        // vaguely want to run everything if we're down the track already
+        if (this.oa()) await this.main()
     }
     
     when_to_do_A() {
