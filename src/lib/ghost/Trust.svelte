@@ -11,7 +11,7 @@
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
     import { DirectoryModus } from "$lib/p2p/ftp/Sharing.svelte";
     import Modus from "$lib/mostly/Modus.svelte";
-    import type { OurPeering, OurPier } from "$lib/Trust.svelte";
+    import type { OurPeering, OurPier, OurPiers, Trusting } from "$lib/Trust.svelte";
    
     // < why is typescript not working
     let {M}:{M:Modus} = $props()
@@ -27,6 +27,7 @@
         console.log(`🔒 Trusting`)
         await w.r({Trustastic:1,day:1,to:1,be:1,alive:1})
         this.F.w = w
+        await this.Trusting_API(A,w)
 
         // copy all these objects into here so we can hang state off them
         // < this could be a TrustingModus.constructor $effect() for these Thingses
@@ -81,7 +82,6 @@
         await w.r({friv:this.stashed?.friv})
     },
 
-
     async Listening(A,w) {
         let P = this.F.P
         // < multiplicity
@@ -93,8 +93,11 @@
 
         let Id = Our.o1({Id:1})[0]
         let eer = Peering.instance = P.i_Peering(Id) as Peering
+        eer.Thing = Peering
+        
         // same .stashed
         eer.stashed = Peering.stashed
+
         // console.log(`You `,eer)
         w.i({Listening:1,eer,Peering,prepub:def.sc.prepub})
     },
@@ -124,11 +127,8 @@
 
             if (!Li.oa({Pier:1,prepub})) {
                 // spawn a Pier
-                P.address_to_connect_from = eer
+                let ier  = this.Pierise(eer,prepub,Pier)
                 
-                let ier = Pier.instance = eer.i_Pier(prepub) as Pier
-                // same .stashed
-                ier.stashed = Pier.stashed
                 w.i({see:`connecting to`,prepub})
                 Li.i({Pier,ier,prepub})
             }
@@ -159,6 +159,76 @@
         }
     },
 
+    // replaces P.connect_pubkey
+    async Pierise(eer:Peering,prepub:string,Pier:OurPier):Promise<Pier> {
+        // < disconnections? does this help at all:
+        if (!eer) throw "!eer"
+        if (eer.disconnected && 0) {
+            throw "huh"
+            // lots of these pile up sometimes?
+            // if (this.eer_awaitsing) return
+            if (this.destroyed) throw "discon + destroyed"
+                // return console.log(`guess no awaits...`)
+            console.warn(`Pierise(${eer.Id},${prepub},${Pier.Id}) awaits...`)
+            this.eer_awaitsing = true
+            setTimeout(() => {
+                this.eer_awaitsing = false
+                this.connect_pubkey(pub)
+            }, 410)
+            return
+        }
+
+        let con = eer.connect(prepub)
+
+        console.log(`Pierise(${eer.Id},${prepub},${Pier.Id})`)
+
+        let ier = Pier.instance = eer.i_Pier(prepub) as Pier
+        ier.Thing = Pier
+
+        ier.init_begins(eer,con)
+
+        return ier
+    },
+
+    async Trusting_API(A,w) {
+        let F = this.F as Trusting
+
+        // including the incoming connections
+        F.Peering_i_Pier = async (ier) => {
+            let OPs = this.F.OurPiers as OurPiers
+            // < see if OurPier exists but isnt instantiated
+            // < we have to await a_Pier()
+
+            // < maybe OPs.add_Thing({name:prepub})
+            // < maybe stay for:
+
+            // same .stashed
+            ier.stashed = Pier.stashed
+            // give it the stashed Id we're expected
+            //  over here as %Our,Pier/%Id already, if we know the full publicKey
+            let Our = w.o({Our:1,Pier})
+            let Id = Our.o1({Id:1})[0]
+            if (Id) ier.Ud = Id
+        }
+
+        // meeting someone
+        F.Pier_i_publicKey = async (ier) => {
+            // received a good publicKey, only knew pubkey (ier.pub)
+            // < store this.Ud via elvis
+            this.i_elvis(w,"save_Ud",{ier})
+        }
+        for (let e of this.o_elvis(w,'save_Ud')) {
+            let {ier} = e.sc
+            let Id = ier.Ud as Idento
+            // < this could be moved over there to Peerily...
+            //   we still believe in ier.pub
+            //    but not ier.stashed.pubkey, which is now:
+            ier.stashed.Id = Id.freeze()
+            console.warn(`e:save_Ud(${1})`)
+        }
+
+
+    },
 
 
 //#endregion
@@ -281,6 +351,7 @@
             I.i({fresh:1,bit})
         }
     },
+
     async Idzeug(A,w) {
         let I = w.o({Idzeug:1})[0]
         if (!I) return
@@ -291,7 +362,7 @@
             // this may adopt their existing Pier, drawing it into this Idzeuging
             // < this spawn is not on the right object.
             //   we want to create them in our contacts list...
-            I.sc.OurPier = this.spawn_Thing({name:prepub,prepub})
+            I.sc.OurPier = this.i_Pier(prepub)
 
             I.i({init:1})
         }

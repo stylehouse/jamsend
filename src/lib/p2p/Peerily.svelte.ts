@@ -3,6 +3,7 @@ import { KVStore } from '$lib/data/IDB.svelte';
 import { objectify } from '$lib/data/Stuff.svelte';
 import type { ThingAction } from '$lib/data/Things.svelte';
 import type Modus from '$lib/mostly/Modus.svelte';
+import type { OurPeering, OurPier } from '$lib/Trust.svelte';
 import type { Trusting } from '$lib/Trusting.svelte';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
@@ -185,6 +186,8 @@ export class Peering {
     P:Peerily
     Id:Idento
     stashed:StashedPeering = $state()
+    // ^ is shared with, we are the instance of:
+    Thing:OurPeering
     Peer:PeerJS
     constructor(P,Id,opt) {
         this.P = P
@@ -209,6 +212,7 @@ export class Peering {
     i_Pier(pub:Prekey):Pier {
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
+        return pier || this.P.Trusting.Peering_i_Pier(pub)
         if (!pier) {
             // < shouldn't say Peer:this?
             pier = new Pier({P:this.P,Peer:this,pub})
@@ -220,6 +224,7 @@ export class Peering {
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     a_Pier(pub:Prekey):Pier {
+        if (this.Trusting) return this.i_Pier(pub)
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
         if (!pier) {
@@ -440,6 +445,7 @@ export class Peerily {
     // to others
     eer_awaitsing = null
     async connect_pubkey(pub,label="") {
+        if (this.Trusting) throw "nevers"
         pub = ''+pub
         let eer = this.address_to_connect_from
         if (!eer) throw "!eer"
@@ -478,6 +484,8 @@ export class Peerily {
 export class Pier {
     P:Peerily
     stashed:StashedPier = $state()
+    // ^ is shared with, we are the instance of:
+    Thing:OurPier
     forget() {
         this.eer.forget_Pier(this.pub)
     }
@@ -513,7 +521,7 @@ export class Pier {
             if (this.con == con) throw "concon"
             this.con.close()
         }
-        if (this.stashed.pubkey) {
+        if (!this.P.Trusting && this.stashed.pubkey) {
             // will insist on this in unemit:hello, slightly better security
             this.Ud = new Idento()
             this.Ud.publicKey = dehex(this.stashed.pubkey)
@@ -887,10 +895,15 @@ export class Pier {
             if (!publicKey.startsWith(this.pub)) throw `not them`
             this.Ud = new Idento()
             this.Ud.publicKey = dehex(publicKey)
-            this.stashed.pubkey = publicKey
-            this.stashed.saw_first ||= now_in_seconds()
-            // < hang this off e:ping?
-            // this.stashed.saw_last ||= now_in_seconds()
+            if (this.P.Trusting) {
+                this.P.Trusting.Pier_i_publicKey(this)
+            }
+            else {
+                this.stashed.pubkey = publicKey
+                this.stashed.saw_first ||= now_in_seconds()
+                // < hang this off e:ping?
+                // this.stashed.saw_last ||= now_in_seconds()
+            }
         }
     }
 
