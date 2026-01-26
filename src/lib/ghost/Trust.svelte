@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
 
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
@@ -37,6 +37,15 @@
 
         this.F.w = w
         await this.Trusting_API(A,w)
+
+        // is it a sane time to look at OurPier
+        //  or is a new one waiting for UI to UI:Thingstashed it
+        let UI_unready = [
+            ...this.F.OurPeerings.asArray(),
+            ...this.F.OurPiers.asArray(),
+        ].filter(xer => !xer.stashed)
+        if (UI_unready.length) console.warn(`M:Trusting not UI_ready`,UI_unready)
+
 
         // copy all these objects into here so we can hang state off them
         // < this could be a TrustingModus.constructor $effect() for these Thingses
@@ -146,12 +155,26 @@
                 continue
             }
 
+            
             if (!Li.oa({Pier:1,prepub})) {
-                // spawn a Pier
-                let ier = this.Pierise(eer,prepub,Pier)
-                
+                let now = now_in_seconds_with_ms()
+                // spawn a Pier, but don't hang around until it's connected
+                let Promised_ier = this.Pierise(eer,prepub,Pier)
+                // may go really async while PeerServer connects
+                //  before we can get Piers via eer.connect()
+
                 w.i({see:`connecting to`,prepub})
-                Li.i({Pier,ier,prepub})
+
+                let LiPi = Li.i({Pier,prepub}); // <- important ;
+                (async() => {
+                    // Li never clonereplace so it's safe to lately put stuff that matters
+                    let ier = LiPi.sc.ier = await Promised_ier
+                    if (!ier.Thing) throw `!ier.Thing`
+                    let delta = now_in_seconds_with_ms() - now
+                    let see = `got dial tone after ${delta.toFixed(3)}...`
+                    console.log(`Ringing: ${see}`)
+                    w.i({see,prepub})
+                })()
             }
             let ier = Pier.instance
 
@@ -183,31 +206,27 @@
     // < should we directly Peering_i_Pier() ? it knows Our already
 
     // replaces P.connect_pubkey
+    // may go really async while PeerServer connects
+    //  before we can try Piers via eer.connect()
     async Pierise(eer:Peering,prepub:string,Pier:OurPier):Promise<Pier> {
+        let say = `Pierise(${eer.Id},${prepub},${Pier.name})`
         // < disconnections? does this junk help at all:
         if (!eer) throw "!eer"
-        if (eer.disconnected && 0) {
-            throw "huh"
-            // lots of these pile up sometimes?
-            // if (this.eer_awaitsing) return
-            if (this.destroyed) throw "discon + destroyed"
-                // return console.log(`guess no awaits...`)
-            console.warn(`Pierise(${eer.Id},${prepub},${Pier.Id}) awaits...`)
-            this.eer_awaitsing = true
-            setTimeout(() => {
-                this.eer_awaitsing = false
-                this.connect_pubkey(pub)
-            }, 410)
-            return
+        if (eer.disconnected) {
+            // < also singleton?
+            // < might not handle some scenario?
+            console.warn(`${say}: awaiting dial tone`)
+            await eer.promise_connection
         }
 
         let con = eer.connect(prepub)
 
-        console.log(`Pierise(${eer.Id},${prepub},${Pier.stashed.Id})`)
+        console.log(say)
 
         // the swing around to the backend:
         let ier = await eer.i_Pier(prepub)
-        
+        await tick()
+
         ier.init_begins(eer,con)
 
         return ier
@@ -290,7 +309,6 @@
 
             }
             return ier
-
         }
         for (let e of this.o_elvis(w,'i_Pier_Our')) {
             let {return_fn,prepub} = e.sc
@@ -310,11 +328,11 @@
             let Id = ier.Ud as Idento
             // < this could be moved over there to Peerily...
             //   we still believe in ier.pub
-            //    but not ier.stashed.pubkey, which is now:
+            //    GONE is ier.stashed.pubkey, now simply:
             ier.stashed.Id = Id.freeze()
+            delete ier.stashed.prepub
             console.warn(`e:save_Ud(${1})`)
         }
-
     },
 
 
@@ -328,12 +346,12 @@
     async LetsPier(A,w,Our:TheC,Pier:OurPier) {
         let s = Pier.stashed
         let Id = Our.o1({Id:1})[0]
-        if (s.prepub && Id) throw `prepub && Id`
+        if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
         let prepub = s.prepub || Id.pretty_pubkey()
 
-        if (w.o({see:`i_Pier_Our`,return_fn:1})) {
+        if (w.oa({see:`i_Pier_Our`,return_fn:1})) {
             // it's connecting to us, might be new if
-            console.log(`i_Pier_Our! ${prepub}`)
+            console.log(`e:i_Pier_Our! ${prepub}`)
         }
 
         // < its stashed will to be connected to
@@ -407,9 +425,9 @@
         }
         // we upgrade to having Id after emit:hello'ing an initial prepub
         let Id = Our.o1({Id:1})[0]
-        if (s.prepub && Id) throw `prepub && Id`
+        if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
         let prepub = s.prepub || Id.pretty_pubkey()
-        // index prepub, %Hath is in replace()
+        // index prepub, %Hath is replacing
         w.i({Hath:1,user:1,prepub,name:Our.sc.name})
 
         // establish a sequence number for all Pier

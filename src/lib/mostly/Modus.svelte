@@ -38,7 +38,7 @@
         // do the first drawing almost immediately, but after M.stashed appears
         do_drawing = null
         M.on_first_main = () => {
-            console.log(`started|stashed|perm -> main() ${objectify(S)}`)
+            console.log(`M:${objectify(M)} had first main()`)
             if (S.modus != M) debugger
 
             // start drawing as intended

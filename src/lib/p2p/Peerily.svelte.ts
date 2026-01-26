@@ -188,6 +188,8 @@ export class Peering {
     stashed:StashedPeering = $state()
     // ^ is shared with, we are the instance of:
     Thing:OurPeering
+
+    promise_connection?:Promise<void> // while .disconnected
     Peer:PeerJS
     constructor(P,Id,opt) {
         this.P = P
@@ -420,7 +422,11 @@ export class Peerily {
     create_Peering(Id:Idento) {
         // these listen to one address (for us) each
         let eer = new Peering(this, Id, Peer_OPTIONS())
+
         eer.disconnected = true
+        let reso_connect
+        eer.promise_connection = new Promise(reso => reso_connect = reso)
+
         eer.on('connection', async (con) => {
             console.log(`inbound connection(${con.peer})`)
             let pier = await eer.a_Pier(con.peer)
@@ -429,10 +435,12 @@ export class Peerily {
         })
         eer.on('open', () => {
             console.log(`connected (to PeerServer)`)
+            reso_connect()
             eer.disconnected = false
         })
         eer.on('disconnected', () => {
             console.log(`disconnected (from PeerServer)`)
+            eer.promise_connection = new Promise(reso => reso_connect = reso)
             eer.disconnected = true
             !this.destroyed && eer.reconnect()
         })

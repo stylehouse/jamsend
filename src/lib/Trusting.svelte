@@ -57,6 +57,7 @@
             type="ourpier" 
         >
             {#snippet thing(S:OurPier)}
+                {@const levity = console.log(`UI:Trusting/Pier:${S.name}`)}
                 <div class='levity Pier'>
                     <p>a Pier</p>
 

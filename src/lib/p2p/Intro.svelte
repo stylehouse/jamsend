@@ -151,13 +151,13 @@
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
 
     <Trusting {P} /> 
-
+{#if 0}
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
             <Peering {pub} {eer} />
         {/each}
     </div>
-
+{/if}
 
 </div>
 

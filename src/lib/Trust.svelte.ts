@@ -10,6 +10,8 @@ import type { KVStore } from "./data/IDB.svelte.ts";
 //#region F:Trusting
 // PeeringFeature can hopefully operate without this.eer
 export class Trusting extends PeeringFeature {
+    started = $state(false)
+    declare modus?:TrustingModus
     w?:TheC = $state() // give w:Trusting to UI:Trust
     spawn_PF({Pier}:{Pier:Pier}) {
         throw `this will never happen because we don't belong to a Peering`
@@ -42,6 +44,7 @@ export class Trusting extends PeeringFeature {
     async start() {
         console.log(`M:Trusting is on...`)
         await this.modus.start()
+        this.started = true
     }
 }
 
