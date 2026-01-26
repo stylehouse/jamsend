@@ -209,10 +209,10 @@ export class Peering {
         F.eer = this
     }
 
-    i_Pier(pub:Prekey):Pier {
+    async i_Pier(pub:Prekey):Promise<Pier> {
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
-        return pier || this.P.Trusting.Peering_i_Pier(pub)
+        return pier || await this.P.Trusting.Peering_i_Pier(this,pub)
         if (!pier) {
             // < shouldn't say Peer:this?
             pier = new Pier({P:this.P,Peer:this,pub})
@@ -223,8 +223,8 @@ export class Peering {
 
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
-    a_Pier(pub:Prekey):Pier {
-        if (this.Trusting) return this.i_Pier(pub)
+    async a_Pier(pub:Prekey):Pier {
+        if (this.Trusting) return await this.i_Pier(pub)
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
         if (!pier) {
@@ -421,9 +421,9 @@ export class Peerily {
         // these listen to one address (for us) each
         let eer = new Peering(this, Id, Peer_OPTIONS())
         eer.disconnected = true
-        eer.on('connection', (con) => {
+        eer.on('connection', async (con) => {
             console.log(`inbound connection(${con.peer})`)
-            let pier = eer.a_Pier(con.peer)
+            let pier = await eer.a_Pier(con.peer)
             pier.done_init = false
             pier.init_begins(eer,con,true)
         })
@@ -468,7 +468,7 @@ export class Peerily {
         con.trivance = 1
 
         console.log(`connect_pubkey(${pub})\t${label}`)
-        let pier = eer.a_Pier(pub)
+        let pier = await eer.a_Pier(pub)
         pier.init_begins(eer,con)
 
 

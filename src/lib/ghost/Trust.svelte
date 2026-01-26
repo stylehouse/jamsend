@@ -3,7 +3,7 @@
 
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
-    import { now_in_seconds_with_ms, now_in_seconds, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
+    import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
     import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
@@ -25,7 +25,16 @@
 
     async Trusting(A,w) {
         console.log(`🔒 Trusting`)
-        await w.r({Trustastic:1,day:1,to:1,be:1,alive:1})
+        for (let e of this.o_elvis(w,'Trustastic')) {
+            w.i({Trustastic:1,day:1,to:1,be:1,alive:1})
+        }
+        if (!w.oa({Trustastic:1})) {
+            setTimeout(() => {
+                this.i_elvis(w,'Trustastic')
+            },80)
+        }
+
+
         this.F.w = w
         await this.Trusting_API(A,w)
 
@@ -66,6 +75,7 @@
 
 
 
+        await this.Trusting_API_finally(A,w)
 
 
 
@@ -82,11 +92,24 @@
         await w.r({friv:this.stashed?.friv})
     },
 
+    // we have replaced P.a_Peering|Pier with i_Peering|Pier
+    //  we Ringing() / Pierise() / eer.i_Pier() creates them outgoingly
+    //  and eg Idzeug() will await eer.i_Pier()
+    //   until it is all figured out
+
+    // < I think we'll want this from eg Idzeug()
+    //   
+    // pick an eer and eer.i_Pier()
+    async i_Pier(prepub):Promise<OurPier> {
+        return 
+    },
+
     async Listening(A,w) {
-        let P = this.F.P
+        let F = this.F as Trusting
+        let P = F.P as Peerily
         // < multiplicity
         if (w.oa({Listening:1})) return
-        let def = w.o({Hath:1,main:1,address:1})[0]
+        let def = w.o({Hath:1,address:1,main:1})[0]
         let Our = def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
         if (!Our) return w.i({error:"pick a new main address?"})
         let Peering = Our.sc.Peering as OurPeering
@@ -101,10 +124,11 @@
         // console.log(`You `,eer)
         w.i({Listening:1,eer,Peering,prepub:def.sc.prepub})
     },
-    // < we also need an inbound connection handler, see P.create_Peering / eer.a_Pier
+    
     
     async Ringing(A,w) {
-        let P = this.F.P
+        let F = this.F as Trusting
+        let P = F.P as Peerily
         // < multiplicity diagramming
         // we're coming here many times, for potentially many Ri per Li
         // the prepub is an address, Pier may be a new contact
@@ -113,9 +137,6 @@
             let Li = w.o({Listening:1})[0]
             let Peering = Li.sc.Peering as OurPeering
             let eer = Li.sc.eer as Peering
-            // we have replaced P.a_Peering|Pier with i_Peering|Pier
-            // this one is in a callback somewhere:
-            eer.a_Pier = eer.i_Pier
             // use this Peering to contact Pier...
             let Pier = Ri.sc.Pier as OurPier
             let prepub = Ri.sc.prepub
@@ -127,7 +148,7 @@
 
             if (!Li.oa({Pier:1,prepub})) {
                 // spawn a Pier
-                let ier  = this.Pierise(eer,prepub,Pier)
+                let ier = this.Pierise(eer,prepub,Pier)
                 
                 w.i({see:`connecting to`,prepub})
                 Li.i({Pier,ier,prepub})
@@ -159,9 +180,11 @@
         }
     },
 
+    // < should we directly Peering_i_Pier() ? it knows Our already
+
     // replaces P.connect_pubkey
     async Pierise(eer:Peering,prepub:string,Pier:OurPier):Promise<Pier> {
-        // < disconnections? does this help at all:
+        // < disconnections? does this junk help at all:
         if (!eer) throw "!eer"
         if (eer.disconnected && 0) {
             throw "huh"
@@ -180,36 +203,101 @@
 
         let con = eer.connect(prepub)
 
-        console.log(`Pierise(${eer.Id},${prepub},${Pier.Id})`)
+        console.log(`Pierise(${eer.Id},${prepub},${Pier.stashed.Id})`)
 
-        let ier = Pier.instance = eer.i_Pier(prepub) as Pier
-        ier.Thing = Pier
-
+        // the swing around to the backend:
+        let ier = await eer.i_Pier(prepub)
+        
         ier.init_begins(eer,con)
 
         return ier
     },
 
+    i_Pier_instance(w,OurPier,opt) {
+        // construct the javascript object
+        let ier = new Pier(opt)
+
+        // they become a pair:
+        OurPier.instance = ier
+        ier.Thing = OurPier
+
+        // same .stashed
+        ier.stashed = OurPier.stashed
+
+        // give it the stashed Id we're expecting, if we know it
+        //  over here as %Our,Pier/%Id already, if we know the full publicKey
+        let Our = w.o({Our:1,Pier:OurPier})[0]
+        let Id = Our.o1({Id:1})[0]
+        if (Id) {
+            console.log(`had the ${opt.pub} Ud already`)
+            if (Id.privateKey) throw `got a Pier's privateKey`
+            // inversion, Ud!
+            //  we can't sign but can verify, with this Idento
+            ier.Ud = Id
+        }
+
+        return ier
+    },
+    o_Pier_Our(w,prepub) {
+        let def = w.o({Hath:1,user:1,prepub})[0]
+        let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
+        return Our
+    },
+    async Trusting_API_finally(A,w) {
+        // you can handle elvis many times
+        for (let e of this.o_elvis(w,'i_Pier_Our')) {
+            let {return_fn,prepub} = e.sc
+            return_fn()
+        }
+    },
     async Trusting_API(A,w) {
         let F = this.F as Trusting
+        let P = F.P as Peerily
 
         // including the incoming connections
-        F.Peering_i_Pier = async (ier) => {
-            let OPs = this.F.OurPiers as OurPiers
-            // < see if OurPier exists but isnt instantiated
-            // < we have to await a_Pier()
+        //  and any time some part of the app (Idzeug) wants to add a Pier
+        // goes async until %Our,Pier exists, makes .instance
+        F.Peering_i_Pier = async (eer:Peering,prepub:string) => {
+            let Our = this.o_Pier_Our(w,prepub)
+            let ier
+            if (Our) {
+                // see if OurPier exists but isnt instantiated
+                let Pier = Our.sc.Pier as OurPier
+                ier = Pier.instance
+                if (ier) {
+                    if (prepub != ier.pub) throw `~pub`
+                    return ier
+                }
+                // < opt.Peer seems GONE?
+                ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,pub:prepub})
+            }
+            else {
+                // make %Our,Pier before connecting
+                //  so it can have a live .stashed
+                let return_fn
+                let promise = new Promise((reso) => return_fn = reso)
+                // < right? or we'll need to give a e%return_fn that calls ?
+                if (!return_fn) throw "whatsitdo"
 
-            // < maybe OPs.add_Thing({name:prepub})
-            // < maybe stay for:
+                this.i_elvis(w,'i_Pier_Our',{return_fn,prepub})
+                await promise
 
-            // same .stashed
-            ier.stashed = Pier.stashed
-            // give it the stashed Id we're expected
-            //  over here as %Our,Pier/%Id already, if we know the full publicKey
-            let Our = w.o({Our:1,Pier})
-            let Id = Our.o1({Id:1})[0]
-            if (Id) ier.Ud = Id
+                Our = this.o_Pier_Our(w,prepub)
+                if (!Our) throw `haven't built an OurPier`
+                let Pier = Our.sc.Pier as OurPier
+                if (Pier.instance) throw `new Pier got made just while getting i Our`
+                ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,pub:prepub})
+
+            }
+            return ier
+
         }
+        for (let e of this.o_elvis(w,'i_Pier_Our')) {
+            let {return_fn,prepub} = e.sc
+            console.log(`elvised i_Pier_Our ${prepub}`)
+            w.i({see:`i_Pier_Our`,return_fn})
+        }
+        
 
         // meeting someone
         F.Pier_i_publicKey = async (ier) => {
@@ -227,7 +315,6 @@
             console.warn(`e:save_Ud(${1})`)
         }
 
-
     },
 
 
@@ -243,6 +330,11 @@
         let Id = Our.o1({Id:1})[0]
         if (s.prepub && Id) throw `prepub && Id`
         let prepub = s.prepub || Id.pretty_pubkey()
+
+        if (w.o({see:`i_Pier_Our`,return_fn:1})) {
+            // it's connecting to us, might be new if
+            console.log(`i_Pier_Our! ${prepub}`)
+        }
 
         // < its stashed will to be connected to
 
@@ -351,7 +443,6 @@
             I.i({fresh:1,bit})
         }
     },
-
     async Idzeug(A,w) {
         let I = w.o({Idzeug:1})[0]
         if (!I) return
