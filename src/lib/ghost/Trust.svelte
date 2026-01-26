@@ -21,21 +21,31 @@
     await M.eatfunc({
 
 //#endregion
-//#region api
+//#region Trusting
 
     async Trusting(A,w) {
+        console.log(`🔒 Trusting`)
         await w.r({Trustastic:1,day:1,to:1,be:1,alive:1})
         this.F.w = w
 
         // copy all these objects into here so we can hang state off them
+        // < this could be a TrustingModus.constructor $effect() for these Thingses
         await w.replace({Our:1}, async () => {
             for (let Peering of this.F.OurPeerings.asArray()) {
-                let Our = w.i({Our:1,Peering,name:Peering.name})
-                await this.OurPeering(A,w,Our,Peering)
+                w.i({Our:1,Peering,name:Peering.name})
             }
             for (let Pier of this.F.OurPiers.asArray()) {
-                let Our = w.i({Our:1,Pier,name:Pier.name})
-                await this.OurPier(A,w,Our,Pier)
+                w.i({Our:1,Pier,name:Pier.name})
+            }
+        })
+        await w.replace({Hath:1}, async () => {
+            for (let Our of w.bo({Peering:1,Our:1})) {
+                console.log(`Peering: ${keyser(Our)}`)
+                await this.OurPeering(A,w,Our,Our.sc.Peering)
+            }
+            for (let Our of w.bo({Pier:1,Our:1})) {
+                console.log(`Pier: ${keyser(Our)}`)
+                await this.OurPier(A,w,Our,Our.sc.Pier)
             }
         })
         
@@ -56,7 +66,6 @@
 
 
 
-        console.log(`Verily trusting: ${keyser({etc:1})}`)
 
         for (let e of this.o_elvis(w,'increase')) {
             this.stashed.friv ||= 0
@@ -69,16 +78,14 @@
     async Listening(A,w) {
         // < multiplicity
         if (w.oa({Listening:1})) return
-        let def = w.o({Our:1,main:1,address:1})[0]
-        let Our = def && w.o({Our:1,Peering:1,prepub:def.sc.prepub})[0]
-        if (!Our) return w.i({error:"pick a new main address"})
+        let def = w.o({Hath:1,main:1,address:1})[0]
+        let Our = def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
+        if (!Our) return w.i({error:"pick a new main address?"})
         let OurPeering = Our.sc.Peering as OurPeering
         // < or something
-        OurPeering.instance ||= new Peering(this.F.P,)
-        
+        // OurPeering.instance ||= new Peering(this.F.P,1)
+        w.i({error:"end of time"})
         // < instantiate the default OurPeering if not online
-
-        w.i()
     },
 
     async Ringing(A,w) {
@@ -98,6 +105,7 @@
 
 //#endregion
 //#region Our*
+    // these replace the %Hath,address|user,prepub,name
 
     async OurPeering(A,w,Our:TheC,Peering:OurPeering) {
         let s = Peering.stashed
@@ -110,29 +118,30 @@
         if (!Our.oa({init:1})) {
             let Id = new Idento()
             Id.thaw(s.Id)
-            // index prepub
-            let etc = {name:Our.sc.name}
-            if (s.main) etc.main = 1
-            w.i({Our:1,address:1,prepub:Id.pretty_pubkey(),...etc})
+            Our.i({Id})
 
             // < maybe at some point, ~~ P.a_Peering(Id)
             Our.i({init:1})
         }
+        let Id = Our.o1({Id:1})[0]
+        let prepub = Id.pretty_pubkey()
+        // index prepub
+        let etc = {name:Our.sc.name}
+        if (s.main) etc.main = 1
+        w.i({Hath:1,address:1,prepub,...etc})
     },
 
     async OurPier(A,w,Our:TheC,Pier:OurPier) {
         let s = Pier.stashed
-        if (!s.Id) {
+        if (!s.Id && !s.prepub) {
             // on spawn, the first time
             if (Pier.the_cia) {
-                let Id = new Idento()
-                Id.from_hex(INSTANCE_TYRANT_PREPUB)
-                s.Id = Id.pretty_pubkey()
+                s.prepub = INSTANCE_TYRANT_PREPUB
             }
             else if (Pier.prepub) {
                 // only happens when we ThingsIsms.add_Thing(opt)
-                let Id = new Idento()
-                Id.from_hex(Pier.prepub)
+                // prepubs ain't ready the be Id.thaw(), that sanity checks publicKey
+                s.prepub = Pier.prepub
             }
             else {
                 // should be new_thing
@@ -140,15 +149,23 @@
             }
         }
         if (!Our.oa({init:1})) {
-            let Id = new Idento()
-            Id.thaw(s.Id)
-            // index prepub
-            w.i({Our:1,user:1,prepub:Id.pretty_pubkey(),name:Our.sc.name})
+            if (s.Id) {
+                // only deals with whole pubkeys, and maybe private keys
+                let Id = new Idento()
+                Id.thaw(s.Id)
+                Our.i({Id})
+            }
 
             // < see if they're online, once
             //   if not they'll see if you're online
             Our.i({init:1})
         }
+        // we upgrade to having Id after emit:hello'ing an initial prepub
+        let Id = Our.o1({Id:1})[0]
+        if (s.prepub && Id) throw `prepub && Id`
+        let prepub = s.prepub || Id.pretty_pubkey()
+        // index prepub
+        w.i({Hath:1,user:1,prepub,name:Our.sc.name})
 
         // establish a sequence number for all Pier
         if (!s.Serial) {
@@ -206,6 +223,9 @@
         let Pier = OP.instance
         if (Pier && !Pier.disconnected) {
             // < talk it out
+        }
+        else {
+            w.i({waits:222})
         }
     },
 

@@ -371,9 +371,9 @@
 
     
     
-    // persist your esc-ness
+    // persists
     let quit_fullscreen = $state(uimem.get('quit_fullscreen') ?? false)
-    let esc = () => {
+    let toggle_fullscreen = () => {
         quit_fullscreen = !quit_fullscreen
         uimem.set('quit_fullscreen',quit_fullscreen)
     }
@@ -463,7 +463,6 @@
                     <button onclick={() => YES()} disabled={heist && true}>yeah</button>
                     {#if title}<span class='np'>{artist} - {title}</span>{/if}
                     <span>
-                        <button onclick={() => esc()} class='small'>etc</button>
                         <button onclick={() => NO()} class='big'>nah</button>
                     </span>
                 </div>
@@ -474,6 +473,17 @@
                 {/if}
             </div>
         {/if}
+        <div class='uiing bottom'>
+            <div class='controls'>
+                <span>
+                    <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                </span>
+
+                <span>
+                    <a href="https://github.com/stylehouse/jamsend">README</a>
+                </span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -525,6 +535,10 @@
         border-radius:3em;
         display: flex;
         flex-direction: column;
+    }
+    .bottom {
+        top:initial;
+        bottom:0;
     }
     .uiing button {
         padding:0.7em;
