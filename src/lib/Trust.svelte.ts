@@ -1,7 +1,7 @@
 import { keyser, type TheC } from "./data/Stuff.svelte.ts";
 import { ThingIsms, ThingsIsms } from "./data/Things.svelte.ts";
 import {Modus} from "./mostly/Modus.svelte.ts";
-import { Peering, PeeringFeature, Pier, PierFeature } from "./p2p/Peerily.svelte";
+import { Idento, Peering, PeeringFeature, Pier, PierFeature } from "./p2p/Peerily.svelte";
 import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { tick } from "svelte";
 import type { KVStore } from "./data/IDB.svelte.ts";
@@ -46,12 +46,19 @@ export class Trusting extends PeeringFeature {
 //#endregion
 //#region OurP*
 
+type StashedObject = {
+    prepub?: String, // while !said_hello
+    Id: Idento,
+    main?: boolean,
+
+}
+
 // they both have S.stashed, not in a Modus
 //  we just have one M:Trusting that can think for them
 // < turn up in gizmos for UI:Thingstashed but should be...
 abstract class stashedHavingThingIsms extends ThingIsms {
     // M.stashed is persistent
-    stashed:Object = $state()
+    stashed:StashedObject = $state()
     stashed_mem:KVStore
 
     // also they need to call i_started_mem():

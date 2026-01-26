@@ -16,7 +16,7 @@
     // < why is typescript not working
     let {M}:{M:Modus} = $props()
     let V = {}
-    const INSTANCE_TYRANT_PREPUB = "93d2292c4eaee795"
+    const INSTANCE_TYRANT_PREPUB = "d29b454067f8c0e2"
     onMount(async () => {
     await M.eatfunc({
 
@@ -38,16 +38,22 @@
                 w.i({Our:1,Pier,name:Pier.name})
             }
         })
+        // having indexes...
         await w.replace({Hath:1}, async () => {
             for (let Our of w.bo({Peering:1,Our:1})) {
-                console.log(`Peering: ${keyser(Our)}`)
                 await this.OurPeering(A,w,Our,Our.sc.Peering)
             }
             for (let Our of w.bo({Pier:1,Our:1})) {
-                console.log(`Pier: ${keyser(Our)}`)
                 await this.OurPier(A,w,Our,Our.sc.Pier)
             }
         })
+        // spawning desires
+        for (let Our of w.o({Peering:1,Our:1})) {
+            await this.LetsPeering(A,w,Our,Our.sc.Peering)
+        }
+        for (let Our of w.o({Pier:1,Our:1})) {
+            await this.LetsPier(A,w,Our,Our.sc.Pier)
+        }
         
         this.stashed.PierSerial ||= 0
 
@@ -72,39 +78,111 @@
             this.stashed.friv++
             w.i(tex({an:"event came in"},nex({},e.sc,'elvis')))
         }
-        await w.r({friv:this.stashed?.friv,five:'able'})
+        await w.r({friv:this.stashed?.friv})
     },
 
+
     async Listening(A,w) {
+        let P = this.F.P
         // < multiplicity
         if (w.oa({Listening:1})) return
         let def = w.o({Hath:1,main:1,address:1})[0]
         let Our = def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
         if (!Our) return w.i({error:"pick a new main address?"})
-        // we just call this Peering elsewhere, like this %Peering
-        //  but it is here with the actual Peering, so
-        let OurPeering = Our.sc.Peering as OurPeering
+        let Peering = Our.sc.Peering as OurPeering
 
         let Id = Our.o1({Id:1})[0]
-        let eer = OurPeering.instance = this.F.P.i_Peering(Id) as Peering
+        let eer = Peering.instance = P.i_Peering(Id) as Peering
         // same .stashed
-        eer.stashed = OurPeering.stashed
+        eer.stashed = Peering.stashed
         // console.log(`You `,eer)
-        w.i({Listening:1,eer})
+        w.i({Listening:1,eer,Peering,prepub:def.sc.prepub})
     },
-
+    // < we also need an inbound connection handler, see P.create_Peering / eer.a_Pier
+    
     async Ringing(A,w) {
-        // < multiplicity
-        for (let Ri of w.o({Ringing:1,prepub:1})) {
-            // < instantiate the default OurPeering if not online
+        let P = this.F.P
+        // < multiplicity diagramming
+        // we're coming here many times, for potentially many Ri per Li
+        // the prepub is an address, Pier may be a new contact
+        for (let Ri of w.o({Ringing:1,prepub:1,Pier:1})) {
+            // < many Li. this will probably be the default, first one got to %Listening
+            let Li = w.o({Listening:1})[0]
+            let Peering = Li.sc.Peering as OurPeering
+            let eer = Li.sc.eer as Peering
+            // we have replaced P.a_Peering|Pier with i_Peering|Pier
+            // this one is in a callback somewhere:
+            eer.a_Pier = eer.i_Pier
+            // use this Peering to contact Pier...
+            let Pier = Ri.sc.Pier as OurPier
+            let prepub = Ri.sc.prepub
+            if (Li.sc.prepub == prepub) {
+                // it's us. instance tyrant?
+                await Ri.r({failed:"it's yourself"})
+                continue
+            }
+
+            if (!Li.oa({Pier:1,prepub})) {
+                // spawn a Pier
+                P.address_to_connect_from = eer
+                
+                let ier = Pier.instance = eer.i_Pier(prepub) as Pier
+                // same .stashed
+                ier.stashed = Pier.stashed
+                w.i({see:`connecting to`,prepub})
+                Li.i({Pier,ier,prepub})
+            }
+            let ier = Pier.instance
+
+            // monitor its switch-onitty
+            if (ier && !ier.disconnected) {
+                w.i({see:`connected!`})
+                await w.r({connected_this_time:1})
+            }
+            else if (w.oa({connected_this_time:1})) {
+                w.i({see:`disconnected!?`})
+            }
+            else {
+                if (!ier) w.i({error:"!ier"})
+                else {
+                    w.i({see:`not connected...`})
+                }
+            }
+
+            // w.i({see:`connecting to`,prepub})
+            // let ago = await Li.i_wasLast('expanded')
+            // need = ago > REFRESH_DL_SECONDS ? [_C({by:'refresh time'})] : null
+
+
+
             // < instantiate the OurPier
         }
     },
 
 
 
+//#endregion
+//#region Lets*
 
 
+    async LetsPeering(A,w,Our:TheC,Peering:OurPeering) {
+    },
+
+    async LetsPier(A,w,Our:TheC,Pier:OurPier) {
+        let s = Pier.stashed
+        let Id = Our.o1({Id:1})[0]
+        if (s.prepub && Id) throw `prepub && Id`
+        let prepub = s.prepub || Id.pretty_pubkey()
+
+        // < its stashed will to be connected to
+
+        // so we can tell the CIA about new ones easily
+        if (Pier.the_cia) {
+            // < daily connect and upload new social graph
+            //   this has to be... a non-feature emit
+            await w.r({Ringing:1,prepub,Pier,for:"SafetyNet"})
+        }
+    },
 
 
 
@@ -169,21 +247,14 @@
         let Id = Our.o1({Id:1})[0]
         if (s.prepub && Id) throw `prepub && Id`
         let prepub = s.prepub || Id.pretty_pubkey()
-        // index prepub
+        // index prepub, %Hath is in replace()
         w.i({Hath:1,user:1,prepub,name:Our.sc.name})
 
         // establish a sequence number for all Pier
+        // < doesn't seem to go
         if (!s.Serial) {
             s.Serial = this.stashed.PierSerial
             this.stashed.PierSerial += 1
-        }
-
-
-        // so we can tell the CIA about new ones easily
-        if (Pier.the_cia) {
-            // < daily connect and upload new social graph
-            //   this has to be... a non-feature emit
-            //   
         }
     },
 
@@ -213,21 +284,24 @@
     async Idzeug(A,w) {
         let I = w.o({Idzeug:1})[0]
         if (!I) return
+        let prepub = I.sc.prepub
         if (!I.oa({init:1})) {
-            let prepub = I.sc.prepub
             // it may exist - with this name!
             // < could get weird? people giving different prepubs to gain more download slots?
             // this may adopt their existing Pier, drawing it into this Idzeuging
+            // < this spawn is not on the right object.
+            //   we want to create them in our contacts list...
             I.sc.OurPier = this.spawn_Thing({name:prepub,prepub})
 
             I.i({init:1})
         }
 
-        w.i({Ringing:1,prepub,for:"biz"})
-        let OP = I.sc.OurPier
-        let Pier = OP.instance
+        let OurPier = I.sc.OurPier as OurPier
+        w.i({Ringing:1,prepub,Pier:OurPier,for:"Idzeug"})
+
+        let Pier = OurPier.instance
         if (Pier && !Pier.disconnected) {
-            // < talk it out
+            w.i({error:`< talk it out`})
         }
         else {
             w.i({waits:222})

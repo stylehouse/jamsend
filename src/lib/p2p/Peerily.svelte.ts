@@ -206,6 +206,16 @@ export class Peering {
         F.eer = this
     }
 
+    i_Pier(pub:Prekey):Pier {
+        if (!pub) throw "!pub"
+        let pier = this.Piers.get(pub)
+        if (!pier) {
+            // < shouldn't say Peer:this?
+            pier = new Pier({P:this.P,Peer:this,pub})
+            this.Piers.set(pub,pier)
+        }
+        return pier
+    }
 
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
@@ -372,7 +382,6 @@ export class Peerily {
         if (!eer) {
             eer = this.create_Peering(Id)
             this.addresses.set(prepub,eer)
-            this.address_to_connect_from ||= eer
         }
         return eer
     }
