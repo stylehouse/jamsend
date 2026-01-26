@@ -3,13 +3,14 @@
     import { SvelteSet } from "svelte/reactivity";
 	import QrCode from "svelte-qrcode"
     import { Idento, Peerily, PeeringFeature, type StashedPeering,
-        Peering as Peering_type, Peering
+        Peering as Peering_type
      } from "./Peerily.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
     import { throttle } from "$lib/Y";
     import { PeeringSharing } from "./ftp/Sharing.svelte";
     import GatEnabler from "./ui/GatEnabler.svelte";
     import Trusting from "$lib/Trusting.svelte";
+    import Peering from "./Peering.svelte";
 
     let spec = `
     more modern A.svelte
@@ -74,6 +75,8 @@
         console.log(`saving Vstash`)
         localStorage.Vstash = JSON.stringify(P.stash)
     },200)
+
+
     let on_Peering = (eer:Peering_type) => {
         // < switch features on|off on different Peerings
         //   we'll presume we dont
@@ -83,29 +86,11 @@
     }
     let P = new Peerily({on_error,save_stash,on_Peering})
 
-    // P.stash persists
-    // < identity per ?id=..., which we namespace into which stash...
-    $effect(() => {
-        if (!localStorage.Vstash) return
-        load_stash()
-    })
-    $effect(() => {
-        if (!P.stash) return
-        save_stash()
-        // for debugging whether Pier.stashed.leg++ still works
-        //  < name it something easy to grep out of the json, hidden in the dom?
-        console.log("stashed JSON: "+localStorage.Vstash)
-    })
     onDestroy(() => {
         P.stop()
     })
 
 
-    let whoto = $state("ef281478ab8a9620")
-    let tryit = () => {
-        if (P.addresses.has(whoto)) whoto = "e092bc4767702a42"
-        // P.connect_pubkey(whoto)
-    }
 
     // we'll get Trusting to spur this:
     // onMount(() => P.startup())
@@ -125,16 +110,6 @@
         await navigator.clipboard.writeText(link);
     }
 
-    async function showstash() {
-        console.log("P.stash",P.stash)
-        let data = JSON.parse(localStorage.Vstash)
-        let bit = data.Peerings[0]?.Piers[0]
-        console.log("localStorage.Vstash.Peerings[0].Piers[0]",bit)
-        console.log("localStorage.Vstash",data)
-    }
-    async function dropstashedPeerings() {
-        P.stash.Peerings = []
-    }
 
     $effect(() => {
         0 &&
@@ -171,7 +146,7 @@
         </span>
     </pan>
 
-    <button onclick={tryit}>go</button>
+    <!-- <button onclick={tryit}>go</button> -->
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
 

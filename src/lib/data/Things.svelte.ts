@@ -40,7 +40,7 @@ export abstract class ThingIsms extends ActionsAndModus {
     //      accumulating context from a chain of S.*.stashed_mem(M,longerkey)
     //    it is also
     //     the resulting KVStore
-    i_stashed_mem(M:Modus|Object,name:string) {
+    i_stashed_mem(M?:Modus|Object,name?:string) {
         let key = `Thing:${this.up.storeName}=${this.name}`
         if (name != null) key += `/${name}`
         if (M == null) M = this

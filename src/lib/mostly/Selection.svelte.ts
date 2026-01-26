@@ -447,6 +447,7 @@ class Dierarchy extends SelectionItself {
                     return null
                 }
                 continue
+            
             }
             D = D.o(this.c.trace_sc)
                 .find(D => D_match(D,bit)) // first one matching that

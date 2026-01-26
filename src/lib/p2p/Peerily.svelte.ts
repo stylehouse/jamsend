@@ -365,6 +365,19 @@ export class Peerily {
     // < if there are many, it doesn't matter which does outgoing connect()s?
     address_to_connect_from:Peering|null = null
     // create a new listen address (eer)
+    i_Peering(Id:Idento) {
+        let prepub = Id+''
+        // this'll track this.addresses/$prepub = eer
+        let eer = this.addresses.get(prepub)
+        if (!eer) {
+            eer = this.create_Peering(Id)
+            this.addresses.set(prepub,eer)
+            this.address_to_connect_from ||= eer
+        }
+        return eer
+    }
+    // < GOING for the above, where stashed is abstracted
+    // create a new listen address (eer)
     a_Peering(Id:Idento) {
         let prepub = Id+''
         // this'll track this.addresses/$prepub = eer

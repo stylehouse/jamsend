@@ -81,11 +81,16 @@
         let def = w.o({Hath:1,main:1,address:1})[0]
         let Our = def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
         if (!Our) return w.i({error:"pick a new main address?"})
+        // we just call this Peering elsewhere, like this %Peering
+        //  but it is here with the actual Peering, so
         let OurPeering = Our.sc.Peering as OurPeering
-        // < or something
-        // OurPeering.instance ||= new Peering(this.F.P,1)
-        w.i({error:"end of time"})
-        // < instantiate the default OurPeering if not online
+
+        let Id = Our.o1({Id:1})[0]
+        let eer = OurPeering.instance = this.F.P.i_Peering(Id) as Peering
+        // same .stashed
+        eer.stashed = OurPeering.stashed
+        // console.log(`You `,eer)
+        w.i({Listening:1,eer})
     },
 
     async Ringing(A,w) {
