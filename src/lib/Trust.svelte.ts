@@ -23,6 +23,7 @@ export class Trusting extends PeeringFeature {
     // Peerily -> M:Trusting api
     Peering_i_Pier?:Function
     Pier_i_publicKey?:Function
+    Pier_reconnect?:Function
 
     constructor(opt) {
         super(opt)

@@ -235,6 +235,7 @@
     i_Pier_instance(w,OurPier,opt) {
         // construct the javascript object
         let ier = new Pier(opt)
+        console.log(`i_Pier_instance(${ier.pub})`)
 
         // they become a pair:
         OurPier.instance = ier
@@ -248,7 +249,7 @@
         let Our = w.o({Our:1,Pier:OurPier})[0]
         let Id = Our.o1({Id:1})[0]
         if (Id) {
-            console.log(`had the ${opt.pub} Ud already`)
+            console.log(` - had the ${opt.pub} Ud already`)
             if (Id.privateKey) throw `got a Pier's privateKey`
             // inversion, Ud!
             //  we can't sign but can verify, with this Idento
@@ -273,22 +274,30 @@
         let F = this.F as Trusting
         let P = F.P as Peerily
 
+        // < auto_reconnect() first line:
+        //     this.inbound = true
+        //   how odd? would it never try again then unless worth_reconnecting
+        F.Pier_reconnect = async (ier:Pier) => {
+            let eer = ier.eer
+            let con = eer.connect(ier.pub)
+            ier.init_begins(eer,con)
+        }
+
         // including the incoming connections
         //  and any time some part of the app (Idzeug) wants to add a Pier
         // goes async until %Our,Pier exists, makes .instance
         F.Peering_i_Pier = async (eer:Peering,prepub:string) => {
             let Our = this.o_Pier_Our(w,prepub)
             let ier
+            let Pier
             if (Our) {
                 // see if OurPier exists but isnt instantiated
-                let Pier = Our.sc.Pier as OurPier
+                Pier = Our.sc.Pier as OurPier
                 ier = Pier.instance
                 if (ier) {
                     if (prepub != ier.pub) throw `~pub`
                     return ier
                 }
-                // < opt.Peer seems GONE?
-                ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,pub:prepub})
             }
             else {
                 // make %Our,Pier before connecting
@@ -303,11 +312,13 @@
 
                 Our = this.o_Pier_Our(w,prepub)
                 if (!Our) throw `haven't built an OurPier`
-                let Pier = Our.sc.Pier as OurPier
-                if (Pier.instance) throw `new Pier got made just while getting i Our`
-                ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,pub:prepub})
-
+                Pier = Our.sc.Pier as OurPier
+                if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
             }
+            if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
+            
+            // < opt.Peer seems GONE?
+            ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,eer,pub:prepub})
             return ier
         }
         for (let e of this.o_elvis(w,'i_Pier_Our')) {
@@ -337,7 +348,7 @@
 
 
 //#endregion
-//#region Lets*
+//#region Lets* ambition
 
 
     async LetsPeering(A,w,Our:TheC,Peering:OurPeering) {
@@ -355,6 +366,14 @@
         }
 
         // < its stashed will to be connected to
+
+        let ier = Pier.instance
+        if (ier) {
+            w.i({see:"UP"})
+            // < jog more state
+            // also:
+            // ier.worth_reconnecting
+        }
 
         // so we can tell the CIA about new ones easily
         if (Pier.the_cia) {

@@ -537,11 +537,12 @@ export class Pier {
         this.eer = eer
         this.con = con
         this.inbound = inbound
+        let say = inbound ? "receoved" : "made"
 
         con.on('open', () => {
             if (!this.disconnected) return
             this.disconnected = false
-            console.log(`-> connection(${this.pub})`)
+            console.log(`${say} connection(${this.pub})`)
             // the other con.on handlers, hello procedure, etc:
             this.init_completo(eer,con)
         })
@@ -612,7 +613,12 @@ export class Pier {
                     return
                 }
                 // try
-                this.P.connect_pubkey(this.pub, `retried after ${time}ms`)
+                if (this.P.Trusting) {
+                    this.P.Trusting.Pier_reconnect(this)
+                }
+                else {
+                    this.P.connect_pubkey(this.pub, `retried after ${time}ms`)
+                }
                 // maybe try again
                 recur()
             },get_auto_reconnect_time())
