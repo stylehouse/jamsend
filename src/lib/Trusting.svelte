@@ -14,8 +14,8 @@
     onMount(() => {
         F = P.Trusting = new Trusting({P})
     })
-    let w = $derived(F?.w)
     let M = $derived(F?.modus)
+    let w = $derived(M?.w)
     // < our Modus 
     let increase = () => {
         M.i_elvis(w, "increase", { thingsing: "L" });

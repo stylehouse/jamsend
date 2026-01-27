@@ -13,12 +13,13 @@
         console.log(`Pier thinked`)
     }
     $effect(() => {
+        if (pier.P.Trusting) return
         if (Object.entries(pier.stashed)) {
             console.log(`Pier stashed save...`)
             pier.P.save_stash()
         }
     })
-    $inspect('Pier shing',pier.stashed)
+    // $inspect('Pier shing',pier.stashed)
 </script>
 
 <div id=levity>

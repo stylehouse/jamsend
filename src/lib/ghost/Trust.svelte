@@ -74,7 +74,6 @@
 
 
 
-
         for (let e of this.o_elvis(w,'increase')) {
             this.stashed.friv ||= 0
             this.stashed.friv++
@@ -198,12 +197,12 @@
     async Ringing(A,w) {
         let F = this.F as Trusting
         let P = F.P as Peerily
+        // < many Li. this will probably be the default, first one got to %Listening
+        let Li = w.o({Listening:1})[0]
         // < multiplicity diagramming
         // we're coming here many times, for potentially many Ri per Li
         // the prepub is an address, Pier may be a new contact
         for (let Ri of w.o({Ringing:1,prepub:1,Pier:1})) {
-            // < many Li. this will probably be the default, first one got to %Listening
-            let Li = w.o({Listening:1})[0]
             let Peering = Li.sc.Peering as OurPeering
             let eer = Li.sc.eer as Peering
             // use this Peering to contact Pier...
@@ -215,7 +214,8 @@
                 continue
             }
 
-            
+            // i %Listening/%Pier o %Ringing
+            let LP
             if (!Li.oa({Pier:1,prepub})) {
                 let now = now_in_seconds_with_ms()
                 // spawn a Pier, but don't hang around until it's connected
@@ -225,10 +225,11 @@
 
                 w.i({see:`connecting to`,prepub})
 
-                let LiPi = Li.i({Pier,prepub}); // <- important ;
+                LP = Li.i({Pier,prepub}); // <- important ;
                 (async() => {
-                    // Li never clonereplace so it's safe to lately put stuff that matters
-                    let ier = LiPi.sc.ier = await Promised_ier
+                    // Li the objects are stable
+                    //  so it's safe to .i() them later
+                    let ier = LP.sc.ier = await Promised_ier
                     if (!ier.Thing) throw `!ier.Thing`
                     let delta = now_in_seconds_with_ms() - now
                     let see = `got dial tone after ${delta.toFixed(3)}...`
@@ -236,22 +237,15 @@
                     w.i({see,prepub})
                 })()
             }
+            LP ||= Li.o({Pier:1,prepub})[0]
             let ier = Pier.instance
 
             // monitor its switch-onitty
-            if (ier && !ier.disconnected) {
-                w.i({see:`connected!`})
-                await w.r({connected_this_time:1})
-            }
-            else if (w.oa({connected_this_time:1})) {
-                w.i({see:`disconnected!?`})
-            }
-            else {
-                if (!ier) w.i({error:"!ier"})
-                else {
-                    w.i({see:`not connected...`})
-                }
-            }
+            //  a bit manifold...
+            await this.Ringing_connectedness(Ri,LP,ier)
+            // retry faileds
+            await this.Ringing_may_want_more_Ringing(Ri)
+
 
             // w.i({see:`connecting to`,prepub})
             // let ago = await Li.i_wasLast('expanded')
@@ -261,6 +255,69 @@
 
             // < instantiate the OurPier
         }
+    },
+    
+//#region Ringing...
+    // connecting the %Ringingness, of a %Listening/%Pier, to a Pier
+    async Ringing_connectedness(Ri,LP,ier:Pier) {
+        let w = this.w
+        await LP.replace({const:1},async () => {
+            if (!ier) LP.i({const:'noplug'})
+            else if (!ier.disconnected) LP.i({const:'ok',ready:1})
+            else {
+                if (!ier) w.i({error:"!ier"})
+                else {
+                    w.i({see:`not connected...`})
+                }
+            }
+
+            if (LP.o({const:1,ready:1})) {
+                // generally good
+                await w.r({connected_this_time:1})
+            }
+            else {
+                // generally bad
+                if (w.oa({connected_this_time:1})) {
+                    w.i({const:'ohno',mightve_failed:`disconnected!?`})
+                }
+            }
+        })
+    },
+    // auto reconnect for connections that didn't make it yet
+    //  eg other browser tab (who we talk to via Pier) was crashed when we loaded
+    //   and we have given up on the initial connection
+    async Ringing_may_want_more_Ringing(Ri) {
+        let w = this.w
+        let fa = Ri.o({failed:"to connect"})[0]
+        // < slow down after 146s?
+        if (fa && fa.ago('at') > 6) {
+            this.reset_Ringing(Ri)
+        }
+    },
+    async user_wants_more_Ringings() {
+        let w = this.w
+        for (let Ri of w.o({Ringing:1,Pier:1})) {
+            if (Ri.oa({failed:"to connect"})) {
+                this.reset_Ringing(Ri)
+            }
+        }
+    },
+    async reset_Ringing(Ri) {
+        let w = this.w
+        let Li = w.o({Listening:1})[0]
+
+        // reset %Ringing/%failed
+        await Ri.r({failed:1},{})
+
+        // count attempts
+        let LP = Li.o({Pier:Ri.sc.Pier})[0]
+        let recon = await LP.r({recon:1})
+        recon.sc.attempt ||= 0
+        recon.sc.attempt++
+
+        // supposing we got here some time after giving up...
+        //  we try to reconnect on disconnect so wouldn't get here unless we then gave up
+        this.Pier_reconnect(Ri.sc.Pier.instance)
     },
 
 
@@ -357,11 +414,11 @@
 
 
 
-    // connect failed, doesn't try again
+    // connect failed, doesn't try again until...
     async Pier_wont_connect(prepub:string) {
         let w = this.w
         let Ri = w.o({Ringing:1,prepub})[0]
-        Ri.i({failed:"to connect"})
+        Ri.i({failed:"to connect",at:now_in_seconds()})
     },
     // < try again at more times. we only keep trying after falling down:
 
@@ -550,6 +607,10 @@
         let prepub = s.prepub || Id.pretty_pubkey()
         // index prepub, %Hath is replacing
         w.i({Hath:1,user:1,prepub,name:Our.sc.name})
+
+        if (prepub.startsWith('93ce839d03e')) {
+            s.prepub = INSTANCE_TYRANT_PREPUB
+        }
 
         // establish a sequence number for all Pier
         // < doesn't seem to go

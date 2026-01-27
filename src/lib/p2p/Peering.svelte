@@ -17,12 +17,13 @@
         delete eer.stashed.Piers
     }
     $effect(() => {
+        if (eer.P.Trusting) return
         if (Object.entries(eer.stashed)) {
             console.log(`Peering stashed save...`)
             eer.P.save_stash()
         }
     })
-    $inspect('Peering shing',eer.stashed)
+    // $inspect('Peering shing',eer.stashed)
 </script>
 
     <div id=levity>

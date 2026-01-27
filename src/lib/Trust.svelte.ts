@@ -144,7 +144,7 @@ export class TrustingModus extends Modus {
         super(opt)
         this.F = this.S
         this.S.i_actions({
-            'Trust++': () => 1,
+            'Ringing++': () => this.user_wants_more_Ringings(),
             'Trust--': () => 1,
             'Mo++': () => this.main(),
         })

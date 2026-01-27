@@ -255,6 +255,7 @@ export class Peering {
 
         return pier
     }
+    // < GOING is now a UI:Things feature
     forget_Pier(pub:Prekey) {
         let before = this.stashed.Piers.length
         this.stashed.Piers = this.stashed.Piers
@@ -537,7 +538,7 @@ export class Pier {
         this.eer = eer
         this.con = con
         this.inbound = inbound
-        let say = inbound ? "receoved" : "made"
+        let say = inbound ? "received" : "made"
 
         con.on('open', () => {
             if (!this.disconnected) return
