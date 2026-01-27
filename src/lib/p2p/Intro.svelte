@@ -7,9 +7,9 @@
      } from "./Peerily.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
     import { throttle } from "$lib/Y";
-    import { PeeringSharing } from "./ftp/Sharing.svelte";
+    import { PeeringSharing } from "./ftp/Sharing.svelte.ts";
     import GatEnabler from "./ui/GatEnabler.svelte";
-    import Trusting from "$lib/Trusting.svelte";
+    import Trusting from "$lib/FTrusting.svelte";
     import Peering from "./Peering.svelte";
 
     let spec = `
@@ -65,29 +65,16 @@
         errors.add(err)
         console.error(`Error ${err.type}: ${err}`)
     }
-
-    // top level storage
-    //  Peering|Pier.stashed.* come out of here
-    //  features each have their own IndexedDB
-    //  < more hidden-in-the-dom storage as well
-    //    for people that want to save the app as a document
-    function load_stash() {
-        console.log(`loading Vstash`)
-        P.stash = JSON.parse(localStorage.Vstash)
+    
+    let save_stash = () => {
+        throw "GONE"
     }
-    // < GOING what was P.stash.Peering[0] = eer.stashed
-    //    is now provided by OurPeering.stashed, see UI:Thingstashed
-    let save_stash = throttle(() => {
-        console.log(`saving Vstash`)
-        localStorage.Vstash = JSON.stringify(P.stash)
-    },200)
-
-
     let on_Peering = (eer:Peering_type) => {
         // < switch features on|off on different Peerings
         //   we'll presume we dont
         //    and the app would get compiled to a subdomain
         //    when it wants different arrangements
+        // < whats with this ts problem
         eer.feature(new PeeringSharing({P,eer}))
     }
     let P = new Peerily({on_error,save_stash,on_Peering})
@@ -101,12 +88,14 @@
     // we'll get Trusting to spur this:
     // onMount(() => P.startup())
     
-
+    P.dosharing = () => {
+        sharing()
+    }
 
     
     let link = $state()
     async function sharing() {
-        if (link) return link = null
+        // if (link) return link = null
         // already in the address bar, can become QR code
         link = P.share_url + ",blaggablagga,hitech"
     }
@@ -114,13 +103,6 @@
         await navigator.clipboard.writeText(link);
     }
 
-
-    $effect(() => {
-        0 &&
-        setTimeout(() => {
-            [455,2455,5455].map(ms => setTimeout(() => tryit(), ms))
-        },1)
-    })
     $inspect(P.stash)
 
 
@@ -134,6 +116,7 @@
                 <qrthing>
                     <p> <button onclick={copy_link}>Copy Link</button> </p>
                     <pqr> <QrCode value={link} /> </pqr>
+                    <p> Here it is: {link} </p>
                 </qrthing>
             {/if}
         </span>

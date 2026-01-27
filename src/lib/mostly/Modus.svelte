@@ -116,7 +116,7 @@
     {/if}
     
     <Agency {M} ></Agency>
-    {#if UI_component}
+    {#if UI_component && M.stashed}
         <p>
             UI'd
             <svelte:component this={UI_component} {M} ></svelte:component>

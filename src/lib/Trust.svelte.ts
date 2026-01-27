@@ -5,6 +5,7 @@ import { Idento, Peering, PeeringFeature, Pier, PierFeature } from "./p2p/Peeril
 import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { tick } from "svelte";
 import type { KVStore } from "./data/IDB.svelte.ts";
+import MTrusting from "./MTrusting.svelte";
 
 //#endregion
 //#region F:Trusting
@@ -140,6 +141,7 @@ export class OurPier extends stashedHavingThingIsms {
 export class TrustingModus extends Modus {
     declare S:Trusting
     declare F:Trusting
+    want_fullscreen = $state(true)
     constructor(opt:Partial<TrustingModus>) {
         super(opt)
         this.F = this.S
@@ -148,6 +150,7 @@ export class TrustingModus extends Modus {
             'Trust--': () => 1,
             'Mo++': () => this.main(),
         })
+        this.UI_component = MTrusting
     }
     async start() {
         await this.do_A()

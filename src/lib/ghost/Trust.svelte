@@ -11,10 +11,10 @@
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
     import { DirectoryModus } from "$lib/p2p/ftp/Sharing.svelte";
     import Modus from "$lib/mostly/Modus.svelte";
-    import type { OurPeering, OurPier, OurPiers, Trusting } from "$lib/Trust.svelte";
+    import type { OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
    
     // < why is typescript not working
-    let {M}:{M:Modus} = $props()
+    let {M}:{M:TrustingModus} = $props()
     let V = {}
     const INSTANCE_TYRANT_PREPUB = "d29b454067f8c0e2"
     onMount(async () => {
@@ -64,6 +64,16 @@
         await this.Listening(A,w)
         await this.Ringing(A,w)
 
+
+        // M.F.P.dosharing()
+        // setTimeout(() => {
+        // M.F.P.dosharing()
+
+        // },1000)
+        // setTimeout(() => {
+        // M.F.P.dosharing()
+
+        // },1000)
 
 
         await this.Trusting_API_finally(A,w)

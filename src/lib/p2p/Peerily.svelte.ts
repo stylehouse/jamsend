@@ -4,7 +4,7 @@ import { objectify } from '$lib/data/Stuff.svelte';
 import type { ThingAction } from '$lib/data/Things.svelte';
 import type Modus from '$lib/mostly/Modus.svelte';
 import type { OurPeering, OurPier } from '$lib/Trust.svelte';
-import type { Trusting } from '$lib/Trusting.svelte';
+import type { Trusting } from '$lib/Trust.svelte.ts';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'

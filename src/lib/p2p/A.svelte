@@ -40,28 +40,8 @@
     }
     let P = new Peerily({on_error,save_stash,on_Peering})
 
-    // P.stash persists
-    // < identity per ?id=..., which we namespace into which stash...
-    $effect(() => {
-        if (!localStorage.Astash) return
-        load_stash()
-    })
-    $effect(() => {
-        if (!P.stash) return
-        save_stash()
-        // for debugging whether Pier.stashed.leg++ still works
-        //  < name it something easy to grep out of the json, hidden in the dom?
-        console.log("stashed JSON: "+localStorage.Astash)
-    })
     onDestroy(() => P.stop())
     onMount(() => P.startup())
-
-
-    let whoto = $state("ef281478ab8a9620")
-    let tryit = () => {
-        if (P.addresses.has(whoto)) whoto = "e092bc4767702a42"
-        // P.connect_pubkey(whoto)
-    }
 
 
     
