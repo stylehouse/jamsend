@@ -24,6 +24,8 @@
         console.log("Grip: ",S)
         setTimeout(() => S.stashed.fings = 3,1300)
     }
+    // < cyto in here... can we make friends in common?
+    let fullscreen = 0
 </script>
 
 <div class='levity Trusting'>
@@ -31,7 +33,48 @@
 {#if F}
     <button onclick={increase} >increase</button>
 
+
+
+
+
+
+
+
+    <div class="hoist" class:fullscreened={fullscreen}>
+        <div class="contain" class:fullscreened={fullscreen}>
+
+            <div class='uiing bottom'>
+                <div class='controls'>
+                    <span>
+                        <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                    </span>
+
+                    <span>
+                        <a href="https://github.com/stylehouse/jamsend">README</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
     <Modus S={F} do_start=1></Modus>
+
+
+    <!-- and then we have to have these things exist to get S.stashed
+         which we wait for sometimes somewhere -->
+
+
 
     <h3>Our Peerings</h3>
     <Things
@@ -92,4 +135,60 @@
         margin-left:-1em;
         border-radius:2em;
     }
+
+
+    div {
+        background:black;
+    }
+    button.big {
+        font-size:1.6em;
+    }
+    button.small {
+        font-size:0.75em;
+        opacity:0.05;
+    }
+    .contain {
+        position:relative;
+        width: 100%;
+        height: 100%;
+    }
+    .hoist.fullscreened {
+        position:fixed;
+        top:0;
+        left:0;
+        z-index:20000;
+        width: 100%;
+        height: 100%;
+    }
+    .uiing {
+        width: 100%;
+        position:absolute;
+        top:0;
+        left:0;
+        border-radius:3em;
+        display: flex;
+        flex-direction: column;
+    }
+    .bottom {
+        top:initial;
+        bottom:0;
+    }
+    .uiing button {
+        padding:0.7em;
+    }
+    .controls {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .controls > span:last-of-type {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+
+
 </style>
