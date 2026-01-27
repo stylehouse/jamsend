@@ -40,11 +40,10 @@
 
         // is it a sane time to look at OurPier
         //  or is a new one waiting for UI to UI:Thingstashed it
-        let UI_unready = [
+        await this.waiting_for_Thingstashed(A,w,() => [
             ...this.F.OurPeerings.asArray(),
             ...this.F.OurPiers.asArray(),
-        ].filter(xer => !xer.stashed)
-        if (UI_unready.length) console.warn(`M:Trusting not UI_ready`,UI_unready)
+        ])
 
 
         // copy all these objects into here so we can hang state off them
@@ -100,6 +99,78 @@
         }
         await w.r({friv:this.stashed?.friv})
     },
+    
+    // is it a sane time to look at OurPier
+    //  or is a new one waiting for UI to UI:Thingstashed it
+    async waiting_for_Thingstashed(A,w,N_fn) {
+        let loop = 5
+        while (1) {
+            if (loop-- < 0) throw "loop"
+            let UI_unready = N_fn().filter(S => !S.stashed)
+            if (UI_unready.length) {
+                console.warn(`M:Trusting not UI_ready`,UI_unready.map(S=>S.name))
+                await Promise.all(UI_unready.map(S => S.promise_stashed))
+                console.log(`M:Trusting UI_ready!`,UI_unready.map(S=>S.name))
+                // go around in case one got spawned since
+                continue
+            }
+            break
+        }
+    },
+
+
+//#endregion
+//#region Idzeug
+
+    async read_page_uri(A,w) {
+        let m = window.location.hash.match(/^#([\w,:]+)$/);
+        if (!m) return
+        let [hex,policy,sign] = m[1].split(',')
+        let prepub = hex
+        if (w.oa({Our:1,address:1,prepub})) {
+            // it's us, fumbling with the link
+            // < keep an invite code in the url? sublates sharing UI
+            //   can modern phones make QR codes of links on the spot?
+            return
+        }
+        await w.r({Idzeug:1},{})
+        let I = w.i({Idzeug:1,prepub,policy,sign})
+        for (let bit of policy) {
+            I.i({fresh:1,bit})
+        }
+    },
+    async Idzeug(A,w) {
+        let I = w.o({Idzeug:1})[0]
+        if (!I) return
+        let prepub = I.sc.prepub
+        if (!I.oa({init:1})) {
+            // it may exist - with this name!
+            // < could get weird? people giving different prepubs to gain more download slots?
+            // this may adopt their existing Pier, drawing it into this Idzeuging
+            // < this spawn is not on the right object.
+            //   we want to create them in our contacts list...
+            I.sc.OurPier = this.i_Pier(prepub)
+
+            I.i({init:1})
+        }
+
+        let OurPier = I.sc.OurPier as OurPier
+        w.i({Ringing:1,prepub,Pier:OurPier,for:"Idzeug"})
+
+        let Pier = OurPier.instance
+        if (Pier && !Pier.disconnected) {
+            w.i({error:`< talk it out`})
+        }
+        else {
+            w.i({waits:222})
+        }
+    },
+
+
+
+
+//#endregion
+//#region Listening, Ringing
 
     // we have replaced P.a_Peering|Pier with i_Peering|Pier
     //  we Ringing() / Pierise() / eer.i_Pier() creates them outgoingly
@@ -203,6 +274,10 @@
         }
     },
 
+
+//#endregion
+//#region Pierise
+
     // < should we directly Peering_i_Pier() ? it knows Our already
 
     // replaces P.connect_pubkey
@@ -258,6 +333,8 @@
 
         return ier
     },
+
+    // prepub -> %Our,Pier=OurPier.instance=Pier
     o_Pier_Our(w,prepub) {
         let def = w.o({Hath:1,user:1,prepub})[0]
         let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
@@ -274,6 +351,7 @@
         let F = this.F as Trusting
         let P = F.P as Peerily
 
+        
         // < auto_reconnect() first line:
         //     this.inbound = true
         //   how odd? would it never try again then unless worth_reconnecting
@@ -282,6 +360,7 @@
             let con = eer.connect(ier.pub)
             ier.init_begins(eer,con)
         }
+
 
         // including the incoming connections
         //  and any time some part of the app (Idzeug) wants to add a Pier
@@ -366,6 +445,9 @@
         }
 
         // < its stashed will to be connected to
+        if (s.prepub) {
+            await Our.r({Uncontacted:1})
+        }
 
         let ier = Pier.instance
         if (ier) {
@@ -454,56 +536,6 @@
         if (!s.Serial) {
             s.Serial = this.stashed.PierSerial
             this.stashed.PierSerial += 1
-        }
-    },
-
-
-
-
-//#endregion
-//#region Idzeug
-
-    async read_page_uri(A,w) {
-        let m = window.location.hash.match(/^#([\w,:]+)$/);
-        if (!m) return
-        let [hex,policy,sign] = m[1].split(',')
-        let prepub = hex
-        if (w.oa({Our:1,address:1,prepub})) {
-            // it's us, fumbling with the link
-            // < keep an invite code in the url? sublates sharing UI
-            //   can modern phones make QR codes of links on the spot?
-            return
-        }
-        await w.r({Idzeug:1},{})
-        let I = w.i({Idzeug:1,prepub,policy,sign})
-        for (let bit of policy) {
-            I.i({fresh:1,bit})
-        }
-    },
-    async Idzeug(A,w) {
-        let I = w.o({Idzeug:1})[0]
-        if (!I) return
-        let prepub = I.sc.prepub
-        if (!I.oa({init:1})) {
-            // it may exist - with this name!
-            // < could get weird? people giving different prepubs to gain more download slots?
-            // this may adopt their existing Pier, drawing it into this Idzeuging
-            // < this spawn is not on the right object.
-            //   we want to create them in our contacts list...
-            I.sc.OurPier = this.i_Pier(prepub)
-
-            I.i({init:1})
-        }
-
-        let OurPier = I.sc.OurPier as OurPier
-        w.i({Ringing:1,prepub,Pier:OurPier,for:"Idzeug"})
-
-        let Pier = OurPier.instance
-        if (Pier && !Pier.disconnected) {
-            w.i({error:`< talk it out`})
-        }
-        else {
-            w.i({waits:222})
         }
     },
 

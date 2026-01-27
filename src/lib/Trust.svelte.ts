@@ -56,7 +56,7 @@ export class Trusting extends PeeringFeature {
 
 type StashedObject = {
     prepub?: String, // while !said_hello
-    Id: Idento,
+    Id: Idento, // serialised version of
     main?: boolean,
 
 }
@@ -68,6 +68,14 @@ abstract class stashedHavingThingIsms extends ThingIsms {
     // M.stashed is persistent
     stashed:StashedObject = $state()
     stashed_mem:KVStore
+    promise_stashed?:Promise<void>
+    reso_promise_stashed?:Function
+    constructor(opt) {
+        super(opt)
+        // M:Trusting can demand|await all S.stashed
+        //  ie, it waits for storage via waiting for the UI, which does storage
+        this.promise_stashed = new Promise((reso) => this.reso_promise_stashed = reso)
+    }
 
     // also they need to call i_started_mem():
     started = $state(false)

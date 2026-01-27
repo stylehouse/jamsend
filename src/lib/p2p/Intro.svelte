@@ -71,6 +71,8 @@
         console.log(`loading Vstash`)
         P.stash = JSON.parse(localStorage.Vstash)
     }
+    // < GOING what was P.stash.Peering[0] = eer.stashed
+    //    is now provided by OurPeering.stashed, see UI:Thingstashed
     let save_stash = throttle(() => {
         console.log(`saving Vstash`)
         localStorage.Vstash = JSON.stringify(P.stash)
@@ -98,8 +100,6 @@
 
 
     
-    let Id:Idento
-    let Ud:Idento
     let link = $state()
     async function sharing() {
         if (link) return link = null
@@ -151,7 +151,8 @@
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
 
     <Trusting {P} /> 
-{#if 0}
+
+{#if 1}
     <div class=bitsies>
         {#each P.addresses as [pub,eer] (pub)}
             <Peering {pub} {eer} />

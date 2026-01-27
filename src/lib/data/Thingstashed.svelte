@@ -26,6 +26,9 @@
             if (json) {
                 // console.log(`stashedHaver ${name} loaded`)
             }
+            // here M is actually S, the eg Thing:OurPier wanting to load storage before being thought about
+            // full or not, S is now awake enough for M to think about
+            M.reso_promise_stashed?.()
         }
         if (Object.entries(M.stashed)) {
             // console.log(`stashedHaver ${name} saving...`)
