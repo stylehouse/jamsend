@@ -35,7 +35,6 @@
         }
 
 
-        this.F.w = w
         await this.Trusting_API(A,w)
 
         // is it a sane time to look at OurPier
@@ -334,6 +333,9 @@
         return ier
     },
 
+//#endregion
+//#region API *er
+
     // prepub -> %Our,Pier=OurPier.instance=Pier
     o_Pier_Our(w,prepub) {
         let def = w.o({Hath:1,user:1,prepub})[0]
@@ -351,7 +353,14 @@
         let F = this.F as Trusting
         let P = F.P as Peerily
 
-        
+
+        // connect failed, doesn't try again
+        F.Pier_wont_connect = async (prepub:string) => {
+            let Ri = w.o({Ringing:1,prepub})[0]
+            Ri.i({failed:"to connect"})
+        }
+        // < try again at more times. we only keep trying after falling down:
+
         // < auto_reconnect() first line:
         //     this.inbound = true
         //   how odd? would it never try again then unless worth_reconnecting

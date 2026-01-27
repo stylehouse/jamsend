@@ -24,6 +24,7 @@ export class Trusting extends PeeringFeature {
     Peering_i_Pier?:Function
     Pier_i_publicKey?:Function
     Pier_reconnect?:Function
+    Pier_wont_connect?:Function
 
     constructor(opt) {
         super(opt)
