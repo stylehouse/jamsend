@@ -5,6 +5,7 @@ import type { ThingAction } from '$lib/data/Things.svelte';
 import type Modus from '$lib/mostly/Modus.svelte';
 import type { OurPeering, OurPier } from '$lib/Trust.svelte';
 import type { Trusting } from '$lib/Trust.svelte.ts';
+import { erring } from '$lib/Y';
 import * as ed from '@noble/ed25519';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
@@ -757,7 +758,7 @@ export class Pier {
             try {
                 await this.process_single_unemit(currentData)
             } catch (err) {
-                console.error(`Error processing unemit:`, err)
+                console.error(erring(`Error processing unemit:`, err))
                 this.reset_unemit_state()
                 this.on_error?.(err)
             }
@@ -1029,6 +1030,7 @@ export class Pier {
             else {
                 // a grant
                 await this.verify_trust(t,true)
+                console.log(`granted_trust()`,t)
                 if (this.stashed.trust) {
                     // replaces any existing $to
                     let ti = this.stashed.trust.findIndex(st => t.to == st.to)
@@ -1061,8 +1063,9 @@ export class Pier {
         this.update_trust()
 
         // let them know and remember
-        this.emit('trusted',{trust:[t]})
-        console.log(`grant_trust(${to})`)
+        let trust = [t]
+        this.emit('trusted',{trust})
+        console.log(`grant_trust(${to})`,trust)
     }
     // we un-trust them
     revoke_trust(not:TrustName) {
@@ -1075,7 +1078,7 @@ export class Pier {
         // disable the in-memory grant
         this.stated_trust.delete(not)
         this.update_trust()
-        console.log(`revoke_trust(${not})`)
+        console.log(`revoke_trust(${not})`,not)
     }
 
     //#region Pier features
@@ -1093,11 +1096,14 @@ export class Pier {
         let switch_on = (direction) => {
             return (t:TrustedTrust,k:TrustName) => {
                 if (!this.features.get(k)) {
+                    // spawn PF!
                     // Peerily.F <-> Pier.PF
                     // F must already exist
                     //  thusly we allow a PF to exist and talk to Pier
                     let F = this.eer.features.get(k)
+                    if (!F) throw `haven't got F of ${k}`
                     let PF = F.spawn_PF({Pier:this})
+                    PF.spawned_at = now_in_seconds_with_ms()
                     this.features.set(k,PF)
                 }
                 // and on the 
@@ -1113,6 +1119,9 @@ export class Pier {
                 }
             }
         }
+        // what we are switching on for them to play with
+        //  needs ideally to wait for trust acceptance before emit to them?
+        // < where emits are elvises that can pend
         this.trust.forEach(switch_on('local'))
         this.trusted.forEach(switch_on('remote'))
 
@@ -1245,6 +1254,7 @@ export abstract class PierFeature extends ActionsAndModus {
     Pier:Pier
     // < their perm.local.* (to here) may include arbitrary signed data
     perm:BidiTrustication = $state({})
+    spawned_at:number
     constructor(opt) {
         super()
         Object.assign(this, opt)

@@ -29,6 +29,7 @@
     {/if}
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={tweakstash}>~~</button> -->
+     
     <Trusticles {pier} />
 
     <div class=bitsies>

@@ -482,6 +482,8 @@
         
         // < opt.Peer seems GONE?
         ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,eer,pub:prepub})
+
+        eer.Piers.set(prepub,ier)
         return ier
     },
     async elvising_i_Pier_Our(A,w,e) {

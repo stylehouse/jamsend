@@ -4,7 +4,7 @@
     // all F must host data:
     import Thingstashed from "./data/Thingstashed.svelte";
     import Modus from "./mostly/Modus.svelte";
-    import { OurPeering, OurPier, Trusting } from "./Trust.svelte.ts";
+    import { OurPeering, OurPier, Trusting, TrustingModus } from "./Trust.svelte.ts";
     import Things from "./data/Things.svelte";
     import type { Peerily } from "./p2p/Peerily.svelte.ts";
     import Trust from "./ghost/Trust.svelte";
@@ -14,15 +14,24 @@
     onMount(() => {
         F = P.Trusting = new Trusting({P})
     })
-    let M = $derived(F?.modus)
+    let M = $derived(F?.modus) as TrustingModus
     let w = $derived(M?.w)
     // < our Modus 
     let increase = () => {
         M.i_elvis(w, "increase", { thingsing: "L" });
     }
-    let grip = (S) => {
+    let jsonit = (s) => JSON.parse(JSON.stringify(s))
+    let grip = () => {
         console.log("Grip: ",JSON.parse(JSON.stringify(M.stashed)))
-        setTimeout(() => S.stashed.fings = 3,1300)
+    }
+    let boing = (S) => {
+        if (!S.instance) {
+            return console.warn("Noinst")
+        }
+        if (!S.instance.stashed) {
+            return console.warn("Nostashed")
+        }
+        S.instance.stashed.threeing = 3
     }
 </script>
 
@@ -30,7 +39,7 @@
 <h2>Trust!</h2>
 {#if F}
     <button onclick={increase} >increase</button>
-    <button onclick={grip} >grip</button>
+    <button onclick={() => grip()} >grip</button>
 
 
 
@@ -50,6 +59,7 @@
             {#snippet thing(S:OurPeering)}
                 <div class='levity Peering'>
                     <p>a Peering</p>
+                    {JSON.stringify(S.stashed)}
 
                     <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
                     {#if S.started}
@@ -69,6 +79,8 @@
                 {@const levity = console.log(`UI:Trusting/Pier:${S.name}`)}
                 <div class='levity Pier'>
                     <p>a Pier</p>
+                    <button onclick={() => boing(S)} >boing</button>
+                    {JSON.stringify(S.stashed)}
 
                     <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
                     {#if S.started}

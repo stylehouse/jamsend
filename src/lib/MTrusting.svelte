@@ -2,8 +2,8 @@
     let {M} = $props()
     let F = M.F
     // < this isn't working here!?
-    // let uimem = M.imem("UI")
-    // let inmem = uimem.further('Intro')
+    let uimem = M.imem("UI")
+    let inmem = uimem.further('Intro')
     // oh well if we're not recursive we can just use M.stashed
     let s = $derived(M.stashed)
     
@@ -12,6 +12,7 @@
     let toggle_fullscreen = () => {
         quit_fullscreen = !quit_fullscreen
         s.quit_fullscreen = quit_fullscreen
+        inmem.set('quit_fullscreen',quit_fullscreen)
     }
     
     let jamming = $derived(M.want_fullscreen)
