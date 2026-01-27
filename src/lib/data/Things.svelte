@@ -35,7 +35,7 @@
         
         try {
             // Use the collection's add method
-            await Ss.add_Thing(name)
+            await Ss.add_Thing({name})
             newItemName = ''
         } catch (err) {
             console.warn(`Failed to add ${type}:`, err)

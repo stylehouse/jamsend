@@ -142,7 +142,8 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     // now CRUD, syncing that .things SvelteMap and IndexedDB
 
     // Add a new share
-    async add_Thing(name: string): Promise<ThingIsms> {
+    async add_Thing(opt): Promise<ThingIsms> {
+        let name = opt.name as string
         if (this.things.has(name)) {
             throw erring(`Share "${name}" already exists`)
         }
@@ -151,7 +152,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
         await this.add({name}, name)
         
         // Create and return the DirectoryShare
-        const share = this.spawn_Thing({name})
+        const share = this.spawn_Thing(opt)
         return share
     }
 

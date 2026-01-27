@@ -16,7 +16,7 @@
     // < why is typescript not working
     let {M}:{M:TrustingModus} = $props()
     let V = {}
-    const INSTANCE_TYRANT_PREPUB = "d29b454067f8c0e2"
+    const INSTANCE_TYRANT_PREPUB = "7d64ae28faf8bfdf"
     onMount(async () => {
     await M.eatfunc({
 
@@ -313,6 +313,7 @@
         }
     },
     async reset_Ringing(Ri) {
+        if (!Ri.sc.Pier.instance) return
         let w = this.w
         let Li = w.o({Listening:1})[0]
 
@@ -421,6 +422,15 @@
         }
     },
 
+    async elvising_i_Pier_Our(A,w,e) {
+        let {return_fn,prepub} = e.sc
+        debugger
+        console.log(`elvised i_Pier_Our ${prepub}`)
+        w.i({see:`i_Pier_Our`,return_fn})
+
+    },
+
+
 
 
 
@@ -428,6 +438,8 @@
     async Pier_wont_connect(prepub:string) {
         let w = this.w
         let Ri = w.o({Ringing:1,prepub})[0]
+        // seen incoming connections, immediately then this heres, Ri=null
+        if (!Ri) return
         Ri.i({failed:"to connect",at:now_in_seconds()})
     },
     // < try again at more times. we only keep trying after falling down:
@@ -464,12 +476,13 @@
         }
         else {
             // make %Our,Pier before connecting
-            //  so it can have a live .stashed
+            await F.OurPiers.add_Thing({name:prepub,prepub})
+            debugger
+
+            // and wait so it can have a live .stashed
+            // < it's important we are out of Atime here. sub this maneuvre
             let return_fn
             let promise = new Promise((reso) => return_fn = reso)
-            // < right? or we'll need to give a e%return_fn that calls ?
-            if (!return_fn) throw "whatsitdo"
-
             this.i_elvis(w,'i_Pier_Our',{return_fn,prepub})
             await promise
 
@@ -480,18 +493,24 @@
         }
         if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
         
+
+        console.log(`i Pier(${prepub})`)
+
         // < opt.Peer seems GONE?
         ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,eer,pub:prepub})
+        if (!Pier.instance) throw `!Pier.instance`
+        if (!ier.Thing) throw `!ier.Thing`
 
         eer.Piers.set(prepub,ier)
         return ier
     },
-    async elvising_i_Pier_Our(A,w,e) {
-        let {return_fn,prepub} = e.sc
-        console.log(`elvised i_Pier_Our ${prepub}`)
-        w.i({see:`i_Pier_Our`,return_fn})
 
+    async Pier_init_completo(ier:Pier) {
+        let eer = ier.eer
+        let say = ier.inbound ? "received" : "made"
+        console.log(`${say} i Pier(${ier.pub}) complete`)
     },
+
 
 
     async Pier_i_publicKey(ier:Pier) {
@@ -526,6 +545,7 @@
         let Id = Our.o1({Id:1})[0]
         if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
         let prepub = s.prepub || Id.pretty_pubkey()
+
 
         if (w.oa({see:`i_Pier_Our`,return_fn:1})) {
             // it's connecting to us, might be new if
@@ -619,10 +639,6 @@
         let prepub = s.prepub || Id.pretty_pubkey()
         // index prepub, %Hath is replacing
         w.i({Hath:1,user:1,prepub,name:Our.sc.name})
-
-        if (prepub.startsWith('93ce839d03e')) {
-            s.prepub = INSTANCE_TYRANT_PREPUB
-        }
 
         // establish a sequence number for all Pier
         // < doesn't seem to go

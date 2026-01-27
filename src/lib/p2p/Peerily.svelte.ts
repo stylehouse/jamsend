@@ -578,6 +578,7 @@ export class Pier {
         this.reset_protocol_state()
         
         // begin crypto introduction
+        if (this.P.Trusting) this.P.Trusting.M.Pier_init_completo(this)
         // also a technicality: someone has to try con.send() to get it open
         if (!this.inbound) {
             this.say_hello()

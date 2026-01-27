@@ -99,7 +99,7 @@ export class OurPeerings extends ThingsIsms {
         return new OurPeering(opt)
     }
     async autovivify(opt) {
-        opt.name = 'generated'
+        opt.name = 'autovivified'
     }
 }
 // < see if they're online then activate certain protocols etc?
