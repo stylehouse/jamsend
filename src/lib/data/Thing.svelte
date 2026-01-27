@@ -26,6 +26,7 @@
 
 <div 
     class="thing-item" 
+    class:stealth={S.F.P.stealth && S.stashed?.stealth}
     data-type={type}
     class:started={S.started}
     class:needs-attention={S.no_autostart}
@@ -76,18 +77,5 @@
 }
 
 
-
-
-/* Type-specific styling */
-.thing-item[data-type="share"] {
-    border-left: 2px solid #4CAF50;
-}
-
-.thing-item[data-type="playlist"] {
-    border-left: 2px solid #9C27B0;
-}
-
-.thing-item[data-type="bookmark"] {
-    border-left: 2px solid #FF9800;
-}
+.stealth {display:none}
 </style>

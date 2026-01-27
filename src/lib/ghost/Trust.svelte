@@ -267,6 +267,8 @@
         }
     },
     
+
+//#endregion
 //#region Ringing...
     // connecting the %Ringingness, of a %Listening/%Pier, to a Pier
     async Ringing_connectedness(Ri,LP,ier:Pier) {
@@ -596,6 +598,10 @@
             // < maybe at some point, ~~ P.a_Peering(Id)
             Our.i({init:1})
         }
+
+        // < see if they're online, once
+        //   if not they'll see if you're online?
+
         let Id = Our.o1({Id:1})[0]
         let prepub = Id.pretty_pubkey()
         // index prepub
@@ -609,6 +615,7 @@
         if (!s.Id && !s.prepub) {
             // on spawn, the first time
             if (Pier.the_cia) {
+                s.stealth = 1
                 s.prepub = INSTANCE_TYRANT_PREPUB
             }
             else if (Pier.prepub) {
@@ -621,18 +628,21 @@
                 throw `how would this happen`
             }
         }
-        if (!Our.oa({init:1})) {
+        // hold off init until Id is got
+        if (s.Id && !Our.oa({init:1})) {
             if (s.Id) {
                 // only deals with whole pubkeys, and maybe private keys
                 let Id = new Idento()
                 Id.thaw(s.Id)
                 Our.i({Id})
             }
-
-            // < see if they're online, once
-            //   if not they'll see if you're online
             Our.i({init:1})
         }
+
+        // not really a contact
+        if (s.stealth) await Our.r({stealth:1})
+
+
         // we upgrade to having Id after emit:hello'ing an initial prepub
         let Id = Our.o1({Id:1})[0]
         if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`

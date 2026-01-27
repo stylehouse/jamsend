@@ -2,6 +2,7 @@
     import type { Pier } from "./Peerily.svelte";
     import Trusticles from "./ui/Trusticles.svelte";
 
+    // < rename -> ier
     let {pier}:{pier:Pier} = $props()
     async function showstash() {
         console.log("pier",pier.stashed)
@@ -21,15 +22,15 @@
     })
     // $inspect('Pier shing',pier.stashed)
 </script>
-
-<div id=levity>
+ 
+<div id=levity class:stealth={pier.P.stealth && pier.stashed?.stealth}>
     Pier: {pier.pub} 
     {#if pier.disconnected}
         <span class="ohno tech">discon</span>
     {/if}
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={tweakstash}>~~</button> -->
-     
+
     <Trusticles {pier} />
 
     <div class=bitsies>
@@ -47,4 +48,5 @@
         border-left: 2em solid rgb(97, 139, 19);
         border-radius:2em;
     }
+    .stealth {display:none}
 </style>

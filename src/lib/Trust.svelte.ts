@@ -113,6 +113,8 @@ export class OurPiers extends ThingsIsms {
     constructor(opt) {
         super(opt)
         this.set_table(`Pier`)
+        // stealth config
+        // this.F.P.stealth = true
     }
 
 
