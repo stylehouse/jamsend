@@ -214,7 +214,7 @@ export class Peering {
     async i_Pier(pub:Prekey):Promise<Pier> {
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
-        return pier || await this.P.Trusting.Peering_i_Pier(this,pub)
+        return pier || await this.P.Trusting.M.Peering_i_Pier(this,pub)
         if (!pier) {
             // < shouldn't say Peer:this?
             pier = new Pier({P:this.P,Peer:this,pub})
@@ -614,7 +614,7 @@ export class Pier {
                 }
                 // try
                 if (this.P.Trusting) {
-                    this.P.Trusting.Pier_reconnect(this)
+                    this.P.Trusting.M.Pier_reconnect(this)
                 }
                 else {
                     this.P.connect_pubkey(this.pub, `retried after ${time}ms`)
@@ -910,7 +910,7 @@ export class Pier {
             this.Ud = new Idento()
             this.Ud.publicKey = dehex(publicKey)
             if (this.P.Trusting) {
-                this.P.Trusting.Pier_i_publicKey(this)
+                this.P.Trusting.M.Pier_i_publicKey(this)
             }
             else {
                 this.stashed.pubkey = publicKey

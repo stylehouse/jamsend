@@ -35,7 +35,6 @@
         }
 
 
-        await this.Trusting_API(A,w)
 
         // is it a sane time to look at OurPier
         //  or is a new one waiting for UI to UI:Thingstashed it
@@ -44,26 +43,11 @@
             ...this.F.OurPiers.asArray(),
         ])
 
+        await this.Trusting_i_Our_Things(A,w)
 
-        // copy all these objects into here so we can hang state off them
-        // < this could be a TrustingModus.constructor $effect() for these Thingses
-        await w.replace({Our:1}, async () => {
-            for (let Peering of this.F.OurPeerings.asArray()) {
-                w.i({Our:1,Peering,name:Peering.name})
-            }
-            for (let Pier of this.F.OurPiers.asArray()) {
-                w.i({Our:1,Pier,name:Pier.name})
-            }
-        })
-        // having indexes...
-        await w.replace({Hath:1}, async () => {
-            for (let Our of w.bo({Peering:1,Our:1})) {
-                await this.OurPeering(A,w,Our,Our.sc.Peering)
-            }
-            for (let Our of w.bo({Pier:1,Our:1})) {
-                await this.OurPier(A,w,Our,Our.sc.Pier)
-            }
-        })
+        // these must operate on stable %Our
+        await this.Trusting_API(A,w)
+
         // spawning desires
         for (let Our of w.o({Peering:1,Our:1})) {
             await this.LetsPeering(A,w,Our,Our.sc.Peering)
@@ -99,23 +83,29 @@
         await w.r({friv:this.stashed?.friv})
     },
     
-    // is it a sane time to look at OurPier
-    //  or is a new one waiting for UI to UI:Thingstashed it
-    async waiting_for_Thingstashed(A,w,N_fn) {
-        let loop = 5
-        while (1) {
-            if (loop-- < 0) throw "loop"
-            let UI_unready = N_fn().filter(S => !S.stashed)
-            if (UI_unready.length) {
-                console.warn(`M:Trusting not UI_ready`,UI_unready.map(S=>S.name))
-                await Promise.all(UI_unready.map(S => S.promise_stashed))
-                console.log(`M:Trusting UI_ready!`,UI_unready.map(S=>S.name))
-                // go around in case one got spawned since
-                continue
+    // i %Our,Peering|Pier=s o F/Ss/S
+    async Trusting_i_Our_Things(A,w) {
+        // copy all these objects into here so we can hang state off them
+        // < this could be a TrustingModus.constructor $effect() for these Thingses
+        await w.replace({Our:1}, async () => {
+            for (let Peering of this.F.OurPeerings.asArray()) {
+                w.i({Our:1,Peering,name:Peering.name})
             }
-            break
-        }
+            for (let Pier of this.F.OurPiers.asArray()) {
+                w.i({Our:1,Pier,name:Pier.name})
+            }
+        })
+        // having indexes...
+        await w.replace({Hath:1}, async () => {
+            for (let Our of w.bo({Peering:1,Our:1})) {
+                await this.OurPeering(A,w,Our,Our.sc.Peering)
+            }
+            for (let Our of w.bo({Pier:1,Our:1})) {
+                await this.OurPier(A,w,Our,Our.sc.Pier)
+            }
+        })
     },
+
 
 
 //#endregion
@@ -342,6 +332,20 @@
         let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
         return Our
     },
+    // other processes talk to this authority sometimes
+    async Trusting_API(A,w) {
+        // and so here we are
+        this.w = w
+        // < is this.w always sane? it's the old one while %Our rebuilds?
+
+        for (let e of this.o_elvis(w,'i_Pier_Our')) {
+            await this.elvising_i_Pier_Our(A,w,e)
+        }
+        // meeting someone
+        for (let e of this.o_elvis(w,'save_Ud')) {
+            await this.elvising_save_Ud(A,w,e)
+        }
+    },
     async Trusting_API_finally(A,w) {
         // you can handle elvis many times
         for (let e of this.o_elvis(w,'i_Pier_Our')) {
@@ -349,90 +353,96 @@
             return_fn()
         }
     },
-    async Trusting_API(A,w) {
+
+
+
+
+    // connect failed, doesn't try again
+    async Pier_wont_connect(prepub:string) {
+        let w = this.w
+        let Ri = w.o({Ringing:1,prepub})[0]
+        Ri.i({failed:"to connect"})
+    },
+    // < try again at more times. we only keep trying after falling down:
+
+    // < auto_reconnect() first line:
+    //     this.inbound = true
+    //   how odd? would it never try again then unless worth_reconnecting
+    async Pier_reconnect(ier:Pier) {
+        let eer = ier.eer
+        let con = eer.connect(ier.pub)
+        ier.init_begins(eer,con)
+    },
+
+
+    // including the incoming connections
+    //  and any time some part of the app (Idzeug) wants to add a Pier
+    // goes async until %Our,Pier exists, makes .instance
+    async Peering_i_Pier(eer:Peering,prepub:string) {
         let F = this.F as Trusting
         let P = F.P as Peerily
+        let w = this.w
 
-
-        // connect failed, doesn't try again
-        F.Pier_wont_connect = async (prepub:string) => {
-            let Ri = w.o({Ringing:1,prepub})[0]
-            Ri.i({failed:"to connect"})
-        }
-        // < try again at more times. we only keep trying after falling down:
-
-        // < auto_reconnect() first line:
-        //     this.inbound = true
-        //   how odd? would it never try again then unless worth_reconnecting
-        F.Pier_reconnect = async (ier:Pier) => {
-            let eer = ier.eer
-            let con = eer.connect(ier.pub)
-            ier.init_begins(eer,con)
-        }
-
-
-        // including the incoming connections
-        //  and any time some part of the app (Idzeug) wants to add a Pier
-        // goes async until %Our,Pier exists, makes .instance
-        F.Peering_i_Pier = async (eer:Peering,prepub:string) => {
-            let Our = this.o_Pier_Our(w,prepub)
-            let ier
-            let Pier
-            if (Our) {
-                // see if OurPier exists but isnt instantiated
-                Pier = Our.sc.Pier as OurPier
-                ier = Pier.instance
-                if (ier) {
-                    if (prepub != ier.pub) throw `~pub`
-                    return ier
-                }
+        let Our = this.o_Pier_Our(w,prepub)
+        let ier
+        let Pier
+        if (Our) {
+            // see if OurPier exists but isnt instantiated
+            Pier = Our.sc.Pier as OurPier
+            ier = Pier.instance
+            if (ier) {
+                if (prepub != ier.pub) throw `~pub`
+                return ier
             }
-            else {
-                // make %Our,Pier before connecting
-                //  so it can have a live .stashed
-                let return_fn
-                let promise = new Promise((reso) => return_fn = reso)
-                // < right? or we'll need to give a e%return_fn that calls ?
-                if (!return_fn) throw "whatsitdo"
+        }
+        else {
+            // make %Our,Pier before connecting
+            //  so it can have a live .stashed
+            let return_fn
+            let promise = new Promise((reso) => return_fn = reso)
+            // < right? or we'll need to give a e%return_fn that calls ?
+            if (!return_fn) throw "whatsitdo"
 
-                this.i_elvis(w,'i_Pier_Our',{return_fn,prepub})
-                await promise
+            this.i_elvis(w,'i_Pier_Our',{return_fn,prepub})
+            await promise
 
-                Our = this.o_Pier_Our(w,prepub)
-                if (!Our) throw `haven't built an OurPier`
-                Pier = Our.sc.Pier as OurPier
-                if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
-            }
+            Our = this.o_Pier_Our(w,prepub)
+            if (!Our) throw `haven't built an OurPier`
+            Pier = Our.sc.Pier as OurPier
             if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
-            
-            // < opt.Peer seems GONE?
-            ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,eer,pub:prepub})
-            return ier
         }
-        for (let e of this.o_elvis(w,'i_Pier_Our')) {
-            let {return_fn,prepub} = e.sc
-            console.log(`elvised i_Pier_Our ${prepub}`)
-            w.i({see:`i_Pier_Our`,return_fn})
-        }
+        if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
         
-
-        // meeting someone
-        F.Pier_i_publicKey = async (ier) => {
-            // received a good publicKey, only knew pubkey (ier.pub)
-            // < store this.Ud via elvis
-            this.i_elvis(w,"save_Ud",{ier})
-        }
-        for (let e of this.o_elvis(w,'save_Ud')) {
-            let {ier} = e.sc
-            let Id = ier.Ud as Idento
-            // < this could be moved over there to Peerily...
-            //   we still believe in ier.pub
-            //    GONE is ier.stashed.pubkey, now simply:
-            ier.stashed.Id = Id.freeze()
-            delete ier.stashed.prepub
-            console.warn(`e:save_Ud(${1})`)
-        }
+        // < opt.Peer seems GONE?
+        ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,eer,pub:prepub})
+        return ier
     },
+    async elvising_i_Pier_Our(A,w,e) {
+        let {return_fn,prepub} = e.sc
+        console.log(`elvised i_Pier_Our ${prepub}`)
+        w.i({see:`i_Pier_Our`,return_fn})
+
+    },
+
+
+    async Pier_i_publicKey(ier:Pier) {
+        let w = this.w
+        // received a good publicKey, only knew pubkey (ier.pub)
+        // < store this.Ud via elvis
+        this.i_elvis(w,"save_Ud",{ier})
+    },
+    async elvising_save_Ud(A,w,e) {
+        let {ier} = e.sc
+        let Id = ier.Ud as Idento
+        // < this could be moved over there to Peerily...
+        //   we still believe in ier.pub
+        //    GONE is ier.stashed.pubkey, now simply:
+        ier.stashed.Id = Id.freeze()
+        delete ier.stashed.prepub
+        console.warn(`e:save_Ud(${1})`)
+
+    },
+
 
 
 //#endregion
@@ -450,6 +460,7 @@
 
         if (w.oa({see:`i_Pier_Our`,return_fn:1})) {
             // it's connecting to us, might be new if
+            Our.i({is:"inbound"})
             console.log(`e:i_Pier_Our! ${prepub}`)
         }
 

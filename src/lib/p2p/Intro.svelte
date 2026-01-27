@@ -60,7 +60,7 @@
     let on_error = (err) => {
         if (err.type == 'peer-unavailable') {
             let prepub = err.message.match(/^Could not connect to peer (\w+)$/)[1]
-            P.Trusting.Pier_wont_connect(prepub)
+            P.Trusting.M.Pier_wont_connect(prepub)
         }
         errors.add(err)
         console.error(`Error ${err.type}: ${err}`)
