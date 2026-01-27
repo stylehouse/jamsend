@@ -94,7 +94,11 @@
     let actions = $derived(no_actions ? null : S.actions)
 
     // putting this in $derived() avoids error when M is undefined
+    // a frontend!
     let UI_component = $derived(M.UI_component)
+    // one that wants M.stashed
+    let stashy_UI_component = $derived(M.stashy_UI_component)
+    // another way to put a frontend
     let VJ = $derived(M.VJ)
 
 </script>
@@ -116,10 +120,16 @@
     {/if}
     
     <Agency {M} ></Agency>
-    {#if UI_component && M.stashed}
+    {#if UI_component}
         <p>
             UI'd
             <svelte:component this={UI_component} {M} ></svelte:component>
+        </p>
+    {/if}
+    {#if stashy_UI_component && M.stashed}
+        <p>
+            UI'd
+            <svelte:component this={stashy_UI_component} {M} ></svelte:component>
         </p>
     {/if}
 <Scrollability maxHeight="80vh" class="content-area">

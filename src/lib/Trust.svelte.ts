@@ -3,7 +3,7 @@ import { ThingIsms, ThingsIsms } from "./data/Things.svelte.ts";
 import {Modus} from "./mostly/Modus.svelte.ts";
 import { Idento, Peering, PeeringFeature, Pier, PierFeature } from "./p2p/Peerily.svelte";
 import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
-import { tick } from "svelte";
+import { tick, type Component } from "svelte";
 import type { KVStore } from "./data/IDB.svelte.ts";
 import MTrusting from "./MTrusting.svelte";
 
@@ -142,6 +142,7 @@ export class TrustingModus extends Modus {
     declare S:Trusting
     declare F:Trusting
     want_fullscreen = $state(true)
+    stashy_UI_component:Component
     constructor(opt:Partial<TrustingModus>) {
         super(opt)
         this.F = this.S
@@ -150,7 +151,7 @@ export class TrustingModus extends Modus {
             'Trust--': () => 1,
             'Mo++': () => this.main(),
         })
-        this.UI_component = MTrusting
+        this.stashy_UI_component = MTrusting
     }
     async start() {
         await this.do_A()

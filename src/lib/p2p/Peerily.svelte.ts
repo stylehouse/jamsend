@@ -216,18 +216,15 @@ export class Peering {
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
         return pier || await this.P.Trusting.M.Peering_i_Pier(this,pub)
-        if (!pier) {
-            // < shouldn't say Peer:this?
-            pier = new Pier({P:this.P,Peer:this,pub})
-            this.Piers.set(pub,pier)
-        }
-        return pier
     }
 
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     async a_Pier(pub:Prekey):Pier {
         if (this.Trusting) return await this.i_Pier(pub)
+
+
+
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
         if (!pier) {
