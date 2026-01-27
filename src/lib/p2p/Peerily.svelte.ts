@@ -1209,8 +1209,11 @@ export abstract class PeeringFeature extends ActionsAndModus {
     // gizmos register each Modus anywhere within, can store strings
     gizmos = $state(new SvelteMap())
     gizmo_mem = new SvelteMap()
+    stashed_mem_key() {
+        return `F=${objectify(this)}`
+    }
     stashed_mem(M:Modus|Object,name:string) {
-        let key = `PeeringFeature=${objectify(this)}/${name}`
+        let key = `${this.stashed_mem_key()}/${name}`
         // we keep a read+writer for each key in the KVStore
         let mem = this.gizmo_mem.get(key)
         if (!mem) {

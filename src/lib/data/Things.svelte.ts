@@ -40,8 +40,11 @@ export abstract class ThingIsms extends ActionsAndModus {
     //      accumulating context from a chain of S.*.stashed_mem(M,longerkey)
     //    it is also
     //     the resulting KVStore
+    stashed_mem_key() {
+        return `Thing:${this.up.storeName}=${this.name}`
+    }
     i_stashed_mem(M?:Modus|Object,name?:string) {
-        let key = `Thing:${this.up.storeName}=${this.name}`
+        let key = this.stashed_mem_key()
         if (name != null) key += `/${name}`
         if (M == null) M = this
         let mem = this.F.stashed_mem(M,key)
@@ -52,7 +55,25 @@ export abstract class ThingIsms extends ActionsAndModus {
         this.i_stashed_mem(M,name)
     }
 
-
+    // < the 'share handle' also needs a delete
+    async on_remove() {
+        // delete Thing's gizmos
+        // < less terrible design, start over...
+        let prefix = this.F.stashed_mem_key() +'/'+ this.stashed_mem_key()
+        // < why is this KVStore (which is what we want)
+        let kvStore = this.stashed_mem as KVStore
+        if (typeof kvStore == 'function') {
+            debugger
+        }
+        // Get all keys that start with this prefix
+        const allKeys = await kvStore.getAllKeys() // depends on your KVStore API
+        const matchingKeys = allKeys.filter(key => key.startsWith(prefix))
+        
+        // Delete each matching key
+        for (const key of matchingKeys) {
+            await kvStore.delete(key)
+        }
+    }
 
 }
 abstract class ThingNessIsms {
@@ -152,15 +173,16 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
         await this.add({name}, name)
         
         // Create and return the DirectoryShare
-        const share = this.spawn_Thing(opt)
-        return share
+        const S = this.spawn_Thing(opt)
+        return S
     }
 
     // Remove a share
     async remove_Thing(name: string): Promise<void> {
-        const share = this.things.get(name)
-        if (share) {
-            await share.stop?.()
+        const S = this.things.get(name)
+        if (S) {
+            S.on_remove()
+            await S.stop?.()
             this.things.delete(name)
         }
         

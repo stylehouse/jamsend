@@ -16,7 +16,7 @@
     // < why is typescript not working
     let {M}:{M:TrustingModus} = $props()
     let V = {}
-    const INSTANCE_TYRANT_PREPUB = "7d64ae28faf8bfdf"
+    const INSTANCE_TYRANT_PREPUB = "39c5108c0e1f7948"
     onMount(async () => {
     await M.eatfunc({
 
