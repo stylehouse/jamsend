@@ -878,11 +878,11 @@ export class Pier {
             this.hear_trusted(data)
         },
         ping: async (data) => {
-            console.log("they say ping: ",data)
+            // console.log("they say ping: ",data)
             await this.P.Trusting.M.unemitPing(this,data)
         },
         intro: async (data) => {
-            console.log("they say ping: ",data)
+            console.log("they say intro: ",data)
             await this.P.Trusting.M.unemitIntro(this,data)
         },
     }

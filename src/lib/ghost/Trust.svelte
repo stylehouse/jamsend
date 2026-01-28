@@ -197,7 +197,7 @@
             let advice = depeel(c)
             if (advice.match(/[^\w+ ,:-]/)) throw "illegal char, depeel: "+advice
             
-            advice.replace(/ /g,'+')
+            advice = advice.replace(/ /g,'+')
             // < higher security: not giving your Id here
             //    requires instance tyrant to mediate
             //     requires more people online to get Idzeuganised
@@ -211,7 +211,7 @@
 
             // < dev
             // console.log(`invite: ${Idzeuginance}\n\tfully: ${Idzeugi}`)
-            await this.Idzeugmanci(A,w,Idzeugi)
+            await this.mock_Idzeugmance(A,w,Idzeugi)
 
 
             N.push(Idzeugi)
@@ -225,15 +225,31 @@
         window.location.hash = 'jamsend'
     },
 
+    async mock_Idzeugmance(A,w,Idzeugi) {
+        let url = new URL(Idzeugi)
+        await this.Idzeugmanci(A,w,url.hash.slice(1))
+    },
 
     async Idzeugmance(A,w) {
         let m = window.location.hash.match(/^#([\w,+_:-]{16,})$/);
         this.reset_location_hash()
-        m && await this.Idzeugmancy(A,w,m[1])
+        m && await this.Idzeugmanci(A,w,m[1])
     },
+
+    getOurThing(A,w,prepub) {
+        let Our = w.o({Hath:1,prepub})[0]?.o({Our:1})[0]
+        return {Our,
+            Thing: Our?.sc.Pier || Our?.sc.Peering
+        }
+    },
+
     async Idzeugmanci(A,w,Idzeugi:string) {
         let [prepub,advice,sign] = Idzeugi.split('-')
-        if (w.oa({Our:1,address:1,prepub})) {
+
+        if ('break') sign = sign.replace(/[face]/,'4')
+
+        advice = advice.replace(/\+/g,' ')
+        if (0 && w.oa({Our:1,address:1,prepub})) {
             // < redundant while invite only
             // it's us, fumbling with the link
             // < keep an invite code in the url? sublates sharing UI
@@ -243,7 +259,7 @@
         }
         
         await w.r({Idzeugnation:1},{})
-        let I = w.i({Idzeugnation:1,prepub})
+        let I = w.i({Idzeugnation:1,prepub,advice,sign})
 
         let c = peel(advice)
         let name = Object.keys(c)[0]
@@ -251,6 +267,16 @@
         delete c[name]
         // hold this out here, avoid their c.* being at I/%* 
         I.i({name,n}).i(c)
+    },
+    async Idzeuverify(A,w:TheC,I:TheC) {
+        // < GOING not usually able to sign this early
+        let {prepub,advice,sign} = I.sc
+        let {Our,Thing} = this.getOurThing(A,w,prepub)
+        if (!Thing) throw "< for them"
+        let Id = Our.o1({Id:1})[0] as Idento
+        if (!Id) throw "!Id!?"
+        let isok = await Id.ver(sign,`${prepub}-${advice}`)
+        I.sc.isok = isok
     },
 
 
@@ -264,10 +290,18 @@
             // this may adopt their existing Pier, drawing it into this Idzeuging
             // < this spawn is not on the right object.
             //   we want to create them in our contacts list...
-            I.sc.OurPier = this.i_Pier(prepub)
+
+            I.sc.OurPier = await this.i_Pier(prepub)
 
             I.i({init:1})
         }
+
+    },
+
+
+
+
+    async Idzeugo_fetchemup(A,w:TheC) {
 
         let OurPier = I.sc.OurPier as OurPier
         w.i({Ringing:1,prepub,Pier:OurPier,for:"Idzeug"})
@@ -280,6 +314,8 @@
             w.i({waits:222})
         }
     },
+
+
 
 
     async unemitIntro(ier:Pier,data) {
@@ -807,6 +843,7 @@
         let etc = {name:Our.sc.name}
         if (s.main) etc.main = 1
         w.i({Hath:1,address:1,prepub,...etc})
+            .is().i(Our)
     },
 
     async OurPier(A,w,Our:TheC,Pier:OurPier) {
@@ -848,6 +885,7 @@
         let prepub = s.prepub || Id.pretty_pubkey()
         // index prepub, %Hath is replacing
         w.i({Hath:1,user:1,prepub,name:Our.sc.name})
+            .is().i(Our)
 
         // establish a sequence number for all Pier
         // < doesn't seem to go
