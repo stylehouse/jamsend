@@ -118,6 +118,10 @@
         let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
         return Our
     },
+    o_Our_main_Peering(w:TheC):OurPeering {
+        let def = w.o({Hath:1,address:1,main:1})[0]
+        return def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
+    },
     // < I think we'll want this from eg Idzeug()
     //   
     // pick an eer and eer.i_Pier()
@@ -126,28 +130,20 @@
     },
 
 
-
 //#endregion
 //#region Idzeug
 
-    async read_page_uri(A,w) {
-        let m = window.location.hash.match(/^#([\w,:]+)$/);
-        if (!m) return
-        let [hex,policy,sign] = m[1].split(',')
-        let prepub = hex
-        if (w.oa({Our:1,address:1,prepub})) {
-            // it's us, fumbling with the link
-            // < keep an invite code in the url? sublates sharing UI
-            //   can modern phones make QR codes of links on the spot?
-            return
-        }
-        await w.r({Idzeug:1},{})
-        let I = w.i({Idzeug:1,prepub,policy,sign})
-        for (let bit of policy) {
-            I.i({fresh:1,bit})
-        }
-    },
+    
     async Idzeug(A,w) {
+        // be able to make them
+        let Z = w.oai({Idzeugability:1})
+        let Our = this.o_Our_main_Peering(w)
+        let Id = Our.o1({Id:1})[0]
+        // with the current Idzeugability...
+        window.location.hash = `${Id}-leeem`
+        M.F.P.share_url = window.location.toString()
+
+
         let I = w.o({Idzeug:1})[0]
         if (!I) return
         let prepub = I.sc.prepub
@@ -178,6 +174,23 @@
     },
 
 
+    async read_page_uri(A,w) {
+        let m = window.location.hash.match(/^#([\w-,:]+)$/);
+        if (!m) return
+        let [hex,policy,sign] = m[1].split('-')
+        let prepub = hex
+        if (w.oa({Our:1,address:1,prepub})) {
+            // it's us, fumbling with the link
+            // < keep an invite code in the url? sublates sharing UI
+            //   can modern phones make QR codes of links on the spot?
+            return
+        }
+        await w.r({Idzeug:1},{})
+        let I = w.i({Idzeug:1,prepub,policy,sign})
+        for (let bit of policy) {
+            I.i({fresh:1,bit})
+        }
+    },
 
 
 
@@ -195,12 +208,10 @@
         let P = F.P as Peerily
         // < multiplicity
         if (w.oa({Listening:1})) return
-        let def = w.o({Hath:1,address:1,main:1})[0]
-        let Our = def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
+        let Our = this.o_Our_main_Peering(w)
         if (!Our) return w.i({error:"pick a new main address?"})
-        let Peering = Our.sc.Peering as OurPeering
-
         let Id = Our.o1({Id:1})[0]
+        let Peering = Our.sc.Peering as OurPeering
         let eer = Peering.instance = P.i_Peering(Id) as Peering
         eer.Thing = Peering
         
@@ -208,7 +219,8 @@
         eer.stashed = Peering.stashed
 
         // console.log(`You `,eer)
-        w.i({Listening:1,eer,Peering,prepub:def.sc.prepub})
+        let prepub = Id.pretty_pubkey()
+        w.i({Listening:1,eer,Peering,prepub})
     },
     
     async Ringing(A,w) {
@@ -606,7 +618,7 @@
         }
         else {
             let Our = this.o_Pier_Our(w,ier.pub)
-            let Ping = Our.o({Ping:1})[0]
+            let Ping = Our.oai({Ping:1})
             let latency
             if (!data.received) {
                 // step 3, the local|origin again
