@@ -89,13 +89,14 @@
     // onMount(() => P.startup())
     
     P.dosharing = () => {
+        if (link) link = null
         sharing()
     }
 
     
     let link = $state()
     async function sharing() {
-        // if (link) return link = null
+        if (link) return link = null
         // already in the address bar, can become QR code
         link = P.share_url + ",blaggablagga,hitech"
     }

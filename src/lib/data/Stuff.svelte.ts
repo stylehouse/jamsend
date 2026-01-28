@@ -280,6 +280,12 @@ class StuffIO {
         return nonemptyArray_or_null(this.bo1(c,q))
     }
 
+    // select or insert - when you want .r() but keeping the C object
+    // < could upsert, index-safely?
+    oai(s,c={}) {
+        return this.o(s)[0] || this.i({...s,...c})
+    }
+
 
     o_query(sc:TheUniversal,q:any) {
         q ||= {}

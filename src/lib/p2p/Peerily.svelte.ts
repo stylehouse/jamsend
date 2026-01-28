@@ -870,6 +870,14 @@ export class Pier {
             console.log("they say trusted: ",data)
             this.hear_trusted(data)
         },
+        ping: async (data) => {
+            console.log("they say ping: ",data)
+            await this.P.Trusting.M.unemitPing(this,data)
+        },
+        intro: async (data) => {
+            console.log("they say ping: ",data)
+            await this.P.Trusting.M.unemitIntro(this,data)
+        },
     }
 
     //#region hello

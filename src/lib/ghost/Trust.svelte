@@ -22,7 +22,7 @@
 
 //#endregion
 //#region Trusting
-
+    // high-level clustery thinking
     async Trusting(A,w) {
         console.log(`🔒 Trusting`)
         for (let e of this.o_elvis(w,'Trustastic')) {
@@ -64,17 +64,15 @@
         await this.Listening(A,w)
         await this.Ringing(A,w)
 
-
-        // M.F.P.dosharing()
-        // setTimeout(() => {
-        // M.F.P.dosharing()
-
-        // },1000)
-        // setTimeout(() => {
-        // M.F.P.dosharing()
-
-        // },1000)
-
+        if (0 && 'hold sharing open') {
+            M.F.P.dosharing()
+            setTimeout(() => {
+                M.F.P.dosharing()
+            },1000)
+            setTimeout(() => {
+                M.F.P.dosharing()
+            },1000)
+        }
 
         await this.Trusting_API_finally(A,w)
 
@@ -113,6 +111,18 @@
                 await this.OurPier(A,w,Our,Our.sc.Pier)
             }
         })
+    },
+    // prepub -> %Our,Pier=OurPier.instance=Pier
+    o_Pier_Our(w,prepub) {
+        let def = w.o({Hath:1,user:1,prepub})[0]
+        let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
+        return Our
+    },
+    // < I think we'll want this from eg Idzeug()
+    //   
+    // pick an eer and eer.i_Pier()
+    async i_Pier(prepub:string):Promise<OurPier> {
+        return  1
     },
 
 
@@ -163,6 +173,10 @@
             w.i({waits:222})
         }
     },
+    async unemitIntro(ier:Pier,data) {
+        // < Idzeug convo
+    },
+
 
 
 
@@ -175,12 +189,6 @@
     //  and eg Idzeug() will await eer.i_Pier()
     //   until it is all figured out
 
-    // < I think we'll want this from eg Idzeug()
-    //   
-    // pick an eer and eer.i_Pier()
-    async i_Pier(prepub):Promise<OurPier> {
-        return 
-    },
 
     async Listening(A,w) {
         let F = this.F as Trusting
@@ -395,12 +403,6 @@
 //#endregion
 //#region API *er
 
-    // prepub -> %Our,Pier=OurPier.instance=Pier
-    o_Pier_Our(w,prepub) {
-        let def = w.o({Hath:1,user:1,prepub})[0]
-        let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
-        return Our
-    },
     // other processes talk to this authority sometimes
     async Trusting_API(A,w) {
         // and so here we are
@@ -518,7 +520,7 @@
         if (!Our) throw `your Pier has not %Our`
         let Li = w.o({Listening:1,eer})[0]
         if (!Li) throw `your Peering has not %Listening`
-        let LP = Li.i({Pier,prepub:ier.pub})
+        let LP = Li.oai({Pier,prepub:ier.pub})
         let say = ier.inbound ? "received" : "made"
         await LP.r({direction:say})
         await Our.r({direction:say})
@@ -568,16 +570,22 @@
         }
 
         // < its stashed will to be connected to
-        if (s.prepub) {
-            await Our.r({Uncontacted:1})
-        }
+        
+        // assert %Uncontacted before s.prepub upgrades to s.Id
+        await Our.r({Uncontacted:1}, s.prepub ? null : {})
 
         let ier = Pier.instance
+        await Our.r({UP:1}, ier ? null : {})
         if (ier) {
-            w.i({see:"UP"})
-            // < jog more state
+            // < jog more state?
             // also:
             // ier.worth_reconnecting
+
+            // monitor state
+            await this.Our_connectedness(Our,ier)
+            if (Our.oa({const:1,ready:1})) {
+                await this.Our_ping(Our,ier)
+            }
         }
 
         // so we can tell the CIA about new ones easily
@@ -586,8 +594,80 @@
             //   this has to be... a non-feature emit
             await w.r({Ringing:1,prepub,Pier,for:"SafetyNet"})
         }
+
+
     },
 
+    async unemitPing(ier:Pier,data) {
+        let w = this.w
+        if (!data.answered) {
+            // step 2
+            ier.emit('ping',{...data,answered:now_in_seconds_with_ms()})
+        }
+        else {
+            let Our = this.o_Pier_Our(w,ier.pub)
+            let Ping = Our.o({Ping:1})[0]
+            let latency
+            if (!data.received) {
+                // step 3, the local|origin again
+                let received = now_in_seconds_with_ms()
+                latency = received - data.sent
+                ier.emit('ping',{...data,received})
+            }
+            else {
+                // step 4, the remote|destination again
+                let acknowledged = now_in_seconds_with_ms()
+                latency = acknowledged - data.answered
+            }
+            latency = latency.toFixed(3)
+            await Ping.r({latency})
+            ex(Ping.sc,{latency})
+            await Ping.i_wasLast('sent', true)
+        }
+    },
+    async Our_ping(Our:TheC,ier:Pier) {
+        let w = this.w
+        let Ping = Our.oai({Ping:1})
+        let ago = await Ping.i_wasLast('sent')
+        // ago initialises to Infinity
+        if (ago > 5) {
+            console.log(`Our ping to ${ier.pub}`)
+            ier.emit('ping',{sent:now_in_seconds_with_ms()})
+        }
+        if (ago > 9) {
+            Our.i({const:'bad',timing_out:1})
+        }
+        if (ago > 29) {
+            // < what to do... we're still %const,ready, so ...
+            Our.i({const:'very bad',timed_out:1})
+        }
+    },
+
+    async Our_connectedness(Our:TheC,ier:Pier) {
+        let w = this.w
+        await Our.replace({const:1},async () => {
+            if (!ier) Our.i({const:'noplug'})
+            else if (!ier.disconnected) Our.i({const:'ok',ready:1})
+            else {
+                if (!ier) w.i({error:"!ier"}).i(Our)
+                else {
+                    let say = Our.oa({was_ready:1}) ? 'disconnected' : 'unconnected'
+                    Our.i({const:say})
+                }
+            }
+
+            if (Our.oa({const:1,ready:1})) {
+                // generally good
+                Our.oai({was_ready:1})
+            }
+            else {
+                // generally bad
+                if (Our.oa({was_ready:1})) {
+                    Our.i({const:'ohno',mightve_failed:`disconnected!?`})
+                }
+            }
+        })
+    },
 
 
 //#endregion
