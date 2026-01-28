@@ -221,7 +221,7 @@ export class Peering {
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     async a_Pier(pub:Prekey):Pier {
-        if (this.Trusting) return await this.i_Pier(pub)
+        if (this.P.Trusting) return await this.i_Pier(pub)
 
 
 

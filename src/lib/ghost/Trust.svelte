@@ -203,7 +203,6 @@
         w.i({Listening:1,eer,Peering,prepub:def.sc.prepub})
     },
     
-    
     async Ringing(A,w) {
         let F = this.F as Trusting
         let P = F.P as Peerily
@@ -235,8 +234,8 @@
 
                 w.i({see:`connecting to`,prepub})
 
-                LP = Li.i({Pier,prepub}); // <- important ;
-                (async() => {
+                LP = Li.i({Pier,prepub})
+                ;(async() => {
                     // Li the objects are stable
                     //  so it's safe to .i() them later
                     let ier = LP.sc.ier = await Promised_ier
@@ -426,7 +425,6 @@
 
     async elvising_i_Pier_Our(A,w,e) {
         let {return_fn,prepub} = e.sc
-        debugger
         console.log(`elvised i_Pier_Our ${prepub}`)
         w.i({see:`i_Pier_Our`,return_fn})
 
@@ -478,8 +476,12 @@
         }
         else {
             // make %Our,Pier before connecting
-            await F.OurPiers.add_Thing({name:prepub,prepub})
-            debugger
+            console.log(`piers add_Thing ${prepub}`)
+            let alsoPier = await F.OurPiers.add_Thing({name:prepub,prepub})
+            let aPier = alsoPier as OurPier
+            if (!aPier.prepub) debugger
+            // < giving it to add_Thing opt above doesn't work?
+            aPier.prepub = prepub
 
             // and wait so it can have a live .stashed
             // < it's important we are out of Atime here. sub this maneuvre
@@ -491,15 +493,13 @@
             Our = this.o_Pier_Our(w,prepub)
             if (!Our) throw `haven't built an OurPier`
             Pier = Our.sc.Pier as OurPier
-            if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
+            // they sometimes have Pier.instance by now
         }
-        if (Pier.instance) throw `new Pier.instance got made just while getting i Our`
         
 
         console.log(`i Pier(${prepub})`)
 
-        // < opt.Peer seems GONE?
-        ier = this.i_Pier_instance(w,Pier,{P,Peer:eer,eer,pub:prepub})
+        ier = Pier.instance || this.i_Pier_instance(w,Pier,{P,eer,pub:prepub})
         if (!Pier.instance) throw `!Pier.instance`
         if (!ier.Thing) throw `!ier.Thing`
 
@@ -507,14 +507,26 @@
         return ier
     },
 
+    // from Pier itself
     async Pier_init_completo(ier:Pier) {
+        let w = this.w
         let eer = ier.eer
+        let Pier = ier.Thing
+        if (!Pier) throw `aint Thing`
+        // it has the CRUD object, Our*, in %Our
+        let Our = this.o_Pier_Our(w,ier.pub)
+        if (!Our) throw `your Pier has not %Our`
+        let Li = w.o({Listening:1,eer})[0]
+        if (!Li) throw `your Peering has not %Listening`
+        let LP = Li.i({Pier,prepub:ier.pub})
         let say = ier.inbound ? "received" : "made"
+        await LP.r({direction:say})
+        await Our.r({direction:say})
         console.log(`${say} i Pier(${ier.pub}) complete`)
     },
 
 
-
+    // from unemit:hello
     async Pier_i_publicKey(ier:Pier) {
         let w = this.w
         // received a good publicKey, only knew pubkey (ier.pub)
@@ -625,7 +637,7 @@
             }
             else {
                 // should be new_thing
-                throw `how would this happen`
+                console.warn(`how would this happen`)
             }
         }
         // hold off init until Id is got
