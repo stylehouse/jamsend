@@ -267,11 +267,11 @@ abstract class TimeGallopia extends ModusItself {
 
     // is it a sane time to look at OurPier
     //  or is a new one waiting for UI to UI:Thingstashed it
-    async waiting_for_Thingstashed(A,w,N_fn) {
+    async waiting_for_Thingstashed(A,w) {
         let loop = 5
         while (1) {
             if (loop-- < 0) throw "loop"
-            let UI_unready = N_fn().filter(S => !S.stashed)
+            let UI_unready = this.S.every_Thing().filter(S => !S.stashed)
             if (UI_unready.length) {
                 console.warn(`M:Trusting not UI_ready`,UI_unready.map(S=>S.name))
                 await Promise.all(UI_unready.map(S => S.promise_stashed))

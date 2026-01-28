@@ -3,8 +3,10 @@
     import Thing from './Thing.svelte'
     import Thingness from './Thingness.svelte'
     import type { DirectoryShares } from '$lib/p2p/ftp/Directory.svelte';
+    import type { ThingsIsms } from './Things.svelte.ts';
 
-    type TheSs = DirectoryShares // and whatever other Things:* we invent before dissolving into pure Stuff
+    // whatever Things/Thing:* we invent before dissolving into pure Stuff
+    type TheSs = DirectoryShares | ThingsIsms
     interface ThingsProps {
         Ss: TheSs // The collection (DirectoryShares, etc) with .things SvelteMap
         type: string           // e.g. "share", "playlist", "bookmark"

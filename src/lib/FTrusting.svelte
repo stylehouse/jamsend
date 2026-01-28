@@ -4,7 +4,7 @@
     // all F must host data:
     import Thingstashed from "./data/Thingstashed.svelte";
     import Modus from "./mostly/Modus.svelte";
-    import { OurPeering, OurPier, Trusting, TrustingModus } from "./Trust.svelte.ts";
+    import { OurIdzeug, OurPeering, OurPier, Trusting, TrustingModus } from "./Trust.svelte.ts";
     import Things from "./data/Things.svelte";
     import type { Peerily } from "./p2p/Peerily.svelte.ts";
     import Trust from "./ghost/Trust.svelte";
@@ -33,6 +33,7 @@
         }
         S.instance.stashed.threeing = 3
     }
+    // < move all this Thingstashed into Things because of an Ss.indication_of_such
 </script>
 
 <div class='levity Trusting'>
@@ -48,6 +49,27 @@
 
     <!-- and then we have to have these things exist to get S.stashed
          which we wait for sometimes somewhere -->
+
+
+    <h3>Our Idzeugs</h3>
+    <Things
+            Ss={F.OurIdzeugs}
+            type="ouridzeug" 
+        >
+            {#snippet thing(S:OurIdzeug)}
+                {@const levity = console.log(`UI:Trusting/Idzeug:${S.name}`)}
+                <div class='levity Idzeug'>
+                    <p>an Idzeug</p>
+                    <button onclick={() => boing(S)} >boing</button>
+                    {JSON.stringify(S.stashed)}
+
+                    <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
+                    {#if S.started}
+                        <Thingstashed {F} M={S} />
+                    {/if}
+                </div>
+            {/snippet}
+    </Things>
 
 
 
@@ -108,6 +130,9 @@
     }
     .Pier {
         border-left: 2em solid rgb(97, 139, 19);
+    }
+    .Idzeug {
+        border-left: 2em solid rgb(115, 19, 139);
     }
     .levity {
         margin-left:-1em;

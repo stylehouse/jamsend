@@ -109,6 +109,13 @@ export class IdentoCrypto {
         Object.assign(this, { publicKey, privateKey })
     }
 
+    async sig(message) {
+        return enhex(await this.sign(message))
+    }
+    async ver(sign,message) {
+        return await this.verify(dehex(sign),message)
+    }
+
     async sign(message) {
         if (!this.privateKey) throw "!privateKey"
         const signature = await ed.signAsync(enu8(message),this.privateKey)

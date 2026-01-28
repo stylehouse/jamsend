@@ -4,14 +4,14 @@
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
-    import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { depeel, erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
     import { DirectoryModus } from "$lib/p2p/ftp/Sharing.svelte";
     import Modus from "$lib/mostly/Modus.svelte";
-    import type { OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
+    import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
    
     // < why is typescript not working
     let {M}:{M:TrustingModus} = $props()
@@ -38,10 +38,7 @@
 
         // is it a sane time to look at OurPier
         //  or is a new one waiting for UI to UI:Thingstashed it
-        await this.waiting_for_Thingstashed(A,w,() => [
-            ...this.F.OurPeerings.asArray(),
-            ...this.F.OurPiers.asArray(),
-        ])
+        await this.waiting_for_Thingstashed(A,w)
 
         await this.Trusting_i_Our_Things(A,w)
 
@@ -57,9 +54,9 @@
         }
         
         this.stashed.PierSerial ||= 0
+        this.stashed.IdzeugSerial ||= 0
 
-        await this.read_page_uri(A,w)
-        await this.Idzeug(A,w)
+        await this.Idzeuging(A,w)
         
         await this.Listening(A,w)
         await this.Ringing(A,w)
@@ -101,6 +98,9 @@
             for (let Pier of this.F.OurPiers.asArray()) {
                 w.i({Our:1,Pier,name:Pier.name})
             }
+            for (let Idzeug of this.F.OurIdzeugs.asArray()) {
+                w.i({Our:1,Idzeug,name:Idzeug.name})
+            }
         })
         // having indexes...
         await w.replace({Hath:1}, async () => {
@@ -122,6 +122,11 @@
         let def = w.o({Hath:1,address:1,main:1})[0]
         return def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
     },
+    Our_main_Id(w):{Our,Id:Idento} {
+        let Our = this.o_Our_main_Peering(w)
+        let Id = Our.o1({Id:1})[0]
+        return {Our,Id}
+    },
     // < I think we'll want this from eg Idzeug()
     //   
     // pick an eer and eer.i_Pier()
@@ -132,19 +137,100 @@
 
 //#endregion
 //#region Idzeug
+    async Idzeuging(A,w) {
+        // capturing
+        await this.Idzeugmance(A,w)
+        // producing
+        await this.Idzeugnate(A,w)
+        // consuming
+        await this.Idzeuganise(A,w)
+    },
+
+
+    async Idzeugmance(A,w) {
+        let m = window.location.hash.match(/^#([\w-,:]+)$/);
+        if (!m) return
+        let [hex,policy,sign] = m[1].split('-')
+        let prepub = hex
+        if (w.oa({Our:1,address:1,prepub})) {
+            // it's us, fumbling with the link
+            // < keep an invite code in the url? sublates sharing UI
+            //   can modern phones make QR codes of links on the spot?
+            console.log(`it's us, fumbling with the link`)
+            return
+        }
+        await w.r({Idzeugnation:1},{})
+        let I = w.i({Idzeugnation:1,prepub,policy,sign})
+        for (let bit of policy) {
+            I.i({fresh:1,bit})
+        }
+    },
 
     
-    async Idzeug(A,w) {
-        // be able to make them
-        let Z = w.oai({Idzeugability:1})
-        let Our = this.o_Our_main_Peering(w)
-        let Id = Our.o1({Id:1})[0]
+    // be able to make them, continuously
+    //  starting with loading the URI with something sharable...
+    async Idzeugnate(A,w:TheC) {
         // with the current Idzeugability...
-        window.location.hash = `${Id}-leeem`
-        M.F.P.share_url = window.location.toString()
+        let {Id} = this.Our_main_Id(w)
+
+        // < select which to put in the URI or share button
+        let primary = w.o({Idzeug:1,Our:1}).pop()
+        for (let Our of w.o({Idzeug:1,Our:1})) {
+            // these might be springing into existence, primacy... who knows.
+            let {Idzeug} = Our.sc
+            let s = Idzeug.stashed
+            if (!s.Serial) {
+                s.Serial = this.stashed.IdzeugSerial
+                this.stashed.IdzeugSerial += 1
+            }
+            s.Upper_Number ||= 0
+
+            if (Our == primary) {
+                // the signed stuff
+                await this.Idzeug_i_Idzeugi(w,Idzeug)
+                M.F.P.share_url = 333
+            }
+        }
+
+    },
+    // an Idzeugi can have a serial number, $n
+    //   so for many invites in the wind
+    //    we only need to remember they need $n between some range
+    //    and not be in the answered set Idzeug remembers
+    async Idzeug_i_Idzeugi(w,Idzeug:OurIdzeug,many=1) {
+        let N = []
+        let s = Idzeug.stashed
+        let upNum = s.Upper_Number
+        for (let i = 1; i <= many; i++) {
+            
+            let {Id}:{Id:Idento} = this.Our_main_Id(w)
+            let c = {}as any
+
+            c[Idzeug.name] = s.Serial
+
+            c.n = upNum
+            upNum += 1
+
+            let advice = depeel(c)
+            let whowhat = `${Id}-${advice}`
+            let heh = await Id.sig(whowhat)
+            let Idzeugi = `${whowhat}-${heh}`
+
+            
+            window.location.hash = Idzeugi
+            let maybe = window.location.toString()
+            console.log(`what wanted is: ${Idzeugi}\nmaybe: ${maybe}`,window.location)
+            N.push(Idzeugi)
+        }
+        // now store a new
+        s.Upper_Number   = upNum
+        return many == 1 ? N[0] : N
+    },
 
 
-        let I = w.o({Idzeug:1})[0]
+
+    async Idzeuganise(A,w:TheC) {
+        let I = w.o({Idzeugnation:1})[0]
         if (!I) return
         let prepub = I.sc.prepub
         if (!I.oa({init:1})) {
@@ -169,28 +255,12 @@
             w.i({waits:222})
         }
     },
+
+
     async unemitIntro(ier:Pier,data) {
         // < Idzeug convo
     },
 
-
-    async read_page_uri(A,w) {
-        let m = window.location.hash.match(/^#([\w-,:]+)$/);
-        if (!m) return
-        let [hex,policy,sign] = m[1].split('-')
-        let prepub = hex
-        if (w.oa({Our:1,address:1,prepub})) {
-            // it's us, fumbling with the link
-            // < keep an invite code in the url? sublates sharing UI
-            //   can modern phones make QR codes of links on the spot?
-            return
-        }
-        await w.r({Idzeug:1},{})
-        let I = w.i({Idzeug:1,prepub,policy,sign})
-        for (let bit of policy) {
-            I.i({fresh:1,bit})
-        }
-    },
 
 
 

@@ -20,23 +20,32 @@ export class Trusting extends PeeringFeature {
     modus_init() {
         return new TrustingModus({S:this})
     }
+    every_Thing() {
+        return [
+            ...this.OurPeerings.asArray(),
+            ...this.OurPiers.asArray(),
+            ...this.OurIdzeugs.asArray(),
+        ]
+    }
 
     constructor(opt) {
         super(opt)
         this.trust_name = 'Trust'
-        this.IDB_Schema(1, [
+        this.IDB_Schema(2, [
             'Peering',
             'Pier',
-            'Trust',
+            'Idzeug',
             'gizmo',        // for named Things:** with .stashed via UI:Thingstashed
                             // including those Peering|Pier things .stashed
                             // < more elegant storage
         ])
         this.OurPeerings = new OurPeerings({F:this})
         this.OurPiers = new OurPiers({F:this})
+        this.OurIdzeugs = new OurIdzeugs({F:this})
     }
     OurPeerings:OurPeerings
     OurPiers:OurPiers
+    OurIdzeugs:OurIdzeugs
 
     async start() {
         console.log(`M:Trusting is on...`)
@@ -54,13 +63,14 @@ type StashedObject = {
     prepub?: String, // while !said_hello
     Id: Idento, // serialised version of
     main?: boolean,
-
+    Serial?:number, // could be from M.s.PierSerial or M.s.IdzeugSerial on Our$that
+    Upper_Number?:number, // on OurIdzeug
 }
 
 // they both have S.stashed, not in a Modus
 //  we just have one M:Trusting that can think for them
 // < turn up in gizmos for UI:Thingstashed but should be...
-abstract class stashedHavingThingIsms extends ThingIsms {
+export abstract class stashedHavingThingIsms extends ThingIsms {
     // M.stashed is persistent
     stashed:StashedObject = $state()
     stashed_mem:KVStore
@@ -85,6 +95,14 @@ abstract class stashedHavingThingIsms extends ThingIsms {
     }
 }
 
+
+
+
+
+
+
+
+// these sync into w:Trusting/%Our,...
 //    present as an officey place separate to the being of them
 //    maybe with an arrow connecting them
 export class OurPeerings extends ThingsIsms {
@@ -102,7 +120,6 @@ export class OurPeerings extends ThingsIsms {
         opt.name = 'autovivified'
     }
 }
-// < see if they're online then activate certain protocols etc?
 export class OurPeering extends stashedHavingThingIsms {
     instance?:Peering
 }
@@ -122,14 +139,32 @@ export class OurPiers extends ThingsIsms {
         return new OurPier(opt)
     }
     async autovivify(opt) {
-        // < instance tyrant
         opt.name = 'instance tyrant'
         opt.the_cia = true
     }
 }
-// < see if they're online then activate certain protocols etc?
 export class OurPier extends stashedHavingThingIsms {
     instance?:Pier
+    // does almost nothing...
+}
+
+
+export class OurIdzeugs extends ThingsIsms {
+    started = $state(false)
+    constructor(opt) {
+        super(opt)
+        this.set_table(`Idzeug`)
+    }
+
+
+    async thingsify(opt) {
+        return new OurIdzeug(opt)
+    }
+    async autovivify(opt) {
+        opt.name = 'typical policy'
+    }
+}
+export class OurIdzeug extends stashedHavingThingIsms {
     // does almost nothing...
 }
 
