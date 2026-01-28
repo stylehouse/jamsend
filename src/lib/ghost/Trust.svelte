@@ -4,7 +4,7 @@
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
-    import { depeel, erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { depeel, erring, ex, grap, grep, grop, indent, map, nex, peel, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import Record from "./Records.svelte";
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
@@ -147,24 +147,6 @@
     },
 
 
-    async Idzeugmance(A,w) {
-        let m = window.location.hash.match(/^#([\w-,:]+)$/);
-        if (!m) return
-        let [hex,policy,sign] = m[1].split('-')
-        let prepub = hex
-        if (w.oa({Our:1,address:1,prepub})) {
-            // it's us, fumbling with the link
-            // < keep an invite code in the url? sublates sharing UI
-            //   can modern phones make QR codes of links on the spot?
-            console.log(`it's us, fumbling with the link`)
-            return
-        }
-        await w.r({Idzeugnation:1},{})
-        let I = w.i({Idzeugnation:1,prepub,policy,sign})
-        for (let bit of policy) {
-            I.i({fresh:1,bit})
-        }
-    },
 
     
     // be able to make them, continuously
@@ -186,9 +168,10 @@
             s.Upper_Number ||= 0
 
             if (Our == primary) {
+                // temporarily while 
                 // the signed stuff
-                await this.Idzeug_i_Idzeugi(w,Idzeug)
-                M.F.P.share_url = 333
+                let uri = await this.Idzeug_i_Idzeugi(A,w,Idzeug)
+                M.F.P.share_url = uri
             }
         }
 
@@ -197,7 +180,7 @@
     //   so for many invites in the wind
     //    we only need to remember they need $n between some range
     //    and not be in the answered set Idzeug remembers
-    async Idzeug_i_Idzeugi(w,Idzeug:OurIdzeug,many=1) {
+    async Idzeug_i_Idzeugi(A,w,Idzeug:OurIdzeug,many=1) {
         let N = []
         let s = Idzeug.stashed
         let upNum = s.Upper_Number
@@ -212,21 +195,63 @@
             upNum += 1
 
             let advice = depeel(c)
-            let whowhat = `${Id}-${advice}`
-            let heh = await Id.sig(whowhat)
-            let Idzeugi = `${whowhat}-${heh}`
-
+            if (advice.match(/[^\w+ ,:-]/)) throw "illegal char, depeel: "+advice
             
-            window.location.hash = Idzeugi
-            let maybe = window.location.toString()
-            console.log(`what wanted is: ${Idzeugi}\nmaybe: ${maybe}`,window.location)
+            advice.replace(/ /g,'+')
+            // < higher security: not giving your Id here
+            //    requires instance tyrant to mediate
+            //     requires more people online to get Idzeuganised
+            let whowhat = `${Id}-${advice}`
+            let sign = await Id.sig(whowhat)
+            let Idzeuginance = `${whowhat}-${sign}`
+
+            let url = new URL(location.origin)
+            url.hash = Idzeuginance
+            let Idzeugi = url.toString()
+
+            // < dev
+            // console.log(`invite: ${Idzeuginance}\n\tfully: ${Idzeugi}`)
+            await this.Idzeugmanci(A,w,Idzeugi)
+
+
             N.push(Idzeugi)
         }
         // now store a new
         s.Upper_Number   = upNum
         return many == 1 ? N[0] : N
     },
+    // < put an ad for a hashtag here?
+    reset_location_hash() {
+        window.location.hash = 'jamsend'
+    },
 
+
+    async Idzeugmance(A,w) {
+        let m = window.location.hash.match(/^#([\w,+_:-]{16,})$/);
+        this.reset_location_hash()
+        m && await this.Idzeugmancy(A,w,m[1])
+    },
+    async Idzeugmanci(A,w,Idzeugi:string) {
+        let [prepub,advice,sign] = Idzeugi.split('-')
+        if (w.oa({Our:1,address:1,prepub})) {
+            // < redundant while invite only
+            // it's us, fumbling with the link
+            // < keep an invite code in the url? sublates sharing UI
+            //   can modern phones make QR codes of links on the spot?
+            console.log(`it's us, fumbling with the link`)
+            return
+        }
+        
+        await w.r({Idzeugnation:1},{})
+        let I = w.i({Idzeugnation:1,prepub})
+
+        let c = peel(advice)
+        let name = Object.keys(c)[0]
+        let n = c[name]
+        delete c[name]
+        // hold this out here, avoid their c.* being at I/%* 
+        I.i({name,n}).i(c)
+    },
 
 
     async Idzeuganise(A,w:TheC) {

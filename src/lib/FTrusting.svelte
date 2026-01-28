@@ -61,6 +61,9 @@
                 <div class='levity Idzeug'>
                     <p>an Idzeug</p>
                     <button onclick={() => boing(S)} >boing</button>
+                    {#if S.name.match(/[^\w+ -]/)}
+                        <p>Name contains illegal characters. Delete and add another. </p>
+                    {/if}
                     {JSON.stringify(S.stashed)}
 
                     <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->

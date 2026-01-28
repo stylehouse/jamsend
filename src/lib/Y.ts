@@ -501,9 +501,13 @@ export function peel(s: any, sep?: string, kep?: string): Record<string, any> {
 }
 
 // Hash into ke:va,ys:lue string
-export function depeel(s: Record<string, any>, d?: { sep?: string; hie?: string }): string {
+export function depeel(s: Record<string, any>, d?: { sort?:boolean, sep?: string; hie?: string }): string {
     d = d || {};
-    const ks = Object.keys(s).sort();
+    d.sep ??= ','
+    d.hie ??= ':'
+    d.sort ??= false
+    const ks = Object.keys(s);
+    if (d.sort) ks = ks.sort()
     const hs: string[] = [];
     
     for (const k of ks) {
