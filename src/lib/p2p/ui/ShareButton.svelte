@@ -11,7 +11,7 @@
     async function sharing() {
         if (link) return link = null
         // already in the address bar, can become QR code
-        link = P.share_url + ",blaggablagga,hitech"
+        link = P.share_url
     }
     async function copy_link() {
         await navigator.clipboard.writeText(link);

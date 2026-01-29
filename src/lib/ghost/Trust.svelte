@@ -180,6 +180,7 @@
     //   so for many invites in the wind
     //    we only need to remember they need $n between some range
     //    and not be in the answered set Idzeug remembers
+    USE_PRESIGS: 1,
     async Idzeug_i_Idzeugi(A,w,Idzeug:OurIdzeug,many=1) {
         let N = []
         let s = Idzeug.stashed
@@ -194,20 +195,26 @@
             c.n = upNum
             upNum += 1
 
+
+
             let advice = depeel(c)
             if (advice.match(/[^\w+ ,:-]/)) throw "illegal char, depeel: "+advice
-            
             advice = advice.replace(/ /g,'+')
+
             // < higher security: not giving your Id here
             //    requires instance tyrant to mediate
             //     requires more people online to get Idzeuganised
+            //      and perhaps encrypting the Id for instance tyrant to get first?
             let whowhat = `${Id}-${advice}`
             let sign = await Id.sig(whowhat)
+            if (this.USE_PRESIGS) sign = sign.slice(0,16)
             let Idzeuginance = `${whowhat}-${sign}`
 
             let url = new URL(location.origin)
             url.hash = Idzeuginance
             let Idzeugi = url.toString()
+
+
 
             // < dev
             // console.log(`invite: ${Idzeuginance}\n\tfully: ${Idzeugi}`)
@@ -243,12 +250,12 @@
         }
     },
 
+    // out of time, put the w/%Idzeugnation for Idzeuganise() to work up
     async Idzeugmanci(A,w,Idzeugi:string) {
         let [prepub,advice,sign] = Idzeugi.split('-')
 
-        if ('break') sign = sign.replace(/[face]/,'4')
+        // if ('break') sign = sign.replace(/[face]/,'4')
 
-        advice = advice.replace(/\+/g,' ')
         if (0 && w.oa({Our:1,address:1,prepub})) {
             // < redundant while invite only
             // it's us, fumbling with the link
@@ -259,30 +266,54 @@
         }
         
         await w.r({Idzeugnation:1},{})
+        // signed stuff:
         let I = w.i({Idzeugnation:1,prepub,advice,sign})
 
+        // slight decode, unpack data
+        advice = advice.replace(/\+/g,' ')
         let c = peel(advice)
         let name = Object.keys(c)[0]
         let n = c[name]
         delete c[name]
         // hold this out here, avoid their c.* being at I/%* 
         I.i({name,n}).i(c)
+
+        // check it's even true in the mean time
+        I.sc.verifying = this.Idzeuverify(A,w,I)
+        // < i_elvis
     },
+
     async Idzeuverify(A,w:TheC,I:TheC) {
-        // < GOING not usually able to sign this early
         let {prepub,advice,sign} = I.sc
         let {Our,S} = this.getOurThing(A,w,prepub)
         if (!S) throw "< for them"
         let Id = Our.o1({Id:1})[0] as Idento
         if (!Id) throw "!Id!?"
-        let isok = await Id.ver(sign,`${prepub}-${advice}`)
-        I.sc.isok = isok
+        if (Id+'' != prepub) throw `Idzeuverify for another user is not possible`
+
+        if (this.USE_PRESIGS) {
+            // they only provide a part of the valid signature
+            //  we regenerate it given their particular advice
+            let whowhat = `${prepub}-${advice}`
+            let signier = await Id.sig(whowhat)
+            signier = signier.slice(0,16)
+            I.sc.isok = sign == signier
+        }
+        else {
+            I.sc.isok = await Id.ver(sign,`${prepub}-${advice}`)
+        }
     },
 
 
     async Idzeuganise(A,w:TheC) {
         let I = w.o({Idzeugnation:1})[0]
         if (!I) return
+
+        if (I.sc.verifying) {
+            await I.sc.verifying
+            delete I.sc.verifying
+        }
+
         let prepub = I.sc.prepub
         if (!I.oa({init:1})) {
             // it may exist - with this name!
