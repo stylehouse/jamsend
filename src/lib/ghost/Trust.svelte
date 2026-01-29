@@ -127,6 +127,12 @@
         let Id = Our.o1({Id:1})[0]
         return {Our,Id}
     },
+    getOurThing(A,w,prepub) {
+        let Our = w.o({Hath:1,prepub})[0]?.o({Our:1})[0]
+        return {Our,
+            S: Our?.sc.Pier || Our?.sc.Peering
+        }
+    },
     // < I think we'll want this from eg Idzeug()
     //   
     // pick an eer and eer.i_Pier()
@@ -168,8 +174,9 @@
             s.Upper_Number ||= 0
 
             if (Our == primary) {
-                // temporarily while 
-                // the signed stuff
+                // continue
+                // dev, temporarily while 
+                // spit one out, continuously
                 let uri = await this.Idzeug_i_Idzeugi(A,w,Idzeug)
                 M.F.P.share_url = uri
             }
@@ -188,18 +195,14 @@
         for (let i = 1; i <= many; i++) {
             
             let {Id}:{Id:Idento} = this.Our_main_Id(w)
-            let c = {}as any
-
-            c[Idzeug.name] = s.Serial
-
+            let c = {} as any
+            c.name = Idzeug.name
             c.n = upNum
             upNum += 1
 
+            
 
-
-            let advice = depeel(c)
-            if (advice.match(/[^\w+ ,:-]/)) throw "illegal char, depeel: "+advice
-            advice = advice.replace(/ /g,'+')
+            let advice = this.encode_Idzeugi_advice(c)
 
             // < higher security: not giving your Id here
             //    requires instance tyrant to mediate
@@ -210,15 +213,15 @@
             if (this.USE_PRESIGS) sign = sign.slice(0,16)
             let Idzeuginance = `${whowhat}-${sign}`
 
-            let url = new URL(location.origin)
+            let url = new URL(location.origin+location.pathname)
             url.hash = Idzeuginance
             let Idzeugi = url.toString()
 
 
 
-            // < dev
+            // < dev, eat our own Idzeugs
             // console.log(`invite: ${Idzeuginance}\n\tfully: ${Idzeugi}`)
-            await this.mock_Idzeugmance(A,w,Idzeugi)
+            // await this.mock_Idzeugmance(A,w,Idzeugi)
 
 
             N.push(Idzeugi)
@@ -231,25 +234,37 @@
     reset_location_hash() {
         window.location.hash = 'jamsend'
     },
-
-    async mock_Idzeugmance(A,w,Idzeugi) {
-        let url = new URL(Idzeugi)
-        await this.Idzeugmanci(A,w,url.hash.slice(1))
+    encode_Idzeugi_advice(c) {
+        let name = c.name
+        delete c.name
+        let s = {} as any
+        s[name] = 1
+        let advice = depeel({...s,...c})
+        if (advice.match(/[^\w+ ,:-]/)) throw "illegal char, depeel: "+advice
+        advice = advice.replace(/ /g,'+')
+        return advice
+    },
+    decode_Idzeugi_advice(advice) {
+        advice = advice.replace(/\+/g,' ')
+        let c = peel(advice)
+        let name = Object.keys(c)[0]
+        delete c[name]
+        return {name,...c}
     },
 
+    // entry: find new Idzeug in uri
     async Idzeugmance(A,w) {
         let m = window.location.hash.match(/^#([\w,+_:-]{16,})$/);
         this.reset_location_hash()
         m && await this.Idzeugmanci(A,w,m[1])
     },
-
-    getOurThing(A,w,prepub) {
-        let Our = w.o({Hath:1,prepub})[0]?.o({Our:1})[0]
-        return {Our,
-            S: Our?.sc.Pier || Our?.sc.Peering
-        }
+    async mock_Idzeugmance(A,w,Idzeugi) {
+        let url = new URL(Idzeugi)
+        await this.Idzeugmanci(A,w,url.hash.slice(1))
     },
 
+
+    // consume a new Idzeug, got from uri
     // out of time, put the w/%Idzeugnation for Idzeuganise() to work up
     async Idzeugmanci(A,w,Idzeugi:string) {
         let [prepub,advice,sign] = Idzeugi.split('-')
@@ -265,22 +280,17 @@
             return
         }
         
-        await w.r({Idzeugnation:1},{})
         // signed stuff:
-        let I = w.i({Idzeugnation:1,prepub,advice,sign})
+        let I = _C({Idzeugnation:1,prepub,advice,sign})
 
         // slight decode, unpack data
-        advice = advice.replace(/\+/g,' ')
-        let c = peel(advice)
-        let name = Object.keys(c)[0]
-        let n = c[name]
-        delete c[name]
+        let c = this.decode_Idzeugi_advice(advice)
+        let s = sex({},c,'name,n')
         // hold this out here, avoid their c.* being at I/%* 
-        I.i({name,n}).i(c)
+        I.i(s).i(c)
+            debugger
 
-        // check it's even true in the mean time
-        I.sc.verifying = this.Idzeuverify(A,w,I)
-        // < i_elvis
+        this.i_elvis(w,'i Idzeug',{I})
     },
 
     async Idzeuverify(A,w:TheC,I:TheC) {
@@ -305,7 +315,19 @@
     },
 
 
+//#endregion
+//#region Idzeuganise
     async Idzeuganise(A,w:TheC) {
+        // continuously manage them
+        for (let e of this.o_elvis(w,'i Idzeug')) {
+            // once when entered
+            let {I} = e.sc
+            debugger
+            await w.r({Idzeugnation:1},{})
+            if (!I.sc.Idzeugnation) throw `whatisI`
+            w.i(I)
+        }
+
         let I = w.o({Idzeugnation:1})[0]
         if (!I) return
 
@@ -327,6 +349,9 @@
             I.i({init:1})
         }
 
+        // // check it's even true in the mean time
+        // I.sc.verifying = this.Idzeuverify(A,w,I)
+        // // < i_elvis
     },
 
 
@@ -805,7 +830,6 @@
         let ago = await Ping.i_wasLast('sent')
         // ago initialises to Infinity
         if (ago > 5) {
-            console.log(`Our ping to ${ier.pub}`)
             ier.emit('ping',{sent:now_in_seconds_with_ms()})
         }
         if (ago > 9) {
