@@ -265,18 +265,7 @@
             //  if you do this we never leave this loop:
             // AN.push(A)
         }
-        
-        // wrapped in mutex for each w involved
-        let soupup = async (N) => {
-            let fn = N[0]
-            if (typeof fn == 'function') return await fn()
-            await this.c_mutex(fn,'Aw_think', async () => {
-                await soupup(N.slice(1))
-            })
-        }
-        // soupup([...AwN.map(c => c.w), async () => {
-            await this.agency_officing(AwN,AN)
-        // }])
+        await this.agency_officing(AwN,AN)
     },
     procure_ways(A):TheN {
         let wN = A.oa({w:1})

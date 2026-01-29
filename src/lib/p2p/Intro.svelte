@@ -8,7 +8,7 @@
     import { throttle } from "$lib/Y";
     import { PeeringSharing } from "./ftp/Sharing.svelte.ts";
     import GatEnabler from "./ui/GatEnabler.svelte";
-    import Trusting from "$lib/FTrusting.svelte";
+    import FTrusting from "$lib/FTrusting.svelte";
     import Peering from "./Peering.svelte";
 
     let spec = `
@@ -83,15 +83,17 @@
         P.stop()
     })
 
-
+    
 </script>
 
 <div>
     <pan>
         <ShareButton {P} />
-        <span>Welcome to jamsend.</span>
+        <span id="heading">Welcome to jamsend.</span>
         <span>
-            <GatEnabler />
+            {#if P.audio_maybe}
+                <GatEnabler />
+            {/if}
         </span>
     </pan>
 
@@ -99,7 +101,7 @@
     <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={dropstashedPeerings}>--</button> -->
 
-    <Trusting {P} /> 
+    <FTrusting {P} /> 
 
 {#if 1}
     <div class=bitsies>
@@ -115,7 +117,7 @@
     div {
         color: green;
     }
-    pan>span {
+    #heading {
         font-size:4em;
         color:lightgreen;
     }

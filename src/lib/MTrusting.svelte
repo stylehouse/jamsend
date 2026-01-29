@@ -1,4 +1,6 @@
 <script lang="ts">
+    import FaceSucker from "./p2p/ui/FaceSucker.svelte";
+
     let {M} = $props()
     let F = M.F
     // < this isn't working here!?
@@ -24,60 +26,42 @@
 
 
 
+<FaceSucker altitude={33} {fullscreen}>
+    {#snippet content()}
+        <div class='uiing bottom'>
+            <div class='controls'>
+                <span>
+                    <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                </span>
 
-    <div class="hoist" class:fullscreened={fullscreen}>
-        <div class="contain" class:fullscreened={fullscreen}>
-
-            <div class='uiing bottom'>
-                <div class='controls'>
-                    <span>
-                        <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
-                    </span>
-
-                    Here are things: {quit_fullscreen}
+                Introducing jamsend. Left cave: {quit_fullscreen}. 
 
 
-                    <div class="content">
-                        <ul>
-                            {#each M.msgs as C (C.sc.msgs_id)}
-                                <li>{C.sc.say}</li>
-                            {/each}
-                        </ul>
-                    </div>
-
-                    <span>
-                        <a href="https://github.com/stylehouse/jamsend">README</a>
-                    </span>
+                <div class="content">
+                    <ul>
+                        {#each M.msgs as C (C.sc.msgs_id)}
+                            <li>{C.sc.say}</li>
+                        {/each}
+                    </ul>
                 </div>
+
+                <span>
+                    <a href="https://github.com/stylehouse/jamsend">README</a>
+                </span>
             </div>
         </div>
-    </div>
+    {/snippet}
+</FaceSucker>
 
 
 <style>
     
-    div {
-        background:black;
-    }
     button.big {
         font-size:1.6em;
     }
     button.small {
         font-size:0.75em;
         opacity:0.35;
-    }
-    .contain {
-        position:relative;
-        width: 100%;
-        height: 100%;
-    }
-    .hoist.fullscreened {
-        position:fixed;
-        top:0;
-        left:0;
-        z-index:20000;
-        width: 100%;
-        height: 100%;
     }
     .uiing {
         width: 100%;

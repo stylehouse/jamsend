@@ -145,13 +145,29 @@
 
 
 //#endregion
-//#region Idzeug
+//#region Introducing
+    // F.fade_splash
     async Introducing(A,w) {
+        let In = w.oai({Induction:1})
+        // remove corporate logo asap, but dont make a flicker
+        if (!In.oa({faded_splash:1})) {
+            setTimeout(() => {
+                M.F.P.fade_splash = true
+
+            },100)
+            In.i({faded_splash:1})
+        }
+
+        // once we've heard it's okay!
+        for (let e of this.o_elvis(w,'gotIn')) {
+            M.stashed.Welcome = true
+        }
+        if (M.stashed.Welcome) {
+            M.F.P.audio_maybe = true
+        }
+        
         // < modulate F:Trusting UI
         
-        for (let e of this.o_elvis(w,'gotIn')) {
-            w.i({Explodes:1,On:1,The:1,Scene:1})
-        }
     },
 
 
@@ -669,12 +685,13 @@
         }
     },
     // w/%Our,Pier connection state is in w/%Listening/%Pier
+    // < why can't (inbound?) LP be relied upon to have LP%eir ...
     o_LP(ier:Pier) {
         let w = this.w
         let eer = ier.eer
         let Li = w.o({Listening:1,eer})[0]
         // < sometimes matching ier doesn't work here?
-        let LP = Li.o({Pier:1,ier:1,prepub:ier.pub})[0]
+        let LP = Li.o({Pier:1,prepub:ier.pub})[0]
         // and we only have a link in %Our
         return LP
     },
@@ -784,9 +801,6 @@
     async Trusting_API(A,w) {
         // < is this.w always sane? it's the old one while %Our rebuilds?
 
-        for (let e of this.o_elvis(w,'i_Pier_Our')) {
-            await this.elvising_i_Pier_Our(A,w,e)
-        }
         // meeting someone
         for (let e of this.o_elvis(w,'save_Ud')) {
             await this.elvising_save_Ud(A,w,e)
@@ -794,19 +808,11 @@
     },
     async Trusting_API_finally(A,w) {
         // you can handle elvis many times
-        for (let e of this.o_elvis(w,'i_Pier_Our')) {
+        for (let e of this.o_elvis(w,'Pier->Our')) {
             let {return_fn,prepub} = e.sc
             return_fn()
         }
     },
-
-    async elvising_i_Pier_Our(A,w,e) {
-        let {return_fn,prepub} = e.sc
-        console.log(`elvised i_Pier_Our ${prepub}`)
-        w.i({see:`i_Pier_Our`,return_fn})
-
-    },
-
 
 
 
@@ -897,7 +903,7 @@
             // < it's important we are out of Atime here. sub this maneuvre
             let return_fn
             let promise = new Promise((reso) => return_fn = reso)
-            this.i_elvis(w,'i_Pier_Our',{return_fn,prepub})
+            this.i_elvis(w,'Pier->Our',{return_fn,prepub})
             await promise
 
             Our = this.o_Pier_Our(w,prepub)
@@ -987,13 +993,6 @@
         if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
         let prepub = s.prepub || Id.pretty_pubkey()
 
-
-        if (w.oa({see:`i_Pier_Our`,return_fn:1})) {
-            // it's connecting to us, might be new if
-            Our.i({is:"inbound"})
-            console.log(`e:i_Pier_Our! ${prepub}`)
-        }
-
         // < its stashed will to be connected to
         // < see if they're online, once
         //   if not they'll see if you're online?
@@ -1022,18 +1021,27 @@
             await w.r({Ringing:1,prepub,Pier,for:"SafetyNet"})
         }
 
-
+        
     },
+
+
+//#endregion
+//#region Ping
 
     async unemitPing(ier:Pier,data) {
         let w = this.w
+        await this.c_mutex(w,'Aw_think', async () => {
         if (!data.answered) {
             // step 2
             ier.emit('ping',{...data,answered:now_in_seconds_with_ms()})
         }
         else {
             let LP = this.o_LP(ier)
-            if (!LP) return console.warn(`unemit:Ping with no LP yet?`)
+            if (!LP) {
+                debugger
+                LP = this.o_LP(ier)
+            }
+            if (!LP) return console.warn(`unemit:Ping from ${ier.pub}, no LP yet?`)
             let Ping = LP.oai({Ping:1})
             let latency
             if (!data.received) {
@@ -1052,6 +1060,7 @@
             ex(Ping.sc,{latency})
             await Ping.i_wasLast('sent', true)
         }
+        })
     },
     async Our_ping(LP:TheC,ier:Pier) {
         let w = this.w
