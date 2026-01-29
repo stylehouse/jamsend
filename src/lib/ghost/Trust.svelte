@@ -34,16 +34,21 @@
         //     },80)
         // }
         
-        this.stashed.PierSerial ||= 0
-        this.stashed.IdzeugSerial ||= 0
+        
 
 
 
         // is it a sane time to look at OurPier
         //  or is a new one waiting for UI to UI:Thingstashed it
         await this.waiting_for_Thingstashed(A,w)
+        // < ^ doesn't help:
+        if (!this.stashed) return w.i({waits:"for M.stashed"})
+        this.stashed.PierSerial ||= 0
+        this.stashed.IdzeugSerial ||= 0
 
         await this.Trusting_i_Our_Things(A,w)
+        // and so here we are, with a sane set of %Our
+        this.w = w
 
         // these must operate on stable %Our
         await this.Trusting_API(A,w)
@@ -346,21 +351,27 @@
             this.UIsay(w,say)
             I.sc.dead = 1
         }
-
-        let {Id} = this.Our_main_Id(w)
-        if (Id+'' == I.sc.prepub) return bad("invited yourself")
-        // < graph the Pier creation possibilities
+        let prepub = I.sc.prepub
+        if (1) {
+            let {Id} = this.Our_main_Id(w)
+            if (Id+'' == prepub) return bad("invited yourself")
+        }
 
         // add this Pier
-        let Our = await this.simply_i_Pier_Our(I.sc.prepub)
-        if (!Our) return w.i({waits:"i Pier"}).i(I)
-        I.sc.Pier = Our.sc.Pier
-        
+        let Our = await this.simply_i_Pier_Our(prepub)
+        if (!Our) return w.i({waits:"i %Our,Pier"}).i(I)
+        let Pier = Our.sc.Pier
+        if (!Pier) throw "never"
         await w.r({Ringing:1,prepub,Pier,for:"Idzeugnosis"})
+        // < should be there by now?
+        if (!Pier.instance) return w.i({waits:`Pier ${prepub} instance`})
 
+        let LP = this.o_LP(Pier.instance)
+        if (LP?.oa({const:1,ready:1})) {
+            let Id = this.ensure_Our_Id(Our)
+            let prepub = Id+''
+            if (prepub != prepub) throw `thought...`
 
-        let Pier = OurPier.instance
-        if (Pier && !Pier.disconnected) {
             w.i({error:`< talk it out`})
         }
         else {
@@ -368,18 +379,6 @@
         }
 
         return
-        let prepub = I.sc.prepub
-        if (!I.oa({init:1})) {
-            // it may exist - with this name!
-            // < could get weird? people giving different prepubs to gain more download slots?
-            // this may adopt their existing Pier, drawing it into this Idzeuging
-            // < this spawn is not on the right object.
-            //   we want to create them in our contacts list...
-            debugger
-            I.sc.OurPier = await this.i_Pier(prepub)
-
-            I.i({init:1})
-        }
     },
 
 
@@ -492,7 +491,7 @@
 
             // monitor its switch-onitty
             //  a bit manifold...
-            await this.Ringing_connectedness(Ri,LP,ier)
+            await this.LP_connectedness(LP,ier)
             // retry faileds
             await this.Ringing_may_want_more_Ringing(Ri)
 
@@ -511,29 +510,43 @@
 //#endregion
 //#region Ringing...
     // connecting the %Ringingness, of a %Listening/%Pier, to a Pier
-    async Ringing_connectedness(Ri,LP,ier:Pier) {
+    async LP_connectedness(LP:TheC,ier:Pier) {
         let w = this.w
+        let generally_good = false
         await LP.replace({const:1},async () => {
             if (!ier) LP.i({const:'noplug'})
             else if (!ier.disconnected) LP.i({const:'ok',ready:1})
             else {
-                if (!ier) w.i({error:"!ier"})
+                if (!ier) w.i({error:"!ier"}).i(LP)
                 else {
-                    w.i({see:`not connected...`})
+                    let say = LP.oa({was_ready:1}) ? 'disconnected' : 'unconnected'
+                    LP.i({const:say})
                 }
             }
 
-            if (LP.o({const:1,ready:1})) {
-                // generally good
-                await w.r({connected_this_time:1})
+            if (LP.oa({const:1,ready:1})) {
+                generally_good = true
             }
             else {
                 // generally bad
-                if (w.oa({connected_this_time:1})) {
-                    w.i({const:'ohno',mightve_failed:`disconnected!?`})
+                if (LP.oa({was_ready:1})) {
+                    LP.i({const:'ohno',mightve_failed:`disconnected!?`})
                 }
             }
         })
+        if (generally_good) {
+            // permanent, that we were connected
+            LP.oai({was_ready:1})
+        }
+    },
+    // w/%Our,Pier connection state is in w/%Listening/%Pier
+    o_LP(ier:Pier) {
+        let w = this.w
+        let eer = ier.eer
+        let Li = w.o({Listening:1,eer})[0]
+        let LP = Li.o({Pier:1,ier})[0]
+        // and we only have a link in %Our
+        return LP
     },
     // auto reconnect for connections that didn't make it yet
     //  eg other browser tab (who we talk to via Pier) was crashed when we loaded
@@ -577,6 +590,7 @@
 //#endregion
 //#region Pierise
 
+    // < graph the Pier creation possibilities
     // < should we directly Peering_i_Pier() ? it knows Our already
 
     // replaces P.connect_pubkey
@@ -638,8 +652,6 @@
 
     // other processes talk to this authority sometimes
     async Trusting_API(A,w) {
-        // and so here we are
-        this.w = w
         // < is this.w always sane? it's the old one while %Our rebuilds?
 
         for (let e of this.o_elvis(w,'i_Pier_Our')) {
@@ -719,6 +731,16 @@
         let F = this.F as Trusting
         let P = F.P as Peerily
         let w = this.w
+        if (!w) {
+            console.warn("no w on arrival")
+            // Wait for w to become available, up to 10 attempts
+            for (let attempt = 0; attempt < 10; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, 100))
+                w = this.w
+                if (w) break
+            }
+            if (!w) throw "no w:Trusting"
+        }
 
         let Our = this.o_Pier_Our(w,prepub)
         let ier
@@ -798,11 +820,27 @@
         //   we still believe in ier.pub
         //    GONE is ier.stashed.pubkey, now simply:
         ier.stashed.Id = Id.freeze()
+        let Pier = ier.Thing
+        let Our = w.o({Our:1,Pier})[0]
+        let prepub = ier.stashed.prepub
         delete ier.stashed.prepub
-        console.warn(`e:save_Ud(${1})`)
+        this.ensure_Our_Id(Our)
+        console.warn(`e:save_Ud(${prepub})`)
 
     },
-
+    ensure_Our_Id(Our:TheC) {
+        let {Pier} = Our.sc
+        if (!Pier) throw "for Peering?"
+        let s = Pier.stashed
+        if (!s) throw "!stashed?"
+        if (s.Id && !Our.oa({Id:1})) {
+            // only deals with whole pubkeys, and maybe private keys
+            let Id = new Idento()
+            Id.thaw(s.Id)
+            Our.i({Id})
+        }
+        return Our.o1({Id:1})[0]
+    },
 
 
 //#endregion
@@ -810,6 +848,7 @@
 
 
     async LetsPeering(A,w,Our:TheC,Peering:OurPeering) {
+        // nothing
     },
 
     async LetsPier(A,w,Our:TheC,Pier:OurPier) {
@@ -826,6 +865,8 @@
         }
 
         // < its stashed will to be connected to
+        // < see if they're online, once
+        //   if not they'll see if you're online?
         
         // assert %Uncontacted before s.prepub upgrades to s.Id
         await Our.r({Uncontacted:1}, s.prepub ? null : {})
@@ -838,9 +879,9 @@
             // ier.worth_reconnecting
 
             // monitor state
-            await this.Our_connectedness(Our,ier)
-            if (Our.oa({const:1,ready:1})) {
-                await this.Our_ping(Our,ier)
+            let LP = this.o_LP(ier)
+            if (LP?.oa({const:1,ready:1})) {
+                await this.Our_ping(LP,ier)
             }
         }
 
@@ -861,8 +902,9 @@
             ier.emit('ping',{...data,answered:now_in_seconds_with_ms()})
         }
         else {
-            let Our = this.o_Pier_Our(w,ier.pub)
-            let Ping = Our.oai({Ping:1})
+            let LP = this.o_LP(ier)
+            if (!LP) return console.warn(`unemit:Ping with no LP yet?`)
+            let Ping = LP.oai({Ping:1})
             let latency
             if (!data.received) {
                 // step 3, the local|origin again
@@ -881,52 +923,23 @@
             await Ping.i_wasLast('sent', true)
         }
     },
-    async Our_ping(Our:TheC,ier:Pier) {
+    async Our_ping(LP:TheC,ier:Pier) {
         let w = this.w
-        let Ping = Our.oai({Ping:1})
+        let Ping = LP.oai({Ping:1})
         let ago = await Ping.i_wasLast('sent')
         // ago initialises to Infinity
         if (ago > 5) {
             ier.emit('ping',{sent:now_in_seconds_with_ms()})
         }
         if (ago > 9) {
-            Our.i({const:'bad',timing_out:1})
+            LP.i({const:'bad',timing_out:1})
         }
         if (ago > 29) {
             // < what to do... we're still %const,ready, so ...
-            Our.i({const:'very bad',timed_out:1})
+            LP.i({const:'very bad',timed_out:1})
         }
     },
 
-    async Our_connectedness(Our:TheC,ier:Pier) {
-        let w = this.w
-        let generally_good = false
-        await Our.replace({const:1},async () => {
-            if (!ier) Our.i({const:'noplug'})
-            else if (!ier.disconnected) Our.i({const:'ok',ready:1})
-            else {
-                if (!ier) w.i({error:"!ier"}).i(Our)
-                else {
-                    let say = Our.oa({was_ready:1}) ? 'disconnected' : 'unconnected'
-                    Our.i({const:say})
-                }
-            }
-
-            if (Our.oa({const:1,ready:1})) {
-                generally_good = true
-            }
-            else {
-                // generally bad
-                if (Our.oa({was_ready:1})) {
-                    Our.i({const:'ohno',mightve_failed:`disconnected!?`})
-                }
-            }
-        })
-        if (generally_good) {
-            // permanent, that we were connected
-            Our.oai({was_ready:1})
-        }
-    },
 
 
 //#endregion
@@ -941,17 +954,12 @@
             s.Id = Id.freeze()
             s.main = true
         }
-        if (!Our.oa({init:1})) {
+        if (!Our.oa({Id:1})) {
             let Id = new Idento()
             Id.thaw(s.Id)
             Our.i({Id})
-
-            // < maybe at some point, ~~ P.a_Peering(Id)
-            Our.i({init:1})
         }
 
-        // < see if they're online, once
-        //   if not they'll see if you're online?
 
         let Id = Our.o1({Id:1})[0]
         let prepub = Id.pretty_pubkey()
@@ -981,15 +989,7 @@
             }
         }
         // hold off init until Id is got
-        if (s.Id && !Our.oa({init:1})) {
-            if (s.Id) {
-                // only deals with whole pubkeys, and maybe private keys
-                let Id = new Idento()
-                Id.thaw(s.Id)
-                Our.i({Id})
-            }
-            Our.i({init:1})
-        }
+        if (s.Id) this.ensure_Our_Id(Our)
 
         // not really a contact
         if (s.stealth) await Our.r({stealth:1})

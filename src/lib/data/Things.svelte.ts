@@ -148,7 +148,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
             }
             this.started = true
 
-            console.log(`Initialized ${this.things.size} shares`)
+            console.log(`Thing:${this.storeName} x${this.things.size}`)
         } catch (err) {
             console.warn('Failed to initialize shares:', err)
         }
