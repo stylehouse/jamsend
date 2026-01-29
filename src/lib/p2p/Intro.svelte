@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import { SvelteSet } from "svelte/reactivity";
-	import QrCode from "svelte-qrcode"
     import { Idento, Peerily, PeeringFeature, type StashedPeering,
         Peering as Peering_type
      } from "./Peerily.svelte";
@@ -85,63 +84,12 @@
     })
 
 
-
-    // we'll get Trusting to spur this:
-    // onMount(() => P.startup())
-    
-    P.dosharing = () => {
-        if (link) link = null
-        sharing()
-    }
-
-    
-    let link = $state()
-    async function sharing() {
-        if (link) return link = null
-        // already in the address bar, can become QR code
-        link = P.share_url + ",blaggablagga,hitech"
-    }
-    async function copy_link() {
-        await navigator.clipboard.writeText(link);
-    }
-    let size = $state(300)
-    let qrele:HTMLElement = $state()
-    $effect(() => {
-        if (link && qrele) {
-            let img = qrele.children[0]
-            if (img.nodeName != "IMG") throw "!img"
-            // in here, adjust size for smallest width|height of viewport
-            const vw = window.innerWidth
-            const vh = window.innerHeight
-            const availableWidth = vw * 0.8
-            const availableHeight = (vh - 100) * 0.8 // subtract space for button
-            size = Math.min(availableWidth, availableHeight)
-        }
-    })
-
 </script>
 
 <div>
     <pan>
-        <span onclick={sharing}>
-            <ShareButton />
-            {#if link}
-                <qrthing>
-                    <span>
-                        <p> <button onclick={copy_link}>Copy Link</button>, oncer.</p>
-                        <pqr bind:this={qrele}> <QrCode value={link} {size} /> </pqr>
-                    </span>
-                </qrthing>
-            {/if}
-        </span>
-        
-        <span>
-            <label for="onramptype" >onramp</label>
-            <select id="onramptype">
-                <option>figaro</option>
-                <option>figaro</option>
-            </select>
-        </span>
+        <ShareButton {P} />
+        <span>Welcome to jamsend.</span>
         <span>
             <GatEnabler />
         </span>
@@ -164,31 +112,11 @@
 </div>
 
 <style>
-    qrthing {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        backdrop-filter: blur(4px);
-    }
-    pqr > img{
-        width: 78vw;
-    }
-    pqr {
-        display: flex;
-        background: white;
-        padding: 2em;
-    }
     div {
         color: green;
     }
-    button{
-        padding:1em;
+    pan>span {
+        font-size:4em;
+        color:lightgreen;
     }
 </style>

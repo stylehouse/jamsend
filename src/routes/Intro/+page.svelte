@@ -4,5 +4,4 @@
 
     
 </script>
-<h3> Gidday </h3>
 <Intro />
