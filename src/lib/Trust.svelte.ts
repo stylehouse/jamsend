@@ -180,6 +180,9 @@ export class TrustingModus extends Modus {
     declare F:Trusting
     want_fullscreen = $state(true)
     stashy_UI_component:Component
+    msgs = $state([])
+    msgs_serial = 0
+    
     constructor(opt:Partial<TrustingModus>) {
         super(opt)
         this.F = this.S

@@ -112,7 +112,9 @@
             }
         })
     },
+
     // prepub -> %Our,Pier=OurPier.instance=Pier
+    // see also simply_i_Pier() for progressing to one of these:
     o_Pier_Our(w,prepub) {
         let def = w.o({Hath:1,user:1,prepub})[0]
         let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
@@ -132,12 +134,6 @@
         return {Our,
             S: Our?.sc.Pier || Our?.sc.Peering
         }
-    },
-    // < I think we'll want this from eg Idzeug()
-    //   
-    // pick an eer and eer.i_Pier()
-    async i_Pier(prepub:string):Promise<OurPier> {
-        return  1
     },
 
 
@@ -288,9 +284,10 @@
         let s = sex({},c,'name,n')
         // hold this out here, avoid their c.* being at I/%* 
         I.i(s).i(c)
-            debugger
-
-        this.i_elvis(w,'i Idzeug',{I})
+        
+        // we area already in Atime, about to manage these:
+        await w.r({Idzeugnation:1},{})
+        w.i(I)
     },
 
     async Idzeuverify(A,w:TheC,I:TheC) {
@@ -313,54 +310,54 @@
             I.sc.isok = await Id.ver(sign,`${prepub}-${advice}`)
         }
     },
+    UIsay(w,say) {
+        let C = _C({msgs_id:M.msgs_serial++,say})
+        M.msgs.push(C)
+        console.log(`🔒 says: ${say}`)
+        w.i({see:'🔒',say})
+    },
 
 
 //#endregion
 //#region Idzeuganise
     async Idzeuganise(A,w:TheC) {
-        // continuously manage them
-        for (let e of this.o_elvis(w,'i Idzeug')) {
-            // once when entered
-            let {I} = e.sc
-            debugger
-            await w.r({Idzeugnation:1},{})
-            if (!I.sc.Idzeugnation) throw `whatisI`
-            w.i(I)
+        // continuously...
+        for (let I of w.o({Idzeugnation:1})) {
+            // we are the invitee
+            await this.Idzeugnation(A,w,I)
         }
-
-        let I = w.o({Idzeugnation:1})[0]
-        if (!I) return
-
-        if (I.sc.verifying) {
-            await I.sc.verifying
-            delete I.sc.verifying
+        for (let I of w.o({Idzeugnosis:1})) {
+            // we are acting the doorman
+            await this.Idzeugnosis(A,w,I)
         }
-
-        let prepub = I.sc.prepub
-        if (!I.oa({init:1})) {
-            // it may exist - with this name!
-            // < could get weird? people giving different prepubs to gain more download slots?
-            // this may adopt their existing Pier, drawing it into this Idzeuging
-            // < this spawn is not on the right object.
-            //   we want to create them in our contacts list...
-
-            I.sc.OurPier = await this.i_Pier(prepub)
-
-            I.i({init:1})
-        }
-
-        // // check it's even true in the mean time
-        // I.sc.verifying = this.Idzeuverify(A,w,I)
-        // // < i_elvis
     },
 
 
 
+    async Idzeugnation(A,w,I) {
+        if (!I) return
+        if (I.sc.dead) {
+            if (I.sc.dead++ > 3) {
+                w.drop(I)
+            }
+            return
+        }
+        let bad = (say) => {
+            this.UIsay(w,say)
+            I.sc.dead = 1
+        }
 
-    async Idzeugo_fetchemup(A,w:TheC) {
+        let {Id} = this.Our_main_Id(w)
+        if (Id+'' == I.sc.prepub) return bad("invited yourself")
+        // < graph the Pier creation possibilities
 
-        let OurPier = I.sc.OurPier as OurPier
-        w.i({Ringing:1,prepub,Pier:OurPier,for:"Idzeug"})
+        // add this Pier
+        let Our = await this.simply_i_Pier_Our(I.sc.prepub)
+        if (!Our) return w.i({waits:"i Pier"}).i(I)
+        I.sc.Pier = Our.sc.Pier
+        
+        await w.r({Ringing:1,prepub,Pier,for:"Idzeugnosis"})
+
 
         let Pier = OurPier.instance
         if (Pier && !Pier.disconnected) {
@@ -369,13 +366,50 @@
         else {
             w.i({waits:222})
         }
+
+        return
+        let prepub = I.sc.prepub
+        if (!I.oa({init:1})) {
+            // it may exist - with this name!
+            // < could get weird? people giving different prepubs to gain more download slots?
+            // this may adopt their existing Pier, drawing it into this Idzeuging
+            // < this spawn is not on the right object.
+            //   we want to create them in our contacts list...
+            debugger
+            I.sc.OurPier = await this.i_Pier(prepub)
+
+            I.i({init:1})
+        }
     },
+
 
 
 
 
     async unemitIntro(ier:Pier,data) {
         // < Idzeug convo
+    },
+
+
+
+
+
+    async Idzeugnosis(A,w,I) {
+
+
+
+        if (I.sc.verifying) {
+            await I.sc.verifying
+            delete I.sc.verifying
+        }
+        if (!I.sc.isok) return bad("bad sig")
+
+
+        // // check it's even true in the mean time
+        // I.sc.verifying = this.Idzeuverify(A,w,I)
+        // // < i_elvis
+
+
     },
 
 
@@ -654,6 +688,29 @@
         ier.init_begins(eer,con)
     },
 
+    // if you are not under the level of %Ringing,
+    //  you can create an OurPier, wait for its %Our, then %Ringing it, all proper-like
+    async simply_i_Pier_Our(prepub:string):Promise<TheC|undefined> {
+        let w = this.w
+        let Pier = await this.simply_i_Pier(prepub)
+        // and want to get Atime to %Our,Pier if not already
+        //  there is no Pier.Our = %Our, because ephemeral %Our
+        //   only Pier.instance <=> ier.Thing
+        let Our = this.o_Pier_Our(w,prepub)
+        if (Our && Our.sc.Pier != Pier) throw `!sense`
+        return Our
+    },
+    async simply_i_Pier(prepub:string):Promise<OurPier> {
+        let F = this.F as Trusting
+        let P = F.P as Peerily
+        let w = this.w
+        let had = this.o_Pier_Our(w,prepub)
+        if (had) return had.sc.Pier
+        console.log(`piers add_Thing ${prepub}`)
+        let S = await F.OurPiers.add_Thing({name:prepub,prepub})
+        return S as OurPier
+    },
+
 
     // including the incoming connections
     //  and any time some part of the app (Idzeug) wants to add a Pier
@@ -680,7 +737,7 @@
             console.log(`piers add_Thing ${prepub}`)
             let alsoPier = await F.OurPiers.add_Thing({name:prepub,prepub})
             let aPier = alsoPier as OurPier
-            if (!aPier.prepub) debugger
+            if (!aPier.prepub) throw `add_Thing!prepub`
             // < giving it to add_Thing opt above doesn't work?
             aPier.prepub = prepub
 

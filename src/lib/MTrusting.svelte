@@ -36,6 +36,15 @@
 
                     Here are things: {quit_fullscreen}
 
+
+                    <div class="content">
+                        <ul>
+                            {#each M.msgs as C (C.sc.msgs_id)}
+                                <li>{C.sc.say}</li>
+                            {/each}
+                        </ul>
+                    </div>
+
                     <span>
                         <a href="https://github.com/stylehouse/jamsend">README</a>
                     </span>
