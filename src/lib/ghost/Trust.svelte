@@ -281,25 +281,32 @@
             return
         }
         
+        await this.i_Idzeugsomething(w,'Idzeugnation',{prepub,advice,sign})
+    },
+
+    async i_Idzeugsomething(w,keyword,c) {
+        let s = {}
+        s[keyword] = 1
         // signed stuff:
-        let I = _C({Idzeugnation:1,prepub,advice,sign})
+        let I = _C({...s,...c})
 
         // slight decode, unpack data
-        let c = this.decode_Idzeugi_advice(advice)
-        let s = sex({},c,'name,n')
-        // hold this out here, avoid their c.* being at I/%* 
-        I.i(s).i(c)
+        let advice = c.advice
+        if (1) {
+            let c = this.decode_Idzeugi_advice(advice)
+            let s = sex({},c,'name,n')
+            // hold this out here, avoid their c.* being at I/%* 
+            I.i(s).i(c)
+        }
         
         // we area already in Atime, about to manage these:
-        await w.r({Idzeugnation:1},{})
+        await w.r(s,{})
         w.i(I)
     },
 
     async Idzeuverify(A,w:TheC,I:TheC) {
         let {prepub,advice,sign} = I.sc
-        let {Our,S} = this.getOurThing(A,w,prepub)
-        if (!S) throw "< for them"
-        let Id = Our.o1({Id:1})[0] as Idento
+        let {Id}:{Id:Idento} = this.Our_main_Id(w)
         if (!Id) throw "!Id!?"
         if (Id+'' != prepub) throw `Idzeuverify for another user is not possible`
 
@@ -315,31 +322,115 @@
             I.sc.isok = await Id.ver(sign,`${prepub}-${advice}`)
         }
     },
+
+
+//#endregion
+//#region Idzeuganise
     UIsay(w,say) {
         let C = _C({msgs_id:M.msgs_serial++,say})
         M.msgs.push(C)
         console.log(`🔒 says: ${say}`)
         w.i({see:'🔒',say})
     },
-
-
-//#endregion
-//#region Idzeuganise
     async Idzeuganise(A,w:TheC) {
+        let not_dead = (I) => {
+            if (I.sc.dead) {
+                if (I.sc.dead++ > 3) {
+                    w.drop(I)
+                }
+                return
+            }
+            let damn = (say:string) => {
+                if (!I.sc.dead) this.UIsay(w,say)
+                I.sc.dead = 1
+            }
+            return damn
+        }
         // continuously...
         for (let I of w.o({Idzeugnation:1})) {
             // we are the invitee
-            await this.Idzeugnation(A,w,I)
+            let no = not_dead(I)
+            no && await this.Idzeugnation(A,w,I,no)
         }
+
+        await this.o_elvis_Idzeugnosis(A,w)
         for (let I of w.o({Idzeugnosis:1})) {
             // we are acting the doorman
-            await this.Idzeugnosis(A,w,I)
+            let no = not_dead(I)
+            no && await this.Idzeugnosis(A,w,I,no)
         }
     },
 
 
 
-    async Idzeugnation(A,w,I) {
+    async Idzeugnation(A,w,I,no) {
+        let prepub = I.sc.prepub
+        if (1) {
+            let {Id} = this.Our_main_Id(w)
+            if (Id+'' == prepub) return no("invited yourself")
+        }
+
+        // add this Pier
+        let Our = await this.simply_i_Pier_Our(prepub)
+        if (!Our) return w.i({waits:"i %Our,Pier"}).i(I)
+        let Pier = Our.sc.Pier
+        if (!Pier) throw "never"
+        await w.r({Ringing:1,prepub,Pier,for:"Idzeugnosis"})
+        // < should be there by now?
+        let ier = Pier.instance
+        if (!ier) return w.i({waits:`Pier ${prepub} instance`})
+
+        let LP = this.o_LP(ier)
+        if (!LP?.oa({const:1,ready:1})) {
+            return w.i({waits:'connecting...'})
+        }
+
+        // their Id
+        let Id = this.ensure_Our_Id(Our)
+        if (prepub != Id+'') throw `thought...`
+        
+        if (!I.sc.asked) {
+            // causes an e:'i Idzeugnosis' over there
+            await ier.emit('intro',sex({},I.sc,'advice,sign'))
+            return
+        }
+        for (let e of this.o_elvis(w,'o Idzeugnosis')) {
+            sex(I.sc,e.sc,'failed,success')
+        }
+
+        if (I.sc.failed) {
+            no(`problem with your invite: ${I.sc.failed}`)
+            return
+        }
+        if (!I.sc.success) {
+            w.i({waits:"invite shown..."})
+            return
+        }
+
+        w.i({waits:`what verily now`})
+    },
+    async o_elvis_Idzeugnosis(A,w) {
+        for (let e of this.o_elvis(w,'i Idzeugnosis')) {
+            await this.i_Idzeugsomething(w,'Idzeugnosis',sex({},e.sc,'ier,advice,sign'))
+        }
+    },
+    async unemitIntro(ier:Pier,data) {
+        // Idzeug convo
+        if (!data.answer) {
+            // ask doorman
+            this.i_elvis(this.w,'i Idzeugnosis',sex({ier},data,'advice,sign'))
+        }
+        else {
+            // invitee gets answer
+            this.i_elvis(this.w,'o Idzeugnosis',sex({ier},data,'failed,success'))
+        }
+    },
+
+
+
+
+    // the authority checks an Idzeug
+    async Idzeugnosis(A,w,I) {
         if (!I) return
         if (I.sc.dead) {
             if (I.sc.dead++ > 3) {
@@ -351,64 +442,26 @@
             this.UIsay(w,say)
             I.sc.dead = 1
         }
-        let prepub = I.sc.prepub
-        if (1) {
-            let {Id} = this.Our_main_Id(w)
-            if (Id+'' == prepub) return bad("invited yourself")
-        }
+        let ier = I.sc.ier as Pier
 
-        // add this Pier
-        let Our = await this.simply_i_Pier_Our(prepub)
-        if (!Our) return w.i({waits:"i %Our,Pier"}).i(I)
+        
+
+        // sanity:
+        // is theirs now:
+        let prepub = ier.pub
+        let Our = this.o_Pier_Out(w,prepub)
         let Pier = Our.sc.Pier
-        if (!Pier) throw "never"
-        await w.r({Ringing:1,prepub,Pier,for:"Idzeugnosis"})
-        // < should be there by now?
-        if (!Pier.instance) return w.i({waits:`Pier ${prepub} instance`})
+        if (ier != Pier.instance) throw `Pier ${prepub} not %Our,Pier.instance`
 
-        let LP = this.o_LP(Pier.instance)
-        if (LP?.oa({const:1,ready:1})) {
-            let Id = this.ensure_Our_Id(Our)
-            let prepub = Id+''
-            if (prepub != prepub) throw `thought...`
 
-            w.i({error:`< talk it out`})
-        }
-        else {
-            w.i({waits:222})
+        await this.Idzeuverify(A,w,I)
+
+        if (!I.sc.isok) {
+            ier.emit('intro',{answer:1,failed:'bad sig'})
+            return bad("bad sig")
         }
 
-        return
-    },
-
-
-
-
-
-    async unemitIntro(ier:Pier,data) {
-        // < Idzeug convo
-    },
-
-
-
-
-
-    async Idzeugnosis(A,w,I) {
-
-
-
-        if (I.sc.verifying) {
-            await I.sc.verifying
-            delete I.sc.verifying
-        }
-        if (!I.sc.isok) return bad("bad sig")
-
-
-        // // check it's even true in the mean time
-        // I.sc.verifying = this.Idzeuverify(A,w,I)
-        // // < i_elvis
-
-
+        w.i({waits:`what verily now`})
     },
 
 
