@@ -34,6 +34,12 @@
         S.instance.stashed.threeing = 3
     }
     // < move all this Thingstashed into Things because of an Ss.indication_of_such
+
+    //    < configure Idzeug.stashed.give_them_trust
+    //       from checkboxes of Features
+      
+
+
 </script>
 
 <div class='levity Trusting'>
@@ -61,6 +67,9 @@
                 <div class='levity Idzeug'>
                     <p>an Idzeug</p>
                     <button onclick={() => boing(S)} >boing</button>
+
+                    
+
                     {#if S.name.match(/[^\w+ -]/)}
                         <p>Name contains illegal characters. Delete and add another. </p>
                     {/if}

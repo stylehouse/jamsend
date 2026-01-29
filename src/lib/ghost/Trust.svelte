@@ -66,6 +66,8 @@
         await this.Listening(A,w)
         await this.Ringing(A,w)
 
+        await this.Introducing(A,w)
+
         if (0 && 'hold sharing open') {
             M.F.P.dosharing()
             setTimeout(() => {
@@ -140,6 +142,18 @@
             S: Our?.sc.Pier || Our?.sc.Peering
         }
     },
+
+
+//#endregion
+//#region Idzeug
+    async Introducing(A,w) {
+        // < modulate F:Trusting UI
+        
+        for (let e of this.o_elvis(w,'gotIn')) {
+            w.i({Explodes:1,On:1,The:1,Scene:1})
+        }
+    },
+
 
 
 //#endregion
@@ -305,10 +319,10 @@
     },
 
     async Idzeuverify(A,w:TheC,I:TheC) {
-        let {prepub,advice,sign} = I.sc
+        let {advice,sign} = I.sc
         let {Id}:{Id:Idento} = this.Our_main_Id(w)
         if (!Id) throw "!Id!?"
-        if (Id+'' != prepub) throw `Idzeuverify for another user is not possible`
+        let prepub = Id+''
 
         if (this.USE_PRESIGS) {
             // they only provide a part of the valid signature
@@ -316,12 +330,14 @@
             let whowhat = `${prepub}-${advice}`
             let signier = await Id.sig(whowhat)
             signier = signier.slice(0,16)
-            I.sc.isok = sign == signier
+            I.sc.sign_ok = sign == signier
         }
         else {
-            I.sc.isok = await Id.ver(sign,`${prepub}-${advice}`)
+            I.sc.sign_ok = await Id.ver(sign,`${prepub}-${advice}`)
         }
     },
+
+    
 
 
 //#endregion
@@ -346,6 +362,7 @@
             }
             return damn
         }
+        
         // continuously...
         for (let I of w.o({Idzeugnation:1})) {
             // we are the invitee
@@ -364,6 +381,13 @@
 
 
     async Idzeugnation(A,w,I,no) {
+        if (I.sc.success) {
+            // once done
+            if (I.i_wasLast("finished") > 22) {
+                I.sc.dead = 1
+            }
+            return
+        }
         let prepub = I.sc.prepub
         if (1) {
             let {Id} = this.Our_main_Id(w)
@@ -392,6 +416,7 @@
         if (!I.sc.asked) {
             // causes an e:'i Idzeugnosis' over there
             await ier.emit('intro',sex({},I.sc,'advice,sign'))
+            I.sc.asked = true
             return
         }
         for (let e of this.o_elvis(w,'o Idzeugnosis')) {
@@ -407,7 +432,13 @@
             return
         }
 
-        w.i({waits:`what verily now`})
+        // < it might have some other data too, not in the trust...
+        ier.emit('intro',{answer:1,thanks:1})
+        I.i_wasLast("finished",true)
+        this.UIsay(w,I.sc.success)
+        // Intro prepares for the next UI...
+        this.i_elvis(w,'gotIn')
+        console.log(`🔒🔒🔒🔒🔒`)
     },
     async o_elvis_Idzeugnosis(A,w) {
         for (let e of this.o_elvis(w,'i Idzeugnosis')) {
@@ -415,6 +446,7 @@
         }
     },
     async unemitIntro(ier:Pier,data) {
+        if (data.thanks) return
         // Idzeug convo
         if (!data.answer) {
             // ask doorman
@@ -430,42 +462,86 @@
 
 
     // the authority checks an Idzeug
-    async Idzeugnosis(A,w,I) {
-        if (!I) return
-        if (I.sc.dead) {
-            if (I.sc.dead++ > 3) {
-                w.drop(I)
+    async Idzeugnosis(A,w,I,_no) {
+        let ier = I.sc.ier as Pier
+        let is = ier.stashed
+        let no = (say) => {
+            ier.emit('intro',{answer:1,failed:say})
+            // < we (local|authority) don't need to get these UI messages...
+            //    but do want to abandon the %Idzeugnosis
+            _no(say)
+        }
+
+        if (I.sc.success) {
+            // once done
+            if (!is.Good) throw "howd"
+            if (I.i_wasLast("finished") > 22) {
+                I.sc.dead = 1
             }
             return
         }
-        let bad = (say) => {
-            this.UIsay(w,say)
-            I.sc.dead = 1
-        }
-        let ier = I.sc.ier as Pier
-
-        
 
         // sanity:
         // is theirs now:
         let prepub = ier.pub
-        let Our = this.o_Pier_Out(w,prepub)
+        let Our = this.o_Pier_Our(w,prepub)
         let Pier = Our.sc.Pier
         if (ier != Pier.instance) throw `Pier ${prepub} not %Our,Pier.instance`
 
-
         await this.Idzeuverify(A,w,I)
-
-        if (!I.sc.isok) {
-            ier.emit('intro',{answer:1,failed:'bad sig'})
-            return bad("bad sig")
+        if (!I.sc.sign_ok) {
+            return no("bad sig")
         }
 
-        w.i({waits:`what verily now`})
+        let c = this.decode_Idzeugi_advice(I.sc.advice)
+        let Zur = w.o({Our:1,Idzeug:1,name:c.name})[0]
+        let Idzeug = Zur?.sc.Idzeug
+        if (!Idzeug) {
+            return no("offer expired")
+        }
+        if (!this.claim_Idzeug_number(Idzeug,c.n)) {
+            return no("prize already claimed")
+        }
+
+        // they are welcome
+        is.Good = true
+        // store things about them imparted by the Idzeug here
+        let Zs = Idzeug.stashed
+        ex(is,Zs.mix||{})
+        // this may be the non-first Idzeug of the Pier,
+        //  as they collect... tokens...
+        if (is.introduced_at) I.sc.already_met = true
+        is.introduced_at ||= now_in_seconds_with_ms()
+
+        // < UI and so forth Zs.give_them_trust
+        let give_them_trust = ['ftp']
+        for (let to of give_them_trust) {
+            ier.grant_trust(to,{Idzeug:Idzeug.name})
+        }
+
+        ier.emit('intro',{answer:1,success:`got ${give_them_trust.join(',')} access`})
+        I.sc.success = true
+        I.i_wasLast("finished",true)
+        console.log(`🔒🔒🔒🔒🔒`)
     },
 
+    // true if it is now consumed, false if duplicate
+    async claim_Idzeug_number(Idzeug:OurIdzeug,n:number) {
+        if (!n || n != n*1) throw "!number"
+        let N = Idzeug.stashed.taken_n ||= []
+        if (N.includes(n)) return false
+        // this'll be shorter in json...
+        // < another KVStore or so
+        N.push(n)
+        return true
+    },
 
-
+    // true if Pier is allowed past hello|intro to trust and beyond
+    async ier_is_Good(ier:Pier,is_response) {
+        if (ier.stashed.Good) return true
+        if (is_response) throw `Pier thought they were Good?`
+        return false
+    },
 
 //#endregion
 //#region Listening, Ringing
@@ -597,7 +673,8 @@
         let w = this.w
         let eer = ier.eer
         let Li = w.o({Listening:1,eer})[0]
-        let LP = Li.o({Pier:1,ier})[0]
+        // < sometimes matching ier doesn't work here?
+        let LP = Li.o({Pier:1,ier:1,prepub:ier.pub})[0]
         // and we only have a link in %Our
         return LP
     },

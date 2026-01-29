@@ -29,7 +29,7 @@ function arre(a:Array,gone,neu) {
 
 // hex strings, [0-9a-f]
 type Sighex = string
-type TrustName = string
+export type TrustName = string
 // extra properties may be involved, for consumers of the state of pier.trust|trusted
 type TrustedTrust = ToTrust & {qua?:number}
 // this is what's signed, is stored without .pub
@@ -912,6 +912,7 @@ export class Pier {
         //  we only send trust info to them now
         this.say_trust()
     }
+    
     receive_publicKey(data) {
         let publicKey = data.publicKey
         if (this.Ud) {
@@ -968,7 +969,12 @@ export class Pier {
     }
 
     // client reminds server what abilities they're allowed
-    async say_trust() {
+    async say_trust(is_response=false) {
+        if (!this.P.Trusting.M.ier_is_Good(this,is_response)) {
+            // they|us will get back to this
+            return
+        }
+
         let trust = this.stashed.trust?.filter(t => t.to) || []
 
         for (const t of trust) {
@@ -988,7 +994,7 @@ export class Pier {
     // server checks and applies those abilities
     async hear_trust({trust}) {
         // < redundant?
-        if (!this.said_trust) this.say_trust()
+        if (!this.said_trust) this.say_trust(true)
         if (trust.some(t => !t.to)) throw "revoke in trust[]?"
         // verify grants
         // using trust.map() here would not wait for the throw to be effective
@@ -1022,7 +1028,7 @@ export class Pier {
         let sign = t.sign
         delete t.sign
         t.pub = receiver+''
-        let valid = await believer.verify(dehex(sign), JSON.stringify(t))
+        let valid = await believer.ver(sign, JSON.stringify(t))
         if (!valid) throw `invalid trust signature to:${t.to}`
         delete t.pub
         t.sign = sign
@@ -1062,7 +1068,7 @@ export class Pier {
     async grant_trust(to:TrustName,opt={}) {
         // signed data
         let t:SaidTrusticle = {to,time:now_in_seconds(),...opt,pub:this.Ud+''}
-        t.sign = enhex(await this.eer.Id.sign(JSON.stringify(t)))
+        t.sign = await this.eer.Id.sig(JSON.stringify(t))
         delete t.pub
 
         // enable it to save them saying it back to us?

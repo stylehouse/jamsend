@@ -1,7 +1,7 @@
 import { keyser, type TheC } from "./data/Stuff.svelte.ts";
 import { ThingIsms, ThingsIsms } from "./data/Things.svelte.ts";
 import {Modus} from "./mostly/Modus.svelte.ts";
-import { Idento, Peering, PeeringFeature, Pier, PierFeature } from "./p2p/Peerily.svelte";
+import { Idento, Peering, PeeringFeature, Pier, PierFeature, type TrustName } from "./p2p/Peerily.svelte";
 import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { tick, type Component } from "svelte";
 import type { KVStore } from "./data/IDB.svelte.ts";
@@ -60,11 +60,18 @@ export class Trusting extends PeeringFeature {
 //#region OurP*
 
 type StashedObject = {
-    prepub?: String, // while !said_hello
+    prepub?: String, // on OPier while !said_hello
     Id: Idento, // serialised version of
-    main?: boolean,
+    main?: boolean, // on Peering
     Serial?:number, // could be from M.s.PierSerial or M.s.IdzeugSerial on Our$that
-    Upper_Number?:number, // on OurIdzeug
+    // on Idzeug:
+    Upper_Number?:number, 
+    taken_n?:number[],
+    mix?:Object,
+    give_them_trust?:TrustName[],
+    // on Pier after Idzeug ok:
+    Good:true, 
+    introduced_at:number,
 }
 
 // they both have S.stashed, not in a Modus
