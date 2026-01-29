@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import FaceSucker from "./p2p/ui/FaceSucker.svelte";
+    import { fade } from "svelte/transition";
 
     let {M} = $props()
     let F = M.F
@@ -19,6 +21,16 @@
     
     let jamming = $derived(M.want_fullscreen)
     let fullscreen = $derived(jamming && !quit_fullscreen)
+    onMount(() => {
+        // remove corporate logo asap, but dont make a flicker
+        setTimeout(() => {
+            M.F.P.fade_splash = true
+        },234)
+    })
+    $effect(() => {
+        let being = fullscreen ? "hidden" : "initial"
+        document.body.style.setProperty('overflow',being)
+    })
 
     // < cyto in here... can we make friends in common?
 </script>
@@ -26,6 +38,7 @@
 
 
 
+<!-- <div transition:fade> -->
 <FaceSucker altitude={33} {fullscreen}>
     {#snippet content()}
         <div class='uiing bottom'>
@@ -52,10 +65,17 @@
         </div>
     {/snippet}
 </FaceSucker>
+<!-- </div> -->
 
+    <!-- {#if M.stashed}
+        M.stashed: {JSON.stringify(M.stashed)}
+    {/if} -->
 
 <style>
     
+    div.controls {
+        font-size:1.6em;
+    }
     button.big {
         font-size:1.6em;
     }

@@ -128,7 +128,7 @@
     {/if}
     {#if stashy_UI_component && M.stashed}
         <p>
-            UI'd
+            UI'sd
             <svelte:component this={stashy_UI_component} {M} ></svelte:component>
         </p>
     {/if}

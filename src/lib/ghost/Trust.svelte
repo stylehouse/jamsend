@@ -149,14 +149,6 @@
     // F.fade_splash
     async Introducing(A,w) {
         let In = w.oai({Induction:1})
-        // remove corporate logo asap, but dont make a flicker
-        if (!In.oa({faded_splash:1})) {
-            setTimeout(() => {
-                M.F.P.fade_splash = true
-
-            },100)
-            In.i({faded_splash:1})
-        }
 
         // once we've heard it's okay!
         for (let e of this.o_elvis(w,'gotIn')) {
@@ -165,6 +157,8 @@
         if (M.stashed.Welcome) {
             M.F.P.audio_maybe = true
         }
+        
+        await In.r({stashed:1,Welcome:1},M.stashed.Welcome ? null : {})
         
         // < modulate F:Trusting UI
         

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
+    import { fade } from "svelte/transition";
     import { SvelteSet } from "svelte/reactivity";
     import { Idento, Peerily, PeeringFeature, type StashedPeering,
         Peering as Peering_type
@@ -10,6 +11,7 @@
     import GatEnabler from "./ui/GatEnabler.svelte";
     import FTrusting from "$lib/FTrusting.svelte";
     import Peering from "./Peering.svelte";
+    import FaceSucker from "./ui/FaceSucker.svelte";
 
     let spec = `
     more modern A.svelte
@@ -82,18 +84,28 @@
     onDestroy(() => {
         P.stop()
     })
-
-    
+    onMount(() => {
+        document.body.style.setProperty('overflow','hidden')
+    })
+    // < get <div transition:fade> working
 </script>
+
+{#if !P.fade_splash}
+    <div transition:fade>
+    <FaceSucker altitude={44} fullscreen={true}>
+        {#snippet content()}
+            <span id="heading">Welcome to jamsend.</span>
+        {/snippet}
+    </FaceSucker>
+    </div>
+{/if}
 
 <div>
     <pan>
         <ShareButton {P} />
         <span id="heading">Welcome to jamsend.</span>
         <span>
-            {#if P.audio_maybe}
-                <GatEnabler />
-            {/if}
+            <GatEnabler />
         </span>
     </pan>
 
@@ -110,8 +122,8 @@
         {/each}
     </div>
 {/if}
-
 </div>
+
 
 <style>
     div {

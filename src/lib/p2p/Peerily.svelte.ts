@@ -301,8 +301,8 @@ export class Peerily {
     stash:TheStash = $state({})
     Trusting:Trusting
     // UI:Intro via M:Trusting
-    fade_splash = false
-    audio_maybe = false
+    fade_splash = $state(false)
+    audio_maybe = $state(false)
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
