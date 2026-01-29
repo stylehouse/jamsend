@@ -104,9 +104,20 @@
     async function copy_link() {
         await navigator.clipboard.writeText(link);
     }
-
-    $inspect(P.stash)
-
+    let size = $state(300)
+    let qrele:HTMLElement = $state()
+    $effect(() => {
+        if (link && qrele) {
+            let img = qrele.children[0]
+            if (img.nodeName != "IMG") throw "!img"
+            // in here, adjust size for smallest width|height of viewport
+            const vw = window.innerWidth
+            const vh = window.innerHeight
+            const availableWidth = vw * 0.8
+            const availableHeight = (vh - 100) * 0.8 // subtract space for button
+            size = Math.min(availableWidth, availableHeight)
+        }
+    })
 
 </script>
 
@@ -116,9 +127,10 @@
             <ShareButton />
             {#if link}
                 <qrthing>
-                    <p> <button onclick={copy_link}>Copy Link</button> </p>
-                    <pqr> <QrCode value={link} /> </pqr>
-                    <p> Here it is: {link} </p>
+                    <span>
+                        <p> <button onclick={copy_link}>Copy Link</button>, oncer.</p>
+                        <pqr bind:this={qrele}> <QrCode value={link} {size} /> </pqr>
+                    </span>
                 </qrthing>
             {/if}
         </span>
@@ -165,12 +177,18 @@
         z-index: 1000;
         backdrop-filter: blur(4px);
     }
+    pqr > img{
+        width: 78vw;
+    }
     pqr {
+        display: flex;
         background: white;
-        padding-left: 26px;
-        padding-top: 30px;
+        padding: 2em;
     }
     div {
         color: green;
+    }
+    button{
+        padding:1em;
     }
 </style>

@@ -25,14 +25,17 @@
     // high-level clustery thinking
     async Trusting(A,w) {
         console.log(`🔒 Trusting`)
-        for (let e of this.o_elvis(w,'Trustastic')) {
-            w.i({Trustastic:1,day:1,to:1,be:1,alive:1})
-        }
-        if (!w.oa({Trustastic:1})) {
-            setTimeout(() => {
-                this.i_elvis(w,'Trustastic')
-            },80)
-        }
+        // for (let e of this.o_elvis(w,'Trustastic')) {
+        //     w.i({Trustastic:1,day:1,to:1,be:1,alive:1})
+        // }
+        // if (!w.oa({Trustastic:1})) {
+        //     setTimeout(() => {
+        //         this.i_elvis(w,'Trustastic')
+        //     },80)
+        // }
+        
+        this.stashed.PierSerial ||= 0
+        this.stashed.IdzeugSerial ||= 0
 
 
 
@@ -53,9 +56,6 @@
             await this.LetsPier(A,w,Our,Our.sc.Pier)
         }
         
-        this.stashed.PierSerial ||= 0
-        this.stashed.IdzeugSerial ||= 0
-
         await this.Idzeuging(A,w)
         
         await this.Listening(A,w)
@@ -82,7 +82,7 @@
         for (let e of this.o_elvis(w,'increase')) {
             this.stashed.friv ||= 0
             this.stashed.friv++
-            w.i(tex({an:"event came in"},nex({},e.sc,'elvis')))
+            w.i({an:"event came in"}).i(e.sc)
         }
         await w.r({friv:this.stashed?.friv})
     },
@@ -239,7 +239,7 @@
     getOurThing(A,w,prepub) {
         let Our = w.o({Hath:1,prepub})[0]?.o({Our:1})[0]
         return {Our,
-            Thing: Our?.sc.Pier || Our?.sc.Peering
+            S: Our?.sc.Pier || Our?.sc.Peering
         }
     },
 
@@ -271,8 +271,8 @@
     async Idzeuverify(A,w:TheC,I:TheC) {
         // < GOING not usually able to sign this early
         let {prepub,advice,sign} = I.sc
-        let {Our,Thing} = this.getOurThing(A,w,prepub)
-        if (!Thing) throw "< for them"
+        let {Our,S} = this.getOurThing(A,w,prepub)
+        if (!S) throw "< for them"
         let Id = Our.o1({Id:1})[0] as Idento
         if (!Id) throw "!Id!?"
         let isok = await Id.ver(sign,`${prepub}-${advice}`)
@@ -788,6 +788,7 @@
 
     async Our_connectedness(Our:TheC,ier:Pier) {
         let w = this.w
+        let generally_good = false
         await Our.replace({const:1},async () => {
             if (!ier) Our.i({const:'noplug'})
             else if (!ier.disconnected) Our.i({const:'ok',ready:1})
@@ -800,8 +801,7 @@
             }
 
             if (Our.oa({const:1,ready:1})) {
-                // generally good
-                Our.oai({was_ready:1})
+                generally_good = true
             }
             else {
                 // generally bad
@@ -810,6 +810,10 @@
                 }
             }
         })
+        if (generally_good) {
+            // permanent, that we were connected
+            Our.oai({was_ready:1})
+        }
     },
 
 
