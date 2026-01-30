@@ -171,18 +171,28 @@
         }
 
         // download permanence to now
-        if (eers.Welcome) {
-            // Peering Welcome spreads to all of Peerily
-            //  features can now do UI of F|PF
-            //   which spawns Modus, has Atime...
-            //    which emits
-            //     now it's trusted to
-            M.F.P.Welcome = true
-        }
-        
         await In.r({stashed:1,Welcome:1},eers.Welcome ? null : {})
-        
-        // < modulate F:Trusting UI
+        if (!eers.Welcome) return
+        // Peering Welcome spreads to all of Peerily
+        //  features can now do UI of F|PF
+        //   which spawns Modus, has Atime...
+        M.F.P.Welcome = true
+
+
+
+        // < once Welcome we can watch the...
+        if (M.F.P.some_feature_is_ready) {
+            // from and so we can reveal, UI:Cytoscape
+            // means your raterminal has a %NowPlaying
+            await In.r({Readiness:1},{Ready:1})
+        }
+        else if (M.F.P.some_feature_is_nearly_ready) {
+            // everything might be ready except for %NowPlaying
+            //  which requires they have shares and you have AudioContext go
+            await In.r({Readiness:1},{NearlyReady:1})
+        }
+
+        // < not connecting to anyone but instance tyrant is a fail?
         
     },
 

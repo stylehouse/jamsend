@@ -17,7 +17,8 @@
     // we give one C to Stuffing
     //  it usually takes many
     //  so we have an extra container layer here
-    let req = $derived(heist.o()[0])
+    // < heist goes undefined? though above <Pirate> is an if(heist)
+    let req = $derived(heist?.o()[0] || req)
     let show_req = $state()
     let interesting_title:string = $state()
 
@@ -268,7 +269,7 @@
         {/if}
 
 
-        {#if show_req}
+        {#if show_req && heist}
             <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
         {/if}
         </div>

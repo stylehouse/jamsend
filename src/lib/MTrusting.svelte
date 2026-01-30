@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import FaceSucker from "./p2p/ui/FaceSucker.svelte";
     import { fade } from "svelte/transition";
+    import FaceSucker from "./p2p/ui/FaceSucker.svelte";
     import { grop } from "./Y";
 
     let {M} = $props()
@@ -21,8 +21,8 @@
         inmem.set('quit_fullscreen',quit_fullscreen)
     }
     
-    let jamming = $derived(M.want_fullscreen)
-    let fullscreen = $derived(jamming && !quit_fullscreen)
+    let jamming = $derived(!P.some_feature_is_ready)
+    let can_fullscreen = $derived(jamming && !quit_fullscreen)
     onMount(() => {
         // remove corporate logo asap, but dont make a flicker
         setTimeout(() => {
@@ -30,7 +30,7 @@
         },234)
     })
     $effect(() => {
-        let being = fullscreen ? "hidden" : "initial"
+        let being = can_fullscreen ? "hidden" : "initial"
         document.body.style.setProperty('overflow',being)
     })
     function classify(C) {
@@ -39,14 +39,36 @@
             : C.sc.good ? 'good'
             : 'other'
     }
+    // < this fade to UI:Cytoscape isn't working
+    let wasfull = can_fullscreen
+    let pseudofading = $state(false)
+    let fullscreen = $state(false)
+    $effect(() => {
+        if (can_fullscreen != wasfull) {
+            if (!can_fullscreen) {
+                // only fade out
+                pseudofading = true
+                // bring it back unfullscreened
+                setTimeout(() => {
+                    pseudofading = false
+                    fullscreen = can_fullscreen
+                }, 300)
+            }
+            else {
+                fullscreen = can_fullscreen
+            }
+            wasfull = can_fullscreen
+        }
+    })
     // < cyto in here... can we make friends in common?
 </script>
 
 
 
-
-<!-- <div transition:fade> -->
-<FaceSucker altitude={33} {fullscreen}>
+{#if !pseudofading}
+<div transition:fade={{duration:3500}}>
+    <div>
+<FaceSucker altitude={33} fullscreen={can_fullscreen} >
     {#snippet content()}
         <div class='uiing bottom'>
             <div class='controls'>
@@ -57,8 +79,10 @@
 
 
                 <div class="content">
-                    Introducing jamsend. Left cave: {quit_fullscreen}.
+                    Left cave: {quit_fullscreen}.
                     {#if P.Welcome}Welcome.{/if}
+                    {#if P.some_feature_is_ready}Ready.
+                    {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
                     <ul>
                         {#each M.msgs as C (C.sc.msgs_id)}
                             <li class={classify(C)}>{C.sc.say}</li>
@@ -67,13 +91,14 @@
                 </div>
 
                 <span>
-                    <a href="https://github.com/stylehouse/jamsend">README</a>
                 </span>
             </div>
         </div>
     {/snippet}
 </FaceSucker>
-<!-- </div> -->
+    </div>
+</div>
+{/if}
 
     <!-- {#if M.stashed}
         M.stashed: {JSON.stringify(M.stashed)}

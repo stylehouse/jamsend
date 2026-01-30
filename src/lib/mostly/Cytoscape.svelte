@@ -12,6 +12,7 @@
     import fcose from "cytoscape-fcose";
     // and everything, interactively
     import cola from "cytoscape-cola";
+    import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
@@ -424,15 +425,25 @@
     node_edger.jamming = (whether) => {
         jamming = whether
     }
-    // < F:Trust, always there, also throws up fullscreening on load
-    //    depending also on the same !quit_fullscreen
-    //   shows them induction text maybe
+    // F:Trusting, always there, also throws up fullscreening on load
+    //  depending also on similar !quit_fullscreen
+    //   shows them induction text while atop us
+    
     //   processes idzeug maybe
     //   and lets you select which peer to listen to, if multiple...
     //   and jumps out of the way just as the stream comes in
     //   
     // < once jamming, or
     let fullscreen = $derived(jamming && !quit_fullscreen)
+    onMount(() => {
+        M.F.P.some_feature_is_nearly_ready = true
+    })
+    $effect(() => {
+        if (jamming) {
+            // we are now ready for F:Trusting to reveal us
+            M.F.P.some_feature_is_ready = true
+        }
+    })
 
 
     function selection_changed() {
@@ -453,8 +464,8 @@
 <button onclick={() => cy.fit()}>fit()</button>
 
 
-<div class="hoist" class:jamming={fullscreen}>
-    <div class="contain" class:jamming={fullscreen}>
+<FaceSucker altitude={22} {fullscreen}>
+    {#snippet content()}
         <div class="graph" bind:this={ele}></div>
 
         {#if jamming}
@@ -484,8 +495,8 @@
                 </span>
             </div>
         </div>
-    </div>
-</div>
+    {/snippet}
+</FaceSucker>
 
 <style>
     div {

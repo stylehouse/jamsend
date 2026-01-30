@@ -304,6 +304,9 @@ export class Peerily {
     fade_splash = $state(false)
     // < stop F|PF features spawning until:
     Welcome = $state(false)
+    // M:Trusting sucks face until:
+    some_feature_is_nearly_ready = $state(false)
+    some_feature_is_ready = $state(false)
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive

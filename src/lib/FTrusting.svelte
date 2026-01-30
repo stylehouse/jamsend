@@ -56,7 +56,10 @@
     <!-- and then we have to have these things exist to get S.stashed
          which we wait for sometimes somewhere -->
 
-
+    <details>
+        <summary>
+            <h3>Our Peerings</h3>
+        </summary>
     <h3>Our Idzeugs</h3>
     <Things
             Ss={F.OurIdzeugs}
@@ -131,6 +134,7 @@
         <!-- is a bunch of code that can load into M.* without tearing down all this -->
         <Trust {M} />
     {/if}
+    </details>
 {/if}
 </div>
 <style>
