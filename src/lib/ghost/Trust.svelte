@@ -66,6 +66,7 @@
         await this.Listening(A,w)
         await this.Ringing(A,w)
 
+        
         await this.Introducing(A,w)
 
         if (0 && 'hold sharing open') {
@@ -164,10 +165,9 @@
             eers.Welcome = true
         }
         // if we're the instance tyrant
-        let prepub = Id+''
-        if (w.oa({Hath:1,user:1,prepub,name:'instance tyrant'})) {
+        if (M.amTyrant) {
             eers.Welcome = true
-            In.oai({instanceTyrant:1})
+            await this.Tyranny(A,w)
         }
 
         // download permanence to now
@@ -205,11 +205,121 @@
                  which otherwise should blank-stare them
                   removing the quit_fullscreen button
              and then un-Good-ified Pier can invite others!
+              causing unconnected pieces of the social graph
             so instance tyrant is going to have to officiate Idzeuginations
              and your invitee is going to know your invitor's prepub
              Idvoyage = {alice,bob,met_at,sign}
         `
+        w.oai({instanceTyrant:1})
+
+        // do marriage certs
+        if (!M.OurTyrant.stashed.Idvoyage) {
+            // do our own...
+            // Tyrant can invite others without freaking out about the state of:
+            let CreationMyth = await this.Idvoyage_generate({Alice:'appeared',depth:0})
+            M.OurTyrant.stashed.Idvoyage = await this.Idvoyage_generate({
+                Idvoyage: CreationMyth,
+                Alice: M.OurTyrant.instance.pub,
+                Bob: M.OurTyrant.instance.pub,
+                at: now_in_seconds(),
+                depth: 1
+            })
+        }
+        // < capture and check all prepubs mentioned in these exist
+        for (let e of this.o_elvis(w,'i Idvoyage')) {
+            let ier = e.sc.ier
+
+            // the posited, potential new Idzeug.
+            let c = e.sc.Idvoyage
+            // demands this, the previous Idzeug, is supplied instead of working out some blockchainery?
+            let Before = c.Idvoyage
+            delete c.Idvoyage
+            // we back to their Idzeugnation similarly to how their peer might
+            let bad = (say) => {
+                ier.emit('intro',{answer:1,failed:say})
+            }
+            let BeforeAlice_ok = Before
+                && Before.Bob == c.Alice 
+                && c.Bob == ier.pub // invitee, undergoing Idzeugnation
+                && await this.Idvoyage_verify(Before)
+            if (!BeforeAlice_ok) {
+                bad("invalid Idvoyage.Idvoyage")
+                continue
+            }
+            let delta = c.at - now_in_seconds()
+            if (delta < -35 || delta > 35) {
+                bad("too far away in time")
+                continue
+            }
+
+            // we trust them to invite this Bob
+            c.depth = Before.depth+1
+            await this.Idvoyage_generate(c)
+            if (!c.sign) throw `no signed`
+
+            ier.emit('intro',{Idvoyage:c})
+            console.log(`🦑 Idvoyage away: ${c.depth}`)
+
+            // < capture c
+        }
+        for (let e of this.o_elvis(w,'Periodically')) {
+            // < capture daily user stats. roll off their intensity if large network depth
+        }
     },
+    async Idvoyage_verify(Idvoyage):Promise<boolean> {
+        let c = {...Idvoyage}
+        let sign = delete c.sign
+        let js = JSON.stringify(c)
+        let Id = M.amTyrant ? M.mainPeering.instance.Id : M.OurTyrant.instance.Ud
+        return await Id.ver(sign,js)
+    },
+    async Idvoyage_generate(c) {
+        let Id = M.mainPeering.instance.Id
+        if (c.sign) throw `already signed`
+        let js = JSON.stringify(c)
+        c.sign = await Id.sig(js)
+        return c
+    },
+
+
+    // coninuously on Idzeugnation, once otherwise about to Good=true
+    //  return true to stall there and repeat
+    async Idvoyage_arrange(A,w,I):Promise<boolean> {
+        if (!I.sc.Idvoyage_sought) {
+            // Idzeugnation already has brought this up
+            if (await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)) {
+                return I.i({waits:"arranging mirage..."})
+            }
+            // timestamp we joined the trust network
+            let at = I.sc.arranged_at ||= now_in_seconds()
+            
+            // they become our Alice, etc
+            let Alice = I.sc.Alice.instance.pub
+            let Bob = M.mainPeering.instance.pub
+            let Idvoyage = I.sc.Idvoyage
+            if (!Idvoyage) throw "Alice!Idvoyage"
+
+            let c = {Idvoyage,Alice,Bob,at}
+            M.OurTyrant.instance.emit('intro',{Idvoyage:c})
+            I.sc.Idvoyage_sought = true
+        }
+        else {
+            // we get %answer,failed about this request via e:'o Idzeugnosis'
+            for (let e of this.o_elvis(this.w,'i Idvoyage')) {
+                let Idvoyage = e.sc.Idvoyage
+                if (!await this.Idvoyage_verify(Idvoyage)) throw `tyrant brainmelt`
+                // this is given to every Idzeugnosis we make from now on 
+                M.mainPeering.stashed.Idvoyage = Idvoyage
+                I.sc.Idvoyaging_onwards = Idvoyage
+                return false
+            }
+        }
+        return true
+    },
+    
+
+
+
 
 
 //#endregion
@@ -439,8 +549,6 @@
         }
     },
 
-
-
     async Idzeugnation(A,w,I,_no) {
         let no = (say) => {
             console.log(`🦑 Idzeugnation problem: ${say}`)
@@ -458,19 +566,17 @@
             let {Id} = this.Our_main_Id(w)
             if (Id+'' == prepub) return no("invited yourself")
         }
-
         // add this Pier
         let Our = await this.simply_i_Pier_Our(prepub)
         if (!Our) return I.i({waits:"Our"}).i(I)
-        let Pier = Our.sc.Pier
+        let Pier = Our.sc.Pier as OurPier
         if (!Pier) throw "never"
-        await w.r({Ringing:1,prepub,Pier,for:"Idzeugnosis"})
-        // < should be there by now?
-        let ier = Pier.instance
-        if (!ier) return I.i({waits:`instance`})
-
-        let LP = this.o_LP(ier)
-        if (!LP?.oa({const:1,ready:1})) {
+        I.sc.Alice = Pier
+        
+        let Tyrant_ok = M.amTyrant
+            || !await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)
+        let Pier_ok = !await this.RingUp(A,w,Pier,"Idzeugnosis",I)
+        if (!Pier_ok) {
             console.log(`🦑 Idzeugnation connecting...`)
             return I.i({waits:'connecting...'})
         }
@@ -479,7 +585,21 @@
         let Id = this.ensure_Our_Id(Our)
         if (!Id) return I.i({waits:'almost...'})
         if (prepub != Id+'') throw `thought...`
-        
+        // and the third party...
+        if (!Tyrant_ok) {
+            // we need them online to give us an "is connected to someone" cert
+            //  which elegantly handles uploading the social graph!
+            I.sc.waiting_on_Tyrant_at ||= now_in_seconds()
+            if (I.ago('waiting_on_Tyrant_at') > 25) {
+                return no(`the third party who verifies trust network continuity is not available.
+                    the link will work again, just keep this tab for a while.`)
+            }
+            return I.i({waits:"arranging mirage..."})
+        }
+
+
+
+        // is about as safe as it can be to consume the Idzeug number:
         if (!I.sc.asked) {
             // causes an e:'i Idzeugnosis' over there
             await ier.emit('intro',sex({},I.sc,'advice,sign'))
@@ -487,7 +607,7 @@
             return
         }
         for (let e of this.o_elvis(w,'o Idzeugnosis')) {
-            sex(I.sc,e.sc,'failed,success')
+            sex(I.sc,e.sc,'failed,success,Idvoyage')
         }
 
         if (I.sc.failed) {
@@ -499,7 +619,25 @@
             I.i({waits:"invite shown..."})
             return
         }
+        // they say success
+        //  and give us their Idvoyage to get our Idvoyage
+        let is_trusted = await this.Idvoyage_verify(I.sc.Idvoyage)
+        if (!is_trusted) {
+            console.log(`🦑 Idvoyage_verify BAD`)
+            return no(`not on the trust network`)
+        }
 
+        // timestamp we joined the trust network
+        I.sc.arranged_at ||= now_in_seconds()
+        if (I.ago('arranged_at') > 25) {
+            // Idvoyage hasn't come around
+            return no(`can't contact instance tyrant`)
+        }
+
+        // also checks with instance tyrant to get a marriage cert sort of thing
+        // < check theirs
+        if (await this.Idvoyage_arrange(A,w,I)) return
+        
         // < it might have some other data too, not in the trust...
         ier.emit('intro',{answer:1,thanks:1})
         I.i_wasLast("finished",true)
@@ -515,7 +653,12 @@
     },
     async unemitIntro(ier:Pier,data) {
         if (data.thanks) return
-        // Idzeug convo
+        // the trip to the Tyrant and back
+        if (data.Idvoyage) {
+            this.i_elvis(this.w,'i Idvoyage',sex({ier},data,'Idvoyage'))
+            return
+        }
+        // Idzeug two-peers convo
         if (!data.answer) {
             // ask doorman
             this.i_elvis(this.w,'i Idzeugnosis',sex({ier},data,'advice,sign'))
@@ -529,7 +672,11 @@
 
 
 
+
+
+
     // the authority checks an Idzeug
+    // is already on the network (social graph)
     async Idzeugnosis(A,w,I,_no) {
         let ier = I.sc.ier as Pier
         let is = ier.stashed
@@ -557,7 +704,7 @@
         let Pier = Our.sc.Pier
         if (ier != Pier.instance) throw `Pier ${prepub} not %Our,Pier.instance`
 
-        await this.Idzeuverify(A,w,I)
+        if (!I.sc.sign_ok) await this.Idzeuverify(A,w,I)
         if (!I.sc.sign_ok) {
             return no("bad sig")
         }
@@ -587,8 +734,11 @@
         for (let to of give_them_trust) {
             ier.grant_trust(to,{Idzeug:Idzeug.name})
         }
-
-        ier.emit('intro',{answer:1,success:`got ${give_them_trust.join(',')} access`})
+        
+        ier.emit('intro',{answer:1,
+            success:`got ${give_them_trust.join(',')} access`,
+            Idvoyage: M.mainPeering.stashed.Idvoyage,
+        })
         I.sc.success = true
         I.i_wasLast("finished",true)
         console.log(`🦑 Idzeugnation good 🔒`)
@@ -646,6 +796,10 @@
         let Peering = Our.sc.Peering as OurPeering
         let eer = Peering.instance = P.i_Peering(Id) as Peering
         eer.Thing = Peering
+        M.mainPeering = Peering
+        if (Id.pretty_pubkey() == INSTANCE_TYRANT_PREPUB) {
+            M.amTyrant = true
+        }
         
         // same .stashed
         eer.stashed = Peering.stashed
@@ -655,6 +809,32 @@
         w.i({Listening:1,eer,Peering,prepub})
     },
     
+
+    // I becomes client identifier for a session of %Ringing
+    //  I are stable, similar to reqy
+    //  %Ringing,Pier,.../%Because=label,I are replacey
+    // < stop when all a %Ringing's I drop
+    async RingUp(A,w,Pier,label,I) {
+        let prepub = Pier.instance.Ud?.pretty_pubkey()
+        let pubkey = Pier.instance.pub
+        if (prepub != pubkey) throw `pub!=pub`
+
+        // instructions for the background
+        let Ri = await w.r({Ringing:1,prepub,Pier})
+        let Be = await Ri.r({Because:label,I})
+        // < whittle.
+        Be.i_wasLast('wanted',true)
+
+        // < should be there by now?
+        let ier = Pier.instance
+        if (!ier) return true //I.i({waits:`instance`})
+
+        let LP = this.o_LP(ier)
+        if (!LP?.oa({const:1,ready:1})) {
+            return true
+        }
+    },
+
     async Ringing(A,w) {
         let F = this.F as Trusting
         let P = F.P as Peerily
@@ -1176,7 +1356,6 @@
         if (!s.Id && !s.prepub) {
             // on spawn, the first time
             if (Pier.the_cia) {
-                s.stealth = 1
                 s.prepub = INSTANCE_TYRANT_PREPUB
             }
             else if (Pier.prepub) {
@@ -1192,10 +1371,6 @@
         // hold off init until Id is got (see other places we call this)
         if (s.Id) this.ensure_Our_Id(Our)
 
-        // not really a contact
-        if (s.stealth) await Our.r({stealth:1})
-
-
         // we upgrade to having Id after emit:hello'ing an initial prepub
         let Id = Our.o1({Id:1})[0]
         if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
@@ -1204,8 +1379,20 @@
         w.i({Hath:1,user:1,prepub,name:Our.sc.name})
             .is().i(Our)
 
+        // not really a contact
+        if (s.the_cia || prepub == INSTANCE_TYRANT_PREPUB) {
+            s.stealth = 1
+            s.the_cia = 1
+            Pier.the_cia = 1
+            M.OurTyrant = Pier
+            if (!M.OurTyrant) {
+                debugger
+            }
+            console.log(`OurTyrant: ${prepub}`)
+        }
+        if (s.stealth) await Our.r({stealth:1})
+
         // establish a sequence number for all Pier
-        // < doesn't seem to go
         if (!s.Serial) {
             s.Serial = this.stashed.PierSerial
             this.stashed.PierSerial += 1

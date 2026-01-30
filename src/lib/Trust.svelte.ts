@@ -72,6 +72,8 @@ type StashedObject = {
     // on Pier after Idzeug ok:
     Good:true, 
     introduced_at:number,
+    // Peering
+    Idvoyage:Object
 }
 
 // they both have S.stashed, not in a Modus
@@ -189,7 +191,12 @@ export class TrustingModus extends Modus {
     stashy_UI_component:Component
     msgs = $state([])
     msgs_serial = 0
-    
+
+    w:TheC // latest w:Trusting
+    OurTyrant:OurPier
+    amTyrant = false
+    mainPeering:OurPeering // there's a function called OurPeering
+
     constructor(opt:Partial<TrustingModus>) {
         super(opt)
         this.F = this.S

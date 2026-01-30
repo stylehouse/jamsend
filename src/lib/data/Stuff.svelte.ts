@@ -412,7 +412,7 @@ abstract class TimeOffice extends StuffIO {
         if (time == null) return Infinity
         return now_in_seconds() - time
     }
-    async i_wasLast(label:string,now=false) {
+    async i_wasLast(label:string,now) {
         if (now) {
             // set it
             await this.replace({wasLast:label,at:1},async () => {
