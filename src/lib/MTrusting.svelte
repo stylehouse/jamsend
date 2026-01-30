@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import FaceSucker from "./p2p/ui/FaceSucker.svelte";
     import { fade } from "svelte/transition";
+    import { grop } from "./Y";
 
     let {M} = $props()
     let F = M.F
@@ -32,7 +33,12 @@
         let being = fullscreen ? "hidden" : "initial"
         document.body.style.setProperty('overflow',being)
     })
-
+    function classify(C) {
+        setTimeout(() => grop(C,M.msgs), 15000)
+        return C.sc.mediocre ? 'mediocre'
+            : C.sc.good ? 'good'
+            : 'other'
+    }
     // < cyto in here... can we make friends in common?
 </script>
 
@@ -55,7 +61,7 @@
                     {#if P.Welcome}Welcome.{/if}
                     <ul>
                         {#each M.msgs as C (C.sc.msgs_id)}
-                            <li>{C.sc.say}</li>
+                            <li class={classify(C)}>{C.sc.say}</li>
                         {/each}
                     </ul>
                 </div>
@@ -74,6 +80,12 @@
     {/if} -->
 
 <style>
+    .mediocre {
+        color: #7e7a47;
+    }
+    .good {
+        color:lightgreen;
+    }
     
     div.controls {
         font-size:1.6em;

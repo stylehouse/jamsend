@@ -238,7 +238,6 @@ export class PierSharing extends PierFeature {
     constructor(opt) {
         super(opt)
         this.UI_component = Sharee
-        this.emit("whatsup",{from:this.Pier.eer.Id+''})
     }
     
     every_Modus():Modus[] {
@@ -256,6 +255,7 @@ export class PierSharing extends PierFeature {
     async start() {
         try {
             this.started = true
+            this.emit("whatsup",{from:this.Pier.eer.Id+''})
             console.log(`PierSharing:`, this.list);
         } catch (err) {
             throw erring("Failed to start file sharing", err);

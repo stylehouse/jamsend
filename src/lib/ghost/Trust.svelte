@@ -374,14 +374,15 @@
 
 //#endregion
 //#region Idzeuganise
-    UIsay(w,say) {
-        let C = _C({msgs_id:M.msgs_serial++,say})
+    UIsay(w,say,c={}) {
+        let C = _C({msgs_id:M.msgs_serial++,say,...c})
         M.msgs.push(C)
         console.log(`🔒 says: ${say}`)
         w.i({see:'🔒',say})
     },
     async Idzeuganise(A,w:TheC) {
-        let not_dead = (I) => {
+        let not_dead = async (I) => {
+            await this.w_forgets_problems(I)
             if (I.sc.dead) {
                 if (I.sc.dead++ > 3) {
                     w.drop(I)
@@ -398,14 +399,18 @@
         // continuously...
         for (let I of w.o({Idzeugnation:1})) {
             // we are the invitee
-            let no = not_dead(I)
+            let no = await not_dead(I)
             no && await this.Idzeugnation(A,w,I,no)
+            // they're standing at the gate getting a stream of mediocre noises
+            for (let wa of I.o1({waits:1})) {
+                this.UIsay(w,wa,{mediocre:1})
+            }
         }
 
         await this.o_elvis_Idzeugnosis(A,w)
         for (let I of w.o({Idzeugnosis:1})) {
             // we are acting the doorman
-            let no = not_dead(I)
+            let no = await not_dead(I)
             no && await this.Idzeugnosis(A,w,I,no)
         }
     },
@@ -432,23 +437,23 @@
 
         // add this Pier
         let Our = await this.simply_i_Pier_Our(prepub)
-        if (!Our) return w.i({waits:"i %Our,Pier"}).i(I)
+        if (!Our) return I.i({waits:"Our"}).i(I)
         let Pier = Our.sc.Pier
         if (!Pier) throw "never"
         await w.r({Ringing:1,prepub,Pier,for:"Idzeugnosis"})
         // < should be there by now?
         let ier = Pier.instance
-        if (!ier) return w.i({waits:`Pier ${prepub} instance`})
+        if (!ier) return I.i({waits:`instance`})
 
         let LP = this.o_LP(ier)
         if (!LP?.oa({const:1,ready:1})) {
             console.log(`🦑 Idzeugnation connecting...`)
-            return w.i({waits:'connecting...'})
+            return I.i({waits:'connecting...'})
         }
 
         // their Id
         let Id = this.ensure_Our_Id(Our)
-        if (!Id) return w.i({waits:'almost...'})
+        if (!Id) return I.i({waits:'almost...'})
         if (prepub != Id+'') throw `thought...`
         
         if (!I.sc.asked) {
@@ -467,14 +472,14 @@
         }
         if (!I.sc.success) {
             console.log(`🦑 Idzeugnation put...`)
-            w.i({waits:"invite shown..."})
+            I.i({waits:"invite shown..."})
             return
         }
 
         // < it might have some other data too, not in the trust...
         ier.emit('intro',{answer:1,thanks:1})
         I.i_wasLast("finished",true)
-        this.UIsay(w,I.sc.success)
+        this.UIsay(w,I.sc.success,{good:1})
         // Intro prepares for the next UI...
         this.i_elvis(w,'gotIn')
         console.log(`🦑 Idzeugnation good 🔒`)

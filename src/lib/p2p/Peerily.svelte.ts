@@ -618,6 +618,7 @@ export class Pier {
             let time = get_auto_reconnect_time()
             if (this.P.destroyed) return console.log(`guess no auto_reconnect...`)
             setTimeout(() => {
+                if (this.P.destroyed) return console.log(`guess no auto_reconnect...`)
                 if (!this.disconnected) {
                     // it's over
                     this.auto_reconnect_time = null
