@@ -35,6 +35,7 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    line-height:0.8;
     font-size: 0.8rem;
     transition: all 0.2s ease;
     background: #2196F3;

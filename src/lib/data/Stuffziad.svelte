@@ -172,4 +172,7 @@
     color: rgb(61, 245, 159);
     background-color: rgba(14, 26, 29, 0.3);
 }
+    .btn>span {
+        line-height:0.9;
+    }
 </style>

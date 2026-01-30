@@ -72,8 +72,8 @@ type StashedObject = {
     // on Pier after Idzeug ok:
     Good:true, 
     introduced_at:number,
-    // Peering
-    Idvoyage:Object
+    // < move to Peering.stashed? (the type there)
+    Idvoyage:Object,
 }
 
 // they both have S.stashed, not in a Modus
@@ -154,7 +154,7 @@ export class OurPiers extends ThingsIsms {
 }
 export class OurPier extends stashedHavingThingIsms {
     instance?:Pier
-    // does almost nothing...
+    prepub:string
 }
 
 
@@ -174,7 +174,6 @@ export class OurIdzeugs extends ThingsIsms {
     }
 }
 export class OurIdzeug extends stashedHavingThingIsms {
-    // does almost nothing...
 }
 
 
