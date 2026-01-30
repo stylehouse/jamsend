@@ -877,14 +877,6 @@ export class Pier {
             console.log("they say hi: ",data)
             this.hear_hello(data)
         },
-        trust: async (data) => {
-            console.log("they say trust: ",data)
-            this.hear_trust(data)
-        },
-        trusted: async (data) => {
-            console.log("they say trusted: ",data)
-            this.hear_trusted(data)
-        },
         ping: async (data) => {
             // console.log("they say ping: ",data)
             await this.P.Trusting.M.unemitPing(this,data)
@@ -892,6 +884,17 @@ export class Pier {
         intro: async (data) => {
             console.log("they say intro: ",data)
             await this.P.Trusting.M.unemitIntro(this,data)
+        },
+        
+        trust: async (data) => {
+            if (!this.is_vaguely_trusted()) return
+            console.log("they say trust: ",data)
+            this.hear_trust(data)
+        },
+        trusted: async (data) => {
+            if (!this.is_vaguely_trusted()) return
+            console.log("they say trusted: ",data)
+            this.hear_trusted(data)
         },
     }
 
@@ -976,9 +979,16 @@ export class Pier {
         this.refresh_features()
     }
 
+    // set by Idzeugn*
+    is_vaguely_trusted(is_response=false) {
+        let is = this.P.Trusting.M.ier_is_Good(this)
+        if (!is && is_response) throw `Pier thought they were Good?`
+        return is
+    }
+
     // client reminds server what abilities they're allowed
     async say_trust(is_response=false) {
-        if (!this.P.Trusting.M.ier_is_Good(this,is_response)) {
+        if (!this.is_vaguely_trusted(is_response)) {
             // they|us will get back to this
             return
         }

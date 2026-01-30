@@ -52,14 +52,20 @@
 
     <Modus S={F} do_start=1></Modus>
 
+    {#snippet Stashedness(S)}
+        <p>{JSON.stringify(S.stashed)}</p>
+        <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
+        {#if S.started}
+            <p><Thingstashed {F} M={S} /></p>
+        {/if}
+    {/snippet}
+
 
     <!-- and then we have to have these things exist to get S.stashed
          which we wait for sometimes somewhere -->
 
     <details>
-        <summary>
-            <h3>Our Peerings</h3>
-        </summary>
+        <summary>Our data</summary>
     <h3>Our Idzeugs</h3>
     <Things
             Ss={F.OurIdzeugs}
@@ -76,12 +82,7 @@
                     {#if S.name.match(/[^\w+ -]/)}
                         <p>Name contains illegal characters. Delete and add another. </p>
                     {/if}
-                    {JSON.stringify(S.stashed)}
-
-                    <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
-                    {#if S.started}
-                        <Thingstashed {F} M={S} />
-                    {/if}
+                    {@render Stashedness(S)}
                 </div>
             {/snippet}
     </Things>
@@ -96,12 +97,7 @@
             {#snippet thing(S:OurPeering)}
                 <div class='levity Peering'>
                     <p>a Peering</p>
-                    {JSON.stringify(S.stashed)}
-
-                    <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
-                    {#if S.started}
-                        <Thingstashed {F} M={S} />
-                    {/if}
+                    {@render Stashedness(S)}
                 </div>
             {/snippet}
     </Things>
@@ -117,12 +113,7 @@
                 <div class='levity Pier'>
                     <p>a Pier</p>
                     <button onclick={() => boing(S)} >boing</button>
-                    {JSON.stringify(S.stashed)}
-
-                    <!-- is usually handled by S.M.init_stashed_memory(), which gizmos -->
-                    {#if S.started}
-                        <Thingstashed {F} M={S} />
-                    {/if}
+                    {@render Stashedness(S)}
                 </div>
             {/snippet}
     </Things>
@@ -153,5 +144,11 @@
     .levity {
         margin-left:-1em;
         border-radius:2em;
+    }
+    summary {
+        font-size: 1.6em;
+    }
+    p {
+        word-break: break-all;
     }
 </style>

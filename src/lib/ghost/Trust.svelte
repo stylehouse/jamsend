@@ -196,6 +196,20 @@
         
     },
 
+//#endregion
+//#region Tyranny
+
+    async Tyranny(A,w) {
+        const point = `
+            bad actor can easily skip Introducing
+                 which otherwise should blank-stare them
+                  removing the quit_fullscreen button
+             and then un-Good-ified Pier can invite others!
+            so instance tyrant is going to have to officiate Idzeuginations
+             and your invitee is going to know your invitor's prepub
+             Idvoyage = {alice,bob,met_at,sign}
+        `
+    },
 
 
 //#endregion
@@ -581,22 +595,36 @@
     },
 
     // true if it is now consumed, false if duplicate
-    async claim_Idzeug_number(Idzeug:OurIdzeug,n:number) {
+    claim_Idzeug_number(Idzeug:OurIdzeug,n:number) {
         if (!n || n != n*1) throw "!number"
         let N = Idzeug.stashed.taken_n ||= []
         if (N.includes(n)) return false
         // this'll be shorter in json...
         // < another KVStore or so
         N.push(n)
+        // react to save!
+        // Idzeug.stashed.taken_n = Idzeug.stashed.taken_n
         return true
     },
 
     // true if Pier is allowed past hello|intro to trust and beyond
-    async ier_is_Good(ier:Pier,is_response) {
-        if (ier.stashed.Good) return true
-        if (is_response) throw `Pier thought they were Good?`
-        return false
+    ier_is_Good(ier:Pier) {
+        return ier.stashed.Good ? true : false
     },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //#endregion
 //#region Listening, Ringing
@@ -1133,7 +1161,6 @@
             Id.thaw(s.Id)
             Our.i({Id})
         }
-
 
         let Id = Our.o1({Id:1})[0]
         let prepub = Id.pretty_pubkey()
