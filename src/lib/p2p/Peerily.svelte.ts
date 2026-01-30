@@ -302,7 +302,8 @@ export class Peerily {
     Trusting:Trusting
     // UI:Intro via M:Trusting
     fade_splash = $state(false)
-    audio_maybe = $state(false)
+    // < stop F|PF features spawning until:
+    Welcome = $state(false)
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive

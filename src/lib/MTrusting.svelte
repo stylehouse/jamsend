@@ -5,6 +5,7 @@
 
     let {M} = $props()
     let F = M.F
+    let P = F.P
     // < this isn't working here!?
     let uimem = M.imem("UI")
     let inmem = uimem.further('Intro')
@@ -47,10 +48,11 @@
                     <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
                 </span>
 
-                Introducing jamsend. Left cave: {quit_fullscreen}. 
 
 
                 <div class="content">
+                    Introducing jamsend. Left cave: {quit_fullscreen}.
+                    {#if P.Welcome}Welcome.{/if}
                     <ul>
                         {#each M.msgs as C (C.sc.msgs_id)}
                             <li>{C.sc.say}</li>
@@ -85,7 +87,6 @@
     }
     .uiing {
         width: 100%;
-        position:absolute;
         top:0;
         left:0;
         border-radius:3em;
@@ -110,6 +111,9 @@
         display: flex;
         align-items: center;
         gap: 0.5em;
+    }
+    .content { 
+        padding:1em;
     }
 
 </style>

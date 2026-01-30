@@ -47,6 +47,7 @@
             </div>
 
         <!-- F features on Peering  -->
+        {#if eer.P.Welcome}
             <div class=bitsies>
                 {#each eer.features as [k,F] (k)}
                     <div class=bitsies>
@@ -54,6 +55,7 @@
                     </div>
                 {/each}
             </div>
+        {/if}
     </div>
 <style>
     #levity {

@@ -33,6 +33,7 @@
 
     <Trusticles {pier} />
 
+    {#if pier.P.Welcome}
     <div class=bitsies>
         {#each pier.features as [k,PF] (k)}
             <div class=bitsies>
@@ -40,6 +41,7 @@
             </div>
         {/each}
     </div>
+    {/if}
 </div>
 
 <style>

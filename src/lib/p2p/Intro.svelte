@@ -91,10 +91,13 @@
 </script>
 
 {#if !P.fade_splash}
-    <div transition:fade>
+    <div transition:fade={{duration:100}}>
     <FaceSucker altitude={44} fullscreen={true}>
         {#snippet content()}
-            <span id="heading">Welcome to jamsend.</span>
+            <center>
+                <span id="heading">jamsend</span>
+                <img src="favicon.png"/>
+            </center>
         {/snippet}
     </FaceSucker>
     </div>
@@ -132,5 +135,15 @@
     #heading {
         font-size:4em;
         color:lightgreen;
+    }
+    center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height:100%;
+    }
+    center>span {
+        position:absolute;
     }
 </style>

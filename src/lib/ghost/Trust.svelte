@@ -146,19 +146,41 @@
 
 //#endregion
 //#region Introducing
-    // F.fade_splash
+    // F.fade_splash is off'd by UI:MTrusting, which has another underneath it
+    //  ier.say_trust() will be avoided until ier_is_Good()
     async Introducing(A,w) {
         let In = w.oai({Induction:1})
-
+        let {Our,Id} = this.Our_main_Id(w)
+        let Peering = Our.sc.Peering as OurPeering
+        // stash important us-info on this Peering...
+        //  limiting us to the one, is a better place to store long term info like this...
+        // then we can leave haphazard UI state in M.stashed,
+        //  and backup the S.stashed, which is more tidy
+        let eers = Peering.stashed
+        if (!eers) throw "should have everything S.stashed"
+        
         // once we've heard it's okay!
         for (let e of this.o_elvis(w,'gotIn')) {
-            M.stashed.Welcome = true
+            eers.Welcome = true
         }
-        if (M.stashed.Welcome) {
-            M.F.P.audio_maybe = true
+        // if we're the instance tyrant
+        let prepub = Id+''
+        if (w.oa({Hath:1,user:1,prepub,name:'instance tyrant'})) {
+            eers.Welcome = true
+            In.oai({instanceTyrant:1})
+        }
+
+        // download permanence to now
+        if (eers.Welcome) {
+            // Peering Welcome spreads to all of Peerily
+            //  features can now do UI of F|PF
+            //   which spawns Modus, has Atime...
+            //    which emits
+            //     now it's trusted to
+            M.F.P.Welcome = true
         }
         
-        await In.r({stashed:1,Welcome:1},M.stashed.Welcome ? null : {})
+        await In.r({stashed:1,Welcome:1},eers.Welcome ? null : {})
         
         // < modulate F:Trusting UI
         
@@ -390,7 +412,11 @@
 
 
 
-    async Idzeugnation(A,w,I,no) {
+    async Idzeugnation(A,w,I,_no) {
+        let no = (say) => {
+            console.log(`🦑 Idzeugnation problem: ${say}`)
+            _no(say)
+        }
         if (I.sc.success) {
             // once done
             if (I.i_wasLast("finished") > 22) {
@@ -416,11 +442,13 @@
 
         let LP = this.o_LP(ier)
         if (!LP?.oa({const:1,ready:1})) {
+            console.log(`🦑 Idzeugnation connecting...`)
             return w.i({waits:'connecting...'})
         }
 
         // their Id
         let Id = this.ensure_Our_Id(Our)
+        if (!Id) return w.i({waits:'almost...'})
         if (prepub != Id+'') throw `thought...`
         
         if (!I.sc.asked) {
@@ -438,6 +466,7 @@
             return
         }
         if (!I.sc.success) {
+            console.log(`🦑 Idzeugnation put...`)
             w.i({waits:"invite shown..."})
             return
         }
@@ -448,7 +477,7 @@
         this.UIsay(w,I.sc.success)
         // Intro prepares for the next UI...
         this.i_elvis(w,'gotIn')
-        console.log(`🔒🔒🔒🔒🔒`)
+        console.log(`🦑 Idzeugnation good 🔒`)
     },
     async o_elvis_Idzeugnosis(A,w) {
         for (let e of this.o_elvis(w,'i Idzeugnosis')) {
@@ -476,6 +505,7 @@
         let ier = I.sc.ier as Pier
         let is = ier.stashed
         let no = (say) => {
+            console.log(`🦑 Idzeugnosis problem: ${say}`)
             ier.emit('intro',{answer:1,failed:say})
             // < we (local|authority) don't need to get these UI messages...
             //    but do want to abandon the %Idzeugnosis
@@ -532,7 +562,7 @@
         ier.emit('intro',{answer:1,success:`got ${give_them_trust.join(',')} access`})
         I.sc.success = true
         I.i_wasLast("finished",true)
-        console.log(`🔒🔒🔒🔒🔒`)
+        console.log(`🦑 Idzeugnation good 🔒`)
     },
 
     // true if it is now consumed, false if duplicate
@@ -685,7 +715,7 @@
         let eer = ier.eer
         let Li = w.o({Listening:1,eer})[0]
         // < sometimes matching ier doesn't work here?
-        let LP = Li.o({Pier:1,prepub:ier.pub})[0]
+        let LP = Li?.o({Pier:1,prepub:ier.pub})[0]
         // and we only have a link in %Our
         return LP
     },
@@ -1031,10 +1061,6 @@
         }
         else {
             let LP = this.o_LP(ier)
-            if (!LP) {
-                debugger
-                LP = this.o_LP(ier)
-            }
             if (!LP) return console.warn(`unemit:Ping from ${ier.pub}, no LP yet?`)
             let Ping = LP.oai({Ping:1})
             let latency
@@ -1121,7 +1147,7 @@
                 console.warn(`how would this happen`)
             }
         }
-        // hold off init until Id is got
+        // hold off init until Id is got (see other places we call this)
         if (s.Id) this.ensure_Our_Id(Our)
 
         // not really a contact
