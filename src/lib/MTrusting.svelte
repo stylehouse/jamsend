@@ -21,8 +21,10 @@
         inmem.set('quit_fullscreen',quit_fullscreen)
     }
     
-    let jamming = $derived(!P.some_feature_is_ready)
-    let can_fullscreen = $derived(jamming && !quit_fullscreen)
+    // < go back to fullscreen? it doesn't
+    let never_ready = true
+    let unready = $derived(!P.some_feature_is_ready && never_ready)
+    let can_fullscreen = $derived(unready && !quit_fullscreen)
     onMount(() => {
         // remove corporate logo asap, but dont make a flicker
         setTimeout(() => {
@@ -30,6 +32,7 @@
         },234)
     })
     $effect(() => {
+        if (!unready) never_ready = false
         let being = can_fullscreen ? "hidden" : "initial"
         document.body.style.setProperty('overflow',being)
     })
@@ -42,7 +45,7 @@
     // < this fade to UI:Cytoscape isn't working
     let wasfull = can_fullscreen
     let pseudofading = $state(false)
-    let fullscreen = $state(false)
+    let fullscreen = $state(can_fullscreen)
     $effect(() => {
         if (can_fullscreen != wasfull) {
             if (!can_fullscreen) {
@@ -68,7 +71,7 @@
 {#if !pseudofading}
 <div transition:fade={{duration:3500}}>
     <div>
-<FaceSucker altitude={33} fullscreen={can_fullscreen} >
+<FaceSucker altitude={33} {fullscreen} >
     {#snippet content()}
         <div class='uiing bottom'>
             <div class='controls'>
@@ -120,7 +123,7 @@
     }
     button.small {
         font-size:0.75em;
-        opacity:0.35;
+        opacity:0.05;
     }
     .uiing {
         width: 100%;
