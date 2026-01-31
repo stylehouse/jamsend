@@ -175,10 +175,18 @@
         
         if (!eers.Welcome) {
             if (!w.oa({Idzeugnation:1})) {
-                this.UIsay(w,"Ohno!")
+                // arrived on the page without an invite
+                // don't allow quit_fullscreen (stay in the cave)
+                M.F.P.dodgy_user = true
             }
             return
         }
+        // if they then pasted an Idzeugy uri
+        //  after trying the front page without it
+        // < slight indicator of tech proficiency
+        //    and the opportunity to hire our attackers...
+        M.F.P.dodgy_user = false
+
         // Peering Welcome spreads to all of Peerily
         //  features can now do UI of F|PF
         //   which spawns Modus, has Atime...
@@ -747,6 +755,7 @@
         // pretend we have done say_trust()
         //  we may have already if Good (and Idzeuging additional trust now)
         ier.said_trust = true
+        ier.heard_trust = true
         return give_them_trust
     },
 

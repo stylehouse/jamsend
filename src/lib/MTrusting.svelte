@@ -75,8 +75,10 @@
     {#snippet content()}
         <div class='uiing bottom'>
             <div class='controls'>
-                <span>
-                    <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                <span class='rigid'>
+                    {#if !P.dodgy_user}
+                        <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                    {/if}
                 </span>
 
 
@@ -114,6 +116,9 @@
     .good {
         color:lightgreen;
     }
+    .rigid {
+        width:3em;
+    }
     
     div.controls {
         font-size:1.6em;
@@ -123,7 +128,7 @@
     }
     button.small {
         font-size:0.75em;
-        opacity:0.05;
+        opacity:0.02;
     }
     .uiing {
         width: 100%;

@@ -4,6 +4,7 @@
     import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
     import { now_in_seconds, PeeringFeature } from '$lib/p2p/Peerily.svelte';
+    import type { DirectoryListing } from "$lib/p2p/ftp/Directory.svelte";
 
     // these One/Many things are given to a Things/Thing UI
     // Shares/Share is the filesystem terminal
