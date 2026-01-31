@@ -146,7 +146,9 @@
     // returns which of these w now have %elvis to handle, routed from A
     async elvised_A_w(A,wN:TheN) {
         if (A.o({w:1}).length != 1) {
-            console.warn(`strange number of A:${A.sc.A}/*%w:`,A.o({w:1}))
+            // avoid complaining for the A:audio/w:racast+raterm situation...
+            // < also this is silly? it's only a saving grace if you address e to A only
+            // console.warn(`strange number of A:${A.sc.A}/*%w:`,A.o({w:1}))
         }
         let yes = [] as TheN
         let find_w = async (e) => {

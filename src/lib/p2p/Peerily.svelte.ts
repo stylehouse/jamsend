@@ -887,12 +887,12 @@ export class Pier {
         },
         
         trust: async (data) => {
-            if (!this.is_vaguely_trusted()) return
+            if (!this.is_vaguely_trusted()) return console.log("Ignore unemit:trust")
             console.log("they say trust: ",data)
             this.hear_trust(data)
         },
         trusted: async (data) => {
-            if (!this.is_vaguely_trusted()) return
+            if (!this.is_vaguely_trusted()) return console.log("Ignore unemit:trusted")
             console.log("they say trusted: ",data)
             this.hear_trusted(data)
         },
@@ -990,7 +990,7 @@ export class Pier {
     async say_trust(is_response=false) {
         if (!this.is_vaguely_trusted(is_response)) {
             // they|us will get back to this
-            return
+            return console.log("Avoid say_trust")
         }
 
         let trust = this.stashed.trust?.filter(t => t.to) || []

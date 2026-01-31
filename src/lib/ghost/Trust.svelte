@@ -397,7 +397,6 @@
             upNum += 1
 
             
-
             let advice = this.encode_Idzeugi_advice(c)
 
             // < higher security: not giving your Id here
@@ -412,12 +411,6 @@
             let url = new URL(location.origin+location.pathname)
             url.hash = Idzeuginance
             let Idzeugi = url.toString()
-
-
-
-            // < dev, eat our own Idzeugs
-            // console.log(`invite: ${Idzeuginance}\n\tfully: ${Idzeugi}`)
-            // await this.mock_Idzeugmance(A,w,Idzeugi)
 
 
             N.push(Idzeugi)
@@ -451,52 +444,24 @@
     // entry: find new Idzeug in uri
     async Idzeugmance(A,w) {
         let m = window.location.hash.match(/^#([\w,+_:-]{16,})$/);
-        this.reset_location_hash()
-        m && await this.Idzeugmanci(A,w,m[1])
-    },
-    async mock_Idzeugmance(A,w,Idzeugi) {
-        let url = new URL(Idzeugi)
-        await this.Idzeugmanci(A,w,url.hash.slice(1))
-    },
-
-
-    // consume a new Idzeug, got from uri
-    // out of time, put the w/%Idzeugnation for Idzeuganise() to work up
-    async Idzeugmanci(A,w,Idzeugi:string) {
-        let [prepub,advice,sign] = Idzeugi.split('-')
-
-        // if ('break') sign = sign.replace(/[face]/,'4')
-
-        if (0 && w.oa({Our:1,address:1,prepub})) {
-            // < redundant while invite only
-            // it's us, fumbling with the link
-            // < keep an invite code in the url? sublates sharing UI
-            //   can modern phones make QR codes of links on the spot?
-            console.log(`it's us, fumbling with the link`)
-            return
+        if (m) {
+            let [prepub,advice,sign] = m[1].split('-')
+            let {name} = this.decode_Idzeugi_advice(advice)
+            await this.i_Idzeugsomething(w,'Idzeugnation',{name,prepub,advice,sign})
         }
-        
-        await this.i_Idzeugsomething(w,'Idzeugnation',{prepub,advice,sign})
+        else {
+            this.reset_location_hash()
+        }
     },
 
+
+    // enter the work piece for Idzeugn*, ~~ reqy but one at a time
+    //  eg put the w/%Idzeugnation for Idzeuganise() to work up
     async i_Idzeugsomething(w,keyword,c) {
         let s = {}
         s[keyword] = 1
-        // signed stuff:
-        let I = _C({...s,...c})
-
-        // slight decode, unpack data
-        let advice = c.advice
-        if (1) {
-            let c = this.decode_Idzeugi_advice(advice)
-            let s = sex({},c,'name,n')
-            // hold this out here, avoid their c.* being at I/%* 
-            I.i(s).i(c)
-        }
-        
-        // we area already in Atime, about to manage these:
-        await w.r(s,{})
-        w.i(I)
+        // we are already in Atime, about to manage these:
+        let I = await w.r(s,c)
     },
 
     async Idzeuverify(A,w:TheC,I:TheC) {
@@ -614,10 +579,15 @@
             }
             return I.i({waits:"arranging mirage..."})
         }
+        // < this may stop Tyrant Idzeugnating
+        let TId = M.OurTyrant?.instance?.Ud
+        if (!TId) return I.i({waits:'nearly...'})
 
 
 
-        // is about as safe as it can be to consume the Idzeug number:
+        // is about as safe as it can be to consume the Idzeug
+        //  it shall be taken away now!
+        this.reset_location_hash()
         if (!I.sc.asked) {
             // causes an e:'i Idzeugnosis' over there
             await ier.emit('intro',sex({},I.sc,'advice,sign'))
@@ -658,8 +628,13 @@
         console.log('as far as arrange')
         if (await this.Idvoyage_arrange(A,w,I)) return
         
+        // they are welcome
+        Pier.stashed.Good = true
+        // grant them the same access
+        // < UI popup, bonds, etc
+        await this.Idzeug_apply_trust(Pier,I)
+
         // < it might have some other data too, not in the trust...
-        ier.emit('intro',{answer:1,thanks:1})
         await I.i_wasLast("finished",true)
         this.UIsay(w,I.sc.success,{good:1})
         // Intro prepares for the next UI...
@@ -673,7 +648,6 @@
         }
     },
     async unemitIntro(ier:Pier,data) {
-        if (data.thanks) return
         // the trip to the Tyrant and back
         if (data.Idvoyage && !data.success) {
             this.i_elvis(this.w,'i Idvoyage',sex({ier},data,'Idvoyage'))
@@ -700,22 +674,12 @@
     // is already on the network (social graph)
     async Idzeugnosis(A,w,I,_no) {
         let ier = I.sc.ier as Pier
-        let is = ier.stashed
         let no = (say) => {
             console.log(`🦑 Idzeugnosis problem: ${say}`)
             ier.emit('intro',{answer:1,failed:say})
             // < we (local|authority) don't need to get these UI messages...
             //    but do want to abandon the %Idzeugnosis
             _no(say)
-        }
-
-        if (I.sc.success) {
-            // once done
-            if (!is.Good) throw "howd"
-            if (await I.i_wasLast("finished") > 22) {
-                I.sc.dead = 1
-            }
-            return
         }
 
         // sanity:
@@ -725,12 +689,22 @@
         let Pier = Our.sc.Pier
         if (ier != Pier.instance) throw `Pier ${prepub} not %Our,Pier.instance`
 
+        if (I.sc.success) {
+            // once done
+            if (!Pier.stashed.Good) throw "howd"
+            if (await I.i_wasLast("finished") > 22) {
+                I.sc.dead = 1
+            }
+            return
+        }
+
         if (!I.sc.sign_ok) await this.Idzeuverify(A,w,I)
         if (!I.sc.sign_ok) {
             return no("bad sig")
         }
 
         let c = this.decode_Idzeugi_advice(I.sc.advice)
+        I.sc.name = c.name
         let Zur = w.o({Our:1,Idzeug:1,name:c.name})[0]
         let Idzeug = Zur?.sc.Idzeug
         if (!Idzeug) {
@@ -741,20 +715,16 @@
         }
 
         // they are welcome
-        is.Good = true
+        Pier.stashed.Good = true
         // store things about them imparted by the Idzeug here
         let Zs = Idzeug.stashed
-        ex(is,Zs.mix||{})
+        ex(Pier.stashed,Zs.mix||{})
         // this may be the non-first Idzeug of the Pier,
         //  as they collect... tokens...
-        if (is.introduced_at) I.sc.already_met = true
-        is.introduced_at ||= now_in_seconds_with_ms()
+        if (Pier.stashed.introduced_at) I.sc.already_met = true
+        Pier.stashed.introduced_at ||= now_in_seconds_with_ms()
 
-        // < UI and so forth Zs.give_them_trust
-        let give_them_trust = ['ftp']
-        for (let to of give_them_trust) {
-            ier.grant_trust(to,{Idzeug:Idzeug.name})
-        }
+        let give_them_trust = await this.Idzeug_apply_trust(Pier,I)
         
         ier.emit('intro',{answer:1,
             success:`got ${give_them_trust.join(',')} access`,
@@ -763,6 +733,21 @@
         I.sc.success = true
         await I.i_wasLast("finished",true)
         console.log(`🦑 Idzeugnation good 🔒`)
+    },
+    
+    async Idzeug_apply_trust(Pier,I) {
+        let ier = Pier.instance
+        if (!I.sc.name) throw "!name"
+        // < UI and so forth Zs.give_them_trust
+        let give_them_trust = ['ftp']
+        for (let to of give_them_trust) {
+            // note on it that it came via Idzeug, no indication of which end
+            await ier.grant_trust(to,{Idzeug:I.sc.name})
+        }
+        // pretend we have done say_trust()
+        //  we may have already if Good (and Idzeuging additional trust now)
+        ier.said_trust = true
+        return give_them_trust
     },
 
     // true if it is now consumed, false if duplicate
