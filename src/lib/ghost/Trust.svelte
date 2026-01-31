@@ -256,26 +256,23 @@
         let the = await this.wrangle_storage(A,w,share,path)
         if (!the || !the.sc.D) return
 
-        
-
         // avoid creating empty files, we come here often...
-        // if (!w.oa({Idvoyaging:1})) return
+        if (!w.oa({Idvoyaging:1})) return
         
         await this.the_regularly_reopening_Writer(the,name)
 
-        let Up = w.oai({Upto:1})
-        Up.sc.i ||= 1
-        let number = Up.sc.i++
-        await the.sc.Writer.write(`${number}\n`)
-        return
-
+        // let Up = w.oai({Upto:1})
+        // Up.sc.i ||= 1
+        // let number = Up.sc.i++
+        // await the.sc.Writer.write(`${number}\n`)
+        // return
 
 
         for (let Idv of w.o({Idvoyaging:1,Now:1,Before:1})) {
             let {Now,Before} = Idv.sc
             let s = s => JSON.stringify([s.Alice,s.Bob,s.at,s.depth])
-            the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
-            // w.drop(Idv)
+            await the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
+            w.drop(Idv)
         }
     },
     // reopen the Writer every so often because these swap files vanish...
@@ -285,24 +282,28 @@
 
         let DL = the.sc.DL as DirectoryListing
 
-        let time = now_in_seconds()
-        time = time - time % reopen_every
+        // let time = now_in_seconds()
+        // < trying to be this clever. chaos!
+        //    docs say existing file will copy to the swap file first!?
+        //    the log file itself is the last 20s of numbers
+        //     and one from 20s before that
+        //    the swap file is 20s of number since those 20s of numbers...
+        // this way we lose up to a minute of stuff
+        //  page reloads do not manage to close the Writer via do_stoppage()
+        // time = time - time % reopen_every
         let reopen_Writer = the.sc.name && the.sc.name != name
-            || the.sc.time && the.sc.time != time
+            // || the.sc.time && the.sc.time != time
         if (reopen_Writer && the.sc.Writer) {
-            // ten minute change
-            the.sc.Writer
-            await the.sc.Writer.close()
-            the.sc.Writer = null
-            
-            await new Promise(resolve => setTimeout(resolve, 666));
-            console.log(`opened ${name}`)
+            // time to change
+            if (the.sc.Writer) {
+                await the.sc.Writer.close()
+                the.sc.Writer = null
+            }
         }
-        //  existing file will copy to the swap file first
         the.sc.Writer ||= await DL.getWriter(name,true)
 
         the.sc.name = name
-        the.sc.time = time
+        // the.sc.time = time
     },
     // this can be local time
     get_Idvoyaging_filename(): string[] {
@@ -312,18 +313,19 @@
         const day = String(now.getDate()).padStart(2, '0');
         const hour = String(now.getHours()).padStart(2, '0');
         let minutes = now.getMinutes()
-        minutes = minutes - minutes % 10
+        // minutes = minutes - minutes % 10
         minutes = String(minutes).padStart(2, '0');
         return [`Idvoyages-${year}${month}${day}`,`${hour}${minutes}.jsons`]
     },
 
     // onDestroy
-    do_stop() {
-        debugger
+    //  page reloads do not manage to close the Writer via do_stoppage()
+    // < reload() procedure, coordinating with engaged Pier
+    //    an unmount everything via {#if}
+    do_stoppage() {
         for (let A of this.o({A:1})) {
             for (let w of A.o({w:1})) {
                 for (let the of w.o({theStorage:1})) {
-                    debugger
                     the.sc.Writer?.close()
                 }
             }

@@ -83,6 +83,7 @@ abstract class ModusItself extends TheC  {
     stop() {
         this.stopped = true
         this.do_stop?.()
+        this.do_stoppage?.()
     }
 
 

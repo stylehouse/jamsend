@@ -212,6 +212,7 @@ export class DirectoryListing {
     }
 
     async getReader(pathbit) {
+        console.log(`getReader() ${this.up?.name}/${this.name}/${pathbit}`)
         const fileHandle = await this.handle.getFileHandle(pathbit);
         const file = await fileHandle.getFile();
         // < never needs closing? isn't file.stream

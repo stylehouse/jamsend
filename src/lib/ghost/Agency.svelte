@@ -6,7 +6,7 @@
 
     let {M} = $props()
     const V = {}
-    V.w = 0
+    V.w = 1
     V.elvis = 1
 
     onMount(async () => {
@@ -458,7 +458,7 @@
             })
             // a tiny Selection.process() watching path change
             if (c.path_now != c.path_was) {
-                V.w && 0 || console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
+                V.w && console.log(`changed journey: j:${j.sc.journey}\t${c.path_was}\t->\t${c.path_now}`)
                 // < also eg w:radiostock/%waits:A:Directory should there and back
                 this.i_elvis(w,'putjourney',{Aw:'Directory',reply:w})
             }
