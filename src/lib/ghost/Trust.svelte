@@ -248,31 +248,61 @@
         // and an open share
         let share = await this.Introducing_storage(A,w,eer)
         if (!share) return w.i({waits:"storage"})
+
         // that we have an app data directory in
         //  with day directories...
         let [dir,name] = this.get_Idvoyaging_filename()
         let path = ['.jamsend','Tyrant','Idvoyages',dir]
         let the = await this.wrangle_storage(A,w,share,path)
         if (!the || !the.sc.D) return
-        // < and keep making this writer as hours go by
-        the.sc.DL ||= this.D_to_DL(the.sc.D)
-        let DL = the.sc.DL as DirectoryListing
-        if (the.sc.name && the.sc.name != name) {
-            // ten minute change
-            the.sc.Writer?.close()
-            the.sc.Writer = null
-        }
-        the.sc.Writer ||= await DL.getWriter(name,true)
-        the.sc.name = name
-
-
-        the.sc.Writer.write("Informacion\n")
 
         
 
+        // avoid creating empty files, we come here often...
+        // if (!w.oa({Idvoyaging:1})) return
+        
+        await this.the_regularly_reopening_Writer(the,name)
+
+        let Up = w.oai({Upto:1})
+        Up.sc.i ||= 1
+        let number = Up.sc.i++
+        await the.sc.Writer.write(`${number}\n`)
+        return
+
+
+
         for (let Idv of w.o({Idvoyaging:1,Now:1,Before:1})) {
             let {Now,Before} = Idv.sc
+            let s = s => JSON.stringify([s.Alice,s.Bob,s.at,s.depth])
+            the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
+            // w.drop(Idv)
         }
+    },
+    // reopen the Writer every so often because these swap files vanish...
+    async the_regularly_reopening_Writer(the:TheC,name:string,reopen_every=20) {
+        // wrangle_storage() knocks this off if the targeted directory changes:
+        the.sc.DL ||= this.D_to_DL(the.sc.D)
+
+        let DL = the.sc.DL as DirectoryListing
+
+        let time = now_in_seconds()
+        time = time - time % reopen_every
+        let reopen_Writer = the.sc.name && the.sc.name != name
+            || the.sc.time && the.sc.time != time
+        if (reopen_Writer && the.sc.Writer) {
+            // ten minute change
+            the.sc.Writer
+            await the.sc.Writer.close()
+            the.sc.Writer = null
+            
+            await new Promise(resolve => setTimeout(resolve, 666));
+            console.log(`opened ${name}`)
+        }
+        //  existing file will copy to the swap file first
+        the.sc.Writer ||= await DL.getWriter(name,true)
+
+        the.sc.name = name
+        the.sc.time = time
     },
     // this can be local time
     get_Idvoyaging_filename(): string[] {
@@ -283,8 +313,21 @@
         const hour = String(now.getHours()).padStart(2, '0');
         let minutes = now.getMinutes()
         minutes = minutes - minutes % 10
-        const minute = String(minutes).padStart(2, '0');
+        minutes = String(minutes).padStart(2, '0');
         return [`Idvoyages-${year}${month}${day}`,`${hour}${minutes}.jsons`]
+    },
+
+    // onDestroy
+    do_stop() {
+        debugger
+        for (let A of this.o({A:1})) {
+            for (let w of A.o({w:1})) {
+                for (let the of w.o({theStorage:1})) {
+                    debugger
+                    the.sc.Writer?.close()
+                }
+            }
+        }
     },
     
     // Tyrant wants an app data directory writer thingy
