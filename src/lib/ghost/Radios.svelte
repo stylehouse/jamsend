@@ -1065,13 +1065,31 @@
     //  M/%spare_worker=A:hunting indicates capacity to make more records
 
     // radio pools into the unsatisfiable task of keeping stock
+    async radiostock_aimOpen(A,w) {
+        for (let Op of w.o({aimOpen:1})) {
+            // < fix something about %aim,category, the two oscillate existing
+            M.CANT_HAVE_ANY_MORE_AIM = 1
+            let path = Op.sc.path
+            // will be created
+            let D = await this.aim_to_open(w,path,'aimOpen')
+            if (!D) continue
+            // continuously - they will always have the latest D
+            Op.sc.return_fn(D)
+        }
+    },
     async radiostock(A,w) {
         // races to keep stock ahead of pointers
         // < needs timeout? await Pier.promise_destroy?
         let co = await w.r({consumers:1,of:'radiostock'})
 
+        // an extra wiry way that eg A:Trusting/w:Tyrant opens its app data directory
+        await this.radiostock_aimOpen(A,w)
         // advertise an API of this Modus
         await this.r({io:'radiostock'},{
+            aimOpen: async ({path,return_fn}) => {
+                w.i({aimOpen:1,path,return_fn})
+                this.i_elvis(w)
+            },
             i: async (re:TheC) => {
                 w = this.refresh_C([A,w])
                 // first it comes into the cache here, available to Piers
@@ -1126,6 +1144,7 @@
         })
 
         if (IGNORE_RADIOSTOCK_CACHE) return
+        if (M.CANT_HAVE_ANY_MORE_AIM) return
 
         // and may cache on the filesystem for spanglier startups
         await this.radiostock_caching(A,w)
@@ -1134,7 +1153,7 @@
         // the .jamsend/radiostock/ directory D
         let stockD
         let keep_things = RADIOSTOCK_CACHE_LIMIT
-        stockD = await this.aim_to_open(w,['.jamsend','radiostock'])
+        stockD = await this.aim_to_open(w,['.jamsend','radiostock'],'radiostocking')
         if (!stockD) return // also when ope<3
         // gc for something we do...
         // < it doesn't like elvising this in or anything... it's impossible to get rid of?

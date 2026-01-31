@@ -230,10 +230,10 @@ export class DirectoryListing {
             }
         };
     }
-    async getWriter(pathbit):Promise<FileSystemWritableFileStream> {
+    async getWriter(pathbit,keepExistingData=false):Promise<FileSystemWritableFileStream> {
         if (!this.handle) throw erring('No directory access')
         const fileHandle = await this.handle.getFileHandle(pathbit, { create: true });
-        const writable = await fileHandle.createWritable();
+        const writable = await fileHandle.createWritable({keepExistingData});
         return writable;
     }
     async makeDirectory(pathbit) {

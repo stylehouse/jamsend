@@ -85,12 +85,12 @@
 
     // < the spawn|delete API should be part of Selection,
     //   so that this can be in Modus, near Agency...
-    async aim_to_open(w,path) {
+    async aim_to_open(w,path,label) {
         return await this.Se.aim_to_open(w,path,async (D,pathbit) => {
             let DL = this.D_to_DL(D)
             D.i({was_operated_on:1,by:'aim_to_open()'})
             await DL.makeDirectory(pathbit)
-        })
+        },label)
     },
 
 

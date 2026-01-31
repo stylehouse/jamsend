@@ -12,6 +12,8 @@
     import { DirectoryModus, PeeringSharing } from "$lib/p2p/ftp/Sharing.svelte";
     import Modus from "$lib/mostly/Modus.svelte";
     import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
+    import type { DirectoryListing, DirectoryShare } from "$lib/p2p/ftp/Directory.svelte";
+    import Directory from "./Directory.svelte";
    
     // < why is typescript not working
     let {M}:{M:TrustingModus} = $props()
@@ -241,18 +243,84 @@
 
         await this.Tyranny_of_Bookkeeping(A,w,eer)
     },
-    // do induction certs
-    async Tyranny_of_Bookkeeping(A,w,eer:Peering){
-        // we'll need this:
-        let path = ['.jamsend','Tyrant']
-        let ok = await this.Introducing_storage(A,w,eer)
-        if (!ok) return w.i({waits:"storage"})
+    // save info
+    async Tyranny_of_Bookkeeping(A,w,eer:Peering) {
+        // and an open share
+        let share = await this.Introducing_storage(A,w,eer)
+        if (!share) return w.i({waits:"storage"})
+        // that we have an app data directory in
+        //  with day directories...
+        let [dir,name] = this.get_Idvoyaging_filename()
+        let path = ['.jamsend','Tyrant','Idvoyages',dir]
+        let the = await this.wrangle_storage(A,w,share,path)
+        if (!the || !the.sc.D) return
+        // < and keep making this writer as hours go by
+        the.sc.DL ||= this.D_to_DL(the.sc.D)
+        let DL = the.sc.DL as DirectoryListing
+        if (the.sc.name && the.sc.name != name) {
+            // ten minute change
+            the.sc.Writer?.close()
+            the.sc.Writer = null
+        }
+        the.sc.Writer ||= await DL.getWriter(name,true)
+        the.sc.name = name
 
 
+        the.sc.Writer.write("Informacion\n")
+
+        
+
+        for (let Idv of w.o({Idvoyaging:1,Now:1,Before:1})) {
+            let {Now,Before} = Idv.sc
+        }
     },
-    // Tyrant or invitee can want to bring up shares...
-    async wrangle_storage(A,w,eer:Peering,path?:string[]){
+    // this can be local time
+    get_Idvoyaging_filename(): string[] {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        let minutes = now.getMinutes()
+        minutes = minutes - minutes % 10
+        const minute = String(minutes).padStart(2, '0');
+        return [`Idvoyages-${year}${month}${day}`,`${hour}${minutes}.jsons`]
+    },
+    
+    // Tyrant wants an app data directory writer thingy
+    async wrangle_storage(A,w,share:DirectoryShare,path?:string[]) {
+        // randomly go through radiostock
+        // < because there's no way to project aims that far?
+        //  not with Miome because it's also too far, beyond this.S (F:Trusting)
+        // await this.Miome(A,{io:'radiostock'})
+        if (!share.modus) return w.i({waits:"storage modus"}) && 0
+        for (let io of share.modus.o({io:'radiostock'})) {
+            await A.r({io:'radiostock'},io.sc)
+        }
 
+        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"}) && 0
+        let io = A.o({io:'radiostock'})[0]
+        let uri = path.join('/')
+        for (let the of w.o({theStorage:1})) {
+            if (the.sc.theStorage != uri) {
+                // it is changing directories for a new day
+                the.sc.Writer?.close()
+                w.drop(the)
+            }
+        }
+        // a stable C object:
+        let the = w.oai({theStorage:uri})
+        if (!the.sc.asked) {
+            io.sc.aimOpen({path,return_fn: (D) => {
+                // continuously - we will always have the latest D
+                if (!the.sc.D) this.i_elvis(w)
+                the.sc.D = D
+            }})
+            the.sc.asked = 1
+        }
+        if (!the.sc.D) return w.i({waits:"gotStorage"}) && 0
+
+        return the
     },
     // Tyrant or invitee can want to bring up shares...
     async Introducing_storage(A,w,eer:Peering) {
@@ -261,7 +329,7 @@
         // see also cytotermi_pirating_heist_loadshares()
         // in some share:
         let sharing = eer.features.get('ftp') as unknown as PeeringSharing
-        let share = sharing.shares.asArray()[0]
+        let share = sharing.shares.asArray()[0] as unknown as DirectoryShare
         if (!share) return //throw "no autoviv share?"
         if (!share.started) {
             let open = share.actions.filter(act => act.label == 'open share')[0]
@@ -270,7 +338,7 @@
         }
         else {
             M.F.P.needs_share_open_action = null
-            return true
+            return share
         }
     },
     // do induction certs
@@ -280,8 +348,10 @@
                  which otherwise should blank-stare them
              and then invite others!
               causing unconnected pieces of the social graph
-            so instance tyrant is going to have to officiate Idzeuginations
-             and your invitee is going to know your invitor's prepub
+            so instance tyrant is going to have to
+             officiate Idzeuginations
+              and your invitee is going to know your invitor's prepub
+             collect the social graph they tell of
         `
 
         if (!eer.stashed.Idvoyage) {
@@ -333,7 +403,7 @@
             ier.emit('intro',{Idvoyage:Now})
             console.log(`🦑 Idvoyage away: ${Now.depth}`)
 
-
+            w.i({Idvoyaging:1,Now,Before})
             // < capture c
         }
     },
@@ -1477,3 +1547,6 @@
     })
     })
 </script>
+
+
+<Directory {M} />
