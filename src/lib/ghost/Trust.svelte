@@ -169,10 +169,15 @@
         // if we're the instance tyrant
         if (M.amTyrant) {
             eers.Welcome = true
-            await this.Tyranny(A,w)
+            // start doing instance tyrant things
+            await A.oai({w:'Tyranny'},{andSecurity:1})
+            // route its mail
+            //  unemit handlers send to M.w which isn't the Tyrant
+            for (let e of this.o_elvis(w,'i Idvoyage')) {
+                this.i_elvis(w,'i Idvoyage',{...e.sc,Aw:'Trusting/Tyranny'})
+            }
         }
 
-        
         if (!eers.Welcome) {
             if (!w.oa({Idzeugnation:1})) {
                 // arrived on the page without an invite
@@ -214,21 +219,35 @@
 //#region Tyranny
 
     async Tyranny(A,w) {
-        const point = `
-            bad actor can easily skip Introducing
-                 which otherwise should blank-stare them
-                  removing the quit_fullscreen button
-             and then un-Good-ified Pier can invite others!
-              causing unconnected pieces of the social graph
-            so instance tyrant is going to have to officiate Idzeuginations
-             and your invitee is going to know your invitor's prepub
-             Idvoyage = {alice,bob,met_at,sign}
-        `
         w.oai({instanceTyrant:1})
         let eer = M.mainPeering.instance
         if (!eer) return w.i({waits:'instantiate ourselves...'})
 
-        // do induction certs
+        await this.Tyranny_of_Idvoyage(A,w,eer)
+
+        for (let e of this.o_elvis(w,'Periodically')) {
+            // < capture daily user stats. roll off their intensity if large network depth
+        }
+
+        await this.Tyranny_of_Bookkeeping(A,w,eer)
+    },
+    // do induction certs
+    async Tyranny_of_Bookkeeping(A,w,eer){
+
+        // < wanting
+
+    },
+    // do induction certs
+    async Tyranny_of_Idvoyage(A,w,eer){
+        const point = `
+            bad actor can easily skip Introducing
+                 which otherwise should blank-stare them
+             and then invite others!
+              causing unconnected pieces of the social graph
+            so instance tyrant is going to have to officiate Idzeuginations
+             and your invitee is going to know your invitor's prepub
+        `
+
         if (!eer.stashed.Idvoyage) {
             // do our own...
             let prepub = eer.Id.pretty_pubkey()
@@ -278,10 +297,8 @@
             ier.emit('intro',{Idvoyage:Now})
             console.log(`🦑 Idvoyage away: ${Now.depth}`)
 
+
             // < capture c
-        }
-        for (let e of this.o_elvis(w,'Periodically')) {
-            // < capture daily user stats. roll off their intensity if large network depth
         }
     },
     // this sign-on-the-end scheme similar to trust (to|not)
