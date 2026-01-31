@@ -16,7 +16,7 @@
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
-    do_drawing ||= true // < store this?
+    do_drawing ||= false // < store this?
     let init_do_drawing = do_drawing
     // drawing also covers:
     let do_strata = $state()
@@ -50,7 +50,7 @@
             if (M.stashed.do_strata != null) {
                 do_strata = M.stashed.do_strata
             }
-            do_strata ??= true
+            do_strata ??= false
         }
 
         if (do_start) {

@@ -1,11 +1,10 @@
 <script lang="ts">
-    import type { Pier } from "../Peerily.svelte";
+    import type { Pier, TrustName } from "../Peerily.svelte";
 
     let {pier}:{pier:Pier} = $props()
-
-    // any of these abilities
-    //   except for 'forget' which is just a UI overload for deleting this Pier
-    let abilities = ['hear','ftp', 'forget']
+    let eer = pier.eer
+    
+    
     function apply(ability) {
         if (ability == 'forget') {
             // not a trust
@@ -20,34 +19,26 @@
             pier.grant_trust(ability)
         }
     }
-    // Get currently trusted abilities (what we trust them with)
-    let trusted_abilities = $state([])
-    let dropdown_options = $state([])
-    
-    $effect(() => {
-        trusted_abilities = Array.from(pier.trust?.keys() || [])
-    })
+    // any of these abilities
+    let abilities = $derived(eer.features.keys())
 
-    // Get available options for the dropdown
-    $effect(() => {
-        dropdown_options = abilities.flatMap(ability => {
-            if (ability === 'forget') {
-                return [{ value: 'forget', label: 'Forget peer', action: 'special' }]
-            }
-            
-            const is_trusted = trusted_abilities.includes(ability)
-            
-            if (is_trusted) {
-                // Show revoke option
-                return [{ value: `-${ability}`, label: `--${ability}`, action: 'revoke' }]
-            } else {
-                // Show grant option  
-                return [{ value: ability, label: ability, action: 'grant' }]
-            }
-        })
-    })
+    let trust_us_with = $derived(Array.from(pier.trusted?.keys() || []))
+    let trusting_them_with = $derived(Array.from(pier.trust?.keys() || []))
+    let talk = $derived(
+        !trusting_them_with.length && !trust_us_with.length
+        ? ""
+        : `them to ${trusting_them_with.join("+")},
+            we may ${trust_us_with.join("+")}`
+    )
+
+    let dropdown_options = $derived(abilities.map(
+        (t:TrustName) => trusting_them_with.includes(t)
+            ? [{ value: `-${t}`, label: `--${t}`, action: 'revoke' }]
+            : [{ value: t, label: t, action: 'grant' }]
+    ))
 
     function handleSelection(event) {
+        // debugger
         const selectedValue = event.target.value
         if (selectedValue) {
             apply(selectedValue)
@@ -75,6 +66,7 @@
             </option>
         {/each}
     </select>
+    {talk}
 </div>
 
 <style>

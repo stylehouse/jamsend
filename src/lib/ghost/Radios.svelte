@@ -844,6 +844,11 @@
         // speaking, on Pier, to the other Pier
         let Pier = this.PF.Pier
         let io
+        // copy %io:radiostock interfaces here
+        await this.Miome(A,{io:'radiostock'})
+        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"})
+        io = A.o({io:'radiostock'})[0]
+
         
         let rr = await w.r({was_sent:1})
         // let rr = await wh.r({these_records:1})
@@ -966,11 +971,6 @@
 
         // we provide %record and %stream
         //  %stream should let people join for the first 10s
-
-        // copy %io:radiostock interfaces here
-        await this.Miome(A,{io:'radiostock'})
-        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"})
-        io = A.o({io:'radiostock'})[0]
 
         // what we have to play
         let them = A.o({record:1})
