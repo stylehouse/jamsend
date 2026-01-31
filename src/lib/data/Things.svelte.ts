@@ -55,7 +55,6 @@ export abstract class ThingIsms extends ActionsAndModus {
         this.i_stashed_mem(M,name)
     }
 
-    // < the 'share handle' also needs a delete
     async on_remove() {
         // delete Thing's gizmos
         // < less terrible design, start over...
@@ -63,6 +62,11 @@ export abstract class ThingIsms extends ActionsAndModus {
         // < why is this KVStore (which is what we want)
         let kvStore = this.stashed_mem as KVStore
         if (typeof kvStore == 'function') {
+            if (this.persisted_handle) {
+                // < for a DirectoryShare. the 'share handle' also needs a delete
+                this.persisted_handle.delete()
+                return
+            }
             debugger
         }
         // Get all keys that start with this prefix
