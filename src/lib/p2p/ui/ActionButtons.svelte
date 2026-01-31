@@ -22,7 +22,7 @@
     {#each actions as action}
         <button 
             onclick={() => handleAction(action)}
-            class="but but-{action.class}"
+            class="button button-{action.class}"
             title={action.label}
         >
             {action.icon || action.label}
@@ -30,7 +30,7 @@
     {/each}
 
 <style>
-.but {
+.button {
     padding: 0.3rem 0.6rem;
     border: none;
     border-radius: 4px;
@@ -42,45 +42,44 @@
     color: white;
 }
 
-.but:hover {
+.button:hover {
     background: #1976D2;
 }
 
 /* Start button */
-.but-start {
+.button-start {
     background: #4CAF50;
     color: white;
 }
 
-.but-start:hover {
+.button-start:hover {
     background: #45a049;
 }
 
 /* Stop button */
-.but-stop {
+.button-stop {
     background: #f44336;
     color: white;
 }
 
-.but-stop:hover {
+.button-stop:hover {
     background: #d32f2f;
 }
 
-/* Big prominent button */
-.but-big {
+.button-big {
     padding: 0.4rem 0.8rem !important;
     font-weight: 600;
-    font-size: 0.85rem !important;
+    font-size: 0.85em;
     background: #FF5722 !important;
 }
 
-.but-big:hover {
+.button-big:hover {
     background: #E64A19 !important;
     transform: scale(1.05);
 }
 
 /* Remove/delete button */
-.but-remove {
+.button-remove {
     background: #f44336;
     color: white;
     font-weight: bold;
@@ -92,7 +91,7 @@
     padding: 0;
 }
 
-.but-remove:hover {
+.button-remove:hover {
     background: #d32f2f;
     transform: scale(1.1);
 }

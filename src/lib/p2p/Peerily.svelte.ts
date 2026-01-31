@@ -297,7 +297,6 @@ export class Peering {
 //#region Peerily (P)
 // the main|single object of our p2p business, over all Peerings
 export class Peerily {
-    // < GOING in favour on Trusting
     stash:TheStash = $state({})
     Trusting:Trusting
     // UI:Intro via M:Trusting
@@ -309,7 +308,8 @@ export class Peerily {
     // or until:
     some_feature_is_nearly_ready = $state(false)
     some_feature_is_ready = $state(false)
-    
+    needs_share_open_action = $state(null)
+
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
     on_Peering:Function|null

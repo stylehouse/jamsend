@@ -3,8 +3,10 @@
     import { fade } from "svelte/transition";
     import FaceSucker from "./p2p/ui/FaceSucker.svelte";
     import { grop } from "./Y";
+    import ActionButtons from "./p2p/ui/ActionButtons.svelte";
+    import type { TrustingModus } from "./Trust.svelte";
 
-    let {M} = $props()
+    let {M}:{M:TrustingModus} = $props()
     let F = M.F
     let P = F.P
     // < this isn't working here!?
@@ -23,7 +25,10 @@
     
     // < go back to fullscreen? it doesn't
     let never_ready = true
-    let unready = $derived(!P.some_feature_is_ready && never_ready)
+    let any_problems = !P.some_feature_is_ready
+        || !P.Welcome
+        || P.needs_share_open_action
+    let unready = $derived(any_problems && never_ready)
     let can_fullscreen = $derived(unready && !quit_fullscreen)
     onMount(() => {
         // remove corporate logo asap, but dont make a flicker
@@ -63,6 +68,13 @@
             wasfull = can_fullscreen
         }
     })
+    let share_act = $derived(P.needs_share_open_action)
+    // gets set only once so they can dismiss it and continue
+    let no_share = () => {
+        P.needs_share_open_action = null
+        // Introducing along:
+        M.i_elvis(M.w,'noop')
+    }
     // < cyto in here... can we make friends in common?
 </script>
 
@@ -93,6 +105,22 @@
                             <li class={classify(C)}>{C.sc.say}</li>
                         {/each}
                     </ul>
+                    
+                    {#if share_act}
+                        <span class="collections inrow" title="
+                        Access to (some part of) your filesystem is required to share.
+                        ">
+                            To share them music,
+                            <span class="arow" style="font-size:1.8em;">
+                                can you please
+                                <ActionButtons actions={[share_act]} />
+                            </span>
+                            . . . . . .<button onclick={() => no_share()}
+                                style="margin:2em;"
+                                >nah</button>
+                        </span>
+                    {/if}
+                    
                 </div>
 
                 <span>

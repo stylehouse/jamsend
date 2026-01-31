@@ -9,7 +9,7 @@
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-    import { DirectoryModus } from "$lib/p2p/ftp/Sharing.svelte";
+    import { DirectoryModus, PeeringSharing } from "$lib/p2p/ftp/Sharing.svelte";
     import Modus from "$lib/mostly/Modus.svelte";
     import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
    
@@ -197,10 +197,19 @@
         //   which spawns Modus, has Atime...
         M.F.P.Welcome = true
 
+        let eer = Peering.instance
+        if (!eer) w.i({waits:"your eer"})
+        if (!w.oa({checked_shares:1})) {
+            let ok = await this.Introducing_storage(A,w,eer)
+            if (!ok) w.i({waits:"your shares"})
+            // puts a P.needs_share_open_action that they can dismiss
+        }
 
-
-        // < once Welcome we can watch the...
-        if (M.F.P.some_feature_is_ready) {
+        if (M.F.P.needs_share_open_action) {
+            // the tiny bit of setup... dismissable 
+            await In.r({Readiness:1},{GrantingDirectoryAccess:1})
+        }
+        else if (M.F.P.some_feature_is_ready) {
             // from and so we can reveal, UI:Cytoscape
             // means your raterminal has a %NowPlaying
             await In.r({Readiness:1},{Ready:1})
@@ -226,16 +235,43 @@
         await this.Tyranny_of_Idvoyage(A,w,eer)
 
         for (let e of this.o_elvis(w,'Periodically')) {
-            // < capture daily user stats. roll off their intensity if large network depth
+            // < capture daily user stats. 
+            //    roll off their intensity if large network depth
         }
 
         await this.Tyranny_of_Bookkeeping(A,w,eer)
     },
     // do induction certs
-    async Tyranny_of_Bookkeeping(A,w,eer){
+    async Tyranny_of_Bookkeeping(A,w,eer:Peering){
+        // we'll need this:
+        let path = ['.jamsend','Tyrant']
+        let ok = await this.Introducing_storage(A,w,eer)
+        if (!ok) return w.i({waits:"storage"})
 
-        // < wanting
 
+    },
+    // Tyrant or invitee can want to bring up shares...
+    async wrangle_storage(A,w,eer:Peering,path?:string[]){
+
+    },
+    // Tyrant or invitee can want to bring up shares...
+    async Introducing_storage(A,w,eer:Peering) {
+        // wants to log social graph in the first share we find
+        //  this indicates whether a share is functioning
+        // see also cytotermi_pirating_heist_loadshares()
+        // in some share:
+        let sharing = eer.features.get('ftp') as unknown as PeeringSharing
+        let share = sharing.shares.asArray()[0]
+        if (!share) return //throw "no autoviv share?"
+        if (!share.started) {
+            let open = share.actions.filter(act => act.label == 'open share')[0]
+            // -> UI
+            M.F.P.needs_share_open_action = open
+        }
+        else {
+            M.F.P.needs_share_open_action = null
+            return true
+        }
     },
     // do induction certs
     async Tyranny_of_Idvoyage(A,w,eer){
@@ -664,6 +700,8 @@
         this.UIsay(w,I.sc.success,{good:1})
         // Intro prepares for the next UI...
         this.i_elvis(w,'gotIn')
+        setTimeout(() => this.i_elvis(w,'gotIn'), 800)
+        setTimeout(() => this.i_elvis(w,'gotIn'), 1500)
         I.sc.finished = true
         console.log(`🦑 Idzeugnation good 🔒`)
     },
