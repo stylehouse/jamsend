@@ -1196,7 +1196,7 @@
         let having = had.length + reqy.pending
         if (having < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
-            for await (const re of this.load_random_records(stockD, to_load,had)) {
+            for await (const re of this.load_random_records(A,stockD, to_load,had)) {
                 // if it's not a repeat
                 if (A.oa({record:1,enid:re.sc.enid})) {
                     console.log(`load_random_records() DUP ${re.sc.enid} (dropped)`)

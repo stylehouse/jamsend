@@ -470,21 +470,29 @@
         
             // <AI>
             // Helper to load random records from stock directory
-            async *load_random_records(sD: TheD, count: number, had:TheN): AsyncGenerator<TheC> {
+            async *load_random_records(A,sD: TheD, count: number, had:TheN): AsyncGenerator<TheC> {
                 // Get all .webms files from D/* (the Tree children)
                 let webmsFiles = sD.o({Tree: 1, name: 1})
                     .filter((D: TheD) => D.sc.name.endsWith('.webms'))
                 
                 if (webmsFiles.length === 0) return
                 
-                // Filter out ones we've already loaded
-                let unloaded = webmsFiles.filter((D: TheD) => !D.oa({warmed_up: 1}))
-                
+                // Filter out ones we've already got
+                let unloaded = webmsFiles.filter((D: TheD) => {
+                    !D.oa({warmed_up: 1})
+                })
+                let have_enids = A.o1({enid:1,record:1})
+                unloaded = unloaded.filter(
+                    D => !have_enids.some(
+                        enid => D.sc.name.includes(enid)
+                    )
+                )
+
                 if (unloaded.length === 0) {
                     // console.log("All .webms files in stock already loaded")
                     return
                 }
-                
+
                 // Load random selection
                 for (let i = 0; i < count && i < unloaded.length; i++) {
                     const randomIdx = this.prandle(unloaded.length);
