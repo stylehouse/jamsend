@@ -72,6 +72,9 @@ type StashedObject = {
     // on Pier after Idzeug ok:
     Good:true, 
     introduced_at:number,
+    // on Pier to help randomly reconnect
+    pickedup_at:number,
+    hungup_at:number,
     // < move to Peering.stashed? (the type there)
     Idvoyage:Object,
 }
@@ -193,7 +196,7 @@ export class TrustingModus extends Modus {
 
     w:TheC // latest w:Trusting
     OurTyrant:OurPier
-    amTyrant = false
+    amTyrant = $state(false)
     mainPeering:OurPeering // there's a function called OurPeering
 
     constructor(opt:Partial<TrustingModus>) {

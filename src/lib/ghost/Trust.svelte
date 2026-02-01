@@ -2,17 +2,9 @@
     import { onMount, tick } from "svelte";
 
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
-    import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
     import { depeel, erring, ex, grap, grep, grop, indent, map, nex, peel, sex, sha256, tex, throttle } from "$lib/Y.ts"
-    import Record from "./Records.svelte";
-    import Cytoscape from "$lib/mostly/Cytoscape.svelte";
-    import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
-    import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-    import { DirectoryModus, PeeringSharing } from "$lib/p2p/ftp/Sharing.svelte";
-    import Modus from "$lib/mostly/Modus.svelte";
     import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
-    import type { DirectoryListing, DirectoryShare } from "$lib/p2p/ftp/Directory.svelte";
     import Directory from "./Directory.svelte";
     import Tyranny from "./Tyranny.svelte";
    
@@ -188,16 +180,16 @@
             }
             return
         }
+        // Peering Welcome spreads to all of Peerily
+        //  features can now do UI of F|PF
+        //   which spawns Modus, has Atime...
+        M.F.P.Welcome = true
         // if they then pasted an Idzeugy uri
         //  after trying the front page without it
         // < slight indicator of tech proficiency
         //    and the opportunity to hire our attackers...
         M.F.P.dodgy_user = false
 
-        // Peering Welcome spreads to all of Peerily
-        //  features can now do UI of F|PF
-        //   which spawns Modus, has Atime...
-        M.F.P.Welcome = true
 
         let eer = Peering.instance
         if (!eer) w.i({waits:"your eer"})
@@ -222,8 +214,94 @@
             await In.r({Readiness:1},{NearlyReady:1})
         }
 
-        // < not connecting to anyone but instance tyrant is a fail?
+        await this.Gardening(A,w)
+    },
+
+
+
+
+
+
+//#endregion
+//#region Gardening
+
+
+    async Gardening(A,w) {
+        if (w.oa({Idzeugnation:1})) {
+            // they're busy doing a UI process...
+            //  don't connect to random Piers yet
+            return
+        }
+        let Ga = w.oai({Garden:1})
+        let first_time = !Ga.oa({GoodPier:1})
+        // make Pier identifying sc with enough noise for replace() to make sense
+        let descPier = (Pier:OurPier) => {
+            let {name,prepub} = Pier
+            return ex({name,Pier}, name != prepub ? {prepub} : {})
+        }
+        // notice who is available
+        // < contacts beneath this level should whittle
+        //    they'd be Tyrant's stream of Idvoyage clients...
+        // build up a list of good Piers
+        let all_Piers = this.F.OurPiers.asArray() as OurPier[]
+        all_Piers = all_Piers.filter(Pier => !Pier.stashed.stealth)
+        let Good_Piers = all_Piers.filter(Pier => Pier.stashed.Good)
         
+
+        await Ga.replace({GoodPier:1}, async () => {
+            for (let Pier of Good_Piers) {
+                // if (!Pier.stashed.pickedup_at) throw "some Good never connected"
+                let hungup_at = Pier.stashed.hungup_at
+                let agoity = !hungup_at ? 0 : now_in_seconds() - hungup_at
+                Ga.i({GoodPier:1,...descPier(Pier),agoity})
+            }
+        })
+        let agoities = Ga.o1({agoity:1,GoodPier:1}).sort()
+        // < our contacts sorted by agoity
+        //  < not Pier.stashed.stealth
+        //  < start calling them
+        //    esp all those never hungup
+        await Ga.r({Thing:agoities.join(", ")})
+
+
+
+        // OurPier whittling
+        // < not Pier.stashed.stealth
+        for (let Gonier of Ga.o({Decomposing:1,Pier:1})) {
+            let Pier = Gonier.sc.Pier
+            if (w.oa({Our:1,Pier})) {
+                Ga.i({Decomposing:1,still:Pier.name})
+            }
+            else {
+                Ga.drop(Gonier)
+            }
+        }
+
+        await Ga.r({Decomposing:1},{})
+        // return
+
+        let unGood = all_Piers.filter(Pier => !Good_Piers.includes(Pier))
+        await Ga.replace({unGood:1}, async () => {
+            for (let Pier of unGood) {
+                Ga.i({unGood:1,...descPier(Pier)})
+            }
+        })
+        for (let Go of Ga.o({unGood:1})) {
+            // let this state be transient for some
+            // if this oai() was an r() we'd be blanking %since each time
+            //  replace preserves what looks like its inners...
+            //    ...based on the replaced C.sc.*
+            //   but doesn't take any C.sc.*
+            let ti = Go.oai({timeout:1})
+            ti.sc.since ||= now_in_seconds()
+            if (ti.ago('since') > REQUESTS_MAX_LIFETIME) {
+                let Pier = Go.sc.Pier as OurPier
+                await Ga.i({Decomposing:1,...descPier(Pier)})
+                console.log(`🌱 Decomposing Pier:${Pier.name}`)
+                // await M.F.OurPiers.remove_Thing(Pier.name)
+            }
+        }
+
     },
 
 
@@ -371,6 +449,9 @@
     // connecting the %Ringingness, of a %Listening/%Pier, to a Pier
     async LP_connectedness(LP:TheC,ier:Pier) {
         let w = this.w
+
+        let was_good = LP.oa({const:1,ready:1})
+
         let generally_good = false
         await LP.replace({const:1},async () => {
             if (!ier) LP.i({const:'noplug'})
@@ -396,6 +477,17 @@
         if (generally_good) {
             // permanent, that we were connected
             LP.oai({was_ready:1})
+            if (!was_good) {
+                ier.stashed.pickedup_at = now_in_seconds()
+                ier.stashed.hungup_at = null
+            }
+        }
+        else {
+            if (was_good) {
+                if (ier.stashed.hungup_at != null) throw `hangup hungup`
+                ier.stashed.hungup_at = now_in_seconds()
+            }
+
         }
     },
     // w/%Our,Pier connection state is in w/%Listening/%Pier

@@ -233,7 +233,7 @@ export function armap(...args) {
 }
 
 // Filter array or object by predicate
-
+// < param type this so s of type Pier[] iterates v of type Pier
 export function grep(c:Array<any>|Object, s?:any):Array<any>|Object {
     // no function greps for true
     // see also nex(), for not-null

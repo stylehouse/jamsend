@@ -230,6 +230,10 @@ export class Audiolet {
     loudness?: LUFS
     metadata?: {artist:string,album:string,title:string,year:string}
     async load(encoded:Array<ArrayBuffer>) {
+        if (encoded instanceof Uint8Array) {
+            // < how does it happen
+            encoded = [encoded.buffer] as ArrayBuffer[]
+        }
         let stretch = await this.decode_stretch(encoded)
         stretch.onended = () => {
             // console.log("stretch ended")

@@ -98,6 +98,7 @@
                 <div class="content">
                     Left cave: {quit_fullscreen}.
                     {#if P.Welcome}Welcome.{/if}
+                    {#if M.amTyrant}amTyrant.{/if}
                     {#if P.some_feature_is_ready}Ready.
                     {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
                     <ul>
