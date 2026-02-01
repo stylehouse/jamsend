@@ -5,6 +5,7 @@
     import { grop } from "./Y";
     import ActionButtons from "./p2p/ui/ActionButtons.svelte";
     import type { TrustingModus } from "./Trust.svelte";
+    import ShareButton from "./p2p/ui/ShareButton.svelte";
 
     let {M}:{M:TrustingModus} = $props()
     let F = M.F
@@ -96,8 +97,8 @@
 
 
                 <div class="content">
-                    Left cave: {quit_fullscreen}.
-                    {#if P.Welcome}Welcome.{/if}
+                    {#if P.Welcome}Welcome.
+                    {:else}Left cave: {quit_fullscreen}.{/if}
                     {#if M.amTyrant}amTyrant.{/if}
                     {#if P.some_feature_is_ready}Ready.
                     {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
@@ -122,6 +123,16 @@
                         </span>
                     {/if}
                     
+                    {#if M.F.P.Nobody_Is_Online}
+                        <p>
+                            Nobody is online
+                            <span style="position:absolute; 
+                                pointer-events:none;">🌱</span>
+                            <span style="font-size:0.5em">
+                                <ShareButton {P} />
+                            </span>
+                        </p>
+                    {/if}
                 </div>
 
                 <span>

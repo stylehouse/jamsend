@@ -233,7 +233,6 @@
             return
         }
         let Ga = w.oai({Garden:1})
-        let first_time = !Ga.oa({GoodPier:1})
         // make Pier identifying sc with enough noise for replace() to make sense
         // notice who is available
         // < contacts beneath this level should whittle
@@ -283,30 +282,42 @@
         // < they may not want to serve the feature right now tho...
         //    you need to pop up on their screen
         //    if they're too busy with someone else...
-        await Ga.r({Thing:agoities.join(", ")})
+        // await Ga.r({Thing:agoities.join(", ")})
         let least_ago = agoities[0]
         let max_Initiating = 6 - Ga.o({Initiative:1}).length
 
         // starting with only the set we didn't connect with if any
-        for (let Go of Ga.o({GoodPier:1,agoity:String(least_ago)})) {
+        for (let Go of available.filter(Go => Go.sc.agoity == least_ago)) {
             if (max_Initiating <= 0) break
             max_Initiating -= 1
 
             Ga.i({Initiative:1,...desc(Go)})
         }
 
-        let some = false
+        let Incommunicado = (I) => {
+            Ga.i({Incommunicado:1,...desc(I)})
+            Ga.drop(I)
+            // < de-instance it? probably a little early in development of this thing for niceties
+            //    but can it then connect to us alright if it comes online?
+        }
         for (let I of Ga.o({Initiative:1,Pier:1})) {
-            some = true
             let Pier = I.sc.Pier
+            let prepub = I.sc.Pier.prepub
             // this keeps applying our will to connect
             let Pier_ok = !await this.RingUp(A,w,Pier,"Initiative",I)
             if (!I.sc.ringing_at) {
-                console.log(`🌱 Springing Pier:${Pier.name}`)
+                console.log(`🌱 Initiative Pier:${Pier.name}`)
                 I.sc.ringing_at = now_in_seconds()
             }
-
-            if (!I.sc.pickedup_at) {
+            // peer server can respond soon that they aren't online
+            let Ri = w.o({Ringing:1,prepub})[0]
+            if (!Ri) throw "!Ri"
+            let fa = Ri.o({failed:"to connect"})[0]
+            if (fa && Pier_ok) throw `i %failed is out of Atime, but %const,ready should noticed by now`
+            if (fa) {
+                Incommunicado(I)
+            }
+            else if (!I.sc.pickedup_at) {
                 // cause a %Ringing/%Pier (%Because/%I)
                 if (Pier_ok) {
                     // mirror Pier.stashed.pickedup_at
@@ -315,31 +326,37 @@
                 else if (I.ago('ringing_at') > REQUESTS_MAX_LIFETIME) {
                     // < there's a better|faster 'no answer' event somewhere...
                     // give up, will come around and try another
-                    Ga.i({Incommunicado:1,...desc(I)})
-                    // < should drop Ringing/Pier (Because/I)
-                    Ga.drop(I)
+                    Incommunicado(I)
                 }
             }
             else {
-                // once %Initiative,pickedup_at...
+                // an %Initiative,pickedup_at...
                 if (!Pier_ok) {
+                    // was online
                     // quick fugue allowed (reconnect)
                     I.sc.fuguing_at ||= now_in_seconds()
                     if (I.ago('fuguing_at') > REQUESTS_MAX_LIFETIME) {
-                        Ga.i({Incommunicado:1,...desc(I)})
-                        Ga.drop(I)
+                        Incommunicado(I)
                     }
                 }
+                Ga.ago('started_at') > 5
             }
         }
 
+        Ga.sc.started_at ||= now_in_seconds()
+        M.F.P.Nobody_Is_Online =
+            Ga.ago('started_at') > 5
+            && !Ga.oa({Initiative:1,Pier:1}) && true
+        return
         await Ga.replace({Nobody_Is_Online:1},async () => {
-            if (!some) {
+            if (!Ga.oa({Initiative:1})) {
                 Ga.i({Nobody_Is_Online:'🌱'})
+                M.F.P.Nobody_Is_Online = true
+            }
+            else {
+                M.F.P.Nobody_Is_Online = false
             }
         })
-        
-
     },
 
 
@@ -431,14 +448,16 @@
     // brings up a Pier
     // I becomes client identifier for a session of %Ringing
     //  I are stable, similar to reqy
-    //   %Ringing,Pier,.../%Because=label,I are replacey
-    // < stop when all a %Ringing's I drop
+    //  Ri is too: Ri%Ringing,prepub,Pier
+    //   .../Be%Because=label,I are replacey
+    //    ie Be/* can be stable but Be.sc.* will vanish
+    //     when that client does RingUp()
     async RingUp(A,w,Pier,label,I) {
         // may !Pier.instance initially
         let prepub = Pier.prepub
         if (!prepub || prepub.length != 16) throw "!Pier.prepub"
         // instructions for the background
-        let Ri = await w.r({Ringing:1,prepub},{Pier})
+        let Ri = await w.oai({Ringing:1,prepub},{Pier})
         let Be = await Ri.r({Because:label,I})
         // < whittle.
         await Be.i_wasLast('wanted',true)
@@ -460,6 +479,9 @@
         let P = F.P as Peerily
         // < many Li. this will probably be the default, first one got to %Listening
         let Li = w.o({Listening:1})[0]
+
+        await this.UnRinging_UnListening(w,Li)
+        
         // < multiplicity diagramming
         // we're coming here many times, for potentially many Ri per Li
         // the prepub is an address, Pier may be a new contact
@@ -510,7 +532,7 @@
             await this.Ringing_may_want_more_Ringing(Ri)
             
             // hang up approriately...
-            await this.Ringing_letgo_Because(Ri,LP)
+            await this.Ringing_letgo_Because(w,Ri,LP)
 
 
             // w.i({see:`connecting to`,prepub})
@@ -523,8 +545,38 @@
         }
     },
     // letting go of %Ringing/LP
-    async Ringing_letgo_Because(Ri,LP:TheC,ier:Pier) {
-        
+    async UnRinging_UnListening(w,Li:TheC) {
+        for (let Un of w.o({UnRingingd:1})) {
+            if (Un.ago('unring_at') > REQUESTS_MAX_LIFETIME/3) {
+                let prepub = Un.sc.prepub
+                if (!w.oa({Ringing:1,prepub})) {
+                    // out of %Ringing will to have this connection
+                    for (let LP of Li.o({Pier:1,prepub})) {
+                        Li.drop(LP)
+                    }
+                    w.drop(Un)
+                }
+            }
+            else {
+                // sit there for a bit to make sure %Ringing doesn't come back
+                // < all of it should be via RingUp
+                //    and all connected Piers should be accounted for
+                //     except if they're incoming!?
+            }
+        }
+    },
+    // letting go of %Ringing/LP
+    async Ringing_letgo_Because(w,Ri:TheC,LP:TheC) {
+        for (let Be of Ri.o({Because:1})) {
+            if (await Be.i_wasLast('wanted') > REQUESTS_MAX_LIFETIME) {
+                Ri.drop(Be)
+            }
+        }
+        if (!Ri.oa({Because:1})) {
+            // out of reasons to want this %Ringing
+            w.i({UnRingingd:1,prepub:Ri.sc.prepub,unring_at:now_in_seconds()})
+            w.drop(Ri)
+        }
     },
     
 

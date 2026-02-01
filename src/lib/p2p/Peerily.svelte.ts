@@ -309,6 +309,7 @@ export class Peerily {
     some_feature_is_nearly_ready = $state(false)
     some_feature_is_ready = $state(false)
     needs_share_open_action = $state(null)
+    Nobody_Is_Online = $state(null)
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
