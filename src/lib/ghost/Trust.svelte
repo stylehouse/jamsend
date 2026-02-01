@@ -235,10 +235,6 @@
         let Ga = w.oai({Garden:1})
         let first_time = !Ga.oa({GoodPier:1})
         // make Pier identifying sc with enough noise for replace() to make sense
-        let descPier = (Pier:OurPier) => {
-            let {name,prepub} = Pier
-            return ex({name,Pier}, name != prepub ? {prepub} : {})
-        }
         // notice who is available
         // < contacts beneath this level should whittle
         //    they'd be Tyrant's stream of Idvoyage clients...
@@ -253,23 +249,106 @@
                 // if (!Pier.stashed.pickedup_at) throw "some Good never connected"
                 let hungup_at = Pier.stashed.hungup_at
                 let agoity = !hungup_at ? 0 : now_in_seconds() - hungup_at
-                Ga.i({GoodPier:1,...descPier(Pier),agoity})
+                Ga.i({GoodPier:1,...this.descPier(Pier),
+                    agoity,
+                })
             }
         })
-        let agoities = Ga.o1({agoity:1,GoodPier:1}).sort()
-        // < our contacts sorted by agoity
-        //  < not Pier.stashed.stealth
+
+
+        await this.Gardening_Initiative(A,w,Ga)
+
+        // nobody should have to whittle Piers except Tyrant
+        //  who doesn't Idzeuganise being Good with anyone
+        //   and nobody whittles Tyrant despite them not being Good
+        let unGood = all_Piers.filter(Pier => !Good_Piers.includes(Pier))
+        await this.Gardening_Decomposing(A,w,Ga,unGood)
+    },
+    descPier(Pier:OurPier) {
+        let {name,prepub} = Pier
+        return ex({name,Pier}, name != prepub ? {prepub} : {})
+    },
+    // magnetise contacts to check onlinity
+    async Gardening_Initiative(A,w,Ga) {
+        let desc = (Go:TheC) => this.descPier(Go.sc.Pier)
+        let available = Ga.o({GoodPier:1,agoity:1})
+            // < or just !Pier.instance?
+            .filter(Go => !Ga.oa({Incommunicado:1,...desc(Go)}))
+            .filter(Go => !Ga.oa({Initiative:1,...desc(Go)})) as TheN
+
+        // our uncontacted (this time) contacts sorted by agoity
+        let agoities = available.map(Go => Go.sc.agoity).sort()
         //  < start calling them
         //    esp all those never hungup
+        // < they may not want to serve the feature right now tho...
+        //    you need to pop up on their screen
+        //    if they're too busy with someone else...
         await Ga.r({Thing:agoities.join(", ")})
+        let least_ago = agoities[0]
+        let max_Initiating = 6 - Ga.o({Initiative:1}).length
+
+        // starting with only the set we didn't connect with if any
+        for (let Go of Ga.o({GoodPier:1,agoity:String(least_ago)})) {
+            if (max_Initiating <= 0) break
+            max_Initiating -= 1
+
+            Ga.i({Initiative:1,...desc(Go)})
+        }
+
+        let some = false
+        for (let I of Ga.o({Initiative:1,Pier:1})) {
+            some = true
+            let Pier = I.sc.Pier
+            // this keeps applying our will to connect
+            let Pier_ok = !await this.RingUp(A,w,Pier,"Initiative",I)
+            if (!I.sc.ringing_at) {
+                console.log(`🌱 Springing Pier:${Pier.name}`)
+                I.sc.ringing_at = now_in_seconds()
+            }
+
+            if (!I.sc.pickedup_at) {
+                // cause a %Ringing/%Pier (%Because/%I)
+                if (Pier_ok) {
+                    // mirror Pier.stashed.pickedup_at
+                    I.sc.pickedup_at = now_in_seconds()
+                }
+                else if (I.ago('ringing_at') > REQUESTS_MAX_LIFETIME) {
+                    // < there's a better|faster 'no answer' event somewhere...
+                    // give up, will come around and try another
+                    Ga.i({Incommunicado:1,...desc(I)})
+                    // < should drop Ringing/Pier (Because/I)
+                    Ga.drop(I)
+                }
+            }
+            else {
+                // once %Initiative,pickedup_at...
+                if (!Pier_ok) {
+                    // quick fugue allowed (reconnect)
+                    I.sc.fuguing_at ||= now_in_seconds()
+                    if (I.ago('fuguing_at') > REQUESTS_MAX_LIFETIME) {
+                        Ga.i({Incommunicado:1,...desc(I)})
+                        Ga.drop(I)
+                    }
+                }
+            }
+        }
+
+        await Ga.replace({Nobody_Is_Online:1},async () => {
+            if (!some) {
+                Ga.i({Nobody_Is_Online:'🌱'})
+            }
+        })
+        
+
+    },
 
 
-
+    async Gardening_Decomposing(A,w,Ga,unGood) {
         // OurPier whittling
-        // < not Pier.stashed.stealth
         for (let Gonier of Ga.o({Decomposing:1,Pier:1})) {
             let Pier = Gonier.sc.Pier
             if (w.oa({Our:1,Pier})) {
+                // the other Decomposing...
                 Ga.i({Decomposing:1,still:Pier.name})
             }
             else {
@@ -277,13 +356,11 @@
             }
         }
 
-        await Ga.r({Decomposing:1},{})
-        // return
+        await Ga.r({Decomposing:1,Pier:1},{})
 
-        let unGood = all_Piers.filter(Pier => !Good_Piers.includes(Pier))
         await Ga.replace({unGood:1}, async () => {
             for (let Pier of unGood) {
-                Ga.i({unGood:1,...descPier(Pier)})
+                Ga.i({unGood:1,...this.descPier(Pier)})
             }
         })
         for (let Go of Ga.o({unGood:1})) {
@@ -296,9 +373,9 @@
             ti.sc.since ||= now_in_seconds()
             if (ti.ago('since') > REQUESTS_MAX_LIFETIME) {
                 let Pier = Go.sc.Pier as OurPier
-                await Ga.i({Decomposing:1,...descPier(Pier)})
+                await Ga.i({Decomposing:1,...this.descPier(Pier)})
                 console.log(`🌱 Decomposing Pier:${Pier.name}`)
-                // await M.F.OurPiers.remove_Thing(Pier.name)
+                await M.F.OurPiers.remove_Thing(Pier.name)
             }
         }
 
@@ -431,6 +508,9 @@
             await this.LP_connectedness(LP,ier)
             // retry faileds
             await this.Ringing_may_want_more_Ringing(Ri)
+            
+            // hang up approriately...
+            await this.Ringing_letgo_Because(Ri,LP)
 
 
             // w.i({see:`connecting to`,prepub})
@@ -441,6 +521,10 @@
 
             // < instantiate the OurPier
         }
+    },
+    // letting go of %Ringing/LP
+    async Ringing_letgo_Because(Ri,LP:TheC,ier:Pier) {
+        
     },
     
 
