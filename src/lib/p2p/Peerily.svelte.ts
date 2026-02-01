@@ -219,14 +219,17 @@ export class Peering {
         F.eer = this
     }
 
+    // the many remotes
+    Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
+
+    // < GOING... maybe maybe should this function on this object
+    //    and know how to reach over to the CRUD-end here...
     async i_Pier(pub:Prekey):Promise<Pier> {
         if (!pub) throw "!pub"
         let pier = this.Piers.get(pub)
         return pier || await this.P.Trusting.M.Peering_i_Pier(this,pub)
     }
 
-    // the many remotes
-    Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
     async a_Pier(pub:Prekey):Pier {
         if (this.P.Trusting) return await this.i_Pier(pub)
 
@@ -445,7 +448,9 @@ export class Peerily {
 
         eer.on('connection', async (con) => {
             console.log(`inbound connection(${con.peer})`)
-            let pier = await eer.a_Pier(con.peer)
+            let prepub = con.peer
+            
+            let pier = await this.Trusting.M.Peering_i_Pier(eer,prepub)
             pier.done_init = false
             pier.init_begins(eer,con,true)
         })
@@ -799,9 +804,9 @@ export class Pier {
             this.next_unemit.data = JSON.parse(data)
 
             if (!this.Ud) {
-                // only accept hello before we know
+                // only accept hello before we know their Idento
                 let type = this.next_unemit.data.type
-                if (type != 'hello') throw `unauthorised emit:${type}`
+                if (type != 'hello') return console.warn(`unauthorised unemit:${type}`)
             }
             if (crypto.buffer_sign) {
                 this.next_unemission = 'buffer'
@@ -826,7 +831,8 @@ export class Pier {
     retriable_handleMessage(data) {
         // wait for trust to arrive, but don't make an infinite loop
         if (now_in_seconds() > (this.retry_untrusted_messages_until_ts || Infinity)) {
-            throw "too late to handleMessage, haven't heard_trust"
+            let say = this.heard_trust ? "heard_trust..." : "haven't heard_trust"
+            return console.warn(`dropped pending unemit:${data.type}, ${say}`)
         }
         this.retry_untrusted_messages_until_ts ||= now_in_seconds() + 9.1114
         setTimeout(() => {

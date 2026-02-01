@@ -20,21 +20,20 @@
         }
     }
     // any of these abilities
-    let abilities = $derived(eer.features.keys())
+    let abilities = $derived([...eer.features.keys()])
 
-    let trust_us_with = $derived(Array.from(pier.trusted?.keys() || []))
-    let trusting_them_with = $derived(Array.from(pier.trust?.keys() || []))
+    let trust_us_with = $derived([...pier.trusted.keys()])
+    let trusting_them_with = $derived([...pier.trust.keys()])
     let talk = $derived(
         !trusting_them_with.length && !trust_us_with.length
         ? ""
-        : `them to ${trusting_them_with.join("+")},
-            we may ${trust_us_with.join("+")}`
+        : `them to ${trusting_them_with.join("+")||'—'},
+            we may ${trust_us_with.join("+")||'—'}`
     )
-
     let dropdown_options = $derived(abilities.map(
         (t:TrustName) => trusting_them_with.includes(t)
-            ? [{ value: `-${t}`, label: `--${t}`, action: 'revoke' }]
-            : [{ value: t, label: t, action: 'grant' }]
+            ? { value: `-${t}`, label: `--${t}`, action: 'revoke' }
+            : { value: t, label: `${t}`, action: 'grant' }
     ))
 
     function handleSelection(event) {

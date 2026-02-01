@@ -754,6 +754,9 @@
             let {return_fn,prepub} = e.sc
             return_fn()
         }
+        for (let e of this.o_elvis(w,'init_completo')) {
+            await this.elvising_Pier_init_completo(w,e.sc.ier)
+        }
     },
 
 
@@ -834,12 +837,17 @@
         }
         else {
             // make %Our,Pier before connecting
-            console.log(`piers add_Thing ${prepub}`)
-            let alsoPier = await F.OurPiers.add_Thing({name:prepub,prepub})
-            let aPier = alsoPier as OurPier
-            if (!aPier.prepub) console.warn(`add_Thing:${prepub} !prepub`)
-            // < giving it to add_Thing opt above doesn't work?
-            aPier.prepub = prepub
+            // it may already exist as a Thing but not Our
+            Pier = await F.OurPiers.asArray().filter(S => S.name == prepub)
+            if (Pier) {
+                console.log(`piers add_Thing ${prepub}`)
+                Pier = await F.OurPiers.add_Thing({name:prepub,prepub})
+                Pier = Pier as OurPier
+            }
+            // < giving it to add_Thing opt above doesn't work
+            //   also what of it should we put in the Pier table itself...
+            //    and how to designate more|less important IndexedDBs to keep
+            Pier.prepub = prepub
 
             // and wait so it can have a live .stashed
             // < it's important we are out of Atime here. sub this maneuvre
@@ -862,16 +870,22 @@
         if (!ier.Thing) throw `!ier.Thing`
 
         eer.Piers.set(prepub,ier)
+
         return ier
     },
 
     // from Pier itself
     async Pier_init_completo(ier:Pier) {
         let w = this.w
-        let eer = ier.eer
         let Pier = ier.Thing
+        // we make sure of this before now:
         if (!Pier) throw `aint Thing`
-        // it has the CRUD object, Our*, in %Our
+        // but they (CRUD Things, Our*) may not have i %Our
+        this.i_elvis(w,'init_completo',{ier})
+    },
+    // from Pier itself
+    async elvising_Pier_init_completo(w,ier:Pier) {
+        let eer = ier.eer
         let Our = this.o_Pier_Our(w,ier.pub)
         if (!Our) throw `your Pier has not %Our`
         let Li = w.o({Listening:1,eer})[0]
