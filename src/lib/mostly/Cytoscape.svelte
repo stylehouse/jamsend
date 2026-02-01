@@ -532,9 +532,7 @@
     .graph {
         width: 100%;
         top:6%;
-        height: 94%;
-        min-height: 50em;
-        min-width: 40em;
+        height: calc(min(60vw, 60vh));
         background: black;
         color: #b394ff;
     }

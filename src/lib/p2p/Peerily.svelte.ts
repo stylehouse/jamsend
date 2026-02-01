@@ -857,7 +857,7 @@ export class Pier {
                 // check permit
                 let t = this.trust.get(trust_name)
                     || this.trusted.get(trust_name)
-                if (!t) throw `unemit !permit to feature: ${trust_name}`
+                if (!t) return console.warn(`unemit !permit to feature: ${trust_name}`)
 
                 let PF = this.features.get(trust_name)
                 handy.PF = PF
@@ -1071,6 +1071,7 @@ export class Pier {
                 if (!this.stashed.trust) continue
                 let ti = this.stashed.trust.findIndex(st => t.not == st.to)
                 if (ti >= 0) this.stashed.trust.splice(ti,1)
+                this.stashed.trust = this.stashed.trust
                 this.trusted.delete(t.not)
             }
             else {
@@ -1084,6 +1085,7 @@ export class Pier {
                 }
                 this.stashed.trust ||= []
                 this.stashed.trust.push(t)
+                this.stashed.trust = this.stashed.trust
                 // can come with other opinions in t
                 this.trusted.set(t.to,t)
             }
@@ -1105,6 +1107,7 @@ export class Pier {
             // un-revoke
             let ti = this.stashed.trust.findIndex(t => to == t.not)
             if (ti >= 0) this.stashed.trust.splice(ti,1)
+            this.stashed.trust = this.stashed.trust
         }
         this.update_trust()
 
@@ -1121,6 +1124,7 @@ export class Pier {
         //  since the grant would still work (on the devil's computer)
         this.stashed.trust ||= []
         this.stashed.trust.push({not})
+            this.stashed.trust = this.stashed.trust
         // disable the in-memory grant
         this.stated_trust.delete(not)
         this.update_trust()

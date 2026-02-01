@@ -6,7 +6,7 @@
 
     let {M} = $props()
     const V = {}
-    V.w = 0
+    V.w = 1
     V.elvis = 1
 
     onMount(async () => {
@@ -192,9 +192,15 @@
         let them = w.o({elvis:1})
         them.length && this.o_elvis(w,'noop')
         for (let e of them.filter(e => e.c.served)) {
-            e.drop(e)
+            w.drop(e)
         }
         for (let e of them.filter(e => !e.c.served)) {
+            if (!e.c.retried) {
+                // the e just sits there now. its handler should have been there...
+                e.c.retried = 1
+                continue
+            }
+            w.drop(e)
             throw `A:${A.sc.A}/w:${w.sc.w}/%elvis=${e.sc.elvis} not served`
         }
     },

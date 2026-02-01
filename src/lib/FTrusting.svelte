@@ -147,6 +147,7 @@
     }
     summary {
         font-size: 1.6em;
+        padding: 1em;
     }
     p {
         word-break: break-all;

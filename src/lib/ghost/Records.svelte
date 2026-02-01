@@ -184,7 +184,7 @@
 
         // receive transcoded buffers
         aud.setupRecorder(true)
-        w.sc.seq = q.from_seq || 0
+        let seq = q.from_seq || 0
 
         let tinybits = []
         let deal_tinybits = async (blob,buffers) => {
@@ -274,8 +274,8 @@
             let duration = bud.duration()
             // duration -= pre_duration
             // generate %record/*%preview
-            let prsc = {...keywordc,seq:w.sc.seq,duration,type,buffer}
-            w.sc.seq++
+            let prsc = {...keywordc,seq,duration,type,buffer}
+            seq += 1
             if (aud.left() && aud.left() < 0.4) {
                 console.warn(`A tiny amount of aud left: ${aud.left()}`)
             }
@@ -478,9 +478,7 @@
                 if (webmsFiles.length === 0) return
                 
                 // Filter out ones we've already got
-                let unloaded = webmsFiles.filter((D: TheD) => {
-                    !D.oa({warmed_up: 1})
-                })
+                let unloaded = webmsFiles.filter((D: TheD) => !D.oa({warmed_up: 1}))
                 let have_enids = A.o1({enid:1,record:1})
                 unloaded = unloaded.filter(
                     D => !have_enids.some(
@@ -573,7 +571,7 @@
                     return re;
                 } catch (err) {
                     console.error(`Failed to read record from disk:`, err);
-                    throw err;
+                    // throw err;
                 }
             },
             // tidy up zero-length radiostocks

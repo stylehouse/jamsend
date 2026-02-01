@@ -1473,7 +1473,7 @@
                     let pr = re.i({...prsc, seq})
                     w.c.on_recording(re,pr)
                 }
-                w.sc.seq = seq
+                // w.sc.seq = seq
             }
         }
         
