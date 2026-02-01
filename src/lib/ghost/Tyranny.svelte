@@ -311,25 +311,7 @@
 //#endregion
 //#region Idzeug
     async Idzeuging(A,w) {
-        // capturing
-        await this.Idzeugmance(A,w)
-        // producing
-        await this.Idzeugnate(A,w)
-        // consuming
-        await this.Idzeuganise(A,w)
-    },
-
-
-
-    
-    // be able to make them, continuously
-    //  starting with loading the URI with something sharable...
-    async Idzeugnate(A,w:TheC) {
-        // with the current Idzeugability...
-        let {Id} = this.Our_main_Id(w)
-
-        // < select which to put in the URI or share button
-        let primary = w.o({Idzeug:1,Our:1}).pop()
+        // as a possibility of ours
         for (let Our of w.o({Idzeug:1,Our:1})) {
             // these might be springing into existence, primacy... who knows.
             let {Idzeug} = Our.sc
@@ -339,23 +321,36 @@
                 this.stashed.IdzeugSerial += 1
             }
             s.Upper_Number ||= 0
-
-            if (Our == primary) {
-                // continue
-                // dev, temporarily while 
-                // spit one out, continuously
-                let uri = await this.Idzeug_i_Idzeugi(A,w,Idzeug)
-                M.F.P.share_url = uri
-            }
         }
-
+        // production via Idzeugnate() via UI:ShareButton (out of Atime)
+        
+        // capturing
+        await this.Idzeugmance(A,w)
+        // consuming
+        await this.Idzeuganise(A,w)
     },
+    
+    // be able to make them, via UI:ShareButton (out of Atime)
+    async Idzeugnate() {
+        let w = this.w
+        // with the current Idzeugability...
+        let {Id} = this.Our_main_Id(w)
+
+        // < select which to put in the URI or share button
+        let Our = w.o({Idzeug:1,Our:1}).pop()
+        let {Idzeug} = Our.sc
+
+        let uri = await this.Idzeug_i_Idzeugi(w,Idzeug)
+        return uri
+    },
+
+
     // an Idzeugi can have a serial number, $n
     //   so for many invites in the wind
     //    we only need to remember they need $n between some range
     //    and not be in the answered set Idzeug remembers
     USE_PRESIGS: 1,
-    async Idzeug_i_Idzeugi(A,w,Idzeug:OurIdzeug,many=1) {
+    async Idzeug_i_Idzeugi(w,Idzeug:OurIdzeug,many=1) {
         let N = []
         let s = Idzeug.stashed
         let upNum = s.Upper_Number
@@ -504,6 +499,7 @@
     async Idzeugnation(A,w,I,_no) {
         let no = (say) => {
             console.log(`🦑 Idzeugnation problem: ${say}`)
+            this.reset_location_hash()
             _no(say)
         }
         if (I.sc.finished) {
