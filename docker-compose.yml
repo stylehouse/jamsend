@@ -54,3 +54,29 @@ services:
     #, "--path", "/peerjs-server"]
     restart: 'always'
 
+
+  tyrant-logger:
+    build:
+      context: .
+      dockerfile: ty/Dockerfile
+    container_name: jamsend-tyrant-logger
+    volumes:
+      - ./logs:/logs
+    ports:
+      - "172.17.0.1:3000:3000"
+    environment:
+      - LOG_DIR=/logs
+      - MOJO_LOG_LEVEL=info
+    restart: 'always'
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'          # Max 0.5 CPU cores
+          memory: 256M         # Max 256MB RAM
+        reservations:
+          cpus: '0.1'          # Reserve 0.1 CPU cores  
+          memory: 64M          # Reserve 64MB RAM
+    ulimits:
+      nproc: 50                # Max 50 processes
+      nofile: 512              # Max 512 open files
