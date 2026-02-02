@@ -498,6 +498,8 @@
             }
 
             // i %Listening/%Pier o %Ringing
+            if (!Pier) throw `!our`
+            if (Pier.constructor.name != 'OurPier') throw `!OurPier`
             let LP
             if (!Li.oa({Pier:1,prepub})) {
                 let now = now_in_seconds_with_ms()
@@ -509,6 +511,7 @@
                 w.i({see:`connecting to`,prepub})
                 console.log(`EnPierise: ${prepub}`)
 
+                if (typeof Pier == 'function') debugger
                 LP = Li.i({Pier,prepub})
                 ;(async() => {
                     // Li the objects are stable
@@ -552,6 +555,10 @@
                 if (!w.oa({Ringing:1,prepub})) {
                     // out of %Ringing will to have this connection
                     for (let LP of Li.o({Pier:1,prepub})) {
+                        if (LP.oa({direction:'received'})) {
+                            // < should never go away?
+                            console.warn(`UnRinging LP/%direction=received`)
+                        }
                         Li.drop(LP)
                     }
                     w.drop(Un)
@@ -838,7 +845,7 @@
         else {
             // make %Our,Pier before connecting
             // it may already exist as a Thing but not Our
-            Pier = await F.OurPiers.asArray().filter(S => S.name == prepub)
+            Pier = F.OurPiers.asArray().filter(S => S.name == prepub)[0]
             if (Pier) {
                 console.log(`piers add_Thing ${prepub}`)
                 Pier = await F.OurPiers.add_Thing({name:prepub,prepub})
@@ -887,7 +894,10 @@
     async elvising_Pier_init_completo(w,ier:Pier) {
         let eer = ier.eer
         let Our = this.o_Pier_Our(w,ier.pub)
-        if (!Our) throw `your Pier has not %Our`
+        if (!Our) throw `Pier ! %Our`
+        let Pier = Our.sc.Pier
+        if (Pier.instance != ier) throw "Whua"
+
         let Li = w.o({Listening:1,eer})[0]
         if (!Li) throw `your Peering has not %Listening`
         let LP = Li.oai({Pier,prepub:ier.pub})

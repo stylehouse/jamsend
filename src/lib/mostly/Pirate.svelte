@@ -102,9 +102,6 @@
         return def
     }
     let show_req_Stuffing = _C({})
-
-
-    // < test M.F.directory_compat_mode
 </script>
 
 
@@ -164,7 +161,7 @@
                 </span>
             </span>
         {/if}
-        {#if M.F.directory_compat_mode}
+        {#if M.F.P.directory_compat_mode}
             <span class="collections inrow" title="
             Access to (some part of) your filesystem is required.
             ">

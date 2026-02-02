@@ -10,6 +10,7 @@
     // the fairly-global Peering and PeeringFeature object
     let { eer,F }:{ eer:Peering,F:PeeringSharing } = $props();
 
+    let compat_mode = $state()
     onMount(async () => {
         // < Things might F.shares.start()
         //   Thing then DirectoryShare.start()?
@@ -17,12 +18,9 @@
             //  await F.start()
              }, 2100)
         console.log("shares!: ",[F,F.shares.things])
+
+        compat_mode = F.P.directory_compat_mode = !('showDirectoryPicker' in window)
     })
-
-
-
-    let compat_mode = $state()
-    $effect(() => { compat_mode = F.directory_compat_mode = !('showDirectoryPicker' in window) })
 </script>
 
 <h2>The plot here.</h2>

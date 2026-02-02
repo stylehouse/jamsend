@@ -171,7 +171,7 @@
         let sharing = eer.features.get('ftp') as unknown as PeeringSharing
         let share = sharing.shares.asArray()[0] as unknown as DirectoryShare
         if (!share) return //throw "no autoviv share?"
-        if (!share.started) {
+        if (!share.started && !M.F.P.directory_compat_mode) {
             let open = share.actions.filter(act => act.label == 'open share')[0]
             // -> UI
             M.F.P.needs_share_open_action = open

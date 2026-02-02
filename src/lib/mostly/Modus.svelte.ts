@@ -96,9 +96,9 @@ abstract class ModusItself extends TheC  {
     main() {
         // suggest we do main() ASAP
         let main = this.main_throttle = this.main_throttle || throttle(() => {
-            if (!this.stashy_UI_component && !this.stashed) {
+            if (!this.stashed) {
                 if (this.no_stashed_failout++ > 10) {
-                    throw "still no M.stashed, looks like there should be"
+                    throw "still no M.stashed"
                 }
                 return setTimeout(() => this.main(), 50)
             }

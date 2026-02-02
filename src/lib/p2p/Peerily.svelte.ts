@@ -313,6 +313,9 @@ export class Peerily {
     some_feature_is_ready = $state(false)
     needs_share_open_action = $state(null)
     Nobody_Is_Online = $state(null)
+    // if their browser is refusing the directory api
+    // > some attempt at compatibility?
+    directory_compat_mode = $state()
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
