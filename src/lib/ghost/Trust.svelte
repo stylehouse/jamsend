@@ -421,10 +421,21 @@
 
 
     async Listening(A,w) {
+        // < multiplicity
+        let Li = w.o({Listening:1})[0]
+        Li ||= await this.init_Listening(A,w)
+        
+        for (let LP of Li.o({Pier:1,prepub:1})) {
+            let Pier = LP.sc.Pier as OurPier
+            let ier = Pier.instance
+            // monitor everything's switch-onitty
+            //  a bit manifold...
+            await this.LP_connectedness(LP,ier)
+        }
+    },
+    async init_Listening(A,w) {
         let F = this.F as Trusting
         let P = F.P as Peerily
-        // < multiplicity
-        if (w.oa({Listening:1})) return
         let Our = this.o_Our_main_Peering(w)
         if (!Our) return w.i({error:"pick a new main address?"})
         let Id = Our.o1({Id:1})[0]
@@ -441,7 +452,7 @@
 
         // console.log(`You `,eer)
         let prepub = Id.pretty_pubkey()
-        w.i({Listening:1,eer,Peering,prepub})
+        return w.i({Listening:1,eer,Peering,prepub})
     },
     
 
@@ -472,6 +483,11 @@
         }
         // done the RingUp phase of this want of a %Ringing
         return false
+    },
+    is_LP_okay(LP) {
+        if (!LP) return
+        return LP.oa({const:1,ready:1})
+            && LP.oa({Ping:1,good:1})
     },
 
     async Ringing(A,w) {
@@ -528,9 +544,6 @@
             LP ||= Li.o({Pier:1,prepub})[0]
             let ier = Pier.instance
 
-            // monitor its switch-onitty
-            //  a bit manifold...
-            await this.LP_connectedness(LP,ier)
             // retry faileds
             await this.Ringing_may_want_more_Ringing(Ri)
             
@@ -846,7 +859,7 @@
             // make %Our,Pier before connecting
             // it may already exist as a Thing but not Our
             Pier = F.OurPiers.asArray().filter(S => S.name == prepub)[0]
-            if (Pier) {
+            if (!Pier) {
                 console.log(`piers add_Thing ${prepub}`)
                 Pier = await F.OurPiers.add_Thing({name:prepub,prepub})
                 Pier = Pier as OurPier
@@ -975,6 +988,7 @@
 
             // monitor state
             let LP = this.o_LP(ier)
+            // these two conditions together are is_LP_okay(LP)
             if (LP?.oa({const:1,ready:1})) {
                 await this.Our_ping(LP,ier)
             }
@@ -1013,24 +1027,42 @@
             latency = latency.toFixed(3)
             await Ping.r({latency})
             ex(Ping.sc,{latency})
-            await Ping.i_wasLast('sent', true)
+            await Ping.i_wasLast('received', true)
         }
         })
     },
     async Our_ping(LP:TheC,ier:Pier) {
         let w = this.w
         let Ping = LP.oai({Ping:1})
-        let ago = await Ping.i_wasLast('sent')
+
+        // returns Infinity initially:
+        let ping_ago = await Ping.i_wasLast('sent')
         // ago initialises to Infinity
-        if (ago > 5) {
+        if (ping_ago > 5) {
+            await Ping.i_wasLast('sent', true)
             ier.emit('ping',{sent:now_in_seconds_with_ms()})
         }
-        if (ago > 9) {
-            LP.i({const:'bad',timing_out:1})
+
+        let pong_ago = await Ping.i_wasLast('received')
+        if (pong_ago == Infinity) {}
+        else if (pong_ago > 29) {
+            await Ping.r({failed:1},{timed_out:1})
+            // in an effort to simply be !%const,ready now:
+            ier.lets_disconnect('ping timeout')
         }
-        if (ago > 29) {
-            // < what to do... we're still %const,ready, so ...
-            LP.i({const:'very bad',timed_out:1})
+        else if (pong_ago > 9) {
+            await Ping.r({failed:1},{timing_out:1})
+        }
+        else {
+            await Ping.r({failed:1},{})
+        }
+        if (Ping.oa({failed:1})) {
+            delete Ping.sc.good
+            Ping.sc.bad = 'failed'
+        }
+        else {
+            delete Ping.sc.bad
+            Ping.sc.good = 1
         }
     },
 

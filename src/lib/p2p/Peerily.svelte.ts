@@ -542,6 +542,10 @@ export class Pier {
         console.log(`!! error via connection(${this.pub})`)
         this.P.on_error(err)
     }
+    lets_disconnect(reason='') {
+        console.log(`!! voluntary disconnect(${this.pub}) ${reason}`)
+        this.con.close()
+    }
     disconnected = $state(true)
     was_disconnected = false
     worth_reconnecting = true
