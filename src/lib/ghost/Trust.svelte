@@ -242,7 +242,7 @@
         all_Piers = all_Piers.filter(Pier => !Pier.stashed.stealth)
         let Good_Piers = all_Piers.filter(Pier => Pier.stashed.Good)
         
-
+        // make a set of Piers that are potentially connectable
         await Ga.replace({GoodPier:1}, async () => {
             for (let Pier of Good_Piers) {
                 // if (!Pier.stashed.pickedup_at) throw "some Good never connected"
@@ -254,7 +254,7 @@
             }
         })
 
-
+        // try to connect some until all connected or %Incommunicado
         await this.Gardening_Initiative(A,w,Ga)
 
         // nobody should have to whittle Piers except Tyrant
@@ -586,6 +586,7 @@
         }
     },
     // letting go of %Ringing/LP
+    // < this and init_completo() need to be sure to not delete
     async Ringing_letgo_Because(w,Ri:TheC,LP:TheC) {
         for (let Be of Ri.o({Because:1})) {
             if (await Be.i_wasLast('wanted') > REQUESTS_MAX_LIFETIME) {
@@ -685,6 +686,7 @@
         await Ri.r({failed:1},{})
 
         // count attempts
+        // < I think this is redundant. certainly the %attempt is being lost. .r() not stable.
         let LP = Li.o({Pier:Ri.sc.Pier})[0]
         let recon = await LP.r({recon:1})
         recon.sc.attempt ||= 0
@@ -917,6 +919,8 @@
         let say = ier.inbound ? "received" : "made"
         await LP.r({direction:say})
         await Our.r({direction:say})
+        // corner case: pending deletion from failing to call them
+        w.o({UnRingingd:1,prepub:ier.pub}).map(Un => w.drop(Un))
         console.log(`${say} i Pier(${ier.pub}) complete`)
     },
 
@@ -1056,6 +1060,7 @@
         else {
             await Ping.r({failed:1},{})
         }
+
         if (Ping.oa({failed:1})) {
             delete Ping.sc.good
             Ping.sc.bad = 'failed'
@@ -1063,6 +1068,12 @@
         else {
             delete Ping.sc.bad
             Ping.sc.good = 1
+            // and it's no longer...
+            let Pier = LP.sc.Pier
+            let Ga = w.oai({Garden:1})
+            for (let In of Ga.o({Incommunicado:1,Pier})) {
+                Ga.drop(In)
+            }
         }
     },
 

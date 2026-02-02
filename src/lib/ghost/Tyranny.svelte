@@ -192,6 +192,26 @@
              officiate Idzeuginations
               and your invitee is going to know your invitor's prepub
              collect the social graph they tell of
+            
+            bad actor can also do a hacked Idzeugnation
+             that doesn't contact Tyrant at all
+             Alice does Idzeugnosis, gives out trust...
+             < she should give out her Idvoyage but not trust
+               until seeing Bob's resultant Idvoyage
+             of course they'd need an Alice Idzeug, so no too relevant...
+              but the CIA (the real one) could manage that
+            
+            and in general, on security...
+            we have very low identity visibility...
+             no nicknames or when they authenticated, what you've heisted...
+
+             < get people to sign their name like on the courier's pda
+               and forge the signature of their invitor as well
+
+            we kind of check Tyrant's app-level code is responding
+             before consuming the Idzeug
+             via wanting LP/%Ping, via RingUp
+
         `
 
         if (!eer.stashed.Idvoyage) {
@@ -575,6 +595,7 @@
             I.i({waits:"invite shown..."})
             return
         }
+
         // they say success
         //  and give us their Idvoyage to get our Idvoyage
         let is_trusted = await this.Idvoyage_verify(I.sc.Idvoyage)
