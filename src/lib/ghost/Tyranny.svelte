@@ -13,7 +13,8 @@
    
     let {M}:{M:TrustingModus} = $props()
     let V = {}
-    
+    const TYRANT_URL = 'https://jamdense.duckdns.org/l/log';
+
     const REQUESTS_MAX_LIFETIME = 25
     onMount(async () => {
     await M.eatfunc({
@@ -29,6 +30,8 @@
         let eer = M.mainPeering.instance
         if (!eer) return w.i({waits:'instantiate ourselves...'})
 
+        w.i({Idvoyaging:1,Now:{Question:"is"},Before:'bloop'})
+
         await this.Tyranny_of_Idvoyage(A,w,eer)
 
         for (let e of this.o_elvis(w,'Periodically')) {
@@ -40,77 +43,21 @@
     },
     // save info
     async Tyranny_of_Bookkeeping(A,w,eer:Peering) {
-        // and an open share
-        let share = await this.Introducing_storage(A,w,eer)
-        if (!share) return w.i({waits:"storage"})
-
-        // that we have an app data directory in
-        //  with day directories...
-        let [dir,name] = this.get_Idvoyaging_filename()
-        let path = ['.jamsend','Tyrant','Idvoyages',dir]
-        let the = await this.wrangle_storage(A,w,share,path)
-        if (!the || !the.sc.D) return
-
-        // avoid creating empty files, we come here often...
-        if (!w.oa({Idvoyaging:1})) return
-        
-        await this.the_regularly_reopening_Writer(the,name)
-
-        // let Up = w.oai({Upto:1})
-        // Up.sc.i ||= 1
-        // let number = Up.sc.i++
-        // await the.sc.Writer.write(`${number}\n`)
-        // return
+        // < temp? forget about it
+        // let the = await this.sorting_out_the_Writer(A,w,eer)
 
 
         for (let Idv of w.o({Idvoyaging:1,Now:1,Before:1})) {
             let {Now,Before} = Idv.sc
-            let s = s => JSON.stringify([s.Alice,s.Bob,s.at,s.depth])
-            await the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
+            // off to a perl webserver to write to a log
+            fetch(TYRANT_URL, {
+                method: 'POST',
+                body: JSON.stringify({Now,Before})
+            }).catch((er) => {
+                throw erring("Tyrant Idvoyaging upload",er)
+            });
             w.drop(Idv)
         }
-    },
-    // reopen the Writer every so often because these swap files vanish...
-    async the_regularly_reopening_Writer(the:TheC,name:string,reopen_every=20) {
-        // wrangle_storage() knocks this off if the targeted directory changes:
-        the.sc.DL ||= this.D_to_DL(the.sc.D)
-
-        let DL = the.sc.DL as DirectoryListing
-
-        // let time = now_in_seconds()
-        // < trying to be this clever. chaos!
-        //    docs say existing file will copy to the swap file first!?
-        //    the log file itself is the last 20s of numbers
-        //     and one from 20s before that
-        //    the swap file is 20s of number since those 20s of numbers...
-        // this way we lose up to a minute of stuff
-        //  page reloads do not manage to close the Writer via do_stoppage()
-        // time = time - time % reopen_every
-        let reopen_Writer = the.sc.name && the.sc.name != name
-            // || the.sc.time && the.sc.time != time
-        if (reopen_Writer && the.sc.Writer) {
-            // time to change
-            if (the.sc.Writer) {
-                await the.sc.Writer.close()
-                the.sc.Writer = null
-            }
-        }
-        the.sc.Writer ||= await DL.getWriter(name,true)
-
-        the.sc.name = name
-        // the.sc.time = time
-    },
-    // this can be local time
-    get_Idvoyaging_filename(): string[] {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hour = String(now.getHours()).padStart(2, '0');
-        let minutes = now.getMinutes()
-        // minutes = minutes - minutes % 10
-        minutes = String(minutes).padStart(2, '0');
-        return [`Idvoyages-${year}${month}${day}`,`${hour}${minutes}.jsons`]
     },
 
     // onDestroy
@@ -760,6 +707,135 @@
     },
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // < GOING? directory api seems not to like this use case
+    //  < also fix: why this causes a tailspin
+    //     creating another set of %aim confuses it?
+    //      repeatedly logging: changed journey: j:A:radiostock	Tyra/.jamsend/Tyrant/Idvoyages/Idvoyages-20260202	->	Tyra/.jamsend/Tyrant/Idvoyages/Idvoyages-20260203
+    //      and %elvis:noop back again
+    //    in w:radiostock, where we've haphazardly wired in...
+    async sorting_out_the_Writer(A,w,eer:Peering) {
+        // and an open share
+        let share = await this.Introducing_storage(A,w,eer)
+        if (!share) return w.i({waits:"storage"})
+
+        // that we have an app data directory in
+        //  with day directories...
+        let [dir,name] = this.get_Idvoyaging_filename()
+        let path = ['.jamsend','Tyrant','Idvoyages',dir]
+        let the = await this.wrangle_storage(A,w,share,path)
+        if (!the || !the.sc.D) return
+
+        // avoid creating empty files, we come here often...
+        if (!w.oa({Idvoyaging:1})) return
+        
+        await this.the_regularly_reopening_Writer(the,name)
+
+        // let Up = w.oai({Upto:1})
+        // Up.sc.i ||= 1
+        // let number = Up.sc.i++
+        // await the.sc.Writer.write(`${number}\n`)
+        // return
+
+
+        // then you'd:
+            // await the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
+    },
+
+
+    // reopen the Writer every so often because these swap files vanish...
+    async the_regularly_reopening_Writer(the:TheC,name:string,reopen_every=20) {
+        // wrangle_storage() knocks this off if the targeted directory changes:
+        the.sc.DL ||= this.D_to_DL(the.sc.D)
+
+        let DL = the.sc.DL as DirectoryListing
+
+        // let time = now_in_seconds()
+        // < trying to be this clever. chaos!
+        //    docs say existing file will copy to the swap file first!?
+        //    the log file itself is the last 20s of numbers
+        //     and one from 20s before that
+        //    the swap file is 20s of number since those 20s of numbers...
+        // this way we lose up to a minute of stuff
+        //  page reloads do not manage to close the Writer via do_stoppage()
+        // time = time - time % reopen_every
+        let reopen_Writer = the.sc.name && the.sc.name != name
+            // || the.sc.time && the.sc.time != time
+        if (reopen_Writer && the.sc.Writer) {
+            // time to change
+            if (the.sc.Writer) {
+                await the.sc.Writer.close()
+                the.sc.Writer = null
+            }
+        }
+        the.sc.Writer ||= await DL.getWriter(name,true)
+
+        the.sc.name = name
+        // the.sc.time = time
+    },
+    // this can be local time
+    get_Idvoyaging_filename(): string[] {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        let minutes = now.getMinutes()
+        // minutes = minutes - minutes % 10
+        minutes = String(minutes).padStart(2, '0');
+        return [`Idvoyages-${year}${month}${day}`,`${hour}${minutes}.jsons`]
+    },
 
 
 
