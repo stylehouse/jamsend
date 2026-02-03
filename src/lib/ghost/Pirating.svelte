@@ -244,7 +244,6 @@
         if (enid) {
             // don't always need to have the %record, see resumable_heist()
             let Aaudio = raterm.up
-            if (Aaudio.sc.A != 'audio') throw "!A"
 
             let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
             if (!re) {

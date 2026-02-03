@@ -13,6 +13,8 @@
     // and everything, interactively
     import cola from "cytoscape-cola";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
+    import ShareButton from "$lib/p2p/ui/ShareButton.svelte";
+    import type { RadioModus } from "$lib/p2p/ftp/Audio.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
@@ -220,7 +222,8 @@
     //#endregion
     //#region dealing
 
-    let { VJ, M } = $props();
+    let { VJ, M }:{M:RadioModus} = $props();
+    let P = M.F.P
     let w = VJ.sc.VJ;
     // < put interface on M?
     let node_edger = {};
@@ -494,7 +497,8 @@
                 </span>
 
                 <span>
-                    <a href="https://github.com/stylehouse/jamsend">README</a>
+                    <ShareButton {P} />
+                    <a href="https://github.com/stylehouse/jamsend" target="#">README</a>
                 </span>
             </div>
         </div>
@@ -509,7 +513,7 @@
         font-size:2em;
     }
     button.big {
-        font-size:1.6em;
+        font-size:2.6em;
     }
     button.small {
         font-size:0.75em;
