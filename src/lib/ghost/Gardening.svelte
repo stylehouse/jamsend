@@ -158,11 +158,17 @@
     // Gardening can move the active w:raterminal around one Pier at a time
     async Gardening_Engagements(A,w,Ga) {
         const spec = `
-            < notice when a new potential interaction is possible
-            when Pier connect, or advertise...
+          we only limit our number of raterms to one
+           to have one thing playing
+          no regard for
+           < piling too many raterms onto one racast
+           < when a new potential interaction is possible
+          but those things could be managed
+        
             
-            we have a state of things we're engaged in
+        we have a state of things we're engaged in
             socially
+             some Pier are around
             technologically
              an enabled Sharing
 

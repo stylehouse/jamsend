@@ -1,6 +1,7 @@
 <script lang="ts">
-    import A from "$lib/p2p/A.svelte";
+    import Intro from "$lib/p2p/Intro.svelte";
+
 
     
 </script>
-<A />
+<Intro />

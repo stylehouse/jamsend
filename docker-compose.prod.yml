@@ -1,3 +1,5 @@
+# this file becomes docker-compose.yml on prod
+# < give readonly access to chrome in an app server, a racast
 x-common-volumes: &common-volumes
   music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music:ro"
 
@@ -9,7 +11,6 @@ services:
         FROM alpine:3.19
         WORKDIR /app
         RUN apk add --no-cache vim \
-            ffmpeg \
             nodejs \
             npm
         # Copy package files
@@ -27,8 +28,6 @@ services:
         CMD ["node", "dist-server/server.js"]
     container_name: jamsend-prod
     working_dir: /app
-    volumes:
-      - *music-volume
     ports:
       # this would bind to LAN address as well
       #  but WebRTC requires a secure context (can be localhost)
@@ -53,3 +52,63 @@ services:
     ulimits:
       nproc: 100
       nofile: 1024
+
+
+
+
+
+
+
+  peerjs:
+    image: peerjs/peerjs-server
+    container_name: jamsend-peerjs
+    ports:
+      - "172.17.0.1:9995:9995"
+    command: ["--port", "9995"]
+    # the Caddy handle_path in leproxy takes this bit of path off
+    #, "--path", "/peerjs-server"]
+    restart: 'always'
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    ulimits:
+      nproc: 100
+      nofile: 1024
+
+
+
+
+  tyrant-logger:
+    build:
+      context: .
+      dockerfile: ty/Dockerfile
+    container_name: jamsend-tyrant-logger
+    user: "1000:1000"  # Run as your UID to avoid permission issues
+    volumes:
+      - ./ty:/app
+      - ./logs:/logs
+    ports:
+      - "172.17.0.1:9393:9393"
+    environment:
+      - LOG_DIR=/logs
+      - MOJO_LOG_LEVEL=info
+      - MOJO_MODE=production
+    restart: 'always'
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    ulimits:
+      nproc: 100
+      nofile: 1024
+
+
