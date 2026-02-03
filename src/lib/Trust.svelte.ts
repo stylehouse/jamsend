@@ -144,7 +144,9 @@ export class OurPiers extends ThingsIsms {
         super(opt)
         this.set_table(`Pier`)
         // stealth config
-        // this.F.P.stealth = true
+        if (import.meta.env.MODE === 'production') {
+            this.F.P.stealth = true;
+        }
     }
 
 

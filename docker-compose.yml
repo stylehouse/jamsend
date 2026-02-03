@@ -44,30 +44,30 @@ services:
       nproc: 100               # Max 100 processes total
       nofile: 1024             # Max 1024 open files
 
-  peerjs:
-    image: peerjs/peerjs-server
-    container_name: jamsend-peerjs
-    ports:
-      - "172.17.0.1:9995:9995"
-    command: ["--port", "9995"]
-    # the Caddy handle_path in leproxy takes this bit of path off
-    #, "--path", "/peerjs-server"]
-    restart: 'always'
+  # peerjs:
+  #   image: peerjs/peerjs-server
+  #   container_name: jamsend-peerjs
+  #   ports:
+  #     - "172.17.0.1:9995:9995"
+  #   command: ["--port", "9995"]
+  #   # the Caddy handle_path in leproxy takes this bit of path off
+  #   #, "--path", "/peerjs-server"]
+  #   restart: 'always'
 
 
-  tyrant-logger:
-    build:
-      context: .
-      dockerfile: ty/Dockerfile
-    container_name: jamsend-tyrant-logger
-    user: "1000:1000"  # Run as your UID to avoid permission issues
-    volumes:
-      - ./ty:/app
-      - ./logs:/logs
-    ports:
-      - "172.17.0.1:9393:9393"
-    environment:
-      - LOG_DIR=/logs
-      - MOJO_LOG_LEVEL=info
-      - MOJO_MODE=production
-    restart: 'always'
+  # tyrant-logger:
+  #   build:
+  #     context: .
+  #     dockerfile: ty/Dockerfile
+  #   container_name: jamsend-tyrant-logger
+  #   user: "1000:1000"  # Run as your UID to avoid permission issues
+  #   volumes:
+  #     - ./ty:/app
+  #     - ./logs:/logs
+  #   ports:
+  #     - "172.17.0.1:9393:9393"
+  #   environment:
+  #     - LOG_DIR=/logs
+  #     - MOJO_LOG_LEVEL=info
+  #     - MOJO_MODE=production
+  #   restart: 'always'

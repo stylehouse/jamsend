@@ -141,7 +141,6 @@
     {:else}Left cave: {quit_fullscreen}.{/if}
     {#if M.amTyrant}amTyrant.{/if}
     {#if P.some_feature_is_ready}Ready.
-    those_Active
     {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
     <ul>
         {#each M.msgs as C (C.sc.msgs_id)}

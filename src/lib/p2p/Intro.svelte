@@ -91,6 +91,10 @@
     // < get <div transition:fade> working
 </script>
 
+<svelte:head>
+    <title>jamsend</title>
+</svelte:head>
+
 {#if !P.fade_splash}
     <div transition:fade={{duration:100}}>
     <FaceSucker altitude={44} fullscreen={true}>

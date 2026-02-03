@@ -11,7 +11,9 @@
    
     let {M}:{M:TrustingModus} = $props()
     let V = {}
-    const INSTANCE_TYRANT_PREPUB = "39c5108c0e1f7948"
+    const INSTANCE_TYRANT_PREPUB =
+        import.meta.env.INSTANCE_TYRANT_PREPUB
+        || "39c5108c0e1f7948"
     const REQUESTS_MAX_LIFETIME = 25
     onMount(async () => {
     await M.eatfunc({
@@ -840,7 +842,7 @@
             if (!ier.disconnected && !LP) {
                 // get it out of %Garden/%Incommunicado
                 //  which should lead back to LP-havity
-                console.log(`Pier${Pier.prepub} in reconnected, needs LP`)
+                console.log(`Pier:${Pier.prepub} in reconnected, needs LP`)
                 this.Pier_is_alive(w,Pier)
             }
         }

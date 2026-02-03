@@ -469,45 +469,59 @@
 
 <FaceSucker altitude={22} {fullscreen}>
     {#snippet content()}
-        <div class="graph" 
-            class:graphtightly={!fullscreen} 
-            bind:this={ele}
-        ></div>
+        <div class="relief">
+        <div class="wall">
+        </div>
+            <div class="graph" 
+                class:graphtightly={!fullscreen} 
+                bind:this={ele}
+            ></div>
 
-        {#if jamming}
-            <div class='uiing'>
+            {#if jamming}
+                <div class='uiing'>
+                    <div class='controls'>
+                        <button onclick={() => YES()} disabled={heist && true}>yeah</button>
+                        {#if title}<span class='np'>{artist} - {title}</span>{/if}
+                        <span>
+                            <button onclick={() => NO()} class='big'>nah</button>
+                        </span>
+                    </div>
+                    {#if heist}
+                        <div class='heisting'>
+                            <Pirate {M} {mem} {heist} {w}></Pirate>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+            <div class='uiing bottom'>
                 <div class='controls'>
-                    <button onclick={() => YES()} disabled={heist && true}>yeah</button>
-                    {#if title}<span class='np'>{artist} - {title}</span>{/if}
                     <span>
-                        <button onclick={() => NO()} class='big'>nah</button>
+                        <button onclick={() => toggle_fullscreen()}
+                            class={!quit_fullscreen ? 'small' : ''}>fullscreen</button>
+                    </span>
+
+                    <span>
+                        <ShareButton {P} />
+                        <a href="https://github.com/stylehouse/jamsend" target="#">README</a>
                     </span>
                 </div>
-                {#if heist}
-                    <div class='heisting'>
-                        <Pirate {M} {mem} {heist} {w}></Pirate>
-                    </div>
-                {/if}
-            </div>
-        {/if}
-        <div class='uiing bottom'>
-            <div class='controls'>
-                <span>
-                    <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
-                </span>
-
-                <span>
-                    <ShareButton {P} />
-                    <a href="https://github.com/stylehouse/jamsend" target="#">README</a>
-                </span>
             </div>
         </div>
     {/snippet}
 </FaceSucker>
 
 <style>
-    div {
-        background:black;
+    div.relief {
+        background:#b394ff;
+    }
+    div.wall {
+        background:url('seapiano.webp');
+        background-size:cover;
+        mix-blend-mode: multiply;
+        opacity: 0.7;
+        width:100%;
+        height: 100%;
+        position:absolute;
     }
     .np {
         font-size:2em;
@@ -542,20 +556,20 @@
         height: 94%;
         min-height: 50em;
         min-width: 40em;
-        background: black;
         color: #b394ff;
     }
     .graphtightly {
         height: calc(min(60vw, 60vh));
+        min-height: 6em;
     }
     .uiing {
         width: 100%;
         position:absolute;
         top:0;
         left:0;
-        border-radius:3em;
         display: flex;
         flex-direction: column;
+        background: black;
     }
     .bottom {
         top:initial;

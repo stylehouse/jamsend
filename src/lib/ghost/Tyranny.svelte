@@ -175,7 +175,9 @@
     // coninuously on Idzeugnation, once otherwise about to Good=true
     //  return true to stall there and repeat
     async Idvoyage_arrange(A,w,I):Promise<boolean> {
-        if (!I.sc.Idvoyage_sought) {
+        let ago = await I.i_wasLast('sought')
+        if (ago < 9) {
+            await I.i_wasLast('sought',true)
             // Idzeugnation already has brought this up
             if (await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)) {
                 return I.i({waits:"arranging mirage..."})
@@ -191,8 +193,7 @@
 
             let c = {Idvoyage,Alice,Bob,at}
             M.OurTyrant.instance.emit('intro',{Idvoyage:c})
-            I.sc.Idvoyage_sought = true
-                console.log(`🦑 Idvoyage sought`)
+            console.log(`🦑 Idvoyage sought`)
         }
         else {
             // we get %answer,failed about this request via e:'o Idzeugnosis'
@@ -257,6 +258,7 @@
     //    we only need to remember they need $n between some range
     //    and not be in the answered set Idzeug remembers
     USE_PRESIGS: 1,
+    PREHASH: '#############',
     async Idzeug_i_Idzeugi(w,Idzeug:OurIdzeug,many=1) {
         let N = []
         let s = Idzeug.stashed
@@ -282,7 +284,7 @@
             let Idzeuginance = `${whowhat}-${sign}`
 
             let url = new URL(location.origin+location.pathname)
-            url.hash = Idzeuginance
+            url.hash = this.PREHASH + Idzeuginance
             let Idzeugi = url.toString()
 
 
@@ -294,7 +296,7 @@
     },
     // < put an ad for a hashtag here?
     reset_location_hash() {
-        window.location.hash = 'jamsend'
+        window.location.hash = this.PREHASH + 'jamsend'
     },
     encode_Idzeugi_advice(c) {
         let name = c.name
@@ -316,7 +318,7 @@
 
     // entry: find new Idzeug in uri
     async Idzeugmance(A,w) {
-        let m = window.location.hash.match(/^#([\w,+_:-]{16,})$/);
+        let m = window.location.hash.match(/^#+([\w,+_:-]{16,})$/);
         if (m) {
             let [prepub,advice,sign] = m[1].split('-')
             let {name} = this.decode_Idzeugi_advice(advice)
@@ -549,6 +551,9 @@
 
 
 
+
+//#endregion
+//#region Idzeugnosis
 
     // the authority checks an Idzeug
     // is already on the network (social graph)
