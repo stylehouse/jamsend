@@ -151,15 +151,17 @@
 
         let LP = this.o_LP(ier)
         if (!LP?.oa({const:1,ready:1})) {
+            w.i({waits:LP})
             return true
         }
+        // also wait for a Ping
+        if (!this.is_LP_okay(LP)) {
+            w.i({waits:LP})
+            return true
+        }
+
         // done the RingUp phase of this want of a %Ringing
         return false
-    },
-    is_LP_okay(LP) {
-        if (!LP) return
-        return LP.oa({const:1,ready:1})
-            && LP.oa({Ping:1,good:1})
     },
 
     async Ringing(A,w) {
@@ -838,7 +840,7 @@
             if (!ier.disconnected && !LP) {
                 // get it out of %Garden/%Incommunicado
                 //  which should lead back to LP-havity
-                console.log(`Pier:${Pier.prepub} in reconnected, needs LP`)
+                console.log(`Pier${Pier.prepub} in reconnected, needs LP`)
                 this.Pier_is_alive(w,Pier)
             }
         }

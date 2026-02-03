@@ -139,6 +139,7 @@ export class IdentoCrypto {
 //#region idento
 // lifecycle-related helpers
 export type storableIdento = {pub:string,key:string}
+export type PrePub = string
 export class Idento extends IdentoCrypto {
     // url bit with a pubkey
     prepub_only = false
@@ -316,6 +317,8 @@ export class Peerily {
     // if their browser is refusing the directory api
     // > some attempt at compatibility?
     directory_compat_mode = $state()
+    // Gardening can move the active raterm around one Pier at a time
+    switchup_Engagements?:Function
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
@@ -709,7 +712,7 @@ export class Pier {
 
     send_stuff({crypto,data,buffer}) {
         if (!this.send_ready) {
-            console.error(`${this} channel not ready, dropping emit`);
+            console.error(`${this.pub} !ready, dropping emit`);
             return
         }
 

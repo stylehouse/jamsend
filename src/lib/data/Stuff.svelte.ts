@@ -577,6 +577,15 @@ export class Stuff extends TimeOffice {
                     }
                     await q.pairs_fn?.(a,b)
                 }
+
+                if (q.gone_fn) {
+                    for (let [a,b] of pairs) {
+                        if (a && !b) {
+                            q.gone_fn(a)
+                        }
+                        
+                    }
+                }
             }
 
             if (partial) {

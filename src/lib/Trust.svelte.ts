@@ -1,11 +1,12 @@
-import { keyser, type TheC } from "./data/Stuff.svelte.ts";
+import { keyser, type TheC, type TheN } from "./data/Stuff.svelte.ts";
 import { ThingIsms, ThingsIsms } from "./data/Things.svelte.ts";
 import {Modus} from "./mostly/Modus.svelte.ts";
-import { Idento, Peering, PeeringFeature, Pier, PierFeature, type TrustName } from "./p2p/Peerily.svelte";
+import { Idento, Peering, PeeringFeature, Pier, PierFeature, type PrePub, type TrustName } from "./p2p/Peerily.svelte";
 import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { tick, type Component } from "svelte";
 import type { KVStore } from "./data/IDB.svelte.ts";
 import MTrusting from "./MTrusting.svelte";
+import { SvelteMap } from "svelte/reactivity";
 
 //#endregion
 //#region F:Trusting
@@ -198,6 +199,9 @@ export class TrustingModus extends Modus {
     OurTyrant:OurPier
     amTyrant = $state(false)
     mainPeering:OurPeering // there's a function called OurPeering
+
+    // the UI workings list of Pier by the En%Engage
+    Active:TheN = $state([])
 
     constructor(opt:Partial<TrustingModus>) {
         super(opt)

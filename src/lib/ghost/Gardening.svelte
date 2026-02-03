@@ -106,7 +106,7 @@
             //  don't connect to random Piers yet
             return
         }
-        let Ga = w.oai({Garden:1})
+        let Ga = w.oai({Garden:1,place:1})
         // make Pier identifying sc with enough noise for replace() to make sense
         // notice who is available
         // build up a list of good Piers
@@ -125,10 +125,6 @@
                 })
             }
         })
-
-        // try to reach optimal engagement
-        await this.Gardening_Engagements(A,w,Ga)
-
         // try to connect some until all connected or %Incommunicado
         await this.Gardening_Initiative(A,w,Ga)
 
@@ -137,10 +133,18 @@
         //   and nobody whittles Tyrant despite them not being Good
         let unGood = all_Piers.filter(Pier => !Good_Piers.includes(Pier))
         await this.Gardening_Decomposing(A,w,Ga,unGood)
+
+
+
+        // try to reach optimal engagement
+        await this.Gardening_Engagements(A,w,Ga)
+
     },
     descPier(Pier:OurPier) {
         let {name,prepub} = Pier
-        return ex({name,Pier}, name != prepub ? {prepub} : {})
+        return ex({name,Pier}, 
+            name != prepub ? {prepub}
+            : {})
     },
 
 
@@ -149,9 +153,10 @@
 
 
 //#endregion
-//#region Gardening
+//#region Engage
 
-    async Gardening_Engagements(A,w) {
+    // Gardening can move the active w:raterminal around one Pier at a time
+    async Gardening_Engagements(A,w,Ga) {
         const spec = `
             < notice when a new potential interaction is possible
             when Pier connect, or advertise...
@@ -175,10 +180,95 @@
         
         output is a bunch of inhibition for all the Pier's features
          racasting if 0, raterminal if <3
-        `
+        `;
+
+        let inhibit = async (En,n:number) => {
+            let ier = En.sc.Pier.instance
+            for (let to of names) {
+                // starts out in a house of attention
+                // not throwing on a record right away...
+                // but sharing is possible
+                console.log(`telling our ${ier.pub} ${to} inhib=${n}`)
+                ier.inhibited_features.set(to,n)
+            }
+            await En.r({Inhibited:n})
+        }
+        let get_on = async (En) => {
+            await inhibit(En,0)
+            await Ga.r({Latest_Engagement:1},{...desc(En)})
+
+            // for whatever reason (too much skipping tracks)
+
+            M.F.P.switchup_Engagements = async () => {
+                await inhibit(En,0)
+
+            }
+        }
+        let desc = (Go:TheC) => this.descPier(Go.sc.Pier)
+
+        let Our = this.o_Our_main_Peering(w)
+        let Peering = Our.sc.Peering as OurPeering
+        let eer = Peering.instance
+        let names = [...eer.features.keys()]
+
+        for (let Pe of Ga.o({Perfect:1,Pier:1})) {
+            let En = Ga.oai({Engage:1,...desc(Pe)})
+            En.sc.Pe = Pe // motivation ion
+        }
+
+        let one_on = false
+        for (let En of Ga.o({Engage:1,Pier:1})) {
+            let ier = En.sc.Pier.instance
+
+            // init - nothing
+            if (!En.oa({Inhibited:1})) await inhibit(En,9)
+
+            if (Ga.oa({Engaged:1,...desc(En)})) {
+                // we are
+                if (!M.Active.includes(En)) M.Active.push(En)
+            }
+            else if (Ga.o({Engaged:1}).length < 4) {
+                // volunteer - sharing, no listen
+                await inhibit(En,2)
+                Ga.i({Engaged:1,...desc(En)})
+            }
+
+            if (En.o1({Inhibited:1})[0] < 1) {
+                if (one_on) throw "multi on"
+                one_on = En
+            }
 
 
-        // let inhibition = ier.inhibited_features.get(this.F.trust_name) || 0
+            // side note,
+            let Pe = En.sc.Pe
+            if (Pe.c.drop) En.i({orphane:1})
+            if (Pe.sc.gonelikeatrain) En.i({orphane:'C'})
+        }
+
+
+        let N = Ga.o({Engage:1,Pier:1})
+        // uninhibit them, spawning eg w:raterminal there
+        if (!one_on && N.length) {
+            let one
+            // make sure we don't just re-pick our 
+            let loop = 5
+            while (!one) {
+                one = N[this.prandle(N.length)]
+                if (loop-- < 0) break // settle for Latest_Engagement
+                if (Ga.oa({Latest_Engagement:1,...desc(one)})) one = null
+            }
+            if (!one) throw "must be"
+
+            await get_on(one)
+        }
+        if (!one_on && !N.length) {
+            // < sanely coincides with Nobody is online
+        }
+    },
+
+    // < place in raterminal for...
+    async lots_of_nah_for_a_while(w) {
+        await M.F.P.switchup_Engagements?.(w)
     },
 
 
@@ -233,13 +323,14 @@
             // < de-instance it? probably a little early in development of this thing for niceties
             //    but can it then connect to us alright if it comes online?
         }
+        let PerfectN = []
         for (let I of Ga.o({Initiative:1,Pier:1})) {
             let Pier = I.sc.Pier
             let prepub = I.sc.Pier.prepub
             // this keeps applying our will to connect
             let Pier_ok = !await this.RingUp(A,w,Pier,"Initiative",I)
             if (!I.sc.ringing_at) {
-                console.log(`🌱 Initiative Pier:${Pier.name}`)
+                console.log(`🌱 Pier:${Pier.name}`)
                 I.sc.ringing_at = now_in_seconds()
             }
             // peer server can respond soon that they aren't online
@@ -272,7 +363,15 @@
                         Incommunicado(I)
                     }
                 }
-                Ga.ago('started_at') > 5
+                else {
+                    // this is where it's at
+
+                    PerfectN.push(I)
+
+                    if (Ga.ago('started_at') > 5) {
+                        // even moreso, start thinking about..
+                    }
+                }
             }
         }
 
@@ -280,16 +379,23 @@
         M.F.P.Nobody_Is_Online =
             Ga.ago('started_at') > 5
             && !Ga.oa({Initiative:1,Pier:1}) && true
-        return
-        await Ga.replace({Nobody_Is_Online:1},async () => {
-            if (!Ga.oa({Initiative:1})) {
-                Ga.i({Nobody_Is_Online:'🌱'})
-                M.F.P.Nobody_Is_Online = true
-            }
-            else {
-                M.F.P.Nobody_Is_Online = false
-            }
-        })
+
+
+
+
+        await Ga.replace({Perfect:1},async () => {
+            for (let I of PerfectN) {
+                // a Pier in an ideal state of connection
+                // < unreliability rating based on recent loss of this quality
+                // while this exists, we organise with them...
+                Ga.i({Perfect:1,...desc(I)})
+            }    
+        },
+        // < discovering all this sensibly. you can notice things vanish:
+        {gone_fn:(Pe)=>{
+            Pe.sc.gonelikeatrain = now_in_seconds()
+        }})
+
     },
 
 
@@ -431,6 +537,15 @@
         // chunky
         // console.log(`pinging ${pong_ago} ${Ping.sc.bad||'ok'}`)
     },
+
+    // < make simplicities like:
+    // if
+    is_LP_okay(LP) {
+        if (!LP) return
+        return LP.oa({const:1,ready:1})
+            && LP.oa({Ping:1,good:1})
+    },
+    // then
     Pier_is_alive(w,Pier) {
         let Ga = w.oai({Garden:1})
         for (let In of Ga.o({Incommunicado:1,Pier})) {

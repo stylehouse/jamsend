@@ -94,75 +94,117 @@
 
 
 
+{#snippet those_Active()}
+    {#if M.Active.length}
+        <h3>Active {M.mainPeering?.instance?.Id.pretty_pubkey()}</h3>
+        <div class="valued">
+            <ul>
+            {#each M.Active as En (En.sc.name)}
+
+                
+                <li>
+                    <span class="tech">
+                        {#each En.sc.Pier.instance.inhibited_features as [to,n] (to)}
+                            {to}:{n}
+                        {/each}
+                    </span>
+                    Pier: <span class="title">{En.sc.name} </span>
+                </li>
+
+            {/each}
+            </ul>
+        </div>
+    {/if}
+
+
+
+    {#if M.F.P.Nobody_Is_Online}
+        <p>
+            Nobody is online
+            <span>
+                <span style="position:absolute; 
+                    pointer-events:none;">🌱</span>
+                <span style="font-size:0.5em">
+                    <ShareButton {P} />
+                </span>
+            </span>
+        </p>
+    {/if}
+{/snippet}
+
+
+<!-- plateau of mostly introductory language -->
+
+{#snippet nice_conversation()}
+
+    {#if P.Welcome}Welcome.
+    {:else}Left cave: {quit_fullscreen}.{/if}
+    {#if M.amTyrant}amTyrant.{/if}
+    {#if P.some_feature_is_ready}Ready.
+    those_Active
+    {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
+    <ul>
+        {#each M.msgs as C (C.sc.msgs_id)}
+            <li class={classify(C)}>{C.sc.say}</li>
+        {/each}
+    </ul>
+
+    <span class='ohno'>
+        {#if a_while_passes}{any_problems}{/if}
+    </span>
+    
+    {#if share_act}
+        <span class="collections inrow" title="
+        Access to (some part of) your filesystem is required to share.
+        ">
+            To share them music,
+            <span class="arow" style="font-size:1.8em;">
+                can you please
+                <ActionButtons actions={[share_act]} />
+            </span>
+            . . . . . .<button onclick={() => no_share()}
+                style="margin:2em;"
+                >nah</button>
+        </span>
+    {/if}
+    
+    
+    {@render those_Active()}
+
+{/snippet}
+
+
+<!-- also, project it on the screen -->
 
 {#if !pseudofading}
-<div transition:fade={{duration:3500}}>
-    <div>
-<FaceSucker altitude={33} {fullscreen} >
-    {#snippet content()}
-        <div class='uiing bottom'>
-            <div class='controls'>
-                <span class='rigid'>
-                    {#if !P.dodgy_user}
-                        <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
-                    {/if}
-                </span>
-
-
-
-                <div class="content">
-                    {#if P.Welcome}Welcome.
-                    {:else}Left cave: {quit_fullscreen}.{/if}
-                    {#if M.amTyrant}amTyrant.{/if}
-                    {#if P.some_feature_is_ready}Ready.
-                    {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
-                    <ul>
-                        {#each M.msgs as C (C.sc.msgs_id)}
-                            <li class={classify(C)}>{C.sc.say}</li>
-                        {/each}
-                    </ul>
-
-                    <span class='ohno'>
-                        {#if a_while_passes}{any_problems}{/if}
+    <div transition:fade={{duration:3500}}>
+        <div>
+    <FaceSucker altitude={33} {fullscreen} >
+        {#snippet content()}
+            <div class='uiing bottom'>
+                <div class='controls'>
+                    <span class='rigid'>
+                        {#if !P.dodgy_user}
+                            <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                        {/if}
                     </span>
-                    
-                    {#if share_act}
-                        <span class="collections inrow" title="
-                        Access to (some part of) your filesystem is required to share.
-                        ">
-                            To share them music,
-                            <span class="arow" style="font-size:1.8em;">
-                                can you please
-                                <ActionButtons actions={[share_act]} />
-                            </span>
-                            . . . . . .<button onclick={() => no_share()}
-                                style="margin:2em;"
-                                >nah</button>
-                        </span>
-                    {/if}
-                    
-                    {#if M.F.P.Nobody_Is_Online}
-                        <p>
-                            Nobody is online
-                            <span>
-                                <span style="position:absolute; 
-                                    pointer-events:none;">🌱</span>
-                                <span style="font-size:0.5em">
-                                    <ShareButton {P} />
-                                </span>
-                            </span>
-                        </p>
-                    {/if}
-                </div>
 
-                <span>
-                </span>
+
+
+                    <div class="content">
+                        
+                        {@render nice_conversation()}
+
+                    </div>
+
+                    <span>
+                    </span>
+                </div>
             </div>
+        {/snippet}
+    </FaceSucker>
         </div>
-    {/snippet}
-</FaceSucker>
     </div>
-</div>
 {/if}
 
     <!-- {#if M.stashed}
@@ -170,6 +212,14 @@
     {/if} -->
 
 <style>
+    .valued {
+        object-fit: cover;
+        border-radius: 0.3rem;
+        border: 2px solid rgb(51, 90, 134);
+    }
+    .title {
+        font-size: 1.6em;
+    }
     .mediocre {
         color: #7e7a47;
     }
