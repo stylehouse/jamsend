@@ -466,7 +466,10 @@
 
 <FaceSucker altitude={22} {fullscreen}>
     {#snippet content()}
-        <div class="graph" bind:this={ele}></div>
+        <div class="graph" 
+            class:graphtightly={!fullscreen} 
+            bind:this={ele}
+        ></div>
 
         {#if jamming}
             <div class='uiing'>
@@ -532,9 +535,14 @@
     .graph {
         width: 100%;
         top:6%;
-        height: calc(min(60vw, 60vh));
+        height: 94%;
+        min-height: 50em;
+        min-width: 40em;
         background: black;
         color: #b394ff;
+    }
+    .graphtightly {
+        height: calc(min(60vw, 60vh));
     }
     .uiing {
         width: 100%;
