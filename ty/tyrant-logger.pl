@@ -11,9 +11,15 @@ my $current_fh;
 my $current_path = '';
 my $flush_timer;
 
+get '/' => sub ($c) {
+    my $remote_ip = $c->tx->remote_address;
+    app->log->info("/ from $remote_ip");
+    
+    $c->render(json => {ok => 1, remote_ip => $remote_ip});
+};
 
-# POST endpoint: /log (body is JSON string or object)
-post '/log' => sub ($c) {
+# POST endpoint: / (body is JSON string or object)
+post '/' => sub ($c) {
     my $data = $c->req->body;
     
     unless ($data) {
@@ -53,6 +59,10 @@ post '/log' => sub ($c) {
             $flush_timer = undef;
         });
     }
+
+    my $remote_ip = $c->tx->remote_address;
+    # < remove this after verifying not public
+    app->log->info("/ post from $remote_ip");
     
     $c->render(json => {ok => 1});
 };

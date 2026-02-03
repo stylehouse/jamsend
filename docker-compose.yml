@@ -60,10 +60,12 @@ services:
       context: .
       dockerfile: ty/Dockerfile
     container_name: jamsend-tyrant-logger
+    user: "1000:1000"  # Run as your UID to avoid permission issues
     volumes:
+      - ./ty:/app
       - ./logs:/logs
     ports:
-      - "172.17.0.1:9393:3000"
+      - "172.17.0.1:9393:9393"
     environment:
       - LOG_DIR=/logs
       - MOJO_LOG_LEVEL=info

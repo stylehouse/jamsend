@@ -13,7 +13,12 @@
    
     let {M}:{M:TrustingModus} = $props()
     let V = {}
-    const TYRANT_URL = 'https://jamdense.duckdns.org/l/log';
+    // < replicate the reverse proxy handle_path for /log, see git:leproxy 15d26579f84a9d3a8f7110b6d04cdd973b3fa443
+    // < parameterise the Tyrant,Idvoyages thing
+    //    log lots of stuff by time this way
+    //    namespaces etc
+    // < server env has tyrant pubkey, sessions, then /log could be public
+    const TYRANT_URL = '/log';
 
     const REQUESTS_MAX_LIFETIME = 25
     onMount(async () => {
@@ -30,7 +35,7 @@
         let eer = M.mainPeering.instance
         if (!eer) return w.i({waits:'instantiate ourselves...'})
 
-        w.i({Idvoyaging:1,Now:{Question:"is"},Before:'bloop'})
+        w.i({Idvoyaging:1,Now:{Question:"is"},Before:{splat:'3lv1s'}})
 
         await this.Tyranny_of_Idvoyage(A,w,eer)
 
@@ -56,6 +61,7 @@
             }).catch((er) => {
                 throw erring("Tyrant Idvoyaging upload",er)
             });
+            console.log(`logged Idvoyaging ${Now.depth||'?'}`)
             w.drop(Idv)
         }
     },
