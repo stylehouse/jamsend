@@ -123,7 +123,7 @@ export class SharesModus extends RadioModus {
 
 }
 //#endregion
-//#region M:Sharee
+//#region M:Sharee Radio!
 export class ShareeModus extends RadioModus {
     declare S:PierSharing
     declare F:PeeringSharing
@@ -148,20 +148,30 @@ export class ShareeModus extends RadioModus {
     // describe the minds regarding trust
     // < rename perm... it's both pieces of trust, theirs and ours...
     async do_A() {
+        let PF = this.PF
+        let F = PF.F
+        let ier = PF.Pier
+
         await this.r({A:1},{})
+        // the frontend
         let V = this.i({A:'visual'})
         V.i({w:'cytotermicaster'})
         
+        // the give|take. each could be their own A?
+        // < is one A for both ra* here...
+        //    confusing their %records and our %records?
         let A = this.i({A:'audio'})
 
         // < so perm can change over time, do this every time, replacing %w?
         let perm = this.PF.perm
-        if (perm.local) {
+        let inhibition = ier.inhibited_features.get(this.F.trust_name) || 0
+        if (perm.local && inhibition <3) {
             // we grant them read access, they receive
             A.i({w:'racaster'})
         }
-        if (perm.remote) {
+        if (perm.remote && inhibition < 1) {
             // they grant us read access, we receive
+            //  easier to inhibit of the two functions
             A.i({w:'raterminal'})
         }
         if (perm.local && perm.remote) {

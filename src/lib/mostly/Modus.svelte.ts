@@ -61,11 +61,18 @@ abstract class ModusItself extends TheC  {
         if (!this.stashed) return
         //  or PF.perm.*
         if (this.PF) {
+            let PF = this.PF
             // but it requires we hear their trust before M.started
-            if (!this.PF.Pier.heard_trust) return
+            if (!PF.Pier.heard_trust) return
+
             // listen to .perm.* changes
-            let important = this.PF?.perm;
+            let important = PF.perm;
             important && Object.entries(important)
+
+            // and enablements, another softer layer of the same info:
+            let F = PF.F
+            let ier = PF.Pier
+            let inhibition = ier.inhibited_features.get(F.trust_name)
         }
         this.Modus_i_elvis('do',{Aw:'',fn:async () => {
             // downloads any relevant perms by replacing the A/w situation

@@ -152,13 +152,33 @@
 
 
     async Gardening_Engagements(A,w) {
-        // < notice when a new potential interaction is possible
-        //    when Pier connect, or advertise...
-        
-        // we have a state of things we're engaged in
+        const spec = `
+            < notice when a new potential interaction is possible
+            when Pier connect, or advertise...
+            
+            we have a state of things we're engaged in
+            socially
+            technologically
+             an enabled Sharing
 
-        // that informs others of roles they could play, if there are any spare
-        //  
+            that informs others of roles they could play
+             if there are any spare
+            
+        first:
+         find Pier we trust to ftp
+          racaster will already be there...
+           but should wait for this as well.
+            it's a complicated do_A() that reads permissions
+             so it just needs to read this too...
+          so we offer them dedication to it
+           as it's unlikely we'll get >1 raterm per racaster this week
+        
+        output is a bunch of inhibition for all the Pier's features
+         racasting if 0, raterminal if <3
+        `
+
+
+        // let inhibition = ier.inhibited_features.get(this.F.trust_name) || 0
     },
 
 

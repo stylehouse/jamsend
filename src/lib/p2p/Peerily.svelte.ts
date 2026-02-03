@@ -513,6 +513,7 @@ export class Peerily {
 
 
 // aka Participant
+type Inhibition = number
 export class Pier {
     P:Peerily
     stashed:StashedPier = $state()
@@ -532,7 +533,9 @@ export class Pier {
     eer:Peering
     con:DataConnection
 
-    // for ui drawers - see features
+    // for user-user focus - see Gardening_Engagements
+    //  a soft layer on top of TrustName
+    inhibited_features:SvelteMap<TrustName,Inhibition> = $state(new SvelteMap())
 
     constructor(opt) {
         Object.assign(this, opt)
