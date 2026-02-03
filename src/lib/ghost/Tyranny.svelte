@@ -9,7 +9,6 @@
     import Modus from "$lib/mostly/Modus.svelte";
     import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
     import type { DirectoryListing, DirectoryShare } from "$lib/p2p/ftp/Directory.svelte";
-    import Directory from "./Directory.svelte";
    
     let {M}:{M:TrustingModus} = $props()
     let V = {}
@@ -35,35 +34,38 @@
         let eer = M.mainPeering.instance
         if (!eer) return w.i({waits:'instantiate ourselves...'})
 
-        w.i({Idvoyaging:1,Now:{Question:"is"},Before:{splat:'3lv1s'}})
 
+        // this kind of thing is logged:
+        // this.log_Idvoyage(w,{Question:"is"},{splat:'bleep'})
         await this.Tyranny_of_Idvoyage(A,w,eer)
 
+
         for (let e of this.o_elvis(w,'Periodically')) {
-            // < capture daily user stats. 
+            // < daily user stats. 
             //    roll off their intensity if large network depth
+            //  < interesting proof-of-social-graph ...
         }
-
-        await this.Tyranny_of_Bookkeeping(A,w,eer)
     },
-    // save info
-    async Tyranny_of_Bookkeeping(A,w,eer:Peering) {
-        // < temp? forget about it
-        // let the = await this.sorting_out_the_Writer(A,w,eer)
+    // at the end, to log an Idvoyaging we gave out
+    log_Idvoyage(w,Now,Before) {
+        let queue = M.log_Idvoyage_queue ||= []
+        queue.push({Now,Before})
 
-
-        for (let Idv of w.o({Idvoyaging:1,Now:1,Before:1})) {
-            let {Now,Before} = Idv.sc
-            // off to a perl webserver to write to a log
-            fetch(TYRANT_URL, {
-                method: 'POST',
-                body: JSON.stringify({Now,Before})
-            }).catch((er) => {
-                throw erring("Tyrant Idvoyaging upload",er)
-            });
-            console.log(`logged Idvoyaging ${Now.depth||'?'}`)
-            w.drop(Idv)
-        }
+        let go = M.log_Idvoyage_throttle ||= throttle(() => {
+            console.log(`logged Idvoyaging x${queue.length}`)
+            while (1) {
+                let sc = queue.shift()
+                if (!sc) break
+                // off to a perl webserver to write to a log
+                fetch(TYRANT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({Now,Before})
+                }).catch((er) => {
+                    throw erring("Tyrant Idvoyaging upload",er)
+                });
+            }
+        },80)
+        go()
     },
 
     // onDestroy
@@ -80,41 +82,6 @@
         }
     },
     
-    // Tyrant wants an app data directory writer thingy
-    async wrangle_storage(A,w,share:DirectoryShare,path?:string[]) {
-        // randomly go through radiostock
-        // < because there's no way to project aims that far?
-        //  not with Miome because it's also too far, beyond this.S (F:Trusting)
-        // await this.Miome(A,{io:'radiostock'})
-        if (!share.modus) return w.i({waits:"storage modus"}) && 0
-        for (let io of share.modus.o({io:'radiostock'})) {
-            await A.r({io:'radiostock'},io.sc)
-        }
-
-        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"}) && 0
-        let io = A.o({io:'radiostock'})[0]
-        let uri = path.join('/')
-        for (let the of w.o({theStorage:1})) {
-            if (the.sc.theStorage != uri) {
-                // it is changing directories for a new day
-                the.sc.Writer?.close()
-                w.drop(the)
-            }
-        }
-        // a stable C object:
-        let the = w.oai({theStorage:uri})
-        if (!the.sc.asked) {
-            io.sc.aimOpen({path,return_fn: (D) => {
-                // continuously - we will always have the latest D
-                if (!the.sc.D) this.i_elvis(w)
-                the.sc.D = D
-            }})
-            the.sc.asked = 1
-        }
-        if (!the.sc.D) return w.i({waits:"gotStorage"}) && 0
-
-        return the
-    },
     // Tyrant or invitee can want to bring up shares...
     async Introducing_storage(A,w,eer:Peering) {
         // wants to log social graph in the first share we find
@@ -216,7 +183,7 @@
             ier.emit('intro',{Idvoyage:Now})
             console.log(`🦑 Idvoyage away: ${Now.depth}`)
 
-            w.i({Idvoyaging:1,Now,Before})
+            this.log_Idvoyage(w,Now,Before)
             // < capture c
         }
     },
@@ -797,6 +764,43 @@
 
         // then you'd:
             // await the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
+    },
+
+
+    // Tyrant wants an app data directory writer thingy
+    async wrangle_storage(A,w,share:DirectoryShare,path?:string[]) {
+        // randomly go through radiostock
+        // < because there's no way to project aims that far?
+        //  not with Miome because it's also too far, beyond this.S (F:Trusting)
+        // await this.Miome(A,{io:'radiostock'})
+        if (!share.modus) return w.i({waits:"storage modus"}) && 0
+        for (let io of share.modus.o({io:'radiostock'})) {
+            await A.r({io:'radiostock'},io.sc)
+        }
+
+        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"}) && 0
+        let io = A.o({io:'radiostock'})[0]
+        let uri = path.join('/')
+        for (let the of w.o({theStorage:1})) {
+            if (the.sc.theStorage != uri) {
+                // it is changing directories for a new day
+                the.sc.Writer?.close()
+                w.drop(the)
+            }
+        }
+        // a stable C object:
+        let the = w.oai({theStorage:uri})
+        if (!the.sc.asked) {
+            io.sc.aimOpen({path,return_fn: (D) => {
+                // continuously - we will always have the latest D
+                if (!the.sc.D) this.i_elvis(w)
+                the.sc.D = D
+            }})
+            the.sc.asked = 1
+        }
+        if (!the.sc.D) return w.i({waits:"gotStorage"}) && 0
+
+        return the
     },
 
 
