@@ -26,16 +26,29 @@
     
     // < go back to fullscreen? it doesn't
     let never_ready = true
-    let any_problems = !P.some_feature_is_ready
-        || !P.Welcome
-        || P.needs_share_open_action
+    let any_problems = $derived(
+        !P.some_feature_is_ready && (
+            !P.some_feature_is_nearly_ready ? 'none' : `nothing's`
+        )
+        || !P.Welcome && "try refreshing" // misleading advice but very helpful
+        || P.needs_share_open_action && "need share"
+)
     let unready = $derived(any_problems && never_ready)
+    // ready means we can unfullscreen,
+    //  and reveal a fullscreen UI:Cytoscape
     let can_fullscreen = $derived(unready && !quit_fullscreen)
+
+    let a_while_passes = $state(false)
+
     onMount(() => {
         // remove corporate logo asap, but dont make a flicker
         setTimeout(() => {
             M.F.P.fade_splash = true
         },234)
+        // reveal problems talk after a while
+        setTimeout(() => {
+            a_while_passes = true
+        },6234)
     })
     $effect(() => {
         if (!unready) never_ready = false
@@ -81,6 +94,7 @@
 
 
 
+
 {#if !pseudofading}
 <div transition:fade={{duration:3500}}>
     <div>
@@ -107,6 +121,10 @@
                             <li class={classify(C)}>{C.sc.say}</li>
                         {/each}
                     </ul>
+
+                    <span class='ohno'>
+                        {#if a_while_passes}{any_problems}{/if}
+                    </span>
                     
                     {#if share_act}
                         <span class="collections inrow" title="

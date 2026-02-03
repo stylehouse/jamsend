@@ -20,7 +20,7 @@
     //  ier.say_trust() will be avoided until ier_is_Good()
     async Introducing(A,w:TheC) {
         let In = w.oai({Induction:1})
-        In.sc.began_at = now_in_seconds_with_ms()
+        In.sc.began_at ||= now_in_seconds_with_ms()
         let {Our,Id} = this.Our_main_Id(w)
         let Peering = Our.sc.Peering as OurPeering
         // stash important us-info on this Peering...
