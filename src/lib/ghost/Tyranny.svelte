@@ -68,39 +68,6 @@
         go()
     },
 
-    // onDestroy
-    //  page reloads do not manage to close the Writer via do_stoppage()
-    // < reload() procedure, coordinating with engaged Pier
-    //    an unmount everything via {#if}
-    do_stoppage() {
-        for (let A of this.o({A:1})) {
-            for (let w of A.o({w:1})) {
-                for (let the of w.o({theStorage:1})) {
-                    the.sc.Writer?.close()
-                }
-            }
-        }
-    },
-    
-    // Tyrant or invitee can want to bring up shares...
-    async Introducing_storage(A,w,eer:Peering) {
-        // wants to log social graph in the first share we find
-        //  this indicates whether a share is functioning
-        // see also cytotermi_pirating_heist_loadshares()
-        // in some share:
-        let sharing = eer.features.get('ftp') as unknown as PeeringSharing
-        let share = sharing.shares.asArray()[0] as unknown as DirectoryShare
-        if (!share) return //throw "no autoviv share?"
-        if (!share.started && !M.F.P.directory_compat_mode) {
-            let open = share.actions.filter(act => act.label == 'open share')[0]
-            // -> UI
-            M.F.P.needs_share_open_action = open
-        }
-        else {
-            M.F.P.needs_share_open_action = null
-            return share
-        }
-    },
     // do induction certs
     async Tyranny_of_Idvoyage(A,w,eer){
         const point = `
@@ -450,7 +417,7 @@
             return
         }
         let prepub = I.sc.prepub
-        if (1) {
+        if ('not yourself') {
             let {Id} = this.Our_main_Id(w)
             if (Id+'' == prepub) return no("invited yourself")
         }
@@ -765,8 +732,19 @@
         // then you'd:
             // await the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
     },
-
-
+    // onDestroy
+    //  page reloads do not manage to close the Writer via do_stoppage()
+    // < reload() procedure, coordinating with engaged Pier
+    //    an unmount everything via {#if}
+    do_stoppage() {
+        for (let A of this.o({A:1})) {
+            for (let w of A.o({w:1})) {
+                for (let the of w.o({theStorage:1})) {
+                    the.sc.Writer?.close()
+                }
+            }
+        }
+    },
     // Tyrant wants an app data directory writer thingy
     async wrangle_storage(A,w,share:DirectoryShare,path?:string[]) {
         // randomly go through radiostock

@@ -4,7 +4,8 @@
     import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
     import { now_in_seconds, PeeringFeature } from '$lib/p2p/Peerily.svelte';
-    import type { DirectoryListing } from "$lib/p2p/ftp/Directory.svelte";
+    import type { DirectoryListing, DirectoryShare } from "$lib/p2p/ftp/Directory.svelte";
+    import type { PeeringSharing } from "$lib/p2p/ftp/Sharing.svelte";
 
     // these One/Many things are given to a Things/Thing UI
     // Shares/Share is the filesystem terminal
@@ -22,6 +23,25 @@
     await M.eatfunc({
 
 
+    // Tyrant or invitee can want to bring up shares...
+    async Introducing_storage(A,w,eer:Peering) {
+        // wants to log social graph in the first share we find
+        //  this indicates whether a share is functioning
+        // see also cytotermi_pirating_heist_loadshares()
+        // in some share:
+        let sharing = eer.features.get('ftp') as unknown as PeeringSharing
+        let share = sharing.shares.asArray()[0] as unknown as DirectoryShare
+        if (!share) return //throw "no autoviv share?"
+        if (!share.started && !M.F.P.directory_compat_mode) {
+            let open = share.actions.filter(act => act.label == 'open share')[0]
+            // -> UI
+            M.F.P.needs_share_open_action = open
+        }
+        else {
+            M.F.P.needs_share_open_action = null
+            return share
+        }
+    },
 
 
 

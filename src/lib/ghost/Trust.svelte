@@ -42,41 +42,27 @@
         this.stashed.PierSerial ||= 0
         this.stashed.IdzeugSerial ||= 0
 
-        await this.Trusting_i_Our_Things(A,w)
+        await this.i_Our_Things(A,w)
         // and so here we are, with a sane set of %Our
         this.w = w
 
-        // these must operate on stable %Our
-        await this.Trusting_API(A,w)
+        // these must operate on stable %Our, but before etc
+        await this.Trusting_API_begins(A,w)
 
-        // spawning desires
-        for (let Our of w.o({Peering:1,Our:1})) {
-            await this.LetsPeering(A,w,Our,Our.sc.Peering)
-        }
-        for (let Our of w.o({Pier:1,Our:1})) {
-            await this.LetsPier(A,w,Our,Our.sc.Pier)
-        }
+        await this.o_Our_Things(A,w)
         
-        // ghost/Tyranny
+        // ghost/Tyranny of security
         await this.Idzeuging(A,w)
-        
+        // connecting to people
         await this.Listening(A,w)
         await this.Ringing(A,w)
-
-        // ghost/Gardening
+        // ghost/Gardening sense making
         await this.Introducing(A,w)
 
-        if (0 && 'hold sharing open') {
-            M.F.P.dosharing()
-            setTimeout(() => {
-                M.F.P.dosharing()
-            },1000)
-            setTimeout(() => {
-                M.F.P.dosharing()
-            },1000)
-        }
 
-        await this.Trusting_API_finally(A,w)
+
+        // these like to happen now, etc
+        await this.Trusting_API_ends(A,w)
 
 
 
@@ -92,56 +78,6 @@
         await w.r({friv:this.stashed?.friv})
     },
     
-    // i %Our,Peering|Pier=s o F/Ss/S
-    async Trusting_i_Our_Things(A,w) {
-        // copy all these objects into here so we can hang state off them
-        // < this could be a TrustingModus.constructor $effect() for these Thingses
-        await w.replace({Our:1}, async () => {
-            for (let Peering of this.F.OurPeerings.asArray()) {
-                w.i({Our:1,Peering,name:Peering.name})
-            }
-            for (let Pier of this.F.OurPiers.asArray()) {
-                w.i({Our:1,Pier,name:Pier.name})
-            }
-            for (let Idzeug of this.F.OurIdzeugs.asArray()) {
-                w.i({Our:1,Idzeug,name:Idzeug.name})
-            }
-        })
-        // having indexes...
-        await w.replace({Hath:1}, async () => {
-            for (let Our of w.bo({Peering:1,Our:1})) {
-                await this.OurPeering(A,w,Our,Our.sc.Peering)
-            }
-            for (let Our of w.bo({Pier:1,Our:1})) {
-                await this.OurPier(A,w,Our,Our.sc.Pier)
-            }
-        })
-    },
-
-    // prepub -> %Our,Pier=OurPier.instance=Pier
-    // see also simply_i_Pier() for progressing to one of these:
-    o_Pier_Our(w,prepub) {
-        let def = w.o({Hath:1,user:1,prepub})[0]
-        let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
-        return Our
-    },
-    o_Our_main_Peering(w:TheC):OurPeering {
-        let def = w.o({Hath:1,address:1,main:1})[0]
-        return def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
-    },
-    Our_main_Id(w):{Our,Id:Idento} {
-        let Our = this.o_Our_main_Peering(w)
-        let Id = Our.o1({Id:1})[0]
-        return {Our,Id}
-    },
-    getOurThing(A,w,prepub) {
-        let Our = w.o({Hath:1,prepub})[0]?.o({Our:1})[0]
-        return {Our,
-            S: Our?.sc.Pier || Our?.sc.Peering
-        }
-    },
-
-
 
 
 
@@ -494,31 +430,38 @@
         return ier
     },
 
+
+    // prepub -> %Our,Pier=OurPier.instance=Pier
+    // see also simply_i_Pier() for progressing to one of these:
+    o_Pier_Our(w,prepub) {
+        let def = w.o({Hath:1,user:1,prepub})[0]
+        let Our = def && w.o({Our:1,Pier:1,name:def.sc.name})[0]
+        return Our
+    },
+    o_Our_main_Peering(w:TheC):OurPeering {
+        let def = w.o({Hath:1,address:1,main:1})[0]
+        return def && w.o({Our:1,Peering:1,name:def.sc.name})[0]
+    },
+    Our_main_Id(w):{Our,Id:Idento} {
+        let Our = this.o_Our_main_Peering(w)
+        let Id = Our.o1({Id:1})[0]
+        return {Our,Id}
+    },
+    // < GOING?
+    getOurThing(A,w,prepub) {
+        let Our = w.o({Hath:1,prepub})[0]?.o({Our:1})[0]
+        return {Our,
+            S: Our?.sc.Pier || Our?.sc.Peering
+        }
+    },
+
+
 //#endregion
-//#region API *er
-
-    // other processes talk to this authority sometimes
-    async Trusting_API(A,w) {
-        // < is this.w always sane? it's the old one while %Our rebuilds?
-
-        // meeting someone
-        for (let e of this.o_elvis(w,'save_Ud')) {
-            await this.elvising_save_Ud(A,w,e)
-        }
-    },
-    async Trusting_API_finally(A,w) {
-        // you can handle elvis many times
-        for (let e of this.o_elvis(w,'Pier->Our')) {
-            let {return_fn,prepub} = e.sc
-            return_fn()
-        }
-        for (let e of this.o_elvis(w,'init_completo')) {
-            await this.elvising_Pier_init_completo(w,e.sc.ier)
-        }
-    },
+//#region <-> Peerily i
 
 
 
+    // events run over from Peerily**
 
     // connect failed, doesn't try again until...
     async Pier_wont_connect(prepub:string) {
@@ -529,6 +472,8 @@
         Ri.i({failed:"to connect",at:now_in_seconds()})
     },
     // < try again at more times. we only keep trying after falling down:
+    // < test this again now that
+    //    Ping failed causes ier.lets_disconnect
 
     // < auto_reconnect() first line:
     //     this.inbound = true
@@ -538,6 +483,11 @@
         let con = eer.connect(ier.pub)
         ier.init_begins(eer,con)
     },
+
+    // the way to go from a prepub to a Pier.
+    //  eg in Idzeugnation()
+    // it does a add_Thing if it doesn't exist.
+    // < it could be called i_Pier()
 
     // if you are not under the level of %Ringing,
     //  you can create an OurPier, wait for its %Our, then %Ringing it, all proper-like
@@ -632,6 +582,29 @@
         return ier
     },
 
+//#endregion
+//#region <-> Peerily o
+
+    // other processes talk to this authority sometimes
+    async Trusting_API_begins(A,w) {
+        // < is this.w always sane? it's the old one while %Our rebuilds?
+
+        // meeting someone
+        for (let e of this.o_elvis(w,'save_Ud')) {
+            await this.elvising_save_Ud(A,w,e)
+        }
+    },
+    async Trusting_API_ends(A,w) {
+        // you can handle elvis many times
+        for (let e of this.o_elvis(w,'Pier->Our')) {
+            let {return_fn,prepub} = e.sc
+            return_fn()
+        }
+        for (let e of this.o_elvis(w,'init_completo')) {
+            await this.elvising_Pier_init_completo(w,e.sc.ier)
+        }
+    },
+
     // from Pier itself
     async Pier_init_completo(ier:Pier) {
         let w = this.w
@@ -699,8 +672,136 @@
 
 
 //#endregion
-//#region Lets* ambition
 
+
+//#region Our* congeal
+
+
+    // i %Our,Peering|Pier=s o F/Ss/S
+    async i_Our_Things(A,w) {
+        // copy all these objects into here so we can hang state off them
+        // < this could be a TrustingModus.constructor $effect() for these Thingses
+        await w.replace({Our:1}, async () => {
+            for (let Peering of this.F.OurPeerings.asArray()) {
+                w.i({Our:1,Peering,name:Peering.name})
+            }
+            for (let Pier of this.F.OurPiers.asArray()) {
+                w.i({Our:1,Pier,name:Pier.name})
+            }
+            for (let Idzeug of this.F.OurIdzeugs.asArray()) {
+                w.i({Our:1,Idzeug,name:Idzeug.name})
+            }
+        })
+        // having indexes...
+        await w.replace({Hath:1}, async () => {
+            for (let Our of w.bo({Peering:1,Our:1})) {
+                await this.OurPeering(A,w,Our,Our.sc.Peering)
+            }
+            for (let Our of w.bo({Pier:1,Our:1})) {
+                await this.OurPier(A,w,Our,Our.sc.Pier)
+            }
+        })
+    },
+
+    // these replace the %Hath,address|user,prepub,name
+
+    async OurPeering(A,w,Our:TheC,Peering:OurPeering) {
+        let s = Peering.stashed
+        if (!s.Id) {
+            let Id = new Idento()
+            await Id.generateKeys()
+            s.Id = Id.freeze()
+            s.main = true
+        }
+        if (!Our.oa({Id:1})) {
+            let Id = new Idento()
+            Id.thaw(s.Id)
+            Our.i({Id})
+        }
+
+        let Id = Our.o1({Id:1})[0]
+        let prepub = Id.pretty_pubkey()
+        // index prepub
+        let etc = {name:Our.sc.name}
+        if (s.main) etc.main = 1
+        w.i({Hath:1,address:1,prepub,...etc})
+            .is().i(Our)
+    },
+
+    async OurPier(A,w,Our:TheC,Pier:OurPier) {
+        let s = Pier.stashed
+        if (!s.Id && !s.prepub) {
+            // on spawn, the first time
+            if (Pier.the_cia) {
+                s.prepub = INSTANCE_TYRANT_PREPUB
+            }
+            else if (Pier.prepub) {
+                // only happens when we ThingsIsms.add_Thing(opt)
+                // prepubs ain't ready the be Id.thaw(), that sanity checks publicKey
+                s.prepub = Pier.prepub
+            }
+            else {
+                // should be new_thing
+                console.warn(`how would this happen`)
+            }
+        }
+        // hold off init until Id is got (see other places we call this)
+        if (s.Id) this.ensure_Our_Id(Our)
+
+        // we upgrade to having Id after emit:hello'ing an initial prepub
+        let Id = Our.o1({Id:1})[0]
+        if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
+        let prepub = s.prepub || Id?.pretty_pubkey()
+        if (!prepub) {
+            console.warn(`someone dropped the prepub making this Pier: ${Pier.name}`)
+            // < why
+            prepub = Pier.name
+        }
+        // index prepub, %Hath is replacing
+        w.i({Hath:1,user:1,prepub,name:Our.sc.name})
+            .is().i(Our)
+        // very convenient, exists from the start ish
+        Pier.prepub ||= prepub
+        if (Pier.prepub != prepub) throw `their prepub changed`
+
+        // not really a contact
+        if (s.the_cia || prepub == INSTANCE_TYRANT_PREPUB) {
+            s.stealth = 1
+            s.the_cia = 1
+            Pier.the_cia = 1
+            M.OurTyrant = Pier
+        }
+        if (s.stealth) await Our.r({stealth:1})
+
+        // establish a sequence number for all Pier
+        if (!s.Serial) {
+            s.Serial = this.stashed.PierSerial
+            this.stashed.PierSerial += 1
+        }
+    },
+
+
+
+//#endregion
+
+
+
+
+//#region Lets* ambition
+    // spawning desires
+    // but only as a page of stuff in a back office
+    //  basically just Ping though it could be elsewhere
+    // more of a Gardening thing...
+    // < something should make sure every Pier.instance
+    //    has an LP, or a reason not to be in...
+    async o_Our_Things(A,w) {
+        for (let Our of w.o({Peering:1,Our:1})) {
+            await this.LetsPeering(A,w,Our,Our.sc.Peering)
+        }
+        for (let Our of w.o({Pier:1,Our:1})) {
+            await this.LetsPier(A,w,Our,Our.sc.Pier)
+        }
+    },
 
     async LetsPeering(A,w,Our:TheC,Peering:OurPeering) {
         // nothing
@@ -787,8 +888,14 @@
         if (pong_ago == Infinity) {}
         else if (pong_ago > 29) {
             await Ping.r({failed:1},{timed_out:1})
-            // in an effort to simply be !%const,ready now:
-            ier.lets_disconnect('ping timeout')
+
+            let disco_ago = await Ping.i_wasLast('disco')
+            if (disco_ago > 12) {
+                // don't go into a loop
+                await Ping.i_wasLast('disco',true)
+                // in an effort to simply be !%const,ready now:
+                ier.lets_disconnect('ping timeout')
+            }
         }
         else if (pong_ago > 9) {
             await Ping.r({failed:1},{timing_out:1})
@@ -811,88 +918,13 @@
                 Ga.drop(In)
             }
         }
+        // chunky
+        // console.log(`pinging ${pong_ago} ${Ping.sc.bad||'ok'}`)
     },
 
 
 
 //#endregion
-//#region Our*
-    // these replace the %Hath,address|user,prepub,name
-
-    async OurPeering(A,w,Our:TheC,Peering:OurPeering) {
-        let s = Peering.stashed
-        if (!s.Id) {
-            let Id = new Idento()
-            await Id.generateKeys()
-            s.Id = Id.freeze()
-            s.main = true
-        }
-        if (!Our.oa({Id:1})) {
-            let Id = new Idento()
-            Id.thaw(s.Id)
-            Our.i({Id})
-        }
-
-        let Id = Our.o1({Id:1})[0]
-        let prepub = Id.pretty_pubkey()
-        // index prepub
-        let etc = {name:Our.sc.name}
-        if (s.main) etc.main = 1
-        w.i({Hath:1,address:1,prepub,...etc})
-            .is().i(Our)
-    },
-
-    async OurPier(A,w,Our:TheC,Pier:OurPier) {
-        let s = Pier.stashed
-        if (!s.Id && !s.prepub) {
-            // on spawn, the first time
-            if (Pier.the_cia) {
-                s.prepub = INSTANCE_TYRANT_PREPUB
-            }
-            else if (Pier.prepub) {
-                // only happens when we ThingsIsms.add_Thing(opt)
-                // prepubs ain't ready the be Id.thaw(), that sanity checks publicKey
-                s.prepub = Pier.prepub
-            }
-            else {
-                // should be new_thing
-                console.warn(`how would this happen`)
-            }
-        }
-        // hold off init until Id is got (see other places we call this)
-        if (s.Id) this.ensure_Our_Id(Our)
-
-        // we upgrade to having Id after emit:hello'ing an initial prepub
-        let Id = Our.o1({Id:1})[0]
-        if (s.prepub && Id) throw `prepub && Id. former should vanish in e:save_Ud`
-        let prepub = s.prepub || Id?.pretty_pubkey()
-        if (!prepub) {
-            console.warn(`someone dropped the prepub making this Pier: ${Pier.name}`)
-            // < why
-            prepub = Pier.name
-        }
-        // index prepub, %Hath is replacing
-        w.i({Hath:1,user:1,prepub,name:Our.sc.name})
-            .is().i(Our)
-        // very convenient, exists from the start ish
-        Pier.prepub ||= prepub
-        if (Pier.prepub != prepub) throw `their prepub changed`
-
-        // not really a contact
-        if (s.the_cia || prepub == INSTANCE_TYRANT_PREPUB) {
-            s.stealth = 1
-            s.the_cia = 1
-            Pier.the_cia = 1
-            M.OurTyrant = Pier
-        }
-        if (s.stealth) await Our.r({stealth:1})
-
-        // establish a sequence number for all Pier
-        if (!s.Serial) {
-            s.Serial = this.stashed.PierSerial
-            this.stashed.PierSerial += 1
-        }
-    },
 
 
 
