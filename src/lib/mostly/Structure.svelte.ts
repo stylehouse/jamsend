@@ -114,7 +114,7 @@ export class Structure {
                     i_readin('name', {format});
                     
                     // Determine if it's a track
-                    if (format.match(/^(mp3|wav|ogg|m4a|aac|flac|opus|webm|oga|mkv|mka|mp4)$/)) {
+                    if (format.match(/^(mp3|wav|ogg|m4a|aac|flac|opus|oga|mka)$/)) {
                         type = 'track'
                         i_readin('name',{type});
                     }
