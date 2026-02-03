@@ -463,6 +463,11 @@
         //  it shall be taken away now!
         this.reset_location_hash()
         if (!I.sc.asked) {
+            // they are welcome
+            //  which allows them to send trust
+            //   before we fully sort out Idvoyage
+            //   and send them ours
+            Pier.stashed.Good = true
             // causes an e:'i Idzeugnosis' over there
             await ier.emit('intro',sex({},I.sc,'advice,sign'))
             I.sc.asked = true
@@ -503,8 +508,6 @@
         console.log('as far as arrange')
         if (await this.Idvoyage_arrange(A,w,I)) return
         
-        // they are welcome
-        Pier.stashed.Good = true
         // grant them the same access
         // < UI popup, bonds, etc
         await this.Idzeug_apply_trust(Pier,I)
@@ -617,6 +620,7 @@
         if (!I.sc.name) throw "!name"
         // < UI and so forth Zs.give_them_trust
         let give_them_trust = ['ftp']
+
         for (let to of give_them_trust) {
             // note on it that it came via Idzeug, no indication of which end
             await ier.grant_trust(to,{Idzeug:I.sc.name})
@@ -625,6 +629,7 @@
         //  we may have already if Good (and Idzeuging additional trust now)
         ier.said_trust = true
         ier.heard_trust = true
+
         return give_them_trust
     },
 
