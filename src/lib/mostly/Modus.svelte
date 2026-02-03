@@ -105,8 +105,9 @@
 
 {#if M}
     <p>
-        I am a {M.constructor.name} 
-        {#if gat}with a gat. <GatHaving {gat}/>{/if}
+        <!-- I am a {M.constructor.name}  -->
+        <!-- {#if gat}with a gat. {/if} -->
+        {#if gat}<GatHaving {gat}/>{/if}
         <button onclick={tog_draw}>{drawingness}</button>
         <button onclick={tog_strata}>{strataness}</button>
         <button onclick={lets_redraw}>redraw</button>
@@ -122,13 +123,13 @@
     <Agency {M} ></Agency>
     {#if UI_component}
         <p>
-            UI'd
+            <!-- UI'd -->
             <svelte:component this={UI_component} {M} ></svelte:component>
         </p>
     {/if}
     {#if stashy_UI_component && M.stashed}
         <p>
-            UI'sd
+            <!-- UI'sd -->
             <svelte:component this={stashy_UI_component} {M} ></svelte:component>
         </p>
     {/if}

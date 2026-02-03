@@ -11,11 +11,19 @@
 </script>
  
 <div id=levity class:stealth={pier.P.stealth && pier.stashed?.stealth}>
-    Pier: {pier.pub} 
+    Pier: <span class="title">{pier.pub} </span>
     {#if pier.disconnected}
         <span class="ohno tech">discon</span>
     {/if}
-    <button onclick={showstash}>stash</button>
+    {#if pier.stashed.stealth}
+        <span class="tech">stealth</span>
+    {/if}
+    {#if pier.latency}
+        <span class="tech latency" style="{pier.latency < 3 ? '' : 
+            'font-size:'+ Math.min(4, pier.latency * 0.22 + 1) +'em'
+        }">{pier.latency}</span>
+    {/if}
+    <!-- <button onclick={showstash}>stash</button> -->
     <!-- <button onclick={tweakstash}>~~</button> -->
 
     <TrustEnabler {pier} />
@@ -38,4 +46,8 @@
         border-radius:2em;
     }
     .stealth {display:none}
+    .title {
+        font-size: 1.6em;
+    }
+    .latency{margin:0.3em}
 </style>

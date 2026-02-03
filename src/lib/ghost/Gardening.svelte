@@ -5,9 +5,10 @@
     import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
     import { depeel, erring, ex, grap, grep, grop, indent, map, nex, peel, sex, sha256, tex, throttle } from "$lib/Y.ts"
     import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
-   
+    
     let {M}:{M:TrustingModus} = $props()
     const REQUESTS_MAX_LIFETIME = 25
+    const PHI = 1.613
     let V = {}
     onMount(async () => {
     await M.eatfunc({
@@ -151,6 +152,15 @@
 //#region Gardening
 
 
+    async Gardening_wert(A,w) {
+        const spec = `
+            when %is_both_listener_and_source
+             < raterm our Pier's supplied racastings
+               sublating the A:audio grouping should do
+
+
+            `
+    },
     async Gardening_Engagements(A,w) {
         const spec = `
             < notice when a new potential interaction is possible
@@ -324,6 +334,103 @@
 
 
 
+
+//#endregion
+//#region Ping
+
+    async unemitPing(ier:Pier,data) {
+        let w = this.w
+        await this.c_mutex(w,'Aw_think', async () => {
+        if (!data.answered) {
+            // step 2
+            ier.emit('ping',{...data,answered:now_in_seconds_with_ms()})
+        }
+        else {
+            let LP = this.o_LP(ier)
+            if (!LP) return console.warn(`unemit:Ping from ${ier.pub}, no LP yet?`)
+            let Ping = LP.oai({Ping:1})
+            let latency
+            if (!data.received) {
+                // step 3, the local|origin again
+                let received = now_in_seconds_with_ms()
+                latency = received - data.sent
+                ier.emit('ping',{...data,received})
+            }
+            else {
+                // step 4, the remote|destination again
+                let acknowledged = now_in_seconds_with_ms()
+                latency = acknowledged - data.answered
+            }
+            latency = Number(latency.toFixed(3))
+            await Ping.r({latency})
+            ex(Ping.sc,{latency})
+            await Ping.i_wasLast('received', true)
+        }
+        })
+    },
+    async Our_ping(LP:TheC,ier:Pier) {
+        let w = this.w
+        let Ping = LP.oai({Ping:1})
+
+        // returns Infinity initially:
+        let ping_ago = await Ping.i_wasLast('sent')
+        // ago initialises to Infinity
+        if (ping_ago > 5 || Ping.oa({failed:1}) && ping_ago > PHI) {
+            await Ping.i_wasLast('sent', true)
+            ier.emit('ping',{sent:now_in_seconds_with_ms()})
+        }
+
+        let pong_ago = await Ping.i_wasLast('received')
+        if (pong_ago == Infinity) {}
+        else if (pong_ago > 29) {
+            await Ping.r({failed:1},{timed_out:1})
+
+            let disco_ago = await Ping.i_wasLast('disco')
+            if (disco_ago > 12) {
+                // don't go into a loop
+                await Ping.i_wasLast('disco',true)
+                // in an effort to simply be !%const,ready now:
+                ier.lets_disconnect('ping timeout')
+            }
+        }
+        else if (pong_ago > 9) {
+            await Ping.r({failed:1},{timing_out:1})
+            Ping.oai({latency_timeouting:1},{since:now_in_seconds()})
+        }
+        else {
+            await Ping.r({failed:1},{})
+            await Ping.r({latency_timeouting:1},{})
+
+        }
+
+        // supply latency to UI
+        let latency = Ping.o1({latency:1})[0]
+        if (latency != null) {
+            // add the whole number of seconds since the first timing out ping
+            let failsince = Ping.o({latency_timeouting:1})[0]
+            if (failsince) latency += failsince.ago('since')
+        }
+        ier.latency = latency
+
+
+
+        if (Ping.oa({failed:1})) {
+            delete Ping.sc.good
+            Ping.sc.bad = 'failed'
+        }
+        else {
+            delete Ping.sc.bad
+            Ping.sc.good = 1
+            // and it's no longer...
+            let Pier = LP.sc.Pier
+            let Ga = w.oai({Garden:1})
+            for (let In of Ga.o({Incommunicado:1,Pier})) {
+                Ga.drop(In)
+            }
+        }
+        // chunky
+        // console.log(`pinging ${pong_ago} ${Ping.sc.bad||'ok'}`)
+    },
 
 
 

@@ -72,7 +72,7 @@
     let share_act = $derived(P.needs_share_open_action)
     // gets set only once so they can dismiss it and continue
     let no_share = () => {
-        P.needs_share_open_action = null
+        P.needs_share_open_action = false
         // Introducing along:
         M.i_elvis(M.w,'noop')
     }

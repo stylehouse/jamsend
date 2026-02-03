@@ -173,7 +173,6 @@
 
         let co = await w.r({consumers:1,of:'radiostock'})
         let client = 1
-        let la = null
         let next = async (loop=0) => {
             if (loop > 3) throw "loop"
 

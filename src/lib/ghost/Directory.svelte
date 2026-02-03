@@ -34,8 +34,10 @@
         if (!share) return //throw "no autoviv share?"
         if (!share.started && !M.F.P.directory_compat_mode) {
             let open = share.actions.filter(act => act.label == 'open share')[0]
-            // -> UI
-            M.F.P.needs_share_open_action = open
+            // -> UI, if they haven't clicked NAH before
+            if (M.F.P.needs_share_open_action == null) {
+                M.F.P.needs_share_open_action = open
+            }
         }
         else {
             M.F.P.needs_share_open_action = null

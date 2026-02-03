@@ -23,7 +23,7 @@
     })
 </script>
 
-<h2>The plot here.</h2>
+<!-- <h2>The plot here.</h2> -->
 
 {#each F.gizmos as [name, M] (name)}
     <Thingstashed {F} {name} {M} />

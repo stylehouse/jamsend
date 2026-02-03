@@ -536,6 +536,8 @@ export class Pier {
     // for user-user focus - see Gardening_Engagements
     //  a soft layer on top of TrustName
     inhibited_features:SvelteMap<TrustName,Inhibition> = $state(new SvelteMap())
+    
+    latency:number = $state()
 
     constructor(opt) {
         Object.assign(this, opt)
