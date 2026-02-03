@@ -178,6 +178,14 @@
         return yes
     },
 
+    // < WIP, similar to the above
+    Aw_route(path) {
+        let bit = path.shift()
+        if (path.length) throw `< more code`
+        let w = this.o({A:bit})[0]?.o({w:bit})[0]
+        return w
+    },
+
     // application code services all awaiting w%elvis
     o_elvis(w,t) {
         let them = w.o({elvis:t})

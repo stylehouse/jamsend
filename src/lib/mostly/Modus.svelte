@@ -108,7 +108,7 @@
         <!-- I am a {M.constructor.name}  -->
         <!-- {#if gat}with a gat. {/if} -->
         {#if gat}<GatHaving {gat}/>{/if}
-        <button onclick={tog_draw}>{drawingness}</button>
+        <button onclick={tog_draw} class='large'>{drawingness}</button>
         <button onclick={tog_strata}>{strataness}</button>
         <button onclick={lets_redraw}>redraw</button>
         {#if actions}<ActionButtons {actions} />{/if}
@@ -155,4 +155,5 @@
 
 
 <style>
+    .large{font-size:3.613em}
 </style>

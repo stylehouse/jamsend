@@ -124,7 +124,7 @@
 
 
 
-    // hears from A:audio
+    // hears from w:raterminal when important thing changes
     async cytotermi_may_descripted(A,w,raterm) {
         // pinged from raterm/%nowPlaying with this attached:
         for (let e of this.o_elvis(w,'i_nowPlaying')) {

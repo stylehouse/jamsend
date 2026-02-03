@@ -693,7 +693,7 @@
                 if (re && A.o({record:1,enid:re.sc.enid}).length > 1) console.warn(`multiple %record,enid=${re.sc.enid}`)
                 if (re && same_re && same_re != re) console.warn(`other existent %record,enid=${re.sc.enid}`)
                 if (!same_re || !re) {
-                    // the A:audio/%record has been whittled
+                    // the A/%record has been whittled
                     if (re) {
                         // have this once here, then forget it
                         delete we.sc.re
@@ -710,7 +710,7 @@
                     }
                 }
                 else {
-                    // the A:audio/%record exists
+                    // the A/%record exists
                     let listened_for = we.sc.played_time
                     if (listened_for < LISTENING_FOR_LONG_ENOUGH) continue
                     we.sc.almost_going_since ||= now_in_seconds_with_ms()

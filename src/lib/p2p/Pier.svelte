@@ -25,7 +25,7 @@
                 'font-size:'+ Math.min(2.4, pier.latency * 0.12 + 1) +'em'
         }">{pier.latency}</span>
     {/if}
-    <!-- <button onclick={showstash}>stash</button> -->
+    <button onclick={showstash}>stash</button>
     <!-- <button onclick={tweakstash}>~~</button> -->
 
     <TrustEnabler {pier} />

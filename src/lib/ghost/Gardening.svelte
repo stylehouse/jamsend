@@ -151,16 +151,6 @@
 //#endregion
 //#region Gardening
 
-
-    async Gardening_wert(A,w) {
-        const spec = `
-            when %is_both_listener_and_source
-             < raterm our Pier's supplied racastings
-               sublating the A:audio grouping should do
-
-
-            `
-    },
     async Gardening_Engagements(A,w) {
         const spec = `
             < notice when a new potential interaction is possible
@@ -191,6 +181,16 @@
         // let inhibition = ier.inhibited_features.get(this.F.trust_name) || 0
     },
 
+
+    async Gardening_hmm(A,w) {
+        const spec = `
+
+
+            (...)
+
+
+        `
+    },
 
 
 

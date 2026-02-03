@@ -157,27 +157,31 @@ export class ShareeModus extends RadioModus {
         let V = this.i({A:'visual'})
         V.i({w:'cytotermicaster'})
         
-        // the give|take. each could be their own A?
-        // < is one A for both ra* here...
-        //    confusing their %records and our %records?
-        let A = this.i({A:'audio'})
+        // the give|take. one A for each.
+        //  or it gets confusing their %records and our %records
+        //   < could be done
 
         // < so perm can change over time, do this every time, replacing %w?
         let perm = this.PF.perm
         let inhibition = ier.inhibited_features.get(this.F.trust_name) || 0
         if (perm.local && inhibition <3) {
             // we grant them read access, they receive
-            A.i({w:'racaster'})
+            this.i({A:'racaster'})
         }
         if (perm.remote && inhibition < 1) {
             // they grant us read access, we receive
             //  easier to inhibit of the two functions
-            A.i({w:'raterminal'})
+            this.i({A:'raterminal'})
         }
+
+
+        await this.r({is_both_listener_and_source:1},{})
         if (perm.local && perm.remote) {
             // < may both be on, share DJing, syncing many Pier's?
-            A.i({is_both_listener_and_source:1})
+            this.i({is_both_listener_and_source:1})
         }
+
+        
         console.log(`do_A() for ${this.constructor.name}`)
         this.main()
     }

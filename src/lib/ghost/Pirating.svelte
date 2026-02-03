@@ -54,13 +54,13 @@
         // when we have both they're doing different work, independently
 
         // the frontend, listening to the music
-        let raterm = this.o({A:'audio'})[0]?.o({w:'raterminal'})[0]
+        let raterm = this.Aw_route(['raterminal'])
         w.i({see:1,raterm})
 
 
 
         // the backend, sending music yonder
-        let racast = this.o({A:'audio'})[0]?.o({w:'racaster'})[0]
+        let racast = this.Aw_route(['racaster'])
         w.i({see:1,racast})
 
         // copy %io:radiopiracy interfaces here
@@ -244,7 +244,7 @@
         if (enid) {
             // don't always need to have the %record, see resumable_heist()
             let Aaudio = raterm.up
-            if (Aaudio.sc.A != 'audio') throw "!A:audio"
+            if (Aaudio.sc.A != 'audio') throw "!A"
 
             let re = req.sc.re ||= Aaudio.o({record:1,enid})[0]
             if (!re) {

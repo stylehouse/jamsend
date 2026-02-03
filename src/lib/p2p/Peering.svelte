@@ -16,7 +16,7 @@
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>
                 {/if}
-                <!-- <button onclick={showstash}>stash</button> -->
+                <button onclick={showstash}>stash</button>
                 <!-- <button onclick={tweakstash}>~~</button> -->
                 <!-- <button onclick={dropstashedPiers}>--</button> -->
             </div>
