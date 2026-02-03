@@ -19,8 +19,10 @@
         <span class="tech">stealth</span>
     {/if}
     {#if pier.latency}
-        <span class="tech latency" style="{pier.latency < 3 ? '' : 
-            'font-size:'+ Math.min(4, pier.latency * 0.22 + 1) +'em'
+        <span class="tech latency"
+            class:ohno={pier.latency > 6}
+            style="{pier.latency < 3 ? '' : 
+                'font-size:'+ Math.min(2.4, pier.latency * 0.12 + 1) +'em'
         }">{pier.latency}</span>
     {/if}
     <!-- <button onclick={showstash}>stash</button> -->

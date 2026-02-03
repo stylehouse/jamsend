@@ -833,7 +833,16 @@
             if (LP?.oa({const:1,ready:1})) {
                 await this.Our_ping(LP,ier)
             }
+
+            // notice being stuck in states...
+            if (!ier.disconnected && !LP) {
+                // get it out of %Garden/%Incommunicado
+                //  which should lead back to LP-havity
+                console.log(`Pier:${Pier.prepub} in reconnected, needs LP`)
+                this.Pier_is_alive(w,Pier)
+            }
         }
+
 
         
     },

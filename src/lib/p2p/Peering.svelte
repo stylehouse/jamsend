@@ -12,7 +12,7 @@
 
     <div id=levity>
         <!-- itself: -->
-            <div>Listening: {pub} 
+            <div>Listening: <span class="title">{pub} </span>
                 {#if eer.disconnected}
                     <span class="ohno tech">discon</span>
                 {/if}
@@ -46,5 +46,8 @@
         margin-left:-1em;
         border-left: 2em solid saddlebrown;
         border-radius:2em;
+    }
+    .title {
+        font-size: 1.6em;
     }
 </style>

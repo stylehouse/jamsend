@@ -410,6 +410,8 @@
             let failsince = Ping.o({latency_timeouting:1})[0]
             if (failsince) latency += failsince.ago('since')
         }
+        // await Ping.r({fancy_latency:latency})
+        // ier.latency = Ping.o1({fancy_latency:1})[0] || ''
         ier.latency = latency
 
 
@@ -423,15 +425,18 @@
             Ping.sc.good = 1
             // and it's no longer...
             let Pier = LP.sc.Pier
-            let Ga = w.oai({Garden:1})
-            for (let In of Ga.o({Incommunicado:1,Pier})) {
-                Ga.drop(In)
-            }
+
+            this.Pier_is_alive(w,Pier)
         }
         // chunky
         // console.log(`pinging ${pong_ago} ${Ping.sc.bad||'ok'}`)
     },
-
+    Pier_is_alive(w,Pier) {
+        let Ga = w.oai({Garden:1})
+        for (let In of Ga.o({Incommunicado:1,Pier})) {
+            Ga.drop(In)
+        }
+    }
 
 
 
