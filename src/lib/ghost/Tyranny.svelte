@@ -202,19 +202,19 @@
             M.OurTyrant.instance.emit('intro',{Idvoyage:c})
             console.log(`🦑 Idvoyage sought`)
         }
-        else {
-            // we get %answer,failed about this request via e:'o Idzeugnosis'
-            console.log(`🦑 waiting for Idvoyage`)
-            for (let e of this.o_elvis(this.w,'i Idvoyage')) {
-                let Idvoyage = e.sc.Idvoyage
-                if (!await this.Idvoyage_verify(Idvoyage)) throw `tyrant brainmelt`
-                // this is given to every Idzeugnosis we make from now on 
-                M.mainPeering.stashed.Idvoyage ||= Idvoyage
-                I.sc.Idvoyaging_onwards = Idvoyage
-                console.log(`🦑 Idvoyage++`,Idvoyage)
-                return false
-            }
+
+        // we get %answer,failed about this request via e:'o Idzeugnosis'
+        console.log(`🦑 waiting for Idvoyage`)
+        for (let e of this.o_elvis(this.w,'i Idvoyage')) {
+            let Idvoyage = e.sc.Idvoyage
+            if (!await this.Idvoyage_verify(Idvoyage)) throw `tyrant brainmelt`
+            // this is given to every Idzeugnosis we make from now on 
+            M.mainPeering.stashed.Idvoyage ||= Idvoyage
+            I.sc.Idvoyaging_onwards = Idvoyage
+            console.log(`🦑 Idvoyage++`,Idvoyage)
+            return false
         }
+
         return true
     },
     
