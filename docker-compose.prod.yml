@@ -109,7 +109,9 @@ services:
           cpus: '0.5'
           memory: 256M
     ulimits:
-      nproc: 100
+      # this is too low, and isn't per container
+      #  because we are running against uid=1000
+      # nproc: 100
       nofile: 1024
 
 

@@ -30,7 +30,10 @@
         // very top level of behaviour settings
         //  handy for development
         // < part of the next resolution of UI
-        // M.F.P.NoHeavyComputing ??= true
+        if (import.meta.env.MODE != 'production') {
+            M.F.P.NoHeavyComputing ??= true
+            M.log_Idvoyage_spam = true
+        }
 
         // continue watching the fog
         await this.Introducing_Readiness(A,w,In,Our)

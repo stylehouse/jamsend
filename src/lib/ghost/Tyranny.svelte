@@ -36,7 +36,10 @@
 
 
         // this kind of thing is logged:
-        // this.log_Idvoyage(w,{Question:"is"},{splat:'bleep'})
+        
+        if (M.log_Idvoyage_spam) {
+            this.log_Idvoyage(w,{Question:"is"},{splat:'bleep'})
+        }
         await this.Tyranny_of_Idvoyage(A,w,eer)
 
 
