@@ -11,10 +11,11 @@
    
     let {M}:{M:TrustingModus} = $props()
     let V = {}
+    let IS_PROD = location.host.startsWith('jamsend.')
     const INSTANCE_TYRANT_PREPUB =
         // < this working:
         import.meta.env.INSTANCE_TYRANT_PREPUB
-        || import.meta.env.MODE === 'production'
+        || (import.meta.env.MODE === 'production'||IS_PROD)
             ? "4c845c179ebf1b11"
             : "93d34f61fead5759"
     const REQUESTS_MAX_LIFETIME = 25

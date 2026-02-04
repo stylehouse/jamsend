@@ -90,8 +90,10 @@
         document.body.style.setProperty('overflow','hidden')
         title = location.host.split('.')[0]
     })
+    let IS_PROD = location.host.startsWith('jamsend.')
+    // import.meta.env.MODE != 'production'
     let full_title = $derived(title + 
-        (import.meta.env.MODE != 'production' ? 
+        (!IS_PROD ? 
             ' - '+import.meta.env.MODE : ''
         )
     )
