@@ -12,10 +12,11 @@ services:
         RUN apk add --no-cache \
             nodejs \
             npm
+        RUN npm install
     container_name: jamsend-dev
     working_dir: /app
     volumes:
-      # - .:/app
+      - .:/app
       # - "./testsounds:/music:ro"
       - *music-volume
     ports:
