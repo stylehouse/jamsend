@@ -72,6 +72,7 @@ sub get_log_filepath {
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $year += 1900;
     $mon += 1;
+    $min = $min - $min % 20;
     
     my $dir_name = sprintf("Idvoyages-%04d%02d%02d", $year, $mon, $mday);
     my $filename = sprintf("%02d%02d.jsons", $hour, $min);
