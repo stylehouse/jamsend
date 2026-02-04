@@ -20,7 +20,6 @@ services:
         # Copy source and build
         COPY . .
         RUN npm run build
-        RUN npm run build:server
 
         # Clean up dev dependencies after build
         RUN npm prune --production
