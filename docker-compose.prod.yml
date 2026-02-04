@@ -36,7 +36,7 @@ services:
     environment:
       - PORT=19091
       - HOST=0.0.0.0
-      - INSTANCE_TYRANT_PREPUB=39c5108c0e1f7948
+      - INSTANCE_TYRANT_PREPUB=9547586469c20ce9
     tty: true
     stdin_open: true
     restart: 'always'
