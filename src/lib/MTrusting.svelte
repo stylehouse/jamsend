@@ -128,7 +128,7 @@
 
 
 
-    {#if M.F.P.Nobody_Is_Online}
+    {#if M.F.P.Nobody_Is_Online && M.F.P.Welcome}
         <p>
             Nobody is online
             <span>
