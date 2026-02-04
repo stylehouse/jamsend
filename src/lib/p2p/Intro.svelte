@@ -86,11 +86,12 @@
         P.stop()
     })
     let title = $state('jamsend')
+    let IS_PROD = $state()
     onMount(() => {
         document.body.style.setProperty('overflow','hidden')
         title = location.host.split('.')[0]
+        IS_PROD = location?.host?.startsWith('jamsend.')
     })
-    let IS_PROD = location.host.startsWith('jamsend.')
     // import.meta.env.MODE != 'production'
     let full_title = $derived(title + 
         (!IS_PROD ? 
