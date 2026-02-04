@@ -80,7 +80,7 @@
         // we unemits at the frontend, for Pier
         // we're o - on the backend being asked about uri
         // we're i - front receiving result
-        w.sc.unemits ||= {
+        w.sc.unemits = {
             o_descripted: async ({uri}:{uri:string}) => {
                 if (!racast) throw `racast unemits o_descripted`
                 w = this.refresh_C([A,w])
@@ -168,7 +168,7 @@
                 }
                 else {
                     // awaiting input
-                    console.log(`🏴‍☠️ awaits hierarchy editing`)
+                    console.log(`🏴‍☠️ await choosings`)
                     w.i({see:1,PiratingTime:1})
                 }
             }
@@ -380,6 +380,10 @@
         const buffer_headroom = (blob.sc.pulled_size || 0) - blob.sc.received_size
         const buffer_low = buffer_headroom < (PIPELINE_BYTES * PIPELINE_LOW_THRESHOLD)
         
+
+        // console.log(`🔵 blob_could_emit_o_pull ${buffer_low ? "And shall!" : ""}`)
+
+
         if (buffer_low) {
             // put this another PIPELINE_BYTES ahead so we don't do this too often?
             let pulled_size = blob.sc.received_size + PIPELINE_BYTES
@@ -553,6 +557,8 @@
         // < seek use. for resuming downloads?
         // blob.sc.seek ||= 0
         blob.sc.received_size ||= 0
+
+        // console.log(`🔵 cytotermi_heist_now ${blob.sc.received_size} of: ${blob.sc.uri}`)
 
         await this.blob_could_emit_o_pull(req,he,blob)
     },
