@@ -10,33 +10,94 @@
     async function copy_link() {
         await navigator.clipboard.writeText(links[0]);
     }
-    let size = $state(300)
+    let size = $state(800)
     let qrsele:HTMLElement|undefined = $state()
     let space_fraction = $state(1)
+    let compositeUrl = $state<string|null>(null)
     
     $effect(() => {
-        if (links.length && qrsele) {
+        if (links.length == 1 && qrsele) {
             const vw = window.innerWidth
             const vh = window.innerHeight
             const availableWidth = vw * 0.8
             const availableHeight = (vh - 100) * 0.8
-            
-            // Calculate grid dimensions
-            const count = links.length
-            const cols = Math.ceil(Math.sqrt(count))
-            const rows = Math.ceil(count / cols)
-            
-            // Size to fit grid
-            const sizeByWidth = (availableWidth / cols) * space_fraction
-            const sizeByHeight = (availableHeight / rows) * space_fraction
-            
-            size = Math.min(sizeByWidth, sizeByHeight)
+            size = Math.min(availableWidth, availableHeight) * space_fraction
         }
     })
 
     async function blotter() {
-        space_fraction = 0.85
-        links = await P.Trusting.M.Idzeugnate(90)
+        links = await P.Trusting.M.Idzeugnate(126)
+        
+        // Wait for QR codes to render
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Create composite image
+        await createComposite()
+    }
+    async function createComposite() {
+        if (!qrsele) return
+        
+        const OVERLAP_PERCENT = -0.18
+        const PADDING = 130  // padding around edge in pixels
+        
+        // A4 at 300dpi: 210mm x 297mm = 2480 x 3508 pixels
+        let margin = 400
+        const A4_WIDTH = 2480 - margin
+        const A4_HEIGHT = 3508 - margin
+        
+        const canvas = document.createElement('canvas')
+        canvas.width = A4_WIDTH
+        canvas.height = A4_HEIGHT
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        
+        // White background
+        ctx.fillStyle = 'white'
+        ctx.fillRect(0, 0, A4_WIDTH, A4_HEIGHT)
+        
+        // Get all QR code images
+        const qrElements = qrsele.querySelectorAll('pqr img')
+        const images = Array.from(qrElements) as HTMLImageElement[]
+        
+        if (images.length === 0) return
+        
+        // Calculate grid: aim for roughly square layout
+        const cols = Math.ceil(Math.sqrt(images.length * 0.77)) - 1
+        const rows = Math.ceil(images.length / cols) - 1
+        
+        // Available space after padding
+        const availableWidth = A4_WIDTH - (2 * PADDING)
+        const availableHeight = A4_HEIGHT - (2 * PADDING)
+        
+        // Calculate QR size with overlap/gap
+        const effectiveCols = cols * (1 - OVERLAP_PERCENT) + OVERLAP_PERCENT
+        const effectiveRows = rows * (1 - OVERLAP_PERCENT) + OVERLAP_PERCENT
+        
+        const qrSizeByWidth = availableWidth / effectiveCols
+        const qrSizeByHeight = availableHeight / effectiveRows
+        const qrSize = Math.min(qrSizeByWidth, qrSizeByHeight)
+        
+        const gapX = qrSize * OVERLAP_PERCENT
+        const gapY = qrSize * OVERLAP_PERCENT
+        
+        // Draw QR codes with gap (left-to-right, top-to-bottom)
+        images.forEach((img, index) => {
+            const col = index % cols
+            const row = Math.floor(index / cols)
+            
+            const x = PADDING + (col * (qrSize - gapX))
+            const y = PADDING + (row * (qrSize - gapY))
+            
+            ctx.drawImage(img, x, y, qrSize, qrSize)
+        })
+        
+        // Convert to JPEG
+        canvas.toBlob((blob) => {
+            if (blob) {
+                if (compositeUrl) URL.revokeObjectURL(compositeUrl)
+                compositeUrl = URL.createObjectURL(blob)
+            }
+        }, 'image/jpeg', 0.95)
     }
 </script>
 
@@ -51,8 +112,22 @@
             <span>
                 <p class="noprint"> 
                     <button onclick={copy_link}>Copy Link</button>, oncer.
-                    <button class='small' onclick={blotter}>blotter</button>
+                    {#if compositeUrl}
+                        <a href={compositeUrl} download="qr-blotter.jpg" class='small blotter-link'>blotter ⬇</a>
+                    {:else}
+                        <button class='small' onclick={blotter}>blotter</button>
+                    {/if}
                 </p>
+                
+                {#if compositeUrl}
+                    <div class="composite-preview">
+                        <img src={compositeUrl} alt="QR Blotter" />
+                        <a href={compositeUrl} download="qr-blotter.jpg" class="download-link">
+                            Download A4 (210×297mm @ 300dpi)
+                        </a>
+                    </div>
+                {/if}
+                
                 <div class="qr-grid" bind:this={qrsele}>
                     {#each links as link (link)}
                         <pqr> <QrCode value={link} {size} /> </pqr>
@@ -93,17 +168,57 @@
         overflow: auto;
     }
     
+    .composite-preview {
+        background: white;
+        padding: 1em;
+        margin: 1em auto;
+        max-width: 300px;
+        border-radius: 0.5em;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .composite-preview img {
+        width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        display: block;
+    }
+    
+    .download-link {
+        display: block;
+        margin-top: 0.5em;
+        padding: 0.75em;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        text-align: center;
+        border-radius: 0.25em;
+        font-size: 0.9em;
+    }
+    
+    .download-link:hover {
+        background: #1d4ed8;
+    }
+    
     pqr {
         display: flex;
         background: white;
-        padding: -1.5em;
+        padding: 0.5em;
         justify-content: center;
         align-items: center;
     }
     
-    button {
+    button, .blotter-link {
         padding: 1em;
         font-size: 1.5em;
+    }
+    
+    .blotter-link {
+        display: inline-block;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 0.25em;
     }
     
     p {
@@ -119,30 +234,9 @@
         opacity: 0.1;
     }
 
-    /* Print styles */
     @media print {
-        .noprint {
+        .noprint, .composite-preview {
             display: none !important;
-        }
-        
-        qrthing {
-            position: static;
-            background: white;
-            backdrop-filter: none;
-            width: auto;
-            height: auto;
-        }
-        
-        .qr-grid {
-            max-width: 100%;
-            max-height: none;
-            overflow: visible;
-            gap: 0.5cm;
-        }
-        
-        pqr {
-            padding: 0.2cm;
-            break-inside: avoid;
         }
     }
 </style>
