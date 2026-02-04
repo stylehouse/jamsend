@@ -202,7 +202,7 @@
             // < on prod, these get compiley labels
             // if (Pier.constructor.name != 'OurPier') throw `!OurPier`
             let LP
-            if (!Li.oa({Pier:1,prepub})) {
+            if (!Li.oa({Pier:1,prepub}) || !Pier.instance) {
                 let now = now_in_seconds_with_ms()
                 // spawn a Pier, but don't hang around until it's connected
                 let Promised_ier = this.Pierise(eer,prepub,Pier)
