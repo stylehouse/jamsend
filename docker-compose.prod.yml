@@ -1,46 +1,53 @@
 # this file becomes docker-compose.yml on prod
+# < chrome beings
 # < give readonly access to chrome in an app server, a racast
-x-common-volumes: &common-volumes
-  music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music:ro"
 
 services:
   app:
     build:
       context: .
       dockerfile_inline: |
-        FROM alpine:3.19
+        FROM node:20-alpine
         WORKDIR /app
-        RUN apk add --no-cache vim \
-            nodejs \
-            npm
+        
+        # Install system dependencies
+        RUN apk add --no-cache vim
+        
         # Copy package files
         COPY package*.json ./
+        
         # Install ALL dependencies (including devDependencies for build)
         RUN npm ci
-        # Copy source and build
+        
+        # Copy source code
         COPY . .
+        
+        # Build the application
         RUN npm run build
-
+        
         # Clean up dev dependencies after build
         RUN npm prune --production
         
+        # Expose port
+        EXPOSE 19091
+        
         CMD ["node", "dist-server/server.js"]
+    
     container_name: jamsend-prod
     working_dir: /app
     ports:
-      # this would bind to LAN address as well
+      # this (with port 9091) would bind to LAN address as well
       #  but WebRTC requires a secure context (can be localhost)
       # - "9091:9091"
       - "172.17.0.1:19091:19091"
     environment:
+      - NODE_ENV=production
       - PORT=19091
       - HOST=0.0.0.0
       - INSTANCE_TYRANT_PREPUB=9547586469c20ce9
-    tty: true
-    stdin_open: true
-    restart: 'always'
-    command: node dist-server/server.js
-
+    
+    restart: always
+    
     deploy:
       resources:
         limits:
@@ -49,15 +56,10 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+    
     ulimits:
       nproc: 100
       nofile: 1024
-
-
-
-
-
-
 
   peerjs:
     image: peerjs/peerjs-server
@@ -65,9 +67,8 @@ services:
     ports:
       - "172.17.0.1:9995:9995"
     command: ["--port", "9995"]
-    # the Caddy handle_path in leproxy takes this bit of path off
-    #, "--path", "/peerjs-server"]
-    restart: 'always'
+    restart: always
+    
     deploy:
       resources:
         limits:
@@ -76,19 +77,17 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+    
     ulimits:
       nproc: 100
       nofile: 1024
-
-
-
 
   tyrant-logger:
     build:
       context: .
       dockerfile: ty/Dockerfile
     container_name: jamsend-prod-tyrant-logger
-    user: "1000:1000"  # Run as your UID to avoid permission issues
+    user: "1000:1000" # Run as your UID to avoid permission issues
     volumes:
       - ./ty:/app
       - ./logs:/logs
@@ -98,7 +97,8 @@ services:
       - LOG_DIR=/logs
       - MOJO_LOG_LEVEL=info
       - MOJO_MODE=production
-    restart: 'always'
+    restart: always
+    
     deploy:
       resources:
         limits:
@@ -107,10 +107,9 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+    
     ulimits:
       # this is too low, and isn't per container
       #  because we are running against uid=1000
       # nproc: 100
       nofile: 1024
-
-
