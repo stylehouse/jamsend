@@ -15,6 +15,10 @@
         import.meta.env.INSTANCE_TYRANT_PREPUB
         || "93d34f61fead5759"
     const REQUESTS_MAX_LIFETIME = 25
+
+
+    console.log(`We have import.meta.env.INSTANCE_TYRANT_PREPUB: ${import.meta.env.INSTANCE_TYRANT_PREPUB}`)
+
     onMount(async () => {
     await M.eatfunc({
 
