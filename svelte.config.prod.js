@@ -1,8 +1,36 @@
-// this file becomes svelte.config.js on prod
 import adapter from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-export default {
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
+	preprocess: vitePreprocess(),
+
 	kit: {
-		adapter: adapter()
+		// Use adapter-node for production deployment
+		adapter: adapter({
+			out: 'build',
+			precompress: false,
+			envPrefix: ''
+		}),
+		
+		// Production environment settings
+		env: {
+			publicPrefix: 'PUBLIC_'
+		}
+	},
+
+	// Vite build configuration for debugging
+	vite: {
+		build: {
+			// Generate source maps for debugging
+			sourcemap: true,
+			// Disable minification
+			minify: false,
+			// Keep original variable names
+			target: 'esnext'
+		}
 	}
 };
+
+export default config;

@@ -1,24 +1,23 @@
-import { svelteTesting } from '@testing-library/svelte/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-// import { webSocketServer } from './src/lib/abandoned/ws-server/ws-server';
 
 export default defineConfig({
-  build: {
-    ssr: true,
-    outDir: 'dist-server',
-    // 1. Stop the squashing
-    minify: false,
-    // 2. Generate maps (true or 'inline')
-    sourcemap: true, 
-    // 3. Keep code modern to avoid transpilation "noise"
-    target: 'esnext', 
-  },
-	plugins: [sveltekit(),
-		//  webSocketServer
-		],
-
-
+	plugins: [sveltekit()],
+	
+	build: {
+		// Generate source maps for production debugging
+		sourcemap: true,
+		
+		// Disable minification to make debugging easier
+		minify: false,
+		
+		// Keep original variable names
+		target: 'esnext',
+		
+		// Increase chunk size warning limit (optional)
+		chunkSizeWarningLimit: 1000
+	},
+	
 
 	server: {
 		allowedHosts: ["jamsend.duckdns.org","djamsend.duckdns.org","jamdense.duckdns.org"]
