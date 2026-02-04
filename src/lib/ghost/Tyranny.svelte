@@ -184,11 +184,12 @@
     async Idvoyage_arrange(A,w,I):Promise<boolean> {
         let ago = await I.i_wasLast('sought')
         if (ago < 9 || ago == Infinity) {
-            await I.i_wasLast('sought',true)
             // Idzeugnation already has brought this up
             if (await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)) {
                 return I.i({waits:"arranging mirage..."})
             }
+            await I.i_wasLast('sought',true)
+            
             // timestamp we joined the trust network
             let at = I.sc.arranged_at ||= now_in_seconds()
             
