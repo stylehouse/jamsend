@@ -15,7 +15,7 @@
         // < this working:
         import.meta.env.INSTANCE_TYRANT_PREPUB
         || import.meta.env.MODE === 'production'
-            ? "9547586469c20ce9"
+            ? "4c845c179ebf1b11"
             : "93d34f61fead5759"
     const REQUESTS_MAX_LIFETIME = 25
 
