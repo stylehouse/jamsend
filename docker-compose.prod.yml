@@ -12,7 +12,9 @@ services:
         RUN apk add --no-cache \
             nodejs \
             npm
+        COPY package*.json ./
         RUN npm install
+        COPY . .
     container_name: jamsend-prod
     working_dir: /app
     volumes:
