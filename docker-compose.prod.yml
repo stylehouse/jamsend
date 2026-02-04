@@ -25,25 +25,21 @@ services:
         # Build the application
         RUN npm run build
         
-        # Clean up dev dependencies after build
-        RUN npm prune --production
+        # Install serve for serving static files
+        RUN npm install -g serve
         
         # Expose port
         EXPOSE 19091
         
-        CMD ["node", "dist-server/server.js"]
+        # Serve the built app from dist directory
+        CMD ["serve", "-s", "dist", "-l", "19091", "--no-clipboard"]
     
     container_name: jamsend-prod
     working_dir: /app
     ports:
-      # this (with port 9091) would bind to LAN address as well
-      #  but WebRTC requires a secure context (can be localhost)
-      # - "9091:9091"
       - "172.17.0.1:19091:19091"
     environment:
       - NODE_ENV=production
-      - PORT=19091
-      - HOST=0.0.0.0
       - INSTANCE_TYRANT_PREPUB=9547586469c20ce9
     
     restart: always
