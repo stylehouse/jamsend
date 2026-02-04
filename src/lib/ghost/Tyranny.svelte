@@ -176,7 +176,7 @@
     //  return true to stall there and repeat
     async Idvoyage_arrange(A,w,I):Promise<boolean> {
         let ago = await I.i_wasLast('sought')
-        if (ago < 9) {
+        if (ago < 9 || ago == Infinity) {
             await I.i_wasLast('sought',true)
             // Idzeugnation already has brought this up
             if (await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)) {

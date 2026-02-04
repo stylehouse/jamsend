@@ -32,13 +32,15 @@
         )
         || !P.Welcome && "try refreshing" // misleading advice but very helpful
         || P.needs_share_open_action && "need share"
-)
+    )
+
     let unready = $derived(any_problems && never_ready)
     // ready means we can unfullscreen,
     //  and reveal a fullscreen UI:Cytoscape
     let can_fullscreen = $derived(unready && !quit_fullscreen)
 
     let a_while_passes = $state(false)
+    let refresh_talk = $state('')
 
     onMount(() => {
         // remove corporate logo asap, but dont make a flicker
@@ -49,6 +51,9 @@
         setTimeout(() => {
             a_while_passes = true
         },6234)
+        setTimeout(() => {
+            refresh_talk = `reload`
+        },14234)
     })
     $effect(() => {
         if (!unready) never_ready = false
@@ -149,7 +154,12 @@
     </ul>
 
     <span class='ohno'>
-        {#if a_while_passes}{any_problems}{/if}
+        {#if a_while_passes && !P.dodgy_user}
+            {any_problems}  
+            <a href="/" onclick={(e) => { e.preventDefault(); location.reload(); }}>
+                {refresh_talk}
+            </a>
+        {/if}
     </span>
     
     {#if share_act}

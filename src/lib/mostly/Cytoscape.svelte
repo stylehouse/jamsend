@@ -513,6 +513,9 @@
 <style>
     div.relief {
         background:#b394ff;
+        width:100%;
+        height: 100%;
+
     }
     div.wall {
         background:url('seapiano.webp');

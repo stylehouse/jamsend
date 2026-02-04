@@ -6,8 +6,11 @@
     let { mem,stuffziad }: { mem:Modusmem, stuffziad: Stuffziad } = $props()
     mem = mem.further("Stuffziad:"+stuffziad.name)
 
+    let t = stuffziad.name
+    let auto_open = t == 'A' || t == 'w' ? true : false
+
     // thaw|freeze our openness to persistent memory
-    let openness = $state(mem.get('openness') || false);
+    let openness = $state(mem.get('openness') || auto_open);
     function toggle() {
         openness = !openness;
         mem.set('openness',openness)
