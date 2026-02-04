@@ -31,8 +31,8 @@ services:
         # Expose port
         EXPOSE 19091
         
-        # Serve the built app from dist directory
-        CMD ["serve", "-s", "dist", "-l", "19091", "--no-clipboard"]
+        # Serve the built app from build directory
+        CMD ["serve", "-s", "build", "-l", "19091", "--no-clipboard"]
     
     container_name: jamsend-prod
     working_dir: /app

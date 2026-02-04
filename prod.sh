@@ -23,6 +23,7 @@ fi
 # become prod
 cp docker-compose.prod.yml docker-compose.yml
 cp svelte.config.prod.js svelte.config.js
+mkdir build
 
 # Build new Docker images and start the services.
 # The '--build' flag ensures your images are rebuilt with the latest code and configurations.
