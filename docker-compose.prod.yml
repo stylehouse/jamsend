@@ -62,7 +62,7 @@ services:
 
   peerjs:
     image: peerjs/peerjs-server
-    container_name: jamsend-peerjs
+    container_name: jamsend-prod-peerjs
     ports:
       - "172.17.0.1:9995:9995"
     command: ["--port", "9995"]
@@ -88,7 +88,7 @@ services:
     build:
       context: .
       dockerfile: ty/Dockerfile
-    container_name: jamsend-tyrant-logger
+    container_name: jamsend-prod-tyrant-logger
     user: "1000:1000"  # Run as your UID to avoid permission issues
     volumes:
       - ./ty:/app

@@ -30,7 +30,7 @@
         // very top level of behaviour settings
         //  handy for development
         // < part of the next resolution of UI
-        M.F.P.NoHeavyComputing ??= true
+        // M.F.P.NoHeavyComputing ??= true
 
         // continue watching the fog
         await this.Introducing_Readiness(A,w,In,Our)
