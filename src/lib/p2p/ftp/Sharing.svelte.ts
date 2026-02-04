@@ -78,7 +78,7 @@ export class DirectoryModus extends RadioModus {
         await this.r({A:1},{})
         this.i({A:'Directory'})
         
-        if (!this.SUSTAINABILITY_MODE) {
+        if (!this.F.P.NoHeavyComputing) {
             // these are the expensive processes
             // < could be allowed:
             this.i({A:'rastream'})

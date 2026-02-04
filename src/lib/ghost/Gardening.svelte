@@ -9,6 +9,7 @@
     let {M}:{M:TrustingModus} = $props()
     const REQUESTS_MAX_LIFETIME = 25
     const PHI = 1.613
+    
     let V = {}
     onMount(async () => {
     await M.eatfunc({
@@ -22,6 +23,23 @@
         let In = w.oai({Induction:1})
         In.sc.began_at ||= now_in_seconds_with_ms()
         let {Our,Id} = this.Our_main_Id(w)
+
+        // bring Pier in
+        await this.Introducing_GateZone(A,w,In,Our)
+
+        // very top level of behaviour settings
+        //  handy for development
+        // < part of the next resolution of UI
+        M.F.P.NoHeavyComputing ??= true
+
+        // continue watching the fog
+        await this.Introducing_Readiness(A,w,In,Our)
+
+        await this.Gardening(A,w)
+        
+    },
+
+    async Introducing_GateZone(A,w:TheC,In,Our) {
         let Peering = Our.sc.Peering as OurPeering
         // stash important us-info on this Peering...
         //  limiting us to the one, is a better place to store long term info like this...
@@ -52,6 +70,7 @@
                 // don't allow quit_fullscreen (stay in the cave)
                 M.F.P.dodgy_user = true
             }
+            // going off to get Welcomed (Idzeugnated)
             return
         }
         // Peering Welcome spreads to all of Peerily
@@ -60,11 +79,13 @@
         M.F.P.Welcome = true
         // if they then pasted an Idzeugy uri
         //  after trying the front page without it
-        // < slight indicator of tech proficiency
-        //    and the opportunity to hire our attackers...
+        // < collect for hiring all these indicators of tech proficiency
         M.F.P.dodgy_user = false
+        
+    },
 
-
+    async Introducing_Readiness(A,w:TheC,In,Our) {
+        let Peering = Our.sc.Peering as OurPeering
         let eer = Peering.instance
         if (!eer) w.i({waits:"your eer"})
         if (!w.oa({checked_shares:1})) {
@@ -88,12 +109,8 @@
             await In.r({Readiness:1},{NearlyReady:1})
         }
 
-        await this.Gardening(A,w)
+
     },
-
-
-
-
 
 
 //#endregion

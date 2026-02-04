@@ -23,8 +23,6 @@
     await M.eatfunc({
 
 
-        // these are the expensive processes with w:meander and w:radiopreview
-        SUSTAINABILITY_MODE: true,
         
 
     // Tyrant or invitee can want to bring up shares...

@@ -101,23 +101,21 @@
 
 {#snippet those_Active()}
     {#if M.Active.length}
-        <h3>Active {M.mainPeering?.instance?.Id.pretty_pubkey()}</h3>
+        <h3>Active <span class="title">{M.mainPeering?.instance?.Id.pretty_pubkey()}</span></h3>
         <div class="valued">
-            <ul>
             {#each M.Active as En (En.sc.name)}
 
                 
-                <li>
+                <div>
+                    Pier: <span class="title">{En.sc.name} </span>
                     <span class="tech">
                         {#each En.sc.Pier.instance.inhibited_features as [to,n] (to)}
                             {to}:{n}
                         {/each}
                     </span>
-                    Pier: <span class="title">{En.sc.name} </span>
-                </li>
+                </div>
 
             {/each}
-            </ul>
         </div>
     {/if}
 

@@ -319,6 +319,9 @@ export class Peerily {
     directory_compat_mode = $state()
     // Gardening can move the active raterm around one Pier at a time
     switchup_Engagements?:Function
+    // avoid the expensive processes with w:meander and w:radiopreview
+    //  everyone can still have radiostock and rapiracy
+    NoHeavyComputing = $state(false)
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive
