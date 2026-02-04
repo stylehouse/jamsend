@@ -85,14 +85,21 @@
     onDestroy(() => {
         P.stop()
     })
+    let title = $state('jamsend')
     onMount(() => {
         document.body.style.setProperty('overflow','hidden')
+        title = location.host.split('.')[0]
     })
+    let full_title = $derived(title + 
+        (import.meta.env.MODE != 'production' ? 
+            ' - '+import.meta.env.MODE : ''
+        )
+    )
     // < get <div transition:fade> working
 </script>
 
 <svelte:head>
-    <title>jamsend</title>
+    <title>{full_title}</title>
 </svelte:head>
 
 {#if !P.fade_splash}

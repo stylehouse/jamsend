@@ -37,7 +37,16 @@
 
     //    < configure Idzeug.stashed.give_them_trust
     //       from checkboxes of Features
-      
+    
+    // < bizzarely needing this delay!?
+    let appearing_Peering = $state(false);
+    let whatsit = (S) => {
+        console.log("whatsit(S)",S)
+        return S.instance?.Id?.pretty_pubkey()
+    }
+    onMount(() => {
+        setTimeout(() => appearing_Peering = true, 500)
+    })
 
 
 </script>
@@ -64,7 +73,7 @@
     <!-- and then we have to have these things exist to get S.stashed
          which we wait for sometimes somewhere -->
 
-    <details>
+    <details open>
         <summary>Our data</summary>
     <h3>Our Idzeugs</h3>
     <Things
@@ -96,7 +105,9 @@
         >
             {#snippet thing(S:OurPeering)}
                 <div class='levity Peering'>
-                    <p>a Peering</p>
+                    {#if appearing_Peering}
+                        <p>a Peering: {whatsit(S)}</p>
+                    {/if}
                     {@render Stashedness(S)}
                 </div>
             {/snippet}

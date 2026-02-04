@@ -13,7 +13,7 @@
     let V = {}
     const INSTANCE_TYRANT_PREPUB =
         import.meta.env.INSTANCE_TYRANT_PREPUB
-        || "39c5108c0e1f7948"
+        || "93d34f61fead5759"
     const REQUESTS_MAX_LIFETIME = 25
     onMount(async () => {
     await M.eatfunc({

@@ -94,7 +94,14 @@
         // Introducing along:
         M.i_elvis(M.w,'noop')
     }
+
     // < cyto in here... can we make friends in common?
+
+    // take over an uninhabited instance
+    //  by escaping fullscreen while !Good
+    //  and setting your prepub as instance tyrant
+    window.release_here = () => toggle_fullscreen()
+
 </script>
 
 

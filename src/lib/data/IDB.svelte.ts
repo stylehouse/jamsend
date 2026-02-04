@@ -50,7 +50,7 @@ export class IndexedDBStorage<T = any> {
 
     private openDatabase(): Promise<IDBDatabase> {
         return new Promise((resolve, reject) => {
-            console.log(`Opening IndexedDB: ${this.dbName}, store: ${this.storeName}, version: ${this.version}`)
+            // console.log(`Opening IndexedDB: ${this.dbName}, store: ${this.storeName}, version: ${this.version}`)
             const request = indexedDB.open(this.dbName, this.version)
             
             request.onerror = () => {
@@ -64,7 +64,7 @@ export class IndexedDBStorage<T = any> {
             }
             
             request.onsuccess = () => {
-                console.log(`IndexedDB opened successfully: ${this.dbName}`)
+                // console.log(`IndexedDB opened successfully: ${this.dbName}`)
                 const db = request.result
                 
                 // Add error handler for the database connection
