@@ -413,13 +413,18 @@
 
     // savable
     onMount(() => {
-        let heice = mem.get('resumable_heist')
-        node_edger.set_resumable_heist(null)
-        heice && M.i_elvis(w, 'resume_heist', {heice})
     })
+    let on_jamming_commenced = () => {
+        // fullscreen interface ready to receive this thing
+        // < nah shouldn't cancel a heist once it's @5
+        let heice = mem.get('resumable_heist')
+        // node_edger.set_resumable_heist(null)
+        heice && M.i_elvis(w, 'resume_heist', {heice})
+    }
     node_edger.set_resumable_heist = (heice) => {
         mem.set('resumable_heist',heice)
     }
+
 
 
 
@@ -428,6 +433,16 @@
     node_edger.jamming = (whether) => {
         jamming = whether
     }
+    // stick this down so Pier can reconnect without leaving fullscreen
+    // < to switch which Pier is facesucking, raterming. Engage needs to.
+    let ever_jamming = $state(false)
+    $effect(() => {
+        if (jamming && !ever_jamming) {
+            ever_jamming = true
+            on_jamming_commenced()
+
+        }
+    })
     // F:Trusting, always there, also throws up fullscreening on load
     //  depending also on similar !quit_fullscreen
     //   shows them induction text while atop us
@@ -437,7 +452,7 @@
     //   and jumps out of the way just as the stream comes in
     //   
     // < once jamming, or
-    let fullscreen = $derived(jamming && !quit_fullscreen)
+    let fullscreen = $derived(ever_jamming && !quit_fullscreen)
     onMount(() => {
         M.F.P.some_feature_is_nearly_ready = true
     })
