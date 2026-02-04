@@ -7,7 +7,7 @@ services:
     build:
       context: .
       dockerfile_inline: |
-        FROM node:20-alpine
+        FROM node:20-alpine AS builder
         WORKDIR /app
         
         # Install system dependencies
@@ -22,24 +22,45 @@ services:
         # Copy source code
         COPY . .
         
-        # Build the application
+        # Build the SvelteKit application
         RUN npm run build
         
-        # Install serve for serving static files
-        RUN npm install -g serve
+        # Production stage
+        FROM node:20-alpine
+        WORKDIR /app
+        
+        # Install vim for debugging if needed
+        RUN apk add --no-cache vim
+        
+        # Copy package files
+        COPY package*.json ./
+        
+        # Install ONLY production dependencies
+        RUN npm ci --omit=dev
+        
+        # Copy built app from builder
+        COPY --from=builder /app/build ./build
+        COPY --from=builder /app/package.json ./
         
         # Expose port
         EXPOSE 19091
         
-        # Serve the built app from build directory
-        CMD ["serve", "-s", "build", "-l", "19091", "--no-clipboard"]
+        # Run the SvelteKit Node server
+        ENV NODE_ENV=production
+        ENV PORT=19091
+        ENV HOST=0.0.0.0
+        
+        CMD ["node", "build/index.js"]
     
     container_name: jamsend-prod
-    working_dir: /app
     ports:
       - "172.17.0.1:19091:19091"
     environment:
       - NODE_ENV=production
+      - PORT=19091
+      - HOST=0.0.0.0
+      - ORIGIN=http://localhost:19091
+      - BODY_SIZE_LIMIT=Infinity
       - INSTANCE_TYRANT_PREPUB=9547586469c20ce9
     
     restart: always
