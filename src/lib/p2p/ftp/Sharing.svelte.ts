@@ -78,10 +78,14 @@ export class DirectoryModus extends RadioModus {
         await this.r({A:1},{})
         this.i({A:'Directory'})
         
-        this.i({A:'rastream'})
+        if (!this.SUSTAINABILITY_MODE) {
+            // these are the expensive processes
+            // < could be allowed:
+            this.i({A:'rastream'})
 
-        this.i({A:'Alice Records'}).i({w:'rahunting'})
-        this.i({A:'Bob Records'}).i({w:'rahunting'})
+            this.i({A:'Alice Records'}).i({w:'rahunting'})
+            this.i({A:'Bob Records'}).i({w:'rahunting'})
+        }
 
         this.i({A:'radiostock'})
         this.i({A:'rapiracy'})

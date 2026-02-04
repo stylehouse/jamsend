@@ -38,7 +38,7 @@
 
     onMount(async () => {
     await M.eatfunc({
-        
+
         async on_code_change() {
             // < bounces!?
             this.on_code_change = async () => {}
