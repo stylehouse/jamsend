@@ -18,7 +18,9 @@ function Peer_OPTIONS() {
     // to not run your own server:
     // return {}
     // this gets a path intercepted by Caddy in stylehouse/leproxy
-    return {host:location.host,port:443,path:"peerjs-server"}
+    let [host,port] = location.host.split(':')
+    port ||= 443
+    return {host,port,path:"peerjs-server"}
 }
 
 function arre(a:Array,gone,neu) {
