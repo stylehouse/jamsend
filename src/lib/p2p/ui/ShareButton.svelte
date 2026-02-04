@@ -1,34 +1,38 @@
 <script lang="ts">
 	import QrCode from "svelte-qrcode"
     let {P} = $props()
-    P.dosharing = () => {
-        if (link) link = null
-        sharing()
-    }
-
     
-    let link = $state()
+    let links = $state([])
     async function sharing() {
-        if (link) return link = null
-        link = await P.Trusting.M.Idzeugnate()
+        if (links.length) return links = []
+        links = await P.Trusting.M.Idzeugnate(1)
     }
     async function copy_link() {
-        await navigator.clipboard.writeText(link);
+        await navigator.clipboard.writeText(links[0]);
     }
     let size = $state(300)
-    let qrele:HTMLElement|undefined = $state()
+    let qrsele:HTMLElement|undefined = $state()
+    let space_fraction = $state(1)
     $effect(() => {
-        if (link && qrele) {
-            let img = qrele.children[0]
+        if (links.length && qrsele) {
+            let img = qrsele.children[0].children[0]
             if (img.nodeName != "IMG") throw "!img"
             // in here, adjust size for smallest width|height of viewport
             const vw = window.innerWidth
             const vh = window.innerHeight
             const availableWidth = vw * 0.8
             const availableHeight = (vh - 100) * 0.8 // subtract space for button
-            size = Math.min(availableWidth, availableHeight)
+            size = Math.min(
+                availableWidth * space_fraction,
+                 availableHeight * space_fraction)
         }
     })
+
+    async function blotter() {
+        // < swap out pqr for a canvas, p
+        space_fraction = 0.16
+        links = await P.Trusting.M.Idzeugnate(10)
+    }
 </script>
 
 <span onclick={sharing}>
@@ -38,11 +42,19 @@
             <path fill=#2563eb d="M448 256C501 256 544 213 544 160C544 107 501 64 448 64C395 64 352 107 352 160C352 165.4 352.5 170.8 353.3 176L223.6 248.1C206.7 233.1 184.4 224 160 224C107 224 64 267 64 320C64 373 107 416 160 416C184.4 416 206.6 406.9 223.6 391.9L353.3 464C352.4 469.2 352 474.5 352 480C352 533 395 576 448 576C501 576 544 533 544 480C544 427 501 384 448 384C423.6 384 401.4 393.1 384.4 408.1L254.7 336C255.6 330.8 256 325.5 256 320C256 314.5 255.5 309.2 254.7 304L384.4 231.9C401.3 246.9 423.6 256 448 256z"/>
         </svg>
     </span>
-    {#if link}
+    {#if links.length}
         <qrthing>
             <span>
-                <p> <button onclick={copy_link}>Copy Link</button>, oncer.</p>
-                <pqr bind:this={qrele}> <QrCode value={link} {size} /> </pqr>
+                <p> 
+                    <button onclick={copy_link}>Copy Link</button>, oncer.
+                    <button class='small' onclick={blotter}>blotter</button>
+                
+                </p>
+                <div bind:this={qrsele}>
+                {#each links as link (link)}
+                    <pqr> <QrCode value={link} {size} /> </pqr>
+                {/each}
+                </div>
                 <!-- <p>{link}</p> -->
             </span>
         </qrthing>
@@ -61,7 +73,7 @@
 
     qrthing {
         position: fixed;
-        top: 0;
+        bottom: 0;
         left: 0;
         width: 100%;
         height: 100%;
@@ -82,9 +94,17 @@
     }
     button{
         padding:1em;
-        font-size:9vw;
+        font-size:1.5em;
     }
     p{
         font-size: 2em;
+    }
+    .small {
+        font-size: 0.5em;
+        float: right;
+        padding:0.3em;
+        transform:scale(2.2) rotate(9deg);
+        transform-origin:bottom;
+        opacity: 0.1;
     }
 </style>

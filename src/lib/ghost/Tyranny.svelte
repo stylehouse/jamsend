@@ -247,7 +247,7 @@
     },
     
     // be able to make them, via UI:ShareButton (out of Atime)
-    async Idzeugnate() {
+    async Idzeugnate(many=1) {
         let w = this.w
         // with the current Idzeugability...
         let {Id} = this.Our_main_Id(w)
@@ -256,8 +256,7 @@
         let Our = w.o({Idzeug:1,Our:1}).pop()
         let {Idzeug} = Our.sc
 
-        let uri = await this.Idzeug_i_Idzeugi(w,Idzeug)
-        return uri
+        return await this.Idzeug_i_Idzeugi(w,Idzeug,many)
     },
 
 
@@ -300,7 +299,7 @@
         }
         // now store a new
         s.Upper_Number   = upNum
-        return many == 1 ? N[0] : N
+        return N
     },
     // < put an ad for a hashtag here?
     reset_location_hash() {
