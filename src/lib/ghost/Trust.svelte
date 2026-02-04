@@ -198,7 +198,8 @@
 
             // i %Listening/%Pier o %Ringing
             if (!Pier) throw `!our`
-            if (Pier.constructor.name != 'OurPier') throw `!OurPier`
+            // < on prod, these get compiley labels
+            // if (Pier.constructor.name != 'OurPier') throw `!OurPier`
             let LP
             if (!Li.oa({Pier:1,prepub})) {
                 let now = now_in_seconds_with_ms()
