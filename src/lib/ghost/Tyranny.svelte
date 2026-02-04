@@ -503,7 +503,7 @@
         let is_trusted = await this.Idvoyage_verify(I.sc.Idvoyage)
         if (!is_trusted) {
             console.log(`🦑 Idvoyage_verify BAD`)
-            return no(`your contact is part of a renegade trust network and could be dangerous`)
+            return no(`Idvoyage_verify failed`)
         }
 
         // timestamp we joined the trust network
