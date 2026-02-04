@@ -54,6 +54,8 @@
         let queue = M.log_Idvoyage_queue ||= []
         queue.push({Now,Before})
 
+        if (M.log_Idvoyage_not) return console.log(`would log Idvoyage.`)
+
         let go = M.log_Idvoyage_throttle ||= throttle(() => {
             console.log(`logged Idvoyaging x${queue.length}`)
             while (1) {
@@ -64,7 +66,9 @@
                     method: 'POST',
                     body: JSON.stringify({Now,Before})
                 }).catch((er) => {
-                    throw erring("Tyrant Idvoyaging upload",er)
+                    // < proxy to a separate development tyrant logger...
+                    //   these just fail in development.
+                    console.warn("Tyrant Idvoyaging upload",er)
                 });
             }
         },80)
@@ -439,7 +443,7 @@
         let Tyrant_ok = M.amTyrant
             || !await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)
         if (!Pier_ok) {
-            console.log(`🦑 Idzeugnation connecting...`)
+            console.log(`🦑 Idzeugnation connecting... Pier:${Pier?.instance?.pub}`)
             return I.i({waits:'connecting...'})
         }
 
@@ -643,7 +647,7 @@
 
     // true if it is now consumed, false if duplicate
     claim_Idzeug_number(Idzeug:OurIdzeug,n:number) {
-        if (!n || n != n*1) throw "!number"
+        if (n == null || n != n*1) throw "!number"
         let N = Idzeug.stashed.taken_n ||= []
         if (N.includes(n)) return false
         // this'll be shorter in json...

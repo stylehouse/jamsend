@@ -24,25 +24,8 @@
         In.sc.began_at ||= now_in_seconds_with_ms()
         let {Our,Id} = this.Our_main_Id(w)
 
-        // bring Pier in
-        await this.Introducing_GateZone(A,w,In,Our)
 
-        // very top level of behaviour settings
-        //  handy for development
-        // < part of the next resolution of UI
-        if (import.meta.env.MODE != 'production') {
-            M.F.P.NoHeavyComputing ??= true
-            M.log_Idvoyage_spam = true
-        }
-
-        // continue watching the fog
-        await this.Introducing_Readiness(A,w,In,Our)
-
-        await this.Gardening(A,w)
         
-    },
-
-    async Introducing_GateZone(A,w:TheC,In,Our) {
         let Peering = Our.sc.Peering as OurPeering
         // stash important us-info on this Peering...
         //  limiting us to the one, is a better place to store long term info like this...
@@ -61,7 +44,6 @@
             // start doing instance tyrant things
             await A.oai({w:'Tyranny'},{andSecurity:1})
             // route its mail
-            //  unemit handlers send to M.w which isn't the Tyrant
             for (let e of this.o_elvis(w,'i Idvoyage')) {
                 this.i_elvis(w,'i Idvoyage',{...e.sc,Aw:'Trusting/Tyranny'})
             }
@@ -84,6 +66,24 @@
         //  after trying the front page without it
         // < collect for hiring all these indicators of tech proficiency
         M.F.P.dodgy_user = false
+
+
+
+
+
+        // very top level of behaviour settings
+        //  handy for development
+        // < part of the next resolution of UI
+        if (import.meta.env.MODE != 'production') {
+            // M.F.P.NoHeavyComputing ??= true
+            // M.log_Idvoyage_spam = true
+            M.log_Idvoyage_not = true
+        }
+
+        // continue watching the fog
+        await this.Introducing_Readiness(A,w,In,Our)
+
+        await this.Gardening(A,w)
         
     },
 

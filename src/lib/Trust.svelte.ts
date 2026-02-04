@@ -176,7 +176,7 @@ export class OurIdzeugs extends ThingsIsms {
         return new OurIdzeug(opt)
     }
     async autovivify(opt) {
-        opt.name = 'typical policy'
+        opt.name = 'ope'
     }
 }
 export class OurIdzeug extends stashedHavingThingIsms {

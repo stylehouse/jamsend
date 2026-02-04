@@ -41,7 +41,6 @@
     // < bizzarely needing this delay!?
     let appearing_Peering = $state(false);
     let whatsit = (S) => {
-        console.log("whatsit(S)",S)
         return S.instance?.Id?.pretty_pubkey()
     }
     onMount(() => {

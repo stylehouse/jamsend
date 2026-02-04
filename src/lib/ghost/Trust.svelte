@@ -624,7 +624,13 @@
         let Our = this.o_Pier_Our(w,ier.pub)
         if (!Our) throw `Pier ! %Our`
         let Pier = Our.sc.Pier
-        if (Pier.instance != ier) throw "Whua"
+        if (Pier.instance != ier) {
+            setTimeout(() => {
+                if (Pier.instance != ier) {
+                    throw `Pier.instance != ier for a while: Pier:${ier.pub}`
+                }
+            },500)
+        }
 
         let Li = w.o({Listening:1,eer})[0]
         if (!Li) throw `your Peering has not %Listening`
