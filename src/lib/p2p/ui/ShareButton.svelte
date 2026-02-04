@@ -36,7 +36,7 @@
 
     async function blotter() {
         space_fraction = 0.85
-        links = await P.Trusting.M.Idzeugnate(10)
+        links = await P.Trusting.M.Idzeugnate(90)
     }
 </script>
 
@@ -49,7 +49,7 @@
     {#if links.length}
         <qrthing>
             <span>
-                <p> 
+                <p class="noprint"> 
                     <button onclick={copy_link}>Copy Link</button>, oncer.
                     <button class='small' onclick={blotter}>blotter</button>
                 </p>
@@ -96,7 +96,7 @@
     pqr {
         display: flex;
         background: white;
-        padding: 0.5em;
+        padding: -1.5em;
         justify-content: center;
         align-items: center;
     }
@@ -117,5 +117,32 @@
         transform: scale(2.2) rotate(9deg);
         transform-origin: bottom;
         opacity: 0.1;
+    }
+
+    /* Print styles */
+    @media print {
+        .noprint {
+            display: none !important;
+        }
+        
+        qrthing {
+            position: static;
+            background: white;
+            backdrop-filter: none;
+            width: auto;
+            height: auto;
+        }
+        
+        .qr-grid {
+            max-width: 100%;
+            max-height: none;
+            overflow: visible;
+            gap: 0.5cm;
+        }
+        
+        pqr {
+            padding: 0.2cm;
+            break-inside: avoid;
+        }
     }
 </style>
