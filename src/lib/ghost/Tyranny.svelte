@@ -461,7 +461,7 @@
                 return no(`the third party who verifies trust network continuity is not available.
                     the link will work again, just keep this tab for a while.`)
             }
-            return I.i({waits:"arranging mirage..."})
+            return I.i({waits:"nearing mirage..."})
         }
         // < this may stop Tyrant Idzeugnating
         let TId = M.OurTyrant?.instance?.Ud
