@@ -10,7 +10,6 @@ services:
         FROM alpine:3.19
         WORKDIR /app
         RUN apk add --no-cache \
-            ffmpeg \
             nodejs \
             npm
     container_name: jamsend-dev
