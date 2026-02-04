@@ -21,7 +21,7 @@ services:
       - "172.17.0.1:19091:19091"
     environment:
       - NODE_ENV=production
-    command: npm run dev -- --host 0.0.0.0 --port 19091
+    command: npx vite --host 0.0.0.0 --port 19091
     tty: true
     stdin_open: true
     
