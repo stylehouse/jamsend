@@ -6,6 +6,8 @@ modern music piracy in the browser
 
 ![at sea](static/screenshot.webp)
 
+It has a very sensible data abstraction called Stuff that seems like where computers are heading.
+
 ## safety
 
 Could be better but is fantastic.
@@ -24,11 +26,11 @@ Preserve directory structure, tend to move whole albums, restart if interrupted.
 
 # funding
 
-Help! [Cash will be applied](https://ko-fi.com/ostylehouse). Long story. Wanting to create high quality work to nice things up. I've wanted to build but needed the more complete metaphysics that now seems to be here to make it all connect. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
+[Send tips!](https://ko-fi.com/ostylehouse). Long story. Lots of quality work to nice things up I've wanted to build but needed the more complete metaphysics that now seems to be here to make it all connect. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
 
 # development
 
-Help also! Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
+Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
 
 This effectively locates the frontier of computer interface and program design. This is a relatively tidy part of an ongoing project to capture the core of the universe with language, which I've been working on for a long time, and fix the computer once and for all. It now appears in the guise of a music piracy app, to communicate.
 
