@@ -164,10 +164,6 @@ export class OurPiers extends stashedHavingThingsIsms {
     constructor(opt) {
         super(opt)
         this.set_table(`Pier`)
-        // stealth config
-        if (import.meta.env.MODE === 'production') {
-            this.F.P.stealth = true;
-        }
     }
 
 
@@ -226,6 +222,7 @@ export class TrustingModus extends Modus {
     // the UI workings list of Pier by the En%Engage
     Active:TheN = $state([])
     log_Idvoyage_spam = false
+    log_Idvoyage_not = false
 
     constructor(opt:Partial<TrustingModus>) {
         super(opt)

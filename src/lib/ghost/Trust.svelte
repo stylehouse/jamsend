@@ -11,18 +11,17 @@
    
     let {M}:{M:TrustingModus} = $props()
     let V = {}
-    let IS_PROD = location.host.startsWith('jamsend.')
+    let P = M.F.P
+    P.PROD = location.host.startsWith('jamsend.')
         || location.host.startsWith('voula')
     const INSTANCE_TYRANT_PREPUB =
         // < this working:
         import.meta.env.INSTANCE_TYRANT_PREPUB
-        || (import.meta.env.MODE === 'production'||IS_PROD)
+        || (import.meta.env.MODE === 'production'||P.PROD)
             ? "4c845c179ebf1b11"
             : "93d34f61fead5759"
     const REQUESTS_MAX_LIFETIME = 25
 
-
-    console.log(`We have import.meta.env.INSTANCE_TYRANT_PREPUB: ${import.meta.env.INSTANCE_TYRANT_PREPUB}`)
 
     onMount(async () => {
     await M.eatfunc({
@@ -41,6 +40,18 @@
         //     },80)
         // }
         
+
+        // very top level of behaviour settings
+        //  handy for development
+        // < part of the next resolution of UI
+        if (!P.PROD) {
+            // M.F.P.NoHeavyComputing ??= true
+            // M.log_Idvoyage_spam = true
+            M.log_Idvoyage_not = true
+        }
+        else {
+            this.F.P.stealth = true;
+        }
         
 
 
@@ -126,7 +137,7 @@
         let eer = Peering.instance = P.i_Peering(Id) as Peering
         eer.Thing = Peering
         M.mainPeering = Peering
-        
+
         if (Id.pretty_pubkey() == INSTANCE_TYRANT_PREPUB) {
             M.amTyrant = true
         }
