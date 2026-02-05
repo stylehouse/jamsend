@@ -36,8 +36,14 @@
         if (!name) return
         
         try {
-            // Use the collection's add method
-            await Ss.add_Thing({name})
+            if (name.startsWith('{') && Ss.thawEnteredStashed) {
+                // Upsert JSON of S.stashed
+                await Ss.thawEnteredStashed(name)
+            }
+            else {
+                // Use the collection's add method
+                await Ss.add_Thing({name})
+            }
             newItemName = ''
         } catch (err) {
             console.warn(`Failed to add ${type}:`, err)

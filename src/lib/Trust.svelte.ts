@@ -106,9 +106,30 @@ export abstract class stashedHavingThingIsms extends ThingIsms {
             throw erring(`Failed to start ${this.constructor.name} "${this.name}"`, err)
         }
     }
+
 }
 
+class stashedHavingThingsIsms extends ThingsIsms {
+    async thawEnteredStashed(js) {
+        let da = JSON.parse(js)
+        
+        for (let S of this.asArray()) {
+            let pub = S.stashed?.Id?.pub
+            if (pub && pub == da.Id.pub) {
+                // found it! update it
+                S.stashed = da
+                return
+            }
+        }
 
+        let prepub = da.Id.pub.slice(0,16)
+        let S = await this.add_Thing({name:prepub})
+        // wait for UI to make .stashed exist
+        await S.promise_stashed
+        S.stashed = da
+        console.log(`Added Thing with stashed data: ${S.name}`)
+    }
+}
 
 
 
@@ -118,7 +139,7 @@ export abstract class stashedHavingThingIsms extends ThingIsms {
 // these sync into w:Trusting/%Our,...
 //    present as an officey place separate to the being of them
 //    maybe with an arrow connecting them
-export class OurPeerings extends ThingsIsms {
+export class OurPeerings extends stashedHavingThingsIsms {
     started = $state(false)
     constructor(opt) {
         super(opt)
@@ -138,7 +159,7 @@ export class OurPeering extends stashedHavingThingIsms {
 }
 
 
-export class OurPiers extends ThingsIsms {
+export class OurPiers extends stashedHavingThingsIsms {
     started = $state(false)
     constructor(opt) {
         super(opt)
@@ -164,7 +185,7 @@ export class OurPier extends stashedHavingThingIsms {
 }
 
 
-export class OurIdzeugs extends ThingsIsms {
+export class OurIdzeugs extends stashedHavingThingsIsms {
     started = $state(false)
     constructor(opt) {
         super(opt)
