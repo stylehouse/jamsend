@@ -47,6 +47,28 @@
         setTimeout(() => appearing_Peering = true, 500)
     })
 
+    let loaded = false
+    $effect(() => {
+        if (loaded) return
+        if (!M?.stashed) return
+        if (M.stashed.NoHeavyComputing != null) {
+            F.P.NoHeavyComputing = M.stashed.NoHeavyComputing
+        }
+        if (M.stashed.showDetails != null) {
+            showDetails = M.stashed.showDetails
+        }
+        loaded = true
+    })
+    let showDetails = $state(false)
+    let NoHeavyComputing = $derived(F?.P?.NoHeavyComputing)
+    function tognoheavy(e) {
+        let is = e.target.checked
+        F.P.NoHeavyComputing = is
+        M.stashed.NoHeavyComputing = is
+    }
+    function togdetails(e) {
+        M.stashed.showDetails = showDetails = !showDetails
+    }
 
 </script>
 
@@ -55,6 +77,12 @@
 {#if F}
     <button onclick={increase} >increase</button>
     <button onclick={() => grip()} >grip</button>
+    <input type="checkbox"
+        onchange={(e) => tognoheavy(e)}
+        id="NoHeavyComputing" checked={NoHeavyComputing} /> 
+        <label for="NoHeavyComputing">
+            NoHeavyComputing
+        </label>
 
 
 
@@ -72,8 +100,8 @@
     <!-- and then we have to have these things exist to get S.stashed
          which we wait for sometimes somewhere -->
 
-    <details open>
-        <summary>Our data</summary>
+    <p>Our data <button onclick={togdetails}>show|hide</button></p>
+    <div class:invis={!showDetails}>
     <h3>Our Idzeugs</h3>
     <Things
             Ss={F.OurIdzeugs}
@@ -127,7 +155,7 @@
                 </div>
             {/snippet}
     </Things>
-
+    </div>
     
     {#if M}
         <!-- is usually handled by F.gizmos -->
@@ -135,7 +163,6 @@
         <!-- is a bunch of code that can load into M.* without tearing down all this -->
         <Trust {M} />
     {/if}
-    </details>
 {/if}
 </div>
 <style>
@@ -154,6 +181,9 @@
     .levity {
         margin-left:-1em;
         border-radius:2em;
+    }
+    .invis {
+        display:none;
     }
     summary {
         font-size: 1.6em;
