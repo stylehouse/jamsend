@@ -514,7 +514,6 @@
 
         // also checks with instance tyrant to get a marriage cert sort of thing
         // < check theirs
-        console.log('as far as arrange')
         if (await this.Idvoyage_arrange(A,w,I)) return
         
         // grant them the same access
@@ -536,9 +535,22 @@
             await this.i_Idzeugsomething(w,'Idzeugnosis',sex({},e.sc,'ier,advice,sign'))
         }
     },
+    recent_Idvoyage_signs: [],
     async unemitIntro(ier:Pier,data) {
         // the trip to the Tyrant and back
         if (data.Idvoyage && !data.success) {
+            let sign = data.Idvoyage.sign
+
+            // < multi ask, multi success
+            if (this.recent_Idvoyage_signs.includes(sign)) {
+                console.log(`skipping dup e:i Idvoyage`)
+                return
+            }
+            this.recent_Idvoyage_signs.push(sign)
+            setTimeout(() => {
+                grop(si => si == sign,this.recent_Idvoyage_signs)
+            }, 9000)
+
             this.i_elvis(this.w,'i Idvoyage',sex({ier},data,'Idvoyage'))
             return
         }

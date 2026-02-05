@@ -225,6 +225,7 @@
         M.stashed: {JSON.stringify(M.stashed)}
     {/if} -->
 
+    
 <style>
     .valued {
         object-fit: cover;

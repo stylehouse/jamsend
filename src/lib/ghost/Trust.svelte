@@ -19,7 +19,7 @@
         import.meta.env.INSTANCE_TYRANT_PREPUB
         || (import.meta.env.MODE === 'production'||P.PROD)
             ? "4c845c179ebf1b11"
-            : "93d34f61fead5759"
+            : "a342837a674836d6"
     const REQUESTS_MAX_LIFETIME = 25
 
 
@@ -73,13 +73,22 @@
 
         await this.o_Our_Things(A,w)
         
-        // ghost/Tyranny of security
-        await this.Idzeuging(A,w)
-        // connecting to people
-        await this.Listening(A,w)
-        await this.Ringing(A,w)
-        // ghost/Gardening sense making
-        await this.Introducing(A,w)
+        if (M.fairly_init == null) {
+            M.fairly_init = false
+            setTimeout(() => {
+                M.fairly_init = true
+                this.i_elvis(w)
+            },1500)
+        }
+        if (M.fairly_init) {
+            // ghost/Tyranny of security
+            await this.Idzeuging(A,w)
+            // connecting to people
+            await this.Listening(A,w)
+            await this.Ringing(A,w)
+            // ghost/Gardening sense making
+            await this.Introducing(A,w)
+        }
 
 
 
@@ -681,10 +690,12 @@
         //    GONE is ier.stashed.pubkey, now simply:
         ier.stashed.Id = Id.freeze()
         let Pier = ier.Thing
-        let Our = w.o({Our:1,Pier})[0]
         let prepub = ier.stashed.prepub
+        let anOur = await this.simply_i_Pier_Our(prepub)
+
+        let Our = w.o({Our:1,Pier})[0]
         delete ier.stashed.prepub
-        this.ensure_Our_Id(Our)
+        this.ensure_Our_Id(Our) 
         console.warn(`e:save_Ud(${prepub})`)
 
     },

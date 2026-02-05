@@ -550,7 +550,6 @@ export class Pier {
 
     constructor(opt) {
         Object.assign(this, opt)
-
     }
     on_error(err) {
         console.log(`!! error via connection(${this.pub})`)
@@ -581,9 +580,11 @@ export class Pier {
         this.inbound = inbound
         let say = inbound ? "received" : "made"
 
-        con.on('open', () => {
+        con.on('open', async () => {
             if (!this.disconnected) return
             this.disconnected = false
+            await this.emit('noop')
+
             console.log(`${say} connection(${this.pub})`)
             // the other con.on handlers, hello procedure, etc:
             this.init_completo(eer,con)
@@ -827,7 +828,9 @@ export class Pier {
             if (!this.Ud) {
                 // only accept hello before we know their Idento
                 let type = this.next_unemit.data.type
-                if (type != 'hello') return console.warn(`unauthorised unemit:${type}`)
+                if (type != 'hello' && type != 'noop') {
+                    return console.warn(`unauthorised unemit:${type}`)
+                }
             }
             if (crypto.buffer_sign) {
                 this.next_unemission = 'buffer'
@@ -903,6 +906,9 @@ export class Pier {
         this.trusted.clear()
     }
     handlers = {
+        noop: async (data) => {
+            console.log("they say noop: ",data)
+        },
         hello: async (data) => {
             console.log("they say hi: ",data)
             this.hear_hello(data)

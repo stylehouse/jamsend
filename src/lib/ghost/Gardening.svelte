@@ -45,6 +45,7 @@
             await A.oai({w:'Tyranny'},{andSecurity:1})
             // route its mail
             for (let e of this.o_elvis(w,'i Idvoyage')) {
+                console.log(`Routing mail to w:Tyranny`)
                 this.i_elvis(w,'i Idvoyage',{...e.sc,Aw:'Trusting/Tyranny'})
             }
         }
@@ -445,7 +446,7 @@
             //   but doesn't take any C.sc.*
             let ti = Go.oai({timeout:1})
             ti.sc.since ||= now_in_seconds()
-            if (ti.ago('since') > REQUESTS_MAX_LIFETIME) {
+            if (ti.ago('since') > REQUESTS_MAX_LIFETIME*6) {
                 let Pier = Go.sc.Pier as OurPier
                 await Ga.i({Decomposing:1,...this.descPier(Pier)})
                 console.log(`🌱 Decomposing Pier:${Pier.name}`)
