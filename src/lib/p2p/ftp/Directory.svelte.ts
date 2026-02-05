@@ -86,6 +86,8 @@ export class DirectoryShare extends ThingIsms {
     async start_post(retriable=false) {
         if (this.fsHandler.started) {
             this.started = true
+            // dismiss UI wanting this
+            this.F.P.needs_share_open_action = null
             console.log(`DirectoryShare "${this.name}" started`)
         }
         else {
