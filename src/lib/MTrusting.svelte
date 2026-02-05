@@ -159,7 +159,7 @@
     </ul>
 
     <span class='ohno'>
-        {#if a_while_passes && !P.dodgy_user}
+        {#if a_while_passes && M.F.P.Welcome}
             {any_problems}  
             <a href="/" onclick={(e) => { e.preventDefault(); location.reload(); }}>
                 {refresh_talk}

@@ -393,6 +393,7 @@
         }
         
         // continuously...
+        let someIdzeugnations = false
         for (let I of w.o({Idzeugnation:1})) {
             // we are the invitee
             let no = await not_dead(I)
@@ -401,7 +402,9 @@
             for (let wa of I.o1({waits:1})) {
                 this.UIsay(w,wa,{mediocre:1})
             }
+            someIdzeugnations = true
         }
+        
 
         await this.o_elvis_Idzeugnosis(A,w)
         for (let I of w.o({Idzeugnosis:1})) {
@@ -464,7 +467,16 @@
         }
         // < this may stop Tyrant Idzeugnating
         let TId = M.OurTyrant?.instance?.Ud
-        if (!TId) return I.i({waits:'nearly...'})
+        if (!TId) {
+            // < cleanly, properly creating new Pier at the destination...
+            //   somehow it... no hello the first time?
+            I.i({stuckat_noId:1})
+            if (I.o({stuckat_noId:1}).length > 1) {
+                console.warn(`guessing Pier++ has gone weird, reloading...`)
+                location.reload()
+            }
+            return I.i({waits:'nearly...'})
+        }
 
 
 
