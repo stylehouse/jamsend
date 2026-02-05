@@ -57,9 +57,13 @@
         if (M.stashed.showDetails != null) {
             showDetails = M.stashed.showDetails
         }
+        if (M.stashed.NoRadio != null) {
+            NoRadio = M.stashed.NoRadio
+        }
         loaded = true
     })
     let showDetails = $state(false)
+    let NoRadio = $state(false)
     let NoHeavyComputing = $derived(F?.P?.NoHeavyComputing)
     function tognoheavy(e) {
         let is = e.target.checked
@@ -68,6 +72,10 @@
     }
     function togdetails(e) {
         M.stashed.showDetails = showDetails = !showDetails
+    }
+    function tognoradio(e) {
+        let is = e.target.checked
+        M.stashed.NoRadio = NoRadio = is
     }
 
 </script>
@@ -82,6 +90,12 @@
         id="NoHeavyComputing" checked={NoHeavyComputing} /> 
         <label for="NoHeavyComputing">
             NoHeavyComputing
+        </label>
+    <input type="checkbox"
+        onchange={(e) => tognoradio(e)}
+        id="NoRadio" checked={NoRadio} /> 
+        <label for="NoRadio">
+            NoRadio
         </label>
 
 

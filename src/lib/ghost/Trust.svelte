@@ -658,7 +658,8 @@
         if (Pier.instance != ier) {
             setTimeout(() => {
                 if (Pier.instance != ier) {
-                    throw `Pier.instance != ier for a while: Pier:${ier.pub}`
+                    console.warn(`reloading because: Pier.instance != ier for a while: Pier:${ier.pub}`)
+                    location.reload()
                 }
             },500)
         }

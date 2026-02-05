@@ -267,7 +267,7 @@
 
         let N = Ga.o({Engage:1,Pier:1})
         // uninhibit them, spawning eg w:raterminal there
-        if (!one_on && N.length) {
+        if (!one_on && N.length && !M.stashed.NoRadio) {
             let one
             // make sure we don't just re-pick our 
             let loop = 5
