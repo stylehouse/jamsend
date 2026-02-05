@@ -407,8 +407,14 @@
         if (heist) heist.c.abandon_piracy()
     }
     let NO = () => {
-        node_edger.deheist()
-        M.turn_knob()
+        let he = heist?.o()[0]
+        let planning_heist = he && he.sc.cv <3
+        if (planning_heist) {
+            node_edger.deheist()
+        }
+        else {
+            M.turn_knob()
+        }
     }
 
     // savable
@@ -440,7 +446,10 @@
         if (jamming && !ever_jamming) {
             ever_jamming = true
             on_jamming_commenced()
-
+            setTimeout(() => {
+                // < first thing we play reliably inaudible?
+                M.turn_knob()
+            },800)
         }
     })
     // F:Trusting, always there, also throws up fullscreening on load
