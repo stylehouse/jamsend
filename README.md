@@ -1,37 +1,48 @@
 # jamsend
 
-Hifi streaming with radio-tuner UI
+modern music piracy in the browser
 
 # features
 
+![at sea](static/screenshot.webp)
+
+## safety
+
+Could be better but is fantastic.
+
 ## p2p
 
-Music comes from connections you make, ideally you're sitting next to each other.
+Music comes from connections you make - manipulation is impossible.
 
-## radio-tuner
+## experience
 
-Peer-to-peer music sharing where you turn the knob and jump into the middle of a random track, like tuning a radio.
+You listen to someone's music collection, always jumping into the middle of a random track, like tuning a radio. Normal everyday options spring up.
 
-# setup
+## downloads
 
-```bash
-# get such a container
-docker compose build
-# populate your ./node_modules, mounted in the container under /app
-docker run --rm -v .:/app jamsend-app:latest npm install
-# thence
-docker compose up
-# maybe eventually
-cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
-```
+Preserve directory structure, tend to move whole albums, restart if interrupted.
 
-If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works. You should then look at `docker compose ps` to see where it's listening, it may need to be on localhost. Getting it on the interweb is left a bit hard, just help this project until we make an app scripting language and the community can develop what you need.
+# funding
+
+Help! [Cash will be applied](https://ko-fi.com/ostylehouse). Long story. Wanting to create high quality work to nice things up. I've wanted to build but needed the more complete metaphysics that now seems to be here to make it all connect. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
 
 # development
 
-Is go. This should grow into the best place for code to live, etc. You may be paid $3/hr if under 16 and in NZ, you may volunteer. All development, commissioning and correspondence is on github under the eyes of the law. There are about 20 40hr developments I expect we can manage 70% success with in the first two weeks.
+Help also! Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
 
-There are many non-frontend things to do. See Issues, or anything commented as < in the code, which means TODO.
+This effectively locates the frontier of computer interface and program design. This is a relatively tidy part of an ongoing project to capture the core of the universe with language, which I've been working on for a long time, and fix the computer once and for all. It now appears in the guise of a music piracy app, to communicate.
+
+Plans soon include a compiler of a nice language that we could do CodeMirror integration with and so provide a REPL. Then a lot of eg ghosts/ can be rewritten to look quite saleable, and it'll all seem a new language is being born, inspire everyone and attract funding easier.
+
+Plans later are that this general technology should grow into the best place for any information, and be standard.
+
+# hiring
+
+Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may of course volunteer on open source software. Go for it. All development, commissioning and correspondence is on github under the eyes of the law. There are vaguely 20 40hr developments I expect 70% success with the first week!
+
+You would need to get it set up yourself but reach out if anything isn't easy. If you can change code with reliable results, yay.
+
+There are many non-frontend things to do. See Issues, or comments starting with < in the code, which means less-than-existant ie TODO.
 
 ## notes
 
@@ -41,9 +52,7 @@ To use *prod.sh*, see *Peer_OPTIONS*, but we no longer use socket.io which it ma
 
 ## objects, data layer
 
-AI says: Besides p2p and audio, we need a sophisticated, reactive data structure and UI framework, with a focus on managing dynamic, hierarchical data (like directory listings) and visualizing it in a way that responds to frequent updates.
-
-Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then  *TheC*. Start reading the code [data/Stuff](src/lib/data/Stuff.svelte.ts).
+Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts).
 
 To write code, the src/lib/ghost/\*.svelte is the best place to build things because it'll update the Modus live without restarting anything, but they need to be included by a Modus, which are included by some kind of *\*Feature*, so do a whole lot of searches and readings, you probably want to add another %w=yourmethod to some M.do_A().
 
@@ -67,15 +76,15 @@ Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Thi
 
 We can note (in comments and spec (so far)) the name of a C variable, and some relevant structure and properties like so:
 
-``neu%nib=dir`` is new (you can't use the reserved word new), its .sc.nib='dir'
+``D%nib=dir`` is probably in a tree of D**, its .sc.nib='dir'
 
 ``%record/*%preview`` is the many %preview inside a %record
 
 *Stuffing* puts them on the screen efficiently, grouping like stuff, compressing communication.
 
-*Travel* tracks recursion into trees of C (aka C**, eg C/C, C/C/C, etc).
+*Travel* does recursion into trees of C (aka C**, eg C/C, C/C/C, etc).
 
-*Selection* is and locates C**, by the higher level Artist/Album/Track hierarchy or via directory path...
+*Selection* is *Travel* with change tracking and enough thinking to be useful for eg *Directory* and *Cytoscaping*, it should be a fairly universal type of stuff-going-on. We usually simply put something somewhere then come back later and look for something like it, this is an attempt to formalise that being, lifecycling part of reality.
 
 *Modus* is an agenda to attend to, has a heartbeat, provides persistent memory via *Modusmem*... Eg *DirectoryModus* wanders around your *DirectoryShare* looking for music to make available, and traces of our mind we may have stored in there.
 
@@ -102,19 +111,35 @@ And now these are the important user-mind things to persist in *Modusmem* and be
 
 ## goals
 
-- paying $3/hr programmers
+- hiring $3/hr programmers
 - get funding
 - shared directories
 - climbing directories, properly randomly selecting, transcoding in ffmpeg-wasm
-- guess the `Artist/1979 Album/01 Track.etc` hierarchy, or pulling in ffmpeg-wasm to read tags?
-- read a managed music library via some API, eg readonly open your Strawberry music player's sqlite database.
+- guess the `Artist/1979 Album/01 Track.etc` hierarchy, general noise sorter and goo tuner
+- read a big music library via some API, eg readonly open your Strawberry music player's sqlite database, to be able to search up tracks
 - streaming, show gear. voice calls?
-- collectivise music collection connections
-- build a trust network
+- safer content filter. assure media-contained album art is legit.
+- collectivise music collection connections, ie multi-hop
+- build a trust network, advanced social network features aka SafetyNet
 - cytoscape ui, presence|rate|pitch-bendable aud
 - culture (ethnology, typology, ?) graph
 - auto-heal corrupt data
 - utopian stuff, conservation schemes for local disk space alleviation
+
+# setup
+
+```bash
+# get such a container
+docker compose build
+# populate your ./node_modules, mounted in the container under /app
+docker run --rm -v .:/app jamsend-app:latest npm install
+# thence
+docker compose up
+# maybe eventually
+cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
+```
+
+If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works. You should then look at `docker compose ps` to see where it's listening, it may need to be on localhost. Getting it on the interweb is left a bit hard, just help this project until we make an app scripting language and the community can develop what you need.
 
 ## Licensing
 
