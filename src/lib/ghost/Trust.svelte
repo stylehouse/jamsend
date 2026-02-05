@@ -12,6 +12,7 @@
     let {M}:{M:TrustingModus} = $props()
     let V = {}
     let IS_PROD = location.host.startsWith('jamsend.')
+        || location.host.startsWith('voula')
     const INSTANCE_TYRANT_PREPUB =
         // < this working:
         import.meta.env.INSTANCE_TYRANT_PREPUB
@@ -125,6 +126,7 @@
         let eer = Peering.instance = P.i_Peering(Id) as Peering
         eer.Thing = Peering
         M.mainPeering = Peering
+        
         if (Id.pretty_pubkey() == INSTANCE_TYRANT_PREPUB) {
             M.amTyrant = true
         }
