@@ -416,10 +416,20 @@
 
 
     async Idzeugnation(A,w,I,_no) {
-        let no = (say) => {
+        let no = (say,nonfatal=false) => {
             console.log(`🦑 Idzeugnation problem: ${say}`)
-            this.reset_location_hash()
+            // usually we give this up when we send it to our invitee
+            if (!nonfatal) this.reset_location_hash()
             _no(say)
+        }
+        let dont_get_stuck_waiting_for_Id = () => {
+            // < cleanly, properly creating new Pier at the destination...
+            //   somehow it... no hello the first time?
+            I.i({stuckat_noId:1})
+            if (I.o({stuckat_noId:1}).length > 1) {
+                console.warn(`guessing Pier++ has gone weird, reloading...`)
+                location.reload()
+            }
         }
         if (I.sc.finished) {
             // once done, let someone notice if they look closely
@@ -452,7 +462,10 @@
 
         // their Id
         let Id = this.ensure_Our_Id(Our)
-        if (!Id) return I.i({waits:'almost...'})
+        if (!Id) {
+            dont_get_stuck_waiting_for_Id()
+            return I.i({waits:'almost...'})
+        }
         if (prepub != Id+'') throw `thought...`
         // and the third party...
         if (!Tyrant_ok) {
@@ -461,20 +474,14 @@
             I.sc.waiting_on_Tyrant_at ||= now_in_seconds()
             if (I.ago('waiting_on_Tyrant_at') > REQUESTS_MAX_LIFETIME) {
                 return no(`the third party who verifies trust network continuity is not available.
-                    the link will work again, just keep this tab for a while.`)
+                    the link will work again, just keep this tab for a while.`,true)
             }
             return I.i({waits:"nearing mirage..."})
         }
         // < this may stop Tyrant Idzeugnating
         let TId = M.OurTyrant?.instance?.Ud
         if (!TId) {
-            // < cleanly, properly creating new Pier at the destination...
-            //   somehow it... no hello the first time?
-            I.i({stuckat_noId:1})
-            if (I.o({stuckat_noId:1}).length > 1) {
-                console.warn(`guessing Pier++ has gone weird, reloading...`)
-                location.reload()
-            }
+            dont_get_stuck_waiting_for_Id()
             return I.i({waits:'nearly...'})
         }
 
@@ -500,7 +507,7 @@
         }
 
         if (I.sc.failed) {
-            no(`problem with your invite: ${I.sc.failed}`)
+            no(`problem with your Idzeug: ${I.sc.failed}`)
             return
         }
         if (!I.sc.success) {
@@ -521,7 +528,7 @@
         I.sc.arranged_at ||= now_in_seconds()
         if (I.ago('arranged_at') > REQUESTS_MAX_LIFETIME) {
             // Idvoyage hasn't come around
-            return no(`can't contact instance tyrant`)
+            return no(`can't contact instance tyrant`,true)
         }
 
         // also checks with instance tyrant to get a marriage cert sort of thing
