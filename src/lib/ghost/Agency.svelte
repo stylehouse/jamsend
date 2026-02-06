@@ -1,6 +1,7 @@
 <script lang="ts">
     import { keyser, type TheN } from "$lib/data/Stuff.svelte";
     import {Modus} from "$lib/mostly/Modus.svelte.ts";
+    import type { RadioModus } from "$lib/p2p/ftp/Audio.svelte";
     import { erring, grop, nex } from "$lib/Y";
     import { onMount } from "svelte";
 
@@ -170,7 +171,13 @@
                 // in the case of one A/w, we assume it has just changed into w:meander or so
                 return itis(wN[0])
             }
-            throw `A:${A.sc.A} /!w %elvis=${e.sc.elvis},Aw=${e.sc.Aw}`
+            
+            let say = `A:${A.sc.A} /!w %elvis=${e.sc.elvis},Aw=${e.sc.Aw}`
+            let M = this as RadioModus
+            if (M.F.P.PROD) console.warn(say)
+            else {
+                throw say
+            }
         }
         for (let e of A.o({elvis:1})) {
             await find_w(e)
