@@ -36,7 +36,7 @@
     type TheC = Object
     let blob_monitoring:TheC = $state()
     let after_a_while = $state()
-    onMount(() => setTimeout(() => after_a_while = true,3000))
+    onMount(() => setTimeout(() => after_a_while = true,13000))
 
     $effect(() => {
         if (req?.version) {
@@ -152,16 +152,18 @@
             {:else}
                 <b>{interesting_title}</b>
                 
-                {#if after_a_while && !(req.sc.cv <3)}
+            {/if}
+            <span class="rightward">
+                {#if after_a_while}
                     . . . . .
-                    if you're stuck here,
+                    stuck?
                     <a href="/" onclick={(e) => { e.preventDefault(); location.reload(); }}>
                         reload
                     </a>
                     or
                     <button onclick={() => M.node_edger.deheist()}>abandon</button>
                 {/if}
-            {/if}
+            </span>
             <span class="rightward">
                 {@render toggler(show_req_Stuffing,'show_req',false)}
             </span>
