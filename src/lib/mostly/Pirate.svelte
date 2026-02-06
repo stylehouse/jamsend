@@ -164,7 +164,7 @@
                     <button onclick={() => M.node_edger.deheist()}>abandon</button>
                 {/if}
             </span>
-            <span class="rightward">
+            <span class="rightward invisy">
                 {@render toggler(show_req_Stuffing,'show_req',false)}
             </span>
         </span>
@@ -306,8 +306,10 @@
         align-items: center;
         width: 100%;
     }
-    .theoneline > .rightward {
+    .rightward {
         float: right;
+    }
+    .invisy {
         opacity:0.05;
     }
     .metric {
