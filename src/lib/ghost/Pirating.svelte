@@ -765,8 +765,12 @@
 
         this.calculate_pipeline(blob)
         let speed = blob.sc.avg_kBps ? `@ ${blob.sc.avg_kBps} kBps` : ''
-        V.serve && console.log(`💾 Wrote chunk ${seq} for ${blob.sc.bit} (${blob.sc.progress_pct}%) ${speed}`)
-
+        this.blob_writing_say = `💾 Wrote chunk ${seq} for ${blob.sc.bit}`
+            +` (${blob.sc.progress_pct}%) ${speed}`
+        this.blob_writing_talk ||= throttle(() => {
+            V.serve && console.log(this.blob_writing_say)
+        },500)
+        this.blob_writing_talk()
 
         if (blob.sc.total_size) {
             blob.sc.progress_pct = Math.round(
@@ -775,6 +779,8 @@
         }
         await this.blob_could_emit_o_pull(req,he,blob)
     },
+
+
     // local side, back
     // in a DirectoryModus, a shipping clerk to push|pull
     async rapiracy_i_push_reqy(A,w,req) {
