@@ -212,6 +212,8 @@
                     req.sc.cv = 7
                 }
             }
+            if (req.sc.cv < 7) {
+            }
             else {
                 if (req.sc.cv < 8) {
                     if (!req.oa({solved:1})) throw "!ready"
