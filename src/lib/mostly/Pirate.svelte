@@ -35,6 +35,8 @@
     
     type TheC = Object
     let blob_monitoring:TheC = $state()
+    let after_a_while = $state()
+    onMount(() => setTimeout(() => after_a_while = true,3000))
 
     $effect(() => {
         if (req?.version) {
@@ -149,6 +151,16 @@
                 <!-- <span class="metric">{avg_kBps}kB/s</span> -->
             {:else}
                 <b>{interesting_title}</b>
+                
+                {#if after_a_while && !(req.sc.cv <3)}
+                    . . . . .
+                    if you're stuck here,
+                    <a href="/" onclick={(e) => { e.preventDefault(); location.reload(); }}>
+                        reload
+                    </a>
+                    or
+                    <button onclick={() => M.node_edger.deheist()}>abandon</button>
+                {/if}
             {/if}
             <span class="rightward">
                 {@render toggler(show_req_Stuffing,'show_req',false)}
@@ -209,7 +221,8 @@
                         {@render item(pl)}
 
                         {#if pl.sc.heistable}
-                            <button onclick={() => nab_places(pl)}>nab</button>
+                            <button onclick={() => nab_places(pl)}
+                                class='nabule'>nab</button>
                         {/if}
                         {#if pl.sc.directory}
                             <span class="arow">
@@ -304,6 +317,8 @@
     }
     button {
         padding:0.3em;
+    }
+    button.nabule {
         transform:scale(2.2) rotate(9deg);
         transform-origin:bottom;
     }
