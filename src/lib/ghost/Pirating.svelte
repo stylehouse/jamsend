@@ -112,8 +112,18 @@
 
             },
             // we are receiving blob
-            i_pull: async (data) => {
-                if (!raterm) throw `raterm unemits i_pull`
+            i_pull: async (data,loop) => {
+                if (!raterm) {
+                    console.warn(`sidestepping !raterm unemits i_pull`)
+                    loop ||= 0
+                    loop += 1
+                    if (loop > 6) throw `raterm unemits i_pull loopy` 
+                    setTimeout(() => {
+                        w = this.refresh_C([A,w])
+                        w.sc.unemits.i_pull(data,loop)
+                    },800)
+                    return
+                }
                 w = this.refresh_C([A,w])
                 await this.termicaster_unemits_i_pull(A,w,data)
             },
@@ -130,9 +140,7 @@
         let reqy = await this.requesty_serial(w,'pirating')
         for (let e of this.o_elvis(w,'nab_this')) {
             let enid = e.sc.enid
-            if (!enid) {
-                debugger
-            }
+            if (!enid) throw "nab!enid"
             if (reqy.o({enid}).length) {
                 console.log(`dup pirating re ${enid}`)
                 continue
@@ -208,7 +216,7 @@
                 if (req.sc.cv < 8) {
                     if (!req.oa({solved:1})) throw "!ready"
                     // is done..?
-
+                    M.node_edger.deheist()
                     req.sc.finished = "is done"
                 }
             }
@@ -748,7 +756,7 @@
 
         await blob.sc.writer.write(buffer)
         // we get some download
-        if (!buffer.byteLength) debugger
+        if (!buffer.byteLength) throw "!buffer.byteLength"
         blob.sc.received_size += buffer.byteLength
         // Store chunk size for bandwidth calculation
         blob.sc.last_chunk_size = buffer.byteLength
@@ -859,7 +867,15 @@
             eph:1,
         })
 
-        if (!he.oa({blob:1})) return req.i({error:"No he/%blob?"})
+        // a completed heist that has been resumed may do this...
+        if (!he.oa({blob:1})) {
+            if (!he.sc.resumed_is_go) {
+                throw `No he/%blob?`
+            }
+            console.warn(`supposing blobless resumed heist is complete!`)
+            await req.r({solved: 1})
+            return
+        }
         await this.cytotermi_heist_engages_remote(A,w,req,he,local,remote)
 
 

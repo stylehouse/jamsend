@@ -18,7 +18,11 @@
     //  it usually takes many
     //  so we have an extra container layer here
     // < heist goes undefined? though above <Pirate> is an if(heist)
-    let req = $derived(heist?.o()[0] || req)
+    let first_req
+    let req = $derived(heist?.o()[0] || first_req)
+    $effect(() => {
+        first_req ||= req
+    })
     let show_req = $state()
     let interesting_title:string = $state()
 
