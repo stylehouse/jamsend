@@ -19,6 +19,9 @@
     // $share/.jamsend/radiostock/*.webms
     const IGNORE_RADIOSTOCK_CACHE = false 
     const RADIOSTOCK_CACHE_LIMIT = 200 // items, they are timestamped
+    // < become like P.NoPreviewing etc, apparatus for stored toggley settings
+    //   and if on it should make A:Bob
+    const BOB_NEVER_RESTS = true
 
     // < get these numbers down, which involves lots of testing?
     //   adapt to slow cpu, which might be measured by punctuality of a callback?
@@ -1261,6 +1264,10 @@
 
 
     //#region hunt, radiopreview
+    async reset(A,w,D) {
+        await A.c.reset_Aw()
+        this.main()
+    },
     async rahunting(A,w,D) {
         // in response to eg decode errors, just try again from the top
         A.c.reset_Aw = async () => await this.Areset(A)
@@ -1273,7 +1280,9 @@
     async radiopreview(A,w,D) {
         if (!this.gat.AC_ready) return w.i({error:"!AC",waits:1})
         // w can mutate
-        w.sc.then = "rest"
+        w.sc.then = A.sc.A.startsWith("Bob") && BOB_NEVER_RESTS
+            ? "reset" : "rest"
+
         w.c.error_fn = async (er) => {
             if (!String(er).includes("Error: original encoded buffers fail\n  Unable to decode audio data")) return
             // re-wander due to corrupt-seeming data
