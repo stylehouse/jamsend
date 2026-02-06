@@ -18,7 +18,7 @@
 
     // $share/.jamsend/radiostock/*.webms
     const IGNORE_RADIOSTOCK_CACHE = false 
-    const RADIOSTOCK_CACHE_LIMIT = 20 // items, they are timestamped
+    const RADIOSTOCK_CACHE_LIMIT = 200 // items, they are timestamped
 
     // < get these numbers down, which involves lots of testing?
     //   adapt to slow cpu, which might be measured by punctuality of a callback?
