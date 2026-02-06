@@ -324,6 +324,7 @@ export class Peerily {
     // avoid the expensive processes with w:meander and w:radiopreview
     //  everyone can still have radiostock and rapiracy
     NoHeavyComputing = $state(false)
+    NoPreviewing = $state(false) // w:rastream encoder allowed
     PROD = $state(true)
 
     on_error:Function|null

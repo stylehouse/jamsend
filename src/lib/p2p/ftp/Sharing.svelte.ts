@@ -83,8 +83,10 @@ export class DirectoryModus extends RadioModus {
             // < could be allowed:
             this.i({A:'rastream'})
 
-            this.i({A:'Alice Records'}).i({w:'rahunting'})
-            this.i({A:'Bob Records'}).i({w:'rahunting'})
+            if (!this.F.P.NoPreviewing) {
+                this.i({A:'Alice Records'}).i({w:'rahunting'})
+                this.i({A:'Bob Records'}).i({w:'rahunting'})
+            }
         }
 
         this.i({A:'radiostock'})

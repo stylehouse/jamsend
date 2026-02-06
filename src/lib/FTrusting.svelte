@@ -54,28 +54,37 @@
         if (M.stashed.NoHeavyComputing != null) {
             F.P.NoHeavyComputing = M.stashed.NoHeavyComputing
         }
-        if (M.stashed.showDetails != null) {
-            showDetails = M.stashed.showDetails
+        if (M.stashed.NoPreviewing != null) {
+            F.P.NoPreviewing = M.stashed.NoPreviewing
         }
         if (M.stashed.NoRadio != null) {
             NoRadio = M.stashed.NoRadio
+        }
+        if (M.stashed.showDetails != null) {
+            showDetails = M.stashed.showDetails
         }
         loaded = true
     })
     let showDetails = $state(false)
     let NoRadio = $state(false)
+    let NoPreviewing = $derived(F?.P?.NoPreviewing)
     let NoHeavyComputing = $derived(F?.P?.NoHeavyComputing)
     function tognoheavy(e) {
         let is = e.target.checked
         F.P.NoHeavyComputing = is
         M.stashed.NoHeavyComputing = is
     }
-    function togdetails(e) {
-        M.stashed.showDetails = showDetails = !showDetails
+    function togNoPreviewing(e) {
+        let is = e.target.checked
+        F.P.NoPreviewing = is
+        M.stashed.NoPreviewing = is
     }
     function tognoradio(e) {
         let is = e.target.checked
         M.stashed.NoRadio = NoRadio = is
+    }
+    function togdetails(e) {
+        M.stashed.showDetails = showDetails = !showDetails
     }
 
 </script>
@@ -90,6 +99,12 @@
         id="NoHeavyComputing" checked={NoHeavyComputing} /> 
         <label for="NoHeavyComputing">
             NoHeavyComputing
+        </label>
+    <input type="checkbox"
+        onchange={(e) => togNoPreviewing(e)}
+        id="NoPreviewing" checked={NoPreviewing} /> 
+        <label for="NoPreviewing">
+            NoPreviewing
         </label>
     <input type="checkbox"
         onchange={(e) => tognoradio(e)}
