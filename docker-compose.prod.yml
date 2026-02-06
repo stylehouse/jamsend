@@ -95,3 +95,25 @@ services:
       #  because we are running against uid=1000
       # nproc: 100
       nofile: 1024
+
+  upnp-forwarder:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM alpine:3.19
+        RUN apk add --no-cache miniupnpc
+        COPY ty/upnp-loop.sh /usr/local/bin/upnp-loop.sh
+        RUN chmod +x /usr/local/bin/upnp-loop.sh
+        CMD ["/usr/local/bin/upnp-loop.sh"]
+    container_name: jamsend-prod-upnp
+    network_mode: host
+    restart: always
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
