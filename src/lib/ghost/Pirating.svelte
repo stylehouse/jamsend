@@ -410,7 +410,9 @@
         if (!definitely && await req.i_wasLast('did_blob_monitoring') < 2) return
         await req.i_wasLast('did_blob_monitoring',true)
         
-        await req.r({blob_monitoring:1},sex({},blob.sc,'bit,progress_pct,avg_kBps'))
+        let progress_tally = he.sc.progress_tally
+        await req.r({blob_monitoring:1},
+            sex({progress_tally},blob.sc,'bit,progress_pct,avg_kBps'))
     },
 
 

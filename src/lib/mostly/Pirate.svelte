@@ -34,7 +34,6 @@
     let share_act:ThingAction = $state()
     
     type TheC = Object
-    let progress_tally:TheC = $state()
     let blob_monitoring:TheC = $state()
 
     $effect(() => {
@@ -60,7 +59,7 @@
                 // progress heist
                 // < kBps styling nice
                 let he = req.o({heist:1})[0]
-                progress_tally = he ? he.sc.progress_tally : ''
+                // progress_tally = he ? he.sc.progress_tally : ''
                 if (he?.sc.heisted) {
                     if (!req.sc.finished) {
                         console.log(`heist almost up...`)
@@ -106,6 +105,8 @@
         return def
     }
     let show_req_Stuffing = _C({})
+
+    let progress_tally = $derived(blob_monitoring.sc.progress_tally)
 </script>
 
 
@@ -140,7 +141,7 @@
         <span class="arow theoneline">
             <span class="slash">⤓</span>
             {#if blob_monitoring}
-                {@const {progress_tally,bit,progress_pct,avg_kBps} = blob_monitoring.sc}
+                {@const {bit,progress_pct,avg_kBps} = blob_monitoring.sc}
                 ...
                 <span class="metric">{progress_tally}</span>
                 <!-- <b>{bit}</b> -->
