@@ -102,7 +102,7 @@ services:
     volumes:
       - ./ty/turnserver.conf:/etc/coturn/turnserver.conf:ro
     restart: always
-    
+    command: turnserver -n --log-file stdout --no-stdout-log
     deploy:
       resources:
         limits:
