@@ -107,6 +107,8 @@
             if (!no) return
             let he = no.sc.nowPlaying
             let re = he.o({record:1})[0]
+            // might be cancelled by now
+            if (!re) return
             let {meta,enid} = re.sc
             let {artist,title} = meta
             M.node_edger.titles({artist,title,enid})
