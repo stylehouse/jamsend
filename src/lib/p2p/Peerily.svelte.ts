@@ -12,6 +12,8 @@ import PeerJS from 'peerjs'
 import type { Component } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
 
+// < put in .env, is also in coturn config and leproxy
+const PUBLIC_IP = '125.237.111.64'
 const MAX_BUFFER = 64 * 1024; // 64KB
 const LOW_BUFFER = MAX_BUFFER * 0.8; // Start sending again at 80%
 function Peer_OPTIONS() {
@@ -20,7 +22,18 @@ function Peer_OPTIONS() {
     // this gets a path intercepted by Caddy in stylehouse/leproxy
     let [host,port] = location.host.split(':')
     port ||= 443
-    return {host,port,path:"peerjs-server"}
+    const iceServers = [
+        { urls: `stun:${PUBLIC_IP}:3478` },
+        {
+            urls: `turn:${PUBLIC_IP}:3478`,
+            username: 'jamsend',
+            credential: 'Eiru7gahneeD2che'
+        },
+    ];
+
+    return {host,port,path:"peerjs-server",
+        config: {iceServers},
+    }
 }
 
 function arre(a:Array,gone,neu) {
