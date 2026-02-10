@@ -27,11 +27,13 @@ function Peer_OPTIONS() {
     let [host,port] = location.host.split(':')
     port ||= 443
     const iceServers = [
+        { urls: `stun:${PUBLIC_IP}:3478` },
         {
             urls: `turn:${PUBLIC_IP}:3478`,
             username: 'jamsend',
             credential: 'Eiru7gahneeD2che'
         },
+        { urls: `stun:${PRIVATE_IP}:3478` },
         {
             urls: `turn:${PRIVATE_IP}:3478`,
             username: 'jamsend',
