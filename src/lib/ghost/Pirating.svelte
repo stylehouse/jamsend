@@ -148,7 +148,7 @@
             await reqy.i({enid})
         }
         for (let e of this.o_elvis(w,'nab_specifically')) {
-            let {req,pl,pls} = e.sc
+            let {req,pl} = e.sc
             let wp = await req.r({wants_place:1})
             wp.empty().i(pl)
         }

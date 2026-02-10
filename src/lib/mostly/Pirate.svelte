@@ -78,9 +78,9 @@
             },1)
         }
     })
-    function nab_places(pl,pls) {
+    function nab_places(pl) {
         // < elvis -> makes sense of all those checkboxes
-        M.i_elvis(w, "nab_specifically", { req,pl,pls });
+        M.i_elvis(w, "nab_specifically", { req,pl });
 
     }
     function togglific_default(pl,k,checked) {

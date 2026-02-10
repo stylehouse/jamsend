@@ -19,7 +19,7 @@
         import.meta.env.INSTANCE_TYRANT_PREPUB
         || (import.meta.env.MODE === 'production'||P.PROD)
             ? "d360edfe0cd2fa77"
-            : "a342837a674836d6"
+            : "6d7931ea74f2c695"
     const REQUESTS_MAX_LIFETIME = 25
 
 
@@ -773,6 +773,7 @@
     },
 
     async OurPier(A,w,Our:TheC,Pier:OurPier) {
+        if (!Pier) throw `!Pier`
         let s = Pier.stashed
         if (!s.Id && !s.prepub) {
             // on spawn, the first time
@@ -810,6 +811,12 @@
 
         // not really a contact
         if (s.the_cia || prepub == INSTANCE_TYRANT_PREPUB) {
+            if (prepub != INSTANCE_TYRANT_PREPUB) {
+                // probably, this is after window.release_here() and takeover, and we have the old tyrant still
+                console.warn(`rolling previous tyrant Pier:${prepub}`)
+                Pier.up.remove_Thing(Pier.name)
+                return
+            }
             s.stealth = 1
             s.the_cia = 1
             Pier.the_cia = 1

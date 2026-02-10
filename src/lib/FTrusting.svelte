@@ -41,7 +41,12 @@
     // < bizzarely needing this delay!?
     let appearing_Peering = $state(false);
     let whatsit = (S) => {
-        return S.instance?.Id?.pretty_pubkey()
+        // < rename Ud->Id ...?
+        let Id = S.instance?.Id || S.instance?.Ud
+        if (!Id) return ''
+        let prepub = Id.pretty_pubkey()
+        if (prepub == S.name) return ''
+        return `: ${prepub}`
     }
     onMount(() => {
         setTimeout(() => appearing_Peering = true, 500)
@@ -162,7 +167,7 @@
             {#snippet thing(S:OurPeering)}
                 <div class='levity Peering'>
                     {#if appearing_Peering}
-                        <p>a Peering: {whatsit(S)}</p>
+                        <p>a Peering{  whatsit(S)}</p>
                     {/if}
                     {@render Stashedness(S)}
                 </div>
@@ -178,7 +183,7 @@
             {#snippet thing(S:OurPier)}
                 {@const levity = console.log(`UI:Trusting/Pier:${S.name}`)}
                 <div class='levity Pier'>
-                    <p>a Pier</p>
+                    <p>a Pier{  whatsit(S)}</p>
                     <button onclick={() => boing(S)} >boing</button>
                     {@render Stashedness(S)}
                 </div>

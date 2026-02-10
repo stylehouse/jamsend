@@ -155,7 +155,7 @@ export class OurPeerings extends stashedHavingThingsIsms {
     }
 }
 export class OurPeering extends stashedHavingThingIsms {
-    instance?:Peering
+    instance?:Peering = $state()
 }
 
 
@@ -176,7 +176,7 @@ export class OurPiers extends stashedHavingThingsIsms {
     }
 }
 export class OurPier extends stashedHavingThingIsms {
-    instance?:Pier
+    instance?:Pier = $state()
     prepub:string
 }
 

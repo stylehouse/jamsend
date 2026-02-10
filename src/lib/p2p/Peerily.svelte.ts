@@ -208,7 +208,7 @@ export class Idento extends IdentoCrypto {
 //   so we proxy everything
 export class Peering {
     P:Peerily
-    Id:Idento
+    Id:Idento = $state()
     stashed:StashedPeering = $state()
     // ^ is shared with, we are the instance of:
     Thing:OurPeering
