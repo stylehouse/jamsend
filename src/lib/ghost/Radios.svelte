@@ -653,7 +653,7 @@
     },
 
     async i_nowPlaying(A,w,he,re) {
-        let no = await w.r({nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,wasreally:2,
+        let no = await w.r({nowPlaying:1},{nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,
             ...re.sc.meta
         })
         // this structure is just for cyto excitement, hosted here for moment accuracy
