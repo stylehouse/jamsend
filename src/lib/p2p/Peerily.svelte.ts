@@ -14,6 +14,10 @@ import { SvelteMap } from 'svelte/reactivity';
 
 // < put in .env, is also in coturn config and leproxy
 const PUBLIC_IP = '125.237.111.64'
+// prod appservers resolve the domain to this
+//  they have to TURN to peers outside the LAN
+const PRIVATE_IP = '192.168.1.11'
+
 const MAX_BUFFER = 64 * 1024; // 64KB
 const LOW_BUFFER = MAX_BUFFER * 0.8; // Start sending again at 80%
 function Peer_OPTIONS() {
@@ -23,9 +27,13 @@ function Peer_OPTIONS() {
     let [host,port] = location.host.split(':')
     port ||= 443
     const iceServers = [
-        { urls: `stun:${PUBLIC_IP}:3478` },
         {
             urls: `turn:${PUBLIC_IP}:3478`,
+            username: 'jamsend',
+            credential: 'Eiru7gahneeD2che'
+        },
+        {
+            urls: `turn:${PRIVATE_IP}:3478`,
             username: 'jamsend',
             credential: 'Eiru7gahneeD2che'
         },
