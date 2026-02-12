@@ -19,7 +19,7 @@
         import.meta.env.INSTANCE_TYRANT_PREPUB
         || (import.meta.env.MODE === 'production'||P.PROD)
             ? "d360edfe0cd2fa77"
-            : "6d7931ea74f2c695"
+            : "24586460a8dea75a"
     const REQUESTS_MAX_LIFETIME = 25
 
 

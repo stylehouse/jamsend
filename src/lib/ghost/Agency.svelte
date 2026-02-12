@@ -562,8 +562,6 @@
                     }
                     // they forget their problems like w
                     await M.w_forgets_problems(req)
-                    
-                    await req.r({see:1},{})
                     // < hoist req/%aim to w somehow.
                     //   at the end of all %requesty_pirating
                 }
