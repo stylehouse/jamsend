@@ -695,7 +695,7 @@ class Dierarchy extends SelectionItself {
         path: string[], 
         spawn_fn: (parentD: TheD, pathbit: string) => Promise<void>,
         category, // so these %aim can be replaced away if you have many categories
-    ): Promise<TheD | undefined> {
+    ): Promise<TheD | null> {
         let is_awake = (D:TheD) => {
             let ope = D && D.o1({v:1,openity:1})[0]
             if (ope <3 || !D) return // watch out for null <3 == true
@@ -756,7 +756,7 @@ class Dierarchy extends SelectionItself {
         // let seq = ao.seq + 1
         return D
     }
-    async aim_for(w,path,category):TheD|null {
+    async aim_for(w,path,category):Promise<TheD|null> {
         // journey at it
         let ai = await w.r({aim:1,category})
         await ai.replace({path:1}, async () => {
