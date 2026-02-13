@@ -708,20 +708,19 @@ class Dierarchy extends SelectionItself {
         category ||= 1
 
         path = [this.c.T.sc.D.sc.name, ...path]
+        // point at it, it may be there. draws the complete %aim.
+        let D = await this.aim_for(w,path,category)
+        // and it must be fully awake|open, not closed, on the edge
+        if (is_awake(D)) return D
+
         let apath = []
         let at = path.join('/')
-        if (w.oa({aimed:at,category})) {
-            // faster now it has landed? the %aim just hangs around
-            let D = this.path_to_D(path)
-            if (is_awake(D)) return D
-        }
-        let D
         let uD
         for (let pathbit of path) {
             apath.push(pathbit)
             at = apath.join('/')
 
-            D = await this.aim_for(w,apath,category)
+            D = this.path_to_D(apath)
             if (!D) {
                 if (uD) {
                     // assume we must make it
@@ -734,7 +733,7 @@ class Dierarchy extends SelectionItself {
                     throw "none found"
                 }
                 // you wait for the aim to fill it in
-                return
+                return null
             }
 
             // found that directory
@@ -742,19 +741,19 @@ class Dierarchy extends SelectionItself {
             if (!is_awake(D)) {
                 w.i({see:"aim_to_open waits to open",at})
                 // you wait for the aim to fill it in
-                return
+                return null
             }
 
             uD = D
         }
-        await w.r({aimed:at,category})
+
         w.i({see:"aim_to_open OK",at})
 
         // // track where we're up to along path
         // let ao_sc = {aimope:path.join('/')}
         // let ao = w.o(ao_sc)[0]?.sc || {seq:-1}
         // let seq = ao.seq + 1
-        return D
+        return D || null
     }
     async aim_for(w,path,category):Promise<TheD|null> {
         // journey at it

@@ -569,26 +569,31 @@
                     grop(req,N)
                     w.drop(req)
                 }
+
+                req_serial ||= w.o({...reqserialc})[0]
                 
-                // < being req should be noted in the stack
-                let categories = []
+                // < being req should be noted in the stack. can we name fn better?
                 for (let req of N) {
 
                     // the middle, work being done
                     await fn(req)
 
-                    req.c.category && !categories.includes(req.c.category)
-                        && categories.push(req.c.category)
+                    let category = req.c.category
+                    if (category) {
+                        // keep this info for when there are no req
+                        //  and we need to drop the last of our %aims
+                        req_serial.oai({had_aim:1,category})
+                    }
                 }
-
-                for (let category of categories) {
+                
+                for (let category of req_serial?.o1({category:1,had_aim:1})||[]) {
                     await w.r({aim:1,category},{})
-                    await w.r({aimed:1,category},{})
                 }
                 for (let req of N) {
+                    // hoist: i w/%aim o w/req/%aim
+                    // < req%hoisty hoists the %aim, %error, %see, %waits, %failed
+                    //    from req as an indexed thing, into w
                     req.o({aim:1}).map(ai => w.i(ai))
-                    req.o({aimed:1}).map(ai => w.i(ai))
-                    // < hoist them, and %error, from req as an indexed thing, under w
 
                 }
 
