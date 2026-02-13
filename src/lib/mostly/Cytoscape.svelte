@@ -14,7 +14,7 @@
     import cola from "cytoscape-cola";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
     import ShareButton from "$lib/p2p/ui/ShareButton.svelte";
-    import type { RadioModus } from "$lib/p2p/ftp/Audio.svelte";
+    import type { RadioModus } from "$lib/mostly/Modus.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";

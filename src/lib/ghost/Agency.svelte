@@ -1,13 +1,12 @@
 <script lang="ts">
     import { keyser, type TheN } from "$lib/data/Stuff.svelte";
-    import {Modus} from "$lib/mostly/Modus.svelte.ts";
-    import type { RadioModus } from "$lib/p2p/ftp/Audio.svelte";
+    import type { RadioModus } from "$lib/mostly/Modus.svelte.ts";
     import { erring, grop, nex } from "$lib/Y";
     import { onMount } from "svelte";
 
     let {M} = $props()
     const V = {}
-    V.w = 1
+    V.w = 0
     V.elvis = 1
 
     onMount(async () => {
