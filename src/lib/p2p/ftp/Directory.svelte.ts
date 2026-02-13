@@ -8,7 +8,6 @@ import { Strata, Structure } from '$lib/mostly/Structure.svelte';
 import { CHUNK_SIZE, erring, grap, grop, sha256 } from '$lib/Y'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import { DirectoryModus, type PeeringSharing, type PierSharing } from './Sharing.svelte';
-import { RadioModus } from './Audio.svelte';
 
 
 //#region DirectoryShare

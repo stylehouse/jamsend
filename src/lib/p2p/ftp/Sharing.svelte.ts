@@ -9,8 +9,8 @@ import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.
 import { PeeringFeature, PierFeature,
          now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
 import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
-import { RadioModus } from "./Audio.svelte.ts";
 import type { Travel } from "$lib/mostly/Selection.svelte";
+import { RadioModus } from "$lib/mostly/Modus.svelte.ts";
 
 //#endregion
 //#region DirectoryModus
