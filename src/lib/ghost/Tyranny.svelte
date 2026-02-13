@@ -426,7 +426,7 @@
             // < cleanly, properly creating new Pier at the destination...
             //   somehow it... no hello the first time?
             I.i({stuckat_noId:1})
-            if (I.o({stuckat_noId:1}).length > 1) {
+            if (!(I.o({stuckat_noId:1}).length <3)) {
                 console.warn(`guessing Pier++ has gone weird, reloading...`)
                 location.reload()
             }

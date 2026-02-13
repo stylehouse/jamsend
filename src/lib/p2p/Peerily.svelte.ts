@@ -582,6 +582,13 @@ export class Pier {
     lets_disconnect(reason='') {
         console.log(`!! voluntary disconnect(${this.pub}) ${reason}`)
         this.con.close()
+        setTimeout(() => {
+            if (this.disconnected) {
+                // give up and vanish the Pier
+                this.eer.Piers.delete(this.pub)
+                // < if they can reconnect after this?
+            }
+        },5000)
     }
     disconnected = $state(true)
     was_disconnected = false

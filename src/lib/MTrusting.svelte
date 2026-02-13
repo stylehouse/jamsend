@@ -148,7 +148,7 @@
 {#snippet nice_conversation()}
 
     {#if P.Welcome}Welcome.
-    {:else}This is experimental software, feel free to reload every minute.{/if}
+    {:else}Feel free to reload.{/if}
     {#if M.amTyrant}amTyrant.{/if}
     {#if P.some_feature_is_ready}Ready.
     {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}

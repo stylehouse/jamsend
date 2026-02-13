@@ -884,6 +884,8 @@
             if (LP?.oa({const:1,ready:1})) {
                 await this.Our_ping(LP,ier)
             }
+            
+            // see also 'voluntary disconnect', and the LP lifecycle
 
             // notice being stuck in states...
             if (!ier.disconnected && !LP) {
