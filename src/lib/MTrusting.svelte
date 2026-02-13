@@ -171,24 +171,28 @@
         <div>
     <FaceSucker altitude={33} {fullscreen} >
         {#snippet content()}
-            <div class='uiing bottom'>
-                <div class='controls'>
-                    <span class='rigid'>
-                        {#if !P.dodgy_user}
-                            <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
-                        {/if}
-                    </span>
+            <div class="relief">
+                <div class="wall"></div>
+
+                <div class='uiing bottom'>
+                    <div class='controls'>
+                        <span class='rigid'>
+                            {#if !P.dodgy_user}
+                                <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
+                            {/if}
+                        </span>
 
 
 
-                    <div class="content">
-                        
-                        {@render nice_conversation()}
+                        <div class="content">
+                            
+                            {@render nice_conversation()}
 
+                        </div>
+
+                        <span>
+                        </span>
                     </div>
-
-                    <span>
-                    </span>
                 </div>
             </div>
         {/snippet}
@@ -203,6 +207,22 @@
 
     
 <style>
+    div.relief {
+        background:#1a4e2e;
+        width:100%;
+        height: 100%;
+
+    }
+    div.wall {
+        background:url('seapiano.webp');
+        background-size:cover;
+        mix-blend-mode: multiply;
+        opacity: 0.2;
+        width:100%;
+        height: 100%;
+        position:absolute;
+    }
+
     .valued {
         object-fit: cover;
         border-radius: 0.3rem;
@@ -238,6 +258,7 @@
         border-radius:3em;
         display: flex;
         flex-direction: column;
+        font-family:Arial, Helvetica, sans-serif;
     }
     .bottom {
         top:initial;

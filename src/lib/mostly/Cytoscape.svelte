@@ -489,8 +489,6 @@
     // gets set only once so they can dismiss it and continue
     let no_share = () => {
         P.needs_share_open_action = false
-        // Introducing along:
-        M.i_elvis(M.w,'noop')
     }
 </script>
 
@@ -502,8 +500,8 @@
 <FaceSucker altitude={22} {fullscreen}>
     {#snippet content()}
         <div class="relief">
-        <div class="wall">
-        </div>
+            <div class="wall"></div>
+            
             <div class="graph" 
                 class:graphtightly={!fullscreen} 
                 bind:this={ele}
@@ -512,10 +510,15 @@
             {#if jamming}
                 <div class='uiing'>
                     <div class='controls'>
-                        <button onclick={() => YES()} disabled={heist && true}>yeah</button>
-                        {#if title}<span class='np'>{artist} - {title}</span>{/if}
+                        <button onclick={() => YES()} class='big'
+                            disabled={heist && true}
+                            >yeah</button>
+                        {#if title}
+                            <span class='np'>{artist} - {title}</span>
+                        {/if}
                         <span>
-                            <button onclick={() => NO()} class='big'>nah</button>
+                            <button onclick={() => NO()} class='big'
+                                >nah</button>
                         </span>
                     </div>
                     {#if heist}
@@ -532,22 +535,22 @@
                             class={!quit_fullscreen ? 'small' : ''}>fullscreen</button>
                     </span>
 
-                    {#if share_act}
-                        <span class="collections inrow" title="
-                        Access to (some part of) your filesystem is required to share.
-                        ">
-                            <span class="arow" style="font-size:1.8em;">
-                                please
-                                <ActionButtons actions={[share_act]} />
-                                to share back
-                            </span>
-                            <button onclick={() => no_share()}
-                                style="margin:2em;"
-                                >nah</button>
-                        </span>
-                    {/if}
 
                     <span>
+                        {#if share_act}
+                            <span class="navicom" title="
+                            Access to (some part of) your filesystem is required to share.
+                            ">
+                                <span class="arow" style="font-size:1.8em;">
+                                    please
+                                    <ActionButtons actions={[share_act]} />
+                                    to share back
+                                </span>
+                                <button onclick={() => no_share()}
+                                    style="margin:2em;"
+                                    >nah</button>
+                            </span>
+                        {/if}
                         <ShareButton {P} />
                         <a href="https://github.com/stylehouse/jamsend" target="#" style="font-size:1.8em;">README</a>
                     </span>
@@ -558,6 +561,12 @@
 </FaceSucker>
 
 <style>
+    .navicom {
+        border: 2px solid blue;
+        border-radius:2em;
+        margin: 0.5em;
+        padding: 0.5em;
+    }
     div.relief {
         background:#b394ff;
         width:100%;
@@ -578,6 +587,7 @@
     }
     button.big {
         font-size:2.6em;
+        background:#1a4e2e;
     }
     button.small {
         font-size:0.75em;
