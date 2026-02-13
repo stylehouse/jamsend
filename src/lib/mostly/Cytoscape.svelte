@@ -15,6 +15,7 @@
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
     import ShareButton from "$lib/p2p/ui/ShareButton.svelte";
     import type { RadioModus } from "$lib/p2p/ftp/Audio.svelte";
+    import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
@@ -484,6 +485,13 @@
         }
     }
     
+    let share_act = $derived(P.needs_share_open_action)
+    // gets set only once so they can dismiss it and continue
+    let no_share = () => {
+        P.needs_share_open_action = false
+        // Introducing along:
+        M.i_elvis(M.w,'noop')
+    }
 </script>
 
 <button onclick={() => layout()}>layout</button>
@@ -524,9 +532,24 @@
                             class={!quit_fullscreen ? 'small' : ''}>fullscreen</button>
                     </span>
 
+                    {#if share_act}
+                        <span class="collections inrow" title="
+                        Access to (some part of) your filesystem is required to share.
+                        ">
+                            <span class="arow" style="font-size:1.8em;">
+                                please
+                                <ActionButtons actions={[share_act]} />
+                                to share back
+                            </span>
+                            <button onclick={() => no_share()}
+                                style="margin:2em;"
+                                >nah</button>
+                        </span>
+                    {/if}
+
                     <span>
                         <ShareButton {P} />
-                        <a href="https://github.com/stylehouse/jamsend" target="#">README</a>
+                        <a href="https://github.com/stylehouse/jamsend" target="#" style="font-size:1.8em;">README</a>
                     </span>
                 </div>
             </div>

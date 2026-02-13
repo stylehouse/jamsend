@@ -3,7 +3,6 @@
     import { fade } from "svelte/transition";
     import FaceSucker from "./p2p/ui/FaceSucker.svelte";
     import { grop } from "./Y";
-    import ActionButtons from "./p2p/ui/ActionButtons.svelte";
     import type { TrustingModus } from "./Trust.svelte";
     import ShareButton from "./p2p/ui/ShareButton.svelte";
 
@@ -31,7 +30,6 @@
             !P.some_feature_is_nearly_ready ? 'none' : `nothing's`
         )
         || !P.Welcome && "try refreshing" // misleading advice but very helpful
-        || P.needs_share_open_action && "need share"
     )
 
     let unready = $derived(any_problems && never_ready)
@@ -87,13 +85,6 @@
             wasfull = can_fullscreen
         }
     })
-    let share_act = $derived(P.needs_share_open_action)
-    // gets set only once so they can dismiss it and continue
-    let no_share = () => {
-        P.needs_share_open_action = false
-        // Introducing along:
-        M.i_elvis(M.w,'noop')
-    }
 
     // < cyto in here... can we make friends in common?
 
@@ -148,7 +139,7 @@
 {#snippet nice_conversation()}
 
     {#if P.Welcome}Welcome.
-    {:else}Feel free to reload.{/if}
+    {:else}Climbing aboard...{/if}
     {#if M.amTyrant}amTyrant.{/if}
     {#if P.some_feature_is_ready}Ready.
     {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
@@ -166,21 +157,6 @@
             </a>
         {/if}
     </span>
-    
-    {#if share_act}
-        <span class="collections inrow" title="
-        Access to (some part of) your filesystem is required to share.
-        ">
-            To share them music,
-            <span class="arow" style="font-size:1.8em;">
-                can you please
-                <ActionButtons actions={[share_act]} />
-            </span>
-            . . . . . .<button onclick={() => no_share()}
-                style="margin:2em;"
-                >nah</button>
-        </span>
-    {/if}
     
     
     {@render those_Active()}
