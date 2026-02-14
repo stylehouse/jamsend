@@ -137,9 +137,14 @@
 <!-- plateau of mostly introductory language -->
 
 {#snippet nice_conversation()}
-
-    {#if P.Welcome}Welcome.
-    {:else}Climbing aboard...{/if}
+    {#if P.Welcome}
+        Brilliant...
+    {:else}
+        Left cave: {quit_fullscreen}.
+        {#if P.dodgy_user}
+            <span style="font-size: 24px; display: inline-block; transform: scaleY(-1);">🐢</span>
+        {/if}
+    {/if}
     {#if M.amTyrant}amTyrant.{/if}
     {#if P.some_feature_is_ready}Ready.
     {:else if P.some_feature_is_nearly_ready}Nearly ready.{/if}
