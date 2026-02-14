@@ -507,8 +507,8 @@
                 bind:this={ele}
             ></div>
 
-            {#if jamming}
-                <div class='uiing'>
+            <div class='uiing'>
+                {#if jamming}
                     <div class='controls'>
                         <button onclick={() => YES()} class='big'
                             disabled={heist && true}
@@ -521,13 +521,14 @@
                                 >nah</button>
                         </span>
                     </div>
-                    {#if heist}
-                        <div class='heisting'>
-                            <Pirate {M} {mem} {heist} {w}></Pirate>
-                        </div>
-                    {/if}
-                </div>
-            {/if}
+                {/if}
+                {#if heist}
+                    <div class='heisting'>
+                        <Pirate {M} {mem} {heist} {w}></Pirate>
+                    </div>
+                {/if}
+            </div>
+            
             <div class='uiing bottom'>
                 <div class='controls'>
                     <span>

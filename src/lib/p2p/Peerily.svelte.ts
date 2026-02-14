@@ -887,7 +887,7 @@ export class Pier {
         // wait for trust to arrive, but don't make an infinite loop
         if (now_in_seconds() > (this.retry_untrusted_messages_until_ts || Infinity)) {
             let say = this.heard_trust ? "heard_trust..." : "haven't heard_trust"
-            return console.warn(`dropped pending unemit:${data.type}, ${say}`)
+            return console.warn(`Pier:${this.pub}: dropped pending unemit:${data.type}, ${say}`)
         }
         this.retry_untrusted_messages_until_ts ||= now_in_seconds() + 9.1114
         setTimeout(() => {
@@ -936,32 +936,40 @@ export class Pier {
         this.trust.clear()
         this.trusted.clear()
     }
+    they_say(what,data) {
+        console.log(`Pier:${this.pub}: says ${what}:`, data);
+    }
     handlers = {
         noop: async (data) => {
-            console.log("they say noop: ",data)
+            this.they_say("noop", data);
         },
         hello: async (data) => {
-            console.log("they say hi: ",data)
-            this.hear_hello(data)
+            this.they_say("hello", data);
+            this.hear_hello(data);
         },
         ping: async (data) => {
-            // console.log("they say ping: ",data)
-            await this.P.Trusting.M.unemitPing(this,data)
+            // this.they_say("ping", data);
+            await this.P.Trusting.M.unemitPing(this, data);
         },
         intro: async (data) => {
-            console.log("they say intro: ",data)
-            await this.P.Trusting.M.unemitIntro(this,data)
+            this.they_say("intro", data);
+            await this.P.Trusting.M.unemitIntro(this, data);
         },
-        
         trust: async (data) => {
-            if (!this.is_vaguely_trusted()) return console.log("Ignore unemit:trust")
-            console.log("they say trust: ",data)
-            this.hear_trust(data)
+            if (!this.is_vaguely_trusted()) {
+                this.they_say("trust, prematurely", data);
+                return;
+            }
+            this.they_say("trust", data);
+            this.hear_trust(data);
         },
         trusted: async (data) => {
-            if (!this.is_vaguely_trusted()) return console.log("Ignore unemit:trusted")
-            console.log("they say trusted: ",data)
-            this.hear_trusted(data)
+            if (!this.is_vaguely_trusted()) {
+                this.they_say("trusted, prematurely", data);
+                return;
+            }
+            this.they_say("trusted", data);
+            this.hear_trusted(data);
         },
     }
 

@@ -113,7 +113,8 @@
             },
             // we are receiving blob
             i_pull: async (data,loop) => {
-                if (!raterm) {
+                if (!raterm && 0) {
+                    // < GOING? causes a drop in blob.sc.seq
                     console.warn(`sidestepping !raterm unemits i_pull`)
                     loop ||= 0
                     loop += 1
@@ -382,7 +383,7 @@
     // speed control via continuous acking|reiterating the emit:o_pull
     // runs in time to initiate the heist/blob
     //  and our of time in every unemit:i_pull we download
-    async blob_could_emit_o_pull(req,he,blob) {
+    async blob_could_emit_o_pull(req,he,blob,enthused=false) {
         // keep telling them we want more
         // < manual speed control, shared equally amongst Piers
         const PIPELINE_BYTES = this.calculate_pipeline(blob)
@@ -403,6 +404,12 @@
                 pulled_size,
             })
             blob.sc.pulled_size = pulled_size
+        }
+        if (enthused) {
+            await this.PF.emit('o_pull', {
+                uri: blob.sc.uri,
+                pulled_size: blob.sc.pulled_size,
+            })
         }
         await this.blob_monitoring(req,he,blob)
     },
@@ -572,7 +579,7 @@
 
         // console.log(`🔵 cytotermi_heist_now ${blob.sc.received_size} of: ${blob.sc.uri}`)
 
-        await this.blob_could_emit_o_pull(req,he,blob)
+        await this.blob_could_emit_o_pull(req,he,blob,true)
     },
 
     
@@ -1241,7 +1248,7 @@
                 // serve is a requesty from an unemit:o_pull
                 //  which we base another request off
                 if (o_push_reqy.o({serve}).length) {
-                    return console.log(`dup o_push`)
+                    return// console.log(`dup o_push`)
                 }
                 // < reqy.r({serve},{...}) would sublate the above block
                 //    we would just pointlessly e:noop ourselves on dup in this case...
