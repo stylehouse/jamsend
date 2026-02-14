@@ -1,5 +1,7 @@
 
 services:
+
+
   droid:
     image: seleniarm/standalone-chromium:latest # Optimized for cross-arch (arm/amd64)
     container_name: jamsend-droid
@@ -10,16 +12,23 @@ services:
       retries: 5
     environment:
       - START_XVFB=true
-      - SCREEN_WIDTH=1280
-      - SCREEN_HEIGHT=720
+      - VNC_NO_PASSWORD=1
+      - SCREEN_WIDTH=988
+      - SCREEN_HEIGHT=1200
       - NODE_MAX_SESSIONS=1
       # WebRTC Specific Flags
-      - CHROME_FLAGS=--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required
+      - CHROME_FLAGS=--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security
+      - SE_NODE_SESSION_TIMEOUT=3600 # 1 hour instead of 5 minutes
     ports:
       - "4444:4444" # Selenium Grid port
       - "127.0.0.1:7900:7900" # noVNC Web Interface
     shm_size: 2gb # CRITICAL: Chrome crashes without large shared memory
     restart: always
+    volumes:
+      - ./music:/home/seluser/music
+      - ./chrome-profile:/home/seluser/chrome-profile
+
+
   bot:
     build:
       context: .

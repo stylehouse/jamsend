@@ -12,14 +12,20 @@ const url = process.env.TARGET_URL;
 let lastState = "";
 
 async function scrape() {
+    console.log("Checking Droid-PiersList")
     let options = new chrome.Options();
     // This is the magic: it tells the browser to appear on the VNC screen
     options.addArguments('--display=:99.0'); 
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
+    // Explicitly set the directory to the location we will mount in Docker
+    options.addArguments('--user-data-dir=/home/seluser/chrome-profile');
+    // It's also good to specify the profile name
+    options.addArguments('--profile-directory=Default');
 
     let driver = await new Builder()
         .forBrowser('chrome')
+        .setChromeOptions(options)
         .usingServer(seleniumUrl)
         .build();
 
