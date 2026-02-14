@@ -10,7 +10,7 @@ It has a very sensible data abstraction called Stuff that seems like where compu
 
 ## safety
 
-Could be better but is fantastic.
+Could be better but is fantastic. No strangers exist, only your contacts.
 
 ## p2p
 
@@ -26,7 +26,7 @@ Preserve directory structure, tend to move whole albums, restart if interrupted.
 
 # funding
 
-[Send tips!](https://ko-fi.com/ostylehouse). Long story. Lots of quality work to nice things up I've wanted to build but needed the more complete metaphysics that now seems to be here to make it all connect. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
+[Send tips!](https://ko-fi.com/ostylehouse). Long story: wanting to technically manage lots of quality work on a new language and direction for the humans, which is somewhat here in this project. Stuff.svelte.ts really. Seem to have good enough metaphysics to join lots of efforts together. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
 
 # development
 
@@ -86,7 +86,7 @@ We can note (in comments and spec (so far)) the name of a C variable, and some r
 
 *Travel* does recursion into trees of C (aka C**, eg C/C, C/C/C, etc).
 
-*Selection* is *Travel* with change tracking and enough thinking to be useful for eg *Directory* and *Cytoscaping*, it should be a fairly universal type of stuff-going-on. We usually simply put something somewhere then come back later and look for something like it, this is an attempt to formalise that being, lifecycling part of reality.
+*Selection* is *Travel* with change tracking and enough thinking to be useful for eg *Directory* and *Cytoscaping*, it should be a fairly universal type of stuff-going-on. We usually simply put something somewhere and realise it's the same thing we put there last time, this is an attempt to formalise that part of reality with lifecycles of beings in situations.
 
 *Modus* is an agenda to attend to, has a heartbeat, provides persistent memory via *Modusmem*... Eg *DirectoryModus* wanders around your *DirectoryShare* looking for music to make available, and traces of our mind we may have stored in there.
 
@@ -131,6 +131,7 @@ And now these are the important user-mind things to persist in *Modusmem* and be
 # setup
 
 ```bash
+snap install docker
 # get such a container
 docker compose build
 # populate your ./node_modules, mounted in the container under /app

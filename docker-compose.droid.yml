@@ -1,0 +1,39 @@
+
+services:
+  droid:
+    image: seleniarm/standalone-chromium:latest # Optimized for cross-arch (arm/amd64)
+    container_name: jamsend-droid
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - START_XVFB=true
+      - SCREEN_WIDTH=1280
+      - SCREEN_HEIGHT=720
+      - NODE_MAX_SESSIONS=1
+      # WebRTC Specific Flags
+      - CHROME_FLAGS=--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required
+    ports:
+      - "4444:4444" # Selenium Grid port
+      - "127.0.0.1:7900:7900" # noVNC Web Interface
+    shm_size: 2gb # CRITICAL: Chrome crashes without large shared memory
+    restart: always
+  bot:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:20-alpine
+        WORKDIR /app
+        RUN npm install selenium-webdriver
+        COPY bot.js .
+        CMD ["node", "bot.js"]
+    depends_on:
+      droid:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - TARGET_URL=https://jamsend.duckdns.org:9999/
+      - SELENIUM_REMOTE_URL=http://droid:4444/wd/hub

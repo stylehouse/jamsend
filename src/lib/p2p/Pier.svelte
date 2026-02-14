@@ -10,10 +10,10 @@
     // $inspect('Pier shing',pier.stashed)
 </script>
  
-<div id=levity class:stealth={pier.P.stealth && pier.stashed?.stealth}>
-    Pier: <span class="title">{pier.pub} </span>
+<div class="levity Pier_itself" class:stealth={pier.P.stealth && pier.stashed?.stealth}>
+    Pier: <span class="Pier_prepub title">{pier.pub} </span>
     {#if pier.disconnected}
-        <span class="ohno tech">discon</span>
+        <span class="ohno tech discon">discon</span>
     {/if}
     {#if pier.stashed.stealth}
         <span class="tech">stealth</span>
@@ -42,7 +42,7 @@
 </div>
 
 <style>
-    #levity {
+    .levity {
         margin-left:-1em;
         border-left: 2em solid rgb(97, 139, 19);
         border-radius:2em;

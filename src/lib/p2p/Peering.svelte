@@ -10,7 +10,7 @@
     // $inspect('Peering shing',eer.stashed)
 </script>
 
-    <div id=levity>
+    <div class=levity>
         <!-- itself: -->
             <div>Listening: <span class="title">{pub} </span>
                 {#if eer.disconnected}
@@ -42,7 +42,7 @@
         {/if}
     </div>
 <style>
-    #levity {
+    .levity {
         margin-left:-1em;
         border-left: 2em solid saddlebrown;
         border-radius:2em;
