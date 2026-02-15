@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { throttle } from "$lib/Y";
     import type { Snippet } from "svelte";
 
     let { content,
@@ -12,12 +13,33 @@
 
     let scrollElement: HTMLDivElement;
     let needsScroll = $state(false);
+    
+    // Hysteresis: needs 20px overflow to enable scroll, 
+    // but once enabled stays enabled until 20px under threshold
+    let scrollState = $state({ needed: false, lastHeight: 0 });
 
-    function checkScrollNeeded() {
+    let checkScrollNeeded = throttle(() => {
         if (scrollElement) {
-            needsScroll = scrollElement.scrollHeight > scrollElement.clientHeight;
+            const overflow = scrollElement.scrollHeight - scrollElement.clientHeight;
+            const currentHeight = scrollElement.scrollHeight;
+            
+            // Add 20px hysteresis
+            if (scrollState.needed) {
+                // Already scrolling - need to be 20px under to disable
+                if (overflow < -20) {
+                    scrollState.needed = false;
+                }
+            } else {
+                // Not scrolling - need to be 20px over to enable
+                if (overflow > 20) {
+                    scrollState.needed = true;
+                }
+            }
+            
+            scrollState.lastHeight = currentHeight;
+            needsScroll = scrollState.needed;
         }
-    }
+    }, 200);
 
     $effect(() => {
         if (scrollElement) {

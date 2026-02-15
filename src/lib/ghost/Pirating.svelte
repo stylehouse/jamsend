@@ -982,7 +982,7 @@
             soft_disbelieve_categories = false
             soft_disbelieve_directories = true
         }
-        else if (disbelieve_directories) {
+        else if (disbelieve_directories && wp.sc.blob) {
             "collect random tracks in one place"
             soft_disbelieve_categories = true
         }
@@ -1032,6 +1032,7 @@
             only_categories,
         }
         // console.log(`Toggly heist defaults after:`,defaults)
+        await tick()
         req.c.set_checkbox_defaults(defaults)
     },
 
