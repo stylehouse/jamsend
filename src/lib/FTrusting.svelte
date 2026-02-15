@@ -56,6 +56,9 @@
     $effect(() => {
         if (loaded) return
         if (!M?.stashed) return
+        if (M.stashed.Boblessless != null) {
+            F.P.Boblessless = M.stashed.Boblessless
+        }
         if (M.stashed.NoHeavyComputing != null) {
             F.P.NoHeavyComputing = M.stashed.NoHeavyComputing
         }
@@ -74,6 +77,12 @@
     let NoRadio = $state(false)
     let NoPreviewing = $derived(F?.P?.NoPreviewing)
     let NoHeavyComputing = $derived(F?.P?.NoHeavyComputing)
+    let Boblessless = $derived(F?.P?.Boblessless)
+    function togBoblessless(e) {
+        let is = e.target.checked
+        F.P.Boblessless = is
+        M.stashed.Boblessless = is
+    }
     function tognoheavy(e) {
         let is = e.target.checked
         F.P.NoHeavyComputing = is
@@ -97,26 +106,42 @@
 <div class='levity Trusting'>
 <h2>Trust!</h2>
 {#if F}
-    <button onclick={increase} >increase</button>
-    <button onclick={() => grip()} >grip</button>
-    <input type="checkbox"
-        onchange={(e) => tognoheavy(e)}
-        id="NoHeavyComputing" checked={NoHeavyComputing} /> 
-        <label for="NoHeavyComputing">
-            NoHeavyComputing
-        </label>
-    <input type="checkbox"
-        onchange={(e) => togNoPreviewing(e)}
-        id="NoPreviewing" checked={NoPreviewing} /> 
-        <label for="NoPreviewing">
-            NoPreviewing
-        </label>
-    <input type="checkbox"
-        onchange={(e) => tognoradio(e)}
-        id="NoRadio" checked={NoRadio} /> 
-        <label for="NoRadio">
-            NoRadio
-        </label>
+    <span>
+        <button onclick={increase} >increase</button>
+        <button onclick={() => grip()} >grip</button>
+    </span>
+    <span>
+        <input type="checkbox"
+            onchange={(e) => togBoblessless(e)}
+            id="Boblessless" checked={Boblessless} /> 
+            <label for="Boblessless">
+                Boblessless
+            </label>
+    </span>
+    <span>
+        <input type="checkbox"
+            onchange={(e) => tognoheavy(e)}
+            id="NoHeavyComputing" checked={NoHeavyComputing} /> 
+            <label for="NoHeavyComputing">
+                NoHeavyComputing
+            </label>
+    </span>
+    <span>
+        <input type="checkbox"
+            onchange={(e) => togNoPreviewing(e)}
+            id="NoPreviewing" checked={NoPreviewing} /> 
+            <label for="NoPreviewing">
+                NoPreviewing
+            </label>
+    </span>
+    <span>
+        <input type="checkbox"
+            onchange={(e) => tognoradio(e)}
+            id="NoRadio" checked={NoRadio} /> 
+            <label for="NoRadio">
+                NoRadio
+            </label>
+    </span>
 
 
 

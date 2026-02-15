@@ -102,7 +102,6 @@ export class Audiolet {
 
         // Stop any ongoing playback
         this.playing?.stop();
-        this.playing_next?.stop();
         delete this.playing;
         delete this.playing_next;
         delete this.playing_last;

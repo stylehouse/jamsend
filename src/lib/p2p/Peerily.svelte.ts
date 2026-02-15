@@ -344,6 +344,8 @@ export class Peerily {
     directory_compat_mode = $state()
     // Gardening can move the active raterm around one Pier at a time
     switchup_Engagements?:Function
+    // stay on expensive process
+    Boblessless = $state(false)
     // avoid the expensive processes with w:meander and w:radiopreview
     //  everyone can still have radiostock and rapiracy
     NoHeavyComputing = $state(false)

@@ -19,9 +19,6 @@
     // $share/.jamsend/radiostock/*.webms
     const IGNORE_RADIOSTOCK_CACHE = false 
     const RADIOSTOCK_CACHE_LIMIT = 200 // items, they are timestamped
-    // < become like P.NoPreviewing etc, apparatus for stored toggley settings
-    //   and if on it should make A:Bob
-    const BOB_NEVER_RESTS = false
 
     // < get these numbers down, which involves lots of testing?
     //   adapt to slow cpu, which might be measured by punctuality of a callback?
@@ -661,7 +658,7 @@
         }
     },
     async i_nowPlaying(A,w,he,re) {
-        await this.close_nowPlaying()
+        await this.close_nowPlaying(A,w)
 
         let no = await w.r({nowPlaying:1},{nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,
             ...re.sc.meta
@@ -1294,7 +1291,7 @@
     async radiopreview(A,w,D) {
         if (!this.gat.AC_ready) return w.i({error:"!AC",waits:1})
         // w can mutate
-        w.sc.then = A.sc.A.startsWith("Bob") && BOB_NEVER_RESTS
+        w.sc.then = A.sc.A.startsWith("Bob") && M.F.P.Boblessless
             ? "reset" : "rest"
 
         w.c.error_fn = async (er) => {
