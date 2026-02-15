@@ -13,7 +13,12 @@ export class SoundSystem {
         Object.assign(this,opt)
     }
     close() {
-        this.AC?.close();
+        if (this.AC) {
+            // Close the AudioContext
+            this.AC.close().catch(console.error);
+            this.AC = null;
+        }
+        this.AC_ready = false;
     }
     now() {
         return this.AC?.currentTime || 0
@@ -53,6 +58,7 @@ export class SoundSystem {
         // < this.M.beginable()?
     }
 
+
     // the many sound feeds
     new_audiolet(opt={}):Audiolet {
         let aud = new Audiolet({gat:this,...opt})
@@ -87,6 +93,42 @@ export class Audiolet {
         this.gainNode.connect(this.gainNode2);
         this.gainNode.gain.value = 1;
     }
+    // < use this
+    close() {
+        // Stop and disconnect all audio nodes
+        this.gainNode?.disconnect();
+        this.gainNode2?.disconnect();
+        this.outputNode?.disconnect();
+
+        // Stop any ongoing playback
+        this.playing?.stop();
+        this.playing_next?.stop();
+        delete this.playing;
+        delete this.playing_next;
+        delete this.playing_last;
+
+        // Stop and clean up MediaRecorder
+        this.mediaRecorder_onstop();
+        if (this.mediaRecorder) {
+            this.mediaRecorder.ondataavailable = null;
+            this.mediaRecorder = undefined;
+        }
+
+        // Clear timeouts
+        if (this.segmentation_timeoutId) {
+            clearTimeout(this.segmentation_timeoutId);
+            delete this.segmentation_timeoutId;
+        }
+
+        // Reset state
+        this.stopped = true;
+        this.start_time = undefined;
+        this.stop_time = undefined;
+        this.on_recording = undefined;
+        this.on_ended = undefined;
+        this.on_stop = undefined;
+    }
+
 
     mediaRecorder?: MediaRecorder
     segment_duration?:number

@@ -27,8 +27,24 @@ export class RadioModus extends Modus {
         super(opt)
         this.gat = new SoundSystem({M:this})
     }
+    // on UI:Modus destroy
     do_stop() {
-        // on UI:Modus destroy
+        // Clean up any remaining auds
+        // < radio_hear() has auds for this too..
+        //   perhaps they get notified by gat?
+        for (let A of this.o({A:1})) {
+            for (let w of A.o({w:1})) {
+                for (let aud of w.o1({aud:1})) {
+                    aud?.close?.()
+                }
+                // Nested auds under %hearing (from radio_hear/raterminal)
+                for (let he of w.o({hearing:1})) {
+                    for (let au of he.o({aud:1})) {
+                        au.sc.aud?.close?.()
+                    }
+                }
+            }
+        }
         this.gat?.close()
     }
     

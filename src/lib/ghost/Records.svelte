@@ -339,9 +339,10 @@
 
     async watch_auds_progressing(A,w,D) {
         // watch the aud progress
-        let auds:Array<Audiolet> = w.o1({aud:1})
+        let auds:Audiolet[] = w.o1({aud:1})
         let alive = 0
         let watching = await w.r({watching_auds:1})
+
         await watching.replace({aud:1,left:1}, async () => {
             for (let aud of auds) {
                 if (!aud.stopped) {
@@ -353,6 +354,7 @@
                     // check that left is going down over time
                     //  not sure why they'd hang there, not stopped but not playing...
                     let N = watching.o({aud,left:1})
+                    this.whittle_N(N,9)
                     let lefts = N.map(au => au.sc.left)
                     let minmaxsame = Math.min(...lefts) == Math.max(...lefts)
 
@@ -363,10 +365,10 @@
                         // < only w/%error ever gets tidied up?
                         A.i({error:`watched aud isn't rolling...`})
                     }
-                    this.whittle_N(N,9)
                 }
                 else {
                     // done!
+                    aud.close()
                     w.i({see:'aud',stopped:1})
                 }
                 w.i({see:'audtime',along:aud.along(),duration:aud.duration()})

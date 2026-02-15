@@ -131,15 +131,19 @@
                 // re.i({dooooooooyyings:'it'})
             }
         }
+
+        // < potential memory leak or just ugliness:
         w.c.spinner ||= setInterval(() => {
             if (this.stopped) return clearInterval(w.c.spinner)
             this.check_all_records_sanity(A)
-        }, 100)
+        }, 5000)
+
         // < should we have hidden state like this?
         //   depends on KEEP_WHOLE_w to not lose w.c at the end of every time
         //    which perhaps we should...
         // our cursor id on the broadcaster, so we can restart
         w.c.cursor ||= this.prandle(9000000000)
+
         // < times...
         w.c.rec_end_nearing = () => {
             // < any %record/*%seq=$here,end_seq=$later can indicate the end?
@@ -459,6 +463,7 @@
 
             // time to decode the next aud
             if (!plau.sc.next) {
+                // < %elvis this better
                 setTimeout(() => progress(), 345)
             }
             })
@@ -515,6 +520,7 @@
                 if (!au.sc.aud.stopped) {
                     console.warn(`whittle playing he/au: ${re.sc.enid}@${seq}`)
                 }
+                au.sc.aud.close()
             }
         }
 
@@ -628,15 +634,6 @@
         //   which sets up continuity
         await progress()
 
-        // < ideally with mixage
-        // switch off any currently heard auds
-        for (let he of w.o1({nowPlaying:1})) {
-            // < where is playhead seems too complicated
-            for (let aud of he.o1({aud:1}) as Audiolet[]) {
-                aud.on_ended = undefined
-                aud.stop()
-            }
-        }
 
         let no = await this.i_nowPlaying(A,w,he,re)
         // notifies the UI
@@ -652,7 +649,20 @@
         this.whittle_N(he.o({aud:1,pr:1}),10)
     },
 
+
+    async close_nowPlaying(A,w) {
+        // < ideally with mixage
+        // switch off any currently heard auds
+        for (let he of w.o1({nowPlaying:1})) {
+            // < where is playhead seems too complicated
+            for (let au of he.o({aud:1}) as Audiolet[]) {
+                au.sc.aud?.close()
+            }
+        }
+    },
     async i_nowPlaying(A,w,he,re) {
+        await this.close_nowPlaying()
+
         let no = await w.r({nowPlaying:1},{nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,
             ...re.sc.meta
         })
@@ -829,6 +839,9 @@
         while (await spoolia()) { 1 }
 
         this.Cpromised(re,async () => await spoolia())
+        re.c.on_transmission_complete = () => {
+            delete re.c.promised
+        }
     },
 
 
@@ -836,6 +849,7 @@
 //#region racaster
     // < test the efficacy of this... born in chaos
     async racaster(A,w) {
+        // < GOING, was used for testing simulating the host neglecting us
         if (this.sent_re_client_quota_default == null) {
             this.sent_re_client_quota_default = 0
             this.sent_re_client_quota = {}
@@ -1427,7 +1441,9 @@
             // < figure out how to keep the %record without muddling it with non-continuing %stream
             re.r({stream:1},{})
             not_relevant = true
-            w.o1({aud:1}).map(aud => aud.stop())
+            w.o1({aud:1}).map(aud => aud.close())
+        
+            re.c.on_transmission_complete?.()
         }
         let check_for_abandonment = (pr) => {
             if (!re.c.client_ack_seq) return

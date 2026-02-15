@@ -433,6 +433,7 @@ class FileSystemHandler {
     // go somewhere
     async getFileHandle(filename: string): Promise<FileSystemFileHandle> {
         if (!this.handle) throw erring('No directory access')
+        console.log(`Got a filehandle! `,this.file_handles)
         const handle = await this.handle.getFileHandle(filename);
         this.file_handles.set(filename, handle);
         return handle;
