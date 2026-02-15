@@ -105,10 +105,11 @@
     align-items: center;
     gap: 0.3rem;
 }
-    .custom-actions {
-        flex: 1; /* Take remaining space */
-        justify-content: flex-end
-    }
+.custom-actions {
+    flex: 1; /* Take remaining space */
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
 
 .thing-name {
     font-weight: 500;
