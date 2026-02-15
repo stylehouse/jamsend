@@ -30,7 +30,7 @@
 //#region Trusting
     // high-level clustery thinking
     async Trusting(A,w) {
-        console.log(`🔒 Trusting`)
+        // console.log(`🔒 Trusting`)
         // for (let e of this.o_elvis(w,'Trustastic')) {
         //     w.i({Trustastic:1,day:1,to:1,be:1,alive:1})
         // }

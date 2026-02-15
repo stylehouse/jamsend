@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
 
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
@@ -13,7 +13,8 @@
     let {M} = $props()
     let V = {}
     V.descripted = 0 // also in Cytoscaping
-    V.serve = 1
+    V.serve = 0
+    V.local = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -280,9 +281,11 @@
         con.c.abandon_piracy = () => {
             M.node_edger.enheist(null)
             req.sc.finished ||= "abandoned by UI"
+            // < perhaps need to work around how we once needed to:
+            // < GOING:
             // drop() incase we get another %elvis:nab_this
             //  before the %finished->drop() comes around
-            w.drop(req)
+            // w.drop(req)
         }
         // < does it work not continuously handing it over like this?
         M.node_edger.enheist(con)
@@ -292,6 +295,8 @@
             req.c.set_checkbox_defaults = set_fn
         }
     },
+
+
 
 
     // things we do
@@ -412,6 +417,7 @@
                 pulled_size: blob.sc.pulled_size,
             })
         }
+        if (enthused || buffer_low) req.sc.o_pull_at = now_in_seconds()
         await this.blob_monitoring(req,he,blob)
     },
     // 
@@ -568,7 +574,7 @@
         await this.cytotermi_heist_now(A,w,req,he,local,remote,now)
 
         // < this 
-        console.log(`heist ${he.sc.progress_tally} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`,now)
+        V.serve && console.log(`heist ${he.sc.progress_tally} ${now.sc.received_size||0}/${now.sc.total_size||'?'}`)
     },
     // in time, keeps asking for more of now
     async cytotermi_heist_now(A,w,req,he,local,remote,blob) {
@@ -584,6 +590,7 @@
     },
 
     
+    // through this interface ^ v flows the music
 
 
     // serve
@@ -1242,7 +1249,7 @@
                 this.i_elvis(w,'noop',{handle:req})
                 return req
             },
-            // the download is being sourced here
+            // the download is being sourced
             //  next door in A:Directory
             o_push: async (serve) => {
                 w = this.refresh_C([A,w])
@@ -1265,12 +1272,20 @@
         })
 
         // these requests take time to start happening and want to park when up blown
+        let ipushes = 0
         await i_push_reqy.do(async (req) => {
+            ipushes += 1
             await this.rapiracy_i_push_reqy(A,w,req)
         })
+        V.local && ipushes && console.log(`rapiracy! active downloads: x${ipushes}`)
+
+        let opushes = 0
         await o_push_reqy.do(async (req) => {
+            opushes += 1
             await this.rapiracy_o_push_reqy(A,w,req)
         })
+        V.local && opushes && console.log(`rapiracy! active uploads: x${opushes}`)
+
         // respond to all requests for visions of the directory tree
         await o_descripted_reqy.do(async (req) => {
             await this.rapiracy_descripted(A,w,io,req)

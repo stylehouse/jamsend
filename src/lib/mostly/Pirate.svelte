@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount, untrack } from "svelte";
     import { grop, throttle } from "$lib/Y";
-    import { _C, type TheN } from "$lib/data/Stuff.svelte";
+    import { _C, keyser, type TheN } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
     import Scrollability from "$lib/p2p/ui/Scrollability.svelte";
     import type { Modusmem } from "./Modus.svelte.ts";
@@ -45,45 +45,74 @@
         },6000)
         return () => clearInterval(interval)
     })
+    
+    let req_seems_not_to_exist = 0
+    let dest_dir = $state()
+    let dest_bit = $state()
+    let pirate_thunk = throttle(() => {
+        setTimeout(async () => {
+            // console.log("UI:Pirate thunk")
 
+            // as soon as you get interested in one, can't rely on np for titling
+            let re = req.sc.re
+            interesting_title = re ? re.sc.title : "resumed"
+            // you can Stuffing the reqy
+            show_req = show_req_Stuffing.sc.show_req
+
+            // nab form
+            pls = req.o({places:1})[0]
+            let ok = pls && !pls.sc.finished
+            places = ok && pls.o({place:1}) || null
+            collections = places && grop(pl => pl.sc.collection, places)
+
+            // needs to open a share
+            share_act = req.o1({action:1,needs:"a share"})[0]
+
+            // progress heist
+            // < kBps styling nice
+            let he = req.o({heist:1})[0]
+            // progress_tally = he ? he.sc.progress_tally : ''
+
+            if (he?.sc.heisted) {
+                // ^ is roughly equivalent to v, but consequential via req/%solved
+                if (req.sc.finished) {
+                    // console.log(`heist is fading into the past`)
+                    setTimeout(() => {
+                        M.node_edger.deheist()
+                    },2000)
+                }
+            }
+
+
+            blob_monitoring = req.o({blob_monitoring:1})[0]
+            if (blob_monitoring) {
+                dest_bit = blob_monitoring.sc.bit
+                dest_dir = he.sc.destination_directories
+            }
+
+            // w seems to forget what we're doing...
+            let way = M.refresh_C([w.up,w])
+            if (!way) return
+            if (!way.o().includes(req)) {
+                req_seems_not_to_exist += 1
+                if (!(req_seems_not_to_exist <3)) {
+                    // < strange. why?
+                    req_seems_not_to_exist = 0
+                    console.log(`UI:Pirate thunk - reattaching w/req`)
+                    let reqy = await M.requesty_serial(way,'pirating')
+                    let another_req = await reqy.i(req.sc)
+                    req.o().map(uh => another_req.i(uh))
+                }
+            }
+        },1)
+
+    },300)
     $effect(() => {
         if (req?.version) {
             // this happens whenever we A:visual/**
             //  regularly attending to the req, in A time
-            setTimeout(() => {
-                // as soon as you get interested in one, can't rely on np for titling
-                let re = req.sc.re
-                interesting_title = re ? re.sc.title : "resumed"
-                // you can Stuffing the reqy
-                show_req = show_req_Stuffing.sc.show_req
-
-                // nab form
-                pls = req.o({places:1})[0]
-                let ok = pls && !pls.sc.finished
-                places = ok && pls.o({place:1}) || null
-                collections = places && grop(pl => pl.sc.collection, places)
-
-                // needs to open a share
-                share_act = req.o1({action:1,needs:"a share"})[0]
-
-                // progress heist
-                // < kBps styling nice
-                let he = req.o({heist:1})[0]
-                // progress_tally = he ? he.sc.progress_tally : ''
-                if (he?.sc.heisted) {
-                    if (!req.sc.finished) {
-                        console.log(`heist almost up...`)
-                    }
-                    else {
-                        console.log(`heist is fading into the past`)
-                        setTimeout(() => {
-                            M.node_edger.deheist()
-                        },2000)
-                    }
-                }
-
-                blob_monitoring = req.o({blob_monitoring:1})[0]
-            },1)
+            // < but also, we have that interval above, since we somehow vanish w/req
+            pirate_thunk()
         }
     })
     function nab_places(pl) {
@@ -110,6 +139,7 @@
         checkbox_defaults = c
         mem.set('checkbox_defaults',c)
     })
+
     function togfault(k,def) {
         def = checkbox_defaults[k] ?? def
         return def
@@ -117,7 +147,9 @@
     let show_req_Stuffing = _C({})
 
     let progress_tally = $derived(blob_monitoring.sc.progress_tally)
+    let showingHeist = $derived(show_req && heist)
 </script>
+
 
 
 {#snippet bigslash()}
@@ -145,6 +177,7 @@
 {/snippet}
 
 
+
 <Scrollability maxHeight="60vh" class="content-area">
     {#snippet content()}
         <div>
@@ -157,6 +190,11 @@
                 <!-- <b>{bit}</b> -->
                 <span class="metric small">{progress_pct}%</span>
                 <!-- <span class="metric">{avg_kBps}kB/s</span> -->
+                <span class="marquee-container">
+                    <marquee class='dir'>{dest_dir}</marquee>
+                    <span class="separator">/</span>
+                    <marquee class='bit'>{dest_bit}</marquee>
+                </span>
             {:else}
                 <b>{interesting_title}</b>
                 
@@ -294,12 +332,14 @@
         {/if}
 
 
-        {#if show_req && heist}
+        {#if showingHeist}
             <Stuffing mem={mem.further("heist")} stuff={heist} {M} />
         {/if}
         </div>
     {/snippet}
 </Scrollability>
+
+
 
 <style>
     input {
@@ -363,5 +403,37 @@
     }
     .arow {
         display:block;
+    }
+
+
+
+    .marquee-container {
+        display: inline-flex;
+        align-items: center;
+        max-width: 50%; /* or whatever fits your layout */
+        gap: 0.2em;
+        overflow: hidden;
+    }
+
+    .marquee-container marquee {
+        display: inline-block;
+        white-space: nowrap;
+        flex: 1;
+        min-width: 0; /* allows flexbox to shrink */
+    }
+
+    .marquee-container .separator {
+        flex-shrink: 0;
+        padding: 0 0.2em;
+    }
+
+    marquee.dir {
+        color: rgb(156, 140, 217);
+        font-size: 0.9em;
+    }
+
+    marquee.bit {
+        font-weight: bold;
+        font-size: 1.1em;
     }
 </style>
