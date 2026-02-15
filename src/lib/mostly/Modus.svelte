@@ -12,7 +12,7 @@
     import { ThingsIsms,ThingIsms } from "$lib/data/Things.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
     import Agency from "$lib/ghost/Agency.svelte";
-    import Thingstashed from "$lib/data/Thingstashed.svelte";
+    import Radios from "$lib/ghost/Radios.svelte";
 
     type Sthing = PeeringSharing | PierSharing | DirectoryShare
     let {S,do_start,do_drawing}:{S:Sthing,do_start?:any,do_drawing?:any} = $props()
@@ -95,7 +95,7 @@
 
     // putting this in $derived() avoids error when M is undefined
     // a frontend!
-    let UI_component = $derived(M.UI_component)
+    let UI_component = $derived(M.UI_component || M.use_Radios && Radios)
     // one that wants M.stashed
     let stashy_UI_component = $derived(M.stashy_UI_component)
     // another way to put a frontend
