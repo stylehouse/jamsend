@@ -35,10 +35,10 @@
     // on the PF Sharee
     // take nowPlaying somewhere interesting
     async cytotermicaster(A,w) {
+        let cynoed = await this.cynoed(A,w)
+        if (!cynoed) return w.i({waits:'for UI'})
+
         let {raterm} = await this.termicaster_resources(A,w)
-
-
-
         if (!raterm) return w.i({see:'sitting still'})
 
         // help the user
@@ -46,9 +46,6 @@
         // queries|receives context
         await this.cytotermi_may_descripted(A,w,raterm)
         
-        let cynoed = await this.cynoed(A,w)
-        if (!cynoed) return w.i({waits:'for UI'})
-
 
         let C = 1 ? await this.cytotermi_knows(A,w)
             : await this.cytotermi_testdata_knows(A,w)
@@ -509,7 +506,7 @@
             // < touch the graph?
             //   it isn't clearly wired back through time yet
             w.i({see:1,hasSelection:keyser(D)})
-            
+
         }
     },
     
