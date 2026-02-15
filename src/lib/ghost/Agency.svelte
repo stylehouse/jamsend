@@ -1,6 +1,7 @@
 <script lang="ts">
     import { keyser, type TheN } from "$lib/data/Stuff.svelte";
-    import type { RadioModus } from "$lib/mostly/Modus.svelte.ts";
+    import type { RadioModus } from "$lib/p2p/ftp/Sharing.svelte";
+    
     import { erring, grop, nex } from "$lib/Y";
     import { onMount } from "svelte";
 
@@ -556,6 +557,10 @@
                 for (let req of N) {
                     // pre-run prep
                     if (req.sc.finished) {
+                        let interesting = t != 'o_descripted'
+                        if (interesting) {
+                            console.log(`Finished reqy:${t} ${req.sc.req_i}`)
+                        }
                         drop.push(req)
                         continue
                     }

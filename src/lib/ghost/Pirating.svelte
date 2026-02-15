@@ -9,7 +9,6 @@
     import Cytoscape from "$lib/mostly/Cytoscape.svelte";
     import { Selection, Travel, type TheD } from "$lib/mostly/Selection.svelte";
     import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-    import { DirectoryModus } from "$lib/p2p/ftp/Sharing.svelte";
    
     let {M} = $props()
     let V = {}
@@ -315,7 +314,7 @@
     async serve_pulled_pushed(serve:TheC,releasor=false) {
         let go = serve.sc.pushed_size < serve.sc.pulled_size
         if (!go) {
-            // as either
+            // sender (which does pushed_size++) pauses
             if (!serve.sc.push_pending) {
                 // create a stopper
                 serve.sc.push_pending_go
@@ -326,6 +325,7 @@
             }
         }
         if (releasor) {
+            // controlled by termicaster_unemits_o_pull(), ie client wants more
             if (go) {
                 if (serve.sc.push_pending) {
                     V.serve && console.log(`⏸️  Backpressure waiting for ${serve.sc.uri}`)
@@ -336,6 +336,7 @@
             }
         }
         else {
+            // serve awaits
             if (serve.sc.push_pending) {
                 await serve.sc.push_pending
             }
@@ -796,7 +797,8 @@
         // this isn't req%requesty_pirating
         let local = req.sc.local
         // if code has reloaded this.constructor != DirectoryModus when it is
-        if (this.constructor.name != 'DirectoryModus') throw `not DirectoryModus`
+        //  also in production builds class names go crazy
+        if (this.Ima != 'DirectoryModus') throw `not DirectoryModus`
         let path = local.sc.destdirs.length ? local.sc.destdirs.split('/')
             // points at the root of the share:
             : []

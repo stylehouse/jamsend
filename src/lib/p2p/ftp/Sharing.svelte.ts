@@ -10,7 +10,30 @@ import { PeeringFeature, PierFeature,
          now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
 import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { RadioModus } from "$lib/mostly/Modus.svelte.ts";
+import Radios from "$lib/ghost/Radios.svelte"
+import {Modus} from "$lib/mostly/Modus.svelte.ts";
+import { SoundSystem } from "./Audio.svelte";
+
+//#endregion
+//#region RadioModus
+// for M.* functions from ghost/Radios
+// and having M.gat
+export class RadioModus extends Modus {
+    // Audio things haver
+    //  Modus.stop() happens reliably, avoiding zombie sounds
+    gat:SoundSystem
+    constructor(opt:Partial<Modus>) {
+        super(opt)
+        this.gat = new SoundSystem({M:this})
+        // and all this application code:
+        this.UI_component = Radios
+    }
+    do_stop() {
+        // on UI:Modus destroy
+        this.gat?.close()
+    }
+    
+}
 
 //#endregion
 //#region DirectoryModus
@@ -38,6 +61,8 @@ export class DirectoryModus extends RadioModus {
             'A++': () => this.do_A(),
         })
     }
+
+    Ima = 'DirectoryModus'
 
 
 

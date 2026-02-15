@@ -7,8 +7,6 @@ import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peeri
 import { erring, exactly, grep, hak, iske, map, tex, throttle } from "$lib/Y";
 import type { Component } from "svelte";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
-import Radios from "$lib/ghost/Radios.svelte"
-import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte";
 
 //#endregion
 //#region Modus
@@ -554,23 +552,6 @@ export abstract class Modus extends Agency {
 }
 
 
-
-export class RadioModus extends Modus {
-    // Audio things haver
-    //  Modus.stop() happens reliably, avoiding zombie sounds
-    gat:SoundSystem
-    constructor(opt:Partial<Modus>) {
-        super(opt)
-        this.gat = new SoundSystem({M:this})
-        // and all this application code:
-        this.UI_component = Radios
-    }
-    do_stop() {
-        // on UI:Modus destroy
-        this.gat?.close()
-    }
-    
-}
 
 
 

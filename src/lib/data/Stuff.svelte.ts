@@ -165,6 +165,10 @@ class StuffIO {
             this.X.bump_version()
         }
     }
+    bump_version() {
+        this.Xify()
+        this.X.bump_version()
+    }
     get version() {
         return this.X?.serial_i || 0
     }

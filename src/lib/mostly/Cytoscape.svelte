@@ -14,8 +14,8 @@
     import cola from "cytoscape-cola";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
     import ShareButton from "$lib/p2p/ui/ShareButton.svelte";
-    import type { RadioModus } from "$lib/mostly/Modus.svelte.ts";
     import ActionButtons from "$lib/p2p/ui/ActionButtons.svelte";
+    import type { RadioModus } from "$lib/p2p/ftp/Sharing.svelte";
     let layeng = fcose;
     let layeng_name = "fcose";
     cytoscape.use(layeng);
@@ -424,6 +424,8 @@
     let on_jamming_commenced = () => {
         // fullscreen interface ready to receive this thing
         // < nah shouldn't cancel a heist once it's @5
+        // < allow heist resume sooner than this...
+        //
         let heice = mem.get('resumable_heist')
         // node_edger.set_resumable_heist(null)
         heice && M.i_elvis(w, 'resume_heist', {heice})
@@ -528,7 +530,7 @@
                     </div>
                 {/if}
             </div>
-            
+
             <div class='uiing bottom'>
                 <div class='controls'>
                     <span>

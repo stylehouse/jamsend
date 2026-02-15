@@ -36,7 +36,15 @@
     type TheC = Object
     let blob_monitoring:TheC = $state()
     let after_a_while = $state()
-    onMount(() => setTimeout(() => after_a_while = true,13000))
+    onMount(() => {
+        setTimeout(() => after_a_while = true,13000)
+        // regularly hit the below $effect where we unpack everything from req
+        //  even if nothing is i() there recently...
+        let interval = setInterval(() => {
+            req.bump_version()
+        },6000)
+        return () => clearInterval(interval)
+    })
 
     $effect(() => {
         if (req?.version) {

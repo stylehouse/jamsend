@@ -509,11 +509,7 @@
             // < touch the graph?
             //   it isn't clearly wired back through time yet
             w.i({see:1,hasSelection:keyser(D)})
-            continue
-            reqy.i({D})
-            setTimeout(() => {
-                M.node_edger.enheist({lets:"Control",things:3})
-            },22)
+            
         }
     },
     
