@@ -430,47 +430,6 @@ class FileSystemHandler {
     }
 
 
-    // go somewhere
-    async getFileHandle(filename: string): Promise<FileSystemFileHandle> {
-        if (!this.handle) throw erring('No directory access')
-        console.log(`Got a filehandle! `,this.file_handles)
-        const handle = await this.handle.getFileHandle(filename);
-        this.file_handles.set(filename, handle);
-        return handle;
-    }
-
-    // First get file info and iterator factory
-    async getFileReader(filename: string, chunkSize = CHUNK_SIZE): Promise<FileReader> {
-        if (!this.handle) throw erring('No directory access')
-
-        const fileHandle = await this.handle.getFileHandle(filename);
-        const file = await fileHandle.getFile();
-        
-        return {
-            size: file.size,
-            iterate: async function*(startFrom = 0) {
-                let offset = startFrom;
-                while (offset < file.size) {
-                    // Read file in chunks
-                    const chunk = file.slice(offset, offset + chunkSize);
-                    yield await chunk.arrayBuffer();
-                    offset += chunkSize;
-                }
-            }
-        };
-    }
-
-    // Write file in chunks
-    async writeFileChunks(filename: string): Promise<FileSystemWritableFileStream> {
-        if (!this.handle) throw erring('No directory access')
-
-        const fileHandle = await this.handle.getFileHandle(filename, { create: true });
-        const writable = await fileHandle.createWritable();
-        this.file_handles.set(filename, fileHandle);
-        return writable;
-    }
-
-
 
 
 
