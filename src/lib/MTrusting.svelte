@@ -98,6 +98,20 @@
 
 
 {#snippet those_Active()}
+    {#if M.F.P.Nobody_Is_Online && M.F.P.Welcome}
+        <p class="Nobodyonline">
+            Nobody is online
+            <span>
+                <span style="position:absolute; 
+                    pointer-events:none;">🌱</span>
+                <span style="font-size:0.5em">
+                    <ShareButton {P} />
+                </span>
+            </span>
+        </p>
+    {/if}
+
+
     {#if M.Active.length}
         <h3>Active <span class="title">{M.mainPeering?.instance?.Id.pretty_pubkey()}</span></h3>
         <div class="valued">
@@ -115,21 +129,6 @@
 
             {/each}
         </div>
-    {/if}
-
-
-
-    {#if M.F.P.Nobody_Is_Online && M.F.P.Welcome}
-        <p>
-            Nobody is online
-            <span>
-                <span style="position:absolute; 
-                    pointer-events:none;">🌱</span>
-                <span style="font-size:0.5em">
-                    <ShareButton {P} />
-                </span>
-            </span>
-        </p>
     {/if}
 {/snippet}
 
@@ -162,9 +161,6 @@
             </a>
         {/if}
     </span>
-    
-    
-    {@render those_Active()}
 
 {/snippet}
 
@@ -190,13 +186,16 @@
 
 
                         <div class="content">
-                            
                             {@render nice_conversation()}
-
                         </div>
 
                         <span>
                         </span>
+                    </div>
+                    <div class='controls'>
+                        <div class="content Activos">
+                            {@render those_Active()}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -216,7 +215,6 @@
         background:#1a4e2e;
         width:100%;
         height: 100%;
-
     }
     div.wall {
         background:url('seapiano.webp');
@@ -228,7 +226,13 @@
         position:absolute;
         pointer-events:none;
     }
-
+    .Activos {
+        font-size: 0.4em;
+        white-space:pre;
+    }
+    .Nobodyonline {
+        font-size: 1.7em;
+    }
     .valued {
         object-fit: cover;
         border-radius: 0.3rem;
