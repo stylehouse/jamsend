@@ -26,19 +26,33 @@ function Peer_OPTIONS() {
     // this gets a path intercepted by Caddy in stylehouse/leproxy
     let [host,port] = location.host.split(':')
     port ||= 443
+    let turncred = {
+        username: 'jamsend',
+        credential: 'Eiru7gahneeD2che',
+    }
+    
     const iceServers = [
         { urls: `stun:${PUBLIC_IP}:3478` },
         {
             urls: `turn:${PUBLIC_IP}:3478`,
-            username: 'jamsend',
-            credential: 'Eiru7gahneeD2che'
+            ...turncred,
         },
         { urls: `stun:${PRIVATE_IP}:3478` },
         {
             urls: `turn:${PRIVATE_IP}:3478`,
-            username: 'jamsend',
-            credential: 'Eiru7gahneeD2che'
+            ...turncred,
         },
+
+        {
+            urls: `turns:${PUBLIC_IP}:3478?transport=tcp`,
+            ...turncred,
+        },
+        {
+            urls: `turns:${PRIVATE_IP}:3478?transport=tcp`,
+            ...turncred,
+        },
+
+        // 
     ];
 
     return {host,port,path:"peerjs-server",
@@ -515,6 +529,23 @@ export class Pier {
         if (!this.inbound) {
             this.say_hello()
         }
+        else {
+            // haphazardry.
+            // < may not be necessary. if both sides think they're inbound?
+            setTimeout(() => {
+                if (!this.said_hello) {
+                    this.say_hello()
+                }
+            },4321)
+        }
+        // haphazardry.
+        let times = 10
+        let interval = setInterval(() => {
+            this.emit('noop',{nothing:1})
+            times -= 1
+            if (times < 1) clearInterval(interval)
+        },4321)
+
 
         return this
     }
