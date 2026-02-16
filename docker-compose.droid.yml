@@ -3,6 +3,7 @@ services:
 
 
   droid:
+    restart: always
     image: seleniarm/standalone-chromium:latest # Optimized for cross-arch (arm/amd64)
     container_name: jamsend-droid
     healthcheck:
@@ -18,18 +19,20 @@ services:
       - NODE_MAX_SESSIONS=1
       # WebRTC Specific Flags
       - CHROME_FLAGS=--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security
-      - SE_NODE_SESSION_TIMEOUT=3600 # 1 hour instead of 5 minutes
+      # - SE_NODE_SESSION_TIMEOUT=3600 # 1 hour instead of 5 minutes
+      - SE_NODE_SESSION_TIMEOUT=86400 # 24 hours
+      - SE_SESSION_REQUEST_TIMEOUT=3600 # 1 hour - bot should request refresh every 10 minutes
     ports:
       - "4444:4444" # Selenium Grid port
       - "127.0.0.1:7900:7900" # noVNC Web Interface
     shm_size: 2gb # CRITICAL: Chrome crashes without large shared memory
-    restart: always
     volumes:
       - ./music:/home/seluser/music
       - ./chrome-profile:/home/seluser/chrome-profile
 
 
   bot:
+    restart: always
     build:
       context: .
       dockerfile_inline: |

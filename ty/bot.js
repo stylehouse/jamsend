@@ -11,16 +11,14 @@ const seleniumUrl = process.env.SELENIUM_REMOTE_URL || 'http://droid:4444/wd/hub
 const url = process.env.TARGET_URL;
 let lastState = "";
 
-async function scrape() {
-    console.log("Checking Droid-PiersList")
+async function startBot() {
     let options = new chrome.Options();
-    // This is the magic: it tells the browser to appear on the VNC screen
+    // it tells the browser to appear on the VNC screen
     options.addArguments('--display=:99.0'); 
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
-    // Explicitly set the directory to the location we will mount in Docker
+    // persist IndexedDB, is mounted in docker
     options.addArguments('--user-data-dir=/home/seluser/chrome-profile');
-    // It's also good to specify the profile name
     options.addArguments('--profile-directory=Default');
 
     let driver = await new Builder()
@@ -28,11 +26,23 @@ async function scrape() {
         .setChromeOptions(options)
         .usingServer(seleniumUrl)
         .build();
+    console.log("chrome started");
 
+
+    while (true) {
+        await scrape()
+        // Wait 10 minutes before the next iteration
+        await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000));
+    }
+}
+async function scrape() {
     try {
+        console.log(`[${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
+
         await driver.get(url);
+        console.log("got page")
         // Wait for the elements to load
-        await driver.wait(until.elementLocated(By.className('Pier_itself')), 10000);
+        await driver.wait(until.elementLocated(By.className('Pier_itself')), 16 * 1000);
 
         const piers = await driver.findElements(By.className('Pier_itself'));
         let stats = {
@@ -59,7 +69,9 @@ async function scrape() {
         if (currentState !== lastState) {
             saveLog(stats);
             lastState = currentState;
+            console.log("doing")
         }
+        console.log("checked")
 
     } catch (e) {
         console.error("Scrape failed:", e.message);
