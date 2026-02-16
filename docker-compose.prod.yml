@@ -98,6 +98,7 @@ services:
   coturn:
     image: coturn/coturn:latest
     container_name: jamsend-prod-coturn
+    user: "0:0"  # Run as root to be able to read /caddy_certs/**
     network_mode: host
     volumes:
       - ./ty/turnserver.conf:/etc/coturn/turnserver.conf:ro
