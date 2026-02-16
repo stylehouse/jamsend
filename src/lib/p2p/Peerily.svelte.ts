@@ -248,55 +248,6 @@ export class Peering {
     // the many remotes
     Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
 
-    // < GOING... maybe maybe should this function on this object
-    //    and know how to reach over to the CRUD-end here...
-    async i_Pier(pub:Prekey):Promise<Pier> {
-        if (!pub) throw "!pub"
-        let pier = this.Piers.get(pub)
-        return pier || await this.P.Trusting.M.Peering_i_Pier(this,pub)
-    }
-
-    async a_Pier(pub:Prekey):Pier {
-        if (this.P.Trusting) return await this.i_Pier(pub)
-
-
-
-        if (!pub) throw "!pub"
-        let pier = this.Piers.get(pub)
-        if (!pier) {
-            pier = new Pier({P:this.P,Peer:this,pub})
-            this.Piers.set(pub,pier)
-        }
-
-        // stashable
-        // .pubkey as primary key, ignore malformed
-        if (this.stashed.Piers?.find(a => !a.pubkey)) {
-            this.stashed.Piers = this.stashed.Piers.filter(a => a.pubkey)
-        }
-        let stashed = this.stashed.Piers?.find(a => a.pubkey?.startsWith(pub))
-        if (!stashed) {
-            // svelte reactivity: must be given to the object first
-            //  or it won't be the same object as ends up in .Piers
-            // no .pubkey yet
-            pier.stashed = {}
-            this.stashed.Piers ||= []
-            this.stashed.Piers.push(pier.stashed)
-        }
-        else {
-            pier.stashed = stashed
-            arre(this.stashed.Piers,stashed,pier.stashed)
-        }
-
-        return pier
-    }
-    // < GOING is now a UI:Things feature
-    forget_Pier(pub:Prekey) {
-        let before = this.stashed.Piers.length
-        this.stashed.Piers = this.stashed.Piers
-            .filter(a => !a.pubkey?.startsWith(pub))
-        let after = this.stashed.Piers.length
-        if (before == after) throw `!forget_Pier`
-    }
 
 
 
@@ -370,66 +321,7 @@ export class Peerily {
         }
         this.addresses.clear()
     }
-
-    // arrive at the webpage! who are we? who do we want?
-    async startup() {
-        let eer = await this.listen_to_yourself()
-
-        this.seek_others()
-
-        this.remember_people()
-    }
-    // if you don't remember yourself
-    async listen_to_yourself() {
-        if (!this.stash.Peerings?.length) {
-            // you're new!
-            let Id = new Idento()
-            await Id.generateKeys()
-            this.a_Peering(Id)
-        }
-        else {
-            // resume Peering at all our Ids
-            // < slightly bad security|privacy: all your Ids become online-looking
-            this.stash.Peerings.map((a:StashedPeering) => {
-                let Id = new Idento()
-                Id.thaw(a.keys)
-                // they CRUD further into a.**
-                this.a_Peering(Id)
-            })
-        }
-    }
     share_url = $state()
-    seek_others() {
-        // consume the URL they navigated to
-        let m = window.location.hash.match(/^#([\w,:]+)$/);
-        if (!m) return
-        let [hex,...policy] = m[1].split(',')
-        if (policy.length) throw `< seek_others() with policy=${policy}`
-        
-        // the location may be another person's
-        let Ud = new Idento()
-        Ud.from_hex(hex)
-        let prepub = Ud.publicKey && Ud.pretty_pubkey()
-        let is_us = this.addresses.has(prepub)
-        if (!is_us) {
-            this.connect_pubkey(Ud)
-        }
-
-        // plant a sharable URL for attracting others to them
-        // < this wants navigator.history.push() or some such integration
-        window.location.hash = this.address_to_connect_from.Id+''
-        this.share_url = window.location.toString()
-    }
-    // autoconnect everyone you knew! if they're online
-    remember_people() {
-        let eer = this.address_to_connect_from
-        eer.stashed.Piers.map(sp => {
-            // put its pubkey into 
-            let Ud = new Idento()
-            Ud.from_hex(sp.pubkey)
-            this.connect_pubkey(Ud)
-        })
-    }
 
 
     // own pubkey addresses
@@ -488,9 +380,7 @@ export class Peerily {
             console.log(`inbound connection(${con.peer})`)
             let prepub = con.peer
             
-            let pier = await this.Trusting.M.Peering_i_Pier(eer,prepub)
-            pier.done_init = false
-            pier.init_begins(eer,con,true)
+            await this.Trusting.M.Peering_i_Pier(eer,prepub,con,true)
         })
         eer.on('open', () => {
             console.log(`connected (to PeerServer)`)
@@ -508,38 +398,6 @@ export class Peerily {
         })
         return eer
     }
-
-    // to others
-    eer_awaitsing = null
-    async connect_pubkey(pub,label="") {
-        if (this.Trusting) throw "nevers"
-        pub = ''+pub
-        let eer = this.address_to_connect_from
-        if (!eer) throw "!eer"
-        if (eer.disconnected) {
-            // lots of these pile up sometimes
-            // if (this.eer_awaitsing) return
-            if (this.destroyed) return console.log(`guess no awaits...`)
-            console.log(`connect_pubkey(${pub}) awaits...`)
-            this.eer_awaitsing = true
-            setTimeout(() => {
-                this.eer_awaitsing = false
-                this.connect_pubkey(pub)
-            }, 410)
-            return
-        }
-        let con = eer.connect(pub)
-
-        if (!con) throw "!con"
-        if (con.trivance) throw "con same!"
-        con.trivance = 1
-
-        console.log(`connect_pubkey(${pub})\t${label}`)
-        let pier = await eer.a_Pier(pub)
-        pier.init_begins(eer,con)
-
-
-    }
 }
 
 
@@ -554,9 +412,6 @@ export class Pier {
     stashed:StashedPier = $state()
     // ^ is shared with, we are the instance of:
     Thing:OurPier
-    forget() {
-        this.eer.forget_Pier(this.pub)
-    }
 
     // their pretty and full pubkey
     pub:Prekey|null
@@ -600,7 +455,7 @@ export class Pier {
     init_begins(eer,con,inbound=false) {
         if (this.con) {
             // < gets messy (send on a disconnected handle) without con.close here
-            if (this.con == con) throw "concon"
+            if (this.con == con) throw `concon`
             this.con.close()
         }
         if (!this.P.Trusting && this.stashed.pubkey) {
@@ -612,7 +467,7 @@ export class Pier {
         this.con = con
         this.inbound = inbound
         let say = inbound ? "received" : "made"
-
+        
         con.on('open', async () => {
             if (!this.disconnected) return
             this.disconnected = false
@@ -695,7 +550,7 @@ export class Pier {
                     this.P.Trusting.M.Pier_reconnect(this)
                 }
                 else {
-                    this.P.connect_pubkey(this.pub, `retried after ${time}ms`)
+                    throw `no Trusting`
                 }
                 // maybe try again
                 recur()

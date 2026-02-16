@@ -425,17 +425,8 @@
             await eer.promise_connection
         }
 
-        let con = eer.connect(prepub)
-
         console.log(say)
-
-        // the swing around to the backend:
-        let ier = await eer.i_Pier(prepub)
-        await tick()
-
-        ier.init_begins(eer,con)
-
-        return ier
+        return await this.Peering_i_Pier(eer,prepub,null,false)
     },
 
     i_Pier_instance(w,OurPier,opt) {
@@ -551,7 +542,7 @@
     // including the incoming connections
     //  and any time some part of the app (Idzeug) wants to add a Pier
     // goes async until %Our,Pier exists, makes .instance
-    async Peering_i_Pier(eer:Peering,prepub:string) {
+    async Peering_i_Pier(eer:Peering,prepub:string,con?,inbound=false) {
         let F = this.F as Trusting
         let P = F.P as Peerily
         let w = this.w
@@ -573,8 +564,9 @@
             // see if OurPier exists but isnt instantiated
             Pier = Our.sc.Pier as OurPier
             ier = Pier.instance
-            if (ier) {
+            if (ier && !con) {
                 if (prepub != ier.pub) throw `~pub`
+                if (!ier.con) throw `ier!con`
                 return ier
             }
         }
@@ -613,7 +605,18 @@
         if (!ier.Thing) throw `!ier.Thing`
 
         eer.Piers.set(prepub,ier)
-
+        
+        // crucially, we only connect if we need to, here
+        //  but if it is incoming we have to init_begins() it, which closes the old one
+        if (con || !ier.con) {
+            if (ier.con && con) {
+                // this is fine
+                console.warn(`did Pier:${prepub} incoming connection again!`)
+            }
+            con ||= eer.connect(prepub)
+            ier.done_init = false
+            ier.init_begins(eer,con,inbound)
+        }
         return ier
     },
 

@@ -188,9 +188,9 @@
                 ...
                 <span class="metric">{progress_tally}</span>
                 <!-- <b>{bit}</b> -->
-                <span class="metric small">{progress_pct}%</span>
+                {#if progress_pct}<span class="metric small">{progress_pct}%</span>{/if}
                 <!-- <span class="metric">{avg_kBps}kB/s</span> -->
-                <span class="marquee-container">
+                <span class="marquee-container rightward">
                     <marquee class='dir'>{dest_dir}</marquee>
                     <span class="separator">/</span>
                     <marquee class='bit'>{dest_bit}</marquee>
