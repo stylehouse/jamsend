@@ -143,7 +143,7 @@
                 sc.direction = LP.o({ direction:1 })[0]?.sc?.direction
                 let Ping = LP.o({ Ping:1 })[0]
                 if (Ping) {
-                    sc.ping_good    = !!Ping.oa({ good:1 })
+                    sc.ping_good    = !!Ping.sc.good
                     sc.ping_bad     = Ping.sc.bad
                     sc.ping_latency = Ping.o1({ latency:1 })[0]
                 }

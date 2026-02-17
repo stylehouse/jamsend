@@ -650,8 +650,12 @@
         ex(Pier.stashed,Zs.mix||{})
         // this may be the non-first Idzeug of the Pier,
         //  as they collect... tokens...
-        if (Pier.stashed.introduced_at) I.sc.already_met = true
-        Pier.stashed.introduced_at ||= now_in_seconds_with_ms()
+        if (Pier.stashed.introduced_at) {
+            I.sc.already_met = true
+        }
+        else {
+            Pier.stashed.introduced_at = now_in_seconds_with_ms()
+        }
 
         let give_them_trust = await this.Idzeug_apply_trust(Pier,I)
         
