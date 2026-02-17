@@ -106,13 +106,13 @@ abstract class VerilyPeerily {
                 }
             };
 
-            // Timeout after 3 seconds
+            // Timeout after 6 seconds, TURNS may take more than 3
             setTimeout(() => {
                 if (pc.signalingState !== 'closed') {
                     pc.close();
                     state_becomes('nogo')
                 }
-            }, 3000);
+            }, 6 * 1000);
 
             // We need to create a data channel to trigger ICE gathering
             pc.createDataChannel('test');
