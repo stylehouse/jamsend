@@ -91,11 +91,22 @@
     // take over an uninhabited instance
     //  by escaping fullscreen while !Good
     //  and setting your prepub as instance tyrant
-    window.release_here = () => toggle_fullscreen()
+    window.realise = () => toggle_fullscreen()
 
 </script>
 
-
+{#snippet ice_table()}
+    <div class="ice-diagnostics">
+        <table>
+            {#each Object.entries(P.iceStatus) as [name, status]}
+                <tr>
+                    <td class="ice-name">{name}</td>
+                    <td class="ice-val">{status}</td>
+                </tr>
+            {/each}
+        </table>
+    </div>
+{/snippet}
 
 {#snippet those_Active()}
     {#if M.F.P.Nobody_Is_Online && M.F.P.Welcome}
@@ -190,6 +201,7 @@
                         </div>
 
                         <span>
+                            {@render ice_table()}
                         </span>
                     </div>
                     <div class='controls'>
@@ -291,6 +303,28 @@
     }
     .content { 
         padding:1em;
+    }
+
+
+    .ice-diagnostics {
+        opacity: 0.3;
+        font-family: monospace;
+        font-size: 0.5em;
+        margin-right: 1em;
+        pointer-events: none;
+        user-select: none;
+    }
+    .ice-diagnostics table {
+        border-spacing: 2px;
+    }
+    .ice-name {
+        text-align: right;
+        padding-right: 5px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .ice-val {
+        font-weight: bold;
     }
 
 </style>

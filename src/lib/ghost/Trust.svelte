@@ -19,7 +19,7 @@
         import.meta.env.INSTANCE_TYRANT_PREPUB
         || (import.meta.env.MODE === 'production'||P.PROD)
             ? "d360edfe0cd2fa77"
-            : "24586460a8dea75a"
+            : "1e1e0f65ad462174"
     const REQUESTS_MAX_LIFETIME = 25
 
 
@@ -117,9 +117,10 @@
 //#endregion
 //#region Listening, Ringing
 
-    // we have replaced P.a_Peering|Pier with i_Peering|Pier
-    //  we Ringing() / Pierise() / eer.i_Pier() creates them outgoingly
-    //  and eg Idzeug() will await eer.i_Pier()
+    // we have P.a_Peering => eer
+    //  then eer sprouts ier via M:Trusting.Peering_i_Pier()
+    //  we Ringing() / Pierise() / eer.Peering_i_Pier(), creates them outgoingly
+    //  and eg Idzeugnation() will go Ringing() and etc
     //   until it is all figured out
 
 

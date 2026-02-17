@@ -14,6 +14,11 @@ import { SvelteMap } from 'svelte/reactivity';
 
 const MAX_BUFFER = 64 * 1024; // 64KB
 const LOW_BUFFER = MAX_BUFFER * 0.8; // Start sending again at 80%
+
+//#endregion
+
+
+//#region PeerJS etc
 function Peer_OPTIONS() {
     // to not run your own server:
     // return {}
@@ -26,21 +31,103 @@ function Peer_OPTIONS() {
     }
     
     const iceServers = [
+        // own infra
         { urls: 'stun:jamsend.duckdns.org:3478' },
+        {
+            urls: 'turns:jamsend.duckdns.org:5349',
+            ...turncred
+        },
         {
             urls: 'turn:jamsend.duckdns.org:3478',
             ...turncred
         },
-        {
-            urls: 'turns:jamsend.duckdns.org:5349',
-            ...turncred
-        }
+
+        // public infra
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' },
+
     ];
 
     return {host,port,path:"peerjs-server",
-        config: {iceServers},
+        config: {
+            iceServers,
+            // is default. could also be:
+            //  public - avoid relay (no go behind Symmetric NAT)
+            //  relay - must relay, forcing all traffic through the TURN server
+            //   < could be necessary for Safety, bit of content oversight...
+            iceTransportPolicy: 'all',
+            iceCandidatePoolSize: 10
+        },
     }
 }
+type iceServerConfig = {urls:string,username?:string,credential?:string}
+
+abstract class VerilyPeerily {
+    iceStatus:any = $state({});
+
+    async runConnectivityCheck() {
+        const opts = Peer_OPTIONS();
+        let them = opts.config.iceServers.slice(0,3)
+        let lives = await Promise.all(
+            them.map(cfg => this.testIceServer(cfg))
+        )
+
+        let okays = lives.filter(li => li == 'ok')
+
+        
+        if (okays.length < 2) {
+            console.error("Critical: No connectivity to ICE servers")
+        }
+    }
+    async testIceServer(cfg:iceServerConfig): Promise<string> {
+        return new Promise((resolve) => {
+            let name = cfg.urls.split(":")[0]
+            let state_becomes = (such) => {
+                this.iceStatus[name] = such
+                this.iceStatus = this.iceStatus // reactivity hack
+                if (such != '...') {
+                    resolve(such)
+                }
+            }
+            // the test begins
+            state_becomes('...')
+
+            const pc = new RTCPeerConnection({
+                iceServers: [cfg]
+            });
+
+            // If we find even one candidate, the server is alive
+            pc.onicecandidate = (e) => {
+                if (e.candidate) {
+                    pc.close();
+                    state_becomes('ok')
+                }
+            };
+
+            // Timeout after 3 seconds
+            setTimeout(() => {
+                if (pc.signalingState !== 'closed') {
+                    pc.close();
+                    state_becomes('nogo')
+                }
+            }, 3000);
+
+            // We need to create a data channel to trigger ICE gathering
+            pc.createDataChannel('test');
+            pc.createOffer().then(offer => pc.setLocalDescription(offer))
+                .catch(() => {
+                    state_becomes('nogo@setLocalDescription')
+            });
+        });
+    }
+}
+
+//#endregion
+
+
+//#region f, types
 
 function arre(a:Array,gone,neu) {
     const i = a.indexOf(gone)
@@ -272,7 +359,7 @@ export class Peering {
 
 //#region Peerily (P)
 // the main|single object of our p2p business, over all Peerings
-export class Peerily {
+export class Peerily extends VerilyPeerily {
     stash:TheStash = $state({})
     Trusting:Trusting
     // UI:Intro via M:Trusting
@@ -305,7 +392,9 @@ export class Peerily {
     save_stash:Function|null
 
     constructor(opt={}) {
+        super()
         Object.assign(this, opt)
+        this.runConnectivityCheck()
     }
     destroyed = false
     stop() {
@@ -337,36 +426,11 @@ export class Peerily {
         }
         return eer
     }
-    // < GOING for the above, where stashed is abstracted
-    // create a new listen address (eer)
-    a_Peering(Id:Idento) {
-        let prepub = Id+''
-        // this'll track this.addresses/$prepub = eer
-        let eer = this.addresses.get(prepub)
-        if (!eer) {
-            eer = this.create_Peering(Id)
-            this.addresses.set(prepub,eer)
-            this.address_to_connect_from ||= eer
-        }
-
-        // stash it with our known selves (keypairs, listen addresses)
-        let stashed = this.stash.Peerings?.find(a => a.keys.pub.startsWith(prepub))
-        if (!stashed) {
-            eer.stashed = {keys:Id.freeze()}
-            this.stash.Peerings ||= []
-            this.stash.Peerings.push(eer.stashed)
-        }
-        else {
-            eer.stashed = stashed
-            arre(this.stash.Peerings,stashed,eer.stashed)
-        }
-
-        return eer
-    }
 
     create_Peering(Id:Idento) {
         // these listen to one address (for us) each
         let eer = new Peering(this, Id, Peer_OPTIONS())
+        
 
         eer.disconnected = true
         let reso_connect
@@ -394,6 +458,8 @@ export class Peerily {
         })
         return eer
     }
+
+
 }
 
 
@@ -811,7 +877,7 @@ export class Pier {
     }
     handlers = {
         noop: async (data) => {
-            this.they_say("noop", data);
+            // this.they_say("noop", data);
         },
         hello: async (data) => {
             this.they_say("hello", data);

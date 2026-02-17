@@ -80,21 +80,26 @@
         // < whats with this ts problem
         eer.feature(new PeeringSharing({P,eer}))
     }
-    let P = new Peerily({on_error,save_stash,on_Peering})
+    let P = $state()
 
     onDestroy(() => {
-        P.stop()
+        P?.stop()
     })
     let title = $state('jamsend')
     onMount(() => {
+        // < whats up with this
         document.body.style.setProperty('overflow','hidden')
         title = location.host.split('.')[0]
+
+        P = new Peerily({on_error,save_stash,on_Peering})
     })
-    let full_title = $derived(title + 
-        (!P.PROD ? 
-            ' - '+import.meta.env.MODE : ''
-        )
+
+    let DEV = $derived(P ? !P.PROD : false)
+    let full_title = $derived(
+        title + 
+        (DEV ? ' - '+import.meta.env.MODE : '')
     )
+    let fade_splash = $derived(P?.fade_splash)
     // < get <div transition:fade> working
 </script>
 
@@ -102,7 +107,7 @@
     <title>{full_title}</title>
 </svelte:head>
 
-{#if !P.fade_splash}
+{#if !fade_splash}
     <div transition:fade={{duration:100}}>
     <FaceSucker altitude={44} fullscreen={true}>
         {#snippet content()}
@@ -115,6 +120,7 @@
     </div>
 {/if}
 
+{#if P}
 <div>
     <pan>
         <ShareButton {P} />
@@ -138,7 +144,7 @@
     </div>
 {/if}
 </div>
-
+{/if}
 
 <style>
     div {
