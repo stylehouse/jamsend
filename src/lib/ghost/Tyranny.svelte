@@ -245,9 +245,7 @@
         // consuming
         await this.Idzeuganise(A,w)
     },
-    
-    // be able to make them, via UI:ShareButton (out of Atime)
-    async Idzeugnate(many=1) {
+    ourIdzeug() {
         let w = this.w
         // with the current Idzeugability...
         let {Id} = this.Our_main_Id(w)
@@ -255,8 +253,19 @@
         // < select which to put in the URI or share button
         let Our = w.o({Idzeug:1,Our:1}).pop()
         let {Idzeug} = Our.sc
-
-        return await this.Idzeug_i_Idzeugi(w,Idzeug,many)
+        return Idzeug
+    },
+    
+    // be able to make them, via UI:ShareButton (out of Atime)
+    async Idzeugnate(many=1) {
+        return await this.Idzeug_i_Idzeugi(this.w,this.ourIdzeug(),many)
+    },
+    // winding forward the number in the Idzeug
+    //  I keep losing my Our Data somehow.
+    async IdzeugNumberLeap(many=1) {
+        let Idzeug = this.ourIdzeug()
+        let s = Idzeug.stashed
+        s.Upper_Number = s.Upper_Number + 800
     },
 
 

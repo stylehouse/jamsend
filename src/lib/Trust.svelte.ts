@@ -282,7 +282,7 @@ export class TrustingModus extends Modus {
         this.F = this.S
         this.S.i_actions({
             'Ringing++': () => this.user_wants_more_Ringings(),
-            'Trust--': () => 1,
+            'Idz.n+++': () => this.IdzeugNumberLeap(),
             'Mo++': () => this.main(),
         })
         this.stashy_UI_component = MTrusting
