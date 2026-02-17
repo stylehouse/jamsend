@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { TrustingModus } from "$lib/Trust.svelte"
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     let { M }: { M: TrustingModus } = $props()
 
@@ -11,11 +11,12 @@
 
     // Poll ier properties (not $state) every 1.2s
     onMount(() => {
-        M.OverPierings = []
+        M.OverPierings_rows = []
     })
-    let R = $derived(M.OverPierings || [])
-    let serialno = 0
-    let serial = $derived(R && serialno++)
+    onDestroy(() => {
+        M.OverPierings_rows = null
+    })
+    let R = $derived(M.OverPierings_rows || [])
 
     const sig = (s: string) => s?.slice(0, 8) ?? '?'
     function ago(ts: number) {
@@ -26,19 +27,16 @@
 </script>
 
 {#if M.w}
-{#key serial}
 <div class="op">
     <div class="head">
         <b>OverPiering</b>
         <span class="us">us:{sig(M.mainPeering?.instance?.Id?.pretty_pubkey?.())}</span>
         {#if M.amTyrant}<em class="tag t">TYRANT</em>{/if}
-         view version {serial}
         <span class="ct">{R.length}p</span>
     </div>
 
     <div class="body">
-        {#each R as C (C.sc.prepub)}
-        {@const s = C.sc}
+        {#each R as s (s.prepub)}
         <div class="row"
             class:ready={s.lp_ready}
             class:disc={!s.con_open && s.has_instance}
@@ -130,7 +128,6 @@
         {/if}
     </div>
 </div>
-{/key}
 {/if}
 
 

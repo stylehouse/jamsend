@@ -202,7 +202,53 @@ export class OurIdzeug extends stashedHavingThingIsms {
 }
 
 
+//#endregion
+//#region OverPier
+// AI! report whos online with lots of fragmented detail
 
+export class OverPier {
+    prepub:        string  = $state('')
+    // identity
+    Good:          boolean = $state(false)
+    stealth:       boolean = $state(false)
+    is_tyrant:     boolean = $state(false)
+    introduced_at: number  = $state(0)
+    // instance
+    has_instance:  boolean = $state(false)
+    disconnected:  boolean = $state(true)
+    inbound:       boolean = $state(false)
+    said_hello:    boolean = $state(false)
+    heard_hello:   boolean = $state(false)
+    said_trust:    boolean = $state(false)
+    heard_trust:   boolean = $state(false)
+    dc_state:      string  = $state('?')
+    con_open:      boolean = $state(false)
+    latency:       number  = $state(null)
+    trust_to:      string[] = $state([])
+    trust_from:    string[] = $state([])
+    // LP
+    lp_const:      string  = $state(null)
+    lp_ready:      boolean = $state(false)
+    direction:     string  = $state(null)
+    ping_good:     boolean = $state(false)
+    ping_bad:      string  = $state(null)
+    ping_latency:  number  = $state(null)
+    // ringing
+    ringing:       boolean = $state(false)
+    ringing_failed: boolean = $state(false)
+    because:       string[] = $state([])
+    // garden
+    initiative:    boolean = $state(false)
+    perfect:       boolean = $state(false)
+    incommunicado: boolean = $state(false)
+    engaged:       boolean = $state(false)
+    // idzeugnation
+    idzeugnation:          boolean = $state(false)
+    idzeugnation_asked:    boolean = $state(false)
+    idzeugnation_finished: boolean = $state(false)
+    idzeugnation_dead:     boolean = $state(false)
+    idzeugnation_waits:    string  = $state(null)
+}
 
 
 
@@ -217,7 +263,9 @@ export class TrustingModus extends Modus {
     msgs_serial = 0
 
     w?:TheC = $state() // give w:Trusting to UI:Trust
-    OverPierings = $state([]) // report whos online with lots of fragmented detail
+    // report whos online with lots of fragmented detail
+    OverPierings_rows: Record<string,any>[] = $state()
+    OverPierings_map = new Map<string, OverPier>()
 
     OurTyrant:OurPier
     amTyrant = $state(false)

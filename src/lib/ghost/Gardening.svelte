@@ -4,7 +4,7 @@
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
     import { depeel, erring, ex, grap, grep, grop, indent, map, nex, peel, sex, sha256, tex, throttle } from "$lib/Y.ts"
-    import type { OurIdzeug, OurPeering, OurPier, OurPiers, Trusting, TrustingModus } from "$lib/Trust.svelte";
+    import { OverPier, type OurIdzeug, type OurPeering, type OurPier, type OurPiers, type Trusting, type TrustingModus } from "$lib/Trust.svelte";
     
     let {M}:{M:TrustingModus} = $props()
     const REQUESTS_MAX_LIFETIME = 25
@@ -17,17 +17,38 @@
 //#endregion
 //#region OverPiering
 
-    refresh_OverPierings(A,w) {
-        if (!this.OverPierings) {
-            return // disabled until the UI sets it to []
+    refresh_OverPierings(A, w) {
+        if (!this.OverPierings_rows) return
+
+        let Ns = w.o({ OverPiering:1, prepub:1 })
+        let seen = new Set<string>()
+
+        for (let C of Ns) {
+            let prepub = C.sc.prepub
+            seen.add(prepub)
+            let row = this.OverPierings_map.get(prepub)
+            if (!row) {
+                row = new OverPier()
+                this.OverPierings_map.set(prepub, row)
+                this.OverPierings_rows.push(row)  // $state array notices the push
+            }
+            ex(row, C.sc)  // mutates existing object -> $state sees property changes
         }
-        let N = w.o({ OverPiering:1, prepub:1 })
-        N = N.sort((a, b) => {
-            let av = (a.sc.lp_ready ? 4 : 0) + (a.sc.Good ? 2 : 0) + (a.sc.has_instance ? 1 : 0)
-            let bv = (b.sc.lp_ready ? 4 : 0) + (b.sc.Good ? 2 : 0) + (b.sc.has_instance ? 1 : 0)
-            return bv - av || (a.sc.prepub > b.sc.prepub ? 1 : -1)
+
+        // prune
+        for (let [prepub, row] of this.OverPierings_map) {
+            if (!seen.has(prepub)) {
+                this.OverPierings_map.delete(prepub)
+                grop(r => r === row, this.OverPierings_rows)
+            }
+        }
+        
+        // re-sort in place
+        this.OverPierings_rows.sort((a, b) => {
+            let av = (a.lp_ready ? 4 : 0) + (a.Good ? 2 : 0) + (a.has_instance ? 1 : 0)
+            let bv = (b.lp_ready ? 4 : 0) + (b.Good ? 2 : 0) + (b.has_instance ? 1 : 0)
+            return bv - av || (a.prepub > b.prepub ? 1 : -1)
         })
-        this.OverPierings = N
     },
     async OverPiering(A, w) {
         let prepubs = new Set<string>()
@@ -62,10 +83,16 @@
             if (I.sc.prepub) prepubs.add(I.sc.prepub)
 
         // build/maintain %OverPiering per prepub
+
+        let N = []
+        for (let prepub of prepubs) {
+            let sc = this._op_sc(w, prepub, Li, Ga)
+            sc.prepub = prepub
+            N.push(sc)
+        }
         await w.replace({ OverPiering:1 }, async () => {
-            for (let prepub of prepubs) {
-                let sc = this._op_sc(w, prepub, Li, Ga)
-                w.i({ OverPiering:1, prepub, ...sc })
+            for (let sc of N) {
+                w.i({ OverPiering:1, ...sc })
             }
         })
     },
@@ -84,6 +111,7 @@
         sc.introduced_at = OurPier?.stashed?.introduced_at
         sc.is_tyrant    = (M.OurTyrant?.prepub === prepub)
 
+        
         if (ier) {
             sc.has_instance = true
             sc.disconnected = ier.disconnected
