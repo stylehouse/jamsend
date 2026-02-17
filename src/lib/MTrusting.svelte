@@ -5,6 +5,7 @@
     import { grop } from "./Y";
     import type { TrustingModus } from "./Trust.svelte";
     import ShareButton from "./p2p/ui/ShareButton.svelte";
+    import OverPiering from "./p2p/ui/OverPiering.svelte";
 
     let {M}:{M:TrustingModus} = $props()
     let F = M.F
@@ -141,6 +142,8 @@
             {/each}
         </div>
     {/if}
+
+    <OverPiering {M} />
 {/snippet}
 
 

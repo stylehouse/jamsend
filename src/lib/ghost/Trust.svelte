@@ -72,6 +72,10 @@
         await this.Trusting_API_begins(A,w)
 
         await this.o_Our_Things(A,w)
+
+        // report whos online with lots of fragmented detail
+        await this.OverPiering(A,w)
+        this.refresh_OverPierings(A,w)
         
         if (M.fairly_init == null) {
             M.fairly_init = false

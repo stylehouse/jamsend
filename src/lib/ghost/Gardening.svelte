@@ -14,6 +14,141 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#endregion
+//#region OverPiering
+
+    refresh_OverPierings(A,w) {
+        if (!this.OverPierings) {
+            return // disabled until the UI sets it to []
+        }
+        let N = w.o({ OverPiering:1, prepub:1 })
+        N = N.sort((a, b) => {
+            let av = (a.sc.lp_ready ? 4 : 0) + (a.sc.Good ? 2 : 0) + (a.sc.has_instance ? 1 : 0)
+            let bv = (b.sc.lp_ready ? 4 : 0) + (b.sc.Good ? 2 : 0) + (b.sc.has_instance ? 1 : 0)
+            return bv - av || (a.sc.prepub > b.sc.prepub ? 1 : -1)
+        })
+        this.OverPierings = N
+    },
+    async OverPiering(A, w) {
+        let prepubs = new Set<string>()
+
+        // source: %Hath,user (canonical prepub index)
+        for (let h of w.o({ Hath:1, user:1 }))
+            if (h.sc.prepub) prepubs.add(h.sc.prepub)
+
+        // source: %Ringing (things we're trying to call)
+        for (let Ri of w.o({ Ringing:1, prepub:1 }))
+            if (Ri.sc.prepub) prepubs.add(Ri.sc.prepub)
+
+        // source: %Listening/%Pier (LP — things with an actual slot)
+        let Li = w.o({ Listening:1 })[0]
+        if (Li)
+            for (let LP of Li.o({ Pier:1, prepub:1 }))
+                if (LP.sc.prepub) prepubs.add(LP.sc.prepub)
+
+        // source: Garden nodes
+        let Ga = w.o({ Garden:1 })[0]
+        if (Ga)
+            for (let C of [
+                ...Ga.o({ Initiative:1 }),
+                ...Ga.o({ Incommunicado:1 }),
+                ...Ga.o({ Perfect:1 }),
+                ...Ga.o({ Engage:1 }),
+            ])
+                if (C.sc.Pier?.prepub) prepubs.add(C.sc.Pier.prepub)
+
+        // source: active Idzeugnations
+        for (let I of w.o({ Idzeugnation:1 }))
+            if (I.sc.prepub) prepubs.add(I.sc.prepub)
+
+        // build/maintain %OverPiering per prepub
+        await w.replace({ OverPiering:1 }, async () => {
+            for (let prepub of prepubs) {
+                let sc = this._op_sc(w, prepub, Li, Ga)
+                w.i({ OverPiering:1, prepub, ...sc })
+            }
+        })
+    },
+
+    // merged state snapshot for one prepub
+    _op_sc(w, prepub, Li, Ga) {
+        let sc: Record<string,any> = { prepub }
+
+        // ── OurPier / instance ──────────────────────────────────────────
+        let Our    = this.o_Pier_Our(w, prepub)
+        let OurPier = Our?.sc.Pier
+        let ier     = OurPier?.instance
+
+        sc.Good         = !!OurPier?.stashed?.Good
+        sc.stealth      = !!OurPier?.stashed?.stealth
+        sc.introduced_at = OurPier?.stashed?.introduced_at
+        sc.is_tyrant    = (M.OurTyrant?.prepub === prepub)
+
+        if (ier) {
+            sc.has_instance = true
+            sc.disconnected = ier.disconnected
+            sc.inbound      = ier.inbound
+            // hello protocol
+            sc.said_hello   = !!ier.said_hello
+            sc.heard_hello  = !!ier.Ud            // got full pubkey = heard hello
+            // trust protocol
+            sc.said_trust   = !!ier.said_trust
+            sc.heard_trust  = !!ier.heard_trust
+            // DataChannel readyState — the ground truth
+            let dc = ier.con?.dataChannel
+            sc.dc_state     = dc?.readyState ?? (ier.disconnected ? 'closed' : '?')
+            sc.con_open     = sc.dc_state === 'open'
+            // latency from Ping
+            sc.latency      = ier.latency
+            // trust grants (Map keys)
+            sc.trust_to     = [...(ier.trust?.keys()   || [])]
+            sc.trust_from   = [...(ier.trusted?.keys() || [])]
+        }
+
+        // ── LP (Listening/Pier slot) ─────────────────────────────────────
+        if (Li) {
+            let LP = Li.o({ Pier:1, prepub })[0]
+            if (LP) {
+                sc.lp_const  = LP.o({ const:1 })[0]?.sc?.const
+                sc.lp_ready  = !!LP.oa({ const:1, ready:1 })
+                sc.direction = LP.o({ direction:1 })[0]?.sc?.direction
+                let Ping = LP.o({ Ping:1 })[0]
+                if (Ping) {
+                    sc.ping_good    = !!Ping.oa({ good:1 })
+                    sc.ping_bad     = Ping.sc.bad
+                    sc.ping_latency = Ping.o1({ latency:1 })[0]
+                }
+            }
+        }
+
+        // ── Ringing ──────────────────────────────────────────────────────
+        let Ri = w.o({ Ringing:1, prepub })[0]
+        if (Ri) {
+            sc.ringing        = true
+            sc.ringing_failed = !!Ri.oa({ failed:1 })
+            sc.because        = Ri.o({ Because:1 }).map(b => b.sc.Because)
+        }
+
+        // ── Garden ───────────────────────────────────────────────────────
+        if (Ga) {
+            sc.initiative    = !!Ga.oa({ Initiative:1,    name: prepub })
+            sc.perfect       = !!Ga.oa({ Perfect:1,       name: prepub })
+            sc.incommunicado = !!Ga.oa({ Incommunicado:1, name: prepub })
+            sc.engaged       = !!Ga.oa({ Engage:1,        name: prepub })
+        }
+
+        // ── Idzeugnation ─────────────────────────────────────────────────
+        let Izn = w.o({ Idzeugnation:1, prepub })[0]
+        if (Izn) {
+            sc.idzeugnation          = true
+            sc.idzeugnation_asked    = !!Izn.sc.asked
+            sc.idzeugnation_finished = !!Izn.sc.finished
+            sc.idzeugnation_dead     = !!Izn.sc.dead
+            sc.idzeugnation_waits    = Izn.o1({ waits:1 })[0]
+        }
+
+        return sc
+    },
 
 //#endregion
 //#region Introducing

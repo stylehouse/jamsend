@@ -13,7 +13,9 @@ import { SvelteMap } from "svelte/reactivity";
 // PeeringFeature can hopefully operate without this.eer
 export class Trusting extends PeeringFeature {
     started = $state(false)
+    // < rename .modus -> .M
     declare modus?:TrustingModus
+    // < should use M.trust
     w?:TheC = $state() // give w:Trusting to UI:Trust
     spawn_PF({Pier}:{Pier:Pier}) {
         throw `this will never happen because we don't belong to a Peering`
@@ -214,7 +216,9 @@ export class TrustingModus extends Modus {
     msgs = $state([])
     msgs_serial = 0
 
-    w:TheC // latest w:Trusting
+    w?:TheC = $state() // give w:Trusting to UI:Trust
+    OverPierings = $state([]) // report whos online with lots of fragmented detail
+
     OurTyrant:OurPier
     amTyrant = $state(false)
     mainPeering:OurPeering // there's a function called OurPeering
