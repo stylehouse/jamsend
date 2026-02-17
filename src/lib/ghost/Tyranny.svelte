@@ -325,11 +325,12 @@
 
     // entry: find new Idzeug in uri
     async Idzeugmance(A,w) {
-        let m = window.location.hash.match(/^#+([\w,+_:-]{16,})$/);
+        let m = window.location.hash.match(/^#+([\w,\+_:\-]{16,})$/);
         if (m) {
             let [prepub,advice,sign] = m[1].split('-')
             let {name} = this.decode_Idzeugi_advice(advice)
-            await this.i_Idzeugsomething(w,'Idzeugnation',{name,prepub,advice,sign})
+            let neu = await this.i_Idzeugsomething(w,'Idzeugnation',{name,prepub,advice,sign})
+            if (neu) this.UIsay(w,`Idzeug:${name}, Pier:${prepub}`)
         }
         else {
             this.reset_location_hash()
@@ -339,11 +340,13 @@
 
     // enter the work piece for Idzeugn*, ~~ reqy but one at a time
     //  eg put the w/%Idzeugnation for Idzeuganise() to work up
-    async i_Idzeugsomething(w,keyword,c) {
+    async i_Idzeugsomething(w,keyword,c):Promise<boolean> {
         let s = {}
         s[keyword] = 1
         // we are already in Atime, about to manage these:
+        let neu = !w.oa(s)
         let I = await w.r(s,c)
+        return neu
     },
 
     async Idzeuverify(A,w:TheC,I:TheC) {
@@ -427,8 +430,11 @@
             //   somehow it... no hello the first time?
             I.i({stuckat_noId:1})
             if (!(I.o({stuckat_noId:1}).length <3)) {
-                console.warn(`guessing Pier++ has gone weird, reloading...`)
-                location.reload()
+                if (I.o({stuckat_noId:1}).length == 3) {
+                    this.UIsay(w,"you may need to reload")
+                }
+                // console.warn(`guessing Pier++ has gone weird, reloading...`)
+                // location.reload()
             }
         }
         if (I.sc.finished) {
@@ -683,9 +689,7 @@
         if (N.includes(n)) return false
         // this'll be shorter in json...
         // < another KVStore or so
-        N.push(n)
-        // react to save!
-        // Idzeug.stashed.taken_n = Idzeug.stashed.taken_n
+        N.push(n) // is enough to react and save
         return true
     },
 

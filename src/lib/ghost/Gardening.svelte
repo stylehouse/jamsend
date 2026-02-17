@@ -446,7 +446,7 @@
             //   but doesn't take any C.sc.*
             let ti = Go.oai({timeout:1})
             ti.sc.since ||= now_in_seconds()
-            if (ti.ago('since') > REQUESTS_MAX_LIFETIME*6) {
+            if (ti.ago('since') > REQUESTS_MAX_LIFETIME*106) {
                 let Pier = Go.sc.Pier as OurPier
                 await Ga.i({Decomposing:1,...this.descPier(Pier)})
                 console.log(`🌱 Decomposing Pier:${Pier.name}`)

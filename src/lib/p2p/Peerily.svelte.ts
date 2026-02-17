@@ -582,6 +582,7 @@ export class Pier {
             // < may not be necessary. if both sides think they're inbound?
             setTimeout(() => {
                 if (!this.said_hello) {
+                    console.warn("saying hello late, to "+this.pub)
                     this.say_hello()
                 }
             },4321)
@@ -916,10 +917,13 @@ export class Pier {
         if (this.said_hello) return console.warn("Dont say hello")
         this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.eer.Id.publicKey)})
         this.said_hello = true
+        console.log(`we say hello to ${this.pub}`)
     }
     hear_hello(data) {
         let delta = data.time - now_in_seconds()
         if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
+        console.log(`hello says ${this.pub}`)
+
 
         // they provide their full publicKey
         this.receive_publicKey(data)

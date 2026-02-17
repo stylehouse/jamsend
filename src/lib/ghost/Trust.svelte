@@ -433,7 +433,6 @@
     i_Pier_instance(w,OurPier,opt) {
         // construct the javascript object
         let ier = new Pier(opt)
-        console.log(`i_Pier_instance(${ier.pub})`)
 
         // they become a pair:
         OurPier.instance = ier
@@ -445,7 +444,7 @@
         // give it the stashed Id we're expecting, if we know it
         //  over here as %Our,Pier/%Id already, if we know the full publicKey
         let Our = w.o({Our:1,Pier:OurPier})[0]
-        let Id = Our.o1({Id:1})[0]
+        let Id = Our?.o1({Id:1})[0]
         if (Id) {
             console.log(` - had the ${opt.pub} Ud already`)
             if (Id.privateKey) throw `got a Pier's privateKey`
@@ -536,6 +535,7 @@
         if (had) return had.sc.Pier
         console.log(`piers add_Thing ${prepub}`)
         let S = await F.OurPiers.add_Thing({name:prepub,prepub})
+        S.prepub = prepub
         return S as OurPier
     },
 
@@ -572,6 +572,22 @@
             }
         }
         else {
+            // make instance before %Our or OurPier
+            //  because we have to do init_begins() very soon
+            //   to catch the open event of inbound connections
+            let Pier_stub = { prepub, stashed: {} } as OurPier
+            let ier_early = this.i_Pier_instance(w, Pier_stub, {P, eer, pub: prepub})
+            eer.Piers.set(prepub, ier_early)
+            if (con) {
+                ier_early.done_init = false
+                // registers con.on('open') immediately, in case this is inbound
+                if (!inbound) throw `always is inbound when con is already given`
+                ier_early.init_begins(eer, con, inbound)
+                con = null
+            }
+
+
+
             // make %Our,Pier before connecting
             // it may already exist as a Thing but not Our
             Pier = F.OurPiers.asArray().filter(S => S.name == prepub)[0]
@@ -580,6 +596,7 @@
                 Pier = await F.OurPiers.add_Thing({name:prepub,prepub})
                 Pier = Pier as OurPier
             }
+            Pier.ier_early = ier_early
             // < giving it to add_Thing opt above doesn't work
             //   also what of it should we put in the Pier table itself...
             //    and how to designate more|less important IndexedDBs to keep
@@ -594,13 +611,27 @@
 
             Our = this.o_Pier_Our(w,prepub)
             if (!Our) throw `haven't built an OurPier`
+
             Pier = Our.sc.Pier as OurPier
+            // < may not be true anymore:
             // they sometimes have Pier.instance by now
+
+
+
+            // Swap the stub for the real OurPier
+            ier_early.Thing = Pier  // the real one from IDB
+            Pier.instance = ier_early
+            Pier.ier_early = undefined
+            ier_early.stashed = Pier.stashed
         }
         
 
-        console.log(`i Pier(${prepub})`)
+        console.log(`Peering_i_Pier(${prepub}${inbound && ", inbound" || ""})`)
 
+        if (!Pier.instance && Pier.ier_early) {
+            throw `should be waiting for ier_early but is here in parallel?`
+        }
+        // we may instantiate here if call had !con (ie is outbound)
         ier = Pier.instance || this.i_Pier_instance(w,Pier,{P,eer,pub:prepub})
         if (!Pier.instance) throw `!Pier.instance`
         if (!ier.Thing) throw `!ier.Thing`
@@ -614,6 +645,7 @@
                 // this is fine
                 console.warn(`did Pier:${prepub} incoming connection again!`)
             }
+            // here if call had !con (ie is outbound)
             con ||= eer.connect(prepub)
             ier.done_init = false
             ier.init_begins(eer,con,inbound)
