@@ -118,7 +118,8 @@
             sc.inbound      = ier.inbound
             // hello protocol
             sc.said_hello   = !!ier.said_hello
-            sc.heard_hello  = !!ier.Ud            // got full pubkey = heard hello
+            sc.heard_hello  = !!ier.heard_hello
+            sc.neversaidhello  = !ier.Ud
             // trust protocol
             sc.said_trust   = !!ier.said_trust
             sc.heard_trust  = !!ier.heard_trust

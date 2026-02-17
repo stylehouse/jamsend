@@ -26,13 +26,13 @@
     }
 </script>
 
-{#if M.w}
+{#if M.w && R}
 <div class="op">
     <div class="head">
-        <b>OverPiering</b>
-        <span class="us">us:{sig(M.mainPeering?.instance?.Id?.pretty_pubkey?.())}</span>
-        {#if M.amTyrant}<em class="tag t">TYRANT</em>{/if}
-        <span class="ct">{R.length}p</span>
+        <b title="All known peers, joined from every data source in M:Trusting">OverPiering</b>
+        <span class="us" title="Our own prepub (listen address)">us:{sig(M.mainPeering?.instance?.Id?.pretty_pubkey?.())}</span>
+        {#if M.amTyrant}<em class="tag t" title="This instance is the trust authority">TYRANT</em>{/if}
+        <span class="ct" title="Total known peers">{R.length}p</span>
     </div>
 
     <div class="body">
@@ -40,84 +40,93 @@
         <div class="row"
             class:ready={s.lp_ready}
             class:disc={!s.con_open && s.has_instance}
-            class:ghost={!s.has_instance}>
+            class:ghost={!s.has_instance}
+            title="prepub: {s.prepub}">
 
             <!-- identity -->
             <div class="c id">
-                <span class="pub">{sig(s.prepub)}</span>
-                {#if s.is_tyrant}<em class="tag t">T</em>{/if}
-                {#if s.Good}<em class="tag g">G</em>{/if}
-                {#if s.stealth}<em class="tag s">s</em>{/if}
-                <span class="arr">{s.direction === 'received' ? '←' : s.direction === 'made' ? '→' : '·'}</span>
+                <span class="pub" title="prepub (first 8 of 16 hex chars)">{sig(s.prepub)}</span>
+                {#if s.is_tyrant}<em class="tag t" title="Instance Tyrant — trust authority">T</em>{/if}
+                {#if s.Good}<em class="tag g" title="Good=true: passed Idzeugnation, trusted peer">G</em>{/if}
+                {#if s.stealth}<em class="tag s" title="Stealth: hidden from Garden/UI">s</em>{/if}
+                <span class="arr" title="Direction: ← received (inbound) / → made (outbound)">{s.direction === 'received' ? '←' : s.direction === 'made' ? '→' : '·'}</span>
             </div>
 
             <!-- DataChannel + LP state -->
-            <div class="c con">
+            <div class="c con" title="DataChannel readyState + LP (Listening/Pier) slot state">
                 {#if !s.has_instance}
-                    <span class="dim">no ier</span>
+                    <span class="dim" title="No Pier instance created yet">no ier</span>
                 {:else}
-                    <span class:ok={s.con_open} class:bad={!s.con_open}>{s.dc_state}</span>
+                    <span class:ok={s.con_open} class:bad={!s.con_open}
+                        title="DataChannel.readyState — ground truth of connection">{s.dc_state}</span>
                     {#if s.lp_const}
-                        <span class="lp" class:ok={s.lp_ready}>{s.lp_const}</span>
+                        <span class="lp" class:ok={s.lp_ready}
+                            title="LP const state: ok+ready means RingUp() will pass">{s.lp_const}</span>
                     {/if}
                 {/if}
             </div>
 
-            <!-- hello / trust handshake flags -->
+            <!-- hello / trust handshake -->
             <div class="c hs">
-                <span class:y={s.said_hello}  class:n={!s.said_hello} title="said_hello">shlo</span>
-                <span class:y={s.heard_hello} class:n={!s.heard_hello} title="heard_hello (Ud)">hhlo</span>
-                <span class:y={s.said_trust}  class:n={!s.said_trust}  title="said_trust">str</span>
-                <span class:y={s.heard_trust} class:n={!s.heard_trust} title="heard_trust">htr</span>
+                <span class:y={s.said_hello}  class:n={!s.said_hello}
+                    title="↑hi — said_hello: we sent our full publicKey to them">↑hi</span>
+                <span class:y={s.heard_hello} class:n={!s.heard_hello}
+                    title="hi↓ — heard_hello: received their full publicKey (Ud set)">hi↓</span>
+                <span class:y={s.said_trust}  class:n={!s.said_trust}
+                    title="↑trust — said_trust: we sent our stashed trust certificates">↑trust</span>
+                <span class:y={s.heard_trust} class:n={!s.heard_trust}
+                    title="trust↓ — heard_trust: received their trust certs, features can activate">trust↓</span>
             </div>
 
             <!-- ping -->
-            <div class="c ping">
+            <div class="c ping" title="Ping health — requires LP ready + heard_trust">
                 {#if s.ping_good}
-                    <span class="ok">{s.ping_latency != null ? `${s.ping_latency}s` : '✓'}</span>
+                    <span class="ok" title="Ping healthy, latency: {s.ping_latency}s">{s.ping_latency != null ? `${s.ping_latency}s` : '✓'}</span>
                 {:else if s.ping_bad}
-                    <span class="bad">{s.ping_bad}</span>
+                    <span class="bad" title="Ping failing: {s.ping_bad}">{s.ping_bad}</span>
                 {:else if s.lp_ready}
-                    <span class="dim">…</span>
+                    <span class="dim" title="LP ready, waiting for first ping round-trip">…</span>
                 {:else}
-                    <span class="dim">-</span>
+                    <span class="dim" title="Not connected yet">-</span>
                 {/if}
             </div>
 
             <!-- trust grants -->
-            <div class="c tr">
-                {#if s.trust_to?.length}<span>→{s.trust_to.join(',')}</span>{/if}
-                {#if s.trust_from?.length}<span>←{s.trust_from.join(',')}</span>{/if}
+            <div class="c tr" title="Trust grants: → what we grant them / ← what they grant us">
+                {#if s.trust_to?.length}<span title="Features we grant them access to">→{s.trust_to.join(',')}</span>{/if}
+                {#if s.trust_from?.length}<span title="Features they grant us access to">←{s.trust_from.join(',')}</span>{/if}
             </div>
 
             <!-- garden -->
-            <div class="c ga">
-                {#if s.incommunicado}<em class="tag bad">✗</em>{/if}
-                {#if s.perfect}<em class="tag g">✦</em>{/if}
-                {#if s.initiative}<em class="tag" class:g={!s.incommunicado}>I</em>{/if}
-                {#if s.engaged}<em class="tag e">E</em>{/if}
-                {#if s.ringing_failed}<em class="tag bad">RF</em>{/if}
+            <div class="c ga" title="Gardening state: initiative/perfect/incommunicado/engaged">
+                {#if s.incommunicado}<em class="tag bad" title="Incommunicado: gave up connecting">✗</em>{/if}
+                {#if s.perfect}<em class="tag g" title="Perfect: connected + ping good">✦</em>{/if}
+                {#if s.initiative}<em class="tag" class:g={!s.incommunicado}
+                    title="Initiative: actively trying to connect">I</em>{/if}
+                {#if s.engaged}<em class="tag e" title="Engaged: active feature session (eg music)">E</em>{/if}
+                {#if s.ringing_failed}<em class="tag bad" title="Ringing failed to connect">RF</em>{/if}
                 {#if s.ringing && s.because?.length}
-                    <span class="dim">{s.because.join('/')}</span>
+                    <span class="dim" title="Reasons we want this Ringing: {s.because.join(', ')}">{s.because.join('/')}</span>
                 {/if}
             </div>
 
             <!-- idzeugnation -->
-            <div class="c iz">
+            <div class="c iz" title="Idzeugnation (invite flow) state">
                 {#if s.idzeugnation}
                     <em class="tag"
                         class:g={s.idzeugnation_finished}
-                        class:bad={s.idzeugnation_dead}>
+                        class:bad={s.idzeugnation_dead}
+                        title="IDZ{s.idzeugnation_finished ? ': finished ✓' : s.idzeugnation_asked ? ': asked, awaiting response' : ': started, not yet asked'}">
                         IDZ{s.idzeugnation_finished ? '✓' : s.idzeugnation_asked ? '…' : '?'}
                     </em>
                     {#if s.idzeugnation_waits}
-                        <span class="dim">{s.idzeugnation_waits}</span>
+                        <span class="dim" title="Currently waiting on: {s.idzeugnation_waits}">{s.idzeugnation_waits}</span>
                     {/if}
                 {/if}
             </div>
 
             <!-- age -->
-            <div class="c ts">
+            <div class="c ts" title="{s.introduced_at ? 'Introduced ' + ago(s.introduced_at) + ' ago' : 'Not yet introduced'}">
                 {#if s.introduced_at}{ago(s.introduced_at)}{/if}
             </div>
         </div>
@@ -140,7 +149,7 @@
     border-radius: 3px;
     padding: 5px 6px;
     width: fit-content;
-    min-width: 540px;
+    min-width: 580px;
     max-width: 100%;
 }
 .head {
@@ -158,7 +167,8 @@
 
 .row {
     display: grid;
-    grid-template-columns: 80px 105px 96px 55px 80px 100px 90px 28px;
+    /* id  con   handshake  ping  trust  garden  idzeug  age */
+    grid-template-columns: 80px 105px 130px 55px 80px 100px 90px 28px;
     gap: 3px;
     align-items: center;
     padding: 1px 3px;
@@ -183,8 +193,9 @@
 .lp  { margin-left: 3px; color: #3a5a3a; font-size: 9px; }
 .lp.ok { color: #2a8a2a; }
 
-/* handshake */
-.hs span { margin-right: 3px; font-size: 9px; }
+/* handshake — slightly wider col, arrows make it readable */
+.hs { display: flex; gap: 4px; }
+.hs span { font-size: 9px; }
 .y { color: #2a8a2a; }
 .n { color: #182818; }
 

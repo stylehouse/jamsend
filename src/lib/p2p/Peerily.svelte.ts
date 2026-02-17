@@ -913,6 +913,7 @@ export class Pier {
     //#region hello
     // hello comes first, gives full pubkey
     said_hello = false
+    heard_hello = false
     say_hello() {
         if (this.said_hello) return console.warn("Dont say hello")
         this.emit('hello',{time:now_in_seconds(),publicKey:enhex(this.eer.Id.publicKey)})
@@ -923,7 +924,8 @@ export class Pier {
         let delta = data.time - now_in_seconds()
         if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
         console.log(`hello says ${this.pub}`)
-
+        this.heard_hello = true
+        
 
         // they provide their full publicKey
         this.receive_publicKey(data)

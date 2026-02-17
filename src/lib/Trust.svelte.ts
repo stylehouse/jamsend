@@ -219,6 +219,7 @@ export class OverPier {
     inbound:       boolean = $state(false)
     said_hello:    boolean = $state(false)
     heard_hello:   boolean = $state(false)
+    neversaidhello:boolean = $state(false)
     said_trust:    boolean = $state(false)
     heard_trust:   boolean = $state(false)
     dc_state:      string  = $state('?')
