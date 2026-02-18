@@ -598,6 +598,7 @@
             // it may already exist as a Thing but not Our
             Pier = F.OurPiers.asArray().filter(S => S.name == prepub)[0]
             if (!Pier) {
+                if (prepub.includes('-')) debugger
                 console.log(`piers add_Thing ${prepub}`)
                 Pier = await F.OurPiers.add_Thing({name:prepub,prepub})
                 Pier = Pier as OurPier
