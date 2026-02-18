@@ -288,9 +288,9 @@ abstract class TimeGallopia extends ModusItself {
             if (loop-- < 0) throw "loop"
             let UI_unready = this.S.every_Thing().filter(S => !S.stashed)
             if (UI_unready.length) {
-                console.warn(`M:Trusting not UI_ready`,UI_unready.map(S=>S.name))
+                // console.warn(`M:Trusting not UI_ready`,UI_unready.map(S=>S.name))
                 await Promise.all(UI_unready.map(S => S.promise_stashed))
-                console.log(`M:Trusting UI_ready!`,UI_unready.map(S=>S.name))
+                // console.log(`M:Trusting UI_ready!`,UI_unready.map(S=>S.name))
                 // go around in case one got spawned since
                 continue
             }

@@ -1089,7 +1089,7 @@ function inner_sizing(innered) {
 }
 
 // data dumper
-export function objectify(v:any,loop=-1):string {
+export function objectify(v:any,loop=-1,gutsy=false):string {
     let s = String(
         typeof v == 'number' || typeof v == 'string' ? v
         : v == null ? 'null'
@@ -1099,7 +1099,7 @@ export function objectify(v:any,loop=-1):string {
         }]`
         : v.constructor == TheC ? `${keyser(v,loop+1)}`
         : v.constructor == Boolean ? `${v}`
-        : `${v.constructor.name}()`
+        : `${v.constructor.name}(${gutsy ? keyser(v,loop+1) : ''})`
     )
     let where = 77
     if (s.length > 100) s = s.slice(0,where)+"..."+(s.length-where)

@@ -49,12 +49,12 @@
                 orig(...args)
                 const msg = args.map(v => {
                     if (v === null || typeof v !== 'object') return String(v)
-                    if (typeof v == 'object') return "ob: "+objectify(v)
+                    if (typeof v == 'object') return "ob: "+objectify(v,undefined,true)
                     try { return JSON.stringify(v) } catch { return "ob: "+objectify(v) }
                 }).join(' ')
                 // avoid upload-loop noise
                 if (msg.includes('console_batch')) return
-                M.F.P.ConsoleLogs.push({msg, level, at: now_in_seconds()})
+                M.F.P.ConsoleLogs.push({msg, level, at: now_in_seconds_with_ms()})
             }
         }
     },
