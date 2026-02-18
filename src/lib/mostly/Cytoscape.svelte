@@ -535,7 +535,7 @@
                 <div class='controls'>
                     <span>
                         <button onclick={() => toggle_fullscreen()}
-                            class={!quit_fullscreen ? 'small' : ''}>fullscreen</button>
+                            class={!quit_fullscreen ? 'small' : ''}>f</button>
                     </span>
 
 
@@ -550,7 +550,7 @@
                                     to share back
                                 </span>
                                 <button onclick={() => no_share()}
-                                    style="margin:2em;"
+                                    style="margin:0.1em;"
                                     >nah</button>
                             </span>
                         {/if}
@@ -569,6 +569,7 @@
         border-radius:2em;
         margin: 0.5em;
         padding: 0.5em;
+        font-size:0.7em;
     }
     div.relief {
         background:#b394ff;
