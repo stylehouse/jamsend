@@ -734,7 +734,8 @@
         //    GONE is ier.stashed.pubkey, now simply:
         ier.stashed.Id = Id.freeze()
         let Pier = ier.Thing
-        let prepub = ier.stashed.prepub
+        // < race condition, study, how prepub sometimes is
+        let prepub = ier.stashed.prepub || Id.pretty_pubkey()
         let anOur = await this.simply_i_Pier_Our(prepub)
 
         let Our = w.o({Our:1,Pier})[0]
