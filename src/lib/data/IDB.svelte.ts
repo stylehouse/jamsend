@@ -250,8 +250,11 @@ export class CollectionStorage<T = any> extends IndexedDBStorage<T> {
 
     // Add item to collection
     async add(item: T, key?: IDBValidKey): Promise<void> {
-        const itemKey = key || crypto.randomUUID()
-        await this.put(itemKey, item)
+        // this shall be a problem
+        if (!key) {
+            throw `item add invalid key: ${key}`
+        }
+        await this.put(key, item)
     }
 
     // Remove item from collection

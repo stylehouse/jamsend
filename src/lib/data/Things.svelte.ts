@@ -135,7 +135,17 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     async start() {
         try {
             // read the whole table, instantiating
-            const many = await this.getAll()
+            let allKeys = await this.getAllKeys()
+            let many = []
+            for (const key of allKeys) {
+                let one = await this.get(key)
+                if (!one.name) {
+                    await this.delete(key)
+                    continue
+                }
+                many.push(one)
+            }
+            
             
             if (many.length === 0) {
                 let opt = {}
@@ -169,6 +179,7 @@ export abstract class ThingsIsms extends CollectionStorage<{name: string}> {
     // Add a new share
     async add_Thing(opt): Promise<ThingIsms> {
         let name = opt.name as string
+        if (!name) throw "!name thing"
         if (this.things.has(name)) {
             throw erring(`Share "${name}" already exists`)
         }
