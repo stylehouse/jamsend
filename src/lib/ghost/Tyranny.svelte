@@ -34,7 +34,7 @@
 
         let category = M.F.P.PROD ? "Console" : "DevConsole"
         let user = this.Our_main_Id(w).Id.pretty_pubkey().slice(0,8)
-        
+
         fetch(`/log?stream=${category}-${user}`, {
             method: 'POST',
             body: batch.map(e => JSON.stringify(e)).join('\n')
@@ -49,7 +49,8 @@
                 orig(...args)
                 const msg = args.map(v => {
                     if (v === null || typeof v !== 'object') return String(v)
-                    try { return JSON.stringify(v) } catch { return '[object]' }
+                    if (typeof v == 'object') return "ob: "+objectify(v)
+                    try { return JSON.stringify(v) } catch { return "ob: "+objectify(v) }
                 }).join(' ')
                 // avoid upload-loop noise
                 if (msg.includes('console_batch')) return
