@@ -274,8 +274,9 @@ export class TrustingModus extends Modus {
 
     // the UI workings list of Pier by the En%Engage
     Active:TheN = $state([])
-    log_Idvoyage_spam = false
+    log_Idvoyage_testspam = false
     log_Idvoyage_not = false
+    log_Console_not = false
 
     constructor(opt:Partial<TrustingModus>) {
         super(opt)

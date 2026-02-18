@@ -23,7 +23,40 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#endregion
+//#region uploadConsoleLogs()
+    log_Console(A,w) {
+        let batch = M.F.P.ConsoleLogs
+        if (!batch) return
+        M.F.P.ConsoleLogs = []
+        if (M.log_Console_not) return
+        if (!batch?.length) return
 
+        let category = M.F.P.PROD ? "Console" : "DevConsole"
+        let user = this.Our_main_Id(w).Id.pretty_pubkey().slice(0,8)
+        
+        fetch(`/log?stream=${category}-${user}`, {
+            method: 'POST',
+            body: batch.map(e => JSON.stringify(e)).join('\n')
+        }).catch(er => console.warn('console_batch upload', er))
+    },
+    install_console_capture() {
+        if (M.F.P.ConsoleLogs) return
+        M.F.P.ConsoleLogs = []
+        for (const level of ['log','warn','error'] as const) {
+            const orig = console[level].bind(console)
+            console[level] = (...args) => {
+                orig(...args)
+                const msg = args.map(v => {
+                    if (v === null || typeof v !== 'object') return String(v)
+                    try { return JSON.stringify(v) } catch { return '[object]' }
+                }).join(' ')
+                // avoid upload-loop noise
+                if (msg.includes('console_batch')) return
+                M.F.P.ConsoleLogs.push({msg, level, at: now_in_seconds()})
+            }
+        }
+    },
 
 
 //#endregion
@@ -36,8 +69,7 @@
 
 
         // this kind of thing is logged:
-        
-        if (M.log_Idvoyage_spam) {
+        if (M.log_Idvoyage_testspam) {
             this.log_Idvoyage(w,{Question:"is"},{splat:'bleep'})
         }
         await this.Tyranny_of_Idvoyage(A,w,eer)
@@ -62,9 +94,10 @@
                 let sc = queue.shift()
                 if (!sc) break
                 // off to a perl webserver to write to a log
-                fetch(TYRANT_URL, {
+                //  which expects batches of log statements, so we envelope with []
+                fetch(TYRANT_URL+"?stream=Tyrant-Idvoyages", {
                     method: 'POST',
-                    body: JSON.stringify({Now,Before})
+                    body: JSON.stringify([{Now,Before}])
                 }).catch((er) => {
                     // < proxy to a separate development tyrant logger...
                     //   these just fail in development.

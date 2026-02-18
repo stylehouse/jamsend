@@ -385,6 +385,7 @@ export class Peerily extends VerilyPeerily {
     NoHeavyComputing = $state(false)
     NoPreviewing = $state(false) // w:rastream encoder allowed
     PROD = $state(true)
+    ConsoleLogs = undefined
 
     on_error:Function|null
     // called for each "host" address we create, before Piers arrive

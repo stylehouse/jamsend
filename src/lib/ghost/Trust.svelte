@@ -31,6 +31,7 @@
     // high-level clustery thinking
     async Trusting(A,w) {
         // console.log(`🔒 Trusting`)
+        this.install_console_capture()
         // for (let e of this.o_elvis(w,'Trustastic')) {
         //     w.i({Trustastic:1,day:1,to:1,be:1,alive:1})
         // }
@@ -45,9 +46,8 @@
         //  handy for development
         // < part of the next resolution of UI
         if (!P.PROD) {
-            // M.F.P.NoHeavyComputing ??= true
-            // M.log_Idvoyage_spam = true
             M.log_Idvoyage_not = true
+            // M.log_Console_not = true
         }
         else {
             this.F.P.stealth = true;
@@ -111,6 +111,8 @@
             w.i({an:"event came in"}).i(e.sc)
         }
         await w.r({friv:this.stashed?.friv})
+
+        await this.log_Console(A,w)
     },
     
 

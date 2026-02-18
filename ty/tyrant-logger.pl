@@ -20,14 +20,19 @@ get '/' => sub ($c) {
 
 # POST endpoint: / (body is JSON string or object)
 post '/' => sub ($c) {
+    my $stream = $c->param('stream') || 'Idvoyages';
+    # validate: only word chars and hyphens
+    unless ($stream =~ /^\w[\w\-]{0,40}$/ && $stream =~ /^\w+-\w+$/) {
+        return $c->render(json => {error => 'bad stream'}, status => 400);
+    }
+
     my $data = $c->req->body;
-    
     unless ($data) {
         return $c->render(json => {error => 'Missing data'}, status => 400);
     }
     
     # Get current log file path
-    my $path = get_log_filepath();
+    my $path = get_log_filepath($stream);
     
     # Reopen if path changed
     if ($path ne $current_path) {
@@ -69,17 +74,19 @@ post '/' => sub ($c) {
 
 # Get log file path: /logs/Tyrant-Idvoyages/Idvoyages-YYYYMMDD/HHMM.jsons
 sub get_log_filepath {
+    my ($stream) = @_;
+    my ($category,$section) = split '-', $stream;
     my ($sec, $min, $hour, $mday, $mon, $year) = localtime(time);
     $year += 1900;
     $mon += 1;
     $min = $min - $min % 20;
     
-    my $dir_name = sprintf("Idvoyages-%04d%02d%02d", $year, $mon, $mday);
+    my $dir_name = sprintf("$section-%04d%02d%02d", $year, $mon, $mday);
     my $filename = sprintf("%02d%02d.jsons", $hour, $min);
     
     return File::Spec->catfile(
         $log_base_dir, 
-        'Tyrant-Idvoyages', 
+        $stream, 
         $dir_name, 
         $filename
     );
