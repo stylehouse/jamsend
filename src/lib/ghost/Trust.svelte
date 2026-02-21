@@ -693,9 +693,15 @@
         this.i_elvis(w,'init_completo',{ier})
     },
     // from Pier itself
-    async elvising_Pier_init_completo(w,ier:Pier) {
+    async elvising_Pier_init_completo(w,ier:Pier,retry=5) {
         let eer = ier.eer
         let Our = this.o_Pier_Our(w,ier.pub)
+        if (!Our && retry > 0) {
+            setTimeout(() => {
+                this.elvising_Pier_init_completo(w,ier,retry-1)
+            },654)
+            return
+        }
         if (!Our) throw `Pier ! %Our`
         let Pier = Our.sc.Pier
         if (Pier.instance != ier) {
@@ -726,7 +732,7 @@
         // < store this.Ud via elvis
         this.i_elvis(w,"save_Ud",{ier})
     },
-    async elvising_save_Ud(A,w,e) {
+    async elvising_save_Ud(A,w,e,retry=5) {
         let {ier} = e.sc
         let Id = ier.Ud as Idento
         // < this could be moved over there to Peerily...
@@ -739,6 +745,14 @@
         let anOur = await this.simply_i_Pier_Our(prepub)
 
         let Our = w.o({Our:1,Pier})[0]
+
+        if (!Our && retry > 0) {
+            setTimeout(() => {
+                this.elvising_save_Ud(A,w,e,retry-1)
+            },654)
+            return
+        }
+
         delete ier.stashed.prepub
         this.ensure_Our_Id(Our) 
         console.warn(`e:save_Ud(${prepub})`)

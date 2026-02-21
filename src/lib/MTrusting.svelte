@@ -323,7 +323,6 @@
     .ice-name {
         text-align: right;
         padding-right: 5px;
-        text-transform: uppercase;
         letter-spacing: 1px;
     }
     .ice-val {

@@ -580,6 +580,7 @@ export class Pier {
         this.con = con
         this.inbound = inbound
         let say = inbound ? "received" : "made"
+        console.log(`${say} connection(${this.pub}) starting...`)
         
         con.on('open', async () => {
             if (!this.disconnected) return

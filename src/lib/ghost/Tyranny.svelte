@@ -41,6 +41,7 @@
         }).catch(er => console.warn('console_batch upload', er))
     },
     install_console_capture() {
+        if (!M.F.P.PROD) return
         if (M.F.P.ConsoleLogs) return
         M.F.P.ConsoleLogs = []
         for (const level of ['log','warn','error'] as const) {
@@ -374,7 +375,7 @@
             let [prepub,advice,sign] = m[1].split('-')
             let {name} = this.decode_Idzeugi_advice(advice)
             let neu = await this.i_Idzeugsomething(w,'Idzeugnation',{name,prepub,advice,sign})
-            if (neu) this.UIsay(w,`Idzeug:${name}, Pier:${prepub}`)
+            if (neu) this.UIsay(w,`${name} ${prepub}`)
         }
         else {
             if (!this.said_no_Idzeug) {
@@ -391,9 +392,10 @@
     async i_Idzeugsomething(w,keyword,c):Promise<boolean> {
         let s = {}
         s[keyword] = 1
+        ex(s,c)
         // we are already in Atime, about to manage these:
         let neu = !w.oa(s)
-        let I = await w.r(s,c)
+        let I = w.oai(s)
         return neu
     },
 
@@ -455,6 +457,13 @@
             }
             someIdzeugnations = true
         }
+
+        // in case of duplicate answers
+        // < %elvis: anywhere we retry a request we could get duplicate answers
+        for (let e of this.o_elvis(w,'o Idzeugnosis')) {
+        }
+        for (let e of this.o_elvis(w,'i Idvoyage')) {
+        }
         
 
         await this.o_elvis_Idzeugnosis(A,w)
@@ -473,12 +482,15 @@
             if (!nonfatal) this.reset_location_hash()
             _no(say)
         }
-        let dont_get_stuck_waiting_for_Id = () => {
+        let dont_get_stuck_waiting_for_k = (k,threshold=3) => {
+            let c = {}
+            c["stuckat_"+k] = 1
             // < cleanly, properly creating new Pier at the destination...
             //   somehow it... no hello the first time?
-            I.i({stuckat_noId:1})
-            if (!(I.o({stuckat_noId:1}).length <3)) {
-                if (I.o({stuckat_noId:1}).length == 3) {
+            let sn = I.oai({stuckness:1})
+            I.i(c)
+            if (!(I.o(c).length <threshold)) {
+                if (I.o(c).length == threshold) {
                     this.UIsay(w,"you may need to reload")
                 }
                 // console.warn(`guessing Pier++ has gone weird, reloading...`)
@@ -505,19 +517,20 @@
         I.sc.Alice = Pier
         let Pier_ok = !await this.RingUp(A,w,Pier,"Idzeugnosis",I)
         let ier = Pier.instance
-        
         // in case Tyrant loads someone?
         let Tyrant_ok = M.amTyrant
             || !await this.RingUp(A,w,M.OurTyrant,"Idvoyage",I)
+        
         if (!Pier_ok) {
             console.log(`🦑 Idzeugnation connecting... Pier:${Pier?.instance?.pub}`)
+            dont_get_stuck_waiting_for_k('conPier',7)
             return I.i({waits:'connecting...'})
         }
 
         // their Id
         let Id = this.ensure_Our_Id(Our)
         if (!Id) {
-            dont_get_stuck_waiting_for_Id()
+            dont_get_stuck_waiting_for_k('noId')
             return I.i({waits:'almost...'})
         }
         if (prepub != Id+'') throw `thought...`
@@ -527,20 +540,24 @@
             //  which elegantly handles uploading the social graph!
             I.sc.waiting_on_Tyrant_at ||= now_in_seconds()
             if (I.ago('waiting_on_Tyrant_at') > REQUESTS_MAX_LIFETIME) {
-                return no(`the third party who verifies trust network continuity is not available.
-                    the link will work again, just keep this tab for a while.`,true)
+                return no(`the third party dealing the trust network is not available
+                     - chaos -
+                    the link will work again later.`,true)
             }
             return I.i({waits:"nearing mirage..."})
         }
         // < this may stop Tyrant Idzeugnating
         let TId = M.OurTyrant?.instance?.Ud
         if (!TId) {
-            dont_get_stuck_waiting_for_Id()
+            dont_get_stuck_waiting_for_k('Tyrant-noId')
             return I.i({waits:'nearly...'})
         }
+        
 
-        if (I.i_wasLast('asked') > 5) {
+        if (!I.sc.success && await I.i_wasLast('asked') > 9) {
+            await I.i_wasLast('asked',true)
             this.UIsay(w,`punting...`)
+            console.log(`🦑 asking... ${I.sc.countingup}`)
             // they are welcome
             //  which allows them to send trust
             //   before we fully sort out Idvoyage
@@ -549,7 +566,6 @@
             // causes an e:'i Idzeugnosis' over there
             await ier.emit('intro',sex({},I.sc,'advice,sign'))
             I.sc.asked = true
-            return
         }
         for (let e of this.o_elvis(w,'o Idzeugnosis')) {
             // e%failed can come from Tyrant|Pier
@@ -562,8 +578,7 @@
             return
         }
         if (!I.sc.success) {
-            console.log(`🦑 Idzeugnation put...`)
-            I.i({waits:"invite shown..."})
+            I.i({waits:"suspense..."})
             return
         }
 
@@ -614,7 +629,7 @@
         if (data.Idvoyage && !data.success) {
             let sign = data.Idvoyage.sign
 
-            // < multi ask, multi success
+            // < %elvis: multi ask, multi success
             if (this.recent_Idvoyage_signs.includes(sign)) {
                 console.log(`skipping dup e:i Idvoyage`)
                 return
@@ -688,8 +703,19 @@
             return no("offer expired")
         }
         
-        if (!this.claim_Idzeug_number(Idzeug,c.n)) {
+        // check if Bob already got this recently (retry/reconnect scenario)
+        let already_granted = Idzeug.stashed.recently_granted?.find(
+            g => g.prepub === prepub && (now_in_seconds() - g.at) < 60
+        )
+
+        if (!already_granted && !this.claim_Idzeug_number(Idzeug, c.n)) {
             return no("prize already claimed")
+        }
+        if (!already_granted) {
+            let rg = Idzeug.stashed.recently_granted ||= []
+            rg.push({ at: now_in_seconds(), prepub })
+            // trim old ones
+            Idzeug.stashed.recently_granted = rg.filter(g => (now_in_seconds() - g.at) < 60)
         }
 
         // they are welcome
@@ -739,6 +765,8 @@
     claim_Idzeug_number(Idzeug:OurIdzeug,n:number) {
         if (n == null || n != n*1) throw "!number"
         let N = Idzeug.stashed.taken_n ||= []
+
+
         if (N.includes(n)) return false
         // this'll be shorter in json...
         // < another KVStore or so
