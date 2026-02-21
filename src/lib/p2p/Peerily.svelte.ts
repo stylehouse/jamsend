@@ -63,64 +63,104 @@ function Peer_OPTIONS() {
     }
 }
 type iceServerConfig = {urls:string,username?:string,credential?:string}
+// Replace VerilyPeerily in Peerily.svelte.ts with this:
 
 abstract class VerilyPeerily {
     iceStatus:any = $state({});
 
     async runConnectivityCheck() {
         const opts = Peer_OPTIONS();
-        let them = opts.config.iceServers.slice(0,3)
-        let lives = await Promise.all(
-            them.map(cfg => this.testIceServer(cfg))
+        let iceServers = opts.config.iceServers.slice(0,3)
+        
+        let results = await Promise.all(
+            iceServers.map(cfg => this.testIceServer(cfg))
         )
 
-        let okays = lives.filter(li => li == 'ok')
-
+        let okays = results.filter(r => r === 'ok')
         
         if (okays.length < 2) {
-            console.error("Critical: No connectivity to ICE servers")
+            console.error("Critical: No connectivity to ICE servers", {results})
         }
     }
+    
     async testIceServer(cfg:iceServerConfig): Promise<string> {
         return new Promise((resolve) => {
-            let name = cfg.urls.split(":")[0]
+            let protocol = cfg.urls.split(':')[0].toUpperCase()
+            
             let state_becomes = (such) => {
-                this.iceStatus[name] = such
+                this.iceStatus[protocol] = such
                 this.iceStatus = this.iceStatus // reactivity hack
-                if (such != '...') {
+                if (such !== '...') {
                     resolve(such)
                 }
             }
-            // the test begins
+            
             state_becomes('...')
 
             const pc = new RTCPeerConnection({
                 iceServers: [cfg]
             });
 
-            // If we find even one candidate, the server is alive
+            let foundCandidate = false
+            
             pc.onicecandidate = (e) => {
-                if (e.candidate) {
-                    pc.close();
+                if (!e.candidate || foundCandidate) return
+                
+                let type = e.candidate.type
+                
+                // STUN should give us srflx (server reflexive)
+                // TURN/TURNS should give us relay
+                let isStun = protocol === 'STUN'
+                let expected = isStun ? 'srflx' : 'relay'
+                
+                if (type === expected) {
+                    foundCandidate = true
+                    pc.close()
                     state_becomes('ok')
                 }
-            };
+            }
+            
+            pc.onicegatheringstatechange = () => {
+                if (pc.iceGatheringState === 'complete' && !foundCandidate) {
+                    pc.close()
+                    state_becomes('no:candidate')
+                }
+            }
 
-            // Timeout after 6 seconds, TURNS may take more than 3
+            // TURNS needs more time for TLS handshake
+            let timeout = protocol === 'TURNS' ? 8000 : 5000
+            
             setTimeout(() => {
                 if (pc.signalingState !== 'closed') {
-                    pc.close();
-                    state_becomes('nogo')
+                    pc.close()
+                    state_becomes(foundCandidate ? 'ok' : 'no:timeout')
                 }
-            }, 6 * 1000);
+            }, timeout)
 
-            // We need to create a data channel to trigger ICE gathering
-            pc.createDataChannel('test');
-            pc.createOffer().then(offer => pc.setLocalDescription(offer))
+            pc.createDataChannel('test')
+            pc.createOffer()
+                .then(offer => pc.setLocalDescription(offer))
                 .catch(() => {
-                    state_becomes('nogo@setLocalDescription')
-            });
-        });
+                    pc.close()
+                    state_becomes('no:offer')
+                })
+        })
+    }
+    PEERS_onopen() {
+        // Set PeerServer status
+        this.iceStatus.PEERS = 'ok'
+        this.iceStatus = this.iceStatus  // reactivity
+    }
+    PEERS_onerror(err) {
+        // Set PeerServer status on error
+        if (err.type === 'network') {
+            this.iceStatus.PEERS = 'no:network'
+        } else if (err.type === 'server-error') {
+            this.iceStatus.PEERS = 'no:server'
+        } else {
+            console.error(`misc PEERS error? `,err)
+            this.iceStatus.PEERS = 'no:error'
+        }
     }
 }
 
@@ -447,6 +487,7 @@ export class Peerily extends VerilyPeerily {
             console.log(`connected (to PeerServer)`)
             reso_connect()
             eer.disconnected = false
+            this.PEERS_onopen()
         })
         eer.on('disconnected', () => {
             console.log(`disconnected (from PeerServer)`)
@@ -454,9 +495,18 @@ export class Peerily extends VerilyPeerily {
             eer.disconnected = true
             !this.destroyed && eer.reconnect()
         })
+        let peerfail = /^Could not connect to peer (\w+)$/
         eer.on('error', (err) => {
+            if (err.type == 'peer-unavailable' && err.message.match(peerfail)) {
+                let prepub = err.message.match(peerfail)[1]
+                this.Trusting.M.Pier_wont_connect(prepub)
+                return
+            }
+            this.PEERS_onerror(err)
+            this.iceStatus = this.iceStatus  // reactivity
             this.on_error?.(err)
         })
+
         return eer
     }
 

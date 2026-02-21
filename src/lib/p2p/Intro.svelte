@@ -58,13 +58,7 @@
     
 
     let errors = $state(new SvelteSet())
-    let peerfail = /^Could not connect to peer (\w+)$/
     let on_error = (err) => {
-        if (err.type == 'peer-unavailable' && err.message.match(peerfail)) {
-            let prepub = err.message.match(peerfail)[1]
-            P.Trusting.M.Pier_wont_connect(prepub)
-            return
-        }
         errors.add(err)
         console.error(`Error ${err.type}: ${err}`)
     }
