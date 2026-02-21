@@ -511,7 +511,7 @@
 
             <div class='uiing'>
                 {#if jamming}
-                    <div class='controls'>
+                    <div class='main controls'>
                         <button onclick={() => YES()} class='big'
                             disabled={heist && true}
                             >yeah</button>
@@ -597,6 +597,16 @@
     button.small {
         font-size:0.75em;
         opacity:0.05;
+    }
+    .main.controls button{
+        position: absolute;
+        top: 100%;
+        border-radius:40em;
+        width:3em;
+        transform:rotate(-20deg);
+    }
+    .main.controls span button{
+        right:0;
     }
     .contain {
         position:relative;
