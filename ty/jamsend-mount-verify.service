@@ -1,0 +1,22 @@
+[Unit]
+Description=Wait for Decrypted Music and Bind Mount
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c ' \
+    until [ "$(ls -A /mnt/music 2>/dev/null)" ]; do \
+        echo "Waiting for /mnt/music to be decrypted and populated..."; \
+        sleep 5; \
+    done; \
+    echo "/mnt/music is ready. Performing bind mounts..."; \
+    mount --bind -o ro /mnt/music /mnt/jamsend-music; \
+    mount --bind /mnt/jamsend-appcache /mnt/jamsend-music/.jamsend; \
+    echo "Mounts complete."'
+ExecStop=/bin/bash -c ' \
+    umount /mnt/jamsend-music/.jamsend; \
+    umount /mnt/jamsend-music'
+
+[Install]
+WantedBy=multi-user.target
