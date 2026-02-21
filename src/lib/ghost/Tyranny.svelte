@@ -346,6 +346,7 @@
     },
     // < put an ad for a hashtag here?
     reset_location_hash() {
+        console.log(`location.hash reset`)
         window.location.hash = this.PREHASH + 'jamsend'
     },
     encode_Idzeugi_advice(c) {
@@ -376,7 +377,11 @@
             if (neu) this.UIsay(w,`Idzeug:${name}, Pier:${prepub}`)
         }
         else {
-            this.reset_location_hash()
+            if (!this.said_no_Idzeug) {
+                console.log("no Idzeug")
+                this.said_no_Idzeug = 1
+            }
+            // this.reset_location_hash()
         }
     },
 
@@ -534,12 +539,8 @@
             return I.i({waits:'nearly...'})
         }
 
-
-
-        // is about as safe as it can be to consume the Idzeug
-        //  it shall be taken away now!
-        this.reset_location_hash()
-        if (!I.sc.asked) {
+        if (I.i_wasLast('asked') > 5) {
+            this.UIsay(w,`punting...`)
             // they are welcome
             //  which allows them to send trust
             //   before we fully sort out Idvoyage
@@ -556,6 +557,7 @@
         }
 
         if (I.sc.failed) {
+            // this will reset location hash
             no(`problem with your Idzeug: ${I.sc.failed}`)
             return
         }
@@ -569,6 +571,7 @@
         //  and give us their Idvoyage to get our Idvoyage
         let is_trusted = await this.Idvoyage_verify(I.sc.Idvoyage)
         if (!is_trusted) {
+            // check its not made up before bothering Tyrant
             console.log(`🦑 Idvoyage_verify BAD`)
             return no(`Idvoyage_verify failed`)
         }
@@ -581,12 +584,14 @@
         }
 
         // also checks with instance tyrant to get a marriage cert sort of thing
-        // < check theirs
         if (await this.Idvoyage_arrange(A,w,I)) return
         
         // grant them the same access
         // < UI popup, bonds, etc
         await this.Idzeug_apply_trust(Pier,I)
+        // is about as safe as it can be to consume the Idzeug
+        //  it shall be taken away now!
+        this.reset_location_hash()
 
         // < it might have some other data too, not in the trust...
         await I.i_wasLast("finished",true)
@@ -682,6 +687,7 @@
         if (!Idzeug) {
             return no("offer expired")
         }
+        
         if (!this.claim_Idzeug_number(Idzeug,c.n)) {
             return no("prize already claimed")
         }
