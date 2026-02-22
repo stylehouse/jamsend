@@ -348,21 +348,28 @@
     // < put an ad for a hashtag here?
     reset_location_hash() {
         console.log(`location.hash reset`)
-        window.location.hash = this.PREHASH + 'jamsend'
+        window.location.hash = this.PREHASH
     },
     encode_Idzeugi_advice(c) {
         let name = c.name
         delete c.name
         let s = {} as any
         s[name] = 1
-        let advice = depeel({...s,...c})
-        if (advice.match(/[^\w+ ,:-]/)) throw "illegal char, depeel: "+advice
+        let advice = depeel({...s,...c},{sep:'.',hie:'~'})
+        if (advice.match(/[^\w+ \.~-]/)) throw "illegal char, depeel: "+advice
         advice = advice.replace(/ /g,'+')
         return advice
     },
     decode_Idzeugi_advice(advice) {
         advice = advice.replace(/\+/g,' ')
-        let c = peel(advice)
+        let c
+        if (advice.includes(',') && advice.includes(':')) {
+            // backwards compatibly, all the Idzeugi I tossed out there already
+            c = peel(advice,{sep:',',hie:':'})
+        }
+        else {
+            c = peel(advice,{sep:'.',hie:'~'})
+        }
         let name = Object.keys(c)[0]
         delete c[name]
         return {name,...c}
@@ -370,7 +377,7 @@
 
     // entry: find new Idzeug in uri
     async Idzeugmance(A,w) {
-        let m = window.location.hash.match(/^#+([\w,\+_:\-]{16,})$/);
+        let m = window.location.hash.match(/^#+([\w\.~\-]{16,})$/);
         if (m) {
             let [prepub,advice,sign] = m[1].split('-')
             let {name} = this.decode_Idzeugi_advice(advice)

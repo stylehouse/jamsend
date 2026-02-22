@@ -570,6 +570,7 @@
         margin: 0.5em;
         padding: 0.5em;
         font-size:0.7em;
+        opacity:0.3;
     }
     div.relief {
         background:#b394ff;

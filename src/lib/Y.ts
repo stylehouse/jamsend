@@ -457,11 +457,14 @@ export function tax(s: Record<string, any>, c: Record<string, any>, take: any): 
     
 // Hash from 'k:v' or comma-separated, v=1 if not given
 // Handles nestings of the : and , separators
-export function peel(s: any, sep?: string, kep?: string): Record<string, any> {
+export function peel(s: any, d?: { sep?: string; hie?: string }): Record<string, any> {
+    d = d || {};
+    d.sep ??= ','
+    d.hie ??= ':'
     if (s == null || s === '') return {};
     
-    // Array: convert to hash with values as 1
     if (isar(s)) {
+        // < is just hashkv(s)?
         return hashkv(s.map(k => [k, 1]));
     }
     
@@ -471,20 +474,19 @@ export function peel(s: any, sep?: string, kep?: string): Record<string, any> {
     }
     
     if (isst(s)) {
-        sep = sep || ',';
-        kep = kep || ':';
         
         // Parse the string
         const c: Record<string, any> = {};
-        const parts = s.split(sep);
+        const parts = s.split(d.sep);
         
         for (const part of parts) {
-            const kvParts = part.split(kep);
+            const kvParts = part.split(d.hie);
             const k = kvParts.shift();
             if (!k) continue;
             
             const v = kvParts.length === 1 ? kvParts[0]
-                : kvParts.length > 1 ? kvParts.join(kep)
+                // < odd. should it be string[] ?
+                : kvParts.length > 1 ? kvParts.join(d.hie)
                 : 1;
             
             // Convert numeric strings to numbers

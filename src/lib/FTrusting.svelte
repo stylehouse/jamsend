@@ -174,7 +174,7 @@
 
                     
 
-                    {#if S.name.match(/[^\w+ -]/)}
+                    {#if S.name.match(/[^\w \-]/)}
                         <p>Name contains illegal characters. Delete and add another. </p>
                     {/if}
                     {@render Stashedness(S)}

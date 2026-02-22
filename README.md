@@ -1,12 +1,13 @@
 # jamsend
 
 modern music piracy in the browser
-
-# features
-
 ![at sea](static/screenshot.webp)
 
-It has a very sensible data abstraction called Stuff that seems like where computers are heading.
+# the big picture
+
+We are an ongoing project to capture the core of the universe with language, and fix the computer once and for all!
+
+Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier.
 
 ## safety
 
@@ -26,7 +27,7 @@ Preserve directory structure, tend to move whole albums, restart if interrupted.
 
 # funding
 
-[Send tips!](https://ko-fi.com/ostylehouse). Long story: wanting to technically manage lots of quality work on a new language and direction for the humans, which is somewhat here in this project. Stuff.svelte.ts really. Seem to have good enough metaphysics to join lots of efforts together. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
+[Send tips!](https://ko-fi.com/ostylehouse). Long story: wanting to technically manage lots of quality work on a new computer culture and direction for the humans, which is somewhat here in this project. Stuff.svelte.ts really. Seems to be time to hire, etc. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
 
 # development
 
@@ -40,7 +41,7 @@ Plans later are that this general technology should grow into the best place for
 
 # hiring
 
-Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may of course volunteer on open source software. Go for it. All development, commissioning and correspondence is on github under the eyes of the law. There are vaguely 20 40hr developments I expect 70% success with the first week!
+Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may of course volunteer! Go for it. All development, commissioning and correspondence is on github under the eyes of the law. There are vaguely a dozen separate 40hr developments I expect 70% success with the first week! Happy to manage 10 hour weeks.
 
 You would need to get it set up yourself but reach out if anything isn't easy. If you can change code with reliable results, yay.
 
