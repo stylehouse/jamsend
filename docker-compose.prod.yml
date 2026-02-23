@@ -66,7 +66,20 @@ services:
   tyrant-logger:
     build:
       context: .
-      dockerfile: ty/Dockerfile
+      dockerfile_inline: |
+        FROM perl:5.38-slim
+
+        WORKDIR /app
+
+        # Install Mojolicious and dependencies
+        RUN cpanm --notest \
+            Mojolicious \
+            JSON::PP \
+            Time::HiRes
+
+        # Run the application
+        CMD ["perl", "/app/tyrant-logger.pl", "daemon", "-l", "http://*:9393"]
+
     container_name: jamsend-prod-tyrant-logger
     user: "1000:1000" # Run as your UID to avoid permission issues
     volumes:

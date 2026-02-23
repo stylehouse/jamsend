@@ -16,6 +16,7 @@ x-droid-common: &droid-common
     SE_NODE_SESSION_TIMEOUT: "86400"
     SE_SESSION_REQUEST_TIMEOUT: "3600"
   shm_size: 2gb
+  mem_limit: 2g
 
 x-bot-common: &bot-common
   restart: always
@@ -25,10 +26,10 @@ x-bot-common: &bot-common
       FROM node:20-alpine
       WORKDIR /app
       RUN npm install selenium-webdriver
-      COPY bot.js .
-      CMD ["node", "bot.js"]
+      CMD ["node", "ty/bot.js"]
   volumes:
-    - ./logs:/app/logs
+    - .:/app/ty # keep bot.js up to date by mounting it
+    - ./logs:/app/logs # < doesn't?
   environment: &bot-env
     TARGET_URL: "https://jamsend.duckdns.org:9999/"
 

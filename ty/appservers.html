@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>jamsend // droids</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080c10;
+      --panel:     #0d1117;
+      --border:    #1e2d3d;
+      --accent:    #00ffe0;
+      --accent2:   #ff4f7b;
+      --text:      #c9d1d9;
+      --dim:       #4a5568;
+      --glow:      0 0 12px rgba(0,255,224,0.35);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.07) 2px,
+        rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-shadow: var(--glow);
+    }
+
+    header h1 span {
+      color: var(--dim);
+      font-weight: 400;
+    }
+
+    #clock {
+      font-size: 0.85rem;
+      color: var(--dim);
+      letter-spacing: 0.1em;
+    }
+
+    .grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .cell {
+      height: 100vh;
+      flex-shrink: 0;
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+
+    .cell:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+    }
+
+    .cell-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      background: rgba(0,0,0,0.4);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 2;
+    }
+
+    .cell-header .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: background 0.3s;
+    }
+
+    .cell-header .label {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .cell-header .port {
+      margin-left: auto;
+      font-size: 0.65rem;
+      color: var(--dim);
+    }
+
+    .cell iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #000;
+    }
+
+    .cell .blocked-msg {
+      display: none;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      color: var(--dim);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .cell .blocked-msg a {
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid var(--accent);
+      padding: 6px 14px;
+      border-radius: 2px;
+      letter-spacing: 0.1em;
+      font-size: 0.75rem;
+      transition: background 0.2s;
+    }
+
+    .cell .blocked-msg a:hover {
+      background: rgba(0,255,224,0.1);
+    }
+
+    /* pulse animation for active dot */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .dot.active {
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>JAMSEND <span>// DROID MONITOR</span></h1>
+  <div id="clock"></div>
+</header>
+
+<div class="grid">
+
+  <div class="cell" id="cell-supervisor">
+    <div class="cell-header">
+      <div class="dot" id="dot-supervisor"></div>
+      <span class="label">supervisor</span>
+      <span class="port">:7900</span>
+    </div>
+    <iframe id="frame-supervisor" src="http://localhost:7900/vnc.html?autoconnect=true&resize=scale"></iframe>
+    <div class="blocked-msg" id="blocked-supervisor">
+      <div>iframe blocked by noVNC headers</div>
+      <a href="http://localhost:7900" target="_blank">open in new tab ↗</a>
+    </div>
+  </div>
+
+  <div class="cell" id="cell-tyrant">
+    <div class="cell-header">
+      <div class="dot" id="dot-tyrant"></div>
+      <span class="label">tyrant</span>
+      <span class="port">:7903</span>
+    </div>
+    <iframe id="frame-tyrant" src="http://localhost:7903/vnc.html?autoconnect=true&resize=scale"></iframe>
+    <div class="blocked-msg" id="blocked-tyrant">
+      <div>iframe blocked by noVNC headers</div>
+      <a href="http://localhost:7903" target="_blank">open in new tab ↗</a>
+    </div>
+  </div>
+
+  <div class="cell" id="cell-public">
+    <div class="cell-header">
+      <div class="dot" id="dot-public"></div>
+      <span class="label">public</span>
+      <span class="port">:7901</span>
+    </div>
+    <iframe id="frame-public" src="http://localhost:7901/vnc.html?autoconnect=true&resize=scale"></iframe>
+    <div class="blocked-msg" id="blocked-public">
+      <div>iframe blocked by noVNC headers</div>
+      <a href="http://localhost:7901" target="_blank">open in new tab ↗</a>
+    </div>
+  </div>
+
+  <div class="cell" id="cell-private">
+    <div class="cell-header">
+      <div class="dot" id="dot-private"></div>
+      <span class="label">private</span>
+      <span class="port">:7902</span>
+    </div>
+    <iframe id="frame-private" src="http://localhost:7902/vnc.html?autoconnect=true&resize=scale"></iframe>
+    <div class="blocked-msg" id="blocked-private">
+      <div>iframe blocked by noVNC headers</div>
+      <a href="http://localhost:7902" target="_blank">open in new tab ↗</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // clock
+  const clockEl = document.getElementById('clock');
+  function tick() {
+    clockEl.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // detect if iframe was blocked (X-Frame-Options / CSP)
+  // we can't read iframe content directly, but we can check if it loaded at all
+  const droids = ['supervisor', 'public', 'private', 'tyrant'];
+  droids.forEach(name => {
+    const frame = document.getElementById(`frame-${name}`);
+    const blocked = document.getElementById(`blocked-${name}`);
+    const dot = document.getElementById(`dot-${name}`);
+
+    frame.addEventListener('load', () => {
+      dot.classList.add('active');
+    });
+
+    frame.addEventListener('error', () => {
+      frame.style.display = 'none';
+      blocked.style.display = 'flex';
+    });
+  });
+</script>
+
+</body>
+</html>

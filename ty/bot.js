@@ -9,35 +9,35 @@ const path = require('path');
 
 const seleniumUrl = process.env.SELENIUM_REMOTE_URL || 'http://droid:4444/wd/hub';
 const url = process.env.TARGET_URL;
+const botName = process.env.BOT_NAME || 'unnamed';
 let lastState = "";
 
 async function startBot() {
     let options = new chrome.Options();
     // it tells the browser to appear on the VNC screen
-    options.addArguments('--display=:99.0'); 
+    options.addArguments('--display=:99.0');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
     // persist IndexedDB, is mounted in docker
     options.addArguments('--user-data-dir=/home/seluser/chrome-profile');
     options.addArguments('--profile-directory=Default');
 
-    let driver = await new Builder()
+    const driver = await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
         .usingServer(seleniumUrl)
         .build();
-    console.log("chrome started");
 
+    console.log(`[${botName}] Chrome started`);
 
-    while (true) {
-        await scrape()
-        // Wait 10 minutes before the next iteration
-        await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000));
-    }
+    await scrape(driver);
+    // Run every 10 minutes
+    setInterval(() => scrape(driver), 10 * 60 * 1000);
 }
-async function scrape() {
+
+async function scrape(driver) {
     try {
-        console.log(`[${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
+        console.log(`[${botName}] [${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
 
         await driver.get(url);
         console.log("got page")
@@ -71,10 +71,10 @@ async function scrape() {
             lastState = currentState;
             console.log("doing")
         }
-        console.log("checked")
+        console.log(`[${botName}] Checked: ${stats.connected}/${stats.total} connected`);
 
     } catch (e) {
-        console.error("Scrape failed:", e.message);
+        console.error(`[${botName}] Scrape failed:`, e.message);
     } finally {
         // await driver.quit();
     }
@@ -83,13 +83,11 @@ async function scrape() {
 function saveLog(data) {
     const now = new Date();
     const dir = `./logs/Droid-PiersList/PiersList-${now.toISOString().split('T')[0].replace(/-/g, '')}`;
-    const file = `${now.getHours()}${now.getMinutes()}.json`;
-    
+    const file = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.json`;
+
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, file), JSON.stringify(data, null, 2));
-    console.log(`Log saved: ${file}`);
+    console.log(`[${botName}] Log saved: ${file}`);
 }
 
-// Run every 10 minutes
-setInterval(scrape, 10 * 60 * 1000);
-scrape(); // Run immediately on start
+startBot();
