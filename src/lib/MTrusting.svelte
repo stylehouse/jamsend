@@ -113,13 +113,7 @@
     {#if M.F.P.Nobody_Is_Online && M.F.P.Welcome}
         <p class="Nobodyonline">
             Nobody is online
-            <span>
-                <span style="position:absolute; 
-                    pointer-events:none;">🌱</span>
-                <span style="font-size:0.5em">
-                    <ShareButton {P} />
-                </span>
-            </span>
+                <ShareButton {P} />
         </p>
     {/if}
 
