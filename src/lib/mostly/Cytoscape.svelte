@@ -487,7 +487,9 @@
         }
     }
     
-    let share_act = $derived(P.needs_share_open_action)
+    // < should gauge whether the Pier is wanting your share first via inhibition
+    //    doing pay what you like with it, I don't want more distractions...
+    let share_act = $derived(P.needs_share_open_action && 0)
     // gets set only once so they can dismiss it and continue
     let no_share = () => {
         P.needs_share_open_action = false
@@ -538,7 +540,7 @@
                             class={!quit_fullscreen ? 'small' : ''}>f</button>
                     </span>
 
-
+                    
                     <span>
                         {#if share_act}
                             <span class="navicom" title="
@@ -650,6 +652,7 @@
     .bottom {
         top:initial;
         bottom:0;
+        background: none;
     }
     .uiing button {
         padding:0.7em;
@@ -665,6 +668,8 @@
         display: flex;
         align-items: center;
         gap: 0.5em;
+        background: black;
+        border-radius: 3em 0 0 0;
     }
 
     .heisting {

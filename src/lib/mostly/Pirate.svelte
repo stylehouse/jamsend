@@ -178,7 +178,7 @@
 
 
 
-<Scrollability maxHeight="60vh" class="content-area">
+<Scrollability maxHeight="72vh" class="content-area">
     {#snippet content()}
         <div>
         <span class="arow theoneline">
