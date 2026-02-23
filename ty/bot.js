@@ -10,6 +10,7 @@ const path = require('path');
 const seleniumUrl = process.env.SELENIUM_REMOTE_URL || 'http://droid:4444/wd/hub';
 const url = process.env.TARGET_URL;
 const botName = process.env.BOT_NAME || 'unnamed';
+const chromeProfileDir = process.env.CHROME_PROFILE_DIR || '/home/seluser/chrome-profile';
 let lastState = "";
 
 // config per bot name - supervisor and tyrant are observers only
@@ -20,17 +21,23 @@ const configs = {
     tyrant:     { shouldUnmute: false },
 };
 
-async function startBot() {
+function clearSingletonLocks() {
     // Chrome leaves Singleton* lock files behind on unclean exit,
     // preventing restart. Nuke them before starting.
-    const profileDir = '/home/seluser/chrome-profile/Default';
     try {
-        execSync(`rm -f ${profileDir}/Singleton*`);
-        console.log(`[${botName}] Cleared Singleton locks`);
+        const files = fs.readdirSync(chromeProfileDir).filter(f => f.startsWith('Singleton'));
+        for (const file of files) {
+            fs.unlinkSync(path.join(chromeProfileDir, file));
+            console.log(`[${botName}] Removed lock: ${file}`);
+        }
     } catch (e) {
-        // dir might not exist yet, that's fine
+        // dir might not exist yet on first run, that's fine
     }
-    
+}
+
+async function startBot() {
+    clearSingletonLocks();
+
     let options = new chrome.Options();
     // it tells the browser to appear on the VNC screen
     options.addArguments('--display=:99.0');

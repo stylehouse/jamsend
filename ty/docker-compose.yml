@@ -1,5 +1,5 @@
 x-droid-common: &droid-common
-  restart: always
+  # restart: always
   image: seleniarm/standalone-chromium:latest
   healthcheck:
     test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
@@ -29,9 +29,10 @@ x-bot-common: &bot-common
       CMD ["node", "ty/bot.js"]
   volumes:
     - .:/app/ty # keep bot.js up to date by mounting it
-    - ./logs:/app/logs # < doesn't?
+    - ./logs:/app/logs
   environment: &bot-env
     TARGET_URL: "https://jamsend.duckdns.org:9999/"
+    CHROME_PROFILE_DIR: "/home/seluser/chrome-profile"
 
 services:
 
@@ -50,6 +51,10 @@ services:
     depends_on:
       supervisor-droid:
         condition: service_healthy
+    volumes:
+      - .:/app/ty
+      - ./logs:/app/logs
+      - ./.env.chrome-profiles/supervisor:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://supervisor-droid:4444/wd/hub"
@@ -71,6 +76,10 @@ services:
     depends_on:
       public-droid:
         condition: service_healthy
+    volumes:
+      - .:/app/ty
+      - ./logs:/app/logs
+      - ./.env.chrome-profiles/public:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://public-droid:4444/wd/hub"
@@ -92,6 +101,10 @@ services:
     depends_on:
       private-droid:
         condition: service_healthy
+    volumes:
+      - .:/app/ty
+      - ./logs:/app/logs
+      - ./.env.chrome-profiles/private:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://private-droid:4444/wd/hub"
@@ -112,6 +125,10 @@ services:
     depends_on:
       tyrant-droid:
         condition: service_healthy
+    volumes:
+      - .:/app/ty
+      - ./logs:/app/logs
+      - ./.env.chrome-profiles/tyrant:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://tyrant-droid:4444/wd/hub"
