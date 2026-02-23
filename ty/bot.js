@@ -12,7 +12,25 @@ const url = process.env.TARGET_URL;
 const botName = process.env.BOT_NAME || 'unnamed';
 let lastState = "";
 
+// config per bot name - supervisor and tyrant are observers only
+const configs = {
+    public:     { shouldUnmute: true },
+    private:    { shouldUnmute: true },
+    supervisor: { shouldUnmute: false },
+    tyrant:     { shouldUnmute: false },
+};
+
 async function startBot() {
+    // Chrome leaves Singleton* lock files behind on unclean exit,
+    // preventing restart. Nuke them before starting.
+    const profileDir = '/home/seluser/chrome-profile/Default';
+    try {
+        execSync(`rm -f ${profileDir}/Singleton*`);
+        console.log(`[${botName}] Cleared Singleton locks`);
+    } catch (e) {
+        // dir might not exist yet, that's fine
+    }
+    
     let options = new chrome.Options();
     // it tells the browser to appear on the VNC screen
     options.addArguments('--display=:99.0');
@@ -35,6 +53,23 @@ async function startBot() {
     setInterval(() => scrape(driver), 10 * 60 * 1000);
 }
 
+async function tryUnmute(driver) {
+    const config = configs[botName];
+    if (!config?.shouldUnmute) return;
+
+    try {
+        const buttons = await driver.findElements(By.className('unmute-button'));
+        if (buttons.length > 0) {
+            await buttons[0].click();
+            console.log(`[${botName}] Clicked unmute button`);
+        } else {
+            console.log(`[${botName}] No unmute button found`);
+        }
+    } catch (e) {
+        console.warn(`[${botName}] Unmute click failed:`, e.message);
+    }
+}
+
 async function scrape(driver) {
     try {
         console.log(`[${botName}] [${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
@@ -43,6 +78,8 @@ async function scrape(driver) {
         console.log("got page")
         // Wait for the elements to load
         await driver.wait(until.elementLocated(By.className('Pier_itself')), 16 * 1000);
+
+        await tryUnmute(driver);
 
         const piers = await driver.findElements(By.className('Pier_itself'));
         let stats = {
