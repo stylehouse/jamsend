@@ -1,52 +1,113 @@
+x-droid-common: &droid-common
+  restart: always
+  image: seleniarm/standalone-chromium:latest
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+  environment: &droid-env
+    START_XVFB: "true"
+    VNC_NO_PASSWORD: "1"
+    SCREEN_WIDTH: "988"
+    SCREEN_HEIGHT: "1200"
+    NODE_MAX_SESSIONS: "1"
+    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security"
+    SE_NODE_SESSION_TIMEOUT: "86400"
+    SE_SESSION_REQUEST_TIMEOUT: "3600"
+  shm_size: 2gb
+
+x-bot-common: &bot-common
+  restart: always
+  build:
+    context: .
+    dockerfile_inline: |
+      FROM node:20-alpine
+      WORKDIR /app
+      RUN npm install selenium-webdriver
+      COPY bot.js .
+      CMD ["node", "bot.js"]
+  volumes:
+    - ./logs:/app/logs
+  environment: &bot-env
+    TARGET_URL: "https://jamsend.duckdns.org:9999/"
 
 services:
 
-
-  droid:
-    # produces a noVNC webapp at http://localhost:7900/
-    restart: always
-    image: seleniarm/standalone-chromium:latest # Optimized for cross-arch (arm/amd64)
-    container_name: jamsend-droid
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    environment:
-      - START_XVFB=true
-      - VNC_NO_PASSWORD=1
-      - SCREEN_WIDTH=988
-      - SCREEN_HEIGHT=1200
-      - NODE_MAX_SESSIONS=1
-      # WebRTC Specific Flags
-      - CHROME_FLAGS=--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security
-      # - SE_NODE_SESSION_TIMEOUT=3600 # 1 hour instead of 5 minutes
-      - SE_NODE_SESSION_TIMEOUT=86400 # 24 hours
-      - SE_SESSION_REQUEST_TIMEOUT=3600 # 1 hour - bot should request refresh every 10 minutes
+  # --- supervisor ---
+  supervisor-droid:
+    <<: *droid-common
+    container_name: jamsend-supervisor-droid
     ports:
-      - "4444:4444" # Selenium Grid port
-      - "127.0.0.1:7900:7900" # noVNC Web Interface
-    shm_size: 2gb # CRITICAL: Chrome crashes without large shared memory
+      - "127.0.0.1:7900:7900"
     volumes:
-      - ./music:/home/seluser/music
-      - ./chrome-profile:/home/seluser/chrome-profile
+      - ./.env.chrome-profiles/supervisor:/home/seluser/chrome-profile
 
-
-  bot:
-    restart: always
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM node:20-alpine
-        WORKDIR /app
-        RUN npm install selenium-webdriver
-        COPY bot.js .
-        CMD ["node", "bot.js"]
+  supervisor-bot:
+    <<: *bot-common
     depends_on:
-      droid:
+      supervisor-droid:
         condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
     environment:
-      - TARGET_URL=https://jamsend.duckdns.org:9999/
-      - SELENIUM_REMOTE_URL=http://droid:4444/wd/hub
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://supervisor-droid:4444/wd/hub"
+      BOT_NAME: "supervisor"
+
+  # --- public ---
+  public-droid:
+    <<: *droid-common
+    container_name: jamsend-public-droid
+    ports:
+      - "127.0.0.1:7901:7900"
+    volumes:
+      - /mnt/jamsend-public:/home/seluser/music
+      - ./.env.chrome-profiles/public:/home/seluser/chrome-profile
+
+  public-bot:
+    <<: *bot-common
+    depends_on:
+      public-droid:
+        condition: service_healthy
+    environment:
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://public-droid:4444/wd/hub"
+      BOT_NAME: "public"
+
+  # --- private ---
+  private-droid:
+    <<: *droid-common
+    container_name: jamsend-private-droid
+    ports:
+      - "127.0.0.1:7902:7900"
+    volumes:
+      - /mnt/jamsend-music:/home/seluser/music
+      - ./.env.chrome-profiles/private:/home/seluser/chrome-profile
+
+  private-bot:
+    <<: *bot-common
+    depends_on:
+      private-droid:
+        condition: service_healthy
+    environment:
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://private-droid:4444/wd/hub"
+      BOT_NAME: "private"
+
+  # --- tyrant ---
+  tyrant-droid:
+    <<: *droid-common
+    container_name: jamsend-tyrant-droid
+    ports:
+      - "127.0.0.1:7903:7900"
+    volumes:
+      - ./.env.chrome-profiles/tyrant:/home/seluser/chrome-profile
+
+  tyrant-bot:
+    <<: *bot-common
+    depends_on:
+      tyrant-droid:
+        condition: service_healthy
+    environment:
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://tyrant-droid:4444/wd/hub"
+      BOT_NAME: "tyrant"
