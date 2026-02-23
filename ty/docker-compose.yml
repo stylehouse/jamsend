@@ -3,6 +3,7 @@ services:
 
 
   droid:
+    # produces a noVNC webapp at http://localhost:7900/
     restart: always
     image: seleniarm/standalone-chromium:latest # Optimized for cross-arch (arm/amd64)
     container_name: jamsend-droid
