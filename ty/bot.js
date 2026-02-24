@@ -16,8 +16,8 @@ let driver = null;
 
 // config per bot name - supervisor and tyrant are observers only
 const configs = {
-    public:     { shouldUnmute: true },
-    private:    { shouldUnmute: true },
+    public:     { shouldUnmute: true,countPiers: true },
+    private:    { shouldUnmute: true,countPiers: true },
     supervisor: { shouldUnmute: false },
     tyrant:     { shouldUnmute: false },
 };
@@ -35,15 +35,18 @@ function clearSingletonLocks() {
         // dir might not exist yet on first run, that's fine
     }
 }
-
-async function startBot() {
-    clearSingletonLocks();
+async function initDriver() {
 
     let options = new chrome.Options();
     // it tells the browser to appear on the VNC screen
     options.addArguments('--display=:99.0');
+    options.addArguments('--disable-gpu');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
+    options.addArguments('--disable-software-rasterizer');
+    // --- STABILITY FLAGS ---
+    options.addArguments('--disable-features=VizDisplayCompositor'); 
+    options.addArguments('--force-device-scale-factor=1');
     // persist IndexedDB, is mounted in docker
     options.addArguments('--user-data-dir=/home/seluser/chrome-profile');
     options.addArguments('--profile-directory=Default');
@@ -55,14 +58,13 @@ async function startBot() {
         .build();
 
     console.log(`[${botName}] Chrome started`);
-    await scrape();
-    // Run every 10 minutes
-    setInterval(() => scrape(), 10 * 60 * 1000);
+    return driver;
 }
 
 async function tryUnmute(driver) {
     const config = configs[botName];
     if (!config?.shouldUnmute) return;
+    
     try {
         await driver.wait(until.elementLocated(By.className('unmute-button')), 7 * 1000);
     } catch (e) {}
@@ -82,6 +84,9 @@ async function tryUnmute(driver) {
 
 // Returns pier stats, or null if no piers are present yet (nobody connected)
 async function countPiers(driver) {
+    const config = configs[botName];
+    if (!config?.countPiers) return;
+
     try {
         await driver.wait(until.elementLocated(By.className('Pier_itself')), 16 * 1000);
     } catch (e) {
@@ -115,27 +120,25 @@ async function countPiers(driver) {
 async function scrape() {
     try {
         if (!driver) {
-            console.log(`[${botName}] Driver not found, restarting...`);
-            await startBot();
-            return;
+            console.log(`[${botName}] Initializing driver...`);
+            await initDriver();
         }
-        console.log(`[${botName}] [${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
 
+        console.log(`[${botName}] [${new Date().toLocaleTimeString()}] Refreshing...`);
         await driver.get(url);
         await tryUnmute(driver);
 
         const stats = await countPiers(driver);
-        if (!stats) return;
+        if (stats) {
+            const { details, ...loggable } = stats;
+            const currentState = JSON.stringify(loggable);
 
-        const { details, ...loggable } = stats;
-        const currentState = JSON.stringify(loggable);
-
-        if (currentState !== lastState) {
-            saveLog(loggable);
-            lastState = currentState;
+            if (currentState !== lastState) {
+                saveLog(loggable);
+                lastState = currentState;
+            }
+            console.log(`[${botName}] Checked: ${stats.connected}/${stats.total} connected`);
         }
-        console.log(`[${botName}] Checked: ${stats.connected}/${stats.total} connected`);
-
     } catch (e) {
         console.error(`[${botName}] Scrape failed:`, e.message);
         try { await driver.quit(); } catch (e) {}
@@ -145,7 +148,7 @@ async function scrape() {
 
 function saveLog(data) {
     const now = new Date();
-    const dir = `./logs/Droid-PiersList/PiersList-${now.toISOString().split('T')[0].replace(/-/g, '')}`;
+    const dir = `./logs/Droid-${botName}/PiersList-${now.toISOString().split('T')[0].replace(/-/g, '')}`;
     const file = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.json`;
 
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -153,4 +156,7 @@ function saveLog(data) {
     console.log(`[${botName}] Log saved: ${file}`);
 }
 
-startBot();
+// Entry point
+clearSingletonLocks();
+scrape(); // Run once immediately
+setInterval(scrape, 10 * 60 * 1000); // Then every 10 mins

@@ -2,22 +2,24 @@ x-droid-common: &droid-common
   restart: always
   image: seleniarm/standalone-chromium:latest
   entrypoint: ["/bin/sh", "-c", "rm -f /home/seluser/chrome-profile/Singleton* && /opt/bin/entry_point.sh"]
-  healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
-    interval: 5s
-    timeout: 5s
-    retries: 5
   environment: &droid-env
     START_XVFB: "true"
     VNC_NO_PASSWORD: "1"
     SCREEN_WIDTH: "988"
     SCREEN_HEIGHT: "1200"
     NODE_MAX_SESSIONS: "1"
-    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security"
+    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage"
     SE_NODE_SESSION_TIMEOUT: "86400"
     SE_SESSION_REQUEST_TIMEOUT: "3600"
+  network_mode: host
   shm_size: 2gb
   mem_limit: 2g
+
+x-healthcheckia: &healthcheckia
+  interval: 10s
+  timeout: 5s
+  retries: 3
+  start_period: 30s
 
 x-bot-common: &bot-common
   restart: always
@@ -34,6 +36,7 @@ x-bot-common: &bot-common
   environment: &bot-env
     TARGET_URL: "https://jamsend.duckdns.org:9999/"
     CHROME_PROFILE_DIR: "/home/seluser/chrome-profile"
+  network_mode: host
   mem_limit: 0.3g
 
 services:
@@ -42,8 +45,14 @@ services:
   supervisor-droid:
     <<: *droid-common
     container_name: jamsend-supervisor-droid
-    ports:
-      - "127.0.0.1:7900:7900"
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      SE_NODE_PORT: "4444"
+      SE_VNC_PORT: "5900"
+      SE_NO_VNC_PORT: "7900"
     volumes:
       - ./.env.chrome-profiles/supervisor:/home/seluser/chrome-profile
 
@@ -55,15 +64,22 @@ services:
         condition: service_healthy
     environment:
       <<: *bot-env
-      SELENIUM_REMOTE_URL: "http://supervisor-droid:4444/wd/hub"
+      SELENIUM_REMOTE_URL: "http://localhost:4444/wd/hub"
       BOT_NAME: "supervisor"
 
   # --- public ---
   public-droid:
     <<: *droid-common
     container_name: jamsend-public-droid
-    ports:
-      - "127.0.0.1:7901:7900"
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4445/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      SE_NODE_PORT: "4445"
+      SE_OPTS: "--port 4445"
+      SE_VNC_PORT: "5901"
+      SE_NO_VNC_PORT: "7901"
     volumes:
       - /mnt/jamsend-public:/home/seluser/music
       - ./.env.chrome-profiles/public:/home/seluser/chrome-profile
@@ -76,15 +92,22 @@ services:
         condition: service_healthy
     environment:
       <<: *bot-env
-      SELENIUM_REMOTE_URL: "http://public-droid:4444/wd/hub"
+      SELENIUM_REMOTE_URL: "http://localhost:4445/wd/hub"
       BOT_NAME: "public"
 
   # --- private ---
   private-droid:
     <<: *droid-common
     container_name: jamsend-private-droid
-    ports:
-      - "127.0.0.1:7902:7900"
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4446/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      SE_NODE_PORT: "4446"
+      SE_OPTS: "--port 4446"
+      SE_VNC_PORT: "5902"
+      SE_NO_VNC_PORT: "7902"
     volumes:
       - /mnt/jamsend-music:/home/seluser/music
       - ./.env.chrome-profiles/private:/home/seluser/chrome-profile
@@ -97,15 +120,22 @@ services:
         condition: service_healthy
     environment:
       <<: *bot-env
-      SELENIUM_REMOTE_URL: "http://private-droid:4444/wd/hub"
+      SELENIUM_REMOTE_URL: "http://localhost:4446/wd/hub"
       BOT_NAME: "private"
 
   # --- tyrant ---
   tyrant-droid:
     <<: *droid-common
     container_name: jamsend-tyrant-droid
-    ports:
-      - "127.0.0.1:7903:7900"
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4447/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      SE_NODE_PORT: "4447"
+      SE_OPTS: "--port 4447"
+      SE_VNC_PORT: "5903"
+      SE_NO_VNC_PORT: "7903"
     volumes:
       - ./.env.chrome-profiles/tyrant:/home/seluser/chrome-profile
 
@@ -117,5 +147,5 @@ services:
         condition: service_healthy
     environment:
       <<: *bot-env
-      SELENIUM_REMOTE_URL: "http://tyrant-droid:4444/wd/hub"
+      SELENIUM_REMOTE_URL: "http://localhost:4447/wd/hub"
       BOT_NAME: "tyrant"
