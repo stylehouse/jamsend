@@ -1,11 +1,12 @@
 x-healthcheckia: &healthcheckia
-  interval: 10s
+  interval: 3s
   timeout: 5s
   retries: 3
-  start_period: 30s
+  start_period: 5s
 
 x-droid-common: &droid-common
   restart: always
+  stop_grace_period: 1s  # Kill immediately on restart/stop
   image: seleniarm/standalone-chromium:latest
   entrypoint: 
     - "/bin/sh"
@@ -21,18 +22,21 @@ x-droid-common: &droid-common
   shm_size: 2gb
   mem_limit: 2g
   environment: &droid-env
+    # we Start Xvfb manually above in entrypoint or chrome fails to start,
+    #  but we need this here to keep fluxbox and novnc starting
     START_XVFB: "true"
     VNC_NO_PASSWORD: "1"
     SCREEN_WIDTH: "988"
     SCREEN_HEIGHT: "1200"
     NODE_MAX_SESSIONS: "1"
-    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --disable-web-security --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --disable-features=VizDisplayCompositor --force-device-scale-factor=1"
+    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --hide-crash-restore-bubble --unlimited-storage --disable-web-security --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --disable-features=VizDisplayCompositor --force-device-scale-factor=1"
     SE_NODE_SESSION_TIMEOUT: "86400"
     SE_SESSION_REQUEST_TIMEOUT: "3600"
     SE_EVENT_BUS_HOST: "127.0.0.1"
 
 x-bot-common: &bot-common
   restart: always
+  stop_grace_period: 1s  # Kill immediately on restart/stop
   network_mode: host
   mem_limit: 0.3g
   build:

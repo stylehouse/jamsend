@@ -51,7 +51,19 @@ async function initDriver() {
     // persist IndexedDB, is mounted in docker
     options.addArguments('--user-data-dir=/home/seluser/chrome-profile');
     options.addArguments('--profile-directory=Default');
-
+    options.addArguments("--use-fake-ui-for-media-stream")
+    options.addArguments(" --hide-crash-restore-bubble")
+    options.addArguments("--disable-user-media-security=true")
+    // < AI sludgey that these arguments are in compose CHROME_FLAGS as well
+    // < likely AI lies:
+    options.setUserPreferences({
+        'profile.default_content_setting_values.file_system_write_access': 1, // 1 = Allow
+        'profile.content_settings.exceptions.file_system_write_access.*.setting': 1,
+        'profile.default_content_settings.popups': 0,
+        'browser.enabled_labs_experiments': ["file-system-access-api-persistent-permissions"],
+        'exit_type': 'Normal',
+        'exited_cleanly': true
+    });
     driver = await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
