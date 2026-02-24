@@ -1,7 +1,7 @@
 // AI.
 //   bot to scrape the droid every 10 minutes to count users online.
 //   tally up how many UI:Pier are not disconnected out of a total
-//   log that like logs/Droid-Piers/Piers-20260213/2220.jsons, if it changes. 
+//   log that like logs/Droid-Piers/Piers-20260213/2220.jsons, if it changes.
 const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
@@ -12,6 +12,7 @@ const url = process.env.TARGET_URL;
 const botName = process.env.BOT_NAME || 'unnamed';
 const chromeProfileDir = process.env.CHROME_PROFILE_DIR || '/home/seluser/chrome-profile';
 let lastState = "";
+let driver = null;
 
 // config per bot name - supervisor and tyrant are observers only
 const configs = {
@@ -47,17 +48,16 @@ async function startBot() {
     options.addArguments('--user-data-dir=/home/seluser/chrome-profile');
     options.addArguments('--profile-directory=Default');
 
-    const driver = await new Builder()
+    driver = await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
         .usingServer(seleniumUrl)
         .build();
 
     console.log(`[${botName}] Chrome started`);
-
-    await scrape(driver);
+    await scrape();
     // Run every 10 minutes
-    setInterval(() => scrape(driver), 10 * 60 * 1000);
+    setInterval(() => scrape(), 10 * 60 * 1000);
 }
 
 async function tryUnmute(driver) {
@@ -112,12 +112,16 @@ async function countPiers(driver) {
     return stats;
 }
 
-async function scrape(driver) {
+async function scrape() {
     try {
+        if (!driver) {
+            console.log(`[${botName}] Driver not found, restarting...`);
+            await startBot();
+            return;
+        }
         console.log(`[${botName}] [${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
 
         await driver.get(url);
-
         await tryUnmute(driver);
 
         const stats = await countPiers(driver);
@@ -134,8 +138,8 @@ async function scrape(driver) {
 
     } catch (e) {
         console.error(`[${botName}] Scrape failed:`, e.message);
-    } finally {
-        // await driver.quit();
+        try { await driver.quit(); } catch (e) {}
+        driver = null;
     }
 }
 

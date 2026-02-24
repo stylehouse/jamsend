@@ -1,0 +1,8 @@
+[Unit]
+Description=jamsend-droids periodic restart (triggered by timer)
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/s/src/jamsend/ty
+ExecStart=/usr/bin/docker compose restart
