@@ -101,46 +101,53 @@
         M.stashed.showDetails = showDetails = !showDetails
     }
 
+    function togIdzeugRepeating(S,e) {
+        let is = e.target.checked
+        S.stashed.nRepeating = is
+    }
+
 </script>
 
 <div class='levity Trusting'>
 <h2>Trust!</h2>
 {#if F}
     <span>
-        <button onclick={increase} >increase</button>
-        <button onclick={() => grip()} >grip</button>
-    </span>
-    <span>
-        <input type="checkbox"
-            onchange={(e) => togBoblessless(e)}
-            id="Boblessless" checked={Boblessless} /> 
-            <label for="Boblessless">
-                Boblessless
-            </label>
-    </span>
-    <span>
-        <input type="checkbox"
-            onchange={(e) => tognoheavy(e)}
-            id="NoHeavyComputing" checked={NoHeavyComputing} /> 
-            <label for="NoHeavyComputing">
-                NoHeavyComputing
-            </label>
-    </span>
-    <span>
-        <input type="checkbox"
-            onchange={(e) => togNoPreviewing(e)}
-            id="NoPreviewing" checked={NoPreviewing} /> 
-            <label for="NoPreviewing">
-                NoPreviewing
-            </label>
-    </span>
-    <span>
-        <input type="checkbox"
-            onchange={(e) => tognoradio(e)}
-            id="NoRadio" checked={NoRadio} /> 
-            <label for="NoRadio">
-                NoRadio
-            </label>
+        <span>
+            <button onclick={increase} >increase</button>
+            <button onclick={() => grip()} >grip</button>
+        </span>
+        <span>
+            <input type="checkbox"
+                onchange={(e) => togBoblessless(e)}
+                id="Boblessless" checked={Boblessless} /> 
+                <label for="Boblessless">
+                    Boblessless
+                </label>
+        </span>
+        <span>
+            <input type="checkbox"
+                onchange={(e) => tognoheavy(e)}
+                id="NoHeavyComputing" checked={NoHeavyComputing} /> 
+                <label for="NoHeavyComputing">
+                    NoHeavyComputing
+                </label>
+        </span>
+        <span>
+            <input type="checkbox"
+                onchange={(e) => togNoPreviewing(e)}
+                id="NoPreviewing" checked={NoPreviewing} /> 
+                <label for="NoPreviewing">
+                    NoPreviewing
+                </label>
+        </span>
+        <span>
+            <input type="checkbox"
+                onchange={(e) => tognoradio(e)}
+                id="NoRadio" checked={NoRadio} /> 
+                <label for="NoRadio">
+                    NoRadio
+                </label>
+        </span>
     </span>
 
 
@@ -173,6 +180,14 @@
                     <button onclick={() => boing(S)} >boing</button>
 
                     
+                    <span>
+                        <input type="checkbox"
+                            onchange={(e) => togIdzeugRepeating(S,e)}
+                            id="{S.name}_nRepeating" checked={!!S.stashed?.nRepeating} /> 
+                            <label for="{S.name}_nRepeating">
+                                nRepeating (infinite uses)
+                            </label>
+                    </span>
 
                     {#if S.name.match(/[^\w \-]/)}
                         <p>Name contains illegal characters. Delete and add another. </p>

@@ -1,5 +1,5 @@
 x-droid-common: &droid-common
-  # restart: always
+  restart: always
   image: seleniarm/standalone-chromium:latest
   entrypoint: ["/bin/sh", "-c", "rm -f /home/seluser/chrome-profile/Singleton* && /opt/bin/entry_point.sh"]
   healthcheck:
@@ -34,6 +34,7 @@ x-bot-common: &bot-common
   environment: &bot-env
     TARGET_URL: "https://jamsend.duckdns.org:9999/"
     CHROME_PROFILE_DIR: "/home/seluser/chrome-profile"
+  mem_limit: 0.3g
 
 services:
 

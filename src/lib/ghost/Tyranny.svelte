@@ -773,6 +773,10 @@
         if (n == null || n != n*1) throw "!number"
         let N = Idzeug.stashed.taken_n ||= []
 
+        if (Idzeug.stashed.nRepeating) {
+            // infinite same Idzeugi allowed
+            return true
+        }
 
         if (N.includes(n)) return false
         // this'll be shorter in json...
