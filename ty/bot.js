@@ -63,6 +63,9 @@ async function startBot() {
 async function tryUnmute(driver) {
     const config = configs[botName];
     if (!config?.shouldUnmute) return;
+    try {
+        await driver.wait(until.elementLocated(By.className('unmute-button')), 7 * 1000);
+    } catch (e) {}
 
     try {
         const buttons = await driver.findElements(By.className('unmute-button'));
@@ -77,43 +80,55 @@ async function tryUnmute(driver) {
     }
 }
 
+// Returns pier stats, or null if no piers are present yet (nobody connected)
+async function countPiers(driver) {
+    try {
+        await driver.wait(until.elementLocated(By.className('Pier_itself')), 16 * 1000);
+    } catch (e) {
+        // Timed out - no piers on the page yet, not an error
+        console.log(`[${botName}] No piers found (not connected to anyone yet)`);
+        return null;
+    }
+
+    const piers = await driver.findElements(By.className('Pier_itself'));
+    let stats = {
+        total: piers.length,
+        connected: 0,
+        details: []
+    };
+
+    for (let pier of piers) {
+        // Check if this specific pier has a "discon" element inside it
+        const disconElements = await pier.findElements(By.className('ohno'));
+        const isDisconnected = disconElements.length > 0;
+
+        if (!isDisconnected) stats.connected++;
+
+        // Get the name/pub
+        const name = await pier.findElement(By.className('title')).getText();
+        stats.details.push({ name, status: isDisconnected ? 'offline' : 'online' });
+    }
+
+    return stats;
+}
+
 async function scrape(driver) {
     try {
         console.log(`[${botName}] [${new Date().toLocaleTimeString()}] Refreshing and Scrapping...`);
 
         await driver.get(url);
-        console.log("got page")
-        // Wait for the elements to load
-        await driver.wait(until.elementLocated(By.className('Pier_itself')), 16 * 1000);
 
         await tryUnmute(driver);
 
-        const piers = await driver.findElements(By.className('Pier_itself'));
-        let stats = {
-            total: piers.length,
-            connected: 0,
-            details: []
-        };
+        const stats = await countPiers(driver);
+        if (!stats) return;
 
-        for (let pier of piers) {
-            // Check if this specific pier has a "discon" element inside it
-            const disconElements = await pier.findElements(By.className('ohno'));
-            const isDisconnected = disconElements.length > 0;
-            
-            if (!isDisconnected) stats.connected++;
-            
-            // Get the name/pub
-            const name = await pier.findElement(By.className('title')).getText();
-            stats.details.push({ name, status: isDisconnected ? 'offline' : 'online' });
-        }
+        const { details, ...loggable } = stats;
+        const currentState = JSON.stringify(loggable);
 
-        delete stats.details;
-        const currentState = JSON.stringify(stats);
-        
         if (currentState !== lastState) {
-            saveLog(stats);
+            saveLog(loggable);
             lastState = currentState;
-            console.log("doing")
         }
         console.log(`[${botName}] Checked: ${stats.connected}/${stats.total} connected`);
 

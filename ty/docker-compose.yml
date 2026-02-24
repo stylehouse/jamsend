@@ -1,6 +1,7 @@
 x-droid-common: &droid-common
   # restart: always
   image: seleniarm/standalone-chromium:latest
+  entrypoint: ["/bin/sh", "-c", "rm -f /home/seluser/chrome-profile/Singleton* && /opt/bin/entry_point.sh"]
   healthcheck:
     test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
     interval: 5s
@@ -51,10 +52,6 @@ services:
     depends_on:
       supervisor-droid:
         condition: service_healthy
-    volumes:
-      - .:/app/ty
-      - ./logs:/app/logs
-      - ./.env.chrome-profiles/supervisor:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://supervisor-droid:4444/wd/hub"
@@ -76,10 +73,6 @@ services:
     depends_on:
       public-droid:
         condition: service_healthy
-    volumes:
-      - .:/app/ty
-      - ./logs:/app/logs
-      - ./.env.chrome-profiles/public:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://public-droid:4444/wd/hub"
@@ -101,10 +94,6 @@ services:
     depends_on:
       private-droid:
         condition: service_healthy
-    volumes:
-      - .:/app/ty
-      - ./logs:/app/logs
-      - ./.env.chrome-profiles/private:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://private-droid:4444/wd/hub"
@@ -125,10 +114,6 @@ services:
     depends_on:
       tyrant-droid:
         condition: service_healthy
-    volumes:
-      - .:/app/ty
-      - ./logs:/app/logs
-      - ./.env.chrome-profiles/tyrant:/home/seluser/chrome-profile
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://tyrant-droid:4444/wd/hub"
