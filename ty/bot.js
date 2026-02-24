@@ -39,7 +39,8 @@ async function initDriver() {
 
     let options = new chrome.Options();
     // it tells the browser to appear on the VNC screen
-    options.addArguments('--display=:99.0');
+    const displayNum = process.env.DISPLAY || ':99.0';
+    options.addArguments(`--display=${displayNum}`);
     options.addArguments('--disable-gpu');
     options.addArguments('--no-sandbox');
     options.addArguments('--disable-dev-shm-usage');
