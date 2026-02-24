@@ -7,7 +7,16 @@ x-healthcheckia: &healthcheckia
 x-droid-common: &droid-common
   restart: always
   image: seleniarm/standalone-chromium:latest
-  entrypoint: ["/bin/sh", "-c", "rm -f /home/seluser/chrome-profile/Singleton* && /opt/bin/entry_point.sh"]
+  entrypoint: 
+    - "/bin/sh"
+    - "-c"
+    - |
+      # $$ is used to escape the variable for the container shell
+      rm -f /tmp/.X$${DISPLAY#:*}-lock
+      rm -f /home/seluser/chrome-profile/Singleton*
+      # Start Xvfb manually on the specific DISPLAY
+      Xvfb $$DISPLAY -screen 0 $${SCREEN_WIDTH}x$${SCREEN_HEIGHT}x24 &
+      /opt/bin/entry_point.sh
   network_mode: host
   shm_size: 2gb
   mem_limit: 2g
@@ -42,7 +51,7 @@ x-bot-common: &bot-common
 
 services:
 
-  # --- SUPERVISOR (:99) ---
+  # --- SUPERVISOR (:103) ---
   supervisor-droid:
     <<: *droid-common
     container_name: jamsend-supervisor-droid
@@ -51,7 +60,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
     environment:
       <<: *droid-env
-      DISPLAY: ":99"
+      DISPLAY: ":103"
       SE_NODE_PORT: "4444"
       SE_VNC_PORT: "5900"
       SE_NO_VNC_PORT: "7900"
@@ -65,7 +74,7 @@ services:
     depends_on: { supervisor-droid: { condition: service_healthy } }
     environment:
       <<: *bot-env
-      DISPLAY: ":99.0"
+      DISPLAY: ":103.0"
       SELENIUM_REMOTE_URL: "http://localhost:4444/wd/hub"
       BOT_NAME: "supervisor"
 
