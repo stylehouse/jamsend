@@ -1,6 +1,7 @@
 # jamsend
 
 modern music piracy in the browser
+
 ![at sea](static/screenshot.webp)
 
 # the big picture
@@ -27,7 +28,7 @@ Preserve directory structure, tend to move whole albums, restart if interrupted.
 
 # funding
 
-[Send tips!](https://ko-fi.com/ostylehouse). Long story: wanting to technically manage lots of quality work on a new computer culture and direction for the humans, which is somewhat here in this project. Stuff.svelte.ts really. Seems to be time to hire, etc. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
+[Send tips!](https://ko-fi.com/ostylehouse) Ready to technically manage lots of quality work on a new computer culture and direction for the humans, which is somewhat here in this project. Stuff.svelte.ts really. Seems to be time to hire, etc. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
 
 # development
 
