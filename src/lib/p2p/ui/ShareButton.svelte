@@ -2,9 +2,9 @@
 	import QrCode from "svelte-qrcode"
     let {P} = $props()
     
-    let links = $state([])
+    let links:string[] = $state([])
     async function sharing() {
-        if (links.length) return links = []
+        if (links.length && !blot_waiting) return links = []
         links = await P.Trusting.M.Idzeugnate(1)
     }
     async function copy_link() {
@@ -25,22 +25,42 @@
         }
     })
 
-    async function blotter() {
-        links = await P.Trusting.M.Idzeugnate(126)
-        
-        // Wait for QR codes to render
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Create composite image
+    // temporarily
+    let manual_override_link:string// = 'http://va.sdf.org'
+    let hostname_label:string// = new URL(manual_override_link).hostname
+    let human_label:string// = 'Violin Guy'
+
+    let blot_waiting = $state(false)
+    async function blotter(e:Event) {
+        e.stopPropagation()
+        if (manual_override_link) {
+            // Use the manual override link, multiplied to fill the blotter
+            links = Array(126).fill(manual_override_link)
+        } else {
+            links = await P.Trusting.M.Idzeugnate(126)
+        }
+        blot_waiting = true
+    }
+    $effect(() => {
+        if (blot_waiting && links.length && qrsele) {
+            blot_waiting = false
+            waitThenComposite()
+        }
+    })
+
+    async function waitThenComposite() {
+        // Still need a tick for svelte-qrcode to render its <img> tags
+        // requestAnimationFrame is cleaner than a magic 500ms
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
         await createComposite()
+        console.log(`Made these: `, [...links])
     }
     async function createComposite() {
         if (!qrsele) return
         
         const OVERLAP_PERCENT = -0.18
-        const PADDING = 130  // padding around edge in pixels
+        const PADDING = 130
         
-        // A4 at 300dpi: 210mm x 297mm = 2480 x 3508 pixels
         let margin = 400
         const A4_WIDTH = 2480 - margin
         const A4_HEIGHT = 3508 - margin
@@ -79,8 +99,14 @@
         
         const gapX = qrSize * OVERLAP_PERCENT
         const gapY = qrSize * OVERLAP_PERCENT
+
+        // Label font sizing
+        const labelFontSize = Math.max(20, qrSize * 0.09)
+        ctx.font = `bold ${labelFontSize}px monospace`
+        ctx.fillStyle = '#333'
+        ctx.textAlign = 'center'
+        const labelHeight = hostname_label ? labelFontSize * 1.6 : 0
         
-        // Draw QR codes with gap (left-to-right, top-to-bottom)
         images.forEach((img, index) => {
             const col = index % cols
             const row = Math.floor(index / cols)
@@ -88,10 +114,25 @@
             const x = PADDING + (col * (qrSize - gapX))
             const y = PADDING + (row * (qrSize - gapY))
             
-            ctx.drawImage(img, x, y, qrSize, qrSize)
+            // Draw QR, leaving room for label below
+            const drawSize = qrSize - labelHeight
+            ctx.drawImage(img, x, y, drawSize, drawSize)
+
+            // Draw label under each QR code
+            if (hostname_label) {
+                ctx.fillText(hostname_label, x + drawSize / 2, y + drawSize + labelFontSize)
+            }
+            if (human_label) {
+                ctx.save()
+                ctx.translate(x + drawSize + labelFontSize, y + drawSize / 2)
+                ctx.rotate(-Math.PI / 2)
+                
+                ctx.textAlign = 'center'
+                ctx.fillText(human_label, 0, 0)
+                ctx.restore()
+            }
         })
         
-        // Convert to JPEG
         canvas.toBlob((blob) => {
             if (blob) {
                 if (compositeUrl) URL.revokeObjectURL(compositeUrl)
@@ -132,7 +173,7 @@
                 {/if}
                 
                 <div class="qr-grid" bind:this={qrsele}>
-                    {#each links as link (link)}
+                    {#each links as link}
                         <pqr> <QrCode value={link} {size} /> </pqr>
                     {/each}
                 </div>
@@ -141,7 +182,6 @@
     {/if}
     </span>
 </span>
-
 <style>
     .top{
         display: inline-block;
