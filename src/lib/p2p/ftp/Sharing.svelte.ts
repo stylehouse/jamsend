@@ -287,8 +287,6 @@ export class PeeringSharing extends PeeringFeature {
 //#region PierSharing
 // the PF (per Pier)
 export class PierSharing extends PierFeature {
-    // < keep?
-    tm:TransferManager
     modus_init() {
         return new ShareeModus({S:this})
     }

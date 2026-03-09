@@ -750,8 +750,9 @@ export class Stuff extends TimeOffice {
                     //    lots of permuting?
                     // or just accept the first one?
                     //  they are sorted for uniqueness, won't re-claim...
-                    if (q.strict) {
+                    if (q.resolve_strict) {
                         // be more likely to drop and recreate things
+                        //  if any stringified value has changed
                         let valuesOf = (n) => armap(v=>v+'',n.sc).join(',')
                         if (valuesOf(n) != valuesOf(oldn)) {
                             return

@@ -283,7 +283,7 @@ class SelectionItself extends Travel {
                         this.est_D_T(oD,oT)
                     }
                 },{
-                    strict: Se.c.resolve_strict,
+                    resolve_strict: Se.c.resolve_strict,
                     // receive pairs of continuous-looking particles
                     pairs_fn: async (a:TheD,b:TheD)=>{
                         if (a && !b) {

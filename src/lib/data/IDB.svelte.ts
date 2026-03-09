@@ -59,7 +59,7 @@ export class IndexedDBStorage<T = any> {
             }
             
             request.onblocked = () => {
-                console.warn(`IndexedDB open blocked for ${this.dbName}. Close other tabs or instances.`)
+                throw `IndexedDB open blocked for ${this.dbName}. Close other tabs or instances.`
                 // Could implement retry logic or user notification here
             }
             

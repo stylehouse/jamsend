@@ -37,6 +37,7 @@
 		"cytoscape-cola": "^2.5.1",
 		"cytoscape-dagre": "^2.5.0",
 		"cytoscape-fcose": "^2.2.0",
+		"dexie": "^4.3.0",
 		"express": "^5.1.0",
 		"music-metadata": "^11.10.5",
 		"peerjs": "^1.5.5"

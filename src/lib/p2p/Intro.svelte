@@ -23,7 +23,7 @@
      and everything else is hung off it
     F:Trust
       it can exist outside of a Peering!
-    < supplant P.stashed with M.stashed
+    supplant P.stashed with M.stashed
        use Things to make tables of:
         Peerings - your idents
         Piers - your contacts

@@ -275,7 +275,7 @@ abstract class TimeGallopia extends ModusItself {
             throw erring("c_mutex: "+name,er)
         }
         finally {
-            delete w.c[`${t}_promise`] 
+            delete w.c[`${t}_promise`]
             await release()
         }
     }
