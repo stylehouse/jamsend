@@ -3,7 +3,7 @@
 
 
     // top level!
-    let u = new House({})
+    let u = new House({name:'Mundo'})
     $effect(() => {
         if (u.todo) {
             u.answer_calls()
