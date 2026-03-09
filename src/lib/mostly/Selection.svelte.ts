@@ -125,7 +125,7 @@ export class Travel extends TheC {
 
         // find $n/*
         //  run the query here
-        let M = (T.oa({more:1}) || T.sc.n.o(T.c.match_sc)) as TheN
+        let M = (T.sc.more || T.sc.n.o(T.c.match_sc)) as TheN
         // create T/*
         let N = []
         for (const n of M) {

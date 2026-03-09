@@ -1,6 +1,6 @@
-import { TheC, type TheUniversal } from "$lib/data/Stuff.svelte";
-import type { Travel } from "$lib/mostly/Selection.svelte";
-import { throttle } from "$lib/Y";
+import { TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
+import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
+    import { erring, ex, grap, grep, grop, indent, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 //#region Dexie
@@ -19,26 +19,6 @@ db.version(1).stores({
     House:  'name, json',
     Street: 'name, json',
 })
-
-//#endregion
-//#region concretion
-
-// when any H/A/w/r needs eg a Work object constructed
-export function concretion(T:Travel) {
-    let {D,path_bit_ark} = T.sc
-    // ~~ a column name if we were looking at H/A/w/r
-    // < the supply this schema-part or path-bit, path_bit_ark
-    let _class = classes[path_bit_ark]
-    // the D%* is a possibly slightly different copy of the C%*
-    //  so we look for eg C%w:SomeWay and construct a Work().name=SomeWay
-    let name = D.sc[path_bit_ark]
-
-    let inst = new _class({name})
-
-    if (D.oa({inst:1,concretion:path_bit_ark})) throw `concretion repeat`
-    D.i({inst,concretion:path_bit_ark})
-    return inst
-}
 
 //#endregion
 //#region Housing
@@ -157,8 +137,7 @@ abstract class StorableHousing extends Housing {
                     if (incoming === this._last_written) {
                         // Our own write bouncing back
                         // Still need to mark started on first round-trip
-                        if (!this.started) {killall codium
-                            
+                        if (!this.started) {
                             this.stashed = JSON.parse(incoming)
                             this.started = true
                         }
@@ -213,6 +192,74 @@ export class House extends StorableHousing {
             }
         }
     }
+    // looks into what we have that the calls can zap amongst
+    async channel_beliefs() {
+        // Se lives for the lifetime of this component
+        const Se = new Selection()
+
+        // The scheme: which sc to trace at each depth, and which ark name
+        // depth 0 = House itself (top n)
+        // depth 1 = A particles
+        // depth 2 = w particles
+        // depth 3 = r particles
+        const scheme = [
+            { ark: 'H', sc: { A: 1 } },   // from House, find {A:1}
+            { ark: 'A', sc: { w: 1 } },   // from Agency, find {w:1}
+            { ark: 'w', sc: { r: 1 } },   // from Work, find {r:1}
+        ]
+        // trace_sc is what Selection uses to mirror D** — we use a broad marker
+        await Se.process({
+            n: this,
+            // match_sc is overridden per-depth via T.sc.more in each_fn
+            match_sc: {},
+            trace_sc: { housed: 1 },
+
+            each_fn: async (D, n, T) => {
+                const depth = T.c.path.length - 1
+                const level = scheme[depth]
+                if (!level) throw `off the grid`
+                T.sc.level = level
+                // set path_bit_ark so concretion() knows which class to make
+                T.sc.path_bit_ark = level.ark
+
+                // inject the next level's TheN so dive_middle uses it
+                // rather than match_sc on n
+                T.sc.more = n.o(level.sc)
+            },
+
+            trace_fn: async (uD:TheD,n:TheC,T:Travel) => {
+                // D mirrors n — copy the identifying sc key across
+                // whittles to texty values
+                let D = uD.i(tex({housed:3},n.sc))
+                return D
+            },
+
+            traced_fn: async (D, bD, n, T) => {
+                const level = T.sc.level
+                // does this D already have a live instance?
+                if (D.oa({inst:1,concretion:path_bit_ark})) {
+                    return
+                }
+
+                // no instance yet — post a concretion elvis to H
+                // T.sc.D and T.sc.path_bit_ark are set, concretion() can use T
+                T.sc.D = D
+                this.post_do(async () => {
+                    concretion(T)
+                }, {
+                    see: `concretion ${level.ark}:${D.sc[level.ark]}`,
+                    // backlink: which particle triggered this
+                    for_n: n,
+                })
+            },
+
+            done_fn: async (D, n, T) => {
+                // after processing n/*, could do cleanup or logging here
+            },
+        })
+    }
+
+
 
     // Post an %elvis:do — same idiom as Modus_i_elvis('do',{fn:...})
     // Host $effect re-triggers because todo is $state
@@ -248,7 +295,38 @@ export class House extends StorableHousing {
             concretion_for: from_label,
         })
     }
+
+
+
+    async eatfunc(hash) {
+        Object.assign(this,hash)
+        await this.on_code_change?.()
+        // vaguely want to run everything if we're down the track already
+        if (this.oa()) await this.main()
+    }
+
+
+    
+
 }
+// when any H/A/w/r needs eg a Work object constructed
+export function concretion(T:Travel) {
+    let {D,path_bit_ark} = T.sc
+    // ~~ a column name if we were looking at H/A/w/r
+    // < the supply this schema-part or path-bit, path_bit_ark
+    let _class = classes[path_bit_ark]
+    // the D%* is a possibly slightly different copy of the C%*
+    //  so we look for eg C%w:SomeWay and construct a Work().name=SomeWay
+    let name = D.sc[path_bit_ark]
+
+    let inst = new _class({name})
+
+    if (D.oa({inst:1,concretion:path_bit_ark})) throw `concretion repeat`
+    D.i({inst,concretion:path_bit_ark})
+    return inst
+}
+
+
 
 //#endregion
 //#region Street
@@ -268,7 +346,7 @@ export class ManyStorableHousings extends StorableHousing {
         // separate liveQuery over the full House table
         $effect(() => {
             const sub = liveQuery(
-                () => db.House.toArray()
+                () => this._table.toArray()
             ).subscribe({
                 next: (rows) => {
                     this.house_names = rows.map(r => r.name)
@@ -280,17 +358,17 @@ export class ManyStorableHousings extends StorableHousing {
     }
 
     async add_house(name: string) {
-        await db.House.put({ name, json: '{}' })
+        await this._table.put({ name, json: '{}' })
         // liveQuery picks it up and spawns the House
     }
 
     async remove_house(name: string) {
-        await db.House.delete(name)
+        await this._table.delete(name)
     }
 }
 
 export class Street extends ManyStorableHousings {
-    _table = db.Street
+    _table = db.House
 }
 
 //#endregion
