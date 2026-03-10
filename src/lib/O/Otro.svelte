@@ -1,5 +1,6 @@
 <script lang="ts">
     import Agency from "$lib/ghost/Agency.svelte";
+    import Housedemo from "./Housedemo.svelte";
     import { House } from "./Housing.svelte";
 
 
@@ -15,3 +16,6 @@
 <h3>Here we Are</h3>
 
 <Agency {M} />
+
+
+<Housedemo {M} />

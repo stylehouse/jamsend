@@ -1,6 +1,6 @@
 import { TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
-    import { erring, ex, grap, grep, grop, indent, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+import { tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 //#region Dexie
@@ -46,7 +46,6 @@ abstract class Housing extends TheC {
 
     declare start: Function
 
-    // Promise-chaining mutex, same pattern as c_mutex in Modus
     async mutex(label: string, fn: () => Promise<void>) {
         const key = `_mutex_${label}`
         if (this.c[key]) {
@@ -67,13 +66,6 @@ abstract class Housing extends TheC {
 //#endregion
 //#region StorableHousing
 
-// Shared stash + liveQuery logic for House and Street.
-//
-// Loop guard strategy:
-//   _last_written tracks the json string we last put to Dexie.
-//   When liveQuery fires with that same string, we know it's our own
-//   write bouncing back — skip the save to avoid the echo loop.
-//   30 updates/sec are throttled to one write per 200ms.
 abstract class StorableHousing extends Housing {
     stashed: Record<string, any> = $state(undefined!)
 
@@ -86,15 +78,12 @@ abstract class StorableHousing extends Housing {
     _saving = false
 
     start() {
-        // -- Throttled save, loop-guarded --
         const save = throttle(async () => {
             if (!this.stashed) return
             if (!Object.keys(this.stashed).length) return
             if (this._saving) return
-
             const json = JSON.stringify(this.stashed)
             if (json === this._last_written) return
-
             this._saving = true
             this._last_written = json
             try {
@@ -173,127 +162,180 @@ abstract class StorableHousing extends Housing {
 //#endregion
 //#region House
 
+// The scheme drives Selection.process() depth by depth:
+//   depth 0: at House     -> find {A:1} children, ark='A'
+//   depth 1: at A particle -> find {w:1} children, ark='w'
+//   depth 2: at w particle -> find {r:1} children, ark='r'
+const scheme = [
+    { ark: 'A', sc: { A: 1 } },
+    { ark: 'w', sc: { w: 1 } },
+    { ark: 'r', sc: { r: 1 } },
+]
+
 export class House extends StorableHousing {
     _table = db.House
 
-    // answer_calls: drain %elvis:do particles and run their fn.
-    // Host component does:
-    //   $effect(() => { if (u.todo.length) u.answer_calls() })
+    // Se is stable across answer_calls() cycles — holds D** identity continuity
+    _Se = new Selection()
+
+    main() {
+        console.log(`something wanted main(), should be H%todo += e`)
+    }
+
+    // -------------------------------------------------------------------------
+    // answer_calls: pop %elvis:do particles, run their fn.
+    // Each fn may be a concretion, a dispatch, or both.
+    // Host does: $effect(() => { if (H.todo.length) H.answer_calls() })
+    // -------------------------------------------------------------------------
+    answer_calls_throttle?:Function
     answer_calls() {
+        this.answer_calls_throttle ||= throttle(() => {
+            this.really_answer_calls()
+        },50)
+        this.answer_calls_throttle()
+    }
+    really_answer_calls() {
         for (let e of this.o({ elvis: 'do' })) {
             if (e.sc.fn) {
                 Promise.resolve(e.sc.fn()).then(() => {
                     this.drop(e)
-                    // sync todo so host $effect sees the change
                     this.todo = this.o({ elvis: 1 })
                 })
             } else {
                 this.drop(e)
+                this.todo = this.o({ elvis: 1 })
             }
         }
     }
-    // looks into what we have that the calls can zap amongst
-    async channel_beliefs() {
-        // Se lives for the lifetime of this component
-        const Se = new Selection()
 
-        // The scheme: which sc to trace at each depth, and which ark name
-        // depth 0 = House itself (top n)
-        // depth 1 = A particles
-        // depth 2 = w particles
-        // depth 3 = r particles
-        const scheme = [
-            { ark: 'H', sc: { A: 1 } },   // from House, find {A:1}
-            { ark: 'A', sc: { w: 1 } },   // from Agency, find {w:1}
-            { ark: 'w', sc: { r: 1 } },   // from Work, find {r:1}
-        ]
-        // trace_sc is what Selection uses to mirror D** — we use a broad marker
-        await Se.process({
-            n: this,
-            // match_sc is overridden per-depth via T.sc.more in each_fn
-            match_sc: {},
-            trace_sc: { housed: 1 },
-
-            each_fn: async (D, n, T) => {
-                const depth = T.c.path.length - 1
-                const level = scheme[depth]
-                if (!level) throw `off the grid`
-                T.sc.level = level
-                // set path_bit_ark so concretion() knows which class to make
-                T.sc.path_bit_ark = level.ark
-
-                // inject the next level's TheN so dive_middle uses it
-                // rather than match_sc on n
-                T.sc.more = n.o(level.sc)
-            },
-
-            trace_fn: async (uD:TheD,n:TheC,T:Travel) => {
-                // D mirrors n — copy the identifying sc key across
-                // whittles to texty values
-                let D = uD.i(tex({housed:3},n.sc))
-                return D
-            },
-
-            traced_fn: async (D, bD, n, T) => {
-                const level = T.sc.level
-                // does this D already have a live instance?
-                if (D.oa({inst:1,concretion:path_bit_ark})) {
-                    return
-                }
-
-                // no instance yet — post a concretion elvis to H
-                // T.sc.D and T.sc.path_bit_ark are set, concretion() can use T
-                T.sc.D = D
-                this.post_do(async () => {
-                    concretion(T)
-                }, {
-                    see: `concretion ${level.ark}:${D.sc[level.ark]}`,
-                    // backlink: which particle triggered this
-                    for_n: n,
-                })
-            },
-
-            done_fn: async (D, n, T) => {
-                // after processing n/*, could do cleanup or logging here
-            },
-        })
-    }
-
-
-
-    // Post an %elvis:do — same idiom as Modus_i_elvis('do',{fn:...})
-    // Host $effect re-triggers because todo is $state
+    // -------------------------------------------------------------------------
+    // post_do: same idiom as Modus_i_elvis('do',{fn:...})
+    // -------------------------------------------------------------------------
     post_do(fn: () => Promise<void>, extra: Partial<TheUniversal> = {}) {
         this.i({ elvis: 'do', fn, ...extra })
         this.todo = this.o({ elvis: 1 })
     }
 
-    // Concretion helper: post a do-elvis that spawns a class, waits for it to
-    // start, then re-posts the original fn.
-    // The backlink (from) is for observability — trace why a concretion happened.
-    post_concretion(
-        T: Travel,
-        original_fn: () => Promise<void>,
-        from_label?: string
-    ) {
-        this.post_do(async () => {
-            const inst = concretion(T)
-            // wait for inst.started — it may be doing async work in start()
-            if (!('started' in inst) || (inst as any).started) {
-                // already ready, retry immediately
-                this.post_do(original_fn, { from: from_label })
-                return
-            }
-            // poll via $effect, resolve when started flips
-            await new Promise<void>(resolve => {
-                $effect(() => {
-                    if ((inst as any).started) resolve()
-                })
+    // -------------------------------------------------------------------------
+    // channel_beliefs: was agency_think().
+    //
+    // Runs Selection.process() over H's A/w/r particles.
+    // In traced_fn: if a D has no instance yet, post_concretion().
+    // After the walk: if elvis has an Aw target and all instances on that
+    //   path are started, dispatch to the target instance's method.
+    //
+    // If any concretion was needed, we bail — the concretion's retry
+    // will call channel_beliefs again with the original elvis.
+    // -------------------------------------------------------------------------
+    async channel_beliefs(e?: TheC) {
+        await this.mutex('channel_beliefs', async () => {
+            let needed_concretion = false
+
+            await this._Se.process({
+                n: this,
+                process_sc: {Se:'workrepo'},
+                match_sc: {},
+                trace_sc: { housed: 1 },
+
+                each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                    const depth = T.c.path.length - 1
+                    const level = scheme[depth]
+                    if (!level) return
+                    T.sc.level = level
+                    T.sc.path_bit_ark = level.ark
+                    // inject children for this depth
+                    T.sc.more = n.o(level.sc)
+                },
+
+                trace_fn: async (uD: TheD, n: TheC, T: Travel) => {
+                    // mirror n's texty sc keys onto D, plus housed marker
+                    return uD.i(tex({ housed: 3 }, n.sc))
+                },
+
+                traced_fn: async (D: TheD, bD: TheD, n: TheC, T: Travel) => {
+                    const { level, path_bit_ark } = T.sc
+                    if (!level) return
+
+                    // already concrete?
+                    if (D.oa({ inst: 1, concretion: path_bit_ark })) {
+                        const inst = D.o({ inst: 1, concretion: path_bit_ark })[0]?.sc.inst
+                        // if instance exists but not started yet, bail this cycle
+                        if (inst && 'wake' in inst && !inst.wake()) {
+                            needed_concretion = true
+                        }
+                        return
+                    }
+
+                    // needs a new instance — post concretion, retry original elvis
+                    needed_concretion = true
+                    T.sc.D = D
+                    const original_e = e
+                    this.post_do(async () => {
+                        const inst = concretion(T)
+                        // wait for inst.started before retrying
+                        if ('started' in inst && !(inst as any).started) {
+                            await new Promise<void>(resolve => {
+                                $effect(() => { if ((inst as any).started) resolve() })
+                            })
+                        }
+                        // retry: re-post the original elvis
+                        if (original_e) {
+                            this.post_do(async () => {
+                                await this.channel_beliefs(original_e)
+                            }, { from: `concretion retry ${level.ark}:${D.sc[level.ark]}` })
+                        }
+                    }, {
+                        see: `concretion ${level.ark}:${D.sc[level.ark]}`,
+                        for_n: n,
+                    })
+                },
+
+                done_fn: async (D: TheD, n: TheC, T: Travel) => {},
             })
-            this.post_do(original_fn, { from: from_label })
-        }, {
-            concretion_for: from_label,
+
+            // If any concretions were needed, stop here —
+            // retries will come back through channel_beliefs
+            if (needed_concretion) return
+
+            // All instances are started — dispatch the elvis to its Aw target
+            if (e?.sc.Aw) {
+                await this._dispatch(e)
+            }
         })
+    }
+
+    // -------------------------------------------------------------------------
+    // _dispatch: find the instance at e.sc.Aw and call e.sc.elvis on it
+    // Aw = 'AgencyName' or 'AgencyName/workName'
+    // -------------------------------------------------------------------------
+    private async _dispatch(e: TheC) {
+        const [Aname, wname] = (e.sc.Aw as string).split('/')
+
+        // find the A particle
+        const Ap = this.o({ A: Aname })[0]
+        if (!Ap) return console.warn(`dispatch: no A:${Aname}`)
+        const A_inst: Agency | undefined = Ap.o({ inst: 1, concretion: 'A' })[0]?.sc.inst
+
+        if (!wname) {
+            // targeting Agency directly
+            const method = e.sc.elvis
+            if (A_inst && typeof (A_inst as any)[method] === 'function') {
+                await (A_inst as any)[method](e)
+            }
+            return
+        }
+
+        // find the w particle under A
+        const wp = Ap.o({ w: wname })[0]
+        if (!wp) return console.warn(`dispatch: no w:${wname} under A:${Aname}`)
+        const w_inst: Work | undefined = wp.o({ inst: 1, concretion: 'w' })[0]?.sc.inst
+
+        const method = e.sc.elvis
+        if (w_inst && typeof (w_inst as any)[method] === 'function') {
+            await (w_inst as any)[method](e)
+        } else {
+            console.warn(`dispatch: no method "${method}" on w:${wname}`)
+        }
     }
 
 
