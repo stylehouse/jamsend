@@ -225,8 +225,8 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     main() {
         this.post_do(async () => {
-            await this.channel_beliefs(this.i({ elvis: 'ambience', Aw: '' }))
-        }, { see: 'main->ambience' })
+            await this.channel_beliefs(this.i({ elvis: 'think', Aw: '' }))
+        }, { see: 'main->think' })
     }
 
     // -------------------------------------------------------------------------
@@ -389,7 +389,6 @@ export class House extends StorableHousing {
                     const verb = eventedwTN.length ? 'elvis' : 'think'
                     // V.w>1 && console.log(`${verb} A:${A.sc.A} / w:${wT.sc.n.sc.w}`)
                     await this._Aw_think(AT, wT, e)
-                    console.log(`_Aw_think A:${A.sc.A} / w:${wT.sc.n.sc.w}, e%${keyser(e.sc)}`)
                     AwN.push({ AT, wT })
                 }
                 // javascript facts: this for ATN is not done enumerating
@@ -438,14 +437,7 @@ export class House extends StorableHousing {
         // what method does w want to run?
         // priority: w has a direct %elvis -> use that
         // fallback: use the elvis that came in, or 'think'
-        let method = w.o({ elvis: 1 })[0]?.sc.elvis
-            || e?.sc.elvis
-            || 'think'
-
-        if (method === 'ambience') {
-            // ambient pass — let w do its background work if it has a think()
-            method = 'think'
-        }
+        let method = e?.sc.elvis
 
         // Aw= routing: only dispatch here if this A/w is the target
         if (e?.sc.Aw) {
@@ -455,12 +447,10 @@ export class House extends StorableHousing {
         }
         if (typeof (w_inst as any)[method] === 'function') {
             try {
-                console.log(`Aw think elvises: ${method}`)
+                console.log(`_Aw_think A:${A.sc.A} / w:${wT.sc.n.sc.w}, e%${keyser(e.sc)}`)
+
                 await (w_inst as any)[method](e, AT, wT)
-                // clean up served elvis
-                for (let we of w.o({ elvis: 1 })) {
-                    if (we.sc.elvis === method) we.drop(we)
-                }
+                
             } catch (err) {
                 w.i({ error: String(err) })
                 console.error(`_Aw_think ${A.sc.A}/${w.sc.w}:`, err)
@@ -595,8 +585,8 @@ export class Work extends Housing {
     // Caller does: if (!w.wake()) return
     wake(): boolean { return this.started }
     start() { this.started = true }
-    think() {
-        console.log(`thinks: %w:${this.sc.w}`)
+    think(A,w,e) {
+        console.log(`thinks: %w:${w.sc.w}`)
     }
 }
 

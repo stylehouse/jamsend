@@ -9,8 +9,15 @@
             console.log(`WithItAll ${this.name} starting`)
             this.started = true
         }
-        async withitall(e) {
-            console.log(`withitall() called`, e.sc)
+
+        // called when an elvis targets this w exactly
+        async withitall(e, AT, wT) {
+            console.log(`withitall() called from ${e?.sc.from_name}`, e?.sc)
+        }
+
+        // ambient pass — called every main() cycle
+        async think(e, AT, wT) {
+            console.log(`WithItAll think() — ambient`)
         }
     }
     register_class('w', WithItAll)
@@ -31,7 +38,8 @@
     H.i({ A: 'something' })
     H.o({ A: 'something' })[0].i({ w: 'withitall' })
 
-    // the first thing to do, now that H has been injected with Agency ghost
+    // the first thing to do
+    //  now that H has been injected with Agency ghost
     onMount(() => {
         H.post_do(async () => {
             await H.channel_beliefs(H.i({
