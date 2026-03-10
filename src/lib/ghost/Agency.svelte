@@ -293,6 +293,7 @@
         }
         await this.agency_officing(AwN,AN)
     },
+    // < GONE is template_w_sc. keeping A simple.
     procure_ways(A):TheN {
         let wN = A.oa({w:1})
         if (!wN) {

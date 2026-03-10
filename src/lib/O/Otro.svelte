@@ -11,12 +11,12 @@
         }
 
         // called when an elvis targets this w exactly
-        async withitall(e, AT, wT) {
+        async withitall(A,w,e,AT,wT) {
             console.log(`withitall() called from ${e?.sc.from_name}`, e?.sc)
         }
 
         // ambient pass — called every main() cycle
-        async think(e, AT, wT) {
+        async think(A,w,e,AT,wT) {
             console.log(`WithItAll think() — ambient`)
         }
     }
@@ -42,6 +42,7 @@
     //  now that H has been injected with Agency ghost
     onMount(() => {
         H.post_do(async () => {
+            console.log(`lets...`)
             await H.channel_beliefs(H.i({
                 elvis: 'withitall',
                 Aw: 'something/withitall',
