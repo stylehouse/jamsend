@@ -67,6 +67,7 @@
         return `A:${A.sc.A||'???'}/w:${w.sc.w||'???'}`
     },
     i_elvis(w,t,c) {
+        if (this._i_elvis) return this._i_elvis(w,t,c)
         // < interesting, needs trimming
         // let stack = new Error().stack
         setTimeout(() => {
@@ -198,6 +199,7 @@
 
     // application code services all awaiting w%elvis
     o_elvis(w,t) {
+        if (this._o_elvis) return this._o_elvis(w,t)
         let them = w.o({elvis:t})
         for (let e of them) {
             e.c.served = true

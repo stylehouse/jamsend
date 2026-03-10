@@ -36,11 +36,6 @@ abstract class Housing extends TheC {
     // upward link: Work -> Agency -> House
     up?: Housing
 
-    // outward links, Houses we can elvis....
-    every_House() {
-        return [this]
-    }
-
     constructor(opt: TheUniversal) {
         super({ sc: {} })
         Object.assign(this, opt)
@@ -67,41 +62,117 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // elvisto: post an elvis to H.todo, noting where it came from.
-    // Any Housing can call this — walks .up to find House.
+    // every_House: return all Houses reachable from this Housing.
+    // Default: walk .up to the root House, return [that].
+    // Override in eg PeeringSharing to include all peer/feature Houses —
+    // this is what lets A:WeKnow be found across feature boundaries without
+    // the caller knowing which House owns it.
+    // -------------------------------------------------------------------------
+    every_House(): House[] {
+        let h: Housing = this
+        while (h.up) h = h.up
+        return [h as House]
+    }
+
+    // -------------------------------------------------------------------------
+    // elvisto: post an elvis to whichever House owns the target A.
+    // Searches every_House() for the first H that has A matching the first
+    // path segment of target — mirrors the old every_Modus() loop:
     //
-    // w.elvisto('something/wash', 'wash', { extra: 1 })
-    //   -> H gets %elvis:do,fn=channel_beliefs(e)
-    //      e has Aw='something/wash', from_name, from_ark
+    //   for (let M of this.S.every_Modus()) {
+    //       A = M.o({A:Aname})[0]; if (A) break
+    //   }
+    //
+    // This means w.elvisto('WeKnow','pullFactoid') works from any feature
+    // without the caller knowing which House holds A:WeKnow.
+    //
+    // Throws if no House owns the target A.
     //
     // target: Aw string 'AgencyName/workName' or 'AgencyName'
     // method: the method name to call on the target instance
     // extra:  any extra sc to attach to the elvis particle
     // -------------------------------------------------------------------------
     elvisto(target: string, method: string, extra: Partial<TheUniversal> = {}) {
-        let h: Housing = this
-        while (h.up) h = h.up
-        if (!(h instanceof House)) throw `elvisto: no House in up-chain of ${this.name}`
+        const Aname = target.split('/')[0]
+        const houses = this.every_House()
+
+        // find the House that owns A:Aname
+        let h: House | undefined
+        for (const candidate of houses) {
+            if (candidate.o({ A: Aname })[0]) { h = candidate; break }
+        }
+        if (!h) throw `elvisto: no House has A:${Aname} (target=${target})`
 
         const from_name = this.name
-        const from_ark = this.constructor.name  // 'Work', 'Agency', etc
+        // look up ark from registry so subclasses registered as 'w' get 'w', not 'WithItAll'
+        const from_ark = Object.entries(classes).find(([, v]) => v === this.constructor)?.[0]
+            ?? this.constructor.name
 
         h.post_do(async () => {
-            const e = h.i({
+            const e = h!.i({
                 elvis: method,
                 Aw: target,
                 from_name,
                 from_ark,
                 ...extra,
             })
-            // expand Aw into e/%Aw_path segments before Se.process() runs
-            h._expand_Aw(e)
-            await h.channel_beliefs(e)
+            h!._expand_Aw(e)
+            await h!.channel_beliefs(e)
         }, {
             see: `elvisto ${from_name}->${target}:${method}`,
         })
     }
-}
+
+    // -------------------------------------------------------------------------
+    // i_elvis / _i_elvis:
+    // i_elvis is the public call site — Modus.i_elvis() existing on old subclasses
+    // will shadow this, so they call (this as House)._i_elvis(...) to reach here.
+    //
+    // _i_elvis is the real implementation: derives target, calls elvisto().
+    //
+    // (this as House).i_elvis(w, 'noop', {Aw:'something/other', way_thenced:1})
+    // -------------------------------------------------------------------------
+    i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
+        return this._i_elvis(w, type, extra)
+    }
+
+    _i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
+        // Aw in extra overrides; otherwise target is this w's own A/w address
+        const target = (extra.Aw as string) ?? `${w.sc.A ?? ''}/${w.sc.w ?? ''}`.replace(/^\//, '')
+        const { Aw: _drop, ...rest } = extra
+        this.elvisto(target, type, { ...rest, from_w: w.sc.w })
+    }
+
+    // -------------------------------------------------------------------------
+    // o_elvis / _o_elvis:
+    // o_elvis is the public call site. Returns TheC[] (TheN) — designed to be
+    // iterated. Currently 0 or 1 items; future: multiple %elvis of same type
+    // queued in one 50ms tick may be multiplexed and returned together.
+    //
+    // %elvis does NOT live on w — w is for serious long-lived state.
+    // Elvis particles live on D (the mirror particle in Se), or eventually H.
+    // For now w.c.e is the single transient in-flight elvis set by _Aw_think.
+    //
+    // Calling o_elvis stamps w.oai({elvising:type}) unconditionally —
+    // advertises to _Aw_think that this w handles the type, even on cycles
+    // where w.c.e is not set (future targeted passes without ambience).
+    //
+    // Application code must not assume all e come out in one call — the method
+    // may be called again for a subsequent e of the same type.
+    //
+    // (this as House).o_elvis(w, 'i Idvoyage')
+    // -------------------------------------------------------------------------
+    o_elvis(w: TheC, type: string): TheC[] {
+        return this._o_elvis(w, type)
+    }
+
+    _o_elvis(w: TheC, type: string): TheC[] {
+        // advertise unconditionally — _Aw_think reads %elvising to route future passes
+        w.oai({ elvising: type })
+        const e = w.c.e as TheC | undefined
+        if (!e || e.sc.elvis !== type) return []
+        return [e]
+    }
 
 //#endregion
 //#region StorableHousing
@@ -388,7 +459,6 @@ export class House extends StorableHousing {
     // Phase 2 — Se.c.T.forward() walks the completed T** tree:
     //   concentrate on A targeted by e (or all if ambience)
     //   procure_ways gives a default w if A has none
-    //   _elvised_Aw routes Aw-targeted elvis down to the right w
     //   _Aw_think dispatches to the instance method
     //   _agency_officing does post-pass cleanup
     //
@@ -490,36 +560,61 @@ export class House extends StorableHousing {
         })
     }
 
-
 //#endregion
 //#region think
+
     // -------------------------------------------------------------------------
     // _Aw_think: dispatch to the Work instance's method.
-    // Exact target (targeting==2) -> call e.sc.elvis on instance.
-    // On-path or ambience -> call 'think' if the instance has it.
+    //
+    // Exact target (targeting==2) -> call e.sc.elvis on instance,
+    //   but only if w advertises it handles that type via %elvising.
+    //   Otherwise check if w.sc.w matches — every w is self-dispatching.
+    // Ambient (targeting!=2) -> method = w.sc.w (self-named dispatch).
+    //
+    // w.c.e is set here for the duration of the call so o_elvis() can read it.
     // -------------------------------------------------------------------------
     private async _Aw_think(AT: Travel, wT: Travel, e?: TheC) {
         const A = AT.sc.n as TheC
         const w = wT.sc.n as TheC
         const w_inst = wT.sc.inst as Work
 
-        // exact target -> call the named method; on-path/ambience -> think
         const targeting = e ? this._e_targets_T(e, wT) : 0
-        const method = targeting === 2
-            ? (e!.sc.elvis as string)
-            : 'think'
+
+        let method: string
+        if (targeting === 2) {
+            const elvis_type = e!.sc.elvis as string
+            // w advertises it handles this type if it has %elvising:type
+            // (set by o_elvis() inside the method on a prior cycle)
+            const advertised = w.oa({ elvising: elvis_type })
+            // also dispatch if the method name matches w.sc.w directly
+            const self_named = w.sc.w === elvis_type
+            if (advertised || self_named) {
+                method = elvis_type
+            } else {
+                // targeted but w doesn't handle it — fall through to self-named
+                method = w.sc.w as string
+            }
+        } else {
+            // ambient pass — every w dispatches to its own name
+            method = w.sc.w as string
+        }
 
         if (typeof (w_inst as any)[method] === 'function') {
+            // set transient w.c.e so o_elvis() can read it inside the method
+            w.c.e = e
             try {
-                console.log(`_Aw_think A:${A.sc.A} / w:${w.sc.w}, e%${e ? keyser(e.sc) : 'none'}`)
+                console.log(`_Aw_think A:${A.sc.A} / w:${w.sc.w}, method:${method}, e%${e ? keyser(e.sc) : 'none'}`)
                 await (w_inst as any)[method](A, w, e, AT, wT)
             } catch (err) {
                 w.i({ error: String(err) })
                 console.error(`_Aw_think ${A.sc.A}/${w.sc.w}:`, err)
+            } finally {
+                // clear transient e — no longer being served
+                delete w.c.e
             }
         } else {
-            // think() is optional — only warn for explicitly targeted methods
-            if (targeting === 2) {
+            // self-named method optional — only warn for explicitly targeted ones
+            if (targeting === 2 && e!.sc.elvis !== 'think') {
                 console.warn(`_Aw_think ${A.sc.A}/${w.sc.w} !method: ${method}`)
             }
         }
@@ -592,45 +687,33 @@ function inst_started(inst: Housing): Promise<void> {
 //#endregion
 //#region Street
 // < proto ThingsIsms. house_names reacts into some process.
+// Street is a named container — lists all Houses via liveQuery on db.House.
+// Street has no stashed row of its own.
 
-// Street: reactive list of all Houses.
-// Prototype for ThingsIsms — no concretions yet, just listing + spawning.
-export class ManyStorableHousings extends StorableHousing {
-
-    // reactive list of House names, driven by liveQuery
+export class Street extends Housing {
+    // reactive list of House names, driven by liveQuery over db.House
     house_names: string[] = $state([])
 
     start() {
-        // wire up own stashed + liveQuery
-        super.start()
-
-        // separate liveQuery over the full House table
         $effect(() => {
             const sub = liveQuery(
-                () => this._table.toArray()
+                () => db.House.toArray()
             ).subscribe({
-                next: (rows) => {
-                    this.house_names = rows.map(r => r.name)
-                },
+                next: (rows) => { this.house_names = rows.map(r => r.name) },
                 error: (err) => console.error('Street liveQuery', err)
             })
             return () => sub.unsubscribe()
         })
+        this.started = true
     }
 
     async add_house(name: string) {
-        await this._table.put({ name, json: '{}' })
-        // liveQuery picks it up and spawns the House
+        await db.House.put({ name, json: '{}' })
+        // liveQuery picks it up
     }
-
     async remove_house(name: string) {
-        await this._table.delete(name)
+        await db.House.delete(name)
     }
-}
-
-// Street stores its own stashed in db.Street, but lists from db.House
-export class Street extends ManyStorableHousings {
-    _table = db.House
 }
 
 //#endregion
@@ -644,10 +727,7 @@ export class Work extends Housing {
     // Caller does: if (!w.wake()) return
     wake(): boolean { return this.started }
     start() { this.started = true }
-    // ambient pass — called every main() cycle if no specific target
-    think(A: TheC, w: TheC, e?: TheC) {
-        console.log(`thinks: %w:${w.sc.w}`)
-    }
+    // No think() here — every w dispatches to its own name (w.sc.w) on ambient pass
 }
 
 export class Request extends Housing {
