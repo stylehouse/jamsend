@@ -163,7 +163,7 @@ abstract class StorableHousing extends Housing {
 //#region House
 
 // The scheme drives Selection.process() depth by depth:
-//   depth 0: at House     -> find {A:1} children, ark='A'
+//   depth 0: at House      -> find {A:1} children, ark='A'
 //   depth 1: at A particle -> find {w:1} children, ark='w'
 //   depth 2: at w particle -> find {r:1} children, ark='r'
 const scheme = [
@@ -175,26 +175,22 @@ const scheme = [
 export class House extends StorableHousing {
     _table = db.House
 
-    // Se is stable across answer_calls() cycles — holds D** identity continuity
+    // Se is stable across channel_beliefs() cycles — holds D** identity continuity
     _Se = new Selection()
-
-    main() {
-        console.log(`something wanted main(), should be H%todo += e`)
-    }
 
     // -------------------------------------------------------------------------
     // answer_calls: pop %elvis:do particles, run their fn.
-    // Each fn may be a concretion, a dispatch, or both.
+    // throttled so rapid-fire todo pushes don't pile up
     // Host does: $effect(() => { if (H.todo.length) H.answer_calls() })
     // -------------------------------------------------------------------------
-    answer_calls_throttle?:Function
+    answer_calls_throttle?: Function
     answer_calls() {
         this.answer_calls_throttle ||= throttle(() => {
-            this.really_answer_calls()
-        },50)
+            this._really_answer_calls()
+        }, 50)
         this.answer_calls_throttle()
     }
-    really_answer_calls() {
+    _really_answer_calls() {
         for (let e of this.o({ elvis: 'do' })) {
             if (e.sc.fn) {
                 Promise.resolve(e.sc.fn()).then(() => {
@@ -217,33 +213,54 @@ export class House extends StorableHousing {
     }
 
     // -------------------------------------------------------------------------
+    // main: anything wanting a channel_beliefs() pass posts here.
+    // %elvis:ambience wakes everything — there will always be one ambient elvis
+    // so A/w always get a chance to think even without a specific target.
+    // -------------------------------------------------------------------------
+    main() {
+        this.post_do(async () => {
+            await this.channel_beliefs(this.i({ elvis: 'ambience', Aw: '' }))
+        }, { see: 'main->ambience' })
+    }
+
+    // -------------------------------------------------------------------------
     // channel_beliefs: was agency_think().
     //
-    // Runs Selection.process() over H's A/w/r particles.
-    // In traced_fn: if a D has no instance yet, post_concretion().
-    // After the walk: if elvis has an Aw target and all instances on that
-    //   path are started, dispatch to the target instance's method.
+    // Phase 1 — Se.process() walks H/A/w/r:
+    //   each_fn injects T.sc.more (children) and T.sc.level (scheme depth)
+    //   trace_fn mirrors n -> D
+    //   traced_fn: if D has no instance yet, post_concretion() and bail.
+    //              T.sc.inst is set here for use in phase 2.
     //
-    // If any concretion was needed, we bail — the concretion's retry
-    // will call channel_beliefs again with the original elvis.
+    // Phase 2 — Se.c.T.forward() walks the completed T** tree:
+    //   concentrate on evented A first (those with pending %elvis)
+    //   procure_ways gives a default w if A has none
+    //   elvised_Aw routes A-level elvis down to the right w
+    //   Aw_think dispatches to the instance method
+    //   agency_officing does post-pass cleanup
+    //
+    // If any concretion was needed in phase 1, bail entirely —
+    // the concretion's retry will call channel_beliefs again with original e.
     // -------------------------------------------------------------------------
     async channel_beliefs(e?: TheC) {
         await this.mutex('channel_beliefs', async () => {
             let needed_concretion = false
 
+            // ---- Phase 1: walk H/A/w/r, ensure instances exist ----
             await this._Se.process({
                 n: this,
-                process_sc: {Se:'workrepo'},
+                process_sc: { Se: 'workrepo' },
                 match_sc: {},
                 trace_sc: { housed: 1 },
 
                 each_fn: async (D: TheD, n: TheC, T: Travel) => {
                     const depth = T.c.path.length - 1
                     const level = scheme[depth]
+                    T.sc.more = []
                     if (!level) return
                     T.sc.level = level
                     T.sc.path_bit_ark = level.ark
-                    // inject children for this depth
+                    // inject children for this depth — T.sc.more bypasses match_sc
                     T.sc.more = n.o(level.sc)
                 },
 
@@ -256,29 +273,31 @@ export class House extends StorableHousing {
                     const { level, path_bit_ark } = T.sc
                     if (!level) return
 
-                    // already concrete?
-                    if (D.oa({ inst: 1, concretion: path_bit_ark })) {
-                        const inst = D.o({ inst: 1, concretion: path_bit_ark })[0]?.sc.inst
-                        // if instance exists but not started yet, bail this cycle
-                        if (inst && 'wake' in inst && !inst.wake()) {
+                    // already concrete and started?
+                    const existing = D.o({ inst: 1, concretion: path_bit_ark })[0]
+                    if (existing) {
+                        const inst = existing.sc.inst as Housing
+                        T.sc.inst = inst
+                        // instance exists but not started yet — bail this cycle
+                        if ('wake' in inst && !(inst as Work).wake()) {
                             needed_concretion = true
                         }
                         return
                     }
 
-                    // needs a new instance — post concretion, retry original elvis
+                    // needs a new instance — post concretion, then retry original elvis
                     needed_concretion = true
+                    if (T.sc.D) debugger
                     T.sc.D = D
                     const original_e = e
                     this.post_do(async () => {
                         const inst = concretion(T)
-                        // wait for inst.started before retrying
+                        T.sc.inst = inst
+                        // wait for inst.started — it may do async work in start()
                         if ('started' in inst && !(inst as any).started) {
-                            await new Promise<void>(resolve => {
-                                $effect(() => { if ((inst as any).started) resolve() })
-                            })
+                            await inst_started(inst)
                         }
-                        // retry: re-post the original elvis
+                        // retry: re-post the original elvis through channel_beliefs
                         if (original_e) {
                             this.post_do(async () => {
                                 await this.channel_beliefs(original_e)
@@ -290,85 +309,200 @@ export class House extends StorableHousing {
                     })
                 },
 
-                done_fn: async (D: TheD, n: TheC, T: Travel) => {},
+                done_fn: async (_D: TheD, _n: TheC, _T: Travel) => {},
             })
 
-            // If any concretions were needed, stop here —
+            // If any concretions were posted, stop here —
             // retries will come back through channel_beliefs
             if (needed_concretion) return
 
-            // All instances are started — dispatch the elvis to its Aw target
-            if (e?.sc.Aw) {
-                await this._dispatch(e)
+            // ---- Phase 2: walk T** and think ----
+
+            // collect A-level T nodes from the completed traversal
+            // T.c.path.length-1 == 1 means we are at depth 1 = Agency level
+            let ATN: Travel[] = []
+            await this._Se.c.T.forward(T => {
+                if (T.c.path.length - 1 === 1) ATN.push(T)
+            })
+
+            // if some A have pending events, concentrate on them
+            let eventedATN = ATN.filter(T => T.sc.n.oa({ elvis: 1 }))
+            ATN = eventedATN.length ? eventedATN : ATN
+
+            let AwN: { AT: Travel; wT: Travel }[] = []
+            for (let AT of ATN) {
+                const A = AT.sc.n as TheC
+                const A_inst = AT.sc.inst as Agency
+
+                // collect w-level T nodes under this A
+                // gives eg A:way a w:way if empty — procure_ways equivalent
+                let wTN: Travel[] = []
+                await this._Se.c.T.forward(T => {
+                    if (T.sc.up === AT && T.c.path.length - 1 === 2) wTN.push(T)
+                })
+                if (!wTN.length) {
+                    // procure_ways: if A has no w yet, give it a default w named after A
+                    const default_w = A.oai({ w: A.sc.A })
+                    const wT = this._Se.c.T // < stub — full procure needs Se to re-traverse
+                    // < TODO: proper procure_ways feeds back into Se via post_do + main()
+                }
+
+                // if some A/w attract pending events, concentrate on them
+                let eventedwTN = await this._elvised_Aw(AT, wTN, e)
+                wTN = eventedwTN.length ? eventedwTN : wTN
+
+                for (let wT of wTN) {
+                    const verb = eventedwTN.length ? 'elvis' : 'think'
+                    // V.w>1 && console.log(`${verb} A:${A.sc.A} / w:${wT.sc.n.sc.w}`)
+                    await this._Aw_think(AT, wT, e)
+                    AwN.push({ AT, wT })
+                }
+                // javascript facts: this for ATN is not done enumerating
+                //  if you do this we never leave this loop:
+                // ATN.push(AT)
             }
+
+            await this._agency_officing(AwN, ATN)
         })
     }
 
     // -------------------------------------------------------------------------
-    // _dispatch: find the instance at e.sc.Aw and call e.sc.elvis on it
-    // Aw = 'AgencyName' or 'AgencyName/workName'
+    // _elvised_Aw: route A-level elvis down to the right w Travel node.
+    // Returns which wT nodes now have %elvis to handle.
     // -------------------------------------------------------------------------
-    private async _dispatch(e: TheC) {
-        const [Aname, wname] = (e.sc.Aw as string).split('/')
+    private async _elvised_Aw(AT: Travel, wTN: Travel[], e?: TheC): Promise<Travel[]> {
+        const A = AT.sc.n as TheC
+        if (!A.oa({ elvis: 1 })) return []
 
-        // find the A particle
-        const Ap = this.o({ A: Aname })[0]
-        if (!Ap) return console.warn(`dispatch: no A:${Aname}`)
-        const A_inst: Agency | undefined = Ap.o({ inst: 1, concretion: 'A' })[0]?.sc.inst
-
-        if (!wname) {
-            // targeting Agency directly
-            const method = e.sc.elvis
-            if (A_inst && typeof (A_inst as any)[method] === 'function') {
-                await (A_inst as any)[method](e)
+        const evented: Travel[] = []
+        for (let ae of A.o({ elvis: 1 })) {
+            const target_w = ae.sc.Aw?.split('/')[1]
+            for (let wT of wTN) {
+                const w = wT.sc.n as TheC
+                if (!target_w || w.sc.w === target_w || wTN.length === 1) {
+                    // transfer %elvis onto the w particle
+                    w.i(ae.sc)
+                    ae.drop(ae)
+                    evented.push(wT)
+                    break
+                }
             }
-            return
+        }
+        return evented
+    }
+
+    // -------------------------------------------------------------------------
+    // _Aw_think: dispatch to the Work instance's method.
+    // e.sc.elvis names the method; falls back to ambient thinking.
+    // -------------------------------------------------------------------------
+    private async _Aw_think(AT: Travel, wT: Travel, e?: TheC) {
+        const A = AT.sc.n as TheC
+        const w = wT.sc.n as TheC
+        const w_inst = wT.sc.inst as Work
+
+        // what method does w want to run?
+        // priority: w has a direct %elvis -> use that
+        // fallback: use the elvis that came in, or 'think'
+        let method = w.o({ elvis: 1 })[0]?.sc.elvis
+            || e?.sc.elvis
+            || 'think'
+
+        if (method === 'ambience') {
+            // ambient pass — let w do its background work if it has a think()
+            method = 'think'
         }
 
-        // find the w particle under A
-        const wp = Ap.o({ w: wname })[0]
-        if (!wp) return console.warn(`dispatch: no w:${wname} under A:${Aname}`)
-        const w_inst: Work | undefined = wp.o({ inst: 1, concretion: 'w' })[0]?.sc.inst
+        // Aw= routing: only dispatch here if this A/w is the target
+        if (e?.sc.Aw) {
+            const [Aname, wname] = (e.sc.Aw as string).split('/')
+            if (Aname && A.sc.A !== Aname) return
+            if (wname && w.sc.w !== wname) return
+        }
 
-        const method = e.sc.elvis
-        if (w_inst && typeof (w_inst as any)[method] === 'function') {
-            await (w_inst as any)[method](e)
-        } else {
-            console.warn(`dispatch: no method "${method}" on w:${wname}`)
+        if (typeof (w_inst as any)[method] === 'function') {
+            try {
+                console.log(`Aw think elvises: ${method}`)
+                await (w_inst as any)[method](e, AT, wT)
+                // clean up served elvis
+                for (let we of w.o({ elvis: 1 })) {
+                    if (we.sc.elvis === method) we.drop(we)
+                }
+            } catch (err) {
+                w.i({ error: String(err) })
+                console.error(`_Aw_think ${A.sc.A}/${w.sc.w}:`, err)
+            }
         }
     }
 
+    // -------------------------------------------------------------------------
+    // _agency_officing: post-pass bookkeeping.
+    // Mirrors agency_officing() from the old code.
+    // -------------------------------------------------------------------------
+    private async _agency_officing(
+        AwN: { AT: Travel; wT: Travel }[],
+        ATN: Travel[]
+    ) {
+        // < percolate w/%aim -> journeys, unemits etc as needed
+        // < for now just a hook — old agency_officing logic ports here
+        for (let { AT, wT } of AwN) {
+            const w = wT.sc.n as TheC
+            const w_inst = wT.sc.inst as Work
+            // w can mutate sc eg %then — keep writing it down
+            // < KEEP_WHOLE_w equivalent
+        }
+    }
 
+    // -------------------------------------------------------------------------
+    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
+    // Walks n//D//%inst via the D mirror in Se.
+    // -------------------------------------------------------------------------
+    Awr_to_inst(n: TheC): Housing | undefined {
+        // find the D that mirrors this n in _Se
+        // D.c.T.sc.n === n
+        let found: Housing | undefined
+        this._Se.c.T?.sc.N?.forEach((T: Travel) => {
+            if (T.sc.n === n && T.sc.inst) {
+                found = T.sc.inst
+            }
+        })
+        return found
+    }
 
     async eatfunc(hash) {
-        Object.assign(this,hash)
+        Object.assign(this, hash)
         await this.on_code_change?.()
-        // vaguely want to run everything if we're down the track already
         if (this.oa()) await this.main()
     }
-
-
-    
-
 }
-// when any H/A/w/r needs eg a Work object constructed
-export function concretion(T:Travel) {
-    let {D,path_bit_ark} = T.sc
-    // ~~ a column name if we were looking at H/A/w/r
-    // < the supply this schema-part or path-bit, path_bit_ark
-    let _class = classes[path_bit_ark]
+
+// -------------------------------------------------------------------------
+// concretion: spawn the Housing subclass for a D particle.
+// T.sc must have {D, path_bit_ark} set before calling.
+// -------------------------------------------------------------------------
+export function concretion(T: Travel) {
+    const { D, path_bit_ark } = T.sc
+    const _class = classes[path_bit_ark]
+    if (!_class) throw `concretion: unknown ark "${path_bit_ark}"`
     // the D%* is a possibly slightly different copy of the C%*
     //  so we look for eg C%w:SomeWay and construct a Work().name=SomeWay
-    let name = D.sc[path_bit_ark]
-
-    let inst = new _class({name})
-
-    if (D.oa({inst:1,concretion:path_bit_ark})) throw `concretion repeat`
-    D.i({inst,concretion:path_bit_ark})
+    const name = D.sc[path_bit_ark]
+    const inst = new _class({ name })
+    if (D.oa({ inst: 1, concretion: path_bit_ark })) throw `concretion repeat`
+    D.i({ inst, concretion: path_bit_ark })
     return inst
 }
 
-
+// wait for a Housing instance to become started, without $effect inside async
+function inst_started(inst: Housing): Promise<void> {
+    return new Promise(resolve => {
+        // poll at microtask frequency — inst.started is $state so will flip
+        const check = () => {
+            if ((inst as any).started) return resolve()
+            queueMicrotask(check)
+        }
+        check()
+    })
+}
 
 //#endregion
 //#region Street
@@ -410,7 +544,7 @@ export class ManyStorableHousings extends StorableHousing {
 }
 
 export class Street extends ManyStorableHousings {
-    _table = db.House
+    _table = db.Street
 }
 
 //#endregion
