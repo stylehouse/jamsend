@@ -173,6 +173,7 @@ abstract class Housing extends TheC {
         if (!e || e.sc.elvis !== type) return []
         return [e]
     }
+}
 
 //#endregion
 //#region StorableHousing
