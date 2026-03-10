@@ -1,4 +1,4 @@
-import { TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
+import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
@@ -38,7 +38,7 @@ abstract class Housing extends TheC {
     up?: Housing
 
     constructor(opt: TheUniversal) {
-        super({ sc: { anObj: 1 } })
+        super({ sc: {} })
         Object.assign(this, opt)
         if (this.name == null) throw `!name`
         this.start()
@@ -163,10 +163,11 @@ abstract class StorableHousing extends Housing {
 //#region House
 
 // The scheme drives Selection.process() depth by depth:
-//   depth 0: at House      -> find {A:1} children, ark='A'
-//   depth 1: at A particle -> find {w:1} children, ark='w'
-//   depth 2: at w particle -> find {r:1} children, ark='r'
+//   depth 0: at House      -> find {A:1}
+//   depth 1: at A particle -> find {w:1}
+//   depth 2: at w particle -> find {r:1}
 const scheme = [
+    { ark: 'H', is_inst: 1 },
     { ark: 'A', sc: { A: 1 } },
     { ark: 'w', sc: { w: 1 } },
     { ark: 'r', sc: { r: 1 } },
@@ -178,6 +179,11 @@ export class House extends StorableHousing {
     // Se is stable across channel_beliefs() cycles — holds D** identity continuity
     _Se = new Selection()
 
+    constructor(opt: TheUniversal) {
+        super(opt)
+        this.sc.H = this.name
+    }
+    
     // -------------------------------------------------------------------------
     // answer_calls: pop %elvis:do particles, run their fn.
     // throttled so rapid-fire todo pushes don't pile up
@@ -242,10 +248,68 @@ export class House extends StorableHousing {
     // If any concretion was needed in phase 1, bail entirely —
     // the concretion's retry will call channel_beliefs again with original e.
     // -------------------------------------------------------------------------
+    get_scheme_level(T,addition=0) {
+        const depth = T.c.path.length - 1
+        const level = scheme[depth + addition]
+        return level
+    }
+    apply_scheme(T,e) {
+        let D = T.sc.D as TheD
+        let n = T.sc.n as TheC
+        let level = T.sc.level = T.sc.level || this.get_scheme_level(T)
+        if (!level) return
+        const path_bit_ark = T.sc.path_bit_ark = level.ark
+
+        if (level.is_inst) {
+            // House is itself, A,w,r have TheC <-> js object joins
+            T.sc.inst = T.sc.n
+            return
+        }
+        else {
+            // already concrete and started?
+            const existing = D.o({ inst: 1, concretion: path_bit_ark })[0]
+            if (existing) {
+                const inst = existing.sc.inst as Housing
+                T.sc.inst = inst
+                // instance exists but not started yet — bail this cycle
+                if ('wake' in inst && !(inst as Work).wake()) {
+                    T.c.top.sc.needed_concretion = true
+                }
+                return
+            }
+        }
+        // needs a new instance — post concretion, then retry original elvis
+        T.c.top.sc.needed_concretion = true
+
+        // do the rest once...
+        let began = { began_wanting: 'concretion', concretion: path_bit_ark }
+        if (D.oa(began)) {
+            return
+        }
+        D.i(began)
+
+        const original_e = e
+        this.post_do(async () => {
+            const inst = concretion(T)
+            T.sc.inst = inst
+            // wait for inst.started — it may do async work in start()
+            if ('started' in inst && !(inst as any).started) {
+                await inst_started(inst)
+            }
+            // retry: re-post the original elvis through channel_beliefs
+            if (original_e) {
+                this.post_do(async () => {
+                    await this.channel_beliefs(original_e)
+                }, { from: `concretion retry ${level.ark}:${D.sc[level.ark]}` })
+            }
+        }, {
+            see: `concretion ${level.ark}:${D.sc[level.ark]}`,
+            for_n: n,
+        })
+
+    }
     async channel_beliefs(e?: TheC) {
         await this.mutex('channel_beliefs', async () => {
-            let needed_concretion = false
-
             // ---- Phase 1: walk H/A/w/r, ensure instances exist ----
             await this._Se.process({
                 n: this,
@@ -254,14 +318,12 @@ export class House extends StorableHousing {
                 trace_sc: { housed: 1 },
 
                 each_fn: async (D: TheD, n: TheC, T: Travel) => {
-                    const depth = T.c.path.length - 1
-                    const level = scheme[depth]
+                    this.apply_scheme(T,e)
+                    if (!T.sc.level) return T.sc.not = 1
                     T.sc.more = []
-                    if (!level) return
-                    T.sc.level = level
-                    T.sc.path_bit_ark = level.ark
-                    // inject children for this depth — T.sc.more bypasses match_sc
-                    T.sc.more = n.o(level.sc)
+                    // make /* up — T.sc.more bypasses match_sc
+                    let nextle = this.get_scheme_level(T,1)
+                    T.sc.more = nextle ? n.o(nextle.sc) : []
                 },
 
                 trace_fn: async (uD: TheD, n: TheC, T: Travel) => {
@@ -269,44 +331,13 @@ export class House extends StorableHousing {
                     return uD.i(tex({ housed: 3 }, n.sc))
                 },
 
-                traced_fn: async (D: TheD, bD: TheD, n: TheC, T: Travel) => {
-                    const { level, path_bit_ark } = T.sc
-                    if (!level) return
-
-                    // already concrete and started?
-                    const existing = D.o({ inst: 1, concretion: path_bit_ark })[0]
-                    if (existing) {
-                        const inst = existing.sc.inst as Housing
-                        T.sc.inst = inst
-                        // instance exists but not started yet — bail this cycle
-                        if ('wake' in inst && !(inst as Work).wake()) {
-                            needed_concretion = true
-                        }
-                        return
+                // we have T/* traced and know what's changed
+                //  but haven't yet done their each_fn
+                resolved_fn: async (T:Travel,N:Travel[],goners:TheD[],neus:TheD[]) => {
+                    for (let oT of N) {
+                        this.apply_scheme(oT,e)
+                        if (!T.sc.level) return T.sc.not = 1
                     }
-
-                    // needs a new instance — post concretion, then retry original elvis
-                    needed_concretion = true
-                    if (T.sc.D) debugger
-                    T.sc.D = D
-                    const original_e = e
-                    this.post_do(async () => {
-                        const inst = concretion(T)
-                        T.sc.inst = inst
-                        // wait for inst.started — it may do async work in start()
-                        if ('started' in inst && !(inst as any).started) {
-                            await inst_started(inst)
-                        }
-                        // retry: re-post the original elvis through channel_beliefs
-                        if (original_e) {
-                            this.post_do(async () => {
-                                await this.channel_beliefs(original_e)
-                            }, { from: `concretion retry ${level.ark}:${D.sc[level.ark]}` })
-                        }
-                    }, {
-                        see: `concretion ${level.ark}:${D.sc[level.ark]}`,
-                        for_n: n,
-                    })
                 },
 
                 done_fn: async (_D: TheD, _n: TheC, _T: Travel) => {},
@@ -314,7 +345,10 @@ export class House extends StorableHousing {
 
             // If any concretions were posted, stop here —
             // retries will come back through channel_beliefs
-            if (needed_concretion) return
+            if (this._Se.c.T.c.top.sc.needed_concretion) {
+                console.log(`needed_concretion, e%${keyser(e.sc)}`)
+                return
+            }
 
             // ---- Phase 2: walk T** and think ----
 
@@ -355,6 +389,7 @@ export class House extends StorableHousing {
                     const verb = eventedwTN.length ? 'elvis' : 'think'
                     // V.w>1 && console.log(`${verb} A:${A.sc.A} / w:${wT.sc.n.sc.w}`)
                     await this._Aw_think(AT, wT, e)
+                    console.log(`_Aw_think A:${A.sc.A} / w:${wT.sc.n.sc.w}, e%${keyser(e.sc)}`)
                     AwN.push({ AT, wT })
                 }
                 // javascript facts: this for ATN is not done enumerating
@@ -418,7 +453,6 @@ export class House extends StorableHousing {
             if (Aname && A.sc.A !== Aname) return
             if (wname && w.sc.w !== wname) return
         }
-
         if (typeof (w_inst as any)[method] === 'function') {
             try {
                 console.log(`Aw think elvises: ${method}`)
@@ -431,6 +465,9 @@ export class House extends StorableHousing {
                 w.i({ error: String(err) })
                 console.error(`_Aw_think ${A.sc.A}/${w.sc.w}:`, err)
             }
+        }
+        else {
+            console.warn(`_Aw_think ${A.sc.A}/${w.sc.w} !method: ${method}`)
         }
     }
 
@@ -558,6 +595,9 @@ export class Work extends Housing {
     // Caller does: if (!w.wake()) return
     wake(): boolean { return this.started }
     start() { this.started = true }
+    think() {
+        console.log(`thinks: %w:${this.sc.w}`)
+    }
 }
 
 export class Request extends Housing {
