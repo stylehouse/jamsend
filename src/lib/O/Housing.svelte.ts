@@ -149,8 +149,7 @@ abstract class Housing extends TheC {
     // iterated. Currently 0 or 1 items; future: multiple %elvis of same type
     // queued in one 50ms tick may be multiplexed and returned together.
     //
-    // %elvis does NOT live on w — w is for serious long-lived state.
-    // Elvis particles live on D (the mirror particle in Se), or eventually H.
+    // %elvis does NOT live on w — w is for serious long-lived state
     // For now w.c.e is the single transient in-flight elvis set by _Aw_think.
     //
     // Calling o_elvis stamps w.oai({elvising:type}) unconditionally —
@@ -159,8 +158,8 @@ abstract class Housing extends TheC {
     //
     // Application code must not assume all e come out in one call — the method
     // may be called again for a subsequent e of the same type.
-    //
-    // (this as House).o_elvis(w, 'i Idvoyage')
+    // you write:
+    //  for (let e of (this as House).o_elvis(w, 'i Idvoyage')) {
     // -------------------------------------------------------------------------
     o_elvis(w: TheC, type: string): TheC[] {
         return this._o_elvis(w, type)

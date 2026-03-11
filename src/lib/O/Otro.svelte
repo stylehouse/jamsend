@@ -41,13 +41,17 @@
     // the first thing to do
     //  now that H has been injected with Agency ghost
     onMount(() => {
+        console.log(`Otro onMount`)
+        H.elvisto('something/withitall', 'withitall', { payload: 'hello' })
+        return
         H.post_do(async () => {
-            console.log(`lets...`)
+            console.log(`Otro onMount`)
             await H.channel_beliefs(H.i({
                 elvis: 'withitall',
                 Aw: 'something/withitall',
                 payload: 'hello',
             }))
+            console.log(`Otro /onMount`)
         })
     })
 </script>
