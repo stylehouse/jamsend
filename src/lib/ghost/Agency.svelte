@@ -385,6 +385,8 @@
         const KEEP_WHOLE_w = true
         for (let A of AN) {
             // w can mutate sc eg %then
+            //   < but it might not be a good idea..?
+            //      the Stuffing will snap shut because its target is every key
             //  so keep writing it down
             let ws = A.o({w:1})
             await A.replace({w:1},async () => {

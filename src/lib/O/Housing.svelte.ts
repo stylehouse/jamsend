@@ -294,6 +294,7 @@ export class House extends StorableHousing {
         this.answer_calls_throttle()
     }
     _really_answer_calls() {
+        console.log(`H.todo is: ${this.todo.length}`)
         for (let e of this.o({ elvis: 'do' })) {
             if (e.sc.fn) {
                 Promise.resolve(e.sc.fn()).then(() => {
@@ -322,6 +323,7 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     main() {
         this.post_do(async () => {
+            console.log(`main->think`)
             await this.channel_beliefs(this.i({ elvis: 'think', Aw: '' }))
         }, { see: 'main->think' })
     }
@@ -468,6 +470,8 @@ export class House extends StorableHousing {
     async channel_beliefs(e?: TheC) {
         // expand Aw into path segments if not done yet
         if (e) this._expand_Aw(e)
+        // if e was already served by a concretion retry, skip
+        if (e?.c.served) return
 
         await this.mutex('channel_beliefs', async () => {
             // ---- Phase 1: walk H/A/w/r, ensure instances exist ----
@@ -557,6 +561,8 @@ export class House extends StorableHousing {
             }
 
             await this._agency_officing(AwN, ATN)
+            // mark e as served so any duplicate channel_beliefs(e) calls are no-ops
+            if (e) e.c.served = true
         })
     }
 
