@@ -502,7 +502,7 @@
     // instead of addressing PF.emit()s to a %w,
     //  suppose each message type will be belong to one %w
     async i_unemits_o_Aw(A,w) {
-        if (!w.sc.unemits) return
+        if (!w.sc.unemits || !this.PF) return
         for (let [type,handler] of Object.entries(w.sc.unemits)) {
             // type becomes+unbecomes type=ftp.$k when PF.emit is used
             this.PF.unemits[type] = async (data,{P,Pier}) => {
