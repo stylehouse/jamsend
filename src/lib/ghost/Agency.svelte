@@ -486,11 +486,11 @@
     },
     // < io tupling use
     async i_journeys_o_aims(AwN) {
-        if (!this.Tr) return
+        if (!this.Se.c.T) return
         // replace a particular journey that comes from this A
         // have *%journey ideas first
         let AwjN = []
-        let topD = this.Tr.sc.D
+        let topD = this.Se.c.T.sc.D
         // < why are there no %journeys at this point? huh?
         for (let j of topD.o({journey:1,oaims:1})) {
             // let was = j.oa({path:1}) ? this.Se.j_to_uri(j) : '??'

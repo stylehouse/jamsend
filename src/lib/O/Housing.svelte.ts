@@ -21,6 +21,9 @@ db.version(1).stores({
 })
 
 //#endregion
+const V: Record<string, any> = {}
+V.organise = 0  // set >0 to enable answer_calls/beliefs/organise logs
+
 //#region Housing
 
 abstract class Housing extends TheC {
@@ -162,7 +165,7 @@ abstract class Housing extends TheC {
         let h: Housing = this
         while (h.up) h = h.up
         const H = h as House
-        console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
+        V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
         H.todo = [...H.todo, e]
     }
 }
@@ -249,7 +252,7 @@ export class House extends StorableHousing {
     _table = db.House
 
     // Se is stable across beliefs() cycles — holds D** identity continuity
-    _Se = new Selection()
+    Se = new Selection()
 
     constructor(opt: TheUniversal) {
         super(opt)
@@ -276,7 +279,7 @@ export class House extends StorableHousing {
         if (this.c._mutex_beliefs) {
             const [e] = this.todo
             if (!e || !e.sc.fn) {
-                console.log(`answer_calls: beliefs mutex locked, yielding to $effect`)
+                V.organise && console.log(`answer_calls: beliefs mutex locked, yielding to $effect`)
                 return
             }
         }
@@ -284,7 +287,7 @@ export class House extends StorableHousing {
         const [e, ...rest] = this.todo
         if (!e) return
         this.todo = rest
-        console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
+        V.organise && console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
 
         if (e.sc.fn) {
             // post_do block (fn-carrying e) — run directly, never enters beliefs()
@@ -438,7 +441,7 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     async beliefs(e?: TheC) {
         if (e) this._expand_Aw(e)
-        console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
+        V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
         await this.mutex('beliefs', async () => {
             const done = await this.organise(e)
@@ -453,15 +456,15 @@ export class House extends StorableHousing {
     // Returns false if concretions were posted (retry will come back via todo).
     //
     // IMPORTANT: clear needed_concretion before each process() — it lives on
-    // the persistent _Se.c.T and would latch true forever across cycles otherwise.
+    // the persistent Se.c.T and would latch true forever across cycles otherwise.
     // -------------------------------------------------------------------------
     private async organise(e?: TheC): Promise<boolean> {
         // clear stale concretion flag from previous cycle
-        if (this._Se.c.T) delete this._Se.c.T.sc.needed_concretion
+        if (this.Se.c.T) delete this.Se.c.T.sc.needed_concretion
 
-        console.log(`organise() e%${e ? keyser(e.sc) : 'none'} todo:${this.todo.length}`)
+        V.organise && console.log(`organise() e%${e ? keyser(e.sc) : 'none'} todo:${this.todo.length}`)
 
-        await this._Se.process({
+        await this.Se.process({
             n: this,
             process_sc: { Se: 'workrepo' },
             match_sc: {},
@@ -472,7 +475,7 @@ export class House extends StorableHousing {
                 if (!T.sc.level) { T.sc.not = 1; return }
                 const nextle = this.get_scheme_level(T, 1)
                 T.sc.more = nextle?.sc ? n.o(nextle.sc) : []
-                console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
+                V.organise && console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
             },
 
             trace_fn: async (uD: TheD, n: TheC, T: Travel) => {
@@ -480,7 +483,7 @@ export class House extends StorableHousing {
             },
 
             resolved_fn: async (T: Travel, N: Travel[], goners: TheD[], neus: TheD[]) => {
-                console.log(`  organise resolved depth:${T.c.path.length-1} N:${N.length} goners:${goners.length} neus:${neus.length}`)
+                V.organise && console.log(`  organise resolved depth:${T.c.path.length-1} N:${N.length} goners:${goners.length} neus:${neus.length}`)
                 for (let oT of N) {
                     this.apply_scheme(oT, e)
                     if (!oT.sc.level) { oT.sc.not = 1 }
@@ -490,12 +493,12 @@ export class House extends StorableHousing {
             done_fn: async (_D: TheD, _n: TheC, _T: Travel) => {},
         })
 
-        if (this._Se.c.T?.sc.needed_concretion) {
-            console.log(`organise: needed_concretion — bailing, e%${e ? keyser(e.sc) : 'none'}`)
+        if (this.Se.c.T?.sc.needed_concretion) {
+            V.organise && console.log(`organise: needed_concretion — bailing, e%${e ? keyser(e.sc) : 'none'}`)
             return false
         }
 
-        console.log(`organise: all instances ready, proceeding to attend()`)
+        V.organise && console.log(`organise: all instances ready, proceeding to attend()`)
         return true
     }
 
@@ -507,13 +510,13 @@ export class House extends StorableHousing {
     private async attend(e?: TheC) {
         // collect A-level T nodes
         let ATN: Travel[] = []
-        await this._Se.c.T.forward(T => {
+        await this.Se.c.T.forward(T => {
             if (T.c.path.length - 1 === 1) ATN.push(T)
         })
 
         let targetedATN = e ? ATN.filter(T => this._e_targets_T(e, T) > 0) : ATN
         ATN = targetedATN.length ? targetedATN : ATN
-        console.log(`attend() e%${e ? keyser(e.sc) : 'none'} ATN:${ATN.length} targeted:${targetedATN.length}`)
+        V.organise && console.log(`attend() e%${e ? keyser(e.sc) : 'none'} ATN:${ATN.length} targeted:${targetedATN.length}`)
 
         // parallel arrays: Travel-level for internal use, n-level for officing
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
@@ -523,7 +526,7 @@ export class House extends StorableHousing {
             await this.self_timekeeping(A)
 
             let wTN: Travel[] = []
-            await this._Se.c.T.forward(T => {
+            await this.Se.c.T.forward(T => {
                 if (T.sc.up === AT && T.c.path.length - 1 === 2) wTN.push(T)
             })
 
@@ -592,17 +595,17 @@ export class House extends StorableHousing {
         if (handler) {
             w.c.e = e
             try {
-                console.log(`_Aw_think A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
+                console.log(`💭 A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
                 await handler(A, w, e, AT, wT)
             } catch (err) {
                 w.i({ error: String(err) })
-                console.error(`_Aw_think ${A.sc.A}/${w.sc.w}:`, err)
+                console.error(`💭 ${A.sc.A}/${w.sc.w}:`, err)
             } finally {
                 delete w.c.e
             }
         } else {
             if (targeting === 2 && e!.sc.elvis !== 'think') {
-                console.warn(`_Aw_think ${A.sc.A}/${w.sc.w} !method: ${method}`)
+                console.warn(`💭 ${A.sc.A}/${w.sc.w} !method: ${method}`)
             }
         }
     }
@@ -618,7 +621,7 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     Awr_to_inst(n: TheC): Housing | undefined {
         let found: Housing | undefined
-        this._Se.c.T?.sc.N?.forEach((T: Travel) => {
+        this.Se.c.T?.sc.N?.forEach((T: Travel) => {
             if (T.sc.n === n && T.sc.inst) found = T.sc.inst
         })
         return found
