@@ -13,7 +13,7 @@
 
         // called when an elvis targets this w exactly
         async withitall(A,w,e,AT,wT) {
-            console.log(`withitall() called! from ${e?.sc.from_name}`, e?.sc)
+            console.log(`WithItAll.withitall() called! from ${e?.sc.from_name}`, e?.sc)
         }
 
         // ambient pass — called every main() cycle

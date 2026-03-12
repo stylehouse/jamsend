@@ -360,8 +360,12 @@ export class House extends StorableHousing {
     }
 
     // -------------------------------------------------------------------------
-    // apply_scheme: set T.sc.level, T.sc.path_bit_ark, T.sc.inst.
-    // Sets T.c.top.sc.needed_concretion if an instance is missing or not started.
+    // apply_scheme: set T.sc.level, T.sc.path_bit_ark, T.sc.inst (optional).
+    //
+    // inst is only created when n.sc has a 'class' key (eg w.sc.class = 'WithItAll'),
+    // looked up in the classes registry. Without one, T.sc.inst stays undefined and
+    // _Aw_think falls back to H.* (ghost-injected) methods.
+    // needed_concretion is only set when a class was specified but inst isn't ready yet.
     // -------------------------------------------------------------------------
     apply_scheme(T: Travel, e?: TheC) {
         const D = T.sc.D as TheD
@@ -376,6 +380,7 @@ export class House extends StorableHousing {
             return
         }
 
+        // check for an already-spawned instance
         const existing = D.o({ inst: 1, concretion: path_bit_ark })[0]
         if (existing) {
             const inst = existing.sc.inst as Housing
@@ -386,9 +391,16 @@ export class House extends StorableHousing {
             return
         }
 
-        // needs a new instance
+        // no existing inst — only concretion if n.sc.class is given
+        const class_key = n.sc.class as string | undefined
+        if (!class_key) {
+            // no class specified: inst stays undefined, _Aw_think will use H.*
+            return
+        }
+
+        // class specified but not yet spawned — need concretion
         T.c.top.sc.needed_concretion = true
-        console.log(`  apply_scheme: needs concretion for ${path_bit_ark}:${D.sc[path_bit_ark]}`)
+        console.log(`  apply_scheme: needs concretion for ${path_bit_ark}:${D.sc[path_bit_ark]} (class:${class_key})`)
 
         const began = { began_wanting: 'concretion', concretion: path_bit_ark }
         if (D.oa(began)) return
@@ -401,10 +413,7 @@ export class House extends StorableHousing {
             if ('started' in inst && !(inst as any).started) {
                 await inst_started(inst)
             }
-            // retry: re-push the original elvis onto todo
-            if (original_e) {
-                this._push_todo(original_e)
-            }
+            if (original_e) this._push_todo(original_e)
         }, {
             see: `concretion ${level.ark}:${D.sc[level.ark]}`,
             for_n: n,
@@ -546,12 +555,15 @@ export class House extends StorableHousing {
 //#region think
 
     // -------------------------------------------------------------------------
-    // _Aw_think: dispatch to the Work instance's method.
+    // _Aw_think: dispatch to the Work instance's method (or H.* fallback).
+    //
+    // inst is optional — if T.sc.inst is set, look up method there first.
+    // If not found on inst (or no inst), fall back to this.* (ghost-injected methods).
     // -------------------------------------------------------------------------
     private async _Aw_think(AT: Travel, wT: Travel, e?: TheC) {
         const A = AT.sc.n as TheC
         const w = wT.sc.n as TheC
-        const w_inst = wT.sc.inst as Work
+        const w_inst = wT.sc.inst as Work | undefined
 
         const targeting = e ? this._e_targets_T(e, wT) : 0
 
@@ -569,11 +581,19 @@ export class House extends StorableHousing {
             method = w.sc.w as string
         }
 
-        if (typeof (w_inst as any)[method] === 'function') {
+        // resolve handler: inst first, then H.* (ghost-injected methods)
+        const handler: Function | undefined =
+            (w_inst && typeof (w_inst as any)[method] === 'function')
+                ? (w_inst as any)[method].bind(w_inst)
+                : typeof (this as any)[method] === 'function'
+                    ? (this as any)[method].bind(this)
+                    : undefined
+
+        if (handler) {
             w.c.e = e
             try {
-                console.log(`_Aw_think A:${A.sc.A} / w:${w.sc.w}, method:${method}, e%${e ? keyser(e.sc) : 'none'}`)
-                await (w_inst as any)[method](A, w, e, AT, wT)
+                console.log(`_Aw_think A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
+                await handler(A, w, e, AT, wT)
             } catch (err) {
                 w.i({ error: String(err) })
                 console.error(`_Aw_think ${A.sc.A}/${w.sc.w}:`, err)
@@ -587,20 +607,47 @@ export class House extends StorableHousing {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // self_timekeeping, agency_officing, Aw_satisfied, i_unemits_o_Aw
+    // are NOT defined here — provided by Agency ghost via eatfunc/Object.assign.
+    // Defining them on Housing would clobber whichever version already exists.
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
+    // -------------------------------------------------------------------------
+    Awr_to_inst(n: TheC): Housing | undefined {
+        let found: Housing | undefined
+        this._Se.c.T?.sc.N?.forEach((T: Travel) => {
+            if (T.sc.n === n && T.sc.inst) found = T.sc.inst
+        })
+        return found
+    }
+
     async eatfunc(hash) {
         Object.assign(this, hash)
         await this.on_code_change?.()
         if (this.oa()) this.main()
     }
+
+//#endregion
+//#region think utils
+    // called when an elvis targets this w exactly
+    async withitall(A,w,e,AT,wT) {
+        console.log(`H.withitall() call from ${e?.sc.from_name}`, e?.sc)
+    }
 }
 
 // -------------------------------------------------------------------------
 // concretion: spawn the Housing subclass for a D particle.
+// Uses n.sc.class as the registry key (falls back to path_bit_ark).
 // -------------------------------------------------------------------------
 export function concretion(T: Travel) {
     const { D, path_bit_ark } = T.sc
-    const _class = classes[path_bit_ark]
-    if (!_class) throw `concretion: unknown ark "${path_bit_ark}"`
+    const n = T.sc.n as any
+    const class_key = n?.sc?.class ?? path_bit_ark
+    const _class = classes[class_key]
+    if (!_class) throw `concretion: unknown class "${class_key}" for ark "${path_bit_ark}"`
     const name = D.sc[path_bit_ark]
     const inst = new _class({ name })
     if (D.oa({ inst: 1, concretion: path_bit_ark })) throw `concretion repeat`
