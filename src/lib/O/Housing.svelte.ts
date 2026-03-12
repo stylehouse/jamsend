@@ -40,6 +40,10 @@ abstract class Housing extends TheC {
     // upward link: Work -> Agency -> House
     up?: Housing
 
+    // set to true to pause main() — call stop() to set it
+    stopped = false
+    stop() { this.stopped = true }
+
     constructor(opt: TheUniversal) {
         super({ sc: {} })
         Object.assign(this, opt)
@@ -350,6 +354,7 @@ export class House extends StorableHousing {
     main_throttle?: Function
     main() {
         this.main_throttle ||= throttle(() => {
+            if (this.stopped) return
             const e = new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } })
             this._push_todo(e)
         }, 200)
