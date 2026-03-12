@@ -162,6 +162,7 @@ abstract class Housing extends TheC {
         let h: Housing = this
         while (h.up) h = h.up
         const H = h as House
+        console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
         H.todo = [...H.todo, e]
     }
 }
@@ -272,6 +273,7 @@ export class House extends StorableHousing {
         const [e, ...rest] = this.todo
         if (!e) return
         this.todo = rest
+        console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
 
         if (e.sc.fn) {
             // post_do block — run fn, then check for more
@@ -374,6 +376,7 @@ export class House extends StorableHousing {
 
         // needs a new instance
         T.c.top.sc.needed_concretion = true
+        console.log(`  apply_scheme: needs concretion for ${path_bit_ark}:${D.sc[path_bit_ark]}`)
 
         const began = { began_wanting: 'concretion', concretion: path_bit_ark }
         if (D.oa(began)) return
@@ -414,6 +417,7 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     async beliefs(e?: TheC) {
         if (e) this._expand_Aw(e)
+        console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
         await this.mutex('beliefs', async () => {
             const done = await this.organise(e)
@@ -426,8 +430,16 @@ export class House extends StorableHousing {
     // organise: Phase 1 — Se.process() walk.
     // Returns true if all instances are ready and attend() should proceed.
     // Returns false if concretions were posted (retry will come back via todo).
+    //
+    // IMPORTANT: clear needed_concretion before each process() — it lives on
+    // the persistent _Se.c.T and would latch true forever across cycles otherwise.
     // -------------------------------------------------------------------------
     private async organise(e?: TheC): Promise<boolean> {
+        // clear stale concretion flag from previous cycle
+        if (this._Se.c.T) delete this._Se.c.T.sc.needed_concretion
+
+        console.log(`organise() e%${e ? keyser(e.sc) : 'none'} todo:${this.todo.length}`)
+
         await this._Se.process({
             n: this,
             process_sc: { Se: 'workrepo' },
@@ -439,6 +451,7 @@ export class House extends StorableHousing {
                 if (!T.sc.level) { T.sc.not = 1; return }
                 const nextle = this.get_scheme_level(T, 1)
                 T.sc.more = nextle?.sc ? n.o(nextle.sc) : []
+                console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
             },
 
             trace_fn: async (uD: TheD, n: TheC, T: Travel) => {
@@ -446,6 +459,7 @@ export class House extends StorableHousing {
             },
 
             resolved_fn: async (T: Travel, N: Travel[], goners: TheD[], neus: TheD[]) => {
+                console.log(`  organise resolved depth:${T.c.path.length-1} N:${N.length} goners:${goners.length} neus:${neus.length}`)
                 for (let oT of N) {
                     this.apply_scheme(oT, e)
                     if (!oT.sc.level) { oT.sc.not = 1 }
@@ -456,13 +470,13 @@ export class House extends StorableHousing {
         })
 
         if (this._Se.c.T?.sc.needed_concretion) {
-            console.log(`needed_concretion, e%${e ? keyser(e.sc) : 'none'}`)
+            console.log(`organise: needed_concretion — bailing, e%${e ? keyser(e.sc) : 'none'}`)
             return false
         }
 
+        console.log(`organise: all instances ready, proceeding to attend()`)
         return true
     }
-
 
     // -------------------------------------------------------------------------
     // attend: Phase 2 — walk T** and dispatch to Work instances.
@@ -478,6 +492,7 @@ export class House extends StorableHousing {
 
         let targetedATN = e ? ATN.filter(T => this._e_targets_T(e, T) > 0) : ATN
         ATN = targetedATN.length ? targetedATN : ATN
+        console.log(`attend() e%${e ? keyser(e.sc) : 'none'} ATN:${ATN.length} targeted:${targetedATN.length}`)
 
         // parallel arrays: Travel-level for internal use, n-level for officing
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
@@ -577,7 +592,14 @@ export class House extends StorableHousing {
 
     // -------------------------------------------------------------------------
     // agency_officing: post-pass bookkeeping. Original {A,w} signature preserved
-    // so Modus subclass overrides port cleanly.
+    // so Modus subclass (Agency ghost) overrides port cleanly.
+    //
+    // NOTE: Agency ghost also provides overrides for:
+    //   agency_officing()    — adds i_journeys_o_aims, full unemits loop
+    //   Aw_satisfied()       — same logic, callable from ghost
+    //   i_unemits_o_Aw()     — full PF.unemits wiring (guards on w.sc.unemits && this.PF)
+    //   self_timekeeping()   — same, available to override if timing differs
+    // The stubs here are the base fallbacks when no ghost is attached.
     // -------------------------------------------------------------------------
     async agency_officing(
         AwN: { A: TheC; w: TheC }[],
