@@ -55,9 +55,13 @@
 </script>
 <h3>Here we Are</h3>
 
-<h2>memory: {H.stashed?.things}</h2>
-<button onclick={upthings}>upthings</button>
-<!-- <Stuffing stuff={H} /> -->
+{#if H.stashed}
+    <h2>memory: {H.stashed?.things}</h2>
+    <button onclick={upthings}>upthings</button>
+
+
+    <Stuffing mem={H.imem('current')} stuff={H} M={H} />
+{/if}
 
 <Agency {M} />
 

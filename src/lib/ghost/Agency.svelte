@@ -442,7 +442,7 @@
             // if the UI:Modus still exists
             if (this.stopped) return
             // thing above can stop
-            if (!this.S.started) return
+            if (this.S && !this.S.started) return
 
             this.main()
             

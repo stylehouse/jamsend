@@ -176,6 +176,9 @@ abstract class Housing extends TheC {
 abstract class StorableHousing extends Housing {
     stashed: Record<string, any> = $state(undefined!)
 
+    // burrowing accessor into stashed — mirrors Modus.imem() / Modusmem
+    imem(key: string) { return new Housemem(this, [key]) }
+
     declare _table: EntityTable<HouseRow, 'name'>
 
     _last_written: string | undefined
@@ -233,6 +236,35 @@ abstract class StorableHousing extends Housing {
     }
 }
 
+// Path-burrowing accessor into House.stashed — mirrors Modus.imem() / Modusmem.
+// imem('foo').further('bar').get('x')  reads  H.stashed.foo.bar.x
+// imem('foo').set('x', v)              writes H.stashed.foo.x = v
+export class Housemem {
+    H: StorableHousing
+    keys: string[]
+    constructor(H: StorableHousing, keys: string[]) { this.H = H; this.keys = keys }
+    further(key: string) { return new Housemem(this.H, [...this.keys, key]) }
+    get(key: string) {
+        let here: any = this.H.stashed
+        if (!here) return undefined
+        for (const k of this.keys) {
+            if (!Object.hasOwn(here, k)) return null
+            here = here[k]
+        }
+        return here?.[key]
+    }
+    set(key: string, value: any) {
+        let here: any = this.H.stashed
+        if (!here) return
+        for (const k of this.keys) {
+            here[k] ??= {}
+            here = here[k]
+        }
+        here[key] = value
+        this.H.stashed.version = ((this.H.stashed.version as number) ?? 0) + 1
+    }
+}
+
 //#endregion
 //#region House
 
@@ -272,7 +304,10 @@ export class House extends StorableHousing {
         }, 50)
         this.answer_calls_throttle()
     }
-    _really_answer_calls() {
+    async _really_answer_calls() {
+        // tick the interval each time we drain — mirrors Modus.reset_interval()
+        await this.reset_interval?.()
+
         // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
         // when todo next changes (eg when concretion pushes original_e back).
         // fn-carrying e can always run immediately since they don't enter beliefs().
@@ -635,10 +670,15 @@ export class House extends StorableHousing {
 
 //#endregion
 //#region think utils
-    // called when an elvis targets this w exactly
-    async withitall(A,w,e,AT,wT) {
-        console.log(`H.withitall() call from ${e?.sc.from_name}`, e?.sc)
+
+    // fallback handler for testing without a ghost — ghost methods shadow these
+    async withitall(A, w, e, AT, wT) {
+        console.log(`H.withitall() called from ${e?.sc.from_name}`, e?.sc)
+        if (e?.sc.payload != null) w.i({ payload: e.sc.payload })
+        w.i({latch:3})
     }
+
+//#endregion
 }
 
 // -------------------------------------------------------------------------
