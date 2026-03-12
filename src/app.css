@@ -18,7 +18,9 @@ button, select {
 }
 
 
-
+body {
+    color: green;
+}
 
 button:hover {
   background-color: #2563eb;

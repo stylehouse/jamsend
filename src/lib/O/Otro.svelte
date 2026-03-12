@@ -47,20 +47,16 @@
             H.o({ A: 'something' })[0].i({ w: 'withitall' })
             H.elvisto('something/withitall', 'withitall', { payload: 'hello' })
         },3)
-        return
-        H.post_do(async () => {
-            console.log(`Otro onMount`)
-            await H.channel_beliefs(H.i({
-                elvis: 'withitall',
-                Aw: 'something/withitall',
-                payload: 'hello',
-            }))
-            console.log(`Otro /onMount`)
-        })
     })
+    function upthings() {
+        H.stashed.things ||= 0
+        H.stashed.things += 1
+    }
 </script>
 <h3>Here we Are</h3>
 
+<h2>memory: {H.stashed?.things}</h2>
+<button onclick={upthings}>upthings</button>
 <!-- <Stuffing stuff={H} /> -->
 
 <Agency {M} />
