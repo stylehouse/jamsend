@@ -270,21 +270,29 @@ export class House extends StorableHousing {
         this.answer_calls_throttle()
     }
     _really_answer_calls() {
+        // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
+        // when todo next changes (eg when concretion pushes original_e back).
+        // fn-carrying e can always run immediately since they don't enter beliefs().
+        if (this.c._mutex_beliefs) {
+            const [e] = this.todo
+            if (!e || !e.sc.fn) {
+                console.log(`answer_calls: beliefs mutex locked, yielding to $effect`)
+                return
+            }
+        }
+
         const [e, ...rest] = this.todo
         if (!e) return
         this.todo = rest
         console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
 
         if (e.sc.fn) {
-            // post_do block — run fn, then check for more
-            Promise.resolve(e.sc.fn()).then(() => {
-                if (this.todo.length) this.answer_calls()
-            })
+            // post_do block (fn-carrying e) — run directly, never enters beliefs()
+            // $effect re-fires for any remaining todo after fn resolves
+            e.sc.fn()
         } else {
-            // plain elvis — pass to beliefs()
-            Promise.resolve(this.beliefs(e)).then(() => {
-                if (this.todo.length) this.answer_calls()
-            })
+            // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
+            this.beliefs(e)
         }
     }
 
@@ -298,12 +306,16 @@ export class House extends StorableHousing {
     }
 
     // -------------------------------------------------------------------------
-    // main: push an ambient think elvis onto H.todo.
-    // No H/%elvis particles — everything lives in the todo queue.
+    // main: throttled push of an ambient think elvis onto H.todo.
+    // Multiple rapid calls collapse into one think pass.
     // -------------------------------------------------------------------------
+    main_throttle?: Function
     main() {
-        const e = new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } })
-        this._push_todo(e)
+        this.main_throttle ||= throttle(() => {
+            const e = new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } })
+            this._push_todo(e)
+        }, 200)
+        this.main_throttle()
     }
 
     // -------------------------------------------------------------------------
@@ -480,8 +492,8 @@ export class House extends StorableHousing {
 
     // -------------------------------------------------------------------------
     // attend: Phase 2 — walk T** and dispatch to Work instances.
-    // Converts AT/wT Travel nodes to plain {A,w} pairs so agency_officing()
-    // receives the same signature as the old Modus version.
+    // Collects AT/wT Travel nodes, unwraps to plain {A,w} for agency_officing()
+    // so it receives the same signature as the original Modus version.
     // -------------------------------------------------------------------------
     private async attend(e?: TheC) {
         // collect A-level T nodes
@@ -573,101 +585,6 @@ export class House extends StorableHousing {
                 console.warn(`_Aw_think ${A.sc.A}/${w.sc.w} !method: ${method}`)
             }
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // self_timekeeping: called on A and w nodes before dispatch.
-    // Mirrors old self_timekeeping() — increments round counter, timestamps.
-    // Quirks vs old code:
-    //   - old code called it on TheC (Modus particles) directly; here we get
-    //     the underlying n particle from T.sc.n, so round/timestamp are on n.sc
-    //   - A gets it before iterating its w children; w gets it just before dispatch
-    //     so A's round is always >= w's round in any given cycle
-    //   - no w_ambiently_sleeping equivalent yet — could gate on round here
-    // -------------------------------------------------------------------------
-    async self_timekeeping(n: TheC) {
-        const round = ((n.sc.round as number) ?? 0) + 1
-        await n.r({ round: 1, self: 1 }, { round, self: 1, at: Date.now() })
-    }
-
-    // -------------------------------------------------------------------------
-    // agency_officing: post-pass bookkeeping. Original {A,w} signature preserved
-    // so Modus subclass (Agency ghost) overrides port cleanly.
-    //
-    // NOTE: Agency ghost also provides overrides for:
-    //   agency_officing()    — adds i_journeys_o_aims, full unemits loop
-    //   Aw_satisfied()       — same logic, callable from ghost
-    //   i_unemits_o_Aw()     — full PF.unemits wiring (guards on w.sc.unemits && this.PF)
-    //   self_timekeeping()   — same, available to override if timing differs
-    // The stubs here are the base fallbacks when no ghost is attached.
-    // -------------------------------------------------------------------------
-    async agency_officing(
-        AwN: { A: TheC; w: TheC }[],
-        AN: TheC[]
-    ) {
-        // percolate w/%aim -> journey paths
-        // < having this complicated feature: i_journeys_o_aims full port
-        //   (needs this.Tr, this.Se available — wire up when Dierarchy is attached)
-
-        // percolate w/%unemits -> external handlers
-        // < having this complicated feature: i_unemits_o_Aw full port
-        //   (needs this.PF available — wire up when PeeringFeature is attached)
-
-        for (let { A, w } of AwN) {
-            await this.i_unemits_o_Aw(A, w)
-        }
-
-        for (let { A, w } of AwN) {
-            for (let sa of w.o({ satisfied: 1 })) {
-                await this.Aw_satisfied(A, w, sa)
-            }
-        }
-
-        // KEEP_WHOLE_w: w can mutate sc (eg %then) — keep writing it down
-        for (let A of AN) {
-            const ws = A.o({ w: 1 })
-            await A.replace({ w: 1 }, async () => {
-                ws.map(w => A.i(w).is())
-            })
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Aw_satisfied: handle a w/%satisfied particle.
-    // Takes %then instruction, transitions A to a new w, re-elvises it.
-    // -------------------------------------------------------------------------
-    async Aw_satisfied(A: TheC, w: TheC, sa: TheC) {
-        const next_method = (w.sc.then as string) ?? 'out_of_instructions'
-        const c: TheUniversal = { w: next_method }
-        if (sa.sc.with) c.had = sa.sc.with
-
-        const nu = A.i(c)
-        nu.up = A
-        this.i_elvis(w, 'noop', { A: nu, way_thenced: 1 })
-        nu.empty()
-        for (let ai of w.o({ aim: 1 })) {
-            nu.i(ai)
-        }
-        A.drop(w)
-    }
-
-    // -------------------------------------------------------------------------
-    // i_unemits_o_Aw: percolate w/%unemits -> external message handlers.
-    // < having this complicated feature: full port needs this.PF (PeeringFeature)
-    // -------------------------------------------------------------------------
-    async i_unemits_o_Aw(_A: TheC, _w: TheC) {
-        // < wire up when PF is available
-    }
-
-    // -------------------------------------------------------------------------
-    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
-    // -------------------------------------------------------------------------
-    Awr_to_inst(n: TheC): Housing | undefined {
-        let found: Housing | undefined
-        this._Se.c.T?.sc.N?.forEach((T: Travel) => {
-            if (T.sc.n === n && T.sc.inst) found = T.sc.inst
-        })
-        return found
     }
 
     async eatfunc(hash) {

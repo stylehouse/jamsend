@@ -417,44 +417,6 @@ abstract class TimeGallopia extends ModusItself {
 
 
 
-    // when starting a new time, set the next
-    async reset_interval() {
-        // the universal %interval persists through time, may be adjusted
-        // our current %mo,interval row, a singleton
-        let n
-        let int = this.o({mo:'main',interval:1})[0]
-        let interval = int?.sc.interval || 3.6
-        let id; id = setTimeout(() => {
-            // if we are still the current callback
-            if (n != this.o({mo:'main',interval:1})[0]) return
-            // if the UI:Modus still exists
-            if (this.stopped) return
-            // thing above can stop
-            if (!this.S.started) return
-
-            this.main()
-            
-        },1000*interval)
-
-        await this.replace({mo:'main',interval:1}, async () => {
-            n = this.i({mo:'main',interval,id})
-        })
-    }
-    async self_timekeeping(C:TheC) {
-        // est timestamp
-        !C.oa({self:1,est:1})
-            && C.i({self:1,est:now_in_seconds()})
-
-        // two senses of time
-        let ro = C.o({self:1,round:1})[0]
-        let es = C.oa({self:1,est:1})[0]
-        await C.replace({self:1,round:1},async () => {
-            let round = Number(ro?.sc.round || 0) + 1
-            let age = es && es.ago('est')
-            C.i({self:1,round,age})
-        })
-    }
-
 
 
     // < GOING, but is a primitive sketch of replace()

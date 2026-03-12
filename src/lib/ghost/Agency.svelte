@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { keyser, type TheN } from "$lib/data/Stuff.svelte";
+    import { keyser, TheC, type TheN } from "$lib/data/Stuff.svelte";
     import type { RadioModus } from "$lib/p2p/ftp/Sharing.svelte";
+    import { now_in_seconds } from "$lib/p2p/Peerily.svelte";
     
     import { erring, grop, nex } from "$lib/Y";
     import { onMount } from "svelte";
@@ -353,19 +354,6 @@
         await w.r({see:1},{})
     },
 
-    // return true if a w doesn't need to happen
-
-    async w_ambiently_sleeping(w,times:number=4) {
-        await w.r({self:1,sleeping:1},{})
-        // has an event to process
-        if (w.oa({elvis:1})) return false
-        // h
-        let round = w.o1({round:1,self:1})
-        if (round == 1) return false
-        if (!(round % times)) return false
-        w.i({self:1,sleeping:`not the ${times}-1 time`})
-        return true
-    },
 
     async agency_officing(AwN,AN) {
         // percolate w/ai/%path -> j/%path from this A
@@ -420,6 +408,66 @@
         }
         A.drop(w)
     },
+
+
+
+
+//#endregion
+//#region Agency utils
+
+
+    // return true if a w doesn't need to happen
+    async w_ambiently_sleeping(w,times:number=4) {
+        await w.r({self:1,sleeping:1},{})
+        // has an event to process
+        if (w.oa({elvis:1})) return false
+        // h
+        let round = w.o1({round:1,self:1})
+        if (round == 1) return false
+        if (!(round % times)) return false
+        w.i({self:1,sleeping:`not the ${times}-1 time`})
+        return true
+    },
+
+    // when starting a new time, set the next
+    async reset_interval() {
+        // the universal %interval persists through time, may be adjusted
+        // our current %mo,interval row, a singleton
+        let n
+        let int = this.o({mo:'main',interval:1})[0]
+        let interval = int?.sc.interval || 3.6
+        let id; id = setTimeout(() => {
+            // if we are still the current callback
+            if (n != this.o({mo:'main',interval:1})[0]) return
+            // if the UI:Modus still exists
+            if (this.stopped) return
+            // thing above can stop
+            if (!this.S.started) return
+
+            this.main()
+            
+        },1000*interval)
+
+        await this.replace({mo:'main',interval:1}, async () => {
+            n = this.i({mo:'main',interval,id})
+        })
+    },
+
+    async self_timekeeping(C:TheC) {
+        // est timestamp
+        !C.oa({self:1,est:1})
+            && C.i({self:1,est:now_in_seconds()})
+
+        // two senses of time
+        let ro = C.o({self:1,round:1})[0]
+        let es = C.oa({self:1,est:1})[0]
+        await C.replace({self:1,round:1},async () => {
+            let round = Number(ro?.sc.round || 0) + 1
+            let age = es && es.ago('est')
+            C.i({self:1,round,age})
+        })
+    },
+
 
 
 
