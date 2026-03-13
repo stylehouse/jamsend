@@ -71,17 +71,6 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // every_House: return all Houses reachable from this Housing.
-    // Default: walk .up to the root House, return [that].
-    // Override in eg PeeringSharing to include all peer/feature Houses.
-    // -------------------------------------------------------------------------
-    every_House(): House[] {
-        let h: Housing = this
-        while (h.up) h = h.up
-        return [h as House]
-    }
-
-    // -------------------------------------------------------------------------
     // elvis_marked_from: sc mixin identifying this Housing as the sender.
     // -------------------------------------------------------------------------
     elvis_marked_from(): { from_name: string; from_ark: string } {
@@ -103,7 +92,7 @@ abstract class Housing extends TheC {
             return h as House
         }
         const Aname = (target as string).split('/')[0]
-        const houses = this.every_House()
+        const houses = this.every_House
         for (const candidate of houses) {
             if (candidate.o({ A: Aname })[0]) return candidate
         }
@@ -294,35 +283,6 @@ export class House extends StorableHousing {
     // Se is stable across beliefs() cycles — holds D** identity continuity
     Se = new Selection()
 
-    // null until first ghost eatfunc arrives — gates subHouse creation
-    ghosts: Record<string, Function> | null = $state(null)
- 
-    // Travel H/%H** (including self) and Object.assign ghosts onto each House
-    ghostsHaunt() {
-        if (!this.ghosts) return
-        // assign onto self
-        Object.assign(this, this.ghosts)
-        // walk registered child Houses
-        for (let n of this.o({ H: 1 })) {
-            let child = n.sc.inst as House | undefined
-            if (child) Object.assign(child, this.ghosts)
-        }
-    }
- 
-    // Spawn a child House, register it under this H.
-    // Throws if ghosts haven't arrived yet — caller should wait on H.ghosts.
-    subHouse(name: string): House {
-        if (!this.ghosts) throw `subHouse(${name}): H.ghosts not ready yet`
-        let existing = this.o({ H: name })[0]?.sc.inst as House | undefined
-        if (existing) return existing
-        let child = new House({ name })
-        child.up = this
-        // share the same ghosts immediately
-        Object.assign(child, this.ghosts)
-        this.i({ H: name, inst: child })
-        return child
-    }
-
     // possibly storable determinism for prandle()
     prng?:number[]
 
@@ -332,6 +292,63 @@ export class House extends StorableHousing {
         $effect(() => {
             if (this.todo.length) this.answer_calls()
         })
+    }
+
+    // null until first ghost eatfunc arrives — gates subHouse creation
+    ghosts: Record<string, Function> | null = $state(null)
+ 
+    // -------------------------------------------------------------------------
+    // all_House: Travel H/%H** collecting every ready House.
+    // match_sc:{H:1} descends into child Houses (which are TheC with sc.H=name).
+    // Safe to call from $derived — .o() lives inside House methods.
+    // -------------------------------------------------------------------------
+    get all_House(): House[] {
+        if (!this.stashed) return []
+        const N: House[] = []
+        // synchronous Travel — each_fn pushes stashed Houses into N
+        const visit = (h: House) => {
+            if (!h.stashed) return
+            N.push(h)
+            for (const child of h.o({ H: 1 }) as House[]) {
+                visit(child)
+            }
+        }
+        visit(this)
+        return N
+    }
+ 
+    // -------------------------------------------------------------------------
+    // every_House: stub — walks .up to root, returns root.all_House.
+    // Override or wrap in a peer topology to include Houses from other sources.
+    // -------------------------------------------------------------------------
+    get every_House(): House[] {
+        let h: Housing = this
+        while (h.up) h = h.up
+        return (h as House).all_House
+    }
+    // -------------------------------------------------------------------------
+    // ghostsHaunt: push ghosts onto self and all known child Houses.
+    // -------------------------------------------------------------------------
+    ghostsHaunt() {
+        if (!this.ghosts) return
+        for (const h of this.all_House) {
+            Object.assign(h, this.ghosts)
+        }
+    }
+ 
+    // -------------------------------------------------------------------------
+    // subHouse: spawn a named child House, register it (as itself, no inst wrapper),
+    // share ghosts immediately.
+    // -------------------------------------------------------------------------
+    subHouse(name: string): House {
+        if (!this.ghosts) throw `subHouse(${name}): H.ghosts not ready yet`
+        const existing = this.o({ H: name })[0] as House | undefined
+        if (existing) return existing
+        const child = new House({ name })
+        child.up = this
+        Object.assign(child, this.ghosts)
+        this.i(child)   // child IS the particle — sc.H = name set in constructor
+        return child
     }
 
     // -------------------------------------------------------------------------

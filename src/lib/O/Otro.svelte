@@ -1,6 +1,5 @@
 <script lang="ts">
     import Ghost    from "$lib/O/Ghost.svelte"
-    import { onMount } from "svelte"
     import { House, Work, register_class } from "$lib/O/Housing.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
 
@@ -19,15 +18,17 @@
     }
     register_class('w', WithItAll)
 
-    // ── H:Mundo declared here so template can react to it ────────────────────
-    let H = new House({ name: 'Mundo' })
+    // ── all House construction inside $effect ─────────────────────────────────
+    let H: House = $state(null!)
 
-    // ── once ghosts have arrived, create child Houses ─────────────────────────
-    // H.ghosts flips from null → object when Ghost.svelte's shim receives
-    // its first eatfunc(). The $effect runs exactly once after that.
+    $effect(() => {
+        H = new House({ name: 'Mundo' })
+    })
+
+    // ── once ghosts have arrived, wire child Houses ───────────────────────────
     let setup_done = false
     $effect(() => {
-        if (!H.ghosts || setup_done) return
+        if (!H?.ghosts || setup_done) return
         setup_done = true
 
         let S = H.subHouse('Story')
@@ -37,10 +38,10 @@
         go_busily()
     })
 
-    // ── reactive house list ───────────────────────────────────────────────────
-    let houses: House[] = $derived(
-        [H, ...H.o({ H: 1 }).map(n => n.sc.inst as House).filter(Boolean)]
-    )
+    // ── reactive house list via H.all_House ───────────────────────────────────
+    // all_House lives on House so .o() / Xify() mutations stay inside H.*
+    // and don't fire mid-derived in the template.
+    let houses: House[] = $derived(H?.all_House ?? [])
 
     function go_busily() {
         H.elvisto(H, 'think')
@@ -56,15 +57,15 @@
 <h3>Here we Are</h3>
 
 {#each houses as house (house.name)}
-    {#if house.stashed}
-        <h2>{house.name}</h2>
-        <Stuffing mem={house.imem('current')} stuff={house} M={house} />
-    {/if}
+    <h2>{house.name}</h2>
+    <Stuffing mem={house.imem('current')} stuff={house} M={house} />
 {/each}
 
-{#if H.stashed}
+{#if H?.stashed}
     <button onclick={upthings}>upthings ({H.stashed?.things ?? 0})</button>
     <button onclick={go_busily}>think</button>
 {/if}
 
-<Ghost {H} />
+{#if H}
+    <Ghost {H} />
+{/if}
