@@ -46,6 +46,11 @@
 
         },1)
 
+        setTimeout(() => {
+            S.elvisto(S, 'think')
+            S.todo.push("Blanks")
+        },1333)
+
         go_busily()
     })
 
@@ -56,7 +61,7 @@
 
     function go_busily() {
         H.elvisto(H, 'think')
-        
+
         let S = H.o({H:'Story'})[0]
         S.elvisto(S, 'think')
     }
@@ -71,7 +76,11 @@
 <h3>Here we Are</h3>
 
 {#each houses as house (house.name)}
-    <h2>{house.name}</h2>
+    <h2>
+        {house.name}
+        {#if !house.started}<span class='ungood'>off</span>{/if}
+        todo:{house.todo.length}
+    </h2>
     <Stuffing mem={house.imem('current')} stuff={house} M={house} />
 {/each}
 
@@ -83,3 +92,9 @@
 {#if H}
     <Ghost {H} />
 {/if}
+
+<style>
+    .ungood {
+        color: red;
+    }
+</style>

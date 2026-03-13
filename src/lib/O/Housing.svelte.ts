@@ -343,6 +343,11 @@ export class House extends StorableHousing {
         $effect(() => {
             if (!this.started && this._all_checks_pass()) this.started = true
         })
+        $effect(() => {
+            if (this.started) {
+                console.log(`H:${this.name} started: ${this.started}`)
+            }
+        })
     }
 
     // StorableHousing.start() wires the Dexie $effects; we call super to keep that.
