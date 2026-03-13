@@ -54,6 +54,20 @@ abstract class Housing extends TheC {
 
     declare start: Function
 
+    // -------------------------------------------------------------------------
+    // start_checks: return array of boolean|null readiness opinions.
+    // null = this layer has no opinion (ignored).
+    // Override in subclasses: return [...super.start_checks(), your_check]
+    // -------------------------------------------------------------------------
+    start_checks(): (boolean | null)[] {
+        return []
+    }
+
+    _all_checks_pass(): boolean {
+        const checks = this.start_checks().filter(c => c !== null) as boolean[]
+        return checks.length > 0 && checks.every(Boolean)
+    }
+
     async mutex(label: string, fn: () => Promise<void>) {
         const key = `_mutex_${label}`
         if (this.c[key]) {
@@ -68,6 +82,17 @@ abstract class Housing extends TheC {
             delete this.c[key]
             release!()
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // every_House: return all Houses reachable from this Housing.
+    // Default: walk .up to the root House, return [that].
+    // Override in eg PeeringSharing to include all peer/feature Houses.
+    // -------------------------------------------------------------------------
+    every_House(): House[] {
+        let h: Housing = this
+        while (h.up) h = h.up
+        return [h as House]
     }
 
     // -------------------------------------------------------------------------
@@ -92,7 +117,7 @@ abstract class Housing extends TheC {
             return h as House
         }
         const Aname = (target as string).split('/')[0]
-        const houses = this.every_House
+        const houses = this.every_House()
         for (const candidate of houses) {
             if (candidate.o({ A: Aname })[0]) return candidate
         }
@@ -181,6 +206,11 @@ abstract class StorableHousing extends Housing {
     _last_written: string | undefined
     _saving = false
 
+    // stashed is ready once it has loaded from Dexie (even if empty object)
+    override start_checks(): (boolean | null)[] {
+        return [...super.start_checks(), this.stashed != null]
+    }
+
     start() {
         const save = throttle(async () => {
             if (!this.stashed) return
@@ -207,17 +237,17 @@ abstract class StorableHousing extends Housing {
             ).subscribe({
                 next: (row) => {
                     if (!row) {
-                        if (!this.stashed) { this.stashed = {}; this.started = true }
+                        if (!this.stashed) { this.stashed = {} }
                         return
                     }
                     const incoming = row.json
                     if (incoming === this._last_written) {
-                        if (!this.started) { this.stashed = JSON.parse(incoming); this.started = true }
+                        if (!this.stashed) { this.stashed = JSON.parse(incoming) }
                         return
                     }
                     const parsed = JSON.parse(incoming)
                     if (!this.stashed) {
-                        this.stashed = parsed; this.started = true
+                        this.stashed = parsed
                     } else {
                         this._last_written = incoming
                         this.stashed = parsed
@@ -225,7 +255,7 @@ abstract class StorableHousing extends Housing {
                 },
                 error: (err) => {
                     console.error(`liveQuery ${this.constructor.name}:${this.name}`, err)
-                    if (!this.stashed) { this.stashed = {}; this.started = true }
+                    if (!this.stashed) { this.stashed = {} }
                 }
             })
             return () => sub.unsubscribe()
@@ -235,7 +265,7 @@ abstract class StorableHousing extends Housing {
 
 // Path-burrowing accessor into House.stashed — mirrors Modus.imem() / Modusmem.
 // imem('foo').further('bar').get('x')  reads  H.stashed.foo.bar.x
-// imem('foo').set('x', v)              writes H.stashed.foo.x = v
+// imem('foo').set('x', v)             writes H.stashed.foo.x = v
 export class Housemem {
     H: StorableHousing
     keys: string[]
@@ -284,30 +314,44 @@ export class House extends StorableHousing {
     Se = new Selection()
 
     // possibly storable determinism for prandle()
-    prng?:number[]
+    prng?: number[]
+
+    // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
+    ghosts: Record<string, Function> | null = $state(null)
+
+    // ghosts must have arrived before we are truly started
+    override start_checks(): (boolean | null)[] {
+        return [...super.start_checks(), this.ghosts !== null]
+    }
 
     constructor(opt: TheUniversal) {
         super(opt)
         this.sc.H = this.name
+
+        // drain todo — valid because House is always constructed inside $effect / onMount
         $effect(() => {
             if (this.todo.length) this.answer_calls()
         })
+
+        // single watcher for all readiness signals — flips started when all pass
+        $effect(() => {
+            if (!this.started && this._all_checks_pass()) this.started = true
+        })
     }
 
-    // null until first ghost eatfunc arrives — gates subHouse creation
-    ghosts: Record<string, Function> | null = $state(null)
- 
+    // StorableHousing.start() wires the Dexie $effects; we call super to keep that.
+    // The readiness $effect lives in the constructor so Svelte owns it correctly.
+    override start() {
+        super.start()
+    }
+
     // -------------------------------------------------------------------------
-    // all_House: Travel H/%H** collecting every ready House.
-    // match_sc:{H:1} descends into child Houses (which are TheC with sc.H=name).
-    // Safe to call from $derived — .o() lives inside House methods.
+    // all_House: sync recursive walk — no started guard so ghostsHaunt and
+    // every_House work before started is true.
     // -------------------------------------------------------------------------
     get all_House(): House[] {
-        if (!this.stashed) return []
         const N: House[] = []
-        // synchronous Travel — each_fn pushes stashed Houses into N
         const visit = (h: House) => {
-            if (!h.stashed) return
             N.push(h)
             for (const child of h.o({ H: 1 }) as House[]) {
                 visit(child)
@@ -316,16 +360,17 @@ export class House extends StorableHousing {
         visit(this)
         return N
     }
- 
+
     // -------------------------------------------------------------------------
-    // every_House: stub — walks .up to root, returns root.all_House.
-    // Override or wrap in a peer topology to include Houses from other sources.
+    // every_House: walks .up to root, returns [root].
+    // Override in peer topology to include Houses from other sources.
     // -------------------------------------------------------------------------
-    get every_House(): House[] {
+    override every_House(): House[] {
         let h: Housing = this
         while (h.up) h = h.up
         return (h as House).all_House
     }
+
     // -------------------------------------------------------------------------
     // ghostsHaunt: push ghosts onto self and all known child Houses.
     // -------------------------------------------------------------------------
@@ -335,7 +380,7 @@ export class House extends StorableHousing {
             Object.assign(h, this.ghosts)
         }
     }
- 
+
     // -------------------------------------------------------------------------
     // subHouse: spawn a named child House, register it (as itself, no inst wrapper),
     // share ghosts immediately.
@@ -365,6 +410,9 @@ export class House extends StorableHousing {
         this.answer_calls_throttle()
     }
     async _really_answer_calls() {
+        // don't process until stashed + ghosts are both ready
+        if (!this.started) return
+
         // tick the interval each time we drain — mirrors Modus.reset_interval()
         await this.reset_interval?.()
 
@@ -620,7 +668,6 @@ export class House extends StorableHousing {
             return false
         }
 
-        V.organise && console.log(`organise: all instances ready, proceeding to attend()`)
         return true
     }
 
@@ -639,6 +686,11 @@ export class House extends StorableHousing {
         await this.Se.c.T.forward(T => {
             if (T.c.path.length - 1 === 1) ATN.push(T)
         })
+
+
+        if (this.name == 'Story') {
+            debugger
+        }
 
         let targetedATN = e ? ATN.filter(T => this._e_targets_T(e, T) > 0) : ATN
         ATN = targetedATN.length ? targetedATN : ATN
@@ -710,7 +762,6 @@ export class House extends StorableHousing {
         } else {
             method = w.sc.w as string
         }
-
         // resolve handler: inst first, then H.* (ghost-injected methods)
         const handler: Function | undefined =
             (w_inst && typeof (w_inst as any)[method] === 'function')

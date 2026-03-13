@@ -23,17 +23,26 @@
 
     $effect(() => {
         H = new House({ name: 'Mundo' })
+        setTimeout(() => {
+            houses = [H]
+        },1)
     })
 
     // ── once ghosts have arrived, wire child Houses ───────────────────────────
     let setup_done = false
     $effect(() => {
-        if (!H?.ghosts || setup_done) return
+        if (!H?.started || setup_done) return
         setup_done = true
 
         let S = H.subHouse('Story')
         let SA = S.i({ A: 'Story' })
         SA.i({ w: 'Story', Book: 'LeafFarm' })
+        S.elvisto(S, 'think')
+
+        setTimeout(() => {
+            houses = H.all_House
+
+        },1)
 
         go_busily()
     })
@@ -41,7 +50,7 @@
     // ── reactive house list via H.all_House ───────────────────────────────────
     // all_House lives on House so .o() / Xify() mutations stay inside H.*
     // and don't fire mid-derived in the template.
-    let houses: House[] = $derived(H?.all_House ?? [])
+    let houses = $state([])
 
     function go_busily() {
         H.elvisto(H, 'think')
