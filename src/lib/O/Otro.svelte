@@ -34,6 +34,8 @@
         if (!H?.started || setup_done) return
         setup_done = true
 
+        H.i({A:'Blank'})
+
         let S = H.subHouse('Story')
         let SA = S.i({ A: 'Story' })
         SA.i({ w: 'Story', Book: 'LeafFarm' })
@@ -54,6 +56,9 @@
 
     function go_busily() {
         H.elvisto(H, 'think')
+        
+        let S = H.o({H:'Story'})[0]
+        S.elvisto(S, 'think')
     }
 
     function upthings() {

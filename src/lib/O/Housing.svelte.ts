@@ -111,9 +111,11 @@ abstract class Housing extends TheC {
     // If target is a string, search every_House() for the one owning A:Aname.
     // -------------------------------------------------------------------------
     _find_house(target: string | Housing): House {
+        let h: Housing = this
+        
         if (target instanceof Housing) {
             let h: Housing = target
-            while (h.up) h = h.up
+            while (h.up && !(h instanceof House)) h = h.up
             return h as House
         }
         const Aname = (target as string).split('/')[0]
@@ -181,11 +183,14 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // _push_todo: push an elvis particle onto the root House's todo queue.
+    // _push_todo: push an elvis particle onto this Housing's own root House.
+    // When called via elvisto(), `this` is already the correct target House.
+    // When called from Agency/Work internals (post_do, main, concretion),
+    // `this` is a House too — so the .up walk is just a safety net.
     // -------------------------------------------------------------------------
     _push_todo(e: TheC) {
         let h: Housing = this
-        while (h.up) h = h.up
+        while (h.up && !(h instanceof House)) h = h.up
         const H = h as House
         V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
         H.todo = [...H.todo, e]
@@ -330,6 +335,7 @@ export class House extends StorableHousing {
 
         // drain todo — valid because House is always constructed inside $effect / onMount
         $effect(() => {
+            console.log(`${this.name} pings todo!`)
             if (this.todo.length) this.answer_calls()
         })
 
@@ -668,6 +674,7 @@ export class House extends StorableHousing {
             return false
         }
 
+        V.organise && console.log(`organise: all instances ready, proceeding to attend()`)
         return true
     }
 
@@ -686,11 +693,6 @@ export class House extends StorableHousing {
         await this.Se.c.T.forward(T => {
             if (T.c.path.length - 1 === 1) ATN.push(T)
         })
-
-
-        if (this.name == 'Story') {
-            debugger
-        }
 
         let targetedATN = e ? ATN.filter(T => this._e_targets_T(e, T) > 0) : ATN
         ATN = targetedATN.length ? targetedATN : ATN
@@ -762,6 +764,7 @@ export class House extends StorableHousing {
         } else {
             method = w.sc.w as string
         }
+
         // resolve handler: inst first, then H.* (ghost-injected methods)
         const handler: Function | undefined =
             (w_inst && typeof (w_inst as any)[method] === 'function')
