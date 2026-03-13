@@ -15,7 +15,6 @@
     // Ambient method for w:Story on A:Story.
     // Reads w.sc.Book to decide which Run House to manage.
     async Story(A: TheC, w: TheC) {
-        throw "In it"
         let book = w.sc.Book as string | undefined
         if (!book) return w.i({ see: '!Book on w:Story' })
 

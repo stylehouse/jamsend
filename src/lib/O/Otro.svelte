@@ -1,6 +1,6 @@
 <script lang="ts">
     import Ghost    from "$lib/O/Ghost.svelte"
-    import { House, Work, register_class } from "$lib/O/Housing.svelte"
+    import { Checkitout, House, Work, register_class } from "$lib/O/Housing.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
 
     // A Work subclass with a withitall() method
@@ -20,12 +20,13 @@
 
     // ── all House construction inside $effect ─────────────────────────────────
     let H: House = $state(null!)
-
+    let R
     $effect(() => {
         H = new House({ name: 'Mundo' })
         setTimeout(() => {
             houses = [H]
         },1)
+        // R = new Checkitout({})
     })
 
     // ── once ghosts have arrived, wire child Houses ───────────────────────────
@@ -40,15 +41,18 @@
         let SA = S.i({ A: 'Story' })
         SA.i({ w: 'Story', Book: 'LeafFarm' })
         S.elvisto(S, 'think')
+        R  = new Checkitout({})
 
         setTimeout(() => {
             houses = H.all_House
-
         },1)
 
         setTimeout(() => {
-            S.elvisto(S, 'think')
-            S.todo.push("Blanks")
+            S.reactything = 3
+            // H.reactything = 3
+            R.reactything = 3
+            // S.elvisto(S, 'think')
+            // S.todo.push("Blanks")
         },1333)
 
         go_busily()

@@ -45,11 +45,15 @@ abstract class Housing extends TheC {
     stopped = false
     stop() { this.stopped = true }
 
+    #cleanup: () => void
+    destroy() { this.#cleanup() }
     constructor(opt: TheUniversal) {
         super({ sc: {} })
         Object.assign(this, opt)
         if (this.name == null) throw `!name`
-        this.start()
+        this.#cleanup = $effect.root(() => {
+            this.start()
+        })
     }
 
     declare start: Function
@@ -216,7 +220,7 @@ abstract class StorableHousing extends Housing {
         return [...super.start_checks(), this.stashed != null]
     }
 
-    start() {
+    override start() {
         const save = throttle(async () => {
             if (!this.stashed) return
             if (!Object.keys(this.stashed).length) return
@@ -312,6 +316,25 @@ const scheme = [
     { ark: 'r', sc: { r: 1 } },
 ]
 
+
+
+export class Checkitout {
+    // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
+    reactything:any = $state(null)
+    constructor(opt: TheUniversal) {
+        this.#cleanup = $effect.root(() => {
+            $effect(() => {
+                if (this.reactything) {
+                    console.log(`the reactything!`)
+                }
+            })
+        })
+    }
+    #cleanup: () => void
+    destroy() { this.#cleanup() }
+
+}
+
 export class House extends StorableHousing {
     _table = db.House
 
@@ -329,31 +352,40 @@ export class House extends StorableHousing {
         return [...super.start_checks(), this.ghosts !== null]
     }
 
+    // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
+    reactything:any = $state(null)
+
     constructor(opt: TheUniversal) {
         super(opt)
         this.sc.H = this.name
-
-        // drain todo — valid because House is always constructed inside $effect / onMount
-        $effect(() => {
-            console.log(`${this.name} pings todo!`)
-            if (this.todo.length) this.answer_calls()
-        })
-
-        // single watcher for all readiness signals — flips started when all pass
-        $effect(() => {
-            if (!this.started && this._all_checks_pass()) this.started = true
-        })
-        $effect(() => {
-            if (this.started) {
-                console.log(`H:${this.name} started: ${this.started}`)
-            }
-        })
     }
 
     // StorableHousing.start() wires the Dexie $effects; we call super to keep that.
     // The readiness $effect lives in the constructor so Svelte owns it correctly.
     override start() {
         super.start()
+
+        // $effect.root from Housing
+        $effect(() => {
+            console.log(`${this.name} pings todo!`)
+            if (this.todo.length) this.answer_calls()
+        })
+        $effect(() => {
+            if (!this.started && this._all_checks_pass()) this.started = true
+        })
+
+
+        // etc
+        $effect(() => {
+            if (this.started) {
+                console.log(`H:${this.name} started: ${this.started}`)
+            }
+        })
+        $effect(() => {
+            if (this.reactything) {
+                console.log(`${this.name} reactything!`)
+            }
+        })
     }
 
     // -------------------------------------------------------------------------
@@ -402,7 +434,8 @@ export class House extends StorableHousing {
         if (existing) return existing
         const child = new House({ name })
         child.up = this
-        Object.assign(child, this.ghosts)
+        child.ghosts = this.ghosts          // set via $state setter so the readiness $effect fires
+        Object.assign(child, this.ghosts)   // also spread methods onto child directly
         this.i(child)   // child IS the particle — sc.H = name set in constructor
         return child
     }
