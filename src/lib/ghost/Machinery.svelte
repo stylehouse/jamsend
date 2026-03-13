@@ -15,170 +15,210 @@
 
 //#region farm
 
-    // The farm produces biomass each tick from sunshine + poo.
-    // Occasionally a complex protein emerges that needs enzymatic breakdown
-    // before it can reach the plate.
+    // The farm grows individual %leaf particles from sunshine and poo.
+    // Each leaf has a .dose (float) representing its biomass content.
+    // Leaves grow each tick; max growth is 22% of current dose per tick.
+    // When a leaf reaches dose >= 2.0 it is snipped and elvis'd to plate.
+    // New leaves sprout when sunshine has been > 0.6 for two consecutive rounds,
+    //  using the spare $life_input that existing leaves couldn't absorb.
     async farm(A, w) {
         let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
 
-        if (tick == 3) {
-            this.i_elvis(w, 'prank_call', {
-                Aw: 'enzymeco',
-                quack:1,
-                tick,
-            })
-            
+        // ── %sunshine:1 ───────────────────────────────────────────────
+        let sun_dose = Math.sin(tick * 0.3) * 0.5 + 0.6   // 0.1 .. 1.1
+        let sun = w.o({ sunshine: 1 })[0]
+        if (!sun) sun = w.i({ sunshine: 1, dose: 0 })
+        sun.sc.dose = sun_dose
+
+        // track consecutive sunny rounds for sprouting
+        let streak = w.o({ sunny_streak: 1 })[0]
+        if (!streak) streak = w.i({ sunny_streak: 1, count: 0 })
+        streak.sc.count = sun_dose > 0.6 ? streak.sc.count + 1 : 0
+
+        // ── %poo:1 ────────────────────────────────────────────────────
+        let poo = w.o({ poo: 1 })[0]
+        if (!poo) poo = w.i({ poo: 1, dose: 0 })
+        poo.sc.dose = Math.min(poo.sc.dose + 0.4, 8)
+
+        // ── $life_input: shared growth budget ─────────────────────────
+        let life_input = sun_dose * Math.min(poo.sc.dose, 4)
+        poo.sc.dose *= 0.85   // poo consumed by photosynthesis
+
+        // ── grow existing %leaf particles ─────────────────────────────
+        let leaves = w.o({ leaf: 1 })
+        let total_leaf_dose = leaves.reduce((s, l) => s + l.sc.dose, 0) || 1
+        let absorbed = 0
+        for (let leaf of leaves) {
+            let share = life_input * (leaf.sc.dose / total_leaf_dose)
+            let max_growth = leaf.sc.dose * 0.22
+            let growth = Math.min(share, max_growth)
+            leaf.sc.dose += growth
+            absorbed += growth
         }
 
-        // --- sunshine accumulates on a daily rhythm
-        let sun = Math.sin(tick * 0.3) * 0.5 + 0.6   // 0.1 .. 1.1
-        await w.r({ resource: 'sunshine' }, { resource: 'sunshine', amount: sun })
-
-        // --- poo magically spawns (animals exist offscreen)
-        let poo = w.o({ resource: 'poo' })[0]
-        if (!poo) poo = w.i({ resource: 'poo', amount: 0 })
-        poo.sc.amount = Math.min(poo.sc.amount + 0.4, 8)
-
-        // --- grow biomass from sunshine * poo
-        let fertility = sun * Math.min(poo.sc.amount, 4)
-        let grown = w.o({ resource: 'biomass' })[0]
-        if (!grown) grown = w.i({ resource: 'biomass', amount: 0 })
-        grown.sc.amount = Math.min(grown.sc.amount + fertility * 0.2, 20)
-        poo.sc.amount *= 0.85   // poo consumed by growth
-
-        V.farm && w.i({ see: `☀️${sun.toFixed(1)} 💩${poo.sc.amount.toFixed(1)} 🌱${grown.sc.amount.toFixed(1)}` })
-
-        // --- harvest: send a chunk to the plate each tick if enough biomass
-        if (grown.sc.amount >= 2) {
-            let harvest = Math.min(grown.sc.amount * 0.3, 3)
-            grown.sc.amount -= harvest
-            this.i_elvis(w, 'receive_harvest', {
-                Aw: 'plate/plate',
-                harvest,
-                tick,
-            })
+        // ── sprouting: spare life_input → new %leaf particles ─────────
+        // Only when sunny_streak >= 2.
+        // Each sprout starts at dose 0.1; total new dose capped to 0.22 per tick.
+        if (streak.sc.count >= 2) {
+            let spare = Math.max(life_input - absorbed, 0)
+            let sprout_budget = 0.22
+            while (spare > 0.1 && sprout_budget > 0) {
+                let dose = Math.min(0.1, spare, sprout_budget)
+                let id = `leaf_${tick}_${this.prandle(9999)}`
+                w.i({ leaf: 1, leaf_id: id, dose })
+                V.farm && console.log(`🌿 farm: sprout ${id} dose:${dose.toFixed(3)}`)
+                spare        -= dose
+                sprout_budget -= dose
+            }
         }
 
-        // --- occasionally a complex protein emerges (every ~7 ticks)
-        // sent to plate as a raw protein item; plate handles enzyme breakdown
+        // ── harvest ripe leaves → elvis to plate ──────────────────────
+        // A leaf is ripe at dose >= 2.0; it physically leaves the farm.
+        for (let leaf of w.o({ leaf: 1 })) {
+            if (leaf.sc.dose >= 2.0) {
+                V.farm && console.log(`✂️  farm: harvesting ${leaf.sc.leaf_id} dose:${leaf.sc.dose.toFixed(2)}`)
+                this.i_elvis(w, 'receive_harvest', {
+                    Aw:      'plate/plate',
+                    leaf_id: leaf.sc.leaf_id,
+                    dose:    leaf.sc.dose,
+                    tick,
+                })
+                w.drop(leaf)
+            }
+        }
+
+        // ── complex protein (every ~7 ticks) ──────────────────────────
         if (tick > 0 && tick % 7 === 0) {
             let protein_id = `prot_${tick}`
             if (!w.o({ protein: 1, protein_id }).length) {
-                let complexity = 2 + Math.floor(Math.random() * 4)
+                let complexity = 2 + this.prandle(4)
                 w.i({ protein: 1, protein_id, complexity })
-                V.farm && console.log(`🧬 farm: protein emerged ${protein_id} complexity:${complexity}`)
+                V.farm && console.log(`🧬 farm: protein ${protein_id} complexity:${complexity}`)
                 this.i_elvis(w, 'receive_protein', {
                     Aw: 'plate/plate',
                     protein_id,
                     complexity,
                 })
-                // drop local tracking immediately — plate owns it now
                 w.drop(w.o({ protein: 1, protein_id })[0])
             }
+        }
+
+        if (V.farm) {
+            let lc = w.o({ leaf: 1 }).length
+            let lt = w.o({ leaf: 1 }).reduce((s, l) => s + l.sc.dose, 0)
+            w.i({ see: `☀️${sun_dose.toFixed(1)} 💩${poo.sc.dose.toFixed(1)} 🌿x${lc}(${lt.toFixed(1)}) streak:${streak.sc.count}` })
         }
     },
 
 //#endregion
 //#region plate
 
-    // The plate receives harvests (basic material) and proteins from the farm.
-    // Proteins require enzyme units to break down before they become basic material.
-    // When enzyme runs out, plate requests a restock from enzymeco.
+    // plate receives harvested leaf particles and protein from farm.
+    // Leaf dose → basic material.
+    // Proteins are broken down using %enzyme particles sitting on the %shelf:1.
+    // When the shelf is empty plate sends a request_enzyme elvis to enzymeco.
     async plate(A, w) {
-        let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
 
-        // --- receive harvests from farm -> basic material
+        // ── receive harvested leaves → basic material ─────────────────
         for (let e of this.o_elvis(w, 'receive_harvest')) {
             let basic = w.o({ material: 'basic' })[0]
             if (!basic) basic = w.i({ material: 'basic', amount: 0 })
-            basic.sc.amount += e.sc.harvest
-            V.plate && console.log(`🍽️  plate: +${e.sc.harvest.toFixed(2)} basic (total: ${basic.sc.amount.toFixed(2)})`)
+            basic.sc.amount += e.sc.dose
+            V.plate && console.log(`🍽️  plate: leaf ${e.sc.leaf_id} +${e.sc.dose.toFixed(2)} basic`)
         }
 
-        // --- receive proteins from farm -> queue them
+        // ── receive proteins → queue them ─────────────────────────────
         for (let e of this.o_elvis(w, 'receive_protein')) {
             if (!w.o({ protein: 1, protein_id: e.sc.protein_id }).length) {
                 w.i({ protein: 1, protein_id: e.sc.protein_id, complexity: e.sc.complexity })
-                V.plate && console.log(`🧫 plate: protein arrived ${e.sc.protein_id} complexity:${e.sc.complexity}`)
+                V.plate && console.log(`🧫 plate: protein ${e.sc.protein_id} complexity:${e.sc.complexity}`)
             }
         }
 
-        // --- receive enzyme delivery from enzymeco
+        // ── receive enzyme particles → onto the shelf ─────────────────
         for (let e of this.o_elvis(w, 'deliver_enzyme')) {
-            let inv = w.o({ enzyme_inventory: 1 })[0]
-            if (!inv) inv = w.i({ enzyme_inventory: 1, units: 0 })
-            inv.sc.units += e.sc.units
-            V.enzyme && console.log(`💊 plate: enzyme restocked +${e.sc.units} (total: ${inv.sc.units})`)
+            w.i({ shelf: 1, enzyme: 1, units: e.sc.units })
+            V.enzyme && console.log(`💊 plate: enzyme on shelf +${e.sc.units} units`)
         }
 
-        // --- break down queued proteins using enzyme units
-        let inv = w.o({ enzyme_inventory: 1 })[0]
+        // ── break down proteins using shelf enzymes ───────────────────
+        // Use first enzyme particle until exhausted; then request more.
         for (let prot of w.o({ protein: 1 })) {
-            if (!inv || inv.sc.units <= 0) {
-                // out of enzyme — request more if not already pending
+            let first_enzyme = w.o({ shelf: 1, enzyme: 1 })[0]
+            if (!first_enzyme) {
                 if (!w.oa({ wants_enzyme: 1 })) {
                     w.i({ wants_enzyme: 1 })
                     V.enzyme && console.log(`💊 plate: out of enzyme, requesting restock`)
                     this.i_elvis(w, 'request_enzyme', { Aw: 'enzymeco/enzymeco' })
                 }
-                break   // can't proceed without enzyme
+                break
             }
-            // consume enzyme units equal to protein complexity
-            let cost = Math.min(prot.sc.complexity, inv.sc.units)
-            inv.sc.units -= cost
-            prot.sc.complexity -= cost
+
+            let cost = Math.min(prot.sc.complexity, first_enzyme.sc.units)
+            first_enzyme.sc.units -= cost
+            prot.sc.complexity    -= cost
+
+            if (first_enzyme.sc.units <= 0) {
+                V.enzyme && console.log(`💊 plate: enzyme particle exhausted`)
+                w.drop(first_enzyme)
+                await w.r({ wants_enzyme: 1 }, {})
+            }
+
             if (prot.sc.complexity <= 0) {
-                // fully broken down -> basic material
                 let basic = w.o({ material: 'basic' })[0]
                 if (!basic) basic = w.i({ material: 'basic', amount: 0 })
                 basic.sc.amount += 2
-                V.plate && console.log(`✅ plate: protein ${prot.sc.protein_id} broken down -> +2 basic`)
+                V.plate && console.log(`✅ plate: ${prot.sc.protein_id} broken down → +2 basic`)
                 w.drop(prot)
-                // clear wants_enzyme since we made progress
-                await w.r({ wants_enzyme: 1 }, {})
             }
         }
 
-        // --- basic material vanishes at a steady rate (consumed by life)
+        // ── basic material consumed by life ───────────────────────────
         let basic = w.o({ material: 'basic' })[0]
         if (basic) {
             let vanish = Math.min(basic.sc.amount * 0.25, 1.5)
             basic.sc.amount = Math.max(basic.sc.amount - vanish, 0)
-            V.plate && basic.sc.amount > 0.1 && w.i({
-                see: `🍽️ basic:${basic.sc.amount.toFixed(2)} (-${vanish.toFixed(2)})`
-            })
+            if (V.plate && basic.sc.amount > 0.1)
+                w.i({ see: `🍽️ basic:${basic.sc.amount.toFixed(2)} (-${vanish.toFixed(2)})` })
+        }
+
+        if (V.plate) {
+            let shelf = w.o({ shelf: 1, enzyme: 1 })
+            let shelf_units = shelf.reduce((s, e) => s + e.sc.units, 0)
+            shelf.length && w.i({ see: `💊 shelf: ${shelf.length} enzyme(s), ${shelf_units.toFixed(0)} units` })
         }
     },
 
 //#endregion
 //#region enzymeco
 
-    // enzymeco is a supplier, not a service.
-    // plate asks for enzyme when it has none; enzymeco produces a batch (5 units)
-    // and sends it as an item via 'deliver_enzyme' elvis.
+    // enzymeco produces enzyme particles inside a %producing batch.
+    // When done the particle is elvis'd directly to plate.
     async enzymeco(A, w) {
-        // --- receive restock requests from plate
-        for (let e of this.o_elvis(w, 'prank_call')) {
-            w.i({fluster:1})
-        }
+
+        // ── receive restock requests ──────────────────────────────────
         for (let e of this.o_elvis(w, 'request_enzyme')) {
-            // only one pending delivery at a time
-            if (w.oa({ producing: 1 })) continue
-            w.i({ producing: 1, ticks_left: 3, batch: 5 })
-            V.enzyme && console.log(`🏭 enzymeco: starting enzyme batch (3 ticks)`)
+            if (w.oa({ producing: 1 })) {
+                V.enzyme && console.log(`🏭 enzymeco: already producing, ignoring`)
+                continue
+            }
+            let prod = w.i({ producing: 1, ticks_left: 3 })
+            prod.i({ enzyme: 1, units: 5 })   // enzyme particle gestates inside prod
+            V.enzyme && console.log(`🏭 enzymeco: batch started (3 ticks, 5 units)`)
         }
 
-        // --- work down production
+        // ── tick down production ──────────────────────────────────────
         let prod = w.o({ producing: 1 })[0]
         if (prod) {
             prod.sc.ticks_left -= 1
             if (prod.sc.ticks_left <= 0) {
-                V.enzyme && console.log(`✅ enzymeco: batch ready, delivering ${prod.sc.batch} units to plate`)
+                let enzyme = prod.o({ enzyme: 1 })[0]
+                V.enzyme && console.log(`✅ enzymeco: delivering ${enzyme.sc.units} units`)
                 this.i_elvis(w, 'deliver_enzyme', {
-                    Aw: 'plate/plate',
-                    units: prod.sc.batch,
+                    Aw:    'plate/plate',
+                    units: enzyme.sc.units,
                 })
-                w.drop(prod)
+                w.drop(prod)   // enzyme particle inside is dropped with its host
             } else {
                 V.enzyme && console.log(`⏳ enzymeco: producing (${prod.sc.ticks_left} ticks left)`)
             }
@@ -188,10 +228,7 @@
 //#endregion
 //#region do_A
 
-    // Wire up the three workers.
-    // Called once by Housing when eatfunc() runs (via when_to_do_A / do_A).
     async do_A() {
-        // farm produces, plate consumes, enzymeco mediates
         for (let [Aname, wname] of [['farm','farm'], ['plate','plate'], ['enzymeco','enzymeco']]) {
             let A = this.o({ A: Aname })[0] || this.i({ A: Aname })
             if (!A.o({ w: wname }).length) A.i({ w: wname })

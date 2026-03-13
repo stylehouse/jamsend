@@ -199,24 +199,6 @@ export class Modusmem {
 
 abstract class TimeGallopia extends ModusItself {
     // Modus will be highly tested so is the center of virtualisations
-    // < determinism mode, testing
-    // picks whole numbers 0-($n||1)
-    prandle(n:number) {
-        return Math.floor(Math.random()*n)
-    }
-    
-    // garbage collect items from the front (oldest)
-    whittle_N(N:TheN,to:number) {
-        to ||= 20
-        let goners = []
-        while (N.length > to) {
-            let n:TheC = N.shift() // removes them from your array
-            // < drop() is weird... meant for the host
-            n.drop(n)
-            goners.push(n)
-        }
-        return goners
-    }
 
     // locate the more up to date version of a C
     //   for giving lexically scoped variables (eg A/w/wh/rr)
