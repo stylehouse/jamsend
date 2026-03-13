@@ -1,3 +1,4 @@
+// vastly AI
 import { keyser, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { tex, throttle } from "$lib/Y.ts"
@@ -292,6 +293,9 @@ export class House extends StorableHousing {
 
     // Se is stable across beliefs() cycles — holds D** identity continuity
     Se = new Selection()
+
+    // possibly storable determinism for prandle()
+    prng?:number[]
 
     constructor(opt: TheUniversal) {
         super(opt)

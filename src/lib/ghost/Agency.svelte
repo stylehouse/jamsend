@@ -575,11 +575,17 @@
 
 //#endregion
 //#region util
-    // < determinism mode, testing
+    // determinism. you (House) might sync prng to stashed or something.
     // picks whole numbers 0-($n||1)
     prandle(n:number) {
-        return Math.floor(Math.random()*n)
-    }
+        let [a,b,c,d] = this.prng = this.prng || [1,2,3,4]
+        const t = b << 9
+        c ^= a; d ^= b; b ^= c; a ^= d; c ^= t
+        d = (d << 11) | (d >>> 21)
+        this.prng = [a,b,c,d]
+        let r = (Math.imul(b, 5) >>> 0) / 4294967296  // the ** part
+        return Math.floor(r * n)
+    },
     
     // garbage collect items from the front (oldest)
     whittle_N(N:TheN,to:number) {
@@ -592,8 +598,8 @@
             goners.push(n)
         }
         return goners
-    }
-    
+    },
+
     async requesty_serial(w,t) {
         let reqserialc = {}
         reqserialc['requesty_'+t+'_serial'] = 1

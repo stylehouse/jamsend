@@ -1,3 +1,4 @@
+// AI
 <script lang="ts">
     import { keyser, TheC, type TheN } from "$lib/data/Stuff.svelte";
     import { now_in_seconds } from "$lib/p2p/Peerily.svelte";

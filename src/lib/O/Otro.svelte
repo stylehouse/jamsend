@@ -31,6 +31,7 @@
     let H = new House({name:'Mundo'})
     let M = H // was named Modus
     $effect(() => {
+        console.log(`🔥!!`)
         if (H.todo.length) {
             H.answer_calls()
         }
@@ -60,6 +61,7 @@
         setTimeout(go_busily,30)
         setTimeout(go_busily,60)
         setTimeout(go_busily,90)
+        console.log(`🔥!!`)
     })
     function upthings() {
         H.stashed.things ||= 0
