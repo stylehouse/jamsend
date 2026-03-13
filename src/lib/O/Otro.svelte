@@ -36,6 +36,10 @@
         }
     })
 
+    function go_busily() {
+        console.log(`🔥`)
+        H.elvisto(H,'think')
+    }
 
     // the first thing to do
     //  now that H has been injected with Agency ghost
@@ -53,6 +57,9 @@
             // H.o({ A: 'something' })[0].i({ w: 'withitall' })
             // H.elvisto('something/withitall', 'withitall', { payload: 'hello' })
         },3)
+        setTimeout(go_busily,30)
+        setTimeout(go_busily,60)
+        setTimeout(go_busily,90)
     })
     function upthings() {
         H.stashed.things ||= 0

@@ -21,6 +21,15 @@
     async farm(A, w) {
         let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
 
+        if (tick == 3) {
+            this.i_elvis(w, 'prank_call', {
+                Aw: 'enzymeco',
+                quack:1,
+                tick,
+            })
+            
+        }
+
         // --- sunshine accumulates on a daily rhythm
         let sun = Math.sin(tick * 0.3) * 0.5 + 0.6   // 0.1 .. 1.1
         await w.r({ resource: 'sunshine' }, { resource: 'sunshine', amount: sun })
@@ -149,7 +158,9 @@
     // and sends it as an item via 'deliver_enzyme' elvis.
     async enzymeco(A, w) {
         // --- receive restock requests from plate
-        if (w.c.e.sc.elvis != 'think') debugger
+        for (let e of this.o_elvis(w, 'prank_call')) {
+            w.i({fluster:1})
+        }
         for (let e of this.o_elvis(w, 'request_enzyme')) {
             // only one pending delivery at a time
             if (w.oa({ producing: 1 })) continue

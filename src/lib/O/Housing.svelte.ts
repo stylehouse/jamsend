@@ -109,6 +109,9 @@ abstract class Housing extends TheC {
         throw `elvisto: no House has A:${Aname} (target=${target})`
     }
 
+//#endregion
+//#region elvisto
+
     // -------------------------------------------------------------------------
     // elvisto: post an elvis to whichever House owns the target A.
     // target: string 'AgencyName/workName' | 'AgencyName', or a Housing instance
@@ -156,7 +159,7 @@ abstract class Housing extends TheC {
     }
 
     _o_elvis(w: TheC, type: string): TheC[] {
-        w.oai({ elvising: type })
+        w.oai({ o_elvis: type })
         const e = w.c.e as TheC | undefined
         if (!e || e.sc.elvis !== type) return []
         return [e]
@@ -643,13 +646,14 @@ export class House extends StorableHousing {
         let method: string
         if (targeting === 2) {
             const elvis_type = e!.sc.elvis as string
-            const advertised = w.oa({ elvising: elvis_type })
-            const self_named = w.sc.w === elvis_type
-            if (advertised || self_named) {
-                method = elvis_type
-            } else {
-                method = w.sc.w as string
-            }
+            // if (elvis_type == 'receive_harvest') debugger
+            let handled_by_w_method = 
+                elvis_type == 'think' // asking for the main method
+                    // e type is one it opens inside the main method
+                    || w.oa({ o_elvis: elvis_type }) 
+            method =
+                handled_by_w_method ? w.sc.w
+                    : elvis_type
         } else {
             method = w.sc.w as string
         }
@@ -677,7 +681,7 @@ export class House extends StorableHousing {
                 delete w.c.e
             }
         } else {
-            if (targeting === 2 && e!.sc.elvis !== 'think') {
+            if (targeting === 2) {
                 console.warn(`💭 ${A.sc.A}/${w.sc.w} !method: ${method}`)
             }
         }
