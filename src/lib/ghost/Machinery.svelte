@@ -51,32 +51,20 @@
         }
 
         // --- occasionally a complex protein emerges (every ~7 ticks)
+        // sent to plate as a raw protein item; plate handles enzyme breakdown
         if (tick > 0 && tick % 7 === 0) {
             let protein_id = `prot_${tick}`
-            // only spawn if not already waiting
             if (!w.o({ protein: 1, protein_id }).length) {
-                let prot = w.i({ protein: 1, protein_id, complexity: 2 + Math.floor(Math.random() * 4) })
-                V.farm && console.log(`🧬 farm: protein emerged ${protein_id} complexity:${prot.sc.complexity}`)
-                // request enzyme order — expects a 'breakdown' elvis back
-                this.i_elvis(w, 'order_enzyme', {
-                    Aw: 'enzymeco/enzymeco',
+                let complexity = 2 + Math.floor(Math.random() * 4)
+                w.i({ protein: 1, protein_id, complexity })
+                V.farm && console.log(`🧬 farm: protein emerged ${protein_id} complexity:${complexity}`)
+                this.i_elvis(w, 'receive_protein', {
+                    Aw: 'plate/plate',
                     protein_id,
-                    complexity: prot.sc.complexity,
-                    reply_to: 'farm/farm',
+                    complexity,
                 })
-            }
-        }
-
-        // --- receive enzyme breakdown results
-        for (let e of this.o_elvis(w, 'breakdown')) {
-            let { protein_id, yield: y } = e.sc
-            let prot = w.o({ protein: 1, protein_id })[0]
-            if (prot) {
-                V.farm && console.log(`⚗️  farm: breakdown received for ${protein_id} yield:${y}`)
-                // convert protein into extra biomass
-                let bm = w.o({ resource: 'biomass' })[0]
-                if (bm) bm.sc.amount = Math.min(bm.sc.amount + y, 20)
-                w.drop(prot)
+                // drop local tracking immediately — plate owns it now
+                w.drop(w.o({ protein: 1, protein_id })[0])
             }
         }
     },
@@ -84,21 +72,65 @@
 //#endregion
 //#region plate
 
-    // The plate receives harvests from the farm and breaks them down
-    // into basic material which constantly vanishes (consumed by... life).
+    // The plate receives harvests (basic material) and proteins from the farm.
+    // Proteins require enzyme units to break down before they become basic material.
+    // When enzyme runs out, plate requests a restock from enzymeco.
     async plate(A, w) {
         let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
 
-        // --- receive harvests from farm
+        // --- receive harvests from farm -> basic material
         for (let e of this.o_elvis(w, 'receive_harvest')) {
-            let { harvest } = e.sc
             let basic = w.o({ material: 'basic' })[0]
             if (!basic) basic = w.i({ material: 'basic', amount: 0 })
-            basic.sc.amount += harvest
-            V.plate && console.log(`🍽️  plate: +${harvest.toFixed(2)} basic material (total: ${basic.sc.amount.toFixed(2)})`)
+            basic.sc.amount += e.sc.harvest
+            V.plate && console.log(`🍽️  plate: +${e.sc.harvest.toFixed(2)} basic (total: ${basic.sc.amount.toFixed(2)})`)
         }
 
-        // --- basic material vanishes at a steady rate (consumed)
+        // --- receive proteins from farm -> queue them
+        for (let e of this.o_elvis(w, 'receive_protein')) {
+            if (!w.o({ protein: 1, protein_id: e.sc.protein_id }).length) {
+                w.i({ protein: 1, protein_id: e.sc.protein_id, complexity: e.sc.complexity })
+                V.plate && console.log(`🧫 plate: protein arrived ${e.sc.protein_id} complexity:${e.sc.complexity}`)
+            }
+        }
+
+        // --- receive enzyme delivery from enzymeco
+        for (let e of this.o_elvis(w, 'deliver_enzyme')) {
+            let inv = w.o({ enzyme_inventory: 1 })[0]
+            if (!inv) inv = w.i({ enzyme_inventory: 1, units: 0 })
+            inv.sc.units += e.sc.units
+            V.enzyme && console.log(`💊 plate: enzyme restocked +${e.sc.units} (total: ${inv.sc.units})`)
+        }
+
+        // --- break down queued proteins using enzyme units
+        let inv = w.o({ enzyme_inventory: 1 })[0]
+        for (let prot of w.o({ protein: 1 })) {
+            if (!inv || inv.sc.units <= 0) {
+                // out of enzyme — request more if not already pending
+                if (!w.oa({ wants_enzyme: 1 })) {
+                    w.i({ wants_enzyme: 1 })
+                    V.enzyme && console.log(`💊 plate: out of enzyme, requesting restock`)
+                    this.i_elvis(w, 'request_enzyme', { Aw: 'enzymeco/enzymeco' })
+                }
+                break   // can't proceed without enzyme
+            }
+            // consume enzyme units equal to protein complexity
+            let cost = Math.min(prot.sc.complexity, inv.sc.units)
+            inv.sc.units -= cost
+            prot.sc.complexity -= cost
+            if (prot.sc.complexity <= 0) {
+                // fully broken down -> basic material
+                let basic = w.o({ material: 'basic' })[0]
+                if (!basic) basic = w.i({ material: 'basic', amount: 0 })
+                basic.sc.amount += 2
+                V.plate && console.log(`✅ plate: protein ${prot.sc.protein_id} broken down -> +2 basic`)
+                w.drop(prot)
+                // clear wants_enzyme since we made progress
+                await w.r({ wants_enzyme: 1 }, {})
+            }
+        }
+
+        // --- basic material vanishes at a steady rate (consumed by life)
         let basic = w.o({ material: 'basic' })[0]
         if (basic) {
             let vanish = Math.min(basic.sc.amount * 0.25, 1.5)
@@ -112,36 +144,32 @@
 //#endregion
 //#region enzymeco
 
-    // enzymeco receives protein orders, takes some time (complexity ticks),
-    // then sends back a 'breakdown' elvis with a yield amount.
+    // enzymeco is a supplier, not a service.
+    // plate asks for enzyme when it has none; enzymeco produces a batch (5 units)
+    // and sends it as an item via 'deliver_enzyme' elvis.
     async enzymeco(A, w) {
-        // --- receive new orders
+        // --- receive restock requests from plate
         if (w.c.e.sc.elvis != 'think') debugger
-        for (let e of this.o_elvis(w, 'order_enzyme')) {
-            let { protein_id, complexity, reply_to } = e.sc
-            // only one order per protein
-            if (!w.o({ order: 1, protein_id }).length) {
-                w.i({ order: 1, protein_id, complexity, reply_to, started_at: now_in_seconds(), ticks_left: complexity })
-                V.enzyme && console.log(`🏭 enzymeco: order received for ${protein_id} (complexity:${complexity})`)
-            }
+        for (let e of this.o_elvis(w, 'request_enzyme')) {
+            // only one pending delivery at a time
+            if (w.oa({ producing: 1 })) continue
+            w.i({ producing: 1, ticks_left: 3, batch: 5 })
+            V.enzyme && console.log(`🏭 enzymeco: starting enzyme batch (3 ticks)`)
         }
 
-        // --- work down existing orders
-        for (let order of w.o({ order: 1 })) {
-            order.sc.ticks_left -= 1
-            if (order.sc.ticks_left <= 0) {
-                let yield_amount = order.sc.complexity * 1.4
-                V.enzyme && console.log(`✅ enzymeco: breakdown complete for ${order.sc.protein_id} yield:${yield_amount.toFixed(2)}`)
-                // reply to farm
-                this.i_elvis(w, 'breakdown', {
-                    Aw: order.sc.reply_to,
-                    protein_id: order.sc.protein_id,
-                    yield: yield_amount,
+        // --- work down production
+        let prod = w.o({ producing: 1 })[0]
+        if (prod) {
+            prod.sc.ticks_left -= 1
+            if (prod.sc.ticks_left <= 0) {
+                V.enzyme && console.log(`✅ enzymeco: batch ready, delivering ${prod.sc.batch} units to plate`)
+                this.i_elvis(w, 'deliver_enzyme', {
+                    Aw: 'plate/plate',
+                    units: prod.sc.batch,
                 })
-                w.drop(order)
-            }
-            else {
-                V.enzyme && console.log(`⏳ enzymeco: processing ${order.sc.protein_id} (${order.sc.ticks_left} ticks left)`)
+                w.drop(prod)
+            } else {
+                V.enzyme && console.log(`⏳ enzymeco: producing (${prod.sc.ticks_left} ticks left)`)
             }
         }
     },
