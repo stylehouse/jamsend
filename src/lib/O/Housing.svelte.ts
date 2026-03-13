@@ -294,12 +294,44 @@ export class House extends StorableHousing {
     // Se is stable across beliefs() cycles — holds D** identity continuity
     Se = new Selection()
 
+    // null until first ghost eatfunc arrives — gates subHouse creation
+    ghosts: Record<string, Function> | null = $state(null)
+ 
+    // Travel H/%H** (including self) and Object.assign ghosts onto each House
+    ghostsHaunt() {
+        if (!this.ghosts) return
+        // assign onto self
+        Object.assign(this, this.ghosts)
+        // walk registered child Houses
+        for (let n of this.o({ H: 1 })) {
+            let child = n.sc.inst as House | undefined
+            if (child) Object.assign(child, this.ghosts)
+        }
+    }
+ 
+    // Spawn a child House, register it under this H.
+    // Throws if ghosts haven't arrived yet — caller should wait on H.ghosts.
+    subHouse(name: string): House {
+        if (!this.ghosts) throw `subHouse(${name}): H.ghosts not ready yet`
+        let existing = this.o({ H: name })[0]?.sc.inst as House | undefined
+        if (existing) return existing
+        let child = new House({ name })
+        child.up = this
+        // share the same ghosts immediately
+        Object.assign(child, this.ghosts)
+        this.i({ H: name, inst: child })
+        return child
+    }
+
     // possibly storable determinism for prandle()
     prng?:number[]
 
     constructor(opt: TheUniversal) {
         super(opt)
         this.sc.H = this.name
+        $effect(() => {
+            if (this.todo.length) this.answer_calls()
+        })
     }
 
     // -------------------------------------------------------------------------
