@@ -451,10 +451,10 @@ export class House extends StorableHousing {
 
         const original_e = e
         this.post_do(async () => {
-            const inst = concretion(T)
+            const inst = this.concretion(T)
             T.sc.inst = inst
             if ('started' in inst && !(inst as any).started) {
-                await inst_started(inst)
+                await this.inst_started(inst)
             }
             if (original_e) this._push_todo(original_e)
         }, {
@@ -466,6 +466,32 @@ export class House extends StorableHousing {
     get_scheme_level(T: Travel, addition = 0) {
         const depth = T.c.path.length - 1
         return scheme[depth + addition]
+    }
+    // -------------------------------------------------------------------------
+    // concretion: spawn the Housing subclass for a D particle.
+    // Uses n.sc.class as the registry key (falls back to path_bit_ark).
+    // -------------------------------------------------------------------------
+    concretion(T: Travel) {
+        const { D, path_bit_ark } = T.sc
+        const n = T.sc.n as any
+        const class_key = n?.sc?.class ?? path_bit_ark
+        const _class = classes[class_key]
+        if (!_class) throw `concretion: unknown class "${class_key}" for ark "${path_bit_ark}"`
+        const name = D.sc[path_bit_ark]
+        const inst = new _class({ name })
+        if (D.oa({ inst: 1, concretion: path_bit_ark })) throw `concretion repeat`
+        D.i({ inst, concretion: path_bit_ark })
+        return inst
+    }
+
+    async inst_started(inst: Housing): Promise<void> {
+        return new Promise(resolve => {
+            const check = () => {
+                if ((inst as any).started) return resolve()
+                queueMicrotask(check)
+            }
+            check()
+        })
     }
 
 //#endregion
@@ -541,6 +567,10 @@ export class House extends StorableHousing {
         V.organise && console.log(`organise: all instances ready, proceeding to attend()`)
         return true
     }
+
+
+//#endregion
+//#region attend
 
     // -------------------------------------------------------------------------
     // attend: Phase 2 — walk T** and dispatch to Work instances.
@@ -634,6 +664,9 @@ export class House extends StorableHousing {
 
         if (handler) {
             w.c.e = e
+            
+            await this.w_forgets_problems(w)
+
             try {
                 console.log(`💭 A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
                 await handler(A, w, e, AT, wT)
@@ -674,7 +707,7 @@ export class House extends StorableHousing {
     }
 
 //#endregion
-//#region think utils
+//#region methods
 
     // fallback handler for testing without a ghost — ghost methods shadow these
     async withitall(A, w, e, AT, wT) {
@@ -686,32 +719,6 @@ export class House extends StorableHousing {
 //#endregion
 }
 
-// -------------------------------------------------------------------------
-// concretion: spawn the Housing subclass for a D particle.
-// Uses n.sc.class as the registry key (falls back to path_bit_ark).
-// -------------------------------------------------------------------------
-export function concretion(T: Travel) {
-    const { D, path_bit_ark } = T.sc
-    const n = T.sc.n as any
-    const class_key = n?.sc?.class ?? path_bit_ark
-    const _class = classes[class_key]
-    if (!_class) throw `concretion: unknown class "${class_key}" for ark "${path_bit_ark}"`
-    const name = D.sc[path_bit_ark]
-    const inst = new _class({ name })
-    if (D.oa({ inst: 1, concretion: path_bit_ark })) throw `concretion repeat`
-    D.i({ inst, concretion: path_bit_ark })
-    return inst
-}
-
-function inst_started(inst: Housing): Promise<void> {
-    return new Promise(resolve => {
-        const check = () => {
-            if ((inst as any).started) return resolve()
-            queueMicrotask(check)
-        }
-        check()
-    })
-}
 
 //#endregion
 //#region Street
