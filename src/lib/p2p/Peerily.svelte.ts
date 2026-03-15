@@ -182,7 +182,7 @@ export type TrustName = string
 type TrustedTrust = ToTrust & {qua?:number}
 // this is what's signed, is stored without .pub
 // server removes .sign and adds .pub to verify the rest as json
-type SaidTrusticle = ToTrust & {pub?: Prekey}
+type SaidTrusticle = ToTrust & {pub?: Prepub}
 type StashedTrusticle = ToTrust | NotTrust
 // abilities we have on our peer
 type ToTrust = {
@@ -210,7 +210,7 @@ type TheStash = {
 }
 
 // shortened pubkey, used as your identifier
-type Prekey = Sighex
+type Prepub = Sighex
 type Pubkey = Sighex
 type Prikey = Sighex
 
@@ -312,7 +312,7 @@ export class Idento extends IdentoCrypto {
     }
     // when we only have the pretty part of the pubkey
     //  we can't verify signatures but can find out the longer pubkey
-    pretty_pubkey():Prekey {
+    pretty_pubkey():Prepub {
         return enhex(this.publicKey).slice(0,16)
     }
     toString() {
@@ -369,7 +369,7 @@ export class Peering {
     }
 
     // the many remotes
-    Piers:SvelteMap<Prekey,Pier> = $state(new SvelteMap())
+    Piers:SvelteMap<Prepub,Pier> = $state(new SvelteMap())
 
 
 
@@ -452,7 +452,7 @@ export class Peerily extends VerilyPeerily {
 
     // own pubkey addresses
     //  are one per Peer, so we create them here
-    addresses:SvelteMap<Prekey,Peering> = $state(new SvelteMap())
+    addresses:SvelteMap<Prepub,Peering> = $state(new SvelteMap())
     // there's probably just one of these Peering objects
     // < if there are many, it doesn't matter which does outgoing connect()s?
     address_to_connect_from:Peering|null = null
@@ -527,7 +527,7 @@ export class Pier {
     Thing:OurPier
 
     // their pretty and full pubkey
-    pub:Prekey|null
+    pub:Prepub|null
     Ud?:Idento
     get name() {
         return this.Ud.toString()
