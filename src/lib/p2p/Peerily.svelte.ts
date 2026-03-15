@@ -5,8 +5,12 @@ import type { ThingAction } from '$lib/data/Things.svelte';
 import type Modus from '$lib/mostly/Modus.svelte';
 import type { OurPeering, OurPier } from '$lib/Trust.svelte';
 import type { Trusting } from '$lib/Trust.svelte.ts';
-import { erring } from '$lib/Y';
-import * as ed from '@noble/ed25519';
+import {
+    erring,
+    enhex, dehex,
+    IdentoCrypto, Idento,
+    type storableIdento, type Sighex, type Prepub, type Pubkey, type Prikey,
+} from '$lib/Y';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
 import type { Component } from 'svelte';
@@ -175,8 +179,6 @@ function arre(a:Array,gone,neu) {
     a[i] = neu
 }
 
-// hex strings, [0-9a-f]
-type Sighex = string
 export type TrustName = string
 // extra properties may be involved, for consumers of the state of pier.trust|trusted
 type TrustedTrust = ToTrust & {qua?:number}
@@ -208,11 +210,6 @@ type TheStash = {
     trust: {},
     Peerings: StashedPeering[],
 }
-
-// shortened pubkey, used as your identifier
-type Prepub = Sighex
-type Pubkey = Sighex
-type Prikey = Sighex
 
 // the global internet time, UTC in whole seconds
 export function now_in_seconds_with_ms() {

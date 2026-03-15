@@ -1,20 +1,14 @@
 import { TheC } from "./data/Stuff.svelte";
-
+import * as ed from '@noble/ed25519';
 
 
 
 
 
 //#region crypto
-// Export keys to hexadecimal
-export const enhex = ed.etc.bytesToHex
-export const dehex = ed.etc.hexToBytes
-// ensure Uint8Array (Bytes)
-function enu8(message) {
-    return message instanceof Uint8Array ? 
-        message : new TextEncoder().encode(message)
+export async function dig(data: string): Promise<string> {
+    return (await sha256(data)).slice(0, 16)
 }
-
 export async function sha256(data: string): Promise<string> {
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(data);
@@ -23,6 +17,23 @@ export async function sha256(data: string): Promise<string> {
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex;
 }
+
+// hex strings, [0-9a-f]
+export type Sighex = string
+export type Prepub = string
+export type Pubkey = string
+export type Prikey = string
+export type storableIdento = {pub:string,key:string}
+export type PrePub = string
+// Export bytes to hexadecimal
+export const enhex = ed.etc.bytesToHex
+export const dehex = ed.etc.hexToBytes
+// ensure Uint8Array (bytes)
+function enu8(message) {
+    return message instanceof Uint8Array ? 
+        message : new TextEncoder().encode(message)
+}
+
 
 // the crypto features of Idento
 export class IdentoCrypto {
@@ -70,9 +81,6 @@ export class IdentoCrypto {
 
 
 //#region idento
-// lifecycle-related helpers
-export type storableIdento = {pub:string,key:string}
-export type PrePub = string
 export class Idento extends IdentoCrypto {
     // url bit with a pubkey
     prepub_only = false
@@ -236,6 +244,8 @@ export class Parserify {
         delete this[1];
         delete this[2];
         delete this[3];
+        delete this.it;
+        delete this.whole;
         
         if (!this.m.length) return false;
         
