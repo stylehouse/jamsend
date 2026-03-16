@@ -133,7 +133,7 @@ abstract class Housing extends TheC {
     }
 
 //#endregion
-//#region elvisto
+//#region elvis
 
     // -------------------------------------------------------------------------
     // elvisto: post an elvis to whichever House owns the target A.
@@ -201,6 +201,30 @@ abstract class Housing extends TheC {
         V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
         H.todo = [...H.todo, e]
     }
+
+    // a higher level, client call returns true when req%reply
+    i_elvis_req(w: TheC, type: string, req: TheC, extra: Partial<TheUniversal> = {}): boolean {
+        if (req.sc.finished) return true
+        if (!req.oa({ req_sent: 1 })) {
+            req.i({ req_sent: 1 })
+            req.c.wakeup = () => this.i_elvis(w, 'think', {})
+            this.i_elvis(w, type, { ...extra, req })
+        }
+        return false
+    }
+
+    o_elvis_req(w: TheC, type: string): Array<{ e: TheC; req: TheC; finish: (reply: any) => void }> {
+        return this.o_elvis(w, type).map(e => {
+            const req = e.sc.req as TheC
+            const finish = (reply: any) => {
+                req.sc.reply = reply
+                req.sc.finished = true
+                req.c.wakeup?.()
+            }
+            return { e, req, finish }
+        })
+    }
+    
 }
 
 //#endregion
@@ -741,7 +765,9 @@ export class House extends StorableHousing {
             wTN = targetedwTN.length ? targetedwTN : wTN
 
             for (let wT of wTN) {
+                // < make this object Work, perhaps in .i() because sc?
                 const w = wT.sc.n as TheC
+                w.up = A
                 await this.self_timekeeping(w)
                 await this._Aw_think(AT, wT, e)
                 AwN.push({ AT, wT, A, w })
@@ -869,8 +895,11 @@ export class House extends StorableHousing {
 
 
 //#endregion
-//#region methods
+//#region w:*
     // after H.started, so storage etc is there...
+    //  in an $effect in Otro
+    // < we may need to do this subHouse() biz like we concretion()
+    //    on demand in an e:do
     may_begin() {
         let H = this
         // < H.stashed.* could be used to track current something
@@ -897,6 +926,10 @@ export class House extends StorableHousing {
         w.oai({ imperfection: 1 })
     }
 
+
+//#endregion
+//#region w:Wormhole
+// < move nearer w:Wormhole?
     async DirectoryOpener(A, w, e, AT, wT) {
         const key = `${(this as House).name}`
 
@@ -953,18 +986,142 @@ export class House extends StorableHousing {
         })
     }
     // < clone Directory more...
-    async Wormhole(A: TheC, w: TheC) {
-        let DL = A.c.DL as DirectoryListing
-        w.oai({ imperfection: 1 })
-        DL ? w.i({see:"got this", dl: DL.name})
-            : w.i({see:"awaiting dir"})
+    async Wormhole(A, w, e, AT, wT) {
+        // putjourney → set A.c.nav, re-trigger caller (unchanged)
+        for (const pj of this.o_elvis(w, 'putjourney')) {
+            const DL = A.c.DL as DirectoryListing | undefined
+            const reply_w = pj.sc.reply as TheC
+            if (!DL) { w.i({ see: '📭 putjourney: no DL' }); continue }
+            if (!DL.expanded) await DL.expand()
+            reply_w.c.nav = A.c.nav ||= new WormholeNav(DL)
+            this.elvisto(`${reply_w.sc.A}/${reply_w.sc.w}`, 'think')
+        }
+
+        // incoming wh_op elvises → enqueue in local reqy (deduplicated by req identity)
+        const fs = await this.requesty_serial(w, 'fs_op')
+        for (const e of this.o_elvis(w, 'wh_op')) {
+            const story_req = e.sc.req as TheC
+            if (!fs.o({ story_req }).length) {
+                await fs.i({ story_req })
+            }
+        }
+
+        await fs.do(async (req) => {
+            const story_req  = req.sc.story_req as TheC
+            const nav        = A.c.nav as WormholeNav | undefined
+            const path       = story_req.sc.wh_path as string
+            const op         = story_req.sc.wh_op   as string
+            const reply_addr = { A: story_req.sc.reply_A as string, w: story_req.sc.reply_w as string }
+
+            const finish = (reply: any) => {
+                story_req.sc.reply = reply
+                req.sc.finished = true
+                this.elvisto(`${reply_addr.A}/${reply_addr.w}`, 'think')
+            }
+
+            if (!nav) return finish({ error: 'not_open' })
+
+            try {
+                if (op === 'read_toc') {
+                    const raw = await nav.read_file(path, 'toc.json')
+                    finish(raw ? { toc: JSON.parse(raw) } : { not_found: true })
+
+                } else if (op === 'read_snap') {
+                    const n = story_req.sc.wh_step as number
+                    const raw = await nav.read_file(path, `${n}.snap`)
+                    finish(raw ? { snap: raw } : { not_found: true })
+
+                } else if (op === 'write_toc') {
+                    await nav.write_file(path, 'toc.json', JSON.stringify(story_req.sc.wh_data))
+                    finish({ ok: true })
+
+                } else if (op === 'write_snap') {
+                    const n = story_req.sc.wh_step as number
+                    await nav.write_file(path, `${n}.snap`, story_req.sc.wh_data as string)
+                    finish({ ok: true })
+
+                } else {
+                    finish({ error: `unknown op: ${op}` })
+                }
+            } catch (err) {
+                finish({ error: String(err) })
+            }
+        })
+
+        const DL = A.c.DL as DirectoryListing | undefined
+        DL ? w.i({ see: `📂 ${DL.name}` }) : w.i({ see: '📭 no directory' })
     }
 
-
-
-//#endregion
 }
 
+export class WormholeNav {
+    root: DirectoryListing
+    // cache of expanded DLs by path string
+    _cache: Map<string, DirectoryListing> = new Map()
+
+    constructor(root: DirectoryListing) { this.root = root }
+
+    // walk named path segments, expanding lazily
+    async dir(...parts: string[]): Promise<DirectoryListing | null> {
+        const key = parts.join('/')
+        if (this._cache.has(key)) return this._cache.get(key)!
+        let here = this.root
+        for (const part of parts) {
+            if (!here.expanded) await here.expand()
+            const next = here.directories.find(d => d.name === part)
+            if (!next) return null
+            here = next
+        }
+        this._cache.set(key, here)
+        return here
+    }
+    // make any directory in your way
+    async mkdirp(...parts: string[]): Promise<DirectoryListing> {
+        let here = this.root
+        const built: string[] = []
+        for (const part of parts) {
+            if (!here.expanded) await here.expand()
+            let next = here.directories.find(d => d.name === part)
+            if (!next) {
+                await here.makeDirectory(part)
+                await here.expand()
+                next = here.directories.find(d => d.name === part)!
+            }
+            built.push(part)
+            this._cache.set(built.join('/'), next)
+            here = next
+        }
+        return here
+    }
+
+    async read_file(dir_path: string, filename: string): Promise<string | null> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.dir(...parts)
+        if (!dir) return null
+        if (!dir.expanded) await dir.expand()
+        if (!dir.files.find(f => f.name === filename)) return null
+        const reader = await dir.getReader(filename)
+        const chunks: ArrayBuffer[] = []
+        for await (const chunk of reader.iterate()) chunks.push(chunk)
+        const buf = chunks.reduce((a, b) => {
+            const o = new Uint8Array(a.byteLength + b.byteLength)
+            o.set(new Uint8Array(a)); o.set(new Uint8Array(b), a.byteLength)
+            return o.buffer
+        })
+        return new TextDecoder().decode(buf)
+    }
+
+    async write_file(dir_path: string, filename: string, content: string): Promise<void> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.mkdirp(...parts)
+        const writer = await dir.getWriter(filename)
+        await writer.write(new TextEncoder().encode(content))
+        await writer.close()
+        this._cache.delete(parts.join('/'))
+        // invalidate parent so next dir() sees new file
+        await dir.expand()
+    }
+}
 
 //#endregion
 //#region Street

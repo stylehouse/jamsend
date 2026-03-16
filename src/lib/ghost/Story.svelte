@@ -11,32 +11,65 @@
 
 //#region Story
 
-    async Story(A: TheC, w: TheC) {
-        let book = w.sc.Book as string | undefined
-        if (!book) return w.i({ see: '!Book on w:Story' })
-
-        let run_name = `Run:${book}`
-        let Run: House = this.subHouse(run_name)
-
+    Story_init(A: TheC, w: TheC) {
+        const book = w.sc.Book as string | undefined
+        if (!book) { w.i({ see: '!Book' }); return null }
+        const run_name = `Run:${book}`
+        const Run = (this as House).subHouse(run_name)
         if (!Run.oa({ A: 1 })) {
-            let init_fn = (Run as any)[`Run_A_${book}`] as Function | undefined
-            if (!init_fn) return w.i({ error: `!Run_A_${book}` })
+            const init_fn = (Run as any)[`Run_A_${book}`] as Function | undefined
+            if (!init_fn) { w.i({ error: `!Run_A_${book}` }); return null }
             init_fn.call(Run)
         }
+        return { Run, run_name }
+    },
 
-        // define the actions channel once on H:Story — not LeafFarm's concern
-        this.oai({ watched: 'actions' })
-        this.enroll_watched()
+    async Story(A: TheC, w: TheC) {
+        const init = this.Story_init(A, w)
+        if (!init) return
+        const { Run, run_name } = init
+
+        ;(this as House).oai({ watched: 'actions' })
+        ;(this as House).enroll_watched()
 
         let run = w.o({ run: run_name })[0]
         if (!run) {
             run = w.i({ run: run_name,
                 steps_done: 0, steps_total: 30,
-                paused: false, mode: 'new'
+                paused: false, mode: 'new',
             })
-            await this.story_drive(Run, w, run)
         }
 
+        const run_path = `Story/${run_name}`
+        const wh = await this.requesty_serial(w, 'wh')
+
+        // ── TOC ───────────────────────────────────────────────────────
+        if (!run.c.toc_loaded) {
+            const toc_req = await wh.i({ wh_path: run_path, wh_op: 'read_toc' })
+            if (!this.i_elvis_req(w, 'wh_op', toc_req, { Aw: 'Wormhole/Wormhole' }))
+                return w.i({ see: '⏳ toc...' })
+
+            const toc = toc_req.sc.reply?.toc ?? {}
+            run.sc.mode = Object.keys(toc.steps ?? {}).length ? 'check' : 'new'
+            w.c.toc      = toc
+            w.c.run_path = run_path
+            w.c.wh       = wh
+            run.c.toc_loaded = true
+        }
+
+        // ── expected snap fetch on mismatch ───────────────────────────
+        if (run.sc.needs_snap) {
+            const n = run.sc.needs_snap as number
+            const snap_req = await wh.i({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+            if (!this.i_elvis_req(w, 'wh_op', snap_req, { Aw: 'Wormhole/Wormhole' }))
+                return w.i({ see: `⏳ snap ${n}...` })
+
+            const moment = w.o({ moment: 1, moment_n: n })[0]
+            if (moment) moment.sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
+            delete run.sc.needs_snap
+        }
+
+        if (!run.c.interval_id) await this.story_drive(Run, w, run)
         await this.story_ui(Run, w, run)
         w.i({ see: `${run_name} ${run.sc.steps_done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
@@ -48,37 +81,27 @@
         if (run.c.interval_id) return
 
         const wa = () => (this as House).oai({ watched: 'actions' })
-
-        // replace just the status particle's sc — clean and explicit
         const update_status = async (label: string, cls = 'default') => {
             await wa().r({ action: 1, role: 'status' }, { label, cls, disabled: true })
             wa().bump_version()
         }
 
-        const stashed  = (this as House).stashed?.[`${run.sc.run}.json`]
-        const expected: Record<number, string> = stashed?.diges ?? {}
-        run.sc.mode = Object.keys(expected).length ? 'check' : 'new'
+        const toc_steps: Record<number, string> = (w.c.toc as any)?.steps ?? {}
         await update_status(run.sc.mode, run.sc.mode === 'new' ? 'save' : 'default')
 
         const step = async () => {
             if (run.c.drop || run.sc.paused) return
-
             const n = run.sc.steps_done + 1
 
-            // new mode: stop at steps_total
-            if (run.sc.mode === 'new' && n > run.sc.steps_total) {
-                clearInterval(run.c.interval_id)
-                delete run.c.interval_id
+            if (run.sc.mode === 'new' && n > (run.sc.steps_total as number)) {
+                clearInterval(run.c.interval_id); delete run.c.interval_id
                 run.sc.paused = true
                 await update_status('recorded ✓', 'start')
-                console.log(`✓ Story: ${run.sc.run} recording complete (${run.sc.steps_total} steps)`)
+                console.log(`✓ Story: ${run.sc.run} complete (${run.sc.steps_total} steps)`)
                 return
             }
-
-            // check mode: stop cleanly when stored steps run out
-            if (run.sc.mode === 'check' && !expected[n]) {
-                clearInterval(run.c.interval_id)
-                delete run.c.interval_id
+            if (run.sc.mode === 'check' && !toc_steps[n]) {
+                clearInterval(run.c.interval_id); delete run.c.interval_id
                 run.sc.paused = true
                 await update_status('done ✓', 'start')
                 console.log(`✓ Story: ${run.sc.run} check complete`)
@@ -87,24 +110,26 @@
 
             Run.elvisto(Run, 'think')
             run.sc.steps_done = n
-
             const snap     = this.story_snap(Run)
             const got_dige = await dig(snap)
 
             if (run.sc.mode === 'new') {
-                w.i({ moment: n, dige: got_dige, ok: true })
+                // store snap in memory — written to disk on Save
+                w.i({ moment: 1, moment_n: n, dige: got_dige, ok: true, snap })
                 await update_status(`recording ${n}/${run.sc.steps_total}`, 'save')
             } else {
-                const exp_dige = expected[n]
-                const ok = exp_dige === got_dige
-                w.i({ moment: n, dige: got_dige, ok, snap: ok ? undefined : snap })
+                const exp_dige = toc_steps[n]
+                const ok       = exp_dige === got_dige
+                // store got_snap for diff display; exp_snap fetched lazily below
+                w.i({ moment: 1, moment_n: n, dige: got_dige, ok, got_snap: snap })
                 if (!ok) {
-                    clearInterval(run.c.interval_id)
-                    delete run.c.interval_id
-                    run.sc.paused = true
+                    clearInterval(run.c.interval_id); delete run.c.interval_id
+                    run.sc.paused    = true
                     run.sc.failed_at = n
+                    run.sc.needs_snap = n   // Story() will fetch expected snap next tick
                     await update_status(`✗ step ${n}`, 'stop')
                     console.log(`⛔ Story: step ${n} mismatch`)
+                    ;(this as House).main()  // wake Story tick to handle snap req
                     return
                 }
                 await update_status(`✓ ${n}`)
@@ -112,15 +137,14 @@
         }
 
         run.c.interval_id = setInterval(step, 200)
-        console.log(`▶ Story: ${run.sc.mode} mode driving ${run.sc.run}`)
+        console.log(`▶ Story: ${run.sc.mode} → ${run.sc.run}`)
     },
 
-    // walk Run and produce a deterministic indented string
     story_snap(Run: House): string {
         const lines: string[] = []
         const walk = (c: TheC, d = 0) => {
             lines.push('  '.repeat(d) + c.t + ' ' + JSON.stringify(tex(c.sc)))
-            for (const child of (c.o({}) as TheC[])) walk(child, d + 1)
+            for (const child of c.o({}) as TheC[]) walk(child, d + 1)
         }
         walk(Run, 0)
         return lines.join('\n') + '\n'
@@ -133,14 +157,42 @@
         const A = this.o({ A: 'Story' })[0]
         const w = A?.o({ w: 'Story' })[0]
         if (!w) return
+
+        const wh       = w.c.wh as any
+        const run_path = w.c.run_path as string | undefined
+
         for (const run of w.o({ run: 1 }) as TheC[]) {
-            const diges: Record<number, string> = {}
-            for (const m of w.o({ moment: 1 }) as TheC[]) {
-                if (m.sc.ok) diges[m.sc.moment] = m.sc.dige
+            const ok_moments = (w.o({ moment: 1 }) as TheC[]).filter(m => m.sc.ok)
+
+            const steps: Record<number, string> = {}
+            for (const m of ok_moments) steps[m.sc.moment_n as number] = m.sc.dige as string
+            const toc_payload = { steps, total: ok_moments.length }
+
+            if (wh && run_path) {
+                ;(async () => {
+                    const toc_req = await wh.i(
+                        { wh_path: run_path, wh_op: 'write_toc' },
+                        { wh_path: run_path, wh_op: 'write_toc', wh_data: toc_payload },
+                    )
+                    this.i_elvis_req(w, 'wh_op', toc_req, { Aw: 'Wormhole/Wormhole' })
+
+                    for (const m of ok_moments) {
+                        if (!m.sc.snap) continue
+                        const snap_req = await wh.i(
+                            { wh_path: run_path, wh_op: 'write_snap', wh_step: m.sc.moment_n },
+                            { wh_path: run_path, wh_op: 'write_snap',
+                              wh_step: m.sc.moment_n, wh_data: m.sc.snap },
+                        )
+                        this.i_elvis_req(w, 'wh_op', snap_req, { Aw: 'Wormhole/Wormhole' })
+                    }
+                    console.log(`💾 wormhole: ${run_path} (${ok_moments.length} steps)`)
+                })()
+            } else {
+                // stashed fallback while directory not open
+                this.stashed ??= {}
+                this.stashed[`${run.sc.run}.json`] = toc_payload
+                console.log(`💾 stashed: ${run.sc.run} (${ok_moments.length} steps)`)
             }
-            this.stashed ??= {}
-            this.stashed[`${run.sc.run}.json`] = { diges }
-            console.log(`💾 saved ${Object.keys(diges).length} digests for ${run.sc.run}`)
         }
     },
 
@@ -167,40 +219,32 @@
     },
 
     async story_ui(this: House, Run: House, w: TheC, run: TheC) {
-        const wa    = this.oai({ watched: 'actions' })
+        const wa     = this.oai({ watched: 'actions' })
         const paused = run.sc.paused
         const mode   = run.sc.mode ?? 'new'
         const step   = run.sc.steps_done ?? 0
         const failed = run.sc.failed_at
 
-        // oai creates once; subsequent calls just update fn (structure stays)
         wa.oai({ action: 1, role: 'pause' }, {
             label: paused ? 'Resume' : 'Pause',
             icon:  paused ? '▶' : '⏸',
             cls:   paused ? 'start' : 'stop',
             fn:    () => { run.sc.paused = !run.sc.paused },
         })
-
         wa.oai({ action: 1, role: 'save' }, {
             label: 'Save', icon: '💾', cls: 'save',
             fn: () => { this.story_save() },
         })
-
         wa.oai({ action: 1, role: 'reset' }, {
             label: 'Reset', icon: '🔄', cls: 'remove',
             fn: () => { this.reset() },
         })
-
-        // status is replaced every call — state changes here
         await wa.r({ action: 1, role: 'status' }, {
             label:    `${mode} ${failed ? '✗' + failed : step}`,
             cls:      failed ? 'stop' : mode === 'new' ? 'save' : 'default',
             disabled: true,
         })
     },
-
-//#endregion
-//#region mechanisms
 
 //#endregion
 
