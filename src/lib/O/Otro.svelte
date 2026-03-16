@@ -87,9 +87,9 @@
         {#if !house.started}<span class='ungood'>off</span>{/if}
         todo:{house.todo.length}
     </h2>
-    {#if H?.actions?.length}
+    {#if house?.actions?.length}
         <div class="house-actions">
-            <Actions N={H.actions} />
+            <Actions N={house.actions} />
         </div>
     {/if}
     <Stuffing mem={house.imem('current')} stuff={house} M={house} />

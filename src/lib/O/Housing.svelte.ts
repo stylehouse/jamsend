@@ -1,5 +1,5 @@
 // vastly AI
-import { keyser, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
+import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
@@ -886,29 +886,26 @@ export class House extends StorableHousing {
     start_watched_C_effect() {
         $effect(() => {
             for (let i = 0; i < this.watched.length; i++) {
-                const v = this.watched[i].C.version
+                let C = this.watched[i].C
+                const v = C.version
                 if (v !== this.watched_v[i]) {
                     this.watched_v[i] = v
                     this.watched[i].handler()
+                    // console.log(`watched change: ${objectify(C)}`)
                 }
             }
         })
-        // setTimeout: watch_c(this,...) must not run synchronously inside
-        //  $effect.root during start() — the 20ms lets construction settle
-        setTimeout(() => {
-            this.watch_c(this, () => {
-                // enroll H/*%watched
-                for (const C of this.o({ watched: 1 }) as TheC[]) {
-                    if (this.watched.some(w => w.C === C)) continue
-                    const key = C.sc.watched as string
-                    // fn in sc (caller may override); default: H[key] = wc.o({})
-                    const fn: Function = C.sc.fn ?? (() => {
-                        (this as any)[key] = C.o({})
-                    })
-                    this.watch_c(C, fn)
-                }
+    }
+    // call this after creating any new %watched particle on H
+    enroll_watched() {
+        for (const C of this.o({ watched: 1 }) as TheC[]) {
+            if (this.watched.some(w => w.C === C)) continue
+            const key = C.sc.watched as string
+            const fn: Function = C.sc.fn ?? (() => {
+                (this as any)[key] = C.o({})
             })
-        },20)
+            this.watch_c(C, fn)
+        }
     }
 
 
