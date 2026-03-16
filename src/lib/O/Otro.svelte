@@ -56,6 +56,7 @@
 
     function go_busily() {
         H.elvisto(H, 'think')
+        H.elvisto(H.o({H:'Story'})[0], 'think')
     }
 
     function upthings() {

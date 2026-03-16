@@ -330,18 +330,6 @@ export class Housemem {
 //#endregion
 //#region House
 
-// The scheme drives Selection.process() depth by depth:
-//   depth 0: House itself  (is_inst — House is its own instance)
-//   depth 1: A particles   -> find {A:1}
-//   depth 2: w particles   -> find {w:1}
-//   depth 3: r particles   -> find {r:1}
-const scheme = [
-    { ark: 'H', is_inst: true },
-    { ark: 'A', sc: { A: 1 } },
-    { ark: 'w', sc: { w: 1 } },
-    { ark: 'r', sc: { r: 1 } },
-]
-
 export class House extends StorableHousing {
     _table = db.House
 
@@ -547,6 +535,10 @@ export class House extends StorableHousing {
         }
     }
 
+
+//#endregion
+//#region scheme
+
     // -------------------------------------------------------------------------
     // apply_scheme: set T.sc.level, T.sc.path_bit_ark, T.sc.inst (optional).
     //
@@ -615,6 +607,9 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     // concretion: spawn the Housing subclass for a D particle.
     // Uses n.sc.class as the registry key (falls back to path_bit_ark).
+    //  < making the A/w variables we play with Agency and Work
+    //     to extend Housing which extends TheC
+    //  < stretching the A column, etc, eg H/A/A/w/r/r/r
     // -------------------------------------------------------------------------
     concretion(T: Travel) {
         const { D, path_bit_ark } = T.sc
@@ -745,6 +740,7 @@ export class House extends StorableHousing {
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
         for (let AT of ATN) {
             const A = AT.sc.n as TheC
+            A.c.up = this as House
 
             await this.self_timekeeping(A)
 
@@ -767,7 +763,8 @@ export class House extends StorableHousing {
             for (let wT of wTN) {
                 // < make this object Work, perhaps in .i() because sc?
                 const w = wT.sc.n as TheC
-                w.up = A
+                w.c.up = A
+
                 await this.self_timekeeping(w)
                 await this._Aw_think(AT, wT, e)
                 AwN.push({ AT, wT, A, w })
@@ -999,11 +996,13 @@ export class House extends StorableHousing {
 
         // incoming wh_op elvises → enqueue in local reqy (deduplicated by req identity)
         const fs = await this.requesty_serial(w, 'fs_op')
-        for (const e of this.o_elvis(w, 'wh_op')) {
-            const story_req = e.sc.req as TheC
+
+        for (const { req: story_req, finish } of this.o_elvis_req(w, 'wh_op')) {
             if (!fs.o({ story_req }).length) {
                 await fs.i({ story_req })
             }
+            // finish is stored on story_req for fs.do() to call later
+            story_req.c.finish = finish
         }
 
         await fs.do(async (req) => {
@@ -1011,40 +1010,37 @@ export class House extends StorableHousing {
             const nav        = A.c.nav as WormholeNav | undefined
             const path       = story_req.sc.wh_path as string
             const op         = story_req.sc.wh_op   as string
-            const reply_addr = { A: story_req.sc.reply_A as string, w: story_req.sc.reply_w as string }
+            const finish    = story_req.c.finish   as Function
 
-            const finish = (reply: any) => {
-                story_req.sc.reply = reply
+            if (!finish) return  // wh_op elvis not yet arrived for this req
+
+            const done = (reply: any) => {
+                finish(reply)
                 req.sc.finished = true
-                this.elvisto(`${reply_addr.A}/${reply_addr.w}`, 'think')
             }
 
-            if (!nav) return finish({ error: 'not_open' })
+            if (!nav) return done({ error: 'not_open' })
 
             try {
                 if (op === 'read_toc') {
                     const raw = await nav.read_file(path, 'toc.json')
-                    finish(raw ? { toc: JSON.parse(raw) } : { not_found: true })
-
+                    done(raw ? { toc: JSON.parse(raw) } : { not_found: true, toc: {} })
                 } else if (op === 'read_snap') {
                     const n = story_req.sc.wh_step as number
                     const raw = await nav.read_file(path, `${n}.snap`)
-                    finish(raw ? { snap: raw } : { not_found: true })
-
+                    done(raw ? { snap: raw } : { not_found: true })
                 } else if (op === 'write_toc') {
                     await nav.write_file(path, 'toc.json', JSON.stringify(story_req.sc.wh_data))
-                    finish({ ok: true })
-
+                    done({ ok: true })
                 } else if (op === 'write_snap') {
                     const n = story_req.sc.wh_step as number
                     await nav.write_file(path, `${n}.snap`, story_req.sc.wh_data as string)
-                    finish({ ok: true })
-
+                    done({ ok: true })
                 } else {
-                    finish({ error: `unknown op: ${op}` })
+                    done({ error: `unknown op: ${op}` })
                 }
             } catch (err) {
-                finish({ error: String(err) })
+                done({ error: String(err) })
             }
         })
 
@@ -1177,6 +1173,18 @@ export const classes: Record<string, new (opt: any) => Housing> = {
     w: Work,
     r: Request,
 }
+
+// The scheme drives Selection.process() depth by depth:
+//   depth 0: House itself  (is_inst — House is its own instance)
+//   depth 1: A particles   -> find {A:1}
+//   depth 2: w particles   -> find {w:1}
+//   depth 3: r particles   -> find {r:1}
+const scheme = [
+    { ark: 'H', is_inst: true },
+    { ark: 'A', sc: { A: 1 } },
+    { ark: 'w', sc: { w: 1 } },
+    { ark: 'r', sc: { r: 1 } },
+]
 
 export function register_class(key: string, ctor: new (opt: any) => Housing) {
     classes[key] = ctor
