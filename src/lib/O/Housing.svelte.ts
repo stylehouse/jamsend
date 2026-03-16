@@ -102,28 +102,24 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // elvis_marked_from: sc mixin identifying this Housing as the sender.
-    // -------------------------------------------------------------------------
-    elvis_marked_from(): { from_name: string; from_ark: string } {
-        const from_name = this.name
-        const from_ark = Object.entries(classes).find(([, v]) => v === this.constructor)?.[0]
-            ?? this.constructor.name
-        return { from_name, from_ark }
-    }
-
-    // -------------------------------------------------------------------------
     // _find_house: resolve a string|Housing target to the owning House.
     // If target is a Housing instance, walk .up to root House.
     // If target is a string, search every_House() for the one owning A:Aname.
     // -------------------------------------------------------------------------
-    _find_house(target: string | Housing): House {
-        let h: Housing = this
-        
+    _find_house(target: string | TheC | Housing): House {
+        if (target instanceof TheC) {
+            // walk w.c.up -> A.c.up -> H
+            let h: any = target
+            while (h.c?.up) h = h.c.up
+            if (!(h instanceof House)) throw `_find_house: TheC chain didn't reach House`
+            return h
+        }
         if (target instanceof Housing) {
             let h: Housing = target
             while (h.up && !(h instanceof House)) h = h.up
             return h as House
         }
+        // string path — search every_House()
         const Aname = (target as string).split('/')[0]
         const houses = this.every_House()
         for (const candidate of houses) {
@@ -135,6 +131,13 @@ abstract class Housing extends TheC {
 //#endregion
 //#region elvis
 
+    // elvistwo: post an elvis to whichever House owns the target A.
+    //  with the first arg being the w|A|H we are coming from
+    elvistwo(source:TheC|Housing, target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
+        // this should be able to become target later
+        extra.sourceHousing = source
+        return this.elvisto(target,method,extra)
+    }
     // -------------------------------------------------------------------------
     // elvisto: post an elvis to whichever House owns the target A.
     // target: string 'AgencyName/workName' | 'AgencyName', or a Housing instance
@@ -142,22 +145,24 @@ abstract class Housing extends TheC {
     // method: the method name to call on the target instance
     // extra:  any extra sc to attach to the elvis particle
     // -------------------------------------------------------------------------
-    elvisto(target: string | Housing, method: string, extra: Partial<TheUniversal> = {}) {
+    elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
         const h = this._find_house(target)
 
-        // normalise target to Aw string
         const Aw = typeof target === 'string' ? target
+            : target instanceof TheC ? (
+                `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
+            )
             : target instanceof Work ? `${(target.up as Agency)?.name ?? ''}/${target.name}`.replace(/^\//, '')
             : (target as Housing).name
 
         const e = new TheC({ c: {}, sc: {
             elvis: method,
             Aw,
-            ...this.elvis_marked_from(),
             ...extra,
         }})
         h._expand_Aw(e)
         h._push_todo(e)
+        return e
     }
 
     // -------------------------------------------------------------------------
@@ -170,7 +175,7 @@ abstract class Housing extends TheC {
     _i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
         const target = (extra.Aw as string) ?? `${w.sc.A ?? ''}/${w.sc.w ?? ''}`.replace(/^\//, '')
         const { Aw: _drop, ...rest } = extra
-        this.elvisto(target, type, { ...rest, from_w: w.sc.w })
+        this.elvistwo(w, target, type, { ...rest })
     }
 
     // -------------------------------------------------------------------------
@@ -203,15 +208,17 @@ abstract class Housing extends TheC {
     }
 
     // a higher level, client call returns true when req%reply
-    i_elvis_req(w: TheC, type: string, req: TheC, extra: Partial<TheUniversal> = {}): boolean {
+    i_elvis_req(source:TheC|Housing, target: string | TheC | Housing, type: string, extra: Partial<TheUniversal> = {}) {
+        const req = extra.req as TheC
+        if (!req) throw `i_elvis_req: no req`
         if (req.sc.finished) return true
         if (!req.oa({ req_sent: 1 })) {
             req.i({ req_sent: 1 })
-            req.c.wakeup = () => this.i_elvis(w, 'think', {})
-            this.i_elvis(w, type, { ...extra, req })
+            const { req: _drop, ...rest } = extra
+            ;(H as House).elvistwo(source, target, type, { ...rest, req })
         }
         return false
-    }
+    },
 
     o_elvis_req(w: TheC, type: string): Array<{ e: TheC; req: TheC; finish: (reply: any) => void }> {
         return this.o_elvis(w, type).map(e => {
@@ -219,7 +226,7 @@ abstract class Housing extends TheC {
             const finish = (reply: any) => {
                 req.sc.reply = reply
                 req.sc.finished = true
-                req.c.wakeup?.()
+                ;(H as House).elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
             }
             return { e, req, finish }
         })
@@ -982,41 +989,28 @@ export class House extends StorableHousing {
             },
         })
     }
-    // < clone Directory more...
     async Wormhole(A, w, e, AT, wT) {
-        // putjourney → set A.c.nav, re-trigger caller (unchanged)
-        for (const pj of this.o_elvis(w, 'putjourney')) {
-            const DL = A.c.DL as DirectoryListing | undefined
-            const reply_w = pj.sc.reply as TheC
-            if (!DL) { w.i({ see: '📭 putjourney: no DL' }); continue }
-            if (!DL.expanded) await DL.expand()
-            reply_w.c.nav = A.c.nav ||= new WormholeNav(DL)
-            this.elvisto(`${reply_w.sc.A}/${reply_w.sc.w}`, 'think')
-        }
-
-        // incoming wh_op elvises → enqueue in local reqy (deduplicated by req identity)
         const fs = await this.requesty_serial(w, 'fs_op')
 
-        for (const { req: story_req, finish } of this.o_elvis_req(w, 'wh_op')) {
-            if (!fs.o({ story_req }).length) {
-                await fs.i({ story_req })
+        for (const { e, req, finish } of this.o_elvis_req(w, 'wh_op')) {
+            if (!fs.o({ req }).length) {
+                const fs_req = await fs.i({ req })
+                fs_req.c.finish = finish   // park finish on the fs req
             }
-            // finish is stored on story_req for fs.do() to call later
-            story_req.c.finish = finish
         }
 
-        await fs.do(async (req) => {
-            const story_req  = req.sc.story_req as TheC
-            const nav        = A.c.nav as WormholeNav | undefined
-            const path       = story_req.sc.wh_path as string
-            const op         = story_req.sc.wh_op   as string
-            const finish    = story_req.c.finish   as Function
+        await fs.do(async (fs_req) => {
+            const req    = fs_req.sc.req as TheC
+            const finish = fs_req.c.finish as Function | undefined
+            if (!finish) return
 
-            if (!finish) return  // wh_op elvis not yet arrived for this req
+            const nav = A.c.nav as WormholeNav | undefined
+            const path = req.sc.wh_path as string
+            const op   = req.sc.wh_op   as string
 
             const done = (reply: any) => {
                 finish(reply)
-                req.sc.finished = true
+                fs_req.sc.finished = true
             }
 
             if (!nav) return done({ error: 'not_open' })
@@ -1025,17 +1019,21 @@ export class House extends StorableHousing {
                 if (op === 'read_toc') {
                     const raw = await nav.read_file(path, 'toc.json')
                     done(raw ? { toc: JSON.parse(raw) } : { not_found: true, toc: {} })
+
                 } else if (op === 'read_snap') {
-                    const n = story_req.sc.wh_step as number
-                    const raw = await nav.read_file(path, `${n}.snap`)
+                    const n = req.sc.wh_step as number
+                    const raw = await nav.read_file(path, `${pad(n)}.snap`)
                     done(raw ? { snap: raw } : { not_found: true })
+
                 } else if (op === 'write_toc') {
-                    await nav.write_file(path, 'toc.json', JSON.stringify(story_req.sc.wh_data))
+                    await nav.write_file(path, 'toc.json', JSON.stringify(req.sc.wh_data))
                     done({ ok: true })
+
                 } else if (op === 'write_snap') {
-                    const n = story_req.sc.wh_step as number
-                    await nav.write_file(path, `${n}.snap`, story_req.sc.wh_data as string)
+                    const n = req.sc.wh_step as number
+                    await nav.write_file(path, `${pad(n)}.snap`, req.sc.wh_data as string)
                     done({ ok: true })
+
                 } else {
                     done({ error: `unknown op: ${op}` })
                 }
@@ -1049,6 +1047,7 @@ export class House extends StorableHousing {
     }
 
 }
+const pad = (n: number) => String(n).padStart(3, '0')
 
 export class WormholeNav {
     root: DirectoryListing
