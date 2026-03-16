@@ -1,6 +1,7 @@
 <script lang="ts">
     import Ghost    from "$lib/O/Ghost.svelte"
     import { Checkitout, House, Work, register_class } from "$lib/O/Housing.svelte"
+    import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
 
     // A Work subclass with a withitall() method
@@ -79,12 +80,18 @@
 
 <h3>Here we Are</h3>
 
+
 {#each houses as house (house.name)}
     <h2>
         {house.name}
         {#if !house.started}<span class='ungood'>off</span>{/if}
         todo:{house.todo.length}
     </h2>
+    {#if H?.actions?.length}
+        <div class="house-actions">
+            <Actions N={H.actions} />
+        </div>
+    {/if}
     <Stuffing mem={house.imem('current')} stuff={house} M={house} />
 {/each}
 

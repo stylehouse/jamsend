@@ -4,6 +4,7 @@ import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.
 import { tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
+
 //#region Dexie
 
 interface HouseRow {
@@ -373,6 +374,7 @@ export class House extends StorableHousing {
         $effect(() => {
             if (!this.started && this._all_checks_pass()) this.started = true
         })
+        this.start_watched_C_effect()
 
 
         // etc
@@ -386,6 +388,7 @@ export class House extends StorableHousing {
                 console.log(`${this.name} reactything!`)
             }
         })
+
     }
 
     // -------------------------------------------------------------------------
@@ -642,6 +645,14 @@ export class House extends StorableHousing {
         })
     }
 
+
+    async eatfunc(hash) {
+        Object.assign(this, hash)
+        await this.on_code_change?.()
+        if (this.oa()) this.main()
+    }
+
+
 //#endregion
 //#region beliefs
 
@@ -771,6 +782,16 @@ export class House extends StorableHousing {
         const AN = ATN.map(AT => AT.sc.n as TheC)
         await this.agency_officing(AwN.map(({ A, w }) => ({ A, w })), AN)
     }
+    // -------------------------------------------------------------------------
+    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
+    // -------------------------------------------------------------------------
+    Awr_to_inst(n: TheC): Housing | undefined {
+        let found: Housing | undefined
+        this.Se.c.T?.sc.N?.forEach((T: Travel) => {
+            if (T.sc.n === n && T.sc.inst) found = T.sc.inst
+        })
+        return found
+    }
 
 //#endregion
 //#region think
@@ -838,22 +859,6 @@ export class House extends StorableHousing {
     // Defining them on Housing would clobber whichever version already exists.
     // -------------------------------------------------------------------------
 
-    // -------------------------------------------------------------------------
-    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
-    // -------------------------------------------------------------------------
-    Awr_to_inst(n: TheC): Housing | undefined {
-        let found: Housing | undefined
-        this.Se.c.T?.sc.N?.forEach((T: Travel) => {
-            if (T.sc.n === n && T.sc.inst) found = T.sc.inst
-        })
-        return found
-    }
-
-    async eatfunc(hash) {
-        Object.assign(this, hash)
-        await this.on_code_change?.()
-        if (this.oa()) this.main()
-    }
 
 //#endregion
 //#region methods
@@ -864,6 +869,50 @@ export class House extends StorableHousing {
         if (e?.sc.payload != null) w.i({ payload: e.sc.payload })
         w.i({latch:3})
     }
+
+//#endregion
+//#region watched
+    // these are derived from H/%watched:actions/*
+    actions: TheC[] = $state([]) 
+
+    watched:   Array<{ C: TheC, handler: Function }> = $state([])
+    watched_v: number[] = []
+    // enroll a C with a handler; idempotent
+    watch_c(C: TheC, handler: Function) {
+        if (this.watched.some(w => w.C === C)) return
+        this.watched.push({ C, handler })
+        this.watched_v.push(C.version)
+    }
+    start_watched_C_effect() {
+        $effect(() => {
+            for (let i = 0; i < this.watched.length; i++) {
+                const v = this.watched[i].C.version
+                if (v !== this.watched_v[i]) {
+                    this.watched_v[i] = v
+                    this.watched[i].handler()
+                }
+            }
+        })
+        // setTimeout: watch_c(this,...) must not run synchronously inside
+        //  $effect.root during start() — the 20ms lets construction settle
+        setTimeout(() => {
+            this.watch_c(this, () => {
+                // enroll H/*%watched
+                for (const C of this.o({ watched: 1 }) as TheC[]) {
+                    if (this.watched.some(w => w.C === C)) continue
+                    const key = C.sc.watched as string
+                    // fn in sc (caller may override); default: H[key] = wc.o({})
+                    const fn: Function = C.sc.fn ?? (() => {
+                        (this as any)[key] = C.o({})
+                    })
+                    this.watch_c(C, fn)
+                }
+            })
+        },20)
+    }
+
+
+
 
 //#endregion
 }

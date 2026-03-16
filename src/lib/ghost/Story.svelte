@@ -1,6 +1,7 @@
 <script lang="ts">
     import { House } from "$lib/O/Housing.svelte"
-    import { TheC }  from "$lib/data/Stuff.svelte"
+    import { TheC } from "$lib/data/Stuff.svelte"
+    import { dig, tex } from "$lib/Y"
     import { onMount } from "svelte"
 
     let { M } = $props()
@@ -9,113 +10,186 @@
     await M.eatfunc({
 
 //#region story w-method
-    async Blank(A: TheC, w: TheC) {
-        w.oai({imperfection:1})
-    },
-    // Ambient method for w:Story on A:Story.
-    // Reads w.sc.Book to decide which Run House to manage.
+
     async Story(A: TheC, w: TheC) {
         let book = w.sc.Book as string | undefined
         if (!book) return w.i({ see: '!Book on w:Story' })
 
-        let run_name = `Run:${book}`   // eg 'Run:LeafFarm'
+        let run_name = `Run:${book}`
+        let Run: House = this.subHouse(run_name)
 
-        // ── ensure H:Run exists and is wired ─────────────────────────
-        let H_run: House = this.subHouse(run_name)
-        if (!H_run.oa({ A: 1 })) {
-            // blank — call Run_A_<Book> with this=H_run
-            let init_fn = (H_run as any)[`Run_A_${book}`] as Function | undefined
+        if (!Run.oa({ A: 1 })) {
+            let init_fn = (Run as any)[`Run_A_${book}`] as Function | undefined
             if (!init_fn) return w.i({ error: `!Run_A_${book}` })
-            init_fn.call(H_run)
+            init_fn.call(Run)
         }
 
-        // ── controlled drive: 30 steps at 5/s ────────────────────────
+        // define the actions channel once on H:Story — not LeafFarm's concern
+        this.oai({ watched: 'actions' })
+        this.bump_version()   // enrolls it via init_watched handler
+
         let run = w.o({ run: run_name })[0]
         if (!run) {
-            run = w.i({ run: run_name, steps_done: 0, steps_total: 30, paused: false })
-            this.story_drive(H_run, w, run)
+            run = w.i({ run: run_name, steps_done: 0, paused: false, mode: 'new' })
+            this.story_drive(Run, w, run)
         }
 
-        w.i({ see: `${run_name} ${run.sc.steps_done}/${run.sc.steps_total}${run.sc.paused ? ' ⏸' : ''}` })
+        this.story_ui(Run, w, run)
+        w.i({ see: `${run_name} ${run.sc.steps_done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
-    // Drive H_run for steps_total steps at 5/s, then pause.
-    story_drive(H_run: House, w: TheC, run: TheC) {
-        if (run.c.interval_id) return
-        let step = () => {
-            if (run.c.drop || run.sc.paused) return
-            if (run.sc.steps_done >= run.sc.steps_total) {
-                clearInterval(run.c.interval_id)
-                delete run.c.interval_id
-                run.sc.paused = true
-                console.log(`⏹️  Story: ${run.sc.run} done`)
-                return
-            }
-            H_run.elvisto(H_run, 'think')
-            run.sc.steps_done += 1
-            console.log(`▶️  step ${run.sc.steps_done}/${run.sc.steps_total}`)
-        }
-        run.c.interval_id = setInterval(step, 200)   // 5 per second
-        console.log(`▶️  Story: driving ${run.sc.run}`)
+    async Blank(A: TheC, w: TheC) {
+        w.oai({ imperfection: 1 })
     },
 
 //#endregion
-//#region reset + Run_A
+//#region drive + snap
 
-    // Drop all %A and todo, reset PRNG — leaves H blank for a fresh run.
+    story_drive(Run: House, w: TheC, run: TheC) {
+        if (run.c.interval_id) return
+
+        // lightweight helper — mutates the status particle and bumps the channel
+        const update_status = (label: string, cls = 'default') => {
+            const wa = (this as House).o({ watched: 'actions' })[0]
+            if (!wa) return
+            const st = wa.o({ action: 1, role: 'status' })[0]
+            if (st) { st.sc.label = label; st.sc.cls = cls }
+            wa.bump_version()
+        }
+
+        // load expected digests, determine mode
+        const stashed  = (this as House).stashed?.[`${run.sc.run}.json`]
+        const expected: Record<number, string> = stashed?.diges ?? {}
+        run.sc.mode = Object.keys(expected).length ? 'check' : 'new'
+        update_status(run.sc.mode, run.sc.mode === 'new' ? 'save' : 'default')
+
+        const step = async () => {
+            if (run.c.drop || run.sc.paused) return
+
+            const n = run.sc.steps_done + 1
+
+            // check mode: stop cleanly when stored steps run out
+            if (run.sc.mode === 'check' && !expected[n]) {
+                clearInterval(run.c.interval_id)
+                delete run.c.interval_id
+                run.sc.paused = true
+                update_status('done ✓', 'start')
+                console.log(`✓ Story: ${run.sc.run} check complete`)
+                return
+            }
+
+            Run.elvisto(Run, 'think')
+            run.sc.steps_done = n
+
+            const snap      = this.story_snap(Run)
+            const got_dige  = await dig(snap)
+
+            if (run.sc.mode === 'new') {
+                // record mode — accumulate digests
+                w.i({ moment: n, dige: got_dige, ok: true })
+                update_status(`recording ${n}`, 'save')
+            } else {
+                // check mode — compare
+                const exp_dige = expected[n]
+                const ok = exp_dige === got_dige
+                w.i({ moment: n, dige: got_dige, ok, snap: ok ? undefined : snap })
+                if (!ok) {
+                    clearInterval(run.c.interval_id)
+                    delete run.c.interval_id
+                    run.sc.paused = true
+                    run.sc.failed_at = n
+                    update_status(`✗ step ${n}`, 'stop')
+                    console.log(`⛔ Story: step ${n} mismatch`)
+                    return
+                }
+                update_status(`✓ ${n}`)
+            }
+        }
+
+        run.c.interval_id = setInterval(step, 200)
+        console.log(`▶ Story: ${run.sc.mode} mode driving ${run.sc.run}`)
+    },
+
+    // walk Run and produce a deterministic indented string
+    story_snap(Run: House): string {
+        const lines: string[] = []
+        const walk = (c: TheC, d = 0) => {
+            lines.push('  '.repeat(d) + c.t + ' ' + JSON.stringify(tex(c.sc)))
+            for (const child of (c.o({}) as TheC[])) walk(child, d + 1)
+        }
+        walk(Run, 0)
+        return lines.join('\n') + '\n'
+    },
+
+//#endregion
+//#region save + reset
+
+    story_save(this: House) {
+        const A = this.o({ A: 'Story' })[0]
+        const w = A?.o({ w: 'Story' })[0]
+        if (!w) return
+        for (const run of w.o({ run: 1 }) as TheC[]) {
+            const diges: Record<number, string> = {}
+            for (const m of w.o({ moment: 1 }) as TheC[]) {
+                if (m.sc.ok) diges[m.sc.moment] = m.sc.dige
+            }
+            this.stashed ??= {}
+            this.stashed[`${run.sc.run}.json`] = { diges }
+            console.log(`💾 saved ${Object.keys(diges).length} digests for ${run.sc.run}`)
+        }
+    },
+
     reset(this: House) {
         this.todo = []
-        for (let A of this.o({ A: 1 })) this.drop(A)
+        for (const A of this.o({ A: 1 }) as TheC[]) this.drop(A)
         this.prng = [1, 2, 3, 4]
         console.log(`🔄 ${this.name} reset`)
     },
 
-    // Wire the LeafFarm workers into this H.
-    // Called as init_fn.call(H_run) so this = H_run.
+//#endregion
+//#region mechanisms
+
     Run_A_LeafFarm(this: House) {
-        for (let [Aname, wname] of [
+        for (const [Aname, wname] of [
             ['farm',     'farm'],
             ['plate',    'plate'],
             ['enzymeco', 'enzymeco'],
         ] as [string, string][]) {
-            let A = this.o({ A: Aname })[0] || this.i({ A: Aname })
+            const A = this.o({ A: Aname })[0] || this.i({ A: Aname })
             if (!A.o({ w: wname }).length) A.i({ w: wname })
         }
         console.log(`🌿 ${this.name} LeafFarm wired`)
     },
 
-//#endregion
-//#region story_replay
+    story_ui(this: House, Run: House, w: TheC, run: TheC) {
+        const wa     = this.oai({ watched: 'actions' })
+        const paused = run.sc.paused
+        const mode   = run.sc.mode ?? 'new'
+        const step   = run.sc.steps_done ?? 0
+        const failed = run.sc.failed_at
 
-    // Replay: reset H:Run and re-drive from scratch.
-    // Call from devtools on H:Story.
-    async story_replay(this: House) {
-        if (this.name !== 'Story') return
-        let A = this.o({ A: 'Story' })[0]
-        if (!A) return
-        let w = A.o({ w: 'Story' })[0]
-        if (!w) return
-        let book = w.sc.Book as string
-        let run_name = `Run:${book}`
+        // idempotent — oai finds or creates each role particle, then mutates sc
+        const pause_a  = wa.oai({ action: 1, role: 'pause' })
+        pause_a.sc.label = paused ? 'Resume' : 'Pause'
+        pause_a.sc.icon  = paused ? '▶' : '⏸'
+        pause_a.sc.cls   = paused ? 'start' : 'stop'
+        pause_a.sc.fn    = () => { run.sc.paused = !run.sc.paused }
 
-        // stop interval
-        let run = w.o({ run: run_name })[0]
-        if (run?.c.interval_id) {
-            clearInterval(run.c.interval_id)
-            delete run.c.interval_id
-        }
+        const save_a   = wa.oai({ action: 1, role: 'save' },
+            { label: 'Save', icon: '💾', cls: 'save' })
+        save_a.sc.fn   = () => { this.story_save() }
 
-        // reset run House
-        let H_run = this.o({ H: run_name })[0]?.sc.inst as House | undefined
-        if (H_run) {
-            H_run.reset()
-            ;(H_run as any).Run_A_LeafFarm()
-        }
+        const reset_a  = wa.oai({ action: 1, role: 'reset' },
+            { label: 'Reset', icon: '🔄', cls: 'remove' })
+        reset_a.sc.fn  = () => { this.reset() }
 
-        // drop run particle so story() spawns fresh
-        if (w) await w.r({ run: run_name }, {})
-        this.main()
-        console.log(`🔄 Story: replay ${run_name}`)
+        // status: disabled pseudo-button, label driven by drive() between ticks
+        const status_a = wa.oai({ action: 1, role: 'status' })
+        status_a.sc.label    = `${mode} ${failed ? '✗' + failed : step}`
+        status_a.sc.cls      = failed ? 'stop' : mode === 'new' ? 'save' : 'default'
+        status_a.sc.disabled = true
+
+        wa.bump_version()
     },
 
 //#endregion
