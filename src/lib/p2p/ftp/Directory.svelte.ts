@@ -370,7 +370,7 @@ interface FileReader {
 }
 
 // type FileSystemDirectoryHandle = any
-class FileSystemHandler {
+export class FileSystemHandler {
     // handle for the root directory of the share
     handle:FileSystemDirectoryHandle|null
     // handles for any file being read

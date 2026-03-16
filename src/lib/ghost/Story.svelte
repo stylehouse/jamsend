@@ -41,10 +41,6 @@
         w.i({ see: `${run_name} ${run.sc.steps_done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
-    async Blank(A: TheC, w: TheC) {
-        w.oai({ imperfection: 1 })
-    },
-
 //#endregion
 //#region drive + snap
 
@@ -202,6 +198,9 @@
             disabled: true,
         })
     },
+
+//#endregion
+//#region mechanisms
 
 //#endregion
 

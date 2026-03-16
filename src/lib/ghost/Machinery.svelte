@@ -7,9 +7,9 @@
 
     let {M} = $props()
     const V = {}
-    V.farm = 1
-    V.plate = 1
-    V.enzyme = 1
+    V.farm = 0
+    V.plate = 0
+    V.enzyme = 0
 
     onMount(async () => {
     await M.eatfunc({

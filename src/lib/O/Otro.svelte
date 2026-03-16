@@ -1,6 +1,6 @@
 <script lang="ts">
     import Ghost    from "$lib/O/Ghost.svelte"
-    import { Checkitout, House, Work, register_class } from "$lib/O/Housing.svelte"
+    import { House, Work, register_class } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
 
@@ -27,7 +27,6 @@
         setTimeout(() => {
             houses = [H]
         },1)
-        // R = new Checkitout({})
     })
 
     // ── once ghosts have arrived, wire child Houses ───────────────────────────
@@ -36,22 +35,13 @@
         if (!H?.started || setup_done) return
         setup_done = true
 
-        H.i({A:'Blank'})
-
-        let S = H.subHouse('Story')
-        let SA = S.i({ A: 'Story' })
-        SA.i({ w: 'Story', Book: 'LeafFarm' })
-        S.elvisto(S, 'think')
-        R  = new Checkitout({})
+        H.may_begin()
 
         setTimeout(() => {
             houses = H.all_House
         },1)
 
         setTimeout(() => {
-            S.reactything = 3
-            // H.reactything = 3
-            R.reactything = 3
             // S.elvisto(S, 'think')
             // S.todo.push("Blanks")
         },1333)
@@ -66,9 +56,6 @@
 
     function go_busily() {
         H.elvisto(H, 'think')
-
-        let S = H.o({H:'Story'})[0]
-        S.elvisto(S, 'think')
     }
 
     function upthings() {

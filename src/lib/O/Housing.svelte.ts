@@ -1,6 +1,7 @@
 // vastly AI
 import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
+import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
@@ -14,12 +15,12 @@ interface HouseRow {
 
 export const db = new Dexie('housing') as Dexie & {
     House: EntityTable<HouseRow, 'name'>
-    Street: EntityTable<HouseRow, 'name'>
 }
 
-db.version(1).stores({
+db.version(2).stores({
     House:  'name, json',
-    Street: 'name, json',
+    Street: null,
+    Handle: 'name',         
 })
 
 //#endregion
@@ -317,25 +318,6 @@ const scheme = [
     { ark: 'r', sc: { r: 1 } },
 ]
 
-
-
-export class Checkitout {
-    // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
-    reactything:any = $state(null)
-    constructor(opt: TheUniversal) {
-        this.#cleanup = $effect.root(() => {
-            $effect(() => {
-                if (this.reactything) {
-                    console.log(`the reactything!`)
-                }
-            })
-        })
-    }
-    #cleanup: () => void
-    destroy() { this.#cleanup() }
-
-}
-
 export class House extends StorableHousing {
     _table = db.House
 
@@ -353,9 +335,6 @@ export class House extends StorableHousing {
         return [...super.start_checks(), this.ghosts !== null]
     }
 
-    // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
-    reactything:any = $state(null)
-
     constructor(opt: TheUniversal) {
         super(opt)
         this.sc.H = this.name
@@ -365,30 +344,14 @@ export class House extends StorableHousing {
     // The readiness $effect lives in the constructor so Svelte owns it correctly.
     override start() {
         super.start()
-
         // $effect.root from Housing
         $effect(() => {
-            console.log(`${this.name} pings todo!`)
             if (this.todo.length) this.answer_calls()
         })
         $effect(() => {
             if (!this.started && this._all_checks_pass()) this.started = true
         })
         this.start_watched_C_effect()
-
-
-        // etc
-        $effect(() => {
-            if (this.started) {
-                console.log(`H:${this.name} started: ${this.started}`)
-            }
-        })
-        $effect(() => {
-            if (this.reactything) {
-                console.log(`${this.name} reactything!`)
-            }
-        })
-
     }
 
     // -------------------------------------------------------------------------
@@ -443,51 +406,8 @@ export class House extends StorableHousing {
         return child
     }
 
-    // -------------------------------------------------------------------------
-    // answer_calls: drain H.todo one item at a time.
-    // If e.sc.fn — it's a post_do block, run it directly.
-    // Otherwise — pass the elvis particle straight to beliefs().
-    // Throttled so rapid-fire todo pushes don't pile up.
-    // -------------------------------------------------------------------------
-    answer_calls_throttle?: Function
-    answer_calls() {
-        this.answer_calls_throttle ||= throttle(() => {
-            this._really_answer_calls()
-        }, 50)
-        this.answer_calls_throttle()
-    }
-    async _really_answer_calls() {
-        // don't process until stashed + ghosts are both ready
-        if (!this.started) return
-
-        // tick the interval each time we drain — mirrors Modus.reset_interval()
-        await this.reset_interval?.()
-
-        // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
-        // when todo next changes (eg when concretion pushes original_e back).
-        // fn-carrying e can always run immediately since they don't enter beliefs().
-        if (this.c._mutex_beliefs) {
-            const [e] = this.todo
-            if (!e || !e.sc.fn) {
-                V.organise && console.log(`answer_calls: beliefs mutex locked, yielding to $effect`)
-                return
-            }
-        }
-
-        const [e, ...rest] = this.todo
-        if (!e) return
-        this.todo = rest
-        V.organise && console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
-
-        if (e.sc.fn) {
-            // post_do block (fn-carrying e) — run directly, never enters beliefs()
-            // $effect re-fires for any remaining todo after fn resolves
-            e.sc.fn()
-        } else {
-            // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
-            this.beliefs(e)
-        }
-    }
+//#endregion
+//#region i todo
 
     // -------------------------------------------------------------------------
     // post_do: push a fn-carrying elvis onto H.todo.
@@ -551,6 +471,56 @@ export class House extends StorableHousing {
         if (max_seq === seq) return 2
 
         return 1
+    }
+
+
+//#endregion
+//#region o todo
+
+    // -------------------------------------------------------------------------
+    // answer_calls: drain H.todo one item at a time.
+    // If e.sc.fn — it's a post_do block, run it directly.
+    // Otherwise — pass the elvis particle straight to beliefs().
+    // Throttled so rapid-fire todo pushes don't pile up.
+    // -------------------------------------------------------------------------
+    answer_calls_throttle?: Function
+    answer_calls() {
+        this.answer_calls_throttle ||= throttle(() => {
+            this._really_answer_calls()
+        }, 50)
+        this.answer_calls_throttle()
+    }
+    async _really_answer_calls() {
+        // don't process until stashed + ghosts are both ready
+        if (!this.started) return
+
+        // tick the interval each time we drain — mirrors Modus.reset_interval()
+        await this.reset_interval?.()
+
+        // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
+        // when todo next changes (eg when concretion pushes original_e back).
+        // fn-carrying e can always run immediately since they don't enter beliefs().
+        if (this.c._mutex_beliefs) {
+            const [e] = this.todo
+            if (!e || !e.sc.fn) {
+                V.organise && console.log(`answer_calls: beliefs mutex locked, yielding to $effect`)
+                return
+            }
+        }
+
+        const [e, ...rest] = this.todo
+        if (!e) return
+        this.todo = rest
+        V.organise && console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
+
+        if (e.sc.fn) {
+            // post_do block (fn-carrying e) — run directly, never enters beliefs()
+            // $effect re-fires for any remaining todo after fn resolves
+            e.sc.fn()
+        } else {
+            // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
+            this.beliefs(e)
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -859,17 +829,6 @@ export class House extends StorableHousing {
     // Defining them on Housing would clobber whichever version already exists.
     // -------------------------------------------------------------------------
 
-
-//#endregion
-//#region methods
-
-    // fallback handler for testing without a ghost — ghost methods shadow these
-    async withitall(A, w, e, AT, wT) {
-        console.log(`H.withitall() called from ${e?.sc.from_name}`, e?.sc)
-        if (e?.sc.payload != null) w.i({ payload: e.sc.payload })
-        w.i({latch:3})
-    }
-
 //#endregion
 //#region watched
     // these are derived from H/%watched:actions/*
@@ -909,6 +868,98 @@ export class House extends StorableHousing {
     }
 
 
+//#endregion
+//#region methods
+    // after H.started, so storage etc is there...
+    may_begin() {
+        let H = this
+        // < H.stashed.* could be used to track current something
+        H.i({A:'Blank'})
+        // the local git repo for test data access
+        let lds = H.i({A:'Wormhole'})
+        lds.i({w:'DirectoryOpener'})
+        lds.i({w:'Wormhole'})
+
+        let S = H.subHouse('Story')
+        let SA = S.i({ A: 'Story' })
+        SA.i({ w: 'Story', Book: 'LeafFarm' })
+        S.elvisto(S, 'think')
+    }
+
+    // fallback handler for testing without a ghost — ghost methods shadow these
+    async withitall(A, w, e, AT, wT) {
+        console.log(`H.withitall() called from ${e?.sc.from_name}`, e?.sc)
+        if (e?.sc.payload != null) w.i({ payload: e.sc.payload })
+        w.i({latch:3})
+    }
+
+    async Blank(A: TheC, w: TheC) {
+        w.oai({ imperfection: 1 })
+    }
+
+    async DirectoryOpener(A, w, e, AT, wT) {
+        const key = `${(this as House).name}`
+
+        // init FileSystemHandler on A
+        if (!A.c.fsh) {
+            const fsh = new FileSystemHandler({
+                share: { name: key },
+                storeDirectoryHandle: async (handle) => {
+                    await db.Handle.put({ name: key, handle })
+                },
+                restoreDirectoryHandle: async () => {
+                    const row = await db.Handle.get(key)
+                    if (!row) return null
+                    try {
+                        const perm = await row.handle.queryPermission({ mode: 'readwrite' })
+                        if (perm === 'granted') return row.handle
+                        if (perm === 'prompt') {
+                            const got = await row.handle.requestPermission({ mode: 'readwrite' })
+                            if (got === 'granted') return row.handle
+                        }
+                    } catch { await db.Handle.delete(key) }
+                    return null
+                },
+            })
+            A.c.fsh = fsh
+            await fsh.start()    // tries restore; silent if nothing stored yet
+            A.oai({ FileSystemHandler: 1, name: key })
+        }
+
+        const fsh = A.c.fsh as FileSystemHandler
+
+        // ── if directory is open: expose DL, ensure it's expanded ────────
+        if (fsh.started && fsh.list) {
+            // this is a DL:
+            A.c.DL = fsh.list
+            if (!fsh.list.expanded) await fsh.list.expand()
+            w.i({ see: `📁 ${fsh.list.name} (${fsh.list.files.length} files)` })
+            return
+        }
+
+        // ── not open: surface one action to pick the directory ───────────
+        if (w.oa({ wants_directory: 1 })) return
+        w.i({ wants_directory: 1 })
+
+        const wa = (this as House).oai({ watched: 'actions' })
+        ;(this as House).enroll_watched()
+        wa.oai({ action: 1, role: 'open_dir' }, {
+            label: 'Open directory', icon: '📂', cls: 'big',
+            fn: async () => {
+                await fsh.requestDirectoryAccess()
+                await w.r({ wants_directory: 1 }, {})
+                ;(this as House).elvisto(this as House, 'think')
+            },
+        })
+    }
+    // < clone Directory more...
+    async Wormhole(A: TheC, w: TheC) {
+        let DL = A.c.DL as DirectoryListing
+        w.oai({ imperfection: 1 })
+        DL ? w.i({see:"got this", dl: DL.name})
+            : w.i({see:"awaiting dir"})
+    }
+
 
 
 //#endregion
@@ -918,6 +969,7 @@ export class House extends StorableHousing {
 //#endregion
 //#region Street
 
+// < stub, unused
 export class Street extends Housing {
     house_names: string[] = $state([])
 
