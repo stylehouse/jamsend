@@ -10,6 +10,8 @@
     await M.eatfunc({
 
 //#region Story
+    // < lets not pad numbers in here, only $step of wormhole/Story/*/$step.snap
+    pad: (n: number) => 0 ? String(n).padStart(3, '0') : n,
 
     Story_init(A: TheC, w: TheC) {
         const book = w.sc.Book as string | undefined
@@ -45,8 +47,10 @@
 
         // ── TOC ───────────────────────────────────────────────────────
         if (!run.c.toc_loaded) {
-            const toc_req = await wh.i({ wh_path: run_path, wh_op: 'read_toc' })
-            if (!this.i_elvis_req(w, 'wh_op', toc_req, { Aw: 'Wormhole/Wormhole' }))
+            const toc_req = await wh.oai({ wh_path: run_path, wh_op: 'read_toc' })
+            let reqN = window.reqN = window.reqN || []
+            if (!reqN.includes(toc_req)) reqN.push(toc_req)
+            if (!this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req }))
                 return w.i({ see: '⏳ toc...' })
 
             const toc = toc_req.sc.reply?.toc ?? {}
@@ -57,12 +61,12 @@
             run.c.toc_loaded = true
         }
 
-        // ── expected snap fetch on mismatch ───────────────────────────
+        // ── pending snap fetch (set by story_drive on mismatch) ───────
         if (run.sc.needs_snap) {
             const n = run.sc.needs_snap as number
-            const snap_req = await wh.i({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
-            if (!this.i_elvis_req(w, 'wh_op', snap_req, { Aw: 'Wormhole/Wormhole' }))
-                return w.i({ see: `⏳ snap ${n}...` })
+            const snap_req = await wh.oai({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+            if (!this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
+                return w.i({ see: `⏳ snap ${this.pad(n)}...` })
 
             const moment = w.o({ moment: 1, moment_n: n })[0]
             if (moment) moment.sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
@@ -114,25 +118,23 @@
             const got_dige = await dig(snap)
 
             if (run.sc.mode === 'new') {
-                // store snap in memory — written to disk on Save
                 w.i({ moment: 1, moment_n: n, dige: got_dige, ok: true, snap })
-                await update_status(`recording ${n}/${run.sc.steps_total}`, 'save')
+                await update_status(`recording ${this.pad(n)}/${this.pad(run.sc.steps_total as number)}`, 'save')
             } else {
                 const exp_dige = toc_steps[n]
                 const ok       = exp_dige === got_dige
-                // store got_snap for diff display; exp_snap fetched lazily below
                 w.i({ moment: 1, moment_n: n, dige: got_dige, ok, got_snap: snap })
                 if (!ok) {
                     clearInterval(run.c.interval_id); delete run.c.interval_id
                     run.sc.paused    = true
                     run.sc.failed_at = n
-                    run.sc.needs_snap = n   // Story() will fetch expected snap next tick
-                    await update_status(`✗ step ${n}`, 'stop')
-                    console.log(`⛔ Story: step ${n} mismatch`)
-                    ;(this as House).main()  // wake Story tick to handle snap req
+                    run.sc.needs_snap = n
+                    await update_status(`✗ step ${this.pad(n)}`, 'stop')
+                    console.log(`⛔ Story: step ${this.pad(n)} mismatch`)
+                    ;(this as House).main()
                     return
                 }
-                await update_status(`✓ ${n}`)
+                await update_status(`✓ ${this.pad(n)}`)
             }
         }
 
@@ -158,7 +160,7 @@
         const w = A?.o({ w: 'Story' })[0]
         if (!w) return
 
-        const wh       = w.c.wh as any
+        const wh       = w.c.wh as ReturnType<typeof this.requesty_serial> | undefined
         const run_path = w.c.run_path as string | undefined
 
         for (const run of w.o({ run: 1 }) as TheC[]) {
@@ -170,25 +172,24 @@
 
             if (wh && run_path) {
                 ;(async () => {
-                    const toc_req = await wh.i(
-                        { wh_path: run_path, wh_op: 'write_toc' },
-                        { wh_path: run_path, wh_op: 'write_toc', wh_data: toc_payload },
-                    )
-                    this.i_elvis_req(w, 'wh_op', toc_req, { Aw: 'Wormhole/Wormhole' })
+                    // write TOC
+                    const toc_req = await wh.i({
+                        wh_path: run_path, wh_op: 'write_toc', wh_data: toc_payload,
+                    })
+                    this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
 
+                    // write each snap
                     for (const m of ok_moments) {
                         if (!m.sc.snap) continue
-                        const snap_req = await wh.i(
-                            { wh_path: run_path, wh_op: 'write_snap', wh_step: m.sc.moment_n },
-                            { wh_path: run_path, wh_op: 'write_snap',
-                              wh_step: m.sc.moment_n, wh_data: m.sc.snap },
-                        )
-                        this.i_elvis_req(w, 'wh_op', snap_req, { Aw: 'Wormhole/Wormhole' })
+                        const snap_req = await wh.i({
+                            wh_path: run_path, wh_op: 'write_snap',
+                            wh_step: m.sc.moment_n, wh_data: m.sc.snap,
+                        })
+                        this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
                     }
                     console.log(`💾 wormhole: ${run_path} (${ok_moments.length} steps)`)
                 })()
             } else {
-                // stashed fallback while directory not open
                 this.stashed ??= {}
                 this.stashed[`${run.sc.run}.json`] = toc_payload
                 console.log(`💾 stashed: ${run.sc.run} (${ok_moments.length} steps)`)
@@ -240,7 +241,7 @@
             fn: () => { this.reset() },
         })
         await wa.r({ action: 1, role: 'status' }, {
-            label:    `${mode} ${failed ? '✗' + failed : step}`,
+            label:    `${mode} ${failed ? '✗' + this.pad(failed as number) : this.pad(step as number)}`,
             cls:      failed ? 'stop' : mode === 'new' ? 'save' : 'default',
             disabled: true,
         })

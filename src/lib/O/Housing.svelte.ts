@@ -208,6 +208,7 @@ abstract class Housing extends TheC {
     }
 
     // a higher level, client call returns true when req%reply
+
     i_elvis_req(source:TheC|Housing, target: string | TheC | Housing, type: string, extra: Partial<TheUniversal> = {}) {
         const req = extra.req as TheC
         if (!req) throw `i_elvis_req: no req`
@@ -215,18 +216,17 @@ abstract class Housing extends TheC {
         if (!req.oa({ req_sent: 1 })) {
             req.i({ req_sent: 1 })
             const { req: _drop, ...rest } = extra
-            ;(H as House).elvistwo(source, target, type, { ...rest, req })
+            this.elvistwo(source, target, type, { ...rest, req })
         }
         return false
-    },
-
+    }
     o_elvis_req(w: TheC, type: string): Array<{ e: TheC; req: TheC; finish: (reply: any) => void }> {
         return this.o_elvis(w, type).map(e => {
             const req = e.sc.req as TheC
             const finish = (reply: any) => {
                 req.sc.reply = reply
                 req.sc.finished = true
-                ;(H as House).elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
+                this.elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
             }
             return { e, req, finish }
         })
@@ -969,7 +969,10 @@ export class House extends StorableHousing {
         if (fsh.started && fsh.list) {
             // this is a DL:
             A.c.DL = fsh.list
-            if (!fsh.list.expanded) await fsh.list.expand()
+            if (!fsh.list.expanded) {
+                await fsh.list.expand()
+                this.main()
+            }
             w.i({ see: `📁 ${fsh.list.name} (${fsh.list.files.length} files)` })
             return
         }
@@ -990,8 +993,13 @@ export class House extends StorableHousing {
         })
     }
     async Wormhole(A, w, e, AT, wT) {
-        const fs = await this.requesty_serial(w, 'fs_op')
+        if (!A.c.nav && A.c.DL) {
+            const DL = A.c.DL as DirectoryListing
+            if (!DL.expanded) await DL.expand()
+            A.c.nav = new WormholeNav(DL)
+        }
 
+        const fs = await this.requesty_serial(w, 'fs_op')
         for (const { e, req, finish } of this.o_elvis_req(w, 'wh_op')) {
             if (!fs.o({ req }).length) {
                 const fs_req = await fs.i({ req })
@@ -1013,7 +1021,11 @@ export class House extends StorableHousing {
                 fs_req.sc.finished = true
             }
 
-            if (!nav) return done({ error: 'not_open' })
+            if (!nav) {
+                // don't finish — leave req pending, Wormhole will retry next tick
+                w.i({ see: '📭 nav not ready' })
+                return
+            }
 
             try {
                 if (op === 'read_toc') {

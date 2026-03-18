@@ -614,7 +614,7 @@
             ison = async () => {}
         }
         let M = this
-        return {
+        let requlator:any; requlator = {
             pending: w.o(({...reqc})).length,
             async i(c,sc={}) {
                 await ison()
@@ -625,6 +625,12 @@
                 //  we can drop our %aim (we tend not to) or get req%finished and they'll vanish
                 req.c.category = `reqy:${t}`
                 return req
+            },
+            async oai(c,sc={}) {
+                let had = requlator.o(c)
+                if (had.length > 1) throw "reqy oai many"
+                if (had.length) return had[0]
+                return await requlator.i(c,sc)
             },
             o(sc={}) {
                 // you can use sc to check for existing workpiece id before you .i()
@@ -685,6 +691,7 @@
                 return N
             }
         }
+        return requlator
     },
 
 
