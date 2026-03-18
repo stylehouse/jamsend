@@ -158,8 +158,10 @@ class StuffIO {
     X_before?:TheX
     replace_having?:Error["stack"]
     Xify() {
+        if (this.X) return
         this.X ||= new TheX()
-        // via Stuff.replace(), X is a page that turns, keep version
+        // X is being created fresh — if replace() is mid-flight,
+        // inherit the version so observers don't miss a beat
         if (this.X_before) {
             this.X.serial_i = this.X_before.serial_i
             this.X.bump_version()
@@ -229,6 +231,8 @@ class StuffIO {
     o(sc?:TheUniversal,q?):TheN|TheC|any|undefined {
         q ||= {}
         sc ||= {}
+        // bold call, avoids "Svelte error: state_unsafe_mutation" from a component doing C.o()
+        if (!this.X) return []
         // < q might be a Travel...?
         this.Xify()
 

@@ -91,6 +91,15 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
+    // top_House: the mutex-holding House, so anyone can .replace() anywhere
+    // -------------------------------------------------------------------------
+    top_House(): House {
+        let h: Housing = this
+        while (h.up) h = h.up
+        return h as House
+    }
+
+    // -------------------------------------------------------------------------
     // every_House: return all Houses reachable from this Housing.
     // Default: walk .up to the root House, return [that].
     // Override in eg PeeringSharing to include all peer/feature Houses.
@@ -513,33 +522,33 @@ export class House extends StorableHousing {
         // don't process until stashed + ghosts are both ready
         if (!this.started) return
 
-        // tick the interval each time we drain — mirrors Modus.reset_interval()
-        await this.reset_interval?.()
-
         // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
         // when todo next changes (eg when concretion pushes original_e back).
         // fn-carrying e can always run immediately since they don't enter beliefs().
         if (this.c._mutex_beliefs) {
-            const [e] = this.todo
-            if (!e || !e.sc.fn) {
-                V.organise && console.log(`answer_calls: beliefs mutex locked, yielding to $effect`)
-                return
-            }
+            V.organise && console.log(`answer_calls: beliefs mutex locked, yielding`)
+            return
         }
 
-        const [e, ...rest] = this.todo
+        let e = this.todo.shift()
         if (!e) return
-        this.todo = rest
-        V.organise && console.log(`answer_calls: shifting e%${keyser(e.sc)} todo remaining:${rest.length}`)
+        V.organise && console.log(`answer_calls: e%${keyser(e.sc)}\t\ttodo:${this.todo.length}`)
+        
+        let H = this.top_House()
+        console.log(`H:${this.name}  -> ${H.name}`)
+        await H.mutex('beliefs', async () => {
+            // come back ambiently
+            if (!this.c.no_interval) await this.reset_interval?.()
 
-        if (e.sc.fn) {
-            // post_do block (fn-carrying e) — run directly, never enters beliefs()
-            // $effect re-fires for any remaining todo after fn resolves
-            e.sc.fn()
-        } else {
-            // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
-            this.beliefs(e)
-        }
+            if (e.sc.fn) {
+                // post_do block (fn-carrying e) — run directly, never enters beliefs()
+                // $effect re-fires for any remaining todo after fn resolves
+                await e.sc.fn()
+            } else {
+                // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
+                await this.beliefs(e)
+            }
+        })
     }
 
 
@@ -664,11 +673,9 @@ export class House extends StorableHousing {
         if (e) this._expand_Aw(e)
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
-        await this.mutex('beliefs', async () => {
-            const done = await this.organise(e)
-            if (!done) return
-            await this.attend(e)
-        })
+        const done = await this.organise(e)
+        if (!done) return
+        await this.attend(e)
     }
 
     // -------------------------------------------------------------------------

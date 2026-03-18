@@ -3,6 +3,7 @@
     import { House, Work, register_class } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
+    import StoryRun from "./ui/StoryRun.svelte";
 
     // A Work subclass with a withitall() method
     class WithItAll extends Work {
@@ -31,6 +32,7 @@
 
     // ── once ghosts have arrived, wire child Houses ───────────────────────────
     let setup_done = false
+    let StoryUI = $state(false)
     $effect(() => {
         if (!H?.started || setup_done) return
         setup_done = true
@@ -44,7 +46,8 @@
         setTimeout(() => {
             // S.elvisto(S, 'think')
             // S.todo.push("Blanks")
-        },1333)
+            StoryUI = true
+        },444)
 
         go_busily()
     })
@@ -68,6 +71,7 @@
 
 <h3>Here we Are</h3>
 
+{#if StoryUI}<StoryRun {H} />{/if}
 
 {#each houses as house (house.name)}
     <h2>
@@ -83,6 +87,7 @@
     <Stuffing mem={house.imem('current')} stuff={house} M={house} />
 {/each}
 
+    
 {#if H?.stashed}
     <button onclick={upthings}>upthings ({H.stashed?.things ?? 0})</button>
     <button onclick={go_busily}>think</button>
@@ -90,6 +95,7 @@
 
 {#if H}
     <Ghost {H} />
+
 {/if}
 
 <style>
