@@ -36,20 +36,23 @@
     // ── snap line type ────────────────────────────────────────────────────────
     type SnapLine = {
         d:         number
-        objecties: Record<string, string>
+        objecties: Record<string, any>   // { ref?, mung? } or {}
         stringies: Record<string, any>
     }
 
     // ── deL: decode one enL-encoded line ─────────────────────────────────────
+    // objecties: { ref?: {k:str}, mung?: string[] } — '' decodes to {}
+    // stringies: the hashable primitives
     function deL(line: string): SnapLine | null {
         const stripped = line.trimStart()
         const d        = Math.floor((line.length - stripped.length) / 2)
         const tab      = stripped.indexOf('\t')
         if (tab < 0) return null
         try {
+            const obj_raw = stripped.slice(0, tab)
             return {
                 d,
-                objecties: JSON.parse(stripped.slice(0, tab)),
+                objecties: obj_raw ? JSON.parse(obj_raw) : {},
                 stringies: JSON.parse(stripped.slice(tab + 1)),
             }
         } catch { return null }
@@ -84,21 +87,27 @@
     let diff = $derived(show_diff ? make_diff(got_lines, exp_lines) : null)
 
     // ── display helpers ───────────────────────────────────────────────────────
-    // first few key:value pairs from stringies — the "noise"
-    function str_label(sl: SnapLine, max = 4): string {
-        return Object.entries(sl.stringies)
-            .slice(0, max)
-            .map(([k, v]) => `${k}:${v}`)
-            .join('  ')
+    // indent: two spaces per depth, for pasting
+    const ind = (d: number) => '  '.repeat(d)
+
+    // one snap line as a pasteable string: "${indent}${obj_part}${str_part}"
+    function line_text(sl: SnapLine): string {
+        const str_part = Object.entries(sl.stringies)
+            .map(([k, v]) => `${k}:${v}`).join('  ')
+        const obj_part = obj_text(sl)
+        return `${ind(sl.d)}${obj_part ? obj_part + '  ' : ''}${str_part}`
     }
-    // object summaries — context column
-    function obj_label(sl: SnapLine): string {
-        const keys = Object.keys(sl.objecties)
-        if (!keys.length) return ''
-        return keys.map(k => `[${k} ${sl.objecties[k]}]`).join(' ')
+
+    // objecties: { ref?: {k:str}, mung?: string[] }
+    // ref: objectify() summaries; mung: array of munged key names
+    function obj_text(sl: SnapLine): string {
+        const o = sl.objecties as any
+        if (!o || !Object.keys(o).length) return ''
+        const parts: string[] = []
+        for (const [k, v] of Object.entries(o.ref ?? {})) parts.push(`${k}:${v}`)
+        if ((o.mung ?? []).length) parts.push(`mung:[${(o.mung as string[]).join(',')}]`)
+        return parts.join('  ')
     }
-    // depth → indent px
-    const px = (d: number) => `${d * 14}px`
 
     // run bar state
     let run_mode    = $derived.by(() => { storyW?.version; return run?.sc.mode    ?? 'new' })
@@ -175,47 +184,19 @@
 
                         <div class="sr-dcol">
                             <div class="sr-dlabel got">got</div>
-                            {#each got_lines as sl, i}
-                                {@const tag = diff?.[i] ?? 'same'}
-                                <div class="sr-line {tag}" style="padding-left:{px(sl.d)}">
-                                    {#if sl.d === 0}<span class="sr-depth0">▸</span>{:else}<span class="sr-tree">╴</span>{/if}
-                                    {#if Object.keys(sl.objecties).length}
-                                        <span class="sr-obj">{obj_label(sl)}</span>
-                                    {/if}
-                                    <span class="sr-str">{str_label(sl)}</span>
-                                </div>
-                            {/each}
+                            <pre class="sr-pre">{#each got_lines as sl, i}{@const tag = diff?.[i] ?? 'same'}<span class="sr-line {tag}">{line_text(sl)}&#10;</span>{/each}</pre>
                         </div>
 
                         <div class="sr-dcol">
                             <div class="sr-dlabel exp">exp</div>
-                            {#each exp_lines as sl, i}
-                                {@const tag = diff?.[i] ?? 'same'}
-                                <div class="sr-line {tag}" style="padding-left:{px(sl.d)}">
-                                    {#if sl.d === 0}<span class="sr-depth0">▸</span>{:else}<span class="sr-tree">╴</span>{/if}
-                                    {#if Object.keys(sl.objecties).length}
-                                        <span class="sr-obj">{obj_label(sl)}</span>
-                                    {/if}
-                                    <span class="sr-str">{str_label(sl)}</span>
-                                </div>
-                            {/each}
+                            <pre class="sr-pre">{#each exp_lines as sl, i}{@const tag = diff?.[i] ?? 'same'}<span class="sr-line {tag}">{line_text(sl)}&#10;</span>{/each}</pre>
                         </div>
 
                     </div>
 
                 {:else}
                     <!-- ── single snap tree (new mode / ok step) ────────── -->
-                    <div class="sr-tree-view">
-                        {#each got_lines as sl}
-                            <div class="sr-line" style="padding-left:{px(sl.d)}">
-                                {#if sl.d === 0}<span class="sr-depth0">▸</span>{:else}<span class="sr-tree">╴</span>{/if}
-                                {#if Object.keys(sl.objecties).length}
-                                    <span class="sr-obj">{obj_label(sl)}</span>
-                                {/if}
-                                <span class="sr-str">{str_label(sl)}</span>
-                            </div>
-                        {/each}
-                    </div>
+                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl}<span class="sr-line">{line_text(sl)}&#10;</span>{/each}</pre>
                 {/if}
 
             </div>
@@ -319,10 +300,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0;
-    max-height: 360px;
-    overflow-y: auto;
 }
-.sr-dcol { overflow: hidden; }
+.sr-dcol { display: flex; flex-direction: column; overflow: hidden; }
 .sr-dcol + .sr-dcol { border-left: 1px solid #1e1e1e; }
 .sr-dlabel {
     font-size: 9px;
@@ -332,51 +311,45 @@
     padding: 3px 8px;
     background: #141414;
     border-bottom: 1px solid #1e1e1e;
+    flex-shrink: 0;
 }
 .sr-dlabel.got { color: #4a9; }
 .sr-dlabel.exp { color: #79b; }
 
-/* single tree view */
-.sr-tree-view {
+/* pre panels — scrollable, pasteable two-space indent */
+.sr-pre {
+    margin: 0;
+    padding: 4px 0;
+    overflow: auto;
     max-height: 360px;
-    overflow-y: auto;
-}
-
-/* snap lines */
-.sr-line {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    padding: 1px 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px;
     line-height: 1.55;
+    color: #bbb;
+    background: transparent;
+    white-space: pre;
+    tab-size: 2;
+}
+.sr-tree-pre {
+    padding: 4px 8px;
+}
+
+/* snap lines inside pre — span per line */
+.sr-line {
+    display: block;
+    padding: 0 8px;
     border-left: 2px solid transparent;
 }
 .sr-line:hover { background: #181818; }
-
-/* diff tags */
 .sr-line.changed { background: #1e1600; border-left-color: #a80; }
 .sr-line.new     { background: #001a10; border-left-color: #4a9; }
 .sr-line.gone    { background: #1a0000; border-left-color: #c55; opacity: 0.6; }
-.sr-line.same    {}
-
-/* line pieces */
-.sr-depth0 { color: #79b; flex-shrink: 0; }
-.sr-tree   { color: #2a2a2a; flex-shrink: 0; }
-.sr-obj    { color: #555; font-size: 10px; flex-shrink: 0; }
-.sr-str    { color: #bbb; overflow: hidden; text-overflow: ellipsis; }
 
 /* scrollbars */
 .sr-strip::-webkit-scrollbar,
-.sr-diff::-webkit-scrollbar,
-.sr-tree-view::-webkit-scrollbar { width: 4px; height: 4px; }
+.sr-pre::-webkit-scrollbar { width: 4px; height: 4px; }
 .sr-strip::-webkit-scrollbar-track,
-.sr-diff::-webkit-scrollbar-track,
-.sr-tree-view::-webkit-scrollbar-track { background: #0e0e0e; }
+.sr-pre::-webkit-scrollbar-track { background: #0e0e0e; }
 .sr-strip::-webkit-scrollbar-thumb,
-.sr-diff::-webkit-scrollbar-thumb,
-.sr-tree-view::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+.sr-pre::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
 </style>

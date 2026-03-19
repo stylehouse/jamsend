@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { House }              from "$lib/O/Housing.svelte"
-    import { TheC, objectify }    from "$lib/data/Stuff.svelte"
-    import { Selection }          from "$lib/mostly/Selection.svelte"
-    import type { TheD, Travel }  from "$lib/mostly/Selection.svelte"
-    import { dig }                from "$lib/Y"
-    import { onMount }            from "svelte"
+    import { ANSWER_CALLS_TICK_MS, House }    from "$lib/O/Housing.svelte"
+    import { TheC, objectify }               from "$lib/data/Stuff.svelte"
+    import { Selection }                     from "$lib/mostly/Selection.svelte"
+    import type { TheD, Travel }             from "$lib/mostly/Selection.svelte"
+    import { dig }                           from "$lib/Y"
+    import { onMount }                       from "svelte"
+    import { now_in_seconds_with_ms }        from "$lib/p2p/Peerily.svelte"
 
     let { M } = $props()
 
@@ -22,15 +23,17 @@
     //   "${indent}${obj_part}\t${enj(stringies)}"
     //   obj_part: "" when objecties is empty (very common), else enj(objecties)
     enL(D: TheD, d: number): string {
-        const obj      = D.sc?.objecties
-        const obj_part = (obj && Object.keys(obj).length) ? this.enj(obj) : ''
+        const obj      = D.sc?.objecties    // {} | {ref} | {mung} | {ref,mung}
+        const obj_part = obj ? this.enj(obj) : ''
         return `${this.ind(d)}${obj_part}\t${this.enj(D.sc?.stringies)}`
     },
 
     // decode one snap line → { d, objecties, stringies }
     // objecties: { ref, mungables } — for display; "" decodes to {}
     // stringies: the hashed primitives — reconstitutes what the Stuffing held
-    deL(line: string): { d: number, objecties: {ref: Record<string,string>, mungables: Record<string,string>}, stringies: Record<string,any> } | null {
+    // decode one snap line → { d, objecties, stringies }
+    // objecties: { ref?: {k:str}, mung?: string[] } — '' → {}
+    deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
         const stripped = line.trimStart()
         const d        = Math.floor((line.length - stripped.length) / 2)
         const tab      = stripped.indexOf('\t')
@@ -39,7 +42,7 @@
             const obj_raw = stripped.slice(0, tab)
             return {
                 d,
-                objecties: obj_raw === '' ? { ref: {}, mungables: {} } : JSON.parse(obj_raw),
+                objecties: obj_raw ? JSON.parse(obj_raw) : {},
                 stringies: JSON.parse(stripped.slice(tab + 1)),
             }
         } catch { return null }
@@ -49,43 +52,59 @@
 
     // ── matching rules ─────────────────────────────────────────────────────
     //
-    //  story_matching: default rules used in story_snap.
     //  Each rule: { matching_any, means: { thence_matching?, munging? } }
+    //  matching_any entries:
+    //    { sc }        — n.matches(sc), wildcard (value=1 matches any value)
+    //    { sc_only }   — n.matches(sc) AND Object.keys(n.sc).length === Object.keys(sc_only).length
+    //                    ie the particle has exactly those keys and no others
     //
-    //  process_node(n, T, D) — the combined function — does three things:
-    //    1. collects active = story_matching + T.sc.up?.sc.thence_matching
-    //    2. divides n.sc into stringies/objecties, sets D.sc.* and T.sc.thence_matching
-    //    3. returns { stringies, objecties }
+    //  munging: keys to strip from stringies (visible in objecties.mung).
+    //  thence_matching: rules pushed to children when this node matches.
     //
-    //  objecties is {} when there are no refs or mungables (very common).
-    //  n.c.snap_munge: C.c documents what was munged (C.c describes C.sc in transit).
+    //  objecties = {} | {ref} | {mung} | {ref,mung}  — only set if non-empty.
+    //  D%mung, D%ref etc carry what was found — never touch n.c.*.
 
     story_matching: [
         {
-            matching_any: [{A:1}, {w:1}],
+            matching_any: [{sc:{A:1}}, {sc:{w:1}}],
             means: {
                 thence_matching: [
-                    {
-                        matching_any: [{self:1}],
-                        means: { munging: [{sc:{est:1}, type:'time'}, {sc:{age:1}, type:'time'}] }
-                    },
-                    {
-                        matching_any: [{mo:1}],
-                        means: { munging: [{sc:{id:1}, type:'timer_id'}] }
-                    },
-                    {
-                        matching_any: [{wasLast:1}, {chaFrom:1}],
-                        means: { munging: [{sc:{at:1}, type:'time'}] }
-                    },
+                    // {self:1, est:...} — skip entirely, timekeeping noise
+                    { matching_any: [{sc_only:{self:1, est:1}}],
+                      means: { skip: true } },
+                    // {self:1, round:..., age:...} — keep, but munge the volatile age
+                    { matching_any: [{sc_only:{self:1, round:1, age:1}}],
+                      means: { munging: [{sc:{age:1}, type:'time'}] } },
+                    // reset_interval marker: munge the timer id
+                    { matching_any: [{sc_only:{mo:1, interval:1, id:1}}],
+                      means: { munging: [{sc:{id:1}, type:'timer_id'}] } },
+                    // wasLast record: munge at
+                    { matching_any: [{sc_only:{wasLast:1, at:1}}],
+                      means: { munging: [{sc:{at:1}, type:'time'}] } },
+                    // chaFrom record: munge at
+                    { matching_any: [{sc_only:{chaFrom:1, was:1, v:1, at:1}}],
+                      means: { munging: [{sc:{at:1}, type:'time'}] } },
                 ]
             }
         }
     ] as Array<any>,
 
-    // process_node: combined divide + thence + D population.
-    // sets D.sc.stringies, D.sc.objecties, D.sc.copy, D.sc.snap_copy (on first visit),
-    // and T.sc.thence_matching for children to inherit.
-    process_node(n: TheC, T: Travel, D: TheD) {
+    // does n match a rule entry? supports {sc} (wildcard) and {sc_only} (exact keyset)
+    story_rule_matches(n: TheC, entry: any): boolean {
+        if (entry.sc_only) {
+            const want = Object.keys(entry.sc_only)
+            if (Object.keys(n.sc).length !== want.length) return false
+            return n.matches(entry.sc_only)
+        }
+        return n.matches(entry.sc)
+    },
+
+    // story_process_node: combined divide + thence + D population.
+    // sets D.sc.stringies, D.sc.objecties (only if non-empty), D.sc.copy,
+    // D.sc.snap_copy (on first visit), D.sc.mung (if any munging happened).
+    // sets T.sc.thence_matching only if non-empty.
+    // never writes to n.c.* — D carries all snap metadata.
+    story_process_node(n: TheC, T: Travel, D: TheD) {
         const active: Array<any> = [
             ...this.story_matching,
             ...(T.sc.up?.sc.thence_matching ?? []),
@@ -93,46 +112,46 @@
 
         const stringies: Record<string, any>    = {}
         const ref:       Record<string, string> = {}
-        const mungables: Record<string, string> = {}
-
-        // collect munging rules that fire on n
-        const munging: Array<any> = []
-        const thence:  Array<any> = []
+        const mung:      string[]               = []   // just the key names
+        const munging:   Array<any> = []
+        const thence:    Array<any> = []
         const seen = new Set<string>()
+        let   skip = false
 
         for (const rule of active) {
-            if (!(rule.matching_any as Array<any>).some((sc: any) => n.matches(sc))) continue
-            for (const m of rule.means?.munging ?? []) munging.push(m)
+            if (!(rule.matching_any as Array<any>).some((e: any) => this.story_rule_matches(n, e))) continue
+            for (const m of rule.means?.munging     ?? []) munging.push(m)
+            if (rule.means?.skip) { skip = true }
             for (const tw of rule.means?.thence_matching ?? []) {
                 const key = JSON.stringify(tw)
                 if (!seen.has(key)) { seen.add(key); thence.push(tw) }
             }
         }
 
+        // skip: omit this node from the snap entirely
+        if (skip) { T.sc.not = 1; return }
+
         for (const [k, v] of Object.entries(n.sc ?? {})) {
             if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
                 ref[k] = objectify(v)
                 continue
             }
-            const munge = munging.find(m => Object.hasOwn(m.sc, k))
-            if (munge) {
-                mungables[k] = munge.type
-                n.c.snap_munge ??= {}
-                n.c.snap_munge[k] = munge.type
-                continue
-            }
+            const m = munging.find(r => Object.hasOwn(r.sc, k))
+            if (m) { mung.push(k); continue }
             stringies[k] = v
         }
 
-        const has_objecties = Object.keys(ref).length || Object.keys(mungables).length
-        const objecties = has_objecties ? { ref, mungables } : {}
+        const objecties: Record<string, any> = {}
+        if (Object.keys(ref).length) objecties.ref = ref
+        if (mung.length)             objecties.mung = mung   // array of key names
 
         D.sc.stringies  = stringies
-        D.sc.objecties  = objecties
-        D.sc.copy       = { ...n.sc }          // raw shallow clone, for future in-memory diffing
-        D.sc.snap_copy ??= this.enj(stringies) // seed on first visit; updated in traced_fn
+        D.sc.objecties  = Object.keys(objecties).length ? objecties : undefined
+        D.sc.copy       = { ...n.sc }
+        D.sc.snap_copy ??= this.enj(stringies)
+        if (mung.length) { D.c.munged ??= []; D.c.munged.push(mung) }
 
-        T.sc.thence_matching = thence
+        if (thence.length) T.sc.thence_matching = thence
     },
 //#region story_snap
 
@@ -150,7 +169,9 @@
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 // process_node divides n.sc, populates D.sc.*, sets T.sc.thence_matching
-                this.process_node(n, T, D)
+                // may set T.sc.not=1 (skip rule) — bail before pushing to lines
+                this.story_process_node(n, T, D)
+                if (T.sc.not) return
                 if (T.c.path.length === 1) {
                     T.sc.more = (n.o({}) as TheC[]).filter(c => !c.sc.snap_root)
                 }
@@ -438,7 +459,7 @@
         }, { see: 'story_save' })
     },
 
-    reset(this: House) {
+    story_reset(this: House) {
         // stop any in-flight story_drive chain before clearing state
         for (const h of this.all_House) {
             for (const w of (h as House).o({ w: 1 }) as TheC[]) {
@@ -494,7 +515,7 @@
         })
         wa.oai({ action: 1, role: 'reset' }, {
             label: 'Reset', icon: '🔄', cls: 'remove',
-            fn: () => { this.reset() },
+            fn: () => { this.story_reset() },
         })
         // lenient: play through all steps accepting mismatches as new ground truth.
         // useful when you've intentionally changed behaviour and want to re-record.
