@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { ANSWER_CALLS_TICK_MS, House }              from "$lib/O/Housing.svelte"
+    import { House }              from "$lib/O/Housing.svelte"
     import { TheC, objectify }    from "$lib/data/Stuff.svelte"
     import { Selection }          from "$lib/mostly/Selection.svelte"
     import type { TheD, Travel }  from "$lib/mostly/Selection.svelte"
     import { dig }                from "$lib/Y"
     import { onMount }            from "svelte"
-    import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
     let { M } = $props()
 
@@ -16,43 +15,125 @@
     pad: (n: number) => String(n).padStart(3, '0'),
 
 //#endregion
-//#region snap encoding
-
-    divide_sc(sc: Record<string, any>): { stringies: Record<string, any>, objecties: Record<string, string> } {
-        const stringies: Record<string, any>    = {}
-        const objecties: Record<string, string> = {}
-        for (const [k, v] of Object.entries(sc ?? {})) {
-            if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
-                objecties[k] = objectify(v)
-            } else {
-                stringies[k] = v
-            }
-        }
-        return { stringies, objecties }
-    },
-
     enj(o: any): string { return JSON.stringify(o ?? {}) },
     ind(d: number): string { return '  '.repeat(d) },
 
+    // encode one D particle as a snap line:
+    //   "${indent}${obj_part}\t${enj(stringies)}"
+    //   obj_part: "" when objecties is empty (very common), else enj(objecties)
     enL(D: TheD, d: number): string {
-        return `${this.ind(d)}${this.enj(D.sc?.objecties)}\t${this.enj(D.sc?.stringies)}`
+        const obj      = D.sc?.objecties
+        const obj_part = (obj && Object.keys(obj).length) ? this.enj(obj) : ''
+        return `${this.ind(d)}${obj_part}\t${this.enj(D.sc?.stringies)}`
     },
 
-    deL(line: string): { d: number, objecties: Record<string,string>, stringies: Record<string,any> } | null {
+    // decode one snap line → { d, objecties, stringies }
+    // objecties: { ref, mungables } — for display; "" decodes to {}
+    // stringies: the hashed primitives — reconstitutes what the Stuffing held
+    deL(line: string): { d: number, objecties: {ref: Record<string,string>, mungables: Record<string,string>}, stringies: Record<string,any> } | null {
         const stripped = line.trimStart()
         const d        = Math.floor((line.length - stripped.length) / 2)
         const tab      = stripped.indexOf('\t')
         if (tab < 0) return null
         try {
+            const obj_raw = stripped.slice(0, tab)
             return {
                 d,
-                objecties: JSON.parse(stripped.slice(0, tab)),
+                objecties: obj_raw === '' ? { ref: {}, mungables: {} } : JSON.parse(obj_raw),
                 stringies: JSON.parse(stripped.slice(tab + 1)),
             }
         } catch { return null }
     },
 
-//#endregion
+//#region snap encoding
+
+    // ── matching rules ─────────────────────────────────────────────────────
+    //
+    //  story_matching: default rules used in story_snap.
+    //  Each rule: { matching_any, means: { thence_matching?, munging? } }
+    //
+    //  process_node(n, T, D) — the combined function — does three things:
+    //    1. collects active = story_matching + T.sc.up?.sc.thence_matching
+    //    2. divides n.sc into stringies/objecties, sets D.sc.* and T.sc.thence_matching
+    //    3. returns { stringies, objecties }
+    //
+    //  objecties is {} when there are no refs or mungables (very common).
+    //  n.c.snap_munge: C.c documents what was munged (C.c describes C.sc in transit).
+
+    story_matching: [
+        {
+            matching_any: [{A:1}, {w:1}],
+            means: {
+                thence_matching: [
+                    {
+                        matching_any: [{self:1}],
+                        means: { munging: [{sc:{est:1}, type:'time'}, {sc:{age:1}, type:'time'}] }
+                    },
+                    {
+                        matching_any: [{mo:1}],
+                        means: { munging: [{sc:{id:1}, type:'timer_id'}] }
+                    },
+                    {
+                        matching_any: [{wasLast:1}, {chaFrom:1}],
+                        means: { munging: [{sc:{at:1}, type:'time'}] }
+                    },
+                ]
+            }
+        }
+    ] as Array<any>,
+
+    // process_node: combined divide + thence + D population.
+    // sets D.sc.stringies, D.sc.objecties, D.sc.copy, D.sc.snap_copy (on first visit),
+    // and T.sc.thence_matching for children to inherit.
+    process_node(n: TheC, T: Travel, D: TheD) {
+        const active: Array<any> = [
+            ...this.story_matching,
+            ...(T.sc.up?.sc.thence_matching ?? []),
+        ]
+
+        const stringies: Record<string, any>    = {}
+        const ref:       Record<string, string> = {}
+        const mungables: Record<string, string> = {}
+
+        // collect munging rules that fire on n
+        const munging: Array<any> = []
+        const thence:  Array<any> = []
+        const seen = new Set<string>()
+
+        for (const rule of active) {
+            if (!(rule.matching_any as Array<any>).some((sc: any) => n.matches(sc))) continue
+            for (const m of rule.means?.munging ?? []) munging.push(m)
+            for (const tw of rule.means?.thence_matching ?? []) {
+                const key = JSON.stringify(tw)
+                if (!seen.has(key)) { seen.add(key); thence.push(tw) }
+            }
+        }
+
+        for (const [k, v] of Object.entries(n.sc ?? {})) {
+            if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
+                ref[k] = objectify(v)
+                continue
+            }
+            const munge = munging.find(m => Object.hasOwn(m.sc, k))
+            if (munge) {
+                mungables[k] = munge.type
+                n.c.snap_munge ??= {}
+                n.c.snap_munge[k] = munge.type
+                continue
+            }
+            stringies[k] = v
+        }
+
+        const has_objecties = Object.keys(ref).length || Object.keys(mungables).length
+        const objecties = has_objecties ? { ref, mungables } : {}
+
+        D.sc.stringies  = stringies
+        D.sc.objecties  = objecties
+        D.sc.copy       = { ...n.sc }          // raw shallow clone, for future in-memory diffing
+        D.sc.snap_copy ??= this.enj(stringies) // seed on first visit; updated in traced_fn
+
+        T.sc.thence_matching = thence
+    },
 //#region story_snap
 
     async story_snap(Run: House): Promise<string> {
@@ -68,32 +149,35 @@
             trace_sc:   { snap_node: 1 },
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                // process_node divides n.sc, populates D.sc.*, sets T.sc.thence_matching
+                this.process_node(n, T, D)
                 if (T.c.path.length === 1) {
-                    const div          = this.divide_sc(n.sc)
-                    D.sc.stringies     = div.stringies
-                    D.sc.objecties     = div.objecties
-                    D.sc.copy        ??= this.enj(div.stringies)
                     T.sc.more = (n.o({}) as TheC[]).filter(c => !c.sc.snap_root)
                 }
                 lines.push({ D, depth: T.c.path.length - 1 })
             },
 
+            // trace_fn: keyspace hygiene in D%sc.
+            // map each key k → the_$k: n.sc[k] — as full as possible for resolve(),
+            // but prefixed so raw sc keys never pollute D's keyspace.
             trace_fn: async (uD: TheD, n: TheC, _T: Travel) => {
-                const div = this.divide_sc(n.sc)
-                return uD.i({ snap_node: 1, stringies: div.stringies, objecties: div.objecties })
+                const identity = Object.fromEntries(
+                    Object.keys(n.sc).map(k => [`the_${k}`, n.sc[k]])
+                )
+                return uD.i({ snap_node: 1, ...identity })
             },
 
             traced_fn: async (D: TheD, bD: TheD | undefined, _n: TheC, _T: Travel) => {
-                const curr   = this.enj(D.sc.stringies)
-                D.sc.changed = bD?.sc.copy != null && curr !== bD.sc.copy
-                D.sc.is_new  = !bD
-                D.sc.copy    = curr
+                // stringies already set in each_fn (fires after traced_fn's parent each_fn)
+                const curr       = this.enj(D.sc.stringies)
+                D.sc.changed     = bD?.sc.snap_copy != null && curr !== bD.sc.snap_copy
+                D.sc.is_new      = !bD
+                D.sc.snap_copy   = curr
             },
         })
 
         return lines.map(({ D, depth }) => this.enL(D, depth)).join('\n') + '\n'
     },
-
 //#endregion
 //#region Story_init
 
@@ -101,6 +185,7 @@
         const book = w.sc.Book as string | undefined
         if (!book) { w.i({ see: '!Book' }); return null }
         const run_name = `Run:${book}`
+        // subHouse() has already happened in $effect time, this is a get
         const Run      = (this as House).subHouse(run_name)
 
         // this will stop the regularly timed main() calls, from reset_interval()
