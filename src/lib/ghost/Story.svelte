@@ -206,9 +206,10 @@
     Story_init(A: TheC, w: TheC) {
         const book = w.sc.Book as string | undefined
         if (!book) { w.i({ see: '!Book' }); return null }
-        const run_name = `Run:${book}`
+        const run_name = `${book}`
         // subHouse() has already happened in $effect time, this is a get
         const Run      = (this as House).subHouse(run_name)
+        Run.sc.Run = 1
 
         // this will stop the regularly timed main() calls, from reset_interval()
         // Run.c.no_interval = true
