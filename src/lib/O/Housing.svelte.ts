@@ -2,6 +2,7 @@
 import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
+import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 import { tex, throttle } from "$lib/Y.ts"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
@@ -25,7 +26,7 @@ db.version(2).stores({
 
 //#endregion
 const V: Record<string, any> = {}
-V.organise = 0  // set >0 to enable answer_calls/beliefs/organise logs
+V.organise = 1  // set >0 to enable answer_calls/beliefs/organise logs
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
@@ -518,6 +519,9 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     answer_calls_throttle?: Function
     answer_calls() {
+        if (this.name.startsWith("Run")) {
+            console.log(`Run%todo`)
+        }
         this.answer_calls_throttle ||= throttle(() => {
             this._really_answer_calls()
         }, ANSWER_CALLS_TICK_MS)
@@ -526,20 +530,28 @@ export class House extends StorableHousing {
     async _really_answer_calls() {
         // don't process until stashed + ghosts are both ready
         if (!this.started) return
-
+        let H = this.top_House()
         // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
         // when todo next changes (eg when concretion pushes original_e back).
         // fn-carrying e can always run immediately since they don't enter beliefs().
-        if (this.c._mutex_beliefs) {
-            V.organise && console.log(`answer_calls: beliefs mutex locked, yielding`)
+        if (H.c._mutex_beliefs) {
+            V.organise && console.log(`answer_calls: H:${this.name} beliefs mutex locked (by H:${H.name}), yielding`)
+            // if todo didn't change, $effect won't re-fire — self-schedule retry
+            setTimeout(() => this.answer_calls(), ANSWER_CALLS_TICK_MS)
             return
         }
 
         let e = this.todo.shift()
         if (!e) return
         V.organise && console.log(`answer_calls: e%${keyser(e.sc)}\t\ttodo:${this.todo.length}`)
+
+        if (this.c.began_run && !this.c.finished_run) {
+            throw "double answer_calls()"
+        }
+
+        this.c.began_run = now_in_seconds_with_ms()
+        this.c.finished_run = null
         
-        let H = this.top_House()
         console.log(`H:${this.name}  -> ${H.name}`)
         await H.mutex('beliefs', async () => {
             // come back ambiently
@@ -554,6 +566,7 @@ export class House extends StorableHousing {
                 await this.beliefs(e)
             }
         })
+        this.c.finished_run = now_in_seconds_with_ms()
     }
 
 

@@ -46,7 +46,7 @@ Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may of 
 
 You would need to get it set up yourself but reach out if anything isn't easy. If you can change code with reliable results, yay.
 
-There are many non-frontend things to do. See Issues, or comments starting with < in the code, which means less-than-existant ie TODO.
+There are many non-frontend things to do. See Issues, or comments starting with < in the code, which means less-than-existing or TODO.
 
 ## notes
 

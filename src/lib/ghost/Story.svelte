@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { House }              from "$lib/O/Housing.svelte"
+    import { ANSWER_CALLS_TICK_MS, House }              from "$lib/O/Housing.svelte"
     import { TheC, objectify }    from "$lib/data/Stuff.svelte"
     import { Selection }          from "$lib/mostly/Selection.svelte"
     import type { TheD, Travel }  from "$lib/mostly/Selection.svelte"
     import { dig }                from "$lib/Y"
     import { onMount }            from "svelte"
+    import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
     let { M } = $props()
 
@@ -142,6 +143,7 @@
 
         // run_name may contain ':' (eg "Run:LeafFarm") which the File System
         // Access API forbids in directory handles — and Windows/HFS+ agree.
+        // Sanitize at the path boundary only; run_name stays canonical internally.
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(run_name)}`
         const wh = await this.requesty_serial(w, 'wh')
@@ -196,7 +198,8 @@
         if (run.c.driving) return
         run.c.driving = true
 
-        const H = this as House
+        const H   = this as House
+        const TICK = ANSWER_CALLS_TICK_MS
 
         const update_status = async (label: string, cls = 'default') => {
             const wa = () => H.oai({ watched: 'actions' })
@@ -206,43 +209,66 @@
 
         const toc_steps: Record<number, string> = (w.c.toc as any)?.steps ?? {}
 
-        // schedule the next do_step via post_do so it's serialised in the todo queue
-        const schedule = () => {
-            if (!run.c.driving) return
-            setTimeout(() => {
-                if (!run.c.driving) return
-                H.post_do(do_step, { see: 'story_step' })
-            }, 200)
-        }
+        // ── Phase 1: do_step ─────────────────────────────────────────────
+        //  Runs inside H:Story beliefs mutex (via post_do).
+        //  Sets began_step, fires Run.elvisto via 1ms timer (so it lands
+        //  after this post_do returns and the mutex is released), then
+        //  immediately hands off to the poll chain and returns.
 
         const do_step = async () => {
-            if (!run.c.driving) return
-
-            // paused: keep chain alive, check again next tick
-            if (run.sc.paused) { schedule(); return }
+            if (!run.c.driving || run.sc.paused) { schedule(); return }
 
             const n = (run.sc.steps_done as number) + 1
 
-            // ── termination conditions ────────────────────────────────────
+            // termination
             if (run.sc.mode === 'new' && n > (run.sc.steps_total as number)) {
-                run.c.driving = false
-                run.sc.paused = true
+                run.c.driving = false; run.sc.paused = true
                 await update_status('recorded ✓', 'start')
-                console.log(`✓ Story: ${run.sc.run} complete (${run.sc.steps_total} steps)`)
+                console.log(`✓ Story: complete (${run.sc.steps_total} steps)`)
                 return
             }
             if (run.sc.mode === 'check' && !toc_steps[n]) {
-                run.c.driving = false
-                run.sc.paused = true
+                run.c.driving = false; run.sc.paused = true
                 await update_status('done ✓', 'start')
-                console.log(`✓ Story: ${run.sc.run} check complete`)
+                console.log(`✓ Story: check complete`)
                 return
             }
 
-            // ── advance one step ──────────────────────────────────────────
-            Run.elvisto(Run, 'think')
-            run.sc.steps_done = n
+            run.c.step_n     = n
+            run.c.began_step = now_in_seconds_with_ms()
+            // fire elvisto 1ms after this post_do releases the mutex
+            setTimeout(() => {
+                if (!run.c.driving) return
+                Run.elvisto(Run, 'think')
+            }, 1)
+            // hand off to poller — plain setTimeout, outside any mutex
+            setTimeout(poll_step, TICK)
+        }
 
+        // ── Phase 2: poll_step ───────────────────────────────────────────
+        //  Plain setTimeout chain — no mutex, no post_do.
+        //  Waits for Run to drain and go quiet, then queues snap_step.
+
+        const poll_step = () => {
+            if (!run.c.driving) return
+            const f = Run.c.finished_run as number | null
+            const quiescent = f != null
+                && f > (run.c.began_step as number)
+                && (now_in_seconds_with_ms() - f) < TICK * 1.5
+            if (!quiescent) { setTimeout(poll_step, TICK); return }
+            // Run has settled — encode inside the mutex
+            H.post_do(snap_step, { see: 'story_snap' })
+        }
+
+        // ── Phase 3: snap_step ───────────────────────────────────────────
+        //  Runs inside H:Story beliefs mutex (via post_do).
+        //  Encodes, stores the moment, then schedules the next do_step.
+
+        const snap_step = async () => {
+            if (!run.c.driving) return
+            const n = run.c.step_n as number
+
+            run.sc.steps_done = n
             const snap     = await this.story_snap(Run)
             const got_dige = await dig(snap)
 
@@ -260,9 +286,9 @@
                 w.i({ moment: 1, moment_n: n, dige: got_dige, ok, got_snap: snap })
 
                 if (!ok) {
-                    run.c.driving    = false
-                    run.sc.paused    = true
-                    run.sc.failed_at = n
+                    run.c.driving     = false
+                    run.sc.paused     = true
+                    run.sc.failed_at  = n
                     run.sc.needs_snap = n
                     await update_status(`✗ step ${this.pad(n)}`, 'stop')
                     console.log(`⛔ Story: step ${this.pad(n)} mismatch`)
@@ -274,14 +300,19 @@
             }
         }
 
-        // do NOT call update_status() here — we're still inside beliefs() and
-        // story_ui() (called right after story_drive() returns in Story()) will
-        // do the initial wa.r({action:1,role:status}) on the same wa C.
-        // Calling it here too causes nested replace() on the same C.
+        // schedule the next do_step as a post_do (inside mutex, safe to replace())
+        const schedule = () => {
+            if (!run.c.driving) return
+            setTimeout(() => {
+                if (!run.c.driving) return
+                H.post_do(do_step, { see: 'story_step' })
+            }, 200)
+        }
+
+        // do NOT call update_status() here — story_ui() covers initial status
         schedule()
         console.log(`▶ Story: drive started for ${run.sc.run}`)
     },
-
 //#endregion
 //#region save + reset
 
