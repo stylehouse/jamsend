@@ -16,6 +16,7 @@
     pad: (n: number) => String(n).padStart(3, '0'),
 
 //#endregion
+
     enj(o: any): string { return JSON.stringify(o ?? {}) },
     ind(d: number): string { return '  '.repeat(d) },
 
@@ -29,9 +30,6 @@
     },
 
     // decode one snap line → { d, objecties, stringies }
-    // objecties: { ref, mungables } — for display; "" decodes to {}
-    // stringies: the hashed primitives — reconstitutes what the Stuffing held
-    // decode one snap line → { d, objecties, stringies }
     // indent is spaces only (2 per depth); separator is \t.
     // measure leading spaces directly — trimStart() would eat a leading \t.
     deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
@@ -39,16 +37,85 @@
         const d      = Math.floor(spaces / 2)
         const tab    = line.indexOf('\t')
         if (tab < 0) throw "no tab"
-        // try {
-            const obj_raw = line.slice(spaces, tab)
-            return {
-                d,
-                objecties: obj_raw ? JSON.parse(obj_raw) : {},
-                stringies: JSON.parse(line.slice(tab + 1)),
-            }
-        // } catch { return null }
+        const obj_raw = line.slice(spaces, tab)
+        return {
+            d,
+            objecties: obj_raw ? JSON.parse(obj_raw) : {},
+            stringies: JSON.parse(line.slice(tab + 1)),
+        }
     },
 
+//#region analysis helpers
+    // These run inside the beliefs mutex (via post_do / Story handler),
+    // so they always see a fully committed X.  StoryRun is a pure reader
+    // of %story_analysis.c.* — it does no parsing or diffing itself.
+
+    parse_snap(s: string) {
+        if (!s) return []
+        return s.split('\n').filter(Boolean)
+            .map(l => this.deL(l))
+            .filter(x => x !== null)
+    },
+
+    // parallel positional diff — positional because snap line order is stable
+    make_diff(got, exp) {
+        const len = Math.max(got.length, exp.length)
+        const result: string[] = []
+        for (let i = 0; i < len; i++) {
+            const g = got[i], e = exp[i]
+            if      (!g) result.push('gone')
+            else if (!e) result.push('new')
+            else if (JSON.stringify(g.stringies) !== JSON.stringify(e.stringies))
+                         result.push('changed')
+            else         result.push('same')
+        }
+        return result
+    },
+
+    // story_analysis: materialise all display data into %story_analysis.c.*
+    // then bump_version() — watch_c in StoryRun fires once, reads atomically.
+    story_analysis(w) {
+        const run     = w.o({ run: 1 })[0]
+        const moments = w.o({ moment: 1 })
+        let   sel     = w.sc.sel ?? null
+
+        // auto-jump to failed step when nothing is selected
+        const failed_at = run?.sc.failed_at
+        if (failed_at != null && sel == null) {
+            sel = w.sc.sel = failed_at
+        }
+
+        const sel_m     = sel != null
+            ? moments.find(m => m.sc.moment_n === sel) ?? null
+            : null
+        const got_snap  = (sel_m?.sc.got_snap ?? sel_m?.sc.snap ?? '')
+        const exp_snap  = (sel_m?.sc.exp_snap ?? '')
+        const got_lines = this.parse_snap(got_snap)
+        const exp_lines = this.parse_snap(exp_snap)
+        const show_diff = exp_lines.length > 0
+        const diff      = show_diff ? this.make_diff(got_lines, exp_lines) : null
+
+        const an = w.oai({ story_analysis: 1 })
+        an.c.run       = run
+        an.c.moments   = moments
+        an.c.sel       = sel
+        an.c.sel_m     = sel_m
+        an.c.got_lines = got_lines
+        an.c.exp_lines = exp_lines
+        an.c.show_diff = show_diff
+        an.c.diff      = diff
+        an.bump_version()
+    },
+
+    // story_sel: UI → worker selection change.
+    // _Aw_think routes here because 'story_sel' is not stamped via o_elvis —
+    // it falls through to direct H.* method lookup.
+    async story_sel(A, w, e) {
+        w.sc.sel = e?.sc.sel ?? null
+        this.story_analysis(w)
+    },
+
+//#endregion
 //#region snap encoding
 
     // ── matching rules ─────────────────────────────────────────────────────
@@ -100,9 +167,8 @@
         return n.matches(entry.sc)
     },
 
-    // story_process_node: combined divide + thence + D population.
-    // sets D.sc.stringies, D.sc.objecties (only if non-empty), D.sc.copy,
-    // D.sc.snap_copy (on first visit), D.sc.mung (if any munging happened).
+    // story_process_node: divide n.sc into stringies / ref / mung for one snap line.
+    // sets D.sc.stringies, D.sc.objecties (only if non-empty), D.sc.snap_copy.
     // sets T.sc.thence_matching only if non-empty.
     // never writes to n.c.* — D carries all snap metadata.
     story_process_node(n: TheC, T: Travel, D: TheD) {
@@ -113,7 +179,7 @@
 
         const stringies: Record<string, any>    = {}
         const ref:       Record<string, string> = {}
-        const mung:      string[]               = []   // just the key names
+        const mung:      string[]               = []
         const munging:   Array<any> = []
         const thence:    Array<any> = []
         const seen = new Set<string>()
@@ -144,7 +210,7 @@
 
         const objecties: Record<string, any> = {}
         if (Object.keys(ref).length) objecties.ref = ref
-        if (mung.length)             objecties.mung = mung   // array of key names
+        if (mung.length)             objecties.mung = mung
 
         D.sc.stringies  = stringies
         D.sc.objecties  = Object.keys(objecties).length ? objecties : undefined
@@ -154,8 +220,10 @@
 
         if (thence.length) T.sc.thence_matching = thence
     },
-//#region story_snap
 
+//#region story_snap
+    // Walk Run/** via a persistent Selection (Run.c.snap_Se) so resolve()
+    // can detect what changed since last step — D.sc.changed / D.sc.is_new.
     async story_snap(Run: House): Promise<string> {
         const lines: Array<{ D: TheD, depth: number }> = []
 
@@ -169,8 +237,6 @@
             trace_sc:   { snap_node: 1 },
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
-                // process_node divides n.sc, populates D.sc.*, sets T.sc.thence_matching
-                // may set T.sc.not=1 (skip rule) — bail before pushing to lines
                 this.story_process_node(n, T, D)
                 if (T.sc.not) return
                 if (T.c.path.length === 1) {
@@ -179,9 +245,7 @@
                 lines.push({ D, depth: T.c.path.length - 1 })
             },
 
-            // trace_fn: keyspace hygiene in D%sc.
-            // map each key k → the_$k: n.sc[k] — as full as possible for resolve(),
-            // but prefixed so raw sc keys never pollute D's keyspace.
+            // prefix every key with the_ so raw sc keys never pollute D's keyspace
             trace_fn: async (uD: TheD, n: TheC, _T: Travel) => {
                 const identity = Object.fromEntries(
                     Object.keys(n.sc).map(k => [`the_${k}`, n.sc[k]])
@@ -190,7 +254,6 @@
             },
 
             traced_fn: async (D: TheD, bD: TheD | undefined, _n: TheC, _T: Travel) => {
-                // stringies already set in each_fn (fires after traced_fn's parent each_fn)
                 const curr       = this.enj(D.sc.stringies)
                 D.sc.changed     = bD?.sc.snap_copy != null && curr !== bD.sc.snap_copy
                 D.sc.is_new      = !bD
@@ -201,23 +264,18 @@
         return lines.map(({ D, depth }) => this.enL(D, depth)).join('\n') + '\n'
     },
 //#endregion
+
 //#region Story_init
 
     Story_init(A: TheC, w: TheC) {
         const book = w.sc.Book as string | undefined
         if (!book) { w.i({ see: '!Book' }); return null }
-        const run_name = `${book}`
+        const run_name = book
         // subHouse() has already happened in $effect time, this is a get
         const Run      = (this as House).subHouse(run_name)
+        // Run=1 marks this House as subjected to Story management
         Run.sc.Run = 1
-
-        // this will stop the regularly timed main() calls, from reset_interval()
-        // Run.c.no_interval = true
-        // all the blunt instrumentation whims to call main() can be stopped, inc the above
-        //  anything dealing with explicit e via eg elvisto will react...
-        //   independently of the snap recorder?
-        //    we need to wait for the flurry of H%todoing to settle
-        //     or maybe it's the kind of step that wants each bit of that mapped as it happens
+        // no ambient main() — Run only ticks when Story explicitly drives it
         Run.c.no_ambient = true
 
         if (!Run.oa({ A: 1 })) {
@@ -249,9 +307,7 @@
             })
         }
 
-        // run_name may contain ':' (eg "Run:LeafFarm") which the File System
-        // Access API forbids in directory handles — and Windows/HFS+ agree.
-        // Sanitize at the path boundary only; run_name stays canonical internally.
+        // sanitize at the path boundary — run_name stays canonical internally
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(run_name)}`
         const wh = await this.requesty_serial(w, 'wh')
@@ -270,7 +326,7 @@
             run.c.toc_loaded = true
         }
 
-        // ── pending snap fetch ─────────────────────────────────────────────
+        // ── pending snap fetch (triggered after a check-mode mismatch) ─────
         if (run.sc.needs_snap) {
             const n        = run.sc.needs_snap as number
             const snap_req = await wh.oai({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
@@ -280,6 +336,8 @@
             const moment = w.o({ moment: 1, moment_n: n })[0]
             if (moment) moment.sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
             delete run.sc.needs_snap
+            // exp_snap just arrived — re-analyse so the diff is ready immediately
+            this.story_analysis(w)
         }
 
         // only start driving once — resume handled inside story_ui pause fn.
@@ -306,7 +364,7 @@
         if (run.c.driving) return
         run.c.driving = true
 
-        const H   = this as House
+        const H    = this as House
         const TICK = ANSWER_CALLS_TICK_MS
 
         const update_status = async (label: string, cls = 'default') => {
@@ -382,6 +440,8 @@
 
             if (run.sc.mode === 'new') {
                 w.i({ moment: 1, moment_n: n, dige: got_dige, ok: true, snap })
+                // analysis after every moment so the strip stays live
+                this.story_analysis(w)
                 await update_status(
                     `recording ${this.pad(n)}/${this.pad(run.sc.steps_total as number)}`,
                     'save'
@@ -392,6 +452,8 @@
                 const exp_dige = toc_steps[n]
                 const ok       = exp_dige === got_dige
                 w.i({ moment: 1, moment_n: n, dige: got_dige, ok, got_snap: snap })
+                // analysis after every moment so the strip stays live
+                this.story_analysis(w)
 
                 if (!ok && !run.sc.lenient) {
                     run.c.driving     = false
@@ -441,6 +503,7 @@
         const toc_payload = { steps, total: ok_moments.length }
 
         if (!wh || !run_path) {
+            // no wormhole yet — park in stashed as a fallback
             this.stashed ??= {}
             this.stashed[`${(w.o({ run: 1 })[0] as TheC)?.sc.run}.json`] = toc_payload
             return
@@ -480,6 +543,7 @@
 //#endregion
 //#region mechanisms
 
+    // wire the Run subHouse for a given book name — one A/w pair per actor
     Run_A_LeafFarm(this: House) {
         for (const [Aname, wname] of [
             ['farm',     'farm'],

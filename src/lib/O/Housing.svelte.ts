@@ -46,6 +46,9 @@ abstract class Housing extends TheC {
 
     // upward link: Work -> Agency -> House
     up?: Housing
+    
+    // true while the beliefs mutex is held — gates UI reactivity
+    believing = $state(false)
 
     // set to true to pause main() — call stop() to set it
     stopped = false
@@ -86,11 +89,13 @@ abstract class Housing extends TheC {
         }
         let release: () => void
         this.c[key] = new Promise(r => release = r)
+        if (label === 'beliefs') this.believing = true
         try {
             await fn()
         } finally {
             delete this.c[key]
             release!()
+            if (label === 'beliefs') this.believing = false
         }
     }
 

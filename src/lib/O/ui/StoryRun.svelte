@@ -4,129 +4,75 @@
 
     let { H }: { H: House } = $props()
 
-    // ── navigation down to w:Story ───────────────────────────────────────────
-    // $state + $effect with null-guards: only update storyH/A/W to a newly-found
-    // non-null reference — never clear on a transient empty result.
-    //
-    // Why not $derived.by({ H?.version; ... })?
-    //   Stuff.replace() swaps H.X to a fresh empty X mid-flight, bumping .version.
-    //   During that window H.o() returns [], so storyH would flip to undefined,
-    //   cascading sel_m → null → {#if sel_m} collapses the panel.
-    //   The null-guard keeps the last known reference until a real change occurs.
+    // ── navigate to w:Story ───────────────────────────────────────────────
+    // Two effects with believing-gates; null-guards prevent clearing on
+    // transient empty results from mid-replace() X swaps.
     let storyH: House | undefined = $state()
-    let storyA: TheC  | undefined = $state()
     let storyW: TheC  | undefined = $state()
 
     $effect(() => {
+        if (H?.believing) return
         void H?.version
         const h = H?.o({ H: 'Story' })?.[0] as House | undefined
         if (h != null && h !== storyH) storyH = h
     })
     $effect(() => {
+        if (H?.believing) return
         void storyH?.version
+        // fold A:Story → w:Story into one effect — fewer reactive layers
         const a = storyH?.o({ A: 'Story' })?.[0] as TheC | undefined
-        if (a != null && a !== storyA) storyA = a
-    })
-    $effect(() => {
-        void storyA?.version
-        const w = storyA?.o({ w: 'Story' })?.[0] as TheC | undefined
+        const w = a?.o({ w: 'Story' })?.[0] as TheC | undefined
         if (w != null && w !== storyW) storyW = w
     })
 
-    // rebuild on every w.i() (which bumps w.version via X.serial_i)
-    let runs    = $derived.by((): TheC[] => { storyW?.version; return (storyW?.o({ run:    1 }) ?? []) as TheC[] })
-    let moments = $derived.by((): TheC[] => { storyW?.version; return (storyW?.o({ moment: 1 }) ?? []) as TheC[] })
-    let run     = $derived(runs[0] as TheC | undefined)
+    // ── watch_c bridge ────────────────────────────────────────────────────
+    // story_analysis() in the ghost computes all display data into
+    // %story_analysis.c.* and calls bump_version().
+    // watch_c fires our handler → notify++ → all $derived.by re-read
+    // from an.c.* in one pass.  No parsing, no diffing happens here.
+    let an: TheC | undefined = $state()
+    let notify = $state(0)
 
-    // ── moment selection ─────────────────────────────────────────────────────
-    let sel: number | null = $state(null)
-    // auto-jump to failed step
     $effect(() => {
-        const f = run?.sc.failed_at
-        if (f != null && sel == null) sel = f as number
+        if (H?.believing || !storyW) return
+        const found = storyW.o({ story_analysis: 1 })?.[0] as TheC | undefined
+        if (!found || found === an) return
+        an = found
+        H.watch_c(an, () => { notify++ })
+        notify++   // seed immediately so deriveds have data on first render
     })
 
-    // sel_m as $state with null-guard — same reasoning as storyH/A/W.
-    // Explicitly cleared only when the user closes the panel (sel = null).
-    let sel_m: TheC | null = $state(null)
-    $effect(() => {
-        if (sel == null) { sel_m = null; return }
-        void storyW?.version   // re-check when exp_snap arrives
-        const m = storyW?.o({ moment: 1, moment_n: sel })?.[0] as TheC | undefined
-        if (m != null && m !== sel_m) sel_m = m
-    })
+    // ── all display state — pure reads from an.c.* ────────────────────────
+    type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
+    type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
-    // ── snap parsing — delegates to H.deL (ghost method) ─────────────────────
-    type SnapLine = ReturnType<typeof H.deL>   // { d, objecties, stringies } | null
+    let moments   = $derived.by((): TheC[]             => { notify; return an?.c.moments   ?? [] })
+    let run       = $derived.by((): TheC | null        => { notify; return an?.c.run       ?? null })
+    let sel       = $derived.by((): number | null      => { notify; return an?.c.sel       ?? null })
+    let sel_m     = $derived.by((): TheC | null        => { notify; return an?.c.sel_m     ?? null })
+    let got_lines = $derived.by((): SnapLine[]         => { notify; return an?.c.got_lines ?? [] })
+    let exp_lines = $derived.by((): SnapLine[]         => { notify; return an?.c.exp_lines ?? [] })
+    let show_diff = $derived.by((): boolean            => { notify; return an?.c.show_diff ?? false })
+    let diff      = $derived.by((): DiffTag[] | null   => { notify; return an?.c.diff      ?? null })
 
-    function parse_snap(s: string): NonNullable<SnapLine>[] {
-        if (!s) return []
-        return s.split('\n').filter(Boolean)
-            .map(l => H.deL(l))
-            .filter((x): x is NonNullable<SnapLine> => x !== null)
-    }
+    let run_mode   = $derived.by((): string            => { notify; return run?.sc.mode       ?? 'new' })
+    let run_done   = $derived.by((): number            => { notify; return run?.sc.steps_done ?? 0 })
+    let run_total  = $derived.by((): number|undefined  => { notify; return run?.sc.steps_total })
+    let run_paused = $derived.by((): boolean           => { notify; return !!run?.sc.paused })
+    let run_failed = $derived.by((): number|undefined  => { notify; return run?.sc.failed_at as number | undefined })
 
-    // got_lines / exp_lines: $derived.by so exp_snap arriving mid-run still
-    // triggers a re-parse.  Cache by snap string: same content → same array
-    // reference → {#each} sees no change → scroll position and devtools
-    // selection are untouched across think ticks.
-    const _got_cache = { snap: '', lines: [] as NonNullable<SnapLine>[] }
-    const _exp_cache = { snap: '', lines: [] as NonNullable<SnapLine>[] }
-
-    let got_lines = $derived.by((): NonNullable<SnapLine>[] => {
-        void storyW?.version   // react when snap / exp_snap is written to sel_m
-        const snap = (sel_m?.sc.got_snap ?? sel_m?.sc.snap ?? '') as string
-        if (snap === _got_cache.snap) return _got_cache.lines
-        _got_cache.snap  = snap
-        _got_cache.lines = parse_snap(snap)
-        return _got_cache.lines
-    })
-    let exp_lines = $derived.by((): NonNullable<SnapLine>[] => {
-        void storyW?.version
-        const snap = (sel_m?.sc.exp_snap ?? '') as string
-        if (snap === _exp_cache.snap) return _exp_cache.lines
-        _exp_cache.snap  = snap
-        _exp_cache.lines = parse_snap(snap)
-        return _exp_cache.lines
-    })
-
-    let show_diff = $derived(exp_lines.length > 0)
-
-    // ── line-level diff (parallel positional comparison) ─────────────────────
-    type DiffTag = 'same' | 'changed' | 'new' | 'gone'
-    function make_diff(got: NonNullable<SnapLine>[], exp: NonNullable<SnapLine>[]): DiffTag[] {
-        const len    = Math.max(got.length, exp.length)
-        const result: DiffTag[] = []
-        for (let i = 0; i < len; i++) {
-            const g = got[i], e = exp[i]
-            if      (!g) result.push('gone')
-            else if (!e) result.push('new')
-            else if (JSON.stringify(g.stringies) !== JSON.stringify(e.stringies))
-                         result.push('changed')
-            else         result.push('same')
-        }
-        return result
-    }
-    let diff = $derived(show_diff ? make_diff(got_lines, exp_lines) : null)
-
-    // ── display helpers ───────────────────────────────────────────────────────
+    // ── display helpers (pure functions, no state reads) ─────────────────
     const ind = (d: number) => '  '.repeat(d)
 
-    function line_parts(sl: NonNullable<SnapLine>): { indent: string, obj: string, str: string } {
+    function line_parts(sl: SnapLine) {
         return {
             indent: ind(sl.d),
             obj:    obj_text(sl),
             str:    Object.entries(sl.stringies).map(([k, v]) => `${k}:${v}`).join('  '),
         }
     }
-    // for pasting: full line as plain text
-    function line_text(sl: NonNullable<SnapLine>): string {
-        const { indent, obj, str } = line_parts(sl)
-        return `${indent}${obj ? obj + '  ' : ''}${str}`
-    }
 
     // objecties: { ref?: {k:str}, mung?: string[] }
-    // ref: objectify() summaries; mung: array of munged key names
     function obj_text(sl: SnapLine): string {
         const o = sl.objecties as any
         if (!o || !Object.keys(o).length) return ''
@@ -136,15 +82,16 @@
         return parts.join('  ')
     }
 
-    // run bar state
-    let run_mode   = $derived.by(() => { storyW?.version; return run?.sc.mode       ?? 'new' })
-    let run_done   = $derived.by(() => { storyW?.version; return run?.sc.steps_done ?? 0 })
-    let run_total  = $derived.by(() => { storyW?.version; return run?.sc.steps_total })
-    let run_paused = $derived.by(() => { storyW?.version; return !!run?.sc.paused })
-    let run_failed = $derived.by(() => { storyW?.version; return run?.sc.failed_at as number | undefined })
-
-    // toggle moment selection
-    function pick(n: number) { sel = sel === n ? null : n }
+    // ── selection — always sent to worker, never local state ─────────────
+    // story_sel elvis handler in Story.svelte updates w.sc.sel and calls
+    // story_analysis(), which notifies us back via watch_c.
+    function pick(n: number) {
+        const new_sel = sel === n ? null : n
+        storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
+    }
+    function close_panel() {
+        storyH?.elvisto('Story/Story', 'story_sel', { sel: null })
+    }
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -175,9 +122,9 @@
         <!-- ── moment strip ─────────────────────────────────────────────── -->
         <div class="sr-strip">
             {#each moments as m (m.sc.moment_n)}
-                {@const n   = m.sc.moment_n as number}
-                {@const ok  = !!m.sc.ok}
-                {@const on  = sel === n}
+                {@const n  = m.sc.moment_n as number}
+                {@const ok = !!m.sc.ok}
+                {@const on = sel === n}
                 <button
                     class="sr-pip"
                     class:ok
@@ -202,7 +149,7 @@
                     <span class="sr-pn">step {String(n).padStart(3,'0')}</span>
                     <span class="sr-pdige">{dige}</span>
                     {#if !ok}<span class="sr-pmm">mismatch</span>{/if}
-                    <button class="sr-close" onclick={() => sel = null}>×</button>
+                    <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
 
                 {#if show_diff}
@@ -235,7 +182,7 @@
 <!-- spaces between obj and str sit outside both spans as raw text in the     -->
 <!-- white-space:pre context — trailing whitespace inside an inline <span>    -->
 <!-- can be stripped by browsers; between sibling spans it is preserved.      -->
-{#snippet snap_line(sl: NonNullable<SnapLine>, tag: string)}
+{#snippet snap_line(sl: SnapLine, tag: string)}
     {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}</span>  {/if}<span class="sr-str">{p.str}</span>&#10;</span>
 {/snippet}
 
