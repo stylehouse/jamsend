@@ -5,18 +5,32 @@
     let { H }: { H: House } = $props()
 
     // ── navigation down to w:Story ───────────────────────────────────────────
-    // Each $derived.by reads .version so Svelte 5 tracks serial_i ($state) changes.
-    let storyH = $derived.by(() => {
-        H?.version
-        return H?.o({ H: 'Story' })?.[0] as House | undefined
+    // $state + $effect with null-guards: only update storyH/A/W to a newly-found
+    // non-null reference — never clear on a transient empty result.
+    //
+    // Why not $derived.by({ H?.version; ... })?
+    //   Stuff.replace() swaps H.X to a fresh empty X mid-flight, bumping .version.
+    //   During that window H.o() returns [], so storyH would flip to undefined,
+    //   cascading sel_m → null → {#if sel_m} collapses the panel.
+    //   The null-guard keeps the last known reference until a real change occurs.
+    let storyH: House | undefined = $state()
+    let storyA: TheC  | undefined = $state()
+    let storyW: TheC  | undefined = $state()
+
+    $effect(() => {
+        void H?.version
+        const h = H?.o({ H: 'Story' })?.[0] as House | undefined
+        if (h != null && h !== storyH) storyH = h
     })
-    let storyA = $derived.by(() => {
-        storyH?.version
-        return storyH?.o({ A: 'Story' })?.[0] as TheC | undefined
+    $effect(() => {
+        void storyH?.version
+        const a = storyH?.o({ A: 'Story' })?.[0] as TheC | undefined
+        if (a != null && a !== storyA) storyA = a
     })
-    let storyW = $derived.by(() => {
-        storyA?.version
-        return storyA?.o({ w: 'Story' })?.[0] as TheC | undefined
+    $effect(() => {
+        void storyA?.version
+        const w = storyA?.o({ w: 'Story' })?.[0] as TheC | undefined
+        if (w != null && w !== storyW) storyW = w
     })
 
     // rebuild on every w.i() (which bumps w.version via X.serial_i)
@@ -31,10 +45,19 @@
         const f = run?.sc.failed_at
         if (f != null && sel == null) sel = f as number
     })
-    let sel_m = $derived(sel != null ? moments.find(m => m.sc.moment_n === sel) : null)
 
-    // ── snap parsing — delegates to H.deL / H.enL etc (ghost methods) ─────────
-    type SnapLine = ReturnType<typeof H.deL>  // { d, objecties, stringies } | null
+    // sel_m as $state with null-guard — same reasoning as storyH/A/W.
+    // Explicitly cleared only when the user closes the panel (sel = null).
+    let sel_m: TheC | null = $state(null)
+    $effect(() => {
+        if (sel == null) { sel_m = null; return }
+        void storyW?.version   // re-check when exp_snap arrives
+        const m = storyW?.o({ moment: 1, moment_n: sel })?.[0] as TheC | undefined
+        if (m != null && m !== sel_m) sel_m = m
+    })
+
+    // ── snap parsing — delegates to H.deL (ghost method) ─────────────────────
+    type SnapLine = ReturnType<typeof H.deL>   // { d, objecties, stringies } | null
 
     function parse_snap(s: string): NonNullable<SnapLine>[] {
         if (!s) return []
@@ -43,16 +66,35 @@
             .filter((x): x is NonNullable<SnapLine> => x !== null)
     }
 
-    // ── pick snap strings from selected moment ────────────────────────────────
-    // new-mode moments: .snap    (we recorded this)
-    // check-mode fail: .got_snap + .exp_snap (fetched from wormhole)
-    let got_lines = $derived(parse_snap((sel_m?.sc.got_snap ?? sel_m?.sc.snap ?? '') as string))
-    let exp_lines = $derived(parse_snap((sel_m?.sc.exp_snap ?? '') as string))
+    // got_lines / exp_lines: $derived.by so exp_snap arriving mid-run still
+    // triggers a re-parse.  Cache by snap string: same content → same array
+    // reference → {#each} sees no change → scroll position and devtools
+    // selection are untouched across think ticks.
+    const _got_cache = { snap: '', lines: [] as NonNullable<SnapLine>[] }
+    const _exp_cache = { snap: '', lines: [] as NonNullable<SnapLine>[] }
+
+    let got_lines = $derived.by((): NonNullable<SnapLine>[] => {
+        void storyW?.version   // react when snap / exp_snap is written to sel_m
+        const snap = (sel_m?.sc.got_snap ?? sel_m?.sc.snap ?? '') as string
+        if (snap === _got_cache.snap) return _got_cache.lines
+        _got_cache.snap  = snap
+        _got_cache.lines = parse_snap(snap)
+        return _got_cache.lines
+    })
+    let exp_lines = $derived.by((): NonNullable<SnapLine>[] => {
+        void storyW?.version
+        const snap = (sel_m?.sc.exp_snap ?? '') as string
+        if (snap === _exp_cache.snap) return _exp_cache.lines
+        _exp_cache.snap  = snap
+        _exp_cache.lines = parse_snap(snap)
+        return _exp_cache.lines
+    })
+
     let show_diff = $derived(exp_lines.length > 0)
 
     // ── line-level diff (parallel positional comparison) ─────────────────────
     type DiffTag = 'same' | 'changed' | 'new' | 'gone'
-    function make_diff(got: SnapLine[], exp: SnapLine[]): DiffTag[] {
+    function make_diff(got: NonNullable<SnapLine>[], exp: NonNullable<SnapLine>[]): DiffTag[] {
         const len    = Math.max(got.length, exp.length)
         const result: DiffTag[] = []
         for (let i = 0; i < len; i++) {
@@ -68,10 +110,8 @@
     let diff = $derived(show_diff ? make_diff(got_lines, exp_lines) : null)
 
     // ── display helpers ───────────────────────────────────────────────────────
-    // indent: two spaces per depth, for pasting
     const ind = (d: number) => '  '.repeat(d)
 
-    // split a snap line into its two display parts
     function line_parts(sl: NonNullable<SnapLine>): { indent: string, obj: string, str: string } {
         return {
             indent: ind(sl.d),
@@ -97,11 +137,11 @@
     }
 
     // run bar state
-    let run_mode    = $derived.by(() => { storyW?.version; return run?.sc.mode    ?? 'new' })
-    let run_done    = $derived.by(() => { storyW?.version; return run?.sc.steps_done ?? 0 })
-    let run_total   = $derived.by(() => { storyW?.version; return run?.sc.steps_total })
-    let run_paused  = $derived.by(() => { storyW?.version; return !!run?.sc.paused })
-    let run_failed  = $derived.by(() => { storyW?.version; return run?.sc.failed_at as number | undefined })
+    let run_mode   = $derived.by(() => { storyW?.version; return run?.sc.mode       ?? 'new' })
+    let run_done   = $derived.by(() => { storyW?.version; return run?.sc.steps_done ?? 0 })
+    let run_total  = $derived.by(() => { storyW?.version; return run?.sc.steps_total })
+    let run_paused = $derived.by(() => { storyW?.version; return !!run?.sc.paused })
+    let run_failed = $derived.by(() => { storyW?.version; return run?.sc.failed_at as number | undefined })
 
     // toggle moment selection
     function pick(n: number) { sel = sel === n ? null : n }
@@ -151,9 +191,9 @@
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
         {#if sel_m}
-            {@const n      = sel_m.sc.moment_n}
-            {@const ok     = !!sel_m.sc.ok}
-            {@const dige   = String(sel_m.sc.dige ?? '').slice(0, 8)}
+            {@const n    = sel_m.sc.moment_n}
+            {@const ok   = !!sel_m.sc.ok}
+            {@const dige = String(sel_m.sc.dige ?? '').slice(0, 8)}
 
             <div class="sr-panel">
 
@@ -166,20 +206,24 @@
                 </div>
 
                 {#if show_diff}
-                    <!-- ── diff columns ─────────────────────────────────── -->
+                    <!-- ── diff: two columns in one scroll container ─────── -->
+                    <!-- sr-diff-hdr: sticky labels above the scrollable body -->
+                    <!-- sr-diff-scroll: single overflow:auto grid — both     -->
+                    <!--   pre elements have overflow:visible so the parent   -->
+                    <!--   scrolls them together as one unit.                 -->
                     <div class="sr-diff">
-                        <div class="sr-dcol">
+                        <div class="sr-diff-hdr">
                             <div class="sr-dlabel got">got</div>
-                            <pre class="sr-pre">{#each got_lines as sl, i}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
-                        </div>
-                        <div class="sr-dcol">
                             <div class="sr-dlabel exp">exp</div>
-                            <pre class="sr-pre">{#each exp_lines as sl, i}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
+                        </div>
+                        <div class="sr-diff-scroll">
+                            <pre class="sr-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each exp_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
                         </div>
                     </div>
                 {:else}
                     <!-- ── single snap tree (new mode / ok step) ────────── -->
-                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl}{@render snap_line(sl, 'same')}{/each}</pre>
+                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
                 {/if}
 
             </div>
@@ -188,8 +232,11 @@
     {/if}
 </div>
 
+<!-- spaces between obj and str sit outside both spans as raw text in the     -->
+<!-- white-space:pre context — trailing whitespace inside an inline <span>    -->
+<!-- can be stripped by browsers; between sibling spans it is preserved.      -->
 {#snippet snap_line(sl: NonNullable<SnapLine>, tag: string)}
-    {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}  </span>{/if}<span class="sr-str">{p.str}</span>&#10;</span>
+    {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}</span>  {/if}<span class="sr-str">{p.str}</span>&#10;</span>
 {/snippet}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -224,8 +271,8 @@
 .sr-status.fail    { color: #c55 }
 .sr-status.running { color: #77a; }
 .sr-bar.is-fail    { border-bottom-color: #4a1a1a; }
-.sr-bar.is-new .sr-mode  { color: #6a9; }
-.sr-bar.is-check .sr-mode{ color: #79b; }
+.sr-bar.is-new   .sr-mode { color: #6a9; }
+.sr-bar.is-check .sr-mode { color: #79b; }
 
 /* moment strip */
 .sr-strip {
@@ -267,10 +314,10 @@
     background: #161616;
     border-bottom: 1px solid #1e1e1e;
 }
-.sr-pn      { color: #79b; font-weight: 600; }
-.sr-pdige   { color: #555; font-size: 10px; }
-.sr-pmm     { color: #c55; font-size: 10px; }
-.sr-close   {
+.sr-pn    { color: #79b; font-weight: 600; }
+.sr-pdige { color: #555; font-size: 10px; }
+.sr-pmm   { color: #c55; font-size: 10px; }
+.sr-close {
     margin-left: auto;
     background: none;
     border: none;
@@ -282,14 +329,28 @@
 }
 .sr-close:hover { color: #aaa; }
 
-/* diff columns */
-.sr-diff {
+/* diff: unified scroll ────────────────────────────────────────────────── */
+.sr-diff-hdr {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0;
+    border-bottom: 1px solid #1e1e1e;
 }
-.sr-dcol { display: flex; flex-direction: column; overflow: hidden; }
-.sr-dcol + .sr-dcol { border-left: 1px solid #1e1e1e; }
+/* single overflow container — both pre children scroll as one unit */
+.sr-diff-scroll {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: auto;
+    max-height: 360px;
+}
+/* pres inside must not scroll individually */
+.sr-diff-scroll > .sr-pre {
+    overflow: visible;
+    max-height: none;
+}
+.sr-diff-scroll > .sr-pre + .sr-pre {
+    border-left: 1px solid #1e1e1e;
+}
+
 .sr-dlabel {
     font-size: 9px;
     font-weight: 700;
@@ -297,7 +358,6 @@
     text-transform: uppercase;
     padding: 3px 8px;
     background: #141414;
-    border-bottom: 1px solid #1e1e1e;
     flex-shrink: 0;
 }
 .sr-dlabel.got { color: #4a9; }
@@ -317,17 +377,15 @@
     white-space: pre;
     tab-size: 2;
 }
-.sr-tree-pre {
-    padding: 4px 8px;
-}
+.sr-tree-pre { padding: 4px 8px; }
 
-/* snap lines inside pre — span per line */
+/* snap lines inside pre — one span per line */
 .sr-line {
     display: block;
     padding: 0 8px;
     border-left: 2px solid transparent;
 }
-.sr-line:hover { background: #181818; }
+.sr-line:hover   { background: #181818; }
 .sr-line.changed { background: #1e1600; border-left-color: #a80; }
 .sr-line.new     { background: #001a10; border-left-color: #4a9; }
 .sr-line.gone    { background: #1a0000; border-left-color: #c55; opacity: 0.6; }
@@ -339,9 +397,12 @@
 
 /* scrollbars */
 .sr-strip::-webkit-scrollbar,
-.sr-pre::-webkit-scrollbar { width: 4px; height: 4px; }
+.sr-pre::-webkit-scrollbar,
+.sr-diff-scroll::-webkit-scrollbar         { width: 4px; height: 4px; }
 .sr-strip::-webkit-scrollbar-track,
-.sr-pre::-webkit-scrollbar-track { background: #0e0e0e; }
+.sr-pre::-webkit-scrollbar-track,
+.sr-diff-scroll::-webkit-scrollbar-track   { background: #0e0e0e; }
 .sr-strip::-webkit-scrollbar-thumb,
-.sr-pre::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 2px; }
+.sr-pre::-webkit-scrollbar-thumb,
+.sr-diff-scroll::-webkit-scrollbar-thumb   { background: #2a2a2a; border-radius: 2px; }
 </style>

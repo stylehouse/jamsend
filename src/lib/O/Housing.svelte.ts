@@ -1,4 +1,3 @@
-// vastly AI
 import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
