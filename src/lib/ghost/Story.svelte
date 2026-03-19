@@ -101,7 +101,16 @@
         if (!book) { w.i({ see: '!Book' }); return null }
         const run_name = `Run:${book}`
         const Run      = (this as House).subHouse(run_name)
-        Run.c.no_interval = true
+
+        // this will stop the regularly timed main() calls, from reset_interval()
+        // Run.c.no_interval = true
+        // all the blunt instrumentation whims to call main() can be stopped, inc the above
+        //  anything dealing with explicit e via eg elvisto will react...
+        //   independently of the snap recorder?
+        //    we need to wait for the flurry of H%todoing to settle
+        //     or maybe it's the kind of step that wants each bit of that mapped as it happens
+        Run.c.no_ambient = true
+
         if (!Run.oa({ A: 1 })) {
             const init_fn = (Run as any)[`Run_A_${book}`] as Function | undefined
             if (!init_fn) { w.i({ error: `!Run_A_${book}` }); return null }
@@ -131,7 +140,10 @@
             })
         }
 
-        const run_path = `Story/${run_name}`
+        // run_name may contain ':' (eg "Run:LeafFarm") which the File System
+        // Access API forbids in directory handles — and Windows/HFS+ agree.
+        const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
+        const run_path = `Story/${fs_safe(run_name)}`
         const wh = await this.requesty_serial(w, 'wh')
 
         // ── TOC ────────────────────────────────────────────────────────────

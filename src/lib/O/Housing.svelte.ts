@@ -27,6 +27,10 @@ db.version(2).stores({
 const V: Record<string, any> = {}
 V.organise = 0  // set >0 to enable answer_calls/beliefs/organise logs
 
+export const ANSWER_CALLS_TICK_MS = 50
+export const AMBIENT_MAIN_TICK_MS = 200
+// see also reset_interval() 3600ms
+
 //#region Housing
 
 abstract class Housing extends TheC {
@@ -276,7 +280,7 @@ abstract class StorableHousing extends Housing {
             } finally {
                 this._saving = false
             }
-        }, 200)
+        }, AMBIENT_MAIN_TICK_MS)
 
         $effect(() => {
             if (this.stashed && Object.keys(this.stashed).length) save()
@@ -452,11 +456,12 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     main_throttle?: Function
     main() {
+        if (this.c.no_ambient) return
         this.main_throttle ||= throttle(() => {
             if (this.stopped) return
             const e = new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } })
             this._push_todo(e)
-        }, 200)
+        }, AMBIENT_MAIN_TICK_MS)
         this.main_throttle()
     }
 
@@ -515,7 +520,7 @@ export class House extends StorableHousing {
     answer_calls() {
         this.answer_calls_throttle ||= throttle(() => {
             this._really_answer_calls()
-        }, 50)
+        }, ANSWER_CALLS_TICK_MS)
         this.answer_calls_throttle()
     }
     async _really_answer_calls() {
