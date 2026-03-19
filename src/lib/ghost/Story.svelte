@@ -47,8 +47,8 @@
 
 //#region analysis helpers
     // These run inside the beliefs mutex (via post_do / Story handler),
-    // so they always see a fully committed X.  StoryRun is a pure reader
-    // of %story_analysis.c.* — it does no parsing or diffing itself.
+    // so they always see a fully committed X.  StoryRun is a pure reader —
+    // it does no parsing or diffing itself.
 
     parse_snap(s: string) {
         if (!s) return []
@@ -72,9 +72,12 @@
         return result
     },
 
-    // story_analysis: materialise all display data into %story_analysis.c.*
-    // then bump_version() — watch_c in StoryRun fires once, reads atomically.
+    // story_analysis: materialise all display data into %story_analysis.sc.*
+    // sc = meaningful named data; c is for machine-internal incidentals only.
+    // wa.bump_version() triggers the debounced watch_c flush:
+    //   H.ave = wa.o({}) → StoryRun's $effect re-runs → Object.assign(display, an.sc)
     story_analysis(w) {
+        const storyH  = this as House
         const run     = w.o({ run: 1 })[0]
         const moments = w.o({ moment: 1 })
         let   sel     = w.sc.sel ?? null
@@ -95,16 +98,20 @@
         const show_diff = exp_lines.length > 0
         const diff      = show_diff ? this.make_diff(got_lines, exp_lines) : null
 
-        const an = w.oai({ story_analysis: 1 })
-        an.c.run       = run
-        an.c.moments   = moments
-        an.c.sel       = sel
-        an.c.sel_m     = sel_m
-        an.c.got_lines = got_lines
-        an.c.exp_lines = exp_lines
-        an.c.show_diff = show_diff
-        an.c.diff      = diff
-        an.bump_version()
+        // %watched:ave was enrolled in Story() — wa.o({}) becomes storyH.ave
+        const wa = storyH.oai({ watched: 'ave' })
+        const an = wa.oai({ story_analysis: 1 })
+        an.sc.run       = run
+        an.sc.moments   = moments
+        an.sc.sel       = sel
+        an.sc.sel_m     = sel_m
+        an.sc.got_lines = got_lines
+        an.sc.exp_lines = exp_lines
+        an.sc.show_diff = show_diff
+        an.sc.diff      = diff
+        // bump wa, not an — watch_c watches the %watched:ave particle,
+        // whose version increments when its children change or we manually bump it
+        wa.bump_version()
     },
 
     // story_sel: UI → worker selection change.
@@ -294,7 +301,10 @@
         if (!init) return
         const { Run, run_name } = init
 
+        // %watched:actions drives H.actions (the action bar)
+        // %watched:ave drives H.ave (UI-facing analysis particles, eg %story_analysis)
         ;(this as House).oai({ watched: 'actions' })
+        ;(this as House).oai({ watched: 'ave' })
         ;(this as House).enroll_watched()
 
         let run = w.o({ run: run_name })[0]

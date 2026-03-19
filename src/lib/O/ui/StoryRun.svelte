@@ -4,64 +4,52 @@
 
     let { H }: { H: House } = $props()
 
-    // ── navigate to w:Story ───────────────────────────────────────────────
-    // Two effects with believing-gates; null-guards prevent clearing on
-    // transient empty results from mid-replace() X swaps.
+    // ── navigate to H:Story ───────────────────────────────────────────────
+    // Null-guard: only update when a real reference is found, so mid-replace()
+    // transient empties (H.o() returns [] while X is swapped) leave storyH alone.
     let storyH: House | undefined = $state()
-    let storyW: TheC  | undefined = $state()
 
     $effect(() => {
-        if (H?.believing) return
         void H?.version
         const h = H?.o({ H: 'Story' })?.[0] as House | undefined
         if (h != null && h !== storyH) storyH = h
     })
-    $effect(() => {
-        if (H?.believing) return
-        void storyH?.version
-        // fold A:Story → w:Story into one effect — fewer reactive layers
-        const a = storyH?.o({ A: 'Story' })?.[0] as TheC | undefined
-        const w = a?.o({ w: 'Story' })?.[0] as TheC | undefined
-        if (w != null && w !== storyW) storyW = w
-    })
 
-    // ── watch_c bridge ────────────────────────────────────────────────────
-    // story_analysis() in the ghost computes all display data into
-    // %story_analysis.c.* and calls bump_version().
-    // watch_c fires our handler → notify++ → all $derived.by re-read
-    // from an.c.* in one pass.  No parsing, no diffing happens here.
-    let an: TheC | undefined = $state()
-    let notify = $state(0)
-
-    $effect(() => {
-        if (H?.believing || !storyW) return
-        const found = storyW.o({ story_analysis: 1 })?.[0] as TheC | undefined
-        if (!found || found === an) return
-        an = found
-        H.watch_c(an, () => { notify++ })
-        notify++   // seed immediately so deriveds have data on first render
-    })
-
-    // ── all display state — pure reads from an.c.* ────────────────────────
+    // ── display state — fed from storyH.ave ───────────────────────────────
+    // H:Story maintains a %watched:ave particle; story_analysis() writes display
+    // data into %story_analysis.sc.* (a child of %watched:ave) and bumps the
+    // watched particle's version.  The debounced flush in start_watched_C_effect
+    // then reassigns storyH.ave ($state), which re-runs this $effect.
+    // Object.assign(display, an.sc) copies all display keys in one shot —
+    // the JS answer to "destructure many keys at once into $state variables".
     type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
     type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
-    let moments   = $derived.by((): TheC[]             => { notify; return an?.c.moments   ?? [] })
-    let run       = $derived.by((): TheC | null        => { notify; return an?.c.run       ?? null })
-    let sel       = $derived.by((): number | null      => { notify; return an?.c.sel       ?? null })
-    let sel_m     = $derived.by((): TheC | null        => { notify; return an?.c.sel_m     ?? null })
-    let got_lines = $derived.by((): SnapLine[]         => { notify; return an?.c.got_lines ?? [] })
-    let exp_lines = $derived.by((): SnapLine[]         => { notify; return an?.c.exp_lines ?? [] })
-    let show_diff = $derived.by((): boolean            => { notify; return an?.c.show_diff ?? false })
-    let diff      = $derived.by((): DiffTag[] | null   => { notify; return an?.c.diff      ?? null })
+    let display = $state({
+        run:       null  as TheC | null,
+        moments:   []    as TheC[],
+        sel:       null  as number | null,
+        sel_m:     null  as TheC | null,
+        got_lines: []    as SnapLine[],
+        exp_lines: []    as SnapLine[],
+        show_diff: false as boolean,
+        diff:      null  as DiffTag[] | null,
+    })
 
-    let run_mode   = $derived.by((): string            => { notify; return run?.sc.mode       ?? 'new' })
-    let run_done   = $derived.by((): number            => { notify; return run?.sc.steps_done ?? 0 })
-    let run_total  = $derived.by((): number|undefined  => { notify; return run?.sc.steps_total })
-    let run_paused = $derived.by((): boolean           => { notify; return !!run?.sc.paused })
-    let run_failed = $derived.by((): number|undefined  => { notify; return run?.sc.failed_at as number | undefined })
+    $effect(() => {
+        // storyH.ave is $state — reassigned by watch_c flush when story_analysis runs
+        const an = storyH?.ave.find((n: TheC) => n.sc.story_analysis)
+        if (an) Object.assign(display, an.sc)
+    })
 
-    // ── display helpers (pure functions, no state reads) ─────────────────
+    // ── simple deriveds from display ──────────────────────────────────────
+    let run_mode   = $derived(display.run?.sc.mode       ?? 'new')
+    let run_done   = $derived(display.run?.sc.steps_done ?? 0)
+    let run_total  = $derived(display.run?.sc.steps_total as number | undefined)
+    let run_paused = $derived(!!display.run?.sc.paused)
+    let run_failed = $derived(display.run?.sc.failed_at  as number | undefined)
+
+    // ── display helpers (pure, no state reads) ────────────────────────────
     const ind = (d: number) => '  '.repeat(d)
 
     function line_parts(sl: SnapLine) {
@@ -82,11 +70,11 @@
         return parts.join('  ')
     }
 
-    // ── selection — always sent to worker, never local state ─────────────
-    // story_sel elvis handler in Story.svelte updates w.sc.sel and calls
-    // story_analysis(), which notifies us back via watch_c.
+    // ── selection — sent to worker, never held as local state ─────────────
+    // story_sel handler in Story.svelte updates w.sc.sel → story_analysis()
+    // → wa.bump_version() → debounced flush → storyH.ave reassigned → display updates.
     function pick(n: number) {
-        const new_sel = sel === n ? null : n
+        const new_sel = display.sel === n ? null : n
         storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
     }
     function close_panel() {
@@ -97,14 +85,14 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="sr">
 
-    {#if !storyW}
-        <div class="sr-empty">no Story w</div>
+    {#if !storyH?.ave.find((n: TheC) => n.sc.story_analysis)}
+        <div class="sr-empty">no Story</div>
 
     {:else}
 
         <!-- ── run bar ──────────────────────────────────────────────────── -->
         <div class="sr-bar" class:is-new={run_mode==='new'} class:is-check={run_mode==='check'} class:is-fail={!!run_failed}>
-            <span class="sr-runname">{run?.sc.run ?? '—'}</span>
+            <span class="sr-runname">{display.run?.sc.run ?? '—'}</span>
             <span class="sr-mode">{run_mode}</span>
             <span class="sr-steps">
                 {String(run_done).padStart(3,'0')}
@@ -121,10 +109,10 @@
 
         <!-- ── moment strip ─────────────────────────────────────────────── -->
         <div class="sr-strip">
-            {#each moments as m (m.sc.moment_n)}
+            {#each display.moments as m (m.sc.moment_n)}
                 {@const n  = m.sc.moment_n as number}
                 {@const ok = !!m.sc.ok}
-                {@const on = sel === n}
+                {@const on = display.sel === n}
                 <button
                     class="sr-pip"
                     class:ok
@@ -137,10 +125,10 @@
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
-        {#if sel_m}
-            {@const n    = sel_m.sc.moment_n}
-            {@const ok   = !!sel_m.sc.ok}
-            {@const dige = String(sel_m.sc.dige ?? '').slice(0, 8)}
+        {#if display.sel_m}
+            {@const n    = display.sel_m.sc.moment_n}
+            {@const ok   = !!display.sel_m.sc.ok}
+            {@const dige = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
 
             <div class="sr-panel">
 
@@ -152,7 +140,7 @@
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
 
-                {#if show_diff}
+                {#if display.show_diff}
                     <!-- ── diff: two columns in one scroll container ─────── -->
                     <!-- sr-diff-hdr: sticky labels above the scrollable body -->
                     <!-- sr-diff-scroll: single overflow:auto grid — both     -->
@@ -164,13 +152,13 @@
                             <div class="sr-dlabel exp">exp</div>
                         </div>
                         <div class="sr-diff-scroll">
-                            <pre class="sr-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
-                            <pre class="sr-pre">{#each exp_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each display.got_lines as sl, i (i)}{@render snap_line(sl, display.diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each display.exp_lines as sl, i (i)}{@render snap_line(sl, display.diff?.[i] ?? 'same')}{/each}</pre>
                         </div>
                     </div>
                 {:else}
                     <!-- ── single snap tree (new mode / ok step) ────────── -->
-                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
+                    <pre class="sr-pre sr-tree-pre">{#each display.got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
                 {/if}
 
             </div>

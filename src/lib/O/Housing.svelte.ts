@@ -891,30 +891,47 @@ export class House extends StorableHousing {
 //#endregion
 //#region watched
     // these are derived from H/%watched:actions/*
-    actions: TheC[] = $state([]) 
+    actions: TheC[] = $state([])
+    // this is a general for-the-UI conveyor
+    ave: TheC[] = $state([])
+
+    // %watched pattern: ghost creates a %watched:key particle on H, calls
+    // enroll_watched().  Default handler sets H[key] = C.o({}); custom fn
+    // overrides that (eg story_analysis uses one to fire notify).
+    // The debounced flush means handlers always read a fully committed X —
+    // they fire ~half a tick after the version bump, well after mutex release.
 
     watched:   Array<{ C: TheC, handler: Function }> = $state([])
     watched_v: number[] = []
-    // enroll a C with a handler; idempotent
+
     watch_c(C: TheC, handler: Function) {
         if (this.watched.some(w => w.C === C)) return
         this.watched.push({ C, handler })
         this.watched_v.push(C.version)
     }
+
     start_watched_C_effect() {
-        $effect(() => {
+        let pending = false
+        const flush = () => {
+            pending = false
             for (let i = 0; i < this.watched.length; i++) {
-                let C = this.watched[i].C
+                const C = this.watched[i].C
                 const v = C.version
                 if (v !== this.watched_v[i]) {
                     this.watched_v[i] = v
                     this.watched[i].handler()
-                    // console.log(`watched change: ${objectify(C)}`)
                 }
             }
+        }
+        $effect(() => {
+            // track all watched C versions — Svelte re-runs this when any change.
+            // handlers are not called here; the setTimeout lets the beliefs tick
+            // finish so flush always reads a fully committed X.
+            for (const { C } of this.watched) void C.version
+            if (!pending) { pending = true; setTimeout(flush, ANSWER_CALLS_TICK_MS / 2) }
         })
     }
-    // call this after creating any new %watched particle on H
+
     enroll_watched() {
         for (const C of this.o({ watched: 1 }) as TheC[]) {
             if (this.watched.some(w => w.C === C)) continue
