@@ -32,20 +32,21 @@
     // objecties: { ref, mungables } — for display; "" decodes to {}
     // stringies: the hashed primitives — reconstitutes what the Stuffing held
     // decode one snap line → { d, objecties, stringies }
-    // objecties: { ref?: {k:str}, mung?: string[] } — '' → {}
+    // indent is spaces only (2 per depth); separator is \t.
+    // measure leading spaces directly — trimStart() would eat a leading \t.
     deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
-        const stripped = line.trimStart()
-        const d        = Math.floor((line.length - stripped.length) / 2)
-        const tab      = stripped.indexOf('\t')
-        if (tab < 0) return null
-        try {
-            const obj_raw = stripped.slice(0, tab)
+        const spaces = line.match(/^ */)?.[0].length ?? 0
+        const d      = Math.floor(spaces / 2)
+        const tab    = line.indexOf('\t')
+        if (tab < 0) throw "no tab"
+        // try {
+            const obj_raw = line.slice(spaces, tab)
             return {
                 d,
                 objecties: obj_raw ? JSON.parse(obj_raw) : {},
-                stringies: JSON.parse(stripped.slice(tab + 1)),
+                stringies: JSON.parse(line.slice(tab + 1)),
             }
-        } catch { return null }
+        // } catch { return null }
     },
 
 //#region snap encoding
@@ -510,6 +511,9 @@
             },
         })
         wa.oai({ action: 1, role: 'save' }, {
+            // save works in any state including failed/mismatch —
+            // this is how you accept a changed run: hit save while !ok,
+            // the got_diges become the new ground truth in the toc.
             label: 'Save', icon: '💾', cls: 'save',
             fn: () => { this.story_save() },
         })

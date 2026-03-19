@@ -33,33 +33,14 @@
     })
     let sel_m = $derived(sel != null ? moments.find(m => m.sc.moment_n === sel) : null)
 
-    // ── snap line type ────────────────────────────────────────────────────────
-    type SnapLine = {
-        d:         number
-        objecties: Record<string, any>   // { ref?, mung? } or {}
-        stringies: Record<string, any>
-    }
+    // ── snap parsing — delegates to H.deL / H.enL etc (ghost methods) ─────────
+    type SnapLine = ReturnType<typeof H.deL>  // { d, objecties, stringies } | null
 
-    // ── deL: decode one enL-encoded line ─────────────────────────────────────
-    // objecties: { ref?: {k:str}, mung?: string[] } — '' decodes to {}
-    // stringies: the hashable primitives
-    function deL(line: string): SnapLine | null {
-        const stripped = line.trimStart()
-        const d        = Math.floor((line.length - stripped.length) / 2)
-        const tab      = stripped.indexOf('\t')
-        if (tab < 0) return null
-        try {
-            const obj_raw = stripped.slice(0, tab)
-            return {
-                d,
-                objecties: obj_raw ? JSON.parse(obj_raw) : {},
-                stringies: JSON.parse(stripped.slice(tab + 1)),
-            }
-        } catch { return null }
-    }
-    function parse_snap(s: string): SnapLine[] {
+    function parse_snap(s: string): NonNullable<SnapLine>[] {
         if (!s) return []
-        return s.split('\n').filter(Boolean).map(deL).filter((x): x is SnapLine => x !== null)
+        return s.split('\n').filter(Boolean)
+            .map(l => H.deL(l))
+            .filter((x): x is NonNullable<SnapLine> => x !== null)
     }
 
     // ── pick snap strings from selected moment ────────────────────────────────
@@ -90,12 +71,18 @@
     // indent: two spaces per depth, for pasting
     const ind = (d: number) => '  '.repeat(d)
 
-    // one snap line as a pasteable string: "${indent}${obj_part}${str_part}"
-    function line_text(sl: SnapLine): string {
-        const str_part = Object.entries(sl.stringies)
-            .map(([k, v]) => `${k}:${v}`).join('  ')
-        const obj_part = obj_text(sl)
-        return `${ind(sl.d)}${obj_part ? obj_part + '  ' : ''}${str_part}`
+    // split a snap line into its two display parts
+    function line_parts(sl: NonNullable<SnapLine>): { indent: string, obj: string, str: string } {
+        return {
+            indent: ind(sl.d),
+            obj:    obj_text(sl),
+            str:    Object.entries(sl.stringies).map(([k, v]) => `${k}:${v}`).join('  '),
+        }
+    }
+    // for pasting: full line as plain text
+    function line_text(sl: NonNullable<SnapLine>): string {
+        const { indent, obj, str } = line_parts(sl)
+        return `${indent}${obj ? obj + '  ' : ''}${str}`
     }
 
     // objecties: { ref?: {k:str}, mung?: string[] }
@@ -181,22 +168,18 @@
                 {#if show_diff}
                     <!-- ── diff columns ─────────────────────────────────── -->
                     <div class="sr-diff">
-
                         <div class="sr-dcol">
                             <div class="sr-dlabel got">got</div>
-                            <pre class="sr-pre">{#each got_lines as sl, i}{@const tag = diff?.[i] ?? 'same'}<span class="sr-line {tag}">{line_text(sl)}&#10;</span>{/each}</pre>
+                            <pre class="sr-pre">{#each got_lines as sl, i}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
                         </div>
-
                         <div class="sr-dcol">
                             <div class="sr-dlabel exp">exp</div>
-                            <pre class="sr-pre">{#each exp_lines as sl, i}{@const tag = diff?.[i] ?? 'same'}<span class="sr-line {tag}">{line_text(sl)}&#10;</span>{/each}</pre>
+                            <pre class="sr-pre">{#each exp_lines as sl, i}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
                         </div>
-
                     </div>
-
                 {:else}
                     <!-- ── single snap tree (new mode / ok step) ────────── -->
-                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl}<span class="sr-line">{line_text(sl)}&#10;</span>{/each}</pre>
+                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl}{@render snap_line(sl, 'same')}{/each}</pre>
                 {/if}
 
             </div>
@@ -204,6 +187,10 @@
 
     {/if}
 </div>
+
+{#snippet snap_line(sl: NonNullable<SnapLine>, tag: string)}
+    {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}  </span>{/if}<span class="sr-str">{p.str}</span>&#10;</span>
+{/snippet}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <style>
@@ -344,6 +331,11 @@
 .sr-line.changed { background: #1e1600; border-left-color: #a80; }
 .sr-line.new     { background: #001a10; border-left-color: #4a9; }
 .sr-line.gone    { background: #1a0000; border-left-color: #c55; opacity: 0.6; }
+/* objecties hemisphere — dull light blue */
+.sr-obj { color: #7aa8c7; }
+/* indent whitespace — invisible but preserves paste layout */
+.sr-ind { white-space: pre; }
+.sr-str { color: #bbb; }
 
 /* scrollbars */
 .sr-strip::-webkit-scrollbar,
