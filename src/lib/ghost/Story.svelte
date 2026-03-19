@@ -324,30 +324,31 @@
         const wh       = w.c.wh as any
         const run_path = w.c.run_path as string | undefined
 
-        for (const run of w.o({ run: 1 }) as TheC[]) {
-            const ok_moments = (w.o({ moment: 1 }) as TheC[]).filter(m => m.sc.ok)
-            const steps: Record<number, string> = {}
-            for (const m of ok_moments) steps[m.sc.moment_n as number] = m.sc.dige as string
-            const toc_payload = { steps, total: ok_moments.length }
+        // capture what we need now, before any async gap
+        const ok_moments = (w.o({ moment: 1 }) as TheC[]).filter(m => m.sc.ok)
+        const steps: Record<number, string> = {}
+        for (const m of ok_moments) steps[m.sc.moment_n as number] = m.sc.dige as string
+        const toc_payload = { steps, total: ok_moments.length }
 
-            if (wh && run_path) {
-                ;(async () => {
-                    const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: toc_payload })
-                    this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
-                    for (const m of ok_moments) {
-                        if (!m.sc.snap) continue
-                        const snap_req = await wh.i({
-                            wh_path: run_path, wh_op: 'write_snap',
-                            wh_step: m.sc.moment_n, wh_data: m.sc.snap,
-                        })
-                        this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
-                    }
-                })()
-            } else {
-                this.stashed ??= {}
-                this.stashed[`${run.sc.run}.json`] = toc_payload
-            }
+        if (!wh || !run_path) {
+            this.stashed ??= {}
+            this.stashed[`${(w.o({ run: 1 })[0] as TheC)?.sc.run}.json`] = toc_payload
+            return
         }
+
+        this.post_do(async () => {
+            const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: toc_payload })
+            this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
+            for (const m of ok_moments) {
+                if (!m.sc.snap) continue
+                const snap_req = await wh.i({
+                    wh_path: run_path, wh_op: 'write_snap',
+                    wh_step: m.sc.moment_n, wh_data: m.sc.snap,
+                })
+                this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
+            }
+            console.log(`💾 wormhole: ${run_path} (${ok_moments.length} steps)`)
+        }, { see: 'story_save' })
     },
 
     reset(this: House) {

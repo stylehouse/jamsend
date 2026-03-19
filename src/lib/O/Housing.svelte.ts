@@ -26,7 +26,7 @@ db.version(2).stores({
 
 //#endregion
 const V: Record<string, any> = {}
-V.organise = 1  // set >0 to enable answer_calls/beliefs/organise logs
+V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
