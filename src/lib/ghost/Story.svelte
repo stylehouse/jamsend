@@ -285,7 +285,7 @@
                 const ok       = exp_dige === got_dige
                 w.i({ moment: 1, moment_n: n, dige: got_dige, ok, got_snap: snap })
 
-                if (!ok) {
+                if (!ok && !run.sc.lenient) {
                     run.c.driving     = false
                     run.sc.paused     = true
                     run.sc.failed_at  = n
@@ -295,7 +295,9 @@
                     H.main()
                     return
                 }
-                await update_status(`✓ ${this.pad(n)}`)
+                // lenient: accept the new snap as ground truth, keep going
+                if (!ok) console.log(`⚠ Story: step ${this.pad(n)} mismatch accepted (lenient)`)
+                await update_status(`${ok ? '✓' : '⚠'} ${this.pad(n)}`, ok ? 'default' : 'save')
                 schedule()
             }
         }
@@ -408,6 +410,25 @@
         wa.oai({ action: 1, role: 'reset' }, {
             label: 'Reset', icon: '🔄', cls: 'remove',
             fn: () => { this.reset() },
+        })
+        // lenient: play through all steps accepting mismatches as new ground truth.
+        // useful when you've intentionally changed behaviour and want to re-record.
+        // save() afterwards to commit the new diges.
+        const lenient = !!run.sc.lenient
+        wa.oai({ action: 1, role: 'lenient' }, {
+            label: lenient ? 'Lenient ⚠' : 'Lenient',
+            icon:  '⚠',
+            cls:   lenient ? 'save' : 'default',
+            fn: () => {
+                run.sc.lenient = !run.sc.lenient
+                // if we were stopped on a failure, resume
+                if (run.sc.lenient && run.sc.failed_at && !run.c.driving) {
+                    delete run.sc.failed_at
+                    delete run.sc.needs_snap
+                    run.sc.paused = false
+                    this.story_drive(Run, w, run)
+                }
+            },
         })
         await wa.r({ action: 1, role: 'status' }, {
             label:    `${mode} ${failed ? '✗' + this.pad(failed as number) : this.pad(step as number)}`,
