@@ -99,6 +99,13 @@
 
         const sorted_real = [...real_moments].sort((a, b) =>
             (a.sc.moment_n as number) - (b.sc.moment_n as number))
+
+        // accepted: mismatch step that has been explicitly accepted this session
+        // or was within the frontier on load — green background but still shows ✗
+        for (const m of sorted_real) {
+            m.sc.accepted = !m.sc.ok && (m.sc.moment_n as number) <= frontier
+        }
+
         const moments = [...sorted_real, ...hollow_moments]
 
         let sel = w.sc.sel ?? null
@@ -140,7 +147,7 @@
         this.story_analysis(w)
     },
 
-    // story_accept: advance frontier to n, immediately save.
+    // story_accept: advance frontier to n, close the panel, continue driving.
     // frontier is the live edge of accepted-but-not-yet-cleanly-verified change.
     // when it reaches the last known step, clear it — the toc is fully re-accepted.
     async story_accept(A, w, e) {
@@ -154,18 +161,27 @@
         const max_step     = Math.max(0, ...Object.keys(toc_steps).map(Number))
 
         if (new_frontier >= max_step) {
-            // frontier has swept to the end — the toc is fully re-accepted.
-            // clear it so the saved toc is clean (no frontier key).
+            // frontier swept to the end — toc is fully re-accepted, write clean
             run.sc.frontier = 0
             console.log(`✓ Story: frontier complete, writing clean toc`)
         } else {
             run.sc.frontier = new_frontier
         }
 
+        // clear failure state so drive continues from the next step
+        delete run.sc.failed_at
+        delete run.sc.needs_snap
+        run.sc.paused = false
+        // close the panel so the next mismatch can auto-open its diff
+        w.sc.sel = null
+
         this.story_analysis(w)
-        // accept = save: write frontier into toc immediately so a reload
-        // knows where accepted change ends and unreviewed steps begin.
+        // write frontier to toc immediately so a reload knows where we are
         this.story_save()
+
+        // restart the drive — it stopped when the mismatch was found
+        const init = this.Story_init(A, w)
+        if (init) this.story_drive(init.Run, w, run)
     },
 
 //#endregion

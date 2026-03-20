@@ -75,8 +75,7 @@
     }
 
     // ── playhead position ─────────────────────────────────────────────────
-    // The playhead (red triangle) marks the frontier edge — where accepted
-    // change ends and unreviewed steps begin.
+    // The playhead (red triangle) marks the frontier edge.
     // When stopped at a mismatch: points to that step.
     // Otherwise: points to the first hollow step (next unrun position).
     // Vanishes when there are no hollow steps and no failure.
@@ -89,7 +88,7 @@
     // ── selection + accept — sent to worker, never held as local state ────
     // story_sel / story_accept update w.sc then call story_analysis(),
     // notifying back via wa.bump_version() → debounced flush → display updates.
-    // story_accept also calls story_save() immediately.
+    // story_accept clears sel, saves, and restarts the drive.
     function pick(n: number) {
         const new_sel = display.sel === n ? null : n
         storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
@@ -129,35 +128,38 @@
 
         <!-- ── moment strip ─────────────────────────────────────────────── -->
         <!-- hollow pips show the full expected shape from toc immediately.  -->
+        <!-- accepted pips are green but still show ✗ (acknowledged change). -->
         <!-- playhead triangle sits above the frontier edge pip.             -->
         <div class="sr-strip">
             {#each display.moments as m (m.sc.moment_n)}
-                {@const n      = m.sc.moment_n as number}
-                {@const ok     = !!m.sc.ok}
-                {@const hollow = !!m.sc.hollow}
-                {@const on     = display.sel === n}
-                {@const ph     = n === playhead_n()}
+                {@const n        = m.sc.moment_n as number}
+                {@const ok       = !!m.sc.ok}
+                {@const hollow   = !!m.sc.hollow}
+                {@const accepted = !!m.sc.accepted}
+                {@const on       = display.sel === n}
+                {@const ph       = n === playhead_n()}
                 <button
                     class="sr-pip"
                     class:ok
-                    class:fail={!ok && !hollow && m.sc.dige != null}
+                    class:accepted
+                    class:fail={!ok && !hollow && !accepted && m.sc.dige != null}
                     class:hollow
                     class:on
                     class:playhead={ph}
                     onclick={() => pick(n)}
-                    title="step {n}{hollow ? ' (hollow)' : ''}  {m.sc.dige ?? ''}"
+                    title="step {n}{hollow ? ' (hollow)' : accepted ? ' (accepted)' : ''}  {m.sc.dige ?? ''}"
                 >{hollow ? '○' : ok ? '·' : '✗'}</button>
             {/each}
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
         {#if display.sel_m}
-            {@const n      = display.sel_m.sc.moment_n}
-            {@const ok     = !!display.sel_m.sc.ok}
-            {@const hollow = !!display.sel_m.sc.hollow}
-            {@const dige   = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
-            <!-- can_accept: any re-run mismatch is always acceptable.
-                 frontier only governs what gets written on save, not visibility. -->
+            {@const n        = display.sel_m.sc.moment_n}
+            {@const ok       = !!display.sel_m.sc.ok}
+            {@const hollow   = !!display.sel_m.sc.hollow}
+            {@const accepted = !!display.sel_m.sc.accepted}
+            {@const dige     = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
+            <!-- can_accept: any re-run mismatch, accepted or not, can be re-accepted -->
             {@const can_accept = !ok && !hollow}
 
             <div class="sr-panel">
@@ -168,13 +170,14 @@
                     <span class="sr-pdige">{dige}</span>
                     {#if hollow}
                         <span class="sr-phollow">hollow</span>
+                    {:else if accepted}
+                        <span class="sr-paccepted">accepted</span>
                     {:else if !ok}
                         <span class="sr-pmm">mismatch</span>
                     {/if}
                     {#if can_accept}
-                        <!-- Accept & Save: advances frontier, writes it to toc immediately.
-                             On reload the strip will be hollow beyond this point. -->
-                        <button class="sr-accept" onclick={() => accept(n)}>Accept & Save</button>
+                        <!-- Accept: advance frontier, save toc, close panel, continue drive -->
+                        <button class="sr-accept" onclick={() => accept(n)}>Accept</button>
                     {/if}
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
@@ -279,12 +282,14 @@
     padding: 0;
     transition: background 0.1s;
 }
-.sr-pip.ok     { background: #1a3a25; color: #4a9; }
-.sr-pip.fail   { background: #3a1a1a; color: #c55; }
+.sr-pip.ok       { background: #1a3a25; color: #4a9; }
+.sr-pip.fail     { background: #3a1a1a; color: #c55; }
+/* accepted: mismatch acknowledged — green background, red ✗ glyph */
+.sr-pip.accepted { background: #1a3a25; color: #c55; }
 /* hollow: toc step not yet re-run; dim outline only */
-.sr-pip.hollow { background: transparent; color: #333; border: 1px solid #2a2a2a; }
-.sr-pip.on     { outline: 1px solid #79b; outline-offset: 1px; }
-.sr-pip:hover  { background: #333; }
+.sr-pip.hollow   { background: transparent; color: #333; border: 1px solid #2a2a2a; }
+.sr-pip.on       { outline: 1px solid #79b; outline-offset: 1px; }
+.sr-pip:hover    { background: #333; }
 
 /* playhead: red downward triangle hovering above the pip.
    sits at the failed step when stopped, otherwise at the frontier edge.
@@ -313,10 +318,11 @@
     background: #161616;
     border-bottom: 1px solid #1e1e1e;
 }
-.sr-pn      { color: #79b; font-weight: 600; }
-.sr-pdige   { color: #555; font-size: 10px; }
-.sr-pmm     { color: #c55; font-size: 10px; }
-.sr-phollow { color: #444; font-size: 10px; }
+.sr-pn         { color: #79b; font-weight: 600; }
+.sr-pdige      { color: #555; font-size: 10px; }
+.sr-pmm        { color: #c55; font-size: 10px; }
+.sr-paccepted  { color: #4a9; font-size: 10px; }
+.sr-phollow    { color: #444; font-size: 10px; }
 .sr-close {
     margin-left: auto;
     background: none;
@@ -328,7 +334,7 @@
     padding: 0 2px;
 }
 .sr-close:hover { color: #aaa; }
-/* accept & save: advances frontier and writes toc immediately */
+/* accept: advance frontier, save, close panel, continue drive */
 .sr-accept {
     margin-left: auto;
     background: #1a3a25;
