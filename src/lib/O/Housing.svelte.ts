@@ -523,9 +523,6 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     answer_calls_throttle?: Function
     answer_calls() {
-        if (this.name.startsWith("Run")) {
-            console.log(`Run%todo`)
-        }
         this.answer_calls_throttle ||= throttle(() => {
             this._really_answer_calls()
         }, ANSWER_CALLS_TICK_MS)

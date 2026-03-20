@@ -1,41 +1,35 @@
-{}	{"H":"Run:LeafFarm"}
-  {}	{"A":"farm"}
-    {}	{"self":1,"est":1773900751}
-    {}	{"self":1,"round":1,"age":0}
-    {}	{"w":"farm"}
-      {}	{"self":1,"est":1773900751}
-      {}	{"self":1,"round":1,"age":0}
-      {}	{"sunshine":1,"dose":0.7477601033306698}
-      {}	{"sunny_streak":1,"count":1}
-      {}	{"poo":1,"dose":0.34}
-  {}	{"A":"plate"}
-    {}	{"self":1,"est":1773900751}
-    {}	{"self":1,"round":1,"age":0}
-    {}	{"w":"plate"}
-      {}	{"self":1,"est":1773900751}
-      {}	{"self":1,"round":1,"age":0}
-      {}	{"o_elvis":"receive_harvest"}
-      {}	{"o_elvis":"receive_protein"}
-      {}	{"o_elvis":"deliver_enzyme"}
-  {}	{"A":"enzymeco"}
-    {}	{"self":1,"est":1773900751}
-    {}	{"self":1,"round":1,"age":0}
-    {}	{"w":"enzymeco"}
-      {}	{"self":1,"est":1773900751}
-      {}	{"self":1,"round":1,"age":0}
-      {}	{"o_elvis":"request_enzyme"}
-  {}	{"mo":"main","interval":3.6,"id":273}
-  {}	{"Se":"workrepo"}
-    {}	{"openity":1,"v":-11}
-    {}	{"housed":3,"A":"farm"}
-      {}	{"openity":1,"v":-11}
-      {}	{"housed":3,"w":"farm"}
-        {}	{"openity":1,"v":-11}
-    {}	{"housed":3,"A":"plate"}
-      {}	{"openity":1,"v":-11}
-      {}	{"housed":3,"w":"plate"}
-        {}	{"openity":1,"v":-11}
-    {}	{"housed":3,"A":"enzymeco"}
-      {}	{"openity":1,"v":-11}
-      {}	{"housed":3,"w":"enzymeco"}
-        {}	{"openity":1,"v":-11}
+	{"H":"LeafFarm","Run":1}
+  	{"A":"farm"}
+    {"mung":["age"]}	{"self":1,"round":1}
+    	{"w":"farm"}
+      {"mung":["age"]}	{"self":1,"round":1}
+      	{"sunshine":1,"dose":0.7477601033306698}
+      	{"sunny_streak":1,"count":1}
+      	{"poo":1,"dose":0.34}
+  	{"A":"plate"}
+    {"mung":["age"]}	{"self":1,"round":1}
+    	{"w":"plate"}
+      {"mung":["age"]}	{"self":1,"round":1}
+      	{"o_elvis":"receive_harvest"}
+      	{"o_elvis":"receive_protein"}
+      	{"o_elvis":"deliver_enzyme"}
+  	{"A":"enzymeco"}
+    {"mung":["age"]}	{"self":1,"round":1}
+    	{"w":"enzymeco"}
+      {"mung":["age"]}	{"self":1,"round":1}
+      	{"o_elvis":"request_enzyme"}
+  	{"mo":"main","interval":3.6,"id":285}
+  	{"Se":"workrepo"}
+    	{"openity":1,"v":-11}
+    	{"housed":3,"A":"farm"}
+      	{"openity":1,"v":-11}
+      	{"housed":3,"w":"farm"}
+        	{"openity":1,"v":-11}
+    	{"housed":3,"A":"plate"}
+      	{"openity":1,"v":-11}
+      	{"housed":3,"w":"plate"}
+        	{"openity":1,"v":-11}
+    	{"housed":3,"A":"enzymeco"}
+      	{"openity":1,"v":-11}
+      	{"housed":3,"w":"enzymeco"}
+        	{"openity":1,"v":-11}

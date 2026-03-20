@@ -6,7 +6,7 @@
 
     // ── navigate to H:Story ───────────────────────────────────────────────
     // Null-guard: only update when a real reference is found, so mid-replace()
-    // transient empties (H.o() returns [] while X is swapped) leave storyH alone.
+    // transient empties leave storyH alone.
     let storyH: House | undefined = $state()
 
     $effect(() => {
@@ -16,18 +16,21 @@
     })
 
     // ── display state — fed from storyH.ave ───────────────────────────────
-    // H:Story maintains a %watched:ave particle; story_analysis() writes display
-    // data into %story_analysis.sc.* (a child of %watched:ave) and bumps the
-    // watched particle's version.  The debounced flush in start_watched_C_effect
-    // then reassigns storyH.ave ($state), which re-runs this $effect.
-    // Object.assign(display, an.sc) copies all display keys in one shot —
-    // the JS answer to "destructure many keys at once into $state variables".
+    // H:Story maintains %watched:ave; story_analysis() writes display data into
+    // %story_analysis.sc.* and bumps the watched particle.  The debounced flush
+    // in start_watched_C_effect reassigns storyH.ave ($state), re-running this
+    // $effect.  Object.assign(display, an.sc) copies all keys in one shot.
+    //
+    // moments contains both real moments (processed this session) and synthetic
+    // hollow ones (from toc, not yet reached).  The frontier field marks how far
+    // the user has explicitly accepted mismatches on a redo session.
     type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
     type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
     let display = $state({
         run:       null  as TheC | null,
         moments:   []    as TheC[],
+        frontier:  0     as number,
         sel:       null  as number | null,
         sel_m:     null  as TheC | null,
         got_lines: []    as SnapLine[],
@@ -37,7 +40,6 @@
     })
 
     $effect(() => {
-        // storyH.ave is $state — reassigned by watch_c flush when story_analysis runs
         const an = storyH?.ave.find((n: TheC) => n.sc.story_analysis)
         if (an) Object.assign(display, an.sc)
     })
@@ -70,15 +72,29 @@
         return parts.join('  ')
     }
 
-    // ── selection — sent to worker, never held as local state ─────────────
-    // story_sel handler in Story.svelte updates w.sc.sel → story_analysis()
-    // → wa.bump_version() → debounced flush → storyH.ave reassigned → display updates.
+    // ── selection + accept — sent to worker, never held as local state ────
+    // story_sel / story_accept handlers update w.sc then call story_analysis(),
+    // which notifies back via wa.bump_version() → debounced flush → display updates.
     function pick(n: number) {
         const new_sel = display.sel === n ? null : n
         storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
     }
     function close_panel() {
         storyH?.elvisto('Story/Story', 'story_sel', { sel: null })
+    }
+    function accept(n: number) {
+        storyH?.elvisto('Story/Story', 'story_accept', { accept_n: n })
+    }
+
+    // a pip is at the frontier edge if it's the first hollow step (the cursor position)
+    function is_frontier_edge(m: TheC): boolean {
+        if (!m.sc.hollow) return false
+        const n = m.sc.moment_n as number
+        // first hollow step beyond the current frontier
+        const hollows = display.moments.filter(x => x.sc.hollow)
+            .map(x => x.sc.moment_n as number)
+            .sort((a, b) => a - b)
+        return hollows[0] === n
     }
 </script>
 
@@ -108,27 +124,36 @@
         </div>
 
         <!-- ── moment strip ─────────────────────────────────────────────── -->
+        <!-- hollow pips (from toc, not yet re-run) show the full expected    -->
+        <!-- shape immediately.  frontier edge pip has a cursor indicator.    -->
         <div class="sr-strip">
             {#each display.moments as m (m.sc.moment_n)}
-                {@const n  = m.sc.moment_n as number}
-                {@const ok = !!m.sc.ok}
-                {@const on = display.sel === n}
+                {@const n       = m.sc.moment_n as number}
+                {@const ok      = !!m.sc.ok}
+                {@const hollow  = !!m.sc.hollow}
+                {@const on      = display.sel === n}
+                {@const fedge   = is_frontier_edge(m)}
                 <button
                     class="sr-pip"
                     class:ok
-                    class:fail={!ok && m.sc.dige != null}
+                    class:fail={!ok && !hollow && m.sc.dige != null}
+                    class:hollow
+                    class:frontier-edge={fedge}
                     class:on
                     onclick={() => pick(n)}
-                    title="step {n}  {m.sc.dige}"
-                >{ok ? '·' : '✗'}</button>
+                    title="step {n}{hollow ? ' (hollow)' : ''}  {m.sc.dige ?? ''}"
+                >{hollow ? '○' : ok ? '·' : '✗'}</button>
             {/each}
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
         {#if display.sel_m}
-            {@const n    = display.sel_m.sc.moment_n}
-            {@const ok   = !!display.sel_m.sc.ok}
-            {@const dige = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
+            {@const n      = display.sel_m.sc.moment_n}
+            {@const ok     = !!display.sel_m.sc.ok}
+            {@const hollow = !!display.sel_m.sc.hollow}
+            {@const dige   = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
+            <!-- a mismatch step can be accepted if it has been re-run (not hollow) -->
+            {@const can_accept = !ok && !hollow && n > display.frontier}
 
             <div class="sr-panel">
 
@@ -136,11 +161,24 @@
                 <div class="sr-phdr">
                     <span class="sr-pn">step {String(n).padStart(3,'0')}</span>
                     <span class="sr-pdige">{dige}</span>
-                    {#if !ok}<span class="sr-pmm">mismatch</span>{/if}
+                    {#if hollow}
+                        <span class="sr-phollow">hollow</span>
+                    {:else if !ok}
+                        <span class="sr-pmm">mismatch</span>
+                    {/if}
+                    {#if can_accept}
+                        <!-- accept: advance frontier to this step, writing new dige on next save -->
+                        <button class="sr-accept" onclick={() => accept(n)}>Accept ✓</button>
+                    {/if}
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
 
-                {#if display.show_diff}
+                {#if hollow}
+                    <div class="sr-hollow-body">
+                        step {String(n).padStart(3,'0')} not yet re-run this session
+                    </div>
+
+                {:else if display.show_diff}
                     <!-- ── diff: two columns in one scroll container ─────── -->
                     <!-- sr-diff-hdr: sticky labels above the scrollable body -->
                     <!-- sr-diff-scroll: single overflow:auto grid — both     -->
@@ -234,10 +272,14 @@
     padding: 0;
     transition: background 0.1s;
 }
-.sr-pip.ok      { background: #1a3a25; color: #4a9; }
-.sr-pip.fail    { background: #3a1a1a; color: #c55; }
-.sr-pip.on      { outline: 1px solid #79b; outline-offset: 1px; }
-.sr-pip:hover   { background: #333; }
+.sr-pip.ok            { background: #1a3a25; color: #4a9; }
+.sr-pip.fail          { background: #3a1a1a; color: #c55; }
+/* hollow: toc step not yet re-run; dim outline only */
+.sr-pip.hollow        { background: transparent; color: #333; border: 1px solid #2a2a2a; }
+/* frontier-edge: first hollow step — the cursor between done and pending */
+.sr-pip.frontier-edge { border-color: #555; color: #555; }
+.sr-pip.on            { outline: 1px solid #79b; outline-offset: 1px; }
+.sr-pip:hover         { background: #333; }
 
 /* snap panel */
 .sr-panel { border-top: 1px solid #222; }
@@ -249,9 +291,10 @@
     background: #161616;
     border-bottom: 1px solid #1e1e1e;
 }
-.sr-pn    { color: #79b; font-weight: 600; }
-.sr-pdige { color: #555; font-size: 10px; }
-.sr-pmm   { color: #c55; font-size: 10px; }
+.sr-pn      { color: #79b; font-weight: 600; }
+.sr-pdige   { color: #555; font-size: 10px; }
+.sr-pmm     { color: #c55; font-size: 10px; }
+.sr-phollow { color: #444; font-size: 10px; }
 .sr-close {
     margin-left: auto;
     background: none;
@@ -263,6 +306,26 @@
     padding: 0 2px;
 }
 .sr-close:hover { color: #aaa; }
+/* accept: advances frontier, written to toc on next save */
+.sr-accept {
+    margin-left: auto;
+    background: #1a3a25;
+    border: 1px solid #2a5a35;
+    border-radius: 2px;
+    color: #4a9;
+    cursor: pointer;
+    font-size: 10px;
+    font-family: inherit;
+    padding: 1px 6px;
+}
+.sr-accept:hover { background: #2a4a35; }
+
+/* hollow body placeholder */
+.sr-hollow-body {
+    padding: 12px;
+    color: #444;
+    font-size: 10px;
+}
 
 /* diff: unified scroll ────────────────────────────────────────────────── */
 .sr-diff-hdr {

@@ -74,43 +74,60 @@
 
     // story_analysis: materialise all display data into %story_analysis.sc.*
     // sc = meaningful named data; c is for machine-internal incidentals only.
-    // wa.bump_version() triggers the debounced watch_c flush:
-    //   H.ave = wa.o({}) → StoryRun's $effect re-runs → Object.assign(display, an.sc)
+    // wa.bump_version() triggers the debounced watch_c flush →
+    //   H.ave = wa.o({}) → StoryRun's $effect → Object.assign(display, an.sc)
     story_analysis(w) {
-        const storyH  = this as House
-        const run     = w.o({ run: 1 })[0]
-        const moments = w.o({ moment: 1 })
-        let   sel     = w.sc.sel ?? null
+        const storyH    = this as House
+        const run       = w.o({ run: 1 })[0]
+        const toc_steps: Record<number, string> = (w.c.toc as any)?.steps ?? {}
+        // frontier: watermark of accepted steps in a redo session.
+        // steps <= frontier write new diges on save; beyond use original toc.
+        const frontier  = (run?.sc.frontier as number) ?? 0
 
+        // real moments: actually processed this session
+        const real_moments = w.o({ moment: 1 }) as TheC[]
+        const real_ns      = new Set(real_moments.map(m => m.sc.moment_n as number))
+
+        // hollow moments: toc steps not yet reached — synthesized so the strip
+        // shows the full expected shape immediately, not just what we've done so far
+        const hollow_moments: TheC[] = Object.keys(toc_steps)
+            .map(Number)
+            .filter(n => !real_ns.has(n))
+            .sort((a, b) => a - b)
+            .map(n => new TheC({ c: {}, sc: { moment_n: n, hollow: true, dige: toc_steps[n] } }))
+
+        const sorted_real = [...real_moments].sort((a, b) =>
+            (a.sc.moment_n as number) - (b.sc.moment_n as number))
+        const moments = [...sorted_real, ...hollow_moments]
+
+        let sel = w.sc.sel ?? null
         // auto-jump to failed step when nothing is selected
         const failed_at = run?.sc.failed_at
-        if (failed_at != null && sel == null) {
-            sel = w.sc.sel = failed_at
-        }
+        if (failed_at != null && sel == null) sel = w.sc.sel = failed_at as number
 
-        const sel_m     = sel != null
+        const sel_m = sel != null
             ? moments.find(m => m.sc.moment_n === sel) ?? null
             : null
-        const got_snap  = (sel_m?.sc.got_snap ?? sel_m?.sc.snap ?? '')
-        const exp_snap  = (sel_m?.sc.exp_snap ?? '')
+
+        // hollow steps have no snap to show
+        const got_snap  = sel_m?.sc.hollow ? '' : (sel_m?.sc.got_snap ?? sel_m?.sc.snap ?? '') as string
+        const exp_snap  = sel_m?.sc.hollow ? '' : (sel_m?.sc.exp_snap ?? '') as string
         const got_lines = this.parse_snap(got_snap)
         const exp_lines = this.parse_snap(exp_snap)
         const show_diff = exp_lines.length > 0
         const diff      = show_diff ? this.make_diff(got_lines, exp_lines) : null
 
-        // %watched:ave was enrolled in Story() — wa.o({}) becomes storyH.ave
         const wa = storyH.oai({ watched: 'ave' })
         const an = wa.oai({ story_analysis: 1 })
         an.sc.run       = run
         an.sc.moments   = moments
+        an.sc.frontier  = frontier
         an.sc.sel       = sel
         an.sc.sel_m     = sel_m
         an.sc.got_lines = got_lines
         an.sc.exp_lines = exp_lines
         an.sc.show_diff = show_diff
         an.sc.diff      = diff
-        // bump wa, not an — watch_c watches the %watched:ave particle,
-        // whose version increments when its children change or we manually bump it
         wa.bump_version()
     },
 
@@ -119,6 +136,18 @@
     // it falls through to direct H.* method lookup.
     async story_sel(A, w, e) {
         w.sc.sel = e?.sc.sel ?? null
+        this.story_analysis(w)
+    },
+
+    // story_accept: advance frontier to n, marking that step's new dige as accepted.
+    // Save writes got_dige for steps <= frontier, original toc dige beyond.
+    async story_accept(A, w, e) {
+        const run = w.o({ run: 1 })[0]
+        debugger
+        if (!run) return
+        const n = e?.sc.accept_n as number | undefined
+        if (n == null) return
+        run.sc.frontier = Math.max((run.sc.frontier as number) ?? 0, n)
         this.story_analysis(w)
     },
 
@@ -505,32 +534,49 @@
 
         const wh       = w.c.wh as any
         const run_path = w.c.run_path as string | undefined
+        const run      = w.o({ run: 1 })[0]
+        const frontier = (run?.sc.frontier as number) ?? 0
+        const toc_steps: Record<number, string> = { ...((w.c.toc as any)?.steps ?? {}) }
 
-        // capture what we need now, before any async gap
-        const ok_moments = (w.o({ moment: 1 }) as TheC[]).filter(m => m.sc.ok)
-        const steps: Record<number, string> = {}
-        for (const m of ok_moments) steps[m.sc.moment_n as number] = m.sc.dige as string
-        const toc_payload = { steps, total: ok_moments.length }
+        // merge strategy: start from existing toc, then overlay with this session's data.
+        // ok moments always win (they matched or were accepted).
+        // mismatch moments win only up to the frontier (user explicitly accepted them).
+        // steps beyond frontier keep their original toc dige, preserving what we haven't reviewed.
+        const all_moments = w.o({ moment: 1 }) as TheC[]
+        if (!all_moments.length && !Object.keys(toc_steps).length) return   // nothing at all
+
+        const merged: Record<number, string> = { ...toc_steps }
+        for (const m of all_moments) {
+            const n  = m.sc.moment_n as number
+            const ok = !!m.sc.ok
+            if (ok || n <= frontier) {
+                merged[n] = m.sc.dige as string
+            }
+        }
+        const toc_payload = { steps: merged, total: Object.keys(merged).length }
 
         if (!wh || !run_path) {
             // no wormhole yet — park in stashed as a fallback
             this.stashed ??= {}
-            this.stashed[`${(w.o({ run: 1 })[0] as TheC)?.sc.run}.json`] = toc_payload
+            this.stashed[`${run?.sc.run}.json`] = toc_payload
             return
         }
 
         this.post_do(async () => {
             const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: toc_payload })
             this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
-            for (const m of ok_moments) {
-                if (!m.sc.snap) continue
+            // save snaps for ok moments and frontier-accepted mismatches
+            for (const m of all_moments) {
+                const snap = (m.sc.snap ?? m.sc.got_snap) as string | undefined
+                if (!snap) continue
+                if (!m.sc.ok && (m.sc.moment_n as number) > frontier) continue
                 const snap_req = await wh.i({
                     wh_path: run_path, wh_op: 'write_snap',
-                    wh_step: m.sc.moment_n, wh_data: m.sc.snap,
+                    wh_step: m.sc.moment_n, wh_data: snap,
                 })
                 this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
             }
-            console.log(`💾 wormhole: ${run_path} (${ok_moments.length} steps)`)
+            console.log(`💾 wormhole: ${run_path} (${Object.keys(merged).length} steps, frontier:${frontier})`)
         }, { see: 'story_save' })
     },
 
@@ -586,9 +632,8 @@
             },
         })
         wa.oai({ action: 1, role: 'save' }, {
-            // save works in any state including failed/mismatch —
-            // this is how you accept a changed run: hit save while !ok,
-            // the got_diges become the new ground truth in the toc.
+            // save works in any state — merges new diges with existing toc,
+            // respecting the frontier for which mismatches have been accepted.
             label: 'Save', icon: '💾', cls: 'save',
             fn: () => { this.story_save() },
         })
