@@ -80,8 +80,9 @@
         const storyH    = this as House
         const run       = w.o({ run: 1 })[0]
         const toc_steps: Record<number, string> = (w.c.toc as any)?.steps ?? {}
-        // frontier: watermark of accepted steps in a redo session.
-        // steps <= frontier write new diges on save; beyond use original toc.
+        // frontier: watermark of accepted steps in a redo session, persisted in toc.
+        // absent (0) means either a clean new run or fully re-accepted.
+        // steps <= frontier write new diges on save; beyond keep original toc dige.
         const frontier  = (run?.sc.frontier as number) ?? 0
 
         // real moments: actually processed this session
@@ -139,16 +140,32 @@
         this.story_analysis(w)
     },
 
-    // story_accept: advance frontier to n, marking that step's new dige as accepted.
-    // Save writes got_dige for steps <= frontier, original toc dige beyond.
+    // story_accept: advance frontier to n, immediately save.
+    // frontier is the live edge of accepted-but-not-yet-cleanly-verified change.
+    // when it reaches the last known step, clear it — the toc is fully re-accepted.
     async story_accept(A, w, e) {
         const run = w.o({ run: 1 })[0]
-        debugger
         if (!run) return
         const n = e?.sc.accept_n as number | undefined
         if (n == null) return
-        run.sc.frontier = Math.max((run.sc.frontier as number) ?? 0, n)
+
+        const new_frontier = Math.max((run.sc.frontier as number) ?? 0, n)
+        const toc_steps    = (w.c.toc as any)?.steps ?? {}
+        const max_step     = Math.max(0, ...Object.keys(toc_steps).map(Number))
+
+        if (new_frontier >= max_step) {
+            // frontier has swept to the end — the toc is fully re-accepted.
+            // clear it so the saved toc is clean (no frontier key).
+            run.sc.frontier = 0
+            console.log(`✓ Story: frontier complete, writing clean toc`)
+        } else {
+            run.sc.frontier = new_frontier
+        }
+
         this.story_analysis(w)
+        // accept = save: write frontier into toc immediately so a reload
+        // knows where accepted change ends and unreviewed steps begin.
+        this.story_save()
     },
 
 //#endregion
@@ -170,6 +187,16 @@
 
     story_matching: [
         {
+            matching_any: [{sc:{H:1}}],
+            means: {
+                thence_matching: [
+                    // reset_interval marker: munge the timer id
+                    { matching_any: [{sc_only:{mo:1, interval:1, id:1}}],
+                      means: { munging: [{sc:{id:1}, type:'timer_id'}] } },
+                ]
+            }
+        },
+        {
             matching_any: [{sc:{A:1}}, {sc:{w:1}}],
             means: {
                 thence_matching: [
@@ -179,9 +206,6 @@
                     // {self:1, round:..., age:...} — keep, but munge the volatile age
                     { matching_any: [{sc_only:{self:1, round:1, age:1}}],
                       means: { munging: [{sc:{age:1}, type:'time'}] } },
-                    // reset_interval marker: munge the timer id
-                    { matching_any: [{sc_only:{mo:1, interval:1, id:1}}],
-                      means: { munging: [{sc:{id:1}, type:'timer_id'}] } },
                     // wasLast record: munge at
                     { matching_any: [{sc_only:{wasLast:1, at:1}}],
                       means: { munging: [{sc:{at:1}, type:'time'}] } },
@@ -190,7 +214,7 @@
                       means: { munging: [{sc:{at:1}, type:'time'}] } },
                 ]
             }
-        }
+        },
     ] as Array<any>,
 
     // does n match a rule entry? supports {sc} (wildcard) and {sc_only} (exact keyset)
@@ -359,6 +383,9 @@
 
             const toc        = toc_req.sc.reply?.toc ?? {}
             run.sc.mode      = Object.keys(toc.steps ?? {}).length ? 'check' : 'new'
+            // restore frontier from toc — tells us where accepted change ends
+            // and unreviewed steps begin across sessions
+            run.sc.frontier  = (toc.frontier as number) ?? 0
             w.c.toc          = toc
             w.c.run_path     = run_path
             w.c.wh           = wh
@@ -543,7 +570,7 @@
         // mismatch moments win only up to the frontier (user explicitly accepted them).
         // steps beyond frontier keep their original toc dige, preserving what we haven't reviewed.
         const all_moments = w.o({ moment: 1 }) as TheC[]
-        if (!all_moments.length && !Object.keys(toc_steps).length) return   // nothing at all
+        if (!all_moments.length && !Object.keys(toc_steps).length) return
 
         const merged: Record<number, string> = { ...toc_steps }
         for (const m of all_moments) {
@@ -553,7 +580,12 @@
                 merged[n] = m.sc.dige as string
             }
         }
-        const toc_payload = { steps: merged, total: Object.keys(merged).length }
+
+        const max_step = Math.max(0, ...Object.keys(merged).map(Number))
+        // frontier=0 means either never set, or fully swept — omit from toc so it's clean.
+        // frontier>0 means accepted-but-unverified change exists; write it so reloads know.
+        const toc_payload: any = { steps: merged, total: Object.keys(merged).length }
+        if (frontier > 0 && frontier < max_step) toc_payload.frontier = frontier
 
         if (!wh || !run_path) {
             // no wormhole yet — park in stashed as a fallback
@@ -576,7 +608,8 @@
                 })
                 this.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
             }
-            console.log(`💾 wormhole: ${run_path} (${Object.keys(merged).length} steps, frontier:${frontier})`)
+            const tag = frontier > 0 ? ` frontier:${frontier}` : ' clean'
+            console.log(`💾 wormhole: ${run_path} (${Object.keys(merged).length} steps${tag})`)
         }, { see: 'story_save' })
     },
 

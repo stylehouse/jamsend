@@ -22,8 +22,10 @@
     // $effect.  Object.assign(display, an.sc) copies all keys in one shot.
     //
     // moments contains both real moments (processed this session) and synthetic
-    // hollow ones (from toc, not yet reached).  The frontier field marks how far
-    // the user has explicitly accepted mismatches on a redo session.
+    // hollow ones (from toc, not yet reached).
+    //
+    // frontier: watermark stored in toc.json of accepted-but-not-yet-cleanly-
+    // verified change.  Absent (0) means a fresh run or fully re-accepted.
     type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
     type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
@@ -72,9 +74,22 @@
         return parts.join('  ')
     }
 
+    // ── playhead position ─────────────────────────────────────────────────
+    // The playhead (red triangle) marks the frontier edge — where accepted
+    // change ends and unreviewed steps begin.
+    // When stopped at a mismatch: points to that step.
+    // Otherwise: points to the first hollow step (next unrun position).
+    // Vanishes when there are no hollow steps and no failure.
+    function playhead_n(): number | null {
+        if (run_failed != null) return run_failed
+        const first_hollow = display.moments.find(m => m.sc.hollow)
+        return first_hollow ? (first_hollow.sc.moment_n as number) : null
+    }
+
     // ── selection + accept — sent to worker, never held as local state ────
-    // story_sel / story_accept handlers update w.sc then call story_analysis(),
-    // which notifies back via wa.bump_version() → debounced flush → display updates.
+    // story_sel / story_accept update w.sc then call story_analysis(),
+    // notifying back via wa.bump_version() → debounced flush → display updates.
+    // story_accept also calls story_save() immediately.
     function pick(n: number) {
         const new_sel = display.sel === n ? null : n
         storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
@@ -84,17 +99,6 @@
     }
     function accept(n: number) {
         storyH?.elvisto('Story/Story', 'story_accept', { accept_n: n })
-    }
-
-    // a pip is at the frontier edge if it's the first hollow step (the cursor position)
-    function is_frontier_edge(m: TheC): boolean {
-        if (!m.sc.hollow) return false
-        const n = m.sc.moment_n as number
-        // first hollow step beyond the current frontier
-        const hollows = display.moments.filter(x => x.sc.hollow)
-            .map(x => x.sc.moment_n as number)
-            .sort((a, b) => a - b)
-        return hollows[0] === n
     }
 </script>
 
@@ -124,22 +128,22 @@
         </div>
 
         <!-- ── moment strip ─────────────────────────────────────────────── -->
-        <!-- hollow pips (from toc, not yet re-run) show the full expected    -->
-        <!-- shape immediately.  frontier edge pip has a cursor indicator.    -->
+        <!-- hollow pips show the full expected shape from toc immediately.  -->
+        <!-- playhead triangle sits above the frontier edge pip.             -->
         <div class="sr-strip">
             {#each display.moments as m (m.sc.moment_n)}
-                {@const n       = m.sc.moment_n as number}
-                {@const ok      = !!m.sc.ok}
-                {@const hollow  = !!m.sc.hollow}
-                {@const on      = display.sel === n}
-                {@const fedge   = is_frontier_edge(m)}
+                {@const n      = m.sc.moment_n as number}
+                {@const ok     = !!m.sc.ok}
+                {@const hollow = !!m.sc.hollow}
+                {@const on     = display.sel === n}
+                {@const ph     = n === playhead_n()}
                 <button
                     class="sr-pip"
                     class:ok
                     class:fail={!ok && !hollow && m.sc.dige != null}
                     class:hollow
-                    class:frontier-edge={fedge}
                     class:on
+                    class:playhead={ph}
                     onclick={() => pick(n)}
                     title="step {n}{hollow ? ' (hollow)' : ''}  {m.sc.dige ?? ''}"
                 >{hollow ? '○' : ok ? '·' : '✗'}</button>
@@ -152,8 +156,9 @@
             {@const ok     = !!display.sel_m.sc.ok}
             {@const hollow = !!display.sel_m.sc.hollow}
             {@const dige   = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
-            <!-- a mismatch step can be accepted if it has been re-run (not hollow) -->
-            {@const can_accept = !ok && !hollow && n > display.frontier}
+            <!-- can_accept: any re-run mismatch is always acceptable.
+                 frontier only governs what gets written on save, not visibility. -->
+            {@const can_accept = !ok && !hollow}
 
             <div class="sr-panel">
 
@@ -167,8 +172,9 @@
                         <span class="sr-pmm">mismatch</span>
                     {/if}
                     {#if can_accept}
-                        <!-- accept: advance frontier to this step, writing new dige on next save -->
-                        <button class="sr-accept" onclick={() => accept(n)}>Accept ✓</button>
+                        <!-- Accept & Save: advances frontier, writes it to toc immediately.
+                             On reload the strip will be hollow beyond this point. -->
+                        <button class="sr-accept" onclick={() => accept(n)}>Accept & Save</button>
                     {/if}
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
@@ -247,18 +253,19 @@
 .sr-bar.is-new   .sr-mode { color: #6a9; }
 .sr-bar.is-check .sr-mode { color: #79b; }
 
-/* moment strip */
+/* moment strip — padding-top makes room for the playhead triangle */
 .sr-strip {
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
-    padding: 6px 8px;
+    padding: 10px 8px 6px;
     background: #0e0e0e;
     border-bottom: 1px solid #1e1e1e;
-    max-height: 72px;
+    max-height: 80px;
     overflow-y: auto;
 }
 .sr-pip {
+    position: relative;
     width: 14px;
     height: 14px;
     border: none;
@@ -272,14 +279,29 @@
     padding: 0;
     transition: background 0.1s;
 }
-.sr-pip.ok            { background: #1a3a25; color: #4a9; }
-.sr-pip.fail          { background: #3a1a1a; color: #c55; }
+.sr-pip.ok     { background: #1a3a25; color: #4a9; }
+.sr-pip.fail   { background: #3a1a1a; color: #c55; }
 /* hollow: toc step not yet re-run; dim outline only */
-.sr-pip.hollow        { background: transparent; color: #333; border: 1px solid #2a2a2a; }
-/* frontier-edge: first hollow step — the cursor between done and pending */
-.sr-pip.frontier-edge { border-color: #555; color: #555; }
-.sr-pip.on            { outline: 1px solid #79b; outline-offset: 1px; }
-.sr-pip:hover         { background: #333; }
+.sr-pip.hollow { background: transparent; color: #333; border: 1px solid #2a2a2a; }
+.sr-pip.on     { outline: 1px solid #79b; outline-offset: 1px; }
+.sr-pip:hover  { background: #333; }
+
+/* playhead: red downward triangle hovering above the pip.
+   sits at the failed step when stopped, otherwise at the frontier edge.
+   vanishes when there are no hollow steps and no failure. */
+.sr-pip.playhead::before {
+    content: '';
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left:  4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top:   6px solid #c55;
+    pointer-events: none;
+}
 
 /* snap panel */
 .sr-panel { border-top: 1px solid #222; }
@@ -306,7 +328,7 @@
     padding: 0 2px;
 }
 .sr-close:hover { color: #aaa; }
-/* accept: advances frontier, written to toc on next save */
+/* accept & save: advances frontier and writes toc immediately */
 .sr-accept {
     margin-left: auto;
     background: #1a3a25;
