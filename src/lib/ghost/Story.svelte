@@ -100,25 +100,31 @@
 
 //#region The helpers — canonical disk-backed toc tree
 
-    The_of(w: TheC): TheC {
-        // get-or-create the canonical toc C-tree rooted at w.c.The.
-        // separate from w's own children so it is never walked by story_snap.
-        if (!w.c.The) w.c.The = new TheC({ c: {}, sc: { The: 1 } })
-        return w.c.The as TheC
+    step_c(container: TheC, n: number, key: string): TheC {
+        // Universal find-or-create for any step-keyed particle.
+        // Works for both The/{step:n} and This/{Step:n} (and any future container).
+        // Always bumps container version on creation so watchers see the new particle.
+        //
+        //   step_c(w.c.The,  n, 'step')  — The's canonical record
+        //   step_c(w.c.This, n, 'Step')  — This's live session record
+        //
+        // exactly() stringifies n → "n"; Stuff coerces it back to a number in o_kv,
+        // so this correctly finds {step:2} regardless of whether n is number or string.
+        const sc: Record<string,any> = {}
+        sc[key] = n
+        const existing = container.o(exactly(sc))[0] as TheC | undefined
+        if (existing) return existing
+        const c = container.i(sc)
+        container.bump_version()
+        return c
     },
 
     The_step(w: TheC, n: number): TheC {
-        // find-or-create {step:n} in The.
-        // exactly({step:n}) stringifies n to "n"; Stuff.o_kv now coerces "n" back to
-        // a number before the index lookup, so this correctly finds {step:2} etc.
-        const The = this.The_of(w)
-        return The.o(exactly({ step: n }))[0] as TheC ?? The.i({ step: n })
+        return this.step_c(w.c.The as TheC, n, 'step')
     },
 
     The_step_dige(w: TheC, n: number): string | undefined {
-        // expected dige for step n from The; undefined if the step is unseen.
-        return (this.The_of(w).o(exactly({ step: n }))[0] as TheC | undefined)
-            ?.sc.dige as string | undefined
+        return (w.c.The as TheC | undefined)?.o(exactly({ step: n }))[0]?.sc.dige as string | undefined
     },
 
     The_frontier(w: TheC): number {
@@ -126,7 +132,7 @@
         // o({note:1,frontier:1}) — both values are wildcard 1, matching any particle
         // that has both "note" and "frontier" keys.  That is exactly what we want.
         // returns 0 when absent (clean / no unreviewed mismatch).
-        for (const s of this.The_of(w).o({ step: 1 }) as TheC[]) {
+        for (const s of (w.c.The as TheC).o({ step: 1 }) as TheC[]) {
             if ((s.o({ note: 1, frontier: 1 }) as TheC[]).length > 0) {
                 return s.sc.step as number
             }
@@ -139,7 +145,7 @@
         // "thing.drop(thing)" — the particle drops itself; the container checks
         // liveness before returning particles, so the old reference is immediately
         // invalidated and will not appear in future queries.
-        const The = this.The_of(w)
+        const The = w.c.The as TheC
         for (const s of The.o({ step: 1 }) as TheC[]) {
             for (const fr of s.o({ note: 1, frontier: 1 }) as TheC[]) {
                 fr.drop(fr)
@@ -155,14 +161,10 @@
 //#region This helpers — live session step particles and colour swatches
 
     i_step(w: TheC, n: number): TheC {
-        // find-or-create the live This/{Step:n} particle inside stepsC.
-        // stepsC is cached on w.c; w.c is ephemeral and re-wired each session in Story().
-        const stepsC = w.c.stepsC as TheC
-        const existing = stepsC.o(exactly({ Step: n }))[0] as TheC | undefined
-        if (existing) return existing
-        const stepC = stepsC.i({ Step: n })
-        ;(w.c.ave as TheC)?.bump_version()   // notify UI that a new Step appeared
-        return stepC
+        // find-or-create the live This/{Step:n} particle inside w.c.This.
+        // w.c.This is the session step container, wired in Story_plan/Story().
+        // Delegates to step_c which bumps version on creation.
+        return this.step_c(w.c.This as TheC, n, 'Step')
     },
 
     step_i_note(w: TheC, n: number, note_sc: Record<string,any>, mode: 'add'|'move'|'remove') {
@@ -183,7 +185,7 @@
         note_sc = { note: 1, ...note_sc }
 
         const H   = this as House
-        const The = H.The_of(w)
+        const The = w.c.The as TheC
 
         if (mode === 'move' || mode === 'remove') {
             for (const s of The.o({ step: 1 }) as TheC[]) {
@@ -243,7 +245,7 @@
 
         lines.push(`\t${this.enj({ story: book })}`)
 
-        const steps = (this.The_of(w).o({ step: 1 }) as TheC[])
+        const steps = (w.c.The as TheC | undefined)?.o({ step: 1 }) as TheC[] ?? []
             .filter(s => !!s.sc.dige || (s.o({ note: 1 }) as TheC[]).length > 0)
             .sort((a, b) => (a.sc.step as number) - (b.sc.step as number))
 
@@ -365,35 +367,25 @@
     // Called after every mutation that should surface in the UI.
     // Steps and swatches are not serialised here — they are live children of
     // stepsC/swatchC inside ave, re-read fresh by the UI on every bump.
-    async story_analysis(w: TheC) {
+    story_analysis(w: TheC) {
         const run      = w.o({ run: 1 })[0]
-        const The      = this.The_of(w)
-        const ave      = w.c.ave    as TheC | undefined
-        const stepsC   = w.c.stepsC as TheC | undefined
-        if (!ave || !stepsC) return   // Story_plan hasn't run yet
+        const The      = w.c.The as TheC
+        const ave      = w.c.ave  as TheC | undefined
+        const thisC    = w.c.This as TheC | undefined
+        if (!ave || !thisC) return   // Story_plan hasn't run yet
         const frontier = (run?.sc.frontier as number) ?? 0
 
         let sel = w.sc.sel ?? null
         const failed_at = run?.sc.failed_at
         if (failed_at != null && sel == null) sel = w.sc.sel = failed_at as number
 
-
-        // Mirror This/%Step into w/%This for Stuffing visibility and debugging.
-        //   w/%This/%Story/%Step  — what is happening now, this session
-        //   w.c.The/%story/%step  — what was on disk / has been accepted
-        // replace({Step:1}, fn) drops all existing {Step:*} children then calls fn
-        // to re-populate — so the count stays exactly equal to stepsC's children.
-        const This = w.oai({ This: 1, Story: 1 })
-        await This.replace({ Step: 1 }, async () => {
-            for (const stepC of stepsC.o({ Step: 1 }) as TheC[]) {
-                This.i({ ...stepC.sc })
-            }
-        })
+        // w.c.This = w/%This,Story:book — visible in Stuffing directly.
+        // No separate mirror needed; This is the real particle, not a copy.
 
         // notes from The/%step:n — keyed by step number.
         // TheC refs are safe here; notes only change on explicit user action.
         const steps_notes: Record<number, TheC[]> = {}
-        for (const theStep of The.o({ step: 1 }) as TheC[]) {
+        for (const theStep of ((w.c.The as TheC)?.o({ step: 1 }) as TheC[] ?? [])) {
             const n     = theStep.sc.step as number
             const notes = theStep.o({ note: 1 }) as TheC[]
             if (notes.length) steps_notes[n] = notes
@@ -402,7 +394,7 @@
         // the_steps: plain {n, dige} snapshot from The — the canonical expected set.
         // The UI builds the full strip skeleton from this, overlaying live stepsC data
         // for steps that have actually run this session.  sorted ascending.
-        const the_steps = (The.o({ step: 1 }) as TheC[])
+        const the_steps = ((w.c.The as TheC)?.o({ step: 1 }) as TheC[] ?? [])
             .map(s => ({ n: s.sc.step as number, dige: s.sc.dige as string | undefined }))
             .sort((a, b) => a.n - b.n)
 
@@ -412,7 +404,7 @@
         an.sc.sel         = sel
         an.sc.the_steps   = the_steps
         an.sc.steps_notes = steps_notes
-        ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${stepsC.o({Step:1}).length} frontier=${frontier}`)
+        ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${(w.c.This as TheC)?.o({Step:1}).length ?? 0} frontier=${frontier}`)
         ave.bump_version()
     },
 
@@ -421,28 +413,25 @@
         this.story_analysis(w)
     },
 
-//#region accept
+
+//#region story_accept
+
     async story_accept(A: TheC, w: TheC, e?: TheC) {
-        // Accept a mismatch at step n.
-        //
-        // Three things happen:
-        //   1. The frontier advances to n (or clears if n is the last known step).
-        //   2. The live dige is cloned into The/%step:N — This → The.
-        //   3. snap and got_snap are deleted from This/{Step:N}.
-        //      Once the step is committed, carrying the full snap text in memory
-        //      is noise: it would appear in future story_snap walks as a stray
-        //      ref on the Story work particle, cluttering the mung output.
-        //      The reference snap stays in the NNN.snap file on disk.
-        //
-        // After accept: failure state cleared, drive resumes.
-        const H   = this as House
+        // Accept a mismatch at step n:
+        //   1. Clone This/{Step:n}.dige → The/{step:n}.dige.  The now reflects reality.
+        //   2. Mark stepC.sc.accepted = true so the UI can dull the pip distinctively.
+        //   3. Shed snap/got_snap from This/{Step:n} — they would appear as object refs
+        //      in future story_snap walks and clutter the mung output.
+        //   4. Advance the frontier note in The (for save/reload bookkeeping).
+        //   5. Clear failure state; resume the drive.
+        const H   = this
         const run = w.o({ run: 1 })[0]
         if (!run) return
         const n = e?.sc.accept_n as number | undefined
         if (n == null) return
 
-        const all_the_steps = H.The_of(w).o({ step: 1 }) as TheC[]
-        const max_step      = Math.max(0, ...all_the_steps.map(s => s.sc.step as number))
+        const The_all = (w.c.The as TheC).o({ step: 1 }) as TheC[]
+        const max_step = Math.max(0, ...The_all.map(s => s.sc.step as number))
 
         if (n >= max_step) {
             run.sc.frontier = 0
@@ -452,11 +441,10 @@
             H.The_set_frontier(w, n)
         }
 
-        // clone dige into The, then shed the snap text from This.
-        // Once committed, carrying full snap strings in memory is noise — they
-        // would appear as object refs on the Story work particle in future snap walks.
+        // This → The: promote the accepted dige into the canonical record
         const stepC = H.i_step(w, n)
         if (stepC.sc.dige) H.The_step(w, n).sc.dige = stepC.sc.dige as string
+        stepC.sc.accepted = true   // explicit; not derived from frontier in story_analysis
         delete stepC.sc.snap
         delete stepC.sc.got_snap
 
@@ -653,30 +641,47 @@
         return { Run, book }
     },
 
-    Story_plan(A: TheC, w: TheC, book: string) {
-        // One-time setup: called from Story() only when the run particle doesn't exist yet.
-        // Creates and enrolls the H-level watched containers, then adds plain sub-containers
-        // inside ave for Steps and swatches.
+    async Story_plan(A: TheC, w: TheC, book: string) {
+        // Wires all session-local C references for w:Story.  Called every session
+        // because w.c.* is ephemeral (cleared on reload), even when run persists in sc.
         //
-        // One {watched:'ave'} on H — H.ave is always its children.
-        // stepsC and swatchesC are plain children of ave (no {watched:X} key of their own).
-        // References are cached on w.c so i_step and ensure_swatch can reach them cheaply
-        // without re-querying the tree on every step.
-        const H   = this
-        H.oai_enroll(H, { watched: 'actions' })
-        const ave     = H.oai_enroll(H, { watched: 'ave' })
-        const stepsC  = ave.o({ Steps:    1 })[0] ?? ave.i({ Steps:    1 })
-        const swatchC = ave.o({ swatches: 1 })[0] ?? ave.i({ swatches: 1 })
-        w.c.ave    = ave
-        w.c.stepsC = stepsC
-        w.c.swatchC = swatchC
+        // Structure:
+        //
+        //   w/%The,story:book     — canonical toc tree (from disk / accepted).
+        //     /%step:N,dige       — one per known step; expected snap hash.
+        //       /%note:1,...      — user annotations
+        //
+        //   w/%This,Story:book    — live session steps.
+        //     /%Step:N            — one per step that has run; ok/dige/got_snap/accepted/saved
+        //
+        //   H/%watched:ave        — reactive container.
+        //     /%swatches:1        — note-type colour palette (r'd fresh each session).
+        //     /%This,Story:book   — live steps (r'd fresh each session — no multi-place).
+        //     /%story_analysis:1  — scalar run state for the UI.
+        //
+        const H = this
 
-        return w.i({ run: book,
-            steps_done:  0,
-            steps_total: 30,
-            paused:      false,
-            mode:        'new',
-        })
+        // The — canonical toc; plain child of w, never in ave, never walked by story_snap
+        w.c.The = w.o(exactly({ The: 1, story: book }))[0]
+            ?? w.i({ The: 1, story: book })
+
+        // This — live session steps, owned by w
+        w.c.This = w.o(exactly({ This: 1, Story: book }))[0]
+            ?? w.i({ This: 1, Story: book })
+
+        // ave — enroll once; r() swatches fresh each session.
+        // This lives on w and is accessed via w.c.This directly by story_analysis
+        // and i_step.  The UI reads steps via storyH.o() rather than through ave.
+        const ave = H.oai_enroll(H, { watched: 'ave' })
+        await ave.r({ swatches: 1 }, {})
+        w.c.swatchC = ave.o({ swatches: 1 })[0] as TheC
+        w.c.ave     = ave
+
+        H.oai_enroll(H, { watched: 'actions' })
+
+        // create the run particle only if it doesn't exist yet
+        return w.o({ run: book })[0]
+            ?? w.i({ run: book, steps_done: 0, steps_total: 30, paused: false, mode: 'new' })
     },
 
 
@@ -688,20 +693,8 @@
         if (!sub) return
         const { Run, book } = sub
 
-        // Story_plan runs once when the run particle doesn't exist yet.
-        // On reload the run particle persists (sc is stashed), but w.c.* is ephemeral
-        // and must be re-wired every session regardless.
-        let run = w.o({ run: book })[0]
-        if (!run) run = H.Story_plan(A, w, book)
-
-        // re-cache w.c references every session — w.c is ephemeral, cleared on reload
-        if (!w.c.ave) {
-            H.oai_enroll(H, { watched: 'actions' })
-            const ave   = H.oai_enroll(H, { watched: 'ave' })
-            w.c.ave     = ave
-            w.c.stepsC  = ave.o({ Steps:    1 })[0] ?? ave.i({ Steps:    1 })
-            w.c.swatchC = ave.o({ swatches: 1 })[0] ?? ave.i({ swatches: 1 })
-        }
+        // Story_plan wires w.c.* every session (w.c is ephemeral; sc survives reloads).
+        const run = await H.Story_plan(A, w, book)
 
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(book)}`
@@ -718,7 +711,7 @@
             const toc_snap = toc_req.sc.reply?.toc_snap ?? ''
             H.decode_toc_snap(toc_snap, w)   // fills The + pre-creates hollow This/{Step:N}
 
-            const step_count = (H.The_of(w).o({ step: 1 }) as TheC[]).length
+            const step_count = (w.c.The as TheC)?.o({ step: 1 }).length ?? 0
             run.sc.mode      = step_count > 0 ? 'check' : 'new'
             run.sc.frontier  = H.The_frontier(w)   // restored from {note:1,frontier:1}
             w.c.run_path     = run_path
@@ -782,10 +775,8 @@
             }
             const n = (run.sc.steps_done as number) + 1
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
-            // diagnostic: show what The has for this step
-            const _the_all = H.The_of(w).o({ step: 1 }) as TheC[]
-            console.log(`The at n=${n}: all steps=[${_the_all.map(s=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', ')}]`)
-            console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
+            ;V.Story && console.log(`The at n=${n}:`, (w.c.The as TheC)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
+            ;V.Story && console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
 
             if (run.sc.mode === 'new' && n > (run.sc.steps_total as number)) {
                 run.c.driving = false; run.sc.paused = true
@@ -904,22 +895,13 @@
         const run_path   = w.c.run_path as string | undefined
         const run        = w.o({ run: 1 })[0]
         const frontier   = (run?.sc.frontier as number) ?? 0
-        const The        = storyH.The_of(w)
+        const The        = w.c.The as TheC
+        const thisC      = w.c.This as TheC | undefined
+        const all_this_steps = thisC ? thisC.o({ Step: 1 }) as TheC[] : []
+        if (!all_this_steps.length && !The?.o({ step: 1 }).length) return
 
-        const ave            = w.c.ave    as TheC | undefined
-        const stepsC         = w.c.stepsC as TheC | undefined
-        const all_this_steps = stepsC ? stepsC.o({ Step: 1 }) as TheC[] : []
-        if (!all_this_steps.length && !(The.o({ step: 1 }) as TheC[]).length) return
-
-        // merge ok / accepted This diges into The
-        for (const stepC of all_this_steps) {
-            if (stepC.sc.hollow) continue
-            const n  = stepC.sc.Step as number
-            const ok = !!stepC.sc.ok
-            if (ok || n <= frontier) {
-                storyH.The_step(w, n).sc.dige = stepC.sc.dige as string
-            }
-        }
+        // The diges were already set by snap_step (new mode) and story_accept (check mode).
+        // No merge loop needed — just sync the frontier note and encode.
 
         // sync frontier note so toc.snap reflects the current state exactly
         const all_the_steps = The.o({ step: 1 }) as TheC[]
@@ -943,18 +925,19 @@
             const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
             storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
 
+            // write NNN.snap for ok steps (new mode) and accepted steps (check mode)
+            // that haven't been saved yet.  saved=true makes subsequent saves cheap.
             for (const stepC of all_this_steps) {
-                if (stepC.sc.hollow) continue
+                if ((!stepC.sc.ok && !stepC.sc.accepted) || stepC.sc.saved) continue
                 const n            = stepC.sc.Step as number
-                // snap was cleared on accept; got_snap is the recorded content
                 const snap_content = (stepC.sc.snap ?? stepC.sc.got_snap) as string | undefined
                 if (!snap_content) continue
-                if (!stepC.sc.ok && n > frontier) continue
                 const snap_req = await wh.i({
                     wh_path: run_path, wh_op: 'write_snap',
                     wh_step: n, wh_data: snap_content,
                 })
                 storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
+                stepC.sc.saved = true   // mark so subsequent saves skip it
             }
 
             const tag = frontier > 0 ? ` frontier:${frontier}` : ' clean'
@@ -972,10 +955,11 @@
         for (const h of this.all_House) {
             for (const w of (h as House).o({ w: 1 }) as TheC[]) {
                 for (const run of w.o({ run: 1 }) as TheC[]) run.c.driving = false
-                // drop Step particles — they live inside stepsC inside H's ave
-                const ave    = (h as House).o({ watched: 'ave' })[0] as TheC | undefined
-                const stepsC = ave?.o({ Steps: 1 })[0] as TheC | undefined
-                if (stepsC) for (const s of stepsC.o({ Step: 1 }) as TheC[]) s.drop(s)
+                // drop all live Step particles from This (w.c.This = w/%This,Story:book)
+                const thisC = w.c.This as TheC | undefined
+                if (thisC) for (const s of thisC.o({ Step: 1 }) as TheC[]) s.drop(s)
+                delete (w as any).c.This
+                delete (w as any).c.The   // will be re-created from disk on next load
                 delete (w as any).c.The
                 delete (w as any).c.toc_loaded
                 delete (w as any).c.wh

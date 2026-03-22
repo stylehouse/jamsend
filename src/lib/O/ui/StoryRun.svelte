@@ -20,7 +20,7 @@
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { peel, exactly } from "$lib/Y"
+    import { peel } from "$lib/Y"
 
     let { H }: { H: House } = $props()
 
@@ -62,24 +62,26 @@
 
     $effect(() => {
         // storyH.ave is reassigned on every bump_version() — the reactive signal.
-        // ave children: {Steps:1} stepsC, {swatches:1} swatchC, {story_analysis:1} scalars.
-        // the_steps (in display) is the The skeleton; stepsC holds only what ran this session.
+        // Steps live on w.c.This (w:Story); we reach them via storyH.o() rather than ave.
         const ave = storyH?.ave
-        // setTimeout breaks the synchronous reactivity loop — writes to $state inside
-        // an $effect that also reads $state would otherwise re-trigger immediately.
         setTimeout(() => {
             console.log('ave:', ave?.map((p: TheC) => JSON.stringify(p.sc)))
 
-            const sc  = ave?.find((p: TheC) => 'Steps'          in (p.sc ?? {})) as TheC | undefined
             const sw  = ave?.find((p: TheC) => 'swatches'       in (p.sc ?? {})) as TheC | undefined
             const an  = ave?.find((p: TheC) => 'story_analysis' in (p.sc ?? {})) as TheC | undefined
+
+            // reach w.c.This for live steps
+            const wStory = storyH?.o({ A: 'Story' })?.[0]?.o?.({ w: 'Story' })?.[0] as TheC | undefined
+            const sc     = wStory?.c?.This as TheC | undefined
 
             if (an) Object.assign(display, an.sc)
             stepsC = sc
             const live_steps = sc ? (sc.o({Step:1}) as TheC[]).sort((a,b)=>(a.sc.Step as number)-(b.sc.Step as number)) : []
             const latest = live_steps[live_steps.length - 1]
             console.log(`StoryRun: stepsC=${!!sc} live=${live_steps.length} the_steps=${display.the_steps.length} latest=`, latest?.sc)
-            sel_m  = display.sel != null ? (sc?.o(exactly({ Step: display.sel }))[0] ?? null) as TheC | null : null
+            sel_m = display.sel != null
+                ? (live_steps.find(s => s.sc.Step === display.sel) ?? null)
+                : null
             swatchesC = sw
             const m: Record<string,string> = {}
             for (const s of (sw?.o({ note_coloring: 1 }) as TheC[] ?? [])) {
@@ -91,7 +93,8 @@
 
     // live_step: the real session TheC for step n, or null if not yet run this session
     function live_step(n: number): TheC | null {
-        return (stepsC?.o(exactly({ Step: n }))[0] ?? null) as TheC | null
+        const all = stepsC ? (stepsC.o({ Step: 1 }) as TheC[]) : []
+        return all.find(s => s.sc.Step === n) ?? null
     }
 
     // Colour helpers — swatch_map is the authoritative source, built by ensure_swatch().
