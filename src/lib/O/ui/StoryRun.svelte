@@ -1,13 +1,31 @@
 <script lang="ts">
+    // StoryRun: the UI strip for the Story test runner.
+    //
+    // Receives H (the parent House) and derives storyH (the Story sub-House).
+    // Reads display state from storyH.ave — a TheC[] array ($state) that
+    // enroll_watched() reassigns on every bump_version().  Use .find() on it,
+    // not .o() — ave is a plain array, not a TheC particle.
+    //
+    // Individual This/{Step:N} particles carry {watched:'ave'} so enroll_watched()
+    // includes them in the reactive set.  Each step's version bump triggers the
+    // ave $effect even when only that one pip's state changed.
+    //
+    // The strip renders pips via {#each} keyed by step number, with an inner
+    // {#key stepC.version} block so Svelte discards and re-creates the pip's DOM
+    // when the step particle's data changes (ok, hollow, dige, notes, etc.).
+    //
+    // Colours come from swatch_map (forwarded via story_analysis).  It is a fatal
+    // design error to render a note type that has no swatch — ensure_swatch() must
+    // have been called before that type ever reaches story_analysis.
+
+    import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import { peel, exactly } from "$lib/Y"
 
     let { H }: { H: House } = $props()
 
-    // ── navigate to H:Story ───────────────────────────────────────────────
-    // Null-guard: only update when a real reference is found, so mid-replace()
-    // transient empties leave storyH alone.
-    let storyH: House | undefined = $state()
+    // ── navigate to H:Story ──────────────────────────────────────────────────
+    let storyH = $state<House | undefined>()
 
     $effect(() => {
         void H?.version
@@ -15,80 +33,158 @@
         if (h != null && h !== storyH) storyH = h
     })
 
-    // ── display state — fed from storyH.ave ───────────────────────────────
-    // H:Story maintains %watched:ave; story_analysis() writes display data into
-    // %story_analysis.sc.* and bumps the watched particle.  The debounced flush
-    // in start_watched_C_effect reassigns storyH.ave ($state), re-running this
-    // $effect.  Object.assign(display, an.sc) copies all keys in one shot.
+    // Single $effect — unpacks everything from storyH.ave when it changes.
+    // ave is TheC[] reassigned by enroll_watched on every bump_version(), so
+    // reading storyH.ave here is the reactive dependency.  All derived state
+    // is imperative assignment inside this one effect — no $derived needed.
     //
-    // moments contains both real moments (processed this session) and synthetic
-    // hollow ones (from toc, not yet reached).
-    //
-    // frontier: watermark stored in toc.json of accepted-but-not-yet-cleanly-
-    // verified change.  Absent (0) means a fresh run or fully re-accepted.
+    // Three particle shapes live in ave:
+    //   {story_analysis:1}       — scalar run state written by story_analysis()
+    //   {watched:'ave',Steps:1}  — stepsC; children are live {Step:n} TheC refs
+    //   {watched:'ave',swatches:1} — swatchesC; children are {note_coloring,color}
+
     type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
     type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
+    type TheStep = { n: number, dige: string | undefined }
+
     let display = $state({
-        run:       null  as TheC | null,
-        moments:   []    as TheC[],
-        frontier:  0     as number,
-        sel:       null  as number | null,
-        sel_m:     null  as TheC | null,
-        got_lines: []    as SnapLine[],
-        exp_lines: []    as SnapLine[],
-        show_diff: false as boolean,
-        diff:      null  as DiffTag[] | null,
+        run_sc:      null as Record<string,any> | null,
+        frontier:    0,
+        sel:         null as number | null,
+        the_steps:   [] as TheStep[],
+        steps_notes: {} as Record<number, TheC[]>,
     })
+    let stepsC     = $state<TheC | undefined>()
+    let sel_m      = $state<TheC | null>(null)
+    let swatchesC  = $state<TheC | undefined>()
+    let swatch_map = $state<Record<string,string>>({})
 
     $effect(() => {
-        const an = storyH?.ave.find((n: TheC) => n.sc.story_analysis)
-        if (an) Object.assign(display, an.sc)
+        // storyH.ave is reassigned on every bump_version() — the reactive signal.
+        // ave children: {Steps:1} stepsC, {swatches:1} swatchC, {story_analysis:1} scalars.
+        // the_steps (in display) is the The skeleton; stepsC holds only what ran this session.
+        const ave = storyH?.ave
+        // setTimeout breaks the synchronous reactivity loop — writes to $state inside
+        // an $effect that also reads $state would otherwise re-trigger immediately.
+        setTimeout(() => {
+            console.log('ave:', ave?.map((p: TheC) => JSON.stringify(p.sc)))
+
+            const sc  = ave?.find((p: TheC) => 'Steps'          in (p.sc ?? {})) as TheC | undefined
+            const sw  = ave?.find((p: TheC) => 'swatches'       in (p.sc ?? {})) as TheC | undefined
+            const an  = ave?.find((p: TheC) => 'story_analysis' in (p.sc ?? {})) as TheC | undefined
+
+            if (an) Object.assign(display, an.sc)
+            stepsC = sc
+            const live_steps = sc ? (sc.o({Step:1}) as TheC[]).sort((a,b)=>(a.sc.Step as number)-(b.sc.Step as number)) : []
+            const latest = live_steps[live_steps.length - 1]
+            console.log(`StoryRun: stepsC=${!!sc} live=${live_steps.length} the_steps=${display.the_steps.length} latest=`, latest?.sc)
+            sel_m  = display.sel != null ? (sc?.o(exactly({ Step: display.sel }))[0] ?? null) as TheC | null : null
+            swatchesC = sw
+            const m: Record<string,string> = {}
+            for (const s of (sw?.o({ note_coloring: 1 }) as TheC[] ?? [])) {
+                m[s.sc.note_coloring as string] = s.sc.color as string
+            }
+            swatch_map = m
+        }, 0)
     })
 
-    // ── simple deriveds from display ──────────────────────────────────────
-    let run_mode   = $derived(display.run?.sc.mode       ?? 'new')
-    let run_done   = $derived(display.run?.sc.steps_done ?? 0)
-    let run_total  = $derived(display.run?.sc.steps_total as number | undefined)
-    let run_paused = $derived(!!display.run?.sc.paused)
-    let run_failed = $derived(display.run?.sc.failed_at  as number | undefined)
+    // live_step: the real session TheC for step n, or null if not yet run this session
+    function live_step(n: number): TheC | null {
+        return (stepsC?.o(exactly({ Step: n }))[0] ?? null) as TheC | null
+    }
 
-    // ── display helpers (pure, no state reads) ────────────────────────────
-    const ind = (d: number) => '  '.repeat(d)
+    // Colour helpers — swatch_map is the authoritative source, built by ensure_swatch().
+    function note_color(type: string): string {
+        const c = swatch_map[type]
+        if (!c) console.error(`StoryRun: no swatch for note type "${type}"`)
+        return c ?? '#666'
+    }
 
-    function line_parts(sl: SnapLine) {
-        return {
-            indent: ind(sl.d),
-            obj:    obj_text(sl),
-            str:    Object.entries(sl.stringies).map(([k, v]) => `${k}:${v}`).join('  '),
+    type NoteFlag = { type: string, color: string }
+    function note_flags_for(n: number): NoteFlag[] {
+        const notes = display.steps_notes[n] ?? []
+        const seen  = new Set<string>()
+        const flags: NoteFlag[] = []
+        for (const nc of notes) {
+            const type = Object.keys(nc.sc).find(k => k !== 'note') ?? 'note'
+            if (!seen.has(type)) {
+                seen.add(type)
+                flags.push({ type, color: note_color(type) })
+            }
         }
+        return flags
     }
 
-    // objecties: { ref?: {k:str}, mung?: string[] }
-    function obj_text(sl: SnapLine): string {
-        const o = sl.objecties as any
-        if (!o || !Object.keys(o).length) return ''
-        const parts: string[] = []
-        for (const [k, v] of Object.entries(o.ref ?? {})) parts.push(`${k}:${v}`)
-        if ((o.mung ?? []).length) parts.push(`mung:[${(o.mung as string[]).join(',')}]`)
-        return parts.join('  ')
+    function note_label(nc: TheC): string {
+        const keys = Object.keys(nc.sc).filter(k => k !== 'note')
+        if (!keys.length) return 'note'
+        return keys.map(k => nc.sc[k] === 1 ? k : `${k}:${nc.sc[k]}`).join(', ')
     }
 
-    // ── playhead position ─────────────────────────────────────────────────
-    // The playhead (red triangle) marks the frontier edge.
-    // When stopped at a mismatch: points to that step.
-    // Otherwise: points to the first hollow step (next unrun position).
-    // Vanishes when there are no hollow steps and no failure.
+    // snap diff — computed from the selected step's snap fields
+    function parse_lines(s: string | undefined): SnapLine[] {
+        if (!s) return []
+        return s.split('\n').filter(Boolean).map(line => {
+            const spaces = line.match(/^ */)?.[0].length ?? 0
+            const d      = Math.floor(spaces / 2)
+            const tab    = line.indexOf('\t')
+            if (tab < 0) return null
+            try { return { d, objecties: {}, stringies: JSON.parse(line.slice(tab + 1)) } }
+            catch { return null }
+        }).filter(Boolean) as SnapLine[]
+    }
+
+    let got_lines  = $derived.by(() => {
+        const live = display.sel != null ? live_step(display.sel) : null
+        return parse_lines(live?.sc.hollow ? '' : (live?.sc.got_snap ?? live?.sc.snap) as string | undefined)
+    })
+    let exp_lines  = $derived.by(() => {
+        const live = display.sel != null ? live_step(display.sel) : null
+        return parse_lines(live?.sc.hollow ? '' : live?.sc.exp_snap as string | undefined)
+    })
+    let show_diff  = $derived(exp_lines.length > 0)
+    let diff: DiffTag[] | null = $derived.by(() => {
+        if (!show_diff) return null
+        const len = Math.max(got_lines.length, exp_lines.length)
+        return Array.from({ length: len }, (_, i) => {
+            const g = got_lines[i], e = exp_lines[i]
+            if (!g) return 'gone'
+            if (!e) return 'new'
+            return JSON.stringify(g.stringies) !== JSON.stringify(e.stringies) ? 'changed' : 'same'
+        }) as DiffTag[]
+    })
+
     function playhead_n(): number | null {
-        if (run_failed != null) return run_failed
-        const first_hollow = display.moments.find(m => m.sc.hollow)
-        return first_hollow ? (first_hollow.sc.moment_n as number) : null
+        if (display.frontier > 0) return display.frontier
+        // first step in The that hasn't been run this session yet
+        const first_hollow = display.the_steps.find(ts => !live_step(ts.n))
+        return first_hollow?.n ?? null
     }
 
-    // ── selection + accept — sent to worker, never held as local state ────
-    // story_sel / story_accept update w.sc then call story_analysis(),
-    // notifying back via wa.bump_version() → debounced flush → display updates.
-    // story_accept clears sel, saves, and restarts the drive.
+    // run bar deriveds
+    let run_mode   = $derived(display.run_sc?.mode       ?? 'new')
+    let run_done   = $derived(display.run_sc?.steps_done ?? 0)
+    let run_total  = $derived(display.run_sc?.steps_total as number | undefined)
+    let run_paused = $derived(!!display.run_sc?.paused)
+    let run_failed = $derived(display.run_sc?.failed_at  as number | undefined)
+    let add_note_text = $state('')
+
+    function do_add_note(n: number) {
+        const text = add_note_text.trim()
+        if (!text) return
+        // peel("frontier")     → {frontier:1}
+        // peel("todo:message") → {todo:"message"}
+        const note_sc = { note: 1, ...peel(text) }
+        storyH?.elvisto('Story/Story', 'story_add_note', { step_n: n, note_sc })
+        add_note_text = ''
+    }
+
+    function do_delete_note(n: number, idx: number) {
+        storyH?.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
+    }
+
+    // ── selection + accept ───────────────────────────────────────────────────
     function pick(n: number) {
         const new_sel = display.sel === n ? null : n
         storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
@@ -99,26 +195,52 @@
     function accept(n: number) {
         storyH?.elvisto('Story/Story', 'story_accept', { accept_n: n })
     }
+
+    // ── display helpers ──────────────────────────────────────────────────────
+    const ind = (d: number) => '  '.repeat(d)
+
+    function line_parts(sl: SnapLine) {
+        return {
+            indent: ind(sl.d),
+            obj:    obj_text(sl),
+            str:    Object.entries(sl.stringies).map(([k, v]) => `${k}:${v}`).join('  '),
+        }
+    }
+
+    function obj_text(sl: SnapLine): string {
+        const o = sl.objecties as any
+        if (!o || !Object.keys(o).length) return ''
+        const parts: string[] = []
+        for (const [k, v] of Object.entries(o.ref ?? {})) parts.push(`${k}:${v}`)
+        if ((o.mung ?? []).length) parts.push(`mung:[${(o.mung as string[]).join(',')}]`)
+        return parts.join('  ')
+    }
+
+    // Note add/delete — dispatched to the worker; never mutate display directly.
+    // The worker calls story_analysis() → ave.bump_version() → deriveds re-run.
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="sr">
 
-    {#if !storyH?.ave.find((n: TheC) => n.sc.story_analysis)}
+    {#if !stepsC}
         <div class="sr-empty">no Story</div>
 
     {:else}
 
-        <!-- ── run bar ──────────────────────────────────────────────────── -->
-        <div class="sr-bar" class:is-new={run_mode==='new'} class:is-check={run_mode==='check'} class:is-fail={!!run_failed}>
-            <span class="sr-runname">{display.run?.sc.run ?? '—'}</span>
+        <!-- run bar -->
+        <div class="sr-bar"
+             class:is-new={run_mode==='new'}
+             class:is-check={run_mode==='check'}
+             class:is-fail={!!run_failed}>
+            <span class="sr-runname">{display.run_sc?.run ?? '—'}</span>
             <span class="sr-mode">{run_mode}</span>
             <span class="sr-steps">
                 {String(run_done).padStart(3,'0')}
                 {#if run_total}&nbsp;/&nbsp;{String(run_total).padStart(3,'0')}{/if}
             </span>
             {#if run_failed}
-                <span class="sr-status fail">✗ {run_failed}</span>
+                <span class="sr-status fail">✗ {String(run_failed).padStart(3,'0')}</span>
             {:else if run_paused}
                 <span class="sr-status ok">✓ done</span>
             {:else}
@@ -126,87 +248,114 @@
             {/if}
         </div>
 
-        <!-- ── moment strip ─────────────────────────────────────────────── -->
-        <!-- hollow pips show the full expected shape from toc immediately.  -->
-        <!-- accepted pips are green but still show ✗ (acknowledged change). -->
-        <!-- playhead triangle sits above the frontier edge pip.             -->
+        <!-- pip strip — one cell per step from The (skeleton); live stepsC data overlaid -->
+        <!-- hollow: step exists in The but hasn't run this session yet                   -->
+        <!-- live_step(n) returns the real TheC if it ran, null if still hollow           -->
         <div class="sr-strip">
-            {#each display.moments as m (m.sc.moment_n)}
-                {@const n        = m.sc.moment_n as number}
-                {@const ok       = !!m.sc.ok}
-                {@const hollow   = !!m.sc.hollow}
-                {@const accepted = !!m.sc.accepted}
+            {#each display.the_steps as ts (ts.n)}
+                {@const n    = ts.n}
+                {@const live = live_step(n)}
+                {@const ok       = !!live?.sc.ok}
+                {@const hollow   = !live}
+                {@const accepted = !!live?.sc.accepted}
                 {@const on       = display.sel === n}
                 {@const ph       = n === playhead_n()}
-                <button
-                    class="sr-pip"
-                    class:ok
-                    class:accepted
-                    class:fail={!ok && !hollow && !accepted && m.sc.dige != null}
-                    class:hollow
-                    class:on
-                    class:playhead={ph}
-                    onclick={() => pick(n)}
-                    title="step {n}{hollow ? ' (hollow)' : accepted ? ' (accepted)' : ''}  {m.sc.dige ?? ''}"
-                >{hollow ? '○' : ok ? '·' : '✗'}</button>
+                {@const flags    = note_flags_for(n)}
+                <div class="sr-pip-cell">
+                    <div class="sr-flags">
+                        {#each flags as f (f.type)}
+                            <span class="sr-flag" style="background:{f.color}" title={f.type}></span>
+                        {/each}
+                    </div>
+                    <button
+                        class="sr-pip"
+                        class:ok
+                        class:accepted
+                        class:fail={!ok && !hollow && !accepted}
+                        class:hollow
+                        class:on
+                        class:playhead={ph}
+                        class:has-notes={flags.length > 0}
+                        onclick={() => pick(n)}
+                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(live?.sc.dige ?? ts.dige) ?? ''}"
+                    >{hollow ? '○' : ok ? '·' : '✗'}</button>
+                </div>
             {/each}
         </div>
 
-        <!-- ── snap panel ───────────────────────────────────────────────── -->
-        {#if display.sel_m}
-            {@const n        = display.sel_m.sc.moment_n}
-            {@const ok       = !!display.sel_m.sc.ok}
-            {@const hollow   = !!display.sel_m.sc.hollow}
-            {@const accepted = !!display.sel_m.sc.accepted}
-            {@const dige     = String(display.sel_m.sc.dige ?? '').slice(0, 8)}
-            <!-- can_accept: any re-run mismatch, accepted or not, can be re-accepted -->
+        <!-- snap panel — sel_m is live TheC (or null for hollow); ts_sel is the The record -->
+        {#if display.sel != null}
+            {@const n        = display.sel}
+            {@const ts_sel   = display.the_steps.find(t => t.n === n)}
+            {@const live     = live_step(n)}
+            {@const ok       = !!live?.sc.ok}
+            {@const hollow   = !live}
+            {@const accepted = !!live?.sc.accepted}
+            {@const dige     = String(live?.sc.dige ?? ts_sel?.dige ?? '').slice(0, 8)}
             {@const can_accept = !ok && !hollow}
+            {@const step_notes = display.steps_notes[n] ?? []}
 
             <div class="sr-panel">
 
-                <!-- panel header -->
                 <div class="sr-phdr">
                     <span class="sr-pn">step {String(n).padStart(3,'0')}</span>
                     <span class="sr-pdige">{dige}</span>
                     {#if hollow}
-                        <span class="sr-phollow">hollow</span>
+                        <span class="sr-plabel hollow">hollow</span>
                     {:else if accepted}
-                        <span class="sr-paccepted">accepted</span>
+                        <span class="sr-plabel accepted">accepted</span>
                     {:else if !ok}
-                        <span class="sr-pmm">mismatch</span>
+                        <span class="sr-plabel mm">mismatch</span>
                     {/if}
                     {#if can_accept}
-                        <!-- Accept: advance frontier, save toc, close panel, continue drive -->
                         <button class="sr-accept" onclick={() => accept(n)}>Accept</button>
                     {/if}
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
 
                 {#if hollow}
-                    <div class="sr-hollow-body">
-                        step {String(n).padStart(3,'0')} not yet re-run this session
-                    </div>
+                    <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
 
-                {:else if display.show_diff}
-                    <!-- ── diff: two columns in one scroll container ─────── -->
-                    <!-- sr-diff-hdr: sticky labels above the scrollable body -->
-                    <!-- sr-diff-scroll: single overflow:auto grid — both     -->
-                    <!--   pre elements have overflow:visible so the parent   -->
-                    <!--   scrolls them together as one unit.                 -->
+                {:else if show_diff}
                     <div class="sr-diff">
                         <div class="sr-diff-hdr">
                             <div class="sr-dlabel got">got</div>
                             <div class="sr-dlabel exp">exp</div>
                         </div>
                         <div class="sr-diff-scroll">
-                            <pre class="sr-pre">{#each display.got_lines as sl, i (i)}{@render snap_line(sl, display.diff?.[i] ?? 'same')}{/each}</pre>
-                            <pre class="sr-pre">{#each display.exp_lines as sl, i (i)}{@render snap_line(sl, display.diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each exp_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
                         </div>
                     </div>
                 {:else}
-                    <!-- ── single snap tree (new mode / ok step) ────────── -->
-                    <pre class="sr-pre sr-tree-pre">{#each display.got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
+                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
                 {/if}
+
+                <!-- Notes from The/%step:n. Rendered even for hollow steps — -->
+                <!-- annotations can exist before a step runs this session.   -->
+                <div class="sr-notes">
+                    <div class="sr-notes-hdr">
+                        <span class="sr-notes-title">notes</span>
+                        {#each Object.entries(swatch_map) as [type, color] (type)}
+                            <span class="sr-note-badge" style="border-color:{color};color:{color}">{type}</span>
+                        {/each}
+                    </div>
+                    {#each step_notes as nc, idx (idx)}
+                        {@const type = Object.keys(nc.sc).find(k => k !== 'note') ?? 'note'}
+                        <div class="sr-note-row">
+                            <span class="sr-note-dot" style="background:{note_color(type)}"></span>
+                            <span class="sr-note-label">{note_label(nc)}</span>
+                            <button class="sr-note-del" onclick={() => do_delete_note(n, idx)} title="delete">×</button>
+                        </div>
+                    {/each}
+                    <div class="sr-note-add">
+                        <input class="sr-note-input"
+                               placeholder="frontier  /  todo:text  /  key:val"
+                               bind:value={add_note_text}
+                               onkeydown={e => e.key === 'Enter' && do_add_note(n)} />
+                        <button class="sr-note-submit" onclick={() => do_add_note(n)}>+</button>
+                    </div>
+                </div>
 
             </div>
         {/if}
@@ -214,16 +363,16 @@
     {/if}
 </div>
 
-<!-- spaces between obj and str sit outside both spans as raw text in the     -->
-<!-- white-space:pre context — trailing whitespace inside an inline <span>    -->
-<!-- can be stripped by browsers; between sibling spans it is preserved.      -->
+<!-- snap_line snippet: rendered inside <pre> so whitespace matters.           -->
+<!-- Space between obj and str spans is raw text between sibling inline spans, -->
+<!-- preserved by white-space:pre.  &#10; = newline character.                -->
 {#snippet snap_line(sl: SnapLine, tag: string)}
     {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}</span>  {/if}<span class="sr-str">{p.str}</span>&#10;</span>
 {/snippet}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <style>
-/* container */
+/* ── container ─────────────────────────────────────────────────────────── */
 .sr {
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px;
@@ -236,7 +385,7 @@
 }
 .sr-empty { padding: 8px 12px; color: #555; }
 
-/* run bar */
+/* ── run bar ────────────────────────────────────────────────────────────── */
 .sr-bar {
     display: flex;
     align-items: center;
@@ -249,14 +398,16 @@
 .sr-mode    { color: #555; }
 .sr-steps   { color: #888; letter-spacing: 0.02em; }
 .sr-status  { font-weight: 600; }
-.sr-status.ok      { color: #4a9 }
-.sr-status.fail    { color: #c55 }
+.sr-status.ok      { color: #4a9; }
+.sr-status.fail    { color: #c55; }
 .sr-status.running { color: #77a; }
 .sr-bar.is-fail    { border-bottom-color: #4a1a1a; }
 .sr-bar.is-new   .sr-mode { color: #6a9; }
 .sr-bar.is-check .sr-mode { color: #79b; }
 
-/* moment strip — padding-top makes room for the playhead triangle */
+/* ── moment strip ───────────────────────────────────────────────────────── */
+/* padding-top makes room for the playhead triangle.                         */
+/* align-items:flex-end keeps pips bottom-aligned when flag rows vary.       */
 .sr-strip {
     display: flex;
     flex-wrap: wrap;
@@ -264,9 +415,38 @@
     padding: 10px 8px 6px;
     background: #0e0e0e;
     border-bottom: 1px solid #1e1e1e;
-    max-height: 80px;
+    max-height: 100px;
     overflow-y: auto;
+    align-items: flex-end;
 }
+
+/* pip-cell: flags row stacked above pip button */
+.sr-pip-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+/* flags row: always rendered (empty = 6px spacer) so pips stay aligned */
+.sr-flags {
+    display: flex;
+    flex-direction: row;
+    gap: 1px;
+    min-height: 6px;
+    align-items: flex-end;
+}
+
+/* individual note-type flag square */
+.sr-flag {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 1px;
+    flex-shrink: 0;
+}
+
+/* pip button */
 .sr-pip {
     position: relative;
     width: 14px;
@@ -282,34 +462,33 @@
     padding: 0;
     transition: background 0.1s;
 }
-.sr-pip.ok       { background: #1a3a25; color: #4a9; }
-.sr-pip.fail     { background: #3a1a1a; color: #c55; }
-/* accepted: mismatch acknowledged — green background, red ✗ glyph */
-.sr-pip.accepted { background: #1a3a25; color: #c55; }
-/* hollow: toc step not yet re-run; dim outline only */
-.sr-pip.hollow   { background: transparent; color: #333; border: 1px solid #2a2a2a; }
-.sr-pip.on       { outline: 1px solid #79b; outline-offset: 1px; }
-.sr-pip:hover    { background: #333; }
+.sr-pip.ok           { background: #1a3a25; color: #4a9; }
+.sr-pip.fail         { background: #3a1a1a; color: #c55; }
+/* accepted: mismatch explicitly ok'd — green body, red glyph */
+.sr-pip.accepted     { background: #1a3a25; color: #c55; }
+/* hollow: toc step not yet reached this session — pale outline, visible ○ */
+.sr-pip.hollow       { background: #1a1a1a; color: #555; border: 1px solid #383838; }
+.sr-pip.on           { outline: 1px solid #79b; outline-offset: 1px; }
+.sr-pip.has-notes    { border-bottom: 2px solid #444; }
+.sr-pip:hover        { background: #333; }
 
 /* playhead: red downward triangle hovering above the pip.
-   sits at the failed step when stopped, otherwise at the frontier edge.
-   vanishes when there are no hollow steps and no failure. */
+   marks the failed step, or the frontier edge otherwise.    */
 .sr-pip.playhead::before {
     content: '';
     position: absolute;
-    top: -9px;
-    left: 50%;
+    top: -9px; left: 50%;
     transform: translateX(-50%);
-    width: 0;
-    height: 0;
+    width: 0; height: 0;
     border-left:  4px solid transparent;
     border-right: 4px solid transparent;
     border-top:   6px solid #c55;
     pointer-events: none;
 }
 
-/* snap panel */
+/* ── snap panel ─────────────────────────────────────────────────────────── */
 .sr-panel { border-top: 1px solid #222; }
+
 .sr-phdr {
     display: flex;
     align-items: center;
@@ -318,110 +497,125 @@
     background: #161616;
     border-bottom: 1px solid #1e1e1e;
 }
-.sr-pn         { color: #79b; font-weight: 600; }
-.sr-pdige      { color: #555; font-size: 10px; }
-.sr-pmm        { color: #c55; font-size: 10px; }
-.sr-paccepted  { color: #4a9; font-size: 10px; }
-.sr-phollow    { color: #444; font-size: 10px; }
+.sr-pn     { color: #79b; font-weight: 600; }
+.sr-pdige  { color: #555; font-size: 10px; }
+.sr-plabel { font-size: 10px; }
+.sr-plabel.mm       { color: #c55; }
+.sr-plabel.accepted { color: #4a9; }
+.sr-plabel.hollow   { color: #444; }
+
 .sr-close {
     margin-left: auto;
-    background: none;
-    border: none;
-    color: #555;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    padding: 0 2px;
+    background: none; border: none;
+    color: #555; cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 0 2px;
 }
 .sr-close:hover { color: #aaa; }
-/* accept: advance frontier, save, close panel, continue drive */
+
 .sr-accept {
     margin-left: auto;
-    background: #1a3a25;
-    border: 1px solid #2a5a35;
-    border-radius: 2px;
-    color: #4a9;
-    cursor: pointer;
-    font-size: 10px;
-    font-family: inherit;
-    padding: 1px 6px;
+    background: #1a3a25; border: 1px solid #2a5a35; border-radius: 2px;
+    color: #4a9; cursor: pointer;
+    font-size: 10px; font-family: inherit; padding: 1px 6px;
 }
 .sr-accept:hover { background: #2a4a35; }
 
-/* hollow body placeholder */
-.sr-hollow-body {
-    padding: 12px;
-    color: #444;
-    font-size: 10px;
-}
+.sr-hollow-body { padding: 12px; color: #444; font-size: 10px; }
 
-/* diff: unified scroll ────────────────────────────────────────────────── */
+/* ── diff ───────────────────────────────────────────────────────────────── */
 .sr-diff-hdr {
     display: grid;
     grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid #1e1e1e;
 }
-/* single overflow container — both pre children scroll as one unit */
 .sr-diff-scroll {
     display: grid;
     grid-template-columns: 1fr 1fr;
     overflow: auto;
     max-height: 360px;
 }
-/* pres inside must not scroll individually */
-.sr-diff-scroll > .sr-pre {
-    overflow: visible;
-    max-height: none;
-}
-.sr-diff-scroll > .sr-pre + .sr-pre {
-    border-left: 1px solid #1e1e1e;
-}
+.sr-diff-scroll > .sr-pre { overflow: visible; max-height: none; }
+.sr-diff-scroll > .sr-pre + .sr-pre { border-left: 1px solid #1e1e1e; }
 
 .sr-dlabel {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    background: #141414;
-    flex-shrink: 0;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 3px 8px; background: #141414;
 }
 .sr-dlabel.got { color: #4a9; }
 .sr-dlabel.exp { color: #79b; }
 
-/* pre panels — scrollable, pasteable two-space indent */
+/* ── pre panels ─────────────────────────────────────────────────────────── */
 .sr-pre {
-    margin: 0;
-    padding: 4px 0;
-    overflow: auto;
-    max-height: 360px;
+    margin: 0; padding: 4px 0;
+    overflow: auto; max-height: 360px;
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: 11px;
-    line-height: 1.55;
-    color: #bbb;
-    background: transparent;
-    white-space: pre;
-    tab-size: 2;
+    font-size: 11px; line-height: 1.55; color: #bbb;
+    background: transparent; white-space: pre; tab-size: 2;
 }
 .sr-tree-pre { padding: 4px 8px; }
 
-/* snap lines inside pre — one span per line */
-.sr-line {
-    display: block;
-    padding: 0 8px;
-    border-left: 2px solid transparent;
-}
+.sr-line { display: block; padding: 0 8px; border-left: 2px solid transparent; }
 .sr-line:hover   { background: #181818; }
 .sr-line.changed { background: #1e1600; border-left-color: #a80; }
 .sr-line.new     { background: #001a10; border-left-color: #4a9; }
 .sr-line.gone    { background: #1a0000; border-left-color: #c55; opacity: 0.6; }
-/* objecties hemisphere — dull light blue */
+
 .sr-obj { color: #7aa8c7; }
-/* indent whitespace — invisible but preserves paste layout */
 .sr-ind { white-space: pre; }
 .sr-str { color: #bbb; }
 
-/* scrollbars */
+/* ── notes panel ────────────────────────────────────────────────────────── */
+.sr-notes {
+    border-top: 1px solid #1a1a1a;
+    padding: 4px 8px 6px;
+    background: #101010;
+}
+.sr-notes-hdr {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+}
+.sr-notes-title {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #444; margin-right: 4px;
+}
+/* type badge: coloured pill in the legend row */
+.sr-note-badge {
+    font-size: 8px; padding: 0 4px; border-radius: 2px;
+    border: 1px solid; opacity: 0.7; line-height: 14px;
+}
+/* note row: coloured dot + label + delete button */
+.sr-note-row {
+    display: flex; align-items: center; gap: 5px; padding: 1px 0;
+}
+.sr-note-dot {
+    flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%;
+}
+.sr-note-label {
+    flex: 1; color: #999; font-size: 10px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sr-note-del {
+    background: none; border: none; color: #444;
+    cursor: pointer; font-size: 12px; line-height: 1; padding: 0 2px;
+}
+.sr-note-del:hover { color: #c55; }
+
+/* add-note row */
+.sr-note-add { display: flex; gap: 4px; margin-top: 4px; }
+.sr-note-input {
+    flex: 1; background: #181818; border: 1px solid #2a2a2a; border-radius: 2px;
+    color: #bbb; font-family: inherit; font-size: 10px; padding: 2px 6px;
+    outline: none; min-width: 0;
+}
+.sr-note-input:focus       { border-color: #3a3a3a; }
+.sr-note-input::placeholder { color: #333; }
+.sr-note-submit {
+    background: #1a2a1a; border: 1px solid #2a3a2a; border-radius: 2px;
+    color: #4a9; cursor: pointer; font-size: 14px; font-family: inherit;
+    padding: 0 6px; line-height: 1;
+}
+.sr-note-submit:hover { background: #2a3a2a; }
+
+/* ── scrollbars ─────────────────────────────────────────────────────────── */
 .sr-strip::-webkit-scrollbar,
 .sr-pre::-webkit-scrollbar,
 .sr-diff-scroll::-webkit-scrollbar         { width: 4px; height: 4px; }

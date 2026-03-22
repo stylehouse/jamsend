@@ -62,9 +62,10 @@
         if (streak.sc.count >= 2) {
             let spare = Math.max(life_input - absorbed, 0)
             let sprout_budget = 0.22
+            let sprout_i = 0
             while (spare > 0.1 && sprout_budget > 0) {
                 let dose = Math.min(0.1, spare, sprout_budget)
-                let id = `leaf_${tick}_${this.prandle(9999)}`
+                let id = `leaf_${tick}_${sprout_i++}`
                 w.i({ leaf: 1, leaf_id: id, dose })
                 V.farm && console.log(`🌿 farm: sprout ${id} dose:${dose.toFixed(3)}`)
                 spare        -= dose

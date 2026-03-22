@@ -930,13 +930,21 @@ export class House extends StorableHousing {
     }
 
     enroll_watched() {
-        for (const C of this.o({ watched: 1 }) as TheC[]) {
-            if (this.watched.some(w => w.C === C)) continue
-            const key = C.sc.watched as string
-            const fn: Function = C.sc.fn ?? (() => {
-                (this as any)[key] = C.o({})
-            })
-            this.watch_c(C, fn)
+        const targets: TheC[] = [this]
+        for (const A of this.o({ A: 1 }) as TheC[]) {
+            for (const w of A.o({ w: 1 }) as TheC[]) {
+                targets.push(w)
+            }
+        }
+        for (const H of targets) {
+            for (const C of H.o({ watched: 1 }) as TheC[]) {
+                if (this.watched.some(w => w.C === C)) continue
+                const key = C.sc.watched as string
+                const fn: Function = C.sc.fn ?? (() => {
+                    (this as any)[key] = C.o({})
+                })
+                this.watch_c(C, fn)
+            }
         }
     }
 
@@ -972,6 +980,7 @@ export class House extends StorableHousing {
     async Blank(A: TheC, w: TheC) {
         w.oai({ imperfection: 1 })
     }
+
 
 
 //#endregion
@@ -1035,60 +1044,92 @@ export class House extends StorableHousing {
             },
         })
     }
-    async Wormhole(A, w, e, AT, wT) {
+    // ── Wormhole ─────────────────────────────────────────────────────────────────
+    // Generic file-backed toc store.  Any House/work that wires up a directory
+    // handle (A.c.DL) gets transparent filesystem access through this actor.
+    //
+    // The toc format is the snap line codec: steps partition the tree, notes hang
+    // below them — that structure is general enough for any project, not just Story.
+    //
+    // op: 'read_toc'   → tries toc.snap; if absent tries legacy toc.json and
+    //                    migrates it in-place to toc.snap before returning.
+    //                    reply: { toc_snap: string } | { not_found:true, toc_snap:'' }
+    //
+    // op: 'write_toc'  → writes wh_data (string) to toc.snap
+    //                    reply: { ok: true }
+    //
+    // op: 'read_snap'  → reads NNN.snap by wh_step number
+    //                    reply: { snap: string } | { not_found: true }
+    //
+    // op: 'write_snap' → writes wh_data to NNN.snap
+    //                    reply: { ok: true }
+    
+    async Wormhole(A: TheC, w: TheC, e: TheC, AT: TheC, wT: TheC) {
         if (!A.c.nav && A.c.DL) {
-            const DL = A.c.DL as DirectoryListing
+            const DL = A.c.DL
             if (!DL.expanded) await DL.expand()
             A.c.nav = new WormholeNav(DL)
         }
-
-        const fs = await this.requesty_serial(w, 'fs_op')
-        for (const { e, req, finish } of this.o_elvis_req(w, 'wh_op')) {
+    
+        const H  = this as House
+        const fs = await H.requesty_serial(w, 'fs_op')
+    
+        for (const { req, finish } of H.o_elvis_req(w, 'wh_op')) {
             if (!fs.o({ req }).length) {
                 const fs_req = await fs.i({ req })
-                fs_req.c.finish = finish   // park finish on the fs req
+                fs_req.c.finish = finish
             }
         }
-
-        await fs.do(async (fs_req) => {
+    
+        await fs.do(async (fs_req: TheC) => {
             const req    = fs_req.sc.req as TheC
             const finish = fs_req.c.finish as Function | undefined
             if (!finish) return
-
-            const nav = A.c.nav as WormholeNav | undefined
+    
+            const nav  = A.c.nav as WormholeNav | undefined
             const path = req.sc.wh_path as string
             const op   = req.sc.wh_op   as string
-
-            const done = (reply: any) => {
-                finish(reply)
-                fs_req.sc.finished = true
-            }
-
-            if (!nav) {
-                // don't finish — leave req pending, Wormhole will retry next tick
-                w.i({ see: '📭 nav not ready' })
-                return
-            }
-
+            const pad  = (n: number) => String(n).padStart(3, '0')
+    
+            const done = (reply: any) => { finish(reply); fs_req.sc.finished = true }
+    
+            if (!nav) { w.i({ see: '📭 nav not ready' }); return }
+    
             try {
                 if (op === 'read_toc') {
-                    const raw = await nav.read_file(path, 'toc.json')
-                    done(raw ? { toc: JSON.parse(raw) } : { not_found: true, toc: {} })
-
+                    // prefer toc.snap; transparently migrate from toc.json if present
+                    let snap = await nav.read_file(path, 'toc.snap')
+    
+                    if (!snap) {
+                        const json_raw = await nav.read_file(path, 'toc.json')
+                        if (json_raw) {
+                            snap = H.migrate_toc_json_to_snap(json_raw)
+                            if (snap) {
+                                // write toc.snap so the next read is fast and toc.json
+                                // is no longer consulted.  leave toc.json in place as
+                                // a read-only backup — the user can delete it manually.
+                                await nav.write_file(path, 'toc.snap', snap)
+                                console.log(`📦 Wormhole: migrated toc.json → toc.snap at ${path}`)
+                            }
+                        }
+                    }
+    
+                    done(snap ? { toc_snap: snap } : { not_found: true, toc_snap: '' })
+    
+                } else if (op === 'write_toc') {
+                    await nav.write_file(path, 'toc.snap', req.sc.wh_data as string)
+                    done({ ok: true })
+    
                 } else if (op === 'read_snap') {
-                    const n = req.sc.wh_step as number
+                    const n   = req.sc.wh_step as number
                     const raw = await nav.read_file(path, `${pad(n)}.snap`)
                     done(raw ? { snap: raw } : { not_found: true })
-
-                } else if (op === 'write_toc') {
-                    await nav.write_file(path, 'toc.json', JSON.stringify(req.sc.wh_data))
-                    done({ ok: true })
-
+    
                 } else if (op === 'write_snap') {
                     const n = req.sc.wh_step as number
                     await nav.write_file(path, `${pad(n)}.snap`, req.sc.wh_data as string)
                     done({ ok: true })
-
+    
                 } else {
                     done({ error: `unknown op: ${op}` })
                 }
@@ -1096,10 +1137,97 @@ export class House extends StorableHousing {
                 done({ error: String(err) })
             }
         })
-
-        const DL = A.c.DL as DirectoryListing | undefined
+    
+        const DL = A.c.DL
         DL ? w.i({ see: `📂 ${DL.name}` }) : w.i({ see: '📭 no directory' })
     }
+    
+    // ── migrate_toc_json_to_snap ──────────────────────────────────────────────────
+    // One-time conversion: legacy toc.json → toc.snap string.
+    // Handles two plausible legacy shapes:
+    //
+    //   shape A (object with steps sub-object):
+    //     { story: "Book", frontier: 3, steps: { "1": "hash", "2": "hash", ... } }
+    //
+    //   shape B (flat key-per-step):
+    //     { "1": "hash", "2": "hash", ..., _frontier: 3 }
+    //
+    // Frontier is embedded as a {note:1,frontier:1} child under the relevant step,
+    // matching the current toc.snap convention.
+    // Returns '' when the JSON is unparseable, empty, or contains no numeric steps.
+    migrate_toc_json_to_snap(json_raw: string): string {
+        let data: Record<string,any>
+        try { data = JSON.parse(json_raw) } catch { return '' }
+    
+        const book      = (data.story ?? data.Story ?? 'unknown') as string
+        const frontier  = (data.frontier ?? data._frontier ?? 0) as number
+        const raw_steps = (typeof data.steps === 'object' && data.steps !== null)
+            ? data.steps as Record<string,string>
+            : data
+    
+        const step_ns = Object.keys(raw_steps)
+            .map(k => parseInt(k))
+            .filter(n => !isNaN(n))
+            .sort((a, b) => a - b)
+        if (!step_ns.length) return ''
+    
+        const ind = (d: number) => '  '.repeat(d)
+        const enj = (o: any) => JSON.stringify(o)
+    
+        const lines: string[] = []
+        lines.push(`\t${enj({ story: book })}`)
+        for (const n of step_ns) {
+            const dige = raw_steps[String(n)]
+            if (!dige || typeof dige !== 'string') continue
+            lines.push(`${ind(1)}\t${enj({ step: n, dige })}`)
+            if (n === frontier && frontier > 0) {
+                lines.push(`${ind(2)}\t${enj({ note: 1, frontier: 1 })}`)
+            }
+        }
+        return lines.join('\n') + '\n'
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }
 const pad = (n: number) => String(n).padStart(3, '0')
