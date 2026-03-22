@@ -112,7 +112,7 @@
         // so this correctly finds {step:2} regardless of whether n is number or string.
         const sc: Record<string,any> = {}
         sc[key] = n
-        const existing = container.o(exactly(sc))[0] as TheC | undefined
+        const existing = container.o(exactly(sc))[0]
         if (existing) return existing
         const c = container.i(sc)
         container.bump_version()
@@ -120,11 +120,11 @@
     },
 
     The_step(w: TheC, n: number): TheC {
-        return this.step_c(w.c.The as TheC, n, 'step')
+        return this.step_c(w.c.The, n, 'step')
     },
 
     The_step_dige(w: TheC, n: number): string | undefined {
-        return (w.c.The as TheC | undefined)?.o(exactly({ step: n }))[0]?.sc.dige as string | undefined
+        return (w.c.The)?.o(exactly({ step: n }))[0]?.sc.dige 
     },
 
     The_frontier(w: TheC): number {
@@ -132,9 +132,9 @@
         // o({note:1,frontier:1}) — both values are wildcard 1, matching any particle
         // that has both "note" and "frontier" keys.  That is exactly what we want.
         // returns 0 when absent (clean / no unreviewed mismatch).
-        for (const s of (w.c.The as TheC).o({ step: 1 }) as TheC[]) {
-            if ((s.o({ note: 1, frontier: 1 }) as TheC[]).length > 0) {
-                return s.sc.step as number
+        for (const s of (w.c.The).o({ step: 1 })) {
+            if ((s.o({ note: 1, frontier: 1 })).length > 0) {
+                return s.sc.step
             }
         }
         return 0
@@ -145,9 +145,9 @@
         // "thing.drop(thing)" — the particle drops itself; the container checks
         // liveness before returning particles, so the old reference is immediately
         // invalidated and will not appear in future queries.
-        const The = w.c.The as TheC
-        for (const s of The.o({ step: 1 }) as TheC[]) {
-            for (const fr of s.o({ note: 1, frontier: 1 }) as TheC[]) {
+        const The = w.c.The
+        for (const s of The.o({ step: 1 })) {
+            for (const fr of s.o({ note: 1, frontier: 1 })) {
                 fr.drop(fr)
             }
         }
@@ -164,7 +164,7 @@
         // find-or-create the live This/{Step:n} particle inside w.c.This.
         // w.c.This is the session step container, wired in Story_plan/Story().
         // Delegates to step_c which bumps version on creation.
-        return this.step_c(w.c.This as TheC, n, 'Step')
+        return this.step_c(w.c.This, n, 'Step')
     },
 
     step_i_note(w: TheC, n: number, note_sc: Record<string,any>, mode: 'add'|'move'|'remove') {
@@ -185,11 +185,11 @@
         note_sc = { note: 1, ...note_sc }
 
         const H   = this as House
-        const The = w.c.The as TheC
+        const The = w.c.The
 
         if (mode === 'move' || mode === 'remove') {
-            for (const s of The.o({ step: 1 }) as TheC[]) {
-                for (const existing of s.o({ note: 1 }) as TheC[]) {
+            for (const s of The.o({ step: 1 })) {
+                for (const existing of s.o({ note: 1 })) {
                     if (existing.matches(note_sc)) {
                         existing.drop(existing)   // thing.drop(thing)
                         break
@@ -212,11 +212,11 @@
         // Ensure {note_coloring:type, color:"#hex"} exists in swatchC.
         // swatchC is cached on w.c from Story_plan.
         // Must be called before any note of a new type reaches story_analysis().
-        const sw = w.c.swatchC as TheC
-        const all_sw = sw.o({ note_coloring: 1 }) as TheC[]
+        const sw = w.c.swatchC
+        const all_sw = sw.o({ note_coloring: 1 })
         if (all_sw.find(s => s.sc.note_coloring === type)) return
 
-        const non_frontier = (sw.o({ note_coloring: 1 }) as TheC[])
+        const non_frontier = (sw.o({ note_coloring: 1 }))
             .filter(s => s.sc.note_coloring !== 'frontier')
         const color = type === 'frontier'
             ? FRONTIER_COLOR
@@ -240,20 +240,20 @@
 //  annotations on not-yet-run steps survive a save.
 
     encode_toc_snap(w: TheC): string {
-        const book  = w.sc.Book as string
+        const book  = w.sc.Book
         const lines: string[] = []
 
         lines.push(`\t${this.enj({ story: book })}`)
 
-        const steps = (w.c.The as TheC | undefined)?.o({ step: 1 }) as TheC[] ?? []
-            .filter(s => !!s.sc.dige || (s.o({ note: 1 }) as TheC[]).length > 0)
+        const steps = (w.c.The)?.o({ step: 1 })
+            .filter(s => !!s.sc.dige || (s.o({ note: 1 })).length > 0)
             .sort((a, b) => (a.sc.step as number) - (b.sc.step as number))
 
         for (const s of steps) {
             const sc: Record<string,any> = { step: s.sc.step }
             if (s.sc.dige) sc.dige = s.sc.dige
             lines.push(`${this.ind(1)}\t${this.enj(sc)}`)
-            for (const noteC of s.o({ note: 1 }) as TheC[]) {
+            for (const noteC of s.o({ note: 1 })) {
                 lines.push(`${this.ind(2)}\t${this.enj(noteC.sc)}`)
             }
         }
@@ -286,7 +286,7 @@
             } else if (parsed.d === 2 && sc.note && curStep) {
                 // depth 2: note — JSON comparison avoids wildcard-1 over-matching
                 const sc_j   = JSON.stringify(sc)
-                const already = (curStep.o({ note: 1 }) as TheC[])
+                const already = (curStep.o({ note: 1 }))
                     .find(n => JSON.stringify(n.sc) === sc_j)
                 if (!already) {
                     curStep.i(sc)
@@ -329,7 +329,7 @@
         const n        = e?.sc.step_n  as number | undefined
         const note_idx = e?.sc.note_idx as number | undefined
         if (n == null || note_idx == null) return
-        const notes = this.The_step(w, n).o({ note: 1 }) as TheC[]
+        const notes = this.The_step(w, n).o({ note: 1 })
         const noteC = notes[note_idx]
         if (noteC) noteC.drop(noteC)   // thing.drop(thing)
         this.story_analysis(w)
@@ -369,15 +369,15 @@
     // stepsC/swatchC inside ave, re-read fresh by the UI on every bump.
     story_analysis(w: TheC) {
         const run      = w.o({ run: 1 })[0]
-        const The      = w.c.The as TheC
-        const ave      = w.c.ave  as TheC | undefined
-        const thisC    = w.c.This as TheC | undefined
+        const The      = w.c.The
+        const ave      = w.c.ave
+        const thisC    = w.c.This
         if (!ave || !thisC) return   // Story_plan hasn't run yet
         const frontier = (run?.sc.frontier as number) ?? 0
 
         let sel = w.sc.sel ?? null
         const failed_at = run?.sc.failed_at
-        if (failed_at != null && sel == null) sel = w.sc.sel = failed_at as number
+        if (failed_at != null && sel == null) sel = w.sc.sel = failed_at
 
         // w.c.This = w/%This,Story:book — visible in Stuffing directly.
         // No separate mirror needed; This is the real particle, not a copy.
@@ -385,17 +385,17 @@
         // notes from The/%step:n — keyed by step number.
         // TheC refs are safe here; notes only change on explicit user action.
         const steps_notes: Record<number, TheC[]> = {}
-        for (const theStep of ((w.c.The as TheC)?.o({ step: 1 }) as TheC[] ?? [])) {
-            const n     = theStep.sc.step as number
-            const notes = theStep.o({ note: 1 }) as TheC[]
+        for (const theStep of ((w.c.The)?.o({ step: 1 }))) {
+            const n     = theStep.sc.step
+            const notes = theStep.o({ note: 1 })
             if (notes.length) steps_notes[n] = notes
         }
 
         // the_steps: plain {n, dige} snapshot from The — the canonical expected set.
         // The UI builds the full strip skeleton from this, overlaying live stepsC data
         // for steps that have actually run this session.  sorted ascending.
-        const the_steps = ((w.c.The as TheC)?.o({ step: 1 }) as TheC[] ?? [])
-            .map(s => ({ n: s.sc.step as number, dige: s.sc.dige as string | undefined }))
+        const the_steps = ((w.c.The)?.o({ step: 1 }))
+            .map(s => ({ n: s.sc.step as number, dige: s.sc.dige  }))
             .sort((a, b) => a.n - b.n)
 
         const an          = ave.oai({ story_analysis: 1 })
@@ -404,7 +404,7 @@
         an.sc.sel         = sel
         an.sc.the_steps   = the_steps
         an.sc.steps_notes = steps_notes
-        ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${(w.c.This as TheC)?.o({Step:1}).length ?? 0} frontier=${frontier}`)
+        ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${(w.c.This)?.o({Step:1}).length ?? 0} frontier=${frontier}`)
         ave.bump_version()
     },
 
@@ -430,7 +430,7 @@
         const n = e?.sc.accept_n as number | undefined
         if (n == null) return
 
-        const The_all = (w.c.The as TheC).o({ step: 1 }) as TheC[]
+        const The_all = (w.c.The).o({ step: 1 })
         const max_step = Math.max(0, ...The_all.map(s => s.sc.step as number))
 
         if (n >= max_step) {
@@ -442,11 +442,11 @@
         }
 
         // This → The: promote the accepted dige into the canonical record
-        const stepC = H.i_step(w, n)
-        if (stepC.sc.dige) H.The_step(w, n).sc.dige = stepC.sc.dige as string
-        stepC.sc.accepted = true   // explicit; not derived from frontier in story_analysis
-        delete stepC.sc.snap
-        delete stepC.sc.got_snap
+        const step = H.i_step(w, n)
+        if (step.sc.dige) H.The_step(w, n).sc.dige = step.sc.dige
+        step.sc.accepted = true
+        delete step.sc.snap
+        delete step.sc.got_snap
 
         delete run.sc.failed_at
         delete run.sc.needs_snap
@@ -595,7 +595,7 @@
                 this.story_process_node(n, T, D)
                 if (T.sc.not) return
                 if (T.c.path.length === 1) {
-                    T.sc.more = (n.o({}) as TheC[]).filter(c => !c.sc.snap_root)
+                    T.sc.more = (n.o({})).filter(c => !c.sc.snap_root)
                 }
                 lines.push({ D, depth: T.c.path.length - 1 })
             },
@@ -626,7 +626,7 @@
         // Get-or-create the Run sub-House for this Book and wire its actors.
         // Called every tick from Story() — cheap when the House and actors already exist.
         // Returns { Run, book } or null when Book is missing or Run_A_<Book> is absent.
-        const book = w.sc.Book as string | undefined
+        const book = w.sc.Book 
         if (!book) { w.i({ see: '!Book' }); return null }
 
         const Run  = this.subHouse(book)
@@ -641,47 +641,36 @@
         return { Run, book }
     },
 
-    async Story_plan(A: TheC, w: TheC, book: string) {
-        // Wires all session-local C references for w:Story.  Called every session
-        // because w.c.* is ephemeral (cleared on reload), even when run persists in sc.
+    Story_plan(A: TheC, w: TheC, book: string) {
+        // One-time setup — only called when there is no %run yet.
+        // Creates all persistent and session-local C structure for w:Story.
         //
-        // Structure:
+        //   w/%The,story:book   — canonical toc; from disk / accepted.
+        //     /%step:N,dige     — one per known step + expected snap hash.
+        //       /%note:1,...    — user annotations
         //
-        //   w/%The,story:book     — canonical toc tree (from disk / accepted).
-        //     /%step:N,dige       — one per known step; expected snap hash.
-        //       /%note:1,...      — user annotations
+        //   w/%This,Story:book  — live session steps.
+        //     /%Step:N          — one per step run this session; ok/dige/got_snap/accepted/saved
         //
-        //   w/%This,Story:book    — live session steps.
-        //     /%Step:N            — one per step that has run; ok/dige/got_snap/accepted/saved
-        //
-        //   H/%watched:ave        — reactive container.
-        //     /%swatches:1        — note-type colour palette (r'd fresh each session).
-        //     /%This,Story:book   — live steps (r'd fresh each session — no multi-place).
-        //     /%story_analysis:1  — scalar run state for the UI.
+        //   H/%watched:ave      — reactive container.
+        //     /%swatches:1      — note-type colour palette.
+        //     /%story_analysis:1 — scalar run state for the UI.
         //
         const H = this
 
-        // The — canonical toc; plain child of w, never in ave, never walked by story_snap
-        w.c.The = w.o(exactly({ The: 1, story: book }))[0]
-            ?? w.i({ The: 1, story: book })
+        w.c.The     = w.o(exactly({ The: 1, story: book }))[0]
+                   ?? w.i({ The: 1, story: book })
 
-        // This — live session steps, owned by w
-        w.c.This = w.o(exactly({ This: 1, Story: book }))[0]
-            ?? w.i({ This: 1, Story: book })
+        w.c.This    = w.o(exactly({ This: 1, Story: book }))[0]
+                   ?? w.i({ This: 1, Story: book })
 
-        // ave — enroll once; r() swatches fresh each session.
-        // This lives on w and is accessed via w.c.This directly by story_analysis
-        // and i_step.  The UI reads steps via storyH.o() rather than through ave.
-        const ave = H.oai_enroll(H, { watched: 'ave' })
-        await ave.r({ swatches: 1 }, {})
-        w.c.swatchC = ave.o({ swatches: 1 })[0] as TheC
+        const ave   = H.oai_enroll(H, { watched: 'ave' })
+        w.c.swatchC = ave.oai({ swatches: 1 })
         w.c.ave     = ave
 
         H.oai_enroll(H, { watched: 'actions' })
 
-        // create the run particle only if it doesn't exist yet
-        return w.o({ run: book })[0]
-            ?? w.i({ run: book, steps_done: 0, steps_total: 30, paused: false, mode: 'new' })
+        return w.i({ run: book, steps_done: 0, steps_total: 30, paused: false, mode: 'new' })
     },
 
 
@@ -693,8 +682,20 @@
         if (!sub) return
         const { Run, book } = sub
 
-        // Story_plan wires w.c.* every session (w.c is ephemeral; sc survives reloads).
-        const run = await H.Story_plan(A, w, book)
+        // Story_plan runs only once — when there is no %run particle yet.
+        // w.c.* wiring lives here; w.c is ephemeral and cleared on reload.
+        // On reload: run exists in sc, but w.c.* is gone; re-wire from existing particles.
+        let run = w.o({ run: book })[0]
+        if (!run) {
+            run = H.Story_plan(A, w, book)
+        } else if (!w.c.ave) {
+            w.c.The     = w.o(exactly({ The: 1, story: book }))[0]
+            w.c.This    = w.o(exactly({ This: 1, Story: book }))[0]
+            const ave   = H.oai_enroll(H, { watched: 'ave' })
+            w.c.swatchC = ave.oai({ swatches: 1 })
+            w.c.ave     = ave
+            H.oai_enroll(H, { watched: 'actions' })
+        }
 
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(book)}`
@@ -711,7 +712,7 @@
             const toc_snap = toc_req.sc.reply?.toc_snap ?? ''
             H.decode_toc_snap(toc_snap, w)   // fills The + pre-creates hollow This/{Step:N}
 
-            const step_count = (w.c.The as TheC)?.o({ step: 1 }).length ?? 0
+            const step_count = (w.c.The)?.o({ step: 1 }).length ?? 0
             run.sc.mode      = step_count > 0 ? 'check' : 'new'
             run.sc.frontier  = H.The_frontier(w)   // restored from {note:1,frontier:1}
             w.c.run_path     = run_path
@@ -723,7 +724,7 @@
         if (run.sc.needs_snap) {
             // ── fetch the expected snap for the failed step ────────────────
             // stored on This/{Step:N}.sc.exp_snap and shown in the diff panel.
-            const n        = run.sc.needs_snap as number
+            const n        = run.sc.needs_snap
             const snap_req = await wh.oai({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
                 return w.i({ see: `⏳ snap ${H.pad(n)}...` })
@@ -762,7 +763,7 @@
         const TICK = ANSWER_CALLS_TICK_MS
 
         const update_status = async (label: string, cls = 'default') => {
-            const wa = () => H.o({ watched: 'actions' })[0] as TheC | undefined
+            const wa = () => H.o({ watched: 'actions' })[0]
             await wa()?.r({ action: 1, role: 'status' }, { label, cls, disabled: true })
             wa()?.bump_version()
         }
@@ -775,7 +776,7 @@
             }
             const n = (run.sc.steps_done as number) + 1
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
-            ;V.Story && console.log(`The at n=${n}:`, (w.c.The as TheC)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
+            ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
             ;V.Story && console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
 
             if (run.sc.mode === 'new' && n > (run.sc.steps_total as number)) {
@@ -814,32 +815,33 @@
         // Phase 3: snap_step — encode, compare, store, schedule next
         const snap_step = async () => {
             if (!run.c.driving) return
-            const n = run.c.step_n as number
+            const n = run.c.step_n
             run.sc.steps_done = n
 
             const snap     = await this.story_snap(Run)
             const got_dige = await dig(snap)
 
-            const stepC     = H.i_step(w, n)
-            stepC.sc.hollow = false
+            const step     = H.i_step(w, n)
+            step.sc.hollow = false
 
             if (run.sc.mode === 'new') {
-                stepC.sc.snap  = snap
-                stepC.sc.dige  = got_dige
-                stepC.sc.ok    = true
+                step.sc.snap     = snap
+                step.sc.dige     = got_dige
+                step.sc.ok       = true
+                step.sc.accepted = true   // new-mode steps are self-accepting; save loop uses this
                 H.The_step(w, n).sc.dige = got_dige
                 H.story_analysis(w)
                 await update_status(
-                    `recording ${H.pad(n)}/${H.pad(run.sc.steps_total as number)}`, 'save')
+                    `recording ${H.pad(n)}/${H.pad(run.sc.steps_total)}`, 'save')
                 schedule()
 
             } else {
                 const exp_dige = H.The_step_dige(w, n)
                 const ok       = exp_dige === got_dige
                 ;V.Story && console.log(`🔍 n=${n} ok=${ok} exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)
-                stepC.sc.got_snap = snap
-                stepC.sc.dige     = got_dige
-                stepC.sc.ok       = ok
+                step.sc.got_snap = snap
+                step.sc.dige     = got_dige
+                step.sc.ok       = ok
                 H.story_analysis(w)
 
                 if (!ok && !run.sc.lenient) {
@@ -892,19 +894,19 @@
         if (!w) return
 
         const wh         = w.c.wh as any
-        const run_path   = w.c.run_path as string | undefined
+        const run_path   = w.c.run_path 
         const run        = w.o({ run: 1 })[0]
         const frontier   = (run?.sc.frontier as number) ?? 0
-        const The        = w.c.The as TheC
-        const thisC      = w.c.This as TheC | undefined
-        const all_this_steps = thisC ? thisC.o({ Step: 1 }) as TheC[] : []
-        if (!all_this_steps.length && !The?.o({ step: 1 }).length) return
+        const The        = w.c.The
+        const thisC      = w.c.This
+        const all_steps = thisC ? thisC.o({ Step: 1 }) : []
+        if (!all_steps.length && !The?.o({ step: 1 }).length) return
 
         // The diges were already set by snap_step (new mode) and story_accept (check mode).
         // No merge loop needed — just sync the frontier note and encode.
 
         // sync frontier note so toc.snap reflects the current state exactly
-        const all_the_steps = The.o({ step: 1 }) as TheC[]
+        const all_the_steps = The.o({ step: 1 })
         const max_step      = Math.max(0, ...all_the_steps.map(s => s.sc.step as number))
         if (frontier > 0 && frontier < max_step) {
             storyH.The_set_frontier(w, frontier)
@@ -925,19 +927,20 @@
             const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
             storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
 
-            // write NNN.snap for ok steps (new mode) and accepted steps (check mode)
-            // that haven't been saved yet.  saved=true makes subsequent saves cheap.
-            for (const stepC of all_this_steps) {
-                if ((!stepC.sc.ok && !stepC.sc.accepted) || stepC.sc.saved) continue
-                const n            = stepC.sc.Step as number
-                const snap_content = (stepC.sc.snap ?? stepC.sc.got_snap) as string | undefined
+            // write NNN.snap only for accepted steps not yet saved.
+            // new-mode steps get accepted=true from snap_step; check-mode from story_accept.
+            // saved=true is set here so repeated save calls write nothing extra.
+            for (const step of all_steps) {
+                if (!step.sc.accepted || step.sc.saved) continue
+                const n            = step.sc.Step
+                const snap_content = step.sc.snap ?? step.sc.got_snap
                 if (!snap_content) continue
                 const snap_req = await wh.i({
                     wh_path: run_path, wh_op: 'write_snap',
                     wh_step: n, wh_data: snap_content,
                 })
                 storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
-                stepC.sc.saved = true   // mark so subsequent saves skip it
+                step.sc.saved = true
             }
 
             const tag = frontier > 0 ? ` frontier:${frontier}` : ' clean'
@@ -953,11 +956,11 @@
         // The next Story invocation starts fresh: re-reads toc.snap, re-builds The,
         // re-creates hollow This/{Step:N}, etc.
         for (const h of this.all_House) {
-            for (const w of (h as House).o({ w: 1 }) as TheC[]) {
-                for (const run of w.o({ run: 1 }) as TheC[]) run.c.driving = false
+            for (const w of (h as House).o({ w: 1 })) {
+                for (const run of w.o({ run: 1 })) run.c.driving = false
                 // drop all live Step particles from This (w.c.This = w/%This,Story:book)
-                const thisC = w.c.This as TheC | undefined
-                if (thisC) for (const s of thisC.o({ Step: 1 }) as TheC[]) s.drop(s)
+                const thisC = w.c.This
+                if (thisC) for (const s of thisC.o({ Step: 1 })) s.drop(s)
                 delete (w as any).c.This
                 delete (w as any).c.The   // will be re-created from disk on next load
                 delete (w as any).c.The
@@ -969,7 +972,7 @@
         }
 
         this.todo = []
-        for (const A of this.o({ A: 1 }) as TheC[]) this.drop(A)
+        for (const A of this.o({ A: 1 })) this.drop(A)
         this.prng = [1, 2, 3, 4]
         console.log(`🔄 ${this.name} reset`)
     },
@@ -981,7 +984,7 @@
         // Find-or-create a {watched:X} container on target, enrolling it exactly once.
         // o(sc)[0] retrieves any existing particle; on first creation enroll_watched()
         // traverses H/A*/w* to pick up any {watched:X} particles wherever they now live.
-        const existing = target.o(sc)[0] as TheC | undefined
+        const existing = target.o(sc)[0]
         if (existing) return existing
         const c = target.i(sc)
         this.enroll_watched()
@@ -1001,7 +1004,7 @@
     },
 
     async story_ui(this: House, Run: House, w: TheC, run: TheC) {
-        const wa = this.o({ watched: 'actions' })[0] as TheC | undefined
+        const wa = this.o({ watched: 'actions' })[0]
         if (!wa) return
         const paused = run.sc.paused
         const mode   = run.sc.mode ?? 'new'

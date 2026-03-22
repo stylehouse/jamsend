@@ -44,12 +44,10 @@
       {"mung":["age"]}	{"self":1,"round":26}
       	{"wants_enzyme":1}
   	{"A":"enzymeco"}
-    {"mung":["age"]}	{"self":1,"round":24}
+    {"mung":["age"]}	{"self":1,"round":23}
     	{"w":"enzymeco"}
       	{"o_elvis":"request_enzyme"}
-      {"mung":["age"]}	{"self":1,"round":24}
-      	{"producing":1,"ticks_left":2}
-        	{"enzyme":1,"units":5}
+      {"mung":["age"]}	{"self":1,"round":23}
   {"mung":["id"]}	{"mo":"main","interval":3.6}
   	{"Se":"workrepo"}
     	{"openity":1,"v":-11}
