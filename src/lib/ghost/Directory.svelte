@@ -321,7 +321,7 @@
 
 
         // watch this change like we do with D%name
-        let op = D.o_kv('openity')
+        let op = D.o({openity:1})[0]
         if (!op) throw "!%openity"
         let openity = op.sc.v || 1
 

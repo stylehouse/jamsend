@@ -134,10 +134,18 @@ class TheX {
         // Look up the key in X.k
         let x = this.k && this.k[k] ? this.k[k] : null;
         
-        // wildcard where {$k:1}
-        if (x && (v != 1 || q?.notwild)) {
+        // wildcard where {$k:1}, leaving us where there are more /$n
+        if (x && (v != 1 || typeof v == 'string' || q?.notwild)) {
             // Find the value index
             let vi = x.vs ? x.vs.indexOf(v) : -1;
+            if (vi < 0 && typeof v == 'string') {
+                // o(exactly(sc)) for when you really mean %step:1 only
+                //  may be trying to locate a string when it needs to use a number
+                v = v * 1
+                if (!Number.isNaN(v)) {
+                    vi = x.vs ? x.vs.indexOf(v) : -1;
+                }
+            }
             if (vi < 0) return; // continues to next iteration
             x = x.v && x.v[vi] ? x.v[vi] : null;
         }
@@ -407,11 +415,6 @@ abstract class TimeOffice extends StuffIO {
             // v=0 shall not exist
             v && D.i({...c,v})
         })
-    }
-    o_kv(k:string):TheC {
-        let c = {}
-        c[k] = 1
-        return  this.o(c)[0]
     }
 
     // for some %timestamp, delta to now, seconds of oldness getter
