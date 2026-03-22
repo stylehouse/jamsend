@@ -46,14 +46,15 @@
     type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
     type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
-    type TheStep = { n: number, dige: string | undefined }
+    type StepEntry = { n: number, dige: string | undefined }
 
     let display = $state({
-        run_sc:      null as Record<string,any> | null,
-        frontier:    0,
-        sel:         null as number | null,
-        the_steps:   [] as TheStep[],
-        steps_notes: {} as Record<number, TheC[]>,
+        run_sc:    null as Record<string,any> | null,
+        frontier:  0,
+        open_at:      null as number | null,
+        bad_count: 0,
+        steps:     [] as StepEntry[],
+        notes:     {} as Record<number, TheC[]>,
     })
     let stepsC     = $state<TheC | undefined>()
     let sel_m      = $state<TheC | null>(null)
@@ -71,16 +72,16 @@
             const an  = ave?.find((p: TheC) => 'story_analysis' in (p.sc ?? {})) as TheC | undefined
 
             // reach w.c.This for live steps
-            const wStory = storyH?.o({ A: 'Story' })?.[0]?.o?.({ w: 'Story' })?.[0] as TheC | undefined
-            const sc     = wStory?.c?.This as TheC | undefined
+            // This is placed in ave directly (multi-placed from w)
+            const sc = ave?.find((p: TheC) => 'This' in (p.sc ?? {})) as TheC | undefined
 
             if (an) Object.assign(display, an.sc)
             stepsC = sc
             const live_steps = sc ? (sc.o({Step:1}) as TheC[]).sort((a,b)=>(a.sc.Step as number)-(b.sc.Step as number)) : []
             const latest = live_steps[live_steps.length - 1]
-            console.log(`StoryRun: stepsC=${!!sc} live=${live_steps.length} the_steps=${display.the_steps.length} latest=`, latest?.sc)
-            sel_m = display.sel != null
-                ? (live_steps.find(s => s.sc.Step === display.sel) ?? null)
+            console.log(`StoryRun: stepsC=${!!sc} live=${live_steps.length} the_steps=${display.steps.length} latest=`, latest?.sc)
+            sel_m = display.open_at != null
+                ? (live_steps.find(s => s.sc.Step === display.open_at) ?? null)
                 : null
             swatchesC = sw
             const m: Record<string,string> = {}
@@ -106,7 +107,7 @@
 
     type NoteFlag = { type: string, color: string }
     function note_flags_for(n: number): NoteFlag[] {
-        const notes = display.steps_notes[n] ?? []
+        const notes = display.notes[n] ?? []
         const seen  = new Set<string>()
         const flags: NoteFlag[] = []
         for (const nc of notes) {
@@ -139,12 +140,12 @@
     }
 
     let got_lines  = $derived.by(() => {
-        const live = display.sel != null ? live_step(display.sel) : null
-        return parse_lines(live?.sc.hollow ? '' : (live?.sc.got_snap ?? live?.sc.snap) as string | undefined)
+        const live = display.open_at != null ? live_step(display.open_at) : null
+        return parse_lines(live?.sc.unrun ? '' : (live?.sc.got_snap ?? live?.sc.snap) as string | undefined)
     })
     let exp_lines  = $derived.by(() => {
-        const live = display.sel != null ? live_step(display.sel) : null
-        return parse_lines(live?.sc.hollow ? '' : live?.sc.exp_snap as string | undefined)
+        const live = display.open_at != null ? live_step(display.open_at) : null
+        return parse_lines(live?.sc.unrun ? '' : live?.sc.exp_snap as string | undefined)
     })
     let show_diff  = $derived(exp_lines.length > 0)
     let diff: DiffTag[] | null = $derived.by(() => {
@@ -161,14 +162,14 @@
     function playhead_n(): number | null {
         if (display.frontier > 0) return display.frontier
         // first step in The that hasn't been run this session yet
-        const first_hollow = display.the_steps.find(ts => !live_step(ts.n))
+        const first_hollow = display.steps.find(ts => !live_step(ts.n))
         return first_hollow?.n ?? null
     }
 
     // run bar deriveds
     let run_mode   = $derived(display.run_sc?.mode       ?? 'new')
-    let run_done   = $derived(display.run_sc?.steps_done ?? 0)
-    let run_total  = $derived(display.run_sc?.steps_total as number | undefined)
+    let run_done   = $derived(display.run_sc?.done ?? 0)
+    let run_total  = $derived(display.run_sc?.total as number | undefined)
     let run_paused = $derived(!!display.run_sc?.paused)
     let run_failed = $derived(display.run_sc?.failed_at  as number | undefined)
     let add_note_text = $state('')
@@ -189,14 +190,17 @@
 
     // ── selection + accept ───────────────────────────────────────────────────
     function pick(n: number) {
-        const new_sel = display.sel === n ? null : n
-        storyH?.elvisto('Story/Story', 'story_sel', { sel: new_sel })
+        const new_sel = display.open_at === n ? null : n
+        storyH?.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
     }
     function close_panel() {
-        storyH?.elvisto('Story/Story', 'story_sel', { sel: null })
+        storyH?.elvisto('Story/Story', 'story_sel', { open_at: null })
     }
     function accept(n: number) {
         storyH?.elvisto('Story/Story', 'story_accept', { accept_n: n })
+    }
+    function accept_all() {
+        storyH?.elvisto('Story/Story', 'story_accept_all', {})
     }
 
     // ── display helpers ──────────────────────────────────────────────────────
@@ -249,19 +253,22 @@
             {:else}
                 <span class="sr-status running">▶</span>
             {/if}
+            {#if display.bad_count > 1}
+                <button class="sr-accept-all" onclick={accept_all}>Accept All ({display.bad_count})</button>
+            {/if}
         </div>
 
         <!-- pip strip — one cell per step from The (skeleton); live stepsC data overlaid -->
-        <!-- hollow: step exists in The but hasn't run this session yet                   -->
+        <!-- unrun: step exists in The but hasn't run this session yet                   -->
         <!-- live_step(n) returns the real TheC if it ran, null if still hollow           -->
         <div class="sr-strip">
-            {#each display.the_steps as ts (ts.n)}
+            {#each display.steps as ts (ts.n)}
                 {@const n    = ts.n}
                 {@const live = live_step(n)}
                 {@const ok       = !!live?.sc.ok}
                 {@const hollow   = !live}
                 {@const accepted = !!live?.sc.accepted}
-                {@const on       = display.sel === n}
+                {@const on       = display.open_at === n}
                 {@const ph       = n === playhead_n()}
                 {@const flags    = note_flags_for(n)}
                 <div class="sr-pip-cell">
@@ -287,16 +294,16 @@
         </div>
 
         <!-- snap panel — sel_m is live TheC (or null for hollow); ts_sel is the The record -->
-        {#if display.sel != null}
-            {@const n        = display.sel}
-            {@const ts_sel   = display.the_steps.find(t => t.n === n)}
+        {#if display.open_at != null}
+            {@const n        = display.open_at}
+            {@const ts_sel   = display.steps.find(t => t.n === n)}
             {@const live     = live_step(n)}
             {@const ok       = !!live?.sc.ok}
             {@const hollow   = !live}
             {@const accepted = !!live?.sc.accepted}
             {@const dige     = String(live?.sc.dige ?? ts_sel?.dige ?? '').slice(0, 8)}
             {@const can_accept = !ok && !hollow}
-            {@const step_notes = display.steps_notes[n] ?? []}
+            {@const step_notes = display.notes[n] ?? []}
 
             <div class="sr-panel">
 
@@ -469,8 +476,8 @@
 .sr-pip.fail         { background: #3a1a1a; color: #c55; }
 /* accepted: mismatch explicitly ok'd — green body, red glyph */
 .sr-pip.accepted     { background: #1a3a25; color: #c55; }
-/* hollow: toc step not yet reached this session — pale outline, visible ○ */
-.sr-pip.hollow       { background: #1a1a1a; color: #555; border: 1px solid #383838; }
+/* unrun: toc step not yet reached this session — pale outline, visible ○ */
+.sr-pip.unrun       { background: #1a1a1a; color: #555; border: 1px solid #383838; }
 .sr-pip.on           { outline: 1px solid #79b; outline-offset: 1px; }
 .sr-pip.has-notes    { border-bottom: 2px solid #444; }
 .sr-pip:hover        { background: #333; }
@@ -521,7 +528,12 @@
     color: #4a9; cursor: pointer;
     font-size: 10px; font-family: inherit; padding: 1px 6px;
 }
-.sr-accept:hover { background: #2a4a35; }
+.sr-accept-all {
+    background: #1a3a25; border: 1px solid #2a5a35; border-radius: 2px;
+    color: #4a9; cursor: pointer; font-size: 10px; font-family: inherit; padding: 1px 8px;
+    margin-left: 4px;
+}
+.sr-accept-all:hover { background: #2a4a35; }
 
 .sr-hollow-body { padding: 12px; color: #444; font-size: 10px; }
 

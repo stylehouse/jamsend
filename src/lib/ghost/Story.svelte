@@ -366,7 +366,7 @@
     // story_analysis: write scalar state into ave/{story_analysis:1} and bump ave.
     // Called after every mutation that should surface in the UI.
     // Steps and swatches are not serialised here — they are live children of
-    // stepsC/swatchC inside ave, re-read fresh by the UI on every bump.
+    // This/swatchC inside ave, re-read fresh by the UI on every bump.
     story_analysis(w: TheC) {
         const run      = w.o({ run: 1 })[0]
         const The      = w.c.The
@@ -375,20 +375,20 @@
         if (!ave || !thisC) return   // Story_plan hasn't run yet
         const frontier = (run?.sc.frontier as number) ?? 0
 
-        let sel = w.sc.sel ?? null
+        let open_at = run?.sc.open_at ?? null
         const failed_at = run?.sc.failed_at
-        if (failed_at != null && sel == null) sel = w.sc.sel = failed_at
+        if (failed_at != null && open_at == null) open_at = run.sc.open_at = failed_at
 
         // w.c.This = w/%This,Story:book — visible in Stuffing directly.
         // No separate mirror needed; This is the real particle, not a copy.
 
         // notes from The/%step:n — keyed by step number.
         // TheC refs are safe here; notes only change on explicit user action.
-        const steps_notes: Record<number, TheC[]> = {}
+        const notes: Record<number, TheC[]> = {}
         for (const theStep of ((w.c.The)?.o({ step: 1 }))) {
             const n     = theStep.sc.step
             const notes = theStep.o({ note: 1 })
-            if (notes.length) steps_notes[n] = notes
+            if (notes.length) notes[n] = notes
         }
 
         // the_steps: plain {n, dige} snapshot from The — the canonical expected set.
@@ -398,19 +398,51 @@
             .map(s => ({ n: s.sc.step as number, dige: s.sc.dige  }))
             .sort((a, b) => a.n - b.n)
 
+        const bad_count = thisC ? (thisC.o({ Step: 1 }) as any[]).filter(s => !s.sc.ok && !s.sc.accepted).length : 0
+
         const an          = ave.oai({ story_analysis: 1 })
         an.sc.run_sc      = run ? { ...run.sc } : null
         an.sc.frontier    = frontier
-        an.sc.sel         = sel
-        an.sc.the_steps   = the_steps
-        an.sc.steps_notes = steps_notes
+        an.sc.open_at        = open_at
+        an.sc.bad_count   = bad_count
+        an.sc.steps       = the_steps
+        an.sc.notes       = notes
         ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${(w.c.This)?.o({Step:1}).length ?? 0} frontier=${frontier}`)
         ave.bump_version()
     },
 
     async story_sel(A: TheC, w: TheC, e?: TheC) {
-        w.sc.sel = e?.sc.sel ?? null
+        const run = w.o({ run: 1 })[0]
+        if (run) run.sc.open_at = e?.sc.open_at ?? null
         this.story_analysis(w)
+    },
+
+    async story_accept_all(A: TheC, w: TheC) {
+        // Accept every !ok step in This at once.  Used after a lenient run that
+        // accumulated multiple mismatches.  Promotes all diges into The, marks
+        // accepted, sheds snap text, then saves and resumes.
+        const H   = this
+        const run = w.o({ run: 1 })[0]
+        if (!run) return
+        const allBad = (w.c.This?.o({ Step: 1 }) ?? []).filter(s => !s.sc.ok)
+        ;V.Story && console.log(`✅ story_accept_all: ${allBad.length} steps`)
+        for (const step of allBad) {
+            const n = step.sc.Step
+            if (step.sc.dige) H.The_step(w, n).sc.dige = step.sc.dige
+            step.sc.accepted = true
+            delete step.sc.snap
+            delete step.sc.got_snap
+        }
+        run.sc.frontier = 0
+        H.The_set_frontier(w, 0)
+        delete run.sc.failed_at
+        delete run.sc.fetch_snap
+        run.sc.paused = false
+        run.sc.open_at   = null
+        H.story_analysis(w)
+        H.story_save()
+        const sub = H.Story_subHouse(A, w)
+        if (sub) H.story_drive(sub.Run, w, run)
     },
 
 
@@ -447,11 +479,13 @@
         step.sc.accepted = true
         delete step.sc.snap
         delete step.sc.got_snap
+        ;V.Story && console.log(`✅ story_accept n=${n} dige=${step.sc.dige?.slice(0,8)} frontier=${run.sc.frontier}`)
+        ;V.Story && console.log(`✅ story_accept n=${n} dige=${step.sc.dige?.slice?.(0,8)} frontier=${run.sc.frontier}`)
 
         delete run.sc.failed_at
-        delete run.sc.needs_snap
+        delete run.sc.fetch_snap
         run.sc.paused = false
-        w.sc.sel      = null
+        run.sc.open_at    = null
 
         H.story_analysis(w)
         H.story_save()
@@ -642,35 +676,32 @@
     },
 
     Story_plan(A: TheC, w: TheC, book: string) {
-        // One-time setup — only called when there is no %run yet.
-        // Creates all persistent and session-local C structure for w:Story.
+        // Called once when there is no %run yet — no run means no The/This either.
+        // Creates all C structure fresh; wires w.c.* for the session.
         //
-        //   w/%The,story:book   — canonical toc; from disk / accepted.
-        //     /%step:N,dige     — one per known step + expected snap hash.
-        //       /%note:1,...    — user annotations
-        //
-        //   w/%This,Story:book  — live session steps.
-        //     /%Step:N          — one per step run this session; ok/dige/got_snap/accepted/saved
-        //
-        //   H/%watched:ave      — reactive container.
-        //     /%swatches:1      — note-type colour palette.
-        //     /%story_analysis:1 — scalar run state for the UI.
+        //   w/%The,story:book   — canonical toc; from disk.
+        //     /%step:N,dige
+        //       /%note:1,...
+        //   w/%This,Story:book  — live session steps (also placed in ave for reactivity).
+        //     /%Step:N          — ok/dige/got_snap/accepted/saved
+        //   H/%watched:ave
+        //     /%swatches:1
+        //     /%This,Story:book — same C particle as w's This (multi-placed)
+        //     /%story_analysis:1
         //
         const H = this
 
-        w.c.The     = w.o(exactly({ The: 1, story: book }))[0]
-                   ?? w.i({ The: 1, story: book })
-
-        w.c.This    = w.o(exactly({ This: 1, Story: book }))[0]
-                   ?? w.i({ This: 1, Story: book })
+        w.c.The  = w.i({ The:  1, story: book })
+        w.c.This = w.i({ This: 1, Story: book })
 
         const ave   = H.oai_enroll(H, { watched: 'ave' })
+        ave.i(w.c.This)                          // This appears in both w and ave
         w.c.swatchC = ave.oai({ swatches: 1 })
         w.c.ave     = ave
 
         H.oai_enroll(H, { watched: 'actions' })
 
-        return w.i({ run: book, steps_done: 0, steps_total: 30, paused: false, mode: 'new' })
+        return w.i({ run: book, done: 0, steps_done: 0, total: 30, steps_total: 30, paused: false, mode: 'new' })
     },
 
 
@@ -682,20 +713,9 @@
         if (!sub) return
         const { Run, book } = sub
 
-        // Story_plan runs only once — when there is no %run particle yet.
-        // w.c.* wiring lives here; w.c is ephemeral and cleared on reload.
-        // On reload: run exists in sc, but w.c.* is gone; re-wire from existing particles.
+        // Story_plan runs once — creates everything. If run exists, everything else does too.
         let run = w.o({ run: book })[0]
-        if (!run) {
-            run = H.Story_plan(A, w, book)
-        } else if (!w.c.ave) {
-            w.c.The     = w.o(exactly({ The: 1, story: book }))[0]
-            w.c.This    = w.o(exactly({ This: 1, Story: book }))[0]
-            const ave   = H.oai_enroll(H, { watched: 'ave' })
-            w.c.swatchC = ave.oai({ swatches: 1 })
-            w.c.ave     = ave
-            H.oai_enroll(H, { watched: 'actions' })
-        }
+        if (!run) run = H.Story_plan(A, w, book)
 
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(book)}`
@@ -721,22 +741,22 @@
             H.story_analysis(w)
         }
 
-        if (run.sc.needs_snap) {
+        if (run.sc.fetch_snap) {
             // ── fetch the expected snap for the failed step ────────────────
             // stored on This/{Step:N}.sc.exp_snap and shown in the diff panel.
-            const n        = run.sc.needs_snap
+            const n        = run.sc.fetch_snap
             const snap_req = await wh.oai({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
                 return w.i({ see: `⏳ snap ${H.pad(n)}...` })
 
             H.i_step(w, n).sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
-            delete run.sc.needs_snap
+            delete run.sc.fetch_snap
             H.story_analysis(w)
         }
 
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
-        w.i({ see: `${book} ${run.sc.steps_done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
+        w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
 
@@ -774,23 +794,31 @@
                 console.log(`⏸ do_step skipped: driving=${run.c.driving} paused=${run.sc.paused}`)
                 schedule(); return
             }
-            const n = (run.sc.steps_done as number) + 1
+            const n = ((run.sc.done ?? run.sc.steps_done ?? 0) as number) + 1
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
             ;V.Story && console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
 
-            if (run.sc.mode === 'new' && n > (run.sc.steps_total as number)) {
+            if (run.sc.mode === 'new' && n > ((run.sc.total ?? run.sc.steps_total ?? 30) as number)) {
                 run.c.driving = false; run.sc.paused = true
                 H.story_analysis(w)
                 await update_status('recorded ✓', 'start')
-                console.log(`✓ Story: complete (${run.sc.steps_total} steps)`)
+                console.log(`✓ Story: complete (${run.sc.total} steps)`)
                 return
             }
             if (run.sc.mode === 'check' && !H.The_step_dige(w, n)) {
                 run.c.driving = false; run.sc.paused = true
+                // clear frontier when we reach the end — no outstanding mismatch
+                run.sc.frontier = 0
+                H.The_set_frontier(w, 0)
+                // if we ran lenient, open the last !ok step so the user can review it
+                const last_bad = (w.c.This?.o({ Step: 1 }) ?? [])
+                    .filter(s => !s.sc.ok)
+                    .sort((a, b) => b.sc.Step - a.sc.Step)[0]
+                if (last_bad) run.sc.open_at = last_bad.sc.Step
                 H.story_analysis(w)
                 await update_status('done ✓', 'start')
-                console.log(`✓ Story: check complete at n=${n} — no dige in The for this step`)
+                console.log(`✓ Story: check complete at n=${n}`)
                 return
             }
 
@@ -816,13 +844,14 @@
         const snap_step = async () => {
             if (!run.c.driving) return
             const n = run.c.step_n
-            run.sc.steps_done = n
+            run.sc.done  = n
+            run.sc.steps_done = n   // keep old key in sync for any persisted reads
 
             const snap     = await this.story_snap(Run)
             const got_dige = await dig(snap)
 
             const step     = H.i_step(w, n)
-            step.sc.hollow = false
+            step.sc.unrun = false
 
             if (run.sc.mode === 'new') {
                 step.sc.snap     = snap
@@ -832,7 +861,7 @@
                 H.The_step(w, n).sc.dige = got_dige
                 H.story_analysis(w)
                 await update_status(
-                    `recording ${H.pad(n)}/${H.pad(run.sc.steps_total)}`, 'save')
+                    `recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
                 schedule()
 
             } else {
@@ -848,7 +877,7 @@
                     run.c.driving     = false
                     run.sc.paused     = true
                     run.sc.failed_at  = n
-                    run.sc.needs_snap = n
+                    run.sc.fetch_snap = n
                     run.sc.frontier   = n
                     H.The_set_frontier(w, n)
                     await update_status(`✗ step ${H.pad(n)}`, 'stop')
@@ -901,6 +930,7 @@
         const thisC      = w.c.This
         const all_steps = thisC ? thisC.o({ Step: 1 }) : []
         if (!all_steps.length && !The?.o({ step: 1 }).length) return
+        ;V.Story && console.log(`💾 story_save: ${all_steps.length} steps, writable=${all_steps.filter(s=>s.sc.ok||s.sc.accepted).length}, saved=${all_steps.filter(s=>s.sc.saved).length}`)
 
         // The diges were already set by snap_step (new mode) and story_accept (check mode).
         // No merge loop needed — just sync the frontier note and encode.
@@ -927,14 +957,19 @@
             const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
             storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
 
-            // write NNN.snap only for accepted steps not yet saved.
-            // new-mode steps get accepted=true from snap_step; check-mode from story_accept.
-            // saved=true is set here so repeated save calls write nothing extra.
+            // write NNN.snap only where the content is new or changed:
+            //   new-mode: step.sc.snap is set (this is the first recording)
+            //   accepted mismatch: step.sc.got_snap is set and accepted=true (replacing old file)
+            // Check-mode ok steps have got_snap but the file already exists on disk unchanged.
             for (const step of all_steps) {
-                if (!step.sc.accepted || step.sc.saved) continue
+                if (step.sc.saved) continue
+                const is_new_recording = !!step.sc.snap          // new mode
+                const is_accepted_change = step.sc.accepted && !!step.sc.got_snap  // check mode mismatch
+                if (!is_new_recording && !is_accepted_change) continue
                 const n            = step.sc.Step
                 const snap_content = step.sc.snap ?? step.sc.got_snap
                 if (!snap_content) continue
+                ;V.Story && console.log(`💾 writing snap n=${n} new=${is_new_recording} accepted=${is_accepted_change}`)
                 const snap_req = await wh.i({
                     wh_path: run_path, wh_op: 'write_snap',
                     wh_step: n, wh_data: snap_content,
@@ -1008,8 +1043,6 @@
         if (!wa) return
         const paused = run.sc.paused
         const mode   = run.sc.mode ?? 'new'
-        const step   = run.sc.steps_done ?? 0
-        const failed = run.sc.failed_at
 
         wa.oai({ action: 1, role: 'pause' }, {
             label: paused ? 'Resume' : 'Pause',
@@ -1029,15 +1062,15 @@
             fn: () => {
                 run.sc.lenient = !run.sc.lenient
                 if (run.sc.lenient && run.sc.failed_at && !run.c.driving) {
-                    delete run.sc.failed_at; delete run.sc.needs_snap
+                    delete run.sc.failed_at; delete run.sc.fetch_snap
                     run.sc.paused = false
                     this.story_drive(Run, w, run)
                 }
             },
         })
         await wa.r({ action: 1, role: 'status' }, {
-            label:    `${mode} ${failed ? '✗' + this.pad(failed as number) : this.pad(step as number)}`,
-            cls:      failed ? 'stop' : mode === 'new' ? 'save' : 'default',
+            label:    `${mode} ${run.sc.failed_at ? '✗' + this.pad(run.sc.failed_at) : this.pad(run.sc.done ?? run.sc.steps_done ?? 0)}`,
+            cls:      run.sc.failed_at ? 'stop' : mode === 'new' ? 'save' : 'default',
             disabled: true,
         })
     },

@@ -104,6 +104,8 @@
             }
         }
 
+        streak.sc.count == 10 && w.i({seen:'wonder'})
+
         if (V.farm) {
             let lc = w.o({ leaf: 1 }).length
             let lt = w.o({ leaf: 1 }).reduce((s, l) => s + l.sc.dose, 0)
