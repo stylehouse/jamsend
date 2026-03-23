@@ -821,6 +821,7 @@
     // Clears the intoCyto pause and starts a fresh story_drive — the drive
     // was already stopped cleanly by advance() so driving=false here.
     async story_cyto_continue(A: TheC, w: TheC) {
+        V.Story && console.log(`e:story_cyto_continue() -> w:${w.sc.w}`)
         const run = w.o({ run: 1 })[0]
         if (!run) return
         run.sc.paused = false
@@ -875,7 +876,7 @@
             if (w.sc.intoCyto) {
                 run.sc.paused = true
                 run.c.driving = false
-                H.top_House().elvisto('Cyto', 'story_cyto_step', { story_step: run.c.step_n })
+                H.top_House().elvisto('Cyto/Cyto', 'story_cyto_step', { story_step: run.c.step_n })
                 return
             }
             schedule()

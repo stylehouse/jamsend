@@ -33,6 +33,7 @@
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
         last_tick = tick
+        console.log(`wave tick`, tick, JSON.stringify(wave.upsert.map(n => ({ id: n.id, shape: n.style?.shape }))))
         if (cy) enqueue(wave)
     })
 
@@ -48,28 +49,46 @@
     }
 
     // ── apply a wave to cy ────────────────────────────────────────────────────
+    // properties cytoscape cannot animate — apply immediately
     function apply(wave: Wave, dur: number) {
         if (!cy) return
         const ms = Math.round(dur * 1000)
-
         // Removals first
         for (const id of wave.remove) {
             cy.getElementById(id).remove()
         }
 
+        const NON_ANIMATABLE = new Set(['shape', 'background-image', 'background-fit',
+            'content', 'label', 'source-label', 'target-label'])
+
         // Upserts
         for (const nd of wave.upsert) {
             const existing = cy.getElementById(nd.id)
+
+            const cleanStyle = Object.fromEntries(
+                Object.entries(nd.style).filter(([, v]) => v != null)
+            )
+            if (cleanStyle.length != nd.style.length) throw "STYLE CONTAINS NULL"
+
             if (existing.length) {
                 // Animate style changes on existing nodes
+                const animated: any   = {}
+                const immediate: any  = {}
+                for (const [k, v] of Object.entries(nd.style)) {
+                    if (v == null) continue
+                    if (NON_ANIMATABLE.has(k)) immediate[k] = v
+                    else animated[k] = v
+                }
                 existing.data('label', nd.label)
-                if (ms > 0) {
-                    existing.animate({ style: nd.style }, { duration: ms, easing: 'ease-out-cubic' })
+                if (Object.keys(immediate).length) existing.style(immediate)
+                if (ms > 0 && Object.keys(animated).length) {
+                    existing.animate({ style: animated }, { duration: ms, easing: 'ease-out-cubic' })
                 } else {
-                    existing.style(nd.style)
+                    existing.style(animated)
                 }
             } else {
-                cy.add({ group: 'nodes', data: { id: nd.id, label: nd.label }, style: nd.style })
+                let ele = cy.add({ group: 'nodes', data: { id: nd.id, label: nd.label }})
+                ele.style(nd.style)
             }
         }
 
@@ -108,7 +127,7 @@
             randomize: false,
             quality: 'default',
         })
-        try { lay.run() } catch {}
+        lay.run()
     }
 
     // ── cytoscape init ────────────────────────────────────────────────────────
@@ -124,7 +143,7 @@
                         'text-wrap':      'wrap',
                         'text-max-width': '72px',
                         'font-size':      '8px',
-                        'font-family':    "'Berkeley Mono', 'Fira Code', monospace",
+                        'font-family':    "Berkeley Mono, Fira Code, monospace",
                         color:            '#eee',
                         'background-color': '#2a2a2a',
                         width:  28,

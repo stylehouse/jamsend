@@ -80,6 +80,9 @@
         w.c.gn   = wa.oai({ cyto_graph: 1 })
         w.i(w.c.gn)
         w.c.plan_done = true
+
+        // first knob: how long to pause Story while we present
+        w.sc.grawave_duration = 2
     },
 
     // ── cyto_update_wave ─────────────────────────────────────────────────────
@@ -133,6 +136,8 @@
         const remove = [...prev_ids].filter(id => !seen.has(id))
         prev_n.sc.ids = [...seen]
 
+        console.log(`Cyto scan x${seen.size}: ${upsert.length}++ ${remove.length}--`)
+
         return {
             upsert,
             remove,
@@ -171,77 +176,79 @@
         const style: any = {}
 
         if (n.sc.leaf) {
-            // Green node; size and lightness scale with dose toward 2.0
             const d  = (n.sc.dose as number) ?? 0
             const sz = Math.round(16 + d * 18)
-            style.backgroundColor = `hsl(120,65%,${30 + d * 16}%)`
+            style['background-color'] = '#3d9e4a'
             style.width  = sz
             style.height = sz
-            style.color  = d > 1.2 ? '#002' : '#eee'
+            style.color  = '#e8ffe8'
 
         } else if (n.sc.sunshine) {
-            const d = (n.sc.dose as number) ?? 0
-            style.backgroundColor = `hsl(48,92%,${44 + d * 12}%)`
-            style.width  = 42
-            style.height = 42
+            const d  = (n.sc.dose as number) ?? 0
+            const sz = Math.round(32 + d * 6)
+            style['background-color'] = '#f5c842'
+            style.width  = sz
+            style.height = sz
             style.shape  = 'diamond'
-            style.color  = '#333'
+            style.color  = '#332200'
 
         } else if (n.sc.poo) {
             const d  = (n.sc.dose as number) ?? 0
-            const sz = Math.round(24 + Math.min(d, 8) * 2)
-            style.backgroundColor = '#5a3010'
+            const sz = Math.round(20 + Math.min(d, 8) * 2)
+            style['background-color'] = '#6b3a1f'
             style.width  = sz
             style.height = sz
-            style.color  = '#c96'
+            style.color  = '#c9884a'
 
         } else if (n.sc.material) {
             const amt = (n.sc.amount as number) ?? 0
-            const sz  = Math.round(22 + Math.min(amt, 20) * 1.5)
-            style.backgroundColor = `hsl(36,55%,${24 + Math.min(amt, 20) * 2}%)`
+            const sz  = Math.round(20 + Math.min(amt, 20) * 1.5)
+            style['background-color'] = '#b8742a'
             style.width  = sz
             style.height = sz
-            style.color  = '#fc9'
+            style.color  = '#ffe8b8'
 
         } else if (n.sc.producing) {
-            style.backgroundColor = '#1a3a70'
+            style['background-color'] = '#1a4a8a'
             style.width  = 44
             style.height = 44
-            style.color  = '#8af'
-            style.shape  = 'rectangle'
+            style.shape  = 'roundrectangle'
+            style.color  = '#aaccff'
 
         } else if (n.sc.protein) {
             const cx = (n.sc.complexity as number) ?? 0
-            style.backgroundColor = `hsl(280,45%,${20 + cx * 6}%)`
-            style.width  = 30
-            style.height = 30
-            style.color  = '#ddf'
+            const sz = Math.round(20 + cx * 4)
+            style['background-color'] = '#6b3a8a'
+            style.width  = sz
+            style.height = sz
+            style.color  = '#e8ccff'
 
         } else if (n.sc.shelf) {
-            const u = (n.sc.units as number) ?? 0
-            style.backgroundColor = '#1a4020'
-            style.width  = Math.round(24 + u * 1.5)
-            style.height = 24
-            style.color  = '#8d8'
+            const u  = (n.sc.units as number) ?? 0
+            const sz = Math.round(22 + u * 2)
+            style['background-color'] = '#2a6a3a'
+            style.width  = sz
+            style.height = 22
+            style.color  = '#aaffcc'
 
         } else if (n.sc.wants_enzyme) {
-            style.backgroundColor = '#402010'
+            style['background-color'] = '#8a3010'
             style.width  = 26
             style.height = 26
-            style.color  = '#fa8'
+            style.color  = '#ffaa88'
 
         } else if (n.sc.run) {
-            style.backgroundColor = '#181828'
+            style['background-color'] = '#1a1a3a'
             style.width  = 50
             style.height = 20
-            style.shape  = 'round-rectangle'
-            style.color  = '#88f'
+            style.shape  = 'roundrectangle'
+            style.color  = '#8888ff'
 
         } else {
-            style.backgroundColor = '#222'
+            style['background-color'] = '#2a2a2a'
             style.width  = 18
             style.height = 18
-            style.color  = '#888'
+            style.color  = '#888888'
         }
 
         return { id, label, style }

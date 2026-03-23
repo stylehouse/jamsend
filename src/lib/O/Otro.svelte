@@ -84,7 +84,9 @@
     {#each house.UIs ?? [] as uiC (uiC.sc.UI)}
         <svelte:component this={uiC.sc.component} H={house} />
     {/each}
-    <Stuffing mem={house.imem('current')} stuff={house} M={house} />
+    {#if house.stashed}
+        <Stuffing mem={house.imem('current')} stuff={house} M={house} />
+    {/if}
 {/each}
 
     
