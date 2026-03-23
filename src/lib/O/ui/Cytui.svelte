@@ -27,7 +27,7 @@
     let last_tick = -1
 
     $effect(() => {
-        const gn = H?.ave?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
+        const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
         if (!gn) return
         const wave = gn.sc.wave as Wave | undefined
         const tick = (gn.sc.tick as number) ?? -1

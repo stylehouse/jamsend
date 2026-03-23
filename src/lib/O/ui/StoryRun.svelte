@@ -1,8 +1,8 @@
 <script lang="ts">
     // StoryRun: the UI strip for the Story test runner.
     //
-    // Receives H (the parent House) and derives storyH (the Story sub-House).
-    // Reads display state from storyH.ave — a TheC[] array ($state) that
+    // Receives H (the parent House) and derives H (the Story sub-House).
+    // Reads display state from H.ave — a TheC[] array ($state) that
     // enroll_watched() reassigns on every bump_version().  Use .find() on it,
     // not .o() — ave is a plain array, not a TheC particle.
     //
@@ -24,18 +24,9 @@
 
     let { H }: { H: House } = $props()
 
-    // ── navigate to H:Story ──────────────────────────────────────────────────
-    let storyH = $state<House | undefined>()
-
-    $effect(() => {
-        void H?.version
-        const h = H?.o({ H: 'Story' })?.[0] as House | undefined
-        if (h != null && h !== storyH) storyH = h
-    })
-
-    // Single $effect — unpacks everything from storyH.ave when it changes.
+    // Single $effect — unpacks everything from H.ave when it changes.
     // ave is TheC[] reassigned by enroll_watched on every bump_version(), so
-    // reading storyH.ave here is the reactive dependency.  All derived state
+    // reading H.ave here is the reactive dependency.  All derived state
     // is imperative assignment inside this one effect — no $derived needed.
     //
     // Three particle shapes live in ave:
@@ -62,7 +53,7 @@
     let swatch_map = $state<Record<string,string>>({})
 
     $effect(() => {
-        const ave = storyH?.ave
+        const ave = H?.ave
         setTimeout(() => {
             console.log('ave:', ave?.map((p: TheC) => JSON.stringify(p.sc)))
 
@@ -169,26 +160,26 @@
         const text = add_note_text.trim()
         if (!text) return
         const note_sc = { note: 1, ...peel(text) }
-        storyH?.elvisto('Story/Story', 'story_add_note', { step_n: n, note_sc })
+        H?.elvisto('Story/Story', 'story_add_note', { step_n: n, note_sc })
         add_note_text = ''
     }
 
     function do_delete_note(n: number, idx: number) {
-        storyH?.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
+        H?.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
     }
 
     function pick(n: number) {
         const new_sel = display.open_at === n ? null : n
-        storyH?.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
+        H?.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
     }
     function close_panel() {
-        storyH?.elvisto('Story/Story', 'story_sel', { open_at: null })
+        H?.elvisto('Story/Story', 'story_sel', { open_at: null })
     }
     function accept(n: number) {
-        storyH?.elvisto('Story/Story', 'story_accept', { accept_n: n })
+        H?.elvisto('Story/Story', 'story_accept', { accept_n: n })
     }
     function accept_all() {
-        storyH?.elvisto('Story/Story', 'story_accept_all', {})
+        H?.elvisto('Story/Story', 'story_accept_all', {})
     }
 
     const ind = (d: number) => '  '.repeat(d)

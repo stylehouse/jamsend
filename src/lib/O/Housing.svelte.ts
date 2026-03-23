@@ -888,9 +888,14 @@ export class House extends StorableHousing {
 //#endregion
 //#region watched
     // these are derived from H/%watched:actions/*
-    actions: TheC[] = $state([])
-    // this is a general for-the-UI conveyor
+    // UI components registered by ghosts via H/%watched:UIs
+    UIs: TheC[] = $state([])
+    // this is a general for-any-UI conveyor
     ave: TheC[] = $state([])
+    // for the button rack, subset of ave
+    actions: TheC[] = $state([])
+    // cytoscape subset of ave
+    graph: TheC[] = $state([])
 
     // %watched pattern: ghost creates a %watched:key particle on H, calls
     // enroll_watched().  Default handler sets H[key] = C.o({}); custom fn
@@ -965,8 +970,8 @@ export class House extends StorableHousing {
         lds.i({w:'Wormhole'})
 
         let S = H.subHouse('Story')
-        let SA = S.i({ A: 'Story' })
-        SA.i({ w: 'Story', Book: 'LeafFarm' })
+        S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafFarm', intoCyto: 1 })
+        S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
         S.elvisto(S, 'think')
     }
 

@@ -5,6 +5,13 @@
     // that Story is exercising), scans its particles for changes, and publishes a
     // grawave to H/%watched:graph → H.ave → Cytui.
     //
+    // ── UI registration ──────────────────────────────────────────────────────
+    //
+    //   On its first tick, w:Cyto registers Cytui into H:Story/%watched:UIs
+    //   alongside StoryRun (registered by Story_plan).  Otro sees both and mounts
+    //   them for H:Story.  oai_enroll + oai is idempotent — subsequent ticks
+    //   are no-ops.
+    //
     // ── intoCyto handshake ───────────────────────────────────────────────────
     //
     //   When w:Story has w.sc.intoCyto set, story_drive calls advance() instead
@@ -39,6 +46,7 @@
     import { objectify, TheC } from "$lib/data/Stuff.svelte"
     import type { House }      from "$lib/O/Housing.svelte"
     import { onMount }         from "svelte"
+    import Cytui               from "./ui/Cytui.svelte"
 
     let { M } = $props()
 
@@ -50,11 +58,28 @@
     // ── w:Cyto ───────────────────────────────────────────────────────────────
     // Ambient worker: finds H:LeafFarm, scans for particle changes,
     // publishes a grawave to H/%watched:graph → H.ave → Cytui.
+    // Also registers Cytui into H:Story/%watched:UIs on first tick so Otro
+    // can mount it automatically alongside StoryRun.
     async Cyto(A: TheC, w: TheC) {
+        if (!w.c.plan_done) this.Cyto_plan(w)
+
         const ok = this.cyto_update_wave(w)
         if (!ok) return w.i({ see: '⏳ no H:LeafFarm yet' })
-        const gn = this.oai({ watched: 'graph' }).oai({ cyto_graph: 1 })
-        w.i({ see: `📊 tick:${gn.sc.tick ?? 0}` })
+        w.i({ see: `📊 tick:${w.c.gn?.sc.tick ?? 0}` })
+    },
+    // ── Cyto_plan ────────────────────────────────────────────────────────────
+    // Runs once on the first tick.  Creates %watched:graph and the cyto_graph
+    // particle inside it, then calls enroll_watched() so H.graph is live before
+    // the first wave arrives.  Analogous to Story_plan for %watched:ave.
+    // Caches the cyto_graph particle on w.c.gn so cyto_update_wave can write
+    // directly without re-querying.
+    Cyto_plan(w: TheC) {
+        const uis = this.oai_enroll(this, { watched: 'UIs' })
+        uis.oai({ UI: 'Cyto', component: Cytui })
+        const wa = this.oai_enroll(this, { watched: 'graph' })
+        w.c.gn   = wa.oai({ cyto_graph: 1 })
+        w.i(w.c.gn)
+        w.c.plan_done = true
     },
 
     // ── cyto_update_wave ─────────────────────────────────────────────────────
@@ -62,11 +87,10 @@
     // story_cyto_step (intoCyto handshake).  Returns false when RunH is absent.
     cyto_update_wave(w: TheC): boolean {
         const H     = this as House
-        const Story = H.o({ H: 'Story' })[0] as House | undefined
+        const Story = H
         const RunH  = Story?.o({ H: 'LeafFarm' })[0] as House | undefined
         if (!RunH) return false
 
-        // Skip when nothing changed in RunH
         const tracking = w.oai({ cyto_tracking: 1 })
         const v = RunH.version
         if (tracking.sc.v === v) return true
@@ -74,13 +98,14 @@
 
         const wave = this.cyto_scan(w, RunH)
 
-        // Publish to H/%watched:graph — drives H.ave → Cytui $effect
-        const wa = H.oai({ watched: 'graph' })
-        H.enroll_watched()
-        const gn = wa.oai({ cyto_graph: 1 })
+        // w.c.gn is the cyto_graph particle, created in Cyto_plan.
+        // %watched:graph is already enrolled so H.graph is live.
+        const gn = w.c.gn as TheC
+        if (!gn) return false   // Cyto_plan hasn't run yet — shouldn't happen
         gn.sc.wave = wave
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
-        wa.bump_version()
+        const wa   = H.o({ watched: 'graph' })[0] as TheC
+        wa?.bump_version()
 
         return true
     },
@@ -230,7 +255,7 @@
     // Scans RunH, publishes the wave, then after grawave_duration fires
     // story_cyto_continue back to w:Story so the drive can resume.
     async story_cyto_step(A: TheC, w: TheC, e: TheC) {
-        // Re-resolve w:Cyto from H for tracking state — A/w here are Cyto's own
+        // w is w:Cyto here — pass it directly for tracking state
         this.cyto_update_wave(w)
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         setTimeout(() => {

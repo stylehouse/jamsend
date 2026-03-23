@@ -33,7 +33,6 @@
 
     // ── once ghosts have arrived, wire child Houses ───────────────────────────
     let setup_done = false
-    let StoryUI = $state(false)
     $effect(() => {
         if (!H?.started || setup_done) return
         setup_done = true
@@ -47,7 +46,6 @@
         setTimeout(() => {
             // S.elvisto(S, 'think')
             // S.todo.push("Blanks")
-            StoryUI = true
         },444)
 
         go_busily()
@@ -72,8 +70,6 @@
 
 <h3>Here we Are</h3>
 
-{#if StoryUI}<StoryRun {H} />{/if}
-
 {#each houses as house (house.name)}
     <h2>
         {house.name}
@@ -85,6 +81,9 @@
             <Actions N={house.actions} />
         </div>
     {/if}
+    {#each house.UIs ?? [] as uiC (uiC.sc.UI)}
+        <svelte:component this={uiC.sc.component} H={house} />
+    {/each}
     <Stuffing mem={house.imem('current')} stuff={house} M={house} />
 {/each}
 

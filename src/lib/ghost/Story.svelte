@@ -37,6 +37,13 @@
     //   exactly() (from Y.ts) stringifies all values so the C engine sees a
     //   non-wildcard string and does a literal equality test.  Future language
     //   tooling may fold this into o()'s second argument.
+    //
+    // ── UI registration ──────────────────────────────────────────────────────
+    //
+    //   Story_plan registers StoryRun into H:Story/%watched:UIs so Otro can
+    //   mount it automatically alongside whichever house it finds it on.
+    //   The same container holds Cytui (registered by w:Cyto on its first tick).
+    //   H.UIs = C.o({}) is populated by enroll_watched() on every bump.
 
     import { objectify, TheC }            from "$lib/data/Stuff.svelte"
     import type { TheD, Travel }          from "$lib/mostly/Selection.svelte"
@@ -45,6 +52,7 @@
     import { onMount }                    from "svelte"
     import { now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House, WormholeNav } from "$lib/O/Housing.svelte"
+    import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
 
     let { M } = $props()
     let V = { Story: 0 }   // set Story: 1 here to enable drive/analysis debug logs
@@ -691,6 +699,8 @@
         //     /%swatches:1
         //     /%This,Story:book — same C particle as w's This (multi-placed)
         //     /%story_analysis:1
+        //   H/%watched:UIs
+        //     /%UI:Story,component:StoryRun  — Otro mounts this via house.UIs
         //
         const H = this
 
@@ -703,6 +713,12 @@
         w.c.ave     = ave
 
         H.oai_enroll(H, { watched: 'actions' })
+
+        // Register StoryRun in %watched:UIs so Otro can mount it for this house.
+        // oai_enroll creates the container once and calls enroll_watched();
+        // oai on the child is idempotent — subsequent Story_plan calls are no-ops.
+        const uis = H.oai_enroll(H, { watched: 'UIs' })
+        uis.oai({ UI: 'Story', component: StoryRun })
 
         return w.i({ run: book, done: 0, steps_done: 0, total: 30, steps_total: 30, paused: false, mode: 'new' })
     },
