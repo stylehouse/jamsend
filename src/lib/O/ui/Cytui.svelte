@@ -13,33 +13,31 @@
     let cy: ReturnType<typeof cytoscape>
 
     type NodeDesc = {
-        id:              string
-        label:           string
-        style:           Record<string,any>
-        parent?:         string
-        new_parent?:     string
-        isCompound?:     boolean
+        id:          string
+        label:       string
+        style:       Record<string,any>
+        parent?:     string
+        new_parent?: string
+        isCompound?: boolean
     }
     type EdgeDesc = {
-        id:     string
-        source: string
-        target: string
-        data?:  Record<string,any>
-        style:  Record<string,any>
+        id: string; source: string; target: string
+        data?: Record<string,any>; style: Record<string,any>
     }
     type MigrateDesc = {
-        id:          string
-        toward:      string
-        then_parent?: string
+        id:              string
+        toward:          string
+        then_parent?:    string
+        harvest_detach?: boolean   // if true: move({parent:null}) before animating
     }
     type Wave = {
-        upsert:       NodeDesc[]
-        edge_upsert:  EdgeDesc[]
-        remove:       string[]
-        edge_remove:  string[]
-        migrate:      MigrateDesc[]
-        constraints:  any | null
-        duration:     number
+        upsert:      NodeDesc[]
+        edge_upsert: EdgeDesc[]
+        remove:      string[]
+        edge_remove: string[]
+        migrate:     MigrateDesc[]
+        constraints: any | null
+        duration:    number
     }
 
     let history:    Wave[] = []
@@ -55,8 +53,6 @@
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
         last_tick = tick
-        console.log(`wave tick`, tick, JSON.stringify(wave.upsert.map(n => ({ id: n.id, shape: n.style?.shape }))))
-        
         if (cy) enqueue(wave)
     })
 
@@ -73,13 +69,12 @@
         status = `tick ${last_tick} · ${nu}n ${eu}e −${rm} ~${mg} · ⏱${wave.duration}s`
     }
 
-    // properties cytoscape cannot animate — must apply immediately
     const NON_ANIM = new Set([
-        'shape', 'background-image', 'background-fit', 'content', 'label',
-        'source-label', 'target-label', 'line-style', 'target-arrow-shape',
-        'source-arrow-shape', 'curve-style', 'text-valign', 'text-halign',
-        'font-size', 'font-weight', 'font-style', 'font-family', 'text-wrap',
-        'text-max-width', 'padding', 'border-style',
+        'shape','background-image','background-fit','content','label',
+        'source-label','target-label','line-style','target-arrow-shape',
+        'source-arrow-shape','curve-style','text-valign','text-halign',
+        'font-size','font-weight','font-style','font-family','text-wrap',
+        'text-max-width','padding','border-style',
     ])
 
     function split_style(style: Record<string,any> = {}) {
@@ -93,7 +88,7 @@
 
     function apply(wave: Wave, dur: number) {
         if (!cy) return
-        const ms = 1000;//Math.round(dur * 1000)
+        const ms = Math.round(dur * 1000)
 
         // 1. remove stale edges
         for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()
@@ -114,7 +109,7 @@
                     el.move({ parent: nd.new_parent })
                 }
                 el.data('label', nd.label)
-                if (Object.keys(imm).length)  el.style(imm)
+                if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {
                     el.animate({ style: anim }, { duration: ms, easing: 'ease-out-cubic' })
                 } else {
@@ -135,7 +130,7 @@
 
             if (el.length) {
                 if (ed.data?.ideal_length != null) el.data('ideal_length', ed.data.ideal_length)
-                if (Object.keys(imm).length)  el.style(imm)
+                if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {
                     el.animate({ style: anim }, { duration: ms })
                 } else {
@@ -157,6 +152,17 @@
             const toward = cy.getElementById(mg.toward)
             if (!el.length) continue
 
+            // ── harvest_detach: remove from parent compound immediately ───────
+            // Without this the compound resizes to track the node's animated
+            // position as it flies across the canvas — detaching first keeps the
+            // farm box still.  Edges that referenced the node by parent compound
+            // have already been removed in step 1 (edge_remove), so no dangling.
+            if (mg.harvest_detach) {
+                el.move({ parent: null })
+                // also drop its stem/helio edges so they don't linger mid-flight
+                el.connectedEdges().remove()
+            }
+
             if (!toward.length || ms <= 0) {
                 mg.then_parent ? el.move({ parent: mg.then_parent }) : el.remove()
                 continue
@@ -166,7 +172,6 @@
             const anim_ms = Math.round(ms * 0.82)
 
             if (mg.then_parent) {
-                // re-parent: animate toward new compound, then move
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: anim_ms, easing: 'ease-in-out-cubic',
@@ -176,7 +181,7 @@
                       } }
                 )
             } else {
-                // harvest merge: animate toward mat:basic, shrink + fade out, remove
+                // harvest: shrink + fade into mat:basic, then remove
                 el.animate(
                     { renderedPosition: tpos,
                       style: { opacity: 0, width: 4, height: 4 } },
@@ -187,7 +192,7 @@
         }
 
         // 6. layout
-        if ((wave.upsert?.length || wave.remove?.length || wave.edge_upsert?.length)) {
+        if (wave.upsert?.length || wave.remove?.length || wave.edge_upsert?.length) {
             relayout(ms, wave.constraints)
         }
     }
@@ -209,14 +214,14 @@
     function relayout(animMs = 300, constraints?: any) {
         lay?.stop()
         lay = cy.layout({
-            name: 'fcose',
+            name:                        'fcose',
             animate:                     animMs > 0,
             animationDuration:           animMs,
             nodeSeparation:              22,
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
             quality:                     'default',
-            idealEdgeLength:             (edge: any) => {
+            idealEdgeLength: (edge: any) => {
                 const il = edge.data('ideal_length')
                 return typeof il === 'number' ? il : 80
             },
@@ -259,11 +264,11 @@
                 {
                     selector: 'edge',
                     style: {
-                        width: 1.2,
-                        'line-color':           '#2a2a2a',
-                        'target-arrow-shape':   'none',
-                        'curve-style':          'bezier',
-                        opacity:                0.5,
+                        width:                1.2,
+                        'line-color':         '#2a2a2a',
+                        'target-arrow-shape': 'none',
+                        'curve-style':        'bezier',
+                        opacity:              0.5,
                     },
                 },
             ],
@@ -284,7 +289,6 @@
         <span class="sep"></span>
         <span class="cytui-dur">⏱ {grawave_dur}s</span>
     </div>
-
     <div class="cytui-legend">
         <span class="l-leaf">🌿 leaf</span>
         <span class="l-sun">◆ sun</span>
@@ -296,14 +300,13 @@
         <span class="l-stem">─ stem</span>
         <span class="l-helio">╌ helio</span>
     </div>
-
     <div class="cytui-graph" bind:this={container}></div>
 </div>
 
 <style>
 .cytui {
     display: flex; flex-direction: column;
-    height: 50vh;
+    height: 50vh; min-height: 320px;
     border: 1px solid #1a1a1a; border-radius: 4px;
     overflow: hidden; background: #070707;
     font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;

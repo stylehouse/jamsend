@@ -22,6 +22,9 @@
         const wa   = this.oai_enroll(this, { watched: 'graph' })
         w.c.gn     = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
+        // wave.duration is the animation duration (ms ÷ 1000) sent to Cytui AND
+        // the Story pause window: story_cyto_step waits (duration*1000 + 100ms)
+        // before firing story_cyto_continue.  Tune this knob for step cadence.
         w.sc.grawave_duration ??= 2
     },
 
@@ -58,6 +61,11 @@
         const migrate: any[] = []
         const w_order: string[] = []
 
+        // ── fcose constraint accumulator ─────────────────────────────────────
+        // Collects both horizontal (left/right) and vertical (top/bottom) pairs.
+        // All are gathered per-worker then merged into constraints at the end.
+        const rel: any[] = []
+
         for (const A of RunH.o({ A: 1 }) as TheC[]) {
             for (const wk of A.o({ w: 1 }) as TheC[]) {
                 const wid   = `w:${wk.sc.w}`
@@ -68,6 +76,7 @@
 
                 let poo_id: string | null = null
                 let sun_id: string | null = null
+                const leaf_ids: string[] = []
 
                 for (const n of wk.o({}) as TheC[]) {
                     if (n.c.drop) continue
@@ -84,9 +93,23 @@
                     if (n.sc.leaf && n.sc.leaf_id) curr_leaf.set(String(n.sc.leaf_id), wid)
                     if (n.sc.poo)      poo_id = id
                     if (n.sc.sunshine) sun_id = id
+                    if (n.sc.leaf)     leaf_ids.push(id)
                 }
 
-                // stem edges: leaf → poo
+                // ── vertical constraints: sun ↑ leaves ↑ poo ─────────────────
+                // sun is above every leaf (gap 20); poo is below every leaf (gap 14).
+                // Together these layer the worker into three vertical bands without
+                // fighting the stem/helio edge lengths.
+                if (sun_id && poo_id) {
+                    // direct sun-above-poo as a backstop when no leaves exist yet
+                    rel.push({ top: sun_id, bottom: poo_id, gap: 55 })
+                }
+                for (const lid of leaf_ids) {
+                    if (sun_id) rel.push({ top: sun_id,  bottom: lid,    gap: 20 })
+                    if (poo_id) rel.push({ top: lid,     bottom: poo_id, gap: 14 })
+                }
+
+                // ── stem edges: leaf → poo (tight young, loose mature) ───────
                 if (poo_id) {
                     for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                         if (n.c.drop) continue
@@ -111,7 +134,7 @@
                     }
                 }
 
-                // helio edges: leaf → sun
+                // ── helio edges: leaf → sun (loose, dashed) ──────────────────
                 if (sun_id) {
                     for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                         if (n.c.drop) continue
@@ -136,16 +159,18 @@
             }
         }
 
-        // harvest migrations: leaf present last scan, gone this scan
+        // ── harvest migrations ────────────────────────────────────────────────
         const mat_id = 'mat:basic'
         for (const [lid] of prev_leaf) {
             if (!curr_leaf.has(lid)) {
-                const leaf_id = `leaf:${lid}`
-                if (seen.has(mat_id)) migrate.push({ id: leaf_id, toward: mat_id })
+                const leaf_node_id = `leaf:${lid}`
+                // harvest_detach=true signals Cytui to move({ parent: null })
+                // before animating so the farm compound doesn't bloat
+                migrate.push({ id: leaf_node_id, toward: mat_id, harvest_detach: true })
             }
         }
 
-        // ref re-parent migrations
+        // ── ref re-parent migrations ──────────────────────────────────────────
         for (const [n, { wid, id }] of curr_ref) {
             const prev = prev_ref.get(n)
             if (prev && prev.wid !== wid && !migrate.find(m => m.id === id)) {
@@ -162,7 +187,7 @@
         const remove      = [...prev_ids].filter(id => !seen.has(id)  && !migrating_ids.has(id))
         const edge_remove = [...prev_eids].filter(id => !seen_e.has(id))
 
-        const rel: any[] = []
+        // ── left-of constraints: w containers in spawn order ─────────────────
         for (let i = 0; i < w_order.length - 1; i++) {
             rel.push({ left: w_order[i], right: w_order[i + 1], gap: 60 })
         }
@@ -203,96 +228,90 @@
     },
 
     hsl2rgb(h: number, s: number, l: number): string {
-        s /= 100;
-        l /= 100;
-
-        const c = (1 - Math.abs(2 * l - 1)) * s;
-        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-        const m = l - c / 2;
-
-        let r = 0, g = 0, b = 0;
-
-        if (h >= 0 && h < 60) {
-            r = c; g = x; b = 0;
-        } else if (h >= 60 && h < 120) {
-            r = x; g = c; b = 0;
-        } else if (h >= 120 && h < 180) {
-            r = 0; g = c; b = x;
-        } else if (h >= 180 && h < 240) {
-            r = 0; g = x; b = c;
-        } else if (h >= 240 && h < 300) {
-            r = x; g = 0; b = c;
-        } else if (h >= 300 && h < 360) {
-            r = c; g = 0; b = x;
-        }
-
-        r = Math.round((r + m) * 255);
-        g = Math.round((g + m) * 255);
-        b = Math.round((b + m) * 255);
-
-        return `rgb(${r},${g},${b})`;
+        s /= 100; l /= 100
+        const c = (1 - Math.abs(2 * l - 1)) * s
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+        const m = l - c / 2
+        let r = 0, g = 0, b = 0
+        if      (h < 60)  { r = c; g = x; b = 0 }
+        else if (h < 120) { r = x; g = c; b = 0 }
+        else if (h < 180) { r = 0; g = c; b = x }
+        else if (h < 240) { r = 0; g = x; b = c }
+        else if (h < 300) { r = x; g = 0; b = c }
+        else              { r = c; g = 0; b = x }
+        return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
     },
 
     cyto_node(n: TheC, id: string): any {
-        const label = this.cyto_label(n);
-        const style: any = {};
+        const label = this.cyto_label(n)
+        const style: any = {}
 
         if (n.sc.leaf) {
-            const d = (n.sc.dose as number) ?? 0;
-            const sz = Math.round(14 + d * 16);
-            const lt = Math.round(28 + d * 12);
-            style['background-color'] = this.hsl2rgb(120, 55, lt);
-            style.width = sz; style.height = sz; style.shape = 'ellipse';
-            style.color = d > 1.4 ? '#001800' : '#b0ffb0';
-        } else if (n.sc.sunshine) {
-            const d = (n.sc.dose as number) ?? 0;
-            const sz = Math.round(28 + d * 8);
-            style['background-color'] = this.hsl2rgb(46, 90, 50 + d * 8);
-            style.width = sz; style.height = sz; style.shape = 'diamond';
-            style.color = '#331800';
-        } else if (n.sc.poo) {
-            const d = (n.sc.dose as number) ?? 0;
-            const sz = Math.round(18 + Math.min(d, 8) * 2.5);
-            style['background-color'] = '#5c3010';
-            style.width = sz; style.height = sz; style.shape = 'ellipse';
-            style.color = '#c88040';
-        } else if (n.sc.material) {
-            const amt = (n.sc.amount as number) ?? 0;
-            const sz = Math.round(18 + Math.min(amt, 20) * 1.6);
-            style['background-color'] = this.hsl2rgb(33, 52, 20 + Math.min(amt, 20) * 1.5);
-            style.width = sz; style.height = sz; style.shape = 'round-rectangle';
-            style.color = '#ffe8c0';
-        } else if (n.sc.producing) {
-            style['background-color'] = '#142060';
-            style.width = 42; style.height = 42; style.shape = 'round-rectangle';
-            style.color = '#9ab4ff';
-        } else if (n.sc.protein) {
-            const cx = (n.sc.complexity as number) ?? 0;
-            const sz = Math.round(18 + cx * 4.5);
-            style['background-color'] = this.hsl2rgb(276, 40, 22 + cx * 5);
-            style.width = sz; style.height = sz; style.shape = 'hexagon';
-            style.color = '#ddc8ff';
-        } else if (n.sc.shelf && n.sc.enzyme) {
-            const u = (n.sc.units as number) ?? 0;
-            style['background-color'] = '#1a4828';
-            style.width = Math.round(20 + u * 2.5); style.height = 20;
-            style.shape = 'round-rectangle'; style.color = '#90ffc0';
-        } else if (n.sc.wants_enzyme) {
-            style['background-color'] = '#6a1a08';
-            style.width = 22; style.height = 22; style.shape = 'star';
-            style.color = '#ff9070';
-        } else if (n.sc.run) {
-            style['background-color'] = '#101028';
-            style.width = 44; style.height = 18; style.shape = 'round-rectangle';
-            style.color = '#7888ff';
-        } else {
-            style['background-color'] = '#242424';
-            style.width = 16; style.height = 16;
-            style.color = '#666';
-        }
-        return { id, label, style };
-    },
+            const d  = (n.sc.dose as number) ?? 0
+            const sz = Math.round(14 + d * 16)
+            const lt = Math.round(28 + d * 12)
+            style['background-color'] = this.hsl2rgb(120, 55, lt)
+            style.width = sz; style.height = sz; style.shape = 'ellipse'
+            style.color = d > 1.4 ? '#001800' : '#b0ffb0'
 
+        } else if (n.sc.sunshine) {
+            const d  = (n.sc.dose as number) ?? 0
+            // size swings noticeably with dose: small dim sun at 0.1, big bright at 1.1
+            const sz = Math.round(22 + d * 22)
+            const lt = Math.round(42 + d * 18)   // 42%..62% lightness
+            style['background-color'] = this.hsl2rgb(46, 90, lt)
+            style.width = sz; style.height = sz; style.shape = 'diamond'
+            style.color = '#331800'
+
+        } else if (n.sc.poo) {
+            const d  = (n.sc.dose as number) ?? 0
+            const sz = Math.round(18 + Math.min(d, 8) * 2.5)
+            style['background-color'] = '#5c3010'
+            style.width = sz; style.height = sz; style.shape = 'ellipse'
+            style.color = '#c88040'
+
+        } else if (n.sc.material) {
+            const amt = (n.sc.amount as number) ?? 0
+            const sz  = Math.round(18 + Math.min(amt, 20) * 1.6)
+            style['background-color'] = this.hsl2rgb(33, 52, 20 + Math.min(amt, 20) * 1.5)
+            style.width = sz; style.height = sz; style.shape = 'round-rectangle'
+            style.color = '#ffe8c0'
+
+        } else if (n.sc.producing) {
+            style['background-color'] = '#142060'
+            style.width = 42; style.height = 42; style.shape = 'round-rectangle'
+            style.color = '#9ab4ff'
+
+        } else if (n.sc.protein) {
+            const cx = (n.sc.complexity as number) ?? 0
+            const sz = Math.round(18 + cx * 4.5)
+            style['background-color'] = this.hsl2rgb(276, 40, 22 + cx * 5)
+            style.width = sz; style.height = sz; style.shape = 'hexagon'
+            style.color = '#ddc8ff'
+
+        } else if (n.sc.shelf && n.sc.enzyme) {
+            const u = (n.sc.units as number) ?? 0
+            style['background-color'] = '#1a4828'
+            style.width = Math.round(20 + u * 2.5); style.height = 20
+            style.shape = 'round-rectangle'; style.color = '#90ffc0'
+
+        } else if (n.sc.wants_enzyme) {
+            style['background-color'] = '#6a1a08'
+            style.width = 22; style.height = 22; style.shape = 'star'
+            style.color = '#ff9070'
+
+        } else if (n.sc.run) {
+            style['background-color'] = '#101028'
+            style.width = 44; style.height = 18; style.shape = 'round-rectangle'
+            style.color = '#7888ff'
+
+        } else {
+            style['background-color'] = '#242424'
+            style.width = 16; style.height = 16
+            style.color = '#666'
+        }
+        return { id, label, style }
+    },
 
     cyto_w_style(wname: string): any {
         const bg: Record<string,string>     = { farm: '#0a1f0a', plate: '#1f130a', enzymeco: '#0a0a1f' }
