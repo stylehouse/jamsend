@@ -7,6 +7,7 @@
     import Agency    from "$lib/ghost/Agency.svelte"
     import Machinery from "$lib/ghost/Machinery.svelte"
     import Story     from "$lib/ghost/Story.svelte"
+    import Cyto from "./Cyto.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -23,5 +24,7 @@
 </script>
 
 <Agency    {M} />
+ <!-- these are all AI -->
 <Machinery {M} />
 <Story     {M} />
+<Cyto     {M} />
