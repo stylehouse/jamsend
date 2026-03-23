@@ -93,7 +93,7 @@
 
     function apply(wave: Wave, dur: number) {
         if (!cy) return
-        const ms = Math.round(dur * 1000)
+        const ms = 1000;//Math.round(dur * 1000)
 
         // 1. remove stale edges
         for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()
@@ -212,7 +212,7 @@
             name: 'fcose',
             animate:                     animMs > 0,
             animationDuration:           animMs,
-            nodeSeparation:              80,
+            nodeSeparation:              22,
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
             quality:                     'default',
@@ -303,7 +303,7 @@
 <style>
 .cytui {
     display: flex; flex-direction: column;
-    height: 480px;
+    height: 50vh;
     border: 1px solid #1a1a1a; border-radius: 4px;
     overflow: hidden; background: #070707;
     font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;

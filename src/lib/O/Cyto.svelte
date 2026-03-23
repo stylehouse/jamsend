@@ -202,65 +202,97 @@
         return parts.join('\n')
     },
 
+    hsl2rgb(h: number, s: number, l: number): string {
+        s /= 100;
+        l /= 100;
+
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = l - c / 2;
+
+        let r = 0, g = 0, b = 0;
+
+        if (h >= 0 && h < 60) {
+            r = c; g = x; b = 0;
+        } else if (h >= 60 && h < 120) {
+            r = x; g = c; b = 0;
+        } else if (h >= 120 && h < 180) {
+            r = 0; g = c; b = x;
+        } else if (h >= 180 && h < 240) {
+            r = 0; g = x; b = c;
+        } else if (h >= 240 && h < 300) {
+            r = x; g = 0; b = c;
+        } else if (h >= 300 && h < 360) {
+            r = c; g = 0; b = x;
+        }
+
+        r = Math.round((r + m) * 255);
+        g = Math.round((g + m) * 255);
+        b = Math.round((b + m) * 255);
+
+        return `rgb(${r},${g},${b})`;
+    },
+
     cyto_node(n: TheC, id: string): any {
-        const label = this.cyto_label(n)
-        const style: any = {}
+        const label = this.cyto_label(n);
+        const style: any = {};
 
         if (n.sc.leaf) {
-            const d  = (n.sc.dose as number) ?? 0
-            const sz = Math.round(14 + d * 16)
-            const lt = Math.round(28 + d * 12)
-            style['background-color'] = `hsl(120,55%,${lt}%)`
-            style.width = sz;  style.height = sz;  style.shape = 'ellipse'
-            style.color = d > 1.4 ? '#001800' : '#b0ffb0'
+            const d = (n.sc.dose as number) ?? 0;
+            const sz = Math.round(14 + d * 16);
+            const lt = Math.round(28 + d * 12);
+            style['background-color'] = this.hsl2rgb(120, 55, lt);
+            style.width = sz; style.height = sz; style.shape = 'ellipse';
+            style.color = d > 1.4 ? '#001800' : '#b0ffb0';
         } else if (n.sc.sunshine) {
-            const d = (n.sc.dose as number) ?? 0
-            const sz = Math.round(28 + d * 8)
-            style['background-color'] = `hsl(46,90%,${50 + d * 8}%)`
-            style.width = sz;  style.height = sz;  style.shape = 'diamond'
-            style.color = '#331800'
+            const d = (n.sc.dose as number) ?? 0;
+            const sz = Math.round(28 + d * 8);
+            style['background-color'] = this.hsl2rgb(46, 90, 50 + d * 8);
+            style.width = sz; style.height = sz; style.shape = 'diamond';
+            style.color = '#331800';
         } else if (n.sc.poo) {
-            const d  = (n.sc.dose as number) ?? 0
-            const sz = Math.round(18 + Math.min(d, 8) * 2.5)
-            style['background-color'] = '#5c3010'
-            style.width = sz;  style.height = sz;  style.shape = 'ellipse'
-            style.color = '#c88040'
+            const d = (n.sc.dose as number) ?? 0;
+            const sz = Math.round(18 + Math.min(d, 8) * 2.5);
+            style['background-color'] = '#5c3010';
+            style.width = sz; style.height = sz; style.shape = 'ellipse';
+            style.color = '#c88040';
         } else if (n.sc.material) {
-            const amt = (n.sc.amount as number) ?? 0
-            const sz  = Math.round(18 + Math.min(amt, 20) * 1.6)
-            style['background-color'] = `hsl(33,52%,${20 + Math.min(amt,20) * 1.5}%)`
-            style.width = sz;  style.height = sz;  style.shape = 'round-rectangle'
-            style.color = '#ffe8c0'
+            const amt = (n.sc.amount as number) ?? 0;
+            const sz = Math.round(18 + Math.min(amt, 20) * 1.6);
+            style['background-color'] = this.hsl2rgb(33, 52, 20 + Math.min(amt, 20) * 1.5);
+            style.width = sz; style.height = sz; style.shape = 'round-rectangle';
+            style.color = '#ffe8c0';
         } else if (n.sc.producing) {
-            style['background-color'] = '#142060'
-            style.width = 42;  style.height = 42;  style.shape = 'round-rectangle'
-            style.color = '#9ab4ff'
+            style['background-color'] = '#142060';
+            style.width = 42; style.height = 42; style.shape = 'round-rectangle';
+            style.color = '#9ab4ff';
         } else if (n.sc.protein) {
-            const cx = (n.sc.complexity as number) ?? 0
-            const sz = Math.round(18 + cx * 4.5)
-            style['background-color'] = `hsl(276,40%,${22 + cx * 5}%)`
-            style.width = sz;  style.height = sz;  style.shape = 'hexagon'
-            style.color = '#ddc8ff'
+            const cx = (n.sc.complexity as number) ?? 0;
+            const sz = Math.round(18 + cx * 4.5);
+            style['background-color'] = this.hsl2rgb(276, 40, 22 + cx * 5);
+            style.width = sz; style.height = sz; style.shape = 'hexagon';
+            style.color = '#ddc8ff';
         } else if (n.sc.shelf && n.sc.enzyme) {
-            const u = (n.sc.units as number) ?? 0
-            style['background-color'] = '#1a4828'
-            style.width = Math.round(20 + u * 2.5);  style.height = 20
-            style.shape = 'round-rectangle';  style.color = '#90ffc0'
+            const u = (n.sc.units as number) ?? 0;
+            style['background-color'] = '#1a4828';
+            style.width = Math.round(20 + u * 2.5); style.height = 20;
+            style.shape = 'round-rectangle'; style.color = '#90ffc0';
         } else if (n.sc.wants_enzyme) {
-            style['background-color'] = '#6a1a08'
-            style.width = 22;  style.height = 22;  style.shape = 'star'
-            style.color = '#ff9070'
+            style['background-color'] = '#6a1a08';
+            style.width = 22; style.height = 22; style.shape = 'star';
+            style.color = '#ff9070';
         } else if (n.sc.run) {
-            style['background-color'] = '#101028'
-            style.width = 44;  style.height = 18;  style.shape = 'round-rectangle'
-            style.color = '#7888ff'
+            style['background-color'] = '#101028';
+            style.width = 44; style.height = 18; style.shape = 'round-rectangle';
+            style.color = '#7888ff';
         } else {
-            style['background-color'] = '#242424'
-            style.width = 16;  style.height = 16
-            style.color = '#666'
+            style['background-color'] = '#242424';
+            style.width = 16; style.height = 16;
+            style.color = '#666';
         }
-        return { id, label, style }
+        return { id, label, style };
     },
+
 
     cyto_w_style(wname: string): any {
         const bg: Record<string,string>     = { farm: '#0a1f0a', plate: '#1f130a', enzymeco: '#0a0a1f' }
