@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
-    import cytoscape    from 'cytoscape'
-    import fcose        from 'cytoscape-fcose'
+    import { onMount }    from 'svelte'
+    import cytoscape      from 'cytoscape'
+    import fcose          from 'cytoscape-fcose'
     import type { House } from '$lib/O/Housing.svelte'
     import type { TheC }  from '$lib/data/Stuff.svelte'
 
@@ -9,22 +9,44 @@
 
     let { H }: { H: House } = $props()
 
-    // ── cytoscape instance ────────────────────────────────────────────────────
     let container: HTMLDivElement
     let cy: ReturnType<typeof cytoscape>
 
-    // ── grawave history for walk-back ─────────────────────────────────────────
-    // Each entry = the wave that was applied to reach that state.
-    type Wave = { upsert: NodeDesc[]; remove: string[]; duration: number }
-    type NodeDesc = { id: string; label: string; style: Record<string, any> }
+    type NodeDesc = {
+        id:              string
+        label:           string
+        style:           Record<string,any>
+        parent?:         string
+        new_parent?:     string
+        isCompound?:     boolean
+    }
+    type EdgeDesc = {
+        id:     string
+        source: string
+        target: string
+        data?:  Record<string,any>
+        style:  Record<string,any>
+    }
+    type MigrateDesc = {
+        id:          string
+        toward:      string
+        then_parent?: string
+    }
+    type Wave = {
+        upsert:       NodeDesc[]
+        edge_upsert:  EdgeDesc[]
+        remove:       string[]
+        edge_remove:  string[]
+        migrate:      MigrateDesc[]
+        constraints:  any | null
+        duration:     number
+    }
 
-    let history: Wave[] = []
-    let pos = $state(-1)          // index of currently-displayed state
-    let status = $state('no graph')
-    let grawave_dur = $state(0.3) // seconds; shown in status
-
-    // ── reactive: watch H.ave for cyto_graph particle ────────────────────────
-    let last_tick = -1
+    let history:    Wave[] = []
+    let pos         = $state(-1)
+    let status      = $state('no graph')
+    let grawave_dur = $state(0.3)
+    let last_tick   = -1
 
     $effect(() => {
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
@@ -34,103 +56,180 @@
         if (!wave || tick === last_tick) return
         last_tick = tick
         console.log(`wave tick`, tick, JSON.stringify(wave.upsert.map(n => ({ id: n.id, shape: n.style?.shape }))))
+        
         if (cy) enqueue(wave)
     })
 
-    // ── enqueue wave (only when at latest position) ───────────────────────────
     function enqueue(wave: Wave) {
-        // If user walked back, discard forward history
         if (pos < history.length - 1) history = history.slice(0, pos + 1)
         history = [...history, wave]
         pos = history.length - 1
         apply(wave, wave.duration)
         grawave_dur = wave.duration
-        status = `tick ${last_tick} | +${wave.upsert.length} -${wave.remove.length} | dur ${wave.duration}s`
+        const nu = wave.upsert?.length ?? 0
+        const eu = wave.edge_upsert?.length ?? 0
+        const rm = wave.remove?.length ?? 0
+        const mg = wave.migrate?.length ?? 0
+        status = `tick ${last_tick} · ${nu}n ${eu}e −${rm} ~${mg} · ⏱${wave.duration}s`
     }
 
-    // ── apply a wave to cy ────────────────────────────────────────────────────
-    // properties cytoscape cannot animate — apply immediately
+    // properties cytoscape cannot animate — must apply immediately
+    const NON_ANIM = new Set([
+        'shape', 'background-image', 'background-fit', 'content', 'label',
+        'source-label', 'target-label', 'line-style', 'target-arrow-shape',
+        'source-arrow-shape', 'curve-style', 'text-valign', 'text-halign',
+        'font-size', 'font-weight', 'font-style', 'font-family', 'text-wrap',
+        'text-max-width', 'padding', 'border-style',
+    ])
+
+    function split_style(style: Record<string,any> = {}) {
+        const anim: any = {}, imm: any = {}
+        for (const [k, v] of Object.entries(style)) {
+            if (v == null) continue
+            ;(NON_ANIM.has(k) ? imm : anim)[k] = v
+        }
+        return { anim, imm }
+    }
+
     function apply(wave: Wave, dur: number) {
         if (!cy) return
         const ms = Math.round(dur * 1000)
-        // Removals first
-        for (const id of wave.remove) {
-            cy.getElementById(id).remove()
+
+        // 1. remove stale edges
+        for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()
+
+        // 2. remove stale nodes — skip migrating ids
+        const migrating = new Set((wave.migrate ?? []).map(m => m.id))
+        for (const id of wave.remove ?? []) {
+            if (!migrating.has(id)) cy.getElementById(id).remove()
         }
 
-        const NON_ANIMATABLE = new Set(['shape', 'background-image', 'background-fit',
-            'content', 'label', 'source-label', 'target-label'])
+        // 3. upsert nodes
+        for (const nd of wave.upsert ?? []) {
+            const el = cy.getElementById(nd.id)
+            const { anim, imm } = split_style(nd.style)
 
-        // Upserts
-        for (const nd of wave.upsert) {
-            const existing = cy.getElementById(nd.id)
-
-            const cleanStyle = Object.fromEntries(
-                Object.entries(nd.style).filter(([, v]) => v != null)
-            )
-            if (cleanStyle.length != nd.style.length) throw "STYLE CONTAINS NULL"
-
-            if (existing.length) {
-                // Animate style changes on existing nodes
-                const animated: any   = {}
-                const immediate: any  = {}
-                for (const [k, v] of Object.entries(nd.style)) {
-                    if (v == null) continue
-                    if (NON_ANIMATABLE.has(k)) immediate[k] = v
-                    else animated[k] = v
+            if (el.length) {
+                if (nd.new_parent && el.parent().id() !== nd.new_parent) {
+                    el.move({ parent: nd.new_parent })
                 }
-                existing.data('label', nd.label)
-                if (Object.keys(immediate).length) existing.style(immediate)
-                if (ms > 0 && Object.keys(animated).length) {
-                    existing.animate({ style: animated }, { duration: ms, easing: 'ease-out-cubic' })
+                el.data('label', nd.label)
+                if (Object.keys(imm).length)  el.style(imm)
+                if (ms > 0 && Object.keys(anim).length) {
+                    el.animate({ style: anim }, { duration: ms, easing: 'ease-out-cubic' })
                 } else {
-                    existing.style(animated)
+                    el.style(anim)
                 }
             } else {
-                let ele = cy.add({ group: 'nodes', data: { id: nd.id, label: nd.label }})
-                ele.style(nd.style)
+                const data: any = { id: nd.id, label: nd.label }
+                if (nd.parent) data.parent = nd.parent
+                const added = cy.add({ group: 'nodes', data })
+                added.style({ ...imm, ...anim })
             }
         }
 
-        if (wave.upsert.length || wave.remove.length) {
-            relayout(ms)
+        // 4. upsert edges
+        for (const ed of wave.edge_upsert ?? []) {
+            const el = cy.getElementById(ed.id)
+            const { anim, imm } = split_style(ed.style)
+
+            if (el.length) {
+                if (ed.data?.ideal_length != null) el.data('ideal_length', ed.data.ideal_length)
+                if (Object.keys(imm).length)  el.style(imm)
+                if (ms > 0 && Object.keys(anim).length) {
+                    el.animate({ style: anim }, { duration: ms })
+                } else {
+                    el.style(anim)
+                }
+            } else {
+                const data: any = { id: ed.id, source: ed.source, target: ed.target }
+                if (ed.data) Object.assign(data, ed.data)
+                try {
+                    const added = cy.add({ group: 'edges', data })
+                    added.style({ ...imm, ...anim })
+                } catch { /* source/target may not exist yet */ }
+            }
+        }
+
+        // 5. migrations
+        for (const mg of wave.migrate ?? []) {
+            const el     = cy.getElementById(mg.id)
+            const toward = cy.getElementById(mg.toward)
+            if (!el.length) continue
+
+            if (!toward.length || ms <= 0) {
+                mg.then_parent ? el.move({ parent: mg.then_parent }) : el.remove()
+                continue
+            }
+
+            const tpos   = toward.renderedPosition()
+            const anim_ms = Math.round(ms * 0.82)
+
+            if (mg.then_parent) {
+                // re-parent: animate toward new compound, then move
+                el.animate(
+                    { renderedPosition: tpos },
+                    { duration: anim_ms, easing: 'ease-in-out-cubic',
+                      complete: () => {
+                          const still = cy.getElementById(mg.id)
+                          if (still.length) still.move({ parent: mg.then_parent! })
+                      } }
+                )
+            } else {
+                // harvest merge: animate toward mat:basic, shrink + fade out, remove
+                el.animate(
+                    { renderedPosition: tpos,
+                      style: { opacity: 0, width: 4, height: 4 } },
+                    { duration: anim_ms, easing: 'ease-in-cubic',
+                      complete: () => { cy.getElementById(mg.id).remove() } }
+                )
+            }
+        }
+
+        // 6. layout
+        if ((wave.upsert?.length || wave.remove?.length || wave.edge_upsert?.length)) {
+            relayout(ms, wave.constraints)
         }
     }
 
-    // ── walk backward / forward through history ───────────────────────────────
     function walk(dir: -1 | 1) {
         const next = pos + dir
         if (next < 0 || next >= history.length) return
-
         if (dir === 1) {
             apply(history[next], 0.2)
         } else {
-            // Undo: rebuild from scratch up to `next`
             cy.elements().remove()
             for (let i = 0; i <= next; i++) apply(history[i], 0)
         }
-
         pos = next
-        status = `history ${pos + 1}/${history.length} (walk-mode)`
+        status = `history ${pos + 1}/${history.length} (walk)`
     }
 
-    // ── layout ────────────────────────────────────────────────────────────────
     let lay: any
-    function relayout(animMs = 300) {
+    function relayout(animMs = 300, constraints?: any) {
         lay?.stop()
         lay = cy.layout({
             name: 'fcose',
-            animate: animMs > 0,
-            animationDuration: animMs,
-            nodeSeparation: 130,
+            animate:                     animMs > 0,
+            animationDuration:           animMs,
+            nodeSeparation:              80,
             nodeDimensionsIncludeLabels: true,
-            randomize: false,
-            quality: 'default',
+            randomize:                   false,
+            quality:                     'default',
+            idealEdgeLength:             (edge: any) => {
+                const il = edge.data('ideal_length')
+                return typeof il === 'number' ? il : 80
+            },
+            edgeElasticity: (edge: any) => {
+                const id = edge.id() as string
+                return id.startsWith('e:helio:') ? 0.10 : 0.45
+            },
+            nodeRepulsion: () => 4000,
+            ...(constraints ?? {}),
         })
-        lay.run()
+        try { lay.run() } catch (e) { console.warn('layout error', e) }
     }
 
-    // ── cytoscape init ────────────────────────────────────────────────────────
     onMount(() => {
         cy = cytoscape({
             container,
@@ -141,30 +240,30 @@
                         label:            'data(label)',
                         'text-valign':    'center',
                         'text-wrap':      'wrap',
-                        'text-max-width': '72px',
-                        'font-size':      '8px',
-                        'font-family':    "Berkeley Mono, Fira Code, monospace",
-                        color:            '#eee',
-                        'background-color': '#2a2a2a',
-                        width:  28,
-                        height: 28,
+                        'text-max-width': '62px',
+                        'font-size':      '7px',
+                        'font-family':    "'Berkeley Mono','Fira Code',monospace",
+                        color:            '#ddd',
+                        'background-color': '#222',
+                        width:  22, height: 22,
                     },
                 },
                 {
+                    selector: ':parent',
+                    style: { 'text-valign': 'top', 'text-halign': 'center' },
+                },
+                {
                     selector: 'node:selected',
-                    style: {
-                        'border-width': 2,
-                        'border-color': '#79b',
-                    },
+                    style: { 'border-width': 2, 'border-color': '#79b' },
                 },
                 {
                     selector: 'edge',
                     style: {
-                        width: 1.5,
-                        'line-color': '#444',
-                        'target-arrow-color': '#444',
-                        'target-arrow-shape': 'triangle',
-                        'curve-style': 'bezier',
+                        width: 1.2,
+                        'line-color':           '#2a2a2a',
+                        'target-arrow-shape':   'none',
+                        'curve-style':          'bezier',
+                        opacity:                0.5,
                     },
                 },
             ],
@@ -173,110 +272,72 @@
     })
 </script>
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="cytui">
-
-    <!-- toolbar -->
     <div class="cytui-bar">
         <span class="cytui-status">{status}</span>
-        <button onclick={() => relayout(300)} title="Re-layout">⟳</button>
-        <button onclick={() => cy?.fit()} title="Fit to screen">⊞</button>
-        <span class="cytui-sep"></span>
-        <button onclick={() => walk(-1)} disabled={pos <= 0} title="Walk back">◀</button>
+        <button onclick={() => relayout(300)}>⟳</button>
+        <button onclick={() => cy?.fit()}>⊞</button>
+        <span class="sep"></span>
+        <button onclick={() => walk(-1)} disabled={pos <= 0}>◀</button>
         <span class="cytui-hist">{pos + 1}/{history.length}</span>
-        <button onclick={() => walk(1)}  disabled={pos >= history.length - 1} title="Walk forward">▶</button>
-        <span class="cytui-sep"></span>
-        <span class="cytui-dur" title="grawave duration (seconds)">⏱ {grawave_dur}s</span>
+        <button onclick={() => walk(1)} disabled={pos >= history.length - 1}>▶</button>
+        <span class="sep"></span>
+        <span class="cytui-dur">⏱ {grawave_dur}s</span>
     </div>
 
-    <!-- legend -->
     <div class="cytui-legend">
         <span class="l-leaf">🌿 leaf</span>
         <span class="l-sun">◆ sun</span>
         <span class="l-poo">● poo</span>
-        <span class="l-mat">■ material</span>
-        <span class="l-prod">▪ producing</span>
-        <span class="l-prot">● protein</span>
-        <span class="l-enz">▪ enzyme</span>
+        <span class="l-mat">■ mat</span>
+        <span class="l-prod">▪ prod</span>
+        <span class="l-prot">⬡ prot</span>
+        <span class="l-enz">▬ enz</span>
+        <span class="l-stem">─ stem</span>
+        <span class="l-helio">╌ helio</span>
     </div>
 
-    <!-- cytoscape canvas -->
     <div class="cytui-graph" bind:this={container}></div>
-
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <style>
 .cytui {
-    display: flex;
-    flex-direction: column;
-    height: 420px;
-    border: 1px solid #222;
-    border-radius: 4px;
-    overflow: hidden;
-    background: #0a0a0a;
-    font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: 11px;
-    color: #ccc;
+    display: flex; flex-direction: column;
+    height: 480px;
+    border: 1px solid #1a1a1a; border-radius: 4px;
+    overflow: hidden; background: #070707;
+    font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;
+    font-size: 11px; color: #aaa;
 }
-
-/* toolbar */
 .cytui-bar {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 8px;
-    background: #141414;
-    border-bottom: 1px solid #1e1e1e;
-    flex-shrink: 0;
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 8px; background: #0f0f0f;
+    border-bottom: 1px solid #181818; flex-shrink: 0;
 }
 .cytui-status {
-    flex: 1;
-    color: #555;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 10px;
+    flex: 1; color: #3a3a3a; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; font-size: 9px;
 }
-.cytui-sep { width: 1px; background: #2a2a2a; height: 14px; margin: 0 2px; }
-.cytui-hist { color: #444; font-size: 10px; min-width: 38px; text-align: center; }
-.cytui-dur  { color: #557; font-size: 10px; }
+.sep { width: 1px; background: #1e1e1e; height: 12px; margin: 0 2px; flex-shrink: 0; }
+.cytui-hist { color: #2a2a2a; font-size: 9px; min-width: 34px; text-align: center; }
+.cytui-dur  { color: #2a2a44; font-size: 9px; }
 .cytui-bar button {
-    background: #1e1e1e;
-    border: 1px solid #2a2a2a;
-    border-radius: 2px;
-    color: #888;
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 1;
-    padding: 1px 5px;
+    background: #141414; border: 1px solid #1e1e1e; border-radius: 2px;
+    color: #555; cursor: pointer; font-size: 12px; line-height: 1;
+    padding: 1px 5px; font-family: inherit;
 }
-.cytui-bar button:hover:not(:disabled) { background: #2a2a2a; color: #bbb; }
-.cytui-bar button:disabled { opacity: 0.25; cursor: not-allowed; }
-
-/* legend */
+.cytui-bar button:hover:not(:disabled) { background: #1e1e1e; color: #999; }
+.cytui-bar button:disabled { opacity: 0.18; cursor: default; }
 .cytui-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 3px 10px;
-    background: #0e0e0e;
-    border-bottom: 1px solid #1a1a1a;
-    font-size: 9px;
-    flex-shrink: 0;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 2px 10px; background: #080808;
+    border-bottom: 1px solid #141414;
+    font-size: 8px; flex-shrink: 0; opacity: 0.6;
 }
-.cytui-legend span { opacity: 0.65; }
-.l-leaf  { color: #4a9 }
-.l-sun   { color: #fc0 }
-.l-poo   { color: #a63 }
-.l-mat   { color: #b84 }
-.l-prod  { color: #48f }
-.l-prot  { color: #b8f }
-.l-enz   { color: #6a8 }
-
-/* cytoscape canvas */
-.cytui-graph {
-    flex: 1;
-    min-height: 0;
-}
+.l-leaf  { color: #4c9 } .l-sun   { color: #fb0 }
+.l-poo   { color: #974 } .l-mat   { color: #b82 }
+.l-prod  { color: #46f } .l-prot  { color: #c8f }
+.l-enz   { color: #4a8 } .l-stem  { color: #3a6 }
+.l-helio { color: #880 }
+.cytui-graph { flex: 1; min-height: 0; }
 </style>
