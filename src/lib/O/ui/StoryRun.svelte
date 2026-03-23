@@ -141,7 +141,7 @@
 
     let got_lines  = $derived.by(() => {
         const live = display.open_at != null ? live_step(display.open_at) : null
-        return parse_lines(live?.sc.unrun ? '' : (live?.sc.got_snap ?? live?.sc.snap) as string | undefined)
+        return parse_lines(live?.sc.unrun ? '' : (live?.sc.got_snap) as string | undefined)
     })
     let exp_lines  = $derived.by(() => {
         const live = display.open_at != null ? live_step(display.open_at) : null

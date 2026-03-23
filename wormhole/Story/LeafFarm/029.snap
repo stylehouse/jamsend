@@ -1,61 +1,58 @@
-{}	{"H":"Run:LeafFarm"}
-  {}	{"A":"farm"}
-    {}	{"self":1,"est":1773900751}
-    {}	{"self":1,"round":29,"age":9}
-    {}	{"w":"farm"}
-      {}	{"self":1,"est":1773900751}
-      {}	{"sunshine":1,"dose":0.9314846150410916}
-      {}	{"sunny_streak":1,"count":9}
-      {}	{"poo":1,"dose":2.246317974413894}
-      {}	{"leaf":1,"leaf_id":"leaf_2_0","dose":0.8029444712277156}
-      {}	{"leaf":1,"leaf_id":"leaf_3_3335","dose":0.658151205924357}
-      {}	{"leaf":1,"leaf_id":"leaf_4_4105","dose":0.5394682015773417}
-      {}	{"leaf":1,"leaf_id":"leaf_5_4824","dose":0.44218705047323104}
-      {}	{"leaf":1,"leaf_id":"leaf_6_7998","dose":1.8122420101361942}
-      {}	{"leaf":1,"leaf_id":"leaf_6_2212","dose":1.8122420101361942}
-      {}	{"leaf":1,"leaf_id":"leaf_6_5175","dose":0.3624484020272386}
-      {}	{"leaf":1,"leaf_id":"leaf_7_5840","dose":1.4854442706034372}
-      {}	{"leaf":1,"leaf_id":"leaf_7_2165","dose":1.4854442706034372}
-      {}	{"leaf":1,"leaf_id":"leaf_7_363","dose":0.29708885412068725}
-      {}	{"leaf":1,"leaf_id":"leaf_8_4709","dose":1.217577270986424}
-      {}	{"leaf":1,"leaf_id":"leaf_8_7104","dose":1.217577270986424}
-      {}	{"leaf":1,"leaf_id":"leaf_8_6907","dose":0.2435154541972848}
-      {}	{"leaf":1,"leaf_id":"leaf_9_8341","dose":0.9980141565462494}
-      {}	{"leaf":1,"leaf_id":"leaf_9_9583","dose":0.9980141565462494}
-      {}	{"leaf":1,"leaf_id":"leaf_9_3587","dose":0.19960283130924975}
-      {}	{"leaf":1,"leaf_id":"leaf_10_1081","dose":0.8180443906116796}
-      {}	{"leaf":1,"leaf_id":"leaf_10_5122","dose":0.8180443906116796}
-      {}	{"leaf":1,"leaf_id":"leaf_10_9062","dose":0.16360887812233582}
-      {}	{"self":1,"round":29,"age":9}
-  {}	{"A":"plate"}
-    {}	{"self":1,"est":1773900751}
-    {}	{"self":1,"round":42,"age":9}
-    {}	{"w":"plate"}
-      {}	{"self":1,"est":1773900751}
-      {}	{"o_elvis":"receive_harvest"}
-      {}	{"o_elvis":"receive_protein"}
-      {}	{"o_elvis":"deliver_enzyme"}
-      {}	{"material":"basic","amount":3.010255443254104}
-      {}	{"self":1,"round":42,"age":9}
-  {}	{"A":"enzymeco"}
-    {}	{"self":1,"est":1773900751}
-    {}	{"self":1,"round":32,"age":9}
-    {}	{"w":"enzymeco"}
-      {}	{"self":1,"est":1773900751}
-      {}	{"o_elvis":"request_enzyme"}
-      {}	{"self":1,"round":32,"age":9}
-  {}	{"mo":"main","interval":3.6,"id":2692}
-  {}	{"Se":"workrepo"}
-    {}	{"openity":1,"v":-11}
-    {}	{"housed":3,"A":"farm"}
-      {}	{"openity":1,"v":-11}
-      {}	{"housed":3,"w":"farm"}
-        {}	{"openity":1,"v":-11}
-    {}	{"housed":3,"A":"plate"}
-      {}	{"openity":1,"v":-11}
-      {}	{"housed":3,"w":"plate"}
-        {}	{"openity":1,"v":-11}
-    {}	{"housed":3,"A":"enzymeco"}
-      {}	{"openity":1,"v":-11}
-      {}	{"housed":3,"w":"enzymeco"}
-        {}	{"openity":1,"v":-11}
+	{"H":"LeafFarm","Run":1}
+  	{"A":"farm"}
+    {"mung":["age"]}	{"self":1,"round":29}
+    	{"w":"farm"}
+      	{"sunshine":1,"dose":0.9314846150410916}
+      	{"sunny_streak":1,"count":9}
+      	{"poo":1,"dose":2.246317974413894}
+      	{"leaf":1,"leaf_id":"leaf_2_2","dose":0.8029444712277156}
+      	{"leaf":1,"leaf_id":"leaf_3_2","dose":0.658151205924357}
+      	{"leaf":1,"leaf_id":"leaf_4_2","dose":0.5394682015773417}
+      	{"leaf":1,"leaf_id":"leaf_5_2","dose":0.44218705047323104}
+      	{"leaf":1,"leaf_id":"leaf_6_0","dose":1.8122420101361942}
+      	{"leaf":1,"leaf_id":"leaf_6_1","dose":1.8122420101361942}
+      	{"leaf":1,"leaf_id":"leaf_6_2","dose":0.3624484020272386}
+      	{"leaf":1,"leaf_id":"leaf_7_0","dose":1.4854442706034372}
+      	{"leaf":1,"leaf_id":"leaf_7_1","dose":1.4854442706034372}
+      	{"leaf":1,"leaf_id":"leaf_7_2","dose":0.29708885412068725}
+      	{"leaf":1,"leaf_id":"leaf_8_0","dose":1.217577270986424}
+      	{"leaf":1,"leaf_id":"leaf_8_1","dose":1.217577270986424}
+      	{"leaf":1,"leaf_id":"leaf_8_2","dose":0.2435154541972848}
+      	{"leaf":1,"leaf_id":"leaf_9_0","dose":0.9980141565462494}
+      	{"leaf":1,"leaf_id":"leaf_9_1","dose":0.9980141565462494}
+      	{"leaf":1,"leaf_id":"leaf_9_2","dose":0.19960283130924975}
+      	{"leaf":1,"leaf_id":"leaf_10_0","dose":0.8180443906116796}
+      	{"leaf":1,"leaf_id":"leaf_10_1","dose":0.8180443906116796}
+      	{"leaf":1,"leaf_id":"leaf_10_2","dose":0.16360887812233582}
+      	{"seen":"wonder"}
+      {"mung":["age"]}	{"self":1,"round":29}
+  	{"A":"plate"}
+    {"mung":["age"]}	{"self":1,"round":41}
+    	{"w":"plate"}
+      	{"o_elvis":"receive_harvest"}
+      	{"o_elvis":"receive_protein"}
+      	{"o_elvis":"deliver_enzyme"}
+      	{"material":"basic","amount":3.009151788380773}
+      	{"wants_enzyme":1}
+      	{"shelf":1,"enzyme":1,"units":2}
+      {"mung":["age"]}	{"self":1,"round":41}
+  	{"A":"enzymeco"}
+    {"mung":["age"]}	{"self":1,"round":31}
+    	{"w":"enzymeco"}
+      	{"o_elvis":"request_enzyme"}
+      {"mung":["age"]}	{"self":1,"round":31}
+  {"mung":["id"]}	{"mo":"main","interval":3.6}
+  	{"Se":"workrepo"}
+    	{"openity":1,"v":-11}
+    	{"housed":3,"A":"farm"}
+      	{"openity":1,"v":-11}
+      	{"housed":3,"w":"farm"}
+        	{"openity":1,"v":-11}
+    	{"housed":3,"A":"plate"}
+      	{"openity":1,"v":-11}
+      	{"housed":3,"w":"plate"}
+        	{"openity":1,"v":-11}
+    	{"housed":3,"A":"enzymeco"}
+      	{"openity":1,"v":-11}
+      	{"housed":3,"w":"enzymeco"}
+        	{"openity":1,"v":-11}

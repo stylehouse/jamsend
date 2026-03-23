@@ -7,7 +7,7 @@
     //   This  — what is spontaneously happening right now, this session.
     //           Particles live as direct children of w, the Story work particle.
     //           Uppercase key: {Step:N}
-    //           Carries: snap, got_snap, exp_snap, dige, ok, hollow, accepted.
+    //           Carries: got_snap, exp_snap, dige, ok, hollow, accepted.
     //           Has {watched:'ave'} in sc so enroll_watched() picks it up and
     //           any version bump on a Step is visible to StoryRun as a reactive
     //           change, even though the Step is not inside the ave container.
@@ -69,18 +69,14 @@
 //  indent: 2 spaces × depth.
 //  obj_part: JSON of objecties metadata (ref ids, mung list) when present,
 //            empty string otherwise.  Tab is the always-present separator.
+//
+//  story_process_node builds D.sc.snap_line (the complete encoded line) so
+//  story_snap can join them directly without a separate enL pass.
 
     pad: (n: number) => String(n).padStart(3, '0'),
 
     enj(o: any): string { return JSON.stringify(o ?? {}) },
     ind(d: number): string { return '  '.repeat(d) },
-
-    // encode one D particle as a snap line
-    enL(D: TheD, d: number): string {
-        const obj      = D.sc?.objecties
-        const obj_part = obj ? this.enj(obj) : ''
-        return `${this.ind(d)}${obj_part}\t${this.enj(D.sc?.stringies)}`
-    },
 
     // decode one snap line → { d, objecties, stringies }
     // throws "no tab" on malformed lines so callers can catch and skip
@@ -235,7 +231,7 @@
 //    depth 1  — step         "  \t{"step":N,"dige":"hash"}"
 //    depth 2  — note         "    \t{"note":1,...typeKV}"
 //
-//  snap text is never included in step lines — it lives in NNN.snap only.
+//  got_snap text is never included in step lines — it lives in NNN.snap only.
 //  Steps without a dige are written only when they carry notes, so user
 //  annotations on not-yet-run steps survive a save.
 
@@ -385,9 +381,9 @@
         // notes from The/%step:n — keyed by step number.
         // TheC refs are safe here; notes only change on explicit user action.
         const notes: Record<number, TheC[]> = {}
-        for (const theStep of ((w.c.The)?.o({ step: 1 }))) {
-            const n     = theStep.sc.step
-            const notes = theStep.o({ note: 1 })
+        for (const s of (w.c.The).o({ step: 1 })) {
+            const n     = s.sc.step
+            const notes = s.o({ note: 1 })
             if (notes.length) notes[n] = notes
         }
 
@@ -420,7 +416,7 @@
     async story_accept_all(A: TheC, w: TheC) {
         // Accept every !ok step in This at once.  Used after a lenient run that
         // accumulated multiple mismatches.  Promotes all diges into The, marks
-        // accepted, sheds snap text, then saves and resumes.
+        // accepted, keeps got_snap for story_save to write.
         const H   = this
         const run = w.o({ run: 1 })[0]
         if (!run) return
@@ -430,8 +426,7 @@
             const n = step.sc.Step
             if (step.sc.dige) H.The_step(w, n).sc.dige = step.sc.dige
             step.sc.accepted = true
-            delete step.sc.snap
-            delete step.sc.got_snap
+            // got_snap kept — story_save reads it inside post_do
         }
         run.sc.frontier = 0
         H.The_set_frontier(w, 0)
@@ -452,8 +447,9 @@
         // Accept a mismatch at step n:
         //   1. Clone This/{Step:n}.dige → The/{step:n}.dige.  The now reflects reality.
         //   2. Mark stepC.sc.accepted = true so the UI can dull the pip distinctively.
-        //   3. Shed snap/got_snap from This/{Step:n} — they would appear as object refs
-        //      in future story_snap walks and clutter the mung output.
+        //   3. Keep got_snap — story_save reads it inside post_do.
+        //      The 5-step trim (in snap_step) cleans up ok+!accepted steps behind us,
+        //      so there is no race between story_accept and story_save's post_do.
         //   4. Advance the frontier note in The (for save/reload bookkeeping).
         //   5. Clear failure state; resume the drive.
         const H   = this
@@ -477,10 +473,8 @@
         const step = H.i_step(w, n)
         if (step.sc.dige) H.The_step(w, n).sc.dige = step.sc.dige
         step.sc.accepted = true
-        delete step.sc.snap
-        delete step.sc.got_snap
+        // got_snap kept — story_save reads it; trim loop handles cleanup behind us
         ;V.Story && console.log(`✅ story_accept n=${n} dige=${step.sc.dige?.slice(0,8)} frontier=${run.sc.frontier}`)
-        ;V.Story && console.log(`✅ story_accept n=${n} dige=${step.sc.dige?.slice?.(0,8)} frontier=${run.sc.frontier}`)
 
         delete run.sc.failed_at
         delete run.sc.fetch_snap
@@ -500,6 +494,11 @@
 //  story_snap walks the Run sub-House via Selection and encodes each particle
 //  as a snap line.  story_matching rules govern what gets skipped, munged, or
 //  traced (re-identified across runs by a stable identity).
+//
+//  story_process_node sets D.sc.snap_line (indent + objecties + tab + stringies)
+//  directly on the D particle, so story_snap just collects Ds and joins their
+//  snap_line strings at the end.  traced_fn compares snap_line across runs for
+//  change detection — no separate snap_copy accumulation needed.
 //
 //  Any object or function value not covered by munging rules falls through to
 //  the objectify() path and ends up in objecties.ref — it is present in the
@@ -562,6 +561,8 @@
         // ref (object values → stable ids via objectify — excluded from diff),
         // mung (keys deliberately excluded, e.g. timestamps).
         // sets T.sc.not=1 to skip the particle entirely.
+        // sets D.sc.snap_line — the complete encoded line (indent + objecties + stringies),
+        //   used directly by story_snap and compared in traced_fn for change detection.
         const active: Array<any> = [
             ...this.story_matching,
             ...(T.sc.up?.sc.thence_matching ?? []),
@@ -602,10 +603,11 @@
         if (Object.keys(ref).length)  objecties.ref  = ref
         if (mung.length)              objecties.mung = mung
 
-        D.sc.stringies  = stringies
-        D.sc.objecties  = Object.keys(objecties).length ? objecties : undefined
-        D.sc.copy       = { ...n.sc }
-        D.sc.snap_copy ??= this.enj(stringies)
+        D.sc.stringies = stringies
+        D.sc.objecties = Object.keys(objecties).length ? objecties : undefined
+        D.sc.copy      = { ...n.sc }
+        const obj_part = Object.keys(objecties).length ? this.enj(objecties) : ''
+        D.sc.snap_line = `${this.ind(T.c.path.length - 1)}${obj_part}\t${this.enj(stringies)}`
         if (mung.length) { D.c.munged ??= []; D.c.munged.push(mung) }
         if (thence.length) T.sc.thence_matching = thence
     },
@@ -614,7 +616,9 @@
         // walk Run via Selection, encoding each particle as a snap line.
         // Selection is cached on Run.c.snap_Se so it retains trace history across
         // steps — that history is what produces the changed/new/gone diff tags.
-        const lines: Array<{ D: TheD, depth: number }> = []
+        // story_process_node sets D.sc.snap_line; traced_fn compares snap_line
+        // strings directly for change detection — no separate snap_copy needed.
+        const lines: TheD[] = []
 
         Run.c.snap_Se ??= new Selection()
         const Se: Selection = Run.c.snap_Se
@@ -631,7 +635,7 @@
                 if (T.c.path.length === 1) {
                     T.sc.more = (n.o({})).filter(c => !c.sc.snap_root)
                 }
-                lines.push({ D, depth: T.c.path.length - 1 })
+                lines.push(D)
             },
 
             trace_fn: async (uD: TheD, n: TheC, _T: Travel) => {
@@ -643,14 +647,13 @@
             },
 
             traced_fn: async (D: TheD, bD: TheD | undefined) => {
-                const curr     = this.enj(D.sc.stringies)
-                D.sc.changed   = bD?.sc.snap_copy != null && curr !== bD.sc.snap_copy
-                D.sc.is_new    = !bD
-                D.sc.snap_copy = curr
+                D.sc.changed = bD?.sc.snap_line != null && D.sc.snap_line !== bD.sc.snap_line
+                D.sc.is_new  = !bD
+                // snap_line on D is the stable record across runs — no separate snap_copy needed
             },
         })
 
-        return lines.map(({ D, depth }) => this.enL(D, depth)).join('\n') + '\n'
+        return lines.map(D => D.sc.snap_line as string).join('\n') + '\n'
     },
 
 
@@ -774,6 +777,8 @@
 //
 //   Phase 3 — snap_step  (inside H beliefs mutex via post_do)
 //     encodes the snap, compares diges, stores on This/{Step:N}, schedules next.
+//     Trims got_snap from ok+!accepted steps 5 behind the current step —
+//     those are already on disk unchanged and don't need to be written by story_save.
 
     story_drive(Run: House, w: TheC, run: TheC) {
         if (run.c.driving) return
@@ -854,7 +859,7 @@
             step.sc.unrun = false
 
             if (run.sc.mode === 'new') {
-                step.sc.snap     = snap
+                step.sc.got_snap = snap
                 step.sc.dige     = got_dige
                 step.sc.ok       = true
                 step.sc.accepted = true   // new-mode steps are self-accepting; save loop uses this
@@ -871,6 +876,16 @@
                 step.sc.got_snap = snap
                 step.sc.dige     = got_dige
                 step.sc.ok       = ok
+
+                // trim got_snap 5 steps back — ok+!accepted steps don't need it
+                // (they already exist on disk unchanged); this also eliminates the race
+                // where story_save's post_do tries to read a field story_accept just cleared.
+                const trim_n = n - 5
+                if (trim_n >= 1) {
+                    const old = H.i_step(w, trim_n)
+                    if (old.sc.ok && !old.sc.accepted) delete old.sc.got_snap
+                }
+
                 H.story_analysis(w)
 
                 if (!ok && !run.sc.lenient) {
@@ -905,16 +920,17 @@
     },
 
 
-//#region story_save — merge This→The and write toc.snap
+//#region story_save — write toc.snap and any unsaved NNN.snap files
 //
-//  Merge This → The for all ok and accepted steps, sync the frontier note,
-//  encode to toc.snap, and ship via Wormhole.
+//  NNN.snap write condition: step has got_snap and accepted.
+//   — new mode:   all steps are accepted=true; got_snap set in snap_step.
+//   — check mode: only mismatches the user accepted carry accepted=true;
+//                 ok steps are already on disk unchanged and their got_snap
+//                 is trimmed away by the 5-step trim in snap_step.
 //
-//  Merge rule:
-//   ok steps always update their step dige in The.
-//   mismatch steps within the frontier also update (user accepted them).
-//   steps beyond the frontier keep the dige from The (from load), preserving
-//    the original ground truth for the unreviewed portion.
+//  got_snap is NOT deleted in story_accept — it stays until post_do writes it.
+//  The 5-step trim handles ok+!accepted cleanup so memory doesn't accumulate.
+//  There is therefore no race between story_accept and the post_do here.
 
     story_save(this: House) {
         const storyH = this
@@ -928,12 +944,9 @@
         const frontier   = (run?.sc.frontier as number) ?? 0
         const The        = w.c.The
         const thisC      = w.c.This
-        const all_steps = thisC ? thisC.o({ Step: 1 }) : []
+        const all_steps  = thisC ? thisC.o({ Step: 1 }) : []
         if (!all_steps.length && !The?.o({ step: 1 }).length) return
-        ;V.Story && console.log(`💾 story_save: ${all_steps.length} steps, writable=${all_steps.filter(s=>s.sc.ok||s.sc.accepted).length}, saved=${all_steps.filter(s=>s.sc.saved).length}`)
-
-        // The diges were already set by snap_step (new mode) and story_accept (check mode).
-        // No merge loop needed — just sync the frontier note and encode.
+        ;V.Story && console.log(`💾 story_save: ${all_steps.length} steps, to_write=${all_steps.filter(s=>s.sc.got_snap&&s.sc.accepted&&!s.sc.saved).length}`)
 
         // sync frontier note so toc.snap reflects the current state exactly
         const all_the_steps = The.o({ step: 1 })
@@ -957,22 +970,14 @@
             const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
             storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
 
-            // write NNN.snap only where the content is new or changed:
-            //   new-mode: step.sc.snap is set (this is the first recording)
-            //   accepted mismatch: step.sc.got_snap is set and accepted=true (replacing old file)
-            // Check-mode ok steps have got_snap but the file already exists on disk unchanged.
             for (const step of all_steps) {
                 if (step.sc.saved) continue
-                const is_new_recording = !!step.sc.snap          // new mode
-                const is_accepted_change = step.sc.accepted && !!step.sc.got_snap  // check mode mismatch
-                if (!is_new_recording && !is_accepted_change) continue
-                const n            = step.sc.Step
-                const snap_content = step.sc.snap ?? step.sc.got_snap
-                if (!snap_content) continue
-                ;V.Story && console.log(`💾 writing snap n=${n} new=${is_new_recording} accepted=${is_accepted_change}`)
+                if (!step.sc.got_snap || !step.sc.accepted) continue
+                const n = step.sc.Step as number
+                ;V.Story && console.log(`💾 writing snap n=${n}`)
                 const snap_req = await wh.i({
                     wh_path: run_path, wh_op: 'write_snap',
-                    wh_step: n, wh_data: snap_content,
+                    wh_step: n, wh_data: step.sc.got_snap,
                 })
                 storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req })
                 step.sc.saved = true
@@ -998,7 +1003,6 @@
                 if (thisC) for (const s of thisC.o({ Step: 1 })) s.drop(s)
                 delete (w as any).c.This
                 delete (w as any).c.The   // will be re-created from disk on next load
-                delete (w as any).c.The
                 delete (w as any).c.toc_loaded
                 delete (w as any).c.wh
                 delete (w as any).c.run_path

@@ -26,17 +26,18 @@
       	{"leaf":1,"leaf_id":"leaf_10_0","dose":0.6145636761810026}
       	{"leaf":1,"leaf_id":"leaf_10_1","dose":0.6145636761810026}
       	{"leaf":1,"leaf_id":"leaf_10_2","dose":0.12291273523620044}
+      	{"seen":"wonder"}
       {"mung":["age"]}	{"self":1,"round":27}
   	{"A":"plate"}
-    {"mung":["age"]}	{"self":1,"round":37}
+    {"mung":["age"]}	{"self":1,"round":36}
     	{"w":"plate"}
       	{"o_elvis":"receive_harvest"}
       	{"o_elvis":"receive_protein"}
       	{"o_elvis":"deliver_enzyme"}
-      	{"material":"basic","amount":3.9284468540177064}
+      	{"material":"basic","amount":3.2115258960971453}
       	{"wants_enzyme":1}
       	{"shelf":1,"enzyme":1,"units":4}
-      {"mung":["age"]}	{"self":1,"round":37}
+      {"mung":["age"]}	{"self":1,"round":36}
   	{"A":"enzymeco"}
     {"mung":["age"]}	{"self":1,"round":29}
     	{"w":"enzymeco"}
