@@ -800,6 +800,19 @@
         w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
+    // ── story_cyto_continue ───────────────────────────────────────────────────
+    // Received from w:Cyto once Cytui has finished animating the current step.
+    // Clears the intoCyto pause and starts a fresh story_drive — the drive
+    // was already stopped cleanly by advance() so driving=false here.
+    async story_cyto_continue(A: TheC, w: TheC) {
+        const run = w.o({ run: 1 })[0]
+        if (!run) return
+        run.sc.paused = false
+        delete run.c.cyto_waiting
+        const sub = this.Story_subHouse(A, w)
+        if (sub) this.story_drive(sub.Run, w, run)
+    },
+
 
 //#region story_drive — four-phase async run loop (three phases in normal mode)
 //
@@ -817,11 +830,12 @@
 //     encodes the snap, compares diges, stores on This/{Step:N}.
 //     Trims (got|exp)_snap 5 steps behind (unless keep_snaps toggle is on).
 //     If snap_checking and ok: sets step.sc.checking, queues poll_check.
-//     Otherwise calls schedule() directly.
+//     Otherwise calls advance() — which either hands off to w:Cyto
+//     (when w.sc.intoCyto is set) or calls schedule() directly.
 //
 //   Phase 4 — poll_check  (plain setTimeout, snap_checking mode only)
 //     waits for Story() to read NNN.snap from disk, verify its dige,
-//     and clear step.sc.checking.  Then calls schedule().
+//     and clear step.sc.checking.  Then calls advance().
 
     story_drive(Run: House, w: TheC, run: TheC) {
         if (run.c.driving) return
@@ -834,6 +848,21 @@
             const wa = () => H.o({ watched: 'actions' })[0]
             await wa()?.r({ action: 1, role: 'status' }, { label, cls, disabled: true })
             wa()?.bump_version()
+        }
+
+        // advance: called at the end of each completed step instead of schedule().
+        // When w.sc.intoCyto is set, pauses the drive and hands control to w:Cyto.
+        // Cyto will scan the farm, publish a grawave, then after its animation
+        // duration fires story_cyto_continue back to w:Story to resume.
+        // When intoCyto is absent, falls through to schedule() as before.
+        const advance = () => {
+            if (w.sc.intoCyto) {
+                run.sc.paused = true
+                run.c.driving = false
+                H.top_House().elvisto('Cyto', 'story_cyto_step', { story_step: run.c.step_n })
+                return
+            }
+            schedule()
         }
 
         // Phase 1: do_step
@@ -888,7 +917,7 @@
             H.post_do(snap_step, { see: 'story_snap' })
         }
 
-        // Phase 3: snap_step — encode, compare, store, trim, then schedule or verify
+        // Phase 3: snap_step — encode, compare, store, trim, then advance or verify
         const snap_step = async () => {
             if (!run.c.driving) return
             const n = run.c.step_n as number
@@ -923,7 +952,7 @@
                 H.story_analysis(w)
                 await update_status(
                     `recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
-                schedule()
+                advance()
 
             } else {
                 const exp_dige = H.The_step_dige(w, n)
@@ -949,7 +978,7 @@
                 }
                 if (!ok) console.log(`⚠ Story: step ${H.pad(n)} mismatch accepted (lenient)`)
                 await update_status(`${ok ? '✓' : '⚠'} ${H.pad(n)}`, ok ? 'default' : 'save')
-                ;V.Story && console.log(`✔ snap_step ok=${ok} n=${n}${ok && w.c.snap_checking ? ', verifying' : ', scheduling'}`)
+                ;V.Story && console.log(`✔ snap_step ok=${ok} n=${n}${ok && w.c.snap_checking ? ', verifying' : ', advancing'}`)
 
                 // snap_checking: queue a disk dige verify for this step and wait
                 // for Story() to process it before advancing.  poll_check unblocks
@@ -961,7 +990,7 @@
                     H.main()
                     setTimeout(poll_check, TICK)
                 } else {
-                    schedule()
+                    advance()
                 }
             }
         }
@@ -990,7 +1019,7 @@
             }
 
             ;V.Story && console.log(`⏱ poll_check ok n=${n}`)
-            schedule()
+            advance()
         }
 
         const schedule = () => {

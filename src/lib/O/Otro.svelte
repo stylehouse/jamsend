@@ -1,4 +1,5 @@
 <script lang="ts">
+    // Otro
     import Ghost    from "$lib/O/Ghost.svelte"
     import { House, Work, register_class } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
