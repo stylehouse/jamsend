@@ -39,8 +39,8 @@
     // is imperative assignment inside this one effect — no $derived needed.
     //
     // Three particle shapes live in ave:
-    //   {story_analysis:1}       — scalar run state written by story_analysis()
-    //   {watched:'ave',Steps:1}  — stepsC; children are live {Step:n} TheC refs
+    //   {story_analysis:1}         — scalar run state written by story_analysis()
+    //   {watched:'ave',Steps:1}    — stepsC; children are live {Step:n} TheC refs
     //   {watched:'ave',swatches:1} — swatchesC; children are {note_coloring,color}
 
     type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
@@ -51,7 +51,7 @@
     let display = $state({
         run_sc:    null as Record<string,any> | null,
         frontier:  0,
-        open_at:      null as number | null,
+        open_at:   null as number | null,
         bad_count: 0,
         steps:     [] as StepEntry[],
         notes:     {} as Record<number, TheC[]>,
@@ -62,18 +62,13 @@
     let swatch_map = $state<Record<string,string>>({})
 
     $effect(() => {
-        // storyH.ave is reassigned on every bump_version() — the reactive signal.
-        // Steps live on w.c.This (w:Story); we reach them via storyH.o() rather than ave.
         const ave = storyH?.ave
         setTimeout(() => {
             console.log('ave:', ave?.map((p: TheC) => JSON.stringify(p.sc)))
 
             const sw  = ave?.find((p: TheC) => 'swatches'       in (p.sc ?? {})) as TheC | undefined
             const an  = ave?.find((p: TheC) => 'story_analysis' in (p.sc ?? {})) as TheC | undefined
-
-            // reach w.c.This for live steps
-            // This is placed in ave directly (multi-placed from w)
-            const sc = ave?.find((p: TheC) => 'This' in (p.sc ?? {})) as TheC | undefined
+            const sc  = ave?.find((p: TheC) => 'This'           in (p.sc ?? {})) as TheC | undefined
 
             if (an) Object.assign(display, an.sc)
             stepsC = sc
@@ -98,7 +93,6 @@
         return all.find(s => s.sc.Step === n) ?? null
     }
 
-    // Colour helpers — swatch_map is the authoritative source, built by ensure_swatch().
     function note_color(type: string): string {
         const c = swatch_map[type]
         if (!c) console.error(`StoryRun: no swatch for note type "${type}"`)
@@ -126,7 +120,6 @@
         return keys.map(k => nc.sc[k] === 1 ? k : `${k}:${nc.sc[k]}`).join(', ')
     }
 
-    // snap diff — computed from the selected step's snap fields
     function parse_lines(s: string | undefined): SnapLine[] {
         if (!s) return []
         return s.split('\n').filter(Boolean).map(line => {
@@ -139,15 +132,15 @@
         }).filter(Boolean) as SnapLine[]
     }
 
-    let got_lines  = $derived.by(() => {
+    let got_lines = $derived.by(() => {
         const live = display.open_at != null ? live_step(display.open_at) : null
-        return parse_lines(live?.sc.unrun ? '' : (live?.sc.got_snap) as string | undefined)
+        return parse_lines(live?.sc.unrun ? '' : live?.sc.got_snap as string | undefined)
     })
-    let exp_lines  = $derived.by(() => {
+    let exp_lines = $derived.by(() => {
         const live = display.open_at != null ? live_step(display.open_at) : null
         return parse_lines(live?.sc.unrun ? '' : live?.sc.exp_snap as string | undefined)
     })
-    let show_diff  = $derived(exp_lines.length > 0)
+    let show_diff = $derived(exp_lines.length > 0)
     let diff: DiffTag[] | null = $derived.by(() => {
         if (!show_diff) return null
         const len = Math.max(got_lines.length, exp_lines.length)
@@ -161,12 +154,10 @@
 
     function playhead_n(): number | null {
         if (display.frontier > 0) return display.frontier
-        // first step in The that hasn't been run this session yet
         const first_hollow = display.steps.find(ts => !live_step(ts.n))
         return first_hollow?.n ?? null
     }
 
-    // run bar deriveds
     let run_mode   = $derived(display.run_sc?.mode       ?? 'new')
     let run_done   = $derived(display.run_sc?.done ?? 0)
     let run_total  = $derived(display.run_sc?.total as number | undefined)
@@ -177,8 +168,6 @@
     function do_add_note(n: number) {
         const text = add_note_text.trim()
         if (!text) return
-        // peel("frontier")     → {frontier:1}
-        // peel("todo:message") → {todo:"message"}
         const note_sc = { note: 1, ...peel(text) }
         storyH?.elvisto('Story/Story', 'story_add_note', { step_n: n, note_sc })
         add_note_text = ''
@@ -188,7 +177,6 @@
         storyH?.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
     }
 
-    // ── selection + accept ───────────────────────────────────────────────────
     function pick(n: number) {
         const new_sel = display.open_at === n ? null : n
         storyH?.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
@@ -203,7 +191,6 @@
         storyH?.elvisto('Story/Story', 'story_accept_all', {})
     }
 
-    // ── display helpers ──────────────────────────────────────────────────────
     const ind = (d: number) => '  '.repeat(d)
 
     function line_parts(sl: SnapLine) {
@@ -222,9 +209,6 @@
         if ((o.mung ?? []).length) parts.push(`mung:[${(o.mung as string[]).join(',')}]`)
         return parts.join('  ')
     }
-
-    // Note add/delete — dispatched to the worker; never mutate display directly.
-    // The worker calls story_analysis() → ave.bump_version() → deriveds re-run.
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -258,9 +242,7 @@
             {/if}
         </div>
 
-        <!-- pip strip — one cell per step from The (skeleton); live stepsC data overlaid -->
-        <!-- unrun: step exists in The but hasn't run this session yet                   -->
-        <!-- live_step(n) returns the real TheC if it ran, null if still hollow           -->
+        <!-- pip strip -->
         <div class="sr-strip">
             {#each display.steps as ts (ts.n)}
                 {@const n    = ts.n}
@@ -293,7 +275,7 @@
             {/each}
         </div>
 
-        <!-- snap panel — sel_m is live TheC (or null for hollow); ts_sel is the The record -->
+        <!-- snap panel -->
         {#if display.open_at != null}
             {@const n        = display.open_at}
             {@const ts_sel   = display.steps.find(t => t.n === n)}
@@ -316,6 +298,11 @@
                         <span class="sr-plabel accepted">accepted</span>
                     {:else if !ok}
                         <span class="sr-plabel mm">mismatch</span>
+                    {/if}
+                    <!-- disk_ok is set by check_snap whenever disk dige != toc dige,
+                         both on mismatches and in snap_checking mode -->
+                    {#if live?.sc.disk_ok === false}
+                        <span class="sr-warn" title="NNN.snap on disk does not match toc.snap dige">⚠ disk stale</span>
                     {/if}
                     {#if can_accept}
                         <button class="sr-accept" onclick={() => accept(n)}>Accept</button>
@@ -341,8 +328,6 @@
                     <pre class="sr-pre sr-tree-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
                 {/if}
 
-                <!-- Notes from The/%step:n. Rendered even for hollow steps — -->
-                <!-- annotations can exist before a step runs this session.   -->
                 <div class="sr-notes">
                     <div class="sr-notes-hdr">
                         <span class="sr-notes-title">notes</span>
@@ -373,9 +358,6 @@
     {/if}
 </div>
 
-<!-- snap_line snippet: rendered inside <pre> so whitespace matters.           -->
-<!-- Space between obj and str spans is raw text between sibling inline spans, -->
-<!-- preserved by white-space:pre.  &#10; = newline character.                -->
 {#snippet snap_line(sl: SnapLine, tag: string)}
     {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}</span>  {/if}<span class="sr-str">{p.str}</span>&#10;</span>
 {/snippet}
@@ -416,8 +398,6 @@
 .sr-bar.is-check .sr-mode { color: #79b; }
 
 /* ── moment strip ───────────────────────────────────────────────────────── */
-/* padding-top makes room for the playhead triangle.                         */
-/* align-items:flex-end keeps pips bottom-aligned when flag rows vary.       */
 .sr-strip {
     display: flex;
     flex-wrap: wrap;
@@ -430,7 +410,6 @@
     align-items: flex-end;
 }
 
-/* pip-cell: flags row stacked above pip button */
 .sr-pip-cell {
     display: flex;
     flex-direction: column;
@@ -438,7 +417,6 @@
     gap: 1px;
 }
 
-/* flags row: always rendered (empty = 6px spacer) so pips stay aligned */
 .sr-flags {
     display: flex;
     flex-direction: row;
@@ -447,7 +425,6 @@
     align-items: flex-end;
 }
 
-/* individual note-type flag square */
 .sr-flag {
     display: inline-block;
     width: 5px;
@@ -456,7 +433,6 @@
     flex-shrink: 0;
 }
 
-/* pip button */
 .sr-pip {
     position: relative;
     width: 14px;
@@ -474,16 +450,12 @@
 }
 .sr-pip.ok           { background: #1a3a25; color: #4a9; }
 .sr-pip.fail         { background: #3a1a1a; color: #c55; }
-/* accepted: mismatch explicitly ok'd — green body, red glyph */
 .sr-pip.accepted     { background: #1a3a25; color: #c55; }
-/* unrun: toc step not yet reached this session — pale outline, visible ○ */
-.sr-pip.unrun       { background: #1a1a1a; color: #555; border: 1px solid #383838; }
+.sr-pip.unrun        { background: #1a1a1a; color: #555; border: 1px solid #383838; }
 .sr-pip.on           { outline: 1px solid #79b; outline-offset: 1px; }
 .sr-pip.has-notes    { border-bottom: 2px solid #444; }
 .sr-pip:hover        { background: #333; }
 
-/* playhead: red downward triangle hovering above the pip.
-   marks the failed step, or the frontier edge otherwise.    */
 .sr-pip.playhead::before {
     content: '';
     position: absolute;
@@ -513,6 +485,17 @@
 .sr-plabel.mm       { color: #c55; }
 .sr-plabel.accepted { color: #4a9; }
 .sr-plabel.hollow   { color: #444; }
+
+/* dige integrity warning — toc/disk mismatch or snap_checking failure */
+.sr-warn {
+    font-size: 10px;
+    font-weight: 600;
+    color: #e67;
+    background: #2a1010;
+    border: 1px solid #4a2020;
+    border-radius: 2px;
+    padding: 0 5px;
+}
 
 .sr-close {
     margin-left: auto;
@@ -592,12 +575,10 @@
     font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: #444; margin-right: 4px;
 }
-/* type badge: coloured pill in the legend row */
 .sr-note-badge {
     font-size: 8px; padding: 0 4px; border-radius: 2px;
     border: 1px solid; opacity: 0.7; line-height: 14px;
 }
-/* note row: coloured dot + label + delete button */
 .sr-note-row {
     display: flex; align-items: center; gap: 5px; padding: 1px 0;
 }
@@ -614,7 +595,6 @@
 }
 .sr-note-del:hover { color: #c55; }
 
-/* add-note row */
 .sr-note-add { display: flex; gap: 4px; margin-top: 4px; }
 .sr-note-input {
     flex: 1; background: #181818; border: 1px solid #2a2a2a; border-radius: 2px;

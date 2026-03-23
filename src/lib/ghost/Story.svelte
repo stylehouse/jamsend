@@ -7,7 +7,7 @@
     //   This  — what is spontaneously happening right now, this session.
     //           Particles live as direct children of w, the Story work particle.
     //           Uppercase key: {Step:N}
-    //           Carries: got_snap, exp_snap, dige, ok, hollow, accepted.
+    //           Carries: got_snap, exp_snap, dige, ok, hollow, accepted, saved.
     //           Has {watched:'ave'} in sc so enroll_watched() picks it up and
     //           any version bump on a Step is visible to StoryRun as a reactive
     //           change, even though the Step is not inside the ave container.
@@ -120,7 +120,7 @@
     },
 
     The_step_dige(w: TheC, n: number): string | undefined {
-        return (w.c.The)?.o(exactly({ step: n }))[0]?.sc.dige 
+        return (w.c.The)?.o(exactly({ step: n }))[0]?.sc.dige
     },
 
     The_frontier(w: TheC): number {
@@ -379,30 +379,29 @@
         // No separate mirror needed; This is the real particle, not a copy.
 
         // notes from The/%step:n — keyed by step number.
-        // TheC refs are safe here; notes only change on explicit user action.
         const notes: Record<number, TheC[]> = {}
         for (const s of (w.c.The).o({ step: 1 })) {
-            const n     = s.sc.step
-            const notes = s.o({ note: 1 })
-            if (notes.length) notes[n] = notes
+            const n   = s.sc.step
+            const N = s.o({ note: 1 })
+            if (N.length) notes[n] = N
         }
 
         // the_steps: plain {n, dige} snapshot from The — the canonical expected set.
         // The UI builds the full strip skeleton from this, overlaying live stepsC data
         // for steps that have actually run this session.  sorted ascending.
         const the_steps = ((w.c.The)?.o({ step: 1 }))
-            .map(s => ({ n: s.sc.step as number, dige: s.sc.dige  }))
+            .map(s => ({ n: s.sc.step as number, dige: s.sc.dige }))
             .sort((a, b) => a.n - b.n)
 
         const bad_count = thisC ? (thisC.o({ Step: 1 }) as any[]).filter(s => !s.sc.ok && !s.sc.accepted).length : 0
 
-        const an          = ave.oai({ story_analysis: 1 })
-        an.sc.run_sc      = run ? { ...run.sc } : null
-        an.sc.frontier    = frontier
-        an.sc.open_at        = open_at
-        an.sc.bad_count   = bad_count
-        an.sc.steps       = the_steps
-        an.sc.notes       = notes
+        const an        = ave.oai({ story_analysis: 1 })
+        an.sc.run_sc    = run ? { ...run.sc } : null
+        an.sc.frontier  = frontier
+        an.sc.open_at   = open_at
+        an.sc.bad_count = bad_count
+        an.sc.steps     = the_steps
+        an.sc.notes     = notes
         ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${(w.c.This)?.o({Step:1}).length ?? 0} frontier=${frontier}`)
         ave.bump_version()
     },
@@ -416,7 +415,8 @@
     async story_accept_all(A: TheC, w: TheC) {
         // Accept every !ok step in This at once.  Used after a lenient run that
         // accumulated multiple mismatches.  Promotes all diges into The, marks
-        // accepted, keeps got_snap for story_save to write.
+        // accepted, keeps got_snap for story_save to write (5-step trim cleans up
+        // after save).
         const H   = this
         const run = w.o({ run: 1 })[0]
         if (!run) return
@@ -426,14 +426,14 @@
             const n = step.sc.Step
             if (step.sc.dige) H.The_step(w, n).sc.dige = step.sc.dige
             step.sc.accepted = true
-            // got_snap kept — story_save reads it inside post_do
+            // got_snap kept — story_save reads it; 5-step trim handles cleanup
         }
         run.sc.frontier = 0
         H.The_set_frontier(w, 0)
         delete run.sc.failed_at
         delete run.sc.fetch_snap
-        run.sc.paused = false
-        run.sc.open_at   = null
+        run.sc.paused  = false
+        run.sc.open_at = null
         H.story_analysis(w)
         H.story_save()
         const sub = H.Story_subHouse(A, w)
@@ -447,9 +447,9 @@
         // Accept a mismatch at step n:
         //   1. Clone This/{Step:n}.dige → The/{step:n}.dige.  The now reflects reality.
         //   2. Mark stepC.sc.accepted = true so the UI can dull the pip distinctively.
-        //   3. Keep got_snap — story_save reads it inside post_do.
-        //      The 5-step trim (in snap_step) cleans up ok+!accepted steps behind us,
-        //      so there is no race between story_accept and story_save's post_do.
+        //   3. got_snap is kept — story_save reads it inside post_do.
+        //      The 5-step trim handles cleanup for accepted+saved steps behind us,
+        //      so there is no race between story_accept and the post_do.
         //   4. Advance the frontier note in The (for save/reload bookkeeping).
         //   5. Clear failure state; resume the drive.
         const H   = this
@@ -458,7 +458,7 @@
         const n = e?.sc.accept_n as number | undefined
         if (n == null) return
 
-        const The_all = (w.c.The).o({ step: 1 })
+        const The_all  = (w.c.The).o({ step: 1 })
         const max_step = Math.max(0, ...The_all.map(s => s.sc.step as number))
 
         if (n >= max_step) {
@@ -478,8 +478,8 @@
 
         delete run.sc.failed_at
         delete run.sc.fetch_snap
-        run.sc.paused = false
-        run.sc.open_at    = null
+        run.sc.paused  = false
+        run.sc.open_at = null
 
         H.story_analysis(w)
         H.story_save()
@@ -497,8 +497,8 @@
 //
 //  story_process_node sets D.sc.snap_line (indent + objecties + tab + stringies)
 //  directly on the D particle, so story_snap just collects Ds and joins their
-//  snap_line strings at the end.  traced_fn compares snap_line across runs for
-//  change detection — no separate snap_copy accumulation needed.
+//  snap_line strings at the end.  traced_fn compares snap_line strings across
+//  runs for change detection — no separate snap_copy accumulation needed.
 //
 //  Any object or function value not covered by munging rules falls through to
 //  the objectify() path and ends up in objecties.ref — it is present in the
@@ -561,8 +561,8 @@
         // ref (object values → stable ids via objectify — excluded from diff),
         // mung (keys deliberately excluded, e.g. timestamps).
         // sets T.sc.not=1 to skip the particle entirely.
-        // sets D.sc.snap_line — the complete encoded line (indent + objecties + stringies),
-        //   used directly by story_snap and compared in traced_fn for change detection.
+        // sets D.sc.snap_line — the complete encoded line (indent + objecties + tab +
+        //   stringies), used directly by story_snap and compared in traced_fn.
         const active: Array<any> = [
             ...this.story_matching,
             ...(T.sc.up?.sc.thence_matching ?? []),
@@ -663,7 +663,7 @@
         // Get-or-create the Run sub-House for this Book and wire its actors.
         // Called every tick from Story() — cheap when the House and actors already exist.
         // Returns { Run, book } or null when Book is missing or Run_A_<Book> is absent.
-        const book = w.sc.Book 
+        const book = w.sc.Book
         if (!book) { w.i({ see: '!Book' }); return null }
 
         const Run  = this.subHouse(book)
@@ -686,7 +686,7 @@
         //     /%step:N,dige
         //       /%note:1,...
         //   w/%This,Story:book  — live session steps (also placed in ave for reactivity).
-        //     /%Step:N          — ok/dige/got_snap/accepted/saved
+        //     /%Step:N          — ok/dige/got_snap/exp_snap/accepted/saved
         //   H/%watched:ave
         //     /%swatches:1
         //     /%This,Story:book — same C particle as w's This (multi-placed)
@@ -746,14 +746,52 @@
 
         if (run.sc.fetch_snap) {
             // ── fetch the expected snap for the failed step ────────────────
-            // stored on This/{Step:N}.sc.exp_snap and shown in the diff panel.
-            const n        = run.sc.fetch_snap
+            // Just loads the file content into step.sc.exp_snap for the diff panel.
+            // Dige verification is always handled by the check_snap block below —
+            // we queue it here so it runs in the same beliefs round.
+            const n        = run.sc.fetch_snap as number
             const snap_req = await wh.oai({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
                 return w.i({ see: `⏳ snap ${H.pad(n)}...` })
 
             H.i_step(w, n).sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
             delete run.sc.fetch_snap
+            run.sc.check_snap ??= n   // verify dige in the block below
+            H.story_analysis(w)
+        }
+
+        if (run.sc.check_snap) {
+            // ── single dige verify — runs for both mismatch and snap_checking steps ─
+            // Mismatch path:      fetch_snap queues check_snap (same beliefs round).
+            // snap_checking path: snap_step queues check_snap on ok steps.
+            //
+            // If disk dige ≠ toc dige the file is stale or corrupt.  We promote
+            // disk_dige into The so the diff panel shows the right "expected" content
+            // and Accept works normally from there.  step.sc.disk_ok surfaces the fact
+            // in StoryRun.  step.sc.checking is only set for snap_checking ok steps —
+            // clearing it here unblocks poll_check in that path; for mismatches it
+            // was never set so clearing is a no-op.
+            const n        = run.sc.check_snap as number
+            const snap_req = await wh.oai({ wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+            if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
+                return w.i({ see: `⏳ verify ${H.pad(n)}...` })
+
+            const disk_snap = snap_req.sc.reply?.snap as string | undefined
+            const step      = H.i_step(w, n)
+            if (disk_snap) {
+                const disk_dige = await dig(disk_snap)
+                const exp_dige  = H.The_step_dige(w, n)
+                const ok        = disk_dige === exp_dige
+                step.sc.disk_ok   = ok
+                step.sc.disk_dige = disk_dige
+                if (!ok) {
+                    // promote disk version into The so fetch_snap / diff already loaded correctly
+                    H.The_step(w, n).sc.dige = disk_dige
+                    console.warn(`⚠ disk dige mismatch n=${n}: disk=${disk_dige.slice(0,8)} toc=${exp_dige?.slice(0,8)}`)
+                }
+            }
+            delete run.sc.check_snap
+            step.sc.checking = false   // unblocks poll_check (snap_checking ok path only)
             H.story_analysis(w)
         }
 
@@ -763,9 +801,9 @@
     },
 
 
-//#region story_drive — three-phase async run loop
+//#region story_drive — four-phase async run loop (three phases in normal mode)
 //
-//  Three-phase async loop.  All phases are closures over run and the drive locals.
+//  All phases are closures over run and the drive locals.
 //
 //   Phase 1 — do_step  (inside H beliefs mutex via post_do)
 //     checks termination conditions, fires Run.elvisto(Run,'think') after 1ms,
@@ -776,9 +814,14 @@
 //     then queues snap_step.
 //
 //   Phase 3 — snap_step  (inside H beliefs mutex via post_do)
-//     encodes the snap, compares diges, stores on This/{Step:N}, schedules next.
-//     Trims got_snap from ok+!accepted steps 5 behind the current step —
-//     those are already on disk unchanged and don't need to be written by story_save.
+//     encodes the snap, compares diges, stores on This/{Step:N}.
+//     Trims (got|exp)_snap 5 steps behind (unless keep_snaps toggle is on).
+//     If snap_checking and ok: sets step.sc.checking, queues poll_check.
+//     Otherwise calls schedule() directly.
+//
+//   Phase 4 — poll_check  (plain setTimeout, snap_checking mode only)
+//     waits for Story() to read NNN.snap from disk, verify its dige,
+//     and clear step.sc.checking.  Then calls schedule().
 
     story_drive(Run: House, w: TheC, run: TheC) {
         if (run.c.driving) return
@@ -845,18 +888,31 @@
             H.post_do(snap_step, { see: 'story_snap' })
         }
 
-        // Phase 3: snap_step — encode, compare, store, schedule next
+        // Phase 3: snap_step — encode, compare, store, trim, then schedule or verify
         const snap_step = async () => {
             if (!run.c.driving) return
-            const n = run.c.step_n
-            run.sc.done  = n
+            const n = run.c.step_n as number
+            run.sc.done       = n
             run.sc.steps_done = n   // keep old key in sync for any persisted reads
 
             const snap     = await this.story_snap(Run)
             const got_dige = await dig(snap)
 
-            const step     = H.i_step(w, n)
+            const step    = H.i_step(w, n)
             step.sc.unrun = false
+
+            // Trim (got|exp)_snap 5 steps behind — best-effort GC.
+            //   ok+!accepted:   already on disk unchanged, safe to drop.
+            //   accepted+saved: written by story_save, safe to drop.
+            //   exp_snap:       display-only, always safe to drop.
+            // Skipped when keep_snaps toggle is on.
+            const trim_n = n - 5
+            if (trim_n >= 1 && !w.c.keep_snaps) {
+                const old = H.i_step(w, trim_n)
+                if (old.sc.ok && !old.sc.accepted)   delete old.sc.got_snap
+                if (old.sc.accepted && old.sc.saved)  delete old.sc.got_snap
+                delete old.sc.exp_snap
+            }
 
             if (run.sc.mode === 'new') {
                 step.sc.got_snap = snap
@@ -877,15 +933,6 @@
                 step.sc.dige     = got_dige
                 step.sc.ok       = ok
 
-                // trim got_snap 5 steps back — ok+!accepted steps don't need it
-                // (they already exist on disk unchanged); this also eliminates the race
-                // where story_save's post_do tries to read a field story_accept just cleared.
-                const trim_n = n - 5
-                if (trim_n >= 1) {
-                    const old = H.i_step(w, trim_n)
-                    if (old.sc.ok && !old.sc.accepted) delete old.sc.got_snap
-                }
-
                 H.story_analysis(w)
 
                 if (!ok && !run.sc.lenient) {
@@ -893,6 +940,7 @@
                     run.sc.paused     = true
                     run.sc.failed_at  = n
                     run.sc.fetch_snap = n
+                    run.sc.check_snap = n   // fetch_snap also sets this, but be explicit
                     run.sc.frontier   = n
                     H.The_set_frontier(w, n)
                     await update_status(`✗ step ${H.pad(n)}`, 'stop')
@@ -901,9 +949,48 @@
                 }
                 if (!ok) console.log(`⚠ Story: step ${H.pad(n)} mismatch accepted (lenient)`)
                 await update_status(`${ok ? '✓' : '⚠'} ${H.pad(n)}`, ok ? 'default' : 'save')
-                ;V.Story && console.log(`✔ snap_step ok n=${n}, scheduling`)
-                schedule()
+                ;V.Story && console.log(`✔ snap_step ok=${ok} n=${n}${ok && w.c.snap_checking ? ', verifying' : ', scheduling'}`)
+
+                // snap_checking: queue a disk dige verify for this step and wait
+                // for Story() to process it before advancing.  poll_check unblocks
+                // once Story() clears step.sc.checking.  Only fires on ok steps —
+                // mismatches already have fetch_snap wired, which reads the disk snap.
+                if (ok && w.c.snap_checking) {
+                    step.sc.checking  = true
+                    run.sc.check_snap = n
+                    H.main()
+                    setTimeout(poll_check, TICK)
+                } else {
+                    schedule()
+                }
             }
+        }
+
+        // Phase 4: poll_check — wait for Story() to verify disk snap (snap_checking only).
+        // If disk_ok === false the file on disk doesn't match toc.snap's recorded dige.
+        // check_snap has already promoted disk_dige into The, so we just pause like a
+        // normal mismatch and let the user Accept from the diff panel.
+        const poll_check = () => {
+            if (!run.c.driving) return
+            const n          = run.c.step_n as number
+            const check_step = H.i_step(w, n)
+            if (check_step.sc.checking) { setTimeout(poll_check, TICK); return }
+
+            if (check_step.sc.disk_ok === false) {
+                check_step.sc.ok  = false
+                run.c.driving     = false
+                run.sc.paused     = true
+                run.sc.failed_at  = n
+                run.sc.fetch_snap = n
+                run.sc.frontier   = n
+                H.The_set_frontier(w, n)
+                update_status(`✗ disk ${H.pad(n)}`, 'stop')
+                H.main()
+                return
+            }
+
+            ;V.Story && console.log(`⏱ poll_check ok n=${n}`)
+            schedule()
         }
 
         const schedule = () => {
@@ -929,7 +1016,7 @@
 //                 is trimmed away by the 5-step trim in snap_step.
 //
 //  got_snap is NOT deleted in story_accept — it stays until post_do writes it.
-//  The 5-step trim handles ok+!accepted cleanup so memory doesn't accumulate.
+//  The 5-step trim (accepted+saved) handles cleanup after the file is written.
 //  There is therefore no race between story_accept and the post_do here.
 
     story_save(this: House) {
@@ -938,15 +1025,15 @@
         const w      = A?.o({ w: 'Story' })[0]
         if (!w) return
 
-        const wh         = w.c.wh as any
-        const run_path   = w.c.run_path 
-        const run        = w.o({ run: 1 })[0]
-        const frontier   = (run?.sc.frontier as number) ?? 0
-        const The        = w.c.The
-        const thisC      = w.c.This
-        const all_steps  = thisC ? thisC.o({ Step: 1 }) : []
+        const wh        = w.c.wh as any
+        const run_path  = w.c.run_path
+        const run       = w.o({ run: 1 })[0]
+        const frontier  = (run?.sc.frontier as number) ?? 0
+        const The       = w.c.The
+        const thisC     = w.c.This
+        const all_steps = thisC ? thisC.o({ Step: 1 }) : []
         if (!all_steps.length && !The?.o({ step: 1 }).length) return
-        ;V.Story && console.log(`💾 story_save: ${all_steps.length} steps, to_write=${all_steps.filter(s=>s.sc.got_snap&&s.sc.accepted&&!s.sc.saved).length}`)
+        ;V.Story && console.log(`💾 story_save: to_write=${all_steps.filter(s=>s.sc.got_snap&&s.sc.accepted&&!s.sc.saved).length}`)
 
         // sync frontier note so toc.snap reflects the current state exactly
         const all_the_steps = The.o({ step: 1 })
@@ -1017,7 +1104,7 @@
     },
 
 
-//#region mechanisms — Run wiring, story_ui
+//#region mechanisms — Run wiring, i_actions_to_c, story_ui
 
     oai_enroll(target: TheC, sc: Record<string,any>): TheC {
         // Find-or-create a {watched:X} container on target, enrolling it exactly once.
@@ -1028,6 +1115,54 @@
         const c = target.i(sc)
         this.enroll_watched()
         return c
+    },
+
+    // i_actions_to_c: declare a toggle action that controls w.c[key].
+    //
+    //   opts.default  (false) — value considered "off"; deleted from stashed
+    //                           rather than stored when toggled back to it,
+    //                           keeping stashed lean.
+    //   opts.stashed  (false) — if true, reads initial value from H.stashed[key]
+    //                           and writes back on every toggle.
+    //   opts.label    (key)   — display label for the action button.
+    //
+    //   w.c[key] is initialised exactly once on first call (== null guard);
+    //   subsequent calls from story_ui update the action's cls in place without
+    //   re-reading stashed.
+    //
+    //   wa.r() replaces the action particle each tick (not oai) so cls always
+    //   reflects the live value when story_ui re-runs.
+    //
+    //   Pattern: delete key from H.stashed when value equals the default so that
+    //   stashed omits uninteresting defaults and stays easy to inspect.
+    async i_actions_to_c(w: TheC, key: string, opts: { default?: boolean, stashed?: boolean, label?: string } = {}) {
+        const H        = this as House
+        const def_v    = opts.default  ?? false
+        const do_stash = opts.stashed  ?? false
+        const label    = opts.label    ?? key
+        const wa       = H.o({ watched: 'actions' })[0]
+        if (!wa) return
+
+        // init w.c[key] once — reads from H.stashed if opted in
+        if (w.c[key] == null) {
+            w.c[key] = (do_stash ? H.stashed?.[key] : null) ?? def_v
+        }
+
+        const current = !!w.c[key]
+        await wa.r({ action: 1, role: key }, {
+            label,
+            icon:  current ? `${label} ✓` : label,
+            cls:   current ? 'toggle-on' : 'toggle-off',
+            fn: () => {
+                const next = !w.c[key]
+                w.c[key] = next
+                if (do_stash) {
+                    if (next === def_v) delete H.stashed[key]
+                    else               H.stashed[key] = next
+                }
+                H.main()
+            },
+        })
     },
 
     Run_A_LeafFarm(this: House) {
@@ -1077,6 +1212,15 @@
             cls:      run.sc.failed_at ? 'stop' : mode === 'new' ? 'save' : 'default',
             disabled: true,
         })
+
+        // Toggle actions backed by w.c.* and optionally H.stashed.* (stashed:true).
+        //   snap_checking: after each ok step, fetch NNN.snap from disk and verify its
+        //     dige against toc.snap.  Adds one beliefs round per step (rarely needed).
+        //     Surfaces corruption as step.sc.disk_ok===false in StoryRun.
+        //   keep_snaps: suppress the 5-step trim of (got|exp)_snap.  Useful when you
+        //     want to inspect snap content across many steps in the same session.
+        await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
+        await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
     },
 
 
