@@ -22,9 +22,8 @@
         const wa   = this.oai_enroll(this, { watched: 'graph' })
         w.c.gn     = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
-        // wave.duration is the animation duration (ms ÷ 1000) sent to Cytui AND
-        // the Story pause window: story_cyto_step waits (duration*1000 + 100ms)
-        // before firing story_cyto_continue.  Tune this knob for step cadence.
+        // wave.duration: animation seconds in Cytui AND Story pause window.
+        // story_cyto_step fires story_cyto_continue after (duration*1000 + 100ms).
         w.sc.grawave_duration ??= 2
     },
 
@@ -60,18 +59,19 @@
         const seen = new Set<string>(), seen_e = new Set<string>()
         const migrate: any[] = []
         const w_order: string[] = []
-
-        // ── fcose constraint accumulator ─────────────────────────────────────
-        // Collects both horizontal (left/right) and vertical (top/bottom) pairs.
-        // All are gathered per-worker then merged into constraints at the end.
         const rel: any[] = []
 
+        // ── always emit known worker names as compound containers ─────────────
+        // We emit them from the worker particles on RunH.  If a worker has no
+        // particle children it still gets a compound node — cytoscape will render
+        // it as an empty box (sized by min-width/min-height in the stylesheet).
         for (const A of RunH.o({ A: 1 }) as TheC[]) {
             for (const wk of A.o({ w: 1 }) as TheC[]) {
                 const wid   = `w:${wk.sc.w}`
                 const wname = String(wk.sc.w)
                 seen.add(wid)
                 w_order.push(wid)
+                // Always upsert the compound — empty or not
                 upsert.push({ id: wid, label: wname, style: this.cyto_w_style(wname), isCompound: true })
 
                 let poo_id: string | null = null
@@ -96,20 +96,14 @@
                     if (n.sc.leaf)     leaf_ids.push(id)
                 }
 
-                // ── vertical constraints: sun ↑ leaves ↑ poo ─────────────────
-                // sun is above every leaf (gap 20); poo is below every leaf (gap 14).
-                // Together these layer the worker into three vertical bands without
-                // fighting the stem/helio edge lengths.
-                if (sun_id && poo_id) {
-                    // direct sun-above-poo as a backstop when no leaves exist yet
-                    rel.push({ top: sun_id, bottom: poo_id, gap: 55 })
-                }
+                // vertical: sun above leaves, leaves above poo
+                if (sun_id && poo_id) rel.push({ top: sun_id, bottom: poo_id, gap: 55 })
                 for (const lid of leaf_ids) {
-                    if (sun_id) rel.push({ top: sun_id,  bottom: lid,    gap: 20 })
-                    if (poo_id) rel.push({ top: lid,     bottom: poo_id, gap: 14 })
+                    if (sun_id) rel.push({ top: sun_id, bottom: lid,    gap: 20 })
+                    if (poo_id) rel.push({ top: lid,    bottom: poo_id, gap: 14 })
                 }
 
-                // ── stem edges: leaf → poo (tight young, loose mature) ───────
+                // stem edges: leaf → poo
                 if (poo_id) {
                     for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                         if (n.c.drop) continue
@@ -134,7 +128,7 @@
                     }
                 }
 
-                // ── helio edges: leaf → sun (loose, dashed) ──────────────────
+                // helio edges: leaf → sun
                 if (sun_id) {
                     for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                         if (n.c.drop) continue
@@ -159,18 +153,19 @@
             }
         }
 
-        // ── harvest migrations ────────────────────────────────────────────────
+        // harvest migrations
         const mat_id = 'mat:basic'
         for (const [lid] of prev_leaf) {
             if (!curr_leaf.has(lid)) {
-                const leaf_node_id = `leaf:${lid}`
-                // harvest_detach=true signals Cytui to move({ parent: null })
-                // before animating so the farm compound doesn't bloat
-                migrate.push({ id: leaf_node_id, toward: mat_id, harvest_detach: true })
+                migrate.push({
+                    id: `leaf:${lid}`,
+                    toward: mat_id,
+                    harvest_detach: true,
+                })
             }
         }
 
-        // ── ref re-parent migrations ──────────────────────────────────────────
+        // ref re-parent migrations
         for (const [n, { wid, id }] of curr_ref) {
             const prev = prev_ref.get(n)
             if (prev && prev.wid !== wid && !migrate.find(m => m.id === id)) {
@@ -187,13 +182,12 @@
         const remove      = [...prev_ids].filter(id => !seen.has(id)  && !migrating_ids.has(id))
         const edge_remove = [...prev_eids].filter(id => !seen_e.has(id))
 
-        // ── left-of constraints: w containers in spawn order ─────────────────
+        // left-of: keep workers in spawn order, tighter gap
         for (let i = 0; i < w_order.length - 1; i++) {
-            rel.push({ left: w_order[i], right: w_order[i + 1], gap: 60 })
+            rel.push({ left: w_order[i], right: w_order[i + 1], gap: 24 })
         }
         const constraints = rel.length ? { relativePlacementConstraint: rel } : null
 
-        console.log(`Cyto scan: ${seen.size} nodes, ${seen_e.size} edges, ${migrate.length} migrations`)
         return { upsert, edge_upsert, remove, edge_remove, migrate, constraints,
                  duration: (w.sc.grawave_duration as number) ?? 0.3 }
     },
@@ -256,9 +250,8 @@
 
         } else if (n.sc.sunshine) {
             const d  = (n.sc.dose as number) ?? 0
-            // size swings noticeably with dose: small dim sun at 0.1, big bright at 1.1
             const sz = Math.round(22 + d * 22)
-            const lt = Math.round(42 + d * 18)   // 42%..62% lightness
+            const lt = Math.round(42 + d * 18)
             style['background-color'] = this.hsl2rgb(46, 90, lt)
             style.width = sz; style.height = sz; style.shape = 'diamond'
             style.color = '#331800'
@@ -324,7 +317,7 @@
             'border-style':       'dashed',
             'text-valign':        'top',
             'text-halign':        'center',
-            padding:              '18px',
+            padding:              '12px',
             'font-size':          '9px',
             'font-weight':        'bold',
             'font-style':         'italic',

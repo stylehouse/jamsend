@@ -28,7 +28,7 @@
         id:              string
         toward:          string
         then_parent?:    string
-        harvest_detach?: boolean   // if true: move({parent:null}) before animating
+        harvest_detach?: boolean
     }
     type Wave = {
         upsert:      NodeDesc[]
@@ -75,6 +75,7 @@
         'source-arrow-shape','curve-style','text-valign','text-halign',
         'font-size','font-weight','font-style','font-family','text-wrap',
         'text-max-width','padding','border-style',
+        'min-width','min-height','min-width-bias-left','min-width-bias-right',
     ])
 
     function split_style(style: Record<string,any> = {}) {
@@ -152,14 +153,11 @@
             const toward = cy.getElementById(mg.toward)
             if (!el.length) continue
 
-            // ── harvest_detach: remove from parent compound immediately ───────
-            // Without this the compound resizes to track the node's animated
-            // position as it flies across the canvas — detaching first keeps the
-            // farm box still.  Edges that referenced the node by parent compound
-            // have already been removed in step 1 (edge_remove), so no dangling.
+            // Detach from compound first so the container doesn't bloat during flight.
+            // Also remove connected edges (stem/helio) immediately — they no longer
+            // connect to a child of the compound, so there's no point keeping them.
             if (mg.harvest_detach) {
                 el.move({ parent: null })
-                // also drop its stem/helio edges so they don't linger mid-flight
                 el.connectedEdges().remove()
             }
 
@@ -168,25 +166,37 @@
                 continue
             }
 
-            const tpos   = toward.renderedPosition()
-            const anim_ms = Math.round(ms * 0.82)
+            const tpos    = toward.renderedPosition()
+            const fly_ms  = Math.round(ms * 0.75)   // spend most time flying
+            const fade_ms = Math.round(ms * 0.20)   // quick fade at destination
 
             if (mg.then_parent) {
+                // re-parent: fly to compound centre then reparent
                 el.animate(
                     { renderedPosition: tpos },
-                    { duration: anim_ms, easing: 'ease-in-out-cubic',
+                    { duration: fly_ms, easing: 'ease-in-out-cubic',
                       complete: () => {
                           const still = cy.getElementById(mg.id)
                           if (still.length) still.move({ parent: mg.then_parent! })
                       } }
                 )
             } else {
-                // harvest: shrink + fade into mat:basic, then remove
+                // harvest: fly full-size to mat:basic, THEN shrink+fade, then remove
                 el.animate(
-                    { renderedPosition: tpos,
-                      style: { opacity: 0, width: 4, height: 4 } },
-                    { duration: anim_ms, easing: 'ease-in-cubic',
-                      complete: () => { cy.getElementById(mg.id).remove() } }
+                    { renderedPosition: tpos },
+                    {
+                        duration: fly_ms,
+                        easing:   'ease-in-cubic',
+                        complete: () => {
+                            const still = cy.getElementById(mg.id)
+                            if (!still.length) return
+                            still.animate(
+                                { style: { opacity: 0, width: 4, height: 4 } },
+                                { duration: fade_ms, easing: 'ease-out-cubic',
+                                  complete: () => cy.getElementById(mg.id).remove() }
+                            )
+                        },
+                    }
                 )
             }
         }
@@ -217,7 +227,7 @@
             name:                        'fcose',
             animate:                     animMs > 0,
             animationDuration:           animMs,
-            nodeSeparation:              22,
+            nodeSeparation:              30,
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
             quality:                     'default',
@@ -226,8 +236,7 @@
                 return typeof il === 'number' ? il : 80
             },
             edgeElasticity: (edge: any) => {
-                const id = edge.id() as string
-                return id.startsWith('e:helio:') ? 0.10 : 0.45
+                return (edge.id() as string).startsWith('e:helio:') ? 0.10 : 0.45
             },
             nodeRepulsion: () => 4000,
             ...(constraints ?? {}),
@@ -245,17 +254,25 @@
                         label:            'data(label)',
                         'text-valign':    'center',
                         'text-wrap':      'wrap',
-                        'text-max-width': '62px',
-                        'font-size':      '7px',
+                        'text-max-width': '72px',
+                        'font-size':      '9px',
                         'font-family':    "'Berkeley Mono','Fira Code',monospace",
                         color:            '#ddd',
                         'background-color': '#222',
-                        width:  22, height: 22,
+                        width:  24, height: 24,
                     },
                 },
                 {
+                    // compound (worker) containers — always rendered, even empty
                     selector: ':parent',
-                    style: { 'text-valign': 'top', 'text-halign': 'center' },
+                    style: {
+                        'text-valign':  'top',
+                        'text-halign':  'center',
+                        'font-size':    '10px',
+                        // minimum size keeps the box visible when empty
+                        'min-width':    80,
+                        'min-height':   60,
+                    },
                 },
                 {
                     selector: 'node:selected',
