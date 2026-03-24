@@ -12,12 +12,15 @@
     let container: HTMLDivElement
     let cy: ReturnType<typeof cytoscape>
 
+    // ── wave types ────────────────────────────────────────────────────────────
+
     type NodeDesc = {
         id:          string
         label:       string
         style:       Record<string,any>
-        parent?:     string
-        new_parent?: string
+        parent?:     string    // compound parent for new nodes
+        new_parent?: string    // re-parent an existing node in place
+        appear_from?: string   // node id to teleport to before layout animation
         isCompound?: boolean
     }
     type EdgeDesc = {
@@ -26,9 +29,10 @@
     }
     type MigrateDesc = {
         id:              string
-        toward:          string
-        then_parent?:    string
-        harvest_detach?: boolean
+        toward:          string    // target node id for the animation
+        then_parent?:    string    // re-parent after anim (absent = remove after)
+        harvest_detach?: boolean   // detach from compound before flying
+        mouthful_expire?:boolean   // small fade-and-shrink toward mat:basic
     }
     type Wave = {
         upsert:      NodeDesc[]
@@ -45,6 +49,8 @@
     let status      = $state('no graph')
     let grawave_dur = $state(0.3)
     let last_tick   = -1
+
+    // ── reactive: H.graph → cyto_graph particle ───────────────────────────────
 
     $effect(() => {
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
@@ -69,6 +75,8 @@
         status = `tick ${last_tick} · ${nu}n ${eu}e −${rm} ~${mg} · ⏱${wave.duration}s`
     }
 
+    // ── NON_ANIM ──────────────────────────────────────────────────────────────
+    // Cytoscape cannot tween these — apply immediately or they throw.
     const NON_ANIM = new Set([
         'shape','background-image','background-fit','content','label',
         'source-label','target-label','line-style','target-arrow-shape',
@@ -121,6 +129,13 @@
                 if (nd.parent) data.parent = nd.parent
                 const added = cy.add({ group: 'nodes', data })
                 added.style({ ...imm, ...anim })
+
+                // appear_from: teleport to spawn position; layout will then
+                // animate the node from there to its natural resting place.
+                if (nd.appear_from) {
+                    const spawn = cy.getElementById(nd.appear_from)
+                    if (spawn.length) added.position(spawn.position())
+                }
             }
         }
 
@@ -153,9 +168,8 @@
             const toward = cy.getElementById(mg.toward)
             if (!el.length) continue
 
-            // Detach from compound first so the container doesn't bloat during flight.
-            // Also remove connected edges (stem/helio) immediately — they no longer
-            // connect to a child of the compound, so there's no point keeping them.
+            // Detach from compound before harvest flight: keeps the container tidy
+            // and removes stem/helio edges that would otherwise dangle.
             if (mg.harvest_detach) {
                 el.move({ parent: null })
                 el.connectedEdges().remove()
@@ -166,37 +180,43 @@
                 continue
             }
 
-            const tpos    = toward.renderedPosition()
-            const fly_ms  = Math.round(ms * 0.75)   // spend most time flying
-            const fade_ms = Math.round(ms * 0.20)   // quick fade at destination
+            const tpos   = toward.renderedPosition()
+            const fly_ms = Math.round(ms * 0.75)
+            const shr_ms = Math.round(ms * 0.20)
 
             if (mg.then_parent) {
-                // re-parent: fly to compound centre then reparent
+                // re-parent: fly to new compound centre then move
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-out-cubic',
                       complete: () => {
-                          const still = cy.getElementById(mg.id)
-                          if (still.length) still.move({ parent: mg.then_parent! })
+                          const s = cy.getElementById(mg.id)
+                          if (s.length) s.move({ parent: mg.then_parent! })
                       } }
                 )
+
+            } else if (mg.mouthful_expire) {
+                // mouthful: quick fade-shrink in place then remove
+                el.animate(
+                    { style: { opacity: 0, width: 3, height: 3 } },
+                    { duration: Math.round(ms * 0.40), easing: 'ease-out-cubic',
+                      complete: () => cy.getElementById(mg.id).remove() }
+                )
+
             } else {
-                // harvest: fly full-size to mat:basic, THEN shrink+fade, then remove
+                // leaf harvest: fly full-size to mat:basic, then shrink+fade
                 el.animate(
                     { renderedPosition: tpos },
-                    {
-                        duration: fly_ms,
-                        easing:   'ease-in-cubic',
-                        complete: () => {
-                            const still = cy.getElementById(mg.id)
-                            if (!still.length) return
-                            still.animate(
-                                { style: { opacity: 0, width: 4, height: 4 } },
-                                { duration: fade_ms, easing: 'ease-out-cubic',
-                                  complete: () => cy.getElementById(mg.id).remove() }
-                            )
-                        },
-                    }
+                    { duration: fly_ms, easing: 'ease-in-cubic',
+                      complete: () => {
+                          const s = cy.getElementById(mg.id)
+                          if (!s.length) return
+                          s.animate(
+                              { style: { opacity: 0, width: 4, height: 4 } },
+                              { duration: shr_ms, easing: 'ease-out-cubic',
+                                complete: () => cy.getElementById(mg.id).remove() }
+                          )
+                      } }
                 )
             }
         }
@@ -207,6 +227,7 @@
         }
     }
 
+    // ── walk-back ─────────────────────────────────────────────────────────────
     function walk(dir: -1 | 1) {
         const next = pos + dir
         if (next < 0 || next >= history.length) return
@@ -220,6 +241,7 @@
         status = `history ${pos + 1}/${history.length} (walk)`
     }
 
+    // ── layout ────────────────────────────────────────────────────────────────
     let lay: any
     function relayout(animMs = 300, constraints?: any) {
         lay?.stop()
@@ -235,15 +257,15 @@
                 const il = edge.data('ideal_length')
                 return typeof il === 'number' ? il : 80
             },
-            edgeElasticity: (edge: any) => {
-                return (edge.id() as string).startsWith('e:helio:') ? 0.10 : 0.45
-            },
+            edgeElasticity: (edge: any) =>
+                (edge.id() as string).startsWith('e:helio:') ? 0.10 : 0.45,
             nodeRepulsion: () => 4000,
             ...(constraints ?? {}),
         })
         try { lay.run() } catch (e) { console.warn('layout error', e) }
     }
 
+    // ── cytoscape init ────────────────────────────────────────────────────────
     onMount(() => {
         cy = cytoscape({
             container,
@@ -251,41 +273,31 @@
                 {
                     selector: 'node',
                     style: {
-                        label:            'data(label)',
-                        'text-valign':    'center',
-                        'text-wrap':      'wrap',
-                        'text-max-width': '72px',
-                        'font-size':      '9px',
-                        'font-family':    "'Berkeley Mono','Fira Code',monospace",
-                        color:            '#ddd',
-                        'background-color': '#222',
-                        width:  24, height: 24,
+                        label: 'data(label)', 'text-valign': 'center',
+                        'text-wrap': 'wrap', 'text-max-width': '72px',
+                        'font-size': '9px',
+                        'font-family': "'Berkeley Mono','Fira Code',monospace",
+                        color: '#ddd', 'background-color': '#222',
+                        width: 24, height: 24,
                     },
                 },
                 {
-                    // compound (worker) containers — always rendered, even empty
+                    // compound (worker) containers — always rendered, even when empty
                     selector: ':parent',
                     style: {
-                        'text-valign':  'top',
-                        'text-halign':  'center',
-                        'font-size':    '10px',
-                        // minimum size keeps the box visible when empty
-                        'min-width':    80,
-                        'min-height':   60,
+                        'text-valign': 'top', 'text-halign': 'center',
+                        'font-size': '10px',
+                        'min-width': 80, 'min-height': 60,
                     },
                 },
-                {
-                    selector: 'node:selected',
-                    style: { 'border-width': 2, 'border-color': '#79b' },
-                },
+                { selector: 'node:selected',
+                  style: { 'border-width': 2, 'border-color': '#79b' } },
                 {
                     selector: 'edge',
                     style: {
-                        width:                1.2,
-                        'line-color':         '#2a2a2a',
-                        'target-arrow-shape': 'none',
-                        'curve-style':        'bezier',
-                        opacity:              0.5,
+                        width: 1.2, 'line-color': '#2a2a2a',
+                        'target-arrow-shape': 'none', 'curve-style': 'bezier',
+                        opacity: 0.5,
                     },
                 },
             ],
@@ -308,6 +320,7 @@
     </div>
     <div class="cytui-legend">
         <span class="l-leaf">🌿 leaf</span>
+        <span class="l-mf">◦ bite</span>
         <span class="l-sun">◆ sun</span>
         <span class="l-poo">● poo</span>
         <span class="l-mat">■ mat</span>
@@ -354,10 +367,10 @@
     border-bottom: 1px solid #141414;
     font-size: 8px; flex-shrink: 0; opacity: 0.6;
 }
-.l-leaf  { color: #4c9 } .l-sun   { color: #fb0 }
-.l-poo   { color: #974 } .l-mat   { color: #b82 }
-.l-prod  { color: #46f } .l-prot  { color: #c8f }
-.l-enz   { color: #4a8 } .l-stem  { color: #3a6 }
-.l-helio { color: #880 }
+.l-leaf  { color: #4c9 } .l-mf    { color: #af5 }
+.l-sun   { color: #fb0 } .l-poo   { color: #974 }
+.l-mat   { color: #b82 } .l-prod  { color: #46f }
+.l-prot  { color: #c8f } .l-enz   { color: #4a8 }
+.l-stem  { color: #3a6 } .l-helio { color: #880 }
 .cytui-graph { flex: 1; min-height: 0; }
 </style>

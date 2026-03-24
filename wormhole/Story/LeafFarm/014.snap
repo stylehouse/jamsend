@@ -5,33 +5,9 @@
       	{"sunshine":1,"dose":0.16421211379320588}
       	{"sunny_streak":1,"count":0}
       	{"poo":1,"dose":2.033722082396662}
-      	{"leaf":1,"leaf_id":"leaf_2_0","dose":0.7817298660413499}
-      	{"leaf":1,"leaf_id":"leaf_2_1","dose":0.7817298660413499}
-      	{"leaf":1,"leaf_id":"leaf_2_2","dose":0.15634597320826982}
-      	{"leaf":1,"leaf_id":"leaf_3_0","dose":0.640762185279795}
-      	{"leaf":1,"leaf_id":"leaf_3_1","dose":0.640762185279795}
-      	{"leaf":1,"leaf_id":"leaf_3_2","dose":0.12815243705595888}
-      	{"leaf":1,"leaf_id":"leaf_4_0","dose":0.5252149059670451}
-      	{"leaf":1,"leaf_id":"leaf_4_1","dose":0.5252149059670451}
-      	{"leaf":1,"leaf_id":"leaf_4_2","dose":0.10504298119340891}
-      	{"leaf":1,"leaf_id":"leaf_5_0","dose":0.4305040212844632}
-      	{"leaf":1,"leaf_id":"leaf_5_1","dose":0.4305040212844632}
-      	{"leaf":1,"leaf_id":"leaf_5_2","dose":0.08610080425689255}
-      	{"leaf":1,"leaf_id":"leaf_6_0","dose":0.35287214859382227}
-      	{"leaf":1,"leaf_id":"leaf_6_1","dose":0.35287214859382227}
-      	{"leaf":1,"leaf_id":"leaf_6_2","dose":0.07057442971876438}
-      	{"leaf":1,"leaf_id":"leaf_7_0","dose":0.28923946606051}
-      	{"leaf":1,"leaf_id":"leaf_7_1","dose":0.28923946606051}
-      	{"leaf":1,"leaf_id":"leaf_7_2","dose":0.05784789321210195}
-      	{"leaf":1,"leaf_id":"leaf_8_0","dose":0.23708152955779507}
-      	{"leaf":1,"leaf_id":"leaf_8_1","dose":0.23708152955779507}
-      	{"leaf":1,"leaf_id":"leaf_8_2","dose":0.04741630591155899}
-      	{"leaf":1,"leaf_id":"leaf_9_0","dose":0.1943291225883566}
-      	{"leaf":1,"leaf_id":"leaf_9_1","dose":0.1943291225883566}
-      	{"leaf":1,"leaf_id":"leaf_9_2","dose":0.038865824517671295}
-      	{"leaf":1,"leaf_id":"leaf_10_0","dose":0.15928616605602997}
-      	{"leaf":1,"leaf_id":"leaf_10_1","dose":0.15928616605602997}
-      	{"leaf":1,"leaf_id":"leaf_10_2","dose":0.03185723321120598}
+      	{"leaf":1,"leaf_id":"leaf_2_0","dose":1.0488575038681316}
+      	{"leaf":1,"leaf_id":"leaf_3_0","dose":0.8597192654656817}
+      	{"leaf":1,"leaf_id":"leaf_4_0","dose":0.7046879225128538}
       	{"seen":"wonder"}
       {"mung":["age"]}	{"self":1,"round":14}
   	{"A":"plate"}

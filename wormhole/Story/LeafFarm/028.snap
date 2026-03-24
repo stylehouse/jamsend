@@ -5,39 +5,22 @@
       	{"sunshine":1,"dose":1.0272994540441402}
       	{"sunny_streak":1,"count":8}
       	{"poo":1,"dose":2.2427270287222285}
-      	{"leaf":1,"leaf_id":"leaf_2_2","dose":0.707887213701636}
-      	{"leaf":1,"leaf_id":"leaf_3_2","dose":0.5802354210669147}
-      	{"leaf":1,"leaf_id":"leaf_4_2","dose":0.4756028041532086}
-      	{"leaf":1,"leaf_id":"leaf_5_0","dose":1.9491918203000382}
-      	{"leaf":1,"leaf_id":"leaf_5_1","dose":1.9491918203000382}
-      	{"leaf":1,"leaf_id":"leaf_5_2","dose":0.3898383640600072}
-      	{"leaf":1,"leaf_id":"leaf_6_0","dose":1.5976982133606865}
-      	{"leaf":1,"leaf_id":"leaf_6_1","dose":1.5976982133606865}
-      	{"leaf":1,"leaf_id":"leaf_6_2","dose":0.3195396426721371}
-      	{"leaf":1,"leaf_id":"leaf_7_0","dose":1.309588699475972}
-      	{"leaf":1,"leaf_id":"leaf_7_1","dose":1.309588699475972}
-      	{"leaf":1,"leaf_id":"leaf_7_2","dose":0.26191773989519423}
-      	{"leaf":1,"leaf_id":"leaf_8_0","dose":1.0734333602262067}
-      	{"leaf":1,"leaf_id":"leaf_8_1","dose":1.0734333602262067}
-      	{"leaf":1,"leaf_id":"leaf_8_2","dose":0.2146866720452413}
-      	{"leaf":1,"leaf_id":"leaf_9_0","dose":0.8798634100214809}
-      	{"leaf":1,"leaf_id":"leaf_9_1","dose":0.8798634100214809}
-      	{"leaf":1,"leaf_id":"leaf_9_2","dose":0.17597268200429608}
-      	{"leaf":1,"leaf_id":"leaf_10_0","dose":0.7211995164110497}
-      	{"leaf":1,"leaf_id":"leaf_10_1","dose":0.7211995164110497}
-      	{"leaf":1,"leaf_id":"leaf_10_2","dose":0.14423990328220987}
       	{"seen":"wonder"}
+      	{"leaf":1,"leaf_id":"leaf_22_0","dose":0.32973039591040015}
+      	{"leaf":1,"leaf_id":"leaf_23_0","dose":0.2702708163200001}
+      	{"leaf":1,"leaf_id":"leaf_24_0","dose":0.22153345600000007}
       {"mung":["age"]}	{"self":1,"round":28}
   	{"A":"plate"}
-    {"mung":["age"]}	{"self":1,"round":39}
+    {"mung":["age"]}	{"self":1,"round":36}
     	{"w":"plate"}
       	{"o_elvis":"receive_harvest"}
       	{"o_elvis":"receive_protein"}
       	{"o_elvis":"deliver_enzyme"}
-      	{"material":"basic","amount":3.349603179343596}
+      	{"material":"basic","amount":1.9566088987075838}
       	{"wants_enzyme":1}
       	{"shelf":1,"enzyme":1,"units":4}
-      {"mung":["age"]}	{"self":1,"round":39}
+      {"mung":["age"]}	{"self":1,"round":36}
+      	{"mouthful":1,"mouthful_id":"leaf_4_0_m36","dose":0.28163445606779325,"spawning_from":"leaf_4_0","ttl":0}
   	{"A":"enzymeco"}
     {"mung":["age"]}	{"self":1,"round":30}
     	{"w":"enzymeco"}

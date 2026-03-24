@@ -6,12 +6,8 @@
       	{"sunny_streak":1,"count":3}
       	{"poo":1,"dose":0.8746499999999999}
       	{"leaf":1,"leaf_id":"leaf_2_0","dose":0.12200000000000001}
-      	{"leaf":1,"leaf_id":"leaf_2_1","dose":0.12200000000000001}
-      	{"leaf":1,"leaf_id":"leaf_2_2","dose":0.024399999999999988}
       {"mung":["age"]}	{"self":1,"round":3}
       	{"leaf":1,"leaf_id":"leaf_3_0","dose":0.1}
-      	{"leaf":1,"leaf_id":"leaf_3_1","dose":0.1}
-      	{"leaf":1,"leaf_id":"leaf_3_2","dose":0.01999999999999999}
   	{"A":"plate"}
     {"mung":["age"]}	{"self":1,"round":3}
     	{"w":"plate"}

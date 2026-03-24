@@ -19,8 +19,8 @@
     // Each leaf has a .dose (float) representing its biomass content.
     // Leaves grow each tick; max growth is 22% of current dose per tick.
     // When a leaf reaches dose >= 2.0 it is snipped and elvis'd to plate.
-    // New leaves sprout when sunshine has been > 0.6 for two consecutive rounds,
-    //  using the spare $life_input that existing leaves couldn't absorb.
+    // New leaves sprout when sunny_streak >= 2, capped at 3 total leaves.
+    // A seed leaf (dose 1.85) is planted on tick 0 so a harvest appears early.
     async farm(A, w) {
         let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
 
@@ -42,7 +42,12 @@
 
         // ── $life_input: shared growth budget ─────────────────────────
         let life_input = sun_dose * Math.min(poo.sc.dose, 4)
-        poo.sc.dose *= 0.85   // poo consumed by photosynthesis
+        poo.sc.dose *= 0.85
+
+        // ── seed leaf on tick 0: near-ripe so it harvests on tick 1 ───
+        if (tick === 1 && !w.o({ leaf: 1, leaf_id: 'seed_0' }).length) {
+            w.i({ leaf: 1, leaf_id: 'seed_0', dose: 1.85 })
+        }
 
         // ── grow existing %leaf particles ─────────────────────────────
         let leaves = w.o({ leaf: 1 })
@@ -57,11 +62,10 @@
         }
 
         // ── sprouting: spare life_input → new %leaf particles ─────────
-        // Only when sunny_streak >= 2.
-        // Each sprout starts at dose 0.1; total new dose capped to 0.22 per tick.
-        if (streak.sc.count >= 2) {
+        // One small sprout per tick, capped at 3 leaves total.
+        if (streak.sc.count >= 2 && w.o({ leaf: 1 }).length < 3) {
             let spare = Math.max(life_input - absorbed, 0)
-            let sprout_budget = 0.22
+            let sprout_budget = 0.10
             let sprout_i = 0
             while (spare > 0.1 && sprout_budget > 0) {
                 let dose = Math.min(0.1, spare, sprout_budget)
@@ -74,7 +78,7 @@
         }
 
         // ── harvest ripe leaves → elvis to plate ──────────────────────
-        // A leaf is ripe at dose >= 2.0; it physically leaves the farm.
+        // A leaf is ripe at dose >= 2.0; it leaves the farm.
         for (let leaf of w.o({ leaf: 1 })) {
             if (leaf.sc.dose >= 2.0) {
                 V.farm && console.log(`✂️  farm: harvesting ${leaf.sc.leaf_id} dose:${leaf.sc.dose.toFixed(2)}`)
@@ -116,18 +120,19 @@
 //#endregion
 //#region plate
 
-    // plate receives harvested leaf particles and protein from farm.
-    // Leaf dose → basic material.
-    // Proteins are broken down using %enzyme particles sitting on the %shelf:1.
-    // When the shelf is empty plate sends a request_enzyme elvis to enzymeco.
+    // plate receives harvested %leaf particles from farm.
+    // Leaves persist on plate and are consumed in random 0.25–0.35 bites per tick.
+    // Each bite spawns a %mouthful (ttl:1, spawning_from:leaf_id) that converts
+    // to basic material on expiry.  Cyto uses spawning_from to start the mouthful
+    // node at the leaf's graph position then animate it outward.
     async plate(A, w) {
 
-        // ── receive harvested leaves → basic material ─────────────────
+        // ── receive harvested leaves → park them on plate ─────────────
         for (let e of this.o_elvis(w, 'receive_harvest')) {
-            let basic = w.o({ material: 'basic' })[0]
-            if (!basic) basic = w.i({ material: 'basic', amount: 0 })
-            basic.sc.amount += e.sc.dose
-            V.plate && console.log(`🍽️  plate: leaf ${e.sc.leaf_id} +${e.sc.dose.toFixed(2)} basic`)
+            if (!w.o({ leaf: 1, leaf_id: e.sc.leaf_id }).length) {
+                w.i({ leaf: 1, leaf_id: e.sc.leaf_id, dose: e.sc.dose })
+                V.plate && console.log(`🍽️  plate: leaf ${e.sc.leaf_id} arrived dose:${e.sc.dose.toFixed(2)}`)
+            }
         }
 
         // ── receive proteins → queue them ─────────────────────────────
@@ -144,8 +149,33 @@
             V.enzyme && console.log(`💊 plate: enzyme on shelf +${e.sc.units} units`)
         }
 
+        // ── consume plate leaves in bites → %mouthful particles ───────
+        // Bite size is lightly randomised via tick+leaf_id arithmetic (no Math.random
+        // so the snap is deterministic).  Each bite becomes a short-lived %mouthful.
+        let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
+        for (let leaf of w.o({ leaf: 1 })) {
+            let jitter = ((tick * 13 + leaf.sc.leaf_id.length * 7) % 10) * 0.01
+            let bite   = Math.min(leaf.sc.dose, 0.25 + jitter)
+            leaf.sc.dose -= bite
+            let mouthful_id = `${leaf.sc.leaf_id}_m${tick}`
+            w.i({ mouthful: 1, mouthful_id, dose: bite, spawning_from: leaf.sc.leaf_id, ttl: 1 })
+            V.plate && console.log(`🫦 mouthful ${mouthful_id} bite:${bite.toFixed(2)} leaf left:${leaf.sc.dose.toFixed(2)}`)
+            if (leaf.sc.dose <= 0.04) w.drop(leaf)
+        }
+
+        // ── expire mouthfuls after one tick → basic material ──────────
+        for (let m of w.o({ mouthful: 1 })) {
+            if (m.sc.ttl <= 0) {
+                let basic = w.o({ material: 'basic' })[0]
+                if (!basic) basic = w.i({ material: 'basic', amount: 0 })
+                basic.sc.amount += m.sc.dose
+                w.drop(m)
+            } else {
+                m.sc.ttl -= 1
+            }
+        }
+
         // ── break down proteins using shelf enzymes ───────────────────
-        // Use first enzyme particle until exhausted; then request more.
         for (let prot of w.o({ protein: 1 })) {
             let first_enzyme = w.o({ shelf: 1, enzyme: 1 })[0]
             if (!first_enzyme) {
@@ -156,17 +186,14 @@
                 }
                 break
             }
-
             let cost = Math.min(prot.sc.complexity, first_enzyme.sc.units)
             first_enzyme.sc.units -= cost
             prot.sc.complexity    -= cost
-
             if (first_enzyme.sc.units <= 0) {
                 V.enzyme && console.log(`💊 plate: enzyme particle exhausted`)
                 w.drop(first_enzyme)
                 await w.r({ wants_enzyme: 1 }, {})
             }
-
             if (prot.sc.complexity <= 0) {
                 let basic = w.o({ material: 'basic' })[0]
                 if (!basic) basic = w.i({ material: 'basic', amount: 0 })
@@ -206,7 +233,7 @@
                 continue
             }
             let prod = w.i({ producing: 1, ticks_left: 3 })
-            prod.i({ enzyme: 1, units: 5 })   // enzyme particle gestates inside prod
+            prod.i({ enzyme: 1, units: 5 })
             V.enzyme && console.log(`🏭 enzymeco: batch started (3 ticks, 5 units)`)
         }
 
@@ -221,7 +248,7 @@
                     Aw:    'plate/plate',
                     units: enzyme.sc.units,
                 })
-                w.drop(prod)   // enzyme particle inside is dropped with its host
+                w.drop(prod)
             } else {
                 V.enzyme && console.log(`⏳ enzymeco: producing (${prod.sc.ticks_left} ticks left)`)
             }

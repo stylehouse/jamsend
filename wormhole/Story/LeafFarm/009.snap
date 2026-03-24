@@ -6,30 +6,9 @@
       	{"sunny_streak":1,"count":9}
       	{"poo":1,"dose":1.7416682550914064}
       	{"leaf":1,"leaf_id":"leaf_2_0","dose":0.4022710830106882}
-      	{"leaf":1,"leaf_id":"leaf_2_1","dose":0.4022710830106882}
-      	{"leaf":1,"leaf_id":"leaf_2_2","dose":0.08045421660213756}
       	{"leaf":1,"leaf_id":"leaf_3_0","dose":0.32973039591040015}
-      	{"leaf":1,"leaf_id":"leaf_3_1","dose":0.32973039591040015}
-      	{"leaf":1,"leaf_id":"leaf_3_2","dose":0.06594607918207997}
       	{"leaf":1,"leaf_id":"leaf_4_0","dose":0.2702708163200001}
-      	{"leaf":1,"leaf_id":"leaf_4_1","dose":0.2702708163200001}
-      	{"leaf":1,"leaf_id":"leaf_4_2","dose":0.05405416326399997}
-      	{"leaf":1,"leaf_id":"leaf_5_0","dose":0.22153345600000007}
-      	{"leaf":1,"leaf_id":"leaf_5_1","dose":0.22153345600000007}
-      	{"leaf":1,"leaf_id":"leaf_5_2","dose":0.04430669119999998}
-      	{"leaf":1,"leaf_id":"leaf_6_0","dose":0.18158480000000005}
-      	{"leaf":1,"leaf_id":"leaf_6_1","dose":0.18158480000000005}
-      	{"leaf":1,"leaf_id":"leaf_6_2","dose":0.03631695999999998}
-      	{"leaf":1,"leaf_id":"leaf_7_0","dose":0.14884000000000003}
-      	{"leaf":1,"leaf_id":"leaf_7_1","dose":0.14884000000000003}
-      	{"leaf":1,"leaf_id":"leaf_7_2","dose":0.029767999999999985}
-      	{"leaf":1,"leaf_id":"leaf_8_0","dose":0.12200000000000001}
-      	{"leaf":1,"leaf_id":"leaf_8_1","dose":0.12200000000000001}
-      	{"leaf":1,"leaf_id":"leaf_8_2","dose":0.024399999999999988}
       {"mung":["age"]}	{"self":1,"round":9}
-      	{"leaf":1,"leaf_id":"leaf_9_0","dose":0.1}
-      	{"leaf":1,"leaf_id":"leaf_9_1","dose":0.1}
-      	{"leaf":1,"leaf_id":"leaf_9_2","dose":0.01999999999999999}
   	{"A":"plate"}
     {"mung":["age"]}	{"self":1,"round":10}
     	{"w":"plate"}

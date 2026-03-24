@@ -9,6 +9,8 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#region w:Cyto
+
     async Cyto(A: TheC, w: TheC) {
         if (!w.c.plan_done) this.Cyto_plan(w)
         const ok = this.cyto_update_wave(w)
@@ -22,7 +24,7 @@
         const wa   = this.oai_enroll(this, { watched: 'graph' })
         w.c.gn     = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
-        // wave.duration: animation seconds in Cytui AND Story pause window.
+        // wave.duration: both the Cytui animation window and the Story pause length.
         // story_cyto_step fires story_cyto_continue after (duration*1000 + 100ms).
         w.sc.grawave_duration ??= 2
     },
@@ -45,15 +47,24 @@
         return true
     },
 
+    // ── cyto_scan ────────────────────────────────────────────────────────────
+    // Produces a full wave per tick: upsert, edge_upsert, remove, edge_remove,
+    // migrate, constraints.  Tracks three persistent maps on w.c:
+    //   ref_map   TheC→{wid,id}   — detects particle re-parenting across workers
+    //   leaf_map  leaf_id→wid     — detects farm→plate leaf migration
+    //   mf_ids    Set<string>     — mouthful ids present last tick (for expiry migrate)
     cyto_scan(w: TheC, RunH: House) {
-        const pn   = w.oai({ cyto_prev_ids:  1 })
-        const pe   = w.oai({ cyto_prev_eids: 1 })
+        const pn        = w.oai({ cyto_prev_ids:  1 })
+        const pe        = w.oai({ cyto_prev_eids: 1 })
         const prev_ids  = new Set<string>(pn.sc.ids  ?? [])
         const prev_eids = new Set<string>(pe.sc.ids  ?? [])
         const prev_ref:  Map<TheC, {wid:string, id:string}> = w.c.ref_map  ?? new Map()
         const prev_leaf: Map<string, string>                 = w.c.leaf_map ?? new Map()
+        const prev_mf:   Set<string>                         = w.c.mf_ids   ?? new Set()
+
         const curr_ref  = new Map<TheC, {wid:string, id:string}>()
         const curr_leaf = new Map<string, string>()
+        const curr_mf   = new Set<string>()
 
         const upsert: any[] = [], edge_upsert: any[] = []
         const seen = new Set<string>(), seen_e = new Set<string>()
@@ -61,17 +72,15 @@
         const w_order: string[] = []
         const rel: any[] = []
 
-        // ── always emit known worker names as compound containers ─────────────
-        // We emit them from the worker particles on RunH.  If a worker has no
-        // particle children it still gets a compound node — cytoscape will render
-        // it as an empty box (sized by min-width/min-height in the stylesheet).
+        // track mat:basic existence for migration targets
+        let mat_node_id: string | null = null
+
         for (const A of RunH.o({ A: 1 }) as TheC[]) {
             for (const wk of A.o({ w: 1 }) as TheC[]) {
                 const wid   = `w:${wk.sc.w}`
                 const wname = String(wk.sc.w)
                 seen.add(wid)
                 w_order.push(wid)
-                // Always upsert the compound — empty or not
                 upsert.push({ id: wid, label: wname, style: this.cyto_w_style(wname), isCompound: true })
 
                 let poo_id: string | null = null
@@ -82,28 +91,40 @@
                     if (n.c.drop) continue
                     const id = this.cyto_id(n)
                     if (!id) continue
+
+                    const is_new      = !prev_ids.has(id)
                     const prev_entry  = prev_ref.get(n)
                     const is_reparent = prev_entry && prev_entry.wid !== wid
+
                     seen.add(id)
                     curr_ref.set(n, { wid, id })
+                    if (n.sc.leaf && n.sc.leaf_id)        curr_leaf.set(String(n.sc.leaf_id), wid)
+                    if (n.sc.mouthful && n.sc.mouthful_id) curr_mf.add(id)
+                    if (n.sc.material === 'basic')         mat_node_id = id
+
                     const nd = this.cyto_node(n, id)
                     nd.parent = wid
-                    if (is_reparent) { nd.new_parent = wid; nd.migrate_from_wid = prev_entry!.wid }
+                    if (is_reparent) { nd.new_parent = wid }
+
+                    // new mouthfuls: teleport to spawning leaf, then fly outward
+                    if (is_new && n.sc.mouthful && n.sc.spawning_from) {
+                        nd.appear_from = `leaf:${n.sc.spawning_from}`
+                    }
                     upsert.push(nd)
-                    if (n.sc.leaf && n.sc.leaf_id) curr_leaf.set(String(n.sc.leaf_id), wid)
+
                     if (n.sc.poo)      poo_id = id
                     if (n.sc.sunshine) sun_id = id
                     if (n.sc.leaf)     leaf_ids.push(id)
                 }
 
-                // vertical: sun above leaves, leaves above poo
+                // vertical placement: sun → leaves → poo
                 if (sun_id && poo_id) rel.push({ top: sun_id, bottom: poo_id, gap: 55 })
                 for (const lid of leaf_ids) {
                     if (sun_id) rel.push({ top: sun_id, bottom: lid,    gap: 20 })
                     if (poo_id) rel.push({ top: lid,    bottom: poo_id, gap: 14 })
                 }
 
-                // stem edges: leaf → poo
+                // stem edges: leaf → poo (young leaves cling close)
                 if (poo_id) {
                     for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                         if (n.c.drop) continue
@@ -115,20 +136,19 @@
                         seen_e.add(eid)
                         edge_upsert.push({
                             id: eid, source: lid, target: poo_id,
-                            data:  { ideal_length: Math.max(18, Math.round(18 + stature * 55)) },
+                            data: { ideal_length: Math.max(18, Math.round(18 + stature * 55)) },
                             style: {
-                                'line-color':         '#3d7a1e',
-                                width:                Math.max(0.5, 0.8 + stature * 1.8),
-                                'line-style':         'solid',
-                                'target-arrow-shape': 'none',
-                                'curve-style':        'straight',
-                                opacity:              0.5 + stature * 0.38,
+                                'line-color': '#3d7a1e',
+                                width:        Math.max(0.5, 0.8 + stature * 1.8),
+                                'line-style': 'solid', 'target-arrow-shape': 'none',
+                                'curve-style': 'straight',
+                                opacity: 0.5 + stature * 0.38,
                             },
                         })
                     }
                 }
 
-                // helio edges: leaf → sun
+                // helio edges: leaf → sun (always loose, dashed)
                 if (sun_id) {
                     for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                         if (n.c.drop) continue
@@ -138,14 +158,11 @@
                         seen_e.add(eid)
                         edge_upsert.push({
                             id: eid, source: lid, target: sun_id,
-                            data:  { ideal_length: 110 },
+                            data: { ideal_length: 110 },
                             style: {
-                                'line-color':         '#c8b020',
-                                width:                0.6,
-                                'line-style':         'dashed',
-                                'target-arrow-shape': 'none',
-                                'curve-style':        'bezier',
-                                opacity:              0.18,
+                                'line-color': '#c8b020', width: 0.6,
+                                'line-style': 'dashed', 'target-arrow-shape': 'none',
+                                'curve-style': 'bezier', opacity: 0.18,
                             },
                         })
                     }
@@ -153,19 +170,23 @@
             }
         }
 
-        // harvest migrations
-        const mat_id = 'mat:basic'
-        for (const [lid] of prev_leaf) {
+        // leaf harvest migrations: leaf left a worker between scans
+        const mat_toward = mat_node_id ?? 'mat:basic'
+        for (const [lid, _prev_wid] of prev_leaf) {
             if (!curr_leaf.has(lid)) {
-                migrate.push({
-                    id: `leaf:${lid}`,
-                    toward: mat_id,
-                    harvest_detach: true,
-                })
+                migrate.push({ id: `leaf:${lid}`, toward: mat_toward, harvest_detach: true })
             }
         }
 
-        // ref re-parent migrations
+        // mouthful expiry migrations: mouthful present last tick, gone this tick
+        for (const mf_id of prev_mf) {
+            if (!curr_mf.has(mf_id)) {
+                // animate toward mat:basic and fade — same visual as leaf harvest
+                migrate.push({ id: mf_id, toward: mat_toward, mouthful_expire: true })
+            }
+        }
+
+        // ref re-parent migrations (particle moved to different worker)
         for (const [n, { wid, id }] of curr_ref) {
             const prev = prev_ref.get(n)
             if (prev && prev.wid !== wid && !migrate.find(m => m.id === id)) {
@@ -173,16 +194,18 @@
             }
         }
 
+        // persist
         pn.sc.ids  = [...seen]
         pe.sc.ids  = [...seen_e]
         w.c.ref_map  = curr_ref
         w.c.leaf_map = curr_leaf
+        w.c.mf_ids   = curr_mf
 
         const migrating_ids = new Set(migrate.map(m => m.id))
-        const remove      = [...prev_ids].filter(id => !seen.has(id)  && !migrating_ids.has(id))
+        const remove      = [...prev_ids].filter(id => !seen.has(id) && !migrating_ids.has(id))
         const edge_remove = [...prev_eids].filter(id => !seen_e.has(id))
 
-        // left-of: keep workers in spawn order, tighter gap
+        // left-of constraints keep workers in spawn order
         for (let i = 0; i < w_order.length - 1; i++) {
             rel.push({ left: w_order[i], right: w_order[i + 1], gap: 24 })
         }
@@ -192,21 +215,26 @@
                  duration: (w.sc.grawave_duration as number) ?? 0.3 }
     },
 
+    // ── cyto_id ───────────────────────────────────────────────────────────────
     cyto_id(n: TheC): string | null {
-        if (n.sc.leaf)                 return `leaf:${n.sc.leaf_id ?? n.sc.leaf}`
-        if (n.sc.sunshine)             return `sun`
-        if (n.sc.poo)                  return `poo`
-        if (n.sc.material)             return `mat:${n.sc.material}`
-        if (n.sc.producing)            return `prod`
-        if (n.sc.protein)              return `prot:${n.sc.protein_id ?? 'p'}`
-        if (n.sc.shelf && n.sc.enzyme) return `enz_shelf`
-        if (n.sc.wants_enzyme)         return `want_enz`
-        if (n.sc.run)                  return `run:${n.sc.run}`
+        if (n.sc.mouthful && n.sc.mouthful_id) return `mf:${n.sc.mouthful_id}`
+        if (n.sc.leaf)                          return `leaf:${n.sc.leaf_id ?? n.sc.leaf}`
+        if (n.sc.sunshine)                      return `sun`
+        if (n.sc.poo)                           return `poo`
+        if (n.sc.material)                      return `mat:${n.sc.material}`
+        if (n.sc.producing)                     return `prod`
+        if (n.sc.protein)                       return `prot:${n.sc.protein_id ?? 'p'}`
+        if (n.sc.shelf && n.sc.enzyme)          return `enz_shelf`
+        if (n.sc.wants_enzyme)                  return `want_enz`
+        if (n.sc.run)                           return `run:${n.sc.run}`
+        // noise
         if (n.sc.self || n.sc.chaFrom || n.sc.wasLast || n.sc.sunny_streak
-            || n.sc.seen || n.sc.o_elvis) return null
+            || n.sc.seen || n.sc.o_elvis)       return null
         return null
     },
 
+    // ── cyto_label ────────────────────────────────────────────────────────────
+    // Compact label: numbers rounded to 2 dp, long strings truncated.
     cyto_label(n: TheC): string {
         const parts: string[] = []
         for (const [k, v] of Object.entries(n.sc ?? {})) {
@@ -221,6 +249,8 @@
         return parts.join('\n')
     },
 
+    // ── hsl2rgb ───────────────────────────────────────────────────────────────
+    // Cytoscape can animate rgb() but not hsl().  Convert at build time.
     hsl2rgb(h: number, s: number, l: number): string {
         s /= 100; l /= 100
         const c = (1 - Math.abs(2 * l - 1)) * s
@@ -236,11 +266,21 @@
         return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
     },
 
+    // ── cyto_node ─────────────────────────────────────────────────────────────
     cyto_node(n: TheC, id: string): any {
         const label = this.cyto_label(n)
         const style: any = {}
 
-        if (n.sc.leaf) {
+        if (n.sc.mouthful) {
+            // small warm teardrop: a bite of leaf energy in transit
+            const d  = (n.sc.dose as number) ?? 0
+            const sz = Math.round(6 + d * 40)   // 6–22 px; bite is 0.25–0.35
+            style['background-color'] = this.hsl2rgb(72, 80, 62)   // lime-yellow
+            style.width = sz; style.height = sz; style.shape = 'ellipse'
+            style.opacity = 0.82
+            style.color   = '#003300'
+
+        } else if (n.sc.leaf) {
             const d  = (n.sc.dose as number) ?? 0
             const sz = Math.round(14 + d * 16)
             const lt = Math.round(28 + d * 12)
@@ -306,6 +346,7 @@
         return { id, label, style }
     },
 
+    // ── cyto_w_style ──────────────────────────────────────────────────────────
     cyto_w_style(wname: string): any {
         const bg: Record<string,string>     = { farm: '#0a1f0a', plate: '#1f130a', enzymeco: '#0a0a1f' }
         const border: Record<string,string> = { farm: '#2a5a1a', plate: '#5a3a1a', enzymeco: '#1a1a5a' }
@@ -313,17 +354,16 @@
             'background-color':   bg[wname]     ?? '#181818',
             'background-opacity': 0.5,
             'border-color':       border[wname] ?? '#2a2a2a',
-            'border-width':       1,
-            'border-style':       'dashed',
-            'text-valign':        'top',
-            'text-halign':        'center',
-            padding:              '12px',
-            'font-size':          '9px',
-            'font-weight':        'bold',
-            'font-style':         'italic',
-            color:                '#4a6a4a',
+            'border-width':       1, 'border-style': 'dashed',
+            'text-valign': 'top', 'text-halign': 'center',
+            padding: '12px', 'font-size': '9px',
+            'font-weight': 'bold', 'font-style': 'italic',
+            color: '#4a6a4a',
         }
     },
+
+//#endregion
+//#region intoCyto handshake
 
     async story_cyto_step(A: TheC, w: TheC, e: TheC) {
         this.cyto_update_wave(w)
@@ -332,6 +372,8 @@
             this.elvisto('Story/Story', 'story_cyto_continue', { story_step: e?.sc.story_step })
         }, dur + 100)
     },
+
+//#endregion
 
     })
     })

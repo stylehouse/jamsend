@@ -55,7 +55,7 @@
     import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
 
     let { M } = $props()
-    let V = { Story: 0 }   // set Story: 1 here to enable drive/analysis debug logs
+    let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
 
     // ── colour palette ───────────────────────────────────────────────────────
     // Assigned in first-seen order via ensure_swatch().
