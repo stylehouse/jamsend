@@ -88,9 +88,13 @@
     enj(o: any): string { return JSON.stringify(o ?? {}) },
     ind(d: number): string { return '  '.repeat(d) },
 
+    // enL: omit the tab entirely when there are no objecties to separate
     enL(parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> }): string {
         const obj_part = Object.keys(parsed.objecties).length ? this.enj(parsed.objecties) : ''
-        return `${this.ind(parsed.d)}${obj_part}\t${this.encode_stringies(parsed.stringies)}`
+        const str_part = this.encode_stringies(parsed.stringies)
+        return obj_part
+            ? `${this.ind(parsed.d)}${obj_part}\t${str_part}`
+            : `${this.ind(parsed.d)}${str_part}`
     },
     // encode_stringies: peel format for readability; falls back to JSON.
     // Peel rule: key /^\w+$/, value is number|boolean or a string with no
@@ -106,21 +110,20 @@
     },
 
     // decode one snap line → { d, objecties, stringies }
-    // Reads both peel ("k:v  k2:v2") and legacy JSON ("{...}") stringies.
-    // throws "no tab" on malformed lines so callers can catch and skip
+    // Reads both peel ("k:v,k2:v2") and legacy JSON ("{...}") stringies.
     deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
         const spaces  = line.match(/^ */)?.[0].length ?? 0
         const d       = Math.floor(spaces / 2)
         const tab     = line.indexOf('\t')
-        if (tab < 0) throw "no tab"
-        const obj_raw = line.slice(spaces, tab)
-        const str_raw = line.slice(tab + 1)
+        const obj_raw = tab >= 0 ? line.slice(spaces, tab) : ''
+        const str_raw = tab >= 0 ? line.slice(tab + 1) : line.slice(spaces)
         return {
             d,
             objecties: obj_raw ? JSON.parse(obj_raw) : {},
             stringies: str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw),
         }
     },
+
 
 
 //#region The helpers — canonical disk-backed toc tree

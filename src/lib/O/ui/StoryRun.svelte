@@ -181,7 +181,7 @@
         // Each side reconstructs its own line from ops so that indent_len and
         // tab_pos are computed against the actual characters on that side —
         // not the other side's line, which may have a tab at a different position
-        // or no tab at all (peel-encoded lines drop the leading tab).
+        // or no tab at all when enL omits it (no objecties → tab is omitted).
         let own = ''
         for (const [op, text] of ops) {
             if (op === 0 || (op === -1 && side === 'left') || (op === 1 && side === 'right')) {
@@ -212,14 +212,19 @@
         return result
     }
 
-    // compute_diff: proper line-level diff via diff-match-patch.
+    // compute_diff: line-level DMP diff, normalized for alignment.
     //   left  = reference (exp_snap or prev step got_snap)
     //   right = current got_snap
-    //   left_only  = removed from current (gone)
-    //   right_only = added in current     (neu)
     //
-    //   Adjacent deletions and insertions are paired into pair/changed rows
-    //   so edits read as one aligned slot rather than two separate blocks.
+    //   Lines are normalized to canonical stringies JSON before alignment so that
+    //   JSON-encoded and peel-encoded lines of the same particle compare as equal.
+    //   Normalization: take the text after the tab (the stringies field), parse it
+    //   (JSON or peel), re-encode as sorted-key JSON.  The objecties/obj_part before
+    //   the tab is not included — it is metadata (mung/ref) that may differ.
+    //   Empty obj_part (tab at indent+0) is supported naturally.
+    //
+    //   DMP runs on the normalized text to get alignment; original lines are then
+    //   substituted back so display and char ops always use the real content.
     function compute_diff(text_left: string, text_right: string): DiffRow[] {
         if (!text_left && !text_right) return []
         if (!text_left) return text_right.split('\n').filter(Boolean)
@@ -227,36 +232,65 @@
         if (!text_right) return text_left.split('\n').filter(Boolean)
             .map(line => ({ kind: 'left_only' as const, line: line.trimEnd() }))
 
+        // norm_line: canonical stringies JSON for a snap line, used only for alignment.
+        // Preserves indent as leading spaces so DMP also aligns by depth.
+        const norm_line = (line: string): string => {
+            const indent  = line.match(/^ */)?.[0] ?? ''
+            const tab     = line.indexOf('\t')
+            const str_raw = tab >= 0 ? line.slice(tab + 1).trimEnd() : line.trimEnd()
+            try {
+                const stringies = str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw)
+                return indent + JSON.stringify(stringies)
+            } catch { return indent + str_raw }
+        }
+
+        const left_lines  = text_left.split('\n').filter(Boolean)
+        const right_lines = text_right.split('\n').filter(Boolean)
+        const norm_left   = left_lines.map(norm_line).join('\n') + '\n'
+        const norm_right  = right_lines.map(norm_line).join('\n') + '\n'
+
         const dmp = new diff_match_patch()
-        const enc = (dmp as any).diff_linesToChars_(text_left, text_right)
+        const enc = (dmp as any).diff_linesToChars_(norm_left, norm_right)
         const raw = dmp.diff_main(enc.chars1, enc.chars2, false)
         ;(dmp as any).diff_charsToLines_(raw, enc.lineArray)
 
+        // Walk ops maintaining cursors into the original line arrays.
+        // op=0 (equal normalized) → same row using originals from both sides.
+        // op=-1/-1 pair → flush as changed rows with char ops on originals.
         const rows: DiffRow[] = []
+        let li = 0, ri = 0
         let pend_l: string[] = [], pend_r: string[] = []
 
-        // flush pending deletion+insertion blocks as paired rows
         const flush = () => {
             const n = Math.max(pend_l.length, pend_r.length)
             for (let i = 0; i < n; i++) {
                 const l = pend_l[i], r = pend_r[i]
                 if (l != null && r != null) {
-                    rows.push({ kind: 'pair', left: l.trimEnd(), right: r.trimEnd(), tag: 'changed',
-                                ops: char_diff_ops(l.trimEnd(), r.trimEnd()) })
+                    rows.push({ kind: 'pair', left: l, right: r, tag: 'changed',
+                                ops: char_diff_ops(l, r) })
                 } else if (l != null) {
-                    rows.push({ kind: 'left_only',  line: l.trimEnd() })
+                    rows.push({ kind: 'left_only',  line: l })
                 } else if (r != null) {
-                    rows.push({ kind: 'right_only', line: r.trimEnd() })
+                    rows.push({ kind: 'right_only', line: r })
                 }
             }
             pend_l = []; pend_r = []
         }
 
         for (const [op, text] of raw) {
-            const lines = text.split('\n').filter(Boolean)
-            if      (op ===  0) { flush(); for (const l of lines) rows.push({ kind: 'pair', left: l.trimEnd(), right: l.trimEnd(), tag: 'same' }) }
-            else if (op === -1) { pend_l.push(...lines) }
-            else if (op ===  1) { pend_r.push(...lines) }
+            const count = text.split('\n').filter(Boolean).length
+            if (op === 0) {
+                flush()
+                for (let i = 0; i < count; i++) {
+                    const l = (left_lines[li++]  ?? '').trimEnd()
+                    const r = (right_lines[ri++] ?? '').trimEnd()
+                    rows.push({ kind: 'pair', left: l, right: r, tag: 'same' })
+                }
+            } else if (op === -1) {
+                for (let i = 0; i < count; i++) pend_l.push((left_lines[li++]  ?? '').trimEnd())
+            } else if (op ===  1) {
+                for (let i = 0; i < count; i++) pend_r.push((right_lines[ri++] ?? '').trimEnd())
+            }
         }
         flush()
         return rows
@@ -717,11 +751,7 @@
      Runs on the full raw line string (indent + obj + tab + str) so the
      snap codec doesn't need re-parsing for highlight rendering. -->
 {#snippet intra_line(line: string, ops: Array<[number, string]>, side: 'left' | 'right')}
-    {@const indent = (line.match(/^ */)?.[0] ?? '')}
-    <span class="sr-ind">{indent}</span>
-    {#each ops_for_display(line, ops, side) as span}
-        <span class={span.cls}>{span.text}</span>
-    {/each}
+    {@const indent = (line.match(/^ */)?.[0] ?? '')}<span class="sr-ind">{indent}</span>{#each ops_for_display(line, ops, side) as span}<span class={span.cls}>{span.text}</span>{/each}
 {/snippet}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->

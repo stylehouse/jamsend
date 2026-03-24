@@ -1,43 +1,43 @@
-	{"H":"LeafFarm","Run":1}
-  	{"A":"farm"}
-    {"mung":["age"]}	{"self":1,"round":28}
-    	{"w":"farm"}
-      	{"sunshine":1,"dose":1.0272994540441402}
-      	{"sunny_streak":1,"count":8}
-      	{"poo":1,"dose":2.2427270287222285}
-      	{"seen":"wonder"}
-      	{"leaf":1,"leaf_id":"leaf_22_0","dose":0.32973039591040015}
-      	{"leaf":1,"leaf_id":"leaf_23_0","dose":0.2702708163200001}
-      	{"leaf":1,"leaf_id":"leaf_24_0","dose":0.22153345600000007}
-      {"mung":["age"]}	{"self":1,"round":28}
-  	{"A":"plate"}
-    {"mung":["age"]}	{"self":1,"round":36}
-    	{"w":"plate"}
-      	{"o_elvis":"receive_harvest"}
-      	{"o_elvis":"receive_protein"}
-      	{"o_elvis":"deliver_enzyme"}
-      	{"material":"basic","amount":1.9566088987075838}
-      	{"wants_enzyme":1}
-      	{"shelf":1,"enzyme":1,"units":4}
-      {"mung":["age"]}	{"self":1,"round":36}
-      	{"mouthful":1,"mouthful_id":"leaf_4_0_m36","dose":0.28163445606779325,"spawning_from":"leaf_4_0","ttl":0}
-  	{"A":"enzymeco"}
-    {"mung":["age"]}	{"self":1,"round":30}
-    	{"w":"enzymeco"}
-      	{"o_elvis":"request_enzyme"}
-      {"mung":["age"]}	{"self":1,"round":30}
-  {"mung":["id"]}	{"mo":"main","interval":3.6}
-  	{"Se":"workrepo"}
-    	{"openity":1,"v":-11}
-    	{"housed":3,"A":"farm"}
-      	{"openity":1,"v":-11}
-      	{"housed":3,"w":"farm"}
-        	{"openity":1,"v":-11}
-    	{"housed":3,"A":"plate"}
-      	{"openity":1,"v":-11}
-      	{"housed":3,"w":"plate"}
-        	{"openity":1,"v":-11}
-    	{"housed":3,"A":"enzymeco"}
-      	{"openity":1,"v":-11}
-      	{"housed":3,"w":"enzymeco"}
-        	{"openity":1,"v":-11}
+H:LeafFarm,Run
+  A:farm
+    {"mung":["age"]}	self,round:28
+    w:farm
+      sunshine,dose:1.0272994540441402
+      sunny_streak,count:8
+      poo,dose:2.2427270287222285
+      seen:wonder
+      leaf,leaf_id:leaf_22_0,dose:0.32973039591040015
+      leaf,leaf_id:leaf_23_0,dose:0.2702708163200001
+      leaf,leaf_id:leaf_24_0,dose:0.22153345600000007
+      {"mung":["age"]}	self,round:28
+  A:plate
+    {"mung":["age"]}	self,round:37
+    w:plate
+      o_elvis:receive_harvest
+      o_elvis:receive_protein
+      o_elvis:deliver_enzyme
+      material:basic,amount:1.966782386782548
+      wants_enzyme
+      shelf,enzyme,units:4
+      {"mung":["age"]}	self,round:37
+      mouthful,mouthful_id:leaf_4_0_m37,dose:0.2716344560677931,spawning_from:leaf_4_0,ttl:0
+  A:enzymeco
+    {"mung":["age"]}	self,round:30
+    w:enzymeco
+      o_elvis:request_enzyme
+      {"mung":["age"]}	self,round:30
+  {"mung":["id"]}	mo:main,interval:3.6
+  Se:workrepo
+    openity,v:-11
+    housed:3,A:farm
+      openity,v:-11
+      housed:3,w:farm
+        openity,v:-11
+    housed:3,A:plate
+      openity,v:-11
+      housed:3,w:plate
+        openity,v:-11
+    housed:3,A:enzymeco
+      openity,v:-11
+      housed:3,w:enzymeco
+        openity,v:-11
