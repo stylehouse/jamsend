@@ -534,9 +534,11 @@
             const idx = display.steps.findIndex(ts => ts.n === display.open_at)
             if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
                 e.preventDefault()
+                ;(document.activeElement as HTMLElement)?.blur()
                 pick(display.steps[idx + 1].n)
             } else if (e.key === 'ArrowLeft' && idx > 0) {
                 e.preventDefault()
+                ;(document.activeElement as HTMLElement)?.blur()
                 pick(display.steps[idx - 1].n)
             }
         }
@@ -611,7 +613,7 @@
                         class:on
                         class:playhead={ph}
                         class:has-notes={flags.length > 0}
-                        onclick={() => pick(n)}
+                        onclick={e => { (e.currentTarget as HTMLElement).blur(); pick(n) }}
                         title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
                     >{hollow ? '○' : ok ? '·' : '✗'}</button>
                 </div>
