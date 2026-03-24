@@ -15,7 +15,7 @@ H:LeafFarm,Run
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      material:basic,amount:0.6487239355402167
+      material:basic,amount:0.6562239355402165
       protein,protein_id:prot_7,complexity:2
       wants_enzyme
       {"mung":["age"]}	self,round:10

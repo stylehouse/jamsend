@@ -10,15 +10,15 @@ H:LeafFarm,Run
       leaf,leaf_id:leaf_4_0,dose:0.2702708163200001
       {"mung":["age"]}	self,round:9
   A:plate
-    {"mung":["age"]}	self,round:11
+    {"mung":["age"]}	self,round:12
     w:plate
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      material:basic,amount:0.4865429516551625
-      protein,protein_id:prot_7,complexity:2
+      material:basic,amount:1.869125963741372
       wants_enzyme
-      {"mung":["age"]}	self,round:11
+      {"mung":["age"]}	self,round:12
+      shelf,enzyme,units:3
   A:enzymeco
     {"mung":["age"]}	self,round:10
     w:enzymeco

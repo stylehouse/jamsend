@@ -1018,7 +1018,7 @@
 
                 H.story_analysis(w)
 
-                if (!ok && !run.sc.lenient) {
+                if (!ok && !w.c.lenient) {
                     run.c.driving     = false
                     run.sc.paused     = true
                     run.sc.failed_at  = n
@@ -1135,7 +1135,8 @@
             storyH.stashed[`${run?.sc.run}.snap`] = snap
             return
         }
-
+        // go async to let story drive forward first
+        setTimeout(() => {
         storyH.post_do(async () => {
             const toc_req = await wh.i({ wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
             storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
@@ -1156,6 +1157,7 @@
             const tag = frontier > 0 ? ` frontier:${frontier}` : ' clean'
             console.log(`💾 wormhole: ${run_path} (${step_count} steps${tag})`)
         }, { see: 'story_save' })
+        },0)
     },
 
 
@@ -1239,9 +1241,8 @@
             fn: () => {
                 const next = !w.c[key]
                 w.c[key] = next
-                if (do_stash) {
-                    H.stashed[key] = next
-                }
+                if (do_stash) H.stashed[key] = next
+                opts.on_change?.(next)   // ← add this
                 H.main()
             },
         })
@@ -1277,22 +1278,15 @@
         wa.oai({ action: 1, role: 'save'   }, { label: 'Save',  icon: '💾', cls: 'save',   fn: () => this.story_save()  })
         wa.oai({ action: 1, role: 'reset'  }, { label: 'Reset', icon: '🔄', cls: 'remove', fn: () => this.story_reset() })
 
-        const lenient = !!run.sc.lenient
-        wa.oai({ action: 1, role: 'lenient' }, {
-            label: lenient ? 'Lenient ⚠' : 'Lenient', icon: '⚠', cls: lenient ? 'save' : 'default',
-            fn: () => {
-                run.sc.lenient = !run.sc.lenient
-                if (run.sc.lenient && run.sc.failed_at && !run.c.driving) {
-                    delete run.sc.failed_at; delete run.sc.fetch_snap
+        await this.i_actions_to_c(w, 'lenient', {
+            stashed: true, label: 'lenient',
+            on_change: (next: boolean) => {
+                if (next && run.sc.failed_at && !run.c.driving) {
+                    delete run.sc.failed_at
                     run.sc.paused = false
                     this.story_drive(Run, w, run)
                 }
             },
-        })
-        await wa.r({ action: 1, role: 'status' }, {
-            label:    `${mode} ${run.sc.failed_at ? '✗' + this.pad(run.sc.failed_at) : this.pad(run.sc.done ?? run.sc.steps_done ?? 0)}`,
-            cls:      run.sc.failed_at ? 'stop' : mode === 'new' ? 'save' : 'default',
-            disabled: true,
         })
 
         // Toggle actions backed by w.c.* and optionally H.stashed.* (stashed:true).
@@ -1304,6 +1298,13 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'intoCyto',      { stashed: true, label: 'into Cyto'    })
+
+        // < is this weird. Baroquely, an information channel in a button
+        await wa.r({ action: 1, role: 'status' }, {
+            label:    `${mode} ${run.sc.failed_at ? '✗' + this.pad(run.sc.failed_at) : this.pad(run.sc.done ?? run.sc.steps_done ?? 0)}`,
+            cls:      run.sc.failed_at ? 'stop' : mode === 'new' ? 'save' : 'default',
+            disabled: true,
+        })
     },
 
 

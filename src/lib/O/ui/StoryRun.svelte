@@ -846,18 +846,19 @@
 .sr-diff-modes button:hover:not(.active) { color: #888; }
 
 .sr-close {
-    margin-left: auto; background: none; border: none;
+    background: none; border: none;
     color: #555; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
 }
 .sr-close:hover { color: #aaa; }
 .sr-accept {
-    background: #1a3a25; border: 1px solid #2a5a35; border-radius: 2px;
-    color: #4a9; cursor: pointer; font-size: 10px; font-family: inherit; padding: 1px 6px;
+    background: #1a3a25; border: 1px solid #2a5a35; border-radius: 3px;
+    color: #4a9; cursor: pointer; font-size: 18px; font-family: inherit; padding: 1px 10px;
+    margin-left: auto;
 }
 .sr-accept-all {
-    background: #1a3a25; border: 1px solid #2a5a35; border-radius: 2px;
-    color: #4a9; cursor: pointer; font-size: 10px; font-family: inherit; padding: 1px 8px;
-    margin-left: 2px;
+    background: #1a3a25; border: 1px solid #2a5a35; border-radius: 3px;
+    color: #4a9; cursor: pointer; font-size: 18px; font-family: inherit; padding: 1px 12px;
+    margin-left: auto;
 }
 .sr-accept-all:hover, .sr-accept:hover { background: #2a4a35; }
 .sr-hollow-body { padding: 12px; color: #444; font-size: 10px; }

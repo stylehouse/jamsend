@@ -11,15 +11,15 @@ H:LeafFarm,Run
       seen:wonder
       {"mung":["age"]}	self,round:14
   A:plate
-    {"mung":["age"]}	self,round:17
+    {"mung":["age"]}	self,round:18
     w:plate
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      material:basic,amount:0.442551223573392
+      material:basic,amount:1.8326642645428368
       wants_enzyme
-      shelf,enzyme,units:3
-      {"mung":["age"]}	self,round:17
+      shelf,enzyme,units
+      {"mung":["age"]}	self,round:18
   A:enzymeco
     {"mung":["age"]}	self,round:15
     w:enzymeco

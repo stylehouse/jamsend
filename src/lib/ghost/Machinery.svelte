@@ -46,7 +46,7 @@
 
         // ── seed leaf on tick 0: near-ripe so it harvests on tick 1 ───
         if (tick === 1 && !w.o({ leaf: 1, leaf_id: 'seed_0' }).length) {
-            w.i({ leaf: 1, leaf_id: 'seed_0', dose: 1.85 })
+            w.i({ leaf: 1, leaf_id: 'seed_0', dose: 1.86 })
         }
 
         // ── grow existing %leaf particles ─────────────────────────────

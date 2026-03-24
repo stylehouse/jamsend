@@ -13,7 +13,7 @@ H:LeafFarm,Run
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      leaf,leaf_id:seed_0,dose:1.559104041332268
+      leaf,leaf_id:seed_0,dose:1.5691040413322679
       {"mung":["age"]}	self,round:3
       mouthful,mouthful_id:seed_0_m3,dose:0.26,spawning_from:seed_0,ttl:0
       material:basic,amount:0.2475
