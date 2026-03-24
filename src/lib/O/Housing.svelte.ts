@@ -970,7 +970,7 @@ export class House extends StorableHousing {
         lds.i({w:'Wormhole'})
 
         let S = H.subHouse('Story')
-        S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafFarm', intoCyto: 1 })
+        S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafFarm' })
         S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
         S.elvisto(S, 'think')
     }

@@ -848,7 +848,7 @@
 //     Trims (got|exp)_snap 5 steps behind (unless keep_snaps toggle is on).
 //     If snap_checking and ok: sets step.sc.checking, queues poll_check.
 //     Otherwise calls advance() — which either hands off to w:Cyto
-//     (when w.sc.intoCyto is set) or calls schedule() directly.
+//     (when w.c.intoCyto is set) or calls schedule() directly.
 //
 //   Phase 4 — poll_check  (plain setTimeout, snap_checking mode only)
 //     waits for Story() to read NNN.snap from disk, verify its dige,
@@ -868,12 +868,12 @@
         }
 
         // advance: called at the end of each completed step instead of schedule().
-        // When w.sc.intoCyto is set, pauses the drive and hands control to w:Cyto.
+        // When w.c.intoCyto is set, pauses the drive and hands control to w:Cyto.
         // Cyto will scan the farm, publish a grawave, then after its animation
         // duration fires story_cyto_continue back to w:Story to resume.
         // When intoCyto is absent, falls through to schedule() as before.
         const advance = () => {
-            if (w.sc.intoCyto) {
+            if (w.c.intoCyto) {
                 run.sc.paused = true
                 run.c.driving = false
                 H.top_House().elvisto('Cyto/Cyto', 'story_cyto_step', { story_step: run.c.step_n })
@@ -1203,8 +1203,7 @@
                 const next = !w.c[key]
                 w.c[key] = next
                 if (do_stash) {
-                    if (next === def_v) delete H.stashed[key]
-                    else               H.stashed[key] = next
+                    H.stashed[key] = next
                 }
                 H.main()
             },
@@ -1267,6 +1266,7 @@
         //     want to inspect snap content across many steps in the same session.
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
+        await this.i_actions_to_c(w, 'intoCyto',      { stashed: true, label: 'into Cyto'    })
     },
 
 
