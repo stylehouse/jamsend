@@ -164,6 +164,54 @@
         return ops
     }
 
+    // ops_for_display: walk ops over a raw snap line, skipping the indent prefix
+    // and the tab separator, so intra_line can render indent as sr-ind first
+    // and then emit only the visible content with del/ins/plain spans.
+    //
+    //   side='left'  → renders op=-1 (deleted) spans, skips op=+1 (inserted)
+    //   side='right' → renders op=+1 (inserted) spans, skips op=-1 (deleted)
+    //   op=0 (equal) → always rendered as plain
+    //
+    // Returns Array<{cls, text}> ready for {#each} in the snippet.
+    function ops_for_display(
+        line: string,
+        ops: CharOps,
+        side: 'left' | 'right',
+    ): Array<{cls: string; text: string}> {
+        // Each side reconstructs its own line from ops so that indent_len and
+        // tab_pos are computed against the actual characters on that side —
+        // not the other side's line, which may have a tab at a different position
+        // or no tab at all (peel-encoded lines drop the leading tab).
+        let own = ''
+        for (const [op, text] of ops) {
+            if (op === 0 || (op === -1 && side === 'left') || (op === 1 && side === 'right')) {
+                own += text
+            }
+        }
+        const indent_len = (own.match(/^ */)?.[0] ?? '').length
+        const tab_pos    = own.indexOf('\t')
+
+        const result: Array<{cls: string; text: string}> = []
+        // own_pos tracks position within the reconstructed own-side string
+        let own_pos = 0
+        for (const [op, text] of ops) {
+            if (op === -1 && side === 'right') continue
+            if (op ===  1 && side === 'left')  continue
+            let visible = ''
+            for (let i = 0; i < text.length; i++) {
+                const abs = own_pos + i
+                if (abs < indent_len) continue   // indent rendered separately as sr-ind
+                if (abs === tab_pos)  continue   // tab separator is structural, not visible
+                visible += text[i]
+            }
+            own_pos += text.length
+            if (!visible) continue
+            const cls = op === 0 ? 'sr-plain' : op === -1 ? 'sr-del' : 'sr-ins'
+            result.push({ cls, text: visible })
+        }
+        return result
+    }
+
     // compute_diff: proper line-level diff via diff-match-patch.
     //   left  = reference (exp_snap or prev step got_snap)
     //   right = current got_snap
@@ -669,14 +717,10 @@
      Runs on the full raw line string (indent + obj + tab + str) so the
      snap codec doesn't need re-parsing for highlight rendering. -->
 {#snippet intra_line(line: string, ops: Array<[number, string]>, side: 'left' | 'right')}
-    {#each ops as [op, text]}
-        {#if op === 0}
-            <span class="sr-plain">{text}</span>
-        {:else if op === -1 && side === 'left'}
-            <span class="sr-del">{text}</span>
-        {:else if op === 1 && side === 'right'}
-            <span class="sr-ins">{text}</span>
-        {/if}
+    {@const indent = (line.match(/^ */)?.[0] ?? '')}
+    <span class="sr-ind">{indent}</span>
+    {#each ops_for_display(line, ops, side) as span}
+        <span class={span.cls}>{span.text}</span>
     {/each}
 {/snippet}
 
