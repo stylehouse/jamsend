@@ -16,7 +16,7 @@ H:LeafFarm,Run
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      material:basic,amount:2.332376515710064
+      material:basic,amount:2.332380748767016
       wants_enzyme
       leaf,leaf_id:leaf_4_0,dose:0.2716344560677931
       shelf,enzyme,units:4

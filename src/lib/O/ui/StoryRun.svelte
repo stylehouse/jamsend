@@ -41,12 +41,15 @@
     //   prev      — prev step got vs this step got, proper DMP diff
     //   naive     — raw got_snap text, no diff highlighting
     //
-    //   diff_mode = null means auto-select: exp if exp_snap present, prev if the
-    //   previous step has got_snap in memory, naive otherwise.  Resets to null
-    //   whenever a new step is opened.
+    //   diff_mode: what this step is showing.  null = auto.
+    //   sticky_mode: carried forward when navigating between steps with arrow keys
+    //     or clicking a pip.  Set whenever a mode button is clicked.  null = auto.
     //
-    //   Mode buttons appear in the panel header for non-hollow steps.  Clicking
-    //   an already-active button resets to null (auto).
+    //   Auto logic: ok steps default to naive (raw snapshot view); mismatch steps
+    //   prefer exp when exp_snap is loaded, then prev, then naive.
+    //
+    //   vs exp and vs prev buttons are larger — the common comparison modes.
+    //   Clicking an already-active button resets diff_mode and sticky_mode to null.
     //
     // ── DiffRow ───────────────────────────────────────────────────────────────
     //
@@ -80,7 +83,9 @@
     // ── diff mode ─────────────────────────────────────────────────────────────
 
     type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'naive'
-    let diff_mode = $state<DiffMode | null>(null)
+    let diff_mode   = $state<DiffMode | null>(null)
+    // sticky_mode carries the chosen mode across step navigation
+    let sticky_mode = $state<DiffMode | null>(null)
 
     // DiffRow: one aligned slot in the two-column diff display.
     // changed pairs carry ops: the character-level DMP diff between left and right,
@@ -381,17 +386,28 @@
         return !!(prev && prev.sc.got_snap)
     })
 
-    // eff_mode: resolved diff mode — null diff_mode auto-selects.
+    // eff_mode: resolved diff mode.
+    // Priority: explicit diff_mode → sticky carry-over → auto by step state.
+    // ok steps (no mismatch) default to naive — just show the snapshot.
+    // mismatch steps auto-prefer exp (when loaded), then prev, then naive.
     // exp_naive is never auto — it must be explicitly chosen.
     let eff_mode = $derived.by((): DiffMode => {
         if (diff_mode) return diff_mode
-        if (has_exp_snap)  return 'exp'
-        if (has_prev_snap) return 'prev'
+        if (sticky_mode) return sticky_mode
+        // auto: inspect the current step
+        const n    = display.open_at
+        const Step = n != null ? live_step(n) : null
+        void Step?.version
+        if (Step && Step.sc.ok) return 'naive'   // ok: just show the snap
+        if (has_exp_snap)       return 'exp'
+        if (has_prev_snap)      return 'prev'
         return 'naive'
     })
 
     function toggle_mode(m: DiffMode) {
-        diff_mode = (diff_mode === m) ? null : m
+        const next = (diff_mode === m) ? null : m
+        diff_mode   = next
+        sticky_mode = next
     }
 
     // diff_rows: final aligned diff for rendering.
@@ -497,7 +513,9 @@
     }
 
     function pick(n: number) {
-        diff_mode = null   // reset to auto when opening a new step
+        // carry sticky_mode into the newly opened step; diff_mode starts fresh
+        // so has_exp_snap / has_prev_snap re-evaluate for the new step
+        diff_mode = null
         const new_sel = display.open_at === n ? null : n
         H.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
     }
@@ -505,6 +523,27 @@
         diff_mode = null
         H.elvisto('Story/Story', 'story_sel', { open_at: null })
     }
+    // Arrow-key navigation through the pip strip.
+    // Left/right move open_at by one step; sticky_mode carries forward.
+    // Ignored when focus is in an input to avoid clobbering text entry.
+    $effect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement) return
+            if (e.target instanceof HTMLTextAreaElement) return
+            if (display.open_at == null) return
+            const idx = display.steps.findIndex(ts => ts.n === display.open_at)
+            if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
+                e.preventDefault()
+                pick(display.steps[idx + 1].n)
+            } else if (e.key === 'ArrowLeft' && idx > 0) {
+                e.preventDefault()
+                pick(display.steps[idx - 1].n)
+            }
+        }
+        document.addEventListener('keydown', handler)
+        return () => document.removeEventListener('keydown', handler)
+    })
+
     function accept(n: number) {
         H.elvisto('Story/Story', 'story_accept', { accept_n: n })
     }
@@ -619,13 +658,13 @@
                     {#if !hollow}
                         <span class="sr-diff-modes">
                             {#if has_exp_snap}
-                                <button class:active={eff_mode==='exp'}
+                                <button class="primary" class:active={eff_mode==='exp'}
                                         onclick={() => toggle_mode('exp')}>vs exp</button>
                                 <button class:active={eff_mode==='exp_naive'}
                                         onclick={() => toggle_mode('exp_naive')}>&amp; exp</button>
                             {/if}
                             {#if has_prev_snap}
-                                <button class:active={eff_mode==='prev'}
+                                <button class="primary" class:active={eff_mode==='prev'}
                                         onclick={() => toggle_mode('prev')}>vs prev</button>
                             {/if}
                             <button class:active={eff_mode==='naive'}
@@ -841,6 +880,11 @@
     background: #181818; border: 1px solid #2a2a2a; border-radius: 2px;
     color: #444; cursor: pointer; font-size: 9px; font-family: inherit;
     padding: 0 5px; line-height: 15px;
+}
+/* primary: vs exp / vs prev — the common comparison modes, shown larger */
+.sr-diff-modes button.primary {
+    font-size: 13.5px; padding: 0 7px; line-height: 17px;
+    border-color: #333;
 }
 .sr-diff-modes button.active { background: #0e1e18; border-color: #2a4a3a; color: #6bc; }
 .sr-diff-modes button:hover:not(.active) { color: #888; }

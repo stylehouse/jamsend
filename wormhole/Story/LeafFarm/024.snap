@@ -16,7 +16,7 @@ H:LeafFarm,Run
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      material:basic,amount:1.9534136431196618
+      material:basic,amount:1.953427021670029
       leaf,leaf_id:leaf_2_0,dose:0.05163445606779271
       leaf,leaf_id:leaf_3_0,dose:0.6016344560677923
       protein,protein_id:prot_21,complexity

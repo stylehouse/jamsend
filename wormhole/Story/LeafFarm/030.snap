@@ -17,7 +17,7 @@ H:LeafFarm,Run
       o_elvis:receive_harvest
       o_elvis:receive_protein
       o_elvis:deliver_enzyme
-      material:basic,amount:1.7880821055774878
+      material:basic,amount:1.7880834449431635
       wants_enzyme
       shelf,enzyme,units:2
       {"mung":["age"]}	self,round:40
