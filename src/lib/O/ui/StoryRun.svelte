@@ -82,9 +82,14 @@
     type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'naive'
     let diff_mode = $state<DiffMode | null>(null)
 
-    // DiffRow: one aligned slot in the two-column diff display
+    // DiffRow: one aligned slot in the two-column diff display.
+    // changed pairs carry ops: the character-level DMP diff between left and right,
+    // Array<[op, text]> where op 0=equal -1=deleted 1=inserted.
+    // The intra_line snippet renders per-character del/ins highlights from ops.
+    type CharOps = Array<[number, string]>
     type DiffRow =
-        | { kind: 'pair';       left: string; right: string; tag: 'same' | 'changed' }
+        | { kind: 'pair';       left: string; right: string; tag: 'same' }
+        | { kind: 'pair';       left: string; right: string; tag: 'changed'; ops: CharOps }
         | { kind: 'left_only';  line: string }   // gone: in reference, not in got
         | { kind: 'right_only'; line: string }   // neu:  in got, not in reference
         | { kind: 'squish';     count: number }
@@ -149,6 +154,16 @@
         return Math.floor((line.match(/^ */)?.[0].length ?? 0) / 2)
     }
 
+    // char_diff_ops: character-level DMP diff between two strings.
+    // diff_cleanupSemantic merges tiny equal fragments into surrounding changes,
+    // reducing noise on floating-point numbers where only last digits differ.
+    function char_diff_ops(a: string, b: string): CharOps {
+        const dmp = new diff_match_patch()
+        const ops = dmp.diff_main(a, b, false)
+        dmp.diff_cleanupSemantic(ops)
+        return ops
+    }
+
     // compute_diff: proper line-level diff via diff-match-patch.
     //   left  = reference (exp_snap or prev step got_snap)
     //   right = current got_snap
@@ -165,9 +180,9 @@
             .map(line => ({ kind: 'left_only' as const, line: line.trimEnd() }))
 
         const dmp = new diff_match_patch()
-        const enc = dmp.diff_linesToChars_(text_left, text_right)
+        const enc = (dmp as any).diff_linesToChars_(text_left, text_right)
         const raw = dmp.diff_main(enc.chars1, enc.chars2, false)
-        dmp.diff_charsToLines_(raw, enc.lineArray)
+        ;(dmp as any).diff_charsToLines_(raw, enc.lineArray)
 
         const rows: DiffRow[] = []
         let pend_l: string[] = [], pend_r: string[] = []
@@ -177,9 +192,14 @@
             const n = Math.max(pend_l.length, pend_r.length)
             for (let i = 0; i < n; i++) {
                 const l = pend_l[i], r = pend_r[i]
-                if      (l != null && r != null) rows.push({ kind: 'pair',       left: l.trimEnd(), right: r.trimEnd(), tag: 'changed' })
-                else if (l != null)              rows.push({ kind: 'left_only',  line: l.trimEnd() })
-                else if (r != null)              rows.push({ kind: 'right_only', line: r.trimEnd() })
+                if (l != null && r != null) {
+                    rows.push({ kind: 'pair', left: l.trimEnd(), right: r.trimEnd(), tag: 'changed',
+                                ops: char_diff_ops(l.trimEnd(), r.trimEnd()) })
+                } else if (l != null) {
+                    rows.push({ kind: 'left_only',  line: l.trimEnd() })
+                } else if (r != null) {
+                    rows.push({ kind: 'right_only', line: r.trimEnd() })
+                }
             }
             pend_l = []; pend_r = []
         }
@@ -256,7 +276,7 @@
             if (!l)       rows.push({ kind: 'right_only', line: r })
             else if (!r)  rows.push({ kind: 'left_only',  line: l })
             else if (l === r) rows.push({ kind: 'pair', left: l, right: r, tag: 'same' })
-            else              rows.push({ kind: 'pair', left: l, right: r, tag: 'changed' })
+            else              rows.push({ kind: 'pair', left: l, right: r, tag: 'changed', ops: char_diff_ops(l, r) })
         }
         return rows
     }
@@ -308,8 +328,7 @@
         const prev_snap = (prev && prev.sc.got_snap  as string) ?? ''
         const mode      = eff_mode
 
-        console.log(`diff_rows: mode=${mode} got=${got_snap.length} exp=${exp_snap.length} prev=${prev_snap.length}`)
-
+        // naive: no diff — pass through as same/same pairs for single-col pre
         const as_naive = (snap: string): DiffRow[] =>
             snap.split('\n').filter(Boolean)
                 .map(line => ({ kind: 'pair' as const, left: line, right: line, tag: 'same' as const }))
@@ -318,14 +337,10 @@
         if (mode === 'exp_naive') return squish_context(positional_diff(exp_snap, got_snap))
 
         const ref = mode === 'exp' ? exp_snap : prev_snap
-        if (!ref) {
-            console.log(`diff_rows: ref empty, falling back to naive`)
-            return as_naive(got_snap)
-        }
+        // ref may be empty while the async fetch is in flight — show naive until it lands
+        if (!ref) return as_naive(got_snap)
 
-        const rows = squish_context(compute_diff(ref, got_snap))
-        console.log(`diff_rows: compute_diff → ${rows.length} rows, kinds=${rows.slice(0,8).map(r=>r.kind+'/'+(r as any).tag??'').join(', ')}`)
-        return rows
+        return squish_context(compute_diff(ref, got_snap))
     })
 
     // col_labels: column headings — left = reference, right = current got
@@ -563,10 +578,16 @@
                                 {#if row.kind === 'squish'}
                                     <!-- collapsed run of uninteresting same lines -->
                                     <div class="sr-squish">… {row.count} unchanged</div>
-                                {:else if row.kind === 'pair'}
-                                    <div class="sr-diff2-row {row.tag}">
+                                {:else if row.kind === 'pair' && row.tag === 'same'}
+                                    <div class="sr-diff2-row same">
                                         <div class="sr-diff2-cell">{@render line_content(row.left)}</div>
                                         <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
+                                    </div>
+                                {:else if row.kind === 'pair' && row.tag === 'changed'}
+                                    <!-- intra_line renders per-character del/ins highlights via ops -->
+                                    <div class="sr-diff2-row changed">
+                                        <div class="sr-diff2-cell">{@render intra_line(row.left, row.ops, 'left')}</div>
+                                        <div class="sr-diff2-cell">{@render intra_line(row.right, row.ops, 'right')}</div>
                                     </div>
                                 {:else if row.kind === 'left_only'}
                                     <!-- gone: present in reference, absent in got -->
@@ -638,6 +659,25 @@
     {@const obj    = tab > indent.length ? line.slice(indent.length, tab) : ''}
     {@const str    = tab >= 0 ? line.slice(tab + 1) : line.trimStart()}
     <span class="sr-ind">{indent}</span>{#if obj}<span class="sr-obj">{obj}</span>  {/if}<span class="sr-str">{str}</span>
+{/snippet}
+
+<!-- intra_line: renders a changed diff cell with per-character highlights.
+     Walks ops Array<[op, text]>:
+       op  0 (equal)    — plain text, no background
+       op -1 (deleted)  — sr-del span in left cell; skipped in right cell
+       op  1 (inserted) — sr-ins span in right cell; skipped in left cell
+     Runs on the full raw line string (indent + obj + tab + str) so the
+     snap codec doesn't need re-parsing for highlight rendering. -->
+{#snippet intra_line(line: string, ops: Array<[number, string]>, side: 'left' | 'right')}
+    {#each ops as [op, text]}
+        {#if op === 0}
+            <span class="sr-plain">{text}</span>
+        {:else if op === -1 && side === 'left'}
+            <span class="sr-del">{text}</span>
+        {:else if op === 1 && side === 'right'}
+            <span class="sr-ins">{text}</span>
+        {/if}
+    {/each}
 {/snippet}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -834,6 +874,14 @@
     color: #4a9; cursor: pointer; font-size: 14px; font-family: inherit; padding: 0 6px; line-height: 1;
 }
 .sr-note-submit:hover { background: #2a3a2a; }
+
+/* ── intra-line character highlights ───────────────────────────────────── */
+/* del: deleted chars in reference (left) cell — red background            */
+.sr-del   { background: #3d0a0a; color: #ff9090; border-radius: 1px; }
+/* ins: inserted chars in got (right) cell — green background              */
+.sr-ins   { background: #0a2a0a; color: #90ff90; border-radius: 1px; }
+/* plain: equal chars — inherits cell colour, no decoration                */
+.sr-plain { }
 
 /* ── scrollbars ─────────────────────────────────────────────────────────── */
 .sr-strip::-webkit-scrollbar,
