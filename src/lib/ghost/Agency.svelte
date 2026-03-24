@@ -3,7 +3,7 @@
     import type { RadioModus } from "$lib/p2p/ftp/Sharing.svelte";
     import { now_in_seconds } from "$lib/p2p/Peerily.svelte";
     
-    import { erring, grop, nex } from "$lib/Y";
+    import { erring, exactly, grop, nex } from "$lib/Y";
     import { onMount } from "svelte";
 
     let {M} = $props()
@@ -618,7 +618,7 @@
             pending: w.o(({...reqc})).length,
             async i(c,sc={}) {
                 await ison()
-                let req = await w.r({...reqc,...c},{...c,...sc})
+                let req = await w.r(exactly({...reqc,...c}),{...c,...sc})
                 req.sc.req_i ||= req_serial.sc.i++
                 // this becomes req/*%aim,category, with others (work pieces) of this reqy
                 //  so they can hoist up to w, from here.
@@ -627,7 +627,7 @@
                 return req
             },
             async oai(c,sc={}) {
-                let had = requlator.o(c)
+                let had = requlator.o(exactly(c))
                 if (had.length > 1) throw "reqy oai many"
                 if (had.length) return had[0]
                 return await requlator.i(c,sc)

@@ -417,6 +417,18 @@
     async story_sel(A: TheC, w: TheC, e?: TheC) {
         const run = w.o({ run: 1 })[0]
         if (run) run.sc.open_at = e?.sc.open_at ?? null
+
+        // if opening a step that has no exp_snap yet (e.g. lenient run that didn't
+        // fetch it), queue a fetch now so the diff panel can show it on demand.
+        const n = run?.sc.open_at as number | undefined
+        if (n != null && run) {
+            const step = this.i_step(w, n)
+            if (!step.sc.exp_snap && this.The_step_dige(w, n)) {
+                run.sc.fetch_snap = n
+                this.main()
+            }
+        }
+
         this.story_analysis(w)
     },
 
@@ -770,7 +782,9 @@
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
                 return w.i({ see: `⏳ snap ${H.pad(n)}...` })
 
-            H.i_step(w, n).sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
+            let Step = H.i_step(w, n)
+            Step.sc.exp_snap = snap_req.sc.reply?.snap ?? '(not found)'
+            Step.bump_version()
             delete run.sc.fetch_snap
             run.sc.check_snap ??= n   // verify dige in the block below
             H.story_analysis(w)

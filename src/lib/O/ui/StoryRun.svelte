@@ -124,12 +124,14 @@
     }
 
     let got_lines = $derived.by(() => {
-        const live = display.open_at != null ? live_step(display.open_at) : null
-        return parse_lines(live?.sc.unrun ? '' : live?.sc.got_snap as string | undefined)
+        const Step = display.open_at != null ? live_step(display.open_at) : null
+        void Step?.version   // subscribe to Step mutations
+        return parse_lines(Step?.sc.got_snap as string | undefined)
     })
     let exp_lines = $derived.by(() => {
-        const live = display.open_at != null ? live_step(display.open_at) : null
-        return parse_lines(live?.sc.unrun ? '' : live?.sc.exp_snap as string | undefined)
+        const Step = display.open_at != null ? live_step(display.open_at) : null
+        void Step?.version
+        return parse_lines(Step?.sc.exp_snap as string | undefined)
     })
     let show_diff = $derived(exp_lines.length > 0)
     let diff: DiffTag[] | null = $derived.by(() => {
