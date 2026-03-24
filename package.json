@@ -19,6 +19,7 @@
 		"@sveltejs/vite-plugin-svelte": "^5.0.3",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/svelte": "^5.2.7",
+		"@types/diff-match-patch": "^1.0.36",
 		"jsdom": "^26.1.0",
 		"svelte": "^5.28.6",
 		"svelte-check": "^4.1.7",
