@@ -48,14 +48,14 @@
     import { objectify, TheC }            from "$lib/data/Stuff.svelte"
     import type { TheD, Travel }          from "$lib/mostly/Selection.svelte"
     import { Selection }                  from "$lib/mostly/Selection.svelte"
-    import { dig, exactly }               from "$lib/Y"
+    import { depeel, peel, dig, exactly }               from "$lib/Y"
     import { onMount }                    from "svelte"
     import { now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House, WormholeNav } from "$lib/O/Housing.svelte"
     import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
 
     let { M } = $props()
-    let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
+    let V = { Story: 0 }   // set Story: 1 here to enable drive/analysis debug logs
 
     // ── colour palette ───────────────────────────────────────────────────────
     // Assigned in first-seen order via ensure_swatch().
@@ -72,11 +72,13 @@
 //  The snap line format is shared by toc.snap (The tree) and NNN.snap (step
 //  content).  Each line encodes one C particle:
 //
-//    "${indent}${obj_part}\t${JSON.stringify(stringies)}"
+//    "${indent}${obj_part}\t${stringies}"
 //
 //  indent: 2 spaces × depth.
 //  obj_part: JSON of objecties metadata (ref ids, mung list) when present,
 //            empty string otherwise.  Tab is the always-present separator.
+//  stringies: peel format "k:v  k2:v2" when all keys/values are sayable,
+//             otherwise JSON (always starts with "{" so deL can detect it).
 //
 //  story_process_node builds D.sc.snap_line (the complete encoded line) so
 //  story_snap can join them directly without a separate enL pass.
@@ -86,18 +88,37 @@
     enj(o: any): string { return JSON.stringify(o ?? {}) },
     ind(d: number): string { return '  '.repeat(d) },
 
+    enL(parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> }): string {
+        const obj_part = Object.keys(parsed.objecties).length ? this.enj(parsed.objecties) : ''
+        return `${this.ind(parsed.d)}${obj_part}\t${this.encode_stringies(parsed.stringies)}`
+    },
+    // encode_stringies: peel format for readability; falls back to JSON.
+    // Peel rule: key /^\w+$/, value is number|boolean or a string with no
+    // whitespace, colons, braces, brackets or quotes.
+    encode_stringies(obj: Record<string,any>): string {
+        const unsafe = /[:,\t\n]/
+        for (const [k, v] of Object.entries(obj)) {
+            if (unsafe.test(k)) return JSON.stringify(obj)
+            if (typeof v === 'number' || typeof v === 'boolean') continue
+            if (typeof v !== 'string' || unsafe.test(v)) return JSON.stringify(obj)
+        }
+        return depeel(obj)
+    },
+
     // decode one snap line → { d, objecties, stringies }
+    // Reads both peel ("k:v  k2:v2") and legacy JSON ("{...}") stringies.
     // throws "no tab" on malformed lines so callers can catch and skip
     deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
-        const spaces = line.match(/^ */)?.[0].length ?? 0
-        const d      = Math.floor(spaces / 2)
-        const tab    = line.indexOf('\t')
+        const spaces  = line.match(/^ */)?.[0].length ?? 0
+        const d       = Math.floor(spaces / 2)
+        const tab     = line.indexOf('\t')
         if (tab < 0) throw "no tab"
         const obj_raw = line.slice(spaces, tab)
+        const str_raw = line.slice(tab + 1)
         return {
             d,
             objecties: obj_raw ? JSON.parse(obj_raw) : {},
-            stringies: JSON.parse(line.slice(tab + 1)),
+            stringies: str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw),
         }
     },
 
@@ -626,8 +647,7 @@
         D.sc.stringies = stringies
         D.sc.objecties = Object.keys(objecties).length ? objecties : undefined
         D.sc.copy      = { ...n.sc }
-        const obj_part = Object.keys(objecties).length ? this.enj(objecties) : ''
-        D.sc.snap_line = `${this.ind(T.c.path.length - 1)}${obj_part}\t${this.enj(stringies)}`
+        D.sc.snap_line = this.enL({ d: T.c.path.length - 1, objecties, stringies })
         if (mung.length) { D.c.munged ??= []; D.c.munged.push(mung) }
         if (thence.length) T.sc.thence_matching = thence
     },

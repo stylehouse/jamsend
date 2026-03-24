@@ -34,7 +34,6 @@
     //   {watched:'ave',Steps:1}    — stepsC; children are live {Step:n} TheC refs
     //   {watched:'ave',swatches:1} — swatchesC; children are {note_coloring,color}
 
-    type SnapLine = { d: number, objecties: Record<string,any>, stringies: Record<string,any> }
     type DiffTag  = 'same' | 'changed' | 'new' | 'gone'
 
     type StepEntry = { n: number, dige: string | undefined }
@@ -111,27 +110,15 @@
         return keys.map(k => nc.sc[k] === 1 ? k : `${k}:${nc.sc[k]}`).join(', ')
     }
 
-    function parse_lines(s: string | undefined): SnapLine[] {
-        if (!s) return []
-        return s.split('\n').filter(Boolean).map(line => {
-            const spaces = line.match(/^ */)?.[0].length ?? 0
-            const d      = Math.floor(spaces / 2)
-            const tab    = line.indexOf('\t')
-            if (tab < 0) return null
-            try { return { d, objecties: {}, stringies: JSON.parse(line.slice(tab + 1)) } }
-            catch { return null }
-        }).filter(Boolean) as SnapLine[]
-    }
-
-    let got_lines = $derived.by(() => {
-        const Step = display.open_at != null ? live_step(display.open_at) : null
-        void Step?.version   // subscribe to Step mutations
-        return parse_lines(Step?.sc.got_snap as string | undefined)
-    })
-    let exp_lines = $derived.by(() => {
+    let got_lines = $derived.by((): string[] => {
         const Step = display.open_at != null ? live_step(display.open_at) : null
         void Step?.version
-        return parse_lines(Step?.sc.exp_snap as string | undefined)
+        return (Step?.sc.got_snap as string ?? '').split('\n').filter(Boolean)
+    })
+    let exp_lines = $derived.by((): string[] => {
+        const Step = display.open_at != null ? live_step(display.open_at) : null
+        void Step?.version
+        return (Step?.sc.exp_snap as string ?? '').split('\n').filter(Boolean)
     })
     let show_diff = $derived(exp_lines.length > 0)
     let diff: DiffTag[] | null = $derived.by(() => {
@@ -141,7 +128,7 @@
             const g = got_lines[i], e = exp_lines[i]
             if (!g) return 'gone'
             if (!e) return 'new'
-            return JSON.stringify(g.stringies) !== JSON.stringify(e.stringies) ? 'changed' : 'same'
+            return g !== e ? 'changed' : 'same'
         }) as DiffTag[]
     })
 
@@ -186,22 +173,6 @@
 
     const ind = (d: number) => '  '.repeat(d)
 
-    function line_parts(sl: SnapLine) {
-        return {
-            indent: ind(sl.d),
-            obj:    obj_text(sl),
-            str:    Object.entries(sl.stringies).map(([k, v]) => `${k}:${v}`).join('  '),
-        }
-    }
-
-    function obj_text(sl: SnapLine): string {
-        const o = sl.objecties as any
-        if (!o || !Object.keys(o).length) return ''
-        const parts: string[] = []
-        for (const [k, v] of Object.entries(o.ref ?? {})) parts.push(`${k}:${v}`)
-        if ((o.mung ?? []).length) parts.push(`mung:[${(o.mung as string[]).join(',')}]`)
-        return parts.join('  ')
-    }
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -313,12 +284,12 @@
                             <div class="sr-dlabel exp">exp</div>
                         </div>
                         <div class="sr-diff-scroll">
-                            <pre class="sr-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
-                            <pre class="sr-pre">{#each exp_lines as sl, i (i)}{@render snap_line(sl, diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each got_lines as line, i (i)}{@render snap_line(line, diff?.[i] ?? 'same')}{/each}</pre>
+                            <pre class="sr-pre">{#each exp_lines as line, i (i)}{@render snap_line(line, diff?.[i] ?? 'same')}{/each}</pre>
                         </div>
                     </div>
                 {:else}
-                    <pre class="sr-pre sr-tree-pre">{#each got_lines as sl, i (i)}{@render snap_line(sl, 'same')}{/each}</pre>
+                    <pre class="sr-pre sr-tree-pre">{#each got_lines as line, i (i)}{@render snap_line(line, 'same')}{/each}</pre>
                 {/if}
 
                 <div class="sr-notes">
@@ -351,8 +322,12 @@
     {/if}
 </div>
 
-{#snippet snap_line(sl: SnapLine, tag: string)}
-    {@const p = line_parts(sl)}<span class="sr-line {tag}"><span class="sr-ind">{p.indent}</span>{#if p.obj}<span class="sr-obj">{p.obj}</span>  {/if}<span class="sr-str">{p.str}</span>&#10;</span>
+{#snippet snap_line(line: string, tag: string)}
+    {@const indent = line.match(/^ */)?.[0] ?? ''}
+    {@const tab    = line.indexOf('\t')}
+    {@const obj    = tab > indent.length ? line.slice(indent.length, tab) : ''}
+    {@const str    = tab >= 0 ? line.slice(tab + 1) : line.trimStart()}
+    <span class="sr-line {tag}"><span class="sr-ind">{indent}</span>{#if obj}<span class="sr-obj">{obj}</span>  {/if}<span class="sr-str">{str}</span>&#10;</span>
 {/snippet}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
