@@ -43,13 +43,35 @@
     //
     //   diff_mode: what this step is showing.  null = auto.
     //   sticky_mode: carried forward when navigating between steps with arrow keys
-    //     or clicking a pip.  Set whenever a mode button is clicked.  null = auto.
+    //     or clicking a pip.  null = auto.
     //
     //   Auto logic: ok steps default to naive (raw snapshot view); mismatch steps
     //   prefer exp when exp_snap is loaded, then prev, then naive.
     //
     //   vs exp and vs prev buttons are larger — the common comparison modes.
     //   Clicking an already-active button resets diff_mode and sticky_mode to null.
+    //
+    // ── diff[] — range collection ────────────────────────────────────────────
+    //
+    //   A two-click gesture available when in vs-prev mode (or while already
+    //   collecting).  First click sets diff_anchor and enters diff_collecting
+    //   state; second click on a different step triggers collect_range(a, b).
+    //
+    //   collect_range walks every step in [min, max], computes its vs-prev diff
+    //   using the same compute_diff / squish_context machinery, formats a
+    //   plain-text block with step headers (Step:003 ─────) and ± diff lines,
+    //   then copies to clipboard.
+    //
+    //   Interesting same-lines (matching INTERESTING) are kept as context so
+    //   cross-step identity threading (leaf_id, mouthful_id, sc.* keys) shows
+    //   up without noise.  Everything else that is "same" is dropped.
+    //
+    //   Steps whose got_snap isn't loaded yet get a placeholder — open them
+    //   first so story_sel triggers the snap fetch, then run diff[] again.
+    //
+    //   Clipboard permission is warmed on the first click (user gesture) via a
+    //   harmless empty writeText(''), so the actual write on the second click
+    //   doesn't prompt the browser.
     //
     // ── DiffRow ───────────────────────────────────────────────────────────────
     //
@@ -512,17 +534,181 @@
         H.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
     }
 
+    // ── diff[] range collection ───────────────────────────────────────────────
+    //
+    //   INTERESTING: lines kept as context even when "same".
+    //   Matches any word ending in "id" (leaf_id, mouthful_id, protein_id),
+    //   step/dige/frontier/error/ok for bookkeeping keys, and the bare "id"
+    //   itself.  lastIndex is reset manually since the flag is /g.
+    //
+    //   Tune this regex freely — it only affects which same-lines are included
+    //   in the plain-text clipboard output, not what's shown in the UI.
+    const INTERESTING = /\b(\w*[Ii]d|step|dige|frontier|error|ok|accepted|saved)\b/g
+
+    // diff_anchor: the step we started collecting from (first click).
+    // diff_collecting: true while we are waiting for the second click.
+    // diff_status: brief human-readable feedback shown next to the button.
+    let diff_anchor     = $state<number | null>(null)
+    let diff_collecting = $state(false)
+    let diff_status     = $state('')
+
+    // format_diff_line: convert one DiffRow into a plain-text line for the
+    // clipboard output.  Returns null for boring same-lines (squished by
+    // INTERESTING check) so the caller can filter them away with .filter(Boolean).
+    function format_diff_line(row: DiffRow): string | null {
+        if (row.kind === 'squish') return `    … ${row.count} unchanged`
+
+        if (row.kind === 'pair' && row.tag === 'same') {
+            // keep same-lines only when they look interesting (ids, keys, etc.)
+            // reset lastIndex before every test because the regex is stateful (/g)
+            const line = row.left.trimEnd()
+            INTERESTING.lastIndex = 0
+            if (!INTERESTING.test(line)) return null
+            return `    ${line}`
+        }
+
+        if (row.kind === 'pair' && row.tag === 'changed') {
+            // show both sides with - / + sigils
+            return `  - ${row.left.trimEnd()}\n  + ${row.right.trimEnd()}`
+        }
+
+        if (row.kind === 'left_only')  return `  - ${row.line.trimEnd()}`
+        if (row.kind === 'right_only') return `  + ${row.line.trimEnd()}`
+
+        return null
+    }
+
+    // collect_range: build the multi-step diff text and copy it to clipboard.
+    //
+    //   The output looks like:
+    //
+    //     Step:003
+    //     ────────────────────────────────────────────
+    //       - w:farm, round:12
+    //       + w:farm, round:13
+    //         leaf_id:seed_0 dose:1.97
+    //
+    //     Step:004
+    //     ────────────────────────────────────────────
+    //       (no changes)
+    //
+    //   Steps without got_snap get a placeholder rather than silently showing
+    //   nothing — the user can open those steps to trigger the snap fetch.
+    //
+    //   from_n and to_n can be supplied in either order; we always walk min→max.
+    async function collect_range(from_n: number, to_n: number) {
+        const min = Math.min(from_n, to_n)
+        const max = Math.max(from_n, to_n)
+        const parts: string[] = []
+        const bar = '─'.repeat(44)
+
+        for (let n = min; n <= max; n++) {
+            const Step   = live_step(n)
+            const header = `Step:${String(n).padStart(3, '0')}`
+
+            if (!Step) {
+                parts.push(`${header}\n${bar}\n  (not run this session)\n`)
+                continue
+            }
+
+            const got_snap = Step.sc.got_snap as string | undefined
+            if (!got_snap) {
+                // snap hasn't been fetched yet — opening the step triggers story_sel
+                // which queues a fetch.  The user can open/close and re-run diff[].
+                parts.push(`${header}\n${bar}\n  (snap not loaded — open this step first)\n`)
+                continue
+            }
+
+            const prev      = n > 1 ? live_step(n - 1) : null
+            const prev_snap = (prev?.sc.got_snap as string) ?? ''
+
+            // reuse the same diff + squish machinery as the interactive panel
+            const raw_rows = prev_snap
+                ? compute_diff(prev_snap, got_snap)
+                : got_snap.split('\n').filter(Boolean)
+                    .map(line => ({ kind: 'right_only' as const, line }))
+            const rows = squish_context(raw_rows)
+
+            const diff_lines = rows
+                .map(format_diff_line)
+                .filter((l): l is string => l !== null)
+
+            if (!diff_lines.length) {
+                parts.push(`${header}\n${bar}\n  (no changes)\n`)
+            } else {
+                parts.push(`${header}\n${bar}\n${diff_lines.join('\n')}\n`)
+            }
+        }
+
+        const text = parts.join('\n')
+
+        try {
+            await navigator.clipboard.writeText(text)
+            diff_status = `copied ${max - min + 1} steps ✓`
+        } catch {
+            // clipboard write can fail in some browser contexts (no permission,
+            // sandboxed iframe, etc.) — fall back to logging so content isn't lost
+            diff_status = 'copy failed — see console'
+            console.log('[diff range]\n' + text)
+        }
+        // clear the status message after a moment
+        setTimeout(() => { diff_status = '' }, 3000)
+    }
+
+    // start_diff_collect: called when the user clicks diff[] in vs-prev mode.
+    //
+    //   Warms clipboard permission on this user gesture (harmless empty write)
+    //   so the actual write inside collect_range doesn't need to prompt.
+    //   Sets diff_anchor to the currently open step and enters collecting state.
+    //   The button label becomes "from step N — pick end step" and pulses.
+    async function start_diff_collect() {
+        const n = display.open_at
+        if (n == null) return
+
+        // warm clipboard permission now, on the user gesture
+        try { await navigator.clipboard.writeText('') } catch { /* prompt will appear on collect instead */ }
+
+        diff_anchor     = n
+        diff_collecting = true
+        diff_status     = ''
+    }
+
+    // cancel_collect: escape hatch — click the pulsing button again to abort.
+    function cancel_collect() {
+        diff_anchor     = null
+        diff_collecting = false
+        diff_status     = ''
+    }
+
+    // pick: open/close a step panel.
+    //
+    //   When collecting, the second click on a different step triggers
+    //   collect_range then clears the anchor.  Clicking the same step as the
+    //   anchor is treated as a cancel (just closes the panel normally).
+    //   diff_mode is always reset so has_exp_snap / has_prev_snap re-evaluate.
     function pick(n: number) {
-        // carry sticky_mode into the newly opened step; diff_mode starts fresh
-        // so has_exp_snap / has_prev_snap re-evaluate for the new step
         diff_mode = null
+
+        if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
+            // second click — collect the range then leave collecting mode
+            collect_range(diff_anchor, n)
+            diff_collecting = false
+            diff_anchor     = null
+        } else if (diff_collecting && n === diff_anchor) {
+            // clicked the same step as anchor — treat as cancel
+            diff_collecting = false
+            diff_anchor     = null
+        }
+
         const new_sel = display.open_at === n ? null : n
         H.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
     }
+
     function close_panel() {
         diff_mode = null
         H.elvisto('Story/Story', 'story_sel', { open_at: null })
     }
+
     // Arrow-key navigation through the pip strip.
     // Left/right move open_at by one step; sticky_mode carries forward.
     // Ignored when focus is in an input to avoid clobbering text entry.
@@ -598,6 +784,8 @@
                 {@const on       = display.open_at === n}
                 {@const ph       = n === playhead_n()}
                 {@const flags    = note_flags_for(n)}
+                <!-- anchor: highlight the pip we started collecting from -->
+                {@const is_anchor = diff_collecting && n === diff_anchor}
                 <div class="sr-pip-cell">
                     <div class="sr-flags">
                         {#each flags as f (f.type)}
@@ -613,6 +801,7 @@
                         class:on
                         class:playhead={ph}
                         class:has-notes={flags.length > 0}
+                        class:is-anchor={is_anchor}
                         onclick={e => { (e.currentTarget as HTMLElement).blur(); pick(n) }}
                         title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
                     >{hollow ? '○' : ok ? '·' : '✗'}</button>
@@ -634,7 +823,7 @@
 
             <div class="sr-panel">
 
-                <!-- header: step id, status label, diff-mode buttons, Accept, × -->
+                <!-- header: step id, status label, diff-mode buttons, diff[], Accept, × -->
                 <div class="sr-phdr">
                     <span class="sr-pn">step {String(n).padStart(3,'0')}</span>
                     <span class="sr-pdige">{dige}</span>
@@ -672,6 +861,30 @@
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
                         </span>
+                    {/if}
+
+                    <!-- diff[]: two-click range collector.
+                         Visible when in vs-prev mode OR already collecting.
+                         First click sets this step as anchor and enters collecting state.
+                         Second click on any other step collects [anchor, that step],
+                         formats ±-annotated vs-prev diffs for each step in the range,
+                         and copies to clipboard.
+                         While collecting the button pulses and shows "from N — pick end".
+                         Clicking it again cancels without collecting anything.
+                         diff_status briefly shows "copied N steps ✓" after success. -->
+                    {#if !hollow && (eff_mode === 'prev' || diff_collecting)}
+                        {#if diff_collecting}
+                            <button class="sr-diffrange collecting" onclick={cancel_collect}>
+                                from {String(diff_anchor).padStart(3,'0')} — pick end ×
+                            </button>
+                        {:else}
+                            <button class="sr-diffrange" onclick={start_diff_collect}>diff[]</button>
+                        {/if}
+                    {/if}
+
+                    <!-- one-shot status after collect_range finishes -->
+                    {#if diff_status && !diff_collecting}
+                        <span class="sr-diffstatus">{diff_status}</span>
                     {/if}
 
                     {#if can_accept}
@@ -850,6 +1063,8 @@
 .sr-pip.on       { outline: 1px solid #79b; outline-offset: 1px; }
 .sr-pip.has-notes { border-bottom: 2px solid #444; }
 .sr-pip:hover    { background: #333; }
+/* is-anchor: the step we started a diff[] collection from — teal ring */
+.sr-pip.is-anchor { outline: 2px solid #4a9; outline-offset: 2px; }
 /* playhead: red downward triangle marking frontier or first hollow pip */
 .sr-pip.playhead::before {
     content: ''; position: absolute; top: -9px; left: 50%;
@@ -890,6 +1105,23 @@
 }
 .sr-diff-modes button.active { background: #0e1e18; border-color: #2a4a3a; color: #6bc; }
 .sr-diff-modes button:hover:not(.active) { color: #888; }
+
+/* ── diff[] range collector button ─────────────────────────────────────── */
+/* sits after the mode buttons, before Accept.                              */
+/* collecting state: pulses teal to signal "waiting for second click".      */
+.sr-diffrange {
+    background: #181818; border: 1px solid #2a3a2a; border-radius: 2px;
+    color: #4a9; cursor: pointer; font-size: 9px; font-family: inherit;
+    padding: 0 7px; line-height: 15px; margin-left: 4px;
+}
+.sr-diffrange:hover { background: #1a2a1a; }
+.sr-diffrange.collecting {
+    background: #1a2a1a; border-color: #4a9; color: #7bc;
+    animation: sr-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sr-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+/* brief "copied N steps ✓" message next to the button */
+.sr-diffstatus { font-size: 9px; color: #4a9; margin-left: 4px; }
 
 .sr-close {
     background: none; border: none;
