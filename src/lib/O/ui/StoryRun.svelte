@@ -100,12 +100,6 @@
 
     let { H }: { H: House } = $props()
 
-    // T: H cast for ghost-injected Textures methods.
-    // These arrive via Textures.svelte eatfunc and are not on the static House type.
-    // depth_of, char_diff_ops, compute_diff, squish_context, positional_diff,
-    // enDif, deDif are all accessible as T.method_name().
-    const T = H as any
-
     // ── types ─────────────────────────────────────────────────────────────────
 
     type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'naive'
@@ -287,13 +281,13 @@
                 .map(line => ({ kind: 'pair' as const, left: line, right: line, tag: 'same' as const }))
 
         if (mode === 'naive')     return as_naive(got_snap)
-        if (mode === 'exp_naive') return T.squish_context(T.positional_diff(exp_snap, got_snap))
+        if (mode === 'exp_naive') return H.squish_context(H.positional_diff(exp_snap, got_snap))
 
         const ref = mode === 'exp' ? exp_snap : prev_snap
         // ref may be empty while the async fetch is in flight — show naive until it lands
         if (!ref) return as_naive(got_snap)
 
-        return T.squish_context(T.compute_diff(ref, got_snap))
+        return H.squish_context(H.compute_diff(ref, got_snap))
     })
 
     // col_labels: column headings — left = reference, right = current got
@@ -354,6 +348,7 @@
     //   direct state mutation from here.
 
     let add_note_text = $state('')
+    let adding_note    = $state(false)  // toggles the + field open/closed
 
     function do_add_note(n: number) {
         const text = add_note_text.trim()
@@ -419,10 +414,10 @@
 
             // Snap with vs-prev diff encoded via T.enDif
             all_lines.push(`  Snap:1 diff:1 prev:1`)
-            const raw_rows = T.compute_diff(prev_snap, got_snap)
-            const rows     = T.squish_context(raw_rows)
+            const raw_rows = H.compute_diff(prev_snap, got_snap)
+            const rows     = H.squish_context(raw_rows)
             // dif_depth = 2: Step at 0, Snap at 1, Dif markers at 2
-            all_lines.push(...T.enDif(rows, 2))
+            all_lines.push(...H.enDif(rows, 2))
         }
 
         const text = all_lines.join('\n') + '\n'
@@ -542,44 +537,6 @@
             {#if display.bad_count > 1}
                 <button class="sr-accept-all" onclick={accept_all}>Accept All ({display.bad_count})</button>
             {/if}
-        </div>
-
-        <!-- ── pip strip ────────────────────────────────────────────────── -->
-        <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
-        <!-- hollow: step in The but not yet reached this session.             -->
-        <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
-        <div class="sr-strip">
-            {#each display.steps as ts (ts.n)}
-                {@const n         = ts.n}
-                {@const Step      = live_step(n)}
-                {@const ok        = !!(Step && Step.sc.ok)}
-                {@const hollow    = !Step}
-                {@const accepted  = !!(Step && Step.sc.accepted)}
-                {@const on        = display.open_at === n}
-                {@const ph        = n === playhead_n()}
-                {@const flags     = note_flags_for(n)}
-                {@const is_anchor = diff_collecting && n === diff_anchor}
-                <div class="sr-pip-cell">
-                    <div class="sr-flags">
-                        {#each flags as f (f.type)}
-                            <span class="sr-flag" style="background:{f.color}" title={f.type}></span>
-                        {/each}
-                    </div>
-                    <button
-                        class="sr-pip"
-                        class:ok
-                        class:accepted
-                        class:fail={!ok && !hollow && !accepted}
-                        class:hollow
-                        class:on
-                        class:playhead={ph}
-                        class:has-notes={flags.length > 0}
-                        class:is-anchor={is_anchor}
-                        onclick={e => { (e.currentTarget as HTMLElement).blur(); pick(n) }}
-                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
-                    >{hollow ? '○' : ok ? '·' : '✗'}</button>
-                </div>
-            {/each}
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
@@ -714,13 +671,22 @@
                     </div>
                 {/if}
 
-                <!-- notes: user annotations on The/{step:N}; persist across sessions -->
+                <!-- notes: swatch badges + big + toggle; input replaces badges while open -->
                 <div class="sr-notes">
                     <div class="sr-notes-hdr">
                         <span class="sr-notes-title">notes</span>
-                        {#each Object.entries(swatch_map) as [type, color] (type)}
-                            <span class="sr-note-badge" style="border-color:{color};color:{color}">{type}</span>
-                        {/each}
+                        <button class="sr-note-plus" onclick={() => { adding_note = !adding_note; if(adding_note) setTimeout(()=>document.querySelector('.sr-note-input')?.focus(),0) }}>+</button>
+                        {#if adding_note}
+                            <input class="sr-note-input"
+                                placeholder="frontier  /  todo:text  /  key:val"
+                                bind:value={add_note_text}
+                                onkeydown={e => { if(e.key==='Enter'){ do_add_note(n); adding_note=false } if(e.key==='Escape') adding_note=false }} />
+                            <button class="sr-note-submit" onclick={() => { do_add_note(n); adding_note=false }}>+</button>
+                        {:else}
+                            {#each Object.entries(swatch_map) as [type, color] (type)}
+                                <span class="sr-note-badge" style="border-color:{color};color:{color}">{type}</span>
+                            {/each}
+                        {/if}
                     </div>
                     {#each step_notes as nc, idx (idx)}
                         {@const type = Object.keys(nc.sc).find(k => k !== 'note') ?? 'note'}
@@ -730,17 +696,50 @@
                             <button class="sr-note-del" onclick={() => do_delete_note(n, idx)} title="delete">×</button>
                         </div>
                     {/each}
-                    <div class="sr-note-add">
-                        <input class="sr-note-input"
-                               placeholder="frontier  /  todo:text  /  key:val"
-                               bind:value={add_note_text}
-                               onkeydown={e => e.key === 'Enter' && do_add_note(n)} />
-                        <button class="sr-note-submit" onclick={() => do_add_note(n)}>+</button>
-                    </div>
                 </div>
 
             </div>
         {/if}
+
+
+
+        <!-- ── pip strip ────────────────────────────────────────────────── -->
+        <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
+        <!-- hollow: step in The but not yet reached this session.             -->
+        <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
+        <div class="sr-strip">
+            {#each display.steps as ts (ts.n)}
+                {@const n         = ts.n}
+                {@const Step      = live_step(n)}
+                {@const ok        = !!(Step && Step.sc.ok)}
+                {@const hollow    = !Step}
+                {@const accepted  = !!(Step && Step.sc.accepted)}
+                {@const on        = display.open_at === n}
+                {@const ph        = n === playhead_n()}
+                {@const flags     = note_flags_for(n)}
+                {@const is_anchor = diff_collecting && n === diff_anchor}
+                <div class="sr-pip-cell">
+                    <div class="sr-flags">
+                        {#each flags as f (f.type)}
+                            <span class="sr-flag" style="background:{f.color}" title={f.type}></span>
+                        {/each}
+                    </div>
+                    <button
+                        class="sr-pip"
+                        class:ok
+                        class:accepted
+                        class:fail={!ok && !hollow && !accepted}
+                        class:hollow
+                        class:on
+                        class:playhead={ph}
+                        class:has-notes={flags.length > 0}
+                        class:is-anchor={is_anchor}
+                        onclick={e => { (e.currentTarget as HTMLElement).blur(); pick(n) }}
+                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
+                    >{hollow ? '○' : ok ? '·' : '✗'}</button>
+                </div>
+            {/each}
+        </div>
 
     {/if}
 </div>

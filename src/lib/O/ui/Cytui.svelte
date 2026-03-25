@@ -29,10 +29,10 @@
     }
     type MigrateDesc = {
         id:              string
-        toward:          string    // target node id for the animation
-        then_parent?:    string    // re-parent after anim (absent = remove after)
-        harvest_detach?: boolean   // detach from compound before flying
-        mouthful_expire?:boolean   // small fade-and-shrink toward mat:basic
+        toward:          string
+        then_parent?:    string
+        harvest_detach?: boolean
+        mouthful_expire?:boolean
     }
     type Wave = {
         upsert:      NodeDesc[]
@@ -102,7 +102,7 @@
         // 1. remove stale edges
         for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()
 
-        // 2. remove stale nodes — skip migrating ids
+        // 2. remove stale nodes (skip migrating)
         const migrating = new Set((wave.migrate ?? []).map(m => m.id))
         for (const id of wave.remove ?? []) {
             if (!migrating.has(id)) cy.getElementById(id).remove()
@@ -130,8 +130,6 @@
                 const added = cy.add({ group: 'nodes', data })
                 added.style({ ...imm, ...anim })
 
-                // appear_from: teleport to spawn position; layout will then
-                // animate the node from there to its natural resting place.
                 if (nd.appear_from) {
                     const spawn = cy.getElementById(nd.appear_from)
                     if (spawn.length) added.position(spawn.position())
@@ -168,8 +166,6 @@
             const toward = cy.getElementById(mg.toward)
             if (!el.length) continue
 
-            // Detach from compound before harvest flight: keeps the container tidy
-            // and removes stem/helio edges that would otherwise dangle.
             if (mg.harvest_detach) {
                 el.move({ parent: null })
                 el.connectedEdges().remove()
@@ -185,7 +181,6 @@
             const shr_ms = Math.round(ms * 0.20)
 
             if (mg.then_parent) {
-                // re-parent: fly to new compound centre then move
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-out-cubic',
@@ -194,17 +189,14 @@
                           if (s.length) s.move({ parent: mg.then_parent! })
                       } }
                 )
-
             } else if (mg.mouthful_expire) {
-                // mouthful: quick fade-shrink in place then remove
                 el.animate(
                     { style: { opacity: 0, width: 3, height: 3 } },
                     { duration: Math.round(ms * 0.40), easing: 'ease-out-cubic',
                       complete: () => cy.getElementById(mg.id).remove() }
                 )
-
             } else {
-                // leaf harvest: fly full-size to mat:basic, then shrink+fade
+                // leaf harvest: fly to mat:basic, then shrink+fade
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-cubic',
@@ -242,6 +234,17 @@
     }
 
     // ── layout ────────────────────────────────────────────────────────────────
+    //
+    //   After each layout run, attach a one-shot 'layoutstop' listener that
+    //   calls cy.fit(cy.nodes(), 16).  16px padding keeps everything visible
+    //   without wasting space on the container edges.
+    //
+    //   The listener is one-shot (removeEventListener inside the handler) so it
+    //   doesn't accumulate across multiple relayout() calls.  We fit to
+    //   cy.nodes() rather than cy.elements() to avoid fitting to invisible
+    //   edge control points, and we exclude the fit during walk-back (animMs=0)
+    //   to avoid jarring zoom changes when stepping through history.
+
     let lay: any
     function relayout(animMs = 300, constraints?: any) {
         lay?.stop()
@@ -262,6 +265,16 @@
             nodeRepulsion: () => 4000,
             ...(constraints ?? {}),
         })
+
+        // auto-fit after layout settles — once per relayout call
+        if (animMs > 0) {
+            const on_stop = () => {
+                cy.removeListener('layoutstop', on_stop)
+                cy.fit(cy.nodes(), 16)
+            }
+            cy.on('layoutstop', on_stop)
+        }
+
         try { lay.run() } catch (e) { console.warn('layout error', e) }
     }
 
@@ -310,7 +323,7 @@
     <div class="cytui-bar">
         <span class="cytui-status">{status}</span>
         <button onclick={() => relayout(300)}>⟳</button>
-        <button onclick={() => cy?.fit()}>⊞</button>
+        <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
         <span class="sep"></span>
         <button onclick={() => walk(-1)} disabled={pos <= 0}>◀</button>
         <span class="cytui-hist">{pos + 1}/{history.length}</span>
@@ -329,6 +342,9 @@
         <span class="l-enz">▬ enz</span>
         <span class="l-stem">─ stem</span>
         <span class="l-helio">╌ helio</span>
+        <span class="l-bite">· bite</span>
+        <span class="l-consume">╌ consume</span>
+        <span class="l-process">╌ process</span>
     </div>
     <div class="cytui-graph" bind:this={container}></div>
 </div>
@@ -367,10 +383,12 @@
     border-bottom: 1px solid #141414;
     font-size: 8px; flex-shrink: 0; opacity: 0.6;
 }
-.l-leaf  { color: #4c9 } .l-mf    { color: #af5 }
-.l-sun   { color: #fb0 } .l-poo   { color: #974 }
-.l-mat   { color: #b82 } .l-prod  { color: #46f }
-.l-prot  { color: #c8f } .l-enz   { color: #4a8 }
-.l-stem  { color: #3a6 } .l-helio { color: #880 }
+.l-leaf  { color: #4c9 } .l-mf      { color: #af5 }
+.l-sun   { color: #fb0 } .l-poo     { color: #974 }
+.l-mat   { color: #b82 } .l-prod    { color: #46f }
+.l-prot  { color: #c8f } .l-enz     { color: #4a8 }
+.l-stem  { color: #3a6 } .l-helio   { color: #880 }
+.l-bite  { color: #af5 } .l-consume { color: #b82 }
+.l-process { color: #4a8 }
 .cytui-graph { flex: 1; min-height: 0; }
 </style>
