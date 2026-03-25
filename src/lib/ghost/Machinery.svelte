@@ -5,24 +5,26 @@
     //
     // ── cross-worker transfers ────────────────────────────────────────────────
     //
-    //   Previously leaves, proteins, and enzymes were sent between workers via
-    //   i_elvis / o_elvis, meaning the particle was absent from both workers
-    //   for one full beliefs tick (gone from farm, not yet in plate).  This
-    //   produced a visible gap in diff[] output and an animation frame where
-    //   the leaf simply vanished.
-    //
-    //   Now all transfers are direct .i() calls into the target worker's C.
-    //   Since all workers run in the same RunH beliefs mutex, the particle is
-    //   always somewhere visible:
+    //   All transfers are direct .i() calls into the target worker's C.
+    //   Since all workers run inside the same RunH beliefs mutex, the particle
+    //   is always somewhere visible — no gap tick where it's in flight but
+    //   invisible to the snap.
     //
     //     leaf harvest:  farm drops the leaf → same tick, plate.i({leaf:1,...})
-    //     protein:       farm produces → farm.i({protein:1,...}) on plate directly
-    //     enzyme:        enzymeco completes batch → plate.i({shelf:1,enzyme:1,...})
-    //     enzyme request: plate sets a flag on enzymeco directly rather than elvisng
+    //     protein:       farm builds a guard particle, places it into plate directly
+    //     enzyme:        enzymeco batch completes → plate.i({shelf:1,enzyme:1,...})
+    //     enzyme request: plate sets %wants_to_produce directly on enzymeco
     //
-    //   helper this.plate_w() and this.enzymeco_w() find the sibling workers.
-    //   Called as this.* because these methods land on the RunH (H:LeafFarm)
-    //   via ghostsHaunt, and the A/w particles also live on RunH.
+    //   plate_w() / enzymeco_w() helpers find sibling workers on RunH.
+    //
+    // ── plate's permanent sun ─────────────────────────────────────────────────
+    //
+    //   plate carries a {sunshine:1, dose:1} particle that is created once
+    //   and never changed.  It does nothing computationally — it exists purely
+    //   so Cyto always has something to anchor the plate compound when leaves,
+    //   mouthfuls, and proteins are all absent.  dose:1 renders as a stable
+    //   mid-sized diamond in Cytui.  Cyto gives it the id "sun:plate" (vs
+    //   farm's oscillating "sun:farm") so they never collide.
 
     import { onMount } from "svelte";
     let {M} = $props()
@@ -48,9 +50,9 @@
     // Each leaf has a .dose (float) representing its biomass content.
     // Leaves grow each tick; max growth is 22% of current dose per tick.
     // When a leaf reaches dose >= 2.0 it is dropped from farm and placed
-    // directly into plate within the same beliefs tick (no elvis gap).
+    // directly into plate within the same beliefs tick — no gap.
     // New leaves sprout when sunny_streak >= 2, capped at 3 total leaves.
-    // A seed leaf (dose 1.85) is planted on tick 0 so a harvest appears early.
+    // A seed leaf (dose 1.86) is planted on tick 1 so a harvest appears early.
     async farm(A, w) {
         let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
 
@@ -108,7 +110,7 @@
 
         // ── harvest ripe leaves → place directly into plate ───────────
         // Drops the leaf from farm and i()s it into plate within the same
-        // beliefs tick so there is no gap — the leaf is always somewhere.
+        // beliefs tick so there is no gap in the snap output.
         let plate = this.plate_w()
         for (let leaf of w.o({ leaf: 1 })) {
             if (leaf.sc.dose >= 2.0) {
@@ -118,15 +120,15 @@
         }
 
         // ── complex protein (every ~7 ticks) ──────────────────────────
-        // Placed directly into plate rather than elvisng.
+        // A guard particle on farm prevents double-spawning; it is dropped
+        // immediately after placing the protein into plate.
         if (tick > 0 && tick % 7 === 0) {
             let protein_id = `prot_${tick}`
             if (!w.o({ protein: 1, protein_id }).length) {
                 let complexity = 2 + this.prandle(4)
-                // mark it on farm so we don't double-spawn
                 w.i({ protein: 1, protein_id, complexity })
+                let plate = this.plate_w()
                 if (plate) plate.i({ protein: 1, protein_id, complexity })
-                // drop the farm-side marker immediately — it was just a guard
                 w.drop(w.o({ protein: 1, protein_id })[0])
             }
         }
@@ -137,22 +139,27 @@
 //#endregion
 //#region plate
 
-    // plate receives harvested %leaf particles directly from farm (no elvis).
-    // Leaves persist on plate and are consumed in random 0.25–0.35 bites per tick.
+    // plate receives harvested %leaf particles directly from farm (no elvis gap).
+    // Leaves are consumed in random 0.25–0.35 bites per tick.
     // Each bite spawns a %mouthful (ttl:1, spawning_from:leaf_id) that converts
-    // to basic material on expiry.  Cyto uses spawning_from to start the mouthful
-    // node at the leaf's graph position then animate it outward.
+    // to basic material on expiry.  Cyto uses spawning_from to teleport the
+    // mouthful node to the leaf's position then animate it outward.
+    //
+    // Proteins are broken down using shelf enzymes.  When the shelf is empty,
+    // plate sets %wants_to_produce directly on enzymeco rather than elvisng.
     async plate(A, w) {
 
-        // ── receive enzymes from shelf (placed directly by enzymeco) ──
-        // Leaves arrive via farm's direct .i() — no receive loop needed.
-        // Proteins likewise arrive directly.  Only enzyme requests remain
-        // as a flag because enzymeco is a separate agency that needs to
-        // know to start producing.
+        // ── permanent decorative sun ──────────────────────────────────
+        // Created once, never changed.  Gives the plate compound a stable
+        // anchor node so it's never empty, and reads nicely in Cytui as a
+        // fixed mid-sized diamond (dose:1 → sz≈44px in cyto_node).
+        if (!w.o({ sunshine: 1 }).length) {
+            w.i({ sunshine: 1, dose: 1 })
+        }
 
         // ── consume plate leaves in bites → %mouthful particles ───────
-        // Bite size is lightly randomised via tick+leaf_id arithmetic (no Math.random
-        // so the snap is deterministic).  Each bite becomes a short-lived %mouthful.
+        // Bite size is lightly randomised via tick+leaf_id arithmetic (no
+        // Math.random so the snap is deterministic).
         let tick = w.o1({ round: 1, self: 1 })[0] ?? 0
         for (let leaf of w.o({ leaf: 1 })) {
             let jitter = ((tick * 13 + leaf.sc.leaf_id.length * 7) % 10) * 0.01
@@ -179,7 +186,7 @@
         for (let prot of w.o({ protein: 1 })) {
             let first_enzyme = w.o({ shelf: 1, enzyme: 1 })[0]
             if (!first_enzyme) {
-                // request restock: set a flag on enzymeco directly
+                // request restock: set flag directly on enzymeco, no elvis round-trip
                 let eco = this.enzymeco_w()
                 if (eco && !eco.oa({ wants_to_produce: 1 })) {
                     eco.i({ wants_to_produce: 1 })
@@ -214,12 +221,12 @@
 //#region enzymeco
 
     // enzymeco produces enzyme particles in a %producing batch.
-    // When done the particle is placed directly into plate's shelf.
-    // Production is now triggered by a %wants_to_produce flag that plate
-    // sets directly on this worker, rather than an elvis request.
+    // Production is triggered by plate setting %wants_to_produce directly
+    // on this worker.  When the batch completes, the enzyme is placed
+    // directly into plate's shelf — no elvis gap.
     async enzymeco(A, w) {
 
-        // ── check for restock flag set by plate ───────────────────────
+        // ── check for restock request from plate ──────────────────────
         if (w.oa({ wants_to_produce: 1 }) && !w.oa({ producing: 1 })) {
             let prod = w.i({ producing: 1, ticks_left: 3 })
             prod.i({ enzyme: 1, units: 5 })
@@ -232,7 +239,6 @@
             prod.sc.ticks_left -= 1
             if (prod.sc.ticks_left <= 0) {
                 let enzyme = prod.o({ enzyme: 1 })[0]
-                // deliver directly to plate's shelf — no elvis gap
                 let plate = this.plate_w()
                 if (plate) plate.i({ shelf: 1, enzyme: 1, units: enzyme.sc.units })
                 w.drop(prod)

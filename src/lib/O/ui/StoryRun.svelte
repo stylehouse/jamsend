@@ -458,7 +458,6 @@
     // diff_mode reset on every pick so eff_mode re-evaluates for the new step.
     function pick(n: number) {
         diff_mode = null
-
         if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
             collect_range(diff_anchor, n)
             diff_collecting = false
@@ -467,14 +466,16 @@
             diff_collecting = false
             diff_anchor     = null
         }
-
         const new_sel = display.open_at === n ? null : n
         H.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
+        // seek the cyto graph to this step
+        H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: new_sel })
     }
 
     function close_panel() {
         diff_mode = null
         H.elvisto('Story/Story', 'story_sel', { open_at: null })
+        H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: null })
     }
 
     // Arrow-key navigation through the pip strip.

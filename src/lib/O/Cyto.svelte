@@ -1,22 +1,56 @@
 <script lang="ts">
     // Cyto.svelte — ghost depositing Cyto worker methods onto H.* via eatfunc.
     //
-    // w:Cyto scans RunH each tick, builds a Wave, and deposits it into a
-    // {cyto_graph:1} particle watched by Cytui.svelte.
+    // w:Cyto scans RunH (H:LeafFarm) each tick, builds a Wave describing
+    // everything that changed, and deposits it into {cyto_graph:1} which
+    // Cytui.svelte watches.  The wave format lets Cytui animate additions,
+    // removals, style changes, and migrations (e.g. a leaf flying from farm
+    // to plate) without ever querying RunH directly — Cyto is the only bridge.
     //
-    // ── changes from original ─────────────────────────────────────────────────
+    // ── wave anatomy ─────────────────────────────────────────────────────────
     //
-    //   • Worker compound nodes are always emitted (upsert) even when empty,
-    //     so enzymeco stays visible throughout, not just when it has children.
+    //   upsert      — nodes to add or update (style, label, parent)
+    //   edge_upsert — edges to add or update (style, ideal_length)
+    //   remove      — node ids to delete
+    //   edge_remove — edge ids to delete
+    //   migrate     — special animated moves: leaf harvest, mouthful expiry,
+    //                 node re-parenting between workers
+    //   constraints — fcose relativePlacementConstraint array (vertical
+    //                 ordering within farm: sun → leaves → poo)
+    //   duration    — seconds for this wave's animation window
+    //   step_n      — set by story_cyto_step; undefined for ambient ticks.
+    //                 Cytui uses this to seek the graph to a story step.
     //
-    //   • Plate edges added:
-    //       mouthful → spawning leaf  (bite origin arc)
-    //       leaf     → mat:basic      (consumption direction)
-    //       protein  → enz_shelf      (enzyme processes protein)
+    // ── edges ────────────────────────────────────────────────────────────────
     //
-    //   • Auto-fit after layout: relayout() attaches a one-shot 'layoutstop'
-    //     listener that calls cy.fit(cy.nodes(), 16) so the graph fills the
-    //     container rather than sitting as a small island.
+    //   Within farm:
+    //     stem  (leaf → poo)    solid green,  stature-weighted thickness
+    //     helio (leaf → sun)    dashed gold,  loose spring, opacity 0.18
+    //
+    //   Within plate:
+    //     bite    (mouthful → spawning leaf)   dotted lime,  ideal 24
+    //     consume (leaf → mat:basic)            dashed amber, ideal 60
+    //     process (protein → enz_shelf)         dashed teal,  ideal 40
+    //
+    //   Cross-worker flow (pulls the three compounds into a tight cluster):
+    //     farm → plate          leaf/protein delivery direction
+    //     plate → enzymeco      enzyme request direction
+    //     enzymeco → plate      enzyme delivery direction
+    //     All three: ideal_length 15, dark subtle style
+    //
+    // ── cyto_id and worker-scoped ids ────────────────────────────────────────
+    //
+    //   cyto_id(n, wname?) builds a stable string id for a particle.
+    //   Sunshine nodes get `sun:${wname}` so plate's decorative sun
+    //   (`sun:plate`) and farm's live sun (`sun:farm`) don't collide.
+    //   The helio edge target uses the result of cyto_id, so it naturally
+    //   follows to `sun:farm` without special-casing.
+    //
+    // ── cyto_seek ─────────────────────────────────────────────────────────────
+    //
+    //   When StoryRun opens a step it fires elvisto('Cyto/Cyto','cyto_seek',
+    //   {seek_step:N}).  cyto_seek writes gn.sc.seek_step and bumps the graph
+    //   particle.  Cytui finds the last history wave whose step_n <= seek_step.
 
     import { TheC }       from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -43,7 +77,7 @@
         const wa   = this.oai_enroll(this, { watched: 'graph' })
         w.c.gn     = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
-        // wave.duration: both the Cytui animation window and the Story pause length.
+        // wave.duration: both the Cytui animation window and the Story pause length
         w.sc.grawave_duration ??= 2
     },
 
@@ -53,7 +87,7 @@
         if (!RunH) return false
         const tracking = w.oai({ cyto_tracking: 1 })
         const v = RunH.version
-        if (tracking.sc.v === v) return true
+        if (tracking.sc.v === v) return true   // nothing changed, skip rebuild
         tracking.sc.v = v
         const wave = this.cyto_scan(w, RunH)
         const gn   = w.c.gn as TheC
@@ -65,18 +99,32 @@
         return true
     },
 
+    // ── cyto_seek ────────────────────────────────────────────────────────────
+    //
+    //   Received from StoryRun when open_at changes.
+    //   seek_step: number → Cytui snaps to that step's wave in history.
+    //   seek_step: null  → Cytui returns to the live head.
+
+    async cyto_seek(A: TheC, w: TheC, e: TheC) {
+        const gn = w.c.gn as TheC
+        if (!gn) return
+        gn.sc.seek_step = e?.sc.seek_step ?? null
+        const wa = (this as House).o({ watched: 'graph' })[0] as TheC
+        wa?.bump_version()
+    },
+
     // ── cyto_scan ────────────────────────────────────────────────────────────
     //
-    //   Produces a full wave per tick.  Worker compound nodes are always
-    //   emitted first (even when empty) so compounds like w:enzymeco remain
-    //   visible throughout the simulation.  Content nodes are emitted after.
+    //   Walks RunH/A*/w* to build the full wave for this tick.
     //
-    //   Edges built per worker:
-    //     farm:   stem (leaf→poo), helio (leaf→sun)
-    //     plate:  bite (mouthful→leaf via spawning_from),
-    //             consume (leaf→mat:basic),
-    //             process (protein→enz_shelf)
-    //     all:    relativePlacementConstraint left-of chain for worker order
+    //   Worker compound nodes are emitted unconditionally (before their
+    //   children) so w:enzymeco stays visible even when idle — previously
+    //   it only appeared when wk.o({}) returned something.
+    //
+    //   Three persistent maps on w.c carry identity across ticks:
+    //     ref_map   TheC → {wid, id}   detects particle re-parenting
+    //     leaf_map  leaf_id → wid       detects farm→plate leaf migration
+    //     mf_ids    Set<id>             detects mouthful expiry
 
     cyto_scan(w: TheC, RunH: House) {
         const pn        = w.oai({ cyto_prev_ids:  1 })
@@ -95,7 +143,7 @@
         const seen = new Set<string>(), seen_e = new Set<string>()
         const migrate: any[] = []
         const w_order: string[] = []
-        const rel: any[] = []
+        const rel: any[] = []   // relativePlacementConstraint entries
 
         let mat_node_id: string | null = null
 
@@ -106,11 +154,7 @@
                 seen.add(wid)
                 w_order.push(wid)
 
-                // ── always emit the worker compound ───────────────────
-                // isCompound:true ensures Cytoscape keeps the container
-                // even when it has no child nodes.  Previously the node
-                // was only pushed when there were children, so empty
-                // workers like w:enzymeco (idle between batches) vanished.
+                // always emit the compound, even when empty (no children yet)
                 upsert.push({
                     id: wid,
                     label: wname,
@@ -118,14 +162,15 @@
                     isCompound: true,
                 })
 
-                // per-worker positioning helpers
-                let poo_id:  string | null = null
-                let sun_id:  string | null = null
+                // per-worker edge helpers — filled while iterating children
+                let poo_id: string | null = null
+                let sun_id: string | null = null
                 const leaf_ids: string[] = []
 
                 for (const n of wk.o({}) as TheC[]) {
                     if (n.c.drop) continue
-                    const id = this.cyto_id(n)
+                    // pass wname so sunshine gets a per-worker id (sun:farm, sun:plate)
+                    const id = this.cyto_id(n, wname)
                     if (!id) continue
 
                     const is_new      = !prev_ids.has(id)
@@ -134,38 +179,37 @@
 
                     seen.add(id)
                     curr_ref.set(n, { wid, id })
-                    if (n.sc.leaf && n.sc.leaf_id)         curr_leaf.set(String(n.sc.leaf_id), wid)
+                    if (n.sc.leaf && n.sc.leaf_id)          curr_leaf.set(String(n.sc.leaf_id), wid)
                     if (n.sc.mouthful && n.sc.mouthful_id)  curr_mf.add(id)
                     if (n.sc.material === 'basic')           mat_node_id = id
 
                     const nd = this.cyto_node(n, id)
                     nd.parent = wid
                     if (is_reparent) nd.new_parent = wid
-
-                    // new mouthfuls teleport to their spawning leaf position
+                    // new mouthfuls: teleport to their spawning leaf, then drift outward
                     if (is_new && n.sc.mouthful && n.sc.spawning_from) {
                         nd.appear_from = `leaf:${n.sc.spawning_from}`
                     }
                     upsert.push(nd)
 
                     if (n.sc.poo)      poo_id = id
-                    if (n.sc.sunshine) sun_id = id
+                    if (n.sc.sunshine) sun_id = id   // sun:farm or sun:plate
                     if (n.sc.leaf)     leaf_ids.push(id)
                 }
 
-                // ── farm edges ────────────────────────────────────────
+                // ── farm edges ────────────────────────────────────────────────
                 if (wname === 'farm') {
-                    // vertical placement: sun → leaves → poo
+                    // vertical placement: sun at top, poo at bottom, leaves between
                     if (sun_id && poo_id) rel.push({ top: sun_id, bottom: poo_id, gap: 55 })
                     for (const lid of leaf_ids) {
                         if (sun_id) rel.push({ top: sun_id, bottom: lid,    gap: 20 })
                         if (poo_id) rel.push({ top: lid,    bottom: poo_id, gap: 14 })
                     }
-                    // stem: leaf → poo (stature-weighted)
+                    // stem: leaf → poo, thickness reflects leaf maturity
                     if (poo_id) {
                         for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                             if (n.c.drop) continue
-                            const lid = this.cyto_id(n)
+                            const lid = this.cyto_id(n, wname)
                             if (!lid) continue
                             const dose    = (n.sc.dose as number) ?? 0
                             const stature = Math.min(dose / 2.0, 1.0)
@@ -175,21 +219,21 @@
                                 id: eid, source: lid, target: poo_id,
                                 data: { ideal_length: Math.max(18, Math.round(18 + stature * 55)) },
                                 style: {
-                                    'line-color':   '#3d7a1e',
-                                    width:          Math.max(0.5, 0.8 + stature * 1.8),
-                                    'line-style':   'solid',
+                                    'line-color':         '#3d7a1e',
+                                    width:                Math.max(0.5, 0.8 + stature * 1.8),
+                                    'line-style':         'solid',
                                     'target-arrow-shape': 'none',
-                                    'curve-style':  'straight',
+                                    'curve-style':        'straight',
                                     opacity: 0.5 + stature * 0.38,
                                 },
                             })
                         }
                     }
-                    // helio: leaf → sun (loose, dashed)
+                    // helio: leaf → sun, loose dashed spring
                     if (sun_id) {
                         for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                             if (n.c.drop) continue
-                            const lid = this.cyto_id(n)
+                            const lid = this.cyto_id(n, wname)
                             if (!lid) continue
                             const eid = `e:helio:${lid}`
                             seen_e.add(eid)
@@ -208,13 +252,12 @@
                     }
                 }
 
-                // ── plate edges ───────────────────────────────────────
+                // ── plate edges ───────────────────────────────────────────────
                 if (wname === 'plate') {
-                    // bite arc: mouthful → its spawning leaf
-                    // shows visually where each bite originated
+                    // bite: mouthful → its spawning leaf (shows where a bite came from)
                     for (const n of wk.o({ mouthful: 1 }) as TheC[]) {
                         if (n.c.drop) continue
-                        const mid = this.cyto_id(n)
+                        const mid = this.cyto_id(n, wname)
                         if (!mid) continue
                         const lid = `leaf:${n.sc.spawning_from}`
                         if (!seen.has(lid)) continue   // leaf may have just left
@@ -224,22 +267,19 @@
                             id: eid, source: lid, target: mid,
                             data: { ideal_length: 24 },
                             style: {
-                                'line-color': '#af5',
-                                width: 0.8,
+                                'line-color': '#af5', width: 0.8,
                                 'line-style': 'dotted',
                                 'target-arrow-shape': 'triangle',
                                 'target-arrow-color': '#af5',
-                                'curve-style': 'bezier',
-                                opacity: 0.55,
+                                'curve-style': 'bezier', opacity: 0.55,
                             },
                         })
                     }
-
-                    // consume arc: leaf → mat:basic (drift direction of biomass)
+                    // consume: leaf → mat:basic (direction of biomass flow)
                     if (mat_node_id) {
                         for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                             if (n.c.drop) continue
-                            const lid = this.cyto_id(n)
+                            const lid = this.cyto_id(n, wname)
                             if (!lid) continue
                             const eid = `e:consume:${lid}`
                             seen_e.add(eid)
@@ -247,25 +287,21 @@
                                 id: eid, source: lid, target: mat_node_id,
                                 data: { ideal_length: 60 },
                                 style: {
-                                    'line-color': '#b82',
-                                    width: 0.7,
+                                    'line-color': '#b82', width: 0.7,
                                     'line-style': 'dashed',
                                     'target-arrow-shape': 'triangle',
                                     'target-arrow-color': '#b82',
-                                    'curve-style': 'bezier',
-                                    opacity: 0.25,
+                                    'curve-style': 'bezier', opacity: 0.25,
                                 },
                             })
                         }
                     }
-
-                    // process arc: protein → enzyme shelf
-                    // shows which resource is needed for breakdown
+                    // process: protein → enzyme shelf (shows what processes it)
                     const enz_id = 'enz_shelf'
                     if (seen.has(enz_id)) {
                         for (const n of wk.o({ protein: 1 }) as TheC[]) {
                             if (n.c.drop) continue
-                            const pid = this.cyto_id(n)
+                            const pid = this.cyto_id(n, wname)
                             if (!pid) continue
                             const eid = `e:process:${pid}`
                             seen_e.add(eid)
@@ -273,13 +309,11 @@
                                 id: eid, source: pid, target: enz_id,
                                 data: { ideal_length: 40 },
                                 style: {
-                                    'line-color': '#4a8',
-                                    width: 0.9,
+                                    'line-color': '#4a8', width: 0.9,
                                     'line-style': 'dashed',
                                     'target-arrow-shape': 'triangle',
                                     'target-arrow-color': '#4a8',
-                                    'curve-style': 'bezier',
-                                    opacity: 0.5,
+                                    'curve-style': 'bezier', opacity: 0.5,
                                 },
                             })
                         }
@@ -288,22 +322,50 @@
             }
         }
 
-        // leaf harvest migrations
+        // ── cross-worker flow edges ───────────────────────────────────────────
+        //
+        //   Very short (ideal_length:15) edges between the worker compound nodes.
+        //   This pulls farm, plate, and enzymeco into a tight triangle so the
+        //   graph doesn't spread them across the whole canvas — they're a system,
+        //   not three independent islands.  The arrows show the delivery direction.
+
+        const flow_edges = [
+            { id: 'e:flow:farm_plate',     source: 'w:farm',     target: 'w:plate'    },
+            { id: 'e:flow:plate_enzymeco', source: 'w:plate',    target: 'w:enzymeco' },
+            { id: 'e:flow:enzymeco_plate', source: 'w:enzymeco', target: 'w:plate'    },
+        ]
+        for (const fe of flow_edges) {
+            if (!seen.has(fe.source) || !seen.has(fe.target)) continue
+            seen_e.add(fe.id)
+            edge_upsert.push({
+                ...fe,
+                data: { ideal_length: 15 },
+                style: {
+                    'line-color': '#2a2a3a', width: 1.5,
+                    'line-style': 'solid',
+                    'target-arrow-shape': 'triangle',
+                    'target-arrow-color': '#2a2a3a',
+                    'curve-style': 'bezier', opacity: 0.35,
+                },
+            })
+        }
+
+        // ── migration detection ───────────────────────────────────────────────
+
+        // leaf crossed from farm to plate: animate it flying toward mat:basic
         const mat_toward = mat_node_id ?? 'mat:basic'
         for (const [lid, _prev_wid] of prev_leaf) {
             if (!curr_leaf.has(lid)) {
                 migrate.push({ id: `leaf:${lid}`, toward: mat_toward, harvest_detach: true })
             }
         }
-
-        // mouthful expiry migrations
+        // mouthful disappeared (ttl expired): fade-shrink toward mat:basic
         for (const mf_id of prev_mf) {
             if (!curr_mf.has(mf_id)) {
                 migrate.push({ id: mf_id, toward: mat_toward, mouthful_expire: true })
             }
         }
-
-        // ref re-parent migrations
+        // particle changed parent worker: fly to new compound centre
         for (const [n, { wid, id }] of curr_ref) {
             const prev = prev_ref.get(n)
             if (prev && prev.wid !== wid && !migrate.find(m => m.id === id)) {
@@ -311,6 +373,7 @@
             }
         }
 
+        // persist the current id sets for next tick's diff
         pn.sc.ids  = [...seen]
         pe.sc.ids  = [...seen_e]
         w.c.ref_map  = curr_ref
@@ -321,7 +384,7 @@
         const remove      = [...prev_ids].filter(id => !seen.has(id) && !migrating_ids.has(id))
         const edge_remove = [...prev_eids].filter(id => !seen_e.has(id))
 
-        // left-of constraints keep workers in spawn order
+        // left-of constraint to keep workers in a stable visual order
         for (let i = 0; i < w_order.length - 1; i++) {
             rel.push({ left: w_order[i], right: w_order[i + 1], gap: 24 })
         }
@@ -334,10 +397,23 @@
 //#endregion
 //#region cyto_id
 
-    cyto_id(n: TheC): string | null {
+    // cyto_id: build a stable string id for a particle.
+    //
+    //   wname is passed by cyto_scan so sunshine gets a per-worker id:
+    //     farm  → "sun:farm"
+    //     plate → "sun:plate"
+    //   This prevents the decorative plate sun from colliding with farm's
+    //   live sun, which oscillates.  All other ids are global (leaf:, poo, etc.)
+    //   since those types only ever live in one worker at a time.
+    //
+    //   Returns null for particles that are noise — bookkeeping state that
+    //   should not appear in the graph (self-timekeeping, o_elvis registrations,
+    //   wasLast/chaFrom audit trails, sunny_streak, seen flags).
+
+    cyto_id(n: TheC, wname?: string): string | null {
         if (n.sc.mouthful && n.sc.mouthful_id) return `mf:${n.sc.mouthful_id}`
         if (n.sc.leaf)                          return `leaf:${n.sc.leaf_id ?? n.sc.leaf}`
-        if (n.sc.sunshine)                      return `sun`
+        if (n.sc.sunshine)                      return wname ? `sun:${wname}` : `sun`
         if (n.sc.poo)                           return `poo`
         if (n.sc.material)                      return `mat:${n.sc.material}`
         if (n.sc.producing)                     return `prod`
@@ -346,7 +422,7 @@
         if (n.sc.wants_enzyme)                  return `want_enz`
         if (n.sc.wants_to_produce)              return `want_prod`
         if (n.sc.run)                           return `run:${n.sc.run}`
-        // noise — skip self-ref bookkeeping particles
+        // skip bookkeeping noise
         if (n.sc.self || n.sc.chaFrom || n.sc.wasLast || n.sc.sunny_streak
             || n.sc.seen || n.sc.o_elvis)       return null
         return null
@@ -355,7 +431,11 @@
 //#endregion
 //#region cyto_label
 
-    // Compact label: numbers rounded to 2 dp, long strings truncated.
+    // cyto_label: compact human-readable label for a node.
+    // Numbers are rounded to 2 dp; strings longer than 11 chars are truncated.
+    // Boolean-valued keys appear as bare words (e.g. "wants_enzyme").
+    // The literal string "1" (wildcard in C) is suppressed — it reads as noise.
+
     cyto_label(n: TheC): string {
         const parts: string[] = []
         for (const [k, v] of Object.entries(n.sc ?? {})) {
@@ -373,7 +453,9 @@
 //#endregion
 //#region hsl2rgb
 
-    // Cytoscape can animate rgb() but not hsl().  Convert at build time.
+    // hsl2rgb: Cytoscape can animate rgb() values but not hsl().
+    // Convert at build time so animated style tweens work correctly.
+
     hsl2rgb(h: number, s: number, l: number): string {
         s /= 100; l /= 100
         const c = (1 - Math.abs(2 * l - 1)) * s
@@ -392,6 +474,20 @@
 //#endregion
 //#region cyto_node
 
+    // cyto_node: visual style for one particle.
+    //
+    //   Size, colour, and shape encode what a node IS and how it's doing:
+    //     leaf:    grows in size and lightens as dose approaches 2.0 (ripe)
+    //     sun:     diamond, oscillates in size/brightness with dose
+    //              (plate's permanent sun has dose:1, so mid-size, stable)
+    //     poo:     dark brown ellipse, grows with dose up to 8
+    //     mat:     warm amber rect, grows with accumulated amount
+    //     mouthful: small lime ellipse, size proportional to bite dose
+    //     protein: purple hexagon, size proportional to complexity remaining
+    //     enz_shelf: teal rect, width proportional to enzyme units
+    //     producing: dark blue rect (batch in progress)
+    //     wants_*/want_prod: red star (requesting something)
+
     cyto_node(n: TheC, id: string): any {
         const label = this.cyto_label(n)
         const style: any = {}
@@ -401,8 +497,7 @@
             const sz = Math.round(6 + d * 40)
             style['background-color'] = this.hsl2rgb(72, 80, 62)
             style.width = sz; style.height = sz; style.shape = 'ellipse'
-            style.opacity = 0.82
-            style.color   = '#003300'
+            style.opacity = 0.82; style.color = '#003300'
 
         } else if (n.sc.leaf) {
             const d  = (n.sc.dose as number) ?? 0
@@ -413,6 +508,7 @@
             style.color = d > 1.4 ? '#001800' : '#b0ffb0'
 
         } else if (n.sc.sunshine) {
+            // farm sun oscillates; plate sun is permanent at dose:1 (stable mid-size)
             const d  = (n.sc.dose as number) ?? 0
             const sz = Math.round(22 + d * 22)
             const lt = Math.round(42 + d * 18)
@@ -473,14 +569,18 @@
 //#endregion
 //#region cyto_w_style
 
+    // cyto_w_style: compound container style per worker.
+    // Each worker gets its own tinted background and border so it's
+    // immediately visually distinct even at a glance.
+
     cyto_w_style(wname: string): any {
-        const bg: Record<string,string>     = { farm: '#0a1f0a', plate: '#1f130a', enzymeco: '#0a0a1f' }
+        const bg:     Record<string,string> = { farm: '#0a1f0a', plate: '#1f130a', enzymeco: '#0a0a1f' }
         const border: Record<string,string> = { farm: '#2a5a1a', plate: '#5a3a1a', enzymeco: '#1a1a5a' }
         return {
             'background-color':   bg[wname]     ?? '#181818',
             'background-opacity': 0.5,
             'border-color':       border[wname] ?? '#2a2a2a',
-            'border-width':       1, 'border-style': 'dashed',
+            'border-width': 1, 'border-style': 'dashed',
             'text-valign': 'top', 'text-halign': 'center',
             padding: '12px', 'font-size': '9px',
             'font-weight': 'bold', 'font-style': 'italic',
@@ -491,8 +591,16 @@
 //#endregion
 //#region intoCyto handshake
 
+    // story_cyto_step: received when Story's drive loop hands off to Cyto.
+    // We scan the current state, stamp the wave with the story step number
+    // so Cytui can seek to it, then fire story_cyto_continue after the
+    // animation window so Story resumes.
+
     async story_cyto_step(A: TheC, w: TheC, e: TheC) {
         this.cyto_update_wave(w)
+        // stamp the wave with the story step number for seek support
+        const gn = w.c.gn as TheC
+        if (gn?.sc.wave) gn.sc.wave.step_n = e?.sc.story_step as number | undefined
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         setTimeout(() => {
             this.elvisto('Story/Story', 'story_cyto_continue', { story_step: e?.sc.story_step })

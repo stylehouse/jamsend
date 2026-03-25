@@ -1,4 +1,26 @@
 <script lang="ts">
+    // Cytui.svelte — Cytoscape rendering widget for the LeafFarm graph.
+    //
+    // Receives H (the Story sub-House).  Reads the live wave from
+    // H.graph/{cyto_graph:1}.wave which w:Cyto updates each tick.
+    //
+    // ── seek ─────────────────────────────────────────────────────────────────
+    //
+    //   When StoryRun opens a step it fires H.elvisto('Cyto/Cyto','cyto_seek',
+    //   {seek_step:N}).  w:Cyto writes gn.sc.seek_step and bumps the graph
+    //   particle.  The $effect here reads seek_step and finds the last wave
+    //   in history whose .step_n <= seek_step, then applies it at duration=0
+    //   so the graph snaps to that moment without animation.
+    //
+    //   Waves from ambient Cyto() ticks have step_n undefined; only waves
+    //   emitted during intoCyto mode (story_cyto_step) are tagged.  When the
+    //   panel is closed seek_step is null and we return to the live head.
+    //
+    // ── history ───────────────────────────────────────────────────────────────
+    //
+    //   Wave history is retained for the seek feature.  The ◀ ▶ walk-back UI
+    //   controls have been removed — seeking is driven by StoryRun navigation.
+
     import { onMount }    from 'svelte'
     import cytoscape      from 'cytoscape'
     import fcose          from 'cytoscape-fcose'
@@ -15,12 +37,8 @@
     // ── wave types ────────────────────────────────────────────────────────────
 
     type NodeDesc = {
-        id:          string
-        label:       string
-        style:       Record<string,any>
-        parent?:     string    // compound parent for new nodes
-        new_parent?: string    // re-parent an existing node in place
-        appear_from?: string   // node id to teleport to before layout animation
+        id: string; label: string; style: Record<string,any>
+        parent?: string; new_parent?: string; appear_from?: string
         isCompound?: boolean
     }
     type EdgeDesc = {
@@ -28,11 +46,8 @@
         data?: Record<string,any>; style: Record<string,any>
     }
     type MigrateDesc = {
-        id:              string
-        toward:          string
-        then_parent?:    string
-        harvest_detach?: boolean
-        mouthful_expire?:boolean
+        id: string; toward: string
+        then_parent?: string; harvest_detach?: boolean; mouthful_expire?: boolean
     }
     type Wave = {
         upsert:      NodeDesc[]
@@ -42,10 +57,10 @@
         migrate:     MigrateDesc[]
         constraints: any | null
         duration:    number
+        step_n?:     number   // set by story_cyto_step; undefined for ambient ticks
     }
 
     let history:    Wave[] = []
-    let pos         = $state(-1)
     let status      = $state('no graph')
     let grawave_dur = $state(0.3)
     let last_tick   = -1
@@ -55,6 +70,30 @@
     $effect(() => {
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
         if (!gn) return
+
+        // ── seek ──────────────────────────────────────────────────────────────
+        //
+        //   seek_step set by w:Cyto when StoryRun opens a step.
+        //   Find the last wave whose step_n <= seek_step and apply it frozen.
+        //   seek_step null → return to live head (most recent history entry).
+        const seek = gn.sc.seek_step as number | null | undefined
+        if (seek != null && cy) {
+            let target_idx = -1
+            for (let i = 0; i < history.length; i++) {
+                if (history[i].step_n != null && history[i].step_n! <= seek) {
+                    target_idx = i
+                }
+            }
+            if (target_idx >= 0) {
+                // rebuild from scratch so nodes match the sought state exactly
+                cy.elements().remove()
+                for (let i = 0; i <= target_idx; i++) apply(history[i], 0)
+                status = `seek step:${seek} (wave ${target_idx + 1}/${history.length})`
+                return   // don't fall through to live-head enqueue below
+            }
+        }
+
+        // ── live head ─────────────────────────────────────────────────────────
         const wave = gn.sc.wave as Wave | undefined
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
@@ -63,20 +102,18 @@
     })
 
     function enqueue(wave: Wave) {
-        if (pos < history.length - 1) history = history.slice(0, pos + 1)
         history = [...history, wave]
-        pos = history.length - 1
         apply(wave, wave.duration)
         grawave_dur = wave.duration
         const nu = wave.upsert?.length ?? 0
         const eu = wave.edge_upsert?.length ?? 0
         const rm = wave.remove?.length ?? 0
         const mg = wave.migrate?.length ?? 0
-        status = `tick ${last_tick} · ${nu}n ${eu}e −${rm} ~${mg} · ⏱${wave.duration}s`
+        const sn = wave.step_n != null ? ` step:${wave.step_n}` : ''
+        status = `tick ${last_tick}${sn} · ${nu}n ${eu}e −${rm} ~${mg} · ⏱${wave.duration}s`
     }
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
-    // Cytoscape cannot tween these — apply immediately or they throw.
     const NON_ANIM = new Set([
         'shape','background-image','background-fit','content','label',
         'source-label','target-label','line-style','target-arrow-shape',
@@ -112,24 +149,18 @@
         for (const nd of wave.upsert ?? []) {
             const el = cy.getElementById(nd.id)
             const { anim, imm } = split_style(nd.style)
-
             if (el.length) {
-                if (nd.new_parent && el.parent().id() !== nd.new_parent) {
-                    el.move({ parent: nd.new_parent })
-                }
+                if (nd.new_parent && el.parent().id() !== nd.new_parent) el.move({ parent: nd.new_parent })
                 el.data('label', nd.label)
                 if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {
                     el.animate({ style: anim }, { duration: ms, easing: 'ease-out-cubic' })
-                } else {
-                    el.style(anim)
-                }
+                } else { el.style(anim) }
             } else {
                 const data: any = { id: nd.id, label: nd.label }
                 if (nd.parent) data.parent = nd.parent
                 const added = cy.add({ group: 'nodes', data })
                 added.style({ ...imm, ...anim })
-
                 if (nd.appear_from) {
                     const spawn = cy.getElementById(nd.appear_from)
                     if (spawn.length) added.position(spawn.position())
@@ -141,15 +172,12 @@
         for (const ed of wave.edge_upsert ?? []) {
             const el = cy.getElementById(ed.id)
             const { anim, imm } = split_style(ed.style)
-
             if (el.length) {
                 if (ed.data?.ideal_length != null) el.data('ideal_length', ed.data.ideal_length)
                 if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {
                     el.animate({ style: anim }, { duration: ms })
-                } else {
-                    el.style(anim)
-                }
+                } else { el.style(anim) }
             } else {
                 const data: any = { id: ed.id, source: ed.source, target: ed.target }
                 if (ed.data) Object.assign(data, ed.data)
@@ -165,29 +193,22 @@
             const el     = cy.getElementById(mg.id)
             const toward = cy.getElementById(mg.toward)
             if (!el.length) continue
-
             if (mg.harvest_detach) {
                 el.move({ parent: null })
                 el.connectedEdges().remove()
             }
-
             if (!toward.length || ms <= 0) {
                 mg.then_parent ? el.move({ parent: mg.then_parent }) : el.remove()
                 continue
             }
-
             const tpos   = toward.renderedPosition()
             const fly_ms = Math.round(ms * 0.75)
             const shr_ms = Math.round(ms * 0.20)
-
             if (mg.then_parent) {
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-out-cubic',
-                      complete: () => {
-                          const s = cy.getElementById(mg.id)
-                          if (s.length) s.move({ parent: mg.then_parent! })
-                      } }
+                      complete: () => { const s = cy.getElementById(mg.id); if (s.length) s.move({ parent: mg.then_parent! }) } }
                 )
             } else if (mg.mouthful_expire) {
                 el.animate(
@@ -196,7 +217,7 @@
                       complete: () => cy.getElementById(mg.id).remove() }
                 )
             } else {
-                // leaf harvest: fly to mat:basic, then shrink+fade
+                // leaf harvest: fly to mat:basic then shrink
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-cubic',
@@ -213,37 +234,17 @@
             }
         }
 
-        // 6. layout
+        // 6. layout with auto-fit
         if (wave.upsert?.length || wave.remove?.length || wave.edge_upsert?.length) {
             relayout(ms, wave.constraints)
         }
     }
 
-    // ── walk-back ─────────────────────────────────────────────────────────────
-    function walk(dir: -1 | 1) {
-        const next = pos + dir
-        if (next < 0 || next >= history.length) return
-        if (dir === 1) {
-            apply(history[next], 0.2)
-        } else {
-            cy.elements().remove()
-            for (let i = 0; i <= next; i++) apply(history[i], 0)
-        }
-        pos = next
-        status = `history ${pos + 1}/${history.length} (walk)`
-    }
-
     // ── layout ────────────────────────────────────────────────────────────────
     //
-    //   After each layout run, attach a one-shot 'layoutstop' listener that
-    //   calls cy.fit(cy.nodes(), 16).  16px padding keeps everything visible
-    //   without wasting space on the container edges.
-    //
-    //   The listener is one-shot (removeEventListener inside the handler) so it
-    //   doesn't accumulate across multiple relayout() calls.  We fit to
-    //   cy.nodes() rather than cy.elements() to avoid fitting to invisible
-    //   edge control points, and we exclude the fit during walk-back (animMs=0)
-    //   to avoid jarring zoom changes when stepping through history.
+    //   After each animated layout, attach a one-shot layoutstop listener that
+    //   fits all nodes with 16px padding.  Skipped for instant (ms=0) applies
+    //   so seek rebuilds don't zoom-thrash; caller can fit manually if needed.
 
     let lay: any
     function relayout(animMs = 300, constraints?: any) {
@@ -265,8 +266,6 @@
             nodeRepulsion: () => 4000,
             ...(constraints ?? {}),
         })
-
-        // auto-fit after layout settles — once per relayout call
         if (animMs > 0) {
             const on_stop = () => {
                 cy.removeListener('layoutstop', on_stop)
@@ -274,7 +273,6 @@
             }
             cy.on('layoutstop', on_stop)
         }
-
         try { lay.run() } catch (e) { console.warn('layout error', e) }
     }
 
@@ -295,7 +293,6 @@
                     },
                 },
                 {
-                    // compound (worker) containers — always rendered, even when empty
                     selector: ':parent',
                     style: {
                         'text-valign': 'top', 'text-halign': 'center',
@@ -324,11 +321,6 @@
         <span class="cytui-status">{status}</span>
         <button onclick={() => relayout(300)}>⟳</button>
         <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
-        <span class="sep"></span>
-        <button onclick={() => walk(-1)} disabled={pos <= 0}>◀</button>
-        <span class="cytui-hist">{pos + 1}/{history.length}</span>
-        <button onclick={() => walk(1)} disabled={pos >= history.length - 1}>▶</button>
-        <span class="sep"></span>
         <span class="cytui-dur">⏱ {grawave_dur}s</span>
     </div>
     <div class="cytui-legend">
@@ -342,9 +334,7 @@
         <span class="l-enz">▬ enz</span>
         <span class="l-stem">─ stem</span>
         <span class="l-helio">╌ helio</span>
-        <span class="l-bite">· bite</span>
-        <span class="l-consume">╌ consume</span>
-        <span class="l-process">╌ process</span>
+        <span class="l-flow">→ flow</span>
     </div>
     <div class="cytui-graph" bind:this={container}></div>
 </div>
@@ -367,28 +357,24 @@
     flex: 1; color: #3a3a3a; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; font-size: 9px;
 }
-.sep { width: 1px; background: #1e1e1e; height: 12px; margin: 0 2px; flex-shrink: 0; }
-.cytui-hist { color: #2a2a2a; font-size: 9px; min-width: 34px; text-align: center; }
-.cytui-dur  { color: #2a2a44; font-size: 9px; }
+.cytui-dur { color: #2a2a44; font-size: 9px; }
 .cytui-bar button {
     background: #141414; border: 1px solid #1e1e1e; border-radius: 2px;
     color: #555; cursor: pointer; font-size: 12px; line-height: 1;
     padding: 1px 5px; font-family: inherit;
 }
-.cytui-bar button:hover:not(:disabled) { background: #1e1e1e; color: #999; }
-.cytui-bar button:disabled { opacity: 0.18; cursor: default; }
+.cytui-bar button:hover { background: #1e1e1e; color: #999; }
 .cytui-legend {
     display: flex; flex-wrap: wrap; gap: 6px;
     padding: 2px 10px; background: #080808;
     border-bottom: 1px solid #141414;
     font-size: 8px; flex-shrink: 0; opacity: 0.6;
 }
-.l-leaf  { color: #4c9 } .l-mf      { color: #af5 }
-.l-sun   { color: #fb0 } .l-poo     { color: #974 }
-.l-mat   { color: #b82 } .l-prod    { color: #46f }
-.l-prot  { color: #c8f } .l-enz     { color: #4a8 }
-.l-stem  { color: #3a6 } .l-helio   { color: #880 }
-.l-bite  { color: #af5 } .l-consume { color: #b82 }
-.l-process { color: #4a8 }
+.l-leaf  { color: #4c9 } .l-mf   { color: #af5 }
+.l-sun   { color: #fb0 } .l-poo  { color: #974 }
+.l-mat   { color: #b82 } .l-prod { color: #46f }
+.l-prot  { color: #c8f } .l-enz  { color: #4a8 }
+.l-stem  { color: #3a6 } .l-helio { color: #880 }
+.l-flow  { color: #556 }
 .cytui-graph { flex: 1; min-height: 0; }
 </style>
