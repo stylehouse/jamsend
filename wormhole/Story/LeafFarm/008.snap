@@ -10,22 +10,20 @@ H:LeafFarm,Run
       leaf,leaf_id:leaf_4_0,dose:0.22153345600000007
       {"mung":["age"]}	self,round:8
   A:plate
-    {"mung":["age"]}	self,round:10
+    {"mung":["age"]}	self,round:8
     w:plate
-      o_elvis:receive_harvest
-      o_elvis:receive_protein
-      o_elvis:deliver_enzyme
-      material:basic,amount:0.6562239355402165
+      material:basic,amount:0.737860107421875
       protein,protein_id:prot_7,complexity:2
       wants_enzyme
-      {"mung":["age"]}	self,round:10
+      {"mung":["age"]}	self,round:8
+      mouthful,mouthful_id:seed_0_m8,dose:0.12910404133226772,spawning_from:seed_0,ttl:0
   A:enzymeco
-    {"mung":["age"]}	self,round:9
+    {"mung":["age"]}	self,round:8
     w:enzymeco
-      o_elvis:request_enzyme
       producing,ticks_left
         enzyme,units:5
-      {"mung":["age"]}	self,round:9
+      wants_to_produce
+      {"mung":["age"]}	self,round:8
   {"mung":["id"]}	mo:main,interval:3.6
   Se:workrepo
     openity,v:-11

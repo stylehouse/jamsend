@@ -51,7 +51,7 @@
     import { depeel, peel, dig, exactly }               from "$lib/Y"
     import { onMount }                    from "svelte"
     import { now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
-    import { ANSWER_CALLS_TICK_MS, House, WormholeNav } from "$lib/O/Housing.svelte"
+    import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
 
     let { M } = $props()
@@ -66,65 +66,6 @@
 
     onMount(async () => {
     await M.eatfunc({
-
-//#region snap-line codec
-//
-//  The snap line format is shared by toc.snap (The tree) and NNN.snap (step
-//  content).  Each line encodes one C particle:
-//
-//    "${indent}${obj_part}\t${stringies}"
-//
-//  indent: 2 spaces × depth.
-//  obj_part: JSON of objecties metadata (ref ids, mung list) when present,
-//            empty string otherwise.  Tab is the always-present separator.
-//  stringies: peel format "k:v  k2:v2" when all keys/values are sayable,
-//             otherwise JSON (always starts with "{" so deL can detect it).
-//
-//  story_process_node builds D.sc.snap_line (the complete encoded line) so
-//  story_snap can join them directly without a separate enL pass.
-
-    pad: (n: number) => String(n).padStart(3, '0'),
-
-    enj(o: any): string { return JSON.stringify(o ?? {}) },
-    ind(d: number): string { return '  '.repeat(d) },
-
-    // enL: omit the tab entirely when there are no objecties to separate
-    enL(parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> }): string {
-        const obj_part = Object.keys(parsed.objecties).length ? this.enj(parsed.objecties) : ''
-        const str_part = this.encode_stringies(parsed.stringies)
-        return obj_part
-            ? `${this.ind(parsed.d)}${obj_part}\t${str_part}`
-            : `${this.ind(parsed.d)}${str_part}`
-    },
-    // encode_stringies: peel format for readability; falls back to JSON.
-    // Peel rule: key /^\w+$/, value is number|boolean or a string with no
-    // whitespace, colons, braces, brackets or quotes.
-    encode_stringies(obj: Record<string,any>): string {
-        const unsafe = /[:,\t\n]/
-        for (const [k, v] of Object.entries(obj)) {
-            if (unsafe.test(k)) return JSON.stringify(obj)
-            if (typeof v === 'number' || typeof v === 'boolean') continue
-            if (typeof v !== 'string' || unsafe.test(v)) return JSON.stringify(obj)
-        }
-        return depeel(obj)
-    },
-
-    // decode one snap line → { d, objecties, stringies }
-    // Reads both peel ("k:v,k2:v2") and legacy JSON ("{...}") stringies.
-    deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
-        const spaces  = line.match(/^ */)?.[0].length ?? 0
-        const d       = Math.floor(spaces / 2)
-        const tab     = line.indexOf('\t')
-        const obj_raw = tab >= 0 ? line.slice(spaces, tab) : ''
-        const str_raw = tab >= 0 ? line.slice(tab + 1) : line.slice(spaces)
-        return {
-            d,
-            objecties: obj_raw ? JSON.parse(obj_raw) : {},
-            stringies: str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw),
-        }
-    },
-
-
 
 //#region The helpers — canonical disk-backed toc tree
 

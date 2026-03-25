@@ -53,46 +53,40 @@
     //
     // ── diff[] — range collection ─────────────────────────────────────────────
     //
-    //   A two-click gesture available when in vs-prev mode (or while already
-    //   collecting).  First click sets diff_anchor and enters diff_collecting
-    //   state; second click on a different step triggers collect_range(a, b).
+    //   A two-click gesture available in vs-prev mode.  First click sets an
+    //   anchor; second click triggers collect_range(anchor, n), which produces
+    //   enL-compatible text and copies it to clipboard.
     //
-    //   collect_range produces enL-compatible text with this structure:
+    //   Pure text functions (compute_diff, squish_context, positional_diff,
+    //   enDif, deDif, depth_of, char_diff_ops) live in Textures.svelte and
+    //   arrive on H via ghostsHaunt().  Called here as T.* (T = H as any).
     //
-    //     Step:3
-    //       Snap:1 diff:1 prev:1
-    //         H:Story            ← ancestor context (same lines kept by squish_context)
-    //           A:farm
-    //             w:farm
-    //               self:1 round:21    ← got side
-    //                 Dif:change       ← marks a changed line; prev version inside
-    //                   self:1 round:20
-    //               Dif:unchanged count:8   ← squished same-line run
+    //   The Dif codec encodes DiffRow[] as snap lines:
+    //     enDif(rows, dif_depth) → string[]
+    //     deDif(lines, dif_depth) → DiffRow[]
     //
-    //   The Dif:* particles are the diff protocol (see i_diffDiff below).
-    //   They are enL-compatible — deL() can parse every line in the output.
+    //   collect_range output structure (all lines enL/deL/peel compatible):
     //
-    //   Steps without got_snap get a placeholder — open those steps first so
-    //   story_sel triggers the fetch, then re-run diff[].
+    //     Step:N                    depth 0
+    //       Snap:1 diff:1 prev:1   depth 1  — Dif markers at depth 2
+    //       Snap:1 first:1         depth 1  — no prev; raw got content at depth 2+
+    //       Snap:1 not_run:1       depth 1  — step hasn't run this session
+    //       Snap:1 not_loaded:1    depth 1  — ran but snap not yet fetched
     //
-    //   Clipboard permission is warmed on the first click (user gesture) via a
-    //   harmless empty writeText(''), so the write on the second click is quiet.
+    // ── what stays in StoryRun ────────────────────────────────────────────────
+    //
+    //   ops_for_display — rendering-only, walks char ops to produce {cls,text}
+    //                     spans for the intra_line snippet.  No text processing.
     //
     // ── DiffRow ───────────────────────────────────────────────────────────────
     //
     //   pair       — line present in both columns (same or internally changed)
-    //   left_only  — only in reference side; rendered as 'gone' (red)
-    //   right_only — only in got side; rendered as 'neu' (green)
-    //                'neu' not 'new' — JS reserved word
-    //   squish     — collapsed run of uninteresting same lines
+    //   left_only  — only in reference side ('gone', red)
+    //   right_only — only in got side ('neu', green)  — not 'new', JS reserved
+    //   squish     — collapsed run of same lines
     //
-    // ── squish_context ────────────────────────────────────────────────────────
-    //
-    //   Collapses runs of >3 unchanged lines but preserves the ancestor chain
-    //   above every changed/neu/gone line.  Ancestors are found by walking
-    //   backward from each interesting row and picking the nearest line at each
-    //   lesser indent depth.  A change inside w:plate always shows the
-    //   H:Story → A:plate path above it while squishing the A:farm branch.
+    //   The canonical definition lives in Textures.svelte's header comment.
+    //   Redeclared here for local TypeScript narrowing.
     //
     // ── note swatches ─────────────────────────────────────────────────────────
     //
@@ -100,39 +94,34 @@
     //   ensure_swatch() in Story.svelte must be called before any note type reaches
     //   story_analysis() — it is a fatal design error to render an unswatched type.
 
-    import type { TheC }        from "$lib/data/Stuff.svelte"
-    import type { House }       from "$lib/O/Housing.svelte"
-    import { peel }             from "$lib/Y"
-    import { diff_match_patch } from 'diff-match-patch'
+    import type { TheC }  from "$lib/data/Stuff.svelte"
+    import type { House } from "$lib/O/Housing.svelte"
+    import { peel }       from "$lib/Y"
 
     let { H }: { H: House } = $props()
 
-    // ── diff mode ─────────────────────────────────────────────────────────────
+    // T: H cast for ghost-injected Textures methods.
+    // These arrive via Textures.svelte eatfunc and are not on the static House type.
+    // depth_of, char_diff_ops, compute_diff, squish_context, positional_diff,
+    // enDif, deDif are all accessible as T.method_name().
+    const T = H as any
+
+    // ── types ─────────────────────────────────────────────────────────────────
 
     type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'naive'
-    let diff_mode   = $state<DiffMode | null>(null)
-    // sticky_mode carries the chosen mode across step navigation
-    let sticky_mode = $state<DiffMode | null>(null)
 
-    // DiffRow: one aligned slot in the two-column diff display.
-    // changed pairs carry ops: the character-level DMP diff between left and right,
-    // Array<[op, text]> where op 0=equal -1=deleted 1=inserted.
-    // The intra_line snippet renders per-character del/ins highlights from ops.
     type CharOps = Array<[number, string]>
+
     type DiffRow =
         | { kind: 'pair';       left: string; right: string; tag: 'same' }
         | { kind: 'pair';       left: string; right: string; tag: 'changed'; ops: CharOps }
-        | { kind: 'left_only';  line: string }   // gone: in reference, not in got
-        | { kind: 'right_only'; line: string }   // neu:  in got, not in reference
+        | { kind: 'left_only';  line: string }
+        | { kind: 'right_only'; line: string }
         | { kind: 'squish';     count: number }
 
-    // ── display state ─────────────────────────────────────────────────────────
-    //
-    //   display is populated by story_analysis() writing into ave/{story_analysis:1}.
-    //   Object.assign(display, an.sc) copies all scalar fields in one shot.
-    //   This, sw, swatchesC are read separately from ave by key presence check.
-
     type StepEntry = { n: number, dige: string | undefined }
+
+    // ── display state ─────────────────────────────────────────────────────────
 
     let display = $state({
         run_sc:    null as Record<string,any> | null,
@@ -172,50 +161,37 @@
         }, 0)
     })
 
-    // live_step: the real {Step:N} session TheC for step n, or null if not yet run.
     function live_step(n: number): TheC | null {
         if (!This) return null
         const all = This.o({ Step: 1 }) as TheC[]
         return all.find(s => s.sc.Step === n) ?? null
     }
 
-    // ── diff computation ──────────────────────────────────────────────────────
+    // ── diff mode state ───────────────────────────────────────────────────────
 
-    // depth_of: snap line indent depth (2 spaces per level).
-    // A line "    w:farm" has 4 leading spaces → depth 2.
-    // Used by squish_context for ancestor walking and by i_diffDiff for re-indentation.
-    function depth_of(line: string): number {
-        return Math.floor((line.match(/^ */)?.[0].length ?? 0) / 2)
-    }
+    let diff_mode   = $state<DiffMode | null>(null)
+    let sticky_mode = $state<DiffMode | null>(null)
 
-    // char_diff_ops: character-level DMP diff between two strings.
-    // diff_cleanupSemantic merges tiny equal fragments into surrounding changes,
-    // reducing noise on floating-point numbers where only last digits differ.
-    function char_diff_ops(a: string, b: string): CharOps {
-        const dmp = new diff_match_patch()
-        const ops = dmp.diff_main(a, b, false)
-        dmp.diff_cleanupSemantic(ops)
-        return ops
-    }
-
-    // ops_for_display: walk ops over a raw snap line, skipping the indent prefix
-    // and the tab separator, so intra_line can render indent as sr-ind first
-    // and then emit only the visible content with del/ins/plain spans.
+    // ── ops_for_display ───────────────────────────────────────────────────────
+    //
+    //   Rendering-only — the one diff function that stays in StoryRun.
+    //   Walks char ops over a raw snap line, skipping the indent prefix and the
+    //   tab separator, producing Array<{cls, text}> for {#each} in intra_line.
     //
     //   side='left'  → renders op=-1 (deleted) spans, skips op=+1 (inserted)
     //   side='right' → renders op=+1 (inserted) spans, skips op=-1 (deleted)
-    //   op=0 (equal) → always rendered as plain
+    //   op=0         → always plain
     //
-    // Returns Array<{cls, text}> ready for {#each} in the snippet.
+    //   Own-side reconstruction ensures indent_len and tab_pos are computed
+    //   against the actual characters on that side — not the other side's line,
+    //   which may have a tab at a different position or no tab at all when enL
+    //   omits it (no objecties → tab is omitted).
+
     function ops_for_display(
         line: string,
         ops: CharOps,
         side: 'left' | 'right',
     ): Array<{cls: string; text: string}> {
-        // Each side reconstructs its own line from ops so that indent_len and
-        // tab_pos are computed against the actual characters on that side —
-        // not the other side's line, which may have a tab at a different position
-        // or no tab at all when enL omits it (no objecties → tab is omitted).
         let own = ''
         for (const [op, text] of ops) {
             if (op === 0 || (op === -1 && side === 'left') || (op === 1 && side === 'right')) {
@@ -226,7 +202,6 @@
         const tab_pos    = own.indexOf('\t')
 
         const result: Array<{cls: string; text: string}> = []
-        // own_pos tracks position within the reconstructed own-side string
         let own_pos = 0
         for (const [op, text] of ops) {
             if (op === -1 && side === 'right') continue
@@ -246,157 +221,7 @@
         return result
     }
 
-    // compute_diff: line-level DMP diff, normalized for alignment.
-    //   left  = reference (exp_snap or prev step got_snap)
-    //   right = current got_snap
-    //
-    //   Lines are normalized to canonical stringies JSON before alignment so that
-    //   JSON-encoded and peel-encoded lines of the same particle compare as equal.
-    //   Normalization: take the text after the tab (the stringies field), parse it
-    //   (JSON or peel), re-encode as sorted-key JSON.  The objecties/obj_part before
-    //   the tab is not included — it is metadata (mung/ref) that may differ.
-    //   Empty obj_part means no tab in the line (enL omits the tab when there are
-    //   no objecties), so lines without a tab are stringies-only and parse directly.
-    //
-    //   DMP runs on the normalized text to get alignment; original lines are then
-    //   substituted back so display and char ops always use the real content.
-    function compute_diff(text_left: string, text_right: string): DiffRow[] {
-        if (!text_left && !text_right) return []
-        if (!text_left) return text_right.split('\n').filter(Boolean)
-            .map(line => ({ kind: 'right_only' as const, line: line.trimEnd() }))
-        if (!text_right) return text_left.split('\n').filter(Boolean)
-            .map(line => ({ kind: 'left_only' as const, line: line.trimEnd() }))
-
-        // norm_line: canonical stringies JSON for a snap line, used only for alignment.
-        // Preserves indent as leading spaces so DMP also aligns by depth.
-        const norm_line = (line: string): string => {
-            const indent  = line.match(/^ */)?.[0] ?? ''
-            const tab     = line.indexOf('\t')
-            const str_raw = tab >= 0 ? line.slice(tab + 1).trimEnd() : line.trimEnd()
-            try {
-                const stringies = str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw)
-                return indent + JSON.stringify(stringies)
-            } catch { return indent + str_raw }
-        }
-
-        const left_lines  = text_left.split('\n').filter(Boolean)
-        const right_lines = text_right.split('\n').filter(Boolean)
-        const norm_left   = left_lines.map(norm_line).join('\n') + '\n'
-        const norm_right  = right_lines.map(norm_line).join('\n') + '\n'
-
-        const dmp = new diff_match_patch()
-        const enc = (dmp as any).diff_linesToChars_(norm_left, norm_right)
-        const raw = dmp.diff_main(enc.chars1, enc.chars2, false)
-        ;(dmp as any).diff_charsToLines_(raw, enc.lineArray)
-
-        // Walk ops maintaining cursors into the original line arrays.
-        // op=0 (equal normalized) → same row using originals from both sides.
-        // op=-1/+1 pairs → flush as changed rows with char ops on originals.
-        const rows: DiffRow[] = []
-        let li = 0, ri = 0
-        let pend_l: string[] = [], pend_r: string[] = []
-
-        const flush = () => {
-            const n = Math.max(pend_l.length, pend_r.length)
-            for (let i = 0; i < n; i++) {
-                const l = pend_l[i], r = pend_r[i]
-                if (l != null && r != null) {
-                    rows.push({ kind: 'pair', left: l, right: r, tag: 'changed',
-                                ops: char_diff_ops(l, r) })
-                } else if (l != null) {
-                    rows.push({ kind: 'left_only',  line: l })
-                } else if (r != null) {
-                    rows.push({ kind: 'right_only', line: r })
-                }
-            }
-            pend_l = []; pend_r = []
-        }
-
-        for (const [op, text] of raw) {
-            const count = text.split('\n').filter(Boolean).length
-            if (op === 0) {
-                flush()
-                for (let i = 0; i < count; i++) {
-                    const l = (left_lines[li++]  ?? '').trimEnd()
-                    const r = (right_lines[ri++] ?? '').trimEnd()
-                    rows.push({ kind: 'pair', left: l, right: r, tag: 'same' })
-                }
-            } else if (op === -1) {
-                for (let i = 0; i < count; i++) pend_l.push((left_lines[li++]  ?? '').trimEnd())
-            } else if (op ===  1) {
-                for (let i = 0; i < count; i++) pend_r.push((right_lines[ri++] ?? '').trimEnd())
-            }
-        }
-        flush()
-        return rows
-    }
-
-    // squish_context: collapse boring same-line runs while preserving the
-    // ancestor chain above each interesting (changed/neu/gone) line.
-    //
-    //   For each interesting row, walk backward marking the nearest preceding
-    //   line at each lesser indent depth — the tree parent chain.  Runs of
-    //   uninteresting rows longer than 3 collapse to a single squish entry.
-    function squish_context(rows: DiffRow[]): DiffRow[] {
-        const interesting = new Set<number>()
-
-        for (let i = 0; i < rows.length; i++) {
-            const r = rows[i]
-            if (r.kind === 'squish' || (r.kind === 'pair' && r.tag === 'same')) continue
-            interesting.add(i)
-        }
-
-        if (interesting.size === 0) {
-            return rows.length > 4 ? [{ kind: 'squish', count: rows.length }] : rows
-        }
-
-        const row_line = (r: DiffRow) =>
-            r.kind === 'pair'       ? r.left :
-            r.kind === 'left_only'  ? r.line :
-            r.kind === 'right_only' ? r.line : ''
-
-        // mark ancestors of every interesting row
-        for (const i of [...interesting]) {
-            let need_depth = depth_of(row_line(rows[i])) - 1
-            for (let j = i - 1; j >= 0 && need_depth >= 0; j--) {
-                if (rows[j].kind === 'squish') continue
-                const d = depth_of(row_line(rows[j]))
-                if (d <= need_depth) { interesting.add(j); need_depth = d - 1 }
-            }
-        }
-
-        const result: DiffRow[] = []
-        let run: number[] = []
-        const flush_run = () => {
-            if (run.length > 3) result.push({ kind: 'squish', count: run.length })
-            else for (const idx of run) result.push(rows[idx])
-            run = []
-        }
-        for (let i = 0; i < rows.length; i++) {
-            if (interesting.has(i)) { flush_run(); result.push(rows[i]) }
-            else run.push(i)
-        }
-        flush_run()
-        return result
-    }
-
-    // positional_diff: compare line i of left against line i of right.
-    // No resyncing after insertions — what you see is what shifted.
-    // Used by 'exp_naive' ("& exp") mode.
-    function positional_diff(text_left: string, text_right: string): DiffRow[] {
-        const ls = text_left.split('\n').filter(Boolean)
-        const rs = text_right.split('\n').filter(Boolean)
-        const len = Math.max(ls.length, rs.length)
-        const rows: DiffRow[] = []
-        for (let i = 0; i < len; i++) {
-            const l = ls[i], r = rs[i]
-            if (!l)       rows.push({ kind: 'right_only', line: r })
-            else if (!r)  rows.push({ kind: 'left_only',  line: l })
-            else if (l === r) rows.push({ kind: 'pair', left: l, right: r, tag: 'same' })
-            else              rows.push({ kind: 'pair', left: l, right: r, tag: 'changed', ops: char_diff_ops(l, r) })
-        }
-        return rows
-    }
+    // ── deriveds ──────────────────────────────────────────────────────────────
 
     // has_exp_snap / has_prev_snap drive which mode buttons are shown.
     // void Step.version subscribes so these update when snaps arrive async.
@@ -418,17 +243,16 @@
 
     // eff_mode: resolved diff mode.
     // Priority: explicit diff_mode → sticky carry-over → auto by step state.
-    // ok steps (no mismatch) default to naive — just show the snapshot.
+    // ok steps default to naive — just show the snapshot.
     // mismatch steps auto-prefer exp (when loaded), then prev, then naive.
     // exp_naive is never auto — it must be explicitly chosen.
     let eff_mode = $derived.by((): DiffMode => {
         if (diff_mode) return diff_mode
         if (sticky_mode) return sticky_mode
-        // auto: inspect the current step
         const n    = display.open_at
         const Step = n != null ? live_step(n) : null
         void Step?.version
-        if (Step && Step.sc.ok) return 'naive'   // ok: just show the snap
+        if (Step && Step.sc.ok) return 'naive'
         if (has_exp_snap)       return 'exp'
         if (has_prev_snap)      return 'prev'
         return 'naive'
@@ -443,6 +267,7 @@
     // diff_rows: final aligned diff for rendering.
     // Subscribes to Step.version and prev.version so it re-derives when
     // snaps arrive asynchronously (e.g. after story_sel triggers a fetch).
+    // Pure diff functions come from T (H with Textures methods injected).
     let diff_rows = $derived.by((): DiffRow[] => {
         const n = display.open_at
         if (n == null) return []
@@ -462,13 +287,13 @@
                 .map(line => ({ kind: 'pair' as const, left: line, right: line, tag: 'same' as const }))
 
         if (mode === 'naive')     return as_naive(got_snap)
-        if (mode === 'exp_naive') return squish_context(positional_diff(exp_snap, got_snap))
+        if (mode === 'exp_naive') return T.squish_context(T.positional_diff(exp_snap, got_snap))
 
         const ref = mode === 'exp' ? exp_snap : prev_snap
         // ref may be empty while the async fetch is in flight — show naive until it lands
         if (!ref) return as_naive(got_snap)
 
-        return squish_context(compute_diff(ref, got_snap))
+        return T.squish_context(T.compute_diff(ref, got_snap))
     })
 
     // col_labels: column headings — left = reference, right = current got
@@ -552,121 +377,12 @@
     let diff_collecting = $state(false)
     let diff_status     = $state('')
 
-    // ── i_diffDiff ────────────────────────────────────────────────────────────
+    // collect_range: build the multi-step Dif block and copy to clipboard.
     //
-    //   The Dif:* protocol: encodes an array of DiffRows as enL-compatible
-    //   snap lines.  Snap-independent — any container can call this and the
-    //   Dif:* particles carry the same meaning regardless of what wraps them.
+    //   All pure diff work delegated to T (Textures methods on H):
+    //     T.compute_diff, T.squish_context, T.enDif
+    //   deDif is the inverse — T.deDif(lines, 2) decodes back to DiffRow[].
     //
-    //   extra_depth: how many additional indent levels to prepend to all lines.
-    //   collect_range calls with extra_depth=2 (depth-0 Step + depth-1 Snap).
-    //
-    //   Encoding per row kind:
-    //
-    //     pair/same    → got (right) line prepended with extra_depth spaces.
-    //                    These are ancestor context lines kept by squish_context.
-    //
-    //     squish       → Dif:unchanged count:N  at (last_seen_depth + 1 + extra_depth).
-    //                    Depth approximation: one level below the last content line,
-    //                    which is where the squished content would have lived.
-    //
-    //     pair/changed → got line re-indented; then Dif:change child at depth+1;
-    //                    then prev (left) line — indent stripped, re-encoded — at depth+2.
-    //                    Tab characters in objectied lines ({"mung":...}\t...) are
-    //                    preserved naturally since we only prepend spaces.
-    //
-    //     right_only   → got line re-indented; then Dif:+ child (new in got, not in prev).
-    //
-    //     left_only    → Dif:- at the line's depth; prev line as child (gone from got).
-    //
-    //   To use from another context:
-    //     const lines = i_diffDiff(squish_context(compute_diff(a, b)), my_depth)
-    //
-    function i_diffDiff(rows: DiffRow[], extra_depth: number): string[] {
-        const ind = (d: number) => '  '.repeat(Math.max(0, d))
-        const out: string[] = []
-
-        // last_d: input depth of the last non-squish row seen.
-        // squish markers go at last_d + 1 + extra_depth, approximating
-        // the depth where the collapsed content would have appeared.
-        let last_d = 0
-
-        for (const row of rows) {
-
-            if (row.kind === 'squish') {
-                // Dif:unchanged is enL-compatible: peel parses {Dif:'unchanged', count:N}
-                out.push(`${ind(last_d + 1 + extra_depth)}Dif:unchanged count:${row.count}`)
-                continue
-            }
-
-            if (row.kind === 'pair' && row.tag === 'same') {
-                // ancestor context: prepend extra_depth levels, keep line as-is.
-                // row.right already has its own indent (depth D * 2 spaces).
-                // Prepending ind(extra_depth) yields total depth D + extra_depth. ✓
-                last_d = depth_of(row.right)
-                out.push(`${ind(extra_depth)}${row.right.trimEnd()}`)
-                continue
-            }
-
-            if (row.kind === 'pair' && row.tag === 'changed') {
-                const d = depth_of(row.right)
-                last_d = d
-                // got line at d + extra_depth
-                out.push(`${ind(extra_depth)}${row.right.trimEnd()}`)
-                // Dif:change child: marks this line as a changed; prev version inside
-                out.push(`${ind(d + extra_depth + 1)}Dif:change`)
-                // prev line: strip its own leading spaces (which are now redundant —
-                // the new depth is already encoded by ind(d + extra_depth + 2)),
-                // then emit at depth+2.  Tabs in objectied lines are not leading
-                // whitespace so they survive the replace correctly.
-                const prev_content = row.left.trimEnd().replace(/^ +/, '')
-                out.push(`${ind(d + extra_depth + 2)}${prev_content}`)
-                continue
-            }
-
-            if (row.kind === 'right_only') {
-                // new line in got, absent from prev
-                const d = depth_of(row.line)
-                last_d = d
-                out.push(`${ind(extra_depth)}${row.line.trimEnd()}`)
-                out.push(`${ind(d + extra_depth + 1)}Dif:+`)
-                continue
-            }
-
-            if (row.kind === 'left_only') {
-                // line gone from got, was in prev — not on the got side so we
-                // emit Dif:- at the appropriate depth then prev as its child
-                const d = depth_of(row.line)
-                last_d = d
-                out.push(`${ind(d + extra_depth)}Dif:-`)
-                const prev_content = row.line.trimEnd().replace(/^ +/, '')
-                out.push(`${ind(d + extra_depth + 1)}${prev_content}`)
-                continue
-            }
-        }
-
-        return out
-    }
-
-    // collect_range: build the multi-step enL diff text and copy to clipboard.
-    //
-    //   Output structure (enL-compatible throughout):
-    //
-    //     Step:3                         ← depth 0, peel {Step:3}
-    //       Snap:1 diff:1 prev:1        ← depth 1, peel {Snap:1, diff:1, prev:1}
-    //         H:Story                   ← depth 2 (H originally depth 0 + extra_depth 2)
-    //           A:farm
-    //             w:farm
-    //               self:1 round:21
-    //                 Dif:change
-    //                   self:1 round:20
-    //               Dif:unchanged count:8
-    //
-    //     Step:4
-    //       Snap:1 first:1              ← no prev; raw got content, no Dif markers
-    //         ...
-    //
-    //   Steps without got_snap: placeholder line explains what to do.
     //   from_n and to_n can be in either order; always walks min → max.
     async function collect_range(from_n: number, to_n: number) {
         const min = Math.min(from_n, to_n)
@@ -674,21 +390,18 @@
         const all_lines: string[] = []
 
         for (let n = min; n <= max; n++) {
-            // Step header at depth 0 — pure peel, no objecties, no tab
             all_lines.push(`Step:${n}`)
 
             const Step     = live_step(n)
             const got_snap = Step?.sc.got_snap as string | undefined
 
             if (!Step) {
-                // step hasn't run this session; hollow pip
-                all_lines.push(`  Snap:1 diff:1 prev:1 not_run:1`)
+                all_lines.push(`  Snap:1 not_run:1`)
                 continue
             }
-
             if (!got_snap) {
-                // step ran but snap wasn't fetched; open it so story_sel queues a fetch
-                all_lines.push(`  Snap:1 diff:1 prev:1 not_loaded:1`)
+                // open this step in the UI so story_sel queues a snap fetch
+                all_lines.push(`  Snap:1 not_loaded:1`)
                 continue
             }
 
@@ -696,23 +409,20 @@
             const prev_snap = (prev?.sc.got_snap as string) ?? ''
 
             if (!prev_snap) {
-                // no previous snap to compare against — emit raw got content.
-                // Snap:1 first:1 signals "no diff, this is the baseline".
+                // no previous snap — emit raw got content without diff markers
                 all_lines.push(`  Snap:1 first:1`)
                 for (const line of got_snap.split('\n').filter(Boolean)) {
-                    // extra_depth = 2: two levels inside Step + Snap
                     all_lines.push(`    ${line.trimEnd()}`)
                 }
                 continue
             }
 
-            // Snap with vs-prev diff content encoded via i_diffDiff
+            // Snap with vs-prev diff encoded via T.enDif
             all_lines.push(`  Snap:1 diff:1 prev:1`)
-
-            const raw_rows = compute_diff(prev_snap, got_snap)
-            const rows     = squish_context(raw_rows)
-            // extra_depth = 2: Step is depth 0, Snap is depth 1, content starts at depth 2
-            all_lines.push(...i_diffDiff(rows, 2))
+            const raw_rows = T.compute_diff(prev_snap, got_snap)
+            const rows     = T.squish_context(raw_rows)
+            // dif_depth = 2: Step at 0, Snap at 1, Dif markers at 2
+            all_lines.push(...T.enDif(rows, 2))
         }
 
         const text = all_lines.join('\n') + '\n'
@@ -725,20 +435,16 @@
             diff_status = 'copy failed — see console'
             console.log('[diff range]\n' + text)
         }
-        // clear the status badge after a moment
         setTimeout(() => { diff_status = '' }, 3000)
     }
 
     // start_diff_collect: first click — arms the collector on this step.
-    //
-    //   Warms clipboard permission now (user gesture) via a harmless empty
-    //   writeText(''), so the actual write inside collect_range is quiet.
+    // Warms clipboard permission on this user gesture via a harmless empty
+    // writeText(''), so the write inside collect_range doesn't need to prompt.
     async function start_diff_collect() {
         const n = display.open_at
         if (n == null) return
-
-        try { await navigator.clipboard.writeText('') } catch { /* prompt will appear on collect */ }
-
+        try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
         diff_anchor     = n
         diff_collecting = true
         diff_status     = ''
@@ -752,10 +458,9 @@
     }
 
     // pick: open/close a step panel.
-    //
-    //   When collecting and a DIFFERENT step is clicked: collect [anchor, n] and
-    //   leave collecting mode.  Same step as anchor: treat as cancel.
-    //   diff_mode is always reset on pick so eff_mode re-evaluates for the new step.
+    // When collecting and a different step is clicked: collect [anchor, n], done.
+    // When collecting and the same step is clicked: cancel.
+    // diff_mode reset on every pick so eff_mode re-evaluates for the new step.
     function pick(n: number) {
         diff_mode = null
 
@@ -764,7 +469,6 @@
             diff_collecting = false
             diff_anchor     = null
         } else if (diff_collecting && n === diff_anchor) {
-            // clicked the anchor again — cancel
             diff_collecting = false
             diff_anchor     = null
         }
@@ -841,9 +545,9 @@
         </div>
 
         <!-- ── pip strip ────────────────────────────────────────────────── -->
-        <!-- One cell per step from The (skeleton); live Step data overlaid.     -->
-        <!-- hollow: step in The but not yet reached this session.               -->
-        <!-- is-anchor: the step diff[] started collecting from — teal ring.     -->
+        <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
+        <!-- hollow: step in The but not yet reached this session.             -->
+        <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
         <div class="sr-strip">
             {#each display.steps as ts (ts.n)}
                 {@const n         = ts.n}
@@ -892,7 +596,7 @@
 
             <div class="sr-panel">
 
-                <!-- header: step id, status label, diff-mode buttons, diff[], Accept, × -->
+                <!-- header ────────────────────────────────────────────── -->
                 <div class="sr-phdr">
                     <span class="sr-pn">step {String(n).padStart(3,'0')}</span>
                     <span class="sr-pdige">{dige}</span>
@@ -909,12 +613,12 @@
                         <span class="sr-warn" title="NNN.snap on disk does not match toc.snap dige">⚠ disk stale</span>
                     {/if}
 
-                    <!-- diff mode buttons — only shown for steps that have run.
-                         vs exp:  got vs expected, proper DMP diff (resyncs after insertions).
-                         & exp:   got vs expected, positional diff (line i vs line i; no resync).
-                         vs prev: sequential DMP diff (evolution since last step).
-                         raw:     got_snap text with no diff highlighting.
-                         Clicking the active button resets to null (auto). -->
+                    <!-- diff mode buttons ──────────────────────────────── -->
+                    <!-- vs exp: DMP diff, resyncs after insertions.        -->
+                    <!-- & exp:  positional diff, line i vs line i.         -->
+                    <!-- vs prev: sequential DMP diff since last step.      -->
+                    <!-- raw: got_snap verbatim.                            -->
+                    <!-- Clicking the active button resets to auto.         -->
                     {#if !hollow}
                         <span class="sr-diff-modes">
                             {#if has_exp_snap}
@@ -932,14 +636,14 @@
                         </span>
                     {/if}
 
-                    <!-- diff[]: two-click range collector.
-                         Visible in vs-prev mode and while collecting (so you can cancel).
-                         First click: this step becomes anchor, button pulses.
-                         Second click (different step): collect_range(anchor, n), copy, done.
-                         Second click (same step): cancel.
-                         Output is a block of enL-compatible lines — Step/Snap/Dif:* structure
-                         suitable for pasting to an AI with full context of what changed. -->
-                    {#if !hollow && (eff_mode === 'prev' || diff_collecting)}
+                    <!-- diff[]: two-click range collector ──────────────── -->
+                    <!-- Visible in vs-prev mode and while collecting.      -->
+                    <!-- First click: arm this step as anchor.              -->
+                    <!-- Second click (different step): collect, copy.      -->
+                    <!-- Second click (same step): cancel.                  -->
+                    <!-- Output: Step/Snap/Dif:* block, enL-compatible.     -->
+                    <!-- T.deDif(lines, 2) decodes it back to DiffRow[].    -->
+                    {#if !hollow}
                         {#if diff_collecting}
                             <button class="sr-diffrange collecting" onclick={cancel_collect}>
                                 from {String(diff_anchor).padStart(3,'0')} — pick end ×
@@ -961,7 +665,7 @@
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
 
-                <!-- body -->
+                <!-- body ──────────────────────────────────────────────── -->
                 {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
 
@@ -1044,9 +748,11 @@
 <!-- ── snippets ─────────────────────────────────────────────────────────── -->
 
 <!-- snap_line: full line block used in naive/tree single-column pre.
-     Snap line format: "${indent}${obj_part}\t${stringies}" when objecties are present,
-     or "${indent}${stringies}" when there are none (enL omits the tab).
-     obj_part is JSON of objecties metadata (mung, ref) when present. -->
+     Snap line format: "${indent}${obj_part}\t${stringies}" when objecties present,
+     or "${indent}${stringies}" when not (enL omits the tab).
+     tab > indent.length guards: a tab that IS the first non-space char (empty
+     obj_part) would give obj='', which is correct.  A missing tab gives -1
+     which fails the guard cleanly. -->
 {#snippet snap_line(line: string, tag: string)}
     {@const indent = line.match(/^ */)?.[0] ?? ''}
     {@const tab    = line.indexOf('\t')}
@@ -1056,7 +762,7 @@
 {/snippet}
 
 <!-- line_content: inline content for two-column diff cells.
-     Same codec parsing as snap_line but without the block wrapper. -->
+     Same codec as snap_line, no block wrapper. -->
 {#snippet line_content(line: string)}
     {@const indent = line.match(/^ */)?.[0] ?? ''}
     {@const tab    = line.indexOf('\t')}
@@ -1065,13 +771,9 @@
     <span class="sr-ind">{indent}</span>{#if obj}<span class="sr-obj">{obj}</span>  {/if}<span class="sr-str">{str}</span>
 {/snippet}
 
-<!-- intra_line: renders a changed diff cell with per-character highlights.
-     Walks ops Array<[op, text]>:
-       op  0 (equal)    — plain text, no background
-       op -1 (deleted)  — sr-del span in left cell; skipped in right cell
-       op  1 (inserted) — sr-ins span in right cell; skipped in left cell
-     Runs on the full raw line string (indent + obj + tab + str) so the
-     snap codec doesn't need re-parsing for highlight rendering. -->
+<!-- intra_line: changed diff cell with per-character highlights.
+     op=0 → plain, op=-1 → sr-del (left cell), op=+1 → sr-ins (right cell).
+     Runs on the full raw line string so snap codec re-parsing is not needed. -->
 {#snippet intra_line(line: string, ops: Array<[number, string]>, side: 'left' | 'right')}
     {@const indent = (line.match(/^ */)?.[0] ?? '')}<span class="sr-ind">{indent}</span>{#each ops_for_display(line, ops, side) as span}<span class={span.cls}>{span.text}</span>{/each}
 {/snippet}
@@ -1131,7 +833,7 @@
 .sr-pip.on       { outline: 1px solid #79b; outline-offset: 1px; }
 .sr-pip.has-notes { border-bottom: 2px solid #444; }
 .sr-pip:hover    { background: #333; }
-/* is-anchor: the step diff[] started collecting from — teal ring */
+/* is-anchor: step diff[] is collecting from — teal ring */
 .sr-pip.is-anchor { outline: 2px solid #4a9; outline-offset: 2px; }
 /* playhead: red downward triangle marking frontier or first hollow pip */
 .sr-pip.playhead::before {
@@ -1176,8 +878,8 @@
 
 /* ── diff[] range collector ─────────────────────────────────────────────── */
 /* sits after the mode buttons, before Accept.                               */
-/* collecting: pulses teal to signal "waiting for second click".             */
-/* sr-diffstatus: brief "copied N steps ✓" badge after success.             */
+/* collecting: pulses teal while waiting for the second click.               */
+/* sr-diffstatus: brief feedback badge, auto-clears after 3s.               */
 .sr-diffrange {
     background: #181818; border: 1px solid #2a3a2a; border-radius: 2px;
     color: #4a9; cursor: pointer; font-size: 9px; font-family: inherit;
