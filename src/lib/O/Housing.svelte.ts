@@ -711,9 +711,10 @@ export class House extends StorableHousing {
 
         V.organise && console.log(`organise() e%${e ? keyser(e.sc) : 'none'} todo:${this.todo.length}`)
 
+        this.Se.sc.topD = await this.Se.r({Se:1,sphere:'D'})
         await this.Se.process({
             n: this,
-            process_sc: { Se: 'workrepo' },
+            process_D: this.Se.sc.topD,
             match_sc: {},
             trace_sc: { housed: 1 },
 
@@ -739,7 +740,7 @@ export class House extends StorableHousing {
 
             done_fn: async (_D: TheD, _n: TheC, _T: Travel) => {},
         })
-
+        
         if (this.Se.c.T?.sc.needed_concretion) {
             V.organise && console.log(`organise: needed_concretion — bailing, e%${e ? keyser(e.sc) : 'none'}`)
             return false

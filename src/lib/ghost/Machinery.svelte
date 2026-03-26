@@ -109,8 +109,10 @@
         let plate = this.plate_w()
         for (let leaf of w.o({ leaf: 1 })) {
             if (leaf.sc.dose >= 2.0) {
-                if (plate) plate.i({ leaf: 1, leaf_id: leaf.sc.leaf_id, dose: leaf.sc.dose, tick })
-                w.drop(leaf)
+                const { leaf_id } = leaf.sc
+                await w.r({ leaf: 1, leaf_id }, {})
+                leaf.sc.tick = tick
+                if (plate) plate.i(leaf)
             }
         }
 

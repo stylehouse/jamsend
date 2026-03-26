@@ -235,6 +235,22 @@
         return !!(prev && prev.sc.got_snap)
     })
 
+    // panel_ready: false while waiting for exp_snap on a mismatch step
+    // that has a known dige (meaning there IS an expected snap to fetch).
+    // Shows a simple "loading" placeholder instead of briefly flashing naive/prev.
+    let panel_ready = $derived.by(() => {
+        const n = display.open_at
+        if (n == null) return false
+        const Step = live_step(n)
+        void Step?.version
+        if (!Step) return true          // hollow — show immediately
+        if (Step.sc.ok || Step.sc.accepted) return true  // no exp needed
+        if (has_exp_snap) return true   // loaded — good to go
+        const ts = display.steps.find(t => t.n === n)
+        if (!ts?.dige) return true      // no expected snap exists — fall through to prev/naive
+        return false                    // waiting for exp_snap fetch
+    })
+
     // eff_mode: resolved diff mode.
     // Priority: explicit diff_mode → sticky carry-over → auto by step state.
     // ok steps default to naive — just show the snapshot.
@@ -482,7 +498,7 @@
             diff_collecting = false
             diff_anchor     = null
         }
-        const new_sel = display.open_at === n ? null : n
+        const new_sel = n
         H.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
         // seek the cyto graph to this step
         H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: new_sel })
@@ -645,7 +661,8 @@
                 <div style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
                 {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
-
+                {:else if !panel_ready}
+                    <div class="sr-hollow-body">loading…</div>
                 {:else if eff_mode === 'naive'}
                     <!-- raw: single pre, full got_snap text, no diff colouring -->
                     <pre class="sr-pre sr-tree-pre">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>

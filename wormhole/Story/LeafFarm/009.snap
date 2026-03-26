@@ -25,17 +25,3 @@ H:LeafFarm,Run
       wants_to_produce
       {"mung":["age"]}	self,round:9
   {"mung":["id"]}	mo:main,interval:3.6
-  Se:workrepo
-    openity,v:-11
-    housed:3,A:farm
-      openity,v:-11
-      housed:3,w:farm
-        openity,v:-11
-    housed:3,A:plate
-      openity,v:-11
-      housed:3,w:plate
-        openity,v:-11
-    housed:3,A:enzymeco
-      openity,v:-11
-      housed:3,w:enzymeco
-        openity,v:-11
