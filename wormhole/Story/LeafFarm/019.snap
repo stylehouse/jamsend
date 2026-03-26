@@ -13,7 +13,8 @@ H:LeafFarm,Run
   A:plate
     {"mung":["age"]}	self,round:19
     w:plate
-      material:basic,amount:0.5052004094265343
+      sunshine,dose
+      material:basic,amount:0.5240563193858369
       wants_enzyme
       shelf,enzyme,units
       shelf,enzyme,units:5

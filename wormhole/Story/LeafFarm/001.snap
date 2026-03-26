@@ -6,12 +6,12 @@ H:LeafFarm,Run
       sunshine,dose:0.7477601033306698
       sunny_streak,count
       poo,dose:0.34
+      leaf,leaf_id:seed_0,dose:1.86
   A:plate
     {"mung":["age"]}	self,round
     w:plate
-      leaf,leaf_id:seed_0,dose:1.859104041332268,tick
       {"mung":["age"]}	self,round
-      mouthful,mouthful_id:seed_0_m1,dose:0.3,spawning_from:seed_0,ttl:0
+      sunshine,dose
   A:enzymeco
     {"mung":["age"]}	self,round
     w:enzymeco

@@ -5,7 +5,7 @@
     // everything that changed, and deposits it into {cyto_graph:1} which
     // Cytui.svelte watches.  The wave format lets Cytui animate additions,
     // removals, style changes, and migrations (e.g. a leaf flying from farm
-    // to plate) without ever querying RunH directly — Cyto is the only bridge.
+    // to plate) without ever querying RunH directly.
     //
     // ── wave anatomy ─────────────────────────────────────────────────────────
     //
@@ -13,13 +13,19 @@
     //   edge_upsert — edges to add or update (style, ideal_length)
     //   remove      — node ids to delete
     //   edge_remove — edge ids to delete
-    //   migrate     — special animated moves: leaf harvest, mouthful expiry,
-    //                 node re-parenting between workers
-    //   constraints — fcose relativePlacementConstraint array (vertical
-    //                 ordering within farm: sun → leaves → poo)
+    //   migrate     — animated moves: leaf harvest, mouthful expiry, re-parenting
+    //   constraints — fcose relativePlacementConstraint (vertical order in farm)
     //   duration    — seconds for this wave's animation window
-    //   step_n      — set by story_cyto_step; undefined for ambient ticks.
-    //                 Cytui uses this to seek the graph to a story step.
+    //   step_n      — story step this wave belongs to.  Set by cyto_update_wave
+    //                 by reading run.sc.done from the Story worker.  Cytui uses
+    //                 this to seek the graph to a given step when a pip is opened.
+    //
+    // ── step tagging ──────────────────────────────────────────────────────────
+    //
+    //   Previously only story_cyto_step (intoCyto mode) tagged waves.  That
+    //   meant seeking only worked when intoCyto was enabled.  Now cyto_update_wave
+    //   always reads H/{A:Story}/{w:Story}/{run:1}.sc.done and stamps step_n on
+    //   every wave, so seek works regardless of intoCyto mode.
     //
     // ── edges ────────────────────────────────────────────────────────────────
     //
@@ -33,24 +39,21 @@
     //     process (protein → enz_shelf)         dashed teal,  ideal 40
     //
     //   Cross-worker flow (pulls the three compounds into a tight cluster):
-    //     farm → plate          leaf/protein delivery direction
-    //     plate → enzymeco      enzyme request direction
-    //     enzymeco → plate      enzyme delivery direction
+    //     farm → plate, plate → enzymeco, enzymeco → plate
     //     All three: ideal_length 15, dark subtle style
     //
-    // ── cyto_id and worker-scoped ids ────────────────────────────────────────
+    // ── cyto_id and per-worker sun ids ───────────────────────────────────────
     //
     //   cyto_id(n, wname?) builds a stable string id for a particle.
     //   Sunshine nodes get `sun:${wname}` so plate's decorative sun
-    //   (`sun:plate`) and farm's live sun (`sun:farm`) don't collide.
-    //   The helio edge target uses the result of cyto_id, so it naturally
-    //   follows to `sun:farm` without special-casing.
+    //   (`sun:plate`) and farm's oscillating sun (`sun:farm`) don't collide.
     //
     // ── cyto_seek ─────────────────────────────────────────────────────────────
     //
-    //   When StoryRun opens a step it fires elvisto('Cyto/Cyto','cyto_seek',
-    //   {seek_step:N}).  cyto_seek writes gn.sc.seek_step and bumps the graph
-    //   particle.  Cytui finds the last history wave whose step_n <= seek_step.
+    //   Fired by StoryRun when open_at changes.  Sets gn.sc.seek_step and
+    //   bumps the graph particle.  Cytui seeks to the last history wave whose
+    //   step_n <= seek_step.  When seek_step is null the graph returns to the
+    //   live head.
 
     import { TheC }       from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -90,7 +93,16 @@
         if (tracking.sc.v === v) return true   // nothing changed, skip rebuild
         tracking.sc.v = v
         const wave = this.cyto_scan(w, RunH)
-        const gn   = w.c.gn as TheC
+
+        // tag with the current story step so Cytui can seek without intoCyto.
+        // we read run.sc.done from the Story worker on this same H.
+        // done is the last fully snapped step, which is what we want.
+        const story_A = H.o({ A: 'Story' })[0] as TheC | undefined
+        const story_w = story_A?.o({ w: 'Story' })[0] as TheC | undefined
+        const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
+        wave.step_n   = run?.sc.done as number | undefined
+
+        const gn = w.c.gn as TheC
         if (!gn) return false
         gn.sc.wave = wave
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
@@ -102,8 +114,8 @@
     // ── cyto_seek ────────────────────────────────────────────────────────────
     //
     //   Received from StoryRun when open_at changes.
-    //   seek_step: number → Cytui snaps to that step's wave in history.
-    //   seek_step: null  → Cytui returns to the live head.
+    //   seek_step: number → Cytui snaps/animates to that step's wave.
+    //   seek_step: null   → Cytui returns to the live head.
 
     async cyto_seek(A: TheC, w: TheC, e: TheC) {
         const gn = w.c.gn as TheC
@@ -205,7 +217,7 @@
                         if (sun_id) rel.push({ top: sun_id, bottom: lid,    gap: 20 })
                         if (poo_id) rel.push({ top: lid,    bottom: poo_id, gap: 14 })
                     }
-                    // stem: leaf → poo, thickness reflects leaf maturity
+                    // stem: leaf → poo, thickness reflects leaf maturity (stature)
                     if (poo_id) {
                         for (const n of wk.o({ leaf: 1 }) as TheC[]) {
                             if (n.c.drop) continue
@@ -325,9 +337,8 @@
         // ── cross-worker flow edges ───────────────────────────────────────────
         //
         //   Very short (ideal_length:15) edges between the worker compound nodes.
-        //   This pulls farm, plate, and enzymeco into a tight triangle so the
-        //   graph doesn't spread them across the whole canvas — they're a system,
-        //   not three independent islands.  The arrows show the delivery direction.
+        //   This pulls farm, plate, and enzymeco into a tight triangle so they're
+        //   a system, not three independent islands.  The arrows show delivery direction.
 
         const flow_edges = [
             { id: 'e:flow:farm_plate',     source: 'w:farm',     target: 'w:plate'    },
@@ -399,16 +410,16 @@
 
     // cyto_id: build a stable string id for a particle.
     //
-    //   wname is passed by cyto_scan so sunshine gets a per-worker id:
-    //     farm  → "sun:farm"
-    //     plate → "sun:plate"
-    //   This prevents the decorative plate sun from colliding with farm's
-    //   live sun, which oscillates.  All other ids are global (leaf:, poo, etc.)
-    //   since those types only ever live in one worker at a time.
+    //   wname is passed so sunshine gets a per-worker id:
+    //     farm  → "sun:farm"    (oscillates with dose)
+    //     plate → "sun:plate"   (permanent, dose:1, stable mid-size)
+    //   This prevents the two suns from colliding in the graph.
+    //   All other ids are global (leaf:, poo, mat:, etc.) since those
+    //   types only live in one worker at a time.
     //
-    //   Returns null for particles that are noise — bookkeeping state that
-    //   should not appear in the graph (self-timekeeping, o_elvis registrations,
-    //   wasLast/chaFrom audit trails, sunny_streak, seen flags).
+    //   Returns null for bookkeeping noise that should not appear in the graph:
+    //   self-timekeeping, o_elvis registrations, wasLast/chaFrom audit trails,
+    //   sunny_streak counter, seen flags.
 
     cyto_id(n: TheC, wname?: string): string | null {
         if (n.sc.mouthful && n.sc.mouthful_id) return `mf:${n.sc.mouthful_id}`
@@ -432,9 +443,8 @@
 //#region cyto_label
 
     // cyto_label: compact human-readable label for a node.
-    // Numbers are rounded to 2 dp; strings longer than 11 chars are truncated.
-    // Boolean-valued keys appear as bare words (e.g. "wants_enzyme").
-    // The literal string "1" (wildcard in C) is suppressed — it reads as noise.
+    // Numbers rounded to 2 dp; strings > 11 chars truncated.
+    // The literal "1" (C wildcard) is suppressed — reads as noise.
 
     cyto_label(n: TheC): string {
         const parts: string[] = []
@@ -453,8 +463,7 @@
 //#endregion
 //#region hsl2rgb
 
-    // hsl2rgb: Cytoscape can animate rgb() values but not hsl().
-    // Convert at build time so animated style tweens work correctly.
+    // Cytoscape can animate rgb() but not hsl() — convert at build time.
 
     hsl2rgb(h: number, s: number, l: number): string {
         s /= 100; l /= 100
@@ -476,17 +485,16 @@
 
     // cyto_node: visual style for one particle.
     //
-    //   Size, colour, and shape encode what a node IS and how it's doing:
-    //     leaf:    grows in size and lightens as dose approaches 2.0 (ripe)
-    //     sun:     diamond, oscillates in size/brightness with dose
-    //              (plate's permanent sun has dose:1, so mid-size, stable)
-    //     poo:     dark brown ellipse, grows with dose up to 8
-    //     mat:     warm amber rect, grows with accumulated amount
+    //   Size, colour, and shape encode type and state:
+    //     leaf:     grows in size and lightens as dose → 2.0 (ripe)
+    //     sun:      diamond, oscillates with dose (plate's permanent sun is stable)
+    //     poo:      dark brown ellipse, grows with dose up to 8
+    //     mat:      warm amber rect, grows with accumulated amount
     //     mouthful: small lime ellipse, size proportional to bite dose
-    //     protein: purple hexagon, size proportional to complexity remaining
-    //     enz_shelf: teal rect, width proportional to enzyme units
-    //     producing: dark blue rect (batch in progress)
-    //     wants_*/want_prod: red star (requesting something)
+    //     protein:  purple hexagon, size proportional to complexity remaining
+    //     enz_shelf:teal rect, width proportional to enzyme units
+    //     producing:dark blue rect (batch in progress)
+    //     wants_*:  red star (requesting something)
 
     cyto_node(n: TheC, id: string): any {
         const label = this.cyto_label(n)
@@ -570,8 +578,7 @@
 //#region cyto_w_style
 
     // cyto_w_style: compound container style per worker.
-    // Each worker gets its own tinted background and border so it's
-    // immediately visually distinct even at a glance.
+    // Each worker gets its own tint so it's visually distinct at a glance.
 
     cyto_w_style(wname: string): any {
         const bg:     Record<string,string> = { farm: '#0a1f0a', plate: '#1f130a', enzymeco: '#0a0a1f' }
@@ -592,15 +599,12 @@
 //#region intoCyto handshake
 
     // story_cyto_step: received when Story's drive loop hands off to Cyto.
-    // We scan the current state, stamp the wave with the story step number
-    // so Cytui can seek to it, then fire story_cyto_continue after the
-    // animation window so Story resumes.
+    // We scan the current state and fire story_cyto_continue after the
+    // animation window so Story resumes.  Wave tagging now happens inside
+    // cyto_update_wave, so no special stamping needed here.
 
     async story_cyto_step(A: TheC, w: TheC, e: TheC) {
         this.cyto_update_wave(w)
-        // stamp the wave with the story step number for seek support
-        const gn = w.c.gn as TheC
-        if (gn?.sc.wave) gn.sc.wave.step_n = e?.sc.story_step as number | undefined
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         setTimeout(() => {
             this.elvisto('Story/Story', 'story_cyto_continue', { story_step: e?.sc.story_step })

@@ -248,6 +248,9 @@
         void Step?.version
         if (Step && Step.sc.ok) return 'naive'
         if (has_exp_snap)       return 'exp'
+        // mismatch step waiting for exp_snap — hold on naive rather than
+        // briefly showing vs-prev which will flip away once exp_snap arrives
+        if (!Step.sc.ok && !Step.sc.accepted) return 'naive'
         if (has_prev_snap)      return 'prev'
         return 'naive'
     })
@@ -313,6 +316,19 @@
         const first_hollow = display.steps.find(ts => !live_step(ts.n))
         return first_hollow ? (first_hollow.n as number) : null
     }
+
+    // waiting_for_exp: mismatch step where exp_snap is the natural mode but
+    // hasn't loaded yet — we're showing vs-prev as a placeholder.
+    // Dim the panel so it doesn't read as authoritative.
+    let waiting_for_exp = $derived.by(() => {
+        const n = display.open_at
+        if (n == null) return false
+        const Step = live_step(n)
+        void Step?.version
+        return !!(Step && !Step.sc.ok && !Step.sc.accepted && !has_exp_snap)
+    })
+
+
 
     // ── note helpers ──────────────────────────────────────────────────────────
 
@@ -624,6 +640,9 @@
                 </div>
 
                 <!-- body ──────────────────────────────────────────────── -->
+                <!-- waiting_for_exp: exp_snap is in flight — dim the     -->
+                <!-- vs-prev placeholder so it doesn't read as final.     -->
+                <div style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
                 {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
 
@@ -671,6 +690,7 @@
                         </div>
                     </div>
                 {/if}
+                </div>
 
                 <!-- notes: swatch badges + big + toggle; input replaces badges while open -->
                 <div class="sr-notes">

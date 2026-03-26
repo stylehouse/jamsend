@@ -12,8 +12,9 @@ H:LeafFarm,Run
   A:plate
     {"mung":["age"]}	self,round:7
     w:plate
-      leaf,leaf_id:seed_0,dose:0.12910404133226772,tick
-      material:basic,amount:0.7038134765625
+      sunshine,dose
+      leaf,leaf_id:seed_0,dose:0.5391999999999999,tick:2
+      material:basic,amount:0.650419921875
       protein,protein_id:prot_7,complexity:2
       {"mung":["age"]}	self,round:7
       mouthful,mouthful_id:seed_0_m7,dose:0.28,spawning_from:seed_0,ttl:0

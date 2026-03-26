@@ -10,10 +10,10 @@ H:LeafFarm,Run
   A:plate
     {"mung":["age"]}	self,round:2
     w:plate
-      leaf,leaf_id:seed_0,dose:1.5291040413322678,tick
+      sunshine,dose
+      leaf,leaf_id:seed_0,dose:1.9392,tick:2
       {"mung":["age"]}	self,round:2
       mouthful,mouthful_id:seed_0_m2,dose:0.33,spawning_from:seed_0,ttl:0
-      material:basic,amount:0.22499999999999998
   A:enzymeco
     {"mung":["age"]}	self,round:2
     w:enzymeco

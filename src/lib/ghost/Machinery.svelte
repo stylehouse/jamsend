@@ -76,11 +76,6 @@
         let life_input = sun_dose * Math.min(poo.sc.dose, 4)
         poo.sc.dose *= 0.85
 
-        // ── seed leaf on tick 1: near-ripe so it harvests on tick 2 ───
-        if (tick === 1 && !w.o({ leaf: 1, leaf_id: 'seed_0' }).length) {
-            w.i({ leaf: 1, leaf_id: 'seed_0', dose: 1.86 })
-        }
-
         // ── grow existing %leaf particles ─────────────────────────────
         let leaves = w.o({ leaf: 1 })
         let total_leaf_dose = leaves.reduce((s, l) => s + l.sc.dose, 0) || 1
@@ -131,6 +126,11 @@
                 if (plate) plate.i({ protein: 1, protein_id, complexity })
                 w.drop(w.o({ protein: 1, protein_id })[0])
             }
+        }
+
+        // ── seed leaf on tick 1: near-ripe so it harvests on tick 2 ───
+        if (tick === 1 && !w.o({ leaf: 1, leaf_id: 'seed_0' }).length) {
+            w.i({ leaf: 1, leaf_id: 'seed_0', dose: 1.86 })
         }
 
         streak.sc.count == 10 && w.i({ seen: 'wonder' })

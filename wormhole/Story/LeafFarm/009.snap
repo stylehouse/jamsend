@@ -12,10 +12,12 @@ H:LeafFarm,Run
   A:plate
     {"mung":["age"]}	self,round:9
     w:plate
-      material:basic,amount:0.6502231115656071
+      sunshine,dose
+      material:basic,amount:0.7558612060546875
       protein,protein_id:prot_7,complexity:2
       wants_enzyme
       {"mung":["age"]}	self,round:9
+      mouthful,mouthful_id:seed_0_m9,dose:0.2291999999999999,spawning_from:seed_0,ttl:0
       shelf,enzyme,units:5
   A:enzymeco
     {"mung":["age"]}	self,round:9

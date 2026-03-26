@@ -9,17 +9,25 @@
     //   When StoryRun opens a step it fires H.elvisto('Cyto/Cyto','cyto_seek',
     //   {seek_step:N}).  w:Cyto writes gn.sc.seek_step and bumps the graph
     //   particle.  The $effect here reads seek_step and finds the last wave
-    //   in history whose .step_n <= seek_step, then applies it at duration=0
-    //   so the graph snaps to that moment without animation.
+    //   in history whose .step_n <= seek_step, then seeks to it.
     //
-    //   Waves from ambient Cyto() ticks have step_n undefined; only waves
-    //   emitted during intoCyto mode (story_cyto_step) are tagged.  When the
-    //   panel is closed seek_step is null and we return to the live head.
+    //   Waves are tagged with step_n in cyto_update_wave (by reading the
+    //   Story worker's run.sc.done), so seeking works whether or not intoCyto
+    //   mode is enabled.
+    //
+    // ── animated forward seek ─────────────────────────────────────────────────
+    //
+    //   last_seek_idx tracks the wave index we are currently showing.
+    //   When a seek arrives and the target is exactly last_seek_idx + 1,
+    //   we apply only that one wave with full animation — the user sees the
+    //   graph transition smoothly when stepping forward one pip at a time.
+    //   Any other seek (jump, backward, panel close) rebuilds from scratch
+    //   at duration=0 so the state is always consistent.
     //
     // ── history ───────────────────────────────────────────────────────────────
     //
-    //   Wave history is retained for the seek feature.  The ◀ ▶ walk-back UI
-    //   controls have been removed — seeking is driven by StoryRun navigation.
+    //   Wave history is retained for seek.  The ◀ ▶ walk-back UI controls
+    //   were removed — seeking is driven entirely by StoryRun navigation.
 
     import { onMount }    from 'svelte'
     import cytoscape      from 'cytoscape'
@@ -57,13 +65,16 @@
         migrate:     MigrateDesc[]
         constraints: any | null
         duration:    number
-        step_n?:     number   // set by story_cyto_step; undefined for ambient ticks
+        step_n?:     number   // story step this wave belongs to (always set now)
     }
 
-    let history:    Wave[] = []
-    let status      = $state('no graph')
-    let grawave_dur = $state(0.3)
-    let last_tick   = -1
+    let history:        Wave[] = []
+    let status          = $state('no graph')
+    let grawave_dur     = $state(0.3)
+    let last_tick       = -1
+    // the history index currently shown; -1 = nothing shown yet.
+    // used to detect single-step-forward seeks so we can animate them.
+    let last_seek_idx   = -1
 
     // ── reactive: H.graph → cyto_graph particle ───────────────────────────────
 
@@ -73,9 +84,16 @@
 
         // ── seek ──────────────────────────────────────────────────────────────
         //
-        //   seek_step set by w:Cyto when StoryRun opens a step.
-        //   Find the last wave whose step_n <= seek_step and apply it frozen.
-        //   seek_step null → return to live head (most recent history entry).
+        //   gn.sc.seek_step is set by cyto_seek when StoryRun opens a pip.
+        //   null means "return to live head" (panel closed).
+        //
+        //   We find the last wave whose step_n <= seek_step.  Waves without
+        //   step_n are ambient ticks; they may appear between tagged waves but
+        //   we skip them for seek purposes (only tagged waves are targets).
+        //
+        //   Forward-by-one: if target is last_seek_idx + 1, apply only that
+        //   wave with full animation so the user sees the graph move rather
+        //   than snap.  Everything else rebuilds from scratch at dur=0.
         const seek = gn.sc.seek_step as number | null | undefined
         if (seek != null && cy) {
             let target_idx = -1
@@ -85,12 +103,26 @@
                 }
             }
             if (target_idx >= 0) {
-                // rebuild from scratch so nodes match the sought state exactly
-                cy.elements().remove()
-                for (let i = 0; i <= target_idx; i++) apply(history[i], 0)
-                status = `seek step:${seek} (wave ${target_idx + 1}/${history.length})`
-                return   // don't fall through to live-head enqueue below
+                if (target_idx === last_seek_idx + 1) {
+                    // one step forward — animate the transition
+                    const wave = history[target_idx]
+                    apply(wave, wave.duration)
+                    status = `step:${seek} (wave ${target_idx + 1}/${history.length})`
+                } else {
+                    // jump or backward — rebuild from scratch, no animation
+                    cy.elements().remove()
+                    for (let i = 0; i <= target_idx; i++) apply(history[i], 0)
+                    status = `seek step:${seek} (wave ${target_idx + 1}/${history.length})`
+                }
+                last_seek_idx = target_idx
+                return   // don't fall through to live-head enqueue
             }
+            // no tagged wave found yet (run hasn't started) — fall through
+        }
+
+        if (seek == null) {
+            // panel closed — return to live head and clear seek tracking
+            last_seek_idx = history.length - 1
         }
 
         // ── live head ─────────────────────────────────────────────────────────
@@ -103,6 +135,8 @@
 
     function enqueue(wave: Wave) {
         history = [...history, wave]
+        // keep last_seek_idx in sync when we're at the live head
+        if (last_seek_idx === history.length - 2) last_seek_idx = history.length - 1
         apply(wave, wave.duration)
         grawave_dur = wave.duration
         const nu = wave.upsert?.length ?? 0
@@ -114,6 +148,7 @@
     }
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
+    // Cytoscape cannot tween these — apply immediately or they throw.
     const NON_ANIM = new Set([
         'shape','background-image','background-fit','content','label',
         'source-label','target-label','line-style','target-arrow-shape',
@@ -139,7 +174,7 @@
         // 1. remove stale edges
         for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()
 
-        // 2. remove stale nodes (skip migrating)
+        // 2. remove stale nodes (skip migrating ids — they get their own animation)
         const migrating = new Set((wave.migrate ?? []).map(m => m.id))
         for (const id of wave.remove ?? []) {
             if (!migrating.has(id)) cy.getElementById(id).remove()
@@ -161,6 +196,7 @@
                 if (nd.parent) data.parent = nd.parent
                 const added = cy.add({ group: 'nodes', data })
                 added.style({ ...imm, ...anim })
+                // new mouthfuls: teleport to spawning leaf before layout moves them
                 if (nd.appear_from) {
                     const spawn = cy.getElementById(nd.appear_from)
                     if (spawn.length) added.position(spawn.position())
@@ -188,11 +224,12 @@
             }
         }
 
-        // 5. migrations
+        // 5. migrations: leaf harvest, mouthful expiry, node re-parenting
         for (const mg of wave.migrate ?? []) {
             const el     = cy.getElementById(mg.id)
             const toward = cy.getElementById(mg.toward)
             if (!el.length) continue
+            // detach harvested leaf from farm compound before flying
             if (mg.harvest_detach) {
                 el.move({ parent: null })
                 el.connectedEdges().remove()
@@ -205,19 +242,21 @@
             const fly_ms = Math.round(ms * 0.75)
             const shr_ms = Math.round(ms * 0.20)
             if (mg.then_parent) {
+                // re-parent: fly to new compound centre then reparent
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-out-cubic',
                       complete: () => { const s = cy.getElementById(mg.id); if (s.length) s.move({ parent: mg.then_parent! }) } }
                 )
             } else if (mg.mouthful_expire) {
+                // mouthful expiry: fade-shrink in place
                 el.animate(
                     { style: { opacity: 0, width: 3, height: 3 } },
                     { duration: Math.round(ms * 0.40), easing: 'ease-out-cubic',
                       complete: () => cy.getElementById(mg.id).remove() }
                 )
             } else {
-                // leaf harvest: fly to mat:basic then shrink
+                // leaf harvest: fly full-size to mat:basic then shrink-fade
                 el.animate(
                     { renderedPosition: tpos },
                     { duration: fly_ms, easing: 'ease-in-cubic',
@@ -234,17 +273,15 @@
             }
         }
 
-        // 6. layout with auto-fit
+        // 6. layout — only when the graph structure actually changed.
+        //    After animated layouts, fit all nodes with 16px padding.
+        //    Instant (ms=0) layouts skip the fit to avoid zoom-thrash during seek.
         if (wave.upsert?.length || wave.remove?.length || wave.edge_upsert?.length) {
             relayout(ms, wave.constraints)
         }
     }
 
     // ── layout ────────────────────────────────────────────────────────────────
-    //
-    //   After each animated layout, attach a one-shot layoutstop listener that
-    //   fits all nodes with 16px padding.  Skipped for instant (ms=0) applies
-    //   so seek rebuilds don't zoom-thrash; caller can fit manually if needed.
 
     let lay: any
     function relayout(animMs = 300, constraints?: any) {
@@ -266,6 +303,7 @@
             nodeRepulsion: () => 4000,
             ...(constraints ?? {}),
         })
+        // after animated layouts, fit to fill the container
         if (animMs > 0) {
             const on_stop = () => {
                 cy.removeListener('layoutstop', on_stop)
@@ -293,6 +331,7 @@
                     },
                 },
                 {
+                    // compound (worker) containers — always rendered, even when empty
                     selector: ':parent',
                     style: {
                         'text-valign': 'top', 'text-halign': 'center',
