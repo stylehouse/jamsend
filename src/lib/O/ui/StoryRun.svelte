@@ -515,18 +515,23 @@
         }
         const new_sel = n
         H.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
-        // seek the cyto graph to this step
-        H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: new_sel })
     }
 
     function close_panel() {
         diff_mode = null
         H.elvisto('Story/Story', 'story_sel', { open_at: null })
-        H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: null })
     }
     $effect(() => {
         displayed_at   // subscribe
         diff_mode = null
+    })
+    // cyto seek tracks display.open_at directly — not displayed_at —
+    // so the graph moves immediately when a pip is clicked, before
+    // exp_snap arrives and the diff panel catches up.
+    $effect(() => {
+        if (display.open_at) {
+            setTimeout(() => H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: display.open_at }), 0)
+        }
     })
 
     // Arrow-key navigation through the pip strip.

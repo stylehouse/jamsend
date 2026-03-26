@@ -119,6 +119,7 @@
 
     async cyto_seek(A: TheC, w: TheC, e: TheC) {
         const gn = w.c.gn as TheC
+        
         if (!gn) return
         gn.sc.seek_step = e?.sc.seek_step ?? null
         const wa = (this as House).o({ watched: 'graph' })[0] as TheC
