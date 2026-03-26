@@ -220,7 +220,7 @@
     // has_exp_snap / has_prev_snap drive which mode buttons are shown.
     // void Step.version subscribes so these update when snaps arrive async.
     let has_exp_snap = $derived.by(() => {
-        const n = display.open_at
+        const n = displayed_at
         if (n == null) return false
         const Step = live_step(n)
         void Step?.version
@@ -228,7 +228,7 @@
     })
 
     let has_prev_snap = $derived.by(() => {
-        const n = display.open_at
+        const n = displayed_at
         if (n == null || n <= 1) return false
         const prev = live_step(n - 1)
         void prev?.version
@@ -243,12 +243,28 @@
         if (n == null) return false
         const Step = live_step(n)
         void Step?.version
-        if (!Step) return true          // hollow — show immediately
-        if (Step.sc.ok || Step.sc.accepted) return true  // no exp needed
-        if (has_exp_snap) return true   // loaded — good to go
+        if (!Step) return true                       // hollow — show immediately
+        if (Step.sc.ok || Step.sc.accepted) return true
+        if (Step.sc.exp_snap) return true            // inline — not has_exp_snap
         const ts = display.steps.find(t => t.n === n)
-        if (!ts?.dige) return true      // no expected snap exists — fall through to prev/naive
-        return false                    // waiting for exp_snap fetch
+        if (!ts?.dige) return true                   // no expected snap to wait for
+        return false                                 // waiting for fetch
+    })
+
+    // displayed_at: the step actually shown in the panel.
+    // Lags behind display.open_at until panel_ready is true for the new step.
+    // This keeps the old diff visible while exp_snap is in flight, giving a
+    // smooth transition — often the same number of lines, barely a flicker.
+    let displayed_at = $state<number | null>(null)
+
+    $effect(() => {
+        if (display.open_at == null) {
+            displayed_at = null   // panel closed — clear immediately
+        } else if (panel_ready) {
+            displayed_at = display.open_at
+        }
+        // if open_at is set but panel_ready is false: leave displayed_at
+        // pointing at whatever was shown before — smooth hold
     })
 
     // eff_mode: resolved diff mode.
@@ -282,7 +298,7 @@
     // snaps arrive asynchronously (e.g. after story_sel triggers a fetch).
     // Pure diff functions come from T (H with Textures methods injected).
     let diff_rows = $derived.by((): DiffRow[] => {
-        const n = display.open_at
+        const n = displayed_at
         if (n == null) return []
         const Step = live_step(n)
         const prev = n > 1 ? live_step(n - 1) : null
@@ -489,7 +505,6 @@
     // When collecting and the same step is clicked: cancel.
     // diff_mode reset on every pick so eff_mode re-evaluates for the new step.
     function pick(n: number) {
-        diff_mode = null
         if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
             collect_range(diff_anchor, n)
             diff_collecting = false
@@ -509,6 +524,10 @@
         H.elvisto('Story/Story', 'story_sel', { open_at: null })
         H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: null })
     }
+    $effect(() => {
+        displayed_at   // subscribe
+        diff_mode = null
+    })
 
     // Arrow-key navigation through the pip strip.
     // Left/right move open_at by one step; sticky_mode carries forward.
@@ -573,8 +592,8 @@
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
-        {#if display.open_at != null}
-            {@const n          = display.open_at}
+         {#if displayed_at != null}
+            {@const n          = displayed_at}
             {@const ts_sel     = display.steps.find(t => t.n === n)}
             {@const Step       = live_step(n)}
             {@const ok         = !!(Step && Step.sc.ok)}
@@ -661,8 +680,6 @@
                 <div style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
                 {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
-                {:else if !panel_ready}
-                    <div class="sr-hollow-body">loading…</div>
                 {:else if eff_mode === 'naive'}
                     <!-- raw: single pre, full got_snap text, no diff colouring -->
                     <pre class="sr-pre sr-tree-pre">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>
