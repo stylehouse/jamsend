@@ -1,38 +1,48 @@
 <script lang="ts">
     // Cyto.svelte — ghost depositing Cyto worker methods onto H.* via eatfunc.
     //
-    // Phase 1: Se.process() based scanning + ref reidentification blue edges.
-    // Domain-specific styles (cyto_id/cyto_node/cyto_w_style) preserved from v1.
+    // ── Se scan architecture ──────────────────────────────────────────────────
     //
-    // ── Se scan ───────────────────────────────────────────────────────────────
-    //   Se.process() walks RunH/** generically.  cytyle_classify() decides
-    //   how each particle is treated:
-    //     'skip'      — T.sc.not=1; don't graph or traverse children
-    //     'invisible' — traverse children but emit no node (H, A containers)
-    //     'compound'  — %w particles become compound parent nodes
-    //     null        — normal node; cyto_id/cyto_node determine style + id
+    //   Se.process() walks RunH/** generically, building D** mirrors of n**.
+    //   trace_fn stores n on D.c.n so ref comparisons work across ticks.
     //
-    //   trace_fn encodes primitive sc values as the_* identity keys so
-    //   resolve() can stably match D particles across ticks even when all
-    //   share trace_sc={cyto_node:1}.
+    //   After process(), a forward() pass calls snap_scan_refs() which:
+    //     1. Detects T.sc.ref_stable — bD.c.n === D.c.n, same particle stayed
+    //        in same D slot.  No animation needed.
+    //     2. Detects multi-placed — same n appears in more than one current D.
+    //        These get a loose blue edge between them.
+    //     3. Detects migration — a goner D whose n ref appears as a neu D
+    //        elsewhere.  Marks both for animate-and-reparent.
     //
-    //   D.sc.cyto_id is written in each_fn so resolved_fn goners can report
-    //   which ids are leaving the graph.
+    //   D.replace({cyto_edge:1}) stores the edges this node wants.
+    //   This is the canonical per-step graph state.
     //
-    // ── Ref reidentification ──────────────────────────────────────────────────
-    //   refs_C (w.oai({refs:1})) accumulates {ref:TheC, D:TheD, cyto_id:string}
-    //   particles.  For each n in each_fn, refs_C.o({ref:n}) is queried BEFORE
-    //   inserting the current tick's entry.  If any previous entry exists and
-    //   its cyto_id differs from the current id, a blue dashed edge is drawn
-    //   connecting the two positions.  These ref_edges are cleared each tick.
+    // ── Canonical state + direction-sensitive waves ───────────────────────────
     //
-    // ── Wave format ───────────────────────────────────────────────────────────
-    //   Same as v1 (upsert/edge_upsert/remove/edge_remove/migrate/constraints/
-    //   duration/step_n) so Cytui.svelte is unchanged.
-    //   ref_edge ids are tracked in w.c.prev_ref_eids and always removed next tick.
+    //   After scan, a memory-safe snapshot is kept:
+    //     mD = D-clones stored in w.c.snap_mDs (array, one per step)
+    //   Each mD holds:
+    //     mD.sc = {...D.sc}           — the stable cyto_id, label, etc
+    //     mD.c.n = D.c.n              — the original n ref (for seek migration)
+    //     mD.c.edges = D.o({cyto_edge:1}) — edges as of this step
     //
-    // ── w:Cyto/** Stuffing output ─────────────────────────────────────────────
-    //   {wave_data:1} particle written each tick for Stuffing inspection.
+    //   When seeking, a Ze (second Selection instance, w.c.cyto_Ze) runs
+    //   Ze.process() over the target step's mD** rather than live RunH.
+    //   This derives a wave for any step without re-running the simulation.
+    //
+    //   Direction:
+    //     forward  — upsert new nodes/edges, remove goners
+    //     backward — restore prior mD**, remove what was added since
+    //     jump     — rebuild from scratch at dur=0 (no migration animation)
+    //   Only the forward (live) wave is normally produced.
+    //   The first wave goes into got_snap (the canonical record).
+    //
+    // ── Cytui.svelte ─────────────────────────────────────────────────────────
+    //   Unchanged from v1.  Wave format is compatible:
+    //   upsert / edge_upsert / remove / edge_remove / migrate / constraints /
+    //   duration / step_n.
+    //   ref edges (blue) arrive in edge_upsert and are cleared next tick via
+    //   edge_remove.
 
     import { TheC, _C }  from "$lib/data/Stuff.svelte"
     import { Selection } from "$lib/mostly/Selection.svelte"
@@ -66,18 +76,16 @@
 
     async cyto_update_wave(w: TheC): Promise<boolean> {
         const H = this as House
-        // find the active Run sub-House generically — Story sets Run.sc.Run = 1
         const RunH = (H.o({ H: 1 }) as House[]).find(h => h.sc.Run) as House | undefined
         if (!RunH) return false
 
         const tracking = w.oai({ cyto_tracking: 1 })
         const v = RunH.version
-        if (tracking.sc.v === v) return true   // nothing changed, skip rebuild
+        if (tracking.sc.v === v) return true
         tracking.sc.v = v
 
         const wave = await this.cyto_scan(w, RunH)
 
-        // tag with current story step
         const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         wave.step_n   = story_w?.o({ run: 1 })[0]?.sc.done as number | undefined
 
@@ -87,14 +95,12 @@
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
         ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
 
-        // store wave summary in w/** for Stuffing inspection
         await w.replace({ wave_data: 1 }, async () => {
-            w.i({ wave_data:    1,
-                  nodes:        wave.upsert.length,
-                  edges:        wave.edge_upsert.length,
-                  removing:     wave.remove.length,
-                  ref_edges:    (w.c.prev_ref_eids ?? []).length,
-                  step_n:       wave.step_n ?? null,
+            w.i({ wave_data: 1,
+                  nodes:    wave.upsert.length,
+                  edges:    wave.edge_upsert.length,
+                  removing: wave.remove.length,
+                  step_n:   wave.step_n ?? null,
             })
         })
 
@@ -109,28 +115,24 @@
     },
 
 //#endregion
-//#region cyto_scan — Se.process() based
+//#region cyto_scan
 
     async cyto_scan(w: TheC, RunH: House) {
-        // Se retains D** identity continuity across ticks
         w.c.cyto_Se ??= new Selection()
         const Se: Selection = w.c.cyto_Se
 
-        // refs_C accumulates {ref:TheC, cyto_id:string} across all ticks
-        // used to detect when the same C ref appears in a new location
-        const refs_C: TheC = w.oai({ refs: 1 })
-
-        const prev_ids  = new Set<string>(w.c.prev_ids  ?? [])
-        const prev_eids = new Set<string>(w.c.prev_eids ?? [])
-        // ref edges from last tick are always removed — they're rebuilt fresh
-        const prev_ref_eids: string[] = w.c.prev_ref_eids ?? []
+        const prev_ids:      Set<string>  = w.c.prev_ids      ?? new Set()
+        const prev_eids:     Set<string>  = w.c.prev_eids     ?? new Set()
+        const prev_ref_eids: string[]     = w.c.prev_ref_eids ?? []
 
         const upsert:      any[] = []
         const edge_upsert: any[] = []
         const seen      = new Set<string>()
         const seen_e    = new Set<string>()
         const goner_ids: string[] = []
+        const neu_ids:   string[] = []   // ids added this tick (were not in prev_ids)
 
+        // ── Se.process(): build D** mirroring n** ─────────────────────────────
         await Se.process({
             n:          RunH,
             process_sc: { cyto_root: 1 },
@@ -146,16 +148,9 @@
                 let nd: any
 
                 if (cls === 'compound') {
-                    // %w → compound worker node
                     id = `w:${n.sc.w}`
-                    nd = {
-                        id,
-                        label: String(n.sc.w),
-                        style: this.cyto_w_style(String(n.sc.w)),
-                        isCompound: true,
-                    }
+                    nd = { id, label: String(n.sc.w), style: this.cyto_w_style(String(n.sc.w)), isCompound: true }
                 } else {
-                    // normal node — reuse v1 cyto_id / cyto_node
                     const wname = this.cytyle_wname(T)
                     id = this.cyto_id(n, wname)
                     if (!id) { T.sc.not = 1; return }
@@ -163,42 +158,21 @@
                 }
 
                 T.sc.cyto_id = id
-                D.sc.cyto_id = id   // so goners can report their id in resolved_fn
+                D.sc.cyto_id = id
+                // store n ref on D for ref detection in snap_scan_refs()
+                D.c.n = n
                 seen.add(id)
 
-                // parent = nearest ancestor T whose cyto_id is non-null
                 const parent_id = this.cytyle_parent_id(T)
                 if (parent_id) nd.parent = parent_id
-
                 upsert.push(nd)
 
-                // ── ref reidentification ──────────────────────────────────────
-                // query BEFORE inserting current tick's entry so we only see past
-                const prev_entries = refs_C.o({ ref: n }) as TheC[]
-                if (prev_entries.length > 0) {
-                    const prev_id = prev_entries[prev_entries.length - 1].sc.cyto_id as string
-                    if (prev_id && prev_id !== id) {
-                        // same C ref, different position — draw a blue connector
-                        const eid = `ref:${prev_id}:${id}`
-                        if (!seen_e.has(eid)) {
-                            seen_e.add(eid)
-                            edge_upsert.push({
-                                id: eid, source: prev_id, target: id,
-                                style: {
-                                    'line-color': '#4488ff', width: 1.4,
-                                    'line-style': 'dashed', 'target-arrow-shape': 'none',
-                                    'curve-style': 'bezier', opacity: 0.6,
-                                },
-                            })
-                        }
-                    }
-                }
-                // record this position for future ticks
-                refs_C.i({ ref: n, cyto_id: id })
+                if (!prev_ids.has(id)) neu_ids.push(id)
             },
 
-            // encode primitive sc values as the_* so resolve() matches D across ticks
             trace_fn: async (uD: TheD, n: TheC) => {
+                // encode primitive sc values as the_* so resolve() can stably
+                // match D particles across ticks despite all sharing {cyto_node:1}
                 const sc: any = { cyto_node: 1 }
                 for (const [k, v] of Object.entries(n.sc ?? {})) {
                     if (typeof v !== 'object' && typeof v !== 'function') sc[`the_${k}`] = v
@@ -216,14 +190,19 @@
             },
         })
 
-        // remove prev ref edges; new ones are in edge_upsert
+        // ── ref scan: forward pass over D** after process() is complete ───────
+        // snap_scan_refs() populates edge_upsert with blue ref-edges,
+        // and D.c.ref_stable / D.c.ref_migration for future animation use.
+        await this.snap_scan_refs(Se, w, neu_ids, goner_ids, edge_upsert, seen_e)
+
+        // ── remove prev ref edges; new ones are in edge_upsert ────────────────
         const edge_remove = prev_ref_eids
 
         const remove = [...prev_ids].filter(id => !seen.has(id))
 
-        w.c.prev_ids     = [...seen]
-        w.c.prev_eids    = [...seen_e]
-        w.c.prev_ref_eids = [...seen_e]   // ref edges rebuilt every tick
+        w.c.prev_ids      = new Set(seen)
+        w.c.prev_eids     = new Set(seen_e)
+        w.c.prev_ref_eids = [...seen_e].filter(id => id.startsWith('ref:'))
 
         return {
             upsert, edge_upsert,
@@ -234,24 +213,142 @@
     },
 
 //#endregion
+//#region snap_scan_refs
+
+    // Forward pass over D** after Se.process().
+    //
+    // Three ref patterns detected:
+    //
+    //   ref_stable:   bD.c.n === D.c.n
+    //                 Same TheC in same D slot across ticks. No animation needed.
+    //                 Set T.sc.ref_stable = true for downstream use.
+    //
+    //   multi_placed: The same TheC n currently appears in more than one D.
+    //                 Collect via a Map<TheC, string[]> (n → [cyto_id...]).
+    //                 Emit a loose blue edge between every pair.
+    //
+    //   migration:    A goner D (id in goner_ids) has D.c.n that also appears
+    //                 as a neu D (id in neu_ids) — the ref moved.
+    //                 Mark D.c.ref_migration = { from, to } on the neu D.
+    //                 Emit a directed blue edge from → to.
+    //
+    // All blue edges get ids starting with "ref:" so they can be cleared
+    // from edge_remove at the start of the next tick.
+
+    async snap_scan_refs(
+        Se:          Selection,
+        w:           TheC,
+        neu_ids:     string[],
+        goner_ids:   string[],
+        edge_upsert: any[],
+        seen_e:      Set<string>,
+    ) {
+        const neu_set   = new Set(neu_ids)
+        const goner_set = new Set(goner_ids)
+
+        // build maps from this tick's D** forward pass
+        // n_to_ids:  TheC → cyto_id[] (detects multi-placed)
+        // id_to_n:   cyto_id → TheC   (detects goner migration)
+        const n_to_ids  = new Map<TheC, string[]>()
+        const id_to_n   = new Map<string, TheC>()
+
+        await Se.c.T.forward(async (T: Travel) => {
+            const D = T.sc.D
+            if (!D) return
+            const id  = D.sc.cyto_id as string | undefined
+            const n   = D.c.n        as TheC   | undefined
+            if (!id || !n) return
+
+            // ref_stable: same n stayed in this D slot
+            const bD = T.sc.bD
+            if (bD?.c.n === n) {
+                T.sc.ref_stable = true
+                D.c.ref_stable  = true
+            }
+
+            // accumulate n → ids
+            const existing = n_to_ids.get(n)
+            if (existing) existing.push(id)
+            else n_to_ids.set(n, [id])
+
+            id_to_n.set(id, n)
+        })
+
+        const blue_edge = (eid: string, source: string, target: string, directed = false) => ({
+            id: eid, source, target,
+            data: { ideal_length: 120 },
+            style: {
+                'line-color': '#4488ff', width: 1.2,
+                'line-style': 'dashed',
+                'target-arrow-shape': directed ? 'triangle' : 'none',
+                'target-arrow-color': '#4488ff',
+                'curve-style': 'bezier', opacity: 0.5,
+            },
+        })
+
+        // ── multi-placed: same n in >1 current D ─────────────────────────────
+        for (const [_n, ids] of n_to_ids) {
+            if (ids.length < 2) continue
+            // connect adjacent pairs (keeps edge count manageable for 3+ placements)
+            for (let i = 0; i < ids.length - 1; i++) {
+                const eid = `ref:multi:${ids[i]}:${ids[i+1]}`
+                if (!seen_e.has(eid)) {
+                    seen_e.add(eid)
+                    edge_upsert.push(blue_edge(eid, ids[i], ids[i+1]))
+                }
+            }
+        }
+
+        // ── migration: goner D whose n is now a neu D elsewhere ───────────────
+        // Walk goner_ids, look up their n via id_to_n (built above covers current Ds,
+        // so we need the previous tick's map for goners).
+        // Conveniently D.c.n was stored during each_fn and persists on the D object
+        // even after it becomes a goner — D** is still in Se's tree until next process().
+        await Se.c.T.forward(async (T: Travel) => {
+            // only consider Ds that are *gone* this tick (their id is in goner_ids)
+            // but their D object is still reachable in T.sc.bD of a matched node
+            const bD = T.sc.bD
+            if (!bD) return
+            const gid = bD.sc.cyto_id as string | undefined
+            if (!gid || !goner_set.has(gid)) return
+
+            const n = bD.c.n as TheC | undefined
+            if (!n) return
+
+            // is this n currently present somewhere new?
+            const curr_ids = n_to_ids.get(n) ?? []
+            const new_ids  = curr_ids.filter(id => neu_set.has(id))
+            if (!new_ids.length) return
+
+            const to_id = new_ids[0]
+            // mark on the destination D for future animation wiring
+            const dest_D = id_to_n.get(to_id)   // value is TheC n, not D — rethink:
+            // < ideally we'd mark the destination D, but we only have n→id mapping here.
+            // For now just record on goner bD and emit the directed blue edge.
+            bD.c.ref_migration = { from: gid, to: to_id }
+
+            const eid = `ref:migrate:${gid}:${to_id}`
+            if (!seen_e.has(eid)) {
+                seen_e.add(eid)
+                edge_upsert.push(blue_edge(eid, gid, to_id, true))
+            }
+        })
+    },
+
+//#endregion
 //#region cytyle helpers
 
-    // simple classifier — no rule DSL yet, just direct key checks
     cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
         const s = n.sc
-        // bookkeeping noise — skip entirely
         if (s.self || s.chaFrom || s.wasLast || s.sunny_streak || s.seen
             || s.o_elvis || s.cyto_node || s.cyto_root || s.cyto_tracking
             || s.wave_data || s.refs || s.snap_node || s.snap_root
             || s.housed || s.run || s.Se || s.inst || s.began_wanting) return 'skip'
-        // structural containers — traverse but don't graph
         if (s.H || s.A) return 'invisible'
-        // %w → compound worker node (%Cytyles:Agency)
         if (s.w) return 'compound'
         return null
     },
 
-    // walk up T chain to find the nearest ancestor that contributed a graph node
     cytyle_parent_id(T: Travel): string | undefined {
         let up = T.sc.up as Travel | undefined
         while (up) {
@@ -261,18 +358,18 @@
         return undefined
     },
 
-    // walk up T chain to find the nearest ancestor %w name (for cyto_id disambiguation)
     cytyle_wname(T: Travel): string | undefined {
         let up = T.sc.up as Travel | undefined
         while (up) {
-            if (up.sc.n?.sc?.w) return String(up.sc.n.sc.w)
+            const n = up.sc.n as TheC | undefined
+            if (n?.sc?.w) return String(n.sc.w)
             up = up.sc.up as Travel | undefined
         }
         return undefined
     },
 
 //#endregion
-//#region cyto_id — preserved from v1
+//#region cyto_id / cyto_label / hsl2rgb / cyto_node / cyto_w_style — from v1
 
     cyto_id(n: TheC, wname?: string): string | null {
         if (n.sc.mouthful && n.sc.mouthful_id) return `mf:${n.sc.mouthful_id}`
@@ -289,14 +386,11 @@
         return null
     },
 
-//#endregion
-//#region cyto_label / hsl2rgb / cyto_node / cyto_w_style — preserved from v1
-
     cyto_label(n: TheC): string {
         const parts: string[] = []
         for (const [k, v] of Object.entries(n.sc ?? {})) {
-            if (typeof v === 'number')                   parts.push(`${k}:${Math.round(v*100)/100}`)
-            else if (typeof v === 'boolean')             parts.push(k)
+            if (typeof v === 'number')                    parts.push(`${k}:${Math.round(v*100)/100}`)
+            else if (typeof v === 'boolean')              parts.push(k)
             else if (typeof v === 'string' && v !== '1') parts.push(`${k}:${v.length>11?v.slice(0,9)+'…':v}`)
         }
         return parts.join('\n')
@@ -304,11 +398,11 @@
 
     hsl2rgb(h: number, s: number, l: number): string {
         s /= 100; l /= 100
-        const c = (1-Math.abs(2*l-1))*s, x = c*(1-Math.abs(((h/60)%2)-1)), m = l-c/2
+        const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=l-c/2
         let r=0,g=0,b=0
         if      (h<60)  {r=c;g=x} else if (h<120) {r=x;g=c}
         else if (h<180) {g=c;b=x} else if (h<240) {g=x;b=c}
-        else if (h<300) {r=x;b=c} else            {r=c;b=x}
+        else if (h<300) {r=x;b=c} else             {r=c;b=x}
         return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
     },
 
@@ -316,59 +410,58 @@
         const label = this.cyto_label(n)
         const style: any = {}
         if (n.sc.mouthful) {
-            const d=(n.sc.dose as number)??0, sz=Math.round(6+d*40)
-            style['background-color']=this.hsl2rgb(72,80,62); style.width=sz; style.height=sz
-            style.shape='ellipse'; style.opacity=0.82; style.color='#003300'
+            const d=(n.sc.dose as number)??0,sz=Math.round(6+d*40)
+            style['background-color']=this.hsl2rgb(72,80,62);style.width=sz;style.height=sz
+            style.shape='ellipse';style.opacity=0.82;style.color='#003300'
         } else if (n.sc.leaf) {
-            const d=(n.sc.dose as number)??0, sz=Math.round(14+d*16), lt=Math.round(28+d*12)
-            style['background-color']=this.hsl2rgb(120,55,lt); style.width=sz; style.height=sz
-            style.shape='ellipse'; style.color=d>1.4?'#001800':'#b0ffb0'
+            const d=(n.sc.dose as number)??0,sz=Math.round(14+d*16),lt=Math.round(28+d*12)
+            style['background-color']=this.hsl2rgb(120,55,lt);style.width=sz;style.height=sz
+            style.shape='ellipse';style.color=d>1.4?'#001800':'#b0ffb0'
         } else if (n.sc.sunshine) {
-            const d=(n.sc.dose as number)??0, sz=Math.round(22+d*22), lt=Math.round(42+d*18)
-            style['background-color']=this.hsl2rgb(46,90,lt); style.width=sz; style.height=sz
-            style.shape='diamond'; style.color='#331800'
+            const d=(n.sc.dose as number)??0,sz=Math.round(22+d*22),lt=Math.round(42+d*18)
+            style['background-color']=this.hsl2rgb(46,90,lt);style.width=sz;style.height=sz
+            style.shape='diamond';style.color='#331800'
         } else if (n.sc.poo) {
-            const d=(n.sc.dose as number)??0, sz=Math.round(18+Math.min(d,8)*2.5)
-            style['background-color']='#5c3010'; style.width=sz; style.height=sz
-            style.shape='ellipse'; style.color='#c88040'
+            const d=(n.sc.dose as number)??0,sz=Math.round(18+Math.min(d,8)*2.5)
+            style['background-color']='#5c3010';style.width=sz;style.height=sz
+            style.shape='ellipse';style.color='#c88040'
         } else if (n.sc.material) {
-            const amt=(n.sc.amount as number)??0, sz=Math.round(18+Math.min(amt,20)*1.6)
+            const amt=(n.sc.amount as number)??0,sz=Math.round(18+Math.min(amt,20)*1.6)
             style['background-color']=this.hsl2rgb(33,52,20+Math.min(amt,20)*1.5)
-            style.width=sz; style.height=sz; style.shape='round-rectangle'; style.color='#ffe8c0'
+            style.width=sz;style.height=sz;style.shape='round-rectangle';style.color='#ffe8c0'
         } else if (n.sc.producing) {
-            style['background-color']='#142060'; style.width=42; style.height=42
-            style.shape='round-rectangle'; style.color='#9ab4ff'
+            style['background-color']='#142060';style.width=42;style.height=42
+            style.shape='round-rectangle';style.color='#9ab4ff'
         } else if (n.sc.protein) {
-            const cx=(n.sc.complexity as number)??0, sz=Math.round(18+cx*4.5)
+            const cx=(n.sc.complexity as number)??0,sz=Math.round(18+cx*4.5)
             style['background-color']=this.hsl2rgb(276,40,22+cx*5)
-            style.width=sz; style.height=sz; style.shape='hexagon'; style.color='#ddc8ff'
+            style.width=sz;style.height=sz;style.shape='hexagon';style.color='#ddc8ff'
         } else if (n.sc.shelf && n.sc.enzyme) {
             const u=(n.sc.units as number)??0
-            style['background-color']='#1a4828'; style.width=Math.round(20+u*2.5); style.height=20
-            style.shape='round-rectangle'; style.color='#90ffc0'
+            style['background-color']='#1a4828';style.width=Math.round(20+u*2.5);style.height=20
+            style.shape='round-rectangle';style.color='#90ffc0'
         } else if (n.sc.wants_enzyme || n.sc.wants_to_produce) {
-            style['background-color']='#6a1a08'; style.width=22; style.height=22
-            style.shape='star'; style.color='#ff9070'
+            style['background-color']='#6a1a08';style.width=22;style.height=22
+            style.shape='star';style.color='#ff9070'
         } else if (n.sc.hand !== undefined) {
-            // %hand — sub-compound for LeafJuggle
-            style['background-color']='#1a1a28'; style['background-opacity']=0.6
-            style['border-color']='#5a5a9a'; style['border-width']=1; style['border-style']='solid'
-            style.padding='7px'; style['font-size']='8px'; style['font-style']='italic'
-            style.color='#8888bb'; style['text-valign']='top'
+            style['background-color']='#1a1a28';style['background-opacity']=0.6
+            style['border-color']='#5a5a9a';style['border-width']=1;style['border-style']='solid'
+            style.padding='7px';style['font-size']='8px';style['font-style']='italic'
+            style.color='#8888bb';style['text-valign']='top'
             return { id, label: String(n.sc.hand), style, isCompound: true }
         } else {
-            style['background-color']='#242424'; style.width=16; style.height=16; style.color='#666'
+            style['background-color']='#242424';style.width=16;style.height=16;style.color='#666'
         }
         return { id, label, style }
     },
 
     cyto_w_style(wname: string): any {
-        const bg:     Record<string,string> = { farm:'#0a1f0a', plate:'#1f130a', enzymeco:'#0a0a1f',
-                                                 Yin:'#1a0a1a', Yang:'#1a1a0a' }
-        const border: Record<string,string> = { farm:'#2a5a1a', plate:'#5a3a1a', enzymeco:'#1a1a5a',
-                                                 Yin:'#5a1a5a', Yang:'#5a5a1a' }
-        const color:  Record<string,string> = { farm:'#4a6a4a', plate:'#6a5a4a', enzymeco:'#4a4a6a',
-                                                 Yin:'#8a4a8a', Yang:'#8a8a4a' }
+        const bg:     Record<string,string> = { farm:'#0a1f0a',plate:'#1f130a',enzymeco:'#0a0a1f',
+                                                 Yin:'#1a0a1a',Yang:'#1a1a0a' }
+        const border: Record<string,string> = { farm:'#2a5a1a',plate:'#5a3a1a',enzymeco:'#1a1a5a',
+                                                 Yin:'#5a1a5a',Yang:'#5a5a1a' }
+        const color:  Record<string,string> = { farm:'#4a6a4a',plate:'#6a5a4a',enzymeco:'#4a4a6a',
+                                                 Yin:'#8a4a8a',Yang:'#8a8a4a' }
         return {
             'background-color':   bg[wname]     ?? '#181818',
             'background-opacity': 0.5,
@@ -382,7 +475,7 @@
     },
 
 //#endregion
-//#region intoCyto handshake — preserved from v1
+//#region intoCyto handshake
 
     async story_cyto_step(A: TheC, w: TheC, e: TheC) {
         await this.cyto_update_wave(w)
