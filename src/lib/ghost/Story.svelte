@@ -596,12 +596,13 @@
         if (thence.length) T.sc.thence_matching = thence
     },
 
-    async story_snap(Run: House): Promise<string> {
-        // walk Run via Selection, encoding each particle as a snap line.
-        // Selection is cached on Run.c.snap_Se so it retains trace history across
-        // steps — that history is what produces the changed/new/gone diff tags.
-        // story_process_node sets D.sc.snap_line; traced_fn compares snap_line
-        // strings directly for change detection — no separate snap_copy needed.
+    // ── snap_H ────────────────────────────────────────────────────────────────
+    // The H-structure portion of the full snap.
+    // Exactly what story_snap used to do — walk Run via Selection,
+    // encode each particle as a snap line, return joined string.
+    // snap_Se lives here; traced_fn compares snap_line strings across runs.
+
+    async snap_H(Run: House): Promise<string> {
         const lines: TheD[] = []
 
         Run.c.snap_Se ??= new Selection()
@@ -623,7 +624,6 @@
             },
 
             trace_fn: async (uD: TheD, n: TheC, _T: Travel) => {
-                // stable identity for re-identification across runs
                 const identity = Object.fromEntries(
                     Object.keys(n.sc).map(k => [`the_${k}`, n.sc[k]])
                 )
@@ -633,11 +633,122 @@
             traced_fn: async (D: TheD, bD: TheD | undefined) => {
                 D.sc.changed = bD?.sc.snap_line != null && D.sc.snap_line !== bD.sc.snap_line
                 D.sc.is_new  = !bD
-                // snap_line on D is the stable record across runs — no separate snap_copy needed
             },
         })
 
         return lines.map(D => D.sc.snap_line as string).join('\n') + '\n'
+    },
+
+    // ── snap_indent ────────────────────────────────────────────────────────────
+    // Shift every line in a snap string by +d depth levels.
+    // Since enL encodes depth as leading '  ' pairs, prepending '  '.repeat(d)
+    // is exactly equivalent to having been encoded at depth+d.
+
+    snap_indent(snap: string, d: number): string {
+        if (!d) return snap
+        const prefix = '  '.repeat(d)
+        return snap.split('\n').filter(Boolean).map(l => prefix + l).join('\n') + '\n'
+    },
+
+
+    // ── snap_cytowave_str ──────────────────────────────────────────────────────
+    // Encode a cyto wave as enL lines starting at d_base.
+    // Each node/edge is one enL line (stringies = identity keys).
+    // Style properties are children at d_base+1, one key per line.
+    // Numeric style values rounded to 2dp; label \n → space.
+    // Excluded: duration, step_n, constraints (non-content).
+
+    snap_cytowave_str(wave: any, d_base = 1): string {
+        if (!wave) return ''
+        const lines: string[] = []
+
+        // ── nodes sorted by id ───────────────────────────────────────────────
+        for (const nd of ([...(wave.upsert ?? [])] as any[])
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const stringies: Record<string,any> = { node: nd.id }
+            if (nd.parent)     stringies.parent   = nd.parent
+            if (nd.isCompound) stringies.compound = 1
+            if (nd.label)      stringies.label    = String(nd.label).replace(/\n/g, ' ')
+            lines.push(this.enL({ d: d_base, stringies }))
+            for (const [k, v] of Object.entries(nd.style ?? {})
+                    .sort(([a], [b]) => a.localeCompare(b))) {
+                if (v == null) continue
+                const sv: Record<string,any> = {}
+                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
+                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
+            }
+        }
+
+        // ── edges sorted by id ───────────────────────────────────────────────
+        for (const ed of ([...(wave.edge_upsert ?? [])] as any[])
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const stringies: Record<string,any> = {
+                edge: ed.id, source: ed.source, target: ed.target,
+            }
+            if (ed.data?.ideal_length != null) stringies.ideal_length = ed.data.ideal_length
+            lines.push(this.enL({ d: d_base, stringies }))
+            for (const [k, v] of Object.entries(ed.style ?? {})
+                    .sort(([a], [b]) => a.localeCompare(b))) {
+                if (v == null) continue
+                const sv: Record<string,any> = {}
+                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
+                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
+            }
+        }
+
+        // ── removals sorted ──────────────────────────────────────────────────
+        for (const id of ([...(wave.remove ?? [])] as string[]).sort())
+            lines.push(this.enL({ d: d_base, stringies: { remove: id } }))
+        for (const id of ([...(wave.edge_remove ?? [])] as string[]).sort())
+            lines.push(this.enL({ d: d_base, stringies: { edge_remove: id } }))
+
+        // ── migrations sorted by id ──────────────────────────────────────────
+        for (const mg of ([...(wave.migrate ?? [])] as any[])
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const stringies: Record<string,any> = { migrate: mg.id, toward: mg.toward }
+            if (mg.harvest_detach)  stringies.harvest_detach  = 1
+            if (mg.mouthful_expire) stringies.mouthful_expire = 1
+            if (mg.then_parent)     stringies.then_parent     = mg.then_parent
+            lines.push(this.enL({ d: d_base, stringies }))
+        }
+
+        return lines.join('\n') + '\n'
+    },
+
+
+    // ── story_snap ────────────────────────────────────────────────────────────
+    // Full snap as a deL-able tree:
+    //
+    //   \t{"Snap":"H"}                       d=0
+    //     [snap_H content shifted to d=1+]
+    //   \t{"Snap":"cytowave"}                d=0
+    //     \t{"node":"w:farm","compound":1,...}   d=1
+    //       \t{"background-color":"#0a1f0a"}     d=2
+    //       ...
+    //
+    // cyto_scan always runs regardless of intoCyto so the wave is always in
+    // the dige.  cyto_update_wave's version-check makes this free when RunH
+    // hasn't changed since the last ambient Cyto tick.
+
+    async story_snap(Run: House): Promise<string> {
+        const H = this as House
+
+        // Snap:H — indent +1 so content nests under the header
+        const h_snap  = await this.snap_H(Run)
+        const h_block = this.snap_indent(h_snap, 1)
+
+        // Snap:Cytowave — always scan
+        const cyto_A = H.o({ A: 'Cyto' })[0] as TheC | undefined
+        const cyto_w = cyto_A?.o({ w: 'Cyto' })[0] as TheC | undefined
+        if (cyto_w) {
+            if (!cyto_w.c.plan_done) H.Cyto_plan(cyto_w)
+            H.cyto_update_wave(cyto_w)
+        }
+        const wave     = cyto_w?.c.gn?.sc.wave as any
+        const cw_block = this.snap_cytowave_str(wave)   // d_base=1, already nested
+
+        return this.enL({ d: 0, stringies: { Snap: 'H' } })        + '\n' + h_block
+            + this.enL({ d: 0, stringies: { Snap: 'cytowave' } }) + '\n' + cw_block
     },
 
 

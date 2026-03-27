@@ -117,7 +117,7 @@
     //   this is the canonical form; deL handles both tab-present and tab-absent.
 
     enL(parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> }): string {
-        const obj_part = Object.keys(parsed.objecties).length ? this.enj(parsed.objecties) : ''
+        const obj_part = Object.keys(parsed.objecties||{}).length ? this.enj(parsed.objecties) : ''
         const str_part = this.encode_stringies(parsed.stringies)
         return obj_part
             ? `${this.ind(parsed.d)}${obj_part}\t${str_part}`

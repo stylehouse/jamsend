@@ -1,26 +1,193 @@
-H:LeafFarm,Run
-  A:farm
-    {"mung":["age"]}	self,round:16
-    w:farm
-      sunshine,dose:0.10191769558207964
-      sunny_streak,count:0
-      poo,dose:2.098364204531588
-      leaf,leaf_id:leaf_2_0,dose:1.2584935527335912
-      leaf,leaf_id:leaf_3_0,dose:1.031552092404583
-      leaf,leaf_id:leaf_4_0,dose:0.8455345019709697
-      seen:wonder
+Snap:H
+  H:LeafFarm,Run
+    A:farm
       {"mung":["age"]}	self,round:16
-  A:plate
-    {"mung":["age"]}	self,round:16
-    w:plate
-      sunshine,dose
-      material:basic,amount:1.2422075718775392
-      wants_enzyme
-      shelf,enzyme,units
-      shelf,enzyme,units:5
+      w:farm
+        sunshine,dose:0.10191769558207964
+        sunny_streak,count:0
+        poo,dose:2.098364204531588
+        leaf,leaf_id:leaf_2_0,dose:1.2584935527335912
+        leaf,leaf_id:leaf_3_0,dose:1.031552092404583
+        leaf,leaf_id:leaf_4_0,dose:0.8455345019709697
+        seen:wonder
+        {"mung":["age"]}	self,round:16
+    A:plate
       {"mung":["age"]}	self,round:16
-  A:enzymeco
-    {"mung":["age"]}	self,round:16
-    w:enzymeco
+      w:plate
+        sunshine,dose
+        material:basic,amount:1.2422075718775392
+        wants_enzyme
+        shelf,enzyme,units
+        shelf,enzyme,units:5
+        {"mung":["age"]}	self,round:16
+    A:enzymeco
       {"mung":["age"]}	self,round:16
-  {"mung":["id"]}	mo:main,interval:3.6
+      w:enzymeco
+        {"mung":["age"]}	self,round:16
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  {"node":"enz_shelf","parent":"w:plate","label":"shelf:1 enzyme:1 units:1"}
+    background-color:#1a4828
+    color:#90ffc0
+    height:20
+    shape:round-rectangle
+    width:23
+  {"node":"enz_shelf","parent":"w:plate","label":"shelf:1 enzyme:1 units:5"}
+    background-color:#1a4828
+    color:#90ffc0
+    height:20
+    shape:round-rectangle
+    width:33
+  {"node":"leaf:leaf_2_0","parent":"w:farm","label":"leaf:1 leaf_id:leaf_2_0 dose:1.26"}
+    {"background-color":"rgb(49,170,49)"}
+    color:#b0ffb0
+    height:34
+    shape:ellipse
+    width:34
+  {"node":"leaf:leaf_3_0","parent":"w:farm","label":"leaf:1 leaf_id:leaf_3_0 dose:1.03"}
+    {"background-color":"rgb(46,158,46)"}
+    color:#b0ffb0
+    height:31
+    shape:ellipse
+    width:31
+  {"node":"leaf:leaf_4_0","parent":"w:farm","label":"leaf:1 leaf_id:leaf_4_0 dose:0.85"}
+    {"background-color":"rgb(44,150,44)"}
+    color:#b0ffb0
+    height:28
+    shape:ellipse
+    width:28
+  {"node":"mat:basic","parent":"w:plate","label":"material:basic amount:1.24"}
+    {"background-color":"rgb(85,59,27)"}
+    color:#ffe8c0
+    height:20
+    shape:round-rectangle
+    width:20
+  {"node":"poo","parent":"w:farm","label":"poo:1 dose:2.1"}
+    background-color:#5c3010
+    color:#c88040
+    height:23
+    shape:ellipse
+    width:23
+  {"node":"sun:farm","parent":"w:farm","label":"sunshine:1 dose:0.1"}
+    {"background-color":"rgb(213,166,11)"}
+    color:#331800
+    height:24
+    shape:diamond
+    width:24
+  {"node":"sun:plate","parent":"w:plate","label":"sunshine:1 dose:1"}
+    {"background-color":"rgb(245,202,61)"}
+    color:#331800
+    height:44
+    shape:diamond
+    width:44
+  {"node":"w:enzymeco","compound":1,"label":"enzymeco"}
+    background-color:#0a0a1f
+    background-opacity:0.5
+    border-color:#1a1a5a
+    border-style:dashed
+    border-width
+    color:#4a6a4a
+    font-size:9px
+    font-style:italic
+    font-weight:bold
+    padding:12px
+    text-halign:center
+    text-valign:top
+  {"node":"w:farm","compound":1,"label":"farm"}
+    background-color:#0a1f0a
+    background-opacity:0.5
+    border-color:#2a5a1a
+    border-style:dashed
+    border-width
+    color:#4a6a4a
+    font-size:9px
+    font-style:italic
+    font-weight:bold
+    padding:12px
+    text-halign:center
+    text-valign:top
+  {"node":"w:plate","compound":1,"label":"plate"}
+    background-color:#1f130a
+    background-opacity:0.5
+    border-color:#5a3a1a
+    border-style:dashed
+    border-width
+    color:#4a6a4a
+    font-size:9px
+    font-style:italic
+    font-weight:bold
+    padding:12px
+    text-halign:center
+    text-valign:top
+  {"node":"want_enz","parent":"w:plate","label":"wants_enzyme:1"}
+    background-color:#6a1a08
+    color:#ff9070
+    height:22
+    shape:star
+    width:22
+  {"edge":"e:flow:enzymeco_plate","source":"w:enzymeco","target":"w:plate","ideal_length":15}
+    curve-style:bezier
+    line-color:#2a2a3a
+    line-style:solid
+    opacity:0.35
+    target-arrow-color:#2a2a3a
+    target-arrow-shape:triangle
+    width:1.5
+  {"edge":"e:flow:farm_plate","source":"w:farm","target":"w:plate","ideal_length":15}
+    curve-style:bezier
+    line-color:#2a2a3a
+    line-style:solid
+    opacity:0.35
+    target-arrow-color:#2a2a3a
+    target-arrow-shape:triangle
+    width:1.5
+  {"edge":"e:flow:plate_enzymeco","source":"w:plate","target":"w:enzymeco","ideal_length":15}
+    curve-style:bezier
+    line-color:#2a2a3a
+    line-style:solid
+    opacity:0.35
+    target-arrow-color:#2a2a3a
+    target-arrow-shape:triangle
+    width:1.5
+  {"edge":"e:helio:leaf:leaf_2_0","source":"leaf:leaf_2_0","target":"sun:farm","ideal_length":110}
+    curve-style:bezier
+    line-color:#c8b020
+    line-style:dashed
+    opacity:0.18
+    target-arrow-shape:none
+    width:0.6
+  {"edge":"e:helio:leaf:leaf_3_0","source":"leaf:leaf_3_0","target":"sun:farm","ideal_length":110}
+    curve-style:bezier
+    line-color:#c8b020
+    line-style:dashed
+    opacity:0.18
+    target-arrow-shape:none
+    width:0.6
+  {"edge":"e:helio:leaf:leaf_4_0","source":"leaf:leaf_4_0","target":"sun:farm","ideal_length":110}
+    curve-style:bezier
+    line-color:#c8b020
+    line-style:dashed
+    opacity:0.18
+    target-arrow-shape:none
+    width:0.6
+  {"edge":"e:stem:leaf:leaf_2_0","source":"leaf:leaf_2_0","target":"poo","ideal_length":53}
+    curve-style:straight
+    line-color:#3d7a1e
+    line-style:solid
+    opacity:0.74
+    target-arrow-shape:none
+    width:1.93
+  {"edge":"e:stem:leaf:leaf_3_0","source":"leaf:leaf_3_0","target":"poo","ideal_length":46}
+    curve-style:straight
+    line-color:#3d7a1e
+    line-style:solid
+    opacity:0.7
+    target-arrow-shape:none
+    width:1.73
+  {"edge":"e:stem:leaf:leaf_4_0","source":"leaf:leaf_4_0","target":"poo","ideal_length":41}
+    curve-style:straight
+    line-color:#3d7a1e
+    line-style:solid
+    opacity:0.66
+    target-arrow-shape:none
+    width:1.56
