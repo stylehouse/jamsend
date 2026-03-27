@@ -8,21 +8,7 @@
     //
     //   When StoryRun opens a step it fires H.elvisto('Cyto/Cyto','cyto_seek',
     //   {seek_step:N}).  w:Cyto writes gn.sc.seek_step and bumps the graph
-    //   particle.  The $effect here reads seek_step and finds the last wave
-    //   in history whose .step_n <= seek_step, then seeks to it.
-    //
-    //   Waves are tagged with step_n in cyto_update_wave (by reading the
-    //   Story worker's run.sc.done), so seeking works whether or not intoCyto
-    //   mode is enabled.
-    //
-    // ── animated forward seek ─────────────────────────────────────────────────
-    //
-    //   last_seek_idx tracks the wave index we are currently showing.
-    //   When a seek arrives and the target is exactly last_seek_idx + 1,
-    //   we apply only that one wave with full animation — the user sees the
-    //   graph transition smoothly when stepping forward one pip at a time.
-    //   Any other seek (jump, backward, panel close) rebuilds from scratch
-    //   at duration=0 so the state is always consistent.
+    //   particle.  The $effect here reads seek_step and finds the Step%CytoStep=C**
     //
     // ── history ───────────────────────────────────────────────────────────────
     //
@@ -68,13 +54,12 @@
         step_n?:     number   // story step this wave belongs to (always set now)
     }
 
-    let history:        Wave[] = []
     let status          = $state('no graph')
     let grawave_dur     = $state(0.3)
     let last_tick       = -1
     // the history index currently shown; -1 = nothing shown yet.
     // used to detect single-step-forward seeks so we can animate them.
-    let last_seek_idx   = -1
+    let last_shown_step   = -1
 
     // ── reactive: H.graph → cyto_graph particle ───────────────────────────────
 
@@ -82,70 +67,38 @@
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
         if (!gn) return
 
-        // ── seek ──────────────────────────────────────────────────────────────
-        //
-        //   gn.sc.seek_step is set by cyto_seek when StoryRun opens a pip.
-        //   null means "return to live head" (panel closed).
-        //
-        //   We find the last wave whose step_n <= seek_step.  Waves without
-        //   step_n are ambient ticks; they may appear between tagged waves but
-        //   we skip them for seek purposes (only tagged waves are targets).
-        //
-        //   Forward-by-one: if target is last_seek_idx + 1, apply only that
-        //   wave with full animation so the user sees the graph move rather
-        //   than snap.  Everything else rebuilds from scratch at dur=0.
         const seek = gn.sc.seek_step as number | null | undefined
-        if (seek != null && cy) {
-            let target_idx = -1
-            for (let i = 0; i < history.length; i++) {
-                if (history[i].step_n != null && history[i].step_n! <= seek) {
-                    target_idx = i
-                }
+
+        if (seek != null) {
+            // get CytoStep from the Step particle on the Story worker
+            const story_w  = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
+            const step_c   = story_w?.c.This?.o({ Step: 1 })?.find(s => s.sc.Step === seek)
+            const to_C     = step_c?.sc.CytoStep as TheC | undefined
+            if (!to_C) {
+                // ← show "no wave for this step" warning in UI
+                status = `⚠ no CytoStep for step ${seek}`
+                return
             }
-            if (target_idx >= 0) {
-                if (target_idx === last_seek_idx + 1) {
-                    // one step forward — animate the transition
-                    const wave = history[target_idx]
-                    apply(wave, wave.duration)
-                    status = `step:${seek} (wave ${target_idx + 1}/${history.length})`
-                } else {
-                    // jump or backward — rebuild from scratch, no animation
-                    cy.elements().remove()
-                    for (let i = 0; i <= target_idx; i++) apply(history[i], 0)
-                    status = `seek step:${seek} (wave ${target_idx + 1}/${history.length})`
-                }
-                last_seek_idx = target_idx
-                return   // don't fall through to live-head enqueue
+            // check cached wave
+            if (!step_c.sc.CytoWave) {
+                const prev_step = story_w?.c.This?.o({ Step: 1 })?.find(s => s.sc.Step === seek - 1)
+                const from_C    = prev_step?.sc.CytoStep as TheC | undefined
+                const adjacent  = Math.abs(seek - last_shown_step) === 1
+                step_c.sc.CytoWave = H.make_wave(from_C ?? null, to_C, adjacent)
             }
-            // no tagged wave found yet (run hasn't started) — fall through
+            last_shown_step = seek
+            apply(step_c.sc.CytoWave, step_c.sc.CytoWave.duration)
+            return
         }
 
-        if (seek == null) {
-            // panel closed — return to live head and clear seek tracking
-            last_seek_idx = history.length - 1
-        }
-
-        // ── live head ─────────────────────────────────────────────────────────
+        // live head — wave comes directly from gn.sc.wave as before
         const wave = gn.sc.wave as Wave | undefined
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
         last_tick = tick
-        if (cy) enqueue(wave)
-    })
-
-    function enqueue(wave: Wave) {
-        history = [...history, wave]
-        // keep last_seek_idx in sync when we're at the live head
-        if (last_seek_idx === history.length - 2) last_seek_idx = history.length - 1
+        last_shown_step = wave.step_n ?? last_shown_step
         apply(wave, wave.duration)
-        grawave_dur = wave.duration
-        const nu = wave.upsert?.length ?? 0
-        const eu = wave.edge_upsert?.length ?? 0
-        const rm = wave.remove?.length ?? 0
-        const mg = wave.migrate?.length ?? 0
-        const sn = wave.step_n != null ? ` step:${wave.step_n}` : ''
-        status = `tick ${last_tick}${sn} · ${nu}n ${eu}e −${rm} ~${mg} · ⏱${wave.duration}s`
-    }
+    })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
     // Cytoscape cannot tween these — apply immediately or they throw.
