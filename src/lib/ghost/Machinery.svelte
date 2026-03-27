@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { House } from "$lib/O/Housing.svelte";
     // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
     //
     // Three workers: farm, plate, enzymeco.
@@ -31,6 +32,115 @@
 
     onMount(async () => {
     await M.eatfunc({
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#endregion
+//#region LeafFarm
+
+
+    Run_A_LeafJuggle(this: House) {
+        for (const [Aname, wname] of [
+            ['Yin',  'Yin' ],
+            ['Yang', 'Yang'],
+        ] as [string, string][]) {
+            const A = this.o({ A: Aname })[0] || this.i({ A: Aname })
+            if (!A.o({ w: wname }).length) A.i({ w: wname })
+        }
+        console.log(`🤹 ${this.name} LeafJuggle wired`)
+    },
+
+
+    async Yaing(w: TheC, other_w: TheC) {
+        const lh = w.oai({ hand: 'left'  })
+        const rh = w.oai({ hand: 'right' })
+ 
+        // rh exits first — passes the leaf to other/left
+        const rh_leaf = rh.o({ leaf: 1 })[0]
+        if (rh_leaf) {
+            await rh.r({ leaf: 1 }, {})        // evict from rh (keep C alive)
+            other_w.oai({ hand: 'left' }).i(rh_leaf)   // place same C object
+        }
+ 
+        // lh passes to rh only if rh is now empty
+        const lh_leaf = lh.o({ leaf: 1 })[0]
+        if (lh_leaf && !rh.oa({ leaf: 1 })) {
+            await lh.r({ leaf: 1 }, {})
+            rh.i(lh_leaf)
+        }
+    },
+ 
+    async Yin(A, w) {
+        const yang_w = this.o({ A: 'Yang' })[0]?.o({ w: 'Yang' })[0]
+        if (!yang_w) return
+ 
+        await this.Yaing(w, yang_w)
+ 
+        // seed: place a fresh leaf if nobody in the whole RunH is holding one
+        const has_leaf = this.o({ A: 1 }).some(A => A.o({ w: 1 }).some(wk => wk.o({ hand: 1 }).some(ha => ha.oa({ leaf: 1 }))))
+        if (!has_leaf) {
+            w.oai({ hand: 'left' }).i({ leaf: 1, leaf_id: 'juggle' })
+        }
+    },
+ 
+    async Yang(A, w) {
+        const yin_w = this.o({ A: 'Yin' })[0]?.o({ w: 'Yin' })[0]
+        if (!yin_w) return
+ 
+        await this.Yaing(w, yin_w)
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#endregion
+//#region LeafFarm
+
+
+
+    Run_A_LeafFarm(this: House) {
+        for (const [Aname, wname] of [
+            ['farm',     'farm'],
+            ['plate',    'plate'],
+            ['enzymeco', 'enzymeco'],
+        ] as [string, string][]) {
+            const A = this.o({ A: Aname })[0] || this.i({ A: Aname })
+            if (!A.o({ w: wname }).length) A.i({ w: wname })
+        }
+        console.log(`🌿 ${this.name} LeafFarm wired`)
+    },
 
 //#region helpers
 

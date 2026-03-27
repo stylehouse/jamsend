@@ -185,7 +185,10 @@
             const el = cy.getElementById(nd.id)
             const { anim, imm } = split_style(nd.style)
             if (el.length) {
-                if (nd.new_parent && el.parent().id() !== nd.new_parent) el.move({ parent: nd.new_parent })
+                if (nd.new_parent && el.parent().id() !== nd.new_parent
+                    && !migrating.has(nd.id)) {
+                    el.move({ parent: nd.new_parent })
+                }
                 el.data('label', nd.label)
                 if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {

@@ -1300,18 +1300,6 @@
         })
     },
 
-    Run_A_LeafFarm(this: House) {
-        for (const [Aname, wname] of [
-            ['farm',     'farm'],
-            ['plate',    'plate'],
-            ['enzymeco', 'enzymeco'],
-        ] as [string, string][]) {
-            const A = this.o({ A: Aname })[0] || this.i({ A: Aname })
-            if (!A.o({ w: wname }).length) A.i({ w: wname })
-        }
-        console.log(`🌿 ${this.name} LeafFarm wired`)
-    },
-
     async story_ui(this: House, Run: House, w: TheC, run: TheC) {
         const wa = this.o({ watched: 'actions' })[0]
         if (!wa) return

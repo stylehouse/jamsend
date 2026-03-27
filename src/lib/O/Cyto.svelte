@@ -1,7 +1,7 @@
 <script lang="ts">
     // Cyto.svelte — ghost depositing Cyto worker methods onto H.* via eatfunc.
     //
-    // w:Cyto scans RunH (H:LeafFarm) each tick, builds a Wave describing
+    // w:Cyto scans RunH (%H:Somesuch,Run) each tick, builds a Wave describing
     // everything that changed, and deposits it into {cyto_graph:1} which
     // Cytui.svelte watches.  The wave format lets Cytui animate additions,
     // removals, style changes, and migrations (e.g. a leaf flying from farm
@@ -70,7 +70,7 @@
     async Cyto(A: TheC, w: TheC) {
         if (!w.c.plan_done) this.Cyto_plan(w)
         const ok = this.cyto_update_wave(w)
-        if (!ok) return w.i({ see: '⏳ no H:LeafFarm yet' })
+        if (!ok) return w.i({ see: '⏳ no H%Run yet' })
         w.i({ see: `📊 tick:${w.c.gn?.sc.tick ?? 0}` })
     },
 
@@ -86,7 +86,7 @@
 
     cyto_update_wave(w: TheC): boolean {
         const H    = this as House
-        const RunH = H.o({ H: 'LeafFarm' })[0] as House | undefined
+        const RunH = H.o({ H:1, Run:1 })[0] as House | undefined
         if (!RunH) return false
         const tracking = w.oai({ cyto_tracking: 1 })
         const v = RunH.version
@@ -204,6 +204,21 @@
                         nd.appear_from = `leaf:${n.sc.spawning_from}`
                     }
                     upsert.push(nd)
+                    // recurse one level into compound sub-containers (%hand in LeafJuggle, etc.)
+                    if (nd.isCompound) {
+                        for (const child of n.o({}) as TheC[]) {
+                            if (child.c.drop) continue
+                            const cid = this.cyto_id(child, wname)
+                            if (!cid) continue
+                            seen.add(cid)
+                            const prev_c = prev_ref.get(child)
+                            curr_ref.set(child, { wid: id, id: cid })
+                            const cnd = this.cyto_node(child, cid)
+                            cnd.parent = id
+                            if (prev_c && prev_c.wid !== id) cnd.new_parent = id
+                            upsert.push(cnd)
+                        }
+                    }
 
                     if (n.sc.poo)      poo_id = id
                     if (n.sc.sunshine) sun_id = id   // sun:farm or sun:plate
@@ -434,6 +449,7 @@
         if (n.sc.wants_enzyme)                  return `want_enz`
         if (n.sc.wants_to_produce)              return `want_prod`
         if (n.sc.run)                           return `run:${n.sc.run}`
+        if (n.sc.hand)  return `hand:${wname ?? 'w'}:${n.sc.hand}`
         // skip bookkeeping noise
         if (n.sc.self || n.sc.chaFrom || n.sc.wasLast || n.sc.sunny_streak
             || n.sc.seen || n.sc.o_elvis)       return null
@@ -566,6 +582,19 @@
             style['background-color'] = '#101028'
             style.width = 44; style.height = 18; style.shape = 'round-rectangle'
             style.color = '#7888ff'
+
+        } else if (n.sc.hand !== undefined) {
+            style['background-color']  = '#1a1a28'
+            style['background-opacity'] = 0.6
+            style['border-color']  = '#5a5a9a'
+            style['border-width']  = 1
+            style['border-style']  = 'solid'
+            style.padding          = '7px'
+            style['font-size']     = '8px'
+            style['font-style']    = 'italic'
+            style.color            = '#8888bb'
+            style['text-valign']   = 'top'
+            return { id, label: String(n.sc.hand), style, isCompound: true }
 
         } else {
             style['background-color'] = '#242424'
