@@ -118,6 +118,7 @@
 //#region cyto_scan
 
     async cyto_scan(w: TheC, RunH: House) {
+        w.c.id_counter ??= 0
         w.c.cyto_Se ??= new Selection()
         const Se: Selection = w.c.cyto_Se
 
@@ -142,31 +143,26 @@
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 const cls = this.cytyle_classify(n)
                 if (cls === 'skip')      { T.sc.not = 1; return }
-                if (cls === 'invisible') { T.sc.cyto_id = null;  return }
+                if (cls === 'invisible') { T.sc.cyto_id = null; return }
 
-                let id: string
+                // stable id lives on D forever — resolve() continuity handles it
+                const id: string = D.c.stable_id ??= `c:${++w.c.id_counter}`
+                T.sc.cyto_id = id
+                D.sc.cyto_id = id
+                D.c.n = n   // keep n ref for ref detection
+
                 let nd: any
-
                 if (cls === 'compound') {
-                    id = `w:${n.sc.w}`
                     nd = { id, label: String(n.sc.w), style: this.cyto_w_style(String(n.sc.w)), isCompound: true }
                 } else {
                     const wname = this.cytyle_wname(T)
-                    id = this.cyto_id(n, wname)
-                    if (!id) { T.sc.not = 1; return }
-                    nd = this.cyto_node(n, id)
+                    nd = this.cyto_node(n, id)   // cyto_node uses n for style only now
                 }
-
-                T.sc.cyto_id = id
-                D.sc.cyto_id = id
-                // store n ref on D for ref detection in snap_scan_refs()
-                D.c.n = n
-                seen.add(id)
 
                 const parent_id = this.cytyle_parent_id(T)
                 if (parent_id) nd.parent = parent_id
+                seen.add(id)
                 upsert.push(nd)
-
                 if (!prev_ids.has(id)) neu_ids.push(id)
             },
 
@@ -183,11 +179,14 @@
             traced_fn: async () => {},
 
             resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
+                // goners retain D.c.n and D.sc.cyto_id from last each_fn — stash them
+                w.c.prev_goners = goners
                 for (const g of goners) {
                     const gid = g.sc.cyto_id as string | undefined
-                    if (gid && !seen.has(gid)) goner_ids.push(gid)
+                    if (gid) goner_ids.push(gid)
                 }
             },
+
         })
 
         // ── ref scan: forward pass over D** after process() is complete ───────
@@ -235,104 +234,65 @@
     // All blue edges get ids starting with "ref:" so they can be cleared
     // from edge_remove at the start of the next tick.
 
-    async snap_scan_refs(
-        Se:          Selection,
-        w:           TheC,
-        neu_ids:     string[],
-        goner_ids:   string[],
-        edge_upsert: any[],
-        seen_e:      Set<string>,
-    ) {
+    // snap_scan_refs — migration from stashed goners, not T.sc.bD
+    async snap_scan_refs(Se, w, neu_ids, goner_ids, edge_upsert, seen_e) {
         const neu_set   = new Set(neu_ids)
         const goner_set = new Set(goner_ids)
-
-        // build maps from this tick's D** forward pass
-        // n_to_ids:  TheC → cyto_id[] (detects multi-placed)
-        // id_to_n:   cyto_id → TheC   (detects goner migration)
         const n_to_ids  = new Map<TheC, string[]>()
-        const id_to_n   = new Map<string, TheC>()
 
+        // single forward pass: build n→ids map, detect ref_stable, multi-placed
         await Se.c.T.forward(async (T: Travel) => {
-            const D = T.sc.D
-            if (!D) return
-            const id  = D.sc.cyto_id as string | undefined
-            const n   = D.c.n        as TheC   | undefined
+            const D  = T.sc.D
+            const id = D?.sc.cyto_id as string | undefined
+            const n  = D?.c.n        as TheC   | undefined
             if (!id || !n) return
 
-            // ref_stable: same n stayed in this D slot
-            const bD = T.sc.bD
-            if (bD?.c.n === n) {
+            if (T.sc.bD?.c.n === n) {
                 T.sc.ref_stable = true
                 D.c.ref_stable  = true
             }
 
-            // accumulate n → ids
             const existing = n_to_ids.get(n)
             if (existing) existing.push(id)
             else n_to_ids.set(n, [id])
-
-            id_to_n.set(id, n)
         })
 
         const blue_edge = (eid: string, source: string, target: string, directed = false) => ({
             id: eid, source, target,
             data: { ideal_length: 120 },
             style: {
-                'line-color': '#4488ff', width: 1.2,
-                'line-style': 'dashed',
+                'line-color': '#4488ff', width: 1.2, 'line-style': 'dashed',
                 'target-arrow-shape': directed ? 'triangle' : 'none',
                 'target-arrow-color': '#4488ff',
                 'curve-style': 'bezier', opacity: 0.5,
             },
         })
 
-        // ── multi-placed: same n in >1 current D ─────────────────────────────
+        // multi-placed: same n in >1 current D
         for (const [_n, ids] of n_to_ids) {
             if (ids.length < 2) continue
-            // connect adjacent pairs (keeps edge count manageable for 3+ placements)
             for (let i = 0; i < ids.length - 1; i++) {
                 const eid = `ref:multi:${ids[i]}:${ids[i+1]}`
-                if (!seen_e.has(eid)) {
-                    seen_e.add(eid)
-                    edge_upsert.push(blue_edge(eid, ids[i], ids[i+1]))
-                }
+                if (!seen_e.has(eid)) { seen_e.add(eid); edge_upsert.push(blue_edge(eid, ids[i], ids[i+1])) }
             }
         }
 
-        // ── migration: goner D whose n is now a neu D elsewhere ───────────────
-        // Walk goner_ids, look up their n via id_to_n (built above covers current Ds,
-        // so we need the previous tick's map for goners).
-        // Conveniently D.c.n was stored during each_fn and persists on the D object
-        // even after it becomes a goner — D** is still in Se's tree until next process().
-        await Se.c.T.forward(async (T: Travel) => {
-            // only consider Ds that are *gone* this tick (their id is in goner_ids)
-            // but their D object is still reachable in T.sc.bD of a matched node
-            const bD = T.sc.bD
-            if (!bD) return
-            const gid = bD.sc.cyto_id as string | undefined
-            if (!gid || !goner_set.has(gid)) return
+        // migration: iterate stashed goners — their n ref may now live somewhere new
+        for (const gD of (w.c.prev_goners ?? []) as TheD[]) {
+            const gid = gD.sc.cyto_id as string | undefined
+            const n   = gD.c.n        as TheC   | undefined
+            if (!gid || !n) continue
 
-            const n = bD.c.n as TheC | undefined
-            if (!n) return
-
-            // is this n currently present somewhere new?
             const curr_ids = n_to_ids.get(n) ?? []
             const new_ids  = curr_ids.filter(id => neu_set.has(id))
-            if (!new_ids.length) return
+            if (!new_ids.length) continue
 
             const to_id = new_ids[0]
-            // mark on the destination D for future animation wiring
-            const dest_D = id_to_n.get(to_id)   // value is TheC n, not D — rethink:
-            // < ideally we'd mark the destination D, but we only have n→id mapping here.
-            // For now just record on goner bD and emit the directed blue edge.
-            bD.c.ref_migration = { from: gid, to: to_id }
+            gD.c.ref_migration = { from: gid, to: to_id }
 
             const eid = `ref:migrate:${gid}:${to_id}`
-            if (!seen_e.has(eid)) {
-                seen_e.add(eid)
-                edge_upsert.push(blue_edge(eid, gid, to_id, true))
-            }
-        })
+            if (!seen_e.has(eid)) { seen_e.add(eid); edge_upsert.push(blue_edge(eid, gid, to_id, true)) }
+        }
     },
 
 //#endregion
@@ -370,21 +330,6 @@
 
 //#endregion
 //#region cyto_id / cyto_label / hsl2rgb / cyto_node / cyto_w_style — from v1
-
-    cyto_id(n: TheC, wname?: string): string | null {
-        if (n.sc.mouthful && n.sc.mouthful_id) return `mf:${n.sc.mouthful_id}`
-        if (n.sc.leaf)                          return `leaf:${n.sc.leaf_id ?? n.sc.leaf}`
-        if (n.sc.sunshine)                      return wname ? `sun:${wname}` : `sun`
-        if (n.sc.poo)                           return `poo`
-        if (n.sc.material)                      return `mat:${n.sc.material}`
-        if (n.sc.producing)                     return `prod`
-        if (n.sc.protein)                       return `prot:${n.sc.protein_id ?? 'p'}`
-        if (n.sc.shelf && n.sc.enzyme)          return `enz_shelf`
-        if (n.sc.wants_enzyme)                  return `want_enz`
-        if (n.sc.wants_to_produce)              return `want_prod`
-        if (n.sc.hand !== undefined)            return `hand:${wname ?? 'w'}:${n.sc.hand}`
-        return null
-    },
 
     cyto_label(n: TheC): string {
         const parts: string[] = []
