@@ -1,0 +1,93 @@
+Snap:H
+  H:LeafJuggle,Run
+    A:Yin
+      {"mung":["age"]}	self,round
+      w:Yin
+        {"mung":["age"]}	self,round
+        hand:left
+          leaf,leaf_id:juggle
+        hand:right
+    A:Yang
+      {"mung":["age"]}	self,round
+      w:Yang
+        {"mung":["age"]}	self,round
+        hand:left
+        hand:right
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  {"node":"hand:Yang:left","parent":"w:Yang","compound":1,"label":"left"}
+    background-color:#1a1a28
+    background-opacity:0.6
+    border-color:#5a5a9a
+    border-style:solid
+    border-width
+    color:#8888bb
+    font-size:8px
+    font-style:italic
+    padding:7px
+    text-valign:top
+  {"node":"hand:Yang:right","parent":"w:Yang","compound":1,"label":"right"}
+    background-color:#1a1a28
+    background-opacity:0.6
+    border-color:#5a5a9a
+    border-style:solid
+    border-width
+    color:#8888bb
+    font-size:8px
+    font-style:italic
+    padding:7px
+    text-valign:top
+  {"node":"hand:Yin:left","parent":"w:Yin","compound":1,"label":"left"}
+    background-color:#1a1a28
+    background-opacity:0.6
+    border-color:#5a5a9a
+    border-style:solid
+    border-width
+    color:#8888bb
+    font-size:8px
+    font-style:italic
+    padding:7px
+    text-valign:top
+  {"node":"hand:Yin:right","parent":"w:Yin","compound":1,"label":"right"}
+    background-color:#1a1a28
+    background-opacity:0.6
+    border-color:#5a5a9a
+    border-style:solid
+    border-width
+    color:#8888bb
+    font-size:8px
+    font-style:italic
+    padding:7px
+    text-valign:top
+  {"node":"leaf:juggle","parent":"hand:Yin:left","label":"leaf:1 leaf_id:juggle"}
+    {"background-color":"rgb(32,111,32)"}
+    color:#b0ffb0
+    height:14
+    shape:ellipse
+    width:14
+  {"node":"w:Yang","compound":1,"label":"Yang"}
+    background-color:#181818
+    background-opacity:0.5
+    border-color:#2a2a2a
+    border-style:dashed
+    border-width
+    color:#4a6a4a
+    font-size:9px
+    font-style:italic
+    font-weight:bold
+    padding:12px
+    text-halign:center
+    text-valign:top
+  {"node":"w:Yin","compound":1,"label":"Yin"}
+    background-color:#181818
+    background-opacity:0.5
+    border-color:#2a2a2a
+    border-style:dashed
+    border-width
+    color:#4a6a4a
+    font-size:9px
+    font-style:italic
+    font-weight:bold
+    padding:12px
+    text-halign:center
+    text-valign:top
