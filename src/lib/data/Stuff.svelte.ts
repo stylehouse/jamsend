@@ -100,7 +100,7 @@ class TheX {
     }
 
     // X/$v +$n
-    i_v(v: any, n: TheC, kf?: string): TheX | null {
+    i_v(v: any, n?: TheC, kf?: string): TheX | null {
         kf = kf || 'v';
         return this.i_refer(v, n, kf);
     }
@@ -705,8 +705,13 @@ export class Stuff extends TimeOffice {
             let neux = _neux as TheX
             kv_iter(neux,(k,kx,v,vx) => {
                 let possible = vx.z
-                let unambiguity = 1 / possible.length
                 // for %nib:dir x20 matching less than %name:veryunique x1
+                let unambiguity = 1 / possible.length
+                let newly_possible = X.i_k(k)?.i_v(v)?.z?.length
+                if (newly_possible) {
+                    // it wants to be unique in the past and future.
+                    unambiguity = (unambiguity + (1/newly_possible)) / 2
+                }
                 // /$neu /$ambiguity=0.234 /$n=old
                 let rated = neux.i_k(unambiguity,null,'unambiguity')
                 rated.z = [...vx.z]

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { _C, TheC } from "$lib/data/Stuff.svelte";
+    import { _C, objectify, TheC } from "$lib/data/Stuff.svelte";
     import type { House } from "$lib/O/Housing.svelte";
     import { armap } from "$lib/Y";
     // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
@@ -139,14 +139,27 @@
                 old_z.forEach(oldn => nkvx.i_z(oldn))
             })
         })
-
+        
         // /$v:neu /$k/$v:stringval /$n=old
         Object.entries(Over.X.neu||{}).forEach(([i,_neux]) => {
             let n = Over.X.neus[i]
+            console.log(`[Notice] on ${objectify(n)}`);
+
             let neux = _neux as TheX
             kv_iter(neux,(k,kx,v,vx) => {
-                let possible = vx.z
-                let unambiguity = 1 / possible.length
+                let possible = vx.z.length
+                let newly_possible = X.i_k(k)?.i_v(v)?.z?.length
+                let unambiguity = 1 / possible
+                if (newly_possible) {
+                    // it wants to be unique in the past and future.
+                    unambiguity = (unambiguity + (1/newly_possible)) / 2
+                }
+
+                // LOG: Which keys are being noticed for which atoms?
+                console.log(`[Notice] Atom(neu) recognizes key "${k}:${v}". `
+                    +` Found old:${possible}, new:${newly_possible} candidates. Unambiguity: ${unambiguity.toFixed(3)}`);
+
+                    
                 // for %nib:dir x20 matching less than %name:veryunique x1
                 // /$neu /$ambiguity=0.234 /$n=old
                 let rated = neux.i_k(unambiguity,null,'unambiguity')
