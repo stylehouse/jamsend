@@ -9,7 +9,6 @@
     //   claim the next slot from the parent's Dip.sc.i counter.
     //   Result written to T.sc.Dip_scanid (or _cytoid) for easy lookup.
     //   T.sc.Dip_scanid_is_new = true when the Dip was freshly created
-    //   (no prev_scan_ids set needed — D/** already tracks persistence).
     //
     // ── Passes ───────────────────────────────────────────────────────────────
     //
@@ -48,7 +47,7 @@
     async Cyto(A: TheC, w: TheC) {
         if (!w.c.plan_done) this.Cyto_plan(w)
         const ok = await this.cyto_update_wave(w)
-        if (!ok) return w.i({ see: '⏳ no H%Run yet' })
+        if (!ok) return w.i({ see: '⏳ no H%Run/%run,done yet' })
         w.i({ see: `📊 tick:${w.c.gn?.sc.tick ?? 0}` })
     },
 
@@ -71,16 +70,18 @@
         if (tracking.sc.v === v) return true
         tracking.sc.v = v
 
+        const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
+        const step_n  = run?.sc.done as number | undefined
+        // wait for step to happen. for take a photo of the stage? H/A/w
+        if (!step_n) return false
+
         const topC = await this.cyto_scan(w, RunH)       // Se1: D** + C** + scan goners
         await this.cyto_assign_ids(w, topC)               // Se2 pass 1: cytoid on nodes
         await this.cyto_scan_refs(w, topC)                // add ref/migration edges to C**
         await this.cyto_assign_ids(w, topC)               // Se2 pass 2: cytoid on new edges
         await this.cyto_resolve_refs(w, topC)             // forward(): C refs → _id strings
         const wave = await this.make_wave(w, topC, true)  // Ze: diff → wave
-
-        const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
-        const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
-        const step_n  = run?.sc.done as number | undefined
         wave.step_n   = step_n
 
 
@@ -94,13 +95,17 @@
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
         gn.sc.topC = topC
         gn.bump_version()
+        const wa = H.o({ watched: 'graph' })[0] as TheC
+        wa?.bump_version()
         
         if (step_n != null && story_w) {
             const step_c = (story_w.c.This?.o({ Step: 1 }) as TheC[] | undefined)
                 ?.find(s => s.sc.Step === step_n)
             if (step_c) { step_c.sc.CytoStep = topC; step_c.sc.CytoWave = wave }
         }
-        console.log(`Your cyto update wave:\n`+this.snap_cytowave_str(wave),wave)
+        let nostyle = this.snap_cytowave_str(wave).split("\n")
+            .filter(l=>!l.match(/^ {4}/)).join("\n")
+        console.log(`Your cyto update wave:\n`+nostyle,wave)
 
         await w.replace({ wave_data: 1 }, async () => {
             w.i({ wave_data: 1, nodes: wave.upsert.length,
@@ -409,7 +414,7 @@
     async make_wave(w: TheC, topC: TheC, adjacent: boolean): Promise<any> {
         w.c.cyto_Ze ??= new Selection()
         const Ze: Selection = w.c.cyto_Ze
-        Ze.sc.topD = await Ze.r({ cyto_z: 1 })
+        Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
 
         const UPSERT = true
 
@@ -419,6 +424,11 @@
         const edge_remove: string[] = []
         const migrate:     any[] = []
 
+        let We = await w.r({Zeeeee:1})
+        We.empty()
+        We.i({C:1}).i(topC)
+        We.i({D:1}).i(Ze.sc.topD)
+
         await Ze.process({
             n:          topC,
             process_D:  Ze.sc.topD,
@@ -426,6 +436,7 @@
             trace_sc:   { tracing: 1 },
 
             each_fn: async (D: TheD, C: TheC, T: Travel) => {
+                if (D.sc.cyto_root && C.sc.cyto_root) return
                 if (!C.sc.cyto_node && !C.sc.cyto_edge) { T.sc.not = 1; return }
                 D.sc.is_edge = !!C.sc.cyto_edge
             },

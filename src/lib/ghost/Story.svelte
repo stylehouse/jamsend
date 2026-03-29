@@ -741,8 +741,9 @@
         const cyto_A = H.o({ A: 'Cyto' })[0] as TheC | undefined
         const cyto_w = cyto_A?.o({ w: 'Cyto' })[0] as TheC | undefined
         if (cyto_w) {
+            if (!cyto_w.c.plan_done) throw "wake w:Cyto before wanting graph"
             if (!cyto_w.c.plan_done) H.Cyto_plan(cyto_w)
-            H.cyto_update_wave(cyto_w)
+            await H.cyto_update_wave(cyto_w)
         }
         const wave     = cyto_w?.c.gn?.sc.wave as any
         const cw_block = this.snap_cytowave_str(wave)   // d_base=1, already nested
