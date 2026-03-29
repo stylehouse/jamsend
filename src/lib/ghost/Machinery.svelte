@@ -1,5 +1,7 @@
 <script lang="ts">
+    import { _C, TheC } from "$lib/data/Stuff.svelte";
     import type { House } from "$lib/O/Housing.svelte";
+    import { armap } from "$lib/Y";
     // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
     //
     // Three workers: farm, plate, enzymeco.
@@ -35,8 +37,200 @@
 
 
 
+    Run_A_StuffFlipping(this: House) {
+        for (const [Aname, wname] of [
+            ['StuffFlipping',  'StuffFlipping' ],
+        ] as [string, string][]) {
+            const A = this.o({ A: Aname })[0] || this.i({ A: Aname })
+            if (!A.o({ w: wname }).length) A.i({ w: wname })
+        }
+        console.log(`🤹 ${this.name} StuffFlipping wired`)
+    },
 
 
+    async StuffFlipping(A, w) {
+        const lh = w.oai({ hand: 'left'  })
+        let temporary = lh.resolve 
+        try {
+            let it
+            await lh.replace({bug:1}, async () => {
+                it = lh.i({bug:1,the_w:"Ying"})
+            })
+            it.i({terpestra:1})
+
+            lh.resolve = this.DEV_resolve
+            await lh.replace({bug:1}, async () => {
+                lh.i({bug:1,self:1,est:171717171717})
+                lh.i({bug:1,self:1})
+                lh.i({bug:1,the_w:"Ying"})
+            })
+        }
+        finally {
+            lh.resolve = temporary
+        }
+    },
+
+
+
+
+
+    // regard new|gone in here
+    // assumes we're going to uniquely identify everything easily
+    //  by comparing n.sc.*,
+    //   n/* or n.sc.*.*
+    // < we could resolve gradually, even one-at-a-time
+    // make a series of pairs of $n across time
+    async DEV_resolve(X:TheX,oldX:TheX,partial:TheN|null,q={}) {
+        if (!oldX?.z?.length) {
+            // everything is new
+            return (X.z||[]).map(n => [null,n])
+        }
+        // partial may be a set of old things we're replacing
+        //  if partial, there's other stuff in oldX we're not replacing
+        // but X is always the new stuff only
+        let partsof = (N:TheN) => {
+            return N.filter(n => !partial || partial.includes(n))
+        }
+        // debuggery
+        let coms = this.coms
+
+        // collect islands of same k+v
+        let Over = _C({})
+        Over.Xify()
+
+        let kv_iter = (X,fn) => {
+            Object.entries(X.k||{}).forEach(([k,kx]) => {
+                kx = kx as TheX
+                // eg k=nib, we're dividing nib=dir|blob
+                Object.entries(kx.v).forEach(([i,vx]) => {
+                    let v = kx.vs[i]
+                    fn(k,kx,v,vx)
+                })
+            })
+        }
+
+        // iterate the new k/v structure
+
+        kv_iter(X,(k,kx,v,vx) => {
+            // eg k=nib,v=dir
+
+            // expect some string property will be more disambiguating
+            // < ref matching. would be slower. do on the remainder?
+            let vtype = typeof v == 'object' ? 'ref' : 'string'
+            if (vtype == 'ref') return
+
+            // look for the same k/v
+            let oldvx = oldX.o_kv(k,v,{notwild:1})
+            if (!oldvx) return // none
+
+            if (!oldvx.z.length) throw `should always be some /$n`
+            let old_z = partsof(oldvx.z)
+            if (!old_z.length) {
+                // may share kv with the out-group
+                // < an odd occasion to study in testing
+                // console.warn("Perhaps your replace() pattern_sc doesn't match the new atoms?",{X,partial})
+                return
+            }
+            vx.z.forEach((n:TheC,i:number) => {
+                // any neu%nib:dir could match any old%nib:dir
+                // via /$v:neu /$k/$v:stringval /$n=old
+                let nkvx = Over.X.i_v(n,null,'neu')
+                    .i_k(k).i_v(v,null)
+                old_z.forEach(oldn => nkvx.i_z(oldn))
+            })
+        })
+
+        // /$v:neu /$k/$v:stringval /$n=old
+        Object.entries(Over.X.neu||{}).forEach(([i,_neux]) => {
+            let n = Over.X.neus[i]
+            let neux = _neux as TheX
+            kv_iter(neux,(k,kx,v,vx) => {
+                let possible = vx.z
+                let unambiguity = 1 / possible.length
+                // for %nib:dir x20 matching less than %name:veryunique x1
+                // /$neu /$ambiguity=0.234 /$n=old
+                let rated = neux.i_k(unambiguity,null,'unambiguity')
+                rated.z = [...vx.z]
+                // /$ambiguity=0.234 /$n=neu for ordering matches amognst all $neu
+                Over.X.i_k(unambiguity,n,'unambiguity')
+
+            })
+        })
+        let sort_unambiguity = (X) => {
+            return Object.keys(X.unambiguity||{}).sort().reverse()
+        }
+
+        // pairs of [oldn,n], eventual result
+        let pairs = []
+        // $neu dwindling to actual new items
+        let unfound:Array<TheC> = [...(X.z||[])]
+        // $oldn that become paired with a $neu
+        let claimed:Array<TheC> = []
+        let claim = (oldn,n) => {
+            pairs.push([oldn,n])
+            unfound = unfound.filter(m => m != n)
+            claimed.push(oldn)
+        }
+
+        // sort by unambiguity
+        // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
+        let ratings = sort_unambiguity(Over.X)
+        ratings.forEach((unambiguity) => {
+            let x = Over.X.unambiguity[unambiguity]
+            x.z.forEach((n:TheC) => {
+                if (!unfound.includes(n)) return
+
+                // /$v:neu
+                let neux = Over.X.i_v(n,null,'neu')
+                if (!neux?.k) throw `algo!?k`
+                let rated = neux.i_k(unambiguity,null,'unambiguity')
+                if (!rated.z.length) throw `algo!?z`
+                for (let oldn of rated.z) {
+                    if (claimed.includes(oldn)) continue
+                    // < I fade out here. maybe with a better io notation...
+                    //   sorting through arrangements any more is...
+                    //    one of those has-been-done academic things
+                    // let oldnx = Over.X.i_v(oldn,n,'old')
+                    // if (oldnx.z.length > 1) coms&&coms.i({ambiguo:n,neu:keyser(n),oldn,old:keyser(oldn)})
+                    // < pile up neux/$maybe=oldn from many vx
+                    //    to union many takes on $oldn with decreasing pickiness
+                    //     depending on everyone else's contest...
+                    //    lots of permuting?
+                    // or just accept the first one?
+                    //  they are sorted for uniqueness, won't re-claim...
+                    if (q.resolve_strict) {
+                        // be more likely to drop and recreate things
+                        //  if any stringified value has changed
+                        let valuesOf = (n) => armap(v=>v+'',n.sc).join(',')
+                        if (valuesOf(n) != valuesOf(oldn)) {
+                            return
+                        }
+                    }
+                    claim(oldn,n)
+                    // once n is claimed, stop claiming oldn for it
+                    break
+                }
+            })
+        })
+
+        // what's left in X_before (that we are partial to replacing)
+        let gone = partsof(oldX.z||[])
+            .filter(oldn => !claimed.includes(oldn))
+        
+        // log it all
+        if (0 && coms) {
+            pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
+            unfound.forEach((n) => coms.i({spawn:keyser(n)}))
+            gone.forEach((n) => coms.i({gone:keyser(n)}))
+        }
+
+        // new stuff
+        unfound.forEach((n) => pairs.push([null,n]))
+        // gone stuff
+        gone.forEach((oldn) => pairs.push([oldn,null]))
+
+        return pairs
+    },
 
 
 
@@ -101,7 +295,9 @@
         // seed: place a fresh leaf if nobody in the whole RunH is holding one
         const has_leaf = this.o({ A: 1 }).some(A => A.o({ w: 1 }).some(wk => wk.o({ hand: 1 }).some(ha => ha.oa({ leaf: 1 }))))
         if (!has_leaf) {
-            w.oai({ hand: 'left' }).i({ leaf: 1, leaf_id: 'juggle' })
+            w.oai({ hand: 'left' })
+                .i({ leaf: 1, leaf_id: 'juggle' })
+                    .i({marble:1})
         }
     },
  

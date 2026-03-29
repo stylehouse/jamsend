@@ -212,7 +212,7 @@
         const book  = w.sc.Book
         const lines: string[] = []
 
-        lines.push(`\t${this.enj({ story: book })}`)
+        lines.push(`${this.enj({ story: book })}`)
 
         const steps = (w.c.The)?.o({ step: 1 })
             .filter(s => !!s.sc.dige || (s.o({ note: 1 })).length > 0)
@@ -221,9 +221,9 @@
         for (const s of steps) {
             const sc: Record<string,any> = { step: s.sc.step }
             if (s.sc.dige) sc.dige = s.sc.dige
-            lines.push(`${this.ind(1)}\t${this.enj(sc)}`)
+            lines.push(`${this.ind(1)}${this.enj(sc)}`)
             for (const noteC of s.o({ note: 1 })) {
-                lines.push(`${this.ind(2)}\t${this.enj(noteC.sc)}`)
+                lines.push(`${this.ind(2)}${this.enj(noteC.sc)}`)
             }
         }
         return lines.join('\n') + '\n'
@@ -806,8 +806,8 @@
         // oai on the child is idempotent — subsequent Story_plan calls are no-ops.
         const uis = H.oai_enroll(H, { watched: 'UIs' })
         uis.oai({ UI: 'Story', component: StoryRun })
-
-        return w.i({ run: book, done: 0, steps_done: 0, total: 30, steps_total: 30, paused: false, mode: 'new' })
+        let total = 5
+        return w.i({ run: book, done: 0, steps_done: 0, total, steps_total: total, paused: false, mode: 'new' })
     },
 
 

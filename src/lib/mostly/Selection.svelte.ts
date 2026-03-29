@@ -122,6 +122,7 @@ export class Travel extends TheC {
 
         // being at $n
         await T.c.each_fn?.(...args)
+        if (T.sc.not) return 
 
         // find $n/*
         //  run the query here

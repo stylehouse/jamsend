@@ -1,0 +1,14 @@
+Snap:H
+  H:StuffFlipping,Run
+    A:StuffFlipping
+      {"mung":["age"]}	self,round
+      w:StuffFlipping
+        {"mung":["age"]}	self,round
+        hand:left
+          bug,self,est:171717171717
+            terpestra
+          bug,self
+          bug,the_w:Ying
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+

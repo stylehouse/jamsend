@@ -30,12 +30,13 @@
     //
     //   make_wave       Ze   n=topC   → diffs C** vs bD** → wave
 
-    import { TheC, _C }  from "$lib/data/Stuff.svelte"
+    import { TheC, _C, objectify }  from "$lib/data/Stuff.svelte"
     import { Selection } from "$lib/mostly/Selection.svelte"
     import type { TheD, Travel } from "$lib/mostly/Selection.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
     import Cytui         from "./ui/Cytui.svelte"
+    import { indent } from "$lib/Y";
 
     let { M } = $props()
 
@@ -82,22 +83,24 @@
         const step_n  = run?.sc.done as number | undefined
         wave.step_n   = step_n
 
-        if (step_n != null && story_w) {
-            const step_c = (story_w.c.This?.o({ Step: 1 }) as TheC[] | undefined)
-                ?.find(s => s.sc.Step === step_n)
-            if (step_c) { step_c.sc.CytoStep = topC; step_c.sc.CytoWave = null }
-        }
 
         await w.replace({ CytoStep: 1 }, async () => {
             w.i({ CytoStep: 1, step_n: step_n ?? null, C: topC })
         })
 
         const gn = w.c.gn as TheC
-        if (!gn) return false
+        if (!gn) throw "Nograph on update_wave" //return false
         gn.sc.wave = wave
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
         gn.sc.topC = topC
         gn.bump_version()
+        
+        if (step_n != null && story_w) {
+            const step_c = (story_w.c.This?.o({ Step: 1 }) as TheC[] | undefined)
+                ?.find(s => s.sc.Step === step_n)
+            if (step_c) { step_c.sc.CytoStep = topC; step_c.sc.CytoWave = wave }
+        }
+        console.log(`Your cyto update wave:\n`+this.snap_cytowave_str(wave),wave)
 
         await w.replace({ wave_data: 1 }, async () => {
             w.i({ wave_data: 1, nodes: wave.upsert.length,
@@ -141,14 +144,15 @@
         }
 
         // new — find/init parent's Dip and claim next slot
-        const parent_D = T.up?.sc.D as TheD | undefined
-        let uDip = parent_D?.o({ Dip: scheme })[0] as TheC | undefined
-        if (!uDip && parent_D) uDip = parent_D.i({ Dip: scheme, value: scheme, i: 0 })
-
-        const i     = (uDip?.sc.i as number) ?? 0
-        if (uDip) uDip.sc.i = i + 1
+        let possible = T.c.path.slice().reverse().slice(1).map(T=>T.sc.D)
+        let uDip
+        for (let uD of possible) {
+            uDip = uD.o({ Dip: scheme })[0]
+            if (uDip) break
+        }
+        // starts from 1 either way:
+        let i = uDip ? ++uDip.sc.i : 1
         const value = `${uDip?.sc.value ?? scheme}_${i}`
-
         D.i({ Dip: scheme, value, i: 0 })
         T.sc[tsc_key]    = value
         T.sc[tsc_is_new] = true
@@ -163,7 +167,8 @@
         const Se: Selection = w.c.cyto_Se
         // replace topD every tick: fresh .c.T; D/** (Dip, n_ref) preserved via resume_X
         Se.sc.topD = await Se.r({ cyto_root: 1 })
-
+        let has_Dip = Se.sc.topD.o({ Dip: 'scanid' })[0] ? "has" : 'neu'
+                console.log(`cyto_scan()! ${has_Dip}`)
         const topC: TheC = _C({ cyto_root: 1 })
         Se.c.scan_goners_by_id = new Map<string, TheD>()
 
@@ -175,21 +180,38 @@
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 const cls = this.cytyle_classify(n)
-                if (cls === 'skip')      { T.sc.not = 1; return }
-                if (cls === 'invisible') { T.sc.C = T.sc.up?.sc.C ?? topC; return }
+                if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
+                if (cls === 'invisible') {
+                    if (T == T.c.path[0]) {
+                        // one Dip field begins on the topD
+                        this.Dip_assign('scanid', D)
+                        const scan_id = this.Dip_assign('scanid', D)
+                        //debug:
+                        const nd = this.cyto_node(n)
+                        let spawny = T.sc.bD ? "---" : 'neu'
+                        console.log(`invis${spawny} scanid: ${scan_id}: ${[
+                            ...T.c.path.map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),nd.label
+                        ].join(" \t ")}`)
+                    }
+                    T.sc.C = T.sc.up?.sc.C ?? topC; return
+                }
 
                 const scan_id = this.Dip_assign('scanid', D)
-                D.oai({ n_ref: 1 }).sc.n = n   // persist n ref for migration detection
 
                 const parentC: TheC = T.sc.up?.sc.C ?? topC
                 const nd = this.cyto_node(n)
+                let spawny = T.sc.bD ? "---" : 'neu'
+                console.log(`your ${spawny} scanid: ${scan_id}: ${[
+                    ...T.c.path.map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),nd.label
+                ].join(" \t ")}`)
 
                 const C: TheC = parentC.i({
                     cyto_node:  1,
                     scan_id,
                     label:      nd.label,
                     isCompound: nd.isCompound ?? false,
-                    parent:     parentC !== topC ? parentC : null,  // C ref → resolved in cyto_resolve_refs
+                    // parent only when parentC is itself a cyto_node (not topC/cyto_root)
+                    parent: parentC.sc.cyto_node ? parentC : null,
                     style:      nd.style,
                 })
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
@@ -198,8 +220,9 @@
 
             trace_fn: async (uD: TheD, n: TheC) => {
                 const sc: any = { tracing: 1 }
-                for (const [k, v] of Object.entries(n.sc ?? {}))
+                for (const [k, v] of Object.entries(n.sc ?? {})) {
                     if (typeof v !== 'object' && typeof v !== 'function') sc[`the_${k}`] = v
+                }
                 return uD.i(sc)
             },
 
@@ -232,6 +255,7 @@
     async cyto_assign_ids(w: TheC, topC: TheC): Promise<void> {
         w.c.cyto_Se2 ??= new Selection()
         const Se2: Selection = w.c.cyto_Se2
+        Se2.sc.topD = await Se2.r({ cyto_assigning: 1 })
 
         await Se2.process({
             n:          topC,
@@ -324,7 +348,7 @@
         for (const [_gid, gD] of goners_by_id) {
             const from_scan_id = gD.c.T?.sc.Dip_scanid as string | undefined
             if (!from_scan_id) continue
-            const n = gD.o({ n_ref: 1 })[0]?.sc.n as TheC | undefined
+            const n = gD.c.T?.sc.n as TheC | undefined
             if (!n) continue
             const neu_Cs = (n_to_Cs.get(n) ?? []).filter(C => is_neu_scan_id(C.sc.scan_id as string))
             if (!neu_Cs.length) continue
@@ -486,11 +510,11 @@
 
     cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
         const s = n.sc
-        if (s.self || s.chaFrom || s.wasLast || s.sunny_streak || s.seen
+        if (s.self || s.mo || s.chaFrom || s.wasLast || s.sunny_streak || s.seen
             || s.o_elvis || s.cyto_node || s.cyto_root || s.cyto_tracking
             || s.wave_data || s.refs || s.snap_node || s.snap_root
             || s.housed || s.run || s.Se || s.inst || s.began_wanting
-            || s.CytoStep || s.CytoWave || s.tracing || s.Dip || s.n_ref
+            || s.CytoStep || s.CytoWave || s.tracing || s.Dip
             || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
         if (s.H || s.A) return 'invisible'
         if (s.w) return 'compound'
