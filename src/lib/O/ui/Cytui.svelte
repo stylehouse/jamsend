@@ -123,6 +123,7 @@
     function apply(wave: Wave, dur: number) {
         if (!cy) return
         const ms = Math.round(dur * 1000)
+        console.log(`🌴 yrararar`)
 
         // 1. remove stale edges
         for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()

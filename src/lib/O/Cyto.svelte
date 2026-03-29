@@ -215,6 +215,11 @@
                 })
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
+
+                if (parentC.sc.cyto_node) {
+                    C.i({cyto_edge:1,scan_id,
+                        source:parentC, label:"/", target:C})
+                }
             },
 
             trace_fn: async (uD: TheD, n: TheC) => {
@@ -605,7 +610,8 @@
             style['border-color']='#5a5a9a';style['border-width']=1;style['border-style']='solid'
             style.padding='7px';style['font-size']='8px';style['font-style']='italic'
             style.color='#8888bb';style['text-valign']='top'
-            return { label: String(n.sc.hand), isCompound: true, style }
+            return { label: String(n.sc.hand), //isCompound: true,
+                style }
         } else {
             style['background-color']='#242424';style.width=16;style.height=16;style.color='#666'
         }
