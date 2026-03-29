@@ -58,14 +58,14 @@
         if (tracking.sc.v === v) return true
         tracking.sc.v = v
 
-        const topC = await this.cyto_scan(w, RunH)        // Se1 + snap_scan_refs
-        await this.cyto_assign_edge_ids(w, topC)          // Se2
+        const topC = await this.cyto_scan(w, RunH)        // Se1 + Se2
         const wave = await this.make_wave(w, topC, true)  // Ze
 
         const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
         const step_n  = run?.sc.done as number | undefined
         wave.step_n   = step_n
+        await w.r({CytoStep:topC,wave,step_n})
 
         if (step_n != null && story_w) {
             const step_c = (story_w.c.This?.o({ Step: 1 }) as TheC[] | undefined)
@@ -185,6 +185,9 @@
         w.c.prev_ids = all_ids
 
         await this.snap_scan_refs(Se, w, topC, new Set(neu_ids), goners_by_id)
+        
+        await this.cyto_assign_edge_ids(w, topC)
+
         return topC
     },
 
@@ -290,17 +293,36 @@
             match_sc:   {},
             trace_sc:   { tracing: 1 },
 
-            each_fn: async (D: TheD, n: TheC, _T: Travel) => {
-                if (!n.sc.cyto_edge) return   // only edges need id assignment here
+            each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                // Dip for every C node and edge — branching namespace like an IP path.
+                // Parent Dip lives on T.sc.up's D; root gets 'r'.
+                // D/{Dip:1} survives replace() via resume_X.
+                const parent_dip_val = (T.sc.up?.sc.D as TheD | undefined)
+                    ?.o({ Dip: 1 })[0]?.sc.Dip as string | undefined ?? 'r'
+
                 let dip = D.o({ Dip: 1 })[0]
-                if (!dip) dip = D.i({ Dip: 1, value: `e:${++w.c.id_counter}` })
-                n.sc.edge_id = dip.sc.value as string   // write back to C edge particle
+                if (!dip) {
+                    // find or create a sibling counter on parent
+                    const parent_D = T.sc.up?.sc.D as TheD | undefined ?? Se2.sc.topD as TheD
+                    const counter  = parent_D.oai({ dip_counter: 1 })
+                    const i        = (counter.sc.i as number) ?? 0
+                    counter.sc.i   = i + 1
+                    dip = D.i({ Dip: 1, value: `${parent_dip_val}_${i}` })
+                }
+
+                // assign edge_id for cyto_edge particles
+                if (n.sc.cyto_edge) {
+                    n.sc.edge_id = dip.sc.value as string
+                }
             },
 
             trace_fn: async (uD: TheD, n: TheC) => {
-                if (n.sc.cyto_edge)  return uD.i({ tracing: 1,
+                // trace on Dip value if present, else on semantic identity
+                const dip = uD.o({ Dip: 1 })[0]?.sc.value as string | undefined
+                if (dip) return uD.i({ tracing: 1, the_Dip: dip })
+                if (n.sc.cyto_edge) return uD.i({ tracing: 1,
                     the_source_id: n.sc.source_id ?? '', the_target_id: n.sc.target_id ?? '' })
-                if (n.sc.cyto_node)  return uD.i({ tracing: 1, the_cyto_id: n.sc.cyto_id ?? '' })
+                if (n.sc.cyto_node) return uD.i({ tracing: 1, the_cyto_id: n.sc.cyto_id ?? '' })
                 return uD.i({ tracing: 1 })
             },
 
@@ -472,6 +494,11 @@
 
     // returns {label, isCompound?, style:{...css}} — no id (Se1 supplies that)
     cyto_node(n: TheC): any {
+        const cls   = this.cytyle_classify(n)
+        if (cls === 'compound') {
+            return { label: String(n.sc.w), isCompound: true,
+                    style: this.cyto_w_style(String(n.sc.w)) }
+        }
         const label = this.cyto_label(n)
         const style: any = {}
         if (n.sc.mouthful) {
