@@ -3,29 +3,32 @@
     //
     // ── Dip protocol ─────────────────────────────────────────────────────────
     //
-    //   Dip_assign(scheme, D) — only D is passed; T reached via D.c.T.
-    //   Parent D via D.c.T.up.sc.D.  Parent's Dip tracks sibling counter.
-    //   Value = parent_value+'_'+sibling_i.  TopD gets Dip{value:scheme, i:0}
-    //   on first child visit.  Before each Se pass, topD's Dip.sc.i is reset
-    //   to 0 so sibling numbering restarts correctly each tick.
-    //
-    //   D/{Dip:scheme, value:'cytoid_0_1', i:0}
-    //     Dip  = scheme identifier (for o() lookup)
-    //     value = the actual id
-    //     i     = next-child counter (incremented as children claim slots)
+    //   Dip_assign(scheme, D) — only D; parent via D.c.T.up.sc.D.
+    //   Dip particles persist in D/** across ticks via resume_X.
+    //   No resetting — existing children keep their values; new children
+    //   claim the next slot from the parent's Dip.sc.i counter.
+    //   Result written to T.sc.Dip_scanid (or _cytoid) for easy lookup.
+    //   T.sc.Dip_scanid_is_new = true when the Dip was freshly created
+    //   (no prev_scan_ids set needed — D/** already tracks persistence).
     //
     // ── Passes ───────────────────────────────────────────────────────────────
     //
-    //   cyto_scan  (Se1) n=RunH → D** mirrors n**; scan_id on C; C.c.Se1_D=D
-    //                    goners → Se1.c.scan_goners_by_id
+    //   cyto_scan       Se1  n=RunH   → D** mirrors n**; scan_id on C; C.c.Se1_D=D
+    //                                   goners → Se1.c.scan_goners_by_id
     //
-    //   cyto_assign_ids (Se2a) n=topC → cytoid Dip on nodes only; no forward yet
+    //   cyto_assign_ids Se2  n=topC   → cytoid Dip on all nodes in C**
+    //                   (1st call, nodes only)
     //
-    //   cyto_scan_refs → blue edges added to C** using node cyto_ids
+    //   cyto_scan_refs            → blue edges added to C** (uses cyto_ids for endpoints,
+    //                               gD.c.T.sc.Dip_scanid for goner from-ids)
     //
-    //   cyto_assign_ids (Se2b) n=topC → cytoid Dip on new edges too;
-    //                    forward(): parent/source/target C→_id; clear Se1_D
-    //                    resolved_fn: goners → Se2.c.cyto_goners (for Ze)
+    //   cyto_assign_ids Se2  n=topC   → cytoid Dip on new edges too
+    //                   (2nd call — existing nodes keep ids, new edges get fresh)
+    //
+    //   cyto_resolve_refs        → forward(): parent/source/target C refs → _id strings
+    //                              clear C.c.Se1_D
+    //
+    //   make_wave       Ze   n=topC   → diffs C** vs bD** → wave
 
     import { TheC, _C }  from "$lib/data/Stuff.svelte"
     import { Selection } from "$lib/mostly/Selection.svelte"
@@ -67,11 +70,12 @@
         if (tracking.sc.v === v) return true
         tracking.sc.v = v
 
-        const topC = await this.cyto_scan(w, RunH)         // Se1
-        await this.cyto_assign_ids(w, topC, false)          // Se2a: node ids
-        await this.cyto_scan_refs(w, topC)                  // ref blue edges
-        await this.cyto_assign_ids(w, topC, true)           // Se2b: edge ids + finalize
-        const wave = await this.make_wave(w, topC, true)    // Ze
+        const topC = await this.cyto_scan(w, RunH)       // Se1: D** + C** + scan goners
+        await this.cyto_assign_ids(w, topC)               // Se2 pass 1: cytoid on nodes
+        await this.cyto_scan_refs(w, topC)                // add ref/migration edges to C**
+        await this.cyto_assign_ids(w, topC)               // Se2 pass 2: cytoid on new edges
+        await this.cyto_resolve_refs(w, topC)             // forward(): C refs → _id strings
+        const wave = await this.make_wave(w, topC, true)  // Ze: diff → wave
 
         const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
@@ -113,36 +117,42 @@
 //#endregion
 //#region Dip_assign
 
-    // Assign (or update) a branching hierarchical id on D.
-    // Only D is passed — T is reached via D.c.T; parent D via D.c.T.up.sc.D.
+    // Assign a branching hierarchical id to D under a named scheme.
+    // Only D is passed — T reached via D.c.T, parent D via D.c.T.up.sc.D.
     //
-    //   D/{Dip:scheme, value:'cytoid_0_1', i:0}
-    //   Parent's Dip.sc.i counts children claimed so far this tick.
-    //   Call Se_reset_dips(topD, scheme) before each Se pass to reset counters.
+    // Dip particles persist in D/** across Se replace() via resume_X.
+    // Existing D: Dip already present → reuse value (no counter increment).
+    // New D:      no Dip → claim parent's next slot (parent.Dip.sc.i++) → create Dip.
+    //
+    // Stores result on T.sc.Dip_${scheme} for easy later access.
+    // Sets T.sc.Dip_${scheme}_is_new = true when freshly created (neu detection).
 
     Dip_assign(scheme: 'scanid' | 'cytoid', D: TheD): string {
-        const parent_D = D.c.T?.up?.sc.D as TheD | undefined
+        const T          = D.c.T as Travel
+        const tsc_key    = `Dip_${scheme}` as const
+        const tsc_is_new = `Dip_${scheme}_is_new` as const
 
-        // find or init parent's Dip (topD gets one on first child visit)
+        // already assigned this tick?
+        const existing = D.o({ Dip: scheme })[0] as TheC | undefined
+        if (existing) {
+            T.sc[tsc_key]    = existing.sc.value
+            T.sc[tsc_is_new] = false
+            return existing.sc.value as string
+        }
+
+        // new — find/init parent's Dip and claim next slot
+        const parent_D = T.up?.sc.D as TheD | undefined
         let uDip = parent_D?.o({ Dip: scheme })[0] as TheC | undefined
         if (!uDip && parent_D) uDip = parent_D.i({ Dip: scheme, value: scheme, i: 0 })
 
-        // claim next sibling index from parent
-        const i = (uDip?.sc.i as number) ?? 0
+        const i     = (uDip?.sc.i as number) ?? 0
         if (uDip) uDip.sc.i = i + 1
         const value = `${uDip?.sc.value ?? scheme}_${i}`
 
-        // update or create own Dip; reset children counter to 0
-        const dip = D.o({ Dip: scheme })[0] as TheC | undefined
-        if (dip) { dip.sc.value = value; dip.sc.i = 0 }
-        else       D.i({ Dip: scheme, value, i: 0 })
+        D.i({ Dip: scheme, value, i: 0 })
+        T.sc[tsc_key]    = value
+        T.sc[tsc_is_new] = true
         return value
-    },
-
-    // Reset Dip sibling counter on topD before each Se pass so sibling
-    // numbering restarts at 0.  topD itself is never visited in each_fn.
-    Se_reset_dips(topD: TheD, scheme: 'scanid' | 'cytoid') {
-        for (const d of topD.o({ Dip: scheme }) as TheC[]) d.sc.i = 0
     },
 
 //#endregion
@@ -151,13 +161,10 @@
     async cyto_scan(w: TheC, RunH: House): Promise<TheC> {
         w.c.cyto_Se ??= new Selection()
         const Se: Selection = w.c.cyto_Se
+        // replace topD every tick: fresh .c.T; D/** (Dip, n_ref) preserved via resume_X
         Se.sc.topD = await Se.r({ cyto_root: 1 })
-        this.Se_reset_dips(Se.sc.topD, 'scanid')
 
         const topC: TheC = _C({ cyto_root: 1 })
-        const prev_scan_ids: Set<string> = w.c.prev_scan_ids ?? new Set()
-        const neu_scan_ids: string[] = []
-
         Se.c.scan_goners_by_id = new Map<string, TheD>()
 
         await Se.process({
@@ -168,11 +175,11 @@
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 const cls = this.cytyle_classify(n)
-                if (cls === 'skip') { T.sc.not = 1; return }
+                if (cls === 'skip')      { T.sc.not = 1; return }
                 if (cls === 'invisible') { T.sc.C = T.sc.up?.sc.C ?? topC; return }
 
                 const scan_id = this.Dip_assign('scanid', D)
-                D.oai({ n_ref: 1 }).sc.n = n
+                D.oai({ n_ref: 1 }).sc.n = n   // persist n ref for migration detection
 
                 const parentC: TheC = T.sc.up?.sc.C ?? topC
                 const nd = this.cyto_node(n)
@@ -182,13 +189,11 @@
                     scan_id,
                     label:      nd.label,
                     isCompound: nd.isCompound ?? false,
-                    parent:     parentC,   // C ref → converted to parent_id in Se2b
+                    parent:     parentC !== topC ? parentC : null,  // C ref → resolved in cyto_resolve_refs
                     style:      nd.style,
                 })
-                C.c.Se1_D = D   // link to Se1 D for ref detection
+                C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
-
-                if (!prev_scan_ids.has(scan_id)) neu_scan_ids.push(scan_id)
             },
 
             trace_fn: async (uD: TheD, n: TheC) => {
@@ -201,19 +206,10 @@
             traced_fn: async () => {},
 
             resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
-                for (const g of goners) this.cyto_collect_goner_scan_ids(g, Se.c.scan_goners_by_id)
+                for (const g of goners)
+                    this.cyto_collect_goner_scan_ids(g, Se.c.scan_goners_by_id as Map<string,TheD>)
             },
         })
-
-        Se.c.neu_scan_ids = new Set(neu_scan_ids)
-
-        // track scan_ids for next tick's neu detection
-        const all = new Set<string>()
-        const coll = (C: TheC) => {
-            for (const nc of C.o({ cyto_node: 1 }) as TheC[]) { all.add(nc.sc.scan_id as string); coll(nc) }
-        }
-        coll(topC)
-        w.c.prev_scan_ids = all
 
         return topC
     },
@@ -226,23 +222,16 @@
     },
 
 //#endregion
-//#region cyto_assign_ids (Se2a / Se2b)
+//#region Se2 — cyto_assign_ids (called twice)
 
-    // Se2a (finalize=false): assigns cytoid Dips to C%cyto_node only — nodes must
-    //   have cyto_ids before cyto_scan_refs can name edge endpoints.
-    //
-    // Se2b (finalize=true): assigns cytoid Dips to everything (including new ref
-    //   edges from cyto_scan_refs); collects goners; runs forward() to:
-    //     • convert parent/source/target C refs → _id strings
-    //     • remove C.c.Se1_D links (keep C** low-memory)
+    // Pass 1 (before cyto_scan_refs): walks C%cyto_node** — nodes get cytoid Dips.
+    // Pass 2 (after  cyto_scan_refs): same walk — nodes keep ids; new edges get fresh ids.
+    // Se2 topD is replaced each pair of calls (i.e., each cyto_update_wave tick) so .c.T
+    // is fresh, but D/** (Dip particles) carry over giving stable ids to matching C nodes.
 
-    async cyto_assign_ids(w: TheC, topC: TheC, finalize: boolean): Promise<void> {
+    async cyto_assign_ids(w: TheC, topC: TheC): Promise<void> {
         w.c.cyto_Se2 ??= new Selection()
         const Se2: Selection = w.c.cyto_Se2
-        Se2.sc.topD = await Se2.r({ cyto_edge_root: 1 })
-        this.Se_reset_dips(Se2.sc.topD, 'cytoid')
-
-        if (finalize) Se2.c.cyto_goners = [] as string[]
 
         await Se2.process({
             n:          topC,
@@ -250,81 +239,43 @@
             match_sc:   {},
             trace_sc:   { tracing: 1 },
 
-            each_fn: async (D: TheD, C: TheC, T: Travel) => {
-                if (!finalize && C.sc.cyto_edge) { T.sc.not = 1; return }  // Se2a skips edges
-                const cyto_id = this.Dip_assign('cytoid', D)
-                if (C.sc.cyto_node) C.sc.cyto_id = cyto_id
-                if (C.sc.cyto_edge) C.sc.edge_id  = cyto_id
+            each_fn: async (D: TheD, C: TheC, _T: Travel) => {
+                if (C.sc.cyto_node) C.sc.cyto_id = this.Dip_assign('cytoid', D)
+                if (C.sc.cyto_edge) C.sc.edge_id  = this.Dip_assign('cytoid', D)
             },
 
             trace_fn: async (uD: TheD, C: TheC) => {
+                // trace on scan_id for nodes, source+target for edges
                 if (C.sc.cyto_node) return uD.i({ tracing: 1, the_scan_id: C.sc.scan_id ?? '' })
                 if (C.sc.cyto_edge) {
-                    // trace on resolved endpoint ids; fall back to C ref if available
                     const src = typeof C.sc.source === 'object'
-                        ? (C.sc.source as TheC).sc.cyto_id ?? ''
+                        ? (C.sc.source as TheC).sc.scan_id ?? ''
                         : C.sc.source_id ?? ''
                     const tgt = typeof C.sc.target === 'object'
-                        ? (C.sc.target as TheC).sc.cyto_id ?? ''
+                        ? (C.sc.target as TheC).sc.scan_id ?? ''
                         : C.sc.target_id ?? ''
-                    return uD.i({ tracing: 1, the_source_id: src, the_target_id: tgt })
+                    return uD.i({ tracing: 1, the_src: src, the_tgt: tgt })
                 }
                 return uD.i({ tracing: 1 })
             },
 
-            traced_fn: async () => {},
-
-            resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
-                if (!finalize) return
-                for (const g of goners) {
-                    const id = g.o({ Dip: 'cytoid' })[0]?.sc.value as string | undefined
-                    if (id) (Se2.c.cyto_goners as string[]).push(id)
-                }
-            },
-        })
-
-        if (!finalize) return
-
-        // Se2b forward(): resolve C refs → _id; clear Se1_D links
-        await Se2.c.T.forward(async (T: Travel) => {
-            const C = T.sc.n as TheC; if (!C) return
-
-            // parent C → parent_id
-            if (C.sc.parent && typeof C.sc.parent === 'object' && C.sc.parent !== topC) {
-                C.sc.parent_id = (C.sc.parent as TheC).sc.cyto_id ?? null
-            }
-            delete C.sc.parent
-
-            // edge source/target C → _id
-            for (const edge_C of C.o({ cyto_edge: 1 }) as TheC[]) {
-                if (edge_C.sc.source && typeof edge_C.sc.source === 'object') {
-                    edge_C.sc.source_id = (edge_C.sc.source as TheC).sc.cyto_id ?? null
-                    delete edge_C.sc.source
-                }
-                if (edge_C.sc.target && typeof edge_C.sc.target === 'object') {
-                    edge_C.sc.target_id = (edge_C.sc.target as TheC).sc.cyto_id ?? null
-                    delete edge_C.sc.target
-                }
-            }
-
-            delete C.c.Se1_D
+            traced_fn:   async () => {},
+            resolved_fn: async () => {},
         })
     },
 
 //#endregion
 //#region cyto_scan_refs
 
-    // Runs after Se2a (nodes have cyto_ids) and before Se2b (edges need ids).
-    // Reads C.c.Se1_D to get n refs for migration detection.
-    // Adds blue cyto_edge children to C nodes (multi-placed) and topC (migration).
-    // Se2b will assign ids to these new edges and clear Se1_D links.
+    // Runs after Se2 pass 1 (nodes have cyto_ids) and before Se2 pass 2 (edges get ids).
+    // Reads C.c.Se1_D for n refs (migration detection).
+    // Adds cyto_edge children to C nodes (multi-placed) and topC (migration orphans).
 
     async cyto_scan_refs(w: TheC, topC: TheC): Promise<void> {
-        const Se1 = w.c.cyto_Se as Selection
-        const goners_by_id: Map<string, TheD> = Se1.c.scan_goners_by_id ?? new Map()
-        const neu_set:       Set<string>       = Se1.c.neu_scan_ids      ?? new Set()
+        const Se1          = w.c.cyto_Se as Selection
+        const goners_by_id = Se1.c.scan_goners_by_id as Map<string, TheD>
 
-        // build n → C[] map from current C** nodes
+        // build n → C[] map from current C%cyto_node**
         const n_to_Cs = new Map<TheC, TheC[]>()
         const walk = (C: TheC) => {
             for (const nc of C.o({ cyto_node: 1 }) as TheC[]) {
@@ -335,36 +286,97 @@
         }
         walk(topC)
 
-        const blue_sc = (src_id: string, tgt_id: string, directed: boolean, opts: any = {}) => ({
+        // detect neu: T.sc.Dip_scanid_is_new was set by Dip_assign in Se1 each_fn
+        const is_neu_scan_id = (scan_id: string): boolean => {
+            // walk Se1.c.T to find if any T has this scan_id as a new Dip
+            // shortcut: if goners_by_id has the scan_id → it's gone (not neu)
+            // neu if it's NOT in goners and was T.sc.Dip_scanid_is_new
+            // simplest: check if the D's Dip was assigned this tick = T.sc.Dip_scanid_is_new
+            // We can't easily walk T** here, so instead: neu if scan_id not in goners_by_id
+            // and scan_id is not in the PREVIOUS tick's ids.
+            // Use Se1.c.T.forward to find the T with this scan_id — but that's heavy.
+            // Practical: any node not in goners is either persistent or new.
+            // Se1.c.neu_scan_ids is built cheaply:
+            const neu = Se1.c.neu_scan_ids as Set<string> | undefined
+            return neu?.has(scan_id) ?? false
+        }
+
+        const blue_sc = (src_id: string, tgt_id: string, directed: boolean, extra: any = {}) => ({
             cyto_edge: 1 as const, ref: 1 as const,
+            source: null, target: null,   // C refs — null since source is gone or id-based
             source_id: src_id, target_id: tgt_id,
-            ideal_length: 120,
             style: {
                 'line-color': '#4488ff', width: 1.2, 'line-style': 'dashed',
                 'target-arrow-shape': directed ? 'triangle' : 'none',
                 'target-arrow-color': '#4488ff', 'curve-style': 'bezier', opacity: 0.5,
             },
-            ...opts,
+            ...extra,
         })
 
-        // multi-placed: same n in >1 current C — undirected blue edges
+        // multi-placed: same n in >1 current C
         for (const [_n, Cs] of n_to_Cs) {
             if (Cs.length < 2) continue
             for (let i = 0; i < Cs.length - 1; i++)
                 Cs[i].i(blue_sc(Cs[i].sc.cyto_id as string, Cs[i+1].sc.cyto_id as string, false))
         }
 
-        // migration: goner (by scan_id) whose n appears as a neu C
-        for (const [gid, gD] of goners_by_id) {
-            const n = gD.o({ n_ref: 1 })[0]?.sc.n as TheC | undefined; if (!n) continue
-            const neu_Cs = (n_to_Cs.get(n) ?? []).filter(C => neu_set.has(C.sc.scan_id as string))
+        // migration: goner whose n ref appears as a neu C
+        for (const [_gid, gD] of goners_by_id) {
+            const from_scan_id = gD.c.T?.sc.Dip_scanid as string | undefined
+            if (!from_scan_id) continue
+            const n = gD.o({ n_ref: 1 })[0]?.sc.n as TheC | undefined
+            if (!n) continue
+            const neu_Cs = (n_to_Cs.get(n) ?? []).filter(C => is_neu_scan_id(C.sc.scan_id as string))
             if (!neu_Cs.length) continue
             const to_C  = neu_Cs[0]
             const to_id = to_C.sc.cyto_id as string
-            to_C.i({ cyto_migration: 1, from_scan_id: gid, to_id })
-            // orphan source edge parked on topC — source_id is scan_id for now
-            topC.i(blue_sc(gid, to_id, true, { orphan_source: 1 }))
+            to_C.i({ cyto_migration: 1, from_scan_id, to_id })
+            topC.i(blue_sc(from_scan_id, to_id, true, { orphan_source: 1 }))
         }
+
+        // build neu_scan_ids set for is_neu_scan_id — do this here for completeness
+        // (was missing from cyto_scan, added now on Se1.c)
+        if (!Se1.c.neu_scan_ids) {
+            const neu = new Set<string>()
+            await Se1.c.T?.forward(async (T: Travel) => {
+                if (T.sc.Dip_scanid_is_new) neu.add(T.sc.Dip_scanid as string)
+            })
+            Se1.c.neu_scan_ids = neu
+        }
+    },
+
+//#endregion
+//#region cyto_resolve_refs
+
+    // Forward walk via Se2.c.T: convert parent/source/target C refs → _id strings.
+    // Clears C.c.Se1_D links (keep C** low-memory after this point).
+
+    async cyto_resolve_refs(w: TheC, topC: TheC): Promise<void> {
+        const Se2 = w.c.cyto_Se2 as Selection
+        if (!Se2?.c.T) return
+
+        await Se2.c.T.forward(async (T: Travel) => {
+            const C = T.sc.n as TheC; if (!C) return
+
+            if (C.sc.cyto_node) {
+                if (C.sc.parent && typeof C.sc.parent === 'object') {
+                    C.sc.parent_id = (C.sc.parent as TheC).sc.cyto_id ?? null
+                    delete C.sc.parent
+                }
+                delete C.c.Se1_D
+            }
+
+            if (C.sc.cyto_edge) {
+                if (C.sc.source && typeof C.sc.source === 'object') {
+                    C.sc.source_id = (C.sc.source as TheC).sc.cyto_id ?? null
+                    delete C.sc.source
+                }
+                if (C.sc.target && typeof C.sc.target === 'object') {
+                    C.sc.target_id = (C.sc.target as TheC).sc.cyto_id ?? null
+                    delete C.sc.target
+                }
+            }
+        })
     },
 
 //#endregion
@@ -395,8 +407,8 @@
             },
 
             trace_fn: async (uD: TheD, C: TheC) => {
-                if (C.sc.cyto_edge) return uD.i({ tracing: 1, the_edge_id:  C.sc.edge_id  ?? '' })
-                if (C.sc.cyto_node) return uD.i({ tracing: 1, the_cyto_id:  C.sc.cyto_id  ?? '' })
+                if (C.sc.cyto_edge) return uD.i({ tracing: 1, the_edge_id: C.sc.edge_id  ?? '' })
+                if (C.sc.cyto_node) return uD.i({ tracing: 1, the_cyto_id: C.sc.cyto_id  ?? '' })
                 return uD.i({ tracing: 1 })
             },
 
@@ -408,9 +420,10 @@
                     const eid = C.sc.edge_id as string
                     if (!eid || C.sc.orphan_source) return
                     if (UPSERT || !bD) {
-                        edge_upsert.push({ id: eid, source: C.sc.source_id as string,
-                            target: C.sc.target_id as string, style: C.sc.style ?? {},
-                            data: { ideal_length: (C.sc.ideal_length as number) ?? 80 } })
+                        edge_upsert.push({ id: eid,
+                            source: C.sc.source_id as string, target: C.sc.target_id as string,
+                            style: C.sc.style ?? {},
+                            data:  { ideal_length: (C.sc.ideal_length as number) ?? 80 } })
                     } else {
                         const old = JSON.parse(snap_C.sc.snap as string ?? '{}')
                         const nw  = C.sc.style as Record<string,any> ?? {}
@@ -419,16 +432,17 @@
                         if (has) edge_upsert.push({ id: eid, style: chg })
                     }
                     snap_C.sc.snap = JSON.stringify(C.sc.style ?? {})
+
                 } else {
                     const id = C.sc.cyto_id as string
                     if (UPSERT || !bD) {
                         upsert.push({ id, label: C.sc.label ?? '',
                             isCompound: C.sc.isCompound ?? false,
-                            parent: C.sc.parent_id ?? undefined,
-                            style: C.sc.style ?? {} })
+                            parent:     C.sc.parent_id  ?? undefined,
+                            style:      C.sc.style ?? {} })
                     } else {
-                        const old   = JSON.parse(snap_C.sc.snap as string ?? '{}')
-                        const nw    = C.sc.style as Record<string,any> ?? {}
+                        const old  = JSON.parse(snap_C.sc.snap as string ?? '{}')
+                        const nw   = C.sc.style as Record<string,any> ?? {}
                         const chg: any = {}; let has = false
                         for (const [k,v] of Object.entries(nw)) if (old[k]!==v) { chg[k]=v; has=true }
                         const lc = C.sc.label     !== snap_C.sc.label
@@ -448,7 +462,7 @@
 
             resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
                 for (const g of goners) {
-                    if (g.sc.is_edge) { if (g.sc.the_edge_id)  edge_remove.push(g.sc.the_edge_id as string) }
+                    if (g.sc.is_edge) { if (g.sc.the_edge_id)  edge_remove.push(g.sc.the_edge_id  as string) }
                     else              { if (g.sc.the_cyto_id)  remove.push(g.sc.the_cyto_id as string) }
                 }
             },
