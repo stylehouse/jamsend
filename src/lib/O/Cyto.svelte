@@ -188,23 +188,17 @@
                 if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
                 if (cls === 'invisible') {
                     if (T == T.c.path[0]) {
-                        // one Dip field begins on the topD
-                        this.Dip_assign('scanid', D)
+                        // Dip must begin on the topD
                         const scan_id = this.Dip_assign('scanid', D)
-                        //debug:
-                        const nd = this.cyto_node(n)
-                        let spawny = T.sc.bD ? "---" : 'neu'
-                        console.log(`invis${spawny} scanid: ${scan_id}: ${[
-                            ...T.c.path.map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),nd.label
-                        ].join(" \t ")}`)
                     }
-                    T.sc.C = T.sc.up?.sc.C ?? topC; return
+                    T.sc.C = T.sc.up?.sc.C ?? topC
+                    return
                 }
 
                 const scan_id = this.Dip_assign('scanid', D)
 
                 const parentC: TheC = T.sc.up?.sc.C ?? topC
-                const nd = this.cyto_node(n)
+                const nd = this.cyto_nstyle(n)
                 let spawny = T.sc.bD ? "---" : 'neu'
                 console.log(`your ${spawny} scanid: ${scan_id}: ${[
                     ...T.c.path.map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),nd.label
@@ -216,7 +210,7 @@
                     label:      nd.label,
                     isCompound: nd.isCompound ?? false,
                     // parent only when parentC is itself a cyto_node (not topC/cyto_root)
-                    parent: parentC.sc.cyto_node ? parentC : null,
+                    parent: parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null,
                     style:      nd.style,
                 })
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
@@ -238,7 +232,7 @@
                     this.cyto_collect_goner_scan_ids(g, Se.c.scan_goners_by_id as Map<string,TheD>)
             },
         })
-
+        
         return topC
     },
 
@@ -268,9 +262,20 @@
             match_sc:   {},
             trace_sc:   { tracing: 1 },
 
-            each_fn: async (D: TheD, C: TheC, _T: Travel) => {
+            each_fn: async (D: TheD, C: TheC, T: Travel) => {
+                // if (C.sc.label == 'Yin') debugger
                 if (C.sc.cyto_node) C.sc.cyto_id = this.Dip_assign('cytoid', D)
+                else
                 if (C.sc.cyto_edge) C.sc.edge_id  = this.Dip_assign('cytoid', D)
+                else
+                if (T == T.c.path[0]) this.Dip_assign('cytoid', D)
+
+
+                let spawny = T.sc.bD ? "---" : 'neu'
+                console.log(`thee ${spawny} scanid: ${C.sc.cyto_id||C.sc.edge_id}: ${[
+                    ...T.c.path.slice().reverse().slice(1).reverse()
+                    .map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),C.sc.label
+                ].join(" \t ")}`)
             },
 
             trace_fn: async (uD: TheD, C: TheC) => {
@@ -416,7 +421,7 @@
         const Ze: Selection = w.c.cyto_Ze
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
 
-        const UPSERT = true
+        const UPSERT = false
 
         const upsert:      any[] = []
         const edge_upsert: any[] = []
@@ -555,7 +560,7 @@
         return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
     },
 
-    cyto_node(n: TheC): any {
+    cyto_nstyle(n: TheC): any {
         const label = this.cyto_label(n)
         const cls   = this.cytyle_classify(n)
         if (cls === 'compound') return { label: String(n.sc.w), isCompound: true,
