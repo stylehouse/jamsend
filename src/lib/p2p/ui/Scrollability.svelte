@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { throttle } from "$lib/Y";
+    import { throttle } from "$lib/Y.svelte";
     import type { Snippet } from "svelte";
 
     let { content,

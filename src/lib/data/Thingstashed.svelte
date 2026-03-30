@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { PeeringFeature } from "$lib/p2p/Peerily.svelte.ts";
-    import { throttle } from "$lib/Y";
+    import { throttle } from "$lib/Y.svelte.ts";
     import type { KVStore } from "./IDB.svelte";
     import type { ThingIsms } from "./Things.svelte.ts";
 

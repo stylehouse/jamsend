@@ -1,8 +1,8 @@
 import { keyser, type TheC, type TheN } from "./data/Stuff.svelte.ts";
 import { ThingIsms, ThingsIsms } from "./data/Things.svelte.ts";
 import {Modus} from "./mostly/Modus.svelte.ts";
-import { Idento, Peering, PeeringFeature, Pier, PierFeature, type PrePub, type TrustName } from "./p2p/Peerily.svelte";
-import { erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.ts"
+import { Peering, PeeringFeature, Pier, PierFeature, type PrePub, type TrustName } from "./p2p/Peerily.svelte";
+import { Idento, erring, ex, grap, grep, grop, indent, map, nex, sex, sha256, tex, throttle } from "$lib/Y.svelte.ts"
 import { tick, type Component } from "svelte";
 import type { KVStore } from "./data/IDB.svelte.ts";
 import MTrusting from "./MTrusting.svelte";

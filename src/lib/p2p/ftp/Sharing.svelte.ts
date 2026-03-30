@@ -8,7 +8,7 @@ type percentage = number
 import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
 import { PeeringFeature, PierFeature,
          now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+import { erring, ex, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.svelte"
 import type { Travel } from "$lib/mostly/Selection.svelte";
 import {Modus} from "$lib/mostly/Modus.svelte.ts";
 import { SoundSystem } from "./Audio.svelte";

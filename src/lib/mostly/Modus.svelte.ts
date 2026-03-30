@@ -4,7 +4,7 @@ import { _C, keyser, objectify, TheC, type TheN, type TheUniversal } from "$lib/
 import { ThingIsms } from '$lib/data/Things.svelte.ts'
 import type { Strata } from "$lib/mostly/Structure.svelte";
 import { now_in_seconds, PierFeature, type PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring, exactly, grep, hak, iske, map, tex, throttle } from "$lib/Y";
+import { erring, exactly, grep, hak, iske, map, tex, throttle } from "$lib/Y.svelte";
 import type { Component } from "svelte";
 import { Selection, Tdebug, Travel } from "./Selection.svelte";
 

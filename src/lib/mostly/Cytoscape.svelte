@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { throttle } from "$lib/Y";
+    import { throttle } from "$lib/Y.svelte";
     import Pirate from "./Pirate.svelte";
     import { _C } from "$lib/data/Stuff.svelte";
 

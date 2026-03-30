@@ -3,7 +3,7 @@
     import type { RadioModus } from "$lib/p2p/ftp/Sharing.svelte";
     import { now_in_seconds } from "$lib/p2p/Peerily.svelte";
     
-    import { erring, exactly, grop, nex } from "$lib/Y";
+    import { erring, exactly, grop, nex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
 
     let {M} = $props()

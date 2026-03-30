@@ -4,7 +4,7 @@
     import { _C, keyser, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
     import { SoundSystem, type Audiolet } from "$lib/p2p/ftp/Audio.svelte.ts"
     import { now_in_seconds_with_ms, now_in_seconds } from "$lib/p2p/Peerily.svelte.ts"
-    import { erring, ex, exactly, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { erring, ex, exactly, grep, grop, map, sex, sha256, tex, throttle } from "$lib/Y.svelte"
     import Records from "./Records.svelte";
     import Cytoscaping from "./Cytoscaping.svelte";
     import Directory from "./Directory.svelte";

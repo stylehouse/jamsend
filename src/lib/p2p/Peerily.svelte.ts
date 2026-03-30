@@ -10,7 +10,7 @@ import {
     enhex, dehex,
     IdentoCrypto, Idento,
     type storableIdento, type Sighex, type Prepub, type Pubkey, type Prikey,
-} from '$lib/Y';
+} from '$lib/Y.svelte';
 import type { DataConnection, PeerConnectOption } from 'peerjs';
 import PeerJS from 'peerjs'
 import type { Component } from 'svelte';

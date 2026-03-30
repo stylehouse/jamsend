@@ -48,7 +48,7 @@
     import { objectify, TheC }            from "$lib/data/Stuff.svelte"
     import type { TheD, Travel }          from "$lib/mostly/Selection.svelte"
     import { Selection }                  from "$lib/mostly/Selection.svelte"
-    import { depeel, peel, dig, exactly }               from "$lib/Y"
+    import { depeel, peel, dig, exactly }               from "$lib/Y.svelte"
     import { onMount }                    from "svelte"
     import { now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
@@ -269,6 +269,13 @@
         // story_analysis (the_steps array), not from pre-created hollow stepsC entries.
         // This/{Step:n} is created only when a step actually runs this session.
     },
+    parse_snap(s: string) {
+        // snap string → array of deL-parsed line objects, nulls filtered
+        if (!s) return []
+        return s.split('\n').filter(Boolean)
+            .map(l => this.deL(l))
+            .filter(x => x !== null)
+    },
 
 
 //#region note event handlers
@@ -307,30 +314,6 @@
 
 //#region analysis — story_analysis, story_sel, story_accept
 
-    parse_snap(s: string) {
-        // snap string → array of deL-parsed line objects, nulls filtered
-        if (!s) return []
-        return s.split('\n').filter(Boolean)
-            .map(l => this.deL(l))
-            .filter(x => x !== null)
-    },
-
-    make_diff(got: any[], exp: any[]) {
-        // positional diff of two parsed snap line arrays.
-        // positional because the snap walk order is stable across runs.
-        // tags: 'same' | 'changed' | 'new' (in got not exp) | 'gone' (vice versa)
-        const len = Math.max(got.length, exp.length)
-        const result: string[] = []
-        for (let i = 0; i < len; i++) {
-            const g = got[i], e = exp[i]
-            if      (!g) result.push('gone')
-            else if (!e) result.push('new')
-            else if (JSON.stringify(g.stringies) !== JSON.stringify(e.stringies))
-                         result.push('changed')
-            else         result.push('same')
-        }
-        return result
-    },
 
     // story_analysis: write scalar state into ave/{story_analysis:1} and bump ave.
     // Called after every mutation that should surface in the UI.

@@ -2,11 +2,8 @@
     import { onDestroy, onMount } from "svelte";
     import { fade } from "svelte/transition";
     import { SvelteSet } from "svelte/reactivity";
-    import { Idento, Peerily, PeeringFeature, type StashedPeering,
-        Peering as Peering_type
-     } from "./Peerily.svelte";
+    import { Peerily, Peering as Peering_type } from "./Peerily.svelte";
     import ShareButton from "./ui/ShareButton.svelte";
-    import { throttle } from "$lib/Y";
     import { PeeringSharing } from "./ftp/Sharing.svelte.ts";
     import GatEnabler from "./ui/GatEnabler.svelte";
     import FTrusting from "$lib/FTrusting.svelte";

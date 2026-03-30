@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { fade } from "svelte/transition";
     import FaceSucker from "./p2p/ui/FaceSucker.svelte";
-    import { grop } from "./Y";
+    import { grop } from "./Y.svelte";
     import type { TrustingModus } from "./Trust.svelte";
     import ShareButton from "./p2p/ui/ShareButton.svelte";
     import OverPiering from "./p2p/ui/OverPiering.svelte";

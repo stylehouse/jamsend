@@ -1,4 +1,4 @@
-import { isar } from "$lib/Y";
+import { isar } from "$lib/Y.svelte";
 import {Modus} from "$lib/mostly/Modus.svelte.ts"
 
 // see also RadioModus

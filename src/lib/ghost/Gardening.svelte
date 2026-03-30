@@ -2,8 +2,8 @@
     import { onMount, tick } from "svelte";
 
     import { _C, keyser, name_numbered_for_uniqueness_in_Set, objectify, Stuffing, Stuffusion, Stuffziad, Stuffziado, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte.ts"
-    import { now_in_seconds_with_ms, now_in_seconds,Peerily, Idento, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
-    import { depeel, erring, ex, grap, grep, grop, indent, map, nex, peel, sex, sha256, tex, throttle } from "$lib/Y.ts"
+    import { now_in_seconds_with_ms, now_in_seconds,Peerily, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts"
+    import { Idento, depeel, erring, ex, grap, grep, grop, indent, map, nex, peel, sex, sha256, tex, throttle } from "$lib/Y.svelte"
     import { OverPier, type OurIdzeug, type OurPeering, type OurPier, type OurPiers, type Trusting, type TrustingModus } from "$lib/Trust.svelte";
     
     let {M}:{M:TrustingModus} = $props()

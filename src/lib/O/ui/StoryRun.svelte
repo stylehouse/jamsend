@@ -96,7 +96,7 @@
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { peel }       from "$lib/Y"
+    import { peel }       from "$lib/Y.svelte"
 
     let { H }: { H: House } = $props()
 

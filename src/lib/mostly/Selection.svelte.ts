@@ -1,7 +1,7 @@
 // Another Things/Thing thing!
 
 import { keyser, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { isar, isC, reverse } from "$lib/Y"
+import { isar, isC, reverse } from "$lib/Y.svelte"
 
 const AI = `
 we need to hierarchise FileLists, and allow them to be opened several times:

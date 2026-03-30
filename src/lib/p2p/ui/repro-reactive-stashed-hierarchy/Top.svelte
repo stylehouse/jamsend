@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { throttle } from "$lib/Y";
+    import { throttle } from "$lib/Y.svelte";
     import { NotPeerily } from "./NotPeerily.svelte";
     import NotPeering from "./NotPeering.svelte";
     // persistence, spans many lives of P in this test

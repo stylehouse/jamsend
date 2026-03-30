@@ -72,7 +72,7 @@
     //
     //   StoryRun redeclares this locally for TypeScript narrowing.
 
-    import { depeel, peel }     from "$lib/Y"
+    import { depeel, peel }     from "$lib/Y.svelte"
     import { diff_match_patch } from 'diff-match-patch'
     import { onMount }          from 'svelte'
 
@@ -174,6 +174,24 @@
         const ops = dmp.diff_main(a, b, false)
         dmp.diff_cleanupSemantic(ops)
         return ops
+    },
+
+    // < GONE?
+    make_diff(got: any[], exp: any[]) {
+        // positional diff of two parsed snap line arrays.
+        // positional because the snap walk order is stable across runs.
+        // tags: 'same' | 'changed' | 'new' (in got not exp) | 'gone' (vice versa)
+        const len = Math.max(got.length, exp.length)
+        const result: string[] = []
+        for (let i = 0; i < len; i++) {
+            const g = got[i], e = exp[i]
+            if      (!g) result.push('gone')
+            else if (!e) result.push('new')
+            else if (JSON.stringify(g.stringies) !== JSON.stringify(e.stringies))
+                         result.push('changed')
+            else         result.push('same')
+        }
+        return result
     },
 
     // ── compute_diff ──────────────────────────────────────────────────────────

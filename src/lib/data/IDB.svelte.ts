@@ -1,5 +1,5 @@
 import type { PeeringFeature } from "$lib/p2p/Peerily.svelte";
-import { erring } from "$lib/Y";
+import { erring } from "$lib/Y.svelte";
 import { SvelteMap } from "svelte/reactivity";
 
 // Shared database connections to prevent blocking

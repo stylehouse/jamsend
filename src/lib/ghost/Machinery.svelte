@@ -1,7 +1,7 @@
 <script lang="ts">
     import { _C, objectify, TheC } from "$lib/data/Stuff.svelte";
     import type { House } from "$lib/O/Housing.svelte";
-    import { armap } from "$lib/Y";
+    import { armap } from "$lib/Y.svelte";
     // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
     //
     // Three workers: farm, plate, enzymeco.

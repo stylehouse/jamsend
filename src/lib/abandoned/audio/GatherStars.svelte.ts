@@ -1,4 +1,4 @@
-import { throttle } from "$lib/Y";
+import { throttle } from "$lib/Y.svelte";
 import type { Audiolet } from "./Audiolet.svelte";
 import { V } from "./Common.svelte";
 import type { Gather } from "./Gather.svelte";

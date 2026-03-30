@@ -2,7 +2,7 @@ import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svel
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
-import { tex, throttle } from "$lib/Y.ts"
+import { tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 

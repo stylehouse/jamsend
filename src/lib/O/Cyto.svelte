@@ -35,7 +35,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
     import Cytui         from "./ui/Cytui.svelte"
-    import { indent, sex } from "$lib/Y";
+    import { indent, sex } from "$lib/Y.svelte";
 
     let { M } = $props()
 
@@ -240,7 +240,7 @@
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
 
-                if (parentC.sc.cyto_node) {
+                if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
                     C.i({cyto_edge:1,scan_id,
                         source:parentC, label:"/", target:C})
                 }
@@ -275,6 +275,114 @@
         for (const child of D.o({ tracing: 1 }) as TheD[])
             this.cyto_collect_goner_scan_ids(child, by_id)
     },
+
+
+//#endregion
+//#region classify n
+
+    cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
+        const s = n.sc
+        if (s.self || s.mo || s.chaFrom || s.wasLast || s.sunny_streak || s.seen
+            || s.o_elvis || s.cyto_node || s.cyto_root || s.cyto_tracking
+            || s.wave_data || s.refs || s.snap_node || s.snap_root
+            || s.housed || s.run || s.Se || s.inst || s.began_wanting
+            || s.CytoStep || s.CytoWave || s.tracing || s.Dip
+            || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
+        if (s.H || s.A) return 'invisible'
+        if (s.w) return 'compound'
+        return null
+    },
+
+    cyto_label(n: TheC): string {
+        const parts: string[] = []
+        for (const [k, v] of Object.entries(n.sc ?? {})) {
+            if (typeof v === 'number')                    parts.push(`${k}:${Math.round(v*100)/100}`)
+            else if (typeof v === 'boolean')              parts.push(k)
+            else if (typeof v === 'string' && v !== '1') parts.push(`${k}:${v.length>11?v.slice(0,9)+'…':v}`)
+        }
+        return parts.join('\n')
+    },
+
+    hsl2rgb(h: number, s: number, l: number): string {
+        s /= 100; l /= 100
+        const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=l-c/2
+        let r=0,g=0,b=0
+        if      (h<60)  {r=c;g=x} else if (h<120) {r=x;g=c}
+        else if (h<180) {g=c;b=x} else if (h<240) {g=x;b=c}
+        else if (h<300) {r=x;b=c} else             {r=c;b=x}
+        return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
+    },
+
+    cyto_nstyle(n: TheC): any {
+        const label = this.cyto_label(n)
+        const cls   = this.cytyle_classify(n)
+        if (cls === 'compound') return { label: String(n.sc.w), isCompound: true,
+                                          style: this.cyto_w_style(String(n.sc.w)) }
+        const style: any = {}
+        if (n.sc.mouthful) {
+            const d=(n.sc.dose as number)??0,sz=Math.round(6+d*40)
+            style['background-color']=this.hsl2rgb(72,80,62);style.width=sz;style.height=sz
+            style.shape='ellipse';style.opacity=0.82;style.color='#003300'
+        } else if (n.sc.leaf) {
+            const d=(n.sc.dose as number)??0,sz=Math.round(14+d*16),lt=Math.round(28+d*12)
+            style['background-color']=this.hsl2rgb(120,55,lt);style.width=sz;style.height=sz
+            style.shape='ellipse';style.color=d>1.4?'#001800':'#b0ffb0'
+        } else if (n.sc.sunshine) {
+            const d=(n.sc.dose as number)??0,sz=Math.round(22+d*22),lt=Math.round(42+d*18)
+            style['background-color']=this.hsl2rgb(46,90,lt);style.width=sz;style.height=sz
+            style.shape='diamond';style.color='#331800'
+        } else if (n.sc.poo) {
+            const d=(n.sc.dose as number)??0,sz=Math.round(18+Math.min(d,8)*2.5)
+            style['background-color']='#5c3010';style.width=sz;style.height=sz
+            style.shape='ellipse';style.color='#c88040'
+        } else if (n.sc.material) {
+            const amt=(n.sc.amount as number)??0,sz=Math.round(18+Math.min(amt,20)*1.6)
+            style['background-color']=this.hsl2rgb(33,52,20+Math.min(amt,20)*1.5)
+            style.width=sz;style.height=sz;style.shape='round-rectangle';style.color='#ffe8c0'
+        } else if (n.sc.producing) {
+            style['background-color']='#142060';style.width=42;style.height=42
+            style.shape='round-rectangle';style.color='#9ab4ff'
+        } else if (n.sc.protein) {
+            const cx=(n.sc.complexity as number)??0,sz=Math.round(18+cx*4.5)
+            style['background-color']=this.hsl2rgb(276,40,22+cx*5)
+            style.width=sz;style.height=sz;style.shape='hexagon';style.color='#ddc8ff'
+        } else if (n.sc.shelf && n.sc.enzyme) {
+            const u=(n.sc.units as number)??0
+            style['background-color']='#1a4828';style.width=Math.round(20+u*2.5);style.height=20
+            style.shape='round-rectangle';style.color='#90ffc0'
+        } else if (n.sc.wants_enzyme || n.sc.wants_to_produce) {
+            style['background-color']='#6a1a08';style.width=22;style.height=22
+            style.shape='star';style.color='#ff9070'
+        } else if (n.sc.hand !== undefined) {
+            style['background-color']='#1a1a28';style['background-opacity']=0.6
+            style['border-color']='#5a5a9a';style['border-width']=1;style['border-style']='solid'
+            style.padding='7px';style['font-size']='8px';style['font-style']='italic'
+            style.color='#8888bb';style['text-valign']='top'
+            return { label: String(n.sc.hand), //isCompound: true,
+                style }
+        } else {
+            style['background-color']='#242424';style.width=16;style.height=16;style.color='#666'
+        }
+        return { label, style }
+    },
+
+    cyto_w_style(wname: string): any {
+        const bg:     Record<string,string> = { farm:'#0a1f0a',plate:'#1f130a',enzymeco:'#0a0a1f',
+                                                 Yin:'#1a0a1a',Yang:'#1a1a0a' }
+        const border: Record<string,string> = { farm:'#2a5a1a',plate:'#5a3a1a',enzymeco:'#1a1a5a',
+                                                 Yin:'#5a1a5a',Yang:'#5a5a1a' }
+        const color:  Record<string,string> = { farm:'#4a6a4a',plate:'#6a5a4a',enzymeco:'#4a4a6a',
+                                                 Yin:'#8a4a8a',Yang:'#8a8a4a' }
+        return {
+            'background-color': bg[wname] ?? '#181818', 'background-opacity': 0.5,
+            'border-color': border[wname] ?? '#2a2a2a', 'border-width': 1, 'border-style': 'dashed',
+            'text-valign': 'top', 'text-halign': 'center', padding: '12px',
+            'font-size': '9px', 'font-weight': 'bold', 'font-style': 'italic',
+            color: color[wname] ?? '#4a6a4a',
+        }
+    },
+
+//#endregion
 
 //#endregion
 //#region Se2 ids
@@ -563,7 +671,7 @@
     },
 
 //#endregion
-//#region wave -> enL
+//#region wave -> string
 
     // ── snap_cytowave_str ──────────────────────────────────────────────────────
     // Encode a cyto wave as enL lines starting at d_base.
@@ -629,112 +737,6 @@
         return lines.join('\n') + '\n'
     },
 
-//#endregion
-//#region classify n
-
-    cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
-        const s = n.sc
-        if (s.self || s.mo || s.chaFrom || s.wasLast || s.sunny_streak || s.seen
-            || s.o_elvis || s.cyto_node || s.cyto_root || s.cyto_tracking
-            || s.wave_data || s.refs || s.snap_node || s.snap_root
-            || s.housed || s.run || s.Se || s.inst || s.began_wanting
-            || s.CytoStep || s.CytoWave || s.tracing || s.Dip
-            || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
-        if (s.H || s.A) return 'invisible'
-        if (s.w) return 'compound'
-        return null
-    },
-
-    cyto_label(n: TheC): string {
-        const parts: string[] = []
-        for (const [k, v] of Object.entries(n.sc ?? {})) {
-            if (typeof v === 'number')                    parts.push(`${k}:${Math.round(v*100)/100}`)
-            else if (typeof v === 'boolean')              parts.push(k)
-            else if (typeof v === 'string' && v !== '1') parts.push(`${k}:${v.length>11?v.slice(0,9)+'…':v}`)
-        }
-        return parts.join('\n')
-    },
-
-    hsl2rgb(h: number, s: number, l: number): string {
-        s /= 100; l /= 100
-        const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=l-c/2
-        let r=0,g=0,b=0
-        if      (h<60)  {r=c;g=x} else if (h<120) {r=x;g=c}
-        else if (h<180) {g=c;b=x} else if (h<240) {g=x;b=c}
-        else if (h<300) {r=x;b=c} else             {r=c;b=x}
-        return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
-    },
-
-    cyto_nstyle(n: TheC): any {
-        const label = this.cyto_label(n)
-        const cls   = this.cytyle_classify(n)
-        if (cls === 'compound') return { label: String(n.sc.w), isCompound: true,
-                                          style: this.cyto_w_style(String(n.sc.w)) }
-        const style: any = {}
-        if (n.sc.mouthful) {
-            const d=(n.sc.dose as number)??0,sz=Math.round(6+d*40)
-            style['background-color']=this.hsl2rgb(72,80,62);style.width=sz;style.height=sz
-            style.shape='ellipse';style.opacity=0.82;style.color='#003300'
-        } else if (n.sc.leaf) {
-            const d=(n.sc.dose as number)??0,sz=Math.round(14+d*16),lt=Math.round(28+d*12)
-            style['background-color']=this.hsl2rgb(120,55,lt);style.width=sz;style.height=sz
-            style.shape='ellipse';style.color=d>1.4?'#001800':'#b0ffb0'
-        } else if (n.sc.sunshine) {
-            const d=(n.sc.dose as number)??0,sz=Math.round(22+d*22),lt=Math.round(42+d*18)
-            style['background-color']=this.hsl2rgb(46,90,lt);style.width=sz;style.height=sz
-            style.shape='diamond';style.color='#331800'
-        } else if (n.sc.poo) {
-            const d=(n.sc.dose as number)??0,sz=Math.round(18+Math.min(d,8)*2.5)
-            style['background-color']='#5c3010';style.width=sz;style.height=sz
-            style.shape='ellipse';style.color='#c88040'
-        } else if (n.sc.material) {
-            const amt=(n.sc.amount as number)??0,sz=Math.round(18+Math.min(amt,20)*1.6)
-            style['background-color']=this.hsl2rgb(33,52,20+Math.min(amt,20)*1.5)
-            style.width=sz;style.height=sz;style.shape='round-rectangle';style.color='#ffe8c0'
-        } else if (n.sc.producing) {
-            style['background-color']='#142060';style.width=42;style.height=42
-            style.shape='round-rectangle';style.color='#9ab4ff'
-        } else if (n.sc.protein) {
-            const cx=(n.sc.complexity as number)??0,sz=Math.round(18+cx*4.5)
-            style['background-color']=this.hsl2rgb(276,40,22+cx*5)
-            style.width=sz;style.height=sz;style.shape='hexagon';style.color='#ddc8ff'
-        } else if (n.sc.shelf && n.sc.enzyme) {
-            const u=(n.sc.units as number)??0
-            style['background-color']='#1a4828';style.width=Math.round(20+u*2.5);style.height=20
-            style.shape='round-rectangle';style.color='#90ffc0'
-        } else if (n.sc.wants_enzyme || n.sc.wants_to_produce) {
-            style['background-color']='#6a1a08';style.width=22;style.height=22
-            style.shape='star';style.color='#ff9070'
-        } else if (n.sc.hand !== undefined) {
-            style['background-color']='#1a1a28';style['background-opacity']=0.6
-            style['border-color']='#5a5a9a';style['border-width']=1;style['border-style']='solid'
-            style.padding='7px';style['font-size']='8px';style['font-style']='italic'
-            style.color='#8888bb';style['text-valign']='top'
-            return { label: String(n.sc.hand), //isCompound: true,
-                style }
-        } else {
-            style['background-color']='#242424';style.width=16;style.height=16;style.color='#666'
-        }
-        return { label, style }
-    },
-
-    cyto_w_style(wname: string): any {
-        const bg:     Record<string,string> = { farm:'#0a1f0a',plate:'#1f130a',enzymeco:'#0a0a1f',
-                                                 Yin:'#1a0a1a',Yang:'#1a1a0a' }
-        const border: Record<string,string> = { farm:'#2a5a1a',plate:'#5a3a1a',enzymeco:'#1a1a5a',
-                                                 Yin:'#5a1a5a',Yang:'#5a5a1a' }
-        const color:  Record<string,string> = { farm:'#4a6a4a',plate:'#6a5a4a',enzymeco:'#4a4a6a',
-                                                 Yin:'#8a4a8a',Yang:'#8a8a4a' }
-        return {
-            'background-color': bg[wname] ?? '#181818', 'background-opacity': 0.5,
-            'border-color': border[wname] ?? '#2a2a2a', 'border-width': 1, 'border-style': 'dashed',
-            'text-valign': 'top', 'text-halign': 'center', padding: '12px',
-            'font-size': '9px', 'font-weight': 'bold', 'font-style': 'italic',
-            color: color[wname] ?? '#4a6a4a',
-        }
-    },
-
-//#endregion
 //#region intoCyto handshake
 
     async story_cyto_step(A: TheC, w: TheC, e: TheC) {

@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, untrack } from "svelte";
-    import { grop, throttle } from "$lib/Y";
+    import { grop, throttle } from "$lib/Y.svelte.ts";
     import { _C, keyser, type TheN } from "$lib/data/Stuff.svelte";
     import Stuffing from "$lib/data/Stuffing.svelte";
     import Scrollability from "$lib/p2p/ui/Scrollability.svelte";

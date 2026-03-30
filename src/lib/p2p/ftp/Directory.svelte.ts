@@ -5,7 +5,7 @@ import { _C, keyser, TheC, type TheN } from '$lib/data/Stuff.svelte';
 import { ThingIsms, ThingsIsms } from '$lib/data/Things.svelte.ts'
 import { Selection, Tdebug, Tour, Travel, type TheD } from '$lib/mostly/Selection.svelte';
 import { Strata, Structure } from '$lib/mostly/Structure.svelte';
-import { CHUNK_SIZE, erring, grap, grop, sha256 } from '$lib/Y'
+import { CHUNK_SIZE, erring, grap, grop, sha256 } from '$lib/Y.svelte'
 import { now_in_seconds, PeeringFeature } from '../Peerily.svelte';
 import { DirectoryModus, type PeeringSharing, type PierSharing } from './Sharing.svelte';
 
