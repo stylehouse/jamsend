@@ -486,7 +486,7 @@
     },
     // < io tupling use
     async i_journeys_o_aims(AwN) {
-        if (!this.Se.c.T) return
+        if (!this.Se?.c.T) return
         // replace a particular journey that comes from this A
         // have *%journey ideas first
         let AwjN = []

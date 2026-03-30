@@ -638,7 +638,7 @@ export function depeel(s: Record<string, any>, d?: { sort?:boolean, sep?: string
     d.sep ??= ','
     d.hie ??= ':'
     d.sort ??= false
-    const ks = Object.keys(s);
+    let ks = Object.keys(s);
     if (d.sort) ks = ks.sort()
     const hs: string[] = [];
     
