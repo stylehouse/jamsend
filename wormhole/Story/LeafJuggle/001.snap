@@ -97,9 +97,9 @@ Snap:cytowave
     font-style:italic
     padding:7px
     text-valign:top
-  edge:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1,ideal_length:80
-  edge:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2,ideal_length:80
-  edge:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2,ideal_length:80
-  edge:cytoid_1_1_2_1,source:cytoid_1_1,target:cytoid_1_1_2,ideal_length:80
-  edge:cytoid_1_2_1_1,source:cytoid_1_2,target:cytoid_1_2_1,ideal_length:80
-  edge:cytoid_1_2_2_1,source:cytoid_1_2,target:cytoid_1_2_2,ideal_length:80
+  edge:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1
+  edge:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+  edge:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2
+  edge:cytoid_1_1_2_1,source:cytoid_1_1,target:cytoid_1_1_2
+  edge:cytoid_1_2_1_1,source:cytoid_1_2,target:cytoid_1_2_1
+  edge:cytoid_1_2_2_1,source:cytoid_1_2,target:cytoid_1_2_2

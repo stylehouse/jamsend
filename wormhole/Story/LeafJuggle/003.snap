@@ -27,6 +27,6 @@ Snap:cytowave
     color:#666
     height:16
     width:16
-  edge:cytoid_1_2_2_2_1,source:cytoid_1_2_2,target:cytoid_1_2_2_2,ideal_length:80
-  edge:cytoid_1_2_2_2_2_1,source:cytoid_1_2_2_2,target:cytoid_1_2_2_2_2,ideal_length:80
+  edge:cytoid_1_2_2_2_1,source:cytoid_1_2_2,target:cytoid_1_2_2_2
+  edge:cytoid_1_2_2_2_2_1,source:cytoid_1_2_2_2,target:cytoid_1_2_2_2_2
   remove:cytoid_1_1_2_2

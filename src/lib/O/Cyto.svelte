@@ -35,7 +35,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
     import Cytui         from "./ui/Cytui.svelte"
-    import { indent } from "$lib/Y";
+    import { indent, sex } from "$lib/Y";
 
     let { M } = $props()
 
@@ -254,7 +254,11 @@
                 return uD.i(sc)
             },
 
-            traced_fn: async () => {},
+            traced_fn: async (D: TheD, bD: TheD | undefined, n: TheC, T: Travel) => {
+                if (T.sc.C && bD) {
+                    T.sc.C.sc.ref_stable = !!(bD && T.sc.n === bD.c.T?.sc.n)
+                }
+            },
 
             resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
                 for (const g of goners)
@@ -437,7 +441,22 @@
 
 //#endregion
 //#region Ze — make_wave
-
+    // Compare newVal against what's stored at bD.sc[key].
+    // newVal is an object (style) or scalar (label, parent_id).
+    // Returns changed subset / changed scalar, or null if nothing changed.
+    // bD=undefined means "all new" — returns newVal wholesale.
+    cyto_changed(bD: TheD | undefined, key: string, newVal: any): any | null {
+        if (!bD) return newVal
+        const old = bD.sc[key]
+        if (newVal !== null && typeof newVal === 'object') {
+            const ch: any = {}; let has = false
+            for (const [k, v] of Object.entries(newVal)) {
+                if (old?.[k] !== v) { ch[k] = v; has = true }
+            }
+            return has ? ch : null
+        }
+        return old !== newVal ? newVal : null
+    },
     async make_wave(w: TheC, topC: TheC, adjacent: boolean): Promise<any> {
         w.c.cyto_Ze ??= new Selection()
         const Ze: Selection = w.c.cyto_Ze
@@ -469,56 +488,56 @@
             },
 
             trace_fn: async (uD: TheD, C: TheC) => {
-                if (C.sc.cyto_edge) return uD.i({ tracing: 1, the_edge_id: C.sc.edge_id  ?? '' })
-                if (C.sc.cyto_node) return uD.i({ tracing: 1, the_cyto_id: C.sc.cyto_id  ?? '' })
+                if (C.sc.cyto_node) return uD.i({
+                    tracing: 1, the_cyto_id:  C.sc.cyto_id  ?? '',
+                    the_style:  { ...C.sc.style  as object ?? {} },
+                    the_label:  C.sc.label   ?? '',
+                    the_parent: C.sc.parent_id ?? null,
+                })
+                if (C.sc.cyto_edge) return uD.i({
+                    tracing: 1, the_edge_id:  C.sc.edge_id  ?? '',
+                    the_style:  { ...C.sc.style  as object ?? {} },
+                    the_src:    C.sc.source_id ?? '',
+                    the_tgt:    C.sc.target_id ?? '',
+                })
                 return uD.i({ tracing: 1 })
             },
 
             traced_fn: async (D: TheD, bD: TheD | undefined, C: TheC) => {
                 if (!C.sc.cyto_node && !C.sc.cyto_edge) return
-                const snap_C = D.oai({ snapshot: 1 })
 
                 if (C.sc.cyto_edge) {
                     const eid = C.sc.edge_id as string
                     if (!eid || C.sc.orphan_source) return
-                    if (UPSERT || !bD) {
+                    const style_ch = this.cyto_changed(bD, 'the_style', C.sc.style ?? {})
+                    if (!bD) {
                         edge_upsert.push({ id: eid,
                             source: C.sc.source_id as string, target: C.sc.target_id as string,
                             style: C.sc.style ?? {},
-                            data:  { ideal_length: (C.sc.ideal_length as number) ?? 80 } })
-                    } else {
-                        const old = JSON.parse(snap_C.sc.snap as string ?? '{}')
-                        const nw  = C.sc.style as Record<string,any> ?? {}
-                        const chg: any = {}; let has = false
-                        for (const [k,v] of Object.entries(nw)) if (old[k]!==v) { chg[k]=v; has=true }
-                        if (has) edge_upsert.push({ id: eid, style: chg })
+                            data: sex({},C.sc,['ideal_length']) })
+                    } else if (style_ch) {
+                        edge_upsert.push({ id: eid, style: style_ch })
                     }
-                    snap_C.sc.snap = JSON.stringify(C.sc.style ?? {})
+                    return
+                }
 
-                } else {
-                    const id = C.sc.cyto_id as string
-                    if (UPSERT || !bD) {
-                        upsert.push({ id, label: C.sc.label ?? '',
-                            isCompound: C.sc.isCompound ?? false,
-                            parent:     C.sc.parent_id  ?? undefined,
-                            style:      C.sc.style ?? {} })
-                    } else {
-                        const old  = JSON.parse(snap_C.sc.snap as string ?? '{}')
-                        const nw   = C.sc.style as Record<string,any> ?? {}
-                        const chg: any = {}; let has = false
-                        for (const [k,v] of Object.entries(nw)) if (old[k]!==v) { chg[k]=v; has=true }
-                        const lc = C.sc.label     !== snap_C.sc.label
-                        const pc = C.sc.parent_id !== snap_C.sc.parent
-                        if (has || lc || pc) {
-                            const nd: any = { id, style: chg }
-                            if (lc) nd.label      = C.sc.label
-                            if (pc) nd.new_parent = C.sc.parent_id ?? null
-                            upsert.push(nd)
-                        }
-                        snap_C.sc.label  = C.sc.label
-                        snap_C.sc.parent = C.sc.parent_id
-                    }
-                    snap_C.sc.snap = JSON.stringify(C.sc.style ?? {})
+                // cyto_node
+                const id       = C.sc.cyto_id   as string
+                const style_ch = this.cyto_changed(bD, 'the_style',  C.sc.style     ?? {})
+                const label_ch = this.cyto_changed(bD, 'the_label',  C.sc.label     ?? '')
+                const par_ch   = this.cyto_changed(bD, 'the_parent', C.sc.parent_id ?? null)
+
+                if (!bD) {
+                    upsert.push({ id, label: C.sc.label ?? '',
+                        isCompound: C.sc.isCompound ?? false,
+                        parent:     C.sc.parent_id  ?? undefined,
+                        style:      C.sc.style      ?? {} })
+                } else if (style_ch || label_ch !== null || par_ch !== null) {
+                    const nd: any = { id }
+                    if (style_ch)      nd.style      = style_ch
+                    if (label_ch !== null) nd.label      = C.sc.label
+                    if (par_ch !== null)   nd.new_parent = C.sc.parent_id ?? null
+                    upsert.push(nd)
                 }
             },
 
