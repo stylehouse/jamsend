@@ -1,7 +1,7 @@
 import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { armap, isar, map, tex, throttle } from "$lib/Y";
+import { armap, ex, isar, map, tex, throttle } from "$lib/Y";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
 const OPTIMISE_FOR_DX = true
@@ -300,6 +300,19 @@ class StuffIO {
     // < could upsert, index-safely?
     oai(s,c={}) {
         return this.o(s)[0] || this.i({...s,...c})
+    }
+    // as above but you want it replaced when these intended C%* change
+    async roai(s, c = {}) {
+        const full = { ...s, ...c }
+        const existing = this.o(s)[0]
+        if (!existing) return this.i(full)
+        const changed = Object.entries(full).some(([k, v]) => 
+            typeof v !== 'function' && existing.sc[k] !== v
+        )
+        // copy up to date functions anyway
+        ex(existing.sc,full)
+        if (changed) return await this.r(s, full)
+        return existing
     }
 
 
