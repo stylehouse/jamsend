@@ -49,17 +49,23 @@
     $effect(() => {
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
         if (!gn) return
-
+ 
         seek_warning = (gn.sc.seek_warning as string | null) ?? null
-
-        const wave = gn.sc.wave as Wave | undefined
+ 
+        const wave = gn.sc.wave as TheC | undefined
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
         last_tick = tick
-        if (cy) apply(wave, wave.duration)
-        grawave_dur = wave.duration
-        const sn = wave.step_n != null ? ` step:${wave.step_n}` : ''
-        status = `tick ${last_tick}${sn} · ${wave.upsert?.length ?? 0}n ${wave.edge_upsert?.length ?? 0}e −${wave.remove?.length ?? 0} ~${wave.migrate?.length ?? 0} · ⏱${wave.duration}s`
+        const dur = (wave.sc.duration as number) ?? 0.3
+        if (cy) apply(wave, dur)
+        grawave_dur = dur
+        const sn = wave.sc.step_n != null ? ` step:${wave.sc.step_n}` : ''
+        status = `tick ${last_tick}${sn}`
+            + ` · ${wave.o({ upsert:      1 }).length}n`
+            + ` ${wave.o({ edge_upsert: 1 }).length}e`
+            + ` −${wave.o({ remove:      1 }).length}`
+            + ` ~${wave.o({ migrate:     1 }).length}`
+            + ` · ⏱${dur}s`
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
@@ -82,121 +88,123 @@
         return { anim, imm }
     }
 
-    function apply(wave: Wave, dur: number) {
+    function apply(wave: TheC, dur: number) {
         if (!cy) return
         const ms = Math.round(dur * 1000)
-        console.log(`🌴 yrararar`)
 
         // 1. remove stale edges
-        for (const id of wave.edge_remove ?? []) cy.getElementById(id).remove()
-
-        // 2. remove stale nodes (skip migrating ids — they get their own animation)
-        const migrating = new Set((wave.migrate ?? []).map(m => m.id))
-        for (const id of wave.remove ?? []) {
-            if (!migrating.has(id)) cy.getElementById(id).remove()
+        for (const n of wave.o({ edge_remove: 1 }) as TheC[])
+            cy.getElementById(n.sc.id as string).remove()
+ 
+        // 2. remove stale nodes (skip migrating ids)
+        const migrating = new Set((wave.o({ migrate: 1 }) as TheC[]).map(m => m.sc.id as string))
+        for (const n of wave.o({ remove: 1 }) as TheC[]) {
+            if (!migrating.has(n.sc.id as string))
+                cy.getElementById(n.sc.id as string).remove()
         }
-
+ 
         // 3. upsert nodes
-        for (const nd of wave.upsert ?? []) {
-            const el = cy.getElementById(nd.id)
-            const { anim, imm } = split_style(nd.style)
+        for (const nd of wave.o({ upsert: 1 }) as TheC[]) {
+            const id = nd.sc.id as string
+            const el = cy.getElementById(id)
+            const { anim, imm } = split_style(nd.sc.style as Record<string,any>)
             if (el.length) {
-                if (nd.new_parent && el.parent().id() !== nd.new_parent
-                    && !migrating.has(nd.id)) {
-                    el.move({ parent: nd.new_parent })
+                const new_parent = nd.sc.new_parent as string | null | undefined
+                if (new_parent !== undefined && !migrating.has(id)
+                    && el.parent().id() !== (new_parent ?? '')) {
+                    el.move({ parent: new_parent ?? null })
                 }
-                el.data('label', nd.label)
+                el.data('label', nd.sc.label)
                 if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {
                     el.animate({ style: anim }, { duration: ms, easing: 'ease-out-cubic' })
                 } else { el.style(anim) }
             } else {
-                const data: any = { id: nd.id, label: nd.label }
-                if (nd.parent) data.parent = nd.parent
+                const data: any = { id, label: nd.sc.label }
+                const parent = nd.sc.parent as string | undefined
+                if (parent) data.parent = parent
                 const added = cy.add({ group: 'nodes', data })
                 added.style({ ...imm, ...anim })
-                // new mouthfuls: teleport to spawning leaf before layout moves them
-                if (nd.appear_from) {
-                    const spawn = cy.getElementById(nd.appear_from)
+                if (nd.sc.appear_from) {
+                    const spawn = cy.getElementById(nd.sc.appear_from as string)
                     if (spawn.length) added.position(spawn.position())
                 }
             }
         }
-
+ 
         // 4. upsert edges
-        for (const ed of wave.edge_upsert ?? []) {
-            const el = cy.getElementById(ed.id)
-            const { anim, imm } = split_style(ed.style)
+        for (const ed of wave.o({ edge_upsert: 1 }) as TheC[]) {
+            const id = ed.sc.id as string
+            const el = cy.getElementById(id)
+            const { anim, imm } = split_style(ed.sc.style as Record<string,any>)
             if (el.length) {
-                if (ed.data?.ideal_length != null) el.data('ideal_length', ed.data.ideal_length)
+                if (ed.sc.ideal_length != null) el.data('ideal_length', ed.sc.ideal_length)
                 if (Object.keys(imm).length) el.style(imm)
                 if (ms > 0 && Object.keys(anim).length) {
                     el.animate({ style: anim }, { duration: ms })
                 } else { el.style(anim) }
             } else {
-                const data: any = { id: ed.id, source: ed.source, target: ed.target }
-                if (ed.data) Object.assign(data, ed.data)
+                const data: any = { id,
+                    source: ed.sc.source as string,
+                    target: ed.sc.target as string,
+                }
+                if (ed.sc.ideal_length != null) data.ideal_length = ed.sc.ideal_length
                 try {
                     const added = cy.add({ group: 'edges', data })
                     added.style({ ...imm, ...anim })
                 } catch { /* source/target may not exist yet */ }
             }
         }
-
-        // 5. migrations: leaf harvest, mouthful expiry, node re-parenting
-        for (const mg of wave.migrate ?? []) {
-            const el     = cy.getElementById(mg.id)
-            const toward = cy.getElementById(mg.toward)
+ 
+        // 5. migrations
+        for (const mg of wave.o({ migrate: 1 }) as TheC[]) {
+            const id     = mg.sc.id     as string
+            const el     = cy.getElementById(id)
+            const toward = cy.getElementById(mg.sc.toward as string)
             if (!el.length) continue
-            // detach harvested leaf from farm compound before flying
-            if (mg.harvest_detach) {
+            if (mg.sc.harvest_detach) {
                 el.move({ parent: null })
                 el.connectedEdges().remove()
             }
             if (!toward.length || ms <= 0) {
-                mg.then_parent ? el.move({ parent: mg.then_parent }) : el.remove()
+                const tp = mg.sc.then_parent as string | undefined
+                tp ? el.move({ parent: tp }) : el.remove()
                 continue
             }
             const tpos   = toward.renderedPosition()
             const fly_ms = Math.round(ms * 0.75)
             const shr_ms = Math.round(ms * 0.20)
-            if (mg.then_parent) {
-                // re-parent: fly to new compound centre then reparent
-                el.animate(
-                    { renderedPosition: tpos },
-                    { duration: fly_ms, easing: 'ease-in-out-cubic',
-                      complete: () => { const s = cy.getElementById(mg.id); if (s.length) s.move({ parent: mg.then_parent! }) } }
-                )
-            } else if (mg.mouthful_expire) {
-                // mouthful expiry: fade-shrink in place
-                el.animate(
-                    { style: { opacity: 0, width: 3, height: 3 } },
-                    { duration: Math.round(ms * 0.40), easing: 'ease-out-cubic',
-                      complete: () => cy.getElementById(mg.id).remove() }
-                )
+            if (mg.sc.then_parent) {
+                const tp = mg.sc.then_parent as string
+                el.animate({ renderedPosition: tpos }, {
+                    duration: fly_ms, easing: 'ease-in-out-cubic',
+                    complete: () => { const s = cy.getElementById(id); if (s.length) s.move({ parent: tp }) }
+                })
+            } else if (mg.sc.mouthful_expire) {
+                el.animate({ style: { opacity: 0, width: 3, height: 3 } }, {
+                    duration: Math.round(ms * 0.40), easing: 'ease-out-cubic',
+                    complete: () => cy.getElementById(id).remove()
+                })
             } else {
-                // leaf harvest: fly full-size to mat:basic then shrink-fade
-                el.animate(
-                    { renderedPosition: tpos },
-                    { duration: fly_ms, easing: 'ease-in-cubic',
-                      complete: () => {
-                          const s = cy.getElementById(mg.id)
-                          if (!s.length) return
-                          s.animate(
-                              { style: { opacity: 0, width: 4, height: 4 } },
-                              { duration: shr_ms, easing: 'ease-out-cubic',
-                                complete: () => cy.getElementById(mg.id).remove() }
-                          )
-                      } }
-                )
+                el.animate({ renderedPosition: tpos }, {
+                    duration: fly_ms, easing: 'ease-in-cubic',
+                    complete: () => {
+                        const s = cy.getElementById(id)
+                        if (!s.length) return
+                        s.animate({ style: { opacity: 0, width: 4, height: 4 } }, {
+                            duration: shr_ms, easing: 'ease-out-cubic',
+                            complete: () => cy.getElementById(id).remove()
+                        })
+                    }
+                })
             }
         }
-
-        // 6. layout — only when the graph structure actually changed.
-        //    After animated layouts, fit all nodes with 16px padding.
-        //    Instant (ms=0) layouts skip the fit to avoid zoom-thrash during seek.
-        if (wave.upsert?.length || wave.remove?.length || wave.edge_upsert?.length) {
-            relayout(ms, wave.constraints)
+ 
+        // 6. layout
+        if (wave.o({ upsert:      1 }).length
+         || wave.o({ remove:      1 }).length
+         || wave.o({ edge_upsert: 1 }).length) {
+            relayout(ms, wave.sc.constraints)
         }
     }
 

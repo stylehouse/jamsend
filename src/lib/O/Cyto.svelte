@@ -64,18 +64,17 @@
         const H    = this as House
         const RunH = (H.o({ H: 1 }) as House[]).find(h => h.sc.Run) as House | undefined
         if (!RunH) return false
-
+ 
         const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
         const done    = run?.sc.done    as number | undefined
         const open_at = run?.sc.open_at as number | null | undefined
-
+ 
         const last_done = (w.c.cyto_Se as any)?.sc?.run_done as number | undefined
         const last_open = w.c.last_open_at as number | null | undefined
-
-        // fast exit — nothing we care about changed
+ 
         if (done === last_done && open_at === last_open) return !!done
-
+ 
         // ── TRIGGER 1: new step done → scan, archive CytoStep ──────────────────
         if (done && done !== last_done) {
             const topC = await this.cyto_scan(w, RunH)
@@ -83,38 +82,38 @@
             await this.cyto_scan_refs(w, topC)
             await this.cyto_assign_ids(w, topC)
             await this.cyto_resolve_refs(w, topC)
-
+ 
             w.i({ CytoStep: 1, step_n: done, C: topC })
             ;(w.c.cyto_Se as any).sc.run_done = done
-
-            // push live only when not peeking at a historical step
+ 
             if (!open_at && !w.c.no_graph) {
                 const wave = await this.make_wave(w, topC, true)
-                wave.step_n = done
+                wave.sc.step_n = done
                 this._cyto_push(w, wave)
             }
-
+ 
             await w.r({ wave_data: 1 }, async () => {
-                const wv = (w.c.gn as TheC)?.sc.wave as any
-                if (wv) w.i({ wave_data: 1, nodes: wv.upsert?.length,
-                            edges: wv.edge_upsert?.length, removing: wv.remove?.length,
-                            step_n: done })
+                const wv = (w.c.gn as TheC)?.sc.wave as TheC | undefined
+                if (wv) w.i({ wave_data: 1,
+                    nodes:    wv.o({ upsert:      1 }).length,
+                    edges:    wv.o({ edge_upsert: 1 }).length,
+                    removing: wv.o({ remove:      1 }).length,
+                    step_n: done })
             })
         }
-
+ 
         // ── TRIGGER 2: open_at changed → seek or return to live ────────────────
         if (open_at !== last_open) {
             w.c.last_open_at = open_at
             const gn = w.c.gn as TheC | undefined
-
+ 
             if (open_at == null) {
-                // back to live — Ze follows latest CytoStep
                 if (gn) gn.sc.seek_warning = null
                 const latest = (w.o({ CytoStep: 1 }) as TheC[])
                     .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
                 if (latest?.sc.C) {
                     const wave = await this.make_wave(w, latest.sc.C as TheC, false)
-                    wave.step_n = latest.sc.step_n as number
+                    wave.sc.step_n = latest.sc.step_n as number
                     this._cyto_push(w, wave)
                 }
             } else {
@@ -126,16 +125,16 @@
                 } else {
                     if (gn) gn.sc.seek_warning = null
                     const wave = await this.make_wave(w, target.sc.C as TheC, false)
-                    wave.step_n = open_at
+                    wave.sc.step_n = open_at
                     this._cyto_push(w, wave)
                 }
             }
         }
-
+ 
         return !!done
     },
 
-    _cyto_push(w: TheC, wave: any) {
+    _cyto_push(w: TheC, wave: TheC) {
         const H  = this as House
         const gn = w.c.gn as TheC | undefined
         if (!gn) return
@@ -565,110 +564,104 @@
         }
         return old !== newVal ? newVal : null
     },
-    async make_wave(w: TheC, topC: TheC, adjacent: boolean): Promise<any> {
+
+    async make_wave(w: TheC, topC: TheC, adjacent: boolean): Promise<TheC> {
         w.c.cyto_Ze ??= new Selection()
         const Ze: Selection = w.c.cyto_Ze
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
-
-        const UPSERT = false
-
-        const upsert:      any[] = []
-        const edge_upsert: any[] = []
-        const remove:      string[] = []
-        const edge_remove: string[] = []
-        const migrate:     any[] = []
-
-        let We = await w.r({Zeeeee:1})
-        We.empty()
-        We.i({C:1}).i(topC)
-        We.i({D:1}).i(Ze.sc.topD)
-
+ 
+        const dur  = adjacent ? ((w.sc.grawave_duration as number) ?? 0.3) : 0
+        const wave = _C({ Snap: 'cytowave', duration: dur })
+ 
         await Ze.process({
             n:          topC,
             process_D:  Ze.sc.topD,
             match_sc:   {},
             trace_sc:   { tracing: 1 },
-
+ 
             each_fn: async (D: TheD, C: TheC, T: Travel) => {
                 if (D.sc.cyto_root && C.sc.cyto_root) return
                 if (!C.sc.cyto_node && !C.sc.cyto_edge) { T.sc.not = 1; return }
                 D.sc.is_edge = !!C.sc.cyto_edge
             },
-
+ 
             trace_fn: async (uD: TheD, C: TheC) => {
                 if (C.sc.cyto_node) return uD.i({
-                    tracing: 1, the_cyto_id:  C.sc.cyto_id  ?? '',
+                    tracing: 1, the_cyto_id: C.sc.cyto_id ?? '',
                     the_style:  { ...C.sc.style  as object ?? {} },
-                    the_label:  C.sc.label   ?? '',
+                    the_label:  C.sc.label  ?? '',
                     the_parent: C.sc.parent_id ?? null,
                 })
                 if (C.sc.cyto_edge) return uD.i({
-                    tracing: 1, the_edge_id:  C.sc.edge_id  ?? '',
-                    the_style:  { ...C.sc.style  as object ?? {} },
-                    the_src:    C.sc.source_id ?? '',
-                    the_tgt:    C.sc.target_id ?? '',
+                    tracing: 1, the_edge_id: C.sc.edge_id ?? '',
+                    the_style: { ...C.sc.style as object ?? {} },
+                    the_src:   C.sc.source_id ?? '',
+                    the_tgt:   C.sc.target_id ?? '',
                 })
                 return uD.i({ tracing: 1 })
             },
-
+ 
             traced_fn: async (D: TheD, bD: TheD | undefined, C: TheC) => {
                 if (!C.sc.cyto_node && !C.sc.cyto_edge) return
-
+ 
                 if (C.sc.cyto_edge) {
                     const eid = C.sc.edge_id as string
                     if (!eid || C.sc.orphan_source) return
                     const style_ch = this.cyto_changed(bD, 'the_style', C.sc.style ?? {})
                     if (!bD) {
-                        edge_upsert.push({ id: eid,
-                            source: C.sc.source_id as string, target: C.sc.target_id as string,
-                            style: C.sc.style ?? {},
-                            data: sex({},C.sc,['ideal_length']) })
+                        wave.i({ edge_upsert: 1, id: eid,
+                            source: C.sc.source_id, target: C.sc.target_id,
+                            style:  C.sc.style ?? {},
+                            data: sex({},C.sc,['ideal_length'])
+                        })
                     } else if (style_ch) {
-                        edge_upsert.push({ id: eid, style: style_ch })
+                        wave.i({ edge_upsert: 1, id: eid, style: style_ch })
                     }
                     return
                 }
-
+ 
                 // cyto_node
-                const id       = C.sc.cyto_id   as string
-                const style_ch = this.cyto_changed(bD, 'the_style',  C.sc.style     ?? {})
-                const label_ch = this.cyto_changed(bD, 'the_label',  C.sc.label     ?? '')
+                const id       = C.sc.cyto_id  as string
+                const style_ch = this.cyto_changed(bD, 'the_style',  C.sc.style    ?? {})
+                const label_ch = this.cyto_changed(bD, 'the_label',  C.sc.label    ?? '')
                 const par_ch   = this.cyto_changed(bD, 'the_parent', C.sc.parent_id ?? null)
-
+ 
                 if (!bD) {
-                    upsert.push({ id, label: C.sc.label ?? '',
+                    wave.i({ upsert: 1, id,
+                        label:      C.sc.label      ?? '',
                         isCompound: C.sc.isCompound ?? false,
                         parent:     C.sc.parent_id  ?? undefined,
-                        style:      C.sc.style      ?? {} })
+                        style:      C.sc.style      ?? {},
+                    })
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
-                    const nd: any = { id }
-                    if (style_ch)      nd.style      = style_ch
-                    if (label_ch !== null) nd.label      = C.sc.label
-                    if (par_ch !== null)   nd.new_parent = C.sc.parent_id ?? null
-                    upsert.push(nd)
+                    wave.i({ upsert: 1, id,
+                        ...(style_ch          ? { style:      style_ch         } : {}),
+                        ...(label_ch !== null ? { label:      C.sc.label       } : {}),
+                        ...(par_ch   !== null ? { new_parent: C.sc.parent_id ?? null } : {}),
+                    })
                 }
             },
-
+ 
             resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
                 for (const g of goners) {
-                    if (g.sc.is_edge) { if (g.sc.the_edge_id)  edge_remove.push(g.sc.the_edge_id  as string) }
-                    else              { if (g.sc.the_cyto_id)  remove.push(g.sc.the_cyto_id as string) }
+                    if (g.sc.is_edge) { if (g.sc.the_edge_id) wave.i({ edge_remove: 1, id: g.sc.the_edge_id }) }
+                    else              { if (g.sc.the_cyto_id) wave.i({ remove:      1, id: g.sc.the_cyto_id }) }
                 }
             },
         })
-
+ 
         if (adjacent) {
             const walk = (C: TheC) => {
                 for (const mc of C.o({ cyto_migration: 1 }) as TheC[])
-                    migrate.push({ id: mc.sc.from_scan_id, toward: mc.sc.to_id, then_parent: null })
+                    wave.i({ migrate: 1, id: mc.sc.from_scan_id, toward: mc.sc.to_id })
                 for (const nc of C.o({ cyto_node: 1 }) as TheC[]) walk(nc)
             }
             walk(topC)
         }
-
-        return { upsert, edge_upsert, remove, edge_remove, migrate, constraints: null,
-                 duration: adjacent ? ((w.sc.grawave_duration as number) ?? 0.3) : 0 }
+ 
+        return wave
     },
+
 
 //#endregion
 //#region wave -> string
@@ -684,56 +677,58 @@
         if (!wave) return ''
         const lines: string[] = []
 
-        // ── nodes sorted by id ───────────────────────────────────────────────
-        for (const nd of ([...(wave.upsert ?? [])] as any[])
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
-            const stringies: Record<string,any> = { node: nd.id }
-            if (nd.parent)     stringies.parent   = nd.parent
-            if (nd.isCompound) stringies.compound = 1
-            if (nd.label)      stringies.label    = String(nd.label).replace(/\n/g, ' ')
-            lines.push(this.enL({ d: d_base, stringies }))
-            for (const [k, v] of Object.entries(nd.style ?? {})
+        // nodes sorted by id
+        for (const nd of (wave.o({ upsert: 1 }) as TheC[])
+                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id)))) {
+            const stringies: Record<string,any> = { node: nd.sc.id }
+            if (nd.sc.parent)     stringies.parent   = nd.sc.parent
+            if (nd.sc.isCompound) stringies.compound = 1
+            if (nd.sc.label)      stringies.label    = String(nd.sc.label).replace(/\n/g, ' ')
+            lines.push(this.enL({ d: d_base, stringies, objecties: {} }))
+            for (const [k, v] of Object.entries((nd.sc.style as Record<string,any>) ?? {})
                     .sort(([a], [b]) => a.localeCompare(b))) {
                 if (v == null) continue
                 const sv: Record<string,any> = {}
                 sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
-                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
+                lines.push(this.enL({ d: d_base + 1, stringies: sv, objecties: {} }))
             }
         }
-
-        // ── edges sorted by id ───────────────────────────────────────────────
-        for (const ed of ([...(wave.edge_upsert ?? [])] as any[])
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+ 
+        // edges sorted by id
+        for (const ed of (wave.o({ edge_upsert: 1 }) as TheC[])
+                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id)))) {
             const stringies: Record<string,any> = {
-                edge: ed.id, source: ed.source, target: ed.target,
+                edge: ed.sc.id, source: ed.sc.source, target: ed.sc.target,
             }
-            if (ed.data?.ideal_length != null) stringies.ideal_length = ed.data.ideal_length
-            lines.push(this.enL({ d: d_base, stringies }))
-            for (const [k, v] of Object.entries(ed.style ?? {})
+            if (ed.sc.ideal_length != null) stringies.ideal_length = ed.sc.ideal_length
+            lines.push(this.enL({ d: d_base, stringies, objecties: {} }))
+            for (const [k, v] of Object.entries((ed.sc.style as Record<string,any>) ?? {})
                     .sort(([a], [b]) => a.localeCompare(b))) {
                 if (v == null) continue
                 const sv: Record<string,any> = {}
                 sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
-                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
+                lines.push(this.enL({ d: d_base + 1, stringies: sv, objecties: {} }))
             }
         }
-
-        // ── removals sorted ──────────────────────────────────────────────────
-        for (const id of ([...(wave.remove ?? [])] as string[]).sort())
-            lines.push(this.enL({ d: d_base, stringies: { remove: id } }))
-        for (const id of ([...(wave.edge_remove ?? [])] as string[]).sort())
-            lines.push(this.enL({ d: d_base, stringies: { edge_remove: id } }))
-
-        // ── migrations sorted by id ──────────────────────────────────────────
-        for (const mg of ([...(wave.migrate ?? [])] as any[])
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
-            const stringies: Record<string,any> = { migrate: mg.id, toward: mg.toward }
-            if (mg.harvest_detach)  stringies.harvest_detach  = 1
-            if (mg.mouthful_expire) stringies.mouthful_expire = 1
-            if (mg.then_parent)     stringies.then_parent     = mg.then_parent
-            lines.push(this.enL({ d: d_base, stringies }))
+ 
+        // removals sorted
+        for (const n of (wave.o({ remove: 1 }) as TheC[])
+                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id))))
+            lines.push(this.enL({ d: d_base, stringies: { remove: n.sc.id }, objecties: {} }))
+        for (const n of (wave.o({ edge_remove: 1 }) as TheC[])
+                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id))))
+            lines.push(this.enL({ d: d_base, stringies: { edge_remove: n.sc.id }, objecties: {} }))
+ 
+        // migrations sorted
+        for (const mg of (wave.o({ migrate: 1 }) as TheC[])
+                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id)))) {
+            const stringies: Record<string,any> = { migrate: mg.sc.id, toward: mg.sc.toward }
+            if (mg.sc.harvest_detach)  stringies.harvest_detach  = 1
+            if (mg.sc.mouthful_expire) stringies.mouthful_expire = 1
+            if (mg.sc.then_parent)     stringies.then_parent     = mg.sc.then_parent
+            lines.push(this.enL({ d: d_base, stringies, objecties: {} }))
         }
-
+ 
         return lines.join('\n') + '\n'
     },
 

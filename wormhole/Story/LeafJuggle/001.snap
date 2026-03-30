@@ -40,13 +40,13 @@ Snap:cytowave
     font-style:italic
     padding:7px
     text-valign:top
-  {"node":"cytoid_1_1_1_2","label":"leaf:1 leaf_id:juggle"}
+  {"node":"cytoid_1_1_1_1","label":"leaf:1 leaf_id:juggle"}
     {"background-color":"rgb(32,111,32)"}
     color:#b0ffb0
     height:14
     shape:ellipse
     width:14
-  {"node":"cytoid_1_1_1_2_2","label":"marble:1"}
+  {"node":"cytoid_1_1_1_1_2","label":"marble:1"}
     background-color:#242424
     color:#666
     height:16
@@ -97,9 +97,5 @@ Snap:cytowave
     font-style:italic
     padding:7px
     text-valign:top
-  edge:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1
-  edge:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
-  edge:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2
-  edge:cytoid_1_1_2_1,source:cytoid_1_1,target:cytoid_1_1_2
-  edge:cytoid_1_2_1_1,source:cytoid_1_2,target:cytoid_1_2_1
-  edge:cytoid_1_2_2_1,source:cytoid_1_2,target:cytoid_1_2_2
+  edge:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
