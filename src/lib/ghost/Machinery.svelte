@@ -115,6 +115,12 @@
         if (!yang_w) return
  
         await this.Yaing(w, yang_w)
+
+        if (!w.oa({whatsit:1})) {
+            let thing = w.i({whatsit:1}).i({thing:'with'})
+            thing.sc.see = 1
+            w.i({other:3}).i(thing)
+        }
  
         // seed: place a fresh leaf if nobody in the whole RunH is holding one
         const has_leaf = this.o({ A: 1 }).some(A => A.o({ w: 1 }).some(wk => wk.o({ hand: 1 }).some(ha => ha.oa({ leaf: 1 }))))

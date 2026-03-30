@@ -446,8 +446,12 @@
         const n_to_Cs = new Map<TheC, TheC[]>()
         const walk = (C: TheC) => {
             for (const nc of C.o({ cyto_node: 1 }) as TheC[]) {
-                const n = (nc.c.Se1_D as TheD | undefined)?.o({ n_ref: 1 })[0]?.sc.n as TheC | undefined
-                if (n) { const a = n_to_Cs.get(n); if (a) a.push(nc); else n_to_Cs.set(n, [nc]) }
+                const n = (nc.c.Se1_D as TheD | undefined)?.c.T.sc.n as TheC | undefined
+                if (n) {
+                     const a = n_to_Cs.get(n);
+                     if (a) a.push(nc)
+                     else n_to_Cs.set(n, [nc]) 
+                }
                 walk(nc)
             }
         }
@@ -481,8 +485,9 @@
         })
 
         // multi-placed: same n in >1 current C
-        for (const [_n, Cs] of n_to_Cs) {
+        for (const [n, Cs] of n_to_Cs) {
             if (Cs.length < 2) continue
+            console.log(`ref saw multiply: ${objectify(n)}`)
             for (let i = 0; i < Cs.length - 1; i++)
                 Cs[i].i(blue_sc(Cs[i].sc.cyto_id as string, Cs[i+1].sc.cyto_id as string, false))
         }
