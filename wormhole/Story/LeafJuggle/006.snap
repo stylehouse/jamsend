@@ -19,13 +19,13 @@ Snap:H
         {"mung":["age"]}	self,round:6
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"node":"cytoid_1_2_2_2","label":"leaf:1 leaf_id:juggle"}
+  {"node":"cytoid_1_2_2_2","parent":"cytoid_1_2","label":"leaf:1 leaf_id:juggle"}
     {"background-color":"rgb(32,111,32)"}
     color:#b0ffb0
     height:14
     shape:ellipse
     width:14
-  {"node":"cytoid_1_2_2_2_2","label":"marble:1"}
+  {"node":"cytoid_1_2_2_2_2","parent":"cytoid_1_2","label":"marble:1"}
     background-color:#242424
     color:#666
     height:16

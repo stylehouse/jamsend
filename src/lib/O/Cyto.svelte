@@ -35,7 +35,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
     import Cytui         from "./ui/Cytui.svelte"
-    import { indent, sex } from "$lib/Y.svelte";
+    import { ex, indent, sex } from "$lib/Y.svelte";
 
     let { M } = $props()
 
@@ -212,6 +212,8 @@
             trace_sc:   { tracing: 1 },
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                T.sc.inherits = ex({},T.up?.sc.inherits||{})
+
                 const cls = this.cytyle_classify(n)
                 if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
                 if (cls === 'invisible') {
@@ -234,14 +236,19 @@
                     label:      nd.label,
                     isCompound: nd.isCompound ?? false,
                     // parent only when parentC is itself a cyto_node (not topC/cyto_root)
-                    parent: parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null,
+                    parent: T.sc.inherits.parent ??
+                        (parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null),
                     style:      nd.style,
                 })
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
+
+                // special cases of node typing:
                 // the non-first duplicate refs get:
                 if (T.sc.loopy) C.sc.loopy = 1
-
+                // %w contains everything in it
+                if (n.sc.w) T.sc.inherits.parent = C
+                // uplinks forming trees of / ness
                 if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
                     C.i({cyto_edge:1,scan_id,
                         source:parentC, label:"/", target:C})
@@ -612,7 +619,7 @@
             traced_fn: async (D: TheD, bD: TheD | undefined, C: TheC) => {
                 if (!C.sc.cyto_node && !C.sc.cyto_edge) return
 
-                
+
                 let label = C.c.Se1_D?.c.T.sc.n.sc.label
                 let etc = label != null ? {label} : {}
  
