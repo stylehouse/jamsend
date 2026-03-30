@@ -118,7 +118,7 @@ services:
       # this is an external volume defined by leproxy
       - leproxy_caddy_data:/caddy_certs:ro
     restart: always
-    command: turnserver -n --log-file stdout --no-stdout-log
+    entrypoint: /bin/sh -c "sed \"s/^external-ip=$/external-ip=$(curl -s -4 ifconfig.me)/\" /etc/turnserver.conf > /tmp/turnserver.conf && exec turnserver -c /tmp/turnserver.conf -n --log-file stdout --no-stdout-log"
     deploy:
       resources:
         limits:

@@ -1,8 +1,7 @@
 [Unit]
-Description=prod-jamsend Docker Compose Application Service
-Requires=docker.service leproxy.service
+Description=jamsend-prod Application Service
+Wants=docker.service leproxy.service network-online.target
 After=docker.service network-online.target leproxy.service
-Wants=network-online.target
 
 [Service]
 Type=oneshot
