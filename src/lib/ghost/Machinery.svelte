@@ -132,6 +132,8 @@
         await this.Yaing(w, yin_w)
     },
 
+
+
     async Yaing(w: TheC, other_w: TheC) {
         const lh = w.oai({ hand: 'left'  })
         const rh = w.oai({ hand: 'right' })

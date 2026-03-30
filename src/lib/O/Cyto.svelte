@@ -571,7 +571,7 @@
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
  
         const dur  = adjacent ? ((w.sc.grawave_duration as number) ?? 0.3) : 0
-        const wave = _C({ Snap: 'cytowave', duration: dur })
+        const wave = _C({ CytoWave:1, duration: dur })
  
         await Ze.process({
             n:          topC,
