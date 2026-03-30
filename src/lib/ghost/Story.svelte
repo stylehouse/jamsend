@@ -417,7 +417,7 @@
         H.The_set_frontier(w, 0)
         delete run.sc.failed_at
         delete run.sc.fetch_snap
-        run.sc.paused  = false
+        run.sc.paused  = 0
         run.sc.open_at = null
         H.story_analysis(w)
         H.story_save()
@@ -463,7 +463,7 @@
 
         delete run.sc.failed_at
         delete run.sc.fetch_snap
-        run.sc.paused  = false
+        run.sc.paused  = 0
         run.sc.open_at = null
 
         H.story_analysis(w)
@@ -651,69 +651,6 @@
     },
 
 
-    // ── snap_cytowave_str ──────────────────────────────────────────────────────
-    // Encode a cyto wave as enL lines starting at d_base.
-    // Each node/edge is one enL line (stringies = identity keys).
-    // Style properties are children at d_base+1, one key per line.
-    // Numeric style values rounded to 2dp; label \n → space.
-    // Excluded: duration, step_n, constraints (non-content).
-
-    snap_cytowave_str(wave: any, d_base = 1): string {
-        if (!wave) return ''
-        const lines: string[] = []
-
-        // ── nodes sorted by id ───────────────────────────────────────────────
-        for (const nd of ([...(wave.upsert ?? [])] as any[])
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
-            const stringies: Record<string,any> = { node: nd.id }
-            if (nd.parent)     stringies.parent   = nd.parent
-            if (nd.isCompound) stringies.compound = 1
-            if (nd.label)      stringies.label    = String(nd.label).replace(/\n/g, ' ')
-            lines.push(this.enL({ d: d_base, stringies }))
-            for (const [k, v] of Object.entries(nd.style ?? {})
-                    .sort(([a], [b]) => a.localeCompare(b))) {
-                if (v == null) continue
-                const sv: Record<string,any> = {}
-                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
-                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
-            }
-        }
-
-        // ── edges sorted by id ───────────────────────────────────────────────
-        for (const ed of ([...(wave.edge_upsert ?? [])] as any[])
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
-            const stringies: Record<string,any> = {
-                edge: ed.id, source: ed.source, target: ed.target,
-            }
-            if (ed.data?.ideal_length != null) stringies.ideal_length = ed.data.ideal_length
-            lines.push(this.enL({ d: d_base, stringies }))
-            for (const [k, v] of Object.entries(ed.style ?? {})
-                    .sort(([a], [b]) => a.localeCompare(b))) {
-                if (v == null) continue
-                const sv: Record<string,any> = {}
-                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
-                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
-            }
-        }
-
-        // ── removals sorted ──────────────────────────────────────────────────
-        for (const id of ([...(wave.remove ?? [])] as string[]).sort())
-            lines.push(this.enL({ d: d_base, stringies: { remove: id } }))
-        for (const id of ([...(wave.edge_remove ?? [])] as string[]).sort())
-            lines.push(this.enL({ d: d_base, stringies: { edge_remove: id } }))
-
-        // ── migrations sorted by id ──────────────────────────────────────────
-        for (const mg of ([...(wave.migrate ?? [])] as any[])
-                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
-            const stringies: Record<string,any> = { migrate: mg.id, toward: mg.toward }
-            if (mg.harvest_detach)  stringies.harvest_detach  = 1
-            if (mg.mouthful_expire) stringies.mouthful_expire = 1
-            if (mg.then_parent)     stringies.then_parent     = mg.then_parent
-            lines.push(this.enL({ d: d_base, stringies }))
-        }
-
-        return lines.join('\n') + '\n'
-    },
 
 
     // ── story_snap ────────────────────────────────────────────────────────────
@@ -753,7 +690,7 @@
     },
 
 
-//#region Story_subHouse and Story_plan
+//#region Story_plan
 
     Story_subHouse(A: TheC, w: TheC) {
         // Get-or-create the Run sub-House for this Book and wire its actors.
@@ -812,7 +749,7 @@
     },
 
 
-//#region Story — main worker loop
+//#region w:Story
 
     async Story(A: TheC, w: TheC) {
         const H    = this
@@ -914,14 +851,15 @@
         V.Story && console.log(`e:story_cyto_continue() -> w:${w.sc.w}`)
         const run = w.o({ run: 1 })[0]
         if (!run) return
-        run.sc.paused = false
+        if (run.sc.paused >= 2) return   // strong pause holds
+        run.sc.paused = 0
         delete run.c.cyto_waiting
         const sub = this.Story_subHouse(A, w)
         if (sub) this.story_drive(sub.Run, w, run)
     },
 
 
-//#region story_drive — four-phase async run loop (three phases in normal mode)
+//#region story_drive
 //
 //  All phases are closures over run and the drive locals.
 //
@@ -963,12 +901,19 @@
         // duration fires story_cyto_continue back to w:Story to resume.
         // When intoCyto is absent, falls through to schedule() as before.
         const advance = () => {
+            // step just completed — check for a pause note
+            const n = run.c.step_n as number
+            if (n != null && H.The_step(w, n).o({ note: 1, pause: 1 }).length) {
+                run.sc.paused = 2
+            }
+
             if (w.c.intoCyto) {
-                run.sc.paused = true
+                run.sc.paused = Math.max((run.sc.paused as number) || 0, 1)
                 run.c.driving = false
                 H.top_House().elvisto('Cyto/Cyto', 'story_cyto_step', { story_step: run.c.step_n })
                 return
             }
+            if (run.sc.paused) return   // strong pause holds before schedule()
             schedule()
         }
 
@@ -984,14 +929,14 @@
             ;V.Story && console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
             
             if (run.sc.mode === 'new' && n > ((run.sc.total ?? 30) as number)) {
-                run.c.driving = false; run.sc.paused = true
+                run.c.driving = false; run.sc.paused = 2
                 H.story_analysis(w)
                 await update_status('recorded ✓', 'start')
                 console.log(`✓ Story: complete (${run.sc.total} steps)`)
                 return
             }
             if (run.sc.mode === 'check' && !H.The_step_dige(w, n)) {
-                run.c.driving = false; run.sc.paused = true
+                run.c.driving = false; run.sc.paused = 2
                 // clear frontier when we reach the end — no outstanding mismatch
                 run.sc.frontier = 0
                 H.The_set_frontier(w, 0)
@@ -1072,7 +1017,7 @@
 
                 if (!ok && !w.c.lenient) {
                     run.c.driving     = false
-                    run.sc.paused     = true
+                    run.sc.paused     = 2
                     run.sc.failed_at  = n
                     run.sc.fetch_snap = n
                     run.sc.check_snap = n   // fetch_snap also sets this, but be explicit
@@ -1114,7 +1059,7 @@
             if (check_step.sc.disk_ok === false) {
                 check_step.sc.ok  = false
                 run.c.driving     = false
-                run.sc.paused     = true
+                run.sc.paused     = 2
                 run.sc.failed_at  = n
                 run.sc.fetch_snap = n
                 run.sc.frontier   = n
@@ -1314,10 +1259,14 @@
             icon:  at_end ? '+'    : paused ? '▶'      : '⏸',
             cls:   at_end ? 'save' : paused ? 'start'   : 'stop',
             fn: () => {
+                if (!run.sc.paused) {
+                    run.sc.paused = 2
+                    return
+                }
                 if (at_end) {
                     run.sc.total = ((run.sc.total ?? 30) as number) + 1
                 }
-                run.sc.paused = false
+                run.sc.paused = 0
                 run.sc.mode = 'new'
                 if (!run.c.driving) this.story_drive(Run, w, run)
             },
@@ -1330,7 +1279,7 @@
             on_change: (next: boolean) => {
                 if (next && run.sc.failed_at && !run.c.driving) {
                     delete run.sc.failed_at
-                    run.sc.paused = false
+                    run.sc.paused = 0
                     this.story_drive(Run, w, run)
                 }
             },

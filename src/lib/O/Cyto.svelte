@@ -277,7 +277,7 @@
     },
 
 //#endregion
-//#region Se2 — cyto_assign_ids (called twice)
+//#region Se2 ids
 
     // Pass 1 (before cyto_scan_refs): walks C%cyto_node** — nodes get cytoid Dips.
     // Pass 2 (after  cyto_scan_refs): same walk — nodes keep ids; new edges get fresh ids.
@@ -563,7 +563,74 @@
     },
 
 //#endregion
-//#region cytyle_classify
+//#region wave -> enL
+
+    // ── snap_cytowave_str ──────────────────────────────────────────────────────
+    // Encode a cyto wave as enL lines starting at d_base.
+    // Each node/edge is one enL line (stringies = identity keys).
+    // Style properties are children at d_base+1, one key per line.
+    // Numeric style values rounded to 2dp; label \n → space.
+    // Excluded: duration, step_n, constraints (non-content).
+
+    snap_cytowave_str(wave: any, d_base = 1): string {
+        if (!wave) return ''
+        const lines: string[] = []
+
+        // ── nodes sorted by id ───────────────────────────────────────────────
+        for (const nd of ([...(wave.upsert ?? [])] as any[])
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const stringies: Record<string,any> = { node: nd.id }
+            if (nd.parent)     stringies.parent   = nd.parent
+            if (nd.isCompound) stringies.compound = 1
+            if (nd.label)      stringies.label    = String(nd.label).replace(/\n/g, ' ')
+            lines.push(this.enL({ d: d_base, stringies }))
+            for (const [k, v] of Object.entries(nd.style ?? {})
+                    .sort(([a], [b]) => a.localeCompare(b))) {
+                if (v == null) continue
+                const sv: Record<string,any> = {}
+                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
+                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
+            }
+        }
+
+        // ── edges sorted by id ───────────────────────────────────────────────
+        for (const ed of ([...(wave.edge_upsert ?? [])] as any[])
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const stringies: Record<string,any> = {
+                edge: ed.id, source: ed.source, target: ed.target,
+            }
+            if (ed.data?.ideal_length != null) stringies.ideal_length = ed.data.ideal_length
+            lines.push(this.enL({ d: d_base, stringies }))
+            for (const [k, v] of Object.entries(ed.style ?? {})
+                    .sort(([a], [b]) => a.localeCompare(b))) {
+                if (v == null) continue
+                const sv: Record<string,any> = {}
+                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
+                lines.push(this.enL({ d: d_base + 1, stringies: sv }))
+            }
+        }
+
+        // ── removals sorted ──────────────────────────────────────────────────
+        for (const id of ([...(wave.remove ?? [])] as string[]).sort())
+            lines.push(this.enL({ d: d_base, stringies: { remove: id } }))
+        for (const id of ([...(wave.edge_remove ?? [])] as string[]).sort())
+            lines.push(this.enL({ d: d_base, stringies: { edge_remove: id } }))
+
+        // ── migrations sorted by id ──────────────────────────────────────────
+        for (const mg of ([...(wave.migrate ?? [])] as any[])
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))) {
+            const stringies: Record<string,any> = { migrate: mg.id, toward: mg.toward }
+            if (mg.harvest_detach)  stringies.harvest_detach  = 1
+            if (mg.mouthful_expire) stringies.mouthful_expire = 1
+            if (mg.then_parent)     stringies.then_parent     = mg.then_parent
+            lines.push(this.enL({ d: d_base, stringies }))
+        }
+
+        return lines.join('\n') + '\n'
+    },
+
+//#endregion
+//#region classify n
 
     cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
         const s = n.sc
@@ -577,9 +644,6 @@
         if (s.w) return 'compound'
         return null
     },
-
-//#endregion
-//#region cyto_label / hsl2rgb / cyto_node / cyto_w_style — from v1
 
     cyto_label(n: TheC): string {
         const parts: string[] = []
