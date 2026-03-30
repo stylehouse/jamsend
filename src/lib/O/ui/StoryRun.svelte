@@ -439,32 +439,49 @@
             const got_snap = Step?.sc.got_snap as string | undefined
 
             if (!Step) {
-                all_lines.push(`  Snap:1 not_run:1`)
+                all_lines.push(`  Snap,not_run`)
                 continue
             }
             if (!got_snap) {
                 // open this step in the UI so story_sel queues a snap fetch
-                all_lines.push(`  Snap:1 not_loaded:1`)
+                all_lines.push(`  Snap,not_loaded`)
                 continue
             }
 
             const prev      = n > 1 ? live_step(n - 1) : null
             const prev_snap = (prev?.sc.got_snap as string) ?? ''
 
-            if (!prev_snap) {
-                // no previous snap — emit raw got content without diff markers
-                all_lines.push(`  Snap:1 first:1`)
+            // ── raw mode: always emit full snap, no diff markers ──────────────
+            if (eff_mode === 'naive' || !prev_snap) {
+                const header = !prev_snap ? `  Snap,first` : `  Snap,raw`
+                all_lines.push(header)
                 for (const line of got_snap.split('\n').filter(Boolean)) {
                     all_lines.push(`    ${line.trimEnd()}`)
                 }
                 continue
             }
 
-            // Snap with vs-prev diff encoded via T.enDif
-            all_lines.push(`  Snap:1 diff:1 prev:1`)
-            const raw_rows = H.compute_diff(prev_snap, got_snap)
-            const rows     = H.squish_context(raw_rows)
-            // dif_depth = 2: Step at 0, Snap at 1, Dif markers at 2
+            // ── diff mode: emit Dif markers ───────────────────────────────────
+            const ref_snap = eff_mode === 'exp' || eff_mode === 'exp_naive'
+                ? (Step.sc.exp_snap as string) ?? ''
+                : prev_snap
+
+            if (!ref_snap) {
+                all_lines.push(`  Snap,first`)
+                for (const line of got_snap.split('\n').filter(Boolean)) {
+                    all_lines.push(`    ${line.trimEnd()}`)
+                }
+                continue
+            }
+
+            const diff_label = eff_mode === 'exp'       ? 'exp'
+                            : eff_mode === 'exp_naive' ? 'exp_naive'
+                            : 'prev'
+            all_lines.push(`  Snap,diff:${diff_label}`)
+            const raw_rows = eff_mode === 'exp_naive'
+                ? H.positional_diff(ref_snap, got_snap)
+                : H.compute_diff(ref_snap, got_snap)
+            const rows = H.squish_context(raw_rows)
             all_lines.push(...H.enDif(rows, 2))
         }
 
