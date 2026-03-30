@@ -808,7 +808,7 @@
         const uis = H.oai_enroll(H, { watched: 'UIs' })
         uis.oai({ UI: 'Story', component: StoryRun })
         let total = 5
-        return w.i({ run: book, done: 0, steps_done: 0, total, steps_total: total, paused: false, mode: 'new' })
+        return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
     },
 
 
@@ -978,12 +978,12 @@
                 console.log(`⏸ do_step skipped: driving=${run.c.driving} paused=${run.sc.paused}`)
                 schedule(); return
             }
-            const n = ((run.sc.done ?? run.sc.steps_done ?? 0) as number) + 1
+            const n = ((run.sc.done ?? 0) as number) + 1
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
             ;V.Story && console.log(`The_step_dige(${n}) =`, H.The_step_dige(w, n))
             
-            if (run.sc.mode === 'new' && n > ((run.sc.total ?? run.sc.steps_total ?? 30) as number)) {
+            if (run.sc.mode === 'new' && n > ((run.sc.total ?? 30) as number)) {
                 run.c.driving = false; run.sc.paused = true
                 H.story_analysis(w)
                 await update_status('recorded ✓', 'start')
@@ -1029,7 +1029,6 @@
             if (!run.c.driving) return
             const n = run.c.step_n as number
             run.sc.done       = n
-            run.sc.steps_done = n   // keep old key in sync for any persisted reads
 
             const snap     = await this.story_snap(Run)
             const got_dige = await dig(snap)
@@ -1307,7 +1306,7 @@
         const paused = run.sc.paused
         const mode   = run.sc.mode ?? 'new'
 
-        const at_end = (run.sc.done ?? 0) >= (run.sc.total ?? run.sc.steps_total ?? 30)
+        const at_end = (run.sc.done ?? 0) >= (run.sc.total ?? 30)
             && run.sc.paused
         
         await wa.roai({ action: 1, role: 'pause' }, {
@@ -1316,8 +1315,7 @@
             cls:   at_end ? 'save' : paused ? 'start'   : 'stop',
             fn: () => {
                 if (at_end) {
-                    run.sc.total = ((run.sc.total ?? run.sc.steps_total ?? 30) as number) + 1
-                    run.sc.steps_total = run.sc.total
+                    run.sc.total = ((run.sc.total ?? 30) as number) + 1
                 }
                 run.sc.paused = false
                 run.sc.mode = 'new'
@@ -1350,7 +1348,7 @@
 
         // < is this weird. Baroquely, an information channel in a button
         await wa.roai({ action: 1, role: 'status' }, {
-            label:    `${mode} ${run.sc.failed_at ? '✗' + this.pad(run.sc.failed_at) : this.pad(run.sc.done ?? run.sc.steps_done ?? 0)}`,
+            label:    `${mode} ${run.sc.failed_at ? '✗' + this.pad(run.sc.failed_at) : this.pad(run.sc.done ?? 0)}`,
             cls:      run.sc.failed_at ? 'stop' : mode === 'new' ? 'save' : 'default',
             disabled: true,
         })
