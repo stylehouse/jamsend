@@ -1,7 +1,7 @@
 // Another Things/Thing thing!
 
 import { keyser, TheC, type TheEmpirical, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { isar, isC, reverse } from "$lib/Y.svelte"
+import { isar, isC, reverse, sex } from "$lib/Y.svelte"
 
 const AI = `
 we need to hierarchise FileLists, and allow them to be opened several times:
@@ -106,7 +106,13 @@ export class Travel extends TheC {
         // check if we're supposed to be here ($n=this) again
         let refx = T.i_visit(C)
         if (refx.z.length > 1) {
-            return T.sc.not = "revisited"
+            if (T.c.loop_but_no_further) {
+                T.sc.no_further = "revisited"
+                T.sc.loopy = 1
+            }
+            else {
+                return T.sc.not = "revisited"
+            }
         }
         // visit here
         T.sc.n = C
@@ -122,7 +128,7 @@ export class Travel extends TheC {
 
         // being at $n
         await T.c.each_fn?.(...args)
-        if (T.sc.not) return 
+        if (T.sc.not || T.sc.no_further) return 
 
         // find $n/*
         //  run the query here
@@ -256,7 +262,7 @@ class SelectionItself extends Travel {
 
         await Tr.dive({
             n,
-            match_sc: Se.c.match_sc,
+            ...sex({},Se.c,'match_sc,loop_but_no_further'),
             // we have our D from being traced from above
             each_fn: async (n:TheC,T:Travel) => {
                 let D:TheD = T.sc.D

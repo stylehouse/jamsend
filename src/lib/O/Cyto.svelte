@@ -206,6 +206,7 @@
 
         await Se.process({
             n:          RunH,
+            loop_but_no_further: 1,
             process_D:  Se.sc.topD,
             match_sc:   {},
             trace_sc:   { tracing: 1 },
@@ -238,6 +239,8 @@
                 })
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
+                // the non-first duplicate refs get:
+                if (T.sc.loopy) C.sc.loopy = 1
 
                 if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
                     C.i({cyto_edge:1,scan_id,
@@ -472,10 +475,10 @@
             return neu?.has(scan_id) ?? false
         }
 
-        const blue_sc = (src_id: string, tgt_id: string, directed: boolean, extra: any = {}) => ({
+        const blue_sc = (source:TheC, target:TheC, directed: boolean, extra: any = {}) => ({
             cyto_edge: 1 as const, ref: 1 as const,
-            source: null, target: null,   // C refs — null since source is gone or id-based
-            source_id: src_id, target_id: tgt_id,
+            source, target,
+            label: '==',
             style: {
                 'line-color': '#4488ff', width: 1.2, 'line-style': 'dashed',
                 'target-arrow-shape': directed ? 'triangle' : 'none',
@@ -489,7 +492,7 @@
             if (Cs.length < 2) continue
             console.log(`ref saw multiply: ${objectify(n)}`)
             for (let i = 0; i < Cs.length - 1; i++)
-                Cs[i].i(blue_sc(Cs[i].sc.cyto_id as string, Cs[i+1].sc.cyto_id as string, false))
+                Cs[i].i(blue_sc(Cs[i], Cs[i+1], false))
         }
 
         // migration: goner whose n ref appears as a neu C
@@ -503,7 +506,6 @@
             const to_C  = neu_Cs[0]
             const to_id = to_C.sc.cyto_id as string
             to_C.i({ cyto_migration: 1, from_scan_id, to_id })
-            topC.i(blue_sc(from_scan_id, to_id, true, { orphan_source: 1 }))
         }
 
         // build neu_scan_ids set for is_neu_scan_id — do this here for completeness
@@ -535,7 +537,8 @@
                     C.sc.parent_id = (C.sc.parent as TheC).sc.cyto_id ?? null
                     delete C.sc.parent
                 }
-                delete C.c.Se1_D
+                // < memory leak?
+                // delete C.c.Se1_D
             }
 
             if (C.sc.cyto_edge) {
@@ -608,19 +611,23 @@
  
             traced_fn: async (D: TheD, bD: TheD | undefined, C: TheC) => {
                 if (!C.sc.cyto_node && !C.sc.cyto_edge) return
+
+                
+                let label = C.c.Se1_D?.c.T.sc.n.sc.label
+                let etc = label != null ? {label} : {}
  
                 if (C.sc.cyto_edge) {
                     const eid = C.sc.edge_id as string
-                    if (!eid || C.sc.orphan_source) return
+                    if (!eid) return
                     const style_ch = this.cyto_changed(bD, 'the_style', C.sc.style ?? {})
                     if (!bD) {
-                        wave.i({ edge_upsert: 1, id: eid,
+                        wave.i({ edge_upsert: 1, id: eid, ...etc,
                             source: C.sc.source_id, target: C.sc.target_id,
                             style:  C.sc.style ?? {},
                             data: sex({},C.sc,['ideal_length'])
                         })
                     } else if (style_ch) {
-                        wave.i({ edge_upsert: 1, id: eid, style: style_ch })
+                        wave.i({ edge_upsert: 1, id: eid, ...etc, style: style_ch })
                     }
                     return
                 }
@@ -632,14 +639,13 @@
                 const par_ch   = this.cyto_changed(bD, 'the_parent', C.sc.parent_id ?? null)
  
                 if (!bD) {
-                    wave.i({ upsert: 1, id,
-                        label:      C.sc.label      ?? '',
-                        isCompound: C.sc.isCompound ?? false,
-                        parent:     C.sc.parent_id  ?? undefined,
-                        style:      C.sc.style      ?? {},
-                    })
+                    if (C.sc.label != null) etc.label = C.sc.label
+                    if (C.sc.isCompound) etc.isCompound = C.sc.isCompound
+                    if (C.sc.parent_id != null) etc.parent = C.sc.parent_id
+                    if (C.sc.style != null) etc.style = C.sc.style
+                    wave.i({ upsert: 1, id, ...etc })
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
-                    wave.i({ upsert: 1, id,
+                    wave.i({ upsert: 1, id, ...etc,
                         ...(style_ch          ? { style:      style_ch         } : {}),
                         ...(label_ch !== null ? { label:      C.sc.label       } : {}),
                         ...(par_ch   !== null ? { new_parent: C.sc.parent_id ?? null } : {}),

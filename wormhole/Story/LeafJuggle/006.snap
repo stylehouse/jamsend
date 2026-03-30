@@ -5,6 +5,9 @@ Snap:H
       w:Yin
         hand:left
         hand:right
+        whatsit
+          thing:with,see
+        other:3
         {"mung":["age"]}	self,round:6
     A:Yang
       {"mung":["age"]}	self,round:6

@@ -8,6 +8,9 @@ Snap:H
           leaf,leaf_id:juggle
             marble
         hand:right
+        whatsit
+          thing:with,see
+        other:3
     A:Yang
       {"mung":["age"]}	self,round
       w:Yang
@@ -62,6 +65,26 @@ Snap:cytowave
     font-style:italic
     padding:7px
     text-valign:top
+  {"node":"cytoid_1_1_3","parent":"cytoid_1_1","label":"whatsit:1"}
+    background-color:#242424
+    color:#666
+    height:16
+    width:16
+  {"node":"cytoid_1_1_3_1","label":"thing:with see:1"}
+    background-color:#242424
+    color:#666
+    height:16
+    width:16
+  {"node":"cytoid_1_1_4","parent":"cytoid_1_1","label":"other:3"}
+    background-color:#242424
+    color:#666
+    height:16
+    width:16
+  {"node":"cytoid_1_1_4_1","label":"thing:with see:1"}
+    background-color:#242424
+    color:#666
+    height:16
+    width:16
   node:cytoid_1_2,compound,label:Yang
     background-color:#1a1a0a
     background-opacity:0.5
@@ -99,3 +122,13 @@ Snap:cytowave
     text-valign:top
   edge:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
   edge:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
+  edge:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
+  edge:cytoid_1_1_3_1_2,source:cytoid_1_1_3_1,target:cytoid_1_1_4_1
+    curve-style:bezier
+    line-color:#4488ff
+    line-style:dashed
+    opacity:0.5
+    target-arrow-color:#4488ff
+    target-arrow-shape:none
+    width:1.2
+  edge:cytoid_1_1_4_1_1,source:cytoid_1_1_4,target:cytoid_1_1_4_1

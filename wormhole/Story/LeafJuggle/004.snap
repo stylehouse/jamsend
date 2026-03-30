@@ -7,6 +7,9 @@ Snap:H
           leaf,leaf_id:juggle
             marble
         hand:right
+        whatsit
+          thing:with,see
+        other:3
         {"mung":["age"]}	self,round:4
     A:Yang
       {"mung":["age"]}	self,round:4

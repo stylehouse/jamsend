@@ -57,7 +57,7 @@
         if (!wave || tick === last_tick) return
         last_tick = tick
         const dur = (wave.sc.duration as number) ?? 0.3
-        if (cy) apply(wave, dur)
+        if (cy) enqueue(wave)
         grawave_dur = dur
         const sn = wave.sc.step_n != null ? ` step:${wave.sc.step_n}` : ''
         status = `tick ${last_tick}${sn}`
@@ -207,6 +207,60 @@
             relayout(ms, wave.sc.constraints)
         }
     }
+
+//#endregion
+//#region layout
+
+    // ── wave queue ────────────────────────────────────────────────────────────
+    //
+    // IDEAS TO REVISIT:
+    //   - phantom/ghost nodes: add invisible target-side clone before reparenting
+    //     so compound bounds are correct before the animation begins (open→move→close)
+    //   - FLIP (First Last Invert Play): snapshot renderedPosition() before structural
+    //     change, apply change instantly, animate from inverted delta back to 0
+    //   - lock non-migrating nodes during migration phase so only compounds resize
+    //   - partial layout: only run layout on the subgraph that actually changed
+    //     (fcose supports fixed positions via fixedNodeConstraint)
+    //   - fade-out on remove: opacity→0 over shr_ms before .remove()
+    //   - staggered entry: new nodes fade in from opacity 0 over first 30% of dur
+    //   - compound pre-sizing: emit phantom children at target parent before migration
+    //     so fcose sees correct compound bbox from the start
+
+    const YOINK_MS = 50
+
+    let wave_queue: TheC[] = []
+    let anim_busy   = false
+    let anim_end_at = 0
+
+    function enqueue(wave: TheC) {
+        const now = Date.now()
+        if (anim_busy && now < anim_end_at - YOINK_MS) {
+            // a wave is mid-flight — yoink all elements to their end state
+            cy.elements().stop(true, true)  // jumps to animation end-values
+            lay?.stop()
+            // drain anything already queued at dur=0 so state is consistent
+            while (wave_queue.length) apply(wave_queue.shift()!, 0)
+            anim_busy = false
+            // small pause so cytoscape commits the jumped positions
+            wave_queue.push(wave)
+            setTimeout(process_queue, YOINK_MS)
+        } else {
+            wave_queue.push(wave)
+            if (!anim_busy) process_queue()
+        }
+    }
+
+    function process_queue() {
+        if (!wave_queue.length) { anim_busy = false; return }
+        const wave = wave_queue.shift()!
+        // if more waves are already waiting, drain this one instantly
+        const dur = wave_queue.length ? 0 : ((wave.sc.duration as number) ?? 0.3)
+        anim_busy   = true
+        anim_end_at = Date.now() + dur * 1000
+        apply(wave, dur)
+        setTimeout(process_queue, dur * 1000 + 20)
+    }
+
 
     // ── layout ────────────────────────────────────────────────────────────────
 
