@@ -65,61 +65,89 @@
         const RunH = (H.o({ H: 1 }) as House[]).find(h => h.sc.Run) as House | undefined
         if (!RunH) return false
 
-        const tracking = w.oai({ cyto_tracking: 1 })
-        const v = RunH.version
-        if (tracking.sc.v === v) return true
-        tracking.sc.v = v
-
         const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
-        const step_n  = run?.sc.done as number | undefined
-        // wait for step to happen. for take a photo of the stage? H/A/w
-        if (!step_n) return false
+        const done    = run?.sc.done    as number | undefined
+        const open_at = run?.sc.open_at as number | null | undefined
 
-        const topC = await this.cyto_scan(w, RunH)       // Se1: D** + C** + scan goners
-        await this.cyto_assign_ids(w, topC)               // Se2 pass 1: cytoid on nodes
-        await this.cyto_scan_refs(w, topC)                // add ref/migration edges to C**
-        await this.cyto_assign_ids(w, topC)               // Se2 pass 2: cytoid on new edges
-        await this.cyto_resolve_refs(w, topC)             // forward(): C refs → _id strings
-        const wave = await this.make_wave(w, topC, true)  // Ze: diff → wave
-        wave.step_n   = step_n
+        const last_done = (w.c.cyto_Se as any)?.sc?.run_done as number | undefined
+        const last_open = w.c.last_open_at as number | null | undefined
 
+        // fast exit — nothing we care about changed
+        if (done === last_done && open_at === last_open) return !!done
 
-        await w.replace({ CytoStep: 1 }, async () => {
-            w.i({ CytoStep: 1, step_n: step_n ?? null, C: topC })
-        })
+        // ── TRIGGER 1: new step done → scan, archive CytoStep ──────────────────
+        if (done && done !== last_done) {
+            const topC = await this.cyto_scan(w, RunH)
+            await this.cyto_assign_ids(w, topC)
+            await this.cyto_scan_refs(w, topC)
+            await this.cyto_assign_ids(w, topC)
+            await this.cyto_resolve_refs(w, topC)
 
-        const gn = w.c.gn as TheC
-        if (!gn) throw "Nograph on update_wave" //return false
+            w.i({ CytoStep: 1, step_n: done, C: topC })
+            ;(w.c.cyto_Se as any).sc.run_done = done
+
+            // push live only when not peeking at a historical step
+            if (!open_at && !w.c.no_graph) {
+                const wave = await this.make_wave(w, topC, true)
+                wave.step_n = done
+                this._cyto_push(w, wave)
+            }
+
+            await w.r({ wave_data: 1 }, async () => {
+                const wv = (w.c.gn as TheC)?.sc.wave as any
+                if (wv) w.i({ wave_data: 1, nodes: wv.upsert?.length,
+                            edges: wv.edge_upsert?.length, removing: wv.remove?.length,
+                            step_n: done })
+            })
+        }
+
+        // ── TRIGGER 2: open_at changed → seek or return to live ────────────────
+        if (open_at !== last_open) {
+            w.c.last_open_at = open_at
+            const gn = w.c.gn as TheC | undefined
+
+            if (open_at == null) {
+                // back to live — Ze follows latest CytoStep
+                if (gn) gn.sc.seek_warning = null
+                const latest = (w.o({ CytoStep: 1 }) as TheC[])
+                    .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
+                if (latest?.sc.C) {
+                    const wave = await this.make_wave(w, latest.sc.C as TheC, false)
+                    wave.step_n = latest.sc.step_n as number
+                    this._cyto_push(w, wave)
+                }
+            } else {
+                const target = (w.o({ CytoStep: 1 }) as TheC[])
+                    .find(s => s.sc.step_n === open_at)
+                if (!target) {
+                    if (gn) { gn.sc.seek_warning = `no graph data for step ${open_at}`; gn.bump_version() }
+                    ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
+                } else {
+                    if (gn) gn.sc.seek_warning = null
+                    const wave = await this.make_wave(w, target.sc.C as TheC, false)
+                    wave.step_n = open_at
+                    this._cyto_push(w, wave)
+                }
+            }
+        }
+
+        return !!done
+    },
+
+    _cyto_push(w: TheC, wave: any) {
+        const H  = this as House
+        const gn = w.c.gn as TheC | undefined
+        if (!gn) return
         gn.sc.wave = wave
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
-        gn.sc.topC = topC
         gn.bump_version()
-        const wa = H.o({ watched: 'graph' })[0] as TheC
-        wa?.bump_version()
-        
-        if (step_n != null && story_w) {
-            const step_c = (story_w.c.This?.o({ Step: 1 }) as TheC[] | undefined)
-                ?.find(s => s.sc.Step === step_n)
-            if (step_c) { step_c.sc.CytoStep = topC; step_c.sc.CytoWave = wave }
-        }
-        let nostyle = this.snap_cytowave_str(wave).split("\n")
-            .filter(l=>!l.match(/^ {4}/)).join("\n")
-        console.log(`Your cyto update wave:\n`+nostyle,wave)
-
-        await w.replace({ wave_data: 1 }, async () => {
-            w.i({ wave_data: 1, nodes: wave.upsert.length,
-                  edges: wave.edge_upsert.length, removing: wave.remove.length,
-                  step_n: step_n ?? null })
-        })
-        return true
+        ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
     },
 
     async cyto_seek(A: TheC, w: TheC, e: TheC) {
-        const gn = w.c.gn as TheC
-        if (!gn) return
-        gn.sc.seek_step = e?.sc.seek_step ?? null
-        gn.bump_version()
+        // open_at already set on run by story_sel — fire trigger 2 in this same tick
+        await this.cyto_update_wave(w)
     },
 
 //#endregion
@@ -199,10 +227,6 @@
 
                 const parentC: TheC = T.sc.up?.sc.C ?? topC
                 const nd = this.cyto_nstyle(n)
-                let spawny = T.sc.bD ? "---" : 'neu'
-                console.log(`your ${spawny} scanid: ${scan_id}: ${[
-                    ...T.c.path.map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),nd.label
-                ].join(" \t ")}`)
 
                 const C: TheC = parentC.i({
                     cyto_node:  1,
@@ -274,13 +298,6 @@
                 if (C.sc.cyto_edge) C.sc.edge_id  = this.Dip_assign('cytoid', D)
                 else
                 if (T == T.c.path[0]) this.Dip_assign('cytoid', D)
-
-
-                let spawny = T.sc.bD ? "---" : 'neu'
-                console.log(`thee ${spawny} scanid: ${C.sc.cyto_id||C.sc.edge_id}: ${[
-                    ...T.c.path.slice().reverse().slice(1).reverse()
-                    .map(T => T.sc.C?.sc.label || "("+objectify(T.sc.n)+")"),C.sc.label
-                ].join(" \t ")}`)
             },
 
             trace_fn: async (uD: TheD, C: TheC) => {

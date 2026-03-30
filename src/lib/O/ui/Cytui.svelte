@@ -1,19 +1,6 @@
 <script lang="ts">
-    // Cytui.svelte — Cytoscape rendering widget for the LeafFarm graph.
+    // Cytui.svelte — Cytoscape rendering widget for the H:Story/H** graph.
     //
-    // Receives H (the Story sub-House).  Reads the live wave from
-    // H.graph/{cyto_graph:1}.wave which w:Cyto updates each tick.
-    //
-    // ── seek ─────────────────────────────────────────────────────────────────
-    //
-    //   When StoryRun opens a step it fires H.elvisto('Cyto/Cyto','cyto_seek',
-    //   {seek_step:N}).  w:Cyto writes gn.sc.seek_step and bumps the graph
-    //   particle.  The $effect here reads seek_step and finds the Step%CytoStep=C**
-    //
-    // ── history ───────────────────────────────────────────────────────────────
-    //
-    //   Wave history is retained for seek.  The ◀ ▶ walk-back UI controls
-    //   were removed — seeking is driven entirely by StoryRun navigation.
 
     import { onMount }    from 'svelte'
     import cytoscape      from 'cytoscape'
@@ -57,47 +44,22 @@
     let status          = $state('no graph')
     let grawave_dur     = $state(0.3)
     let last_tick       = -1
-    // the history index currently shown; -1 = nothing shown yet.
-    // used to detect single-step-forward seeks so we can animate them.
-    let last_shown_step   = -1
-
-    // ── reactive: H.graph → cyto_graph particle ───────────────────────────────
+    let seek_warning = $state<string | null>(null)
 
     $effect(() => {
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
         if (!gn) return
 
-        const seek = gn.sc.seek_step as number | null | undefined
+        seek_warning = (gn.sc.seek_warning as string | null) ?? null
 
-        if (seek != null) {
-            // get CytoStep from the Step particle on the Story worker
-            const story_w  = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0]
-            const step_c   = story_w?.c.This?.o({ Step: 1 })?.find(s => s.sc.Step === seek)
-            const to_C     = step_c?.sc.CytoStep as TheC | undefined
-            if (!to_C) {
-                // ← show "no wave for this step" warning in UI
-                status = `⚠ no CytoStep for step ${seek}`
-                return
-            }
-            // check cached wave
-            if (!step_c.sc.CytoWave) {
-                const prev_step = story_w?.c.This?.o({ Step: 1 })?.find(s => s.sc.Step === seek - 1)
-                const from_C    = prev_step?.sc.CytoStep as TheC | undefined
-                const adjacent  = Math.abs(seek - last_shown_step) === 1
-                step_c.sc.CytoWave = H.make_wave(from_C ?? null, to_C, adjacent)
-            }
-            last_shown_step = seek
-            apply(step_c.sc.CytoWave, step_c.sc.CytoWave.duration)
-            return
-        }
-
-        // live head — wave comes directly from gn.sc.wave as before
         const wave = gn.sc.wave as Wave | undefined
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
         last_tick = tick
-        last_shown_step = wave.step_n ?? last_shown_step
-        apply(wave, wave.duration)
+        if (cy) apply(wave, wave.duration)
+        grawave_dur = wave.duration
+        const sn = wave.step_n != null ? ` step:${wave.step_n}` : ''
+        status = `tick ${last_tick}${sn} · ${wave.upsert?.length ?? 0}n ${wave.edge_upsert?.length ?? 0}e −${wave.remove?.length ?? 0} ~${wave.migrate?.length ?? 0} · ⏱${wave.duration}s`
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
@@ -315,6 +277,9 @@
 <div class="cytui">
     <div class="cytui-bar">
         <span class="cytui-status">{status}</span>
+        {#if seek_warning}
+            <span class="cytui-warn">⚠ {seek_warning}</span>
+        {/if}
         <button onclick={() => relayout(300)}>⟳</button>
         <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
         <span class="cytui-dur">⏱ {grawave_dur}s</span>
@@ -353,6 +318,7 @@
     flex: 1; color: #3a3a3a; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; font-size: 9px;
 }
+.cytui-warn { color: #c88; font-size: 9px; font-style: italic; }
 .cytui-dur { color: #2a2a44; font-size: 9px; }
 .cytui-bar button {
     background: #141414; border: 1px solid #1e1e1e; border-radius: 2px;
