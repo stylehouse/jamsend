@@ -36,3 +36,5 @@ Snap:cytowave
   remove:cytoid_1_1_1_2_2
   edge_remove:cytoid_1_1_1_2_1
   edge_remove:cytoid_1_1_1_2_2_1
+  migrate:cytoid_1_1_1_2,toward:cytoid_1_1_2_2
+  migrate:cytoid_1_1_1_2_2,toward:cytoid_1_1_2_2_2

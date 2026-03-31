@@ -274,6 +274,14 @@
                     this.cyto_collect_goner_scan_ids(g, Se.c.scan_goners_by_id as Map<string,TheD>)
             },
         })
+
+        // build neu_scan_ids here — T** are populated, _is_new flags are set
+        const neu = new Set<string>()
+        await Se.c.T?.forward(async (T: Travel) => {
+            if (T.sc.Dip_scanid_is_new) neu.add(T.sc.Dip_scanid as string)
+        })
+        Se.c.neu_scan_ids = neu  // overwrites every tick, no cache guard
+
         
         return topC
     },
@@ -504,15 +512,15 @@
 
         // migration: goner whose n ref appears as a neu C
         for (const [_gid, gD] of goners_by_id) {
-            const from_scan_id = gD.c.T?.sc.Dip_scanid as string | undefined
-            if (!from_scan_id) continue
             const n = gD.c.T?.sc.n as TheC | undefined
             if (!n) continue
             const neu_Cs = (n_to_Cs.get(n) ?? []).filter(C => is_neu_scan_id(C.sc.scan_id as string))
             if (!neu_Cs.length) continue
-            const to_C  = neu_Cs[0]
-            const to_id = to_C.sc.cyto_id as string
-            to_C.i({ cyto_migration: 1, from_scan_id, to_id })
+            const to_C      = neu_Cs[0]
+            const to_id     = to_C.sc.cyto_id as string
+            const from_id   = (gD.c.T?.sc.C as TheC | undefined)?.sc.cyto_id as string | undefined
+            if (!from_id) continue
+            to_C.i({ cyto_migration: 1, from_id, to_id })
         }
 
         // build neu_scan_ids set for is_neu_scan_id — do this here for completeness
@@ -679,7 +687,7 @@
         if (adjacent) {
             const walk = (C: TheC) => {
                 for (const mc of C.o({ cyto_migration: 1 }) as TheC[])
-                    wave.i({ migrate: 1, id: mc.sc.from_scan_id, toward: mc.sc.to_id })
+                    wave.i({ migrate: 1, id: mc.sc.from_id, toward: mc.sc.to_id })
                 for (const nc of C.o({ cyto_node: 1 }) as TheC[]) walk(nc)
             }
             walk(topC)
