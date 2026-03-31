@@ -73,7 +73,10 @@
         const last_done = (w.c.cyto_Se as any)?.sc?.run_done as number | undefined
         const last_open = w.c.last_open_at as number | null | undefined
  
-        if (done === last_done && open_at === last_open) return !!done
+        const gn = w.c.gn as TheC | undefined
+        if (done === last_done && open_at === last_open && !w.c.cyto_wipe) {
+            return !!done
+        }
  
         // ── TRIGGER 1: new step done → scan, archive CytoStep ──────────────────
         if (done && done !== last_done) {
@@ -103,12 +106,11 @@
         }
  
         // ── TRIGGER 2: open_at changed → seek or return to live ────────────────
-        if (open_at !== last_open) {
+        if (open_at !== last_open || w.c.cyto_wipe) {
             w.c.last_open_at = open_at
-            const gn = w.c.gn as TheC | undefined
+            if (gn) gn.sc.seek_warning = null
  
             if (open_at == null) {
-                if (gn) gn.sc.seek_warning = null
                 const latest = (w.o({ CytoStep: 1 }) as TheC[])
                     .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
                 if (latest?.sc.C) {
@@ -123,7 +125,6 @@
                     if (gn) { gn.sc.seek_warning = `no graph data for step ${open_at}`; gn.bump_version() }
                     ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
                 } else {
-                    if (gn) gn.sc.seek_warning = null
                     const wave = await this.make_wave(w, target.sc.C as TheC, false)
                     wave.sc.step_n = open_at
                     this._cyto_push(w, wave)
@@ -138,6 +139,10 @@
         const H  = this as House
         const gn = w.c.gn as TheC | undefined
         if (!gn) return
+        if (w.c.cyto_wipe) {
+            wave.sc.cyto_wipe = true
+            delete w.c.cyto_wipe
+        }
         gn.sc.wave = wave
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
         gn.bump_version()
@@ -147,6 +152,11 @@
     async cyto_seek(A: TheC, w: TheC, e: TheC) {
         // open_at already set on run by story_sel — fire trigger 2 in this same tick
         await this.cyto_update_wave(w)
+    },
+    async cyto_wipe(A: TheC, w: TheC) {
+        w.c.cyto_wipe = true       // Cytui reads this when applying next wave
+        w.c.cyto_Ze?.sc.topD?.empty()   // D history gone → next process() is fully fresh
+        this.main()
     },
 
 //#endregion

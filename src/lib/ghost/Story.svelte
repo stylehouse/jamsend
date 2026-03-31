@@ -45,6 +45,69 @@
     //   The same container holds Cytui (registered by w:Cyto on its first tick).
     //   H.UIs = C.o({}) is populated by enroll_watched() on every bump.
 
+    let spect = `
+    
+    further design:
+      assertions, pointers
+       crawl code forward by compiling pauses everywhere
+      the UI
+       with its diff space
+        wants a multiplex of Snap:*-possible data channels
+         interfaces to inflate This**
+          and suggest things to become part of The**
+           the good things promoted
+         that may just be in memory for researching things
+        horizontal scroll
+       pips
+        show tiny grains for business as below
+        have an open-Snap side or a graph-play side to click
+
+
+    here's some claudables for going beyond this level of complicated.
+
+        I want to hide the self,round in the Snap:H too
+        but when that raises more than one since the last Story, that's %interesting:elvis_reverb, or something...
+
+        perhaps we want to make an assertion, that finds that thing (below A or w - put the same matching object in two other matchings)
+
+        checks if its increased more than one
+
+        and puts an extra little bright green dot in the pip, to indicate elvis made things to do and did them.
+
+
+
+
+
+        we have blocked off its      {"mung":["id"]}mo:main,interval:3.6 when under H:Story haven't we?
+
+         we basically synthesize it when we want to.
+
+        we should be matching every elvis that happens, so we can pause after one and record everything, then go on, to pull apart the action and really understand things
+
+        at the moment  we have Snap:H, Snap:cytowave...
+
+        we could be defining a template of stuff to get up to at snaptime. we do this trace thing as well which is kind of another channel of test data stuff, that we don't store.
+
+        so into that we could be adding a nice list of elvises that happened
+
+
+
+        so I'd like to incorporate the idea of info channels ... somehow we pass out information from H%Run...
+        was a bunch of this in 
+    
+    
+    
+    
+
+
+
+
+
+
+
+    
+    `
+
     import { objectify, TheC }            from "$lib/data/Stuff.svelte"
     import type { TheD, Travel }          from "$lib/mostly/Selection.svelte"
     import { Selection }                  from "$lib/mostly/Selection.svelte"
@@ -1253,6 +1316,10 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'intoCyto',      { stashed: true, label: 'into Cyto'    })
+        wa.oai({ action: 1, role: 'cyto_wipe' }, {
+            label: 'wipe', icon: '⌀', cls: 'remove',
+            fn: () => this.elvisto('Cyto/Cyto', 'cyto_wipe', {})
+        })
 
         // < is this weird. Baroquely, an information channel in a button
         await wa.roai({ action: 1, role: 'status' }, {

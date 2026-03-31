@@ -91,6 +91,10 @@
     function apply(wave: TheC, dur: number) {
         if (!cy) return
         const ms = Math.round(dur * 1000)
+        if (wave.sc.cyto_wipe) {
+            console.log(`%cyto_wipe removes and re-adds the entire graph`)
+            cy.elements().remove()
+        }
 
         // 1. remove stale edges
         for (const n of wave.o({ edge_remove: 1 }) as TheC[])
