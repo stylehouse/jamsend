@@ -5,8 +5,7 @@ Snap:H
       w:Yin
         {"mung":["age"]}	self,round
         hand:left
-          leaf,leaf_id:juggle
-            marble
+          leaf
         hand:right
         whatsit
           thing:with,see
@@ -43,17 +42,12 @@ Snap:cytowave
     style,font-style:italic
     style,padding:7px
     style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_1_1","label":"leaf:1\nleaf_id:juggle","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"leaf:1","parent":"cytoid_1_1"}
     {"style":1,"background-color":"rgb(32,111,32)"}
     style,color:#b0ffb0
     style,height:14
     style,shape:ellipse
     style,width:14
-  {"upsert":1,"id":"cytoid_1_1_1_1_2","label":"marble:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
   upsert,id:cytoid_1_1_2,label:right,parent:cytoid_1_1
     style,background-color:#1a1a28
     style,background-opacity:0.6
@@ -121,7 +115,6 @@ Snap:cytowave
     style,padding:7px
     style,text-valign:top
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
-  edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
   edge_upsert,id:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
   edge_upsert,id:cytoid_1_1_3_1_2,source:cytoid_1_1_3_1,target:cytoid_1_1_4_1
     style,curve-style:bezier

@@ -341,6 +341,8 @@
                 },
             ],
         })
+        // rebuild from scratch on HMR
+        H.elvisto('Cyto/Cyto', 'cyto_wipe', {})
         return () => { lay?.stop(); cy?.destroy() }
     })
 </script>
