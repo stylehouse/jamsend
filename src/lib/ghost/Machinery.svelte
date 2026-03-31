@@ -94,7 +94,15 @@
 
 
 //#endregion
-//#region LeafFarm
+//#region LeafJuggle
+    // this one's a simple animation roundabout of the same leaf
+    //  *w/*hand/leaf
+    // without elvis, it gets put on the w/* when it changes w
+    //  which you don't usually see because they pick up the leaf
+    //  except when it moves w:Yang->w:Yin, when w:Yin has already run this time
+    //   and so Story comes and snaps the state when it is w:Yin/leaf
+    //   see oddity:leaf not it hand
+    //  
 
 
     Run_A_LeafJuggle(this: House) {
@@ -107,9 +115,6 @@
         }
         console.log(`🤹 ${this.name} LeafJuggle wired`)
     },
-
-
- 
     async Yin(A, w) {
         const yang_w = this.o({ A: 'Yang' })[0]?.o({ w: 'Yang' })[0]
         if (!yang_w) return
@@ -121,10 +126,10 @@
             thing.sc.see = 1
             w.i({other:3}).i(thing)
         }
- 
+
         // seed: place a fresh leaf if nobody in the whole RunH is holding one
-        const has_leaf = this.o({ A: 1 }).some(A => A.o({ w: 1 }).some(wk => wk.o({ hand: 1 }).some(ha => ha.oa({ leaf: 1 }))))
-        if (!has_leaf) {
+        if (!A.sc.began) {
+            A.sc.began = 1
             w.oai({ hand: 'left' })
                 .i({ leaf: 1 })
                     // .i({marble:1})
@@ -144,18 +149,23 @@
         const lh = w.oai({ hand: 'left'  })
         const rh = w.oai({ hand: 'right' })
  
-        // rh exits first — passes the leaf to other/left
-        const rh_leaf = rh.o({ leaf: 1 })[0]
-        if (rh_leaf) {
+        // rh exits first — passes the leaf to other/*
+        for (let leaf of rh.o({ leaf: 1 })) {
             await rh.r({ leaf: 1 }, {})        // evict from rh (keep C alive)
-            other_w.oai({ hand: 'left' }).i(rh_leaf)   // place same C object
+            other_w.i(leaf)   // place same C object
         }
  
-        // lh passes to rh only if rh is now empty
-        const lh_leaf = lh.o({ leaf: 1 })[0]
-        if (lh_leaf && !rh.oa({ leaf: 1 })) {
+        // lh passes to rh
+        for (let leaf of lh.o({ leaf: 1 })) {
             await lh.r({ leaf: 1 }, {})
-            rh.i(lh_leaf)
+            rh.i(leaf)
+        }
+
+        // 
+        // so we see a leaf in the left hand placed by the second w:* to occur
+        for (let leaf of w.o({ leaf: 1 })) {
+            await w.r({ leaf: 1 }, {})
+            w.oai({ hand: 'left' }).i(leaf)
         }
     },
 
