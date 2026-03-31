@@ -711,58 +711,54 @@
         if (!wave) return ''
         const lines: string[] = []
 
-        // nodes sorted by id
-        for (const nd of (wave.o({ upsert: 1 }) as TheC[])
-                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id)))) {
-            const stringies: Record<string,any> = { node: nd.sc.id }
-            if (nd.sc.parent)     stringies.parent   = nd.sc.parent
-            if (nd.sc.isCompound) stringies.compound = 1
-            if (nd.sc.label)      stringies.label    = String(nd.sc.label).replace(/\n/g, ' ')
-            lines.push(this.enL({ d: d_base, stringies, objecties: {} }))
-            for (const [k, v] of Object.entries((nd.sc.style as Record<string,any>) ?? {})
-                    .sort(([a], [b]) => a.localeCompare(b))) {
-                if (v == null) continue
-                const sv: Record<string,any> = {}
-                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
-                lines.push(this.enL({ d: d_base + 1, stringies: sv, objecties: {} }))
+        const rank = (n: TheC) =>
+            n.sc.upsert       ? 0
+            : n.sc.edge_upsert ? 1
+            : n.sc.remove      ? 2
+            : n.sc.edge_remove ? 3
+            : n.sc.migrate     ? 4
+            : 5
+
+        const emit = (n: TheC, d: number) => {
+            // strip style/data so they never appear as refs in the parent line
+            const { style, data, ...rest } = n.sc
+            const line = this.enLine(_C(rest), { d })
+            if (!line) return
+            lines.push(line)
+
+            // style children: {style:1, height:40}
+            if (style && typeof style === 'object' && Object.keys(style).length) {
+                for (const [k, v] of Object.entries(style as Record<string,any>)
+                        .sort(([a],[b]) => a.localeCompare(b))) {
+                    if (v == null) continue
+                    const sv = typeof v === 'number' ? Math.round(v * 100) / 100 : v
+                    const child = this.enLine(_C({ style: 1, [k]: sv }), { d: d + 1 })
+                    if (child) lines.push(child)
+                }
+            }
+
+            // data children: {data:1, ideal_length:80}
+            if (data && typeof data === 'object' && Object.keys(data).length) {
+                derbugger
+                for (const [k, v] of Object.entries(data as Record<string,any>)
+                        .sort(([a],[b]) => a.localeCompare(b))) {
+                    if (v == null) continue
+                    const child = this.enLine(_C({ data: 1, [k]: v }), { d: d + 1 })
+                    if (child) lines.push(child)
+                }
             }
         }
- 
-        // edges sorted by id
-        for (const ed of (wave.o({ edge_upsert: 1 }) as TheC[])
-                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id)))) {
-            const stringies: Record<string,any> = {
-                edge: ed.sc.id, source: ed.sc.source, target: ed.sc.target,
-            }
-            if (ed.sc.ideal_length != null) stringies.ideal_length = ed.sc.ideal_length
-            lines.push(this.enL({ d: d_base, stringies, objecties: {} }))
-            for (const [k, v] of Object.entries((ed.sc.style as Record<string,any>) ?? {})
-                    .sort(([a], [b]) => a.localeCompare(b))) {
-                if (v == null) continue
-                const sv: Record<string,any> = {}
-                sv[k] = typeof v === 'number' ? Math.round(v * 100) / 100 : v
-                lines.push(this.enL({ d: d_base + 1, stringies: sv, objecties: {} }))
-            }
+
+        for (const n of (wave.o({}) as TheC[]).sort((a: TheC, b: TheC) => {
+            const dr = rank(a) - rank(b)
+            if (dr) return dr
+            const ia = String(a.sc.id ?? a.sc.edge_id ?? a.sc.migrate ?? '')
+            const ib = String(b.sc.id ?? b.sc.edge_id ?? b.sc.migrate ?? '')
+            return ia.localeCompare(ib)
+        })) {
+            emit(n, d_base)
         }
- 
-        // removals sorted
-        for (const n of (wave.o({ remove: 1 }) as TheC[])
-                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id))))
-            lines.push(this.enL({ d: d_base, stringies: { remove: n.sc.id }, objecties: {} }))
-        for (const n of (wave.o({ edge_remove: 1 }) as TheC[])
-                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id))))
-            lines.push(this.enL({ d: d_base, stringies: { edge_remove: n.sc.id }, objecties: {} }))
- 
-        // migrations sorted
-        for (const mg of (wave.o({ migrate: 1 }) as TheC[])
-                .sort((a, b) => String(a.sc.id).localeCompare(String(b.sc.id)))) {
-            const stringies: Record<string,any> = { migrate: mg.sc.id, toward: mg.sc.toward }
-            if (mg.sc.harvest_detach)  stringies.harvest_detach  = 1
-            if (mg.sc.mouthful_expire) stringies.mouthful_expire = 1
-            if (mg.sc.then_parent)     stringies.then_parent     = mg.sc.then_parent
-            lines.push(this.enL({ d: d_base, stringies, objecties: {} }))
-        }
- 
+
         return lines.join('\n') + '\n'
     },
 

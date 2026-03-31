@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { objectify, type TheC } from "$lib/data/Stuff.svelte";
     // Text.svelte — ghost depositing snap-line and diff functions onto H.* via eatfunc.
     //
     // Mounted in Ghost.svelte alongside Agency, Machinery, Story, Cyto.
@@ -148,6 +149,87 @@
         }
     },
 
+    // ── enLine ──────────────────────────────────────────────────────────────────
+    // General-purpose single-particle snap line encoder.
+    //
+    //   enLine(n, q) → snap_line string, or null when rules say skip.
+    //
+    // q is both config (in) and result carrier (out):
+    //   in:   q.d       — enL depth
+    //         q.rules   — optional matching rules (same schema as story_matching)
+    //   out:  q.skip, q.thence, q.stringies, q.objecties, q.mung, q.snap_line
+    //
+    // Rule schema:
+    //   { matching_any: [ {sc:{...}} | {sc_only:{...}} ],
+    //     means: { skip?, munging?: [{sc:{key:1}, type}], thence_matching? } }
+    //
+    // Object/function values on n.sc are always put into objecties.ref (excluded
+    // from diff), regardless of rules.  Rules may additionally mung scalar keys.
+    // T is never touched — callers proxy q.skip → T.sc.not, q.thence → T.sc.thence_matching.
+    enLine(n: TheC, q: {
+        d: number
+        rules?: Array<any>
+        // outputs written back:
+        snap_line?: string
+        stringies?: Record<string, any>
+        objecties?: Record<string, any> | undefined
+        skip?: boolean
+        thence?: Array<any>
+        mung?: string[]
+    }): string | null {
+        const munging: Array<any> = []
+        const thence: Array<any> = []
+        const seen = new Set<string>()
+        let skip = false
+
+        for (const rule of (q.rules ?? [])) {
+            const matched = (rule.matching_any as Array<any>).some((entry: any) => {
+                if (entry.sc_only) {
+                    const want = Object.keys(entry.sc_only)
+                    if (Object.keys(n.sc).length !== want.length) return false
+                    return n.matches(entry.sc_only)
+                }
+                return n.matches(entry.sc)
+            })
+            if (!matched) continue
+            for (const m of rule.means?.munging ?? []) munging.push(m)
+            if (rule.means?.skip) skip = true
+            for (const tw of rule.means?.thence_matching ?? []) {
+                const key = JSON.stringify(tw)
+                if (!seen.has(key)) { seen.add(key); thence.push(tw) }
+            }
+        }
+
+        q.skip = skip
+        q.thence = thence
+        if (skip) return null
+
+        const stringies: Record<string, any> = {}
+        const ref: Record<string, string> = {}
+        const mung: string[] = []
+
+        for (const [k, v] of Object.entries(n.sc ?? {})) {
+            if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
+                ref[k] = objectify(v)
+                continue
+            }
+            const m = munging.find(r => Object.hasOwn(r.sc, k))
+            if (m) { mung.push(k); continue }
+            stringies[k] = v
+        }
+
+        const objecties: Record<string, any> = {}
+        if (Object.keys(ref).length) objecties.ref = ref
+        if (mung.length) objecties.mung = mung
+
+        q.stringies = stringies
+        q.objecties = Object.keys(objecties).length ? objecties : undefined
+        q.mung = mung
+
+        const line = this.enL({ d: q.d, objecties: q.objecties, stringies })
+        q.snap_line = line
+        return line
+    },
 //#endregion
 //#region diff
 

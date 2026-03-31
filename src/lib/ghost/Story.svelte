@@ -523,60 +523,29 @@
         return n.matches(entry.sc)
     },
 
+    // classify one particle during the snap walk.
+    // builds stringies (serialisable diff-comparable values),
+    // ref (object values → stable ids via objectify — excluded from diff),
+    // mung (keys deliberately excluded, e.g. timestamps).
+    // sets T.sc.not=1 to skip the particle entirely.
+    // sets D.sc.snap_line — the complete encoded line (indent + objecties + tab +
+    //   stringies), used directly by story_snap and compared in traced_fn.
     story_process_node(n: TheC, T: Travel, D: TheD) {
-        // classify one particle during the snap walk.
-        // builds stringies (serialisable diff-comparable values),
-        // ref (object values → stable ids via objectify — excluded from diff),
-        // mung (keys deliberately excluded, e.g. timestamps).
-        // sets T.sc.not=1 to skip the particle entirely.
-        // sets D.sc.snap_line — the complete encoded line (indent + objecties + tab +
-        //   stringies), used directly by story_snap and compared in traced_fn.
         const active: Array<any> = [
             ...this.story_matching,
             ...(T.sc.up?.sc.thence_matching ?? []),
         ]
+        const q: any = { d: T.c.path.length - 1, rules: active }
+        const line = this.enLine(n, q)
 
-        const stringies: Record<string,any>    = {}
-        const ref:       Record<string,string> = {}
-        const mung:      string[]              = []
-        const munging:   Array<any> = []
-        const thence:    Array<any> = []
-        const seen = new Set<string>()
-        let   skip = false
+        if (q.skip) { T.sc.not = 1; return }
 
-        for (const rule of active) {
-            if (!(rule.matching_any as Array<any>).some((e: any) => this.story_rule_matches(n, e))) continue
-            for (const m of rule.means?.munging ?? []) munging.push(m)
-            if (rule.means?.skip) { skip = true }
-            for (const tw of rule.means?.thence_matching ?? []) {
-                const key = JSON.stringify(tw)
-                if (!seen.has(key)) { seen.add(key); thence.push(tw) }
-            }
-        }
-
-        if (skip) { T.sc.not = 1; return }
-
-        for (const [k, v] of Object.entries(n.sc ?? {})) {
-            if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
-                // unknown object/fn ref — goes to objecties.ref, excluded from diff
-                ref[k] = objectify(v)
-                continue
-            }
-            const m = munging.find(r => Object.hasOwn(r.sc, k))
-            if (m) { mung.push(k); continue }
-            stringies[k] = v
-        }
-
-        const objecties: Record<string,any> = {}
-        if (Object.keys(ref).length)  objecties.ref  = ref
-        if (mung.length)              objecties.mung = mung
-
-        D.sc.stringies = stringies
-        D.sc.objecties = Object.keys(objecties).length ? objecties : undefined
-        D.sc.copy      = { ...n.sc }
-        D.sc.snap_line = this.enL({ d: T.c.path.length - 1, objecties, stringies })
-        if (mung.length) { D.c.munged ??= []; D.c.munged.push(mung) }
-        if (thence.length) T.sc.thence_matching = thence
+        D.sc.stringies = q.stringies
+        D.sc.objecties = q.objecties
+        D.sc.copy = { ...n.sc }
+        D.sc.snap_line = line ?? ''
+        if (q.mung?.length) { D.c.munged ??= []; D.c.munged.push(q.mung) }
+        if (q.thence?.length) T.sc.thence_matching = q.thence
     },
 
     // ── snap_H ────────────────────────────────────────────────────────────────
