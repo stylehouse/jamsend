@@ -661,10 +661,18 @@
             },
  
             resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
-                for (const g of goners) {
-                    if (g.sc.is_edge) { if (g.sc.the_edge_id) wave.i({ edge_remove: 1, id: g.sc.the_edge_id }) }
-                    else              { if (g.sc.the_cyto_id) wave.i({ remove:      1, id: g.sc.the_cyto_id }) }
+                // walk the Ze D subtree of every goner — catches nested nodes
+                // (eg marble inside a goner leaf) that were never explicitly resolved
+                const emit_removes = (g: TheD) => {
+                    if (g.sc.is_edge) {
+                        // < factor in that we get removed node's edges removed for free, to say less
+                        if (g.sc.the_edge_id) wave.i({ edge_remove: 1, id: g.sc.the_edge_id })
+                    } else {
+                        if (g.sc.the_cyto_id) wave.i({ remove: 1, id: g.sc.the_cyto_id })
+                    }
+                    for (const child of g.o({ tracing: 1 }) as TheD[]) emit_removes(child)
                 }
+                for (const g of goners) emit_removes(g)
             },
         })
  

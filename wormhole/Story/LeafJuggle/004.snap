@@ -33,3 +33,6 @@ Snap:cytowave
   edge:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
   edge:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2
   remove:cytoid_1_2_2_1
+  remove:cytoid_1_2_2_1_2
+  edge_remove:cytoid_1_2_2_1_1
+  edge_remove:cytoid_1_2_2_1_2_1
