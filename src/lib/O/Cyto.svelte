@@ -57,7 +57,7 @@
         const wa  = this.oai_enroll(this, { watched: 'graph' })
         w.c.gn        = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
-        w.sc.grawave_duration ??= 2
+        w.sc.grawave_duration ??= 0.4
     },
 
     async cyto_update_wave(w: TheC): Promise<boolean> {
@@ -107,6 +107,8 @@
  
         // ── TRIGGER 2: open_at changed → seek or return to live ────────────────
         if (open_at !== last_open || w.c.cyto_wipe) {
+            let adjacent = last_open == open_at+1
+                || last_open == open_at-1
             w.c.last_open_at = open_at
             if (gn) gn.sc.seek_warning = null
  
@@ -114,7 +116,7 @@
                 const latest = (w.o({ CytoStep: 1 }) as TheC[])
                     .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
                 if (latest?.sc.C) {
-                    const wave = await this.make_wave(w, latest.sc.C as TheC, false)
+                    const wave = await this.make_wave(w, latest.sc.C as TheC, adjacent)
                     wave.sc.step_n = latest.sc.step_n as number
                     this._cyto_push(w, wave)
                 }
@@ -125,7 +127,7 @@
                     if (gn) { gn.sc.seek_warning = `no graph data for step ${open_at}`; gn.bump_version() }
                     ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
                 } else {
-                    const wave = await this.make_wave(w, target.sc.C as TheC, false)
+                    const wave = await this.make_wave(w, target.sc.C as TheC, adjacent)
                     wave.sc.step_n = open_at
                     this._cyto_push(w, wave)
                 }
@@ -136,6 +138,10 @@
     },
 
     _cyto_push(w: TheC, wave: TheC) {
+        console.log(`🌊 push dur:${wave.sc.duration} wipe:${!!wave.sc.cyto_wipe} tick:${(w.c.gn as any)?.sc.tick}`)
+        w.o({TheWave:1}).map(n => n.drop(n))
+        w.i({TheWave:1}).i(wave)
+
         const H  = this as House
         const gn = w.c.gn as TheC | undefined
         if (!gn) return
@@ -603,7 +609,7 @@
         const Ze: Selection = w.c.cyto_Ze
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
  
-        const dur  = adjacent ? ((w.sc.grawave_duration as number) ?? 0.3) : 0
+        const dur  = (w.sc.grawave_duration as number) ?? 0.3
         const wave = _C({ CytoWave:1, duration: dur })
  
         await Ze.process({

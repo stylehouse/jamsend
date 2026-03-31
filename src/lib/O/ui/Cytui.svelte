@@ -257,8 +257,8 @@
     function process_queue() {
         if (!wave_queue.length) { anim_busy = false; return }
         const wave = wave_queue.shift()!
-        // if more waves are already waiting, drain this one instantly
-        const dur = wave_queue.length ? 0 : ((wave.sc.duration as number) ?? 0.3)
+        // if more waves are already waiting, drain at 25fps
+        const dur = wave_queue.length ? 0.04 : ((wave.sc.duration as number) ?? 0.3)
         anim_busy   = true
         anim_end_at = Date.now() + dur * 1000
         apply(wave, dur)

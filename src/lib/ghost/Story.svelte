@@ -54,6 +54,8 @@
        with its diff space
         wants a multiplex of Snap:*-possible data channels
          interfaces to inflate This**
+           is what some notes said around stylehouse / ive/The
+            see also &complace, claude could perhaps straighten it out
           and suggest things to become part of The**
            the good things promoted
          that may just be in memory for researching things
