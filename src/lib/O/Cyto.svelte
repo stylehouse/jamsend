@@ -739,7 +739,6 @@
 
             // data children: {data:1, ideal_length:80}
             if (data && typeof data === 'object' && Object.keys(data).length) {
-                derbugger
                 for (const [k, v] of Object.entries(data as Record<string,any>)
                         .sort(([a],[b]) => a.localeCompare(b))) {
                     if (v == null) continue

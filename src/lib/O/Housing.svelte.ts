@@ -84,18 +84,21 @@ abstract class Housing extends TheC {
     async mutex(label: string, fn: () => Promise<void>) {
         const key = `_mutex_${label}`
         if (this.c[key]) {
+            this.trace('wait', label)
             await this.c[key]
             return this.mutex(label, fn)
         }
         let release: () => void
         this.c[key] = new Promise(r => release = r)
         if (label === 'beliefs') this.believing = true
+        this.trace('lock', label) 
         try {
             await fn()
         } finally {
             delete this.c[key]
             release!()
             if (label === 'beliefs') this.believing = false
+            this.trace('unlock', label)
         }
     }
 
@@ -222,6 +225,10 @@ abstract class Housing extends TheC {
         while (h.up && !(h instanceof House)) h = h.up
         const H = h as House
         V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
+        const tag = e.sc.fn
+            ? `fn:${e.sc.see ?? '?'}`
+            : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
+        H.trace('push', tag)
         H.todo = [...H.todo, e]
     }
 
@@ -355,6 +362,11 @@ export class Housemem {
 //#endregion
 //#region House
 
+export interface TraceEvent {
+    t: number      // performance.now()
+    kind: string   // see call sites below
+    tag?: string
+}
 export class House extends StorableHousing {
     _table = db.House
 
@@ -390,6 +402,19 @@ export class House extends StorableHousing {
         })
         this.start_watched_C_effect()
     }
+
+    trace_log: TraceEvent[] | null = null   // null = noop
+
+    trace(kind: string, tag?: string) {
+        if (!this.trace_log) return
+        this.trace_log.push({ t: performance.now(), kind, tag })
+    }
+    trace_drain(): TraceEvent[] {
+        const log = this.trace_log ?? []
+        this.trace_log = []
+        return log
+    }
+    trace_enable() { this.trace_log ??= [] }
 
     // -------------------------------------------------------------------------
     // all_House: sync recursive walk — no started guard so ghostsHaunt and
@@ -552,6 +577,7 @@ export class House extends StorableHousing {
 
         this.c.began_run = now_in_seconds_with_ms()
         this.c.finished_run = null
+        this.trace('run')
         
         console.log(`H:${this.name}  -> ${H.name}`)
         await H.mutex('beliefs', async () => {
@@ -567,6 +593,7 @@ export class House extends StorableHousing {
                 await this.beliefs(e)
             }
         })
+        this.trace('done')
         this.c.finished_run = now_in_seconds_with_ms()
     }
 
@@ -863,6 +890,7 @@ export class House extends StorableHousing {
             w.c.e = e
             
             await this.w_forgets_problems(w)
+            this.trace('think', `${A.sc.A}/${w.sc.w}→${method}`)
 
             try {
                 console.log(`💭 A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)

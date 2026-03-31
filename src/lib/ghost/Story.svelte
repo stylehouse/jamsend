@@ -905,6 +905,8 @@
 
             run.c.step_n     = n
             run.c.began_step = now_in_seconds_with_ms()
+            Run.trace_enable()
+            Run.trace('step', String(n))
             setTimeout(() => { if (run.c.driving) Run.elvisto(Run, 'think') }, 1)
             setTimeout(poll_step, TICK)
         }
@@ -926,12 +928,17 @@
             if (!run.c.driving) return
             const n = run.c.step_n as number
             run.sc.done       = n
+            Run.trace('snap', String(n))
 
             const snap     = await this.story_snap(Run)
             const got_dige = await dig(snap)
+            Run.trace('snapped', String(n))
 
             const step    = H.i_step(w, n)
             step.sc.unrun = false
+            const run_trace = Run.trace_drain()
+            step.sc.Run_trace = run_trace
+            step.bump_version()
 
             // Trim (got|exp)_snap 5 steps behind — best-effort GC.
             //   ok+!accepted:   already on disk unchanged, safe to drop.

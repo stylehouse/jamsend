@@ -164,6 +164,8 @@
     // ── diff mode state ───────────────────────────────────────────────────────
 
     let diff_mode   = $state<DiffMode | null>(null)
+    let show_trace = $state(false)
+    $effect(() => { displayed_at; show_trace = false }) // to close it when you navigate steps
     let sticky_mode = $state<DiffMode | null>(null)
 
     // ── ops_for_display ───────────────────────────────────────────────────────
@@ -684,6 +686,11 @@
                         {/if}
                     {/if}
 
+                    {#if Step?.sc.Run_trace?.length}
+                        <button class="sr-trace-btn" class:active={show_trace}
+                                onclick={() => show_trace = !show_trace}>trace</button>
+                    {/if}
+
                     <!-- brief status after collect_range finishes -->
                     {#if diff_status && !diff_collecting}
                         <span class="sr-diffstatus">{diff_status}</span>
@@ -747,6 +754,9 @@
                     </div>
                 {/if}
                 </div>
+                {#if show_trace && Step?.sc.Run_trace?.length}
+                    {@render trace_panel(Step.sc.Run_trace)}
+                {/if}
 
                 <!-- notes: swatch badges + big + toggle; input replaces badges while open -->
                 <div class="sr-notes">
@@ -853,6 +863,31 @@
 {#snippet intra_line(line: string, ops: Array<[number, string]>, side: 'left' | 'right')}
     {@const indent = (line.match(/^ */)?.[0] ?? '')}<span class="sr-ind">{indent}</span>{#each ops_for_display(line, ops, side) as span}<span class={span.cls}>{span.text}</span>{/each}
 {/snippet}
+
+{#snippet trace_panel(events: TraceEvent[])}
+    {@const t0    = events[0].t}
+    {@const span  = (events.at(-1)?.t ?? t0) - t0 || 1}
+    {@const COLS  = 56}
+    {@const scale = (t: number) => Math.round((t - t0) / span * COLS)}
+    <div class="sr-trace">
+        <div class="sr-trace-axis">
+            <span>0</span>
+            <span>{span.toFixed(1)}ms</span>
+        </div>
+        {#each events as ev}
+            {@const pos   = scale(ev.t)}
+            {@const cap   = Math.min(pos, COLS - 4)}
+            {@const over  = pos > COLS - 4}
+            {@const label = `${ev.kind}${ev.tag ? ':' + ev.tag : ''}`}
+            <div class="sr-trace-row" style="padding-left:{cap}ch"
+                 title="+{(ev.t - t0).toFixed(2)}ms">
+                {#if over}<span class="sr-trace-dot">·</span>{/if}<span class="sr-trace-lbl">{label}</span>
+            </div>
+        {/each}
+    </div>
+{/snippet}
+
+
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <style>
@@ -1045,6 +1080,29 @@
 .sr-obj { color: #7aa8c7; }
 .sr-ind { white-space: pre; }
 .sr-str { color: #bbb; }
+
+/* ── trace panel ────────────────────────────────────────────────────────── */
+.sr-trace-btn {
+    background:#181818; border:1px solid #2a3a2a; border-radius:2px;
+    color:#4a9; cursor:pointer; font-size:9px; font-family:inherit;
+    padding:0 6px; line-height:15px;
+}
+.sr-trace-btn.active { background:#0e1e18; border-color:#2a4a3a; }
+.sr-trace {
+    font-family:'Berkeley Mono','Fira Code',ui-monospace,monospace;
+    font-size:10px; line-height:1.4; background:#090909;
+    padding:4px 0; overflow-x:auto; white-space:pre;
+    border-top:1px solid #1a1a1a;
+}
+.sr-trace-axis {
+    display:flex; justify-content:space-between;
+    color:#333; font-size:8px; padding:0 4px 2px;
+    border-bottom:1px solid #161616;
+}
+.sr-trace-row { white-space:pre; }
+.sr-trace-dot { color:#555; margin-right:1px; }
+.sr-trace-lbl { color:#7ab0d4; }
+.sr-trace-row:hover .sr-trace-lbl { color:#aad; }
 
 /* ── notes panel ────────────────────────────────────────────────────────── */
 .sr-notes {
