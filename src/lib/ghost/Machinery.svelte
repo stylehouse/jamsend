@@ -126,8 +126,8 @@
         const has_leaf = this.o({ A: 1 }).some(A => A.o({ w: 1 }).some(wk => wk.o({ hand: 1 }).some(ha => ha.oa({ leaf: 1 }))))
         if (!has_leaf) {
             w.oai({ hand: 'left' })
-                .i({ leaf: 1, leaf_id: 'juggle' })
-                    .i({marble:1})
+                .i({ leaf: 1 })
+                    // .i({marble:1})
         }
     },
  

@@ -101,10 +101,15 @@
             cy.getElementById(n.sc.id as string).remove()
  
         // 2. remove stale nodes (skip migrating ids)
-        const migrating = new Set((wave.o({ migrate: 1 }) as TheC[]).map(m => m.sc.id as string))
+        const migrating = new Set([
+            ...(wave.o({ migrate: 1 }) as TheC[]).map(m => m.sc.id as string),
+            ...(wave.o({ migrate: 1 }) as TheC[]).map(m => m.sc.toward as string),
+        ])
+
         for (const n of wave.o({ remove: 1 }) as TheC[]) {
-            if (!migrating.has(n.sc.id as string))
+            if (!migrating.has(n.sc.id as string)) {
                 cy.getElementById(n.sc.id as string).remove()
+            }
         }
  
         // 3. upsert nodes

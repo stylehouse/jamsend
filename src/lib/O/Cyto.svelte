@@ -107,8 +107,12 @@
  
         // ── TRIGGER 2: open_at changed → seek or return to live ────────────────
         if (open_at !== last_open || w.c.cyto_wipe) {
-            let adjacent = last_open == open_at+1
-                || last_open == open_at-1
+            const backwards = typeof last_open === 'number' && typeof open_at === 'number'
+                && open_at < last_open   // going last_open-1
+            let adjacent = last_open-1 == open_at || last_open+1 == open_at
+            const departing = backwards
+                ? (w.o({ CytoStep: 1 }) as TheC[]).find(s => s.sc.step_n === last_open)?.sc.C
+                : null
             w.c.last_open_at = open_at
             if (gn) gn.sc.seek_warning = null
  
@@ -116,7 +120,7 @@
                 const latest = (w.o({ CytoStep: 1 }) as TheC[])
                     .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
                 if (latest?.sc.C) {
-                    const wave = await this.make_wave(w, latest.sc.C as TheC, adjacent)
+                    const wave = await this.make_wave(w, latest.sc.C as TheC, adjacent, backwards, departing)
                     wave.sc.step_n = latest.sc.step_n as number
                     this._cyto_push(w, wave)
                 }
@@ -127,7 +131,7 @@
                     if (gn) { gn.sc.seek_warning = `no graph data for step ${open_at}`; gn.bump_version() }
                     ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
                 } else {
-                    const wave = await this.make_wave(w, target.sc.C as TheC, adjacent)
+                    const wave = await this.make_wave(w, target.sc.C as TheC, adjacent, backwards, departing)
                     wave.sc.step_n = open_at
                     this._cyto_push(w, wave)
                 }
@@ -604,7 +608,7 @@
         return old !== newVal ? newVal : null
     },
 
-    async make_wave(w: TheC, topC: TheC, adjacent: boolean): Promise<TheC> {
+    async make_wave(w: TheC, topC: TheC, adjacent: boolean, backwards = false, departing?:TheC): Promise<TheC> {
         w.c.cyto_Ze ??= new Selection()
         const Ze: Selection = w.c.cyto_Ze
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
@@ -701,12 +705,16 @@
         })
  
         if (adjacent) {
+            const source = backwards ? departing : topC
             const walk = (C: TheC) => {
-                for (const mc of C.o({ cyto_migration: 1 }) as TheC[])
-                    wave.i({ migrate: 1, id: mc.sc.from_id, toward: mc.sc.to_id })
+                for (const mc of C.o({ cyto_migration: 1 }) as TheC[]) {
+                    const from = backwards ? mc.sc.to_id   : mc.sc.from_id
+                    const toward = backwards ? mc.sc.from_id : mc.sc.to_id
+                    wave.i({ migrate: 1, id: from, toward })
+                }
                 for (const nc of C.o({ cyto_node: 1 }) as TheC[]) walk(nc)
             }
-            walk(topC)
+            walk(source)
         }
  
         return wave
