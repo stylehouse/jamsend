@@ -339,7 +339,11 @@
 
     let run_mode   = $derived(display.run_sc?.mode    ?? 'new')
     let run_done   = $derived(display.run_sc?.done    ?? 0)
-    let run_total  = $derived(display.run_sc?.total   as number | undefined)
+    let run_total = $derived(
+        run_mode === 'check'
+            ? display.steps.length
+            : (display.run_sc?.total as number | undefined)
+    )
     let run_paused = $derived(!!display.run_sc?.paused)
     let run_failed = $derived(display.run_sc?.failed_at as number | undefined)
 

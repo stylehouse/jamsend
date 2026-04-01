@@ -982,6 +982,108 @@ export class House extends StorableHousing {
         }
     }
 
+    oai_enroll(target: TheC, sc: Record<string,any>): TheC {
+        // Find-or-create a {watched:X} container on target, enrolling it exactly once.
+        // o(sc)[0] retrieves any existing particle; on first creation enroll_watched()
+        // traverses H/A*/w* to pick up any {watched:X} particles wherever they now live.
+        const existing = target.o(sc)[0]
+        if (existing) return existing
+        const c = target.i(sc)
+        this.enroll_watched()
+        return c
+    }
+
+    // i_actions_to_c: declare a toggle action that controls w.c[key].
+    //
+    //   opts.default  (false) — value considered "off"; deleted from stashed
+    //                           rather than stored when toggled back to it,
+    //                           keeping stashed lean.
+    //   opts.stashed  (false) — if true, reads initial value from H.stashed[key]
+    //                           and writes back on every toggle.
+    //   opts.label    (key)   — display label for the action button.
+    //
+    //   w.c[key] is initialised exactly once on first call (== null guard);
+    //   subsequent calls from story_ui update the action's cls in place without
+    //   re-reading stashed.
+    //
+    //   wa.r() replaces the action particle each tick (not oai) so cls always
+    //   reflects the live value when story_ui re-runs.
+    //
+    //   Pattern: delete key from H.stashed when value equals the default so that
+    //   stashed omits uninteresting defaults and stays easy to inspect.
+    async i_actions_to_c(w: TheC, key: string, opts: { default?: boolean, stashed?: boolean, label?: string } = {}) {
+        const H        = this as House
+        const def_v    = opts.default  ?? false
+        const do_stash = opts.stashed  ?? false
+        const label    = opts.label    ?? key
+        const wa       = H.o({ watched: 'actions' })[0]
+        if (!wa) return
+
+        // init w.c[key] once — reads from H.stashed if opted in
+        if (w.c[key] == null) {
+            w.c[key] = (do_stash ? H.stashed?.[key] : null) ?? def_v
+        }
+
+        const current = !!w.c[key]
+        await wa.r({ action: 1, role: key }, {
+            label,
+            icon:  current ? `${label} ✓` : label,
+            cls:   current ? 'toggle-on' : 'toggle-off',
+            fn: () => {
+                const next = !w.c[key]
+                w.c[key] = next
+                if (do_stash) H.stashed[key] = next
+                opts.on_change?.(next)   // ← add this
+                H.main()
+            },
+        })
+    }
+
+
+//#endregion
+//#region Dip_assign
+
+    // Assign a branching hierarchical id to D under a named scheme.
+    // Only D is passed — T reached via D.c.T, parent D via D.c.T.up.sc.D.
+    //
+    // Dip particles persist in D/** across Se replace() via resume_X.
+    // Existing D: Dip already present → reuse value (no counter increment).
+    // New D:      no Dip → claim parent's next slot (parent.Dip.sc.i++) → create Dip.
+    //
+    // Stores result on T.sc.Dip_${scheme} for easy later access.
+    // Sets T.sc.Dip_${scheme}_is_new = true when freshly created (neu detection).
+
+    Dip_assign(scheme: 'scanid' | 'cytoid', D: TheD): string {
+        const T          = D.c.T as Travel
+        const tsc_key    = `Dip_${scheme}` as const
+        const tsc_is_new = `Dip_${scheme}_is_new` as const
+
+        // already assigned this tick?
+        const existing = D.o({ Dip: scheme })[0] as TheC | undefined
+        if (existing) {
+            T.sc[tsc_key]    = existing.sc.value
+            T.sc[tsc_is_new] = false
+            return existing.sc.value as string
+        }
+
+        // new — find/init parent's Dip and claim next slot
+        let possible = T.c.path.slice().reverse().slice(1).map(T=>T.sc.D)
+        let uDip
+        for (let uD of possible) {
+            uDip = uD.o({ Dip: scheme })[0]
+            if (uDip) break
+        }
+        // starts from 1 either way:
+        let i = uDip ? ++uDip.sc.i : 1
+        const value = `${uDip?.sc.value ?? scheme}_${i}`
+        D.i({ Dip: scheme, value, i: 0 })
+        T.sc[tsc_key]    = value
+        T.sc[tsc_is_new] = true
+        return value
+    }
+
+
+
 
 //#endregion
 //#region w:*
@@ -1021,7 +1123,6 @@ export class House extends StorableHousing {
 
 //#endregion
 //#region w:Wormhole
-// < move nearer w:Wormhole?
     async DirectoryOpener(A, w, e, AT, wT) {
         const key = `${(this as House).name}`
 
@@ -1136,20 +1237,6 @@ export class House extends StorableHousing {
                     // prefer toc.snap; transparently migrate from toc.json if present
                     let snap = await nav.read_file(path, 'toc.snap')
     
-                    if (!snap) {
-                        const json_raw = await nav.read_file(path, 'toc.json')
-                        if (json_raw) {
-                            snap = H.migrate_toc_json_to_snap(json_raw)
-                            if (snap) {
-                                // write toc.snap so the next read is fast and toc.json
-                                // is no longer consulted.  leave toc.json in place as
-                                // a read-only backup — the user can delete it manually.
-                                await nav.write_file(path, 'toc.snap', snap)
-                                console.log(`📦 Wormhole: migrated toc.json → toc.snap at ${path}`)
-                            }
-                        }
-                    }
-    
                     done(snap ? { toc_snap: snap } : { not_found: true, toc_snap: '' })
     
                 } else if (op === 'write_toc') {
@@ -1178,50 +1265,6 @@ export class House extends StorableHousing {
         DL ? w.i({ see: `📂 ${DL.name}` }) : w.i({ see: '📭 no directory' })
     }
     
-    // ── migrate_toc_json_to_snap ──────────────────────────────────────────────────
-    // One-time conversion: legacy toc.json → toc.snap string.
-    // Handles two plausible legacy shapes:
-    //
-    //   shape A (object with steps sub-object):
-    //     { story: "Book", frontier: 3, steps: { "1": "hash", "2": "hash", ... } }
-    //
-    //   shape B (flat key-per-step):
-    //     { "1": "hash", "2": "hash", ..., _frontier: 3 }
-    //
-    // Frontier is embedded as a {note:1,frontier:1} child under the relevant step,
-    // matching the current toc.snap convention.
-    // Returns '' when the JSON is unparseable, empty, or contains no numeric steps.
-    migrate_toc_json_to_snap(json_raw: string): string {
-        let data: Record<string,any>
-        try { data = JSON.parse(json_raw) } catch { return '' }
-    
-        const book      = (data.story ?? data.Story ?? 'unknown') as string
-        const frontier  = (data.frontier ?? data._frontier ?? 0) as number
-        const raw_steps = (typeof data.steps === 'object' && data.steps !== null)
-            ? data.steps as Record<string,string>
-            : data
-    
-        const step_ns = Object.keys(raw_steps)
-            .map(k => parseInt(k))
-            .filter(n => !isNaN(n))
-            .sort((a, b) => a - b)
-        if (!step_ns.length) return ''
-    
-        const ind = (d: number) => '  '.repeat(d)
-        const enj = (o: any) => JSON.stringify(o)
-    
-        const lines: string[] = []
-        lines.push(`\t${enj({ story: book })}`)
-        for (const n of step_ns) {
-            const dige = raw_steps[String(n)]
-            if (!dige || typeof dige !== 'string') continue
-            lines.push(`${ind(1)}\t${enj({ step: n, dige })}`)
-            if (n === frontier && frontier > 0) {
-                lines.push(`${ind(2)}\t${enj({ note: 1, frontier: 1 })}`)
-            }
-        }
-        return lines.join('\n') + '\n'
-    }
 
 
 

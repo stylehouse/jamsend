@@ -180,7 +180,6 @@
         const munging: Array<any> = []
         const thence: Array<any> = []
         const seen = new Set<string>()
-        let skip = false
 
         for (const rule of (q.rules ?? [])) {
             const matched = (rule.matching_any as Array<any>).some((entry: any) => {
@@ -193,16 +192,15 @@
             })
             if (!matched) continue
             for (const m of rule.means?.munging ?? []) munging.push(m)
-            if (rule.means?.skip) skip = true
+            if (rule.means?.skip) q.skip = true
             for (const tw of rule.means?.thence_matching ?? []) {
                 const key = JSON.stringify(tw)
                 if (!seen.has(key)) { seen.add(key); thence.push(tw) }
             }
         }
 
-        q.skip = skip
         q.thence = thence
-        if (skip) return null
+        if (q.skip) return null
 
         const stringies: Record<string, any> = {}
         const ref: Record<string, string> = {}
@@ -230,6 +228,18 @@
         q.snap_line = line
         return line
     },
+
+    // ── snap_indent ────────────────────────────────────────────────────────────
+    // Shift every line in a snap string by +d depth levels.
+    // Since enL encodes depth as leading '  ' pairs, prepending '  '.repeat(d)
+    // is exactly equivalent to having been encoded at depth+d.
+
+    snap_indent(snap: string, d: number): string {
+        if (!d) return snap
+        const prefix = '  '.repeat(d)
+        return snap.split('\n').filter(Boolean).map(l => prefix + l).join('\n') + '\n'
+    },
+    
 //#endregion
 //#region diff
 
@@ -532,7 +542,7 @@
     //   immediately renderable in StoryRun without a further char_diff_ops call.
     //
     //   Unknown Dif types are skipped gracefully for forward compatibility.
-
+    // < use, clauded same time as enDif() for completeness
     deDif(lines: string[], dif_depth: number): any[] {
         const rows: any[] = []
 

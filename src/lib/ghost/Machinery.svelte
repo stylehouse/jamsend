@@ -102,7 +102,7 @@
     //  except when it moves w:Yang->w:Yin, when w:Yin has already run this time
     //   and so Story comes and snaps the state when it is w:Yin/leaf
     //   see oddity:leaf not it hand
-    //  
+    // < use elvis, which will add more beliefs(), etc
 
 
     Run_A_LeafJuggle(this: House) {

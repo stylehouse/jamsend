@@ -113,7 +113,7 @@
     import { objectify, TheC }            from "$lib/data/Stuff.svelte"
     import type { TheD, Travel }          from "$lib/mostly/Selection.svelte"
     import { Selection }                  from "$lib/mostly/Selection.svelte"
-    import { depeel, peel, dig, exactly }               from "$lib/Y.svelte"
+    import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
     import { onMount }                    from "svelte"
     import { now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
@@ -299,7 +299,7 @@
         // This/{Step:N} particles for every known step so the UI strip shows all
         // expected pips immediately, before any step runs this session.
         //
-        // idempotent: safe to call again with the same content.
+        // not safe to call more than once
         if (!snap) return
         let curStep: TheC | null = null
 
@@ -315,18 +315,12 @@
             } else if (parsed.d === 1 && sc.step != null) {
                 // depth 1: step entry — find-or-create in The (uses exactly())
                 curStep = this.The_step(w, sc.step as number)
-                if (sc.dige) curStep.sc.dige = sc.dige
-
+                ex(curStep!.sc,sc)
             } else if (parsed.d === 2 && sc.note && curStep) {
                 // depth 2: note — JSON comparison avoids wildcard-1 over-matching
-                const sc_j   = JSON.stringify(sc)
-                const already = (curStep.o({ note: 1 }))
-                    .find(n => JSON.stringify(n.sc) === sc_j)
-                if (!already) {
-                    curStep.i(sc)
-                    for (const key of Object.keys(sc).filter(k => k !== 'note')) {
-                        this.ensure_swatch(w, key)
-                    }
+                curStep.i(sc)
+                for (const key of Object.keys(sc).filter(k => k !== 'note')) {
+                    this.ensure_swatch(w, key)
                 }
             }
         }
@@ -579,15 +573,6 @@
         },
     ] as Array<any>,
 
-    story_rule_matches(n: TheC, entry: any): boolean {
-        if (entry.sc_only) {
-            const want = Object.keys(entry.sc_only)
-            if (Object.keys(n.sc).length !== want.length) return false
-            return n.matches(entry.sc_only)
-        }
-        return n.matches(entry.sc)
-    },
-
     // classify one particle during the snap walk.
     // builds stringies (serialisable diff-comparable values),
     // ref (object values → stable ids via objectify — excluded from diff),
@@ -654,17 +639,6 @@
         })
 
         return lines.map(D => D.sc.snap_line as string).join('\n') + '\n'
-    },
-
-    // ── snap_indent ────────────────────────────────────────────────────────────
-    // Shift every line in a snap string by +d depth levels.
-    // Since enL encodes depth as leading '  ' pairs, prepending '  '.repeat(d)
-    // is exactly equivalent to having been encoded at depth+d.
-
-    snap_indent(snap: string, d: number): string {
-        if (!d) return snap
-        const prefix = '  '.repeat(d)
-        return snap.split('\n').filter(Boolean).map(l => prefix + l).join('\n') + '\n'
     },
 
 
@@ -1210,64 +1184,7 @@
     },
 
 
-//#region mechanisms — Run wiring, i_actions_to_c, story_ui
-
-    oai_enroll(target: TheC, sc: Record<string,any>): TheC {
-        // Find-or-create a {watched:X} container on target, enrolling it exactly once.
-        // o(sc)[0] retrieves any existing particle; on first creation enroll_watched()
-        // traverses H/A*/w* to pick up any {watched:X} particles wherever they now live.
-        const existing = target.o(sc)[0]
-        if (existing) return existing
-        const c = target.i(sc)
-        this.enroll_watched()
-        return c
-    },
-
-    // i_actions_to_c: declare a toggle action that controls w.c[key].
-    //
-    //   opts.default  (false) — value considered "off"; deleted from stashed
-    //                           rather than stored when toggled back to it,
-    //                           keeping stashed lean.
-    //   opts.stashed  (false) — if true, reads initial value from H.stashed[key]
-    //                           and writes back on every toggle.
-    //   opts.label    (key)   — display label for the action button.
-    //
-    //   w.c[key] is initialised exactly once on first call (== null guard);
-    //   subsequent calls from story_ui update the action's cls in place without
-    //   re-reading stashed.
-    //
-    //   wa.r() replaces the action particle each tick (not oai) so cls always
-    //   reflects the live value when story_ui re-runs.
-    //
-    //   Pattern: delete key from H.stashed when value equals the default so that
-    //   stashed omits uninteresting defaults and stays easy to inspect.
-    async i_actions_to_c(w: TheC, key: string, opts: { default?: boolean, stashed?: boolean, label?: string } = {}) {
-        const H        = this as House
-        const def_v    = opts.default  ?? false
-        const do_stash = opts.stashed  ?? false
-        const label    = opts.label    ?? key
-        const wa       = H.o({ watched: 'actions' })[0]
-        if (!wa) return
-
-        // init w.c[key] once — reads from H.stashed if opted in
-        if (w.c[key] == null) {
-            w.c[key] = (do_stash ? H.stashed?.[key] : null) ?? def_v
-        }
-
-        const current = !!w.c[key]
-        await wa.r({ action: 1, role: key }, {
-            label,
-            icon:  current ? `${label} ✓` : label,
-            cls:   current ? 'toggle-on' : 'toggle-off',
-            fn: () => {
-                const next = !w.c[key]
-                w.c[key] = next
-                if (do_stash) H.stashed[key] = next
-                opts.on_change?.(next)   // ← add this
-                H.main()
-            },
-        })
-    },
+//#region mechanisms — Run wiring, story_ui
 
     async story_ui(this: House, Run: House, w: TheC, run: TheC) {
         const wa = this.o({ watched: 'actions' })[0]

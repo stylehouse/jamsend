@@ -170,48 +170,6 @@
     },
 
 //#endregion
-//#region Dip_assign
-
-    // Assign a branching hierarchical id to D under a named scheme.
-    // Only D is passed — T reached via D.c.T, parent D via D.c.T.up.sc.D.
-    //
-    // Dip particles persist in D/** across Se replace() via resume_X.
-    // Existing D: Dip already present → reuse value (no counter increment).
-    // New D:      no Dip → claim parent's next slot (parent.Dip.sc.i++) → create Dip.
-    //
-    // Stores result on T.sc.Dip_${scheme} for easy later access.
-    // Sets T.sc.Dip_${scheme}_is_new = true when freshly created (neu detection).
-
-    Dip_assign(scheme: 'scanid' | 'cytoid', D: TheD): string {
-        const T          = D.c.T as Travel
-        const tsc_key    = `Dip_${scheme}` as const
-        const tsc_is_new = `Dip_${scheme}_is_new` as const
-
-        // already assigned this tick?
-        const existing = D.o({ Dip: scheme })[0] as TheC | undefined
-        if (existing) {
-            T.sc[tsc_key]    = existing.sc.value
-            T.sc[tsc_is_new] = false
-            return existing.sc.value as string
-        }
-
-        // new — find/init parent's Dip and claim next slot
-        let possible = T.c.path.slice().reverse().slice(1).map(T=>T.sc.D)
-        let uDip
-        for (let uD of possible) {
-            uDip = uD.o({ Dip: scheme })[0]
-            if (uDip) break
-        }
-        // starts from 1 either way:
-        let i = uDip ? ++uDip.sc.i : 1
-        const value = `${uDip?.sc.value ?? scheme}_${i}`
-        D.i({ Dip: scheme, value, i: 0 })
-        T.sc[tsc_key]    = value
-        T.sc[tsc_is_new] = true
-        return value
-    },
-
-//#endregion
 //#region Se1 — cyto_scan
 
     async cyto_scan(w: TheC, RunH: House): Promise<TheC> {

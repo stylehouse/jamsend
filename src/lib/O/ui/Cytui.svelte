@@ -171,10 +171,6 @@
             const el     = cy.getElementById(id)
             const toward = cy.getElementById(mg.sc.toward as string)
             if (!el.length) continue
-            if (mg.sc.harvest_detach) {
-                el.move({ parent: null })
-                el.connectedEdges().remove()
-            }
             if (!toward.length || ms <= 0) {
                 const tp = mg.sc.then_parent as string | undefined
                 tp ? el.move({ parent: tp }) : el.remove()
