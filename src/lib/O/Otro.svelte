@@ -4,6 +4,7 @@
     import { House, Work, register_class } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
+    import { Travel } from "$lib/mostly/Selection.svelte";
     import StoryRun from "./ui/StoryRun.svelte";
 
     // A Work subclass with a withitall() method
@@ -32,7 +33,7 @@
     })
 
     // ── once ghosts have arrived, wire child Houses ───────────────────────────
-    let setup_done = false
+    let setup_done = $state(false)
     $effect(() => {
         if (!H?.started || setup_done) return
         setup_done = true
@@ -49,6 +50,10 @@
         },444)
 
         go_busily()
+    })
+    $effect(() => {
+        if (!setup_done) return
+        houses = H.all_House 
     })
 
     // ── reactive house list via H.all_House ───────────────────────────────────

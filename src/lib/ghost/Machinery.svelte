@@ -63,8 +63,8 @@
 
             // lh.resolve = this.DEV_resolve
             await lh.replace({bug:1}, async () => {
-                lh.i({bug:1,self:1,est:171717171717})
-                lh.i({bug:1,self:1})
+                lh.i({bug:1,shelf:1,est:171717171717})
+                lh.i({bug:1,shelf:1})
                 lh.i({bug:1,the_w:"Ying"})
             })
         }

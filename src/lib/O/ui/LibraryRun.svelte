@@ -12,6 +12,8 @@
     //   • Reset button (sends resetStory elvis to A:Auto/w:Auto)
     //
     // Mung errors are shown as red banners at the top — fatal, user must fix code.
+    // < more reactive UI - last run etc values don't update
+    // < mode where it's a test runner listening for pushes
 
     import type { House }   from "$lib/O/Housing.svelte"
     import type { TheC }    from "$lib/data/Stuff.svelte"
@@ -23,6 +25,10 @@
     let Li = $derived((H.ave ?? []).find((c: TheC) => c.sc.Library != null) ?? null)
     let books = $derived(Li ? (Li as TheC).o({ Book: 1 }) as TheC[] : [])
     let mung_errors = $derived(Li ? (Li as TheC).o({ mung_error: 1 }) as TheC[] : [])
+    let activeBook = $derived((H.ave ?? []).find((c: TheC) => c.sc.activeBook != null)
+        ?.sc.Book ?? null)
+    let isActive = (book) => book.sc.Book == activeBook
+    
 
     // ── editable peel field per book ─────────────────────────────────────
     // editing[bookName] = current text in the input (or null = not editing)
@@ -68,7 +74,7 @@
 
     function fmt_ms(ms: number | null | undefined): string {
         if (ms == null) return '—'
-        const d = new Date(ms)
+        const d = new Date(ms * 1000)
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
             + '.' + String(d.getMilliseconds()).padStart(3, '0')
     }
@@ -132,7 +138,7 @@
                         </td>
                         <td class="lr-actions">
                             <button
-                                class="lr-btn {book.sc.active ? 'active' : 'idle'}"
+                                class="lr-btn {isActive(book) ? 'active' : 'idle'}"
                                 onclick={() => activate(book)}
                             >{book.sc.active ? '▶ active' : 'activate'}</button>
                         </td>

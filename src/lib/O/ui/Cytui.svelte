@@ -106,6 +106,7 @@
         // in seconds
         const now     = performance.now() / 1000
         const started = animations.sc.started_at
+        if (H.stopped) return
 
         if (now - started > 10) { rush_animations(); return }
 

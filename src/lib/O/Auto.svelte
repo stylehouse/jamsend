@@ -36,6 +36,7 @@
     import type { House }   from "$lib/O/Housing.svelte"
     import { onMount }      from "svelte"
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
+    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
     const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping']
     const HEAD = 'Present'
@@ -125,29 +126,46 @@
         // ── get Li every tick ─────────────────────────────────────────────────
         const Li = w.o({ Library: 1 })[0] as TheC | undefined
         if (!Li) return w.i({ see: '⏳ Library...' })
+        let picks_a_book = (bname) => {
+            H.auto_reset_story(bname)
+            w.c.ave.roai({activeBook:1},{Book:bname})
+        }
 
         // ── activateBook elvis ────────────────────────────────────────────────
         for (const ev of this.o_elvis(w, 'activateBook')) {
             const bname = ev.sc.Book as string
             if (!bname) continue
-            for (const b of Li.o({ Book: 1 }) as TheC[]) b.sc.active = (b.sc.Book === bname)
+            for (const b of Li.o({ Book: 1 }) as TheC[]) {
+                if (b.sc.Book === bname) { b.sc.active = 1}
+                else { delete b.sc.active }
+            }
             Li.bump_version()
-            H.auto_reset_story(bname)
+            picks_a_book(bname)
         }
 
         // ── resetStory elvis ──────────────────────────────────────────────────
         for (const ev of this.o_elvis(w, 'resetStory')) {
             const bname = (ev.sc.Book as string)
-                ?? (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active)?.sc.Book
-            if (bname) H.auto_reset_story(bname)
+                ?? (Li.o({ Book: 1,active:1 }) as TheC[])[0]?.sc.Book
+            if (bname) picks_a_book(bname)
+        }
+
+        const active = (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active)
+        // ── storyFinished elvis ───────────────────────────────────────────────
+        for (const ev of this.o_elvis(w, 'storyFinished')) {
+            const bname = ev.sc.Book ?? active?.sc.Book ?? "Blank"
+            const mode  = ev.sc.mode
+            console.log(`📚 storyFinished: ${bname} [${mode}]`)
+            w.i({storyFinished:1,Book:bname,mode})
+            H.auto_sync_story_stats(Li)
+            // < future: auto-advance to next book in Library order
         }
 
         // ── start Story from active book (first time only) ────────────────────
         if (!w.c.story_started) {
-            const active = (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active)
             if (active) {
                 w.c.story_started = true
-                H.auto_reset_story(active.sc.Book as string)
+                picks_a_book(active.sc.Book as string)
             }
         }
 
@@ -258,7 +276,7 @@
 
         const ok  = all_steps.filter(s => s.sc.ok).length
         const ok_pct = Math.round((ok / done) * 100) / 100
-        const last_run_ms = Date.now()
+        const last_run_ms = now_in_seconds_with_ms()
 
         const book = Li.o({ Book: book_name })[0] as TheC | undefined
         if (!book) return
@@ -266,10 +284,11 @@
         const changed = book.sc.ok_pct !== ok_pct
         if (changed) {
             book.sc.ok_pct       = ok_pct
-            book.sc.last_run_ms  = last_run_ms
+            book.sc.last_pct_change  = last_run_ms
             book.sc.done         = done
             Li.bump_version()
         }
+        book.sc.last_run_ms  = last_run_ms
     },
 
     })

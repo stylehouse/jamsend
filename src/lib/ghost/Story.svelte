@@ -924,6 +924,7 @@
                 H.story_analysis(w)
                 await update_status('recorded ✓', 'start')
                 console.log(`✓ Story: complete (${run.sc.total} steps)`)
+                H.top_House().elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'new' })
                 return
             }
             if (run.sc.mode === 'check' && !H.The_step_dige(w, n)) {
@@ -939,6 +940,7 @@
                 H.story_analysis(w)
                 await update_status('done ✓', 'start')
                 console.log(`✓ Story: check complete at n=${n}`)
+                H.top_House().elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
                 return
             }
 
@@ -1159,27 +1161,14 @@
 //#region story_reset
 
     story_reset(this: House) {
-        // Stop any in-flight drive, clear all toc and session state, drop actors.
-        // The next Story invocation starts fresh: re-reads toc.snap, re-builds The,
-        // re-creates hollow This/{Step:N}, etc.
-        for (const h of this.all_House) {
-            for (const w of (h as House).o({ w: 1 })) {
-                for (const run of w.o({ run: 1 })) run.c.driving = false
-                // drop all live Step particles from This (w.c.This = w/%This,Story:book)
-                const thisC = w.c.This
-                if (thisC) for (const s of thisC.o({ Step: 1 })) s.drop(s)
-                delete (w as any).c.This
-                delete (w as any).c.The   // will be re-created from disk on next load
-                delete (w as any).c.toc_loaded
-                delete (w as any).c.wh
-                delete (w as any).c.run_path
-            }
-            delete (h as any).c?.snap_Se
-        }
-
-        this.todo = []
-        for (const A of this.o({ A: 1 })) this.drop(A)
-        this.prng = [1, 2, 3, 4]
+        // H:Story is a child of H:Mundo — Auto owns the lifecycle.
+        // Delegate via elvis so Auto's picks_a_book() runs (tears down and
+        // rebuilds H:Story cleanly rather than trying to reset in place).
+        const topH = this.top_House()
+        // find our book name from the Story worker so Auto knows what to restart
+        const bname = (this.o({ A: 'Story' })[0] as TheC | undefined)
+            ?.o({ w: 'Story' })[0]?.sc.Book as string | undefined
+        topH.elvisto('Auto/Auto', 'resetStory', bname ? { Book: bname } : {})
         console.log(`🔄 ${this.name} reset`)
     },
 

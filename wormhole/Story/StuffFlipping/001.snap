@@ -5,10 +5,57 @@ Snap:H
       w:StuffFlipping
         {"mung":["age"]}	self,round
         hand:left
-          bug,self,est:171717171717
-          bug,self
+          bug,shelf,est:171717171717
+          bug,shelf
           bug,the_w:Ying
             terpestra
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-
+  upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
+    style,background-color:#181818
+    style,background-opacity:0.5
+    style,border-color:#2a2a2a
+    style,border-style:dashed
+    style,border-width
+    style,color:#4a6a4a
+    style,font-size:9px
+    style,font-style:italic
+    style,font-weight:bold
+    style,padding:12px
+    style,text-halign:center
+    style,text-valign:top
+  upsert,id:cytoid_1_1_1,label:left,parent:cytoid_1_1
+    style,background-color:#1a1a28
+    style,background-opacity:0.6
+    style,border-color:#5a5a9a
+    style,border-style:solid
+    style,border-width
+    style,color:#8888bb
+    style,font-size:8px
+    style,font-style:italic
+    style,padding:7px
+    style,text-valign:top
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"bug:1\nshelf:1\nest:171717171717","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_1_2","label":"bug:1\nshelf:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_1_3","label":"bug:1\nthe_w:Ying","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_1_3_2","label":"terpestra:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+  edge_upsert,id:cytoid_1_1_1_3_1,source:cytoid_1_1_1,target:cytoid_1_1_1_3
+  edge_upsert,id:cytoid_1_1_1_3_2_1,source:cytoid_1_1_1_3,target:cytoid_1_1_1_3_2

@@ -136,10 +136,10 @@
                 seen.add(n)
 
                 // Encode via enLine with q.check so mung is flagged.
-                const q: any = { d, check: true }
+                const q: any = { d }
                 const line = H.enLine(n, q)
 
-                if (q.objecties.mung) {
+                if (q.objecties?.mung) {
                     // Build path from ancestor snap_Lines stored in prior each_fn calls.
                     const path_str = T.c.path
                         .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')

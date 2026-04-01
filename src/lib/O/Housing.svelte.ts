@@ -432,15 +432,14 @@ export class House extends StorableHousing {
     // every_House work before started is true.
     // -------------------------------------------------------------------------
     get all_House(): House[] {
-        const N: House[] = []
-        const visit = (h: House) => {
-            N.push(h)
-            for (const child of h.o({ H: 1 }) as House[]) {
-                visit(child)
+        let more = (H) => {
+            let N = []
+            for (let oH of H.subHouses) {
+                N.push(...more(oH))
             }
+            return [H,...N]
         }
-        visit(this)
-        return N
+        return more(this)
     }
 
     // -------------------------------------------------------------------------
@@ -476,6 +475,8 @@ export class House extends StorableHousing {
         child.ghosts = this.ghosts          // set via $state setter so the readiness $effect fires
         Object.assign(child, this.ghosts)   // also spread methods onto child directly
         this.i(child)   // child IS the particle — sc.H = name set in constructor
+        const wa   = this.oai_enroll(this, { watched: 'subHouses' })
+        wa.i(child)
         return child
     }
 
@@ -619,6 +620,7 @@ export class House extends StorableHousing {
     // looked up in the classes registry. Without one, T.sc.inst stays undefined and
     // _Aw_think falls back to H.* (ghost-injected) methods.
     // needed_concretion is only set when a class was specified but inst isn't ready yet.
+    // < define as slope. interesting area. see also Text / enLine / rules
     // -------------------------------------------------------------------------
     apply_scheme(T: Travel, e?: TheC) {
         const D = T.sc.D as TheD
@@ -928,6 +930,8 @@ export class House extends StorableHousing {
 //#endregion
 //#region watched
     // these are derived from H/%watched:actions/*
+    // reactive pile-up of any H/H, so Otro can hoist H**
+    subHouses: TheC[] = $state([])
     // UI components registered by ghosts via H/%watched:UIs
     UIs: TheC[] = $state([])
     // this is a general for-any-UI conveyor
