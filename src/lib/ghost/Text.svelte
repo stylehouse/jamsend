@@ -82,6 +82,144 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#region wormhole Lines
+    // ── encode_wh_lines ────────────────────────────────────────────────────
+    // Encode an arbitrarily deep tree of plain-sc items to snap-line text.
+    //
+    // root_sc   — the depth-0 header (e.g. {Library:1}, {Present:1}).
+    // items     — depth-1 entries; each may carry .children for depth 2, etc.
+    //
+    // Returns { snap, errors }.  Any object or function value on any sc is a
+    // fatal mung error: the offending item is omitted and the error recorded.
+    // The caller should surface errors prominently (they indicate a coding bug).
+    //
+    // WhlItem: { sc: Record<string,any>, children?: WhlItem[] }
+
+    encode_wh_lines(
+        root_sc: Record<string, any>,
+        items: Array<{ sc: Record<string, any>, children?: any[] }>
+    ): { snap: string, errors: string[] } {
+        const errors: string[] = []
+        const lines: string[] = []
+
+        const check = (sc: Record<string, any>, where: string): boolean => {
+            for (const [k, v] of Object.entries(sc)) {
+                if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
+                    errors.push(`mung at ${where}: key "${k}" is ${typeof v} — encode_wh_lines refuses object values`)
+                    return false
+                }
+            }
+            return true
+        }
+
+        if (check(root_sc, 'root')) {
+            lines.push(this.encode_stringies(root_sc))
+        }
+
+        const walk = (items: Array<{ sc: Record<string,any>, children?: any[] }>, d: number) => {
+            for (const item of items) {
+                if (!check(item.sc, `depth ${d}`)) continue
+                lines.push(this.ind(d) + this.encode_stringies(item.sc))
+                if (item.children?.length) walk(item.children, d + 1)
+            }
+        }
+        walk(items, 1)
+
+        return { snap: lines.join('\n') + '\n', errors }
+    },
+
+    // ── decode_wh_lines ────────────────────────────────────────────────────
+    // Decode snap-line text into C particles via per-depth handler functions.
+    //
+    // handlers[0] — called for each depth-1 line  (parent = root_container | null)
+    // handlers[1] — called for each depth-2 line  (parent = TheC from handlers[0])
+    // …and so on for arbitrary depth.
+    //
+    // A handler receives (sc, parentC) and returns the TheC it created/updated,
+    // or null to skip children of that line.  Returning null does not add errors.
+    //
+    // Rules:
+    //   • Any line more than one level deeper than the previous is an error and skipped.
+    //   • Object values in parsed sc are errors (the line is skipped).
+    //   • Missing handler for a depth is an error (line skipped, no children).
+    //
+    // root_container — optional TheC passed as parent to depth-1 handlers.
+
+    decode_wh_lines(
+        snap: string,
+        handlers: Array<((sc: Record<string, any>, parent: any) => any) | null>,
+        root_container: any = null
+    ): { errors: string[], root_sc: Record<string, any> } {
+        const errors: string[] = []
+        let root_sc: Record<string, any> = {}
+
+        if (!snap) return { errors, root_sc }
+
+        // stack entries: { d, container }
+        // d=0 entry is always the root, container = root_container
+        const stack: Array<{ d: number, container: any }> = [
+            { d: 0, container: root_container }
+        ]
+        let prev_d = -1
+
+        for (const raw_line of snap.split('\n')) {
+            const line = raw_line  // preserve indent
+            if (!line.trim()) continue
+
+            let parsed: { d: number, stringies: Record<string, any> } | null = null
+            try {
+                parsed = this.deL(line) as any
+            } catch (e) {
+                errors.push(`parse error: ${line.trim()}`)
+                continue
+            }
+            if (!parsed) continue
+
+            const { d, stringies: sc } = parsed
+
+            // depth jump check — no more than one deeper than previous
+            if (prev_d >= 0 && d > prev_d + 1) {
+                errors.push(`depth jump ${prev_d}→${d} at: ${line.trim()}`)
+                continue
+            }
+            prev_d = d
+
+            // check for mung (object values in parsed sc)
+            let munged = false
+            for (const [k, v] of Object.entries(sc)) {
+                if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
+                    errors.push(`mung at depth ${d}: key "${k}" is ${typeof v}`)
+                    munged = true
+                }
+            }
+            if (munged) continue
+
+            if (d === 0) {
+                root_sc = sc
+                // reset stack keeping the root entry
+                stack.length = 1
+                continue
+            }
+
+            // pop stack to the nearest ancestor shallower than d
+            while (stack.length > 1 && stack[stack.length - 1].d >= d) stack.pop()
+            const parent_entry = stack[stack.length - 1]
+
+            // find handler (handlers[0] = depth 1, handlers[d-1] = depth d)
+            const handler = handlers[d - 1]
+            if (!handler) {
+                errors.push(`no handler for depth ${d}: ${line.trim()}`)
+                continue
+            }
+
+            const result = handler(sc, parent_entry.container)
+            // push result (even if null — children will get null as parent, handler decides)
+            stack.push({ d, container: result ?? null })
+        }
+
+        return { errors, root_sc }
+    },
+
 //#region snap-line codec
 
     // ── enj / ind / pad ───────────────────────────────────────────────────────

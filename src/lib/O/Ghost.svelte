@@ -29,6 +29,7 @@
     import Story     from "$lib/ghost/Story.svelte"
     import Cyto      from "./Cyto.svelte"
     import Text  from "$lib/ghost/Text.svelte"
+    import Auto from "./Auto.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -51,3 +52,5 @@
 <Cyto      {M} />
 <!-- pure text/diff utilities — depth_of, compute_diff, squish_context, enDif, deDif, etc. -->
 <Text  {M} />
+<!-- what are we working on, and memories drifting away -->
+<Auto  {M} />

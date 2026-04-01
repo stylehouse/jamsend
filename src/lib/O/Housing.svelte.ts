@@ -1099,13 +1099,15 @@ export class House extends StorableHousing {
         let lds = H.i({A:'Wormhole'})
         lds.i({w:'DirectoryOpener'})
         lds.i({w:'Wormhole'})
+        // Auto agency — Library manager; starts H:Story when a book is activated
+        H.i({ A: 'Auto' }).i({ w: 'Auto' })
 
-        let S = H.subHouse('Story')
-        // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafFarm' })
-        S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafJuggle' })
-        // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'StuffFlipping' })
-        S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
-        S.elvisto(S, 'think')
+        // let S = H.subHouse('Story')
+        // // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafFarm' })
+        // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafJuggle' })
+        // // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'StuffFlipping' })
+        // S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
+        // S.elvisto(S, 'think')
     }
 
     // fallback handler for testing without a ghost — ghost methods shadow these
@@ -1207,8 +1209,10 @@ export class House extends StorableHousing {
             if (!DL.expanded) await DL.expand()
             A.c.nav = new WormholeNav(DL)
         }
-    
         const H  = this as House
+
+
+        // v1. all operations restricted to ./wormhole/
         const fs = await H.requesty_serial(w, 'fs_op')
     
         for (const { req, finish } of H.o_elvis_req(w, 'wh_op')) {
@@ -1224,7 +1228,7 @@ export class House extends StorableHousing {
             if (!finish) return
     
             const nav  = A.c.nav as WormholeNav | undefined
-            const path = req.sc.wh_path as string
+            const path = `wormhole/${req.sc.wh_path as string}`
             const op   = req.sc.wh_op   as string
             const pad  = (n: number) => String(n).padStart(3, '0')
     
@@ -1260,6 +1264,51 @@ export class House extends StorableHousing {
                 done({ error: String(err) })
             }
         })
+
+//#endregion
+//#region v2
+
+        const rw = await H.requesty_serial(w, 'rw_queue')
+
+        for (const { req, finish } of H.o_elvis_req(w, 'rw_op')) {
+            if (!rw.o({ req }).length) {
+                const rw_req = rw.i({ req })
+                rw_req.c.finish = finish
+            }
+        }
+
+        await rw.do(async (rw_req: TheC) => {
+            const req    = rw_req.sc.req as TheC
+            const finish = rw_req.c.finish as Function | undefined
+            if (!finish) return
+
+            const nav    = A.c.nav as WormholeNav | undefined
+            const name   = req.sc.rw_name as string
+            const op     = req.sc.rw_op   as string
+            const done   = (reply: any) => { finish(reply); rw_req.sc.finished = true }
+
+            if (!nav) { done({ error: '📭 nav not ready' }); return }
+
+            try {
+                const parts    = name.split('/').filter(Boolean)
+                const filename = parts.pop()!
+                const dir_path = parts.join('/')
+
+                if (op === 'read') {
+                    const content = await nav.read_file(dir_path, filename)
+                    done(content != null ? { content } : { not_found: true, content: '' })
+                } else if (op === 'write') {
+                    await nav.write_file(dir_path, filename, req.sc.rw_data as string)
+                    done({ ok: true })
+                } else {
+                    done({ error: `unknown rw op: ${op}` })
+                }
+            } catch (err) {
+                done({ error: String(err) })
+            }
+        })
+
+
     
         const DL = A.c.DL
         DL ? w.i({ see: `📂 ${DL.name}` }) : w.i({ see: '📭 no directory' })
