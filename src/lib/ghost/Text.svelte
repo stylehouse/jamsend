@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { objectify, type TheC } from "$lib/data/Stuff.svelte";
+    import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte";
+    import { Travel } from "$lib/mostly/Selection.svelte"
     // Text.svelte — ghost depositing snap-line and diff functions onto H.* via eatfunc.
     //
     // Mounted in Ghost.svelte alongside Agency, Machinery, Story, Cyto.
@@ -83,141 +84,165 @@
     await M.eatfunc({
 
 //#region wormhole Lines
-    // ── encode_wh_lines ────────────────────────────────────────────────────
-    // Encode an arbitrarily deep tree of plain-sc items to snap-line text.
-    //
-    // root_sc   — the depth-0 header (e.g. {Library:1}, {Present:1}).
-    // items     — depth-1 entries; each may carry .children for depth 2, etc.
-    //
-    // Returns { snap, errors }.  Any object or function value on any sc is a
-    // fatal mung error: the offending item is omitted and the error recorded.
-    // The caller should surface errors prominently (they indicate a coding bug).
-    //
-    // WhlItem: { sc: Record<string,any>, children?: WhlItem[] }
-
-    encode_wh_lines(
+// ── encode_wh_lines ────────────────────────────────────────────────────
+// Encode a tree of {sc, children?} items to snap-line text via Travel.
+//
+// root_sc  — the depth-0 header line, e.g. {Library:1}
+// items    — depth-1 entries; each may carry .children for depth 2+
+//
+// Returns { snap, errors }.
+//
+// Errors are FATAL — any mung (object/function value on any sc) or dupe
+// node causes the offending line to be skipped and the error to record
+// the full T.c.path of ancestor snap lines so you can see exactly where
+// the problem is.  The caller should refuse to save if errors.length > 0.
+    async encode_wh_lines(
         root_sc: Record<string, any>,
         items: Array<{ sc: Record<string, any>, children?: any[] }>
-    ): { snap: string, errors: string[] } {
+    ): Promise<{ snap: string, errors: string[] }> {
+        const H = this as any
         const errors: string[] = []
-        const lines: string[] = []
+        const snap_lines: string[] = []
+        const seen = new Set<TheC>()
 
-        const check = (sc: Record<string, any>, where: string): boolean => {
-            for (const [k, v] of Object.entries(sc)) {
-                if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
-                    errors.push(`mung at ${where}: key "${k}" is ${typeof v} — encode_wh_lines refuses object values`)
-                    return false
+        // Build a TheC tree for Travel to walk.
+        // Each item's sc becomes a TheC; children are i()'d into the parent
+        // so Travel's n.o({}) call finds them as direct children.
+        const build_into = (parent: TheC, sc: Record<string,any>, children?: any[]) => {
+            const c = _C({ ...sc })
+            parent.i(c)
+            for (const child of children ?? []) build_into(c, child.sc, child.children)
+        }
+        const rootC = _C({ ...root_sc })
+        for (const item of items ?? []) build_into(rootC, item.sc, item.children)
+
+        // Walk with Travel — match_sc:{} visits every child at every depth.
+        const Tr = new Travel()
+        await Tr.dive({
+            n: rootC,
+            match_sc: {},
+            each_fn: async (n: TheC, T: Travel) => {
+                const d = T.c.path.length - 1  // 0 for root, 1 for items, etc.
+
+                // Dupe detection: same C object in two places in the tree.
+                if (seen.has(n)) {
+                    const path_str = T.c.path
+                        .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
+                        .join(' → ')
+                    errors.push(`dupe node at depth ${d} — path: ${path_str}`)
+                    T.sc.not = 1
+                    return
                 }
-            }
-            return true
-        }
+                seen.add(n)
 
-        if (check(root_sc, 'root')) {
-            lines.push(this.encode_stringies(root_sc))
-        }
+                // Encode via enLine with q.check so mung is flagged.
+                const q: any = { d, check: true }
+                const line = H.enLine(n, q)
 
-        const walk = (items: Array<{ sc: Record<string,any>, children?: any[] }>, d: number) => {
-            for (const item of items) {
-                if (!check(item.sc, `depth ${d}`)) continue
-                lines.push(this.ind(d) + this.encode_stringies(item.sc))
-                if (item.children?.length) walk(item.children, d + 1)
-            }
-        }
-        walk(items, 1)
+                if (q.objecties.mung) {
+                    // Build path from ancestor snap_Lines stored in prior each_fn calls.
+                    const path_str = T.c.path
+                        .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
+                        .join(' → ')
+                    errors.push(`mung keys [${q.mung?.join(', ')}] at depth ${d} — path: ${path_str}`)
+                    T.sc.not = 1   // skip this node and all its children
+                    return
+                }
 
-        return { snap: lines.join('\n') + '\n', errors }
+                // Store snap_Line on c.c (not c.sc) so it's available for child
+                // path debug without polluting the snap output.
+                n.c.snap_Line = line ?? ''
+                snap_lines.push(line ?? '')
+            },
+        })
+
+        return { snap: snap_lines.join('\n') + '\n', errors }
     },
 
     // ── decode_wh_lines ────────────────────────────────────────────────────
-    // Decode snap-line text into C particles via per-depth handler functions.
+    // Decode snap-line text into a TheC tree.  Returns { c, errors }.
     //
-    // handlers[0] — called for each depth-1 line  (parent = root_container | null)
-    // handlers[1] — called for each depth-2 line  (parent = TheC from handlers[0])
-    // …and so on for arbitrary depth.
+    // c is the depth-0 root TheC (e.g. sc:{Library:1}) with all children
+    // properly i()'d into it — ready for .o() queries at every depth.
+    // Returns c:null on fatal error (no root found, or parse error on root).
     //
-    // A handler receives (sc, parentC) and returns the TheC it created/updated,
-    // or null to skip children of that line.  Returning null does not add errors.
+    // Stack discipline: we maintain a path-like stack [{d,c}].  On each line
+    // we pop until the top entry is shallower than d, then parent.i(newC),
+    // then push.  This means:
     //
-    // Rules:
-    //   • Any line more than one level deeper than the previous is an error and skipped.
-    //   • Object values in parsed sc are errors (the line is skipped).
-    //   • Missing handler for a depth is an error (line skipped, no children).
+    //   Library:1
+    //     Book:LeafJuggle         ← stack [Library, LeafJuggle]
+    //       note:1 todo:fix       ← stack [Library, LeafJuggle, note]
+    //     Book:LeafFarm           ← pop note+LeafJuggle, stack [Library, LeafFarm]
     //
-    // root_container — optional TheC passed as parent to depth-1 handlers.
+    // Errors:
+    //   • More than one depth-0 line → error, second root ignored.
+    //   • Depth jump > 1 (e.g. d=0 → d=2) → error, line skipped.
+    //   • objecties.mung present → error, line skipped (encoded mung = bad encode).
+    //   • Object value in stringies → error, line skipped.
 
-    decode_wh_lines(
-        snap: string,
-        handlers: Array<((sc: Record<string, any>, parent: any) => any) | null>,
-        root_container: any = null
-    ): { errors: string[], root_sc: Record<string, any> } {
+    decode_wh_lines(snap: string): { C: TheC | null, errors: string[] } {
         const errors: string[] = []
-        let root_sc: Record<string, any> = {}
+        if (!snap?.trim()) return { C: null, errors: ['empty snap'] }
 
-        if (!snap) return { errors, root_sc }
-
-        // stack entries: { d, container }
-        // d=0 entry is always the root, container = root_container
-        const stack: Array<{ d: number, container: any }> = [
-            { d: 0, container: root_container }
-        ]
+        interface SE { d: number; C: TheC }
+        const stack: SE[] = []
+        let root: TheC | null = null
         let prev_d = -1
 
-        for (const raw_line of snap.split('\n')) {
-            const line = raw_line  // preserve indent
-            if (!line.trim()) continue
+        for (const raw of snap.split('\n')) {
+            if (!raw.trim()) continue
 
-            let parsed: { d: number, stringies: Record<string, any> } | null = null
-            try {
-                parsed = this.deL(line) as any
-            } catch (e) {
-                errors.push(`parse error: ${line.trim()}`)
+            let parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null = null
+            try { parsed = this.deL(raw) } catch {
+                errors.push(`parse error: "${raw.trim()}"`)
                 continue
             }
             if (!parsed) continue
 
-            const { d, stringies: sc } = parsed
+            const { d, objecties, stringies: sc } = parsed
 
-            // depth jump check — no more than one deeper than previous
+            // Depth jump check — no more than one level deeper than previous.
             if (prev_d >= 0 && d > prev_d + 1) {
-                errors.push(`depth jump ${prev_d}→${d} at: ${line.trim()}`)
+                errors.push(`depth jump ${prev_d}→${d}: "${raw.trim()}"`)
                 continue
             }
             prev_d = d
 
-            // check for mung (object values in parsed sc)
-            let munged = false
-            for (const [k, v] of Object.entries(sc)) {
-                if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
-                    errors.push(`mung at depth ${d}: key "${k}" is ${typeof v}`)
-                    munged = true
-                }
+            // Mung check — objecties.mung means this line was encoded with munged
+            // keys; that's a bug in the encoder, refuse to load it.
+            if (objecties?.mung?.length) {
+                errors.push(`mung keys [${objecties.mung.join(', ')}] at depth ${d}: "${raw.trim()}"`)
+                continue
             }
-            if (munged) continue
+
+            const C = _C({ ...sc })
 
             if (d === 0) {
-                root_sc = sc
-                // reset stack keeping the root entry
-                stack.length = 1
+                if (root !== null) {
+                    errors.push(`second depth-0 root ignored: "${raw.trim()}"`)
+                    continue
+                }
+                root = C
+                stack.length = 0
+                stack.push({ d: 0, C })
                 continue
             }
 
-            // pop stack to the nearest ancestor shallower than d
-            while (stack.length > 1 && stack[stack.length - 1].d >= d) stack.pop()
-            const parent_entry = stack[stack.length - 1]
+            // Pop stack until top is the immediate parent (depth < d).
+            while (stack.length > 0 && stack[stack.length - 1].d >= d) stack.pop()
 
-            // find handler (handlers[0] = depth 1, handlers[d-1] = depth d)
-            const handler = handlers[d - 1]
-            if (!handler) {
-                errors.push(`no handler for depth ${d}: ${line.trim()}`)
+            if (!stack.length) {
+                errors.push(`no parent for depth ${d}: "${raw.trim()}"`)
                 continue
             }
 
-            const result = handler(sc, parent_entry.container)
-            // push result (even if null — children will get null as parent, handler decides)
-            stack.push({ d, container: result ?? null })
+            stack[stack.length - 1].C.i(C)
+            stack.push({ d, C })
         }
 
-        return { errors, root_sc }
+        if (!root) errors.push('no depth-0 root found')
+        return { C: root, errors }
     },
 
 //#region snap-line codec
@@ -360,7 +385,6 @@
 
         q.stringies = stringies
         q.objecties = Object.keys(objecties).length ? objecties : undefined
-        q.mung = mung
 
         const line = this.enL({ d: q.d, objecties: q.objecties, stringies })
         q.snap_line = line

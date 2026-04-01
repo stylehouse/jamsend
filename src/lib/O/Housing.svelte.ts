@@ -200,8 +200,19 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // o_elvis / _o_elvis: read the in-flight elvis from w.c.e.
-    // Stamps w.oai({elvising:type}) to advertise handler to _Aw_think.
+    // o_elvis / _o_elvis: declare and consume a typed elvis inside a worker method.
+    // Usage inside any w:Foo method:
+    //   async Foo(A: TheC, w: TheC, e?: TheC) {
+    //       for (const ev of this.o_elvis(w, 'doThing')) {
+    //           await this.handle_thing(w, ev.sc.payload)
+    //       }
+    //       // … ambient work …
+    //   }
+    // Two effects:
+    //   1. Stamps w/{o_elvis:'doThing'} so _Aw_think knows this method handles
+    //      that elvis type directly — rather than dispatching to H.doThing
+    //   2. Returns [e] if the current tick's e.sc.elvis === type; else [].
+    //      Maybe many at once in the future.
     // -------------------------------------------------------------------------
     o_elvis(w: TheC, type: string): TheC[] {
         return this._o_elvis(w, type)
@@ -1272,7 +1283,7 @@ export class House extends StorableHousing {
 
         for (const { req, finish } of H.o_elvis_req(w, 'rw_op')) {
             if (!rw.o({ req }).length) {
-                const rw_req = rw.i({ req })
+                const rw_req = await rw.i({ req })
                 rw_req.c.finish = finish
             }
         }
