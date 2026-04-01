@@ -7,6 +7,7 @@
     import fcose          from 'cytoscape-fcose'
     import type { House } from '$lib/O/Housing.svelte'
     import { _C, type TheC }  from '$lib/data/Stuff.svelte'
+    import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
 
     cytoscape.use(fcose)
 
@@ -95,29 +96,46 @@
 
     function start_anim_interval() {
         if (anim_interval) return
-        anim_interval = setInterval(tick_animations, 80)   // ~12fps for aiming
+        anim_interval = setInterval(tick_animations, 40)
     }
     function stop_anim_interval() {
         if (anim_interval) { clearInterval(anim_interval); anim_interval = null }
     }
 
     function tick_animations() {
-        animations.c.ticks = (animations.c.ticks ?? 0) + 1
-        if (animations.c.ticks > 100) { rush_animations(); return }
+        // in seconds
+        const now     = performance.now() / 1000
+        const started = animations.sc.started_at
 
+        if (now - started > 10) { rush_animations(); return }
+
+        // a %cue,regularly can decide to get on with the %cue,delay after it
+        let wrapping_up = false
         for (const mg of animations.o({ migrate: 1 }) as TheC[]) {
-            // find first non-done cue in order
-            const cues = (mg.o({ cue: 1 }) as TheC[])
-                .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
-            const cue = cues.find(c => !c.c.done)
-            if (!cue) { mg.drop(mg); continue }
+            const pending = (mg.o({ cue: 1 }) as TheC[]).find(c => !c.c.done)
+            if (!pending) { mg.drop(mg); continue }
 
-            if (cue.sc.regularly) {
-                const done = cue.c.fn?.()
-                if (done) cue.drop(cue)       // advance to next cue next tick
+            const delay = pending.sc.delay as number | undefined
+            const until = pending.sc.until as number | undefined
+
+            // not ready yet
+            // < if before next interval we should pool it for an exact timeout
+            if (!wrapping_up && delay != null && now < started + delay) continue
+
+            // time expired — auto-complete, next tick picks up next cue
+            if (until != null && now >= started + until) {
+                pending.drop(pending); continue
+            }
+
+            if (pending.sc.regularly) {
+                const done = pending.sc.fn()
+                if (done) {
+                    pending.drop(pending)
+                    if (pending.sc.wraps_up) wrapping_up = true
+                }
             } else {
-                cue.c.fn?.()
-                cue.drop(cue)                 // immediate cues run once and vanish
+                pending.sc.fn()
+                pending.drop(pending)
             }
         }
 
@@ -126,59 +144,104 @@
 
     function rush_animations() {
         for (const mg of animations.o({ migrate: 1 }) as TheC[]) {
-            const finality = (mg.o({ cue: 1 }) as TheC[]).find(c => c.sc.finality)
-            finality?.c.fn?.()
+            for (let fin of mg.o({ cue: 1,finality:1 })) {
+                fin.sc.fn()
+            }
         }
         animations = _C({ animations: 1 })
         stop_anim_interval()
     }
 
-
-
-    function flying(mg: any, dur: number) {
+    function flying(wave:TheC, mg: TheC, dur: number) {
         const from_id   = mg.sc.id     as string
         const toward_id = mg.sc.toward as string
+        let upsert = wave.o({upsert:1,id:toward_id})[0]
         const proj_id   = `${from_id}_proj`
-
-        const am = animations.i({ ...mg.sc })
-
-        const c1 = am.i({ cue: 'hide_arrival', order: 1 })
-        c1.c.fn = () => {
-            cy.getElementById(toward_id).style({ opacity: 0 })
-            am.c.src_pos = cy.getElementById(from_id).renderedPosition()
+        let since = now_in_seconds_with_ms()
+        let now = () => {
+            return (now_in_seconds_with_ms() - since).toFixed(2)
         }
 
-        const c2 = am.i({ cue: 'spawn_proj', order: 2 })
-        c2.c.fn = () => {
-            const from = cy.getElementById(from_id)
-            if (!from.length) return
-            const proj = cy.add({ group: 'nodes', data: { id: proj_id } })
-            proj.style({ ...from.style(), opacity: 1 })
-            proj.renderedPosition(am.c.src_pos ?? from.renderedPosition())
-        }
+        const am = animations.i({ migrate: 1, from: from_id, toward: toward_id })
+        am.i({ 
+            cue: 'hide_arrival', 
+            fn: () => {
+                let to = cy.getElementById(toward_id)
+                to.style({ opacity: 0 }) // debug
+                if (upsert.sc.parent) {
+                    // make it spawn in the middle of there, rather than drifting in...
+                    let pa = cy.getElementById(upsert.sc.parent)
+                    console.log(`Migrate ${now()}: new node shifted`)
+                    to.renderedPosition(pa)
+                }
+            } 
+        })
+        am.i({ 
+            cue: 'set-parent', 
+            delay: dur/2,
+            fn: () => {
+                if (upsert.sc.parent) {
+                    // migrations dont add the new node to the parent immediately
+                    //  as they want to drift over
+                    //  before the bounding box is made to expand for them
+                    let to = cy.getElementById(toward_id)
+                    to.move({parent:upsert.sc.parent})
+                    console.log(`Migrate ${now()}: new node parented`)
+                }
+            },
+        })
+        am.i({ 
+            cue: 'spawn_proj', 
+            fn: () => {
+                const from_el = cy.getElementById(from_id)
+                if (!from_el.length) return
+                from_el.style({ opacity: 0 }) // debug
+                let data = { id: proj_id }
+                if (upsert.sc.label != null) data.label = upsert.sc.label
+                const proj = cy.add({ group: 'nodes', data })
+                proj.style({ ...upsert.sc.style, opacity: 1 })
+                proj.renderedPosition(from_el.renderedPosition())
 
-        const c3 = am.i({ cue: 'aim', until: dur, regularly: 1 })
-        c3.c.fn = () => {
-            const proj   = cy.getElementById(proj_id)
-            const toward = cy.getElementById(toward_id)
-            if (!proj.length || !toward.length) return true
-            const tpos = toward.renderedPosition()
-            const cur  = proj.renderedPosition()
-            const dx = tpos.x - cur.x
-            const dy = tpos.y - cur.y
-            if (Math.sqrt(dx*dx + dy*dy) < 8) return true   // arrived
-            proj.renderedPosition({ x: cur.x + dx * 0.35, y: cur.y + dy * 0.35 })
-            return false
-        }
+                let to = cy.getElementById(toward_id).renderedPosition()
+                let from = cy.getElementById(from_id).renderedPosition()
+                const dx = to.x - from.x
+                const dy = to.y - from.y
+                const dist = Math.sqrt(dx * dx + dy * dy).toFixed(1)
+                console.log(`Migrate ${now()}: [${from.x}, ${from.y}] -> [${to.x}, ${to.y}] | Δ: <${dx.toFixed(1)}, ${dy.toFixed(1)}> | Dist: ${dist}`)
+            } 
+        })
 
-        const c4 = am.i({ cue: 'arrive', delay: dur, finality: 1 })
-        c4.c.fn = () => {
-            cy.getElementById(from_id).remove()
-            cy.getElementById(proj_id).remove()
-            cy.getElementById(toward_id).style({ opacity: 1 })
-        }
+        am.i({ 
+            cue: 'aim', 
+            regularly: 1, 
+            until: dur,
+            wraps_up: 1, // %cue:arrive immediately after this returns true
+            fn: () => {
+                const proj   = cy.getElementById(proj_id)
+                const toward = cy.getElementById(toward_id)
+                if (!proj.length || !toward.length) return true
+                const tpos = toward.renderedPosition()
+                const cur  = proj.renderedPosition()
+                const dx = tpos.x - cur.x
+                const dy = tpos.y - cur.y
+                if (Math.sqrt(dx * dx + dy * dy) < 8) return true
+                proj.renderedPosition({ x: cur.x + dx * 0.35, y: cur.y + dy * 0.35 })
+                console.log(`Migrate ${now()}: aiming`)
+                return false
+            } 
+        })
 
-        return am
+        am.i({ 
+            cue: 'arrive', 
+            delay: dur, 
+            finality: 1, 
+            fn: () => {
+                cy.getElementById(proj_id).remove()
+                cy.getElementById(from_id).remove()
+                cy.getElementById(toward_id).style({ opacity: 1 })
+                console.log(`Migrate ${now()}: arrive`)
+            } 
+        })
     }
 
 //#endregion
@@ -186,8 +249,8 @@
 
     function apply(wave: TheC, dur: number) {
         if (!cy) return
-        rush_animations()                          // finalize any in-flight
-        animations = _C({ animations: 1 })        // fresh slate
+        rush_animations()
+        animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
         if (wave.sc.cyto_wipe) {
             console.log(`%cyto_wipe removes and re-adds the entire graph`)
@@ -229,7 +292,7 @@
             } else {
                 const data: any = { id, label: nd.sc.label }
                 const parent = nd.sc.parent as string | undefined
-                if (parent) data.parent = parent
+                if (parent && !migrating.has(id)) data.parent = parent
                 const added = cy.add({ group: 'nodes', data })
                 added.style({ ...imm, ...anim })
                 if (nd.sc.appear_from) {
@@ -266,7 +329,7 @@
         // 5. migrations
         for (const mg of wave.o({ migrate: 1 }) as TheC[]) {
             // < attach other swooshing-over-there modes here
-            let am = flying(mg,dur)
+            let am = flying(wave,mg,dur)
             if (!dur) {
                 // no time, forget everything non-essential
                 am.o({cue:1}).filter(cu => !cu.sc.finality).map(cu => cu.drop(cu))
