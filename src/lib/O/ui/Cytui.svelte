@@ -6,7 +6,7 @@
     import cytoscape      from 'cytoscape'
     import fcose          from 'cytoscape-fcose'
     import type { House } from '$lib/O/Housing.svelte'
-    import type { TheC }  from '$lib/data/Stuff.svelte'
+    import { _C, type TheC }  from '$lib/data/Stuff.svelte'
 
     cytoscape.use(fcose)
 
@@ -87,9 +87,107 @@
         }
         return { anim, imm }
     }
+//#endregion
+//#region animations
+
+    let animations: TheC = $state(_C({ animations: 1 }))
+    let anim_interval: ReturnType<typeof setInterval> | null = null
+
+    function start_anim_interval() {
+        if (anim_interval) return
+        anim_interval = setInterval(tick_animations, 80)   // ~12fps for aiming
+    }
+    function stop_anim_interval() {
+        if (anim_interval) { clearInterval(anim_interval); anim_interval = null }
+    }
+
+    function tick_animations() {
+        animations.c.ticks = (animations.c.ticks ?? 0) + 1
+        if (animations.c.ticks > 100) { rush_animations(); return }
+
+        for (const mg of animations.o({ migrate: 1 }) as TheC[]) {
+            // find first non-done cue in order
+            const cues = (mg.o({ cue: 1 }) as TheC[])
+                .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
+            const cue = cues.find(c => !c.c.done)
+            if (!cue) { mg.drop(mg); continue }
+
+            if (cue.sc.regularly) {
+                const done = cue.c.fn?.()
+                if (done) cue.drop(cue)       // advance to next cue next tick
+            } else {
+                cue.c.fn?.()
+                cue.drop(cue)                 // immediate cues run once and vanish
+            }
+        }
+
+        if (!animations.oa({ migrate: 1 })) stop_anim_interval()
+    }
+
+    function rush_animations() {
+        for (const mg of animations.o({ migrate: 1 }) as TheC[]) {
+            const finality = (mg.o({ cue: 1 }) as TheC[]).find(c => c.sc.finality)
+            finality?.c.fn?.()
+        }
+        animations = _C({ animations: 1 })
+        stop_anim_interval()
+    }
+
+
+
+    function flying(mg: any, dur: number) {
+        const from_id   = mg.sc.id     as string
+        const toward_id = mg.sc.toward as string
+        const proj_id   = `${from_id}_proj`
+
+        const am = animations.i({ ...mg.sc })
+
+        const c1 = am.i({ cue: 'hide_arrival', order: 1 })
+        c1.c.fn = () => {
+            cy.getElementById(toward_id).style({ opacity: 0 })
+            am.c.src_pos = cy.getElementById(from_id).renderedPosition()
+        }
+
+        const c2 = am.i({ cue: 'spawn_proj', order: 2 })
+        c2.c.fn = () => {
+            const from = cy.getElementById(from_id)
+            if (!from.length) return
+            const proj = cy.add({ group: 'nodes', data: { id: proj_id } })
+            proj.style({ ...from.style(), opacity: 1 })
+            proj.renderedPosition(am.c.src_pos ?? from.renderedPosition())
+        }
+
+        const c3 = am.i({ cue: 'aim', until: dur, regularly: 1 })
+        c3.c.fn = () => {
+            const proj   = cy.getElementById(proj_id)
+            const toward = cy.getElementById(toward_id)
+            if (!proj.length || !toward.length) return true
+            const tpos = toward.renderedPosition()
+            const cur  = proj.renderedPosition()
+            const dx = tpos.x - cur.x
+            const dy = tpos.y - cur.y
+            if (Math.sqrt(dx*dx + dy*dy) < 8) return true   // arrived
+            proj.renderedPosition({ x: cur.x + dx * 0.35, y: cur.y + dy * 0.35 })
+            return false
+        }
+
+        const c4 = am.i({ cue: 'arrive', delay: dur, finality: 1 })
+        c4.c.fn = () => {
+            cy.getElementById(from_id).remove()
+            cy.getElementById(proj_id).remove()
+            cy.getElementById(toward_id).style({ opacity: 1 })
+        }
+
+        return am
+    }
+
+//#endregion
+//#region apply
 
     function apply(wave: TheC, dur: number) {
         if (!cy) return
+        rush_animations()                          // finalize any in-flight
+        animations = _C({ animations: 1 })        // fresh slate
         const ms = Math.round(dur * 1000)
         if (wave.sc.cyto_wipe) {
             console.log(`%cyto_wipe removes and re-adds the entire graph`)
@@ -167,43 +265,15 @@
  
         // 5. migrations
         for (const mg of wave.o({ migrate: 1 }) as TheC[]) {
-            const id     = mg.sc.id     as string
-            const el     = cy.getElementById(id)
-            const toward = cy.getElementById(mg.sc.toward as string)
-            if (!el.length) continue
-            if (!toward.length || ms <= 0) {
-                const tp = mg.sc.then_parent as string | undefined
-                tp ? el.move({ parent: tp }) : el.remove()
-                continue
-            }
-            const tpos   = toward.renderedPosition()
-            const fly_ms = Math.round(ms * 0.75)
-            const shr_ms = Math.round(ms * 0.20)
-            if (mg.sc.then_parent) {
-                const tp = mg.sc.then_parent as string
-                el.animate({ renderedPosition: tpos }, {
-                    duration: fly_ms, easing: 'ease-in-out-cubic',
-                    complete: () => { const s = cy.getElementById(id); if (s.length) s.move({ parent: tp }) }
-                })
-            } else if (mg.sc.mouthful_expire) {
-                el.animate({ style: { opacity: 0, width: 3, height: 3 } }, {
-                    duration: Math.round(ms * 0.40), easing: 'ease-out-cubic',
-                    complete: () => cy.getElementById(id).remove()
-                })
-            } else {
-                el.animate({ renderedPosition: tpos }, {
-                    duration: fly_ms, easing: 'ease-in-cubic',
-                    complete: () => {
-                        const s = cy.getElementById(id)
-                        if (!s.length) return
-                        s.animate({ style: { opacity: 0, width: 4, height: 4 } }, {
-                            duration: shr_ms, easing: 'ease-out-cubic',
-                            complete: () => cy.getElementById(id).remove()
-                        })
-                    }
-                })
+            // < attach other swooshing-over-there modes here
+            let am = flying(mg,dur)
+            if (!dur) {
+                // no time, forget everything non-essential
+                am.o({cue:1}).filter(cu => !cu.sc.finality).map(cu => cu.drop(cu))
             }
         }
+
+        if (animations.oa({ migrate: 1 })) start_anim_interval()
  
         // 6. layout
         if (wave.o({ upsert:      1 }).length
