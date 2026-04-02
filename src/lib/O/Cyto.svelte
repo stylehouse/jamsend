@@ -38,6 +38,8 @@
     import { ex, indent, sex } from "$lib/Y.svelte";
 
     let { M } = $props()
+    let V = {}
+    V.gone_debug = 1
 
     onMount(async () => {
     await M.eatfunc({
@@ -247,7 +249,8 @@
                 }
             },
 
-            resolved_fn: async (_T: Travel, _N: Travel[], goners: TheD[]) => {
+            resolved_fn: async (T: Travel, _N: Travel[], goners: TheD[]) => {
+                V.gone_debug && goners.length && T.sc.D.i({goners}) // debug
                 for (const g of goners)
                     this.cyto_collect_goner_scan_ids(g, Se.c.scan_goners_by_id as Map<string,TheD>)
             },
@@ -453,21 +456,6 @@
         }
         walk(topC)
 
-        // detect neu: T.sc.Dip_scanid_is_new was set by Dip_assign in Se1 each_fn
-        const is_neu_scan_id = (scan_id: string): boolean => {
-            // walk Se1.c.T to find if any T has this scan_id as a new Dip
-            // shortcut: if goners_by_id has the scan_id → it's gone (not neu)
-            // neu if it's NOT in goners and was T.sc.Dip_scanid_is_new
-            // simplest: check if the D's Dip was assigned this tick = T.sc.Dip_scanid_is_new
-            // We can't easily walk T** here, so instead: neu if scan_id not in goners_by_id
-            // and scan_id is not in the PREVIOUS tick's ids.
-            // Use Se1.c.T.forward to find the T with this scan_id — but that's heavy.
-            // Practical: any node not in goners is either persistent or new.
-            // Se1.c.neu_scan_ids is built cheaply:
-            const neu = Se1.c.neu_scan_ids as Set<string> | undefined
-            return neu?.has(scan_id) ?? false
-        }
-
         const blue_sc = (source:TheC, target:TheC, directed: boolean, extra: any = {}) => ({
             cyto_edge: 1 as const, ref: 1 as const,
             source, target,
@@ -488,27 +476,24 @@
                 Cs[i].i(blue_sc(Cs[i], Cs[i+1], false))
         }
 
+        let AIM = this.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0].o({run:1})[0].sc.done == 6
+            && V.gone_debug
+        if (AIM) debugger
         // migration: goner whose n ref appears as a neu C
         for (const [_gid, gD] of goners_by_id) {
             const n = gD.c.T?.sc.n as TheC | undefined
+            let AIM = this.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0].o({run:1})[0].sc.done == 6
+            if (gD.sc.the_leaf && AIM) debugger
             if (!n) continue
-            const neu_Cs = (n_to_Cs.get(n) ?? []).filter(C => is_neu_scan_id(C.sc.scan_id as string))
+            const neu_Cs = (n_to_Cs.get(n) ?? []).filter(
+                C => Se1.c.neu_scan_ids.has(C.sc.scan_id)
+            )
             if (!neu_Cs.length) continue
             const to_C      = neu_Cs[0]
             const to_id     = to_C.sc.cyto_id as string
             const from_id   = (gD.c.T?.sc.C as TheC | undefined)?.sc.cyto_id as string | undefined
             if (!from_id) continue
             to_C.i({ cyto_migration: 1, from_id, to_id })
-        }
-
-        // build neu_scan_ids set for is_neu_scan_id — do this here for completeness
-        // (was missing from cyto_scan, added now on Se1.c)
-        if (!Se1.c.neu_scan_ids) {
-            const neu = new Set<string>()
-            await Se1.c.T?.forward(async (T: Travel) => {
-                if (T.sc.Dip_scanid_is_new) neu.add(T.sc.Dip_scanid as string)
-            })
-            Se1.c.neu_scan_ids = neu
         }
     },
 

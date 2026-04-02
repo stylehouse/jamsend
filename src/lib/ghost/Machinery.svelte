@@ -148,24 +148,31 @@
     async Yaing(w: TheC, other_w: TheC) {
         const lh = w.oai({ hand: 'left'  })
         const rh = w.oai({ hand: 'right' })
+        let check = (leaf) => {
+            window.firstleaf ||= leaf
+            if (window.firstleaf != leaf) throw `many leaf`
+        }
  
         // rh exits first — passes the leaf to other/*
         for (let leaf of rh.o({ leaf: 1 })) {
             await rh.r({ leaf: 1 }, {})        // evict from rh (keep C alive)
-            other_w.i(leaf)   // place same C object
+            check(leaf)
+            check(other_w.i(leaf))   // place same C object
         }
  
         // lh passes to rh
         for (let leaf of lh.o({ leaf: 1 })) {
             await lh.r({ leaf: 1 }, {})
-            rh.i(leaf)
+            check(leaf)
+            check(rh.i(leaf))
         }
 
         // 
         // so we see a leaf in the left hand placed by the second w:* to occur
         for (let leaf of w.o({ leaf: 1 })) {
             await w.r({ leaf: 1 }, {})
-            w.oai({ hand: 'left' }).i(leaf)
+            check(leaf)
+            check(w.oai({ hand: 'left' }).i(leaf))
         }
     },
 
