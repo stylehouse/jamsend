@@ -29,6 +29,26 @@
         ?.sc.Book ?? null)
     let isActive = (book) => book.sc.Book == activeBook
     
+    // ── add book ──────────────────────────────────────────────────────────
+    let add_book_text = $state('')
+    let adding_book   = $state(false)
+
+    function do_add_book() {
+        const name = add_book_text.trim()
+        if (!name || !Li) return
+        // idempotent — don't double-add
+        if ((Li as TheC).o({ Book: name }).length) return
+        ;(Li as TheC).i({ Book: name })
+        ;(Li as TheC).bump_version()
+        add_book_text = ''
+        adding_book   = false
+    }
+
+    function do_remove_book(book: TheC) {
+        if (!Li) return
+        ;(Li as TheC).drop(book)
+        ;(Li as TheC).bump_version()
+    }
 
     // ── editable peel field per book ─────────────────────────────────────
     // editing[bookName] = current text in the input (or null = not editing)
@@ -88,6 +108,19 @@
 <div class="library-run">
     <div class="lr-header">
         <span class="lr-title">📚 Library</span>
+        {#if adding_book}
+            <input
+                class="lr-add-input"
+                type="text"
+                placeholder="BookName"
+                bind:value={add_book_text}
+                onkeydown={e => { if (e.key === 'Enter') do_add_book(); if (e.key === 'Escape') adding_book = false }}
+            />
+            <button class="lr-btn save" onclick={do_add_book}>+</button>
+            <button class="lr-btn" onclick={() => adding_book = false}>×</button>
+        {:else}
+            <button class="lr-btn save" onclick={() => { adding_book = true; setTimeout(() => document.querySelector('.lr-add-input')?.focus(), 0) }}>+ book</button>
+        {/if}
         <button class="lr-btn reset" onclick={reset_story}>↺ reset Story</button>
     </div>
 
@@ -110,6 +143,7 @@
                     <th>ok%</th>
                     <th>last run</th>
                     <th>extra sc</th>
+                    <th></th>
                     <th></th>
                 </tr>
             </thead>
@@ -141,6 +175,11 @@
                                 class="lr-btn {isActive(book) ? 'active' : 'idle'}"
                                 onclick={() => activate(book)}
                             >{book.sc.active ? '▶ active' : 'activate'}</button>
+                        </td>
+                        <td>
+                            <button class="lr-btn remove"
+                                onclick={() => do_remove_book(book)}
+                                title="remove {book.sc.Book}">×</button>
                         </td>
                     </tr>
                 {/each}
@@ -213,4 +252,12 @@
     .lr-btn.idle   { background: #222;    border-color: #555; color: #aaa; }
     .lr-btn.reset  { background: #2a1a1a; border-color: #844; color: #c88; }
     .lr-btn:hover  { filter: brightness(1.2); }
+    .lr-btn.remove { background: #2a1a1a; border-color: #844; color: #c88; }
+    .lr-btn.remove:hover { background: #3a1a1a; }
+    .lr-add-input {
+        font-family: monospace; font-size: 0.78rem;
+        background: #222; color: #cdf;
+        border: 1px solid #556; border-radius: 2px;
+        padding: 0.1rem 0.35rem; width: 120px;
+    }
 </style>
