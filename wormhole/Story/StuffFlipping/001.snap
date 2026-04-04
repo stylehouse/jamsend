@@ -4,11 +4,20 @@ Snap:H
       {"mung":["age"]}	self,round
       w:StuffFlipping
         {"mung":["age"]}	self,round
-        hand:left
-          bug,shelf,est:171717171717
-          bug,shelf
-          bug,the_w:Ying
-            terpestra
+        test:C.resolve() unambiguity in the past and future
+          hand:left
+            bug,shelf,est:171717171717
+            bug,shelf
+            bug,the_w:Ying
+              terpestra
+        test:C.resolve() bug about leaf
+          tracing_run,Dip:scanid,value:scanid_1_1,i:5
+          tracing_run,tracing,the_hand:left
+          tracing_run,tracing,the_hand:right
+          tracing_run,tracing,the_whatsit
+          tracing_run,tracing,the_other:3
+          test:C.resolve() leaf goner check,passed:true,goner_count
+            tracing_run,tracing,the_leaf
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
@@ -24,7 +33,12 @@ Snap:cytowave
     style,padding:12px
     style,text-halign:center
     style,text-valign:top
-  upsert,id:cytoid_1_1_1,label:left,parent:cytoid_1_1
+  {"upsert":1,"id":"cytoid_1_1_1","label":"test:C.resolve…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  upsert,id:cytoid_1_1_1_1,label:left,parent:cytoid_1_1
     style,background-color:#1a1a28
     style,background-opacity:0.6
     style,border-color:#5a5a9a
@@ -35,27 +49,39 @@ Snap:cytowave
     style,font-style:italic
     style,padding:7px
     style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_1_1","label":"bug:1\nshelf:1\nest:171717171717","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_1_2","label":"bug:1\nshelf:1\nest:171717171717","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_1_2","label":"bug:1\nshelf:1","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_1_3","label":"bug:1\nshelf:1","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_1_3","label":"bug:1\nthe_w:Ying","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_1_4","label":"bug:1\nthe_w:Ying","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_1_3_2","label":"terpestra:1","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_1_4_2","label":"terpestra:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2","label":"test:C.resolve…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_1","label":"test:C.resolve…\npassed\ngoner_count:1","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
     style,width:16
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
-  edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
-  edge_upsert,id:cytoid_1_1_1_3_1,source:cytoid_1_1_1,target:cytoid_1_1_1_3
-  edge_upsert,id:cytoid_1_1_1_3_2_1,source:cytoid_1_1_1_3,target:cytoid_1_1_1_3_2
+  edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
+  edge_upsert,id:cytoid_1_1_1_1_3_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_3
+  edge_upsert,id:cytoid_1_1_1_1_4_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_4
+  edge_upsert,id:cytoid_1_1_1_1_4_2_1,source:cytoid_1_1_1_1_4,target:cytoid_1_1_1_1_4_2
+  edge_upsert,id:cytoid_1_1_2_1_1,source:cytoid_1_1_2,target:cytoid_1_1_2_1

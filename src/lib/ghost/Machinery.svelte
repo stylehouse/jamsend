@@ -52,7 +52,11 @@
 
 
     async StuffFlipping(A, w) {
-        const lh = w.oai({ hand: 'left'  })
+
+
+
+        let o = w.i({test:"C.resolve() unambiguity in the past and future"})
+        const lh = o.oai({ hand: 'left'  })
         let temporary = lh.resolve 
         try {
             let it
@@ -71,6 +75,54 @@
         finally {
             lh.resolve = temporary
         }
+
+
+
+
+        o = w.i({test:"C.resolve() bug about leaf"})
+        // < needs reproducing outside of LeafJuggle step 6.
+        const p = { tracing_run: 1 }
+        // First pass: Inflate the space with all 6 items
+        await o.replace(p, async () => {
+            o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
+            o.i({ ...p, tracing: 1, the_hand: "left" })
+            o.i({ ...p, tracing: 1, the_hand: "right" })
+            o.i({ ...p, tracing: 1, the_whatsit: 1 })
+            o.i({ ...p, tracing: 1, the_other: 3 })
+            o.i({ ...p, tracing: 1, the_leaf: 1 })
+        })
+
+        // Second pass: the_leaf goes missing
+        let captured_goners = []
+        await o.replace(p, async () => {
+            o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
+            o.i({ ...p, tracing: 1, the_hand: "left" })
+            o.i({ ...p, tracing: 1, the_hand: "right" })
+            o.i({ ...p, tracing: 1, the_whatsit: 1 })
+            o.i({ ...p, tracing: 1, the_other: 3 })
+            // Omitted: the_leaf: 1
+        }, {
+            // Hook into your resolve() pairs where b is null
+            gone_fn: (gone_atom) => {
+                captured_goners.push(gone_atom)
+                console.log("Goner detected:", gone_atom.sc)
+            }
+        })
+
+        // Verification for your test runner
+        const leaf_was_caught = captured_goners.length === 1 && captured_goners[0].sc.the_leaf === 1
+        
+        let gonerch = o.i({ 
+            test: "C.resolve() leaf goner check", 
+            passed: leaf_was_caught,
+            goner_count: captured_goners.length
+        })
+        for (let goner of captured_goners) {
+            gonerch.i(goner)
+        }
+
+
+
     },
 
 

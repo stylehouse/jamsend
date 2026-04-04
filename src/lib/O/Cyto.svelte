@@ -475,9 +475,8 @@
             for (let i = 0; i < Cs.length - 1; i++)
                 Cs[i].i(blue_sc(Cs[i], Cs[i+1], false))
         }
-
-        let AIM = this.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0].o({run:1})[0].sc.done == 6
-            && V.gone_debug
+        let done = this.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0].o({run:1})[0].sc.done
+        let AIM = done == 6 && V.gone_debug
         if (AIM) debugger
         // migration: goner whose n ref appears as a neu C
         for (const [_gid, gD] of goners_by_id) {
