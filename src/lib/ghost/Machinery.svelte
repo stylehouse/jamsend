@@ -1,7 +1,8 @@
 <script lang="ts">
-    import { _C, objectify, TheC } from "$lib/data/Stuff.svelte";
+    import { _C, keyser, objectify, TheC } from "$lib/data/Stuff.svelte";
+    import { Selection } from "$lib/mostly/Selection.svelte";
     import type { House } from "$lib/O/Housing.svelte";
-    import { armap } from "$lib/Y.svelte";
+    import { armap, sex } from "$lib/Y.svelte";
     // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
     //
     // Three workers: farm, plate, enzymeco.
@@ -56,7 +57,7 @@
 
 
         let o = w.i({test:"C.resolve() unambiguity in the past and future"})
-        const lh = o.oai({ hand: 'left'  })
+        let lh = o.oai({ hand: 'left'  })
         let temporary = lh.resolve 
         try {
             let it
@@ -79,8 +80,16 @@
 
 
 
+
+
+
+
+
         o = w.i({test:"C.resolve() bug about leaf"})
         // < needs reproducing outside of LeafJuggle step 6.
+        //    this does show the bug but it needs whittling down
+        // resolve() itself doesn't show the bug, it's something in thefu()
+        //    
 
         let thefu = async (l,s) => {
             const topC = await this.cyto_scan(w, s)
@@ -113,12 +122,12 @@
 
         // Second pass: the_leaf goes missing
         let captured_goners = []
+        lh = null
+        let rh = null
         await o.replace(p, async () => {
             o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
-            o.i({ ...p, ohyea: 1, the_hand: "left" })
-                .i(laleaf)
-            o.i({ ...p, ohyea: 1, the_hand: "right" })
-                .i({tangiuy:1})
+            lh = o.i({ ...p, ohyea: 1, the_hand: "left" })
+            rh = o.i({ ...p, ohyea: 1, the_hand: "right" })
             o.i({ ...p, ohyea: 1, the_whatsit: 1 })
             o.i({ ...p, ohyea: 1, the_other: 3 })
             // Omitted: the_leaf: 1
@@ -129,11 +138,128 @@
                 // o.i({see:"Goner detected:"}).i(gone_atom)
             }
         })
+        // add to these after replace (we obscure that as trace time)
+        //  to avoid this error: Stuff.svelte.ts:592 C.replace() resolved n have /*
+        lh.i(laleaf)
+        rh.i({tangiuy:1})
+        if (captured_goners.length != 1 || !captured_goners[0].sc.the_leaf) o.i({heck:1})
 
-        // < why this shows o/the_leaf vanishing, but not o/the_hand/the_leaf (recycled)
-        await thefu('002 see goner',o)
+        // < should %migrate the o/the_leaf -> o/the_hand/the_leaf
+        //    the other test is not doing these other-level moves. why?
+        await thefu('002 see goner, leaf into left',o)
+
+        lh.empty()
+        rh.empty()
+        rh.i(laleaf)
 
 
+        // < should %migrate it. the other test was doing these sideways moves. why?
+        await thefu('003 leaf moves left->right',o)
+
+
+
+
+
+
+
+
+        // < doesn't really explain anything until it takes on a quality of thefu()
+        //    that breaks %migrate showing the moving part...
+        //   it exposes no bugs yet
+        o = w.i({ test: "Selection: particle moves from root/* to root/container/*" })
+
+        const root = _C({ root_node: 1 })
+        const leaf = root.i({ leaf: 1, name: 'wanderer' })
+
+        let Se = new Selection()
+
+        const run = async (label) => {
+            Se.sc.topD = await Se.r({ Se_test: 1 })
+            await Se.process({
+                n:          root,
+                process_D:  Se.sc.topD,
+                match_sc:   {},
+                trace_sc:   { t: 1 },
+
+                each_fn: async (D, n, T) => {
+                    D.sc.depth = T.c.path.length - 1
+                    D.sc.label = Object.keys(n.sc).filter(k => typeof n.sc[k] !== 'object').join(',')
+                },
+
+                trace_fn: async (uD, n) => uD.i({ t: 1,
+                    ...Object.fromEntries(
+                        Object.entries(n.sc)
+                            .filter(([,v]) => typeof v === 'string' || typeof v === 'number')
+                            .map(([k,v]) => [`the_${k}`, v])
+                    )
+                }),
+
+                traced_fn: async (D, bD) => {
+                    let c = sex({ Traced:1, see: label},D.sc,'label,depth')
+                    if (bD) c.resolved = 1
+                    o.i(c)
+                },
+
+                resolved_fn: async (T, N, goners, neus) => {
+                    if (goners.length) T.sc.goners = goners
+                    o.i({ Reso:1, see: label, at: T.sc.n?.sc.name ?? 'root',
+                        goners: goners.length, neus: neus.length })
+                },
+            })
+            let mo = o.i({moves:label})
+            await this.Se_some_Migration(mo,Se)
+        }
+
+        await run('pass1')
+        // expect: leaf at depth 1, neu:true
+        const box = root.i({ container: 1, name: 'box' })
+        await run('pass1.1')
+
+        // move leaf: no longer direct child of root
+        await root.replace({ leaf: 1 }, async () => {
+            // leaf gone from root level
+        })
+        box.i(leaf)   // same C object, now at depth 2
+
+        await run('pass2')
+
+
+
+
+
+    },
+
+    async Se_some_Migration(o,Se) {
+        // collect what we learned
+        const goner_ns = new Map()
+        const neu_ns   = new Map()
+
+        await Se.c.T.forward(async T => {
+            const bD = T.sc.bD
+            const D  = T.sc.D
+            if (bD && !D) {
+                throw "impossible - goners must be noticed missing from somewhere still there"
+            }
+            if (D && !bD) {
+                // neu
+                const n = D.c.T?.sc.n
+                if (n) { o.i({n_neu: keyser(n.sc)}); neu_ns.set(n, D) }
+            }
+        })
+        await Se.c.T.forward(async T => {
+            for (const gD of (T.sc.goners ?? [])) {
+                const n = gD.c.T?.sc.n
+                if (n) { o.i({n_gone: keyser(n.sc)}); goner_ns.set(n, gD) }
+            }
+        })
+
+        for (const [n, gD] of goner_ns) {
+            if (neu_ns.has(n)) {
+                o.i({ Migration: 1, n: n.sc.name ?? '?',
+                    from_depth: gD.sc.depth,
+                    to_depth:   neu_ns.get(n).sc.depth })
+            }
+        }
 
     },
 

@@ -31,14 +31,50 @@ Snap:H
           tracing_run,Dip:scanid,value:scanid_1_1,i:5
           tracing_run,ohyea,the_hand:left
           tracing_run,ohyea,the_hand:right
-            excellent
+            tracing_run,ohyea,the_leaf
           tracing_run,ohyea,the_whatsit
             excellent
           tracing_run,ohyea,the_other:3
-          see,CytoStep,through:002 see goner
+          {"see":1,"CytoStep":1,"through":"002 see goner, leaf into left"}
             CytoWave,duration:0.3
               remove,id:cytoid_1_1_5
               edge_remove,id:cytoid_1_1_5_1
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_1_2","label":"tracing_run:1\nohyea:1\nthe_leaf:1"}
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2_3","label":"tangiuy:1"}
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_3_1,source:cytoid_1_1_2,target:cytoid_1_1_2_3
+          see,CytoStep,through:003 leaf moves left->right
+            CytoWave,duration:0.3
+              remove,id:cytoid_1_1_1_2
+              edge_remove,id:cytoid_1_1_1_2_1
+              {"upsert":1,"id":"cytoid_1_1_2_2","label":"tracing_run:1\nohyea:1\nthe_leaf:1"}
+              remove,id:cytoid_1_1_2_3
+              edge_remove,id:cytoid_1_1_2_3_1
+        {"test":"Selection: particle moves from root/* to root/container/*"}
+          Traced,see:pass1
+          Reso,see:pass1,at:root,goners:0,neus
+          Reso,see:pass1,at:wanderer,goners:0,neus:0
+          moves:pass1
+            {"n_neu":"root_node:1"}
+            {"n_neu":"leaf:1, name:wanderer"}
+          Traced,see:pass1.1,resolved
+          Traced,see:pass1.1
+          Reso,see:pass1.1,at:root,goners:0,neus
+          Reso,see:pass1.1,at:wanderer,goners:0,neus:0
+          Reso,see:pass1.1,at:box,goners:0,neus:0
+          moves:pass1.1
+            {"n_neu":"root_node:1"}
+            {"n_neu":"container:1, name:box"}
+          Traced,see:pass2,resolved
+          Reso,see:pass2,at:root,goners,neus:0
+          Traced,see:pass2
+          Reso,see:pass2,at:box,goners:0,neus
+          Reso,see:pass2,at:wanderer,goners:0,neus:0
+          moves:pass2
+            {"n_neu":"root_node:1"}
+            {"n_neu":"leaf:1, name:wanderer"}
+            {"n_gone":"leaf:1, name:wanderer"}
+            Migration,n:wanderer,from_depth,to_depth:2
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
@@ -105,7 +141,7 @@ Snap:cytowave
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_2_2","label":"excellent:1","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_2_2","label":"tracing_run:1\nohyea:1\nthe_leaf:1","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
@@ -125,6 +161,131 @@ Snap:cytowave
     style,color:#666
     style,height:16
     style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3","label":"test:Selection…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_1","label":"Traced:1\nsee:pass1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_10","label":"moves:pass1.1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_10_2","label":"n_neu:root_node:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_10_3","label":"n_neu:container…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_11","label":"Traced:1\nsee:pass2\nresolved:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_12","label":"Reso:1\nsee:pass2\nat:root\ngoners:1\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_13","label":"Traced:1\nsee:pass2","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_14","label":"Reso:1\nsee:pass2\nat:box\ngoners:0\nneus:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_15","label":"Reso:1\nsee:pass2\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_16","label":"moves:pass2","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_16_2","label":"n_neu:root_node:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_16_3","label":"n_neu:leaf:1, n…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_16_4","label":"n_gone:leaf:1, n…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_16_5","label":"Migration:1\nn:wanderer\nfrom_depth:1\nto_depth:2","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_2","label":"Reso:1\nsee:pass1\nat:root\ngoners:0\nneus:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_3","label":"Reso:1\nsee:pass1\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_4","label":"moves:pass1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_4_2","label":"n_neu:root_node:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_4_3","label":"n_neu:leaf:1, n…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_5","label":"Traced:1\nsee:pass1.1\nresolved:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_6","label":"Traced:1\nsee:pass1.1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_7","label":"Reso:1\nsee:pass1.1\nat:root\ngoners:0\nneus:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_8","label":"Reso:1\nsee:pass1.1\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_3_9","label":"Reso:1\nsee:pass1.1\nat:box\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
   edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
   edge_upsert,id:cytoid_1_1_1_1_3_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_3
@@ -136,3 +297,27 @@ Snap:cytowave
   edge_upsert,id:cytoid_1_1_2_3_1,source:cytoid_1_1_2,target:cytoid_1_1_2_3
   edge_upsert,id:cytoid_1_1_2_3_2_1,source:cytoid_1_1_2_3,target:cytoid_1_1_2_3_2
   edge_upsert,id:cytoid_1_1_2_4_1,source:cytoid_1_1_2,target:cytoid_1_1_2_4
+  edge_upsert,id:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
+  edge_upsert,id:cytoid_1_1_3_10_1,source:cytoid_1_1_3,target:cytoid_1_1_3_10
+  edge_upsert,id:cytoid_1_1_3_10_2_1,source:cytoid_1_1_3_10,target:cytoid_1_1_3_10_2
+  edge_upsert,id:cytoid_1_1_3_10_3_1,source:cytoid_1_1_3_10,target:cytoid_1_1_3_10_3
+  edge_upsert,id:cytoid_1_1_3_11_1,source:cytoid_1_1_3,target:cytoid_1_1_3_11
+  edge_upsert,id:cytoid_1_1_3_12_1,source:cytoid_1_1_3,target:cytoid_1_1_3_12
+  edge_upsert,id:cytoid_1_1_3_13_1,source:cytoid_1_1_3,target:cytoid_1_1_3_13
+  edge_upsert,id:cytoid_1_1_3_14_1,source:cytoid_1_1_3,target:cytoid_1_1_3_14
+  edge_upsert,id:cytoid_1_1_3_15_1,source:cytoid_1_1_3,target:cytoid_1_1_3_15
+  edge_upsert,id:cytoid_1_1_3_16_1,source:cytoid_1_1_3,target:cytoid_1_1_3_16
+  edge_upsert,id:cytoid_1_1_3_16_2_1,source:cytoid_1_1_3_16,target:cytoid_1_1_3_16_2
+  edge_upsert,id:cytoid_1_1_3_16_3_1,source:cytoid_1_1_3_16,target:cytoid_1_1_3_16_3
+  edge_upsert,id:cytoid_1_1_3_16_4_1,source:cytoid_1_1_3_16,target:cytoid_1_1_3_16_4
+  edge_upsert,id:cytoid_1_1_3_16_5_1,source:cytoid_1_1_3_16,target:cytoid_1_1_3_16_5
+  edge_upsert,id:cytoid_1_1_3_2_1,source:cytoid_1_1_3,target:cytoid_1_1_3_2
+  edge_upsert,id:cytoid_1_1_3_3_1,source:cytoid_1_1_3,target:cytoid_1_1_3_3
+  edge_upsert,id:cytoid_1_1_3_4_1,source:cytoid_1_1_3,target:cytoid_1_1_3_4
+  edge_upsert,id:cytoid_1_1_3_4_2_1,source:cytoid_1_1_3_4,target:cytoid_1_1_3_4_2
+  edge_upsert,id:cytoid_1_1_3_4_3_1,source:cytoid_1_1_3_4,target:cytoid_1_1_3_4_3
+  edge_upsert,id:cytoid_1_1_3_5_1,source:cytoid_1_1_3,target:cytoid_1_1_3_5
+  edge_upsert,id:cytoid_1_1_3_6_1,source:cytoid_1_1_3,target:cytoid_1_1_3_6
+  edge_upsert,id:cytoid_1_1_3_7_1,source:cytoid_1_1_3,target:cytoid_1_1_3_7
+  edge_upsert,id:cytoid_1_1_3_8_1,source:cytoid_1_1_3,target:cytoid_1_1_3_8
+  edge_upsert,id:cytoid_1_1_3_9_1,source:cytoid_1_1_3,target:cytoid_1_1_3_9
