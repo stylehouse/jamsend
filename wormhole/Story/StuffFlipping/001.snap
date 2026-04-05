@@ -11,13 +11,34 @@ Snap:H
             bug,the_w:Ying
               terpestra
         test:C.resolve() bug about leaf
+          see,CytoStep,through:001 see
+            CytoWave,duration:0.3
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1","label":"test:C.resolve…"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_1","label":"tracing_run:1\nohyea:1\nthe_hand:left"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2","label":"tracing_run:1\nohyea:1\nthe_hand:right"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_3","label":"tracing_run:1\nohyea:1\nthe_whatsit:1"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_4","label":"tracing_run:1\nohyea:1\nthe_other:3"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_5","label":"tracing_run:1\nohyea:1\nthe_leaf:1"}
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_1,source:cytoid_1_1,target:cytoid_1_1_2
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2_2","label":"excellent:1"}
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_2_1,source:cytoid_1_1_2,target:cytoid_1_1_2_2
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_3_1,source:cytoid_1_1,target:cytoid_1_1_3
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_3_2","label":"excellent:1"}
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_3_2_1,source:cytoid_1_1_3,target:cytoid_1_1_3_2
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_4_1,source:cytoid_1_1,target:cytoid_1_1_4
+              {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_5_1,source:cytoid_1_1,target:cytoid_1_1_5
           tracing_run,Dip:scanid,value:scanid_1_1,i:5
-          tracing_run,tracing,the_hand:left
-          tracing_run,tracing,the_hand:right
-          tracing_run,tracing,the_whatsit
-          tracing_run,tracing,the_other:3
-          test:C.resolve() leaf goner check,passed:true,goner_count
-            tracing_run,tracing,the_leaf
+          tracing_run,ohyea,the_hand:left
+          tracing_run,ohyea,the_hand:right
+            excellent
+          tracing_run,ohyea,the_whatsit
+            excellent
+          tracing_run,ohyea,the_other:3
+          see,CytoStep,through:002 see goner
+            CytoWave,duration:0.3
+              remove,id:cytoid_1_1_5
+              edge_remove,id:cytoid_1_1_5_1
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
@@ -74,7 +95,32 @@ Snap:cytowave
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1","label":"test:C.resolve…\npassed\ngoner_count:1","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1","label":"tracing_run:1\nohyea:1\nthe_hand:left","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_2","label":"tracing_run:1\nohyea:1\nthe_hand:right","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_2_2","label":"excellent:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_3","label":"tracing_run:1\nohyea:1\nthe_whatsit:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_3_2","label":"excellent:1","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_4","label":"tracing_run:1\nohyea:1\nthe_other:3","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
@@ -85,3 +131,8 @@ Snap:cytowave
   edge_upsert,id:cytoid_1_1_1_1_4_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_4
   edge_upsert,id:cytoid_1_1_1_1_4_2_1,source:cytoid_1_1_1_1_4,target:cytoid_1_1_1_1_4_2
   edge_upsert,id:cytoid_1_1_2_1_1,source:cytoid_1_1_2,target:cytoid_1_1_2_1
+  edge_upsert,id:cytoid_1_1_2_2_1,source:cytoid_1_1_2,target:cytoid_1_1_2_2
+  edge_upsert,id:cytoid_1_1_2_2_2_1,source:cytoid_1_1_2_2,target:cytoid_1_1_2_2_2
+  edge_upsert,id:cytoid_1_1_2_3_1,source:cytoid_1_1_2,target:cytoid_1_1_2_3
+  edge_upsert,id:cytoid_1_1_2_3_2_1,source:cytoid_1_1_2_3,target:cytoid_1_1_2_3_2
+  edge_upsert,id:cytoid_1_1_2_4_1,source:cytoid_1_1_2,target:cytoid_1_1_2_4

@@ -81,45 +81,57 @@
 
         o = w.i({test:"C.resolve() bug about leaf"})
         // < needs reproducing outside of LeafJuggle step 6.
+
+        let thefu = async (l,s) => {
+            const topC = await this.cyto_scan(w, s)
+            await this.cyto_assign_ids(w, topC)
+            await this.cyto_scan_refs(w, topC)
+            await this.cyto_assign_ids(w, topC)
+            await this.cyto_resolve_refs(w, topC)
+ 
+
+            const wave = await this.make_wave(w, topC, true)
+            o.i({ see:1,CytoStep: 1, through:l }).i(wave)
+        }
+        
+        
         const p = { tracing_run: 1 }
         // First pass: Inflate the space with all 6 items
+        let laleaf
         await o.replace(p, async () => {
             o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
-            o.i({ ...p, tracing: 1, the_hand: "left" })
-            o.i({ ...p, tracing: 1, the_hand: "right" })
-            o.i({ ...p, tracing: 1, the_whatsit: 1 })
-            o.i({ ...p, tracing: 1, the_other: 3 })
-            o.i({ ...p, tracing: 1, the_leaf: 1 })
+            o.i({ ...p, ohyea: 1, the_hand: "left" })
+            o.i({ ...p, ohyea: 1, the_hand: "right" })
+                .i({excellent:1})
+            o.i({ ...p, ohyea: 1, the_whatsit: 1 })
+                .i({excellent:1})
+            o.i({ ...p, ohyea: 1, the_other: 3 })
+            laleaf = o.i({ ...p, ohyea: 1, the_leaf: 1 })
         })
+
+        await thefu('001 see',o)
 
         // Second pass: the_leaf goes missing
         let captured_goners = []
         await o.replace(p, async () => {
             o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
-            o.i({ ...p, tracing: 1, the_hand: "left" })
-            o.i({ ...p, tracing: 1, the_hand: "right" })
-            o.i({ ...p, tracing: 1, the_whatsit: 1 })
-            o.i({ ...p, tracing: 1, the_other: 3 })
+            o.i({ ...p, ohyea: 1, the_hand: "left" })
+                .i(laleaf)
+            o.i({ ...p, ohyea: 1, the_hand: "right" })
+                .i({tangiuy:1})
+            o.i({ ...p, ohyea: 1, the_whatsit: 1 })
+            o.i({ ...p, ohyea: 1, the_other: 3 })
             // Omitted: the_leaf: 1
         }, {
             // Hook into your resolve() pairs where b is null
             gone_fn: (gone_atom) => {
                 captured_goners.push(gone_atom)
-                console.log("Goner detected:", gone_atom.sc)
+                // o.i({see:"Goner detected:"}).i(gone_atom)
             }
         })
 
-        // Verification for your test runner
-        const leaf_was_caught = captured_goners.length === 1 && captured_goners[0].sc.the_leaf === 1
-        
-        let gonerch = o.i({ 
-            test: "C.resolve() leaf goner check", 
-            passed: leaf_was_caught,
-            goner_count: captured_goners.length
-        })
-        for (let goner of captured_goners) {
-            gonerch.i(goner)
-        }
+        // < why this shows o/the_leaf vanishing, but not o/the_hand/the_leaf (recycled)
+        await thefu('002 see goner',o)
 
 
 
