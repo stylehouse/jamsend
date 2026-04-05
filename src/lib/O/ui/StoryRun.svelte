@@ -533,6 +533,7 @@
             diff_collecting = false
             diff_anchor     = null
         } else if (diff_collecting && n === diff_anchor) {
+            collect_range(diff_anchor, n)  // same n = single step copy
             diff_collecting = false
             diff_anchor     = null
         }
