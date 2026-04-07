@@ -753,9 +753,11 @@ export class Stuff extends TimeOffice {
         }
 
         // sort by unambiguity
+        let UNAMBIGUITY_THRESHOLD = 0.33
         // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
         let ratings = sort_unambiguity(Over.X)
         ratings.forEach((unambiguity) => {
+            if (Number(unambiguity) < UNAMBIGUITY_THRESHOLD) return
             let x = Over.X.unambiguity[unambiguity]
             x.z.forEach((n:TheC) => {
                 if (!unfound.includes(n)) return
@@ -786,6 +788,7 @@ export class Stuff extends TimeOffice {
                             return
                         }
                     }
+                    coms&&coms.i({claiming: keyser(n), oldn: keyser(oldn), score: unambiguity})
                     claim(oldn,n)
                     // once n is claimed, stop claiming oldn for it
                     break
@@ -798,7 +801,7 @@ export class Stuff extends TimeOffice {
             .filter(oldn => !claimed.includes(oldn))
         
         // log it all
-        if (0 && coms) {
+        if (coms) {
             pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
             unfound.forEach((n) => coms.i({spawn:keyser(n)}))
             gone.forEach((n) => coms.i({gone:keyser(n)}))

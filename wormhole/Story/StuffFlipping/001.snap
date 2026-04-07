@@ -197,6 +197,7 @@ Snap:H
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
               {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2_3","label":"tangiuy:1"}
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_3_1,source:cytoid_1_1_2,target:cytoid_1_1_2_3
+              migrate,id:cytoid_1_1_5,toward:cytoid_1_1_1_2
           see,CytoStep,through:003 leaf moves left->right
             CytoWave,duration:0.3
               remove,id:cytoid_1_1_1_2
