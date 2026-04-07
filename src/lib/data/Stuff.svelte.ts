@@ -561,6 +561,7 @@ export class Stuff extends TimeOffice {
         }
         
         q ||= {}
+        q.pattern_sc = pattern_sc
         // move it aside and regenerate another X
         this.Xify() // always have an X_before, including the first time
         this.X_before = this.X

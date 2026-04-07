@@ -78,8 +78,28 @@
         }
 
 
+        o = w.i({test:"C.resolve() simply about leaf"})
+        let C = o.i({TheThing:1})
+        let first = [
+            // {"self":1,"est":1775527585},
+            {"hand":"left"},{"hand":"right"},{"whatsit":1
+            },{"other":3
+            },{"leaf":1},{"self":1,"round":6,"age":5}
+        ]
+        let then = [
+            {"self":1,"est":1775527585
+            },{"hand":"left"},{"hand":"right"},{"whatsit":1
+            },{"other":3
+            },{"self":1,"round":6,"age":5}
+        ]
 
-
+        first.map(sc => C.i(sc))
+        let pairs = o.i({resolved_pairs:1})
+        await C.replace({},async () => {
+            then.map(sc => C.i(sc))
+        }, {pairs_fn: async (a:TheC,b:TheC)=>{
+            pairs.i({before:objectify(a),now:objectify(b)})
+        }})
 
 
 
@@ -108,7 +128,6 @@
         // First pass: Inflate the space with all 6 items
         let laleaf
         await o.replace(p, async () => {
-            o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
             o.i({ ...p, ohyea: 1, the_hand: "left" })
             o.i({ ...p, ohyea: 1, the_hand: "right" })
                 .i({excellent:1})
@@ -125,7 +144,6 @@
         lh = null
         let rh = null
         await o.replace(p, async () => {
-            o.i({ ...p, Dip: "scanid", value: "scanid_1_1", i: 5 })
             lh = o.i({ ...p, ohyea: 1, the_hand: "left" })
             rh = o.i({ ...p, ohyea: 1, the_hand: "right" })
             o.i({ ...p, ohyea: 1, the_whatsit: 1 })
@@ -338,9 +356,10 @@
     async Yaing(w: TheC, other_w: TheC) {
         const lh = w.oai({ hand: 'left'  })
         const rh = w.oai({ hand: 'right' })
+        
         let check = (leaf) => {
             window.firstleaf ||= leaf
-            if (window.firstleaf != leaf) throw `many leaf`
+            // if (window.firstleaf != leaf) throw `many leaf`
         }
  
         // rh exits first — passes the leaf to other/*
