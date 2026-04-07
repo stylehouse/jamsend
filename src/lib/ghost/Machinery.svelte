@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { _C, keyser, objectify, TheC } from "$lib/data/Stuff.svelte";
+    import { _C, keyser, objectify, TheC, TheX } from "$lib/data/Stuff.svelte";
     import { Selection } from "$lib/mostly/Selection.svelte";
     import type { House } from "$lib/O/Housing.svelte";
-    import { armap, sex } from "$lib/Y.svelte";
+    import { armap, peel, sex } from "$lib/Y.svelte";
     // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
     //
     // Three workers: farm, plate, enzymeco.
@@ -78,41 +78,69 @@
         }
 
 
+        // from here down is studying the same resolve() bug
 
 
 
 
-        o = w.i({test:"C.resolve() simply about leaf"})
-        // shows bad behaviour!
-        let C = o.i({TheThing:1})
-        let first = [
-            // {"self":1,"est":1775527585},
-            {"hand":"left"},{"hand":"right"},{"whatsit":1
-            },{"other":3
-            },{"leaf":1},{"self":1,"round":6,"age":5}
-        ]
-        let then = [
-            {"self":1,"est":1775527585
-            },{"hand":"left"},{"hand":"right"},{"whatsit":1
-            },{"other":3
-            },{"self":1,"round":6,"age":5}
-        ]
-        // set this to {} to prevent %leaf -> %self,est
-        //  ie, this is enough in common to inspire a match...
-        let pattern_sc = {tracing:1}
+
+        o = w.i({ test: "C.resolve() test suite" })
+
+        const resolve_test = async (label, pattern_sc, first_strs, then_strs,DEV) => {
+            const t = o.i({ resolve_test: label })
+            const C = t.i({ C: 1 })
+            first_strs.map(s => C.i({ ...pattern_sc, ...peel(s) }))
+            const pairs = t.i({ pairs: 1 })
+            if (DEV) C.coms = t.i({resolve_coms:1})
+            if (DEV) C.resolve = this.DEV_resolve
+            await C.replace(pattern_sc, async () => {
+                then_strs.map(s => C.i({ ...pattern_sc, ...peel(s) }))
+            }, { pairs_fn: async (a, b) => {
+                pairs.i({before: a ? keyser(a.sc) : '-'})
+                pairs.i({after: b ? keyser(b.sc) : '-' })
+            }})
+        }
+
+        await resolve_test('leaf vanishes, self,est arrives',
+            { tracing: 1 },
+            [ 'hand:left', 'hand:right', 'whatsit', 'other:3', 'leaf', 'self,round:5,age:5' ],
+            [ 'self,est:1775527585', 'hand:left', 'hand:right', 'whatsit', 'other:3', 'self,round:6,age:5' ],
+            true
+        )
+        await resolve_test('leaf vanishes, self,est arrives - no tracing noise',
+            {},
+            [ 'hand:left', 'hand:right', 'whatsit', 'other:3', 'leaf', 'self,round:5,age:5' ],
+            [ 'self,est:1775527585', 'hand:left', 'hand:right', 'whatsit', 'other:3', 'self,round:6,age:5' ]
+        )
+
+        await resolve_test('leaf moves into hand (depth change irrelevant at C level)',
+            { tracing: 1 },
+            [ 'hand:left', 'hand:right', 'leaf' ],
+            [ 'hand:left', 'hand:right' ]
+            // leaf gone — no match expected
+        )
+
+        await resolve_test('everything stable',
+            { tracing: 1 },
+            [ 'hand:left', 'hand:right', 'leaf' ],
+            [ 'hand:left', 'hand:right', 'leaf' ]
+        )
+
+        await resolve_test('one key changes value',
+            { tracing: 1 },
+            [ 'hand:left', 'hand:right', 'other:3' ],
+            [ 'hand:left', 'hand:right', 'other:4' ]
+        )
+
+        await resolve_test('pattern_sc empty — no tracing key noise',
+            {},
+            [ 'hand:left', 'hand:right', 'leaf', 'self,round:6,age:5' ],
+            [ 'self,est:1775527585', 'hand:left', 'hand:right', 'self,round:6,age:5' ]
+        )
 
 
-        first.map(sc => C.i({...pattern_sc,...sc}))
-        let pairs = o.i({resolved_pairs:1})
-        await C.replace(pattern_sc,async () => {
-            then.map(sc => C.i({...pattern_sc,...sc}))
-        }, {pairs_fn: async (a:TheC,b:TheC)=>{
-            pairs.i({before:objectify(a),now:objectify(b)})
-        }})
 
 
-
-        
 
 
 
@@ -291,6 +319,204 @@
         }
 
     },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#endregion
+//#region DEV_resolve
+    async DEV_resolve(X:TheX,oldX:TheX,partial:TheN|null,q={}) {
+        if (!oldX?.z?.length) {
+            // everything is new
+            return (X.z||[]).map(n => [null,n])
+        }
+        // partial may be a set of old things we're replacing
+        //  if partial, there's other stuff in oldX we're not replacing
+        // but X is always the new stuff only
+        let partsof = (N:TheN) => {
+            return N.filter(n => !partial || partial.includes(n))
+        }
+        // debuggery
+        let coms = this.coms
+
+        // collect islands of same k+v
+        let Over = _C({})
+        Over.Xify()
+
+        let kv_iter = (X,fn) => {
+            Object.entries(X.k||{}).forEach(([k,kx]) => {
+                kx = kx as TheX
+                // eg k=nib, we're dividing nib=dir|blob
+                Object.entries(kx.v).forEach(([i,vx]) => {
+                    let v = kx.vs[i]
+                    fn(k,kx,v,vx)
+                })
+            })
+        }
+
+        // iterate the new k/v structure
+
+        kv_iter(X,(k,kx,v,vx) => {
+            // eg k=nib,v=dir
+
+            // expect some string property will be more disambiguating
+            // < ref matching. would be slower. do on the remainder?
+            let vtype = typeof v == 'object' ? 'ref' : 'string'
+            if (vtype == 'ref') return
+
+            // look for the same k/v
+            let oldvx = oldX.o_kv(k,v,{notwild:1})
+            if (!oldvx) return // none
+
+            if (!oldvx.z.length) throw `should always be some /$n`
+            let old_z = partsof(oldvx.z)
+            if (!old_z.length) {
+                // may share kv with the out-group
+                // < an odd occasion to study in testing
+                // console.warn("Perhaps your replace() pattern_sc doesn't match the new atoms?",{X,partial})
+                return
+            }
+
+            
+            vx.z.forEach((n:TheC,i:number) => {
+                // any neu%nib:dir could match any old%nib:dir
+                // via /$v:neu /$k/$v:stringval /$n=old
+                let nkvx = Over.X.i_v(n,null,'neu')
+                    .i_k(k).i_v(v,null)
+                old_z.forEach(oldn => {
+                    coms&&coms.i({candidate: keyser(n), via: `${k}:${v}`, oldn: keyser(oldn)})
+                    nkvx.i_z(oldn)
+                })
+            })
+        })
+
+
+
+        // /$v:neu /$k/$v:stringval /$n=old
+        Object.entries(Over.X.neu||{}).forEach(([i,_neux]) => {
+            let n = Over.X.neus[i]
+            let neux = _neux as TheX
+            kv_iter(neux,(k,kx,v,vx) => {
+                let possible = vx.z
+                // for %nib:dir x20 matching less than %name:veryunique x1
+                let unambiguity = 1 / possible.length
+                let newly_possible = X.i_k(k)?.i_v(v)?.z?.length
+                if (newly_possible) {
+                    // it wants to be unique in the past and future.
+                    unambiguity = (unambiguity + (1/newly_possible)) / 2
+                }
+                // /$neu /$ambiguity=0.234 /$n=old
+                let rated = neux.i_k(unambiguity,null,'unambiguity')
+                rated.z = [...vx.z]
+                // /$ambiguity=0.234 /$n=neu for ordering matches amognst all $neu
+                Over.X.i_k(unambiguity,n,'unambiguity')
+
+            })
+        })
+        let sort_unambiguity = (X) => {
+            return Object.keys(X.unambiguity||{}).sort().reverse()
+        }
+
+        // pairs of [oldn,n], eventual result
+        let pairs = []
+        // $neu dwindling to actual new items
+        let unfound:Array<TheC> = [...(X.z||[])]
+        // $oldn that become paired with a $neu
+        let claimed:Array<TheC> = []
+        let claim = (oldn,n) => {
+            pairs.push([oldn,n])
+            unfound = unfound.filter(m => m != n)
+            claimed.push(oldn)
+        }
+
+        // sort by unambiguity
+        // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
+        let ratings = sort_unambiguity(Over.X)
+        ratings.forEach((unambiguity) => {
+            let x = Over.X.unambiguity[unambiguity]
+            x.z.forEach((n:TheC) => {
+                if (!unfound.includes(n)) return
+
+                // /$v:neu
+                let neux = Over.X.i_v(n,null,'neu')
+                if (!neux?.k) throw `algo!?k`
+                let rated = neux.i_k(unambiguity,null,'unambiguity')
+                if (!rated.z.length) throw `algo!?z`
+                for (let oldn of rated.z) {
+                    if (claimed.includes(oldn)) continue
+                    coms&&coms.i({claiming: keyser(n), oldn: keyser(oldn), score: unambiguity})
+                    // < I fade out here. maybe with a better io notation...
+                    //   sorting through arrangements any more is...
+                    //    one of those has-been-done academic things
+                    // let oldnx = Over.X.i_v(oldn,n,'old')
+                    // if (oldnx.z.length > 1) coms&&coms.i({ambiguo:n,neu:keyser(n),oldn,old:keyser(oldn)})
+                    // < pile up neux/$maybe=oldn from many vx
+                    //    to union many takes on $oldn with decreasing pickiness
+                    //     depending on everyone else's contest...
+                    //    lots of permuting?
+                    // or just accept the first one?
+                    //  they are sorted for uniqueness, won't re-claim...
+                    if (q.resolve_strict) {
+                        // be more likely to drop and recreate things
+                        //  if any stringified value has changed
+                        let valuesOf = (n) => armap(v=>v+'',n.sc).join(',')
+                        if (valuesOf(n) != valuesOf(oldn)) {
+                            return
+                        }
+                    }
+                    claim(oldn,n)
+                    // once n is claimed, stop claiming oldn for it
+                    break
+                }
+            })
+        })
+
+        // what's left in X_before (that we are partial to replacing)
+        let gone = partsof(oldX.z||[])
+            .filter(oldn => !claimed.includes(oldn))
+        
+        // log it all
+        if (1 && coms) {
+            pairs.forEach(([oldn,n]) => coms.i({old:keyser(oldn),neu:keyser(n)}))
+            unfound.forEach((n) => coms.i({spawn:keyser(n)}))
+            gone.forEach((n) => coms.i({gone:keyser(n)}))
+        }
+
+        // new stuff
+        unfound.forEach((n) => pairs.push([null,n]))
+        // gone stuff
+        gone.forEach((oldn) => pairs.push([oldn,null]))
+
+        return pairs
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -59,7 +59,7 @@ use cases:
 `;
 
 // storage class with methods
-class TheX {
+export class TheX {
     // we may be inside another X
     //  aka an x, as in X...x
     up?: TheX;
@@ -645,6 +645,8 @@ export class Stuff extends TimeOffice {
         }
     }
 
+//#endregion
+//#region Stuff.resolve
     // regard new|gone in here
     // assumes we're going to uniquely identify everything easily
     //  by comparing n.sc.*,
