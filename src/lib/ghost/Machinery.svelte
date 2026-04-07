@@ -78,7 +78,12 @@
         }
 
 
+
+
+
+
         o = w.i({test:"C.resolve() simply about leaf"})
+        // shows bad behaviour!
         let C = o.i({TheThing:1})
         let first = [
             // {"self":1,"est":1775527585},
@@ -92,16 +97,22 @@
             },{"other":3
             },{"self":1,"round":6,"age":5}
         ]
+        // set this to {} to prevent %leaf -> %self,est
+        //  ie, this is enough in common to inspire a match...
+        let pattern_sc = {tracing:1}
 
-        first.map(sc => C.i(sc))
+
+        first.map(sc => C.i({...pattern_sc,...sc}))
         let pairs = o.i({resolved_pairs:1})
-        await C.replace({},async () => {
-            then.map(sc => C.i(sc))
+        await C.replace(pattern_sc,async () => {
+            then.map(sc => C.i({...pattern_sc,...sc}))
         }, {pairs_fn: async (a:TheC,b:TheC)=>{
             pairs.i({before:objectify(a),now:objectify(b)})
         }})
 
 
+
+        
 
 
 
