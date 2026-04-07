@@ -443,9 +443,11 @@
         }
 
         // sort by unambiguity
+        let UNAMBIGUITY_THRESHOLD = 0.33
         // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
         let ratings = sort_unambiguity(Over.X)
         ratings.forEach((unambiguity) => {
+            if (Number(unambiguity) < UNAMBIGUITY_THRESHOLD) return
             let x = Over.X.unambiguity[unambiguity]
             x.z.forEach((n:TheC) => {
                 if (!unfound.includes(n)) return

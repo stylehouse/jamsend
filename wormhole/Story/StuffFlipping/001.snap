@@ -30,8 +30,10 @@ Snap:H
               {"after":"tracing:1, other:3"}
               {"before":"tracing:1, self:1, round:5, age:5"}
               {"after":"tracing:1, self:1, round:6, age:5"}
-              {"before":"tracing:1, leaf:1"}
+              before:-
               {"after":"tracing:1, self:1, est:1775527585"}
+              {"before":"tracing:1, leaf:1"}
+              after:-
             resolve_coms
               {"candidate":"tracing:1, self:1, est:1775527585","via":"tracing:1","oldn":"tracing:1, hand:left"}
               {"candidate":"tracing:1, self:1, est:1775527585","via":"tracing:1","oldn":"tracing:1, hand:right"}
@@ -81,13 +83,13 @@ Snap:H
               {"claiming":"tracing:1, whatsit:1","oldn":"tracing:1, whatsit:1","score":"1"}
               {"claiming":"tracing:1, other:3","oldn":"tracing:1, other:3","score":"1"}
               {"claiming":"tracing:1, self:1, round:6, age:5","oldn":"tracing:1, self:1, round:5, age:5","score":"1"}
-              {"claiming":"tracing:1, self:1, est:1775527585","oldn":"tracing:1, leaf:1","score":"0.16666666666666666"}
               {"old":"tracing:1, hand:left","neu":"tracing:1, hand:left"}
               {"old":"tracing:1, hand:right","neu":"tracing:1, hand:right"}
               {"old":"tracing:1, whatsit:1","neu":"tracing:1, whatsit:1"}
               {"old":"tracing:1, other:3","neu":"tracing:1, other:3"}
               {"old":"tracing:1, self:1, round:5, age:5","neu":"tracing:1, self:1, round:6, age:5"}
-              {"old":"tracing:1, leaf:1","neu":"tracing:1, self:1, est:1775527585"}
+              {"spawn":"tracing:1, self:1, est:1775527585"}
+              {"gone":"tracing:1, leaf:1"}
           {"resolve_test":"leaf vanishes, self,est arrives - no tracing noise"}
             C
               self,est:1775527585
@@ -308,12 +310,22 @@ Snap:cytowave
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_3_12","label":"before:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_3_12","label":"before:-","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
     style,width:16
   {"upsert":1,"id":"cytoid_1_1_2_1_3_13","label":"after:tracing:1…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_1_3_14","label":"before:tracing:1…","parent":"cytoid_1_1"}
+    style,background-color:#242424
+    style,color:#666
+    style,height:16
+    style,width:16
+  {"upsert":1,"id":"cytoid_1_1_2_1_3_15","label":"after:-","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
@@ -583,7 +595,7 @@ Snap:cytowave
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_50","label":"claiming:tracing:1…\noldn:tracing:1…\nscore:0.1666666…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_50","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
@@ -608,12 +620,12 @@ Snap:cytowave
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_55","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_55","label":"spawn:tracing:1…","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_56","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_56","label":"gone:tracing:1…","parent":"cytoid_1_1"}
     style,background-color:#242424
     style,color:#666
     style,height:16
@@ -1149,6 +1161,8 @@ Snap:cytowave
   edge_upsert,id:cytoid_1_1_2_1_3_11_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_11
   edge_upsert,id:cytoid_1_1_2_1_3_12_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_12
   edge_upsert,id:cytoid_1_1_2_1_3_13_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_13
+  edge_upsert,id:cytoid_1_1_2_1_3_14_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_14
+  edge_upsert,id:cytoid_1_1_2_1_3_15_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_15
   edge_upsert,id:cytoid_1_1_2_1_3_2_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_2
   edge_upsert,id:cytoid_1_1_2_1_3_3_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_3
   edge_upsert,id:cytoid_1_1_2_1_3_4_1,source:cytoid_1_1_2_1_3,target:cytoid_1_1_2_1_3_4
