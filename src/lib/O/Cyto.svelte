@@ -252,9 +252,10 @@
             resolved_fn: async (T: Travel, _N: Travel[], goners: TheD[]) => {
                 let {D} = T.sc
                 V.gone_debug && goners.length && D.i({goners}) // debug
+                
                 // debug
                 let AIM = this.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0].o({run:1})[0].sc.done == 6
-                if (D.sc.the_w == 'Yin' && AIM) {
+                if (0 && D.sc.the_w == 'Yin' && AIM) {
                     for (let oD of D.o(Se.c.trace_sc)) {
                         let boD = oD.c.T.sc.bD
                         let ton = (D) => D.c.T.sc.n
@@ -492,10 +493,6 @@
         // migration: goner whose n ref appears as a neu C
         for (const [_gid, gD] of goners_by_id) {
             const n = gD.c.T?.sc.n as TheC | undefined
-            
-            // debug
-            let AIM = this.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0].o({run:1})[0].sc.done == 6
-            if (gD.sc.the_leaf && AIM) debugger
 
             if (!n) continue
             const neu_Cs = (n_to_Cs.get(n) ?? []).filter(

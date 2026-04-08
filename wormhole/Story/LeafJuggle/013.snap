@@ -1,0 +1,30 @@
+Snap:H
+  H:LeafJuggle,Run
+    A:Yin,began
+      {"mung":["age"]}	self,round:13
+      w:Yin
+        hand:left
+        hand:right
+        whatsit
+          thing:with,see
+        other:3
+        {"mung":["age"]}	self,round:13
+    A:Yang
+      {"mung":["age"]}	self,round:13
+      w:Yang
+        hand:left
+          leaf
+        hand:right
+        {"mung":["age"]}	self,round:13
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  {"upsert":1,"id":"cytoid_1_2_1_3","label":"leaf:1","parent":"cytoid_1_2"}
+    {"style":1,"background-color":"rgb(32,111,32)"}
+    style,color:#b0ffb0
+    style,height:14
+    style,shape:ellipse
+    style,width:14
+  edge_upsert,id:cytoid_1_2_1_3_1,source:cytoid_1_2_1,target:cytoid_1_2_1_3
+  remove,id:cytoid_1_1_2_3
+  edge_remove,id:cytoid_1_1_2_3_1
+  migrate,id:cytoid_1_1_2_3,toward:cytoid_1_2_1_3
