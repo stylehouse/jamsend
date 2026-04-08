@@ -239,7 +239,7 @@ abstract class Housing extends TheC {
         const tag = e.sc.fn
             ? `fn:${e.sc.see ?? '?'}`
             : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
-        H.trace('push', tag)
+        H.trace('todo', tag)
         H.todo = [...H.todo, e]
     }
 
@@ -589,7 +589,7 @@ export class House extends StorableHousing {
 
         this.c.began_run = now_in_seconds_with_ms()
         this.c.finished_run = null
-        this.trace('run')
+        this.trace('beliefs','begin')
         
         console.log(`H:${this.name}  -> ${H.name}`)
         await H.mutex('beliefs', async () => {
@@ -605,7 +605,7 @@ export class House extends StorableHousing {
                 await this.beliefs(e)
             }
         })
-        this.trace('done')
+        this.trace('beliefs','done')
         this.c.finished_run = now_in_seconds_with_ms()
     }
 

@@ -269,15 +269,14 @@
 //#region snap codec
     // ── encode_toc_snap ───────────────────────────────────────────────────────
     // Walk The/** with Travel for infinite depth. The only inline rule is the
-    // %step rule below — every other particle (TimeSpool, TimeTotal, sample,
+    // %step skip below — every other particle (TimeSpool, TimeTotal, sample,
     // notes, future siblings of step) is encoded by simply rendering its sc and
     // recursing into its children at depth+1. Adding a new bucket under The is
     // therefore zero-code: the codec already round-trips it.
     //
-    // %step rule: a particle with a `step` key is decorated with snap_link:
-    // "NNN.snap" before being emitted, so the on-disk toc.snap line points
-    // visibly at the sibling file holding the actual snapshot text. The dige
-    // remains inline — that is what verification compares against. Steps with
+    // %step rule: a step is just {step:N, dige}. The sibling NNN.snap file is
+    // implied by step:N — no snap_link field on disk, the decoder reconstructs
+    // it (or any code that needs it just calls pad(N)+'.snap'). Steps with
     // neither dige nor notes are skipped (lean toc.snap, matches old behaviour).
     //
     // depth-0 sort: steps come first in numeric order, other buckets after, so
@@ -305,18 +304,13 @@
                     return
                 }
 
-                const sc: Record<string, any> = { ...n.sc }
-
-                // %step inline rule
-                if (sc.step != null) {
-                    if (!sc.dige && !(n.o({ note: 1 }).length)) {
-                        T.sc.not = 1   // skip the whole subtree, nothing worth saving
-                        return
-                    }
-                    sc.snap_link = `${this.pad(sc.step as number)}.snap`
+                // %step skip rule: nothing worth saving for this step
+                if (n.sc.step != null && !n.sc.dige && !(n.o({ note: 1 }).length)) {
+                    T.sc.not = 1
+                    return
                 }
 
-                lines.push(this.enL({ d: depth, stringies: sc }))
+                lines.push(this.enL({ d: depth, stringies: { ...n.sc } }))
             },
         })
 
@@ -324,14 +318,16 @@
     },
 
     // ── decode_toc_snap ───────────────────────────────────────────────────────
-    // Mirror of encode_toc_snap. Walks lines in order, maintains a parents[] stack
-    // indexed by depth: parents[d-1] is the C that a depth-d line gets inserted
-    // into. parents[0] is The itself, so depth-1 lines become direct children.
+    // Mirror of encode_toc_snap. Walks lines in order, maintains a parents[]
+    // stack indexed by depth: parents[d-1] is the C that a depth-d line gets
+    // inserted into. parents[0] is The itself, so depth-1 lines become direct
+    // children.
     //
-    // %step inline rule (mirror): a line with a `step` key uses The_step()
-    // (find-or-create by step number) so the identity is the step number, not
-    // line position. snap_link is dropped on the way in — it's just the disk
-    // filename, dige is what counts.
+    // %step inline rule: a line with a `step` key uses The_step() (find-or-
+    // create by step number) so the identity is the step number, not line
+    // position. The NNN.snap sibling file is implied by step:N — nothing on
+    // disk points at it explicitly, code that needs the path just builds
+    // pad(N)+'.snap'.
     //
     // Everything else: parent.i(sc) — generic insert. notes register their
     // swatch so the UI doesn't fatal-error on first render.
@@ -358,7 +354,6 @@
 
             if (sc.step != null) {
                 // %step inline rule (mirror of encoder)
-                delete sc.snap_link
                 particle = this.The_step(w, sc.step as number)
                 ex(particle.sc, sc)
             } else {
@@ -372,33 +367,29 @@
 
             parents[d] = particle
         }
-        // The is now populated. This/{Step:n} stays empty — only created when a
-        // step actually runs this session. The UI strip is built from The/%step
-        // (the_steps in story_analysis), with live This/{Step:n} overlaid where
-        // present.
     },
 
     // ── sum_beliefs_time ──────────────────────────────────────────────────────
     // Pair-walk a Run_trace and sum the time spent inside the beliefs mutex.
-    // Each {kind:'lock', tag:'beliefs'} must be followed (eventually) by a
-    // matching {kind:'unlock', tag:'beliefs'}; nested locks or unmatched ones
-    // mean the trace is malformed and silently ignoring would hide a real bug,
-    // so we throw. Returns seconds (trace t is performance.now() ms).
+    // Each {kind:'beliefs', tag:'begin'} must be followed by a matching
+    // {kind:'beliefs', tag:'done'}; nested begins or unmatched ones mean the
+    // trace is malformed and silently ignoring would hide a real bug, so we
+    // throw. Returns seconds (trace t is performance.now() ms).
     sum_beliefs_time(trace: any[]): number {
         let total_ms = 0
-        let lock_t: number | null = null
+        let begin_t: number | null = null
         for (const ev of trace ?? []) {
-            if (ev.tag !== 'beliefs') continue
-            if (ev.kind === 'lock') {
-                if (lock_t !== null) throw `sum_beliefs_time: nested lock without unlock`
-                lock_t = ev.t
-            } else if (ev.kind === 'unlock') {
-                if (lock_t === null) throw `sum_beliefs_time: unlock without lock`
-                total_ms += ev.t - lock_t
-                lock_t = null
+            if (ev.kind !== 'beliefs') continue
+            if (ev.tag === 'begin') {
+                if (begin_t !== null) throw `sum_beliefs_time: nested begin without done`
+                begin_t = ev.t
+            } else if (ev.tag === 'done') {
+                if (begin_t === null) throw `sum_beliefs_time: done without begin`
+                total_ms += ev.t - begin_t
+                begin_t = null
             }
         }
-        if (lock_t !== null) throw `sum_beliefs_time: trace ends with unclosed lock`
+        if (begin_t !== null) throw `sum_beliefs_time: trace ends with unclosed begin`
         return total_ms / 1000
     },
 
@@ -421,7 +412,6 @@
     collect_time_sample(w: TheC) {
         const H    = this as House
         const This = w.c.This as TheC
-        debugger
         const ranSteps = (This?.o({ Step: 1 }) ?? [])
             .filter((s: TheC) => Array.isArray(s.sc.Run_trace) && s.sc.Run_trace.length)
         if (!ranSteps.length) return

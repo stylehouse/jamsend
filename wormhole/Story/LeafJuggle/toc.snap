@@ -1,25 +1,32 @@
 story:LeafJuggle
-  step,dige:6faeb785f8e28dd7,snap_link:001.snap
-  step:2,dige:fa3fc39c61cf5b00,snap_link:002.snap
-  step:3,dige:60515624649233fe,snap_link:003.snap
-  step:4,dige:348939bdccf666f0,snap_link:004.snap
-  step:5,dige:efdce380cbaa1ab6,snap_link:005.snap
+  step,dige:6faeb785f8e28dd7
+  step:2,dige:fa3fc39c61cf5b00
+  step:3,dige:60515624649233fe
+  step:4,dige:348939bdccf666f0
+  step:5,dige:efdce380cbaa1ab6
     note,oddity:leaf not in hand
-  step:6,dige:72341adf1c4d90d3,snap_link:006.snap
-  step:7,dige:43cfaa83477c86f7,snap_link:007.snap
-  step:8,dige:a2e614fedb771178,snap_link:008.snap
-  step:9,dige:51a9b12a09ed74be,snap_link:009.snap
-  step:10,dige:6bedc6f6a86e83a5,snap_link:010.snap
-  step:11,dige:ff4e8c32cdc96b28,snap_link:011.snap
-  step:12,dige:ec78b3e62771ca89,snap_link:012.snap
-  step:13,dige:c9a6a204b641b64a,snap_link:013.snap
-  step:14,dige:278a568806560d5c,snap_link:014.snap
-  step:15,dige:1ba4754981d43668,snap_link:015.snap
-  step:16,dige:7b8f16250e6292ac,snap_link:016.snap
-  step:17,dige:73e1877eebbc45a0,snap_link:017.snap
-  step:18,dige:2b31b479483ba07d,snap_link:018.snap
-  step:19,dige:cd93bf0a2465c624,snap_link:019.snap
+  step:6,dige:72341adf1c4d90d3
+  step:7,dige:43cfaa83477c86f7
+  step:8,dige:a2e614fedb771178
+  step:9,dige:51a9b12a09ed74be
+  step:10,dige:6bedc6f6a86e83a5
+  step:11,dige:ff4e8c32cdc96b28
+  step:12,dige:ec78b3e62771ca89
+  step:13,dige:c9a6a204b641b64a
+  step:14,dige:278a568806560d5c
+  step:15,dige:1ba4754981d43668
+  step:16,dige:7b8f16250e6292ac
+  step:17,dige:73e1877eebbc45a0
+  step:18,dige:2b31b479483ba07d
+  step:19,dige:cd93bf0a2465c624
   TimeSpool
-    TimeTotal:beliefs,avg:0
+    TimeTotal:beliefs,avg:0.119
       sample:0,at:1775623028
       sample:0,at:1775623131
+      sample:0.205,at:1775625593
+      sample:0.162,at:1775625721
+      sample:0.133,at:1775626134
+      sample:0.186,at:1775626180
+      sample:0.126,at:1775626230
+      sample:0.135,at:1775626265
+      sample:0.127,at:1775627672
