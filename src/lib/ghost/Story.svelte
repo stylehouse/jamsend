@@ -941,6 +941,11 @@
                     H.The_step(w, n).sc.dige = disk_dige
                     console.warn(`⚠ disk dige mismatch n=${n}: disk=${disk_dige.slice(0,8)} toc=${exp_dige?.slice(0,8)}`)
                 }
+            } else {
+                // file missing entirely — toc.snap claims a dige but NNN.snap is gone
+                step.sc.disk_ok   = false
+                step.sc.disk_dige = null
+                console.warn(`⚠ disk snap missing n=${n}`)
             }
             delete run.sc.check_snap
             step.sc.checking = false   // unblocks poll_check (snap_checking ok path only)
@@ -1144,6 +1149,7 @@
                     run.sc.fetch_snap = n
                     run.sc.check_snap = n   // fetch_snap also sets this, but be explicit
                     run.sc.frontier   = n
+                    if (run.sc.open_at == null) run.sc.open_at = n
                     H.The_set_frontier(w, n)
                     await update_status(`✗ step ${H.pad(n)}`, 'stop')
                     console.log(`⛔ Story: step ${H.pad(n)} mismatch — exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)
@@ -1185,6 +1191,7 @@
                 run.sc.failed_at  = n
                 run.sc.fetch_snap = n
                 run.sc.frontier   = n
+                if (run.sc.open_at == null) run.sc.open_at = n
                 H.The_set_frontier(w, n)
                 update_status(`✗ disk ${H.pad(n)}`, 'stop')
                 H.main()

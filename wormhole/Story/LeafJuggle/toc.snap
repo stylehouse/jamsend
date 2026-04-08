@@ -20,8 +20,7 @@ story:LeafJuggle
   step:18,dige:2b31b479483ba07d
   step:19,dige:cd93bf0a2465c624
   TimeSpool
-    TimeTotal:beliefs,avg:0.119
-      sample:0,at:1775623028
+    TimeTotal:beliefs,avg:0.138
       sample:0,at:1775623131
       sample:0.205,at:1775625593
       sample:0.162,at:1775625721
@@ -30,3 +29,5 @@ story:LeafJuggle
       sample:0.126,at:1775626230
       sample:0.135,at:1775626265
       sample:0.127,at:1775627672
+      sample:0.161,at:1775627909
+      sample:0.14,at:1775628092

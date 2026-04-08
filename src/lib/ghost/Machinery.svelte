@@ -439,8 +439,8 @@
         const rh = w.oai({ hand: 'right' })
         
         let check = (leaf) => {
-            window.firstleaf ||= leaf
-            // if (window.firstleaf != leaf) throw `many leaf`
+            w.c.firstleaf ||= leaf
+            if (w.c.firstleaf != leaf) throw `many leaf`
         }
  
         // rh exits first — passes the leaf to other/*
