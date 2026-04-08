@@ -1,33 +1,36 @@
-{"story":"LeafFarm"}
-  {"step":1,"dige":"733dcb3d3115176c"}
-  {"step":2,"dige":"7081adb68c9d90e7"}
-  {"step":3,"dige":"473a759c0f3e4097"}
-  {"step":4,"dige":"f35842fdf8a85f99"}
-  {"step":5,"dige":"c0206d8fb9dd0f28"}
-  {"step":6,"dige":"72cc2b7f04db7da4"}
-  {"step":7,"dige":"e9699be5413de41a"}
-  {"step":8,"dige":"9bfb3b94f981257b"}
-  {"step":9,"dige":"863f37552ea234ab"}
-  {"step":10,"dige":"27f4ca746fff0d61"}
-  {"step":11,"dige":"a3efb44893489c81"}
-  {"step":12,"dige":"76c95a3c3bb2aa23"}
-  {"step":13,"dige":"efeabf80cb7f4cc8"}
-  {"step":14,"dige":"9801b79f1c1d7371"}
-  {"step":15,"dige":"9c3514bbf8e09746"}
-  {"step":16,"dige":"44ba12943bf10486"}
-  {"step":17,"dige":"e022b362b3a52b01"}
-  {"step":18,"dige":"83d0637450362601"}
-  {"step":19,"dige":"b34a474ace991634"}
-    {"note":1,"that":"leaf_2_0 is about to get harvested"}
-  {"step":20,"dige":"d98d6508860ff5a4"}
-    {"note":1,"that":"leaf_2_0 emerges again"}
-  {"step":21,"dige":"cf1f4aa98341bba9"}
-  {"step":22,"dige":"3ad61a4752b6bf88"}
-  {"step":23,"dige":"a62633c0849cf7d8"}
-  {"step":24,"dige":"51b605cee02a1b2e"}
-  {"step":25,"dige":"d789c9bb2feb4a81"}
-  {"step":26,"dige":"dfd2f0e5808ae3a4"}
-  {"step":27,"dige":"811470146c30e685"}
-  {"step":28,"dige":"98fb5f9216f5039b"}
-  {"step":29,"dige":"67efaa4afcf9462f"}
-  {"step":30,"dige":"fe88b513fb41eece"}
+story:LeafFarm
+  step,dige:733dcb3d3115176c,snap_link:001.snap
+  step:2,dige:7081adb68c9d90e7,snap_link:002.snap
+  step:3,dige:473a759c0f3e4097,snap_link:003.snap
+  step:4,dige:f35842fdf8a85f99,snap_link:004.snap
+  step:5,dige:c0206d8fb9dd0f28,snap_link:005.snap
+  step:6,dige:72cc2b7f04db7da4,snap_link:006.snap
+  step:7,dige:e9699be5413de41a,snap_link:007.snap
+  step:8,dige:9bfb3b94f981257b,snap_link:008.snap
+  step:9,dige:863f37552ea234ab,snap_link:009.snap
+  step:10,dige:27f4ca746fff0d61,snap_link:010.snap
+  step:11,dige:a3efb44893489c81,snap_link:011.snap
+  step:12,dige:76c95a3c3bb2aa23,snap_link:012.snap
+  step:13,dige:efeabf80cb7f4cc8,snap_link:013.snap
+  step:14,dige:9801b79f1c1d7371,snap_link:014.snap
+  step:15,dige:9c3514bbf8e09746,snap_link:015.snap
+  step:16,dige:44ba12943bf10486,snap_link:016.snap
+  step:17,dige:e022b362b3a52b01,snap_link:017.snap
+  step:18,dige:83d0637450362601,snap_link:018.snap
+  step:19,dige:b34a474ace991634,snap_link:019.snap
+    note,that:leaf_2_0 is about to get harvested
+  step:20,dige:d98d6508860ff5a4,snap_link:020.snap
+    note,that:leaf_2_0 emerges again
+  step:21,dige:cf1f4aa98341bba9,snap_link:021.snap
+  step:22,dige:3ad61a4752b6bf88,snap_link:022.snap
+  step:23,dige:a62633c0849cf7d8,snap_link:023.snap
+  step:24,dige:51b605cee02a1b2e,snap_link:024.snap
+  step:25,dige:d789c9bb2feb4a81,snap_link:025.snap
+  step:26,dige:dfd2f0e5808ae3a4,snap_link:026.snap
+  step:27,dige:811470146c30e685,snap_link:027.snap
+  step:28,dige:98fb5f9216f5039b,snap_link:028.snap
+  step:29,dige:67efaa4afcf9462f,snap_link:029.snap
+  step:30,dige:fe88b513fb41eece,snap_link:030.snap
+  TimeSpool
+    TimeTotal:beliefs,avg:0
+      sample:0,at:1775622983

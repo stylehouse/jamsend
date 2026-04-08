@@ -14,9 +14,16 @@
     //
     //   The   — the canonical record; what was on disk plus what was accepted.
     //           Lives in w.c.The, a separate C-tree never walked by snap or saved.
-    //           Lowercase key: {step:N, dige:"hash"}
-    //           Children: {note:1, frontier:1}  — singleton roaming note
-    //                     {note:1, todo:"text"} — user annotation
+    //           Direct children are heterogeneous buckets:
+    //             {step:N, dige}              — one per recorded step
+    //               /{note:1, frontier:1}     — singleton roaming note
+    //               /{note:1, todo:"text"}    — user annotation
+    //             {TimeSpool:1}               — persistent timing samples
+    //               /{TimeTotal:'beliefs', avg}
+    //                 /{sample, at}           — last 10 by .at, oldest evicted
+    //           Mutation goes here, save writes here, decode rehydrates here.
+    //           This is never reflected back into The — the only direction is
+    //           decode-on-load, which puts disk → The.
     //
     //   This is analogous to the local / remote duality in git, but named to
     //   read naturally in prose: "This step" = live session, "The step" = record.
@@ -111,11 +118,11 @@
     `
 
     import { objectify, TheC }            from "$lib/data/Stuff.svelte"
-    import type { TheD, Travel }          from "$lib/mostly/Selection.svelte"
-    import { Selection }                  from "$lib/mostly/Selection.svelte"
+    import type { TheD }                  from "$lib/mostly/Selection.svelte"
+    import { Selection, Travel }          from "$lib/mostly/Selection.svelte"
     import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
     import { onMount }                    from "svelte"
-    import { now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
+    import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
 
@@ -259,75 +266,196 @@
     },
 
 
-//#region toc.snap codec — encode/decode The to/from disk
-//
-//  toc.snap is the on-disk form of The.  It uses the same snap line codec as
-//  NNN.snap files, so a single reader handles everything.
-//
-//  Layout:
-//    depth 0  — story root   \t{"story":"BookName"}
-//    depth 1  — step         "  \t{"step":N,"dige":"hash"}"
-//    depth 2  — note         "    \t{"note":1,...typeKV}"
-//
-//  got_snap text is never included in step lines — it lives in NNN.snap only.
-//  Steps without a dige are written only when they carry notes, so user
-//  annotations on not-yet-run steps survive a save.
-
-    encode_toc_snap(w: TheC): string {
+//#region snap codec
+    // ── encode_toc_snap ───────────────────────────────────────────────────────
+    // Walk The/** with Travel for infinite depth. The only inline rule is the
+    // %step rule below — every other particle (TimeSpool, TimeTotal, sample,
+    // notes, future siblings of step) is encoded by simply rendering its sc and
+    // recursing into its children at depth+1. Adding a new bucket under The is
+    // therefore zero-code: the codec already round-trips it.
+    //
+    // %step rule: a particle with a `step` key is decorated with snap_link:
+    // "NNN.snap" before being emitted, so the on-disk toc.snap line points
+    // visibly at the sibling file holding the actual snapshot text. The dige
+    // remains inline — that is what verification compares against. Steps with
+    // neither dige nor notes are skipped (lean toc.snap, matches old behaviour).
+    //
+    // depth-0 sort: steps come first in numeric order, other buckets after, so
+    // toc.snap reads the same way as before with TimeSpool tucked at the bottom.
+    async encode_toc_snap(w: TheC): Promise<string> {
         const book  = w.sc.Book
-        const lines: string[] = []
+        const lines: string[] = [this.enL({ d: 0, stringies: { story: book } })]
+        const The   = w.c.The as TheC
 
-        lines.push(`${this.enj({ story: book })}`)
+        const T = new Travel()
+        await T.dive({
+            n:        The,
+            match_sc: {},
+            each_fn:  async (n: TheC, T: Travel) => {
+                const depth = T.c.path.length - 1
 
-        const steps = (w.c.The)?.o({ step: 1 })
-            .filter(s => !!s.sc.dige || (s.o({ note: 1 })).length > 0)
-            .sort((a, b) => (a.sc.step as number) - (b.sc.step as number))
+                if (depth === 0) {
+                    // The itself — story root already emitted above.
+                    // Sort children: %step ascending, then everything else.
+                    const children = n.o({}) as TheC[]
+                    const steps  = children.filter(c => c.sc.step != null)
+                        .sort((a, b) => (a.sc.step as number) - (b.sc.step as number))
+                    const others = children.filter(c => c.sc.step == null)
+                    T.sc.more = [...steps, ...others]
+                    return
+                }
 
-        for (const s of steps) {
-            const sc: Record<string,any> = { step: s.sc.step }
-            if (s.sc.dige) sc.dige = s.sc.dige
-            lines.push(`${this.ind(1)}${this.enj(sc)}`)
-            for (const noteC of s.o({ note: 1 })) {
-                lines.push(`${this.ind(2)}${this.enj(noteC.sc)}`)
-            }
-        }
+                const sc: Record<string, any> = { ...n.sc }
+
+                // %step inline rule
+                if (sc.step != null) {
+                    if (!sc.dige && !(n.o({ note: 1 }).length)) {
+                        T.sc.not = 1   // skip the whole subtree, nothing worth saving
+                        return
+                    }
+                    sc.snap_link = `${this.pad(sc.step as number)}.snap`
+                }
+
+                lines.push(this.enL({ d: depth, stringies: sc }))
+            },
+        })
+
         return lines.join('\n') + '\n'
     },
 
+    // ── decode_toc_snap ───────────────────────────────────────────────────────
+    // Mirror of encode_toc_snap. Walks lines in order, maintains a parents[] stack
+    // indexed by depth: parents[d-1] is the C that a depth-d line gets inserted
+    // into. parents[0] is The itself, so depth-1 lines become direct children.
+    //
+    // %step inline rule (mirror): a line with a `step` key uses The_step()
+    // (find-or-create by step number) so the identity is the step number, not
+    // line position. snap_link is dropped on the way in — it's just the disk
+    // filename, dige is what counts.
+    //
+    // Everything else: parent.i(sc) — generic insert. notes register their
+    // swatch so the UI doesn't fatal-error on first render.
+    //
+    // not safe to call more than once.
     decode_toc_snap(snap: string, w: TheC) {
-        // deserialise toc.snap into The/%step:N + notes, and pre-create hollow
-        // This/{Step:N} particles for every known step so the UI strip shows all
-        // expected pips immediately, before any step runs this session.
-        //
-        // not safe to call more than once
         if (!snap) return
-        let curStep: TheC | null = null
+        const The = w.c.The as TheC
+
+        // parents[d] = the C that a line at depth d+1 should be inserted under
+        const parents: TheC[] = [The]
 
         for (const line of snap.split('\n').filter(Boolean)) {
             let parsed: ReturnType<typeof this.deL> | null = null
             try { parsed = this.deL(line) } catch { continue }
             if (!parsed) continue
-            const sc: Record<string,any> = { ...parsed.stringies }
+            const sc: Record<string, any> = { ...parsed.stringies }
+            const d = parsed.d as number
 
-            if (parsed.d === 0) {
-                // depth 0: story root — could validate Book match here in future
+            if (d === 0) continue   // story root — informational, validation hook
 
-            } else if (parsed.d === 1 && sc.step != null) {
-                // depth 1: step entry — find-or-create in The (uses exactly())
-                curStep = this.The_step(w, sc.step as number)
-                ex(curStep!.sc,sc)
-            } else if (parsed.d === 2 && sc.note && curStep) {
-                // depth 2: note — JSON comparison avoids wildcard-1 over-matching
-                curStep.i(sc)
-                for (const key of Object.keys(sc).filter(k => k !== 'note')) {
-                    this.ensure_swatch(w, key)
+            const parent = parents[d - 1] ?? The
+            let particle: TheC
+
+            if (sc.step != null) {
+                // %step inline rule (mirror of encoder)
+                delete sc.snap_link
+                particle = this.The_step(w, sc.step as number)
+                ex(particle.sc, sc)
+            } else {
+                particle = parent.i(sc)
+                if (sc.note) {
+                    for (const key of Object.keys(sc).filter(k => k !== 'note')) {
+                        this.ensure_swatch(w, key)
+                    }
                 }
             }
+
+            parents[d] = particle
         }
-        // The is now populated — the UI strip is built from The/%step entries in
-        // story_analysis (the_steps array), not from pre-created hollow stepsC entries.
-        // This/{Step:n} is created only when a step actually runs this session.
+        // The is now populated. This/{Step:n} stays empty — only created when a
+        // step actually runs this session. The UI strip is built from The/%step
+        // (the_steps in story_analysis), with live This/{Step:n} overlaid where
+        // present.
     },
+
+    // ── sum_beliefs_time ──────────────────────────────────────────────────────
+    // Pair-walk a Run_trace and sum the time spent inside the beliefs mutex.
+    // Each {kind:'lock', tag:'beliefs'} must be followed (eventually) by a
+    // matching {kind:'unlock', tag:'beliefs'}; nested locks or unmatched ones
+    // mean the trace is malformed and silently ignoring would hide a real bug,
+    // so we throw. Returns seconds (trace t is performance.now() ms).
+    sum_beliefs_time(trace: any[]): number {
+        let total_ms = 0
+        let lock_t: number | null = null
+        for (const ev of trace ?? []) {
+            if (ev.tag !== 'beliefs') continue
+            if (ev.kind === 'lock') {
+                if (lock_t !== null) throw `sum_beliefs_time: nested lock without unlock`
+                lock_t = ev.t
+            } else if (ev.kind === 'unlock') {
+                if (lock_t === null) throw `sum_beliefs_time: unlock without lock`
+                total_ms += ev.t - lock_t
+                lock_t = null
+            }
+        }
+        if (lock_t !== null) throw `sum_beliefs_time: trace ends with unclosed lock`
+        return total_ms / 1000
+    },
+
+    // ── collect_time_sample ───────────────────────────────────────────────────
+    // Called once on test completion (both new and check end-branches in
+    // story_drive). Sums the beliefs-mutex time across every step that actually
+    // ran this session (anything in This with a Run_trace), then appends one
+    // sample to The/TimeSpool/{TimeTotal:'beliefs'}.
+    //
+    // Lives in The (not This) so it round-trips through toc.snap and accumulates
+    // history across sessions — the whole point is being able to look back over
+    // recent runs and see "is this test getting slower" / "roughly how long does
+    // this test take to run". This is session-only and would die on reload.
+    //
+    // Trim: keep only the most recent 10 samples per TimeTotal. Sort ascending
+    // by .at so the oldest sit at the front of the array, then whittle_N drops
+    // from the front (and calls .drop() so they vanish from o() results).
+    // avg is recomputed from the survivors so a future chart can read it
+    // without re-summing.
+    collect_time_sample(w: TheC) {
+        const H    = this as House
+        const This = w.c.This as TheC
+        debugger
+        const ranSteps = (This?.o({ Step: 1 }) ?? [])
+            .filter((s: TheC) => Array.isArray(s.sc.Run_trace) && s.sc.Run_trace.length)
+        if (!ranSteps.length) return
+
+        let run_total_seconds = 0
+        for (const step of ranSteps) {
+            run_total_seconds += H.sum_beliefs_time(step.sc.Run_trace as any[])
+        }
+
+        // The_bucket-style find-or-create directly under The. TimeSpool is the
+        // namespace, TimeTotal:'beliefs' is the key (other categories can sit
+        // alongside as siblings later).
+        const The   = w.c.The as TheC
+        const spool = (The.o({ TimeSpool: 1 })[0] as TheC) ?? The.i({ TimeSpool: 1 })
+        const tt    = (spool.o({ TimeTotal: 'beliefs' })[0] as TheC)
+                   ?? spool.i({ TimeTotal: 'beliefs', avg: 0 })
+
+        // append. .at is wall-clock seconds — when this measurement was taken,
+        // not the test duration itself (which is in .sample).
+        tt.i({ sample: Math.round(run_total_seconds * 1000) / 1000, at: now_in_seconds() })
+
+        // sort oldest-first so whittle_N evicts from the front
+        const samples = (tt.o({ sample: 1 }) as TheC[])
+            .sort((a, b) => (a.sc.at as number) - (b.sc.at as number))
+        H.whittle_N(samples, 10)
+
+        // recompute avg from survivors
+        const survivors = tt.o({ sample: 1 }) as TheC[]
+        const avg = survivors.reduce((s, n) => s + (n.sc.sample as number), 0) / survivors.length
+        tt.sc.avg = Math.round(avg * 1000) / 1000
+
+        ;V.Story && console.log(`⏱ TimeSpool/beliefs +sample=${run_total_seconds.toFixed(3)}s avg=${tt.sc.avg}s n=${survivors.length}`)
+    },
+
     parse_snap(s: string) {
         // snap string → array of deL-parsed line objects, nulls filtered
         if (!s) return []
@@ -921,7 +1049,9 @@
             
             if (run.sc.mode === 'new' && n > ((run.sc.total ?? 30) as number)) {
                 run.c.driving = false; run.sc.paused = 2
+                H.collect_time_sample(w)   // append to The/TimeSpool before save
                 H.story_analysis(w)
+                H.story_save()
                 await update_status('recorded ✓', 'start')
                 console.log(`✓ Story: complete (${run.sc.total} steps)`)
                 H.top_House().elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'new' })
@@ -937,7 +1067,9 @@
                     .filter(s => !s.sc.ok)
                     .sort((a, b) => b.sc.Step - a.sc.Step)[0]
                 if (last_bad) run.sc.open_at = last_bad.sc.Step
+                H.collect_time_sample(w)   // append to The/TimeSpool before save
                 H.story_analysis(w)
+                H.story_save()
                 await update_status('done ✓', 'start')
                 console.log(`✓ Story: check complete at n=${n}`)
                 H.top_House().elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
@@ -1099,7 +1231,7 @@
 //  The 5-step trim (accepted+saved) handles cleanup after the file is written.
 //  There is therefore no race between story_accept and the post_do here.
 
-    story_save(this: House) {
+    async story_save(this: House) {
         const storyH = this
         const A      = storyH.o({ A: 'Story' })[0]
         const w      = A?.o({ w: 'Story' })[0]
@@ -1124,7 +1256,7 @@
             storyH.The_set_frontier(w, 0)   // clean: no outstanding mismatch
         }
 
-        const snap       = storyH.encode_toc_snap(w)
+        const snap       = await storyH.encode_toc_snap(w)
         const step_count = all_the_steps.filter(s => !!s.sc.dige).length
 
         if (!wh || !run_path) {
