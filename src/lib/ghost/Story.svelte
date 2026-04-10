@@ -300,7 +300,7 @@
                     const steps  = children.filter(c => c.sc.step != null)
                         .sort((a, b) => (a.sc.step as number) - (b.sc.step as number))
                     const others = children.filter(c => c.sc.step == null)
-                    T.sc.more = [...steps, ...others]
+                    T.sc.more = [...others,...steps]
                     return
                 }
 
