@@ -8,6 +8,10 @@
     import type { House } from '$lib/O/Housing.svelte'
     import { _C, type TheC }  from '$lib/data/Stuff.svelte'
     import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
+    import MatstyleEditor from './MatstyleEditor.svelte'
+    let matstyles = $state<TheC[]>([])
+    let ms_palette: string[] = []
+    let ms_shapes: string[]  = []
 
     cytoscape.use(fcose)
 
@@ -41,6 +45,13 @@
             + ` −${wave.o({ remove:      1 }).length}`
             + ` ~${wave.o({ migrate:     1 }).length}`
             + ` · ⏱${dur}s`
+
+        // read matstyles from graph (Styles:1 particle was i()'d there by Cyto)
+        const styles_C = H?.graph?.find((n: TheC) => n.sc.Styles) as TheC | undefined
+        matstyles = styles_C?.o({ matstyle: 1 }) ?? []
+        // palette + shapes are stable arrays on H (from Matstyle ghost)
+        ms_palette = (H as any).MATSTYLE_PALETTE ?? []
+        ms_shapes  = (H as any).MATSTYLE_SHAPES ?? []
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
@@ -474,6 +485,21 @@
         <span class="l-helio">╌ helio</span>
         <span class="l-flow">→ flow</span>
     </div>
+    {#if matstyles.length}
+        <div class="cytui-matstyles">
+            <MatstyleEditor
+                {matstyles}
+                palette={ms_palette}
+                shapes={ms_shapes}
+                on_update={(key, prop, value) => {
+                    // find Story worker to pass to matstyle_update
+                    let story_w = null
+                    try { story_w = (H as any).Awo('Story') } catch {}
+                    if (story_w) (H as any).matstyle_update(story_w, key, prop, value)
+                }}
+            />
+        </div>
+    {/if}
     <div class="cytui-graph" bind:this={container}></div>
 </div>
 
@@ -508,6 +534,10 @@
     padding: 2px 10px; background: #080808;
     border-bottom: 1px solid #141414;
     font-size: 8px; flex-shrink: 0; opacity: 0.6;
+}
+.cytui-matstyles {
+    padding: 2px 8px; background: #080808;
+    border-bottom: 1px solid #141414;
 }
 .l-leaf  { color: #4c9 } .l-mf   { color: #af5 }
 .l-sun   { color: #fb0 } .l-poo  { color: #974 }

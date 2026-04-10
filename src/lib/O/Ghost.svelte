@@ -30,6 +30,7 @@
     import Cyto      from "./Cyto.svelte"
     import Text  from "$lib/ghost/Text.svelte"
     import Auto from "./Auto.svelte";
+    import Matstyle from "./Matstyle.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -50,6 +51,7 @@
 <Machinery {M} />
 <Story     {M} />
 <Cyto      {M} />
+<Matstyle {M} />
 <!-- pure text/diff utilities — depth_of, compute_diff, squish_context, enDif, deDif, etc. -->
 <Text  {M} />
 <!-- what are we working on, and memories drifting away -->

@@ -340,29 +340,10 @@
         thence?: Array<any>
         mung?: string[]
     }): string | null {
-        const munging: Array<any> = []
-        const thence: Array<any> = []
-        const seen = new Set<string>()
-
-        for (const rule of (q.rules ?? [])) {
-            const matched = (rule.matching_any as Array<any>).some((entry: any) => {
-                if (entry.sc_only) {
-                    const want = Object.keys(entry.sc_only)
-                    if (Object.keys(n.sc).length !== want.length) return false
-                    return n.matches(entry.sc_only)
-                }
-                return n.matches(entry.sc)
-            })
-            if (!matched) continue
-            for (const m of rule.means?.munging ?? []) munging.push(m)
-            if (rule.means?.skip) q.skip = true
-            for (const tw of rule.means?.thence_matching ?? []) {
-                const key = JSON.stringify(tw)
-                if (!seen.has(key)) { seen.add(key); thence.push(tw) }
-            }
-        }
-
-        q.thence = thence
+        // ── classification via mainkey_match (DRY) ──────────────────
+        const mr = this.mainkey_match(n, q.rules ?? [])
+        q.skip   = mr.skip
+        q.thence = mr.thence
         if (q.skip) return null
 
         const stringies: Record<string, any> = {}
@@ -374,7 +355,7 @@
                 ref[k] = objectify(v)
                 continue
             }
-            const m = munging.find(r => Object.hasOwn(r.sc, k))
+            const m = mr.munging.find(r => Object.hasOwn(r.sc, k))
             if (m) { mung.push(k); continue }
             stringies[k] = v
         }
@@ -385,6 +366,7 @@
 
         q.stringies = stringies
         q.objecties = Object.keys(objecties).length ? objecties : undefined
+        q.mung      = mung
 
         const line = this.enL({ d: q.d, objecties: q.objecties, stringies })
         q.snap_line = line

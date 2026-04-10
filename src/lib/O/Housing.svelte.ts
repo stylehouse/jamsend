@@ -860,6 +860,22 @@ export class House extends StorableHousing {
         return found
     }
 
+    // ── Awo: climb the A/w path by name ─────────────────────────────────
+    // Awo('Story')         → finds {A:'Story'}/{w:'Story'}, returns w
+    // Awo('Story','Cyto')  → finds {A:'Story'}/{w:'Cyto'}, returns w
+    // Blows up if multiple rows come out anywhere.
+    Awo(Aname: string, wname?: string): TheC {
+        wname ??= Aname
+        const As = this.o({ A: Aname }) as TheC[]
+        if (!As.length) throw `Awo: !A:${Aname}`
+        if (As.length > 1) throw `Awo: ${As.length}x A:${Aname}`
+        const A = As[0]
+        const ws = A.o({ w: wname }) as TheC[]
+        if (!ws.length) throw `Awo: !w:${wname} in A:${Aname}`
+        if (ws.length > 1) throw `Awo: ${ws.length}x w:${wname} in A:${Aname}`
+        return ws[0]
+    }
+
 //#endregion
 //#region think
 

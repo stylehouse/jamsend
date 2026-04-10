@@ -839,6 +839,9 @@
         const H = this
 
         w.c.The  = w.i({ The:  1, story: book })
+        // lazy-creates Styles bucket — encode_toc_snap walks The/** so this is free.
+        // Matstyle ghost autovivifies entries here during cyto_scan.
+        this.The_Styles(w)
         w.c.This = w.i({ This: 1, Story: book })
 
         const ave   = H.oai_enroll(H, { watched: 'ave' })
