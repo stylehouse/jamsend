@@ -60,12 +60,6 @@
         w.c.gn        = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
         w.sc.grawave_duration ??= 0.4
-        // < de-weird this linkup
-        const story_w = this.Awo('Story')
-        if (story_w?.c?.The) {
-            const wa = this.o({ watched: 'graph' })[0]
-            if (wa && !wa.oa({ Styles: 1 })) wa.i(this.The_Styles(story_w))
-        }
     },
 
     async cyto_update_wave(w: TheC): Promise<boolean> {
@@ -73,16 +67,6 @@
         const RunH = (H.o({ H: 1 }) as House[]).find(h => h.sc.Run) as House | undefined
         if (!RunH) return false
 
-        // < de-weird this linkup
-        // ensure Styles is in graph (retry if Cyto_plan ran before Story)
-        const wa = H.o({ watched: 'graph' })[0]
-        if (wa && !wa.oa({ Styles: 1 })) {
-            try {
-                const story_w = H.Awo('Story')
-                if (story_w?.c?.The) wa.i(H.The_Styles(story_w))
-            } catch {}
-        }
- 
         const story_w = H.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
         const run     = story_w?.o({ run: 1 })[0] as TheC | undefined
         const done    = run?.sc.done    as number | undefined
@@ -239,6 +223,13 @@
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
 
+                // backlink for matstyle_restyle reactivity
+                // < can be got via Se1_D. generalise...
+                C.c.source_n = n
+
+                // nd already has matstyles_desc when matstyle_apply ran
+                if (nd.matstyles_desc) C.sc.matstyles = nd.matstyles_desc
+
                 // special cases of node typing:
                 // the non-first duplicate refs get:
                 if (T.sc.loopy) C.sc.loopy = 1
@@ -332,38 +323,23 @@
         return parts.join('\n')
     },
 
-    hsl2rgb(h: number, s: number, l: number): string {
-        s /= 100; l /= 100
-        const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=l-c/2
-        let r=0,g=0,b=0
-        if      (h<60)  {r=c;g=x} else if (h<120) {r=x;g=c}
-        else if (h<180) {g=c;b=x} else if (h<240) {g=x;b=c}
-        else if (h<300) {r=x;b=c} else             {r=c;b=x}
-        return `rgb(${Math.round((r+m)*255)},${Math.round((g+m)*255)},${Math.round((b+m)*255)})`
-    },
-
-    // cyto_nstyle: delegate to matstyle system.
-    // story_w is found via Awo; matstyle autovivifies on first sight.
     cyto_nstyle(n: TheC): any {
         const key = this.mainkey(n)
         if (!key) return { label: this.cyto_label(n),
             style: { 'background-color': '#242424', width: 16, height: 16, color: '#666' } }
 
         let story_w: TheC | undefined
-        try { story_w = this.Awo('Story') } catch { return this.cyto_nstyle_fallback(n) }
-        if (!story_w?.c?.The) return this.cyto_nstyle_fallback(n)
+        try { story_w = this.Awo('Story') } catch { /* Story not up yet */ }
+        if (!story_w?.c?.The) {
+            // pre-The fallback: deterministic palette colour
+            const idx = key.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 40
+            return { label: this.cyto_label(n),
+                style: { 'background-color': this.MATSTYLE_PALETTE[idx],
+                        width: 16, height: 16, color: '#ccc' } }
+        }
 
         const ms = this.matstyle_get_or_create(story_w, key)
         return this.matstyle_apply(ms, n)
-    },
-
-    // Pre-The fallback — uses mainkey colour from palette directly.
-    cyto_nstyle_fallback(n: TheC): any {
-        const key = this.mainkey(n) ?? '?'
-        const idx = key.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 40
-        const bg = this.MATSTYLE_PALETTE[idx]
-        return { label: this.cyto_label(n),
-            style: { 'background-color': bg, width: 16, height: 16, color: '#ccc' } }
     },
 
     cyto_w_style(wname: string): any {
@@ -504,8 +480,6 @@
                     C.sc.parent_id = (C.sc.parent as TheC).sc.cyto_id ?? null
                     delete C.sc.parent
                 }
-                // < memory leak?
-                // delete C.c.Se1_D
             }
 
             if (C.sc.cyto_edge) {

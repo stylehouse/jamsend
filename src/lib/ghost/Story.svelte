@@ -845,7 +845,10 @@
         w.c.This = w.i({ This: 1, Story: book })
 
         const ave   = H.oai_enroll(H, { watched: 'ave' })
-        ave.i(w.c.This)                          // This appears in both w and ave
+        // This appears in both w/* and ave
+        ave.i(w.c.This)
+        // Styles go into ave for all UIs to read (from w/The/Styles)
+        ave.i(this.The_Styles(w))
         w.c.swatchC = ave.oai({ swatches: 1 })
         w.c.ave     = ave
 

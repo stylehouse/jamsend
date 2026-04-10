@@ -25,6 +25,16 @@
     let last_tick       = -1
     let seek_warning = $state<string | null>(null)
 
+    // the UI channel - %matstyle come from Story
+    $effect(() => {
+        const ave = H.ave
+        if (!ave?.length) return
+        const styles_C = ave.find((n: TheC) => n.sc.Styles) as TheC | undefined
+        matstyles  = styles_C?.o({ matstyle: 1 }) ?? []
+        ms_palette = (H as any).MATSTYLE_PALETTE ?? []
+        ms_shapes  = (H as any).MATSTYLE_SHAPES ?? []
+    })
+    // the graph data channel - %cyto_graph,wave=
     $effect(() => {
         const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
         if (!gn) return
@@ -492,7 +502,6 @@
                 palette={ms_palette}
                 shapes={ms_shapes}
                 on_update={(key, prop, value) => {
-                    // find Story worker to pass to matstyle_update
                     let story_w = null
                     try { story_w = (H as any).Awo('Story') } catch {}
                     if (story_w) (H as any).matstyle_update(story_w, key, prop, value)
