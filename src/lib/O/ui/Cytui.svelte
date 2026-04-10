@@ -16,32 +16,6 @@
     let container: HTMLDivElement
     let cy: ReturnType<typeof cytoscape>
 
-    // ── wave types ────────────────────────────────────────────────────────────
-
-    type NodeDesc = {
-        id: string; label: string; style: Record<string,any>
-        parent?: string; new_parent?: string; appear_from?: string
-        isCompound?: boolean
-    }
-    type EdgeDesc = {
-        id: string; source: string; target: string
-        data?: Record<string,any>; style: Record<string,any>
-    }
-    type MigrateDesc = {
-        id: string; toward: string
-        then_parent?: string; harvest_detach?: boolean; mouthful_expire?: boolean
-    }
-    type Wave = {
-        upsert:      NodeDesc[]
-        edge_upsert: EdgeDesc[]
-        remove:      string[]
-        edge_remove: string[]
-        migrate:     MigrateDesc[]
-        constraints: any | null
-        duration:    number
-        step_n?:     number   // story step this wave belongs to (always set now)
-    }
-
     let status          = $state('no graph')
     let grawave_dur     = $state(0.3)
     let last_tick       = -1

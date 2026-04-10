@@ -1,2 +1,6 @@
-{"story":"StuffFlipping"}
-  {"step":1,"dige":"0ba3638f591a1f1c"}
+story:StuffFlipping
+  step,dige:0ba3638f591a1f1c
+  TimeSpool
+    TimeTotal:beliefs,avg:0.091
+      sample:0.086,at:1775641380
+      sample:0.095,at:1775641396

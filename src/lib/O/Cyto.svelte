@@ -238,7 +238,7 @@
             trace_fn: async (uD: TheD, n: TheC) => {
                 const sc: any = { tracing: 1 }
                 for (const [k, v] of Object.entries(n.sc ?? {})) {
-                    if (typeof v !== 'object' && typeof v !== 'function') sc[`the_${k}`] = v
+                    if (typeof v !== 'object' && typeof v !== 'function') { sc[`the_${k}`] = v }
                 }
                 return uD.i(sc)
             },

@@ -32,5 +32,6 @@ story:LeafFarm
   step:29,dige:67efaa4afcf9462f,snap_link:029.snap
   step:30,dige:fe88b513fb41eece,snap_link:030.snap
   TimeSpool
-    TimeTotal:beliefs,avg:0
+    TimeTotal:beliefs,avg:0.18
       sample:0,at:1775622983
+      sample:0.36,at:1775644437
