@@ -64,6 +64,7 @@
     let { M } = $props()
     let V = {}
     V.gone_debug = 1
+    V.cyto = 1
 
     onMount(async () => {
     await M.eatfunc({
@@ -108,7 +109,10 @@
         // which will run Cyto() → cyto_update_wave().
         const scan = w.c.Scannable as TheC
         if (scan && !w.c.scannable_watched) {
-            this.watch_c(scan, () => this.main())
+            this.watch_c(scan, () => {
+                V.cyto && console.log(`Scannable.version bumped → main()`)
+                this.main()
+            })
             w.c.scannable_watched = true
         }
 
@@ -134,9 +138,10 @@
         if (v_now === last_v && open_at === last_open && !w.c.cyto_wipe) {
             return true
         }
-
         // ── TRIGGER 1: Scannable changed → scan, archive CytoStep ──────────────
-        if (v_now !== last_v) {
+        if (v_now !== last_v || w.c.force_archive) {
+            V.cyto && console.log(`cyto_update_wave trigger 1: v_now=${v_now} last_v=${last_v} open_at=${open_at} last_open=${last_open} pending=${w.c.pending_step_n} force=${w.c.force_archive}`)
+
             const topC = await this.cyto_scan(w, scan)
             await this.cyto_assign_ids(w, topC)
             await this.cyto_scan_refs(w, topC)
@@ -145,7 +150,10 @@
 
             // step_n is optional metadata — client may provide via commission,
             // otherwise we just use the version counter as a monotonic key
-            const step_n = v_now
+            const step_n = w.c.pending_step_n ?? v_now
+            w.c.pending_step_n = undefined
+            w.c.force_archive = false
+            console.log(`📦 archive CytoStep step_n=${step_n} nodes=${topC.o({cyto_node:1}).length} total_archived=${w.o({CytoStep:1}).length}`)
             w.i({ CytoStep: 1, step_n, C: topC })
             w.c.last_scan_v = v_now
 
@@ -171,11 +179,18 @@
             const backwards = typeof last_open === 'number' && typeof open_at === 'number'
                 && open_at < last_open
             let adjacent = last_open-1 == open_at || last_open+1 == open_at
-            const departing = backwards
-                ? (w.o({ CytoStep: 1 }) as TheC[]).find(s => s.sc.step_n === last_open)?.sc.C
+            const departing = typeof last_open === 'number'
+                ? (w.o({ CytoStep: 1 }) as TheC[]).find(s => s.sc.step_n === last_open)?.sc.C ?? null
                 : null
             w.c.last_open_at = open_at
             if (gn) gn.sc.seek_warning = null
+
+            // Seeks need a fresh Ze so every node in the target step emits as
+            // a full upsert — otherwise nodes whose style/label/parent didn't
+            // change between the displayed step and the seek target (eg Yin,
+            // Yang) wouldn't get moved into the right compound on repaint.
+            w.c.cyto_Ze = new Selection()
+            V.cyto && console.log(`trigger 2: adjacent=${adjacent} backwards=${backwards} fresh_Ze=${!adjacent}`)
 
             if (open_at == null) {
                 const latest = (w.o({ CytoStep: 1 }) as TheC[])
@@ -188,6 +203,7 @@
             } else {
                 const target = (w.o({ CytoStep: 1 }) as TheC[])
                     .find(s => s.sc.step_n === open_at)
+                V.cyto && console.log(`seek to ${open_at}: target=${!!target} archive_keys=[${(w.o({CytoStep:1}) as TheC[]).map(s=>s.sc.step_n).join(',')}]`)
                 if (!target) {
                     if (gn) { gn.sc.seek_warning = `no graph data for step ${open_at}`; gn.bump_version() }
                     ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
@@ -570,6 +586,7 @@
         w.c.cyto_Ze ??= new Selection()
         const Ze: Selection = w.c.cyto_Ze
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
+        V.cyto && console.log(`make_wave bD_count=${Ze.sc.topD?.o({tracing:1}).length ?? 0} adjacent=${adjacent}`)
  
         const dur  = (w.sc.grawave_duration as number) ?? 0.3
         const wave = _C({ CytoWave:1, duration: dur })
@@ -671,7 +688,7 @@
                 }
                 for (const nc of C.o({ cyto_node: 1 }) as TheC[]) walk(nc)
             }
-            walk(source)
+            if (source) walk(source)
         }
  
         return wave
@@ -754,6 +771,8 @@
 
     async e_Cyto_animation_request(A: TheC, w: TheC, e: TheC) {
         if (!w.c.supports_takeTurns) return
+        w.c.pending_step_n = e?.sc.story_step   // next scan archives under this
+        w.c.force_archive = true
         await this.cyto_update_wave(w)
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         const client = w.c.client_w as TheC | undefined
