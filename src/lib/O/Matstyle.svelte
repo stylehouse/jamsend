@@ -45,6 +45,7 @@
     //   and pushes a targeted wave.  No full rescan needed.
 
     import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte"
+    import { throttle } from "$lib/Y.svelte"
     import { onMount } from "svelte"
 
     let { M } = $props()
@@ -324,7 +325,7 @@
 
     // Label format — new %meta:label,fmt:"%s",keys:"w" 
     //    Default when absent: cyto_label(n) (existing behaviour).
-    //    When fmt present: sprintf-style %s substitution from the named keys.
+    //    fmt||="%s" is sprintf-style %s substitution from the named keys.
 
     matstyle_label(ms: TheC, n: TheC): string {
         const lm = this.ms_meta(ms, 'label')
@@ -341,6 +342,7 @@
     // Walk latest CytoStep topC via C.c.source_n backlinks,
     // recompute styles for nodes matching changed_key,
     // push a targeted wave.
+    // Caveat: this updates style + label only.
     matstyle_restyle(changed_key: string) {
         const H = this
         let cyto_w
@@ -380,14 +382,17 @@
 //#endregion
 //#region update + save
 
-    _matstyle_save_timer: null as ReturnType<typeof setTimeout> | null,
-
     matstyle_schedule_save() {
-        if (this._matstyle_save_timer) clearTimeout(this._matstyle_save_timer)
-        this._matstyle_save_timer = setTimeout(() => {
-            this._matstyle_save_timer = null
+        // carries out requests to save immediately then every 5 seconds.
+        // < which is a bit lousy.
+        //    is this is the type of thing that shout be chased along
+        //     by onDestory or so from reset somewhere above
+        //    or shown as the trailing end of the last branch
+        //     that happened just as we were turning away from it (by reset)
+        this._matstyle_save_throttled ??= throttle(() => {
             if (typeof this.story_save === 'function') this.story_save()
         }, 5000)
+        this._matstyle_save_throttled()
     },
 
     // Called from UI editor.  prop is flat UI name, mapped to %style or %meta.
@@ -403,6 +408,18 @@
             border_width: 'border-width',
             border_color: 'border-color',
         }
+        // ── style props (background-color, color, shape, width, border-*) ────
+        // These map a flat UI prop name (bg, color, shape, size, ...) to the
+        // real cytoscape css property name stored under %style:$prop,v:$val.
+        //
+        // value === null is the editor's "remove this row" signal — drop the
+        // %style:$prop child entirely so the matstyle falls back to the default.
+        // ms_css_set already drops when val matches MATSTYLE_DEFAULTS, but here
+        // we drop unconditionally because the user explicitly clicked ×.
+        //
+        // 'size' is a UI convenience that maps to 'width' but also mirrors to
+        // 'height' — keeps nodes square without exposing two inputs.  If the
+        // user later wants non-square nodes we'd add a separate 'height' prop.
         if (style_map[prop]) {
             const css_prop = style_map[prop]
             if (value == null) {
