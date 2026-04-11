@@ -305,19 +305,6 @@
         return { label, style, isCompound, matstyles_desc: desc }
     },
 
-    // %w compound containers — deterministic hue from name.
-    matstyle_w_style(wname: string): Record<string, any> {
-        const hue = (wname.split('').reduce((a, c) => a + c.charCodeAt(0), 0) * 137.508) % 360
-        const hx = (h: number, s: number, l: number) => this.hsl_to_hex(h, s, l)
-        return {
-            'background-color': hx(hue, 20, 10), 'background-opacity': 0.5,
-            'border-color': hx(hue, 30, 25), 'border-width': 1, 'border-style': 'dashed',
-            'text-valign': 'top', 'text-halign': 'center', padding: '12px',
-            'font-size': '9px', 'font-weight': 'bold', 'font-style': 'italic',
-            color: hx(hue, 25, 35),
-        }
-    },
-
     hsl_to_hex(h: number, s: number, l: number): string {
         s /= 100; l /= 100
         const f = (n: number) => {

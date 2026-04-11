@@ -342,10 +342,6 @@
         return this.matstyle_apply(ms, n)
     },
 
-    cyto_w_style(wname: string): any {
-        return this.matstyle_w_style(wname)
-    },
-
 
 
     
