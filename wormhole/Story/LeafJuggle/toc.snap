@@ -2,6 +2,108 @@ story:LeafJuggle
   Styles
     matstyle:w
       style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:hand
+      style:background-color,v:#2fb155
+      style:background-color,v:#1a1a28
+      style:color,v:#8888bb
+      style:shape,v:round-rectangle
+      style:width,v:24
+      style:border-color,v:#5a5a9a
+      style:border-width,v
+      meta:label,fmt:%s,keys:hand
+    matstyle:leaf
+      style:background-color,v:#8e29d6
+      style:background-color,v:#1a5a2a
+      style:color,v:#b0ffb0
+      meta:dose,drives:size,min:14,max:32,cap:10
+    matstyle:whatsit
+      style:background-color,v:#c5b759
+    matstyle:thing
+      style:background-color,v:#298699
+    matstyle:other
+      style:background-color,v:#bc2476
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:hand
+      style:background-color,v:#2fb155
+      style:background-color,v:#1a1a28
+      style:color,v:#8888bb
+      style:shape,v:round-rectangle
+      style:width,v:24
+      style:border-color,v:#5a5a9a
+      style:border-width,v
+      meta:label,fmt:%s,keys:hand
+    matstyle:leaf
+      style:background-color,v:#8e29d6
+      style:background-color,v:#1a5a2a
+      style:color,v:#b0ffb0
+      meta:dose,drives:size,min:14,max:32,cap:10
+    matstyle:whatsit
+      style:background-color,v:#c5b759
+    matstyle:thing
+      style:background-color,v:#298699
+    matstyle:other
+      style:background-color,v:#bc2476
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:hand
+      style:background-color,v:#2fb155
+      style:background-color,v:#1a1a28
+      style:color,v:#8888bb
+      style:shape,v:round-rectangle
+      style:width,v:24
+      style:border-color,v:#5a5a9a
+      style:border-width,v
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:hand
+    matstyle:leaf
+      style:background-color,v:#8e29d6
+      style:background-color,v:#1a5a2a
+      style:color,v:#b0ffb0
+      meta:dose,drives:size,min:14,max:32,cap:10
+    matstyle:whatsit
+      style:background-color,v:#c5b759
+    matstyle:thing
+      style:background-color,v:#298699
+    matstyle:other
+      style:background-color,v:#bc2476
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:hand
+      style:background-color,v:#2fb155
+      style:background-color,v:#1a1a28
+      style:color,v:#8888bb
+      style:shape,v:round-rectangle
+      style:width,v:24
+      style:border-color,v:#5a5a9a
+      style:border-width,v
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:hand
+    matstyle:leaf
+      style:background-color,v:#8e29d6
+      style:background-color,v:#1a5a2a
+      style:color,v:#b0ffb0
+      meta:dose,drives:size,min:14,max:32,cap:10
+    matstyle:whatsit
+      style:background-color,v:#c5b759
+    matstyle:thing
+      style:background-color,v:#298699
+    matstyle:other
+      style:background-color,v:#bc2476
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
     matstyle:hand
       style:background-color,v:#2fb155
       style:background-color,v:#1a1a28
@@ -111,9 +213,7 @@ story:LeafJuggle
     matstyle:thing,bg:#298699,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
     matstyle:other,bg:#bc2476,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
   TimeSpool
-    TimeTotal:beliefs,avg:0.254
-      sample:0.083,at:1775807096
-      sample:0.105,at:1775811610
+    TimeTotal:beliefs,avg:0.249
       sample:0.671,at:1775818657
       sample:0.142,at:1775821217
       sample:0.283,at:1775822971
@@ -122,7 +222,10 @@ story:LeafJuggle
       sample:0.163,at:1775842390
       sample:0.131,at:1775842672
       sample:0.142,at:1775843557
+      sample:0.077,at:1775870180
+      sample:0.059,at:1775870443
   step,dige:6faeb785f8e28dd7
+    note,frontier
   step:2,dige:fa3fc39c61cf5b00
   step:3,dige:60515624649233fe
   step:4,dige:348939bdccf666f0

@@ -213,6 +213,10 @@
         const M = (name: string, props: Record<string, any>) => ms.i({ meta: name, ...props })
 
         const seeds: Record<string, () => void> = {
+            w: () => { 
+                M('is_compound', { v: 1 })
+                M('label', { fmt: '%s', keys: 'w' })
+            },
             leaf:              () => { S('background-color','#1a5a2a'); S('color','#b0ffb0')
                                        M('dose', { drives:'size', min:14, max:32, cap:10 }) },
             sunshine:          () => { S('background-color','#8a7010'); S('color','#331800')
@@ -239,7 +243,9 @@
                                        S('shape','star'); S('width',22) },
             hand:              () => { S('background-color','#1a1a28'); S('color','#8888bb')
                                        S('shape','round-rectangle'); S('width',24)
-                                       S('border-color','#5a5a9a'); S('border-width',1) },
+                                       S('border-color','#5a5a9a'); S('border-width',1)
+                                    //    M('is_compound', { v: 1 })
+                                       M('label', { fmt: '%s', keys: 'hand' }) },
         }
         seeds[key]?.()
     },
@@ -251,7 +257,7 @@
         label: string, style: Record<string, any>,
         isCompound?: boolean, matstyles_desc: string
     } {
-        const label = this.cyto_label(n)
+        const label = this.matstyle_label(ms, n)
         const D = this.MATSTYLE_DEFAULTS
         const css = this.ms_css(ms)
         const style: Record<string, any> = {}
@@ -293,7 +299,7 @@
             style['border-style'] = css['border-style'] ?? D['border-style']
         }
 
-        const isCompound = !!ms.oa({ is_compound: 1 })
+        const isCompound = !!this.ms_meta(ms, 'is_compound')?.sc.v
         if (isCompound) {
             style['background-opacity'] = 0.6
             style['text-valign'] = 'top'
@@ -314,6 +320,19 @@
             return Math.round(v * 255).toString(16).padStart(2, '0')
         }
         return `#${f(0)}${f(8)}${f(4)}`
+    },
+
+    // Label format — new %meta:label,fmt:"%s",keys:"w" 
+    //    Default when absent: cyto_label(n) (existing behaviour).
+    //    When fmt present: sprintf-style %s substitution from the named keys.
+
+    matstyle_label(ms: TheC, n: TheC): string {
+        const lm = this.ms_meta(ms, 'label')
+        if (!lm?.sc.fmt) return this.cyto_label(n)
+        const keys = String(lm.sc.keys ?? '').split('+').filter(Boolean)
+        const vals = keys.map(k => String(n.sc[k] ?? ''))
+        let i = 0
+        return String(lm.sc.fmt).replace(/%s/g, () => vals[i++] ?? '')
     },
 
 //#endregion
@@ -385,12 +404,19 @@
         }
         if (style_map[prop]) {
             this.ms_css_set(ms, style_map[prop], value)
-            if (prop === 'size') this.ms_css_set(ms, 'height', value)
+            if (prop === 'size') this.ms_css_set(msmatstyle_label, 'height', value)
         }
         else if (prop === 'is_compound') {
-            const existing = ms.o({ is_compound: 1 })[0]
-            if (value && !existing)  ms.i({ is_compound: 1 })
-            if (!value && existing)  existing.drop(existing)
+            if (value) this.ms_meta_set(ms, 'is_compound', { v: 1 })
+            else { const m = this.ms_meta(ms, 'is_compound'); if (m) m.drop(m) }
+        }
+        else if (prop === 'label_fmt') {
+            if (value) this.ms_meta_set(ms, 'label', { fmt: value })
+            else { const m = this.ms_meta(ms, 'label'); if (m) m.drop(m) }
+        }
+        else if (prop === 'label_keys') {
+            const lm = this.ms_meta(ms, 'label')
+            if (lm) lm.sc.keys = value
         }
         else if (prop === 'dose_drives') {
             if (value)  this.ms_meta_set(ms, 'dose', { drives: 'size' })
