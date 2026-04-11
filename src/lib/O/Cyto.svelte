@@ -236,7 +236,7 @@
                 // %w contains everything in it
                 if (n.sc.w) T.sc.inherits.parent = C
                 // uplinks forming trees of / ness
-                if (parentC.sc.cyto_node && !C.sc.parent.sc.isCompound) {
+                if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
                     C.i({cyto_edge:1,scan_id,
                         source:parentC, label:"/", target:C})
                 }

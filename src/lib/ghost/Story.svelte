@@ -877,7 +877,7 @@
         if (!run) run = H.Story_plan(A, w, book)
         // < what's vanishing ave/Styles? when ~open_at it vanishes momentarily
         const ave = this.oai_enroll(this, { watched: 'ave' })
-        if (!ave.o({ Styles: 1 }).length) ave.i(this.The_Styles(w))
+        if (!ave.oa({ Styles: 1 })) ave.i(this.The_Styles(w))
 
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(book)}`

@@ -404,7 +404,7 @@
         }
         if (style_map[prop]) {
             this.ms_css_set(ms, style_map[prop], value)
-            if (prop === 'size') this.ms_css_set(msmatstyle_label, 'height', value)
+            if (prop === 'size') this.ms_css_set(ms, 'height', value)
         }
         else if (prop === 'is_compound') {
             if (value) this.ms_meta_set(ms, 'is_compound', { v: 1 })
