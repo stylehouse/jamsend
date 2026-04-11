@@ -140,11 +140,16 @@ abstract class Housing extends TheC {
             while (h.up && !(h instanceof House)) h = h.up
             return h as House
         }
-        // string path — search every_House()
+        // string — walk upward from this, prefer nearer subtrees
         const Aname = (target as string).split('/')[0]
-        const houses = this.every_House()
-        for (const candidate of houses) {
-            if (candidate.o({ A: Aname })[0]) return candidate
+        let h: Housing = this
+        while (h) {
+            if (h instanceof House) {
+                for (const candidate of h.all_House) {
+                    if (candidate.o({ A: Aname })[0]) return candidate
+                }
+            }
+            h = h.up!
         }
         throw `elvisto: no House has A:${Aname} (target=${target})`
     }
