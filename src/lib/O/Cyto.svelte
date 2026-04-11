@@ -139,7 +139,7 @@
             return true
         }
         // ── TRIGGER 1: Scannable changed → scan, archive CytoStep ──────────────
-        if (v_now !== last_v || w.c.force_archive) {
+        if (v_now !== last_v) {
             V.cyto && console.log(`cyto_update_wave trigger 1: v_now=${v_now} last_v=${last_v} open_at=${open_at} last_open=${last_open} pending=${w.c.pending_step_n} force=${w.c.force_archive}`)
 
             const topC = await this.cyto_scan(w, scan)
@@ -148,27 +148,15 @@
             await this.cyto_assign_ids(w, topC)
             await this.cyto_resolve_refs(w, topC)
 
-            // Archive only when:
-            //   - client has given us a pending_step_n (authoritative step number), OR
-            //   - client didn't opt into takeTurns at all (we key by version as fallback)
-            // Reactive-only scans between takeTurns signals don't archive — they'd
-            // just create version-keyed phantoms that seek can't find.
-            const should_archive = w.c.pending_step_n !== undefined || !w.c.supports_takeTurns
-            if (should_archive) {
-                const step_n = w.c.pending_step_n ?? v_now
-                V.cyto && console.log(`📦 archive CytoStep step_n=${step_n} nodes=${topC.o({cyto_node:1}).length} total=${w.o({CytoStep:1}).length}`)
-                w.i({ CytoStep: 1, step_n, C: topC })
-            } else {
-                V.cyto && console.log(`⏭ skip archive (reactive scan, awaiting step_n)`)
-            }
+            const step_n = w.c.pending_step_n ?? v_now
             w.c.pending_step_n = undefined
-            w.c.force_archive = false
+            V.cyto && console.log(`📦 archive CytoStep step_n=${step_n} nodes=${topC.o({cyto_node:1}).length} total=${w.o({CytoStep:1}).length}`)
+            w.i({ CytoStep: 1, step_n, C: topC })
             w.c.last_scan_v = v_now
 
-            // live view still needs the wave
             if (!open_at && !w.c.no_graph) {
                 const wave = await this.make_wave(w, topC, true)
-                wave.sc.step_n = w.c.pending_step_n ?? v_now
+                wave.sc.step_n = step_n
                 this._cyto_push(w, wave)
             }
 
@@ -781,7 +769,6 @@
     async e_Cyto_animation_request(A: TheC, w: TheC, e: TheC) {
         if (!w.c.supports_takeTurns) return
         w.c.pending_step_n = e?.sc.story_step   // next scan archives under this
-        w.c.force_archive = true
         await this.cyto_update_wave(w)
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         const client = w.c.client_w as TheC | undefined
