@@ -209,9 +209,9 @@
     },
 
     matstyle_seed_known(ms: TheC, key: string) {
-        const S = (prop: string, v: any) => ms.i({ style: prop, v })
-        const M = (name: string, props: Record<string, any>) => ms.i({ meta: name, ...props })
-
+        const S = (prop: string, v: any) => this.ms_css_set(ms, prop, v)
+        const M = (name: string, props: Record<string, any>) => this.ms_meta_set(ms, name, props)
+    
         const seeds: Record<string, () => void> = {
             w: () => { 
                 M('is_compound', { v: 1 })

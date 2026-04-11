@@ -1,11 +1,10 @@
 story:LeafJuggle
   Styles
     matstyle:w
-      style:background-color,v:#8f3232
+      style:background-color,v:#3aa67e
       meta:is_compound,v
       meta:label,fmt:%s,keys:w
     matstyle:hand
-      style:background-color,v:#2fb155
       style:background-color,v:#1a1a28
       style:color,v:#8888bb
       style:shape,v:round-rectangle
@@ -14,7 +13,6 @@ story:LeafJuggle
       style:border-width,v
       meta:label,fmt:%s,keys:hand
     matstyle:leaf
-      style:background-color,v:#8e29d6
       style:background-color,v:#1a5a2a
       style:color,v:#b0ffb0
       meta:dose,drives:size,min:14,max:32,cap:10
@@ -24,188 +22,8 @@ story:LeafJuggle
       style:background-color,v:#298699
     matstyle:other
       style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-      meta:label,fmt:%s,keys:hand
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:hand
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:hand
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-      is_compound
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w
-      style:background-color,v:#8f3232
-    matstyle:hand
-      style:background-color,v:#2fb155
-      style:background-color,v:#1a1a28
-      style:color,v:#8888bb
-      style:shape,v:round-rectangle
-      style:width,v:24
-      style:border-color,v:#5a5a9a
-      style:border-width,v
-      is_compound
-    matstyle:leaf
-      style:background-color,v:#8e29d6
-      style:background-color,v:#1a5a2a
-      style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
-    matstyle:whatsit
-      style:background-color,v:#c5b759
-    matstyle:thing
-      style:background-color,v:#298699
-    matstyle:other
-      style:background-color,v:#bc2476
-    matstyle:w,bg:#8f3232,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:hand,bg:#1a1a28,color:#8888bb,shape:round-rectangle,size:24,border_color:#5a5a9a,border_width,is_compound
-    matstyle:leaf,bg:#534ed0,color:#bc2476,shape:ellipse,size:20,border_color:#333,border_width:0,dose_drives:size,dose_min:14,dose_max:32
-    matstyle:whatsit,bg:#c5b759,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:thing,bg:#298699,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:other,bg:#bc2476,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:w,bg:#32618f,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:hand,bg:#bbdb43,color:#bbdb43,shape:round-rectangle,size:24,border_color:#5a5a9a,border_width,is_compound
-    matstyle:leaf,bg:#1a5a2a,color:#b0ffb0,shape:ellipse,size:20,border_color:#333,border_width:0,dose_drives:size,dose_min:14,dose_max:32
-    matstyle:whatsit,bg:#c5b759,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:thing,bg:#298699,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:other,bg:#bc2476,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:w,bg:#8f3232,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:hand,bg:#bbdb43,color:#bbdb43,shape:round-rectangle,size:24,border_color:#5a5a9a,border_width,is_compound
-    matstyle:leaf,bg:#1a5a2a,color:#b0ffb0,shape:ellipse,size:20,border_color:#333,border_width:0,dose_drives:size,dose_min:14,dose_max:32
-    matstyle:whatsit,bg:#c5b759,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:thing,bg:#298699,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
-    matstyle:other,bg:#bc2476,color:#ccc,shape:ellipse,size:20,border_color:#333,border_width:0
   TimeSpool
-    TimeTotal:beliefs,avg:0.188
-      sample:0.283,at:1775822971
-      sample:0.251,at:1775823027
+    TimeTotal:beliefs,avg:0.159
       sample:0.567,at:1775836837
       sample:0.163,at:1775842390
       sample:0.131,at:1775842672
@@ -214,6 +32,8 @@ story:LeafJuggle
       sample:0.059,at:1775870443
       sample:0.089,at:1775872626
       sample:0.119,at:1775873264
+      sample:0.102,at:1775874523
+      sample:0.138,at:1775874589
   step,dige:6faeb785f8e28dd7
   step:2,dige:fa3fc39c61cf5b00
   step:3,dige:60515624649233fe

@@ -356,6 +356,11 @@
                 // %step inline rule (mirror of encoder)
                 particle = this.The_step(w, sc.step as number)
                 ex(particle.sc, sc)
+            } else if (sc.Styles != null && d === 1) {
+                // reuse the Styles bucket created by Story_plan
+                particle = this.The_Styles(w)
+                
+                ex(particle.sc, sc)
             } else {
                 particle = parent.i(sc)
                 if (sc.note) {
