@@ -16,9 +16,6 @@
         async withitall(A, w, e, AT, wT) {
             console.log(`WithItAll.withitall() called! from ${e?.sc.from_name}`, e?.sc)
         }
-        async think(A, w, e, AT, wT) {
-            console.log(`WithItAll think() — ambient`)
-        }
     }
     register_class('w', WithItAll)
 

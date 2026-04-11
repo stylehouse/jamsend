@@ -24,10 +24,7 @@ story:LeafJuggle
     matstyle:other
       style:background-color,v:#bc2476
   TimeSpool
-    TimeTotal:beliefs,avg:0.133
-      sample:0.089,at:1775872626
-      sample:0.119,at:1775873264
-      sample:0.102,at:1775874523
+    TimeTotal:beliefs,avg:0.169
       sample:0.138,at:1775874589
       sample:0.074,at:1775874710
       sample:0.072,at:1775875094
@@ -35,6 +32,9 @@ story:LeafJuggle
       sample:0.134,at:1775881999
       sample:0.156,at:1775886938
       sample:0.342,at:1775887847
+      sample:0.195,at:1775888485
+      sample:0.199,at:1775889536
+      sample:0.274,at:1775889855
   step,dige:6faeb785f8e28dd7
   step:2,dige:fa3fc39c61cf5b00
   step:3,dige:60515624649233fe

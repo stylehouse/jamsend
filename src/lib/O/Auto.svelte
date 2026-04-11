@@ -239,7 +239,7 @@
 
     // elvis: resetStory — from LibraryRun button or external caller
     // Activates the named book (or the currently active one if Book not supplied).
-    async resetStory(A: TheC, w: TheC, e: TheC) {
+    async e_resetStory(A: TheC, w: TheC, e: TheC) {
         const H  = this as House
         const Li = w.oai({ Library: 1 })
         const bname = (e?.sc.Book as string)

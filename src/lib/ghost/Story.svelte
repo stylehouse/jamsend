@@ -359,7 +359,7 @@
             } else if (sc.Styles != null && d === 1) {
                 // reuse the Styles bucket created by Story_plan
                 particle = this.The_Styles(w)
-                
+
                 ex(particle.sc, sc)
             } else {
                 particle = parent.i(sc)
@@ -472,7 +472,7 @@
 //    peel("frontier")       → { frontier:1 }
 //    peel("todo:fix me")    → { todo:"fix me" }
 
-    async story_add_note(A: TheC, w: TheC, e?: TheC) {
+    async e_story_add_note(A: TheC, w: TheC, e?: TheC) {
         // note_sc from the UI: plain type keys, e.g. {frontier:1} or {todo:"fix me"}.
         // step_i_note prepends note:1 itself, so the UI does not need to include it.
         // frontier is a singleton: 'move' ensures only one exists across all steps.
@@ -483,7 +483,7 @@
         this.step_i_note(w, n, note_sc, mode)
     },
 
-    async story_delete_note(A: TheC, w: TheC, e?: TheC) {
+    async e_story_delete_note(A: TheC, w: TheC, e?: TheC) {
         const n        = e?.sc.step_n  as number | undefined
         const note_idx = e?.sc.note_idx as number | undefined
         if (n == null || note_idx == null) return
@@ -544,7 +544,7 @@
         ave.bump_version()
     },
 
-    async story_sel(A: TheC, w: TheC, e?: TheC) {
+    async e_story_sel(A: TheC, w: TheC, e?: TheC) {
         const run = w.o({ run: 1 })[0]
         if (run) run.sc.open_at = e?.sc.open_at ?? null
 
@@ -562,7 +562,7 @@
         this.story_analysis(w)
     },
 
-    async story_accept_all(A: TheC, w: TheC) {
+    async e_story_accept_all(A: TheC, w: TheC) {
         // Accept every !ok step in This at once.  Used after a lenient run that
         // accumulated multiple mismatches.  Promotes all diges into The, marks
         // accepted, keeps got_snap for story_save to write (5-step trim cleans up
@@ -593,7 +593,7 @@
 
 //#region story_accept
 
-    async story_accept(A: TheC, w: TheC, e?: TheC) {
+    async e_story_accept(A: TheC, w: TheC, e?: TheC) {
         // Accept a mismatch at step n:
         //   1. Clone This/{Step:n}.dige → The/{step:n}.dige.  The now reflects reality.
         //   2. Mark stepC.sc.accepted = true so the UI can dull the pip distinctively.
@@ -975,7 +975,7 @@
     // Received from w:Cyto once Cytui has finished animating the current step.
     // Clears the intoCyto pause and starts a fresh story_drive — the drive
     // was already stopped cleanly by advance() so driving=false here.
-    async story_cyto_continue(A: TheC, w: TheC) {
+    async e_story_cyto_continue(A: TheC, w: TheC) {
         V.Story && console.log(`e:story_cyto_continue() -> w:${w.sc.w}`)
         const run = w.o({ run: 1 })[0]
         if (!run) return

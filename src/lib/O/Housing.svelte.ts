@@ -1,3 +1,4 @@
+// Housing.svelte.ts
 import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
@@ -907,7 +908,7 @@ export class House extends StorableHousing {
                     || w.oa({ o_elvis: elvis_type }) 
             method =
                 handled_by_w_method ? w.sc.w
-                    : elvis_type
+                    : 'e_'+elvis_type
         } else {
             method = w.sc.w as string
         }
@@ -1144,13 +1145,6 @@ export class House extends StorableHousing {
         // // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'StuffFlipping' })
         // S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
         // S.elvisto(S, 'think')
-    }
-
-    // fallback handler for testing without a ghost — ghost methods shadow these
-    async withitall(A, w, e, AT, wT) {
-        console.log(`H.withitall() called from ${e?.sc.from_name}`, e?.sc)
-        if (e?.sc.payload != null) w.i({ payload: e.sc.payload })
-        w.i({latch:3})
     }
 
     async Blank(A: TheC, w: TheC) {

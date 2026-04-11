@@ -9,8 +9,8 @@
     //   Agency    — w:officing, self-timekeeping, Aw_satisfied, i_unemits_o_Aw
     //   Machinery — general w:* methods (prandle, requesty_serial, etc.)
     //   Story     — w:Story, snap/toc codec, story_drive, story_save, Run wiring
-    //   Cyto      — w:Cyto, cyto_scan, grawave, story_cyto_step handshake
-    //   Textures  — pure text/diff functions: depth_of, char_diff_ops,
+    //   Cyto      — w:Cyto, cyto_scan, grawave, e_story_cyto_step handshake
+    //   Text      — pure text/diff functions: depth_of, char_diff_ops,
     //               compute_diff, squish_context, positional_diff, enDif, deDif
     //
     //   All ghosts call M.eatfunc(hash) in onMount.  eatfunc merges hash into
