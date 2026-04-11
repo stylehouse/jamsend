@@ -1,0 +1,41 @@
+@tokens {
+    IOness { "i " | "o " }
+    Sunpitness { "S " }
+    Title { nonnl+ }
+    Name { (@asciiLetter | "_")+ (@asciiLetter | "_" | @digit)* }
+    Number { @digit+ }
+    nonnl { ![\n] }
+    nl { "\n" }
+    Sigil { "@" | "#" }
+    space  { @whitespace }
+    @precedence {IOness, Number, Title, Sunpitness, Name}
+    @precedence {nl, space}
+}
+
+@top Program { Line* }
+Line { space* inline? nl }
+
+inline { Comment | expression }
+
+Comment { "#" nonnl+ }
+
+expression { Name | Number | IOing | Sunpit | Flug }
+
+// testing https://lezer.codemirror.net/docs/guide/#allowing-ambiguity
+Flug { Flugenzoid | Flugamata }
+Flugenzoid { "[" Flugenzoidia "]" }
+Flugenzoidia { IOness ~flugal }
+Flugamata[@dynamicPrecedence=9] { "[" Flugamatatola "]" }
+Flugamatatola { Name ~flugal }
+
+
+
+
+Sunpit { Sunpitness (IOing | SunpitHead) }
+    IOing { IOness IOpath  }
+    IOpath { Leg ("/" Leg)* }
+    Leg { Sigil? Name }
+
+    SunpitHead { Number | Number Heading | Heading }
+    Heading { Title  }
+
