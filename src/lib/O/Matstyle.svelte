@@ -364,8 +364,10 @@
                 if (n && H.mainkey(n) === changed_key) {
                     const nd = H.matstyle_apply(ms, n)
                     nc.sc.style = nd.style
+                    nc.sc.label = nd.label
                     nc.sc.matstyles = nd.matstyles_desc
-                    wave.i({ upsert: 1, id: nc.sc.cyto_id, style: nd.style })
+                    wave.i({ upsert: 1, id: nc.sc.cyto_id,
+                        style: nd.style, label: nd.label })
                 }
                 walk(nc)
             }
@@ -400,34 +402,51 @@
             size:         'width',
             border_width: 'border-width',
             border_color: 'border-color',
-            border_style: 'border-style',
         }
         if (style_map[prop]) {
-            this.ms_css_set(ms, style_map[prop], value)
-            if (prop === 'size') this.ms_css_set(ms, 'height', value)
+            const css_prop = style_map[prop]
+            if (value == null) {
+                const ex = ms.o({ style: css_prop })[0]
+                if (ex) ex.drop(ex)
+            } else {
+                this.ms_css_set(ms, css_prop, value)
+                if (prop === 'size') this.ms_css_set(ms, 'height', value)
+            }
         }
         else if (prop === 'is_compound') {
             if (value) this.ms_meta_set(ms, 'is_compound', { v: 1 })
             else { const m = this.ms_meta(ms, 'is_compound'); if (m) m.drop(m) }
         }
-        else if (prop === 'label_fmt') {
-            if (value) this.ms_meta_set(ms, 'label', { fmt: value })
-            else { const m = this.ms_meta(ms, 'label'); if (m) m.drop(m) }
-        }
         else if (prop === 'label_keys') {
+            if (value == null || value === '') {
+                const m = this.ms_meta(ms, 'label'); if (m) m.drop(m)
+            } else {
+                const lm = this.ms_meta(ms, 'label') ?? ms.i({ meta: 'label' })
+                lm.sc.keys = value
+                delete lm.sc.key   // canonicalise to plural
+            }
+        }
+        else if (prop === 'label_fmt') {
             const lm = this.ms_meta(ms, 'label')
-            if (lm) lm.sc.keys = value
+            if (!lm) return
+            if (value) lm.sc.fmt = value
+            else delete lm.sc.fmt
         }
         else if (prop === 'dose_drives') {
             if (value)  this.ms_meta_set(ms, 'dose', { drives: 'size' })
             else { const m = this.ms_meta(ms, 'dose'); if (m) m.drop(m) }
         }
-        else if (prop.startsWith('dose_')) {
-            const sub = prop.slice(5)
+        else if (prop === 'dose_key') {
             const dm = this.ms_meta(ms, 'dose')
-            if (dm) dm.sc[sub] = value
+            if (dm) dm.sc.key = value
         }
-
+        else if (prop.startsWith('dose_')) {
+            const sub = prop.slice(5)   // min, max, cap
+            const dm = this.ms_meta(ms, 'dose')
+            if (dm) dm.sc[sub] = Number(value)
+        }
+    
+        ms.bump_version()
         this.matstyle_schedule_save()
         this.matstyle_restyle(key)
     },

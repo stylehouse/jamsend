@@ -44,6 +44,7 @@
         const wave = gn.sc.wave as TheC | undefined
         const tick = (gn.sc.tick as number) ?? -1
         if (!wave || tick === last_tick) return
+        if (!cy) return
         last_tick = tick
         const dur = (wave.sc.duration as number) ?? 0.3
         if (cy) enqueue(wave)
@@ -475,19 +476,6 @@
         <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
         <span class="cytui-dur">⏱ {grawave_dur}s</span>
     </div>
-    <div class="cytui-legend">
-        <span class="l-leaf">🌿 leaf</span>
-        <span class="l-mf">◦ bite</span>
-        <span class="l-sun">◆ sun</span>
-        <span class="l-poo">● poo</span>
-        <span class="l-mat">■ mat</span>
-        <span class="l-prod">▪ prod</span>
-        <span class="l-prot">⬡ prot</span>
-        <span class="l-enz">▬ enz</span>
-        <span class="l-stem">─ stem</span>
-        <span class="l-helio">╌ helio</span>
-        <span class="l-flow">→ flow</span>
-    </div>
     {#if matstyles.length}
         <div class="cytui-matstyles">
             <MatstyleEditor
@@ -531,21 +519,9 @@
     padding: 1px 5px; font-family: inherit;
 }
 .cytui-bar button:hover { background: #1e1e1e; color: #999; }
-.cytui-legend {
-    display: flex; flex-wrap: wrap; gap: 6px;
-    padding: 2px 10px; background: #080808;
-    border-bottom: 1px solid #141414;
-    font-size: 8px; flex-shrink: 0; opacity: 0.6;
-}
 .cytui-matstyles {
     padding: 2px 8px; background: #080808;
     border-bottom: 1px solid #141414;
 }
-.l-leaf  { color: #4c9 } .l-mf   { color: #af5 }
-.l-sun   { color: #fb0 } .l-poo  { color: #974 }
-.l-mat   { color: #b82 } .l-prod { color: #46f }
-.l-prot  { color: #c8f } .l-enz  { color: #4a8 }
-.l-stem  { color: #3a6 } .l-helio { color: #880 }
-.l-flow  { color: #556 }
 .cytui-graph { flex: 1; min-height: 0; }
 </style>
