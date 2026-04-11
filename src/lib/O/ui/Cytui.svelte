@@ -55,13 +55,6 @@
             + ` −${wave.o({ remove:      1 }).length}`
             + ` ~${wave.o({ migrate:     1 }).length}`
             + ` · ⏱${dur}s`
-
-        // read matstyles from graph (Styles:1 particle was i()'d there by Cyto)
-        const styles_C = H?.graph?.find((n: TheC) => n.sc.Styles) as TheC | undefined
-        matstyles = styles_C?.o({ matstyle: 1 }) ?? []
-        // palette + shapes are stable arrays on H (from Matstyle ghost)
-        ms_palette = (H as any).MATSTYLE_PALETTE ?? []
-        ms_shapes  = (H as any).MATSTYLE_SHAPES ?? []
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────

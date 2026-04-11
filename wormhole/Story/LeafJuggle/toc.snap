@@ -1,7 +1,7 @@
 story:LeafJuggle
   Styles
     matstyle:w
-      style:background-color,v:#3aa67e
+      style:background-color,v:#29d638
       meta:is_compound,v
       meta:label,fmt:%s,keys:w
     matstyle:hand
@@ -17,15 +17,14 @@ story:LeafJuggle
       style:color,v:#b0ffb0
       meta:dose,drives:size,min:14,max:32,cap:10
     matstyle:whatsit
-      style:background-color,v:#c5b759
+      style:background-color,v:#bd36c9
+      style:shape,v:hexagon
     matstyle:thing
       style:background-color,v:#298699
     matstyle:other
       style:background-color,v:#bc2476
   TimeSpool
-    TimeTotal:beliefs,avg:0.159
-      sample:0.567,at:1775836837
-      sample:0.163,at:1775842390
+    TimeTotal:beliefs,avg:0.1
       sample:0.131,at:1775842672
       sample:0.142,at:1775843557
       sample:0.077,at:1775870180
@@ -34,6 +33,8 @@ story:LeafJuggle
       sample:0.119,at:1775873264
       sample:0.102,at:1775874523
       sample:0.138,at:1775874589
+      sample:0.074,at:1775874710
+      sample:0.072,at:1775875094
   step,dige:6faeb785f8e28dd7
   step:2,dige:fa3fc39c61cf5b00
   step:3,dige:60515624649233fe
