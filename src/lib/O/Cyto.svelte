@@ -108,7 +108,7 @@
         // React to Scannable mutations — any version bump queues a main()
         // which will run Cyto() → cyto_update_wave().
         const scan = w.c.Scannable as TheC
-        if (scan && !w.c.scannable_watched) {
+        if (scan && !w.c.scannable_watched && !w.c.supports_takeTurns) {
             this.watch_c(scan, () => {
                 V.cyto && console.log(`Scannable.version bumped → main()`)
                 this.main()
@@ -148,18 +148,27 @@
             await this.cyto_assign_ids(w, topC)
             await this.cyto_resolve_refs(w, topC)
 
-            // step_n is optional metadata — client may provide via commission,
-            // otherwise we just use the version counter as a monotonic key
-            const step_n = w.c.pending_step_n ?? v_now
+            // Archive only when:
+            //   - client has given us a pending_step_n (authoritative step number), OR
+            //   - client didn't opt into takeTurns at all (we key by version as fallback)
+            // Reactive-only scans between takeTurns signals don't archive — they'd
+            // just create version-keyed phantoms that seek can't find.
+            const should_archive = w.c.pending_step_n !== undefined || !w.c.supports_takeTurns
+            if (should_archive) {
+                const step_n = w.c.pending_step_n ?? v_now
+                V.cyto && console.log(`📦 archive CytoStep step_n=${step_n} nodes=${topC.o({cyto_node:1}).length} total=${w.o({CytoStep:1}).length}`)
+                w.i({ CytoStep: 1, step_n, C: topC })
+            } else {
+                V.cyto && console.log(`⏭ skip archive (reactive scan, awaiting step_n)`)
+            }
             w.c.pending_step_n = undefined
             w.c.force_archive = false
-            console.log(`📦 archive CytoStep step_n=${step_n} nodes=${topC.o({cyto_node:1}).length} total_archived=${w.o({CytoStep:1}).length}`)
-            w.i({ CytoStep: 1, step_n, C: topC })
             w.c.last_scan_v = v_now
 
+            // live view still needs the wave
             if (!open_at && !w.c.no_graph) {
                 const wave = await this.make_wave(w, topC, true)
-                wave.sc.step_n = step_n
+                wave.sc.step_n = w.c.pending_step_n ?? v_now
                 this._cyto_push(w, wave)
             }
 
