@@ -19,101 +19,93 @@ Snap:H
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:Yin,isCompound:true
-    style,background-color:#1a0a1a
-    style,background-opacity:0.5
-    style,border-color:#5a1a5a
-    style,border-style:dashed
-    style,border-width
-    style,color:#8a4a8a
-    style,font-size:9px
+    style,background-color:#bbdb43
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
     style,font-style:italic
-    style,font-weight:bold
-    style,padding:12px
-    style,text-halign:center
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
     style,text-valign:top
+    style,width:20
   upsert,id:cytoid_1_1_1,label:left,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_1_1","label":"leaf:1","parent":"cytoid_1_1"}
-    {"style":1,"background-color":"rgb(32,111,32)"}
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
+  upsert,id:cytoid_1_1_1_1,label:🌿,parent:cytoid_1_1
+    style,background-color:#1a5a2a
     style,color:#b0ffb0
-    style,height:14
-    style,shape:ellipse
-    style,width:14
+    style,height:20
+    style,shape:triangle
+    style,width:20
   upsert,id:cytoid_1_1_2,label:right,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
+  upsert,id:cytoid_1_1_3,label:whatsit,parent:cytoid_1_1
+    style,background-color:#bd36c9
+    style,color:#ccc
+    style,height:20
+    style,shape:hexagon
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_1","label":"thing:with\nsee","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4","label":"other:3","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_1","label":"thing:with\nsee","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_2,label:Yang,isCompound:true
+    style,background-color:#bbdb43
+    style,background-opacity:0.6
+    style,color:#ccc
     style,font-size:8px
     style,font-style:italic
+    style,height:20
     style,padding:7px
+    style,shape:ellipse
     style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_3","label":"whatsit:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_1","label":"thing:with\nsee:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4","label":"other:3","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_1","label":"thing:with\nsee:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  upsert,id:cytoid_1_2,label:Yang,isCompound:true
-    style,background-color:#1a1a0a
-    style,background-opacity:0.5
-    style,border-color:#5a5a1a
-    style,border-style:dashed
-    style,border-width
-    style,color:#8a8a4a
-    style,font-size:9px
-    style,font-style:italic
-    style,font-weight:bold
-    style,padding:12px
-    style,text-halign:center
-    style,text-valign:top
+    style,width:20
   upsert,id:cytoid_1_2_1,label:left,parent:cytoid_1_2
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
   upsert,id:cytoid_1_2_2,label:right,parent:cytoid_1_2
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
   edge_upsert,id:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
   edge_upsert,id:cytoid_1_1_3_1_2,source:cytoid_1_1_3_1,target:cytoid_1_1_4_1

@@ -1,7 +1,7 @@
 story:LeafJuggle
   Styles
     matstyle:w
-      style:background-color,v:#29d638
+      style:background-color,v:#bbdb43
       meta:is_compound,v
       meta:label,fmt:%s,keys:w
     matstyle:hand
@@ -16,6 +16,8 @@ story:LeafJuggle
       style:background-color,v:#1a5a2a
       style:color,v:#b0ffb0
       meta:dose,drives:size,min:14,max:32,cap:10
+      style:shape,v:triangle
+      meta:label,keys:leaf,fmt:🌿
     matstyle:whatsit
       style:background-color,v:#bd36c9
       style:shape,v:hexagon
@@ -24,34 +26,34 @@ story:LeafJuggle
     matstyle:other
       style:background-color,v:#bc2476
   TimeSpool
-    TimeTotal:beliefs,avg:0.214
-      sample:0.072,at:1775875094
-      sample:0.104,at:1775881912
-      sample:0.134,at:1775881999
+    TimeTotal:beliefs,avg:0.216
       sample:0.156,at:1775886938
       sample:0.342,at:1775887847
       sample:0.195,at:1775888485
-      sample:0.199,at:1775889536
-      sample:0.274,at:1775889855
-      sample:0.368,at:1775894617
-      sample:0.291,at:1775896167
-  step,dige:6faeb785f8e28dd7
-  step:2,dige:fa3fc39c61cf5b00
-  step:3,dige:60515624649233fe
-  step:4,dige:348939bdccf666f0
-  step:5,dige:efdce380cbaa1ab6
+      sample:0.293,at:1775892937
+      sample:0.198,at:1775896483
+      sample:0.198,at:1775896623
+      sample:0.165,at:1775896662
+      sample:0.207,at:1775896712
+      sample:0.205,at:1775896779
+      sample:0.205,at:1775896818
+  step,dige:c1a033d6c1ee6596
+  step:2,dige:4421ff865a1d03e3
+  step:3,dige:77a951ce69904d3b
+  step:4,dige:e8caacf9759b051e
+  step:5,dige:8081dc80c0c47305
     note,oddity:leaf not in hand
-  step:6,dige:72341adf1c4d90d3
-  step:7,dige:43cfaa83477c86f7
-  step:8,dige:a2e614fedb771178
-  step:9,dige:51a9b12a09ed74be
-  step:10,dige:6bedc6f6a86e83a5
-  step:11,dige:ff4e8c32cdc96b28
-  step:12,dige:ec78b3e62771ca89
-  step:13,dige:c9a6a204b641b64a
-  step:14,dige:278a568806560d5c
-  step:15,dige:1ba4754981d43668
-  step:16,dige:7b8f16250e6292ac
-  step:17,dige:73e1877eebbc45a0
-  step:18,dige:2b31b479483ba07d
-  step:19,dige:cd93bf0a2465c624
+  step:6,dige:0cf6b2a762673f4b
+  step:7,dige:8dbd34942204093b
+  step:8,dige:cf98b64b9d206335
+  step:9,dige:0c1503d166e87d62
+  step:10,dige:b99a576821630975
+  step:11,dige:46f456c5d584426d
+  step:12,dige:1dd4ba85cc2bc5d7
+  step:13,dige:ea95ea007a3a090b
+  step:14,dige:fdcccd820b6cf640
+  step:15,dige:45241761045a8fe2
+  step:16,dige:b0ece4c43302dc73
+  step:17,dige:662882240d54cfa4
+  step:18,dige:3a66a2b9bc665547
+  step:19,dige:99f28070062978f0
