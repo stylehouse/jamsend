@@ -871,6 +871,8 @@
         H.watch_c(stylesC, () => H.story_save())
 
         // < this is possibly meant to be an i_elvis_req(), but pretending works too...
+        let Run = H.o({H:1,Run:1})[0]
+        if (!Run) throw "!H/%H,Run"
         const commission = new TheC({ c: {}, sc: {
             Scannable:          Run,
             Styles:             stylesC,

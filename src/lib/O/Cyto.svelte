@@ -758,7 +758,7 @@
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         const client = w.c.client_w as TheC | undefined
         setTimeout(() => {
-            if (client) this.elvistwo(w, client, 'animation_done', { story_step: e?.sc.story_step })
+            if (client) this.elvistwo(w, client, 'Cyto_animation_done', { story_step: e?.sc.story_step })
         }, dur + 100)
     },
 

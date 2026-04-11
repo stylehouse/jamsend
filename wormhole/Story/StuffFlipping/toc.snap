@@ -1,6 +1,65 @@
 story:StuffFlipping
-  step,dige:0ba3638f591a1f1c
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:test
+      style:background-color,v:#2fb155
+    matstyle:hand
+      style:background-color,v:#1a1a28
+      style:color,v:#8888bb
+      style:shape,v:round-rectangle
+      style:width,v:24
+      style:border-color,v:#5a5a9a
+      style:border-width,v
+      meta:label,fmt:%s,keys:hand
+    matstyle:bug
+      style:background-color,v:#c5b759
+    matstyle:terpestra
+      style:background-color,v:#298699
+    matstyle:resolve_test
+      style:background-color,v:#bc2476
+    matstyle:C
+      style:background-color,v:#61bd42
+    matstyle:pairs
+      style:background-color,v:#534ed0
+    matstyle:before
+      style:background-color,v:#a34b1f
+    matstyle:after
+      style:background-color,v:#3aa67e
+    matstyle:resolve_coms
+      style:background-color,v:#bd36c9
+    matstyle:claiming
+      style:background-color,v:#bbdb43
+    matstyle:old
+      style:background-color,v:#32618f
+    matstyle:spawn
+      style:background-color,v:#b12f4a
+    matstyle:gone
+      style:background-color,v:#29d638
+    matstyle:whatsit
+      style:background-color,v:#8259c5
+    matstyle:other
+      style:background-color,v:#997429
+    matstyle:tracing_run
+      style:background-color,v:#24bcb6
+    matstyle:excellent
+      style:background-color,v:#bd429e
+    matstyle:Traced
+      style:background-color,v:#89d04e
+    matstyle:Reso
+      style:background-color,v:#1f35a3
+    matstyle:moves
+      style:background-color,v:#a6483a
+    matstyle:n_neu
+      style:background-color,v:#36c974
+    matstyle:n_gone
+      style:background-color,v:#af43db
+    matstyle:Migration
+      style:background-color,v:#8f8f32
   TimeSpool
     TimeTotal:beliefs,avg:0.091
       sample:0.086,at:1775641380
       sample:0.095,at:1775641396
+  step,dige:0ba3638f591a1f1c
