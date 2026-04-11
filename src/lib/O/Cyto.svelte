@@ -316,7 +316,8 @@
     cyto_label(n: TheC): string {
         const parts: string[] = []
         for (const [k, v] of Object.entries(n.sc ?? {})) {
-            if (typeof v === 'number')                    parts.push(`${k}:${Math.round(v*100)/100}`)
+            if (v === 1)                                  parts.push(k)          // leaf:1 → "leaf"
+            else if (typeof v === 'number')               parts.push(`${k}:${Math.round(v*100)/100}`)
             else if (typeof v === 'boolean')              parts.push(k)
             else if (typeof v === 'string' && v !== '1') parts.push(`${k}:${v.length>11?v.slice(0,9)+'…':v}`)
         }
