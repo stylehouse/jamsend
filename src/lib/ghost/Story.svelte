@@ -780,6 +780,7 @@
     // cyto_scan always runs regardless of intoCyto so the wave is always in
     // the dige.  cyto_update_wave's version-check makes this free when RunH
     // hasn't changed since the last ambient Cyto tick.
+    // < more of these %Snap:* channels could be commissioned by something wanting more readings
 
     async story_snap(Run: House): Promise<string> {
         const H = this as House
@@ -788,16 +789,14 @@
         const h_snap  = await this.snap_H(Run)
         const h_block = this.snap_indent(h_snap, 1)
 
-        // Snap:Cytowave — always scan
+        // Snap:Cytowave — read whatever wave Cyto has currently.
+        // Cyto is commissioned in Story_plan and watches Scannable (=Run)
+        // for version changes, so its wave is already current by the time
+        // we snap.  No need to prod it here.
         const cyto_A = H.o({ A: 'Cyto' })[0] as TheC | undefined
         const cyto_w = cyto_A?.o({ w: 'Cyto' })[0] as TheC | undefined
-        if (cyto_w) {
-            if (!cyto_w.c.plan_done) throw "wake w:Cyto before wanting graph"
-            if (!cyto_w.c.plan_done) H.Cyto_plan(cyto_w)
-            await H.cyto_update_wave(cyto_w)
-        }
         const wave     = cyto_w?.c.gn?.sc.wave as any
-        const cw_block = this.snap_cytowave_str(wave)   // d_base=1, already nested
+        const cw_block = this.snap_cytowave_str(wave)
 
         return this.enL({ d: 0, stringies: { Snap: 'H' } })        + '\n' + h_block
             + this.enL({ d: 0, stringies: { Snap: 'cytowave' } }) + '\n' + cw_block
@@ -864,6 +863,23 @@
         // oai on the child is idempotent — subsequent Story_plan calls are no-ops.
         const uis = H.oai_enroll(H, { watched: 'UIs' })
         uis.oai({ UI: 'Story', component: StoryRun })
+
+        // ── commission Cyto ───────────────────────────────────────────
+        // Cyto reads Scannable/Styles/client_w/capability flags from this
+        // req; watch_c on stylesC drives save-on-edit.
+        const stylesC = this.The_Styles(w)
+        H.watch_c(stylesC, () => H.story_save())
+
+        // < this is possibly meant to be an i_elvis_req(), but pretending works too...
+        const commission = new TheC({ c: {}, sc: {
+            Scannable:          Run,
+            Styles:             stylesC,
+            client_w:           w,
+            supports_seek:      true,
+            supports_takeTurns: true,
+        }})
+        H.elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
+
         let total = 5
         return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
     },
@@ -975,7 +991,7 @@
     // Received from w:Cyto once Cytui has finished animating the current step.
     // Clears the intoCyto pause and starts a fresh story_drive — the drive
     // was already stopped cleanly by advance() so driving=false here.
-    async e_story_cyto_continue(A: TheC, w: TheC) {
+    async e_Cyto_animation_done(A: TheC, w: TheC) {
         V.Story && console.log(`e:story_cyto_continue() -> w:${w.sc.w}`)
         const run = w.o({ run: 1 })[0]
         if (!run) return
@@ -1038,7 +1054,7 @@
             if (w.c.intoCyto) {
                 run.sc.paused = Math.max((run.sc.paused as number) || 0, 1)
                 run.c.driving = false
-                H.top_House().elvisto('Cyto/Cyto', 'story_cyto_step', { story_step: run.c.step_n })
+                H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: run.c.step_n })
                 return
             }
             if (run.sc.paused) return   // strong pause holds before schedule()
@@ -1369,7 +1385,7 @@
         await this.i_actions_to_c(w, 'intoCyto',      { stashed: true, label: 'into Cyto'    })
         wa.oai({ action: 1, role: 'cyto_wipe' }, {
             label: 'wipe', icon: '⌀', cls: 'remove',
-            fn: () => this.elvisto('Cyto/Cyto', 'cyto_wipe', {})
+            fn: () => this.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
         })
 
         // < is this weird. Baroquely, an information channel in a button

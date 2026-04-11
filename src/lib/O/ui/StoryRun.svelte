@@ -554,7 +554,7 @@
     // exp_snap arrives and the diff panel catches up.
     $effect(() => {
         if (display.open_at) {
-            setTimeout(() => H.elvisto('Cyto/Cyto', 'cyto_seek', { seek_step: display.open_at }), 0)
+            setTimeout(() => H.elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
         }
     })
 

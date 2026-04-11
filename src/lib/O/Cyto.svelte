@@ -161,11 +161,11 @@
         ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
     },
 
-    async e_cyto_seek(A: TheC, w: TheC, e: TheC) {
+    async e_Cyto_seek(A: TheC, w: TheC, e: TheC) {
         // open_at already set on run by story_sel — fire trigger 2 in this same tick
         await this.cyto_update_wave(w)
     },
-    async e_cyto_wipe(A: TheC, w: TheC) {
+    async e_Cyto_wipe(A: TheC, w: TheC) {
         w.c.cyto_wipe = true       // Cytui reads this when applying next wave
         w.c.cyto_Ze?.sc.topD?.empty()   // D history gone → next process() is fully fresh
         this.main()

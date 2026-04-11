@@ -7,6 +7,24 @@
     //
     // Replaces the hardcoded cyto_nstyle branches entirely.
     //
+    // ── stylesC — the shared matstyle bucket ─────────────────────────────
+    //
+    //   All CRUD functions take stylesC as an explicit first argument rather
+    //   than reaching for Story's The/Styles via Awo('Story').  This lets
+    //   Cyto clients (Story, LangTiles, anything else) supply their own
+    //   stylesC via the commission req — or share Story's by passing the
+    //   same TheC through.
+    //
+    //   The_Styles(w) is retained as Story's persistence helper — it's how
+    //   Story finds/creates its own {Styles:1} bucket under w.c.The.  Other
+    //   clients can call it too if they want a The-backed bucket, or they
+    //   can bring their own plain TheC.
+    //
+    //   Save-on-change is no longer triggered from inside matstyle_update.
+    //   Instead, the stylesC owner (Story) does watch_c(stylesC, save_fn)
+    //   in Story_plan — so every mutation through these helpers bumps
+    //   stylesC.version and the watch fires, regardless of who called it.
+    //
     // ── mainkey ──────────────────────────────────────────────────────────
     //
     //   Type identity of a particle: first key of n.sc, regardless of value.
@@ -40,9 +58,11 @@
     //
     // ── reactivity ───────────────────────────────────────────────────────
     //
-    //   matstyle_restyle(key) walks the latest CytoStep's topC via
+    //   matstyle_restyle(cyto_w, key) walks the latest CytoStep's topC via
     //   C.c.source_n backlinks, recomputes styles for matching nodes,
     //   and pushes a targeted wave.  No full rescan needed.
+    //   cyto_w is now explicit — caller decides which graph instance to
+    //   restyle (could be H:Story's Cyto, or H:LangTiles's Cyto).
 
     import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte"
     import { throttle } from "$lib/Y.svelte"
@@ -126,20 +146,27 @@
     },
 
 //#endregion
-//#region The_Styles — container + CRUD
+//#region The_Styles — Story's persistence finder
 
+    // The_Styles(w): Story's specific way of finding its styles bucket —
+    // it lives under w.c.The/{Styles:1}.  Other clients (LangTiles etc.)
+    // can either call this with their own w that has a .c.The, or bring
+    // their own plain TheC with {Styles:1} sc.
     The_Styles(w: TheC): TheC {
         const The = w.c.The as TheC
         if (!The) throw '!The for matstyles'
         return The.o({ Styles: 1 })[0] as TheC ?? The.i({ Styles: 1 })
     },
 
-    matstyle_all(w: TheC): TheC[] {
-        return this.The_Styles(w).o({ matstyle: 1 }) as TheC[]
+//#endregion
+//#region CRUD — all take stylesC explicitly
+
+    matstyle_all(stylesC: TheC): TheC[] {
+        return stylesC.o({ matstyle: 1 }) as TheC[]
     },
 
-    matstyle_for(w: TheC, key: string): TheC | undefined {
-        return this.The_Styles(w).o({ matstyle: key })[0] as TheC | undefined
+    matstyle_for(stylesC: TheC, key: string): TheC | undefined {
+        return stylesC.o({ matstyle: key })[0] as TheC | undefined
     },
 
     // read: flat css object from all %style:* children
@@ -188,24 +215,23 @@
 //#endregion
 //#region autovivify
 
-    matstyle_get_or_create(w: TheC, key: string): TheC {
-        let ms = this.matstyle_for(w, key)
+    matstyle_get_or_create(stylesC: TheC, key: string): TheC {
+        let ms = this.matstyle_for(stylesC, key)
         if (ms) return ms
 
-        const styles_c = this.The_Styles(w)
-        const existing = styles_c.o({ matstyle: 1 }) as TheC[]
+        const existing = stylesC.o({ matstyle: 1 }) as TheC[]
         const idx = existing.length
 
         if (idx >= this.MATSTYLE_PALETTE.length) {
-            w.i({ error: `matstyle palette exhausted at ${idx}` })
+            console.error(`matstyle palette exhausted at ${idx}`)
         }
         const bg = this.MATSTYLE_PALETTE[Math.min(idx, this.MATSTYLE_PALETTE.length - 1)]
 
-        ms = styles_c.i({ matstyle: key })
+        ms = stylesC.i({ matstyle: key })
         ms.i({ style: 'background-color', v: bg })
 
         this.matstyle_seed_known(ms, key)
-        this.matstyle_schedule_save()
+        stylesC.bump_version()   // watch_c on stylesC will pick this up for save
         return ms
     },
 
@@ -343,10 +369,12 @@
     // recompute styles for nodes matching changed_key,
     // push a targeted wave.
     // Caveat: this updates style + label only.
-    matstyle_restyle(changed_key: string) {
+    //
+    // cyto_w and stylesC are now both explicit — caller decides which
+    // graph instance's nodes to restyle and where the updated ms lives.
+    // Save-on-change is handled by watch_c on stylesC, not here.
+    matstyle_restyle(cyto_w: TheC, stylesC: TheC, changed_key: string) {
         const H = this
-        let cyto_w
-        try { cyto_w = H.o({ A: 'Cyto' })?.[0]?.o({ w: 'Cyto' })?.[0] } catch { return }
         if (!cyto_w) return
 
         const latest = (cyto_w.o({ CytoStep: 1 }) as TheC[])
@@ -354,9 +382,7 @@
         const topC = latest?.sc.C as TheC
         if (!topC) return
 
-        let story_w
-        try { story_w = H.Awo('Story') } catch { return }
-        const ms = H.matstyle_for(story_w, changed_key)
+        const ms = H.matstyle_for(stylesC, changed_key)
         if (!ms) return
 
         const wave = _C({ CytoWave: 1, duration: 0.3 })
@@ -380,24 +406,15 @@
     },
 
 //#endregion
-//#region update + save
-
-    matstyle_schedule_save() {
-        // carries out requests to save immediately then every 5 seconds.
-        // < which is a bit lousy.
-        //    is this is the type of thing that shout be chased along
-        //     by onDestory or so from reset somewhere above
-        //    or shown as the trailing end of the last branch
-        //     that happened just as we were turning away from it (by reset)
-        this._matstyle_save_throttled ??= throttle(() => {
-            if (typeof this.story_save === 'function') this.story_save()
-        }, 5000)
-        this._matstyle_save_throttled()
-    },
+//#region update
 
     // Called from UI editor.  prop is flat UI name, mapped to %style or %meta.
-    matstyle_update(w: TheC, key: string, prop: string, value: any) {
-        const ms = this.matstyle_for(w, key)
+    //
+    // stylesC and cyto_w are now both explicit.  Save-on-change happens
+    // through watch_c on stylesC (wired by the stylesC owner, eg Story)
+    // — matstyle_update just bumps stylesC.version and lets the watch fire.
+    matstyle_update(cyto_w: TheC, stylesC: TheC, key: string, prop: string, value: any) {
+        const ms = this.matstyle_for(stylesC, key)
         if (!ms) return
 
         const style_map: Record<string, string> = {
@@ -464,8 +481,8 @@
         }
     
         ms.bump_version()
-        this.matstyle_schedule_save()
-        this.matstyle_restyle(key)
+        stylesC.bump_version()   // watch_c on stylesC will pick this up for save
+        this.matstyle_restyle(cyto_w, stylesC, key)
     },
 
 //#endregion

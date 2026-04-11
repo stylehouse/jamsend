@@ -243,7 +243,7 @@
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
         if (wave.sc.cyto_wipe) {
-            console.log(`%cyto_wipe removes and re-adds the entire graph`)
+            console.log(`wave%cyto_wipe removes and re-adds the entire graph`)
             cy.elements().remove()
         }
 
@@ -461,7 +461,7 @@
             ],
         })
         // rebuild from scratch on HMR
-        H.elvisto('Cyto/Cyto', 'cyto_wipe', {})
+        H.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
         return () => { lay?.stop(); cy?.destroy() }
     })
 </script>
@@ -483,9 +483,13 @@
                 palette={ms_palette}
                 shapes={ms_shapes}
                 on_update={(key, prop, value) => {
-                    let story_w = null
-                    try { story_w = (H as any).Awo('Story') } catch {}
-                    if (story_w) (H as any).matstyle_update(story_w, key, prop, value)
+                    // w:Cyto owns the stylesC reference now (from commission).
+                    // Pass both cyto_w and stylesC explicitly to matstyle_update.
+                    let cyto_w
+                    try { cyto_w = (H as any).Awo('Cyto') } catch { return }
+                    const stylesC = cyto_w?.c?.Styles
+                    if (!stylesC) return
+                    ;(H as any).matstyle_update(cyto_w, stylesC, key, prop, value)
                 }}
             />
         </div>
