@@ -340,8 +340,7 @@
         thence?: Array<any>
         mung?: string[]
     }): string | null {
-        // ── classification via mainkey_match (DRY) ──────────────────
-        const mr = this.mainkey_match(n, q.rules ?? [])
+        const mr = this.lematch(n, q.rules ?? [])
         q.skip   = mr.skip
         q.thence = mr.thence
         if (q.skip) return null

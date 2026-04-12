@@ -104,20 +104,23 @@
     ] as string[],
 
 //#endregion
-//#region mainkey + mainkey_match
+//#region mainkey + lematch
 
     mainkey(n: TheC): string | undefined {
         const keys = Object.keys(n.sc ?? {})
         return keys.length ? keys[0] : undefined
     },
 
-    // Generalized rule matcher extracted from enLine.
-    // Same schema as story_matching rules.
-    mainkey_match(n: TheC, rules: any[] = []): {
+    // lematch — generalised rule matcher.  Same schema as story_matching rules:
+    //   { matching_any: [{sc:{...}} | {sc_only:{...}}],
+    //     means: { skip?, munging?, thence_matching? } }
+    // Returns { skip, munging, thence }.  Used by enLine for snap encoding,
+    // by cyto_scan for visibility filtering, and anywhere else a rules list
+    // wants to be applied to a particle.  Grep "lematch" to find all callers.
+    lematch(n: TheC, rules: any[] = []): {
         skip: boolean
         munging: any[]
         thence: any[]
-        mainkey: string | undefined
     } {
         const munging: any[] = []
         const thence: any[] = []
@@ -142,7 +145,7 @@
             }
         }
 
-        return { skip, munging, thence, mainkey: this.mainkey(n) }
+        return { skip, munging, thence }
     },
 
 //#endregion

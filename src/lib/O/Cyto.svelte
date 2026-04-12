@@ -260,6 +260,30 @@
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 T.sc.inherits = ex({},T.up?.sc.inherits||{})
 
+                // ── visibility filter via lematch ──────────────────────
+                // Rules from this.cyto_visibility (depth 0) plus any
+                // thence_matching that depth-0 carried down via T.up.sc.thence.
+                const active = [
+                    ...this.cyto_visibility,
+                    ...(T.up?.sc.cyto_thence ?? []),
+                ]
+                const lm = this.lematch(n, active)
+                if (lm.skip) {
+                    // depth 0 H is "skip" but its children must still be
+                    // walked — so for the top T we drop D, mark T as
+                    // invisible-passthrough, and stash the thence rules.
+                    if (T == T.c.path[0]) {
+                        T.sc.cyto_thence = lm.thence
+                        T.sc.C = topC
+                        return
+                    }
+                    T.sc.not = 1
+                    D.drop(D)
+                    return
+                }
+                // carry thence rules to children
+                if (lm.thence.length) T.sc.cyto_thence = lm.thence
+
                 const cls = this.cytyle_classify(n)
                 if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
                 if (cls === 'invisible') {
@@ -352,6 +376,37 @@
 
 //#endregion
 //#region classify n
+    // ── cyto_visibility ──────────────────────────────────────────────
+    // Rules consumed by lematch in cyto_scan's each_fn.
+    //
+    // Depth 0 (the H itself, if Scannable is an H): skip the H particle
+    // (it has nothing to render), and carry a thence rule that filters
+    // its direct children — only A particles allowed, and A:Cyto skipped
+    // outright so a Cyto never draws itself.
+    //
+    // For non-H Scannables (eg LangTiles model C), the depth-0 particle
+    // has no H key — no rule matches — no thence carries — every child
+    // proceeds normally.
+    cyto_visibility: [
+        {
+            // depth 0: the scannable H — skip it, install child filter
+            matching_any: [{ sc: { H: 1 } }],
+            means: {
+                thence_matching: [
+                    {
+                        // depth 1: only A particles allowed; A:Cyto skipped
+                        matching_any: [{ sc: { A: 'Cyto' } }],
+                        means: { skip: true },
+                    },
+                    {
+                        // any non-A at depth 1 → skip
+                        matching_any: [{ sc: { watched: 1 } }],
+                        means: { skip: true },
+                    },
+                ],
+            },
+        },
+    ] as Array<any>,
 
     cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
         const s = n.sc

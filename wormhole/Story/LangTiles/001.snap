@@ -13,11 +13,24 @@ Snap:H
     A:Cyto
       {"mung":["age"]}	self,round:4
       w:Cyto,grawave_duration:0.4
+        {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
         {"mung":["age"]}	self,round:4
+        {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
+        TheWave
+          {"CytoWave":1,"duration":0.4,"absolute":1}
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1,label:model
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1_2,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1_2_2,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1_2_2_2,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_2_2_1,source:cytoid_1_1_1_2_2,target:cytoid_1_1_1_2_2_2
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:Cyto
     watched:graph
-      cyto_graph
+      {"ref":{"wave":"CytoWave:1, duration:0.4, absolute:1, step_n:null"}}	cyto_graph,tick:2
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:LangTiles,isCompound:true
@@ -67,44 +80,7 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  upsert,id:cytoid_1_2,label:Cyto,isCompound:true
-    style,background-color:#8f3232
-    style,background-opacity:0.6
-    style,color:#ccc
-    style,font-size:8px
-    style,font-style:italic
-    style,height:20
-    style,padding:7px
-    style,shape:ellipse
-    style,text-valign:top
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_3","label":"watched:UIs"}
-    style,background-color:#298699
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_3_1","label":"UI:Cyto"}
-    style,background-color:#bc2476
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_4","label":"watched:graph"}
-    style,background-color:#298699
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
-  upsert,id:cytoid_1_4_1,label:cyto_graph
-    style,background-color:#61bd42
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
   edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
   edge_upsert,id:cytoid_1_1_1_1_2_2_1,source:cytoid_1_1_1_1_2,target:cytoid_1_1_1_1_2_2
   edge_upsert,id:cytoid_1_1_1_1_2_2_2_1,source:cytoid_1_1_1_1_2_2,target:cytoid_1_1_1_1_2_2_2
-  edge_upsert,id:cytoid_1_3_1_1,source:cytoid_1_3,target:cytoid_1_3_1
-  edge_upsert,id:cytoid_1_4_1_1,source:cytoid_1_4,target:cytoid_1_4_1

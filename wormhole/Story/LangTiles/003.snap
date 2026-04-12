@@ -14,6 +14,8 @@ Snap:H
       {"mung":["age"]}	self,round:8
       w:Cyto,grawave_duration:0.4
         {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
+        {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
+        {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
         {"mung":["age"]}	self,round:8
         {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
         TheWave
@@ -21,7 +23,7 @@ Snap:H
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:Cyto
     watched:graph
-      {"ref":{"wave":"CytoWave:1, duration:0.4, step_n:null"}}	cyto_graph,tick:2
+      {"ref":{"wave":"CytoWave:1, duration:0.4, step_n:null"}}	cyto_graph,tick:4
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_4_1","label":"cyto_graph\ntick:2"}
+

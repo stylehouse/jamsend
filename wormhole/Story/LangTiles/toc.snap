@@ -10,16 +10,8 @@ story:LangTiles
       style:background-color,v:#8e29d6
     matstyle:see
       style:background-color,v:#c5b759
-    matstyle:watched
-      style:background-color,v:#298699
-    matstyle:UI
-      style:background-color,v:#bc2476
-    matstyle:cyto_graph
-      style:background-color,v:#61bd42
-    matstyle:TheWave
-      style:background-color,v:#534ed0
   TimeSpool
-    TimeTotal:beliefs,avg:38.062
+    TimeTotal:beliefs,avg:26.72
       sample:0.016,at:1775995344
       sample:0.037,at:1775995552
       sample:0.03,at:1775995724
@@ -27,8 +19,11 @@ story:LangTiles
       sample:0.083,at:1775996089
       sample:133.101,at:1775996455
       sample:133.101,at:1775996833
-  step,dige:0beaababf122f577
-  step:2,dige:58c4a7e97e343d27
-  step:3,dige:524cdd4ad8d5178a
-  step:4,dige:fbe7fe46ba2319be
-  step:5,dige:3f879d7f9f8eee0f
+      sample:0.248,at:1775999476
+      sample:0.248,at:1775999569
+      sample:0.262,at:1775999641
+  step,dige:c5c6682caeeb9098
+  step:2,dige:420f36d1e7047255
+  step:3,dige:02ecceb3f339ad22
+  step:4,dige:72859e0ccc78a5c3
+  step:5,dige:bc50b24e4cf6c6c1
