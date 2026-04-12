@@ -60,8 +60,7 @@ story:LeafFarm
       style:shape,v:round-rectangle
       style:width,v:24
   TimeSpool
-    TimeTotal:beliefs,avg:0.366
-      sample:0.405,at:1775988019
+    TimeTotal:beliefs,avg:0.376
       sample:0.536,at:1775988056
       sample:0.317,at:1775988248
       sample:0.259,at:1775988682
@@ -71,6 +70,7 @@ story:LeafFarm
       sample:0.313,at:1775990959
       sample:0.329,at:1775991112
       sample:0.515,at:1775995263
+      sample:0.511,at:1775996360
   step,dige:4b2b5c6d35ce4eba,snap_link:001.snap
   step:2,dige:c99275c88144331b,snap_link:002.snap
   step:3,dige:3ff365f3177db59e,snap_link:003.snap

@@ -128,10 +128,12 @@
         const last_open   = w.c.last_open_at as number | null | undefined
         const gn          = w.c.gn as TheC | undefined
 
-        if (!absolute && incoming_step_n === last_step_n && open_at === last_open) return true
+        let same_step_n = last_step_n && incoming_step_n === last_step_n
+        let same_open_at = last_open && open_at === last_open
+        if (!absolute && same_step_n && same_open_at) return true
 
         // TRIGGER 1: new step from client → scan + archive
-        if (incoming_step_n !== undefined && incoming_step_n !== last_step_n) {
+        if (incoming_step_n !== undefined && !same_step_n || !w.c.supports_seek) {
             const topC = await this.cyto_scan(w, scan)
             await this.cyto_assign_ids(w, topC)
             await this.cyto_scan_refs(w, topC)
@@ -762,9 +764,11 @@
 //  The client handler is just e_${Clientname}_animation_done on its worker.
 
     async e_Cyto_animation_request(A, w, e) {
-        if (!w.c.supports_takeTurns) return
         const story_step = e?.sc.story_step as number
         await this.cyto_update_wave(w, story_step)
+
+        if (!w.c.supports_takeTurns) return
+
         // At this point: cyto_scan done, archive updated, wave pushed to gn.sc.wave.
         // Wave is ready to be read synchronously by the client.
         const client = w.c.client_w as TheC | undefined

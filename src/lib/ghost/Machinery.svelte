@@ -3,38 +3,137 @@
     import { Selection } from "$lib/mostly/Selection.svelte";
     import type { House } from "$lib/O/Housing.svelte";
     import { armap, peel, sex } from "$lib/Y.svelte";
-    // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
-    //
-    // Three workers: farm, plate, enzymeco.
-    //
-    // ── cross-worker transfers ────────────────────────────────────────────────
-    //
-    //   All transfers are direct .i() calls into the target worker's C.
-    //   Since all workers run inside the same RunH beliefs mutex, the particle
-    //   is always somewhere visible — no gap tick where it's in flight but
-    //   invisible to the snap.
-    //
-    //     leaf harvest:  farm drops the leaf → same tick, plate.i({leaf:1,...})
-    //     protein:       farm builds a guard particle, places it into plate directly
-    //     enzyme:        enzymeco batch completes → plate.i({shelf:1,enzyme:1,...})
-    //     enzyme request: plate sets %wants_to_produce directly on enzymeco
-    //
-    //   plate_w() / enzymeco_w() helpers find sibling workers on RunH.
-    //
-    // ── plate's permanent sun ─────────────────────────────────────────────────
-    //
-    //   plate carries a {sunshine:1, dose:1} particle that is created once
-    //   and never changed.  It does nothing computationally — it exists purely
-    //   so Cyto always has something to anchor the plate compound when leaves,
-    //   mouthfuls, and proteins are all absent.  dose:1 renders as a stable
-    //   mid-sized diamond in Cytui.  Cyto gives it the id "sun:plate" (vs
-    //   farm's oscillating "sun:farm") so they never collide.
-
     import { onMount } from "svelte";
     let {M} = $props()
 
     onMount(async () => {
     await M.eatfunc({
+
+//#endregion
+//#region StuffFlipping
+
+    // LangTiles ghost — a second test-case game with its own Cyto instance.
+    //
+    // ── eithery commissioning ───────────────────────────────────────────────
+    //
+    //   H:Story commissions its Cyto with Scannable=H (everything), giving the
+    //   low-frequency overview wave.  H:LangTiles commissions its own Cyto
+    //   with Scannable=w.c.model — a permanent TheC it owns — for a tighter,
+    //   higher-detail wave of just the LangTiles viewable model.
+    //
+    //   Both Cytos share the same Styles bucket: Story's The/Styles.  We reach
+    //   across via top_House().Awo('Story','Story').c.The and call The_Styles.
+    //   Any matstyle edit from either Cytui writes to the same place and both
+    //   graphs restyle.  Story's watch_c on stylesC handles save-on-change.
+    //
+    //   Client for LangTiles's Cyto is w:LangTiles itself, so Cyto_animation_done
+    //   etc. route back here.  Story's Cyto still talks to w:Story.
+    //
+    // ── minimum viable model ────────────────────────────────────────────────
+    //
+    //   For now just builds w/Bit/Bit/Bit/Bit (nested 4 deep) on w.c.model so
+    //   there's something visible in the graph.  Real LangTiles logic lives
+    //   in the branch-outs from here.
+
+
+    // Called from Auto (same path Story uses) with Book=name of a LangTiles book.
+    // Auto spawns H:LangTiles as a subHouse and calls Run_A_LangTiles on it.
+    Run_A_LangTiles(this: House) {
+        const H = this
+        H.i({ A: 'LangTiles' }).i({ w: 'LangTiles' })
+        H.i({ A: 'Cyto'      }).i({ w: 'Cyto'      })
+        console.log(`🟦 ${H.name} LangTiles wired`)
+    },
+
+//#endregion
+//#region w:LangTiles
+
+    async LangTiles(this: House, A: TheC, w: TheC) {
+        const H = this
+
+        if (!w.c.plan_done) this.LangTiles_plan(w)
+        w.i({ see: `🟦 tiles model:${w.c.model ? '✓' : '…'}` })
+
+
+        let model = w.c.model
+
+        if (!model.oa({Bit:1})) {
+            // Build w/Bit/Bit/Bit/Bit just to prove the pipeline lights up.
+            // (Real LangTiles tile state will replace this.)
+            let here: TheC = model
+            for (let i = 0; i < 4; i++) {
+                here = here.i({ Bit: 1 })
+            }
+        }
+
+
+        H.elvisto('Cyto/Cyto', 'Cyto_animation_request',{Langy:1})
+    },
+
+    LangTiles_plan(this: House, w: TheC) {
+        const H = this
+
+        // ── the permanent viewable model ────────────────────────────
+        // w/{model:1} — a stable TheC we hand to Cyto as Scannable.
+        // i_elvis_req keyed on the req particle won't re-send while this
+        // is the same object, so commissioning happens exactly once.
+        const model = w.i({ model: 1 })
+        w.c.model = model
+
+
+        // ── reach across to Story's Styles ──────────────────────────
+        // Story persists Styles under its w.c.The/{Styles:1}.
+        // We call The_Styles(storyw) so we get the same TheC.
+        // Story's watch_c on that bucket handles save-on-change for
+        // edits made from either Cytui.
+        const topH    = H.top_House()
+        let stylesC: TheC | null = null
+        try {
+            const storyw = topH.o({H:'Story'})[0].Awo('Story', 'Story')
+            stylesC = H.The_Styles(storyw)
+        } catch {
+            console.warn(`LangTiles: H:Story not present yet — Cyto will palette-fallback`)
+        }
+
+        // ── commission our own Cyto ─────────────────────────────────
+        // Scannable = the permanent model C.
+        // client_w  = w:LangTiles itself, so animation_done events come here.
+        // No seek / takeTurns yet — this is the simple observer path.
+        const commission = new TheC({ c: {}, sc: {
+            Scannable:            w.c.model,
+            Styles:               stylesC,
+            client_w:             w,
+            supports_seek:        false,
+            supports_takeTurns:   false,
+            wants_wave_done:      false,
+            wants_animation_done: false,
+        }})
+        // target our local A:Cyto/w:Cyto, not H:Story's
+        H.elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
+
+        w.c.plan_done = true
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //#endregion
@@ -481,6 +580,33 @@
 //#endregion
 //#region LeafFarm
 
+
+    // LeafFarm ghost — wired as Run_A_LeafFarm in Story.svelte.
+    //
+    // Three workers: farm, plate, enzymeco.
+    //
+    // ── cross-worker transfers ────────────────────────────────────────────────
+    //
+    //   All transfers are direct .i() calls into the target worker's C.
+    //   Since all workers run inside the same RunH beliefs mutex, the particle
+    //   is always somewhere visible — no gap tick where it's in flight but
+    //   invisible to the snap.
+    //
+    //     leaf harvest:  farm drops the leaf → same tick, plate.i({leaf:1,...})
+    //     protein:       farm builds a guard particle, places it into plate directly
+    //     enzyme:        enzymeco batch completes → plate.i({shelf:1,enzyme:1,...})
+    //     enzyme request: plate sets %wants_to_produce directly on enzymeco
+    //
+    //   plate_w() / enzymeco_w() helpers find sibling workers on RunH.
+    //
+    // ── plate's permanent sun ─────────────────────────────────────────────────
+    //
+    //   plate carries a {sunshine:1, dose:1} particle that is created once
+    //   and never changed.  It does nothing computationally — it exists purely
+    //   so Cyto always has something to anchor the plate compound when leaves,
+    //   mouthfuls, and proteins are all absent.  dose:1 renders as a stable
+    //   mid-sized diamond in Cytui.  Cyto gives it the id "sun:plate" (vs
+    //   farm's oscillating "sun:farm") so they never collide.
 
 
     Run_A_LeafFarm(this: House) {

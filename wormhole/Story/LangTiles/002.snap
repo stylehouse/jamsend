@@ -1,0 +1,41 @@
+Snap:H
+  H:LangTiles,Run
+    A:LangTiles
+      {"mung":["age"]}	self,round:2
+      w:LangTiles
+        model
+          Bit
+            Bit
+              Bit
+                Bit
+        {"mung":["age"]}	self,round:2
+        {"see":"🟦 tiles model:✓"}
+    A:Cyto
+      {"mung":["age"]}	self,round:6
+      w:Cyto,grawave_duration:0.4
+        {"mung":["age"]}	self,round:6
+        {"ref":{"C":"cyto_root:1"}}	{"CytoStep":1}
+        TheWave
+          {"CytoWave":1,"duration":0.4}
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1,label:model
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1_2,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1_2_2,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2
+            {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_1_2_2_2,label:Bit
+            {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_2_2_1,source:cytoid_1_1_1_2_2,target:cytoid_1_1_1_2_2_2
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:Cyto
+    watched:graph
+      {"ref":{"wave":"CytoWave:1, duration:0.4, step_n:null"}}	cyto_graph,tick
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  upsert,id:cytoid_1_2_1,label:TheWave,parent:cytoid_1_2
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_4_1","label":"cyto_graph\ntick"}
