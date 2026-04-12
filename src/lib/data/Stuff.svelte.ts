@@ -385,6 +385,7 @@ class StuffIO {
         
         return M
     }
+
     matches(sc:TheUniversal) {
         let n:TheC = this
         let query_params = Object.entries(sc || {})
@@ -410,6 +411,40 @@ class StuffIO {
         if (value == 1 && typeof value == 'number') return true
         
         return n.sc[key] == value;
+    }
+
+    // lematch — generalised rule matcher
+    //   { matching_any: [{sc:{...}} | {sc_only:{...}}],
+    //     means: { skip?, munging?, thence_matching? } }
+    lematch(rules: any[] = []): {
+        skip: boolean
+        munging: any[]
+        thence: any[]
+    } {
+        const munging: any[] = []
+        const thence: any[] = []
+        let skip = false
+        const seen = new Set<string>()
+
+        for (const rule of rules) {
+            const matched = (rule.matching_any as any[]).some((entry: any) => {
+                if (entry.sc_only) {
+                    const want = Object.keys(entry.sc_only)
+                    if (Object.keys(this.sc).length !== want.length) return false
+                    return this.matches(entry.sc_only)
+                }
+                return this.matches(entry.sc)
+            })
+            if (!matched) continue
+            for (const m of rule.means?.munging ?? []) munging.push(m)
+            if (rule.means?.skip) skip = true
+            for (const tw of rule.means?.thence_matching ?? []) {
+                const key = JSON.stringify(tw)
+                if (!seen.has(key)) { seen.add(key); thence.push(tw) }
+            }
+        }
+
+        return { skip, munging, thence }
     }
 }
 

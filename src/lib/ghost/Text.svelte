@@ -340,7 +340,7 @@
         thence?: Array<any>
         mung?: string[]
     }): string | null {
-        const mr = this.lematch(n, q.rules ?? [])
+        const mr = n.lematch(q.rules ?? [])
         q.skip   = mr.skip
         q.thence = mr.thence
         if (q.skip) return null

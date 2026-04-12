@@ -103,50 +103,11 @@
         'hexagon', 'star', 'triangle', 'pentagon', 'tag',
     ] as string[],
 
-//#endregion
-//#region mainkey + lematch
-
     mainkey(n: TheC): string | undefined {
         const keys = Object.keys(n.sc ?? {})
         return keys.length ? keys[0] : undefined
     },
 
-    // lematch — generalised rule matcher.  Same schema as story_matching rules:
-    //   { matching_any: [{sc:{...}} | {sc_only:{...}}],
-    //     means: { skip?, munging?, thence_matching? } }
-    // Returns { skip, munging, thence }.  Used by enLine for snap encoding,
-    // by cyto_scan for visibility filtering, and anywhere else a rules list
-    // wants to be applied to a particle.  Grep "lematch" to find all callers.
-    lematch(n: TheC, rules: any[] = []): {
-        skip: boolean
-        munging: any[]
-        thence: any[]
-    } {
-        const munging: any[] = []
-        const thence: any[] = []
-        let skip = false
-        const seen = new Set<string>()
-
-        for (const rule of rules) {
-            const matched = (rule.matching_any as any[]).some((entry: any) => {
-                if (entry.sc_only) {
-                    const want = Object.keys(entry.sc_only)
-                    if (Object.keys(n.sc).length !== want.length) return false
-                    return n.matches(entry.sc_only)
-                }
-                return n.matches(entry.sc)
-            })
-            if (!matched) continue
-            for (const m of rule.means?.munging ?? []) munging.push(m)
-            if (rule.means?.skip) skip = true
-            for (const tw of rule.means?.thence_matching ?? []) {
-                const key = JSON.stringify(tw)
-                if (!seen.has(key)) { seen.add(key); thence.push(tw) }
-            }
-        }
-
-        return { skip, munging, thence }
-    },
 
 //#endregion
 //#region The_Styles — Story's persistence finder

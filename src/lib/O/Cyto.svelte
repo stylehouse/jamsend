@@ -267,7 +267,7 @@
                     ...this.cyto_visibility,
                     ...(T.up?.sc.cyto_thence ?? []),
                 ]
-                const lm = this.lematch(n, active)
+                const lm = n.lematch(active)
                 if (lm.skip) {
                     // depth 0 H is "skip" but its children must still be
                     // walked — so for the top T we drop D, mark T as
