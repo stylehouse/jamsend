@@ -791,16 +791,6 @@
         // we snap.  No need to prod it here.
         const cyto_A = H.o({ A: 'Cyto' })[0] as TheC | undefined
         const cyto_w = cyto_A?.o({ w: 'Cyto' })[0] as TheC | undefined
-        if (w.c.intoCyto) {
-            // Ask Cyto to scan+archive this step NOW, before we read its wave for the snap.
-            // Cyto replies Cyto_animation_done when the wave has been pushed.
-            const done_p = new Promise(res => { w.c.cyto_snap_waiter = res })
-            H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: run.c.step_n })
-            console.log(`Cyto_animation_request awaiting...`)
-            await done_p
-            console.log(`Cyto_animation_request awaited`)
-        }
-
 
         const wave     = cyto_w?.c.gn?.sc.wave as any
         if (!wave) throw "!wave"
@@ -891,6 +881,8 @@
             client_w:           w,
             supports_seek:      true,
             supports_takeTurns: true,
+            wants_wave_done:     true,  // send me Cyto_wave_done after wave push
+            wants_animation_done:true,  // send me Cyto_animation_done after dur
         }})
         H.elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
 
@@ -1001,22 +993,41 @@
         w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
+    // returned from w:Cyto as soon as the current step has a wave
+    async e_Cyto_wave_done(A, w, e) {
+        V.Story && console.log(`e:Cyto_wave_done step=${e?.sc.story_step}`)
+        const run = w.o({ run: 1 })[0]
+        if (!run?.c.awaiting_wave_done) return
+        run.c.awaiting_wave_done = false
+        run.c.driving = true
+        // resume snap_step at the point after the wave is ready
+        const resume = run.c.snap_step_after_wave as (() => Promise<void>) | undefined
+        if (resume) {
+            this.post_do(resume, { see: 'snap_step_after_wave' })
+        }
+    },
     // ── story_cyto_continue ───────────────────────────────────────────────────
     // Received from w:Cyto once Cytui has finished animating the current step.
     // Clears the intoCyto pause and starts a fresh story_drive — the drive
     // was already stopped cleanly by advance() so driving=false here.
-    async e_Cyto_animation_done(A: TheC, w: TheC) {
-        console.log(`e:Cyto_animation_done -> w:Story step=${e?.sc.story_step}`)
-        const waiter = w.c.cyto_snap_waiter
-        if (waiter) { w.c.cyto_snap_waiter = undefined; waiter() }
+    async e_Cyto_animation_done(A, w, e) {
+        V.Story && console.log(`e:Cyto_animation_done step=${e?.sc.story_step}`)
         const run = w.o({ run: 1 })[0]
-        if (!run) return
-        if (run.sc.paused >= 2) return   // strong pause holds
-        run.sc.paused = 0
-        delete run.c.cyto_waiting
-        const sub = this.Story_subHouse(A, w)
-        if (sub) this.story_drive(sub.Run, w, run)
+        if (!run?.c.awaiting_anim_done) return
+        run.c.awaiting_anim_done = false
+        if (run.sc.paused) return   // respect hard pause
+        run.c.driving = true
+        // animation finished — proceed to next step via advance
+        const sub = this.Story_subHouse(null, w)
+        if (!sub) return
+        // advance() isn't exposed; easiest is to re-kick story_drive which falls
+        // through schedule() → do_step for n+1. step_n gets incremented implicitly
+        // by do_step reading run.sc.done+1, and run.sc.done was already set to n
+        // in snap_step, so this does the right thing.
+        run.c.driving = false   // story_drive early-returns if driving
+        this.story_drive(sub.Run, w, run)
     },
+
 
 
 //#region story_drive
@@ -1044,6 +1055,10 @@
 
     story_drive(Run: House, w: TheC, run: TheC) {
         if (run.c.driving) return
+        if (run.c.awaiting_wave_done || run.c.awaiting_anim_done) {
+            console.log(`⏸ story_drive called while awaiting_*; ignored`)
+            return
+        }
         run.c.driving = true
 
         const H    = this as House
@@ -1055,25 +1070,14 @@
             wa()?.bump_version()
         }
 
-        // advance: called at the end of each completed step instead of schedule().
-        // When w.c.intoCyto is set, pauses the drive and hands control to w:Cyto.
-        // Cyto will scan the farm, publish a grawave, then after its animation
-        // duration fires story_cyto_continue back to w:Story to resume.
-        // When intoCyto is absent, falls through to schedule() as before.
+        // advance: called after snap_step completes and (for intoCyto path)
+        // after the animation_done event has resumed the drive.
         const advance = () => {
-            // step just completed — check for a pause note
             const n = run.c.step_n as number
             if (n != null && H.The_step(w, n).o({ note: 1, pause: 1 }).length) {
                 run.sc.paused = 2
             }
-
-            if (w.c.intoCyto) {
-                // < do we keep these here? used to e:Cyto_animation_request
-                // run.sc.paused = Math.max((run.sc.paused as number) || 0, 1)
-                // run.c.driving = false
-                // return
-            }
-            if (run.sc.paused) return   // strong pause holds before schedule()
+            if (run.sc.paused) { run.c.driving = false; return }
             schedule()
         }
 
@@ -1144,14 +1148,35 @@
             run.sc.done       = n
             Run.trace('snap', String(n))
 
-            const snap     = await this.story_snap(w,run,Run)
+            // If intoCyto: pause the drive, send the animation request, return.
+            // e_Cyto_wave_done will resume by calling snap_step_after_wave().
+            if (w.c.intoCyto) {
+                run.c.awaiting_wave_done = true
+                run.c.driving = false    // release mutex by ending this turn
+                H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: n })
+                console.log(`⏸ snap_step paused for Cyto_wave_done step=${n}`)
+                return
+            }
+
+            await snap_step_after_wave()
+        }
+
+        // Reachable by two paths:
+        //   1. Directly from snap_step when !intoCyto
+        //   2. From e_Cyto_wave_done via run.c.snap_step_after_wave when intoCyto
+        const snap_step_after_wave = async () => {
+            if (!run.c.driving) {
+                // we were resumed by the handler which set driving=true
+                run.c.driving = true
+            }
+            const n = run.c.step_n as number
+            const snap     = await this.story_snap(w, run, Run)
             const got_dige = await dig(snap)
             Run.trace('snapped', String(n))
 
-            const step    = H.i_step(w, n)
+            const step = H.i_step(w, n)
             step.sc.unrun = false
-            const run_trace = Run.trace_drain()
-            step.sc.Run_trace = run_trace
+            step.sc.Run_trace = Run.trace_drain()
             step.bump_version()
 
             // Trim (got|exp)_snap 5 steps behind — best-effort GC.
@@ -1169,93 +1194,97 @@
 
             if (run.sc.mode === 'new') {
                 step.sc.got_snap = snap
-                step.sc.dige     = got_dige
-                step.sc.ok       = true
-                step.sc.accepted = true   // new-mode steps are self-accepting; save loop uses this
+                step.sc.dige = got_dige
+                step.sc.ok = true
+                step.sc.accepted = true
                 H.The_step(w, n).sc.dige = got_dige
                 H.story_analysis(w)
-                await update_status(
-                    `recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
-                advance()
-
+                await update_status(`recording ${H.pad(n)}/${H.pad(run.sc.total)}`, 'save')
+                await snap_step_finish()
             } else {
                 const exp_dige = H.The_step_dige(w, n)
-                const ok       = exp_dige === got_dige
-                ;V.Story && console.log(`🔍 n=${n} ok=${ok} exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)
+                const ok = exp_dige === got_dige
+                V.Story && console.log(`🔍 n=${n} ok=${ok} exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)
                 step.sc.got_snap = snap
-                step.sc.dige     = got_dige
-                step.sc.ok       = ok
-
+                step.sc.dige = got_dige
+                step.sc.ok = ok
                 H.story_analysis(w)
 
                 if (!ok && !w.c.lenient) {
-                    run.c.driving     = false
-                    run.sc.paused     = 2
-                    run.sc.failed_at  = n
+                    run.c.driving = false
+                    run.sc.paused = 2
+                    run.sc.failed_at = n
                     run.sc.fetch_snap = n
-                    run.sc.check_snap = n   // fetch_snap also sets this, but be explicit
-                    run.sc.frontier   = n
+                    run.sc.check_snap = n
+                    run.sc.frontier = n
                     if (run.sc.open_at == null) run.sc.open_at = n
                     H.The_set_frontier(w, n)
                     await update_status(`✗ step ${H.pad(n)}`, 'stop')
-                    console.log(`⛔ Story: step ${H.pad(n)} mismatch — exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)
-                    H.main(); return
+                    console.log(`⛔ Story: step ${H.pad(n)} mismatch`)
+                    H.main()
+                    return
                 }
                 if (!ok) console.log(`⚠ Story: step ${H.pad(n)} mismatch accepted (lenient)`)
                 await update_status(`${ok ? '✓' : '⚠'} ${H.pad(n)}`, ok ? 'default' : 'save')
-                ;V.Story && console.log(`✔ snap_step ok=${ok} n=${n}${ok && w.c.snap_checking ? ', verifying' : ', advancing'}`)
 
-                // snap_checking: queue a disk dige verify for this step and wait
-                // for Story() to process it before advancing.  poll_check unblocks
-                // once Story() clears step.sc.checking.  Only fires on ok steps —
-                // mismatches already have fetch_snap wired, which reads the disk snap.
                 if (ok && w.c.snap_checking) {
-                    step.sc.checking  = true
+                    step.sc.checking = true
                     run.sc.check_snap = n
                     H.main()
                     setTimeout(poll_check, TICK)
                 } else {
-                    advance()
+                    await snap_step_finish()
                 }
             }
         }
 
-        // Phase 4: poll_check — wait for Story() to verify disk snap (snap_checking only).
-        // If disk_ok === false the file on disk doesn't match toc.snap's recorded dige.
-        // check_snap has already promoted disk_dige into The, so we just pause like a
-        // normal mismatch and let the user Accept from the diff panel.
+        // Post-snap phase: pause for animation if intoCyto, else advance directly.
+        // Reached from snap_step_after_wave (both modes) and poll_check.
+        const snap_step_finish = async () => {
+            if (w.c.intoCyto) {
+                run.c.awaiting_anim_done = true
+                run.c.driving = false
+                console.log(`⏸ snap_step finished, paused for Cyto_animation_done`)
+                // Cyto's setTimeout will fire animation_done; our handler advances.
+                return
+            }
+            advance()
+        }
+
         const poll_check = () => {
             if (!run.c.driving) return
-            const n          = run.c.step_n as number
+            const n = run.c.step_n as number
             const check_step = H.i_step(w, n)
             if (check_step.sc.checking) { setTimeout(poll_check, TICK); return }
-
             if (check_step.sc.disk_ok === false) {
-                check_step.sc.ok  = false
-                run.c.driving     = false
-                run.sc.paused     = 2
-                run.sc.failed_at  = n
+                check_step.sc.ok = false
+                run.c.driving = false
+                run.sc.paused = 2
+                run.sc.failed_at = n
                 run.sc.fetch_snap = n
-                run.sc.frontier   = n
+                run.sc.frontier = n
                 if (run.sc.open_at == null) run.sc.open_at = n
                 H.The_set_frontier(w, n)
                 update_status(`✗ disk ${H.pad(n)}`, 'stop')
                 H.main()
                 return
             }
-
-            ;V.Story && console.log(`⏱ poll_check ok n=${n}`)
-            advance()
+            V.Story && console.log(`⏱ poll_check ok n=${n}`)
+            snap_step_finish()   // not advance() — go through the intoCyto gate
         }
 
         const schedule = () => {
             if (!run.c.driving) return
-            ;V.Story && console.log(`⏭ schedule driving=${run.c.driving} paused=${run.sc.paused}`)
+            V.Story && console.log(`⏭ schedule driving=${run.c.driving} paused=${run.sc.paused}`)
             setTimeout(() => {
                 if (!run.c.driving) return
                 H.post_do(do_step, { see: 'story_step' })
             }, 200)
         }
+
+        // Expose the two resume-points for handlers.
+        run.c.snap_step_after_wave = snap_step_after_wave
+        run.c.snap_step_finish     = snap_step_finish
 
         schedule()
         console.log(`▶ Story: drive started for ${run.sc.run}`)

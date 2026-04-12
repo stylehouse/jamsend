@@ -104,6 +104,8 @@
         w.c.client_w           = req.sc.client_w as TheC | undefined
         w.c.supports_seek      = !!req.sc.supports_seek
         w.c.supports_takeTurns = !!req.sc.supports_takeTurns
+        w.c.wants_wave_done      = !!req.sc.wants_wave_done
+        w.c.wants_animation_done = !!req.sc.wants_animation_done
 
         // No watch_c. Client drives all scans via Cyto_animation_request.
         // < non-takeTurns clients, add a throttled watch_c here
@@ -741,16 +743,25 @@
 //
 //  The client handler is just e_${Clientname}_animation_done on its worker.
 
-    async e_Cyto_animation_request(A: TheC, w: TheC, e: TheC) {
+    async e_Cyto_animation_request(A, w, e) {
         if (!w.c.supports_takeTurns) return
         const story_step = e?.sc.story_step as number
         await this.cyto_update_wave(w, story_step)
-        const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
+        // At this point: cyto_scan done, archive updated, wave pushed to gn.sc.wave.
+        // Wave is ready to be read synchronously by the client.
         const client = w.c.client_w as TheC | undefined
+        if (client && w.c.wants_wave_done) {
+            this.elvistwo(w, client, 'Cyto_wave_done', { story_step })
+        }
+        // Animation plays for grawave_duration. After that, the motion is
+        // visually complete and the client can proceed to its next step.
+        const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         setTimeout(() => {
-            if (client) this.elvistwo(w, client, 'Cyto_animation_done', { story_step: e?.sc.story_step })
+            if (client && w.c.wants_animation_done) {
+                this.elvistwo(w, client, 'Cyto_animation_done', { story_step })
+            }
         }, dur + 100)
-    },
+    }
 
 //#endregion
 

@@ -605,7 +605,7 @@ export class House extends StorableHousing {
             if (e.sc.fn) {
                 // post_do block (fn-carrying e) — run directly, never enters beliefs()
                 // $effect re-fires for any remaining todo after fn resolves
-                await e.sc.fn()
+                await e.sc.fn(e)
             } else {
                 // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
                 await this.beliefs(e)

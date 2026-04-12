@@ -1,4 +1,66 @@
 story:LeafFarm
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:sunshine
+      style:background-color,v:#8a7010
+      style:color,v:#331800
+      style:shape,v:diamond
+      style:width,v:44
+      meta:dose,drives:size,min:22,max:66,cap:10
+    matstyle:poo
+      style:background-color,v:#5c3010
+      style:color,v:#c88040
+      meta:dose,drives:size,min:18,max:28,cap:8
+    matstyle:leaf
+      style:background-color,v:#1a5a2a
+      style:color,v:#b0ffb0
+      meta:dose,drives:size,min:14,max:32,cap:10
+    matstyle:mouthful
+      style:background-color,v:#4a7a20
+      style:color,v:#003300
+      style:width,v:10
+      meta:dose,drives:size,min:6,max:46,cap:6
+    matstyle:material
+      style:background-color,v:#3a2810
+      style:color,v:#ffe8c0
+      style:shape,v:round-rectangle
+      meta:dose,drives:size,min:18,max:36,cap:20,key:amount
+    matstyle:protein
+      style:background-color,v:#3a1a4a
+      style:color,v:#ddc8ff
+      style:shape,v:hexagon
+      style:width,v:24
+      meta:dose,drives:size,min:18,max:42,cap:8,key:complexity
+    matstyle:wants_enzyme
+      style:background-color,v:#6a1a08
+      style:color,v:#ff9070
+      style:shape,v:star
+      style:width,v:22
+    matstyle:producing
+      style:background-color,v:#142060
+      style:color,v:#9ab4ff
+      style:shape,v:round-rectangle
+      style:width,v:42
+    matstyle:enzyme
+      style:background-color,v:#3aa67e
+    matstyle:wants_to_produce
+      style:background-color,v:#6a1a08
+      style:color,v:#ff9070
+      style:shape,v:star
+      style:width,v:22
+    matstyle:shelf
+      style:background-color,v:#1a4828
+      style:color,v:#90ffc0
+      style:shape,v:round-rectangle
+      style:width,v:24
+  TimeSpool
+    TimeTotal:beliefs,avg:0.27
+      sample:0,at:1775622983
+      sample:0.36,at:1775644437
+      sample:0.45,at:1775976891
   step,dige:733dcb3d3115176c,snap_link:001.snap
   step:2,dige:7081adb68c9d90e7,snap_link:002.snap
   step:3,dige:473a759c0f3e4097,snap_link:003.snap
@@ -31,7 +93,3 @@ story:LeafFarm
   step:28,dige:98fb5f9216f5039b,snap_link:028.snap
   step:29,dige:67efaa4afcf9462f,snap_link:029.snap
   step:30,dige:fe88b513fb41eece,snap_link:030.snap
-  TimeSpool
-    TimeTotal:beliefs,avg:0.18
-      sample:0,at:1775622983
-      sample:0.36,at:1775644437
