@@ -352,17 +352,19 @@
     // Label format — new %meta:label,fmt:"%s",keys:"w" 
     //    Default when absent: cyto_label(n) (existing behaviour).
     //    fmt||="%s" is sprintf-style %s substitution from the named keys.
+
     matstyle_label(ms: TheC, n: TheC): string {
         const lm = this.ms_meta(ms, 'label')
-        if (!lm?.sc.fmt) return this.mainkey(n) ?? this.cyto_label(n)
+        if (!lm?.sc.fmt) return (lm && this.mainkey(n)) ?? this.cyto_label(n)
         const keys = String(lm.sc.keys ?? '').split('+').filter(Boolean)
         let i = 0
-        return String(lm.sc.fmt).replace(/%(s|d)/g, (_, t) => {
+        return String(lm.sc.fmt).replace(/\\n/g,"\n").replace(/%(s|d)/g, (_, t) => {
             const v = n.sc[keys[i++]]
             if (v == null) return ''
             return t === 'd' ? Number(v).toFixed(3) : String(v)
         })
     },
+
 
 //#endregion
 //#region restyle — live edit reactivity

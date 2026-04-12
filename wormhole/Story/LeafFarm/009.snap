@@ -27,18 +27,19 @@ Snap:H
         {"mung":["age"]}	self,round:9
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.81"}
+  upsert,id:cytoid_1_1_1
+    style,height:34
+    style,width:34
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.74"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.402!"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.402"}
     style,height:8
     style,width:8
-  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.330!","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.330","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
     style,height:7
     style,shape:ellipse
     style,width:7
-  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful\nmouthful_id:seed_0_m9\ndose:0.23\nspawning_from:seed_0\nttl:0"}
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.76"}
   {"upsert":1,"id":"cytoid_1_2_7","label":"shelf\nenzyme\nunits:5","parent":"cytoid_1_2"}
     style,background-color:#1a4828

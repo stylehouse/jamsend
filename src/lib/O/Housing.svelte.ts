@@ -27,6 +27,7 @@ db.version(2).stores({
 //#endregion
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
+V.beliefs = 0
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
@@ -597,7 +598,7 @@ export class House extends StorableHousing {
         this.c.finished_run = null
         this.trace('beliefs','begin')
         
-        console.log(`H:${this.name}  -> ${H.name}`)
+        V.beliefs && console.log(`H:${this.name}  -> ${H.name}`)
         await H.mutex('beliefs', async () => {
             // come back ambiently
             if (!this.c.no_interval) await this.reset_interval?.()
@@ -661,7 +662,7 @@ export class House extends StorableHousing {
 
         // class specified but not yet spawned — need concretion
         T.c.top.sc.needed_concretion = true
-        console.log(`  apply_scheme: needs concretion for ${path_bit_ark}:${D.sc[path_bit_ark]} (class:${class_key})`)
+        V.organise && console.log(`  apply_scheme: needs concretion for ${path_bit_ark}:${D.sc[path_bit_ark]} (class:${class_key})`)
 
         const began = { began_wanting: 'concretion', concretion: path_bit_ark }
         if (D.oa(began)) return
@@ -928,11 +929,11 @@ export class House extends StorableHousing {
             this.trace('think', `${A.sc.A}/${w.sc.w}→${method}`)
 
             try {
-                console.log(`💭 A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
+                V.beliefs && console.log(`💭 A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
                 await handler(A, w, e, AT, wT)
             } catch (err) {
                 w.i({ error: String(err) })
-                console.error(`💭 ${A.sc.A}/${w.sc.w}:`, err)
+                V.beliefs && console.error(`💭 ${A.sc.A}/${w.sc.w}:`, err)
             } finally {
                 delete w.c.e
             }

@@ -26,15 +26,17 @@ Snap:H
         {"mung":["age"]}	self,round:18
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.21"}
+  upsert,id:cytoid_1_1_1
+    style,height:25
+    style,width:25
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:2.15"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.612!"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.612"}
     style,height:16
     style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n1.322!"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n1.322"}
     style,height:14
     style,width:14
-  {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n1.083!"}
+  {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n1.083"}
     style,height:12
     style,width:12
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.7"}

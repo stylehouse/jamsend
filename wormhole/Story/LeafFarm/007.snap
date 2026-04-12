@@ -28,21 +28,22 @@ Snap:H
           enzyme,units:5
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:1.03"}
+  upsert,id:cytoid_1_1_1
+    style,height:37
+    style,width:37
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.54"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.270!"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.270"}
     style,height:7
     style,width:7
-  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.222!","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.222","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
     style,height:6
     style,shape:ellipse
     style,width:6
-  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n0.539!"}
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n0.539"}
     style,height:9
     style,width:9
-  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful\nmouthful_id:seed_0_m7\ndose:0.28\nspawning_from:seed_0\nttl:0"}
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.65"}
   {"upsert":1,"id":"cytoid_1_2_5","label":"protein\nprotein_id:prot_7\ncomplexity:2","parent":"cytoid_1_2"}
     style,background-color:#3a1a4a
