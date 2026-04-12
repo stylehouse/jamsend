@@ -17,7 +17,7 @@ story:LeafFarm
     matstyle:leaf
       style:background-color,v:#1a5a2a
       style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:10
+      meta:dose,drives:size,min:14,max:32,cap:28
     matstyle:mouthful
       style:background-color,v:#4a7a20
       style:color,v:#003300
@@ -57,10 +57,11 @@ story:LeafFarm
       style:shape,v:round-rectangle
       style:width,v:24
   TimeSpool
-    TimeTotal:beliefs,avg:0.27
+    TimeTotal:beliefs,avg:0.312
       sample:0,at:1775622983
       sample:0.36,at:1775644437
       sample:0.45,at:1775976891
+      sample:0.436,at:1775979043
   step,dige:733dcb3d3115176c,snap_link:001.snap
   step:2,dige:7081adb68c9d90e7,snap_link:002.snap
   step:3,dige:473a759c0f3e4097,snap_link:003.snap

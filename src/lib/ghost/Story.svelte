@@ -777,7 +777,7 @@
     //       \t{"background-color":"#0a1f0a"}     d=2
     //       ...
     //
-    // cyto_scan always runs regardless of intoCyto so the wave is always in
+    // cyto_scan always runs regardless of waitCyto so the wave is always in
     // the dige.  cyto_update_wave's version-check makes this free when RunH
     // hasn't changed since the last ambient Cyto tick.
     // < more of these %Snap:* channels could be commissioned by something wanting more readings
@@ -881,8 +881,9 @@
             client_w:           w,
             supports_seek:      true,
             supports_takeTurns: true,
-            wants_wave_done:     true,  // send me Cyto_wave_done after wave push
-            wants_animation_done:true,  // send me Cyto_animation_done after dur
+            wants_wave_done:      true,  // always — Story needs the wave before snapping
+            wants_animation_done: true,  // Cyto sends these unconditionally
+                                         //  Story ignores when !waitCyto
         }})
         H.elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
 
@@ -1008,7 +1009,7 @@
     },
     // ── story_cyto_continue ───────────────────────────────────────────────────
     // Received from w:Cyto once Cytui has finished animating the current step.
-    // Clears the intoCyto pause and starts a fresh story_drive — the drive
+    // Clears the waitCyto pause and starts a fresh story_drive — the drive
     // was already stopped cleanly by advance() so driving=false here.
     async e_Cyto_animation_done(A, w, e) {
         V.Story && console.log(`e:Cyto_animation_done step=${e?.sc.story_step}`)
@@ -1047,7 +1048,7 @@
 //     Trims (got|exp)_snap 5 steps behind (unless keep_snaps toggle is on).
 //     If snap_checking and ok: sets step.sc.checking, queues poll_check.
 //     Otherwise calls advance() — which either hands off to w:Cyto
-//     (when w.c.intoCyto is set) or calls schedule() directly.
+//     (when w.c.waitCyto is set) or calls schedule() directly.
 //
 //   Phase 4 — poll_check  (plain setTimeout, snap_checking mode only)
 //     waits for Story() to read NNN.snap from disk, verify its dige,
@@ -1070,7 +1071,7 @@
             wa()?.bump_version()
         }
 
-        // advance: called after snap_step completes and (for intoCyto path)
+        // advance: called after snap_step completes and (for waitCyto path)
         // after the animation_done event has resumed the drive.
         const advance = () => {
             const n = run.c.step_n as number
@@ -1145,25 +1146,19 @@
         const snap_step = async () => {
             if (!run.c.driving) return
             const n = run.c.step_n as number
-            run.sc.done       = n
+            run.sc.done = n
             Run.trace('snap', String(n))
 
-            // If intoCyto: pause the drive, send the animation request, return.
-            // e_Cyto_wave_done will resume by calling snap_step_after_wave().
-            if (w.c.intoCyto) {
-                run.c.awaiting_wave_done = true
-                run.c.driving = false    // release mutex by ending this turn
-                H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: n })
-                console.log(`⏸ snap_step paused for Cyto_wave_done step=${n}`)
-                return
-            }
-
-            await snap_step_after_wave()
+            // Always wait for wave_done — the wave is test data, not decoration.
+            run.c.awaiting_wave_done = true
+            run.c.driving = false
+            H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: n })
+            V.Story && console.log(`⏸ snap_step paused for Cyto_wave_done step=${n}`)
         }
 
         // Reachable by two paths:
-        //   1. Directly from snap_step when !intoCyto
-        //   2. From e_Cyto_wave_done via run.c.snap_step_after_wave when intoCyto
+        //   1. Directly from snap_step when !waitCyto
+        //   2. From e_Cyto_wave_done via run.c.snap_step_after_wave when waitCyto
         const snap_step_after_wave = async () => {
             if (!run.c.driving) {
                 // we were resumed by the handler which set driving=true
@@ -1238,14 +1233,13 @@
             }
         }
 
-        // Post-snap phase: pause for animation if intoCyto, else advance directly.
+        // Post-snap phase: pause for animation if waitCyto, else advance directly.
         // Reached from snap_step_after_wave (both modes) and poll_check.
         const snap_step_finish = async () => {
-            if (w.c.intoCyto) {
+            if (w.c.waitCyto) {
                 run.c.awaiting_anim_done = true
                 run.c.driving = false
-                console.log(`⏸ snap_step finished, paused for Cyto_animation_done`)
-                // Cyto's setTimeout will fire animation_done; our handler advances.
+                V.Story && console.log(`⏸ snap_step finished, paused for Cyto_animation_done`)
                 return
             }
             advance()
@@ -1270,7 +1264,7 @@
                 return
             }
             V.Story && console.log(`⏱ poll_check ok n=${n}`)
-            snap_step_finish()   // not advance() — go through the intoCyto gate
+            snap_step_finish()   // not advance() — go through the waitCyto gate
         }
 
         const schedule = () => {
@@ -1427,7 +1421,7 @@
         //     want to inspect snap content across many steps in the same session.
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
-        await this.i_actions_to_c(w, 'intoCyto',      { stashed: true, label: 'into Cyto'    })
+        await this.i_actions_to_c(w, 'waitCyto',      { stashed: true, label: 'waitCyto'    })
         wa.oai({ action: 1, role: 'cyto_wipe' }, {
             label: 'wipe', icon: '⌀', cls: 'remove',
             fn: () => this.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
