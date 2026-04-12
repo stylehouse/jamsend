@@ -59,7 +59,8 @@ story:StuffFlipping
     matstyle:Migration
       style:background-color,v:#8f8f32
   TimeSpool
-    TimeTotal:beliefs,avg:0.091
+    TimeTotal:beliefs,avg:0.093
       sample:0.086,at:1775641380
       sample:0.095,at:1775641396
+      sample:0.097,at:1775913575
   step,dige:0ba3638f591a1f1c

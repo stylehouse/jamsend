@@ -782,12 +782,8 @@
     // hasn't changed since the last ambient Cyto tick.
     // < more of these %Snap:* channels could be commissioned by something wanting more readings
 
-    async story_snap(Run: House): Promise<string> {
+    async story_snap(w:TheC,run:TheC,Run: House): Promise<string> {
         const H = this as House
-
-        // Snap:H — indent +1 so content nests under the header
-        const h_snap  = await this.snap_H(Run)
-        const h_block = this.snap_indent(h_snap, 1)
 
         // Snap:Cytowave — read whatever wave Cyto has currently.
         // Cyto is commissioned in Story_plan and watches Scannable (=Run)
@@ -795,8 +791,24 @@
         // we snap.  No need to prod it here.
         const cyto_A = H.o({ A: 'Cyto' })[0] as TheC | undefined
         const cyto_w = cyto_A?.o({ w: 'Cyto' })[0] as TheC | undefined
+        if (w.c.intoCyto) {
+            // Ask Cyto to scan+archive this step NOW, before we read its wave for the snap.
+            // Cyto replies Cyto_animation_done when the wave has been pushed.
+            const done_p = new Promise(res => { w.c.cyto_snap_waiter = res })
+            H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: run.c.step_n })
+            console.log(`Cyto_animation_request awaiting...`)
+            await done_p
+            console.log(`Cyto_animation_request awaited`)
+        }
+
+
         const wave     = cyto_w?.c.gn?.sc.wave as any
+        if (!wave) throw "!wave"
         const cw_block = this.snap_cytowave_str(wave)
+
+        // Snap:H — indent +1 so content nests under the header
+        const h_snap  = await this.snap_H(Run)
+        const h_block = this.snap_indent(h_snap, 1)
 
         return this.enL({ d: 0, stringies: { Snap: 'H' } })        + '\n' + h_block
             + this.enL({ d: 0, stringies: { Snap: 'cytowave' } }) + '\n' + cw_block
@@ -994,7 +1006,9 @@
     // Clears the intoCyto pause and starts a fresh story_drive — the drive
     // was already stopped cleanly by advance() so driving=false here.
     async e_Cyto_animation_done(A: TheC, w: TheC) {
-        V.Story && console.log(`e:story_cyto_continue() -> w:${w.sc.w}`)
+        console.log(`e:Cyto_animation_done -> w:Story step=${e?.sc.story_step}`)
+        const waiter = w.c.cyto_snap_waiter
+        if (waiter) { w.c.cyto_snap_waiter = undefined; waiter() }
         const run = w.o({ run: 1 })[0]
         if (!run) return
         if (run.sc.paused >= 2) return   // strong pause holds
@@ -1054,10 +1068,10 @@
             }
 
             if (w.c.intoCyto) {
-                run.sc.paused = Math.max((run.sc.paused as number) || 0, 1)
-                run.c.driving = false
-                H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: run.c.step_n })
-                return
+                // < do we keep these here? used to e:Cyto_animation_request
+                // run.sc.paused = Math.max((run.sc.paused as number) || 0, 1)
+                // run.c.driving = false
+                // return
             }
             if (run.sc.paused) return   // strong pause holds before schedule()
             schedule()
@@ -1130,7 +1144,7 @@
             run.sc.done       = n
             Run.trace('snap', String(n))
 
-            const snap     = await this.story_snap(Run)
+            const snap     = await this.story_snap(w,run,Run)
             const got_dige = await dig(snap)
             Run.trace('snapped', String(n))
 
