@@ -27,31 +27,27 @@ Snap:H
         {"mung":["age"]}	self,round:9
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:0.81"}
-    {"style":1,"background-color":"rgb(244,198,47)"}
-    style,height:40
-    style,width:40
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:1.74"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:leaf_2_0\ndose:0.4"}
-    {"style":1,"background-color":"rgb(38,130,38)"}
-    style,height:20
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_1_4","label":"leaf:1\nleaf_id:leaf_3_0\ndose:0.33"}
-    {"style":1,"background-color":"rgb(37,126,37)"}
-    style,height:19
-    style,width:19
-  {"upsert":1,"id":"cytoid_1_1_5","label":"leaf:1\nleaf_id:leaf_4_0\ndose:0.27"}
-  {"upsert":1,"id":"cytoid_1_2_2","label":"shelf:1\nenzyme:1\nunits:5"}
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.81"}
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.74"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.402!"}
+    style,height:8
+    style,width:8
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.330!","parent":"cytoid_1_1"}
+    style,background-color:#29d638
+    style,color:#b0ffb0
+    style,height:7
+    style,shape:ellipse
+    style,width:7
+  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful\nmouthful_id:seed_0_m9\ndose:0.23\nspawning_from:seed_0\nttl:0"}
+  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.76"}
+  {"upsert":1,"id":"cytoid_1_2_7","label":"shelf\nenzyme\nunits:5","parent":"cytoid_1_2"}
     style,background-color:#1a4828
     style,color:#90ffc0
-    style,height:20
+    style,height:24
     style,shape:round-rectangle
-    style,width:33
-  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful:1\nmouthful_id:seed_0_m9\ndose:0.23\nspawning_from:seed_0\nttl:0"}
-    style,height:15
-    style,width:15
-  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.76"}
-    {"style":1,"background-color":"rgb(82,57,26)"}
+    style,width:24
+  remove,id:cytoid_1_1_5
+  remove,id:cytoid_1_2_2
   remove,id:cytoid_1_3_1
   remove,id:cytoid_1_3_1_1
   edge_remove,id:cytoid_1_3_1_1_1

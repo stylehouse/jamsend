@@ -221,7 +221,7 @@
                         <span class="ms-label">max</span>
                         <input class="ms-num" type="number" value={Number(dm?.sc.max ?? 40)} min="4" max="120"
                                onchange={e => on_update(key, 'dose_max', Number((e.target as HTMLInputElement).value))} />
-                        <span class="ms-label">cap</span>
+                        <span class="ms-label" title="Dose value at which node reaches max size. Higher = more dose required.">cap</span>
                         <input class="ms-num" type="number" value={Number(dm?.sc.cap ?? 10)} min="1" max="100"
                                onchange={e => on_update(key, 'dose_cap', Number((e.target as HTMLInputElement).value))} />
                         <input class="ms-text" placeholder="key" value={dm?.sc.key ?? 'dose'}

@@ -26,21 +26,13 @@ Snap:H
         {"mung":["age"]}	self,round:16
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:0.1"}
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:2.1"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:leaf_2_0\ndose:1.26"}
-    {"style":1,"background-color":"rgb(49,170,49)"}
-    style,height:34
-    style,width:34
-  {"upsert":1,"id":"cytoid_1_1_4","label":"leaf:1\nleaf_id:leaf_3_0\ndose:1.03"}
-    {"style":1,"background-color":"rgb(46,158,46)"}
-    style,height:31
-    style,width:31
-  {"upsert":1,"id":"cytoid_1_1_5","label":"leaf:1\nleaf_id:leaf_4_0\ndose:0.85"}
-    {"style":1,"background-color":"rgb(44,150,44)"}
-    style,height:28
-    style,width:28
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.1"}
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:2.1"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.258!"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n1.032!"}
+    style,height:12
+    style,width:12
+  {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n0.846!"}
+    style,height:11
+    style,width:11
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:1.24"}
-    {"style":1,"background-color":"rgb(85,59,27)"}
-    style,height:20
-    style,width:20

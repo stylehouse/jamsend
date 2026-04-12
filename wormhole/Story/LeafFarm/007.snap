@@ -28,48 +28,45 @@ Snap:H
           enzyme,units:5
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:1.03"}
-    {"style":1,"background-color":"rgb(245,203,66)"}
-    style,height:45
-    style,width:45
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:1.54"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:leaf_2_0\ndose:0.27"}
-  {"upsert":1,"id":"cytoid_1_1_4","label":"leaf:1\nleaf_id:leaf_3_0\ndose:0.22"}
-    {"style":1,"background-color":"rgb(36,123,36)"}
-    style,height:18
-    style,width:18
-  {"upsert":1,"id":"cytoid_1_1_5","label":"leaf:1\nleaf_id:leaf_4_0\ndose:0.18"}
-    style,height:17
-    style,width:17
-  {"upsert":1,"id":"cytoid_1_2_2","label":"leaf:1\nleaf_id:seed_0\ndose:0.54\ntick:2"}
-    {"style":1,"background-color":"rgb(39,134,39)"}
-    style,height:23
-    style,width:23
-  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful:1\nmouthful_id:seed_0_m7\ndose:0.28\nspawning_from:seed_0\nttl:0"}
-    style,height:17
-    style,width:17
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:1.03"}
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.54"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.270!"}
+    style,height:7
+    style,width:7
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.222!","parent":"cytoid_1_1"}
+    style,background-color:#29d638
+    style,color:#b0ffb0
+    style,height:6
+    style,shape:ellipse
+    style,width:6
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n0.539!"}
+    style,height:9
+    style,width:9
+  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful\nmouthful_id:seed_0_m7\ndose:0.28\nspawning_from:seed_0\nttl:0"}
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.65"}
-  {"upsert":1,"id":"cytoid_1_2_5","label":"protein:1\nprotein_id:prot_7\ncomplexity:2","parent":"cytoid_1_2"}
-    {"style":1,"background-color":"rgb(88,49,114)"}
+  {"upsert":1,"id":"cytoid_1_2_5","label":"protein\nprotein_id:prot_7\ncomplexity:2","parent":"cytoid_1_2"}
+    style,background-color:#3a1a4a
     style,color:#ddc8ff
-    style,height:27
+    style,height:24
     style,shape:hexagon
-    style,width:27
-  {"upsert":1,"id":"cytoid_1_2_6","label":"wants_enzyme:1","parent":"cytoid_1_2"}
+    style,width:24
+  upsert,id:cytoid_1_2_6,label:wants_enzyme,parent:cytoid_1_2
     style,background-color:#6a1a08
     style,color:#ff9070
     style,height:22
     style,shape:star
     style,width:22
-  {"upsert":1,"id":"cytoid_1_3_1","label":"producing:1\nticks_left:2","parent":"cytoid_1_3"}
+  {"upsert":1,"id":"cytoid_1_3_1","label":"producing\nticks_left:2","parent":"cytoid_1_3"}
     style,background-color:#142060
     style,color:#9ab4ff
     style,height:42
     style,shape:round-rectangle
     style,width:42
-  {"upsert":1,"id":"cytoid_1_3_1_1","label":"enzyme:1\nunits:5","parent":"cytoid_1_3"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+  {"upsert":1,"id":"cytoid_1_3_1_1","label":"enzyme\nunits:5","parent":"cytoid_1_3"}
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   edge_upsert,id:cytoid_1_3_1_1_1,source:cytoid_1_3_1,target:cytoid_1_3_1_1
+  remove,id:cytoid_1_1_5

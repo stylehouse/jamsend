@@ -154,73 +154,75 @@
         }
 
         const am = animations.i({ migrate: 1, from: from_id, toward: toward_id })
-        am.i({ 
-            cue: 'hide_arrival', 
-            fn: () => {
-                let to = cy.getElementById(toward_id)
-                to.style({ opacity: 0 }) // debug
-                if (upsert.sc.parent) {
-                    // make it spawn in the middle of there, rather than drifting in...
-                    let pa = cy.getElementById(upsert.sc.parent)
-                    console.log(`Migrate ${now()}: new node shifted`)
-                    to.renderedPosition(pa)
-                }
-            } 
-        })
-        am.i({ 
-            cue: 'set-parent', 
-            delay: dur/2,
-            fn: () => {
-                if (upsert.sc.parent) {
-                    // migrations dont add the new node to the parent immediately
-                    //  as they want to drift over
-                    //  before the bounding box is made to expand for them
+        if (upsert) {
+            am.i({ 
+                cue: 'hide_arrival', 
+                fn: () => {
                     let to = cy.getElementById(toward_id)
-                    to.move({parent:upsert.sc.parent})
-                    console.log(`Migrate ${now()}: new node parented`)
-                }
-            },
-        })
-        am.i({ 
-            cue: 'spawn_proj', 
-            fn: () => {
-                const from_el = cy.getElementById(from_id)
-                if (!from_el.length) return
-                from_el.style({ opacity: 0 }) // debug
-                let data = { id: proj_id }
-                if (upsert.sc.label != null) data.label = upsert.sc.label
-                const proj = cy.add({ group: 'nodes', data })
-                proj.style({ ...upsert.sc.style, opacity: 1 })
-                proj.renderedPosition(from_el.renderedPosition())
+                    to.style({ opacity: 0 }) // debug
+                    if (upsert.sc.parent) {
+                        // make it spawn in the middle of there, rather than drifting in...
+                        let pa = cy.getElementById(upsert.sc.parent)
+                        console.log(`Migrate ${now()}: new node shifted`)
+                        to.renderedPosition(pa)
+                    }
+                } 
+            })
+            am.i({ 
+                cue: 'set-parent', 
+                delay: dur/2,
+                fn: () => {
+                    if (upsert.sc.parent) {
+                        // migrations dont add the new node to the parent immediately
+                        //  as they want to drift over
+                        //  before the bounding box is made to expand for them
+                        let to = cy.getElementById(toward_id)
+                        to.move({parent:upsert.sc.parent})
+                        console.log(`Migrate ${now()}: new node parented`)
+                    }
+                },
+            })
+            am.i({ 
+                cue: 'spawn_proj', 
+                fn: () => {
+                    const from_el = cy.getElementById(from_id)
+                    if (!from_el.length) return
+                    from_el.style({ opacity: 0 }) // debug
+                    let data = { id: proj_id }
+                    if (upsert.sc.label != null) data.label = upsert.sc.label
+                    const proj = cy.add({ group: 'nodes', data })
+                    proj.style({ ...upsert.sc.style, opacity: 1 })
+                    proj.renderedPosition(from_el.renderedPosition())
 
-                let to = cy.getElementById(toward_id).renderedPosition()
-                let from = cy.getElementById(from_id).renderedPosition()
-                const dx = to.x - from.x
-                const dy = to.y - from.y
-                const dist = Math.sqrt(dx * dx + dy * dy).toFixed(1)
-                console.log(`Migrate ${now()}: [${from.x}, ${from.y}] -> [${to.x}, ${to.y}] | Δ: <${dx.toFixed(1)}, ${dy.toFixed(1)}> | Dist: ${dist}`)
-            } 
-        })
+                    let to = cy.getElementById(toward_id).renderedPosition()
+                    let from = cy.getElementById(from_id).renderedPosition()
+                    const dx = to.x - from.x
+                    const dy = to.y - from.y
+                    const dist = Math.sqrt(dx * dx + dy * dy).toFixed(1)
+                    console.log(`Migrate ${now()}: [${from.x}, ${from.y}] -> [${to.x}, ${to.y}] | Δ: <${dx.toFixed(1)}, ${dy.toFixed(1)}> | Dist: ${dist}`)
+                } 
+            })
 
-        am.i({ 
-            cue: 'aim', 
-            regularly: 1, 
-            until: dur,
-            wraps_up: 1, // %cue:arrive immediately after this returns true
-            fn: () => {
-                const proj   = cy.getElementById(proj_id)
-                const toward = cy.getElementById(toward_id)
-                if (!proj.length || !toward.length) return true
-                const tpos = toward.renderedPosition()
-                const cur  = proj.renderedPosition()
-                const dx = tpos.x - cur.x
-                const dy = tpos.y - cur.y
-                if (Math.sqrt(dx * dx + dy * dy) < 8) return true
-                proj.renderedPosition({ x: cur.x + dx * 0.35, y: cur.y + dy * 0.35 })
-                console.log(`Migrate ${now()}: aiming`)
-                return false
-            } 
-        })
+            am.i({ 
+                cue: 'aim', 
+                regularly: 1, 
+                until: dur,
+                wraps_up: 1, // %cue:arrive immediately after this returns true
+                fn: () => {
+                    const proj   = cy.getElementById(proj_id)
+                    const toward = cy.getElementById(toward_id)
+                    if (!proj.length || !toward.length) return true
+                    const tpos = toward.renderedPosition()
+                    const cur  = proj.renderedPosition()
+                    const dx = tpos.x - cur.x
+                    const dy = tpos.y - cur.y
+                    if (Math.sqrt(dx * dx + dy * dy) < 8) return true
+                    proj.renderedPosition({ x: cur.x + dx * 0.35, y: cur.y + dy * 0.35 })
+                    console.log(`Migrate ${now()}: aiming`)
+                    return false
+                } 
+            })
+        }
 
         am.i({ 
             cue: 'arrive', 

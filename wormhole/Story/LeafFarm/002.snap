@@ -21,28 +21,24 @@ Snap:H
         {"mung":["age"]}	self,round:2
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:0.88"}
-    {"style":1,"background-color":"rgb(244,199,52)"}
-    style,height:41
-    style,width:41
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:0.63"}
-    style,height:20
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:leaf_2_0\ndose:0.1"}
-    {"style":1,"background-color":"rgb(33,115,33)"}
-    style,color:#b0ffb0
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_2_2","label":"leaf:1\nleaf_id:seed_0\ndose:1.94\ntick:2","parent":"cytoid_1_2"}
-    {"style":1,"background-color":"rgb(61,199,61)"}
-    style,color:#001800
-    style,height:45
-    style,shape:ellipse
-    style,width:45
-  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful:1\nmouthful_id:seed_0_m2\ndose:0.33\nspawning_from:seed_0\nttl:0","parent":"cytoid_1_2"}
-    {"style":1,"background-color":"rgb(205,236,81)"}
-    style,color:#003300
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.88"}
+    style,height:26
+    style,width:26
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.63"}
     style,height:19
-    style,opacity:0.82
-    style,shape:ellipse
     style,width:19
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.100!"}
+    style,height:6
+    style,width:6
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n1.939!","parent":"cytoid_1_2"}
+    style,background-color:#29d638
+    style,color:#b0ffb0
+    style,height:18
+    style,shape:ellipse
+    style,width:18
+  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful\nmouthful_id:seed_0_m2\ndose:0.33\nspawning_from:seed_0\nttl:0","parent":"cytoid_1_2"}
+    style,background-color:#4a7a20
+    style,color:#003300
+    style,height:8
+    style,shape:ellipse
+    style,width:8

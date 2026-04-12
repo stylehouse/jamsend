@@ -27,42 +27,34 @@ Snap:H
           enzyme,units:5
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:0.67"}
-    {"style":1,"background-color":"rgb(243,194,32)"}
-    style,height:37
-    style,width:37
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:1.82"}
-    style,height:23
-    style,width:23
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:leaf_2_0\ndose:0.49"}
-    {"style":1,"background-color":"rgb(39,134,39)"}
-    style,height:22
-    style,width:22
-  {"upsert":1,"id":"cytoid_1_1_4","label":"leaf:1\nleaf_id:leaf_3_0\ndose:0.4"}
-    {"style":1,"background-color":"rgb(38,130,38)"}
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.67"}
+    style,height:25
+    style,width:25
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.82"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.491!"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.402!","parent":"cytoid_1_1"}
+    style,background-color:#29d638
+    style,color:#b0ffb0
+    style,height:8
+    style,shape:ellipse
+    style,width:8
+  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:2.24"}
     style,height:20
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_5","label":"leaf:1\nleaf_id:leaf_4_0\ndose:0.33"}
-    {"style":1,"background-color":"rgb(37,126,37)"}
-    style,height:19
-    style,width:19
-  {"upsert":1,"id":"cytoid_1_2_2","label":"shelf:1\nenzyme:1\nunits:3"}
-    style,width:28
-  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:2.24"}
-    {"style":1,"background-color":"rgb(91,63,29)"}
-    style,height:22
-    style,width:22
-  {"upsert":1,"id":"cytoid_1_3_2","label":"producing:1\nticks_left:2"}
+  {"upsert":1,"id":"cytoid_1_2_7","label":"shelf\nenzyme\nunits:3"}
+  {"upsert":1,"id":"cytoid_1_3_2","label":"producing\nticks_left:2"}
     style,background-color:#142060
     style,color:#9ab4ff
     style,height:42
     style,shape:round-rectangle
     style,width:42
-  {"upsert":1,"id":"cytoid_1_3_2_1","label":"enzyme:1\nunits:5","parent":"cytoid_1_3"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+  {"upsert":1,"id":"cytoid_1_3_2_1","label":"enzyme\nunits:5","parent":"cytoid_1_3"}
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   edge_upsert,id:cytoid_1_3_2_1_1,source:cytoid_1_3_2,target:cytoid_1_3_2_1
+  remove,id:cytoid_1_1_5
   remove,id:cytoid_1_2_3
   remove,id:cytoid_1_2_5

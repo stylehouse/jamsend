@@ -23,27 +23,21 @@ Snap:H
         {"mung":["age"]}	self,round:3
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:0.99"}
-    {"style":1,"background-color":"rgb(245,202,61)"}
-    style,height:44
-    style,width:44
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:0.87"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:leaf_2_0\ndose:0.12"}
-  {"upsert":1,"id":"cytoid_1_1_4","label":"leaf:1\nleaf_id:leaf_3_0\ndose:0.1","parent":"cytoid_1_1"}
-    {"style":1,"background-color":"rgb(33,115,33)"}
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.99"}
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.87"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.122!"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.100!","parent":"cytoid_1_1"}
+    style,background-color:#29d638
     style,color:#b0ffb0
-    style,height:16
+    style,height:6
     style,shape:ellipse
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_2_2","label":"leaf:1\nleaf_id:seed_0\ndose:1.68\ntick:2"}
-    {"style":1,"background-color":"rgb(55,190,55)"}
-    style,height:41
-    style,width:41
-  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful:1\nmouthful_id:seed_0_m3\ndose:0.26\nspawning_from:seed_0\nttl:0"}
+    style,width:6
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n1.679!"}
     style,height:16
     style,width:16
+  {"upsert":1,"id":"cytoid_1_2_3","label":"mouthful\nmouthful_id:seed_0_m3\ndose:0.26\nspawning_from:seed_0\nttl:0"}
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.25","parent":"cytoid_1_2"}
-    {"style":1,"background-color":"rgb(79,55,25)"}
+    style,background-color:#3a2810
     style,color:#ffe8c0
     style,height:18
     style,shape:round-rectangle

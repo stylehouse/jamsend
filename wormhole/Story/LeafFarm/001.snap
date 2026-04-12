@@ -20,65 +20,59 @@ Snap:H
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:farm,isCompound:true
-    style,background-color:#0a1f0a
-    style,background-opacity:0.5
-    style,border-color:#2a5a1a
-    style,border-style:dashed
-    style,border-width
-    style,color:#4a6a4a
-    style,font-size:9px
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
     style,font-style:italic
-    style,font-weight:bold
-    style,padding:12px
-    style,text-halign:center
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
     style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine:1\ndose:0.75","parent":"cytoid_1_1"}
-    {"style":1,"background-color":"rgb(244,195,37)"}
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1","label":"sunshine\ndose:0.75","parent":"cytoid_1_1"}
+    style,background-color:#8a7010
     style,color:#331800
-    style,height:38
+    style,height:25
     style,shape:diamond
-    style,width:38
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo:1\ndose:0.34","parent":"cytoid_1_1"}
+    style,width:25
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.34","parent":"cytoid_1_1"}
     style,background-color:#5c3010
     style,color:#c88040
-    style,height:19
+    style,height:18
     style,shape:ellipse
-    style,width:19
-  {"upsert":1,"id":"cytoid_1_1_3","label":"leaf:1\nleaf_id:seed_0\ndose:1.86","parent":"cytoid_1_1"}
-    {"style":1,"background-color":"rgb(57,198,57)"}
-    style,color:#001800
-    style,height:44
+    style,width:18
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.860!","parent":"cytoid_1_1"}
+    style,background-color:#29d638
+    style,color:#b0ffb0
+    style,height:18
     style,shape:ellipse
-    style,width:44
+    style,width:18
   upsert,id:cytoid_1_2,label:plate,isCompound:true
-    style,background-color:#1f130a
-    style,background-opacity:0.5
-    style,border-color:#5a3a1a
-    style,border-style:dashed
-    style,border-width
-    style,color:#6a5a4a
-    style,font-size:9px
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
     style,font-style:italic
-    style,font-weight:bold
-    style,padding:12px
-    style,text-halign:center
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
     style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_2_1","label":"sunshine:1\ndose:1","parent":"cytoid_1_2"}
-    {"style":1,"background-color":"rgb(245,202,61)"}
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_2_1","label":"sunshine\ndose","parent":"cytoid_1_2"}
+    style,background-color:#8a7010
     style,color:#331800
-    style,height:44
+    style,height:26
     style,shape:diamond
-    style,width:44
+    style,width:26
   upsert,id:cytoid_1_3,label:enzymeco,isCompound:true
-    style,background-color:#0a0a1f
-    style,background-opacity:0.5
-    style,border-color:#1a1a5a
-    style,border-style:dashed
-    style,border-width
-    style,color:#4a4a6a
-    style,font-size:9px
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
     style,font-style:italic
-    style,font-weight:bold
-    style,padding:12px
-    style,text-halign:center
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
     style,text-valign:top
+    style,width:20

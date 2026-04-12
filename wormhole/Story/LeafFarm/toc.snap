@@ -5,19 +5,21 @@ story:LeafFarm
       meta:is_compound,v
       meta:label,fmt:%s,keys:w
     matstyle:sunshine
-      style:background-color,v:#8a7010
+      style:background-color,v:#bbdb43
       style:color,v:#331800
-      style:shape,v:diamond
+      style:shape,v:star
       style:width,v:44
-      meta:dose,drives:size,min:22,max:66,cap:10
+      meta:dose,drives:size,min:22,max:66,cap:3
+      meta:label,keys:sunshine,fmt:sunshine
     matstyle:poo
       style:background-color,v:#5c3010
       style:color,v:#c88040
       meta:dose,drives:size,min:18,max:28,cap:8
     matstyle:leaf
-      style:background-color,v:#1a5a2a
+      style:background-color,v:#29d638
       style:color,v:#b0ffb0
-      meta:dose,drives:size,min:14,max:32,cap:28
+      meta:dose,drives:size,min:5,max:32,cap:4
+      meta:label,keys:dose,fmt:🌿\n%d!
     matstyle:mouthful
       style:background-color,v:#4a7a20
       style:color,v:#003300
@@ -57,40 +59,46 @@ story:LeafFarm
       style:shape,v:round-rectangle
       style:width,v:24
   TimeSpool
-    TimeTotal:beliefs,avg:0.312
-      sample:0,at:1775622983
+    TimeTotal:beliefs,avg:0.372
       sample:0.36,at:1775644437
       sample:0.45,at:1775976891
       sample:0.436,at:1775979043
-  step,dige:733dcb3d3115176c,snap_link:001.snap
-  step:2,dige:7081adb68c9d90e7,snap_link:002.snap
-  step:3,dige:473a759c0f3e4097,snap_link:003.snap
-  step:4,dige:f35842fdf8a85f99,snap_link:004.snap
-  step:5,dige:c0206d8fb9dd0f28,snap_link:005.snap
-  step:6,dige:72cc2b7f04db7da4,snap_link:006.snap
-  step:7,dige:e9699be5413de41a,snap_link:007.snap
-  step:8,dige:9bfb3b94f981257b,snap_link:008.snap
-  step:9,dige:863f37552ea234ab,snap_link:009.snap
-  step:10,dige:27f4ca746fff0d61,snap_link:010.snap
-  step:11,dige:a3efb44893489c81,snap_link:011.snap
-  step:12,dige:76c95a3c3bb2aa23,snap_link:012.snap
-  step:13,dige:efeabf80cb7f4cc8,snap_link:013.snap
-  step:14,dige:9801b79f1c1d7371,snap_link:014.snap
-  step:15,dige:9c3514bbf8e09746,snap_link:015.snap
-  step:16,dige:44ba12943bf10486,snap_link:016.snap
-  step:17,dige:e022b362b3a52b01,snap_link:017.snap
-  step:18,dige:83d0637450362601,snap_link:018.snap
-  step:19,dige:b34a474ace991634,snap_link:019.snap
+      sample:0.334,at:1775985049
+      sample:0.361,at:1775986299
+      sample:0.405,at:1775988019
+      sample:0.536,at:1775988056
+      sample:0.317,at:1775988248
+      sample:0.259,at:1775988682
+      sample:0.259,at:1775988769
+  step,dige:4b2b5c6d35ce4eba,snap_link:001.snap
+  step:2,dige:c99275c88144331b,snap_link:002.snap
+  step:3,dige:3ff365f3177db59e,snap_link:003.snap
+  step:4,dige:c793d181a9b73a72,snap_link:004.snap
+  step:5,dige:b4caa6a52a5fa78c,snap_link:005.snap
+  step:6,dige:4b5173cf0769d956,snap_link:006.snap
+  step:7,dige:1e360089a70ebc22,snap_link:007.snap
+  step:8,dige:06e3e1b2ab568ecc,snap_link:008.snap
+  step:9,dige:ea443b10cc5507c1,snap_link:009.snap
+  step:10,dige:e32943ca07cd417c,snap_link:010.snap
+  step:11,dige:ce780a1dfa5a01ef,snap_link:011.snap
+  step:12,dige:ae184f3dbc15487f,snap_link:012.snap
+  step:13,dige:94c6aa4efaa18f41,snap_link:013.snap
+  step:14,dige:bc768747ab0b6d4b,snap_link:014.snap
+  step:15,dige:35850ca5f3c792bf,snap_link:015.snap
+  step:16,dige:c8373421631cc7d4,snap_link:016.snap
+  step:17,dige:fae100759ec46a9a,snap_link:017.snap
+  step:18,dige:b87640aee547a8fc,snap_link:018.snap
+  step:19,dige:a864c975d82d14e4,snap_link:019.snap
     note,that:leaf_2_0 is about to get harvested
-  step:20,dige:d98d6508860ff5a4,snap_link:020.snap
+  step:20,dige:62f971a22b5520e5,snap_link:020.snap
     note,that:leaf_2_0 emerges again
-  step:21,dige:cf1f4aa98341bba9,snap_link:021.snap
-  step:22,dige:3ad61a4752b6bf88,snap_link:022.snap
-  step:23,dige:a62633c0849cf7d8,snap_link:023.snap
-  step:24,dige:51b605cee02a1b2e,snap_link:024.snap
-  step:25,dige:d789c9bb2feb4a81,snap_link:025.snap
-  step:26,dige:dfd2f0e5808ae3a4,snap_link:026.snap
-  step:27,dige:811470146c30e685,snap_link:027.snap
-  step:28,dige:98fb5f9216f5039b,snap_link:028.snap
-  step:29,dige:67efaa4afcf9462f,snap_link:029.snap
-  step:30,dige:fe88b513fb41eece,snap_link:030.snap
+  step:21,dige:4ea5531fe6bb1c1d,snap_link:021.snap
+  step:22,dige:66bb832282c73732,snap_link:022.snap
+  step:23,dige:0e8a3fa2a15b5e19,snap_link:023.snap
+  step:24,dige:36b74a5c833ee022,snap_link:024.snap
+  step:25,dige:83e73807225fc4b8,snap_link:025.snap
+  step:26,dige:28613ed195364009,snap_link:026.snap
+  step:27,dige:3c6597251e870672,snap_link:027.snap
+  step:28,dige:e54e8b905c3d9d97,snap_link:028.snap
+  step:29,dige:185d7ba3b46da097,snap_link:029.snap
+  step:30,dige:4a39559a751d5966,snap_link:030.snap
