@@ -51,6 +51,7 @@
         grawave_dur = dur
         const sn = wave.sc.step_n != null ? ` step:${wave.sc.step_n}` : ''
         status = `tick ${last_tick}${sn}`
+            + (wave.sc.absolute ? ' abs' : '')
             + ` · ${wave.o({ upsert:      1 }).length}n`
             + ` ${wave.o({ edge_upsert: 1 }).length}e`
             + ` −${wave.o({ remove:      1 }).length}`
@@ -242,8 +243,10 @@
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
-        if (wave.sc.cyto_wipe) {
-            console.log(`wave%cyto_wipe removes and re-adds the entire graph`)
+
+
+        if (wave.sc.absolute) {
+            console.log(`wave%absolute removes and re-adds the entire graph`)
             cy.elements().remove()
         }
 

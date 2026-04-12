@@ -118,7 +118,7 @@
         this.main()
     },
 
-    async cyto_update_wave(w: TheC, incoming_step_n?: number): Promise<boolean> {
+    async cyto_update_wave(w: TheC, incoming_step_n?: number, absolute = false): Promise<boolean> {
         const H    = this as House
         const scan = w.c.Scannable as TheC | undefined
         if (!scan) return false
@@ -128,7 +128,7 @@
         const last_open   = w.c.last_open_at as number | null | undefined
         const gn          = w.c.gn as TheC | undefined
 
-        if (incoming_step_n === last_step_n && open_at === last_open && !w.c.cyto_wipe) return true
+        if (!absolute && incoming_step_n === last_step_n && open_at === last_open) return true
 
         // TRIGGER 1: new step from client → scan + archive
         if (incoming_step_n !== undefined && incoming_step_n !== last_step_n) {
@@ -143,7 +143,7 @@
             w.c.last_step_n = incoming_step_n
 
             if (!open_at && !w.c.no_graph) {
-                const wave = await this.make_wave(w, topC, true)
+                const wave = await this.make_wave(w, topC, true, false, undefined, absolute)
                 wave.sc.step_n = incoming_step_n
                 this._cyto_push(w, wave)
             }
@@ -156,12 +156,26 @@
                     removing: wv.o({ remove:      1 }).length,
                     step_n: incoming_step_n })
             })
+            // absolute-only wipe path: incoming_step_n is undefined and
+            // open_at === last_open, so trigger 2 won't fire — do the wave here.
+        } else if (absolute && open_at == null) {
+            // absolute wipe while showing latest — re-emit from current topC.
+            // No rescan needed; use the latest archived C.
+            const latest = (w.o({ CytoStep: 1 }) as TheC[])
+                .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
+            if (latest?.sc.C) {
+                const wave = await this.make_wave(w, latest.sc.C as TheC, false, false, undefined, true)
+                wave.sc.step_n = latest.sc.step_n as number
+                this._cyto_push(w, wave)
+            }
         }
 
-        // TRIGGER 2: open_at changed → seek (unchanged from the old version)
-        if (w.c.supports_seek && (open_at !== last_open || w.c.cyto_wipe)) {
+        // TRIGGER 2: open_at changed OR absolute requested while seeking
+        if (w.c.supports_seek && (open_at !== last_open || (absolute && open_at != null))) {
             const backwards = typeof last_open === 'number' && typeof open_at === 'number' && open_at < last_open
-            let adjacent = last_open-1 == open_at || last_open+1 == open_at
+            const adjacent  = !absolute
+                        && last_open != null && open_at != null
+                        && Math.abs((open_at as number) - last_open) === 1
             const departing = typeof last_open === 'number'
                 ? (w.o({ CytoStep: 1 }) as TheC[]).find(s => s.sc.step_n === last_open)?.sc.C ?? null
                 : null
@@ -172,7 +186,7 @@
                 const latest = (w.o({ CytoStep: 1 }) as TheC[])
                     .sort((a, b) => (a.sc.step_n as number) - (b.sc.step_n as number)).at(-1)
                 if (latest?.sc.C) {
-                    const wave = await this.make_wave(w, latest.sc.C as TheC, adjacent, backwards, departing)
+                    const wave = await this.make_wave(w, latest.sc.C as TheC, adjacent, backwards, departing, absolute || !adjacent)
                     wave.sc.step_n = latest.sc.step_n as number
                     this._cyto_push(w, wave)
                 }
@@ -182,7 +196,7 @@
                     if (gn) { gn.sc.seek_warning = `no graph data for step ${open_at}`; gn.bump_version() }
                     ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
                 } else {
-                    const wave = await this.make_wave(w, target.sc.C as TheC, adjacent, backwards, departing)
+                    const wave = await this.make_wave(w, target.sc.C as TheC, adjacent, backwards, departing, absolute || !adjacent)
                     wave.sc.step_n = open_at
                     this._cyto_push(w, wave)
                 }
@@ -193,17 +207,15 @@
     },
 
     _cyto_push(w: TheC, wave: TheC) {
-        console.log(`🌊 push dur:${wave.sc.duration} wipe:${!!wave.sc.cyto_wipe} tick:${(w.c.gn as any)?.sc.tick}`)
-        w.o({TheWave:1}).map(n => n.drop(n))
-        w.i({TheWave:1}).i(wave)
+        console.log(`🌊 push dur:${wave.sc.duration}`
+            + ` abs:${!!wave.sc.absolute}`
+            + ` tick:${(w.c.gn as any)?.sc.tick}`)
+        w.o({ TheWave: 1 }).map(n => n.drop(n))
+        w.i({ TheWave: 1 }).i(wave)
 
         const H  = this as House
         const gn = w.c.gn as TheC | undefined
         if (!gn) return
-        if (w.c.cyto_wipe) {
-            wave.sc.cyto_wipe = true
-            delete w.c.cyto_wipe
-        }
         gn.sc.wave = wave
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
         gn.bump_version()
@@ -220,9 +232,7 @@
     },
 
     async e_Cyto_wipe(A: TheC, w: TheC) {
-        w.c.cyto_wipe = true       // Cytui reads this when applying next wave
-        w.c.cyto_Ze?.sc.topD?.empty()   // D history gone → next process() is fully fresh
-        this.main()
+    await this.cyto_update_wave(w, undefined, true)
     },
 
 //#endregion
@@ -556,14 +566,22 @@
         return old !== newVal ? newVal : null
     },
 
-    async make_wave(w: TheC, topC: TheC, adjacent: boolean, backwards = false, departing?:TheC): Promise<TheC> {
+    async make_wave(w: TheC, topC: TheC, adjacent: boolean,
+                    backwards = false, departing?: TheC,
+                    reset_Ze = false): Promise<TheC> {
         w.c.cyto_Ze ??= new Selection()
         const Ze: Selection = w.c.cyto_Ze
+
+        if (reset_Ze) {
+            Ze.sc.topD?.empty()   // forget all bD — everything will read as new
+        }
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
+
         V.cyto && console.log(`make_wave bD_count=${Ze.sc.topD?.o({tracing:1}).length ?? 0} adjacent=${adjacent}`)
  
         const dur  = (w.sc.grawave_duration as number) ?? 0.3
         const wave = _C({ CytoWave:1, duration: dur })
+        if (reset_Ze) wave.sc.absolute = 1
  
         await Ze.process({
             n:          topC,
