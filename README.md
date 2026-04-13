@@ -58,7 +58,7 @@ To use *prod.sh*, see *Peer_OPTIONS*.
 
 ## objects, data layer
 
-Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts) and [Housing etc in O](src/lib/O)
+Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts) and [Housing etc in O](src/lib/O), which has begun to obsolete *Modus* etc.
 
 To write code, the src/lib/ghost/\*.svelte is the best place to build things because it'll update the Modus live without restarting anything, but they need to be included by a Modus, which are included by some kind of *\*Feature*, so do a whole lot of searches and readings, you probably want to add another %w=yourmethod to some M.do_A().
 
