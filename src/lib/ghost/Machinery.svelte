@@ -4,6 +4,9 @@
     import type { House } from "$lib/O/Housing.svelte";
     import { armap, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
+
+    import LangTilesEditor from "$lib/O/ui/LangTilesEditor.svelte"
+
     let {M} = $props()
 
     onMount(async () => {
@@ -70,6 +73,17 @@
         H.elvisto('Cyto/Cyto', 'Cyto_animation_request',{Langy:1})
     },
 
+    async e_langtiles_set_doc(this: House, A: TheC, w: TheC, e: TheC) {
+        const docC = w.c.docC as TheC | undefined
+        if (!docC) return
+        const text = e?.sc.text as string | undefined
+        if (text == null) return
+        if (docC.sc.text === text) return
+        docC.sc.text = text
+        docC.bump_version()
+        // no main() — UI initiated this, no one else needs waking
+    },
+    
     LangTiles_plan(this: House, w: TheC) {
         const H = this
 
@@ -80,6 +94,20 @@
         const model = w.i({ model: 1 })
         w.c.model = model
 
+        // UI registration — Otro mounts this alongside Cytui for H:LangTiles
+        const uis = H.oai_enroll(H, { watched: 'UIs' })
+        uis.oai({ UI: 'LangTilesEditor', component: LangTilesEditor })
+
+        // doc api — a single C on H.ave holding the whole document string.
+        // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
+        // UI pushes via elvis 'langtiles_set_doc' → e_langtiles_set_doc below.
+        const ave = H.oai_enroll(H, { watched: 'ave' })
+        const docC = ave.oai({ langtiles_doc: 1 })
+        if (docC.sc.text == null) {
+            docC.sc.text = '// LangTiles\n// start typing…\n'
+            docC.bump_version()
+        }
+        w.c.docC = docC
 
         // ── reach across to Story's Styles ──────────────────────────
         // Story persists Styles under its w.c.The/{Styles:1}.
