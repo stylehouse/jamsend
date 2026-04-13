@@ -32,7 +32,7 @@ Work is currently progressing towards using it to make a presentation of this pr
 
 Involving a compiler of a nice new language and CodeMirror integration, figuring out how to start using Selection and io expressions together, then we can much more recreationally build testable app code, particularly Radios and Pirating. Architectural problems (causing ugly code) should be fixed. It should all look good in Cyto.
 
-It has a nice style+house pattern emerging: Stuff and Housing are very central to everything yet opposite in nature... universal and empirical. the players and the lights.
+It has a nice style+house pattern emerging: Stuff and Housing are very central to everything yet opposite in nature... universal and empirical. the players and the canopy lighting timeclock.
 
 ## so
 
