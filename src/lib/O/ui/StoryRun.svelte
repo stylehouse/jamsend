@@ -100,7 +100,8 @@
 
     let { H }: { H: House } = $props()
 
-    // ── types ─────────────────────────────────────────────────────────────────
+
+    //#region types
 
     type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'naive'
 
@@ -115,7 +116,7 @@
 
     type StepEntry = { n: number, dige: string | undefined }
 
-    // ── display state ─────────────────────────────────────────────────────────
+    //#region display state 
 
     let display = $state({
         run_sc:    null as Record<string,any> | null,
@@ -161,14 +162,14 @@
         return all.find(s => s.sc.Step === n) ?? null
     }
 
-    // ── diff mode state ───────────────────────────────────────────────────────
+    //#region diff mode state 
 
     let diff_mode   = $state<DiffMode | null>(null)
     let show_trace = $state(false)
     $effect(() => { displayed_at; show_trace = false }) // to close it when you navigate steps
     let sticky_mode = $state<DiffMode | null>(null)
 
-    // ── ops_for_display ───────────────────────────────────────────────────────
+    //#region ops_for_display 
     //
     //   Rendering-only — the one diff function that stays in StoryRun.
     //   Walks char ops over a raw snap line, skipping the indent prefix and the
@@ -217,7 +218,7 @@
         return result
     }
 
-    // ── deriveds ──────────────────────────────────────────────────────────────
+    //#region deriveds 
 
     // has_exp_snap / has_prev_snap drive which mode buttons are shown.
     // void Step.version subscribes so these update when snaps arrive async.
@@ -335,7 +336,7 @@
                                    { left: 'got',  right: ''     }
     )
 
-    // ── run bar deriveds ──────────────────────────────────────────────────────
+    //#region run bar deriveds 
 
     let run_mode   = $derived(display.run_sc?.mode    ?? 'new')
     let run_done   = $derived(display.run_sc?.done    ?? 0)
@@ -368,7 +369,7 @@
 
 
 
-    // ── note helpers ──────────────────────────────────────────────────────────
+    //#region note helpers 
 
     function note_color(type: string): string {
         const c = swatch_map[type]
@@ -394,7 +395,7 @@
         return keys.map(k => nc.sc[k] === 1 ? k : `${k}:${nc.sc[k]}`).join(', ')
     }
 
-    // ── selection + accept ────────────────────────────────────────────────────
+    //#region selection + accept 
     //
     //   All mutations go via H.elvisto to the Story worker.  The worker calls
     //   story_analysis() which bumps ave, which triggers the $effect above,
@@ -416,7 +417,7 @@
         H.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
     }
 
-    // ── diff[] range collection ───────────────────────────────────────────────
+    //#region diff[] collect 
     //
     //   diff_anchor: the step we started collecting from (first click).
     //   diff_collecting: true while waiting for the second click.
@@ -457,7 +458,7 @@
             const prev      = n > 1 ? live_step(n - 1) : null
             const prev_snap = (prev?.sc.got_snap as string) ?? ''
 
-            // ── raw mode: always emit full snap, no diff markers ──────────────
+            // ── raw mode: always emit full snap, no diff markers 
             if (eff_mode === 'naive' || !prev_snap) {
                 const header = !prev_snap ? `  Snap,first` : `  Snap,raw`
                 all_lines.push(header)
@@ -467,7 +468,7 @@
                 continue
             }
 
-            // ── diff mode: emit Dif markers ───────────────────────────────────
+            // ── diff mode: emit Dif markers 
             const ref_snap = eff_mode === 'exp' || eff_mode === 'exp_naive'
                 ? (Step.sc.exp_snap as string) ?? ''
                 : prev_snap
@@ -523,6 +524,7 @@
         diff_status     = ''
     }
 
+    //#region pick + nav
     // pick: open/close a step panel.
     // When collecting and a different step is clicked: collect [anchor, n], done.
     // When collecting and the same step is clicked: cancel.

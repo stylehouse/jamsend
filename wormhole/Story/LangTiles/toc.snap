@@ -11,17 +11,17 @@ story:LangTiles
     matstyle:see
       style:background-color,v:#c5b759
   TimeSpool
-    TimeTotal:beliefs,avg:26.746
-      sample:0.03,at:1775995724
-      sample:0.069,at:1775995981
-      sample:0.083,at:1775996089
-      sample:133.101,at:1775996455
-      sample:133.101,at:1775996833
-      sample:0.248,at:1775999476
+    TimeTotal:beliefs,avg:0.248
       sample:0.248,at:1775999569
       sample:0.262,at:1775999641
       sample:0.107,at:1776000878
-      sample:0.21,at:1776000903
+      sample:0.409,at:1776001957
+      sample:0.145,at:1776041031
+      sample:0.261,at:1776041085
+      sample:0.228,at:1776055486
+      sample:0.175,at:1776055993
+      sample:0.209,at:1776056091
+      sample:0.433,at:1776058297
   step,dige:c5c6682caeeb9098
   step:2,dige:420f36d1e7047255
   step:3,dige:02ecceb3f339ad22
