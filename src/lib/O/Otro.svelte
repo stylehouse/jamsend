@@ -67,15 +67,37 @@
         H.stashed.things += 1
         H.elvisto(H, 'think')
     }
-</script>
 
-<h3>Here we Are</h3>
+
+    
+    
+    const HEADER_HEIGHT_REM = 2.5 // keep in sync with CSS
+
+    function remToPx(rem: number) {
+        return rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
+    }
+
+    function scrollToHouse(e: MouseEvent, stickyIndex: number) {
+        const header = (e.currentTarget as HTMLElement).closest('.house-header')
+        if (!header) return
+        const headerPx = remToPx(HEADER_HEIGHT_REM)
+        // the content right after this header
+        const content = header.nextElementSibling as HTMLElement | null
+        if (!content) return
+        // we want content's top at (stickyIndex + 1) * headerPx from viewport
+        const contentTop = content.getBoundingClientRect().top + window.scrollY
+        const desiredOffset = (stickyIndex + 1) * headerPx
+        window.scrollTo({ top: contentTop - desiredOffset, behavior: 'smooth' })
+    }
+</script>
 
 {#each houses as house, i (house.name)}
     {@const hasActions = house?.actions?.length > 0}
     {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
     <div class="house-header" class:sticky={hasActions} style="--stack-index: {stickyIndex};">
-        <h2 class="house-name">
+        <h2 class="house-name"
+            class:clickable={hasActions}
+            onclick={hasActions ? (e) => scrollToHouse(e, stickyIndex) : null}>
             {house.name}
             {#if !house.started}<span class='ungood'>off</span>{/if}
             <span class="todo-count">{house.todo.length || ''}</span>
@@ -139,5 +161,11 @@
         display: flex;
         justify-content: flex-end;
         min-width: 0;
+    }
+    .house-name.clickable {
+        cursor: pointer;
+    }
+    .house-name.clickable:hover {
+        opacity: 0.7;
     }
 </style>
