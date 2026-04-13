@@ -19,6 +19,7 @@
     }
     register_class('w', WithItAll)
 
+    //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────
     let H: House = $state(null!)
     let R
@@ -71,6 +72,7 @@
 
     
     
+    //#region naviscroll
     const HEADER_HEIGHT_REM = 2.5 // keep in sync with CSS
 
     function remToPx(rem: number) {
@@ -119,6 +121,7 @@
     function scrollToHouseIp(ip: string) {
         scrollToHouseIdx(houses.findIndex(h => h.c?.ip === ip))
     }
+    //#region each house
 </script>
 
 {#each houses as house, i (house.c.ip)}
@@ -126,9 +129,9 @@
     {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
     {@const kids = childrenOf(house)}
     <div class="house-header"
-         class:sticky={hasActions}
-         id="house-{house.c.ip}"
-         style="--stack-index: {stickyIndex};">
+        class:sticky={hasActions}
+        id="house-{house.c.ip}"
+        style="--stack-index: {stickyIndex};">
         <h2 class="house-name"
             class:clickable={hasActions}
             onclick={hasActions ? () => scrollToHouseIdx(i) : null}>
@@ -136,21 +139,21 @@
             {#if !house.started}<span class='ungood'>off</span>{/if}
         </h2>
         <div class="house-nav">
-            <button class="arrow"
-                    disabled={i === 0}
-                    onclick={() => scrollToHouseIdx(i - 1)}>↑</button>
-            <button class="arrow"
-                    disabled={i === houses.length - 1}
-                    onclick={() => scrollToHouseIdx(i + 1)}>↓</button>
+            <span class="arrow arrow-up"
+                class:disabled={i === 0}
+                onclick={() => i > 0 && scrollToHouseIdx(i - 1)}>▲</span>
+            <span class="arrow arrow-down"
+                class:disabled={i === houses.length - 1}
+                onclick={() => i < houses.length - 1 && scrollToHouseIdx(i + 1)}>▼</span>
             <span class="todo-count">{house.todo.length || ''}</span>
         </div>
         {#if kids.length}
+            <span class="kids-sep">/</span>
             <div class="house-kids">
                 {#each kids as kid (kid.c.ip)}
-                    <button class="kid"
-                            onclick={() => scrollToHouseIp(kid.c.ip)}>
+                    <span class="kid" onclick={() => scrollToHouseIp(kid.c.ip)}>
                         {kid.name}
-                    </button>
+                    </span>
                 {/each}
             </div>
         {/if}
@@ -179,18 +182,22 @@
 
 <style>
     .ungood { color: red; }
+
     .house-header {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         background: var(--background, #fff);
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0.5rem 0.25rem 2.75rem;   /* left room for arrows */
+        position: relative;
+        min-height: 2.5rem;
         z-index: 10;
     }
     .house-header.sticky {
         position: sticky;
         top: calc(var(--stack-index) * 2.5rem);
     }
+
     .house-name {
         margin: 0;
         flex: 0 0 auto;
@@ -198,35 +205,64 @@
     }
     .house-name.clickable { cursor: pointer; }
     .house-name.clickable:hover { opacity: 0.7; }
+
     .house-nav {
+        position: absolute;
+        left: 0.25rem;
+        top: 0;
+        bottom: 0;
+        width: 2.25rem;
         display: flex;
+        flex-direction: column;
+        justify-content: center;
         align-items: center;
-        gap: 0.25rem;
-        flex: 0 0 auto;
+        gap: 0;
     }
     .arrow {
-        padding: 0 0.25rem;
-        font-size: 0.9em;
-        opacity: 0.6;
+        font-size: 1.1rem;
+        line-height: 1;
+        cursor: pointer;
+        opacity: 0.55;
+        user-select: none;
+        padding: 0.05rem 0;
     }
-    .arrow:disabled { opacity: 0.2; cursor: default; }
+    .arrow:hover { opacity: 1; }
+    .arrow.disabled { opacity: 0.15; cursor: default; }
     .todo-count {
-        font-size: 0.8em;
-        opacity: 0.6;
-        min-width: 1.5em;
-        text-align: right;
+        position: absolute;
+        right: -0.1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7em;
+        opacity: 0.5;
+    }
+
+    .kids-sep {
+        font-size: 1.3em;
+        opacity: 0.4;
+        flex: 0 0 auto;
+        align-self: center;
     }
     .house-kids {
+        flex: 0 1 auto;                 /* shrinks when actions get crunchy */
+        min-width: 0;
+        max-height: 2.25rem;            /* don't expand the header vertically */
         display: flex;
-        gap: 0.25rem;
-        flex: 0 0 auto;
+        flex-direction: column;
+        flex-wrap: wrap;
+        align-content: center;
+        gap: 0 0.75rem;
+        overflow: hidden;
     }
     .kid {
         font-size: 0.85em;
-        padding: 0.1rem 0.4rem;
-        opacity: 0.75;
+        opacity: 0.7;
+        cursor: pointer;
+        white-space: nowrap;
+        line-height: 1.1;
     }
     .kid:hover { opacity: 1; }
+
     .house-actions {
         flex: 1 1 auto;
         display: flex;
