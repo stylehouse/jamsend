@@ -4,6 +4,8 @@ modern music piracy in the browser
 
 ![at sea](static/screenshot.webp)
 
+[Demo serves an album of mine](https://jamsend.duckdns.org:9999/#############7950f300faa8a4f9-ope.n~0-729547c09f15f29f) in ogg or flac. That invite gets you the ability to invite other peers. Ideally you and your peer are present somewhere you have wifi, with your phones, to begin with...
+
 # the big picture
 
 We are an ongoing project to capture the core of the universe with language, and fix the computer once and for all!
