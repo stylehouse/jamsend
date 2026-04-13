@@ -189,31 +189,115 @@
         }, 50)
     })
 
-    // Wait until `fn()` returns the same numeric value two polls in a row,
-    // then resolve. Gives up after max_attempts.
-    function settle_then<T>(
-        fn: () => T | null,
-        ok: (v: T) => void,
-        interval_ms = 500,
-        max_attempts = 40,
+    // Phase 1: poll fn() until two consecutive reads match (layout settled).
+    // Phase 2: wait confirm_ms, read once more, must still match.
+    // Phase 3: scroll to target, then for chase_ms keep re-reading every
+    //          chase_interval_ms; if drift > 5px, scroll again. User scroll
+    //          detection aborts phase 3 immediately.
+    function settle_then_chase(
+        fn: () => number | null,
+        scroll_to: () => void,
+        opts: {
+            interval_ms?: number
+            max_attempts?: number
+            confirm_ms?: number
+            chase_ms?: number
+            chase_interval_ms?: number
+            drift_px?: number
+        } = {},
     ) {
-        let prev: T | null = null
+        const interval_ms       = opts.interval_ms       ?? 50
+        const max_attempts      = opts.max_attempts      ?? 40
+        const confirm_ms        = opts.confirm_ms        ?? 100
+        const chase_ms          = opts.chase_ms          ?? 1500
+        const chase_interval_ms = opts.chase_interval_ms ?? 100
+        const drift_px          = opts.drift_px          ?? 5
+
+        let prev: number | null = null
         let attempts = 0
-        const tick = () => {
+
+        // ── phase 1: settle ────────────────────────────────────────────
+        const settle_tick = () => {
             attempts++
             const v = fn()
             if (v == null) {
-                if (attempts < max_attempts) setTimeout(tick, interval_ms)
+                if (attempts < max_attempts) setTimeout(settle_tick, interval_ms)
                 return
             }
             if (prev != null && v === prev) {
-                ok(v)
+                // two matched — phase 2
+                setTimeout(() => confirm_tick(v), confirm_ms)
                 return
             }
             prev = v
-            if (attempts < max_attempts) setTimeout(tick, interval_ms)
+            if (attempts < max_attempts) setTimeout(settle_tick, interval_ms)
         }
-        tick()
+
+        // ── phase 2: confirm ───────────────────────────────────────────
+        const confirm_tick = (expected: number) => {
+            const v = fn()
+            if (v == null || v !== expected) {
+                // lost it — back to settling
+                prev = v
+                if (attempts < max_attempts) setTimeout(settle_tick, interval_ms)
+                return
+            }
+            // confirmed — phase 3
+            begin_chase()
+        }
+
+        // ── phase 3: scroll + chase ────────────────────────────────────
+        const begin_chase = () => {
+            scroll_to()
+
+            // snapshot scroll position right after scrollTo starts
+            // (smooth scroll is async, so sample after a tick)
+            let last_scroll_y = window.scrollY
+            let user_scrolled = false
+            let chase_start = Date.now()
+
+            // Settle our baseline a moment after scrollTo fires
+            setTimeout(() => { last_scroll_y = window.scrollY }, chase_interval_ms)
+
+            const chase_tick = () => {
+                if (user_scrolled) return
+                if (Date.now() - chase_start > chase_ms) return
+
+                // detect user scroll: if scrollY changed but we didn't cause it
+                const dy = Math.abs(window.scrollY - last_scroll_y)
+                if (dy > drift_px) {
+                    // could be our smooth scroll still animating, or user
+                    // — we update last_scroll_y and keep watching target drift
+                    last_scroll_y = window.scrollY
+                }
+
+                const v = fn()
+                if (v != null && Math.abs(v - (prev ?? v)) > drift_px) {
+                    // target drifted — re-scroll, update prev
+                    prev = v
+                    scroll_to()
+                    setTimeout(() => { last_scroll_y = window.scrollY }, chase_interval_ms)
+                }
+
+                setTimeout(chase_tick, chase_interval_ms)
+            }
+
+            // user scroll listener — any wheel/touch/keydown input aborts chase
+            const abort = () => { user_scrolled = true }
+            window.addEventListener('wheel',     abort, { once: true, passive: true })
+            window.addEventListener('touchmove', abort, { once: true, passive: true })
+            window.addEventListener('keydown',   abort, { once: true })
+            // cleanup after chase window
+            setTimeout(() => {
+                window.removeEventListener('wheel',     abort)
+                window.removeEventListener('touchmove', abort)
+                window.removeEventListener('keydown',   abort)
+            }, chase_ms + 100)
+
+            setTimeout(chase_tick, chase_interval_ms)
+        }
+
+        settle_tick()
     }
 
     function scrollToHouseIpStable(ip: string) {
@@ -221,20 +305,16 @@
         if (idx < 0) return
         const house = houses[idx]
 
-        settle_then<number>(
-            () => {
-                const header = document.getElementById(`house-${house.c.ip}`)
-                if (!header) return null
-                const content = header.nextElementSibling as HTMLElement | null
-                const el = (house?.actions?.length > 0 && content) ? content : header
-                // round to avoid subpixel jitter blocking settle
-                return Math.round(el.getBoundingClientRect().top + window.scrollY)
-            },
-            () => scrollToHouseIdx(idx),
-        )
+        const measure = () => {
+            const header = document.getElementById(`house-${house.c.ip}`)
+            if (!header) return null
+            const content = header.nextElementSibling as HTMLElement | null
+            const el = (house?.actions?.length > 0 && content) ? content : header
+            return Math.round(el.getBoundingClientRect().top + window.scrollY)
+        }
+
+        settle_then_chase(measure, () => scrollToHouseIdx(idx))
     }
-
-
 
     //#region each house
 </script>
