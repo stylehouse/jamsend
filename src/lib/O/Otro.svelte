@@ -5,6 +5,7 @@
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { Travel } from "$lib/mostly/Selection.svelte";
+    import { tick } from "svelte";
     import StoryRun from "./ui/StoryRun.svelte";
 
     // A Work subclass with a withitall() method
@@ -74,12 +75,14 @@
     
     //#region naviscroll
     const HEADER_HEIGHT_REM = 1.75 // keep in sync with CSS
+    const RESTORE_WINDOW_MS = 3000 // after Mundo start / resetStory, seek newcomers
+
 
     function remToPx(rem: number) {
         return rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
     }
 
-    // direct children of house in the current houses list
+    // direct children of house
     function childrenOf(house) {
         const ip = house?.c?.ip
         if (!ip) return []
@@ -93,6 +96,14 @@
     function scrollToHouseIdx(idx: number) {
         if (idx < 0 || idx >= houses.length) return
         const house = houses[idx]
+        // remember where we gazed — persists across reload
+        if (H?.stashed && house?.c?.ip) {
+            H.stashed.gazed_house_ip = house.c.ip
+        }
+        _scrollToHouseEl(house, idx)
+    }
+
+    function _scrollToHouseEl(house, idx: number) {
         const header = document.getElementById(`house-${house.c.ip}`)
         if (!header) return
 
@@ -121,6 +132,110 @@
     function scrollToHouseIp(ip: string) {
         scrollToHouseIdx(houses.findIndex(h => h.c?.ip === ip))
     }
+
+    //#region gaze restoration
+    // Track which House ips have appeared so we can detect newcomers.
+    // Within RESTORE_WINDOW_MS of Mundo starting (or a resetStory elvis), if
+    // the gazed ip turns up in all_House, seek to it.
+    let seen_ips = new Set<string>()
+    let restore_deadline = 0          // Date.now() ms; 0 = not restoring
+    let restored_once = false          // don't chase the same ip forever
+
+    function open_restore_window() {
+        restore_deadline = Date.now() + RESTORE_WINDOW_MS
+        restored_once = false
+    }
+
+    $effect(() => {
+        if (!H?.started) return
+        // Mundo just started — open the restore window
+        open_restore_window()
+    })
+
+    // Watch H.todo for resetStory elvises — reopen the restore window when
+    // a book is being re-activated, so the newly-spawning Story gets sought.
+    $effect(() => {
+        if (!H?.todo) return
+        for (const e of H.todo) {
+            if (e.sc?.elvis === 'resetStory' || e.sc?.elvis === 'activateBook') {
+                open_restore_window()
+                break
+            }
+        }
+    })
+
+    // Whenever the houses list changes, note new ips and maybe seek the gazed one.
+    $effect(() => {
+        if (!houses?.length) return
+        const gazed = H?.stashed?.gazed_house_ip as string | undefined
+
+        // detect newcomers (first render counts everything as new)
+        const current_ips = new Set(houses.map(h => h.c?.ip).filter(Boolean))
+        const newcomers: string[] = []
+        for (const ip of current_ips) {
+            if (!seen_ips.has(ip)) newcomers.push(ip)
+        }
+        seen_ips = current_ips
+
+        if (!gazed || restored_once) return
+        if (Date.now() > restore_deadline) return
+        if (!newcomers.includes(gazed)) return
+
+        // the gazed house has just appeared — seek to it
+        restored_once = true
+        setTimeout(async () => {
+            await tick()
+            scrollToHouseIpStable(gazed)
+        }, 50)
+    })
+
+    // Wait until `fn()` returns the same numeric value two polls in a row,
+    // then resolve. Gives up after max_attempts.
+    function settle_then<T>(
+        fn: () => T | null,
+        ok: (v: T) => void,
+        interval_ms = 500,
+        max_attempts = 40,
+    ) {
+        let prev: T | null = null
+        let attempts = 0
+        const tick = () => {
+            attempts++
+            const v = fn()
+            if (v == null) {
+                if (attempts < max_attempts) setTimeout(tick, interval_ms)
+                return
+            }
+            if (prev != null && v === prev) {
+                ok(v)
+                return
+            }
+            prev = v
+            if (attempts < max_attempts) setTimeout(tick, interval_ms)
+        }
+        tick()
+    }
+
+    function scrollToHouseIpStable(ip: string) {
+        const idx = houses.findIndex(h => h.c?.ip === ip)
+        if (idx < 0) return
+        const house = houses[idx]
+
+        settle_then<number>(
+            () => {
+                const header = document.getElementById(`house-${house.c.ip}`)
+                if (!header) return null
+                const content = header.nextElementSibling as HTMLElement | null
+                const el = (house?.actions?.length > 0 && content) ? content : header
+                // round to avoid subpixel jitter blocking settle
+                return Math.round(el.getBoundingClientRect().top + window.scrollY)
+            },
+            () => scrollToHouseIdx(idx),
+        )
+    }
+
+
+
     //#region each house
 </script>
 
@@ -158,6 +273,9 @@
                 {/each}
             </div>
         {/if}
+
+
+
         {#if hasActions}
             <div class="house-actions">
                 <Actions N={house.actions} />
