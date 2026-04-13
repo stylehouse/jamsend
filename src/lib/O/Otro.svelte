@@ -71,17 +71,21 @@
 
 <h3>Here we Are</h3>
 
-{#each houses as house (house.name)}
-    <h2>
-        {house.name}
-        {#if !house.started}<span class='ungood'>off</span>{/if}
-        todo:{house.todo.length}
-    </h2>
-    {#if house?.actions?.length}
-        <div class="house-actions">
-            <Actions N={house.actions} />
-        </div>
-    {/if}
+{#each houses as house, i (house.name)}
+    {@const hasActions = house?.actions?.length > 0}
+    {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
+    <div class="house-header" class:sticky={hasActions} style="--stack-index: {stickyIndex};">
+        <h2 class="house-name">
+            {house.name}
+            {#if !house.started}<span class='ungood'>off</span>{/if}
+            <span class="todo-count">{house.todo.length || ''}</span>
+        </h2>
+        {#if hasActions}
+            <div class="house-actions">
+                <Actions N={house.actions} />
+            </div>
+        {/if}
+    </div>
     {#each house.UIs ?? [] as uiC (uiC.sc.UI)}
         <svelte:component this={uiC.sc.component} H={house} />
     {/each}
@@ -90,7 +94,6 @@
     {/if}
 {/each}
 
-    
 {#if H?.stashed}
     <button onclick={upthings}>upthings ({H.stashed?.things ?? 0})</button>
     <button onclick={go_busily}>think</button>
@@ -98,11 +101,43 @@
 
 {#if H}
     <Ghost {H} />
-
 {/if}
 
 <style>
     .ungood {
         color: red;
+    }
+    .house-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: var(--background, #5f2222);
+        padding: 0.25rem 0.5rem;
+        z-index: 10;
+    }
+    .house-header.sticky {
+        position: sticky;
+        /* each sticky header parks below the previous. tweak 2.5rem to your header height. */
+        top: calc(var(--stack-index) * 2.5rem);
+    }
+    .house-name {
+        margin: 0;
+        flex: 0 0 auto;
+        min-width: 8rem;
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+    .todo-count {
+        font-size: 0.8em;
+        opacity: 0.6;
+        margin-left: auto;
+        padding-left: 0.5rem;
+    }
+    .house-actions {
+        flex: 1 1 auto;
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
     }
 </style>

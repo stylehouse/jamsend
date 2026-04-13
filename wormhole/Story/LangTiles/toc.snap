@@ -11,9 +11,7 @@ story:LangTiles
     matstyle:see
       style:background-color,v:#c5b759
   TimeSpool
-    TimeTotal:beliefs,avg:0.259
-      sample:0.262,at:1775999641
-      sample:0.107,at:1776000878
+    TimeTotal:beliefs,avg:0.272
       sample:0.409,at:1776001957
       sample:0.145,at:1776041031
       sample:0.261,at:1776041085
@@ -22,6 +20,8 @@ story:LangTiles
       sample:0.209,at:1776056091
       sample:0.433,at:1776058297
       sample:0.362,at:1776061417
+      sample:0.288,at:1776063293
+      sample:0.213,at:1776063357
   step,dige:c5c6682caeeb9098
   step:2,dige:420f36d1e7047255
   step:3,dige:02ecceb3f339ad22
