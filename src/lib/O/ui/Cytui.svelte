@@ -4,7 +4,11 @@
 
     import { onMount }    from 'svelte'
     import cytoscape      from 'cytoscape'
-    import fcose          from 'cytoscape-fcose'
+    import fcose       from 'cytoscape-fcose'
+    import coseBilkent from 'cytoscape-cose-bilkent'
+    import cola        from 'cytoscape-cola'
+    import dagre       from 'cytoscape-dagre'
+
     import type { House } from '$lib/O/Housing.svelte'
     import { _C, type TheC }  from '$lib/data/Stuff.svelte'
     import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
@@ -14,11 +18,15 @@
     let ms_shapes: string[]  = []
 
     cytoscape.use(fcose)
+    cytoscape.use(coseBilkent)
+    cytoscape.use(cola)
+    cytoscape.use(dagre)
 
     let { H }: { H: House } = $props()
 
     let container: HTMLDivElement
     let cy: ReturnType<typeof cytoscape>
+    let layout_name = $state<string>('fcose')
 
     let status          = $state('no graph')
     let grawave_dur     = $state(0.3)
@@ -40,6 +48,7 @@
         if (!gn) return
  
         seek_warning = (gn.sc.seek_warning as string | null) ?? null
+        layout_name = (gn.sc.layout_name as string) ?? 'fcose'
  
         const wave = gn.sc.wave as TheC | undefined
         const tick = (gn.sc.tick as number) ?? -1
@@ -57,6 +66,12 @@
             + ` −${wave.o({ remove:      1 }).length}`
             + ` ~${wave.o({ migrate:     1 }).length}`
             + ` · ⏱${dur}s`
+    })
+    $effect(() => {
+        if (layout_name && last_tick >= 0) {
+            // re-run current graph through the new engine
+            if (cy) relayout(400)
+        }
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
@@ -400,29 +415,29 @@
     let lay: any
     function relayout(animMs = 300, constraints?: any) {
         lay?.stop()
-        lay = cy.layout({
-            name:                        'fcose',
+        const common = {
             animate:                     animMs > 0,
             animationDuration:           animMs,
-            nodeSeparation:              30,
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
-            quality:                     'default',
-            idealEdgeLength: (edge: any) => {
-                const il = edge.data('ideal_length')
-                return typeof il === 'number' ? il : 80
-            },
-            edgeElasticity: (edge: any) =>
-                (edge.id() as string).startsWith('e:helio:') ? 0.10 : 0.45,
-            nodeRepulsion: () => 4000,
-            ...(constraints ?? {}),
-        })
-        // after animated layouts, fit to fill the container
+        }
+        let opts: any
+        if (layout_name === 'fcose') {
+            opts = { name: 'fcose', ...common, nodeSeparation: 30, quality: 'default',
+                idealEdgeLength: (e: any) => e.data('ideal_length') ?? 80,
+                edgeElasticity:  0.45, nodeRepulsion: () => 4000, ...(constraints ?? {}) }
+        } else if (layout_name === 'cose-bilkent') {
+            opts = { name: 'cose-bilkent', ...common, idealEdgeLength: 80, nodeRepulsion: 4500 }
+        } else if (layout_name === 'cola') {
+            opts = { name: 'cola', ...common, maxSimulationTime: animMs, edgeLength: 80 }
+        } else if (layout_name === 'dagre') {
+            opts = { name: 'dagre', ...common, rankDir: 'TB', nodeSep: 30, rankSep: 50 }
+        } else {
+            opts = { name: 'fcose', ...common }
+        }
+        lay = cy.layout(opts)
         if (animMs > 0) {
-            const on_stop = () => {
-                cy.removeListener('layoutstop', on_stop)
-                cy.fit(cy.nodes(), 16)
-            }
+            const on_stop = () => { cy.removeListener('layoutstop', on_stop); cy.fit(cy.nodes(), 16) }
             cy.on('layoutstop', on_stop)
         }
         try { lay.run() } catch (e) { console.warn('layout error', e) }

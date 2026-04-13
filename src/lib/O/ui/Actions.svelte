@@ -15,14 +15,30 @@
 </script>
 
 {#each actions as a}
-    <button
-        onclick={() => fire(a)}
-        class="btn btn-{a.sc.cls ?? 'default'}"
-        title={a.sc.label}
-        disabled={a.sc.disabled ?? false}
-    >
-        {a.sc.icon ?? a.sc.label}
-    </button>
+    {#if a.sc.kind === 'dropdown'}
+        <label class="dd" title={a.sc.label}>
+            {#if a.sc.icon}<span class="dd-icon">{a.sc.icon}</span>{/if}
+            <select
+                class="dd-select btn btn-{a.sc.cls ?? 'default'}"
+                value={a.sc.value ?? ''}
+                onchange={(e) => { try { a.sc.on_pick?.((e.target as HTMLSelectElement).value) } catch (err) { console.warn(`Dropdown "${a.sc.label}" failed:`, err) } }}
+                disabled={a.sc.disabled ?? false}
+            >
+                {#each (a.sc.options ?? []) as opt}
+                    <option value={opt.value}>{opt.label ?? opt.value}</option>
+                {/each}
+            </select>
+        </label>
+    {:else}
+        <button
+            onclick={() => fire(a)}
+            class="btn btn-{a.sc.cls ?? 'default'}"
+            title={a.sc.label}
+            disabled={a.sc.disabled ?? false}
+        >
+            {a.sc.icon ?? a.sc.label}
+        </button>
+    {/if}
 {/each}
 
 <style>
@@ -65,4 +81,20 @@
     padding: 0;
 }
 .btn-remove:hover { background: #d32f2f; transform: scale(1.1); }
+
+.dd { display: inline-flex; align-items: center; gap: 0.3rem; }
+.dd-icon { font-size: 0.9rem; opacity: 0.8; }
+.dd-select {
+    appearance: none; -webkit-appearance: none;
+    padding-right: 1.4rem;
+    background-image:
+        linear-gradient(45deg, transparent 50%, white 50%),
+        linear-gradient(135deg, white 50%, transparent 50%);
+    background-position: calc(100% - 0.7rem) 50%, calc(100% - 0.4rem) 50%;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    font-family: inherit;
+}
+.dd-select:focus { outline: 1px solid rgba(255,255,255,0.5); outline-offset: 1px; }
 </style>

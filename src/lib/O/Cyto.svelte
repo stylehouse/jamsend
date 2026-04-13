@@ -86,6 +86,9 @@
         w.c.gn        = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true
         w.sc.grawave_duration ??= 0.4
+        const stashed_layout = (this as House).stashed?.Cyto_layout_name as string | undefined
+        w.c.gn.sc.layout_name ??= stashed_layout ?? 'fcose'
+        this.cyto_install_actions(w)
     },
 
     // ── e_Cyto_commission ────────────────────────────────────────────────
@@ -118,6 +121,52 @@
         this.main()
     },
 
+    // Install Cyto's own action buttons on this H.
+    // Called from Cyto_plan so whichever H owns this w:Cyto gets them.
+    cyto_install_actions(w: TheC) {
+        const H  = this as House
+        const wa = H.oai_enroll(H, { watched: 'actions' })
+        const gn = w.c.gn as TheC
+
+        wa.oai({ action: 1, role: 'cyto_wipe' }, {
+            label: 'wipe', icon: '⌀', cls: 'remove',
+            fn: () => H.elvisto(w, 'Cyto_wipe', {}),
+        })
+
+        const engines = [
+            { value: 'fcose',        label: 'fcose'   },
+            { value: 'cose-bilkent', label: 'bilkent' },
+            { value: 'cola',         label: 'cola'    },
+            { value: 'dagre',        label: 'dagre'   },
+        ]
+        wa.oai({ action: 1, role: 'layout_picker' }, {
+            kind:    'dropdown',
+            label:   'layout engine',
+            icon:    '',
+            cls:     'default',
+            options: engines,
+            value:   gn.sc.layout_name ?? 'fcose',
+            on_pick: (name: string) => {
+                if (H.stashed) H.stashed.Cyto_layout_name = name
+                H.elvisto(w, 'Cyto_set_layout', { layout_name: name })
+            },
+        })
+    },
+
+    async e_Cyto_set_layout(A: TheC, w: TheC, e: TheC) {
+        const name = e?.sc.layout_name as string | undefined
+        if (!name) return
+        const gn = w.c.gn as TheC
+        gn.sc.layout_name = name
+        gn.bump_version()
+        const pick = (this.o({ watched: 'actions' })[0] as TheC | undefined)
+            ?.o({ action: 1, role: 'layout_picker' })[0] as TheC | undefined
+        if (pick) pick.sc.value = name
+        // poke the graph watcher so Cytui re-runs relayout with the new engine
+        ;(this as House).o({ watched: 'graph' })[0]?.bump_version()
+    },
+
+//#region cyto_update_wave
     async cyto_update_wave(w: TheC, incoming_step_n?: number, absolute = false): Promise<boolean> {
         const H    = this as House
         const scan = w.c.Scannable as TheC | undefined

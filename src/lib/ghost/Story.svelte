@@ -1422,10 +1422,6 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'waitCyto',      { stashed: true, label: 'waitCyto'    })
-        wa.oai({ action: 1, role: 'cyto_wipe' }, {
-            label: 'wipe', icon: '⌀', cls: 'remove',
-            fn: () => this.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
-        })
 
         // < is this weird. Baroquely, an information channel in a button
         await wa.roai({ action: 1, role: 'status' }, {

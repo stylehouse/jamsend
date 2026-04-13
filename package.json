@@ -36,6 +36,7 @@
 		"@types/express": "^5.0.3",
 		"cytoscape": "^3.33.1",
 		"cytoscape-cola": "^2.5.1",
+		"cytoscape-cose-bilkent": "^4.1.0",
 		"cytoscape-dagre": "^2.5.0",
 		"cytoscape-fcose": "^2.2.0",
 		"dexie": "^4.3.0",
