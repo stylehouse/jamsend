@@ -2,6 +2,7 @@
     import { onMount, onDestroy } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, Compartment } from "@codemirror/state"
+    import { stho, simpleLezerLinter } from "$lib/L/stho"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
@@ -44,11 +45,13 @@
                 doc: initial,
                 extensions: [
                     basicSetup,
+                    stho(),
+                    // simpleLezerLinter(),
                     EditorView.updateListener.of(u => {
                         if (!u.docChanged) return
                         const text = u.state.doc.toString()
                         // push: elvis to w:LangTiles. It sets docC.sc.text and bumps.
-                        H.elvisto('LangTiles/LangTiles', 'langtiles_set_doc', { text })
+                        H.elvisto('LangTiles/LangTiles', 'langtiles_set_doc', { text, editorState: u.state })
                     }),
                 ],
             }),

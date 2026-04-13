@@ -31,6 +31,7 @@
     import Text  from "$lib/ghost/Text.svelte"
     import Auto from "./Auto.svelte";
     import Matstyle from "./Matstyle.svelte";
+    import Lang from "$lib/L/Lang.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -44,14 +45,15 @@
             H.ghostsHaunt()
         }
     }
+    // < extract what we will keep from Agency, etc...
 </script>
-
 <Agency    {M} />
-<!-- these are all AI -->
+<!-- below are all AI -->
 <Machinery {M} />
 <Story     {M} />
 <Cyto      {M} />
-<Matstyle {M} />
+<Matstyle  {M} />
+<Lang      {M} />
 <!-- pure text/diff utilities — depth_of, compute_diff, squish_context, enDif, deDif, etc. -->
 <Text  {M} />
 <!-- what are we working on, and memories drifting away -->

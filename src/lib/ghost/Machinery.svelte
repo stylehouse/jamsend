@@ -60,14 +60,7 @@
 
         let model = w.c.model
 
-        if (!model.oa({Bit:1})) {
-            // Build w/Bit/Bit/Bit/Bit just to prove the pipeline lights up.
-            // (Real LangTiles tile state will replace this.)
-            let here: TheC = model
-            for (let i = 0; i < 4; i++) {
-                here = here.i({ Bit: 1 })
-            }
-        }
+        w.c.editorState && this.whatsthis(w.c.editorState, model) 
 
 
         H.elvisto('Cyto/Cyto', 'Cyto_animation_request',{Langy:1})
@@ -78,12 +71,13 @@
         if (!docC) return
         const text = e?.sc.text as string | undefined
         if (text == null) return
+        w.c.editorState = e.sc.editorState
         if (docC.sc.text === text) return
         docC.sc.text = text
         docC.bump_version()
         // no main() — UI initiated this, no one else needs waking
     },
-    
+
     LangTiles_plan(this: House, w: TheC) {
         const H = this
 
@@ -104,7 +98,14 @@
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const docC = ave.oai({ langtiles_doc: 1 })
         if (docC.sc.text == null) {
-            docC.sc.text = '// LangTiles\n// start typing…\n'
+            docC.sc.text = `# yeti etc
+i thung/with/etc
+
+[y]
+S o yeses/because/blon_itn
+  yapto
+  o figura/datch/#chang
+`
             docC.bump_version()
         }
         w.c.docC = docC
