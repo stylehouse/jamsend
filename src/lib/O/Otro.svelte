@@ -73,7 +73,7 @@
     
     
     //#region naviscroll
-    const HEADER_HEIGHT_REM = 2.5 // keep in sync with CSS
+    const HEADER_HEIGHT_REM = 1.75 // keep in sync with CSS
 
     function remToPx(rem: number) {
         return rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
@@ -132,26 +132,27 @@
         class:sticky={hasActions}
         id="house-{house.c.ip}"
         style="--stack-index: {stickyIndex};">
-        <h2 class="house-name"
+        <h2 class="house-name" title="navigate to this House"
             class:clickable={hasActions}
             onclick={hasActions ? () => scrollToHouseIdx(i) : null}>
             {house.name}
             {#if !house.started}<span class='ungood'>off</span>{/if}
+            <span class="todo-count">{house.todo.length || ''}</span>
         </h2>
         <div class="house-nav">
-            <span class="arrow arrow-up"
+            <span class="arrow arrow-up" title="navigate to the previous House"
                 class:disabled={i === 0}
                 onclick={() => i > 0 && scrollToHouseIdx(i - 1)}>▲</span>
-            <span class="arrow arrow-down"
+            <span class="arrow arrow-down" title="navigate to the next House"
                 class:disabled={i === houses.length - 1}
                 onclick={() => i < houses.length - 1 && scrollToHouseIdx(i + 1)}>▼</span>
-            <span class="todo-count">{house.todo.length || ''}</span>
         </div>
         {#if kids.length}
             <span class="kids-sep">/</span>
             <div class="house-kids">
                 {#each kids as kid (kid.c.ip)}
-                    <span class="kid" onclick={() => scrollToHouseIp(kid.c.ip)}>
+                    <span class="kid" title="navigate to this House"
+                        onclick={() => scrollToHouseIp(kid.c.ip)}>
                         {kid.name}
                     </span>
                 {/each}
@@ -187,55 +188,54 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        background: var(--background, #fff);
-        padding: 0.25rem 0.5rem 0.25rem 2.75rem;   /* left room for arrows */
-        position: relative;
-        min-height: 2.5rem;
+        background: var(--background, rgb(215, 237, 255));
+        padding: 0 0.5rem;
+        min-height: 1.75rem;
         z-index: 10;
     }
     .house-header.sticky {
         position: sticky;
-        top: calc(var(--stack-index) * 2.5rem);
+        top: calc(var(--stack-index) * 1.75rem);
     }
 
     .house-name {
         margin: 0;
         flex: 0 0 auto;
-        min-width: 8rem;
+        min-width: 4rem;
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        font-size: 1rem;
     }
     .house-name.clickable { cursor: pointer; }
     .house-name.clickable:hover { opacity: 0.7; }
+    .todo-count {
+        font-size: 0.7em;
+        opacity: 0.5;
+        margin-left: auto;
+    }
 
     .house-nav {
-        position: absolute;
-        left: 0.25rem;
-        top: 0;
-        bottom: 0;
-        width: 2.25rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 0;
+        flex: 0 0 auto;
+        position: relative;
+        width: 0.1rem;
+        align-self: stretch;
     }
     .arrow {
-        font-size: 1.1rem;
+        position: absolute;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 1rem;
         line-height: 1;
         cursor: pointer;
         opacity: 0.55;
         user-select: none;
-        padding: 0.05rem 0;
     }
+    .arrow-up   { top: 0; }
+    .arrow-down { bottom: 0; }
     .arrow:hover { opacity: 1; }
     .arrow.disabled { opacity: 0.15; cursor: default; }
-    .todo-count {
-        position: absolute;
-        right: -0.1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.7em;
-        opacity: 0.5;
-    }
 
     .kids-sep {
         font-size: 1.3em;
@@ -244,9 +244,9 @@
         align-self: center;
     }
     .house-kids {
-        flex: 0 1 auto;                 /* shrinks when actions get crunchy */
+        flex: 0 1 auto;
         min-width: 0;
-        max-height: 2.25rem;            /* don't expand the header vertically */
+        max-height: 1.5rem;
         display: flex;
         flex-direction: column;
         flex-wrap: wrap;
