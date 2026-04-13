@@ -4,10 +4,6 @@ Snap:H
       {"mung":["age"]}	self,round:4
       w:LangTiles
         model
-          Bit
-            Bit
-              Bit
-                Bit
         {"mung":["age"]}	self,round:4
         {"see":"🟦 tiles model:✓"}
     A:Cyto
@@ -22,9 +18,37 @@ Snap:H
         TheWave
           {"CytoWave":1,"duration":0.4}
     watched:UIs
+      {"ref":{"component":"Function()"}}	UI:LangTilesEditor
       {"ref":{"component":"Function()"}}	UI:Cyto
+    watched:ave
+      {"langtiles_doc":1,"text":"# yeti etc\ni thung/with/etc\n\n[y]\nS o yeses/because/blon_itn\n  yapto\n  o figura/datch/#chang\n"}
     watched:graph
-      {"ref":{"wave":"CytoWave:1, duration:0.4, step_n:null"}}	cyto_graph,tick:5
+      {"ref":{"wave":"CytoWave:1, duration:0.4, step_n:null"}}	cyto_graph,layout_name:cola,tick:5
+    watched:actions
+      {"ref":{"fn":"Function()"}}	action,role:cyto_wipe,label:wipe,icon:⌀,cls:remove
+      {"ref":{"options":"[Object(),Object(),Object(),Object()]","on_pick":"Function()"}}	action,role:layout_picker,kind:dropdown,label:layout engine,icon:,cls:default,value:cola
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-
+  upsert,id:cytoid_1_1,label:LangTiles,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  upsert,id:cytoid_1_1_1,label:model,parent:cytoid_1_1
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_2","label":"see:🟦 tiles …","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20

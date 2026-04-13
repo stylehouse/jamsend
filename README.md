@@ -10,53 +10,55 @@ We are an ongoing project to capture the core of the universe with language, and
 
 Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier.
 
-## safety
+**🔥safety🏠** Could be better but is fantastic. No strangers exist, only your contacts.
 
-Could be better but is fantastic. No strangers exist, only your contacts.
+**🦊p2p🐉** Music comes from connections you make. Manipulation is impossible.
 
-## p2p
+**🌊experience🎶** You listen to someone’s music collection, always jumping into the middle of a random track, like tuning a radio. Normal, everyday options spring up.
 
-Music comes from connections you make - manipulation is impossible.
-
-## experience
-
-You listen to someone's music collection, always jumping into the middle of a random track, like tuning a radio. Normal everyday options spring up.
-
-## downloads
-
-Preserve directory structure, tend to move whole albums, restart if interrupted.
-
-# funding
-
-[Send tips!](https://ko-fi.com/ostylehouse) Ready to technically manage lots of quality work on a new computer culture and direction for the humans, which is somewhat here in this project. Stuff.svelte.ts really. Seems to be time to hire, etc. Wanting to feed it brains. It's becoming a competent system for managing change, including of itself. Important!
+**🚛downloads📦** Preserve directory structure, tend to move whole albums, and restart if interrupted.
 
 # development
 
 Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
 
-This effectively locates the frontier of computer interface and program design. This is a relatively tidy part of an ongoing project to capture the core of the universe with language, which I've been working on for a long time, and fix the computer once and for all. It now appears in the guise of a music piracy app, to communicate.
+## news 
 
-Plans soon include a compiler of a nice language that we could do CodeMirror integration with and so provide a REPL. Then a lot of eg ghosts/ can be rewritten to look quite saleable, and it'll all seem a new language is being born, inspire everyone and attract funding easier.
+A new top-level at lib/O/Otro.svelte is in development, with a bunch of fancy simplicities... It's a much more elegant integration with svelte, etc.
+
+Work is currently progressing towards using it to make a presentation of this project in the next week or two. We're also trying to establish the nice new architecture that I want developers to look at.
+
+Involving a compiler of a nice new language and CodeMirror integration, figuring out how to start using Selection and io expressions together, then we can much more recreationally build testable app code, particularly Radios and Pirating. Architectural problems (causing ugly code) should be fixed. It should all look good in Cyto.
+
+It has a nice style+house pattern emerging: Stuff and Housing are very central to everything yet opposite in nature... universal and empirical. the players and the lights.
+
+## so
+
+It now appears in the guise of a music piracy app, to communicate.
 
 Plans later are that this general technology should grow into the best place for any information, and be standard.
 
 # hiring
 
-Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may of course volunteer! Go for it. All development, commissioning and correspondence is on github under the eyes of the law. There are vaguely a dozen separate 40hr developments I expect 70% success with the first week! Happy to manage 10 hour weeks.
+Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may volunteer! Go for it. All development, commissioning and correspondence is on github under the eyes of the law. There are vaguely a dozen separate 40hr developments I expect 70% success with the first week! Happy to manage 10 hour weeks.
 
-You would need to get it set up yourself but reach out if anything isn't easy. If you can change code with reliable results, yay.
+Open an issue if anything isn't easy. If you can change code with reliable results, yay.
 
-There are many non-frontend things to do. See Issues, or comments starting with < in the code, which means less-than-existing or TODO.
+There are many non-frontend things to do. See Issues on github, or comments starting with < in the code, which means less-than-existing, ie TODO.
 
-## notes
+# funding
+
+[Send tips!](https://ko-fi.com/ostylehouse) Ready to technically manage lots of quality work on a new computer culture and direction for the humans, which is somewhat here in this project.
+
+# notes
 
 DevTools with 'pause on exception' will need to ignore the line in Decoder.ts with a meaningless RangeError, etc, it sometimes adds random breakpoints, which can be ignored or switched off in the expandy-rack to the right, between Watch and Scope.
 
-To use *prod.sh*, see *Peer_OPTIONS*, but we no longer use socket.io which it may be unadapted for.
+To use *prod.sh*, see *Peer_OPTIONS*.
 
 ## objects, data layer
 
-Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts).
+Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts) and [Housing etc in O](src/lib/O)
 
 To write code, the src/lib/ghost/\*.svelte is the best place to build things because it'll update the Modus live without restarting anything, but they need to be included by a Modus, which are included by some kind of *\*Feature*, so do a whole lot of searches and readings, you probably want to add another %w=yourmethod to some M.do_A().
 
