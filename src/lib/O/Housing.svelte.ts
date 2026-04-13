@@ -405,6 +405,8 @@ export class House extends StorableHousing {
     constructor(opt: TheUniversal) {
         super(opt)
         this.sc.H = this.name
+        this.c.ip ??= '1'
+        this.c.ip_i = 0
     }
 
     // StorableHousing.start() wires the Dexie $effects; we call super to keep that.
@@ -479,10 +481,11 @@ export class House extends StorableHousing {
         if (existing) return existing
         const child = new House({ name })
         child.up = this
-        child.ghosts = this.ghosts          // set via $state setter so the readiness $effect fires
-        Object.assign(child, this.ghosts)   // also spread methods onto child directly
-        this.i(child)   // child IS the particle — sc.H = name set in constructor
-        const wa   = this.oai_enroll(this, { watched: 'subHouses' })
+        child.c.ip = `${this.c.ip}_${++this.c.ip_i}`
+        child.ghosts = this.ghosts
+        Object.assign(child, this.ghosts)
+        this.i(child)
+        const wa = this.oai_enroll(this, { watched: 'subHouses' })
         wa.i(child)
         return child
     }

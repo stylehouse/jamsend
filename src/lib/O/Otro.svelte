@@ -77,31 +77,83 @@
         return rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
     }
 
-    function scrollToHouse(e: MouseEvent, stickyIndex: number) {
-        const header = (e.currentTarget as HTMLElement).closest('.house-header')
+    // direct children of house in the current houses list
+    function childrenOf(house) {
+        const ip = house?.c?.ip
+        if (!ip) return []
+        const depth = ip.split('_').length
+        return houses.filter(h =>
+            h.c?.ip?.startsWith(ip + '_')
+            && h.c.ip.split('_').length === depth + 1
+        )
+    }
+
+    function scrollToHouseIdx(idx: number) {
+        if (idx < 0 || idx >= houses.length) return
+        const house = houses[idx]
+        const header = document.getElementById(`house-${house.c.ip}`)
         if (!header) return
+
         const headerPx = remToPx(HEADER_HEIGHT_REM)
-        // the content right after this header
-        const content = header.nextElementSibling as HTMLElement | null
-        if (!content) return
-        // we want content's top at (stickyIndex + 1) * headerPx from viewport
-        const contentTop = content.getBoundingClientRect().top + window.scrollY
-        const desiredOffset = (stickyIndex + 1) * headerPx
-        window.scrollTo({ top: contentTop - desiredOffset, behavior: 'smooth' })
+        const sticky_before = houses.slice(0, idx)
+            .filter(h => h?.actions?.length > 0).length
+        const this_is_sticky = house?.actions?.length > 0
+
+        if (this_is_sticky) {
+            const content = header.nextElementSibling as HTMLElement | null
+            if (!content) return
+            const contentTop = content.getBoundingClientRect().top + window.scrollY
+            window.scrollTo({
+                top: contentTop - (sticky_before + 1) * headerPx,
+                behavior: 'smooth',
+            })
+        } else {
+            const headerTop = header.getBoundingClientRect().top + window.scrollY
+            window.scrollTo({
+                top: headerTop - sticky_before * headerPx,
+                behavior: 'smooth',
+            })
+        }
+    }
+
+    function scrollToHouseIp(ip: string) {
+        scrollToHouseIdx(houses.findIndex(h => h.c?.ip === ip))
     }
 </script>
 
-{#each houses as house, i (house.name)}
+{#each houses as house, i (house.c.ip)}
     {@const hasActions = house?.actions?.length > 0}
     {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
-    <div class="house-header" class:sticky={hasActions} style="--stack-index: {stickyIndex};">
+    {@const kids = childrenOf(house)}
+    <div class="house-header"
+         class:sticky={hasActions}
+         id="house-{house.c.ip}"
+         style="--stack-index: {stickyIndex};">
         <h2 class="house-name"
             class:clickable={hasActions}
-            onclick={hasActions ? (e) => scrollToHouse(e, stickyIndex) : null}>
+            onclick={hasActions ? () => scrollToHouseIdx(i) : null}>
             {house.name}
             {#if !house.started}<span class='ungood'>off</span>{/if}
-            <span class="todo-count">{house.todo.length || ''}</span>
         </h2>
+        <div class="house-nav">
+            <button class="arrow"
+                    disabled={i === 0}
+                    onclick={() => scrollToHouseIdx(i - 1)}>↑</button>
+            <button class="arrow"
+                    disabled={i === houses.length - 1}
+                    onclick={() => scrollToHouseIdx(i + 1)}>↓</button>
+            <span class="todo-count">{house.todo.length || ''}</span>
+        </div>
+        {#if kids.length}
+            <div class="house-kids">
+                {#each kids as kid (kid.c.ip)}
+                    <button class="kid"
+                            onclick={() => scrollToHouseIp(kid.c.ip)}>
+                        {kid.name}
+                    </button>
+                {/each}
+            </div>
+        {/if}
         {#if hasActions}
             <div class="house-actions">
                 <Actions N={house.actions} />
@@ -126,46 +178,59 @@
 {/if}
 
 <style>
-    .ungood {
-        color: red;
-    }
+    .ungood { color: red; }
     .house-header {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        background: var(--background, #5f2222);
+        gap: 0.75rem;
+        background: var(--background, #fff);
         padding: 0.25rem 0.5rem;
         z-index: 10;
     }
     .house-header.sticky {
         position: sticky;
-        /* each sticky header parks below the previous. tweak 2.5rem to your header height. */
         top: calc(var(--stack-index) * 2.5rem);
     }
     .house-name {
         margin: 0;
         flex: 0 0 auto;
         min-width: 8rem;
-        display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
     }
+    .house-name.clickable { cursor: pointer; }
+    .house-name.clickable:hover { opacity: 0.7; }
+    .house-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex: 0 0 auto;
+    }
+    .arrow {
+        padding: 0 0.25rem;
+        font-size: 0.9em;
+        opacity: 0.6;
+    }
+    .arrow:disabled { opacity: 0.2; cursor: default; }
     .todo-count {
         font-size: 0.8em;
         opacity: 0.6;
-        margin-left: auto;
-        padding-left: 0.5rem;
+        min-width: 1.5em;
+        text-align: right;
     }
+    .house-kids {
+        display: flex;
+        gap: 0.25rem;
+        flex: 0 0 auto;
+    }
+    .kid {
+        font-size: 0.85em;
+        padding: 0.1rem 0.4rem;
+        opacity: 0.75;
+    }
+    .kid:hover { opacity: 1; }
     .house-actions {
         flex: 1 1 auto;
         display: flex;
         justify-content: flex-end;
         min-width: 0;
-    }
-    .house-name.clickable {
-        cursor: pointer;
-    }
-    .house-name.clickable:hover {
-        opacity: 0.7;
     }
 </style>
