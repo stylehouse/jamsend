@@ -71,6 +71,12 @@
         })
     })
 
+    // message the backend about CodeMirror
+    //  we have to get the immutable view.state now, pass both via elvis
+    function Lang_i_elvis(view,method,sc) {
+        sc = {view,state:view.state, ...(sc||{})}
+        H.elvisto('LangTiles/LangTiles', method, sc)
+    }
     // ── bookmark StateField ──────────────────────────────────────────────
     //
     //   addBookmarkMark(v)    — install a Decoration.mark spanning v.from..v.to
@@ -120,25 +126,23 @@
     //   Empty selection → expand to the enclosing line, so single-click
     //   bookmarking gives something non-zero-width for whatsthis() to scope
     //   over.  Non-empty selection is used verbatim.
-
     const ctrlB = keymap.of([{
         key: 'Mod-b',
-        run: (v) => {
-            const sel = v.state.selection.main
+        run: (view) => {
+            const sel = view.state.selection.main
             let from = sel.from, to = sel.to
             if (from === to) {
-                const line = v.state.doc.lineAt(from)
+                const line = view.state.doc.lineAt(from)
                 from = line.from; to = line.to
             }
             const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
-            const label = v.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ')
-            v.dispatch({ effects: addBookmarkMark.of({ id, from, to }) })
-            H.elvisto('LangTiles/LangTiles', 'langtiles_add_bookmark', {
-                from, to, label, editorState: v.state,
-            })
+            const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ')
+            view.dispatch({ effects: addBookmarkMark.of({ id, from, to }) })
+            Lang_i_elvis(view,'langtiles_add_bookmark', {from, to, label})
             return true
         },
     }])
+
 
     // ── debounced doc-change → langtiles_update_bookmarks ────────────────
 
@@ -148,15 +152,12 @@
             update_timer = null
             if (!view) return
             const updates = readBookmarks(view)
-            H.elvisto('LangTiles/LangTiles', 'langtiles_update_bookmarks', {
-                updates,
-                editorState: view.state,
-            })
+            Lang_i_elvis(view,'langtiles_update_bookmarks', {updates})
         }, UPDATE_DELAY_MS)
     }
 
     onMount(() => {
-        const initial = (docC?.sc.text as string) ?? ''
+        const initial = (docC?.sc.text as string) ?? '';
         view = new EditorView({
             parent: container,
             state: EditorState.create({
@@ -164,25 +165,24 @@
                 extensions: [
                     basicSetup,
                     stho(),
-                    // simpleLezerLinter(),
                     bookmarkField,
                     ctrlB,
                     EditorView.updateListener.of(u => {
-                        const sel = u.state.selection.main
-                        sel_from = sel.from
-                        sel_to   = sel.to
-                        if (!u.docChanged) return
-                        const text = u.state.doc.toString()
-                        // push text change only — no editorState here.
-                        H.elvisto('LangTiles/LangTiles', 'langtiles_set_doc', { text })
-                        // debounced follow-up carries editorState + live mark
-                        // positions so bookmarks re-scope to their new ranges
-                        schedule_update_bookmarks(u.view)
+                        const sel = u.state.selection.main;
+                        sel_from = sel.from;
+                        sel_to = sel.to;
+                        if (!u.docChanged) return;
+                        const text = u.state.doc.toString();
+                        Lang_i_elvis(view,'langtiles_set_doc', {text})
+                        schedule_update_bookmarks(u.view);
                     }),
                 ],
             }),
-        })
-    })
+        });
+
+        // Dispatch e:editorBegins with the initial editorState
+        Lang_i_elvis(view,'Lang_editorBegins', {})
+    });
 
     onDestroy(() => {
         if (update_timer) clearTimeout(update_timer)

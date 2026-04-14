@@ -23,6 +23,8 @@
     import { onMount } from "svelte"
 
     import Langui from "$lib/O/ui/Langui.svelte"
+    import type { House } from "$lib/O/Housing.svelte";
+    import { EditorView } from "codemirror";
 
     let { M } = $props()
 
@@ -31,7 +33,7 @@
 
 //#region plan
 
-    Lang_plan(this: House, w: TheC) {
+    Lang_plan(A: House, w: TheC) {
         const H = this
 
         // ── the permanent viewable model ────────────────────────────
@@ -46,7 +48,10 @@
         uis.oai({ UI: 'Langui', component: Langui })
 
         const wa = H.oai_enroll(H, { watched: 'actions' })
-        wa.oai({ action: 1, role: 'debookmark'   }, { label: '-marks',  cls: 'save',   fn: () => this.Lang_debookmark(w)  })
+        wa.oai({ action: 1, role: 'debookmark'   },
+             { label: '-marks', fn: () => this.Lang_debookmark(A,w) })
+        wa.oai({ action: 1, role: 'enbookmark'   },
+             { label: '+marks', fn: () => this.test__couple_of_bookmarks(A,w) })
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
@@ -54,15 +59,7 @@
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const docC = ave.oai({ langtiles_doc: 1 })
         if (docC.sc.text == null) {
-            docC.sc.text = `# yeti etc
-
-i thung/with/etc
-
-[y]
-S o yeses/because/blon_itn
-  yapto
-  o figura/datch/#chang
-`
+            docC.sc.text = this.Lang_default_text()
             docC.bump_version()
         }
         w.c.docC = docC
@@ -99,12 +96,23 @@ S o yeses/because/blon_itn
 
         w.c.plan_done = true
     },
+    Lang_default_text() {
+        return `# yeti etc
+
+i thung/with/etc
+
+[y]
+S o yeses/because/blon_itn
+  yapto
+  o figura/datch/#chang
+`
+    },
 
 //#region w:Lang
     async Lang(A: TheC, w: TheC) {
         const H = this
  
-        if (!w.c.plan_done) this.Lang_plan(w)
+        if (!w.c.plan_done) this.Lang_plan(A,w)
  
         const model     = w.c.model as TheC
         const state     = w.c.editorState
@@ -139,12 +147,59 @@ S o yeses/because/blon_itn
         H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
     },
 
+    // onMount() ONLY, automate the test
+    async e_Lang_editorBegins(A,w,e) {
+        if (w.c.editorState) throw new Error("Editor state already set");
+        w.c.editorState = e.sc.state
+        w.c.editorView = e.sc.view
+        await this.test__couple_of_bookmarks(A,w)
+        
+    },
+    async test__couple_of_bookmarks(A,w) {
+        // Get the editor view from the state
+        const view = w.c.editorView
+        // < why did AI want to:
+        // view =  w.c.editorState?.field(EditorView) as EditorView | undefined;
+        if (!view) throw new Error("No editor view found");
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        // Function to simulate Ctrl+B key press
+        const simulateCtrlB = () => {
+            const event = new KeyboardEvent("keydown", {
+                key: "b",
+                ctrlKey: true,
+                bubbles: true,
+            });
+            view.dom.dispatchEvent(event);
+        };
+
+        // Set selection to 38..51
+        view.dispatch({
+            selection: { anchor: 38, head: 51 },
+        });
+
+        // Simulate Ctrl+B
+        simulateCtrlB();
+
+        // Wait for the next tick (to allow the bookmark to be added)
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        // Set selection to 55
+        view.dispatch({
+            selection: { anchor: 55, head: 55 },
+        });
+
+        // Simulate Ctrl+B again
+        simulateCtrlB();
+    },
+
     async Lang_debookmark(w) {
         await w.r({ bookmark: 1 },{})
         this.elvisto(w, 'think', {})
     },
 
-    async e_langtiles_set_doc(this: House, A: TheC, w: TheC, e: TheC) {
+    async e_langtiles_set_doc(A: TheC, w: TheC, e: TheC) {
+        if (!A.sc.A) debugger
         const docC = w.c.docC as TheC | undefined
         if (!docC) return
         const text = e?.sc.text as string | undefined
@@ -167,11 +222,12 @@ S o yeses/because/blon_itn
     // calls push the live mark positions (and a fresh editorState) back here.
     //
     // e.sc carries: from, to, label?, editorState
-    async e_langtiles_add_bookmark(this: House, A: TheC, w: TheC, e: TheC) {
+    async e_langtiles_add_bookmark(A: TheC, w: TheC, e: TheC) {
+        if (!A.sc.A) debugger
         const from  = e?.sc.from  as number | undefined
         const to    = e?.sc.to    as number | undefined
         const label = (e?.sc.label as string | undefined) ?? ''
-        const state = e?.sc.editorState
+        const state = e?.sc.state
         if (from == null || to == null) return
  
         const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
@@ -195,9 +251,10 @@ S o yeses/because/blon_itn
     // lets the editor also use this event to report "this bookmark's mark was
     // deleted" by simply omitting it. (Not yet consumed, but the shape allows
     // future pruning: compare w/%bookmark ids against updates[].id.)
-    async e_langtiles_update_bookmarks(this: House, A: TheC, w: TheC, e: TheC) {
+    async e_langtiles_update_bookmarks(A: TheC, w: TheC, e: TheC) {
+        if (!A.sc.A) debugger
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
-        const state   = e?.sc.editorState
+        const state   = e?.sc.state
         if (updates) {
             for (const u of updates) {
                 const bm = w.o({ bookmark: u.id })[0] as TheC | undefined

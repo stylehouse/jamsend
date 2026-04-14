@@ -53,8 +53,9 @@
 <Story     {M} />
 <Cyto      {M} />
 <Matstyle  {M} />
-<Lang      {M} />
 <!-- pure text/diff utilities — depth_of, compute_diff, squish_context, enDif, deDif, etc. -->
 <Text  {M} />
 <!-- what are we working on, and memories drifting away -->
 <Auto  {M} />
+<!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
+<Lang      {M} />
