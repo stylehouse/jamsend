@@ -1,5 +1,5 @@
 <script lang="ts">
-    // LangTilesEditor — CodeMirror view over w/%langtiles_doc with bookmarks.
+    // Langui — CodeMirror view over w/%langtiles_doc with bookmarks.
     //
     // ── Bookmark pipeline ────────────────────────────────────────────────────
     //

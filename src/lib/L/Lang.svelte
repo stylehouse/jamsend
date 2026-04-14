@@ -31,7 +31,7 @@
 
 //#region plan
 
-    LangTiles_plan(this: House, w: TheC) {
+    Lang_plan(this: House, w: TheC) {
         const H = this
 
         // ── the permanent viewable model ────────────────────────────
@@ -41,9 +41,9 @@
         const model = w.i({ model: 1 })
         w.c.model = model
 
-        // UI registration — Otro mounts this alongside Cytui for H:LangTiles
+        // UI registration — Otro mounts this alongside Cytui for H:Lang
         const uis = H.oai_enroll(H, { watched: 'UIs' })
-        uis.oai({ UI: 'LangTilesEditor', component: Langui })
+        uis.oai({ UI: 'Langui', component: Langui })
 
         const wa = H.oai_enroll(H, { watched: 'actions' })
         wa.oai({ action: 1, role: 'debookmark'   }, { label: '-marks',  cls: 'save',   fn: () => this.Lang_debookmark(w)  })
@@ -78,12 +78,12 @@ S o yeses/because/blon_itn
             const storyw = topH.o({H:'Story'})[0].Awo('Story', 'Story')
             stylesC = H.The_Styles(storyw)
         } catch {
-            console.warn(`LangTiles: H:Story not present yet — Cyto will palette-fallback`)
+            console.warn(`Lang: H:Story not present yet — Cyto will palette-fallback`)
         }
 
         // ── commission our own Cyto ─────────────────────────────────
         // Scannable = the permanent model C.
-        // client_w  = w:LangTiles itself, so animation_done events come here.
+        // client_w  = w:Lang itself, so animation_done events come here.
         // No seek / takeTurns yet — this is the simple observer path.
         const commission = new TheC({ c: {}, sc: {
             Scannable:            w.c.model,
@@ -104,7 +104,7 @@ S o yeses/because/blon_itn
     async Lang(A: TheC, w: TheC) {
         const H = this
  
-        if (!w.c.plan_done) this.LangTiles_plan(w)
+        if (!w.c.plan_done) this.Lang_plan(w)
  
         const model     = w.c.model as TheC
         const state     = w.c.editorState
