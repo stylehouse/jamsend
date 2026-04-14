@@ -5,8 +5,6 @@
     import { armap, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
 
-    import LangTilesEditor from "$lib/O/ui/LangTilesEditor.svelte"
-
     let {M} = $props()
 
     onMount(async () => {

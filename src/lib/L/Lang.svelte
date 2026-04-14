@@ -22,6 +22,8 @@
     import type { EditorState } from "@codemirror/state"
     import { onMount } from "svelte"
 
+    import Langui from "$lib/O/ui/Langui.svelte"
+
     let { M } = $props()
 
     onMount(async () => {
