@@ -62,6 +62,7 @@
 
         w.c.editorState && this.whatsthis(w.c.editorState, model) 
 
+        console.log(`✓ LangTiles`)
 
         H.elvisto('Cyto/Cyto', 'Cyto_animation_request',{Langy:1})
     },

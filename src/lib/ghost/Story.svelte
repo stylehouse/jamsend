@@ -991,6 +991,7 @@
 
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
+        if (w.c.trickle) Run.main(true)
         w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
@@ -1422,6 +1423,7 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'waitCyto',      { stashed: true, label: 'waitCyto'    })
+        await this.i_actions_to_c(w, 'trickle',       { stashed: true, label: 'trickle'     })
 
         // < is this weird. Baroquely, an information channel in a button
         await wa.roai({ action: 1, role: 'status' }, {

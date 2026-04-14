@@ -63,8 +63,8 @@
 
     let { M } = $props()
     let V = {}
-    V.gone_debug = 1
-    V.cyto = 1
+    V.gone_debug = 0
+    V.cyto = 0
 
     onMount(async () => {
     await M.eatfunc({
@@ -257,7 +257,7 @@
     },
 
     _cyto_push(w: TheC, wave: TheC) {
-        console.log(`🌊 push dur:${wave.sc.duration}`
+        V.cyto && console.log(`🌊 push dur:${wave.sc.duration}`
             + ` abs:${!!wave.sc.absolute}`
             + ` tick:${(w.c.gn as any)?.sc.tick}`)
         w.o({ TheWave: 1 }).map(n => n.drop(n))
@@ -292,9 +292,7 @@
         w.c.cyto_Se ??= new Selection()
         const Se: Selection = w.c.cyto_Se
         // replace topD every tick: fresh .c.T; D/** (Dip, n_ref) preserved via resume_X
-        Se.sc.topD = await Se.r({ cyto_root: 1 })
-        let has_Dip = Se.sc.topD.o({ Dip: 'scanid' })[0] ? "has" : 'neu'
-                console.log(`cyto_scan()! ${has_Dip}`)
+        Se.sc.topD = await Se.r({ cyto_scannery: 1 })
         const topC: TheC = _C({ cyto_root: 1 })
         Se.c.scan_goners_by_id = new Map<string, TheD>()
 

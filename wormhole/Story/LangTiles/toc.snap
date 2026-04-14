@@ -5,11 +5,13 @@ story:LangTiles
       meta:is_compound,v
       meta:label,fmt:%s,keys:w
     matstyle:model
-      style:background-color,v:#b12f4a
+      style:background-color,v:#8f8f32
     matstyle:Bit
       style:background-color,v:#8e29d6
     matstyle:see
       style:background-color,v:#c5b759
+    matstyle:error
+      style:background-color,v:#298699
   TimeSpool
     TimeTotal:beliefs,avg:112.389
       sample:0.145,at:1776041031

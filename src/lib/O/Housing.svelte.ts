@@ -507,8 +507,8 @@ export class House extends StorableHousing {
     // Multiple rapid calls collapse into one think pass.
     // -------------------------------------------------------------------------
     main_throttle?: Function
-    main() {
-        if (this.c.no_ambient) return
+    main(ambient_anyway = false) {
+        if (this.c.no_ambient && !ambient_anyway) return
         this.main_throttle ||= throttle(() => {
             if (this.stopped) return
             const e = new TheC({ c: {}, sc: { elvis: 'think', Aw: '' } })
