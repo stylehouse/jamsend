@@ -5,7 +5,7 @@ story:LangTiles
       meta:is_compound,v
       meta:label,fmt:%s,keys:w
     matstyle:model
-      style:background-color,v:#2fb155
+      style:background-color,v:#29d638
     matstyle:Bit
       style:background-color,v:#8e29d6
     matstyle:see

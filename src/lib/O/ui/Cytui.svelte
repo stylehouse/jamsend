@@ -41,6 +41,7 @@
         matstyles  = styles_C?.o({ matstyle: 1 }) ?? []
         ms_palette = (H as any).MATSTYLE_PALETTE ?? []
         ms_shapes  = (H as any).MATSTYLE_SHAPES ?? []
+        if (!styles_C) console.log(`Cyto H:${H.name}.ave:  ${styles_C}`)
     })
     // the graph data channel - %cyto_graph,wave=
     $effect(() => {

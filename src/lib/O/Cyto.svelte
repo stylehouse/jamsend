@@ -109,11 +109,10 @@
         w.c.supports_takeTurns = !!req.sc.supports_takeTurns
         w.c.wants_wave_done      = !!req.sc.wants_wave_done
         w.c.wants_animation_done = !!req.sc.wants_animation_done
-
-        // No watch_c. Client drives all scans via Cyto_animation_request.
-        // < non-takeTurns clients, add a throttled watch_c here
-        //   with throttle() matching grawave_duration
-
+        if (w.c.Styles) {
+            const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
+            ave.i(w.c.Styles)
+        }
 
         console.log(`📡 Cyto commissioned by ${w.c.client_w?.sc.w ?? '?'}`
             + ` seek:${w.c.supports_seek} takeTurns:${w.c.supports_takeTurns}`

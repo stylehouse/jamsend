@@ -853,8 +853,6 @@
         const ave   = H.oai_enroll(H, { watched: 'ave' })
         // This appears in both w/* and ave
         ave.i(w.c.This)
-        // Styles go into ave for all UIs to read (from w/The/Styles)
-        ave.i(this.The_Styles(w))
         w.c.swatchC = ave.oai({ swatches: 1 })
         w.c.ave     = ave
 
@@ -871,6 +869,8 @@
         // req; watch_c on stylesC drives save-on-edit.
         const stylesC = this.The_Styles(w)
         H.watch_c(stylesC, () => H.story_save())
+        // Cyto puts its given commission%Styles into H.ave for us
+        
 
         // < this is possibly meant to be an i_elvis_req(), but pretending works too...
         let Run = H.o({H:1,Run:1})[0]
