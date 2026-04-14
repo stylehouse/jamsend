@@ -20,7 +20,7 @@
     import { _C, TheC } from "$lib/data/Stuff.svelte"
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
-    import { onMount } from "svelte"
+    import { onMount, tick } from "svelte"
 
     import Langui from "$lib/O/ui/Langui.svelte"
     import type { House } from "$lib/O/Housing.svelte";
@@ -49,9 +49,9 @@
 
         const wa = H.oai_enroll(H, { watched: 'actions' })
         wa.oai({ action: 1, role: 'debookmark'   },
-             { label: '-marks', fn: () => this.Lang_debookmark(A,w) })
+             { label: '-marks', fn: () => this.Lang_debookmark(w) })
         wa.oai({ action: 1, role: 'enbookmark'   },
-             { label: '+marks', fn: () => this.test__couple_of_bookmarks(A,w) })
+             { label: '+marks', fn: () => this.Lang_enbookmark(w) })
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
@@ -109,6 +109,7 @@ S o yeses/because/blon_itn
     },
 
 //#region w:Lang
+    // is actually w:LangTiles, the test, for now calling this.
     async Lang(A: TheC, w: TheC) {
         const H = this
  
@@ -149,11 +150,25 @@ S o yeses/because/blon_itn
 
     // onMount() ONLY, automate the test
     async e_Lang_editorBegins(A,w,e) {
-        if (w.c.editorState) throw new Error("Editor state already set");
+        w.c.addBookmarkMark = e.sc.addBookmarkMark
         w.c.editorState = e.sc.state
         w.c.editorView = e.sc.view
+        // this.post_do(async () => {
+            await this.test__couple_of_bookmarks(A,w)
+        // },{ see: 'onMount test__couple_of_bookmarks'})
+    },
+
+    async Lang_enbookmark(w) {
+        const view = w.c.editorView
+        this.elvisto('LangTiles/LangTiles', 'test__couple_of_bookmarks')
+    },
+    async Lang_debookmark(w) {
+        await w.r({ bookmark: 1 },{})
+        // < dispatch a clearAllBookmarks StateEffect to the editor, then drop the rows.
+        this.elvisto(w, 'think', {})
+    },
+    async e_test__couple_of_bookmarks(A,w,e) {
         await this.test__couple_of_bookmarks(A,w)
-        
     },
     async test__couple_of_bookmarks(A,w) {
         // Get the editor view from the state
@@ -162,40 +177,33 @@ S o yeses/because/blon_itn
         // view =  w.c.editorState?.field(EditorView) as EditorView | undefined;
         if (!view) throw new Error("No editor view found");
         await new Promise((resolve) => setTimeout(resolve, 30));
+        await tick();
 
-        // Function to simulate Ctrl+B key press
-        const simulateCtrlB = () => {
-            const event = new KeyboardEvent("keydown", {
-                key: "b",
-                ctrlKey: true,
-                bubbles: true,
+        // Function to add a bookmark via elvis
+        const addBookmark = (from, to) => {
+            const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
+            this.elvisto('LangTiles/LangTiles', 'langtiles_add_bookmark', {
+                from,
+                to,
+                label,
+                view,
+                state: view.state,
             });
-            view.dom.dispatchEvent(event);
         };
 
-        // Set selection to 38..51
+        // Add first bookmark (38..51)
         view.dispatch({
             selection: { anchor: 38, head: 51 },
         });
+        await tick();
+        addBookmark(38, 51);
 
-        // Simulate Ctrl+B
-        simulateCtrlB();
-
-        // Wait for the next tick (to allow the bookmark to be added)
-        await new Promise((resolve) => setTimeout(resolve, 0));
-
-        // Set selection to 55
+        // Add second bookmark (55..55)
         view.dispatch({
             selection: { anchor: 55, head: 55 },
         });
-
-        // Simulate Ctrl+B again
-        simulateCtrlB();
-    },
-
-    async Lang_debookmark(w) {
-        await w.r({ bookmark: 1 },{})
-        this.elvisto(w, 'think', {})
+        await tick();
+        addBookmark(55, 55);
     },
 
     async e_langtiles_set_doc(A: TheC, w: TheC, e: TheC) {
@@ -223,18 +231,33 @@ S o yeses/because/blon_itn
     //
     // e.sc carries: from, to, label?, editorState
     async e_langtiles_add_bookmark(A: TheC, w: TheC, e: TheC) {
-        if (!A.sc.A) debugger
-        const from  = e?.sc.from  as number | undefined
-        const to    = e?.sc.to    as number | undefined
-        const label = (e?.sc.label as string | undefined) ?? ''
-        const state = e?.sc.state
-        if (from == null || to == null) return
- 
-        const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
-        w.i({ bookmark: id, from, to, label })
-        if (state) w.c.editorState = state
-        console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${label}`)
-        this.elvisto(w, 'think', {})
+        let from  = e?.sc.from  as number | undefined;
+        let to    = e?.sc.to    as number | undefined;
+        const label = (e?.sc.label as string | undefined) ?? '';
+        const view  = e?.sc.view  as EditorView | undefined;
+        const state = e?.sc.state as EditorState | undefined;
+
+        if (from == null || to == null || !view || !state) {
+            console.warn("Missing required fields in e_langtiles_add_bookmark");
+            return;
+        }
+        if (from === to) {
+            const line = view.state.doc.lineAt(from);
+            from = line.from;
+            to = line.to;
+        }
+
+        // Add the bookmark to the editor
+        const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+        view.dispatch({
+            effects: w.c.addBookmarkMark.of({ id, from, to }),
+        });
+
+        // Update the backend
+        w.i({ bookmark: id, from, to, label });
+        w.c.editorState = state;
+        console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${label}`);
+        this.elvisto(w, 'think', {});
     },
 
 

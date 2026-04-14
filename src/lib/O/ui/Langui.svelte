@@ -129,17 +129,18 @@
     const ctrlB = keymap.of([{
         key: 'Mod-b',
         run: (view) => {
-            const sel = view.state.selection.main
-            let from = sel.from, to = sel.to
-            if (from === to) {
-                const line = view.state.doc.lineAt(from)
-                from = line.from; to = line.to
-            }
-            const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`
-            const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ')
-            view.dispatch({ effects: addBookmarkMark.of({ id, from, to }) })
-            Lang_i_elvis(view,'langtiles_add_bookmark', {from, to, label})
-            return true
+            const sel = view.state.selection.main;
+            let from = sel.from, to = sel.to;
+            const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
+            // Dispatch a fake elvis to e_langtiles_add_bookmark
+            Lang_i_elvis(view,'langtiles_add_bookmark', {
+                from,
+                to,
+                label,
+                view,
+                state: view.state,
+            });
+            return true;
         },
     }])
 
@@ -181,7 +182,7 @@
         });
 
         // Dispatch e:editorBegins with the initial editorState
-        Lang_i_elvis(view,'Lang_editorBegins', {})
+        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark})
     });
 
     onDestroy(() => {
