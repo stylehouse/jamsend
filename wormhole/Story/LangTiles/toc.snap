@@ -16,6 +16,9 @@ story:LangTiles
       style:background-color,v:#bc2476
     matstyle:Line
       style:background-color,v:#61bd42
+      style:width,v:46
+      style:height,v:46
+      style:color,v:#000
     matstyle:node
       style:background-color,v:#534ed0
     matstyle:texts

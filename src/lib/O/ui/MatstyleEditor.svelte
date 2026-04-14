@@ -101,9 +101,9 @@
                 <!-- ── add row: only options not yet engaged ─────────── -->
                 <div class="ms-add-row">
                     {#if !eng_bg}     <button class="ms-add" onclick={() => on_update(key, 'bg', palette[0] ?? '#888')}>+ bg</button>{/if}
-                    {#if !eng_color}  <button class="ms-add" onclick={() => on_update(key, 'color', '#ccc')}>+ color</button>{/if}
+                    {#if !eng_color}  <button class="ms-add" onclick={() => on_update(key, 'color', '#fff')}>+ color</button>{/if}
                     {#if !eng_shape}  <button class="ms-add" onclick={() => on_update(key, 'shape', 'rectangle')}>+ shape</button>{/if}
-                    {#if !eng_size}   <button class="ms-add" onclick={() => on_update(key, 'size', 20)}>+ size</button>{/if}
+                    {#if !eng_size}   <button class="ms-add" onclick={() => on_update(key, 'size', 24)}>+ size</button>{/if}
                     {#if !eng_border} <button class="ms-add" onclick={() => on_update(key, 'border_width', 1)}>+ border</button>{/if}
                     {#if !eng_compd}  <button class="ms-add" onclick={() => on_update(key, 'is_compound', 1)}>+ compound</button>{/if}
                     {#if !eng_label}  <button class="ms-add" onclick={() => on_update(key, 'label_keys', key)}>+ label</button>{/if}
