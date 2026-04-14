@@ -3,13 +3,13 @@
     //
     // ── Bookmark pipeline ────────────────────────────────────────────────────
     //
-    //   Ctrl+M at cursor/selection → addBookmarkMark StateEffect → bookmarkField
+    //   Ctrl+B at cursor/selection → addBookmarkMark StateEffect → bookmarkField
     //   installs a Decoration.mark carrying its bookmark_id. The field's
     //   marks.map(tr.changes) in update() automatically remaps from/to on
     //   every subsequent edit (RangeSet is the source of truth for positions).
     //
     //   On each dispatch we fire an elvis to w:LangTiles:
-    //     - Ctrl+M:           langtiles_add_bookmark {from,to,label,editorState}
+    //     - Ctrl+B:           langtiles_add_bookmark {from,to,label,editorState}
     //     - 800ms post-edit:  langtiles_update_bookmarks {updates,editorState}
     //     - any text change:  langtiles_set_doc       {text}
     //
@@ -193,7 +193,7 @@
 <div class="lte">
     <div class="lte-bar">
         <span class="lte-title">LangTiles editor</span>
-        <span class="lte-hint">Ctrl+M — add mark</span>
+        <span class="lte-hint">Ctrl+B — add mark</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC?.sc.text as string ?? '').length} chars</span>
     </div>

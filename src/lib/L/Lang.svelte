@@ -43,7 +43,7 @@
 
         // UI registration — Otro mounts this alongside Cytui for H:LangTiles
         const uis = H.oai_enroll(H, { watched: 'UIs' })
-        uis.oai({ UI: 'LangTilesEditor', component: LangTilesEditor })
+        uis.oai({ UI: 'LangTilesEditor', component: Langui })
 
         const wa = H.oai_enroll(H, { watched: 'actions' })
         wa.oai({ action: 1, role: 'debookmark'   }, { label: '-marks',  cls: 'save',   fn: () => this.Lang_debookmark(w)  })
@@ -160,7 +160,7 @@ S o yeses/because/blon_itn
     },
 
 //#region e
-    // Ctrl+M from the editor — create a w/%bookmark at the current selection.
+    // Ctrl+B from the editor — create a w/%bookmark at the current selection.
     //
     // The editor marks the range with a CodeMirror Decoration.mark so from/to
     // track document edits automatically. Periodic e_langtiles_update_bookmarks
