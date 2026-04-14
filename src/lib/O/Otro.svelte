@@ -177,6 +177,8 @@
         }
         seen_ips = current_ips
 
+        console.log(`newcomers: ${newcomers.join(' - ')}`)
+
         if (!gazed || restored_once) return
         if (Date.now() > restore_deadline) return
         if (!newcomers.includes(gazed)) return
@@ -204,6 +206,7 @@
             chase_ms?: number
             chase_interval_ms?: number
             drift_px?: number
+            still_ms?: number
         } = {},
     ) {
         const interval_ms       = opts.interval_ms       ?? 50
@@ -212,6 +215,7 @@
         const chase_ms          = opts.chase_ms          ?? 1500
         const chase_interval_ms = opts.chase_interval_ms ?? 100
         const drift_px          = opts.drift_px          ?? 5
+        const still_ms          = opts.still_ms          ?? 500
 
         let prev: number | null = null
         let attempts = 0
@@ -254,7 +258,8 @@
             // (smooth scroll is async, so sample after a tick)
             let last_scroll_y = window.scrollY
             let user_scrolled = false
-            let chase_start = Date.now()
+            const chase_start = Date.now()
+            let last_drift_t = Date.now()       // ← last time target moved
 
             // Settle our baseline a moment after scrollTo fires
             setTimeout(() => { last_scroll_y = window.scrollY }, chase_interval_ms)
@@ -262,19 +267,16 @@
             const chase_tick = () => {
                 if (user_scrolled) return
                 if (Date.now() - chase_start > chase_ms) return
+                if (Date.now() - last_drift_t > still_ms) return   // ← bail if still
 
-                // detect user scroll: if scrollY changed but we didn't cause it
                 const dy = Math.abs(window.scrollY - last_scroll_y)
-                if (dy > drift_px) {
-                    // could be our smooth scroll still animating, or user
-                    // — we update last_scroll_y and keep watching target drift
-                    last_scroll_y = window.scrollY
-                }
+                if (dy > drift_px) last_scroll_y = window.scrollY
 
                 const v = fn()
                 if (v != null && Math.abs(v - (prev ?? v)) > drift_px) {
                     // target drifted — re-scroll, update prev
                     prev = v
+                    last_drift_t = Date.now()                       // ← drift resets timer
                     scroll_to()
                     setTimeout(() => { last_scroll_y = window.scrollY }, chase_interval_ms)
                 }

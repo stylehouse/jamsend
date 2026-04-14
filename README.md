@@ -78,13 +78,13 @@ Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Thi
 
 ### Stuff
 
-*TheC* is a piece (C) of the computer's mind, and is posited as the standard linguistic item you should believe in. It is the set of properties on the thing (philosophically, not the *Thing* mentioned above). There's an upper (C.sc) and lower (C.c) hemisphere, supposing the user is up and the machine is down. C.c is for esoteric hacks for very nearby machinery, C.sc is for everything you'd ever want to see easily.
+*TheC* is a piece (C) of the computer's mind, and is posited as the standard linguistic item you should believe in. It is the set of properties on the thing (philosophically, not the *Thing* mentioned above). There's an upper (C.sc) and lower (C.c) hemisphere, supposing the user is up and the machine is down. C.c is for esoteric hacks for very nearby machinery, C.sc is for everything you'd ever want to see, one way or another.
 
-*TheC* extends *Stuff*, which allows them to contain each other (eg C/C, C/C/C, etc), and thus insert (C.i({props:1})) and select (.o({props:1})) them. Sets of them get replaced ongoingly, which usually resolves which is which and resumes|re-attaches their /*, eg C/C/C that C/C had before it was re-inserted empty.
+*TheC* extends *Stuff*, which allows them to contain each other (eg C/C, C/C/C, etc), and thus insert (C.i({props:1})) and select (C.o({props:1})) them. There's a way replace subsets of them ongoingly, which usually resolves which is which so they can know their history by simply containing what they did before, so they magically aren't re-inserted empty though it looks like it until the replace finishes. This is an important trick to making code easy.
 
-We can note (in comments and spec (so far)) the name of a C variable, and some relevant structure and properties like so:
+We can note the name of a C variable, and some relevant structure and properties like so:
 
-``D%nib=dir`` is probably in a tree of D**, its .sc.nib='dir'
+``D%nib=dir`` is probably in a tree of D**, and its nib is dir.
 
 ``%record/*%preview`` is the many %preview inside a %record
 
