@@ -447,10 +447,20 @@
             const dm = this.ms_meta(ms, 'dose')
             if (dm) dm.sc[sub] = Number(value)
         }
-    
+
         ms.bump_version()
         stylesC.bump_version()   // watch_c on stylesC will pick this up for save
-        this.matstyle_restyle(cyto_w, stylesC, key)
+
+        // restyle every Cyto using this stylesC
+        const H = this as House
+        for (const house of H.top_House().all_House) {
+            for (const cw of house.o({A:'Cyto'}).flatMap(A => A.o({w:'Cyto'}))) {
+                if (cw.c.Styles === stylesC) {
+                    console.log(`matstyle_restyle: ${house.name}/Cyto ${key}`)
+                    house.matstyle_restyle(cw, stylesC, key)
+                }
+            }
+        }
     },
 
 //#endregion
