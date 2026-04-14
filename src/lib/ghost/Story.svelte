@@ -1367,7 +1367,7 @@
         const bname = (this.o({ A: 'Story' })[0] as TheC | undefined)
             ?.o({ w: 'Story' })[0]?.sc.Book as string | undefined
         topH.elvisto('Auto/Auto', 'resetStory', bname ? { Book: bname } : {})
-        console.log(`🔄 ${this.name} reset`)
+        console.log(`Otro: 🔄 ${this.name}/${bname} story_reset`)
     },
 
 

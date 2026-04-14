@@ -39,6 +39,7 @@
 
         H.may_begin()
 
+        // < drop this?
         setTimeout(() => {
             houses = H.all_House
         },1)
@@ -92,13 +93,35 @@
             && h.c.ip.split('_').length === depth + 1
         )
     }
+    
+    // walk up from a house collecting names, excluding the root Mundo
+    function house_path(house): string {
+        const parts: string[] = []
+        let h = house
+        while (h?.up) {          // stop before the root
+            parts.unshift(h.name)
+            h = h.up
+        }
+        return parts.join('/')
+    }
+
+    // find current house matching a stored path
+    function house_by_path(path: string) {
+        if (!path) return undefined
+        const parts = path.split('/')
+        let h = H              // start from root Mundo
+        for (const name of parts) {
+            h = h?.subHouses?.find(c => c.name === name)
+            if (!h) return undefined
+        }
+        return h
+    }
 
     function scrollToHouseIdx(idx: number) {
         if (idx < 0 || idx >= houses.length) return
         const house = houses[idx]
-        // remember where we gazed — persists across reload
-        if (H?.stashed && house?.c?.ip) {
-            H.stashed.gazed_house_ip = house.c.ip
+        if (H?.stashed && house) {
+            H.stashed.gazed_house_path = house_path(house)
         }
         _scrollToHouseEl(house, idx)
     }
@@ -141,35 +164,26 @@
     let restore_deadline = 0          // Date.now() ms; 0 = not restoring
     let restored_once = false          // don't chase the same ip forever
 
-    function open_restore_window() {
-        restore_deadline = Date.now() + RESTORE_WINDOW_MS
-        restored_once = false
-    }
-
+    // Mundo start: open window once
     $effect(() => {
         if (!H?.started) return
-        // Mundo just started — open the restore window
-        open_restore_window()
-    })
-
-    // Watch H.todo for resetStory elvises — reopen the restore window when
-    // a book is being re-activated, so the newly-spawning Story gets sought.
-    $effect(() => {
-        if (!H?.todo) return
-        for (const e of H.todo) {
-            if (e.sc?.elvis === 'resetStory' || e.sc?.elvis === 'activateBook') {
-                open_restore_window()
-                break
-            }
-        }
+        H.c.restore_window_until = Date.now() + RESTORE_WINDOW_MS
+        restored_once = false
     })
 
     // Whenever the houses list changes, note new ips and maybe seek the gazed one.
+    let last_seen_deadline = 0
     $effect(() => {
         if (!houses?.length) return
-        const gazed = H?.stashed?.gazed_house_ip as string | undefined
+        const gazed_path = H?.stashed?.gazed_house_path as string | undefined
+        const deadline = H?.c?.restore_window_until ?? 0
 
-        // detect newcomers (first render counts everything as new)
+        // new window opened since we last looked — reset
+        if (deadline > last_seen_deadline) {
+            last_seen_deadline = deadline
+            restored_once = false
+        }
+
         const current_ips = new Set(houses.map(h => h.c?.ip).filter(Boolean))
         const newcomers: string[] = []
         for (const ip of current_ips) {
@@ -177,17 +191,17 @@
         }
         seen_ips = current_ips
 
-        console.log(`newcomers: ${newcomers.join(' - ')}`)
+        if (!gazed_path || restored_once) return
+        if (Date.now() > deadline) return
+        if (!newcomers.length) return
 
-        if (!gazed || restored_once) return
-        if (Date.now() > restore_deadline) return
-        if (!newcomers.includes(gazed)) return
+        const target = house_by_path(gazed_path)
+        if (!target || !newcomers.includes(target.c.ip)) return
 
-        // the gazed house has just appeared — seek to it
         restored_once = true
         setTimeout(async () => {
             await tick()
-            scrollToHouseIpStable(gazed)
+            scrollToHouseIpStable(target.c.ip)
         }, 50)
     })
 

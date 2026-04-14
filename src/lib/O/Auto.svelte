@@ -213,6 +213,8 @@
     auto_reset_story(bname: string) {
         const H = this as House
         console.log(`🔄 auto_reset_story → ${bname}`)
+        // signal Otro to re-open its restore window
+        H.top_House().c.restore_window_until = Date.now() + 3000
 
         // stop + drop existing H:Story if present
         const existing = H.o({ H: 'Story' })[0] as House | undefined
@@ -235,17 +237,6 @@
             S.elvisto(S, 'think')
             console.log(`▶ Story subHouse created for ${bname}`)
         }, { see: `activate ${bname}` })
-    },
-
-    // elvis: resetStory — from LibraryRun button or external caller
-    // Activates the named book (or the currently active one if Book not supplied).
-    async e_resetStory(A: TheC, w: TheC, e: TheC) {
-        const H  = this as House
-        const Li = w.oai({ Library: 1 })
-        const bname = (e?.sc.Book as string)
-            ?? Li.o({ Book: 1 }).find(b => b.sc.active)?.sc.Book as string
-        if (!bname) return
-        H.auto_reset_story(bname)
     },
 
 //#region Story stats sync
