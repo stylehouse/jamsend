@@ -39,6 +39,12 @@
     const UPDATE_DELAY_MS = 800
     let update_timer: ReturnType<typeof setTimeout> | null = null
 
+    // Live primary-selection range, updated from the updateListener on every
+    // transaction (selection-only transactions included, so cursor moves
+    // update the header readout immediately).
+    let sel_from = $state(0)
+    let sel_to   = $state(0)
+
     // Find the doc C on H.ave. Same pattern as StoryRun's display effect.
     let docC: TheC | undefined = $state()
     let pullable_text = $derived.by(() => {
@@ -162,6 +168,9 @@
                     bookmarkField,
                     ctrlB,
                     EditorView.updateListener.of(u => {
+                        const sel = u.state.selection.main
+                        sel_from = sel.from
+                        sel_to   = sel.to
                         if (!u.docChanged) return
                         const text = u.state.doc.toString()
                         // push text change only — no editorState here.
@@ -184,6 +193,8 @@
 <div class="lte">
     <div class="lte-bar">
         <span class="lte-title">LangTiles editor</span>
+        <span class="lte-hint">Ctrl+M — add mark</span>
+        <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC?.sc.text as string ?? '').length} chars</span>
     </div>
     <div class="lte-cm" bind:this={container}></div>
@@ -204,6 +215,7 @@
     }
     .lte-title { color: #7ab0d4; }
     .lte-hint  { flex: 1; color: #3a3a3a; font-style: italic; }
+    .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
     .lte-cm    { min-height: 200px; max-height: 50vh; overflow: auto; }
     .lte-cm :global(.cm-editor)  { height: 100%; background: transparent; }
