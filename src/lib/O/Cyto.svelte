@@ -105,8 +105,9 @@
         w.c.Scannable          = req.sc.Scannable as TheC
         w.c.Styles             = req.sc.Styles as TheC | null
         w.c.client_w           = req.sc.client_w as TheC | undefined
-        w.c.supports_seek      = !!req.sc.supports_seek
-        w.c.supports_takeTurns = !!req.sc.supports_takeTurns
+        w.c.supports_constraints = !!req.sc.supports_constraints
+        w.c.supports_seek        = !!req.sc.supports_seek
+        w.c.supports_takeTurns   = !!req.sc.supports_takeTurns
         w.c.wants_wave_done      = !!req.sc.wants_wave_done
         w.c.wants_animation_done = !!req.sc.wants_animation_done
         if (w.c.Styles) {

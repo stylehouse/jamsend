@@ -31,6 +31,10 @@ story:LangTiles
       style:background-color,v:#bbdb43
     matstyle:bookmark_edge
       style:background-color,v:#32618f
+    matstyle:constraint
+      style:background-color,v:#b12f4a
+    matstyle:edge
+      style:background-color,v:#29d638
   TimeSpool
     TimeTotal:beliefs,avg:112.389
       sample:0.145,at:1776041031

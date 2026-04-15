@@ -86,6 +86,7 @@
             Scannable:            w.c.model,
             Styles:               stylesC,
             client_w:             w,
+            supports_constraints: true,
             supports_seek:        false,
             supports_takeTurns:   false,
             wants_wave_done:      false,
@@ -145,6 +146,7 @@ S o yeses/because/blon_itn
         model.empty()
         if (state && bookmarks.length) {
             this.whatsthis(state,model,bookmarks)
+            this.wherewhatis(model)
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
@@ -199,6 +201,7 @@ S o yeses/because/blon_itn
     },
 
 
+//#region walk
 
     // whatsthis_into — dedup-friendly walker.
     //
@@ -304,6 +307,108 @@ S o yeses/because/blon_itn
             }
         }
     },
+
+//#region align
+// wherewhatis(model: TheC): void
+// Traverses the model, adds alignment constraints, and sets up text-node edges.
+
+    // --- Main Traversal: wherewhatis ---
+    wherewhatis(model: TheC) {
+        // 1. Collect all Lines in the model
+        const lines = model.o({ Line: 1 }) as TheC[];
+
+        for (const line of lines) {
+            // 2. Collect text segments and nodes under this Line
+            const textSegments = line.o({ text: 1 }) as TheC[];
+            const nodes = line.o({ node: 1 }) as TheC[];
+
+            // 3. Add vertical alignment constraint for the Line itself
+            this.addAlignmentConstraint(model, [line], "vertical", "alignment");
+
+            // 4. Add horizontal alignment constraint for text segments
+            if (textSegments.length > 1) {
+                this.addAlignmentConstraint(model, textSegments, "horizontal", "alignment");
+            }
+
+            // 5. Position nodes above their corresponding text
+            //    (Assuming textSegments and nodes are ordered by `from` position)
+            for (let i = 0; i < Math.min(textSegments.length, nodes.length); i++) {
+                const textNode = textSegments[i];
+                const node = nodes[i];
+
+                // Add edge between text node and specific descendant node
+                // (e.g., only connect to "S" for "Sunpit")
+                if (node.sc.str?.includes("Sunpit") && textNode.sc.str?.startsWith("S")) {
+                    this.addTextNodeEdge(model, textNode, node, "S");
+                } else if (node.sc.str?.includes("IOpath") && textNode.sc.str?.includes("/")) {
+                    this.addTextNodeEdge(model, textNode, node, "/");
+                } else {
+                    // Default: connect to the node itself
+                    this.addTextNodeEdge(model, textNode, node);
+                }
+
+                // Add vertical alignment constraint for node above text
+                this.addAlignmentConstraint(model, [node, textNode], "vertical", "relativePlacement", 16);
+            }
+        }
+
+        // 6. Add global horizontal alignment for all Lines
+        if (lines.length > 1) {
+            this.addAlignmentConstraint(model, lines, "horizontal", "alignment");
+        }
+    },
+
+    // --- Alignment Constraint Helpers ---
+    addAlignmentConstraint(
+        model: TheC,
+        nodes: TheC[],
+        axis: "horizontal" | "vertical",
+        type: "alignment" | "relativePlacement",
+        gap?: number
+    ) {
+        const constraintType = type === "alignment" ? "alignmentConstraint" : "relativePlacementConstraint";
+        const constraint = model.oai({
+            constraint: 1,
+            type: constraintType,
+            axis,
+            gap: gap ?? 32,
+        });
+
+        if (type === "alignment") {
+            constraint.sc.nodes = nodes.map(n => n.sc.cyto_id);
+        } else {
+            // For relativePlacement, specify top/bottom/left/right
+            constraint.sc[axis === "vertical" ? "top" : "left"] = nodes[0].sc.cyto_id;
+            constraint.sc[axis === "vertical" ? "bottom" : "right"] = nodes[nodes.length - 1].sc.cyto_id;
+        }
+    },
+
+    // --- Text-Node Edge Helper ---
+    addTextNodeEdge(
+        model: TheC,
+        textNode: TheC,
+        node: TheC,
+        label: string = "te"
+    ) {
+        model.oai({
+            edge: 1,
+            source: textNode,
+            target: node,
+            label,
+            style: { "line-color": "#4488ff", width: 1.2, "curve-style": "bezier" },
+        });
+    },
+
+
+
+
+
+
+
+
+
+
+
 
 //#region bm
     // onMount() ONLY, automate the test
