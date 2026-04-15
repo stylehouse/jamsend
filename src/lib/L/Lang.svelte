@@ -108,47 +108,7 @@ S o yeses/because/blon_itn
 `
     },
 
-//#region w:Lang
-    // is actually w:LangTiles, the test, for now calling this.
-    async Lang(A: TheC, w: TheC) {
-        const H = this
- 
-        if (!w.c.plan_done) this.Lang_plan(A,w)
- 
-        const model     = w.c.model as TheC
-        const state     = w.c.editorState
-        const bookmarks = w.o({ bookmark: 1 }) as TheC[]
- 
-        // Rebuild model from bookmarks. Each bookmark gets its own
-        // {bookmark_view:1, bookmark_id, label, from, to} subcontainer and
-        // whatsthis() scopes its tree walk to the bookmark's from..to range.
-        //
-        // Runs whenever editorState is present (ie. at least one bookmark
-        // has been added or the doc has been updated since). If there are
-        // no bookmarks yet, the model is left alone — no bookmarks = nothing
-        // to show.
-        model.empty()
-        if (state && bookmarks.length) {
-            for (const bm of bookmarks) {
-                const sub = model.i({
-                    bookmark_view: 1,
-                    bookmark_id:   bm.sc.bookmark,
-                    label:         bm.sc.label,
-                    from:          bm.sc.from,
-                    to:            bm.sc.to,
-                })
-                this.whatsthis(state, sub, {
-                    from: bm.sc.from as number,
-                    to:   bm.sc.to   as number,
-                })
-            }
-        }
- 
-        w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
-        H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
-    },
-
-    // onMount() ONLY, automate the test
+//#region e
     async e_Lang_editorBegins(A,w,e) {
         w.c.addBookmarkMark = e.sc.addBookmarkMark
         w.c.clearAllBookmarks = e.sc.clearAllBookmarks
@@ -158,6 +118,195 @@ S o yeses/because/blon_itn
             await this.test__couple_of_bookmarks(A,w)
         // },{ see: 'onMount test__couple_of_bookmarks'})
     },
+    async e_langtiles_set_doc(A: TheC, w: TheC, e: TheC) {
+        if (!A.sc.A) debugger
+        const docC = w.c.docC as TheC | undefined
+        if (!docC) return
+        const text = e?.sc.text as string | undefined
+        if (text == null) return
+        if (docC.sc.text === text) return
+        docC.sc.text = text
+        docC.bump_version()
+        // no main() — UI initiated this, no one else needs waking
+    },
+//#region w:Lang
+    // is actually w:LangTiles, the test, for now calling this.
+    async Lang(A: TheC, w: TheC) {
+        const H = this
+
+        if (!w.c.plan_done) this.Lang_plan(A, w)
+
+        const model     = w.c.model as TheC
+        const state     = w.c.editorState
+        const bookmarks = w.o({ bookmark: 1 }) as TheC[]
+
+        // we do our best to send Cyto's Se1 a Line%* that trace all bookmark ids in it.
+        //  so it can notice when Line 3 becomes Line 4 upon the user hitting enter
+        model.empty()
+        if (state && bookmarks.length) {
+            this.whatsthis(state,model,bookmarks)
+        }
+
+        w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
+        H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+    },
+
+    whatsthis(state:EditorState,model:TheC,bookmarks:TheC[]) {
+        // First pass: walk the syntax tree for each bookmark.
+        // whatsthis_into() finds-or-creates Line / node / text
+        // at stable addresses on `model` so duplicate bookmarks
+        // collapse onto the same particles.
+        for (const bm of bookmarks) {
+            const bm_id = bm.sc.bookmark as string
+            const bm_key = `the_bm_${bm_id}`
+            this.whatsthis_into(state, model, {
+                from:  bm.sc.from as number,
+                to:    bm.sc.to   as number,
+                bm_id,
+                bm_key,
+                bm,
+            })
+        }
+
+        // Second pass: edge each bookmark to every Line it touches.
+        // Lines carry the_bm_${id}:1 tags from whatsthis_into, so we
+        // can find them by tag without re-walking the tree.
+        for (const bm of bookmarks) {
+            const bm_id = bm.sc.bookmark as string
+            const bm_key = `the_bm_${bm_id}`
+            // mirror the bookmark itself into the model so Cyto can
+            // treat it as a node (and as edge endpoint)
+            const bmC = model.oai({
+                bookmark_node: 1,
+                bm_id,
+                label: bm.sc.label ?? '',
+                from:  bm.sc.from,
+                to:    bm.sc.to,
+            })
+            const Lines = model.o({ Line: 1 }).filter((L: TheC) => L.sc[bm_key])
+            for (const L of Lines) {
+                model.oai({
+                    bookmark_edge: 1,
+                    bm_id,
+                    the_line_from: L.sc.Line,
+                }, {
+                    source: bmC,
+                    target: L,
+                    label:  '@',
+                })
+            }
+        }
+    },
+
+
+
+    // whatsthis_into — dedup-friendly walker.
+    //
+    // Unlike the old whatsthis() which did bare .i() into a per-bookmark
+    // subcontainer, this one uses oai() with stable keys so repeat walks
+    // (same syntax span seen by two bookmarks) converge on the same TheC.
+    //
+    // Line addressing: {Line: from}  — doc position is the natural identity.
+    // node addressing: {node: name, from, to} under its Line.
+    // text addressing: {text: 1, from, to} under its Line.
+    //
+    // The bm_key tag (the_bm_${id}:1) is stamped on every Line this bookmark
+    // touches, so multiple bookmarks on one Line coexist as multiple tags.
+    whatsthis_into(
+        state: EditorState,
+        model: TheC,
+        opt: { from: number, to: number, bm_id: string, bm_key: string, bm: TheC },
+    ) {
+        const tree = syntaxTree(state)
+        if (!tree || tree.length === 0) return
+
+        const doc = state.doc
+
+        // Walk Line-by-Line. tree.iterate() with a range enters Lines whose
+        // span intersects [from..to]. For each Line we gather its nodes +
+        // text-boundary splits locally, then i() them as Line/node, Line/text.
+        //
+        // Two parallel sequences under each Line, both ordered by `from`:
+        //   Line/node:Foo, Line/node:Bar, ...
+        //   Line/text:{...}, Line/text:{...}, ...
+        //
+        // We don't nest nodes structurally here (flat under Line) — that
+        // matches the request's "Line/node:Sunpitness/node:IOpath" ideal
+        // being a later extension, while keeping dedup trivial for now.
+
+        // Collect Lines in range first so we can set up per-Line boundary sets.
+        const line_entries: Array<{ line_from: number, line_to: number }> = []
+        tree.iterate({
+            from: opt.from,
+            to:   opt.to,
+            enter: (ref) => {
+                if (ref.name === 'Line') {
+                    line_entries.push({ line_from: ref.from, line_to: ref.to })
+                }
+            },
+        })
+
+        // Handle the degenerate case where the selection is zero-width and
+        // falls between Lines — fall back to the containing Line.
+        if (!line_entries.length) {
+            const line = doc.lineAt(opt.from)
+            line_entries.push({ line_from: line.from, line_to: line.to })
+        }
+
+        for (const { line_from, line_to } of line_entries) {
+            const LineC = model.oai({ Line: line_from, line_to })
+            // Tag this Line with the bookmark id — may already be tagged by
+            // a prior bookmark. Tags come and go across ticks via replace().
+            LineC.sc[opt.bm_key] = 1
+            LineC.bump_version()
+
+            // Gather syntax nodes + text boundaries within this Line.
+            const boundaries = new Set<number>([line_from, line_to])
+            const syntax_hits: Array<{ name: string, from: number, to: number, parent_name?: string }> = []
+
+            tree.iterate({
+                from: line_from,
+                to:   line_to,
+                enter: (ref) => {
+                    const { name, from, to } = ref
+                    if (name === 'Program' || name === 'Line') return
+                    const str = doc.sliceString(from, to)
+                    if (!str.trim()) return
+                    boundaries.add(from)
+                    boundaries.add(to)
+                    const parent = ref.node.parent
+                    syntax_hits.push({
+                        name, from, to,
+                        parent_name: (parent && parent.name !== 'Line' && parent.name !== 'Program')
+                            ? parent.name : undefined,
+                    })
+                },
+            })
+
+            // i() nodes under Line with stable keys for dedup across bookmarks.
+            for (const h of syntax_hits) {
+                const nodeC = LineC.oai({ node: h.name, from: h.from, to: h.to })
+                const s = doc.sliceString(h.from, h.to)
+                if (s.length <= 120 && nodeC.sc.str == null) nodeC.sc.str = s
+                if (h.parent_name && nodeC.sc.parent_name == null) {
+                    nodeC.sc.parent_name = h.parent_name
+                }
+            }
+
+            // text segments between boundaries, also direct children of Line.
+            const sorted = [...boundaries].sort((a, b) => a - b)
+            for (let i = 0; i < sorted.length - 1; i++) {
+                const f = sorted[i], t = sorted[i + 1]
+                const s = doc.sliceString(f, t)
+                if (!s.trim()) continue
+                const tC = LineC.oai({ text: 1, from: f, to: t })
+                if (tC.sc.str == null) tC.sc.str = s
+            }
+        }
+    },
+
+//#region bm
+    // onMount() ONLY, automate the test
 
     async Lang_enbookmark(w) {
         const view = w.c.editorView
@@ -210,23 +359,8 @@ S o yeses/because/blon_itn
         addBookmark(55, 55);
     },
 
-    async e_langtiles_set_doc(A: TheC, w: TheC, e: TheC) {
-        if (!A.sc.A) debugger
-        const docC = w.c.docC as TheC | undefined
-        if (!docC) return
-        const text = e?.sc.text as string | undefined
-        if (text == null) return
-        // editorState no longer flows through this event — the bookmark
-        // add/update events are the sole carriers, because whatsthis() only
-        // runs on bookmark scopes now. See e_langtiles_add_bookmark /
-        // e_langtiles_update_bookmarks.
-        if (docC.sc.text === text) return
-        docC.sc.text = text
-        docC.bump_version()
-        // no main() — UI initiated this, no one else needs waking
-    },
 
-//#region e
+//#region bm e
     // Ctrl+B from the editor — create a w/%bookmark at the current selection.
     //
     // The editor marks the range with a CodeMirror Decoration.mark so from/to
@@ -305,68 +439,6 @@ S o yeses/because/blon_itn
 
 
 
-
-    whatsthis(state: EditorState, container: TheC, opt: { from?: number, to?: number } = {}) {
-        const tree = syntaxTree(state)
-        if (!tree || tree.length === 0) return container
-
-        const doc = state.doc
-        const range_from = opt.from ?? 0
-        const range_to   = opt.to   ?? doc.length
-
-        let line_n = 0
-        let lineC: TheC | null = null
-        const boundaries = new Set<number>()
-
-        // tree.iterate filters by range — only enters nodes whose span
-        // intersects [from, to]. Cleaner than cursor.iterate + manual skip.
-        tree.iterate({
-            from: range_from,
-            to:   range_to,
-            enter: (nodeRef) => {
-                const { name, from, to } = nodeRef
-                const str = doc.sliceString(from, to)
-
-                if (name === 'Program') return
-
-                if (name === 'Line') {
-                    line_n++
-                    lineC = container.i(_C({ Line: 1, line_n, from, to }))
-                    return
-                }
-
-                if (!str.trim()) return
-
-                boundaries.add(from)
-                boundaries.add(to)
-
-                const target = lineC ?? container
-                const nodeC = target.i(_C({ node: 1, name, from, to }))
-                if (str.length <= 120) {
-                    nodeC.sc.str = str
-                }
-
-                const parent = nodeRef.node.parent
-                if (parent && parent.name !== 'Line' && parent.name !== 'Program') {
-                    nodeC.sc.parent_name = parent.name
-                }
-            }
-        })
-
-        const sorted = [...boundaries].sort((a, b) => a - b)
-        if (sorted.length > 1) {
-            const textC = container.i(_C({ texts: 1 }))
-            for (let i = 0; i < sorted.length - 1; i++) {
-                const f = sorted[i], t = sorted[i + 1]
-                const s = doc.sliceString(f, t)
-                if (s.trim()) {
-                    textC.i(_C({ text: 1, from: f, to: t, str: s }))
-                }
-            }
-        }
-
-        return container
-    },
 
     })
     })
