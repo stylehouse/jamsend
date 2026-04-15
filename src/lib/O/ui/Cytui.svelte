@@ -262,6 +262,7 @@
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
 
+        console.log(`🌊 apply() this wave: upsert x${wave.o({ upsert: 1 }).length}`)
 
         if (wave.sc.absolute) {
             console.log(`wave%absolute removes and re-adds the entire graph`)

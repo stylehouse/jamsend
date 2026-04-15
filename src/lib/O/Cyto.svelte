@@ -64,7 +64,7 @@
     let { M } = $props()
     let V = {}
     V.gone_debug = 0
-    V.cyto = 0
+    V.cyto = 1
 
     onMount(async () => {
     await M.eatfunc({
@@ -188,7 +188,9 @@
             await this.cyto_assign_ids(w, topC)
             await this.cyto_resolve_refs(w, topC)
 
-            V.cyto && console.log(`📦 archive CytoStep step_n=${incoming_step_n} nodes=${topC.o({cyto_node:1}).length} total=${w.o({CytoStep:1}).length}`)
+            V.cyto && console.log(`📦 archive CytoStep step_n=${incoming_step_n} nodes=${topC.c.node_total} edges=${topC.c.edge_total}`);
+
+            if (!w.c.supports_seek) await w.r({CytoStep:1},{})
             w.i({ CytoStep: 1, step_n: incoming_step_n, C: topC })
             w.c.last_step_n = incoming_step_n
 
@@ -407,7 +409,6 @@
             if (T.sc.Dip_scanid_is_new) neu.add(T.sc.Dip_scanid as string)
         })
         Se.c.neu_scan_ids = neu  // overwrites every tick, no cache guard
-
         
         return topC
     },
@@ -626,9 +627,17 @@
     async cyto_resolve_refs(w: TheC, topC: TheC): Promise<void> {
         const Se2 = w.c.cyto_Se2 as Selection
         if (!Se2?.c.T) return
+        let node_total = 0;
+        let edge_total = 0;
 
         await Se2.c.T.forward(async (T: Travel) => {
             const C = T.sc.n as TheC; if (!C) return
+
+            if (C.sc.cyto_node) {
+                node_total++;
+            } else if (C.sc.cyto_edge) {
+                edge_total++;
+            }
 
             if (C.sc.cyto_node) {
                 if (C.sc.parent && typeof C.sc.parent === 'object') {
@@ -648,6 +657,8 @@
                 }
             }
         })
+        topC.c.node_total = node_total;
+        topC.c.edge_total = edge_total;
     },
 
 //#endregion
@@ -680,8 +691,6 @@
         }
         Ze.sc.topD = await Ze.r({ cyto_root: 'Ze' })
 
-        V.cyto && console.log(`make_wave bD_count=${Ze.sc.topD?.o({tracing:1}).length ?? 0} adjacent=${adjacent}`)
- 
         const dur  = (w.sc.grawave_duration as number) ?? 0.3
         const wave = _C({ CytoWave:1, duration: dur })
         if (reset_Ze) wave.sc.absolute = 1
@@ -785,6 +794,9 @@
             }
             if (source) walk(source)
         }
+        let adjsay = adjacent ? ' adjacent' : ''
+        let empsay = !wave.oa() ? ' empty' : ''
+        V.cyto && console.log(`🌊 make_wave(): upsert x${wave.o({ upsert: 1 }).length}${empsay}${adjsay}`)
  
         return wave
     },
