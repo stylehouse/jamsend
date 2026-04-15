@@ -188,7 +188,7 @@ S o yeses/because/blon_itn
             const Lines = model.o({ Line: 1 }).filter((L: TheC) => L.sc[bm_key])
             for (const L of Lines) {
                 model.oai({
-                    bookmark_edge: 1,
+                    cyto_edge: 1,
                     bm_id,
                     the_line_from: L.sc.Line,
                 }, {

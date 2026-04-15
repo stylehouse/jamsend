@@ -360,7 +360,7 @@
                 if (w.c.supports_constraints) {
                     // misnomer. this means, for any n**:
                     // they don't come with a generic n/n edge or parent relation
-                    // no_parent_linkage = true
+                    no_parent_linkage = true
                     // n%* can be intelligised, assume it's ready to be C scans scan_id:
                     if (n.sc.cyto_cons || n.sc.cyto_edge) {
                         const C = parentC.i({ ...n.sc,  scan_id });
