@@ -356,16 +356,33 @@
                 const parentC: TheC = T.sc.up?.sc.C ?? topC
                 const nd = this.cyto_nstyle(w, n)
 
-                const C: TheC = parentC.i({
-                    cyto_node:  1,
-                    scan_id,
-                    label:      nd.label,
-                    isCompound: nd.isCompound ?? false,
-                    // parent only when parentC is itself a cyto_node (not topC/cyto_root)
-                    parent: T.sc.inherits.parent ??
-                        (parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null),
-                    style:      nd.style,
-                })
+                let C
+                if (n.sc.constraint && w.c.supports_constraints) {
+                    // Create a %cyto_cons particle
+                    C = parentC.i({
+                        cyto_cons: 1,
+                        type: n.sc.type as "alignment" | "relativePlacement",
+                        axis: n.sc.axis as "horizontal" | "vertical",
+                        gap: n.sc.gap ?? 32,
+                        nodes: n.sc.nodes?.map((node: TheC) => node) ?? [],
+                        top: n.sc.top,
+                        bottom: n.sc.bottom,
+                        left: n.sc.left,
+                        right: n.sc.right,
+                    });
+                }
+                else {
+                    C = parentC.i({
+                        cyto_node:  1,
+                        scan_id,
+                        label:      nd.label,
+                        isCompound: nd.isCompound ?? false,
+                        // parent only when parentC is itself a cyto_node (not topC/cyto_root)
+                        parent: T.sc.inherits.parent ??
+                            (parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null),
+                        style:      nd.style,
+                    })
+                }
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
 
@@ -570,7 +587,6 @@
     // Runs after Se2 pass 1 (nodes have cyto_ids) and before Se2 pass 2 (edges get ids).
     // Reads C.c.Se1_D for n refs (migration detection).
     // Adds cyto_edge children to C nodes (multi-placed) and topC (migration orphans).
-
     async cyto_scan_refs(w: TheC, topC: TheC): Promise<void> {
         const Se1          = w.c.cyto_Se as Selection
         const goners_by_id = Se1.c.scan_goners_by_id as Map<string, TheD>
@@ -664,9 +680,30 @@
                     delete C.sc.target
                 }
             }
+
+            if (C.sc.cyto_cons) {
+                // Resolve node objects to cyto_id
+                const constraint = {
+                    ...C.sc,
+                    nodes: C.sc.nodes?.map((node: TheC) => this.resolveCytoId(node)) ?? [],
+                    top: this.resolveCytoId(C.sc.top),
+                    bottom: this.resolveCytoId(C.sc.bottom),
+                    left: this.resolveCytoId(C.sc.left),
+                    right: this.resolveCytoId(C.sc.right),
+                };
+                // Store resolved constraint in C.sc for later collection in make_wave
+                C.sc.resolved_constraint = constraint;
+            }
         })
         topC.c.node_total = node_total;
         topC.c.edge_total = edge_total;
+    },
+    // --- Resolve cyto_id with error throwing ---
+    resolveCytoId(node: TheC | string | undefined): string {
+        if (!node) throw new Error("Constraint node reference is undefined");
+        if (typeof node === "string") return node;
+        if (node.sc.cyto_id) return node.sc.cyto_id;
+        throw new Error(`Node ${node.sc.id} has no cyto_id`);
     },
 
 //#endregion
@@ -738,6 +775,12 @@
                 let label = C.c.Se1_D?.c.T.sc.n.sc.label
                 let etc = label != null ? {label} : {}
  
+                if (C.sc.resolved_constraint) {
+                    if (!topC.sc.constraints) topC.sc.constraints = {};
+                    topC.sc.constraints[C.sc.id] = C.sc.resolved_constraint;
+                    return
+                }
+
                 if (C.sc.cyto_edge) {
                     const eid = C.sc.edge_id as string
                     if (!eid) return

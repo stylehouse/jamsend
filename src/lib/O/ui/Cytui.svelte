@@ -355,6 +355,31 @@
             }
         }
 
+        // 6. constraints
+        if (wave.sc.constraints) {
+            constraints = {}
+            for (const [id, constraint] of Object.entries(wave.sc.constraints)) {
+                const { type, axis, gap, nodes, top, bottom, left, right } = constraint;
+
+                if (type === "alignment") {
+                    if (!constraints.alignment) constraints.alignment = {};
+                    if (axis === "horizontal") {
+                        if (!constraints.alignment.horizontal) constraints.alignment.horizontal = [];
+                        constraints.alignment.horizontal.push(...inflate(nodes));
+                    } else if (axis === "vertical") {
+                        if (!constraints.alignment.vertical) constraints.alignment.vertical = [];
+                        constraints.alignment.vertical.push(...inflate(nodes));
+                    }
+                } else if (type === "relativePlacement") {
+                    if (!constraints.relativePlacement) constraints.relativePlacement = [];
+                    if (axis === "vertical") {
+                        constraints.relativePlacement.push({ top, bottom, gap });
+                    }
+                }
+            }
+        }
+
+
         if (animations.oa({ migrate: 1 })) start_anim_interval()
  
         // 6. layout
@@ -364,6 +389,7 @@
             relayout(ms, wave.sc.constraints)
         }
     }
+    let constraints = {}
 
 //#endregion
 //#region layout
@@ -429,6 +455,7 @@
             animationDuration:           animMs,
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
+            constraints,
         }
         let opts: any
         if (layout_name === 'fcose') {

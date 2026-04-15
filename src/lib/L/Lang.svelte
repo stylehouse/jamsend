@@ -308,42 +308,37 @@ S o yeses/because/blon_itn
         }
     },
 
-//#region align
+//#region constraints
 // wherewhatis(model: TheC): void
 // Traverses the model, adds alignment constraints, and sets up text-node edges.
 
     // --- Main Traversal: wherewhatis ---
     wherewhatis(model: TheC) {
-        // 1. Collect all Lines in the model
         const lines = model.o({ Line: 1 }) as TheC[];
 
         for (const line of lines) {
-            // 2. Collect text segments and nodes under this Line
             const textSegments = line.o({ text: 1 }) as TheC[];
             const nodes = line.o({ node: 1 }) as TheC[];
 
-            // 3. Add vertical alignment constraint for the Line itself
+            // Add vertical alignment constraint for the Line itself
             this.addAlignmentConstraint(model, [line], "vertical", "alignment");
 
-            // 4. Add horizontal alignment constraint for text segments
+            // Add horizontal alignment constraint for text segments
             if (textSegments.length > 1) {
                 this.addAlignmentConstraint(model, textSegments, "horizontal", "alignment");
             }
 
-            // 5. Position nodes above their corresponding text
-            //    (Assuming textSegments and nodes are ordered by `from` position)
+            // Position nodes above their corresponding text
             for (let i = 0; i < Math.min(textSegments.length, nodes.length); i++) {
                 const textNode = textSegments[i];
                 const node = nodes[i];
 
                 // Add edge between text node and specific descendant node
-                // (e.g., only connect to "S" for "Sunpit")
                 if (node.sc.str?.includes("Sunpit") && textNode.sc.str?.startsWith("S")) {
                     this.addTextNodeEdge(model, textNode, node, "S");
                 } else if (node.sc.str?.includes("IOpath") && textNode.sc.str?.includes("/")) {
                     this.addTextNodeEdge(model, textNode, node, "/");
                 } else {
-                    // Default: connect to the node itself
                     this.addTextNodeEdge(model, textNode, node);
                 }
 
@@ -352,7 +347,7 @@ S o yeses/because/blon_itn
             }
         }
 
-        // 6. Add global horizontal alignment for all Lines
+        // Global horizontal alignment for Lines
         if (lines.length > 1) {
             this.addAlignmentConstraint(model, lines, "horizontal", "alignment");
         }
