@@ -51,13 +51,20 @@
         seek_warning = (gn.sc.seek_warning as string | null) ?? null
         layout_name = (gn.sc.layout_name as string) ?? 'fcose'
  
-        const wave = gn.sc.wave as TheC | undefined
+        const waves = (gn.sc.waves as TheC[] | undefined) ?? []
         const tick = (gn.sc.tick as number) ?? -1
-        if (!wave || tick === last_tick) return
+        if (!waves.length || tick === last_tick) return
         if (!cy) return
         last_tick = tick
+
+        // drain the queue — each wave gets enqueued in order
+        gn.sc.waves = []
+        for (const wave of waves) {
+            enqueue(wave)
+        }
+
+        const wave = waves[waves.length - 1]
         const dur = (wave.sc.duration as number) ?? 0.3
-        if (cy) enqueue(wave)
         grawave_dur = dur
         const sn = wave.sc.step_n != null ? ` step:${wave.sc.step_n}` : ''
         status = `tick ${last_tick}${sn}`

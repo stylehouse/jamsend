@@ -259,6 +259,10 @@
     },
 
     _cyto_push(w: TheC, wave: TheC) {
+        if (!wave.oa()) {
+            V.cyto && console.log(`🌊 push NOTHING tick:${(w.c.gn as any)?.sc.tick}`)
+            return
+        }
         V.cyto && console.log(`🌊 push dur:${wave.sc.duration}`
             + ` abs:${!!wave.sc.absolute}`
             + ` tick:${(w.c.gn as any)?.sc.tick}`)
@@ -268,7 +272,10 @@
         const H  = this as House
         const gn = w.c.gn as TheC | undefined
         if (!gn) return
+        // Story looks for this, it makes and reads one at a time
         gn.sc.wave = wave
+        // Lang can make waves faster than Cytui reads them, so they queue here
+        gn.sc.waves = [...(gn.sc.waves ?? []), wave]
         gn.sc.tick = ((gn.sc.tick as number) ?? 0) + 1
         gn.bump_version()
         ;(H.o({ watched: 'graph' })[0] as TheC)?.bump_version()
