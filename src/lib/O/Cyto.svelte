@@ -556,7 +556,7 @@
                         : C.sc.target_id ?? ''
                     return uD.i({ tracing: 1, the_src: src, the_tgt: tgt })
                 }
-                return uD.i({ tracing: 1 })
+                return uD.i({ tracing: 1, ...C.sc })
             },
 
             traced_fn:   async () => {},
@@ -728,7 +728,7 @@
                     the_src:   C.sc.source_id ?? '',
                     the_tgt:   C.sc.target_id ?? '',
                 })
-                return uD.i({ tracing: 1 })
+                return uD.i({ tracing: 1, ...C.sc })
             },
  
             traced_fn: async (D: TheD, bD: TheD | undefined, C: TheC) => {

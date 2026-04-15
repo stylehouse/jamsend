@@ -375,11 +375,10 @@ S o yeses/because/blon_itn
         });
 
         if (type === "alignment") {
-            constraint.sc.nodes = nodes.map(n => n.sc.cyto_id);
+            constraint.sc.nodes = nodes; // Store node objects
         } else {
-            // For relativePlacement, specify top/bottom/left/right
-            constraint.sc[axis === "vertical" ? "top" : "left"] = nodes[0].sc.cyto_id;
-            constraint.sc[axis === "vertical" ? "bottom" : "right"] = nodes[nodes.length - 1].sc.cyto_id;
+            constraint.sc[axis === "vertical" ? "top" : "left"] = nodes[0];
+            constraint.sc[axis === "vertical" ? "bottom" : "right"] = nodes[nodes.length - 1];
         }
     },
 
