@@ -250,6 +250,13 @@ S o yeses/because/blon_itn
             from = line.from;
             to = line.to;
         }
+        const existingBookmark = w.o({ bookmark: 1 }).find((bm: TheC) =>
+            bm.sc.from === from && bm.sc.to === to
+        );
+        if (existingBookmark) {
+            console.log(`🔖 Bookmark already exists for [${from}..${to}]. Skipping.`);
+            return;
+        }
 
         // Add the bookmark to the editor
         const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
