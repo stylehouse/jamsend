@@ -151,6 +151,7 @@ S o yeses/because/blon_itn
     // onMount() ONLY, automate the test
     async e_Lang_editorBegins(A,w,e) {
         w.c.addBookmarkMark = e.sc.addBookmarkMark
+        w.c.clearAllBookmarks = e.sc.clearAllBookmarks
         w.c.editorState = e.sc.state
         w.c.editorView = e.sc.view
         // this.post_do(async () => {
@@ -163,8 +164,11 @@ S o yeses/because/blon_itn
         this.elvisto('LangTiles/LangTiles', 'test__couple_of_bookmarks')
     },
     async Lang_debookmark(w) {
+        const view = w.c.editorView
+        if (view && w.c.clearAllBookmarks) {
+            view.dispatch({ effects: w.c.clearAllBookmarks.of(null) })
+        }
         await w.r({ bookmark: 1 },{})
-        // < dispatch a clearAllBookmarks StateEffect to the editor, then drop the rows.
         this.elvisto(w, 'think', {})
     },
     async e_test__couple_of_bookmarks(A,w,e) {

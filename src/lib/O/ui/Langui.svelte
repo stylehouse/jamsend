@@ -88,12 +88,17 @@
     //                           current positions to w:LangTiles.
 
     const addBookmarkMark = StateEffect.define<{ id: string, from: number, to: number }>()
+    const clearAllBookmarks = StateEffect.define<null>()
 
     const bookmarkField = StateField.define<DecorationSet>({
         create: () => Decoration.none,
         update(marks, tr) {
             marks = marks.map(tr.changes)   // auto-remap on every edit
             for (const e of tr.effects) {
+                if (e.is(clearAllBookmarks)) {
+                    marks = Decoration.none
+                    continue
+                }
                 if (e.is(addBookmarkMark)) {
                     const deco = Decoration.mark({
                         class: 'cm-bookmark',
@@ -182,7 +187,7 @@
         });
 
         // Dispatch e:editorBegins with the initial editorState
-        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark})
+        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, clearAllBookmarks})
     });
 
     onDestroy(() => {
