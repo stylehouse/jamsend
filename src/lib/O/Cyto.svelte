@@ -356,33 +356,30 @@
                 const parentC: TheC = T.sc.up?.sc.C ?? topC
                 const nd = this.cyto_nstyle(w, n)
 
-                let C
-                if (n.sc.constraint && w.c.supports_constraints) {
-                    // Create a %cyto_cons particle
-                    C = parentC.i({
-                        cyto_cons: 1,
-                        type: n.sc.type as "alignment" | "relativePlacement",
-                        axis: n.sc.axis as "horizontal" | "vertical",
-                        gap: n.sc.gap ?? 32,
-                        nodes: n.sc.nodes?.map((node: TheC) => node) ?? [],
-                        top: n.sc.top,
-                        bottom: n.sc.bottom,
-                        left: n.sc.left,
-                        right: n.sc.right,
-                    });
+                let no_parent_linkage = false
+                if (w.c.supports_constraints) {
+                    // misnomer. this means, for any n**:
+                    // they don't come with a generic n/n edge or parent relation
+                    // no_parent_linkage = true
+                    // n%* can be intelligised, assume it's ready to be C scans scan_id:
+                    if (n.sc.cyto_cons || n.sc.cyto_edge) {
+                        const C = parentC.i({ ...n.sc,  scan_id });
+                        C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
+                        T.sc.C = C
+                        return
+                    }
                 }
-                else {
-                    C = parentC.i({
-                        cyto_node:  1,
-                        scan_id,
-                        label:      nd.label,
-                        isCompound: nd.isCompound ?? false,
-                        // parent only when parentC is itself a cyto_node (not topC/cyto_root)
-                        parent: T.sc.inherits.parent ??
-                            (parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null),
-                        style:      nd.style,
-                    })
-                }
+
+                const C = parentC.i({
+                    cyto_node:  1,
+                    scan_id,
+                    label:      nd.label,
+                    isCompound: nd.isCompound ?? false,
+                    // parent only when parentC is itself a cyto_node (not topC/cyto_root)
+                    parent: T.sc.inherits.parent ??
+                        (parentC.sc.isCompound && parentC.sc.cyto_node ? parentC : null),
+                    style:      nd.style,
+                })
                 C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
                 T.sc.C = C
 
@@ -396,12 +393,15 @@
                 // special cases of node typing:
                 // the non-first duplicate refs get:
                 if (T.sc.loopy) C.sc.loopy = 1
-                // %w contains everything in it
-                if (n.sc.w) T.sc.inherits.parent = C
-                // uplinks forming trees of / ness
-                if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
-                    C.i({cyto_edge:1,scan_id,
-                        source:parentC, label:"/", target:C})
+                
+                if (!no_parent_linkage) {
+                    // %w contains everything in it
+                    if (n.sc.w) T.sc.inherits.parent = C
+                    // uplinks forming trees of / ness
+                    if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
+                        C.i({cyto_edge:1,scan_id,
+                            source:parentC, label:"/", target:C})
+                    }
                 }
             },
 
@@ -434,7 +434,23 @@
             if (T.sc.Dip_scanid_is_new) neu.add(T.sc.Dip_scanid as string)
         })
         Se.c.neu_scan_ids = neu  // overwrites every tick, no cache guard
-        
+        // n -> C lookup for downstream ref resolution.
+        // Built once per Se1 walk; consumed by cyto_resolve_refs to translate
+        // n refs (held in cyto_cons.top/bottom/nodes/..., cyto_edge.source/target,
+        // cyto_node.parent) into the C particle that represents that n in this
+        // graph snapshot. The map is rebuilt each tick so dropped/recreated
+        // C particles always resolve to their current incarnation.
+        const n_to_C = new Map<TheC, TheC>()
+        await Se.c.T.forward(async (T: Travel) => {
+            const n = T.sc.n as TheC | undefined
+            const C = T.sc.C as TheC | undefined
+            // skip topT (no real n) and invisible-passthrough Ts (C inherited from parent)
+            if (n && C && C.sc.cyto_node && C.c.Se1_D?.c.T === T) {
+                n_to_C.set(n, C)
+            }
+        })
+        Se.c.n_to_C = n_to_C
+
         return topC
     },
 
@@ -554,11 +570,12 @@
             trace_sc:   { tracing: 1 },
 
             each_fn: async (D: TheD, C: TheC, T: Travel) => {
-                if (C.sc.cyto_node) C.sc.cyto_id = this.Dip_assign('cytoid', D)
-                else
-                if (C.sc.cyto_edge) C.sc.edge_id  = this.Dip_assign('cytoid', D)
-                else
-                if (T == T.c.path[0]) this.Dip_assign('cytoid', D)
+                if (C.sc.cyto_edge) {
+                    C.sc.edge_id  = this.Dip_assign('cytoid', D)
+                }
+                else {
+                    C.sc.cyto_id = this.Dip_assign('cytoid', D)
+                }
             },
 
             trace_fn: async (uD: TheD, C: TheC) => {
@@ -651,59 +668,84 @@
     async cyto_resolve_refs(w: TheC, topC: TheC): Promise<void> {
         const Se2 = w.c.cyto_Se2 as Selection
         if (!Se2?.c.T) return
-        let node_total = 0;
-        let edge_total = 0;
+        // n_to_C was built at the end of cyto_scan
+        const n_to_C = (w.c.cyto_Se as Selection).c.n_to_C as Map<TheC, TheC>
+        const R = (ref: any) => this.resolveCytoId(ref, n_to_C)
+
+        let node_total = 0
+        let edge_total = 0
 
         await Se2.c.T.forward(async (T: Travel) => {
             const C = T.sc.n as TheC; if (!C) return
 
             if (C.sc.cyto_node) {
-                node_total++;
-            } else if (C.sc.cyto_edge) {
-                edge_total++;
-            }
-
-            if (C.sc.cyto_node) {
+                node_total++
                 if (C.sc.parent && typeof C.sc.parent === 'object') {
-                    C.sc.parent_id = (C.sc.parent as TheC).sc.cyto_id ?? null
+                    C.sc.parent_id = R(C.sc.parent)
                     delete C.sc.parent
                 }
             }
 
             if (C.sc.cyto_edge) {
+                edge_total++
                 if (C.sc.source && typeof C.sc.source === 'object') {
-                    C.sc.source_id = (C.sc.source as TheC).sc.cyto_id ?? null
+                    C.sc.source_id = R(C.sc.source)
                     delete C.sc.source
                 }
                 if (C.sc.target && typeof C.sc.target === 'object') {
-                    C.sc.target_id = (C.sc.target as TheC).sc.cyto_id ?? null
+                    C.sc.target_id = R(C.sc.target)
                     delete C.sc.target
                 }
             }
 
             if (C.sc.cyto_cons) {
-                // Resolve node objects to cyto_id
-                const constraint = {
-                    ...C.sc,
-                    nodes: C.sc.nodes?.map((node: TheC) => this.resolveCytoId(node)) ?? [],
-                    top: this.resolveCytoId(C.sc.top),
-                    bottom: this.resolveCytoId(C.sc.bottom),
-                    left: this.resolveCytoId(C.sc.left),
-                    right: this.resolveCytoId(C.sc.right),
-                };
-                // Store resolved constraint in C.sc for later collection in make_wave
-                C.sc.resolved_constraint = constraint;
+                // Constraint endpoints may be n particles (from Lang.wherewhatis,
+                // which builds constraints out of model Lines/texts/nodes), C particles
+                // (if some upstream already promoted them), or already-resolved strings.
+                // R() handles all three; missing slots come back as null and are
+                // dropped before make_wave hands the constraint over.
+                const cleaned: any = {
+                    type: C.sc.type,
+                    axis: C.sc.axis,
+                    gap:  C.sc.gap,
+                }
+                if (Array.isArray(C.sc.nodes)) {
+                    cleaned.nodes = C.sc.nodes.map(R).filter((x: any) => x != null)
+                }
+                for (const slot of ['top', 'bottom', 'left', 'right'] as const) {
+                    const v = R(C.sc[slot])
+                    if (v != null) cleaned[slot] = v
+                }
+                C.sc.resolved_constraint = cleaned
             }
         })
-        topC.c.node_total = node_total;
-        topC.c.edge_total = edge_total;
+        topC.c.node_total = node_total
+        topC.c.edge_total = edge_total
     },
-    // --- Resolve cyto_id with error throwing ---
-    resolveCytoId(node: TheC | string | undefined): string {
-        if (!node) throw new Error("Constraint node reference is undefined");
-        if (typeof node === "string") return node;
-        if (node.sc.cyto_id) return node.sc.cyto_id;
-        throw new Error(`Node ${node.sc.id} has no cyto_id`);
+    // Resolve any reference (n particle from model, C particle from cyto graph,
+    // or already-resolved string id) down to a cyto_id string.
+    //
+    // Used by cyto_resolve_refs for: cyto_cons endpoints, cyto_edge source/target,
+    // cyto_node parent. Centralising here means n->C->cyto_id all goes through
+    // one place and behaviour stays consistent.
+    //
+    //   n_to_C: passed in by caller (Se1.c.n_to_C) — maps model n particles
+    //           to their cyto_node C. n refs land here.
+    //   ref:    null/undefined → null (callers may legitimately have missing slots,
+    //                                  eg a relativePlacement with only `top`/`bottom`)
+    //           string         → returned as-is (already a cyto_id)
+    //           TheC w/ cyto_id (a C from this scan) → its cyto_id
+    //           TheC otherwise (an n from the model)  → look up via n_to_C
+    resolveCytoId(ref: TheC | string | null | undefined, n_to_C: Map<TheC, TheC>): string | null {
+        if (ref == null) return null
+        if (typeof ref === 'string') return ref
+        if (ref.sc?.cyto_id) return ref.sc.cyto_id as string
+        const C = n_to_C.get(ref)
+        if (C?.sc?.cyto_id) return C.sc.cyto_id as string
+        // n that never made it into the graph (filtered by classify, or out of scope)
+        // — return null rather than throw; callers decide whether that's fatal
+        console.warn('resolveCytoId: no C for ref', ref?.sc)
+        return null
     },
 
 //#endregion
@@ -748,7 +790,7 @@
  
             each_fn: async (D: TheD, C: TheC, T: Travel) => {
                 if (D.sc.cyto_root && C.sc.cyto_root) return
-                if (!C.sc.cyto_node && !C.sc.cyto_edge) { T.sc.not = 1; return }
+                if (!C.sc.cyto_node && !C.sc.cyto_edge && !C.sc.cyto_cons) { T.sc.not = 1; return }
                 D.sc.is_edge = !!C.sc.cyto_edge
             },
  
@@ -769,15 +811,12 @@
             },
  
             traced_fn: async (D: TheD, bD: TheD | undefined, C: TheC) => {
-                if (!C.sc.cyto_node && !C.sc.cyto_edge) return
-
-
                 let label = C.c.Se1_D?.c.T.sc.n.sc.label
                 let etc = label != null ? {label} : {}
  
                 if (C.sc.resolved_constraint) {
-                    if (!topC.sc.constraints) topC.sc.constraints = {};
-                    topC.sc.constraints[C.sc.id] = C.sc.resolved_constraint;
+                    if (!wave.sc.constraints) wave.sc.constraints = {};
+                    wave.sc.constraints[C.sc.cyto_id] = C.sc.resolved_constraint;
                     return
                 }
 

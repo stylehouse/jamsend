@@ -355,28 +355,36 @@
             }
         }
 
-        // 6. constraints
+        // 6. constraints — fcose wants the exact shape:
+        //   alignmentConstraint:        { vertical: [[ids],[ids]], horizontal: [[ids]] }
+        //   relativePlacementConstraint: [ {top,bottom,gap}, {left,right,gap} ]
+        // Lang sends `type: "alignmentConstraint"` / `"relativePlacementConstraint"` already
+        // (matches fcose key names directly), each cyto_cons describing one group.
+        // We bucket by (type, axis) — each cyto_cons becomes one inner array
+        // for alignment, or one entry in the array for relativePlacement.
         if (wave.sc.constraints) {
             constraints = {}
-            for (const [id, constraint] of Object.entries(wave.sc.constraints)) {
-                const { type, axis, gap, nodes, top, bottom, left, right } = constraint;
+            for (const [_id, c] of Object.entries(wave.sc.constraints) as [string, any][]) {
+                const { type, axis, gap, nodes, top, bottom, left, right } = c
 
-                if (type === "alignment") {
-                    if (!constraints.alignment) constraints.alignment = {};
-                    if (axis === "horizontal") {
-                        if (!constraints.alignment.horizontal) constraints.alignment.horizontal = [];
-                        constraints.alignment.horizontal.push(...inflate(nodes));
-                    } else if (axis === "vertical") {
-                        if (!constraints.alignment.vertical) constraints.alignment.vertical = [];
-                        constraints.alignment.vertical.push(...inflate(nodes));
-                    }
-                } else if (type === "relativePlacement") {
-                    if (!constraints.relativePlacement) constraints.relativePlacement = [];
-                    if (axis === "vertical") {
-                        constraints.relativePlacement.push({ top, bottom, gap });
+                if (type === 'alignmentConstraint') {
+                    if (!Array.isArray(nodes) || nodes.length < 2) continue
+                    constraints.alignmentConstraint ??= {}
+                    constraints.alignmentConstraint[axis] ??= []
+                    constraints.alignmentConstraint[axis].push([...nodes])
+                } else if (type === 'relativePlacementConstraint') {
+                    constraints.relativePlacementConstraint ??= []
+                    if (axis === 'vertical' && top && bottom) {
+                        constraints.relativePlacementConstraint.push({ top, bottom, gap })
+                    } else if (axis === 'horizontal' && left && right) {
+                        constraints.relativePlacementConstraint.push({ left, right, gap })
                     }
                 }
             }
+            if (Object.keys(constraints).length) console.log(`Constraints: `, constraints)
+        } else {
+            // wave with no constraints — clear out stale ones from the previous layout
+            constraints = {}
         }
 
 
@@ -386,7 +394,7 @@
         if (wave.o({ upsert:      1 }).length
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
-            relayout(ms, wave.sc.constraints)
+            relayout(ms)
         }
     }
     let constraints = {}
@@ -448,20 +456,20 @@
     // ── layout ────────────────────────────────────────────────────────────────
 
     let lay: any
-    function relayout(animMs = 300, constraints?: any) {
+    function relayout(animMs = 300) {
         lay?.stop()
         const common = {
             animate:                     animMs > 0,
             animationDuration:           animMs,
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
-            constraints,
         }
         let opts: any
         if (layout_name === 'fcose') {
             opts = { name: 'fcose', ...common, nodeSeparation: 30, quality: 'default',
                 idealEdgeLength: (e: any) => e.data('ideal_length') ?? 80,
-                edgeElasticity:  0.45, nodeRepulsion: () => 4000, ...(constraints ?? {}) }
+                edgeElasticity:  0.45, nodeRepulsion: () => 4000,
+                ...constraints }
         } else if (layout_name === 'cose-bilkent') {
             opts = { name: 'cose-bilkent', ...common, idealEdgeLength: 80, nodeRepulsion: 4500 }
         } else if (layout_name === 'cola') {

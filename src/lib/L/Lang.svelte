@@ -320,9 +320,6 @@ S o yeses/because/blon_itn
             const textSegments = line.o({ text: 1 }) as TheC[];
             const nodes = line.o({ node: 1 }) as TheC[];
 
-            // Add vertical alignment constraint for the Line itself
-            this.addAlignmentConstraint(model, [line], "vertical", "alignment");
-
             // Add horizontal alignment constraint for text segments
             if (textSegments.length > 1) {
                 this.addAlignmentConstraint(model, textSegments, "horizontal", "alignment");
@@ -349,7 +346,7 @@ S o yeses/because/blon_itn
 
         // Global horizontal alignment for Lines
         if (lines.length > 1) {
-            this.addAlignmentConstraint(model, lines, "horizontal", "alignment");
+            this.addAlignmentConstraint(model, lines, "vertical", "alignment");
         }
     },
 
@@ -361,9 +358,17 @@ S o yeses/because/blon_itn
         type: "alignment" | "relativePlacement",
         gap?: number
     ) {
+        if (type === "alignment" && nodes.length < 2) return;
+        if (type === "relativePlacement" && nodes.length !== 2) return;
         const constraintType = type === "alignment" ? "alignmentConstraint" : "relativePlacementConstraint";
-        const constraint = model.oai({
-            constraint: 1,
+        const ax = axis === "vertical" ? "V" : "H";
+        const label = type === "alignment"
+            ? `align${ax}×${nodes.length}`
+            : `place${ax}`;
+
+        const constraint = model.i({
+            cyto_cons: 1,
+            label,
             type: constraintType,
             axis,
             gap: gap ?? 32,
@@ -385,7 +390,7 @@ S o yeses/because/blon_itn
         label: string = "te"
     ) {
         model.oai({
-            edge: 1,
+            cyto_edge: 1,
             source: textNode,
             target: node,
             label,
