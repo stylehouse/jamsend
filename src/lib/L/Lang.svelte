@@ -260,7 +260,143 @@ S o yeses/because/blon_itn
         return r1.from <= r2.to-1 && r1.to-1 >= r2.from;
     },
 
-//#region walk
+
+
+//#region caving
+
+    caving() {
+        ` // < this
+system of diving into spaces that are developing
+ for slowly opening a hive of realities into one over-place
+ this shall be the collective attentions at things
+ generalisable tech
+  basically deriving openness from journey, see Dierarchy
+
+uses:
+
+in this first use of this possibly generalisable tech
+ we shall split the text by indent
+  which promotes leaders
+  which have among them more and less novel text... see assail()
+ and give Wip, similar to Dip
+  it implies ordering
+   if we want to put something before 1.1,
+    we put it at 1.1.0.1
+    another at "before 1.1" at 1.1.0.2
+     then something before that at 1.1.0.2.0.1
+   but why?
+    I cant remember right now.
+  the dialectics these Wip schemes exist on should have the equivalent of
+   Cyto_wipe
+ 
+   
+> for splitting types that emerge over time
+ the shrine of types
+ has a cell division process for eg a type of Se and what ever could be in it
+  pieces of identity can go to one|both|neither of the new pair
+ so those Se statements are collected and indexed somewhere.
+  as would all the functions defined?
+ 
+
+
+
+
+
+
+ `
+
+        
+    }
+
+
+//#region assail
+
+    assail() {
+        ` // < this
+sauntering up to some code
+ look at subsets of the objects (regions+funcs+calls) in eg Housing.svelte.ts
+ > do lexing stemming and text search with sqlite?
+ pull it apart with regexes?
+    no time to parse every language
+    keep scoped to one show grammar
+    is my code as typescript AST hard to find function calls and definitions...?
+    its got to learn how to learn a new language
+ 
+collect all words, make them linkable to each other?
+ even to see all 1915 ifs, a bundle of 113 ifs leading into src/lib/O/Housing.svelte.ts
+ style the rare words as such
+
+threads of inquiry stack up on the left
+ there's a + button that spawns one where we are
+  name after their start
+  and then they'll wander off, looking at various things with varying intensity+duration
+   or along them, perhaps.
+ the most concrete representations should hover on the right, ie lines in places...
+ the set of them we're looking at should roll over
+  depending on how well tacked-down each thing is
+ 
+
+
+
+ `
+
+        
+    }
+
+//#region regroup
+
+    regroup() {
+        ` // < this
+swap these i|o expressions for something
+ scale the complexity
+  if w oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
+  Travel if multi-layered. inline a big json in the story_rule_matches format for it.
+ also allow
+  o hut/toot$ -> let toot = o hut/toot
+   or something like that? o hut/$toot would be hut.o
+ is it possible to allow these two expr: C o walls | o C/walls
+
+and put the resulting typescript ghost code (wrapped in eatfunc etc)
+ via the Wormhole, into src/lib/gen/Somewhere.svelte
+  and then maybe begin to include it at this point, as %watched:UIs ?
+ and then a ton of code editor with files to check out spawning...
+
+
+// insert iooia here
+
+Sunpit
+ the new lump of potentially non-trivial activity
+ S <IOing>
+  is iteration, probably has a block...
+   of course it would? or it's just IOing
+   it could be a different <IOing> dialect
+    or more capable of being multi-lined?
+  but is a pretty basic luxury iterator
+   uses Travel to expand rows with names that can come out as /$names$/
+
+ Se <IOing>
+  as above but creates a named Selection() that can react to changes upstream etc
+   persists as usual, use concretion() to begin (interrupts the w)
+   perhaps initially it perhaps (approximately):
+    Se i scan/i/$model -> w.oai(%Se:scan).i(%i).i(model)
+   then:
+    Se i scan/trace/D
+        compose a D from an n
+         "trace" sounds like it ends in sc
+   and all other details could probably be wedged in somehow...
+   so a Selection can be composed without the big fat calls
+   potentially broken down into quite small parts
+   the pieces as they are are embryos that could sprout a new limb anywhere
+
+
+
+ `
+
+        
+    }
+
+
+//#region whatsthis
 
     // whatsthis_into — dedup-friendly walker.
     //

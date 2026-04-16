@@ -436,10 +436,7 @@ export class House extends StorableHousing {
     }
     trace_enable() { this.trace_log ??= [] }
 
-    // -------------------------------------------------------------------------
-    // all_House: sync recursive walk — no started guard so ghostsHaunt and
-    // every_House work before started is true.
-    // -------------------------------------------------------------------------
+    // all H** from here down
     get all_House(): House[] {
         let more = (H) => {
             let N = []
@@ -451,19 +448,14 @@ export class House extends StorableHousing {
         return more(this)
     }
 
-    // -------------------------------------------------------------------------
-    // every_House: walks .up to root, returns [root].
-    // Override in peer topology to include Houses from other sources.
-    // -------------------------------------------------------------------------
+    // every house anywhere
     override every_House(): House[] {
         let h: Housing = this
         while (h.up) h = h.up
         return (h as House).all_House
     }
 
-    // -------------------------------------------------------------------------
-    // ghostsHaunt: push ghosts onto self and all known child Houses.
-    // -------------------------------------------------------------------------
+    // merge new code into every H.*, from a ghost doing onMount|HMR
     ghostsHaunt(hash: Record<string, Function>) {
         // merge into H.ghosts
         this.ghosts = { ...(this.ghosts ?? {}), ...hash }
