@@ -1,6 +1,22 @@
 <script lang="ts">
     // Cytui.svelte — Cytoscape rendering widget for the H:Story/H** graph.
     //
+    // ── HTML overlay system ──────────────────────────────────────────────────
+    //
+    //   Text nodes (overlay_kind='code') get a positioned <pre> element rendered
+    //   over the cytoscape canvas. The overlay tracks the node's rendered position
+    //   and size, giving crisp monospace typography independent of graph zoom.
+    //
+    //   Bookmark nodes (overlay_kind='cm-hole') get a <div class="cm-hole"> that
+    //   can later mount a CodeMirror EditorView — the scaffold for opening a hole
+    //   in graph space into code space. The cm-hole has pointer-events:all so the
+    //   user can type into it once a CM is mounted.
+    //
+    //   Overlays are tracked in `overlays: Map<string, HTMLElement>` keyed by
+    //   cytoscape node id. They are created/updated in apply() after node upsert,
+    //   removed when their node is removed, and repositioned on every layout stop
+    //   and cy 'render' event.
+    //
 
     import { onMount }    from 'svelte'
     import cytoscape      from 'cytoscape'
@@ -32,6 +48,13 @@
     let grawave_dur     = $state(0.3)
     let last_tick       = -1
     let seek_warning = $state<string | null>(null)
+
+    // ── overlay system ───────────────────────────────────────────────────────
+    // Map of cytoscape node id → positioned HTML overlay element.
+    // Created in apply(), repositioned on layout/render, destroyed on remove.
+    let overlays: Map<string, HTMLElement> = new Map()
+    // Container div for all overlays — sits over the cy canvas with pointer-events:none
+    let overlay_container: HTMLDivElement
 
     // the UI channel - %matstyle come from Story
     $effect(() => {
@@ -261,6 +284,85 @@
     }
 
 //#endregion
+//#region overlays
+
+    // ── overlay lifecycle ─────────────────────────────────────────────────────
+    //
+    // create_overlay: called from apply() when a node with overlay_str is upserted.
+    //   Creates a positioned HTML element in overlay_container, stores in overlays map.
+    //
+    // update_overlay: called on existing overlay — updates text if changed.
+    //
+    // remove_overlay: called when node is removed — destroys the DOM element.
+    //
+    // reposition_overlays: called after layout stops and on cy 'render' — moves
+    //   each overlay to match its node's rendered position and zoom-adjusted size.
+
+    function create_overlay(id: string, str: string, kind: string) {
+        if (overlays.has(id)) return update_overlay(id, str)
+        if (!overlay_container) return
+
+        const el = document.createElement('div')
+        el.className = kind === 'cm-hole' ? 'cyto-overlay cm-hole' : 'cyto-overlay code-overlay'
+        el.dataset.nodeId = id
+
+        if (kind === 'code') {
+            const pre = document.createElement('pre')
+            const code = document.createElement('code')
+            code.textContent = str
+            pre.appendChild(code)
+            el.appendChild(pre)
+        } else if (kind === 'cm-hole') {
+            // scaffold for future CodeMirror mount
+            el.innerHTML = `<div class="cm-hole-inner" data-cm-id="${id}"></div>`
+        }
+
+        overlay_container.appendChild(el)
+        overlays.set(id, el)
+    }
+
+    function update_overlay(id: string, str: string) {
+        const el = overlays.get(id)
+        if (!el) return
+        const code = el.querySelector('code')
+        if (code && code.textContent !== str) code.textContent = str
+    }
+
+    function remove_overlay(id: string) {
+        const el = overlays.get(id)
+        if (!el) return
+        el.remove()
+        overlays.delete(id)
+    }
+
+    function reposition_overlays() {
+        if (!cy || !overlay_container) return
+        const zoom = cy.zoom()
+        const pan  = cy.pan()
+
+        for (const [id, el] of overlays) {
+            const node = cy.getElementById(id)
+            if (!node.length) { remove_overlay(id); continue }
+
+            const pos = node.renderedPosition()
+            const w   = node.renderedWidth()
+            const h   = node.renderedHeight()
+
+            el.style.left      = `${pos.x - w / 2}px`
+            el.style.top       = `${pos.y - h / 2}px`
+            el.style.width     = `${w}px`
+            el.style.height    = `${h}px`
+            el.style.fontSize  = `${Math.max(6, 12 * zoom)}px`
+            el.style.display   = zoom < 0.3 ? 'none' : ''  // hide at extreme zoom-out
+        }
+    }
+
+    function clear_all_overlays() {
+        for (const [id, el] of overlays) el.remove()
+        overlays.clear()
+    }
+
+//#endregion
 //#region apply
 
     function apply(wave: TheC, dur: number) {
@@ -274,6 +376,7 @@
         if (wave.sc.absolute) {
             console.log(`wave%absolute removes and re-adds the entire graph`)
             cy.elements().remove()
+            clear_all_overlays()
         }
 
         // 1. remove stale edges
@@ -287,8 +390,10 @@
         ])
 
         for (const n of wave.o({ remove: 1 }) as TheC[]) {
-            if (!migrating.has(n.sc.id as string)) {
-                cy.getElementById(n.sc.id as string).remove()
+            const rid = n.sc.id as string
+            if (!migrating.has(rid)) {
+                cy.getElementById(rid).remove()
+                remove_overlay(rid)
             }
         }
  
@@ -318,6 +423,15 @@
                     const spawn = cy.getElementById(nd.sc.appear_from as string)
                     if (spawn.length) added.position(spawn.position())
                 }
+            }
+
+            // ── overlay sync ─────────────────────────────────────────
+            // Create or update HTML overlay for nodes carrying overlay_str.
+            // Cytoscape handles the box/border; the overlay renders crisp text.
+            const overlay_str  = nd.sc.overlay_str  as string | undefined
+            const overlay_kind = nd.sc.overlay_kind as string | undefined
+            if (overlay_str != null) {
+                create_overlay(id, overlay_str, overlay_kind ?? 'code')
             }
         }
  
@@ -390,7 +504,7 @@
 
         if (animations.oa({ migrate: 1 })) start_anim_interval()
  
-        // 6. layout
+        // 7. layout
         if (wave.o({ upsert:      1 }).length
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
@@ -481,7 +595,11 @@
         }
         lay = cy.layout(opts)
         if (animMs > 0) {
-            const on_stop = () => { cy.removeListener('layoutstop', on_stop); cy.fit(cy.nodes(), 16) }
+            const on_stop = () => {
+                cy.removeListener('layoutstop', on_stop)
+                cy.fit(cy.nodes(), 16)
+                reposition_overlays()
+            }
             cy.on('layoutstop', on_stop)
         }
         try { lay.run() } catch (e) { console.warn('layout error', e) }
@@ -524,9 +642,18 @@
                 },
             ],
         })
+
+        // Reposition overlays on viewport changes (pan/zoom/render)
+        cy.on('render', () => reposition_overlays())
+        cy.on('pan zoom', () => reposition_overlays())
+
         // rebuild from scratch on HMR
         H.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
-        return () => { lay?.stop(); cy?.destroy() }
+        return () => {
+            lay?.stop()
+            clear_all_overlays()
+            cy?.destroy()
+        }
     })
 </script>
 
@@ -558,7 +685,13 @@
             />
         </div>
     {/if}
-    <div class="cytui-graph" bind:this={container}></div>
+    <div class="cytui-graph-wrap">
+        <div class="cytui-graph" bind:this={container}></div>
+        <!-- overlay container sits over the cy canvas, pointer-events:none
+             so graph interactions pass through. Individual .cm-hole overlays
+             opt back in with pointer-events:all for future CodeMirror input. -->
+        <div class="cytui-overlays" bind:this={overlay_container}></div>
+    </div>
 </div>
 
 <style>
@@ -591,5 +724,69 @@
     padding: 2px 8px; background: #080808;
     border-bottom: 1px solid #141414;
 }
-.cytui-graph { flex: 1; min-height: 0; }
+
+/* ── graph + overlay stack ─────────────────────────────────────────────── */
+/* The graph and overlay containers are stacked via position:relative/absolute
+   so overlays sit exactly over their cy nodes. The overlay container has
+   pointer-events:none to let graph interactions (pan/zoom/select) through. */
+.cytui-graph-wrap {
+    flex: 1; min-height: 0;
+    position: relative;
+}
+.cytui-graph {
+    position: absolute;
+    inset: 0;
+}
+.cytui-overlays {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* ── code overlay: positioned <pre> over a text node ───────────────────── */
+/* Crisp monospace typography independent of cy zoom. The overlay tracks
+   the node's rendered position/size via reposition_overlays(). */
+:global(.cyto-overlay) {
+    position: absolute;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: left 0.15s ease-out, top 0.15s ease-out,
+                width 0.15s ease-out, height 0.15s ease-out;
+}
+
+:global(.code-overlay) {
+    /* text styling matches cy node's monospace font */
+    font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;
+    color: #8b9a7b;
+}
+:global(.code-overlay pre) {
+    margin: 0; padding: 0;
+    white-space: pre;
+    line-height: 1.4;
+    /* inherit font-size from the overlay div (set by reposition_overlays) */
+    font-size: inherit;
+}
+:global(.code-overlay code) {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* ── cm-hole: scaffold for future CodeMirror mount ─────────────────────── */
+/* pointer-events:all so typing works when a CM is mounted inside.
+   The .cm-hole-inner div is the mount point — CM EditorView attaches here. */
+:global(.cm-hole) {
+    pointer-events: all;
+    border: 1px solid #2a3a4a;
+    border-radius: 3px;
+    background: rgba(10, 15, 20, 0.9);
+    cursor: text;
+}
+:global(.cm-hole-inner) {
+    width: 100%; height: 100%;
+    overflow: auto;
+}
 </style>

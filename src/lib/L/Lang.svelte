@@ -31,6 +31,48 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#region text measurement
+
+    // ── measureText ──────────────────────────────────────────────────────
+    // Monospace text measurement via OffscreenCanvas (or hidden canvas).
+    // Returns { width, height } in px for a given string at a given font size.
+    //
+    // Since we use a monospace font, the per-char width is constant —
+    // we cache the char width per fontSize and multiply by str.length.
+    // Non-printable / tab chars get a fixed slot width.
+    //
+    // The measurement canvas is created once and reused across all calls.
+    // Font: 'Berkeley Mono', 'Fira Code', monospace — same as Cytui.
+    _measure_cache: {} as Record<number, number>,
+    _measure_ctx: null as CanvasRenderingContext2D | null,
+
+    measureText(str: string, fontSize = 12): { width: number, height: number } {
+        if (!str) return { width: 0, height: 0 }
+
+        if (!this._measure_ctx) {
+            const canvas = document.createElement('canvas')
+            canvas.width = 300; canvas.height = 40
+            this._measure_ctx = canvas.getContext('2d')!
+        }
+        const ctx = this._measure_ctx
+        const FONT = `${fontSize}px 'Berkeley Mono','Fira Code',monospace`
+
+        let charW = this._measure_cache[fontSize]
+        if (!charW) {
+            ctx.font = FONT
+            // measure a reference character — 'M' is widest in most fonts
+            charW = ctx.measureText('M').width
+            this._measure_cache[fontSize] = charW
+        }
+
+        // padding: 8px left + 8px right internal to the node
+        const PAD = 16
+        const width  = Math.ceil(str.length * charW) + PAD
+        const height = Math.ceil(fontSize * 1.6) + 8  // line-height ~1.6 + vertical pad
+        return { width, height }
+    },
+
+//#endregion
 //#region plan
 
     Lang_plan(A: House, w: TheC) {
@@ -215,6 +257,13 @@ S o yeses/because/blon_itn
     //
     // The bm_key tag (the_bm_${id}:1) is stamped on every Line this bookmark
     // touches, so multiple bookmarks on one Line coexist as multiple tags.
+    //
+    // Text nodes get measured_width/height from measureText() so Cyto can
+    // size them to fit their string content. They also get an `order` index
+    // (0-based, left-to-right within the Line) for constraint generation.
+    //
+    // Lines get a `line_number` (0-based, top-to-bottom in doc order) for
+    // vertical ordering constraints.
     whatsthis_into(
         state: EditorState,
         model: TheC,
@@ -256,11 +305,25 @@ S o yeses/because/blon_itn
             line_entries.push({ line_from: line.from, line_to: line.to })
         }
 
+        // Assign line_number based on doc-order position among all Lines in model.
+        // We track a running counter on model.c so successive calls share numbering.
+        model.c._line_counter ??= 0
+
         for (const { line_from, line_to } of line_entries) {
             const LineC = model.oai({ Line: line_from, line_to })
             // Tag this Line with the bookmark id — may already be tagged by
             // a prior bookmark. Tags come and go across ticks via replace().
             LineC.sc[opt.bm_key] = 1
+
+            // Assign line_number once (first creation)
+            if (LineC.sc.line_number == null) {
+                LineC.sc.line_number = model.c._line_counter++
+            }
+
+            // Compute a human-readable line label from the doc line number
+            const docLine = doc.lineAt(line_from)
+            LineC.sc.label = `L${docLine.number}`
+
             LineC.bump_version()
 
             // Gather syntax nodes + text boundaries within this Line.
@@ -297,116 +360,168 @@ S o yeses/because/blon_itn
             }
 
             // text segments between boundaries, also direct children of Line.
+            // Each gets an `order` index (0-based L→R) and measured dimensions.
             const sorted = [...boundaries].sort((a, b) => a - b)
+            let text_order = 0
             for (let i = 0; i < sorted.length - 1; i++) {
                 const f = sorted[i], t = sorted[i + 1]
                 const s = doc.sliceString(f, t)
                 if (!s.trim()) continue
                 const tC = LineC.oai({ text: 1, from: f, to: t })
                 if (tC.sc.str == null) tC.sc.str = s
+
+                // measure for Cyto node sizing — monospace at 12px
+                const m = this.measureText(s, 12)
+                tC.sc.measured_width  = m.width
+                tC.sc.measured_height = m.height
+                tC.sc.order = text_order++
+
+                tC.bump_version()
             }
         }
     },
 
 //#region constraints
-// wherewhatis(model: TheC): void
-// Traverses the model, adds alignment constraints, and sets up text-node edges.
+    // wherewhatis(model: TheC): void
+    //
+    // Traverses the model and emits constraints so that:
+    //   — Lines stack vertically in doc order (top→bottom)
+    //   — Lines align on their left edge (vertical alignment = shared X)
+    //   — Text segments within a Line flow left→right in order
+    //   — Syntax nodes float above their corresponding text segment
+    //   — Bookmark nodes sit to the left, connected to their Lines
 
-    // --- Main Traversal: wherewhatis ---
     wherewhatis(model: TheC) {
-        const lines = model.o({ Line: 1 }) as TheC[];
+        const lines = (model.o({ Line: 1 }) as TheC[])
+            .sort((a, b) => (a.sc.line_number as number) - (b.sc.line_number as number))
+
+        // ── vertical stacking: Lines top→bottom in doc order ─────────
+        for (let i = 0; i < lines.length - 1; i++) {
+            model.i({
+                cyto_cons: 1,
+                label: `lineV${i}`,
+                type: 'relativePlacementConstraint',
+                axis: 'vertical',
+                gap: 8,
+                top: lines[i],
+                bottom: lines[i + 1],
+            })
+        }
+
+        // ── left-edge alignment: all Lines share the same X ──────────
+        if (lines.length > 1) {
+            model.i({
+                cyto_cons: 1,
+                label: `linesAlignV×${lines.length}`,
+                type: 'alignmentConstraint',
+                axis: 'vertical',   // vertical alignment = same X position
+                nodes: [...lines],
+            })
+        }
 
         for (const line of lines) {
-            const textSegments = line.o({ text: 1 }) as TheC[];
-            const nodes = line.o({ node: 1 }) as TheC[];
+            const textSegments = (line.o({ text: 1 }) as TheC[])
+                .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
+            const nodes = line.o({ node: 1 }) as TheC[]
 
-            // Add horizontal alignment constraint for text segments
+            // ── horizontal flow: text segments L→R within a Line ─────
+            for (let i = 0; i < textSegments.length - 1; i++) {
+                model.i({
+                    cyto_cons: 1,
+                    label: `txtH${i}`,
+                    type: 'relativePlacementConstraint',
+                    axis: 'horizontal',
+                    gap: 4,  // tight spacing between code tokens
+                    left: textSegments[i],
+                    right: textSegments[i + 1],
+                })
+            }
+
+            // ── baseline alignment: all text segments in a Line share Y ─
             if (textSegments.length > 1) {
-                this.addAlignmentConstraint(model, textSegments, "horizontal", "alignment");
+                model.i({
+                    cyto_cons: 1,
+                    label: `txtAlignH×${textSegments.length}`,
+                    type: 'alignmentConstraint',
+                    axis: 'horizontal',  // horizontal alignment = same Y position
+                    nodes: [...textSegments],
+                })
             }
 
-            // Position nodes above their corresponding text
-            for (let i = 0; i < Math.min(textSegments.length, nodes.length); i++) {
-                const textNode = textSegments[i];
-                const node = nodes[i];
+            // ── Line marker sits left of its first text segment ──────
+            if (textSegments.length > 0) {
+                model.i({
+                    cyto_cons: 1,
+                    label: 'lineLeft',
+                    type: 'relativePlacementConstraint',
+                    axis: 'horizontal',
+                    gap: 12,
+                    left: line,
+                    right: textSegments[0],
+                })
+                // Line and its first text share Y baseline
+                model.i({
+                    cyto_cons: 1,
+                    label: 'lineBaseH',
+                    type: 'alignmentConstraint',
+                    axis: 'horizontal',
+                    nodes: [line, textSegments[0]],
+                })
+            }
 
-                // Add edge between text node and specific descendant node
-                if (node.sc.str?.includes("Sunpit") && textNode.sc.str?.startsWith("S")) {
-                    this.addTextNodeEdge(model, textNode, node, "S");
-                } else if (node.sc.str?.includes("IOpath") && textNode.sc.str?.includes("/")) {
-                    this.addTextNodeEdge(model, textNode, node, "/");
-                } else {
-                    this.addTextNodeEdge(model, textNode, node);
+            // ── syntax annotations float above their text ────────────
+            // Match each syntax node to its nearest text segment by position overlap.
+            // Node above text, connected by a thin edge.
+            for (const nd of nodes) {
+                const nd_from = nd.sc.from as number
+                const nd_to   = nd.sc.to   as number
+                // find the text segment that best overlaps this node
+                let best: TheC | null = null
+                let bestOverlap = 0
+                for (const ts of textSegments) {
+                    const ts_from = ts.sc.from as number
+                    const ts_to   = ts.sc.to   as number
+                    const overlap = Math.min(nd_to, ts_to) - Math.max(nd_from, ts_from)
+                    if (overlap > bestOverlap) { best = ts; bestOverlap = overlap }
                 }
+                if (!best) continue
 
-                // Add vertical alignment constraint for node above text
-                this.addAlignmentConstraint(model, [node, textNode], "vertical", "relativePlacement", 16);
+                // vertical: node above its text
+                model.i({
+                    cyto_cons: 1,
+                    label: 'ndAbove',
+                    type: 'relativePlacementConstraint',
+                    axis: 'vertical',
+                    gap: 20,
+                    top: nd,
+                    bottom: best,
+                })
+
+                // edge: annotation link from syntax node down to text
+                model.oai({
+                    cyto_edge: 1,
+                    annotation_edge: 1,
+                    source_from: nd.sc.from,
+                    target_from: best.sc.from,
+                }, {
+                    source: nd,
+                    target: best,
+                    label:  nd.sc.name ?? '',
+                    style: {
+                        'line-color': '#334',
+                        width: 0.8,
+                        'line-style': 'dotted',
+                        'target-arrow-shape': 'none',
+                        'curve-style': 'bezier',
+                        opacity: 0.4,
+                    },
+                })
             }
         }
-
-        // Global horizontal alignment for Lines
-        if (lines.length > 1) {
-            this.addAlignmentConstraint(model, lines, "vertical", "alignment");
-        }
     },
 
-    // --- Alignment Constraint Helpers ---
-    addAlignmentConstraint(
-        model: TheC,
-        nodes: TheC[],
-        axis: "horizontal" | "vertical",
-        type: "alignment" | "relativePlacement",
-        gap?: number
-    ) {
-        if (type === "alignment" && nodes.length < 2) return;
-        if (type === "relativePlacement" && nodes.length !== 2) return;
-        const constraintType = type === "alignment" ? "alignmentConstraint" : "relativePlacementConstraint";
-        const ax = axis === "vertical" ? "V" : "H";
-        const label = type === "alignment"
-            ? `align${ax}×${nodes.length}`
-            : `place${ax}`;
-
-        const constraint = model.i({
-            cyto_cons: 1,
-            label,
-            type: constraintType,
-            axis,
-            gap: gap ?? 32,
-        });
-
-        if (type === "alignment") {
-            constraint.sc.nodes = nodes; // Store node objects
-        } else {
-            constraint.sc[axis === "vertical" ? "top" : "left"] = nodes[0];
-            constraint.sc[axis === "vertical" ? "bottom" : "right"] = nodes[nodes.length - 1];
-        }
-    },
-
-    // --- Text-Node Edge Helper ---
-    addTextNodeEdge(
-        model: TheC,
-        textNode: TheC,
-        node: TheC,
-        label: string = "te"
-    ) {
-        model.oai({
-            cyto_edge: 1,
-            source: textNode,
-            target: node,
-            label,
-            style: { "line-color": "#4488ff", width: 1.2, "curve-style": "bezier" },
-        });
-    },
-
-
-
-
-
-
-
-
-
-
+    // (legacy helpers removed — addAlignmentConstraint / addTextNodeEdge
+    //  replaced by inline constraint emission in wherewhatis above)
 
 
 //#region bm

@@ -52,6 +52,17 @@
     //                                       clear C.c.Se1_D
     //
     //   make_wave       Ze   n=topC       → diffs C** vs bD** → wave
+    //
+    // ── Lang-aware node types ────────────────────────────────────────────────
+    //
+    //   cyto_nstyle branches by particle type:
+    //     text:1          → code token, monospace, sized to measured_width/height
+    //     Line:N          → gutter marker, narrow pill
+    //     node:Name       → syntax annotation, small rounded rect
+    //     bookmark_node:1 → bookmark pin, tinted badge
+    //
+    //   Text nodes carry overlay_str in wave data for Cytui's HTML overlay
+    //   system (positioned <pre> elements over the cytoscape canvas).
 
     import { TheC, _C, objectify }  from "$lib/data/Stuff.svelte"
     import { Selection } from "$lib/mostly/Selection.svelte"
@@ -370,7 +381,7 @@
                     }
                 }
 
-                const C = parentC.i({
+                const C: TheC = parentC.i({
                     cyto_node:  1,
                     scan_id,
                     label:      nd.label,
@@ -389,6 +400,16 @@
 
                 // nd already has matstyles_desc when matstyle_apply ran
                 if (nd.matstyles_desc) C.sc.matstyles = nd.matstyles_desc
+
+                // ── overlay data ─────────────────────────────────────────
+                // Text nodes carry their string for Cytui's HTML overlay system.
+                // The overlay renders a <pre> with monospace text positioned over
+                // the cytoscape node, giving crisp typography independent of the
+                // graph zoom level. overlay_str is passed through the wave as data.
+                if (nd.overlay_str) {
+                    C.sc.overlay_str = nd.overlay_str
+                    C.sc.overlay_kind = nd.overlay_kind ?? 'code'
+                }
 
                 // special cases of node typing:
                 // the non-first duplicate refs get:
@@ -520,10 +541,117 @@
         return parts.join('\n')
     },
 
-    // cyto_nstyle now takes the Cyto worker w explicitly and reads
-    // w.c.Styles (cached from the commission).  If Styles is absent,
-    // we fall back to a deterministic palette-pick and warn once.
+    // ── cyto_nstyle ──────────────────────────────────────────────────────
+    // Branches by particle type for Lang-aware layout:
+    //
+    //   text:1          → code token: monospace, sized to measured_width/height,
+    //                     dark bg, light text, round-rectangle.
+    //                     Carries overlay_str for Cytui HTML overlay.
+    //
+    //   Line:N          → gutter marker: narrow pill, muted color, shows "LN".
+    //
+    //   node:Name       → syntax annotation: small rounded rect, tinted by name.
+    //                     Floats above its text segment.
+    //
+    //   bookmark_node:1 → bookmark pin: distinctive badge with bookmark color.
+    //
+    //   (default)       → falls through to matstyle / palette as before.
     cyto_nstyle(w: TheC, n: TheC): any {
+        // ── Lang particle types ──────────────────────────────────────
+        if (n.sc.text != null) {
+            // code token — sized to fit its string
+            const str = (n.sc.str as string) ?? ''
+            const mw  = (n.sc.measured_width  as number) ?? 60
+            const mh  = (n.sc.measured_height as number) ?? 28
+            return {
+                label: str,
+                overlay_str: str,
+                overlay_kind: 'code',
+                style: {
+                    'background-color': '#0c0c0c',
+                    'border-width': 1,
+                    'border-color': '#1a1a1a',
+                    width: mw,
+                    height: mh,
+                    shape: 'round-rectangle',
+                    color: '#8b9a7b',       // muted green for code text
+                    'font-size': '11px',
+                    'text-wrap': 'none',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                },
+            }
+        }
+
+        if (n.sc.Line != null) {
+            // gutter marker — narrow, shows line number
+            const label = (n.sc.label as string) ?? `L${n.sc.Line}`
+            return {
+                label,
+                style: {
+                    'background-color': '#0a0a0a',
+                    'border-width': 1,
+                    'border-color': '#181818',
+                    width: 32,
+                    height: 20,
+                    shape: 'round-rectangle',
+                    color: '#3a3a3a',
+                    'font-size': '9px',
+                    'text-wrap': 'none',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                },
+            }
+        }
+
+        if (n.sc.node != null && n.sc.from != null) {
+            // syntax annotation — small, tinted by node name
+            const name = (n.sc.node as string) ?? ''
+            const str  = (n.sc.str  as string) ?? name
+            const label = str.length > 16 ? str.slice(0, 14) + '…' : str
+            // deterministic tint from name hash
+            const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360
+            return {
+                label: `${name}\n${label}`,
+                style: {
+                    'background-color': `hsl(${hue}, 20%, 12%)`,
+                    'border-width': 1,
+                    'border-color': `hsl(${hue}, 30%, 20%)`,
+                    width: Math.max(40, label.length * 6 + 16),
+                    height: 28,
+                    shape: 'round-rectangle',
+                    color: `hsl(${hue}, 40%, 65%)`,
+                    'font-size': '8px',
+                    'text-wrap': 'wrap',
+                    'text-max-width': '80px',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                },
+            }
+        }
+
+        if (n.sc.bookmark_node != null) {
+            // bookmark pin — distinctive badge
+            const label = (n.sc.label as string) ?? (n.sc.bm_id as string) ?? '🔖'
+            return {
+                label: `🔖 ${label}`,
+                style: {
+                    'background-color': '#1a1428',
+                    'border-width': 2,
+                    'border-color': '#7ab0d4',
+                    width: Math.max(48, label.length * 6 + 24),
+                    height: 24,
+                    shape: 'round-rectangle',
+                    color: '#7ab0d4',
+                    'font-size': '9px',
+                    'text-wrap': 'none',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                },
+            }
+        }
+
+        // ── default: matstyle / palette fallback (Story, generic) ────
         const key = this.mainkey(n)
         if (!key) return { label: this.cyto_label(n),
             style: { 'background-color': '#242424', width: 16, height: 16, color: '#666' } }
@@ -847,12 +975,18 @@
                     if (C.sc.isCompound) etc.isCompound = C.sc.isCompound
                     if (C.sc.parent_id != null) etc.parent = C.sc.parent_id
                     if (C.sc.style != null) etc.style = C.sc.style
+                    // overlay data for Cytui HTML overlay system
+                    if (C.sc.overlay_str) etc.overlay_str = C.sc.overlay_str
+                    if (C.sc.overlay_kind) etc.overlay_kind = C.sc.overlay_kind
                     wave.i({ upsert: 1, id, ...etc })
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
                     wave.i({ upsert: 1, id, ...etc,
                         ...(style_ch          ? { style:      style_ch         } : {}),
                         ...(label_ch !== null ? { label:      C.sc.label       } : {}),
                         ...(par_ch   !== null ? { new_parent: C.sc.parent_id ?? null } : {}),
+                        // always pass overlay data through on updates too
+                        ...(C.sc.overlay_str  ? { overlay_str: C.sc.overlay_str } : {}),
+                        ...(C.sc.overlay_kind ? { overlay_kind: C.sc.overlay_kind } : {}),
                     })
                 }
             },
