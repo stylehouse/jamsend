@@ -342,7 +342,7 @@ S o yeses/because/blon_itn
             // that visually wraps its model-children (the text/node particles
             // oai'd onto this LineC below). Cyto's supports_constraints path
             // reads this to set isCompound in cyto_nstyle.
-            LineC.sc.containium = 1
+            // LineC.sc.containium = 1
 
             LineC.bump_version()
 
@@ -434,64 +434,69 @@ S o yeses/because/blon_itn
     wherewhatis(model: TheC) {
         const lines = (model.o({ Line: 1 }) as TheC[])
             .sort((a, b) => (a.sc.line_number as number) - (b.sc.line_number as number))
+        const nonCompoundLines = lines.filter(L => !L.sc.containium)
 
-        // first-text per Line cached for use in pose_Lines (redundant vertical
-        // ordering + left-alignment of the actual code gutter).
-        // const first_text_of_line = new Map<TheC, TheC>()
-        // for (const L of lines) {
-        //     const texts = (L.o({ text: 1 }) as TheC[])
-        //         .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
-        //     if (texts.length) first_text_of_line.set(L, texts[0])
-        // }
-        // ── FOLD: pose_Lines ─────────────────────────────────────────
-        // Vertical stacking of Lines (both on the Line marker AND on
-        // the first text of each Line — redundant constraints give fcose
-        // more to go on, which usually simplifies the solve).
-        // Left-edge alignment keeps the code gutter straight.
-        const pose = model.i({ cyto_fold: 1, mode: 'cyto_fold', label: 'pose_Lines' })
-        for (let i = 0; i < lines.length - 1; i++) {
+        if (nonCompoundLines.length > 1) {
+            // align doesn't work on compound nodes
+            let someLines = nonCompoundLines
+
+            // first-text per Line cached for use in pose_Lines (redundant vertical
+            // ordering + left-alignment of the actual code gutter).
+            const first_text_of_line = new Map<TheC, TheC>()
+            for (const L of someLines) {
+                const texts = (L.o({ text: 1 }) as TheC[])
+                    .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
+                if (texts.length) first_text_of_line.set(L, texts[0])
+            }
+        
+            // ── FOLD: pose_Lines ─────────────────────────────────────────
+            // Vertical stacking of Lines (both on the Line marker AND on
+            // the first text of each Line — redundant constraints give fcose
+            // more to go on, which usually simplifies the solve).
+            // Left-edge alignment keeps the code gutter straight.
+            const pose = model.i({ cyto_fold: 1, mode: 'cyto_fold', label: 'pose_Lines' })
+            for (let i = 0; i < someLines.length - 1; i++) {
+                pose.i({
+                    cyto_cons: 1,
+                    label: `lineMarkV${i}`,
+                    type: 'relativePlacementConstraint',
+                    axis: 'vertical',
+                    gap: 8,
+                    top: someLines[i],
+                    bottom: someLines[i + 1],
+                })
+                const ta = first_text_of_line.get(someLines[i])
+                const tb = first_text_of_line.get(someLines[i + 1])
+                if (ta && tb) {
+                    pose.i({
+                        cyto_cons: 1,
+                        label: `txtRowV${i}`,
+                        type: 'relativePlacementConstraint',
+                        axis: 'vertical',
+                        gap: 8,
+                        top: ta,
+                        bottom: tb,
+                    })
+                }
+            }
             pose.i({
                 cyto_cons: 1,
-                label: `lineMarkV${i}`,
-                type: 'relativePlacementConstraint',
-                axis: 'vertical',
-                gap: 8,
-                top: lines[i],
-                bottom: lines[i + 1],
-            })
-            // const ta = first_text_of_line.get(lines[i])
-            // const tb = first_text_of_line.get(lines[i + 1])
-            // if (0 && ta && tb) {
-            //     pose.i({
-            //         cyto_cons: 1,
-            //         label: `txtRowV${i}`,
-            //         type: 'relativePlacementConstraint',
-            //         axis: 'vertical',
-            //         gap: 8,
-            //         top: ta,
-            //         bottom: tb,
-            //     })
-            // }
-        }
-        if (lines.length > 1) {
-            pose.i({
-                cyto_cons: 1,
-                label: `linesAlignV×${lines.length}`,
+                label: `linesAlignV×${someLines.length}`,
                 type: 'alignmentConstraint',
                 axis: 'vertical',   // vertical alignment = same X position
-                nodes: [...lines],
+                nodes: [...someLines],
             })
             // also left-align all first-texts so the code column is straight
-            // const firsts = lines.map(L => first_text_of_line.get(L)).filter(Boolean) as TheC[]
-            // if (firsts.length > 1) {
-            //     pose.i({
-            //         cyto_cons: 1,
-            //         label: `txtFirstsAlignV×${firsts.length}`,
-            //         type: 'alignmentConstraint',
-            //         axis: 'vertical',
-            //         nodes: firsts,
-            //     })
-            // }
+            const firsts = someLines.map(L => first_text_of_line.get(L)).filter(Boolean) as TheC[]
+            if (firsts.length > 1) {
+                pose.i({
+                    cyto_cons: 1,
+                    label: `txtFirstsAlignV×${firsts.length}`,
+                    type: 'alignmentConstraint',
+                    axis: 'vertical',
+                    nodes: firsts,
+                })
+            }
         }
 
         // Per-Line folds
