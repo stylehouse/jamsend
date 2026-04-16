@@ -991,7 +991,7 @@
 
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
-        if (w.c.trickle) Run.main(true)
+        if (w.c.trickle === w.sc.Book) Run.main(true)
         w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
@@ -1423,13 +1423,58 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'waitCyto',      { stashed: true, label: 'waitCyto'    })
-        await this.i_actions_to_c(w, 'trickle',       { stashed: true, label: 'trickle'     })
+        // trickle: when toggled on, stores the current Book name (not boolean true).
+        // This means only this Book gets the trickle treatment — other Books in
+        // the same House don't accidentally inherit it from stashed.
+        await this.i_actions_to_c(w, 'trickle', {
+            stashed: true,
+            label: 'trickle',
+            on_change: (next: boolean) => {
+                w.c.trickle = next ? w.sc.Book : false
+                if (w.c.trickle) {
+                    // immediately warm up Run
+                    const sub = this.Story_subHouse(null, w)
+                    if (sub) sub.Run.main(true)
+                }
+            },
+        })
+        // On load from stashed, promote boolean true → Book name
+        if (w.c.trickle && w.c.trickle !== false && w.c.trickle !== w.sc.Book) {
+            w.c.trickle = w.sc.Book
+        }
 
         // < is this weird. Baroquely, an information channel in a button
         await wa.roai({ action: 1, role: 'status' }, {
             label:    `${mode} ${run.sc.failed_at ? '✗' + this.pad(run.sc.failed_at) : this.pad(run.sc.done ?? 0)}`,
             cls:      run.sc.failed_at ? 'stop' : mode === 'new' ? 'save' : 'default',
             disabled: true,
+        })
+
+        // ── Resnap button ─────────────────────────────────────────
+        // Debug tool: re-fires the current step's snap_step_after_wave,
+        // capturing Snap:H as it looks RIGHT NOW. Useful when the model
+        // has filled out asynchronously (bookmark walks, Cyto scans) after
+        // the original snap went out with a stale / empty model.
+        //
+        // Doesn't try to reconstruct TheWave properly — the point is to
+        // re-read the H tree into a fresh snap you can open in the diff
+        // panel. The CytoWave portion will be whatever Cyto has cached.
+        await wa.roai({ action: 1, role: 'resnap' }, {
+            label: 'Resnap',
+            icon:  '📸',
+            cls:   'save',
+            fn: () => {
+                const resume = run.c.snap_step_after_wave as (() => Promise<void>) | undefined
+                if (!resume) {
+                    console.warn('Resnap: no snap_step_after_wave on run.c (no step driven yet?)')
+                    return
+                }
+                // driving=true is what snap_step_after_wave expects; it'll reset
+                // itself as it walks through. paused guard just in case.
+                if (run.sc.paused && run.sc.paused !== 2) run.sc.paused = 0
+                run.c.driving = true
+                this.post_do(resume, { see: 'Resnap button' })
+            },
         })
     },
 
