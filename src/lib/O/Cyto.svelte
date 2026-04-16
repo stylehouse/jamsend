@@ -599,8 +599,31 @@
         }
 
         if (n.sc.Line != null) {
-            // gutter marker — narrow, shows line number
+            // Lines with containium become compound cytoscape nodes that
+            // wrap their text/node children. Cytui's :parent selector puts
+            // the label at top-center and enforces min-width/min-height.
+            // Without containium (shouldn't happen in current Lang usage, but
+            // kept for robustness) a Line renders as a narrow gutter pill.
             const label = (n.sc.label as string) ?? `L${n.sc.Line}`
+            if (n.sc.containium) {
+                return {
+                    label,
+                    isCompound: true,
+                    style: {
+                        'background-color': '#080808',
+                        'background-opacity': 0.7,
+                        'border-width': 1,
+                        'border-color': '#1a1a1a',
+                        shape: 'round-rectangle',
+                        color: '#5a6a5a',
+                        'font-size': '10px',
+                        'text-wrap': 'none',
+                        'text-valign': 'top',
+                        'text-halign': 'center',
+                        padding: 6,
+                    },
+                }
+            }
             return {
                 label,
                 style: {

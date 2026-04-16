@@ -315,24 +315,26 @@ S o yeses/because/blon_itn
             line_entries.push({ line_from: line.from, line_to: line.to })
         }
 
-        // Assign line_number based on doc-order position among all Lines in model.
-        // We track a running counter on model.c so successive calls share numbering.
-        model.c._line_counter ??= 0
-
         for (const { line_from, line_to } of line_entries) {
             const LineC = model.oai({ Line: line_from, line_to })
             // Tag this Line with the bookmark id — may already be tagged by
             // a prior bookmark. Tags come and go across ticks via replace().
             LineC.sc[opt.bm_key] = 1
 
-            // Assign line_number once (first creation)
-            if (LineC.sc.line_number == null) {
-                LineC.sc.line_number = model.c._line_counter++
-            }
-
-            // Compute a human-readable line label from the doc line number
+            // line_number = the actual document line number, so sorting by
+            // it always puts Lines in doc order regardless of which bookmark
+            // created them first. (Earlier versions used an insertion-order
+            // counter — that ordered by bookmark-creation order, not doc
+            // order, which is wrong when bookmarks are added out of sequence.)
             const docLine = doc.lineAt(line_from)
-            LineC.sc.label = `L${docLine.number}`
+            LineC.sc.line_number = docLine.number
+            LineC.sc.label       = `L${docLine.number}`
+
+            // containium flag — tells Cyto this particle is a compound node
+            // that visually wraps its model-children (the text/node particles
+            // oai'd onto this LineC below). Cyto's supports_constraints path
+            // reads this to set isCompound in cyto_nstyle.
+            LineC.sc.containium = 1
 
             LineC.bump_version()
 
@@ -492,17 +494,26 @@ S o yeses/because/blon_itn
             const nodes = line.o({ node: 1 }) as TheC[]
             const line_n = line.sc.line_number as number
 
+            // When the Line is a containium (compound in Cyto), its text and
+            // node children are nested inside its compound box — placing the
+            // Line horizontally relative to its own child (or aligning it on Y
+            // with its own child) is circular and fcose doesn't handle it.
+            // So in containium mode we skip those Line-involving constraints
+            // and let the compound layout + inner text constraints do the job.
+            const line_is_compound = !!line.sc.containium
+
             // ── FOLD: flow_Lh_<n> ─────────────────────────────────────
-            // The Line marker plus all its text segments form one
-            // horizontal row: Line → text[0] → text[1] → ... with
-            // shared Y baseline (horizontal alignment).
+            // Text segments form a horizontal row within the Line. When the
+            // Line is NOT compound, the Line marker sits left of text[0]
+            // on a shared baseline; when it IS compound, it just contains
+            // them and we only constrain the inner text chain.
             const flow = model.i({
                 cyto_fold: 1, mode: 'cyto_fold',
                 label: `flow_Lh_${line_n}`,
             })
 
-            // Line marker sits left of first text, same baseline.
-            if (textSegments.length > 0) {
+            if (!line_is_compound && textSegments.length > 0) {
+                // Line marker sits left of first text, same baseline.
                 flow.i({
                     cyto_cons: 1,
                     label: 'lineToText',
@@ -562,8 +573,12 @@ S o yeses/because/blon_itn
                 })
             }
 
-            // All of {Line, text[0..n]} share Y baseline.
-            const row_members = [line, ...textSegments]
+            // Texts share Y baseline. Include the Line marker only when it's
+            // NOT a compound (including a compound alongside its own children
+            // in a horizontal alignment produces circular constraints).
+            const row_members = line_is_compound
+                ? textSegments
+                : [line, ...textSegments]
             if (row_members.length > 1) {
                 flow.i({
                     cyto_cons: 1,
@@ -694,8 +709,16 @@ S o yeses/because/blon_itn
                 parentFold.oai({
                     cyto_edge: 1,
                     syntax_parent_edge: 1,
+                    // Key must distinguish edges that share a `from` on both
+                    // endpoints — e.g. IOpath[38..60] → Leg[38..43] and
+                    // Leg[38..43] → Name[38..43] both have child_from=38 and
+                    // parent_from=38 when you only look at `from`.  Adding
+                    // child_to and parent_to makes each edge uniquely keyed.
                     child_from: nd.sc.from,
+                    child_to:   nd.sc.to,
                     parent_from: pf,
+                    parent_to:   pt,
+                    parent_name: pn,
                 }, {
                     source: parent,
                     target: nd,
