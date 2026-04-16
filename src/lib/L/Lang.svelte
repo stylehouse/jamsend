@@ -75,7 +75,7 @@
 //#endregion
 //#region plan
 
-    Lang_plan(A: House, w: TheC) {
+    async Lang_plan(A: House, w: TheC) {
         const H = this
 
         // ── the permanent viewable model ────────────────────────────
@@ -91,9 +91,9 @@
 
         const wa = H.oai_enroll(H, { watched: 'actions' })
         wa.oai({ action: 1, role: 'debookmark'   },
-             { label: '-marks', fn: () => this.Lang_debookmark(w) })
+            { label: '-marks', fn: () => this.Lang_debookmark(w) })
         wa.oai({ action: 1, role: 'enbookmark'   },
-             { label: '+marks', fn: () => this.Lang_enbookmark(w) })
+            { label: '+marks', fn: () => this.Lang_enbookmark(w) })
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
@@ -177,25 +177,32 @@ S o yeses/because/blon_itn
     async Lang(A: TheC, w: TheC) {
         const H = this
 
-        if (!w.c.plan_done) this.Lang_plan(A, w)
+        if (!w.c.plan_done) await this.Lang_plan(A, w)
+        // these go every time so their toggle state can visually change
+        let on_change = () => this.main()
+        await this.i_actions_to_c(w, 'compo',{ stashed: true, on_change })
+        await this.i_actions_to_c(w, 'compi',{ stashed: true, on_change })
 
         const model     = w.c.model as TheC
         const state     = w.c.editorState
+        const opt       = {compound_nodes: !!w.c.compo}
         const bookmarks = w.o({ bookmark: 1 }) as TheC[]
+        if (w.c.compo) console.log("COMPO ON")
+        if (w.c.compi) console.log("COMPI ON")
 
         // we do our best to send Cyto's Se1 a Line%* that trace all bookmark ids in it.
         //  so it can notice when Line 3 becomes Line 4 upon the user hitting enter
         model.empty()
         if (state && bookmarks.length) {
-            this.whatsthis(state,model,bookmarks)
-            this.wherewhatis(model)
+            this.whatsthis(state,model,bookmarks,opt)
+            this.wherewhatis(model,opt)
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
         H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
     },
 
-    whatsthis(state:EditorState,model:TheC,bookmarks:TheC[]) {
+    whatsthis(state:EditorState,model:TheC,bookmarks:TheC[],opt={}) {
         // First pass: walk the syntax tree for each bookmark.
         // whatsthis_into() finds-or-creates Line / node / text
         // at stable addresses on `model` so duplicate bookmarks
@@ -209,6 +216,7 @@ S o yeses/because/blon_itn
                 bm_id,
                 bm_key,
                 bm,
+                ...opt,
             })
         }
 
@@ -275,7 +283,9 @@ S o yeses/because/blon_itn
     whatsthis_into(
         state: EditorState,
         model: TheC,
-        opt: { from: number, to: number, bm_id: string, bm_key: string, bm: TheC },
+        opt: { from: number, to: number, bm_id: string, bm_key: string, bm: TheC,
+                compound_nodes: Boolean,
+        },
     ) {
         const tree = syntaxTree(state)
         if (!tree || tree.length === 0) return
@@ -342,7 +352,7 @@ S o yeses/because/blon_itn
             // that visually wraps its model-children (the text/node particles
             // oai'd onto this LineC below). Cyto's supports_constraints path
             // reads this to set isCompound in cyto_nstyle.
-            // LineC.sc.containium = 1
+            if (opt.compound_nodes) LineC.sc.containium = 1
 
             LineC.bump_version()
 
