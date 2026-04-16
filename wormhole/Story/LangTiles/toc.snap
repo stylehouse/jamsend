@@ -39,6 +39,8 @@ story:LangTiles
       style:background-color,v:#8259c5
     matstyle:cyto_cons
       style:background-color,v:#997429
+    matstyle:cyto_fold
+      style:background-color,v:#24bcb6
   TimeSpool
     TimeTotal:beliefs,avg:112.389
       sample:0.145,at:1776041031

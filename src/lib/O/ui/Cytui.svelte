@@ -49,12 +49,8 @@
     let last_tick       = -1
     let seek_warning = $state<string | null>(null)
 
-    // ── overlay system ───────────────────────────────────────────────────────
-    // Map of cytoscape node id → positioned HTML overlay element.
-    // Created in apply(), repositioned on layout/render, destroyed on remove.
-    let overlays: Map<string, HTMLElement> = new Map()
-    // Container div for all overlays — sits over the cy canvas with pointer-events:none
-    let overlay_container: HTMLDivElement
+    // Overlay state lives in the //#region overlays block further down
+    // (overlays, overlay_bgs, overlay_container, OVERLAY_QUIET_MS, …).
 
     // the UI channel - %matstyle come from Story
     $effect(() => {
@@ -290,42 +286,95 @@
     //
     // create_overlay: called from apply() when a node with overlay_str is upserted.
     //   Creates a positioned HTML element in overlay_container, stores in overlays map.
+    //   The bg color matches the node so the cy-rendered label is covered — otherwise
+    //   the label text bleeds through and turns the overlay into scribbles.
     //
-    // update_overlay: called on existing overlay — updates text if changed.
+    // update_overlay: called on existing overlay — updates text/bg if changed.
     //
     // remove_overlay: called when node is removed — destroys the DOM element.
     //
     // reposition_overlays: called after layout stops and on cy 'render' — moves
     //   each overlay to match its node's rendered position and zoom-adjusted size.
+    //
+    // ── visibility gating ────────────────────────────────────────────────────
+    //
+    // Positioning every overlay on every frame is expensive during pan/zoom/drag
+    // — browsers struggle to composite dozens of moving divs over a canvas. So:
+    //
+    //   - On `grab` / `pan` / `zoom` / `layoutstart` we add `.overlays-hidden` to
+    //     the container, which instantly invises every overlay via one CSS toggle.
+    //   - On `free` / `pan`-quiet / `zoom`-quiet / `layoutstop` we schedule a
+    //     re-show via debounced timer — after OVERLAY_QUIET_MS of no movement,
+    //     reposition everything and remove the hidden class.
+    //
+    // The hidden class uses `visibility: hidden` not `display: none` so layout
+    // positions don't reflow; also `will-change: transform` is cleared so we
+    // don't keep promoting layers needlessly.
 
-    function create_overlay(id: string, str: string, kind: string) {
-        if (overlays.has(id)) return update_overlay(id, str)
+    const OVERLAY_QUIET_MS = 120
+
+    let overlays: Map<string, HTMLElement> = new Map()
+    // Background color per node id — used when updating so we don't
+    // re-read the node style on every tick
+    let overlay_bgs: Map<string, string> = new Map()
+    // Container div for all overlays — sits over the cy canvas with pointer-events:none
+    let overlay_container: HTMLDivElement
+    let overlay_quiet_timer: ReturnType<typeof setTimeout> | null = null
+
+    function show_overlays_soon() {
+        if (overlay_quiet_timer) clearTimeout(overlay_quiet_timer)
+        overlay_quiet_timer = setTimeout(() => {
+            overlay_quiet_timer = null
+            if (!overlay_container) return
+            reposition_overlays()
+            overlay_container.classList.remove('overlays-hidden')
+        }, OVERLAY_QUIET_MS)
+    }
+
+    function hide_overlays_now() {
+        if (!overlay_container) return
+        overlay_container.classList.add('overlays-hidden')
+        if (overlay_quiet_timer) { clearTimeout(overlay_quiet_timer); overlay_quiet_timer = null }
+    }
+
+    function create_overlay(id: string, str: string, kind: string, bg?: string) {
+        if (overlays.has(id)) return update_overlay(id, str, bg)
         if (!overlay_container) return
 
         const el = document.createElement('div')
-        el.className = kind === 'cm-hole' ? 'cyto-overlay cm-hole' : 'cyto-overlay code-overlay'
+        el.className = kind === 'cm-hole' ? 'cyto-overlay cm-hole' : `cyto-overlay ${kind}-overlay`
         el.dataset.nodeId = id
 
-        if (kind === 'code') {
+        if (kind === 'cm-hole') {
+            // scaffold for future CodeMirror mount
+            el.innerHTML = `<div class="cm-hole-inner" data-cm-id="${id}"></div>`
+        } else {
+            // generic text-bearing overlay: code | annotation
             const pre = document.createElement('pre')
             const code = document.createElement('code')
             code.textContent = str
             pre.appendChild(code)
             el.appendChild(pre)
-        } else if (kind === 'cm-hole') {
-            // scaffold for future CodeMirror mount
-            el.innerHTML = `<div class="cm-hole-inner" data-cm-id="${id}"></div>`
+        }
+
+        if (bg) {
+            el.style.backgroundColor = bg
+            overlay_bgs.set(id, bg)
         }
 
         overlay_container.appendChild(el)
         overlays.set(id, el)
     }
 
-    function update_overlay(id: string, str: string) {
+    function update_overlay(id: string, str: string, bg?: string) {
         const el = overlays.get(id)
         if (!el) return
         const code = el.querySelector('code')
         if (code && code.textContent !== str) code.textContent = str
+        if (bg && bg !== overlay_bgs.get(id)) {
+            el.style.backgroundColor = bg
+            overlay_bgs.set(id, bg)
+        }
     }
 
     function remove_overlay(id: string) {
@@ -333,12 +382,12 @@
         if (!el) return
         el.remove()
         overlays.delete(id)
+        overlay_bgs.delete(id)
     }
 
     function reposition_overlays() {
         if (!cy || !overlay_container) return
         const zoom = cy.zoom()
-        const pan  = cy.pan()
 
         for (const [id, el] of overlays) {
             const node = cy.getElementById(id)
@@ -360,6 +409,7 @@
     function clear_all_overlays() {
         for (const [id, el] of overlays) el.remove()
         overlays.clear()
+        overlay_bgs.clear()
     }
 
 //#endregion
@@ -372,6 +422,12 @@
         const ms = Math.round(dur * 1000)
 
         console.log(`🌊 apply() this wave: upsert x${wave.o({ upsert: 1 }).length}`)
+
+        // Hide overlays while we mutate the graph — freshly-created overlays
+        // start at left:0/top:0 and would flash there for a frame before
+        // reposition_overlays() moves them.  The global layoutstop handler
+        // below will re-show them after positions settle.
+        hide_overlays_now()
 
         if (wave.sc.absolute) {
             console.log(`wave%absolute removes and re-adds the entire graph`)
@@ -428,10 +484,14 @@
             // ── overlay sync ─────────────────────────────────────────
             // Create or update HTML overlay for nodes carrying overlay_str.
             // Cytoscape handles the box/border; the overlay renders crisp text.
+            // overlay_bg matches the node's background so the cy-rendered label
+            // underneath is completely hidden — without it the label bleeds
+            // through and turns the overlay into scribbles.
             const overlay_str  = nd.sc.overlay_str  as string | undefined
             const overlay_kind = nd.sc.overlay_kind as string | undefined
+            const overlay_bg   = nd.sc.overlay_bg   as string | undefined
             if (overlay_str != null) {
-                create_overlay(id, overlay_str, overlay_kind ?? 'code')
+                create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
             }
         }
  
@@ -509,6 +569,10 @@
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
             relayout(ms)
+        } else {
+            // no layout needed — bring overlays back now instead of waiting
+            // for a layoutstop that will never fire
+            show_overlays_soon()
         }
     }
     let constraints = {}
@@ -598,7 +662,9 @@
             const on_stop = () => {
                 cy.removeListener('layoutstop', on_stop)
                 cy.fit(cy.nodes(), 16)
-                reposition_overlays()
+                // overlays are repositioned + unhidden by the global
+                // 'layoutstop' handler (show_overlays_soon) — no need to
+                // duplicate that work here.
             }
             cy.on('layoutstop', on_stop)
         }
@@ -643,9 +709,17 @@
             ],
         })
 
-        // Reposition overlays on viewport changes (pan/zoom/render)
-        cy.on('render', () => reposition_overlays())
-        cy.on('pan zoom', () => reposition_overlays())
+        // ── overlay visibility gating ────────────────────────────────
+        // During motion (drag, pan, zoom, layout) we don't try to keep
+        // overlays in sync — we hide them entirely via one CSS class
+        // toggle on the container. A debounced timer brings them back
+        // once the user stops moving things. This makes heavy graphs
+        // feel snappy even though we have many positioned DOM elements.
+        cy.on('grab',        () => hide_overlays_now())
+        cy.on('free',        () => show_overlays_soon())
+        cy.on('pan zoom',    () => { hide_overlays_now(); show_overlays_soon() })
+        cy.on('layoutstart', () => hide_overlays_now())
+        cy.on('layoutstop',  () => show_overlays_soon())
 
         // rebuild from scratch on HMR
         H.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
@@ -744,9 +818,19 @@
     overflow: hidden;
 }
 
-/* ── code overlay: positioned <pre> over a text node ───────────────────── */
+/* overlays-hidden: set during drag/pan/zoom/layout so we don't repaint
+   dozens of positioned divs every frame. Toggled as one class on the
+   container rather than touching each overlay's style.  visibility:
+   hidden keeps position/layout stable so nothing reflows. */
+:global(.cytui-overlays.overlays-hidden .cyto-overlay) {
+    visibility: hidden;
+}
+
+/* ── code overlay: positioned box over a text node ─────────────────────── */
 /* Crisp monospace typography independent of cy zoom. The overlay tracks
-   the node's rendered position/size via reposition_overlays(). */
+   the node's rendered position/size via reposition_overlays().
+   Background color is set at create-time to match the node's bg, so the
+   cy-rendered label underneath is completely hidden. */
 :global(.cyto-overlay) {
     position: absolute;
     pointer-events: none;
@@ -754,8 +838,12 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    border-radius: 4px;
+    /* transitions only when the container is showing — during drag/pan/zoom
+       the parent has .overlays-hidden which sets visibility:hidden, making
+       these transitions irrelevant. If they were on.
     transition: left 0.15s ease-out, top 0.15s ease-out,
-                width 0.15s ease-out, height 0.15s ease-out;
+                width 0.15s ease-out, height 0.15s ease-out; */
 }
 
 :global(.code-overlay) {
@@ -764,13 +852,31 @@
     color: #8b9a7b;
 }
 :global(.code-overlay pre) {
-    margin: 0; padding: 0;
+    margin: 0; padding: 0 4px;
     white-space: pre;
     line-height: 1.4;
     /* inherit font-size from the overlay div (set by reposition_overlays) */
     font-size: inherit;
 }
 :global(.code-overlay code) {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* ── annotation overlay: syntax name + short string for node:Name ──────── */
+/* Same idea as code-overlay but tuned for tiny boxes hovering above text. */
+:global(.annotation-overlay) {
+    font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;
+    color: inherit;
+}
+:global(.annotation-overlay pre) {
+    margin: 0; padding: 0 3px;
+    white-space: pre-wrap;
+    line-height: 1.2;
+    font-size: calc(1em * 0.75);  /* smaller than code overlays */
+    text-align: center;
+}
+:global(.annotation-overlay code) {
     font-family: inherit;
     font-size: inherit;
 }

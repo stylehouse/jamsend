@@ -82,7 +82,7 @@
         // w/{model:1} — a stable TheC we hand to Cyto as Scannable.
         // i_elvis_req keyed on the req particle won't re-send while this
         // is the same object, so commissioning happens exactly once.
-        const model = w.i({ model: 1 })
+        const model = w.i({ model: 1, cyto_dir:1 })
         w.c.model = model
 
         // UI registration — Otro mounts this alongside Cytui for H:Lang
@@ -327,8 +327,16 @@ S o yeses/because/blon_itn
             LineC.bump_version()
 
             // Gather syntax nodes + text boundaries within this Line.
+            //
+            // For each syntax hit we also capture parent_name / parent_from /
+            // parent_to so wherewhatis can find the parent node by address
+            // (two different hits in one Line could share a name — address
+            // is the only reliable identifier).
             const boundaries = new Set<number>([line_from, line_to])
-            const syntax_hits: Array<{ name: string, from: number, to: number, parent_name?: string }> = []
+            const syntax_hits: Array<{
+                name: string, from: number, to: number,
+                parent_name?: string, parent_from?: number, parent_to?: number,
+            }> = []
 
             tree.iterate({
                 from: line_from,
@@ -341,10 +349,12 @@ S o yeses/because/blon_itn
                     boundaries.add(from)
                     boundaries.add(to)
                     const parent = ref.node.parent
+                    const hasParent = parent && parent.name !== 'Line' && parent.name !== 'Program'
                     syntax_hits.push({
                         name, from, to,
-                        parent_name: (parent && parent.name !== 'Line' && parent.name !== 'Program')
-                            ? parent.name : undefined,
+                        parent_name: hasParent ? parent.name : undefined,
+                        parent_from: hasParent ? parent.from : undefined,
+                        parent_to:   hasParent ? parent.to   : undefined,
                     })
                 },
             })
@@ -356,6 +366,8 @@ S o yeses/because/blon_itn
                 if (s.length <= 120 && nodeC.sc.str == null) nodeC.sc.str = s
                 if (h.parent_name && nodeC.sc.parent_name == null) {
                     nodeC.sc.parent_name = h.parent_name
+                    nodeC.sc.parent_from = h.parent_from
+                    nodeC.sc.parent_to   = h.parent_to
                 }
             }
 
@@ -384,49 +396,134 @@ S o yeses/because/blon_itn
 //#region constraints
     // wherewhatis(model: TheC): void
     //
-    // Traverses the model and emits constraints so that:
-    //   — Lines stack vertically in doc order (top→bottom)
-    //   — Lines align on their left edge (vertical alignment = shared X)
-    //   — Text segments within a Line flow left→right in order
-    //   — Syntax nodes float above their corresponding text segment
-    //   — Bookmark nodes sit to the left, connected to their Lines
+    // Emits constraints + edges grouped into cyto_fold buckets so they don't
+    // drown the flat model tree.  Each fold is `{cyto_fold:1, mode:'cyto_fold',
+    // label:<purpose>}` and is classified as invisible by cytyle_classify —
+    // Cyto walks through it (children still produce constraints) but nothing
+    // is drawn for the fold itself.
+    //
+    // Folds emitted (all direct children of `model`):
+    //   pose_Lines        — Lines stack vertically, left-edge alignment
+    //   flow_Lh_<n>       — one per Line: Line→text[0] and text[i]→text[i+1]
+    //                       horizontal chain + baseline alignment
+    //   nodes_over_text_<n> — one per Line: syntax node above its best-overlap
+    //                        text segment, annotation edges
+    //   syntax_parent_<n> — one per Line: child syntax node → parent syntax node
+    //                       edges (the hierarchy that used to be implicit)
 
     wherewhatis(model: TheC) {
         const lines = (model.o({ Line: 1 }) as TheC[])
             .sort((a, b) => (a.sc.line_number as number) - (b.sc.line_number as number))
 
-        // ── vertical stacking: Lines top→bottom in doc order ─────────
+        // first-text per Line cached for use in pose_Lines (redundant vertical
+        // ordering + left-alignment of the actual code gutter).
+        const first_text_of_line = new Map<TheC, TheC>()
+        for (const L of lines) {
+            const texts = (L.o({ text: 1 }) as TheC[])
+                .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
+            if (texts.length) first_text_of_line.set(L, texts[0])
+        }
+
+        // ── FOLD: pose_Lines ─────────────────────────────────────────
+        // Vertical stacking of Lines (both on the Line marker AND on
+        // the first text of each Line — redundant constraints give fcose
+        // more to go on, which usually simplifies the solve).
+        // Left-edge alignment keeps the code gutter straight.
+        const pose = model.i({ cyto_fold: 1, mode: 'cyto_fold', label: 'pose_Lines' })
         for (let i = 0; i < lines.length - 1; i++) {
-            model.i({
+            pose.i({
                 cyto_cons: 1,
-                label: `lineV${i}`,
+                label: `lineMarkV${i}`,
                 type: 'relativePlacementConstraint',
                 axis: 'vertical',
                 gap: 8,
                 top: lines[i],
                 bottom: lines[i + 1],
             })
+            const ta = first_text_of_line.get(lines[i])
+            const tb = first_text_of_line.get(lines[i + 1])
+            if (ta && tb) {
+                pose.i({
+                    cyto_cons: 1,
+                    label: `txtRowV${i}`,
+                    type: 'relativePlacementConstraint',
+                    axis: 'vertical',
+                    gap: 8,
+                    top: ta,
+                    bottom: tb,
+                })
+            }
         }
-
-        // ── left-edge alignment: all Lines share the same X ──────────
         if (lines.length > 1) {
-            model.i({
+            pose.i({
                 cyto_cons: 1,
                 label: `linesAlignV×${lines.length}`,
                 type: 'alignmentConstraint',
                 axis: 'vertical',   // vertical alignment = same X position
                 nodes: [...lines],
             })
+            // also left-align all first-texts so the code column is straight
+            const firsts = lines.map(L => first_text_of_line.get(L)).filter(Boolean) as TheC[]
+            if (firsts.length > 1) {
+                pose.i({
+                    cyto_cons: 1,
+                    label: `txtFirstsAlignV×${firsts.length}`,
+                    type: 'alignmentConstraint',
+                    axis: 'vertical',
+                    nodes: firsts,
+                })
+            }
         }
 
+        // Per-Line folds
         for (const line of lines) {
             const textSegments = (line.o({ text: 1 }) as TheC[])
                 .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
             const nodes = line.o({ node: 1 }) as TheC[]
+            const line_n = line.sc.line_number as number
 
-            // ── horizontal flow: text segments L→R within a Line ─────
+            // ── FOLD: flow_Lh_<n> ─────────────────────────────────────
+            // The Line marker plus all its text segments form one
+            // horizontal row: Line → text[0] → text[1] → ... with
+            // shared Y baseline (horizontal alignment).
+            const flow = model.i({
+                cyto_fold: 1, mode: 'cyto_fold',
+                label: `flow_Lh_${line_n}`,
+            })
+
+            // Line marker sits left of first text, same baseline.
+            if (textSegments.length > 0) {
+                flow.i({
+                    cyto_cons: 1,
+                    label: 'lineToText',
+                    type: 'relativePlacementConstraint',
+                    axis: 'horizontal',
+                    gap: 12,
+                    left: line,
+                    right: textSegments[0],
+                })
+                // thin edge: Line marker → first text, visual anchor
+                flow.oai({
+                    cyto_edge: 1,
+                    line_text_edge: 1,
+                    the_line: line_n,
+                }, {
+                    source: line,
+                    target: textSegments[0],
+                    label:  '',
+                    style: {
+                        'line-color': '#222',
+                        width: 0.8,
+                        'curve-style': 'bezier',
+                        opacity: 0.5,
+                        'target-arrow-shape': 'none',
+                    },
+                })
+            }
+
+            // Text chain: text[i] → text[i+1]
             for (let i = 0; i < textSegments.length - 1; i++) {
-                model.i({
+                flow.i({
                     cyto_cons: 1,
                     label: `txtH${i}`,
                     type: 'relativePlacementConstraint',
@@ -435,43 +532,49 @@ S o yeses/because/blon_itn
                     left: textSegments[i],
                     right: textSegments[i + 1],
                 })
+                // thin edge connecting adjacent text segments
+                flow.oai({
+                    cyto_edge: 1,
+                    text_chain_edge: 1,
+                    the_line: line_n,
+                    the_order: i,
+                }, {
+                    source: textSegments[i],
+                    target: textSegments[i + 1],
+                    label: '',
+                    style: {
+                        'line-color': '#1a1a1a',
+                        width: 0.6,
+                        'curve-style': 'bezier',
+                        opacity: 0.35,
+                        'target-arrow-shape': 'none',
+                    },
+                })
             }
 
-            // ── baseline alignment: all text segments in a Line share Y ─
-            if (textSegments.length > 1) {
-                model.i({
+            // All of {Line, text[0..n]} share Y baseline.
+            const row_members = [line, ...textSegments]
+            if (row_members.length > 1) {
+                flow.i({
                     cyto_cons: 1,
-                    label: `txtAlignH×${textSegments.length}`,
+                    label: `rowBaseH×${row_members.length}`,
                     type: 'alignmentConstraint',
-                    axis: 'horizontal',  // horizontal alignment = same Y position
-                    nodes: [...textSegments],
+                    axis: 'horizontal',   // shared Y
+                    nodes: row_members,
                 })
             }
 
-            // ── Line marker sits left of its first text segment ──────
-            if (textSegments.length > 0) {
-                model.i({
-                    cyto_cons: 1,
-                    label: 'lineLeft',
-                    type: 'relativePlacementConstraint',
-                    axis: 'horizontal',
-                    gap: 12,
-                    left: line,
-                    right: textSegments[0],
-                })
-                // Line and its first text share Y baseline
-                model.i({
-                    cyto_cons: 1,
-                    label: 'lineBaseH',
-                    type: 'alignmentConstraint',
-                    axis: 'horizontal',
-                    nodes: [line, textSegments[0]],
-                })
-            }
-
-            // ── syntax annotations float above their text ────────────
-            // Match each syntax node to its nearest text segment by position overlap.
-            // Node above text, connected by a thin edge.
+            // ── FOLD: nodes_over_text_<n> ─────────────────────────────
+            // Each syntax node floats above its best-overlapping text.
+            // Annotation edges connect them.
+            const over = model.i({
+                cyto_fold: 1, mode: 'cyto_fold',
+                label: `nodes_over_text_${line_n}`,
+            })
+            // Cache { node → best-overlap text } so the syntax_parent fold
+            // below can fall back to "edge up through the parent chain to
+            // whatever text the deepest descendant sits over".
+            const node_to_best_text = new Map<TheC, TheC>()
             for (const nd of nodes) {
                 const nd_from = nd.sc.from as number
                 const nd_to   = nd.sc.to   as number
@@ -485,9 +588,10 @@ S o yeses/because/blon_itn
                     if (overlap > bestOverlap) { best = ts; bestOverlap = overlap }
                 }
                 if (!best) continue
+                node_to_best_text.set(nd, best)
 
-                // vertical: node above its text
-                model.i({
+                // vertical: node above its text (gap bigger than text→text)
+                over.i({
                     cyto_cons: 1,
                     label: 'ndAbove',
                     type: 'relativePlacementConstraint',
@@ -497,8 +601,8 @@ S o yeses/because/blon_itn
                     bottom: best,
                 })
 
-                // edge: annotation link from syntax node down to text
-                model.oai({
+                // annotation edge: syntax-node → text it describes
+                over.oai({
                     cyto_edge: 1,
                     annotation_edge: 1,
                     source_from: nd.sc.from,
@@ -506,7 +610,7 @@ S o yeses/because/blon_itn
                 }, {
                     source: nd,
                     target: best,
-                    label:  nd.sc.name ?? '',
+                    label:  nd.sc.node ?? '',
                     style: {
                         'line-color': '#334',
                         width: 0.8,
@@ -515,6 +619,60 @@ S o yeses/because/blon_itn
                         'curve-style': 'bezier',
                         opacity: 0.4,
                     },
+                })
+            }
+
+            // ── FOLD: syntax_parent_<n> ───────────────────────────────
+            // Parent-chain edges: child syntax node → parent syntax node
+            // (using parent_from/parent_to to address the parent reliably,
+            //  since two siblings could share a name within one Line).
+            // Also places parent visually above child so the hierarchy
+            // reads top-down.
+            const parentFold = model.i({
+                cyto_fold: 1, mode: 'cyto_fold',
+                label: `syntax_parent_${line_n}`,
+            })
+            for (const nd of nodes) {
+                const pn = nd.sc.parent_name as string | undefined
+                const pf = nd.sc.parent_from as number | undefined
+                const pt = nd.sc.parent_to   as number | undefined
+                if (!pn || pf == null || pt == null) continue
+                // find the parent node in this Line's nodes by address
+                const parent = nodes.find(m =>
+                    m.sc.node === pn && m.sc.from === pf && m.sc.to === pt
+                )
+                if (!parent) continue
+
+                parentFold.oai({
+                    cyto_edge: 1,
+                    syntax_parent_edge: 1,
+                    child_from: nd.sc.from,
+                    parent_from: pf,
+                }, {
+                    source: parent,
+                    target: nd,
+                    label:  '',
+                    style: {
+                        'line-color': '#2a3a2a',
+                        width: 0.9,
+                        'target-arrow-shape': 'triangle',
+                        'target-arrow-color': '#2a3a2a',
+                        'curve-style': 'bezier',
+                        opacity: 0.5,
+                    },
+                })
+
+                // vertical ordering: parent above child (syntactic enclosure
+                // reads top→bottom), but a tighter gap than node→text so
+                // the parent chain compacts nicely above the code row.
+                parentFold.i({
+                    cyto_cons: 1,
+                    label: 'parentAbove',
+                    type: 'relativePlacementConstraint',
+                    axis: 'vertical',
+                    gap: 14,
+                    top: parent,
+                    bottom: nd,
                 })
             }
         }

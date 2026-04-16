@@ -351,7 +351,8 @@
                 // carry thence rules to children
                 if (lm.thence.length) T.sc.cyto_thence = lm.thence
 
-                const cls = this.cytyle_classify(n)
+                let cls = this.cytyle_classify(n)
+                if (w.c.supports_constraints && n.sc.cyto_dir) cls = 'invisible'
                 if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
                 if (cls === 'invisible') {
                     if (T == T.c.path[0]) {
@@ -406,9 +407,12 @@
                 // The overlay renders a <pre> with monospace text positioned over
                 // the cytoscape node, giving crisp typography independent of the
                 // graph zoom level. overlay_str is passed through the wave as data.
+                // overlay_bg matches the node's background so the overlay cleanly
+                // hides the cytoscape label rendered beneath it.
                 if (nd.overlay_str) {
-                    C.sc.overlay_str = nd.overlay_str
+                    C.sc.overlay_str  = nd.overlay_str
                     C.sc.overlay_kind = nd.overlay_kind ?? 'code'
+                    if (nd.overlay_bg) C.sc.overlay_bg = nd.overlay_bg
                 }
 
                 // special cases of node typing:
@@ -525,6 +529,11 @@
             || s.housed || s.run || s.Se || s.inst || s.began_wanting
             || s.CytoStep || s.CytoWave || s.tracing || s.Dip
             || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
+        // cyto_fold: a grouping container for constraints/edges. Walked through
+        // (so its cyto_cons / cyto_edge children are still emitted), but nothing
+        // is drawn for the fold itself. mode:'cyto_fold' is the explicit marker
+        // — also match bare cyto_fold:1 for robustness.
+        if (s.cyto_fold || s.mode === 'cyto_fold') return 'invisible'
         if (s.H || s.A) return 'invisible'
         if (s.w) return 'compound'
         return null
@@ -556,6 +565,10 @@
     //   bookmark_node:1 → bookmark pin: distinctive badge with bookmark color.
     //
     //   (default)       → falls through to matstyle / palette as before.
+    //
+    // overlay_bg: when an overlay is emitted for a node, it needs a background
+    // colour matching the node so the cytoscape-rendered label is hidden
+    // underneath the overlay text. Returned alongside overlay_str.
     cyto_nstyle(w: TheC, n: TheC): any {
         // ── Lang particle types ──────────────────────────────────────
         if (n.sc.text != null) {
@@ -563,12 +576,14 @@
             const str = (n.sc.str as string) ?? ''
             const mw  = (n.sc.measured_width  as number) ?? 60
             const mh  = (n.sc.measured_height as number) ?? 28
+            const bg  = '#0c0c0c'
             return {
                 label: str,
                 overlay_str: str,
                 overlay_kind: 'code',
+                overlay_bg:   bg,
                 style: {
-                    'background-color': '#0c0c0c',
+                    'background-color': bg,
                     'border-width': 1,
                     'border-color': '#1a1a1a',
                     width: mw,
@@ -611,10 +626,14 @@
             const label = str.length > 16 ? str.slice(0, 14) + '…' : str
             // deterministic tint from name hash
             const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360
+            const bg  = `hsl(${hue}, 20%, 12%)`
             return {
                 label: `${name}\n${label}`,
+                overlay_str: `${name}\n${label}`,
+                overlay_kind: 'annotation',
+                overlay_bg:   bg,
                 style: {
-                    'background-color': `hsl(${hue}, 20%, 12%)`,
+                    'background-color': bg,
                     'border-width': 1,
                     'border-color': `hsl(${hue}, 30%, 20%)`,
                     width: Math.max(40, label.length * 6 + 16),
@@ -976,8 +995,9 @@
                     if (C.sc.parent_id != null) etc.parent = C.sc.parent_id
                     if (C.sc.style != null) etc.style = C.sc.style
                     // overlay data for Cytui HTML overlay system
-                    if (C.sc.overlay_str) etc.overlay_str = C.sc.overlay_str
+                    if (C.sc.overlay_str)  etc.overlay_str  = C.sc.overlay_str
                     if (C.sc.overlay_kind) etc.overlay_kind = C.sc.overlay_kind
+                    if (C.sc.overlay_bg)   etc.overlay_bg   = C.sc.overlay_bg
                     wave.i({ upsert: 1, id, ...etc })
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
                     wave.i({ upsert: 1, id, ...etc,
@@ -985,8 +1005,9 @@
                         ...(label_ch !== null ? { label:      C.sc.label       } : {}),
                         ...(par_ch   !== null ? { new_parent: C.sc.parent_id ?? null } : {}),
                         // always pass overlay data through on updates too
-                        ...(C.sc.overlay_str  ? { overlay_str: C.sc.overlay_str } : {}),
+                        ...(C.sc.overlay_str  ? { overlay_str:  C.sc.overlay_str  } : {}),
                         ...(C.sc.overlay_kind ? { overlay_kind: C.sc.overlay_kind } : {}),
+                        ...(C.sc.overlay_bg   ? { overlay_bg:   C.sc.overlay_bg   } : {}),
                     })
                 }
             },
