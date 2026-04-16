@@ -212,6 +212,7 @@ S o yeses/because/blon_itn
             })
         }
 
+        return;
         // Second pass: edge each bookmark to every Line it touches.
         // Lines carry the_bm_${id}:1 tags from whatsthis_into, so we
         // can find them by tag without re-walking the tree.
@@ -241,7 +242,14 @@ S o yeses/because/blon_itn
             }
         }
     },
-
+    // Helper function to check if r2 is contained by r1
+    range_contained (r1: {from: number, to: number}, r2: {from: number, to: number}) {
+        return r1.from <= r2.from && r1.to >= r2.to;
+    },
+    // Helper function to check if r2 overlaps r1
+    range_overlaps (r1: {from: number, to: number}, r2: {from: number, to: number}) {
+        return r1.from <= r2.to-1 && r1.to-1 >= r2.from;
+    },
 
 //#region walk
 
@@ -429,13 +437,12 @@ S o yeses/because/blon_itn
 
         // first-text per Line cached for use in pose_Lines (redundant vertical
         // ordering + left-alignment of the actual code gutter).
-        const first_text_of_line = new Map<TheC, TheC>()
-        for (const L of lines) {
-            const texts = (L.o({ text: 1 }) as TheC[])
-                .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
-            if (texts.length) first_text_of_line.set(L, texts[0])
-        }
-
+        // const first_text_of_line = new Map<TheC, TheC>()
+        // for (const L of lines) {
+        //     const texts = (L.o({ text: 1 }) as TheC[])
+        //         .sort((a, b) => (a.sc.order as number) - (b.sc.order as number))
+        //     if (texts.length) first_text_of_line.set(L, texts[0])
+        // }
         // ── FOLD: pose_Lines ─────────────────────────────────────────
         // Vertical stacking of Lines (both on the Line marker AND on
         // the first text of each Line — redundant constraints give fcose
@@ -452,19 +459,19 @@ S o yeses/because/blon_itn
                 top: lines[i],
                 bottom: lines[i + 1],
             })
-            const ta = first_text_of_line.get(lines[i])
-            const tb = first_text_of_line.get(lines[i + 1])
-            if (ta && tb) {
-                pose.i({
-                    cyto_cons: 1,
-                    label: `txtRowV${i}`,
-                    type: 'relativePlacementConstraint',
-                    axis: 'vertical',
-                    gap: 8,
-                    top: ta,
-                    bottom: tb,
-                })
-            }
+            // const ta = first_text_of_line.get(lines[i])
+            // const tb = first_text_of_line.get(lines[i + 1])
+            // if (0 && ta && tb) {
+            //     pose.i({
+            //         cyto_cons: 1,
+            //         label: `txtRowV${i}`,
+            //         type: 'relativePlacementConstraint',
+            //         axis: 'vertical',
+            //         gap: 8,
+            //         top: ta,
+            //         bottom: tb,
+            //     })
+            // }
         }
         if (lines.length > 1) {
             pose.i({
@@ -475,16 +482,16 @@ S o yeses/because/blon_itn
                 nodes: [...lines],
             })
             // also left-align all first-texts so the code column is straight
-            const firsts = lines.map(L => first_text_of_line.get(L)).filter(Boolean) as TheC[]
-            if (firsts.length > 1) {
-                pose.i({
-                    cyto_cons: 1,
-                    label: `txtFirstsAlignV×${firsts.length}`,
-                    type: 'alignmentConstraint',
-                    axis: 'vertical',
-                    nodes: firsts,
-                })
-            }
+            // const firsts = lines.map(L => first_text_of_line.get(L)).filter(Boolean) as TheC[]
+            // if (firsts.length > 1) {
+            //     pose.i({
+            //         cyto_cons: 1,
+            //         label: `txtFirstsAlignV×${firsts.length}`,
+            //         type: 'alignmentConstraint',
+            //         axis: 'vertical',
+            //         nodes: firsts,
+            //     })
+            // }
         }
 
         // Per-Line folds
@@ -630,18 +637,13 @@ S o yeses/because/blon_itn
             }
 
             for (const ts of textSegments) {
-                const ts_from = ts.sc.from as number
-                const ts_to   = ts.sc.to   as number
                 // find all overlapping syntax nodes
                 const candidates: Array<{ nd: TheC, span: number, depth: number }> = []
                 for (const nd of nodes) {
-                    const nd_from = nd.sc.from as number
-                    const nd_to   = nd.sc.to   as number
-                    const overlap = Math.min(nd_to, ts_to) - Math.max(nd_from, ts_from)
-                    if (overlap <= 0) continue
+                    if (!this.range_overlaps(nd.sc,ts.sc)) continue
                     candidates.push({
                         nd,
-                        span: nd_to - nd_from,
+                        span: nd.sc.to - nd.sc.from,
                         depth: depth_of(nd),
                     })
                 }
@@ -657,7 +659,7 @@ S o yeses/because/blon_itn
                     label: 'ndAbove',
                     type: 'relativePlacementConstraint',
                     axis: 'vertical',
-                    gap: 20,
+                    gap: 10,
                     top: chosen,
                     bottom: ts,
                 })
@@ -674,6 +676,7 @@ S o yeses/because/blon_itn
                     source: chosen,
                     target: ts,
                     label:  chosen.sc.node ?? '',
+                    gap:5,
                     style: {
                         'line-color': '#334',
                         width: 0.8,
@@ -683,6 +686,26 @@ S o yeses/because/blon_itn
                         opacity: 0.4,
                     },
                 })
+
+                // stack of syntax nodes above text containing them
+                const containedSyntaxNodes: TheC[] = [];
+                for (const nd of nodes) {
+                    // Only consider syntax nodes contained by this text node
+                    // if (ts.sc.str == "S " && nd.sc.str.startsWith("S ")) debugger
+                    if (!this.range_contained(ts.sc,nd.sc)) continue;
+                    containedSyntaxNodes.push(nd);
+                }
+                // Add a vertical alignment constraint for all contained syntax nodes
+                if (containedSyntaxNodes.length) {
+                    // if (containedSyntaxNodes.length != 1) debugger
+                    over.i({
+                        cyto_cons: 1,
+                        label: `valign_contained_${ts.sc.from}`,
+                        type: 'alignmentConstraint',
+                        axis: 'vertical',
+                        nodes: [ts,...containedSyntaxNodes],
+                    });
+                }
             }
 
             // ── FOLD: syntax_parent_<n> ───────────────────────────────
@@ -744,6 +767,17 @@ S o yeses/because/blon_itn
                     gap: 14,
                     top: parent,
                     bottom: nd,
+                })
+                // make syntax nodes look like a branch hanging rightwards
+                // < causes a crash if used with: stack of syntax nodes above text containing them
+                0 && parentFold.i({
+                    cyto_cons: 1,
+                    label: 'parentLeft',
+                    type: 'relativePlacementConstraint',
+                    axis: 'horizontal',
+                    gap: 14,
+                    left: parent,
+                    right: nd,
                 })
             }
         }
