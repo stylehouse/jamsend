@@ -464,8 +464,10 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
     // ghostsHaunt: push ghosts onto self and all known child Houses.
     // -------------------------------------------------------------------------
-    ghostsHaunt() {
-        if (!this.ghosts) return
+    ghostsHaunt(hash: Record<string, Function>) {
+        // merge into H.ghosts
+        this.ghosts = { ...(this.ghosts ?? {}), ...hash }
+        // merge that into everything
         for (const h of this.all_House) {
             Object.assign(h, this.ghosts)
         }

@@ -39,10 +39,8 @@
     // each ghost calls M.eatfunc(hash) on onMount.
     const M = {
         eatfunc(hash: Record<string, Function>) {
-            // merge into H.ghosts
-            H.ghosts = { ...(H.ghosts ?? {}), ...hash }
-            // push to all known Houses now
-            H.ghostsHaunt()
+            // merge and push to all known Houses
+            H.ghostsHaunt(hash)
         }
     }
     // < extract what we will keep from Agency, etc...
