@@ -497,6 +497,31 @@ S o yeses/because/blon_itn
                     nodes: firsts,
                 })
             }
+
+            // later comes a nodes-above-text, which is useful in %containium too
+            //  keeps syntax nodes in the space between two lines
+            const syntaxBelow = model.i({
+                cyto_fold: 1,
+                mode: 'cyto_fold',
+                label: 'syntax_nodes_below_lines',
+            });
+            for (let i = 0; i < lines.length - 1; i++) {
+                const line = lines[i];
+                const nextLine = lines[i + 1];
+                const syntaxNodes = nextLine.o({ node: 1 }) as TheC[];
+
+                if (syntaxNodes.length > 0) {
+                    syntaxBelow.i({
+                        cyto_cons: 1,
+                        label: `syntaxBelowLine${i}`,
+                        type: 'relativePlacementConstraint',
+                        axis: 'vertical',
+                        gap: 20, // Adjust as needed
+                        top: line,
+                        bottom: syntaxNodes[0], // Place first syntax node below the line
+                    });
+                }
+            }
         }
 
         // Per-Line folds
