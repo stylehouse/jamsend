@@ -621,28 +621,28 @@
 
         if (n.sc.node != null && n.sc.from != null) {
             // syntax annotation — small, tinted by node name
+            // label is just the syntax name (e.g. "Name", "Leg"). The str
+            // itself is shown on the connected text node, so duplicating it
+            // here just adds clutter.
             const name = (n.sc.node as string) ?? ''
-            const str  = (n.sc.str  as string) ?? name
-            const label = str.length > 16 ? str.slice(0, 14) + '…' : str
             // deterministic tint from name hash
             const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360
             const bg  = `hsl(${hue}, 20%, 12%)`
             return {
-                label: `${name}\n${label}`,
-                overlay_str: `${name}\n${label}`,
+                label: name,
+                overlay_str: name,
                 overlay_kind: 'annotation',
                 overlay_bg:   bg,
                 style: {
                     'background-color': bg,
                     'border-width': 1,
                     'border-color': `hsl(${hue}, 30%, 20%)`,
-                    width: Math.max(40, label.length * 6 + 16),
-                    height: 28,
+                    width: Math.max(36, name.length * 6 + 14),
+                    height: 22,
                     shape: 'round-rectangle',
                     color: `hsl(${hue}, 40%, 65%)`,
-                    'font-size': '8px',
-                    'text-wrap': 'wrap',
-                    'text-max-width': '80px',
+                    'font-size': '9px',
+                    'text-wrap': 'none',
                     'text-valign': 'center',
                     'text-halign': 'center',
                 },

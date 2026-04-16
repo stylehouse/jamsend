@@ -287,13 +287,23 @@ S o yeses/because/blon_itn
         // being a later extension, while keeping dedup trivial for now.
 
         // Collect Lines in range first so we can set up per-Line boundary sets.
+        //
+        // tree.iterate with a range is too permissive — it can enter a Line
+        // whose `from` equals our `opt.to` (or whose `to` equals `opt.from`),
+        // pulling in the neighbouring Line. Apply a strict intersection filter
+        // after collecting: a Line must satisfy `line.from < opt.to` AND
+        // `line.to > opt.from` with strict inequality both ways. This is the
+        // standard open-interval intersection test and correctly excludes
+        // Lines that just abut our range.
         const line_entries: Array<{ line_from: number, line_to: number }> = []
         tree.iterate({
             from: opt.from,
             to:   opt.to,
             enter: (ref) => {
                 if (ref.name === 'Line') {
-                    line_entries.push({ line_from: ref.from, line_to: ref.to })
+                    if (ref.from < opt.to && ref.to > opt.from) {
+                        line_entries.push({ line_from: ref.from, line_to: ref.to })
+                    }
                 }
             },
         })
@@ -565,52 +575,90 @@ S o yeses/because/blon_itn
             }
 
             // ── FOLD: nodes_over_text_<n> ─────────────────────────────
-            // Each syntax node floats above its best-overlapping text.
-            // Annotation edges connect them.
+            // Each text segment gets an annotation edge from the single
+            // deepest syntax node that overlaps it — NOT from every
+            // overlapping ancestor. Ancestors reach the text via the
+            // parent-chain edges in the syntax_parent fold below, so
+            // the visual chain reads: ancestor → ... → deepest → text.
+            //
+            // Rule: for each text segment, find syntax nodes whose span
+            // overlaps it, and pick the one with the smallest span
+            // (span = to - from). A smaller span means deeper in the
+            // Lezer tree (children are always contained by parents).
+            // Ties are broken by deeper parent-chain depth.
             const over = model.i({
                 cyto_fold: 1, mode: 'cyto_fold',
                 label: `nodes_over_text_${line_n}`,
             })
-            // Cache { node → best-overlap text } so the syntax_parent fold
-            // below can fall back to "edge up through the parent chain to
-            // whatever text the deepest descendant sits over".
-            const node_to_best_text = new Map<TheC, TheC>()
-            for (const nd of nodes) {
-                const nd_from = nd.sc.from as number
-                const nd_to   = nd.sc.to   as number
-                // find the text segment that best overlaps this node
-                let best: TheC | null = null
-                let bestOverlap = 0
-                for (const ts of textSegments) {
-                    const ts_from = ts.sc.from as number
-                    const ts_to   = ts.sc.to   as number
-                    const overlap = Math.min(nd_to, ts_to) - Math.max(nd_from, ts_from)
-                    if (overlap > bestOverlap) { best = ts; bestOverlap = overlap }
-                }
-                if (!best) continue
-                node_to_best_text.set(nd, best)
 
-                // vertical: node above its text (gap bigger than text→text)
+            // parent-chain depth for each node — 0 for roots, +1 per parent.
+            // Used as tiebreaker when two nodes share a span (eg Leg:x and
+            // Name:x both at [44..51]).
+            const depth_of = (nd: TheC): number => {
+                let d = 0
+                let cur: TheC | undefined = nd
+                const seen = new Set<TheC>()   // cycle guard — shouldn't happen but cheap
+                while (cur && !seen.has(cur)) {
+                    seen.add(cur)
+                    const pn = cur.sc.parent_name as string | undefined
+                    const pf = cur.sc.parent_from as number | undefined
+                    const pt = cur.sc.parent_to   as number | undefined
+                    if (!pn || pf == null || pt == null) break
+                    const parent = nodes.find(m =>
+                        m.sc.node === pn && m.sc.from === pf && m.sc.to === pt
+                    )
+                    if (!parent) break
+                    d++
+                    cur = parent
+                }
+                return d
+            }
+
+            for (const ts of textSegments) {
+                const ts_from = ts.sc.from as number
+                const ts_to   = ts.sc.to   as number
+                // find all overlapping syntax nodes
+                const candidates: Array<{ nd: TheC, span: number, depth: number }> = []
+                for (const nd of nodes) {
+                    const nd_from = nd.sc.from as number
+                    const nd_to   = nd.sc.to   as number
+                    const overlap = Math.min(nd_to, ts_to) - Math.max(nd_from, ts_from)
+                    if (overlap <= 0) continue
+                    candidates.push({
+                        nd,
+                        span: nd_to - nd_from,
+                        depth: depth_of(nd),
+                    })
+                }
+                if (!candidates.length) continue
+
+                // sort: smaller span first, then deeper parent-chain first
+                candidates.sort((a, b) => a.span - b.span || b.depth - a.depth)
+                const chosen = candidates[0].nd
+
+                // vertical: chosen node above its text (gap bigger than text→text)
                 over.i({
                     cyto_cons: 1,
                     label: 'ndAbove',
                     type: 'relativePlacementConstraint',
                     axis: 'vertical',
                     gap: 20,
-                    top: nd,
-                    bottom: best,
+                    top: chosen,
+                    bottom: ts,
                 })
 
-                // annotation edge: syntax-node → text it describes
+                // annotation edge: deepest-syntax-node → text it describes
                 over.oai({
                     cyto_edge: 1,
                     annotation_edge: 1,
-                    source_from: nd.sc.from,
-                    target_from: best.sc.from,
+                    source_from: chosen.sc.from,
+                    source_to:   chosen.sc.to,
+                    source_name: chosen.sc.node,
+                    target_from: ts.sc.from,
                 }, {
-                    source: nd,
-                    target: best,
-                    label:  nd.sc.node ?? '',
+                    source: chosen,
+                    target: ts,
+                    label:  chosen.sc.node ?? '',
                     style: {
                         'line-color': '#334',
                         width: 0.8,

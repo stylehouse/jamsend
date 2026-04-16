@@ -839,11 +839,6 @@
     justify-content: center;
     overflow: hidden;
     border-radius: 4px;
-    /* transitions only when the container is showing — during drag/pan/zoom
-       the parent has .overlays-hidden which sets visibility:hidden, making
-       these transitions irrelevant. If they were on.
-    transition: left 0.15s ease-out, top 0.15s ease-out,
-                width 0.15s ease-out, height 0.15s ease-out; */
 }
 
 :global(.code-overlay) {
