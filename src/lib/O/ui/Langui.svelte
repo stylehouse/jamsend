@@ -27,7 +27,7 @@
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap } from "@codemirror/view"
-    import { stho, simpleLezerLinter } from "$lib/L/stho"
+    import { stho, simpleLezerLinter } from "$lib/O/stho"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 

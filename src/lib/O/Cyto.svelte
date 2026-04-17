@@ -75,7 +75,7 @@
     let { M } = $props()
     let V = {}
     V.gone_debug = 0
-    V.cyto = 1
+    V.cyto = 0
 
     onMount(async () => {
     await M.eatfunc({

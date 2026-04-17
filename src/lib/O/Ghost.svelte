@@ -31,7 +31,7 @@
     import Text  from "$lib/O/Text.svelte"
     import Auto from "./Auto.svelte";
     import Matstyle from "./Matstyle.svelte";
-    import Lang from "$lib/L/Lang.svelte";
+    import Lang from "$lib/O/Lang.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 

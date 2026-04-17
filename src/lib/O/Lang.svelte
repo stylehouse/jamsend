@@ -268,9 +268,14 @@ S o yeses/because/blon_itn
         ` // < this
 system of diving into spaces that are developing
  for slowly opening a hive of realities into one over-place
+  floating through the landscape of eg assail()
+   dealing with some of the language across it all
  this shall be the collective attentions at things
  generalisable tech
   basically deriving openness from journey, see Dierarchy
+   and that openness affects whatever its connected to, perhaps
+    pigmenting? now with the html overlay each node can have crazy details
+     to be more human readable while being a dense cluster of info
 
 uses:
 
@@ -297,7 +302,18 @@ in this first use of this possibly generalisable tech
  so those Se statements are collected and indexed somewhere.
   as would all the functions defined?
  
+endless zooming through walls covered in code graffiti
+ handles the open and close of the wormhole
+ node gets bigger until it ruptures into being a very folded codemirror
+  the folds look like paper planes crashed in from the right
+  hovering along their tails projects|enlarges whats there behind it
 
+having a new Cyto cluster spawn within (by location trickery) another
+ and grow continuously like an embryo?
+  panning through dimensions of being (clusters of language)
+ so that each architectural subsystem of anything can be made to flash when executed,
+  or reveal itself as a sentence|society momentarily
+   in a hairball of over-connected everything with everySuch<->everySuch
 
 
 
@@ -306,7 +322,7 @@ in this first use of this possibly generalisable tech
  `
 
         
-    }
+    },
 
 
 //#region assail
@@ -341,7 +357,7 @@ threads of inquiry stack up on the left
  `
 
         
-    }
+    },
 
 //#region regroup
 
@@ -350,7 +366,8 @@ threads of inquiry stack up on the left
 swap these i|o expressions for something
  scale the complexity
   if w oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
-  Travel if multi-layered. inline a big json in the story_rule_matches format for it.
+  Travel if multi-layered. inline a big json of of the path (as iooia can do) is the parsed version of the syntax.
+    in the story_rule_matches format for it.
  also allow
   o hut/toot$ -> let toot = o hut/toot
    or something like that? o hut/$toot would be hut.o
@@ -362,7 +379,12 @@ and put the resulting typescript ghost code (wrapped in eatfunc etc)
  and then a ton of code editor with files to check out spawning...
 
 
+
+
 // insert iooia here
+
+
+
 
 Sunpit
  the new lump of potentially non-trivial activity
@@ -393,7 +415,7 @@ Sunpit
  `
 
         
-    }
+    },
 
 
 //#region whatsthis
