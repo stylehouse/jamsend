@@ -141,14 +141,17 @@
         w.c.plan_done = true
     },
     Lang_default_text() {
-        return `# yeti etc
+        return `// yeti etc
+theCompiledStuff(A,w) {
+    i thung/with/etc
+    i yeses/because,it:2
+    i yeses/because,it:5
 
-i thung/with/etc
-
-[y]
-S o yeses/because/blon_itn
-  yapto
-  o figura/datch/#chang
+    [3]
+    S o yeses/because
+        let val = because.sc.it
+        i figiura/datch:$val
+}
 `
     },
 
@@ -363,38 +366,97 @@ threads of inquiry stack up on the left
 
     regroup() {
         ` // < this
-swap these i|o expressions for something
- scale the complexity
-  if w oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
-  Travel if multi-layered. inline a big json of of the path (as iooia can do) is the parsed version of the syntax.
-    in the story_rule_matches format for it.
+we shall do this change in phases I can confirm good:
+ - update the grammar to match a complete set of expressions put in the end of Lang_default_text() string
+ - Expression Translation, its Selection.process(), if ok can write the gen/*
+ - Map building, persisting and exchanging the meaningful bits
+
+
+to continuously compile this code we're editing
+ it should respond efficiently to changes by reusing whole unchanged chunks
+perhaps we need loads of marks, on every Line, so we can see very well what changes?
+ though we'll also be resolving changes often, in small batches
+ the kind of thing diff-match-patch could be used for
+  but codemirror can can give us the most efficient diffing between two states
+   moreover there are times when we have several states from several events,
+    which must have any data relative to each state
+     eg the from,to position of something at some time
+     translated into unison with the other states...
+     like how our bookmarks are separate to codemirror
+      so we have to sync their new positions
+ the Map
+  keep a bunch of the meaningful syntax in a Selection.process()
+   which is function calls, io expressions
+  brings in knowing what $lib/Ghost/* we are editing
+   so Langui could expand a bit at this point.
+    and CRUD a flat list of Ghosts to know.
+    just a sorted dropdown, one option being +
+     via action buttons with type=dropdown.
+  to generate a Map.
+   dexie tables of... items, calls, notes
+   hold off interacting with the others yet
+   and in fact this thing we're working on isn't on disk anywhere...
+    which is how it's supposed to be.
+    do a one-off write of src/lib/gen/Example.go
+     I think it should misrepresent itself as being go to github's languages measurer.
+  to tell if certain things come+go,
+   eg use of a database table, which we could automatically add a bit of schema for
+    since our schema definition will be in this society of objects we're maintaining
+     and we can connect definitions to calls, etc, supposing we parse them as such later.
+
+swap these i|o expressions for... something
+ we will scale the complexity depending on how complex IOing** gets
+ we can assume the first thing in the path is implied to be w for now,
+  but not if it starts with just a variable:
+   o $la/something ->  la.o({something:1})
+  i lots/of/levels -> w.i({lots:1}).i({of:1}).i({levels:1})
+  o lots/of/levels -> (w.o({lots:1})?.o({of:1})?.o({levels:1})||[])
+  o thing -> w.o(thing)
  also allow
-  o hut/toot$ -> let toot = o hut/toot
-   or something like that? o hut/$toot would be hut.o
- is it possible to allow these two expr: C o walls | o C/walls
+  o hut/toot$ -> let toot = o hut/toot  # gives toot the variable
+  o hut/$toot -> hut.o({toot})          # takes toot the variable
+  o hut/toot:3 -> hut.o({toot:3},{exactly:1})
+   turns off wildcard - for they could have just said /toot to mean any toot
+    although:1,they,can,be,mixed (although must == 1, others may be anything)
+   note it looks like peel() format, but variables can:$be,in:$it
 
 and put the resulting typescript ghost code (wrapped in eatfunc etc)
  via the Wormhole, into src/lib/gen/Somewhere.svelte
-  and then maybe begin to include it at this point, as %watched:UIs ?
- and then a ton of code editor with files to check out spawning...
+  and then notify a downstream at w:Pantheate
+   includes it as %watched:UIs, and may do more later...
+ and also .i({result:1,chunk_i:$i,str:'...',name:"thatFunction"}) the resulting typescript
+  meaningfully split up (it's a (k:v), situation) so we can test it. w/** is testable.
+
+
+
+later we'll do the Sunpit-as-iteration and pythonic indentation.
 
 
 
 
-// insert iooia here
 
 
+IOing
+  Travel if multi-layered. inline a big json of of the path (as iooia can do) is the parsed version of the syntax.
+    in the story_rule_matches format for it.
 
+pythonic indent
+  if oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
 
 Sunpit
  the new lump of potentially non-trivial activity
  S <IOing>
-  is iteration, probably has a block...
-   of course it would? or it's just IOing
-   it could be a different <IOing> dialect
-    or more capable of being multi-lined?
+  is iteration, heading of a pythonic-indented block
+  becomes a for loop containing that IOing
+   which may be multi-lined
+
+Sunpit
   but is a pretty basic luxury iterator
    uses Travel to expand rows with names that can come out as /$names$/
+
+ wonder if it is possible to allow these two expr: C o walls | o C/walls
+  it might be ambiguous, needing to not be so casually slipped into javascript.
+
 
  Se <IOing>
   as above but creates a named Selection() that can react to changes upstream etc
@@ -588,7 +650,6 @@ Sunpit
     // onMount() ONLY, automate the test
 
     async Lang_enbookmark(w) {
-        const view = w.c.editorView
         this.elvisto('LangTiles/LangTiles', 'test__couple_of_bookmarks')
     },
     async Lang_debookmark(w) {
@@ -612,7 +673,11 @@ Sunpit
         await tick();
 
         // Function to add a bookmark via elvis
-        const addBookmark = (from, to) => {
+        const addBookmark = async (from, to) => {
+            view.dispatch({
+                selection: { anchor: from, head: to },
+            });
+            await tick();
             const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
             this.elvisto('LangTiles/LangTiles', 'langtiles_add_bookmark', {
                 from,
@@ -623,19 +688,7 @@ Sunpit
             });
         };
 
-        // Add first bookmark (38..51)
-        view.dispatch({
-            selection: { anchor: 38, head: 51 },
-        });
-        await tick();
-        addBookmark(38, 51);
-
-        // Add second bookmark (55..55)
-        view.dispatch({
-            selection: { anchor: 55, head: 55 },
-        });
-        await tick();
-        addBookmark(55, 55);
+        await addBookmark(88, 101);
     },
 
 

@@ -59,7 +59,7 @@
        crawl code forward by compiling pauses everywhere
       the UI
        with its diff space
-        wants a multiplex of Snap:*-possible data channels
+        wants many Snap:*-possible data channels
          interfaces to inflate This**
            is what some notes said around stylehouse / ive/The
             see also &complace, claude could perhaps straighten it out
@@ -87,15 +87,10 @@
 
 
 
-        we have blocked off its      {"mung":["id"]}mo:main,interval:3.6 when under H:Story haven't we?
-
-         we basically synthesize it when we want to.
-
         we should be matching every elvis that happens, so we can pause after one and record everything, then go on, to pull apart the action and really understand things
 
-        at the moment  we have Snap:H, Snap:cytowave...
-
-        we could be defining a template of stuff to get up to at snaptime. we do this trace thing as well which is kind of another channel of test data stuff, that we don't store.
+        we could be defining a template of stuff to get up to at snaptime.
+         we do this trace thing as well which is kind of another channel of test data stuff, that we don't capture yet.
 
         so into that we could be adding a nice list of elvises that happened
 

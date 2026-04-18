@@ -11,7 +11,7 @@
     await M.eatfunc({
 
 //#endregion
-//#region StuffFlipping
+//#region LangTiles
 
     // LangTiles ghost — a second test-case game with its own Cyto instance.
     //
@@ -30,11 +30,6 @@
     //   Client for LangTiles's Cyto is w:LangTiles itself, so Cyto_animation_done
     //   etc. route back here.  Story's Cyto still talks to w:Story.
     //
-    // ── minimum viable model ────────────────────────────────────────────────
-    //
-    //   For now just builds w/Bit/Bit/Bit/Bit (nested 4 deep) on w.c.model so
-    //   there's something visible in the graph.  Real LangTiles logic lives
-    //   in the branch-outs from here.
 
 
     // Called from Auto (same path Story uses) with Book=name of a LangTiles book.
@@ -43,6 +38,7 @@
         const H = this
         H.i({ A: 'LangTiles' }).i({ w: 'LangTiles' })
         H.i({ A: 'Cyto'      }).i({ w: 'Cyto'      })
+        H.i({ A: 'Pantheate' }).i({ w: 'Theatrate' })
         console.log(`🟦 ${H.name} LangTiles wired`)
     },
 
@@ -51,6 +47,25 @@
 
     async LangTiles(A: TheC, w: TheC) {
         await this.Lang(A,w)
+    },
+    // compiled code receiver
+    async Pantheate(A: TheC, w: TheC) {
+        w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop())
+
+        for (let me of this.o_elvis(w,'Ghost_update_notify')) {
+            if (!me.sc.include) throw "!Gun"
+            // once required, it will HMR from here on
+            if (!w.oa({include:me.sc.include})) {
+                let component = require(`$lib/gen/${me.sc.include}`)
+                const uis = this.oai_enroll(this, { watched: 'UIs' })
+                uis.oai({ UI: 'Pantheate-include', component })
+            }
+        }
+        if (w.oa({include:1})) {
+            let fn = this.theCompiledStuff
+            if (!fn) throw `nocompilo`
+            await fn(A,w)
+        }
     },
 
 

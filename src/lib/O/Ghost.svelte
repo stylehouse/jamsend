@@ -29,7 +29,7 @@
     import Story     from "$lib/O/Story.svelte"
     import Cyto      from "./Cyto.svelte"
     import Text  from "$lib/O/Text.svelte"
-    import Auto from "./Auto.svelte";
+    import Auto from "./Auto.go";
     import Matstyle from "./Matstyle.svelte";
     import Lang from "$lib/O/Lang.svelte";
 
