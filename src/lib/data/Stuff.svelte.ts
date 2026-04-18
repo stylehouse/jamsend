@@ -319,8 +319,6 @@ class StuffIO {
     o_query(sc:TheUniversal,q:any) {
         q ||= {}
         q.X ||= this.X
-        // < less of a hack
-        if (q.exactly) sc = exactly(sc)
         // results
         let M:TheN = []
         // Process each key-value pair in sc
@@ -332,6 +330,9 @@ class StuffIO {
 
         let amongst:TheN;
         query_params.forEach(([k, v]) => {
+            if (typeof q.exactly === 'object' ? q.exactly[k] : q.exactly) {
+                if (v === 1) v = "1" // < less of a hack
+            }
             // might have indexing, only for the first one
             if (!amongst) {
                 let x = q.X.o_kv(k,v);
