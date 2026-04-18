@@ -6,9 +6,11 @@
     Number { @digit+ }
     nonnl { ![\n] }
     nl { "\n" }
-    Sigil { "@" | "#" }
+    Sigil { "@" | "#" | "$" }
+    Comma { "," }
+    Colon { ":" }
     space  { @whitespace }
-    @precedence {IOness, Number, Title, Sunpitness, Name}
+    @precedence {IOness, Number, Comma, Colon, Title, Sunpitness, Name}
     @precedence {nl, space}
 }
 
@@ -28,14 +30,14 @@ Flugenzoidia { IOness ~flugal }
 Flugamata[@dynamicPrecedence=9] { "[" Flugamatatola "]" }
 Flugamatatola { Name ~flugal }
 
-
-
-
 Sunpit { Sunpitness (IOing | SunpitHead) }
     IOing { IOness IOpath  }
     IOpath { Leg ("/" Leg)* }
-    Leg { Sigil? Name }
+    Leg { PeelGroup }
+    PeelGroup { PeelItem (Comma PeelItem)* }
+    PeelItem { PeelKey (Colon PeelVal)? }
+    PeelKey { Sigil? Name Sigil? }
+    PeelVal { Sigil? Name Sigil? | Number }
 
     SunpitHead { Number | Number Heading | Heading }
     Heading { Title  }
-
