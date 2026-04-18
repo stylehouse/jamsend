@@ -1,7 +1,7 @@
 import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { armap, ex, isar, map, tex, throttle } from "$lib/Y.svelte";
+import { armap, ex, exactly, isar, map, tex, throttle } from "$lib/Y.svelte";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
 const OPTIMISE_FOR_DX = true
@@ -319,6 +319,8 @@ class StuffIO {
     o_query(sc:TheUniversal,q:any) {
         q ||= {}
         q.X ||= this.X
+        // < less of a hack
+        if (q.exactly) sc = exactly(sc)
         // results
         let M:TheN = []
         // Process each key-value pair in sc
