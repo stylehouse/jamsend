@@ -143,6 +143,11 @@
     Lang_default_text() {
         return `// yeti etc
 theCompiledStuff(A,w) {
+    i hut/toot:3
+    o hut/toot$
+    i hut/$toot
+    o hut/although:1,they,can,be,mixed
+    o $la/something
     i thung/with/etc
     i yeses/because,it:2
     i yeses/because,it:5
@@ -191,8 +196,6 @@ theCompiledStuff(A,w) {
         const state     = w.c.editorState
         const opt       = {compound_nodes: !!w.c.compo}
         const bookmarks = w.o({ bookmark: 1 }) as TheC[]
-        if (w.c.compo) console.log("COMPO ON")
-        if (w.c.compi) console.log("COMPI ON")
 
         // we do our best to send Cyto's Se1 a Line%* that trace all bookmark ids in it.
         //  so it can notice when Line 3 becomes Line 4 upon the user hitting enter
@@ -367,7 +370,6 @@ threads of inquiry stack up on the left
     regroup() {
         ` // < this
 we shall do this change in phases I can confirm good:
- - update the grammar to match a complete set of expressions put in the end of Lang_default_text() string
  - Expression Translation, its Selection.process(), if ok can write the gen/*
  - Map building, persisting and exchanging the meaningful bits
 
@@ -415,7 +417,7 @@ swap these i|o expressions for... something
  also allow
   o hut/toot$ -> let toot = o hut/toot  # gives toot the variable
   o hut/$toot -> hut.o({toot})          # takes toot the variable
-  o hut/toot:3 -> hut.o({toot:3},{exactly:1})
+  o hut/toot:3 -> hut.o({toot:3},{exactly:{toot:true}})
    turns off wildcard - for they could have just said /toot to mean any toot
     although:1,they,can,be,mixed (although must == 1, others may be anything)
    note it looks like peel() format, but variables can:$be,in:$it

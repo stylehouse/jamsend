@@ -30,7 +30,7 @@ Flugenzoidia { IOness ~flugal }
 Flugamata[@dynamicPrecedence=9] { "[" Flugamatatola "]" }
 Flugamatatola { Name ~flugal }
 
-Sunpit { Sunpitness (IOing | SunpitHead) }
+Sunpit { Sunpitness (IOing) }
     IOing { IOness IOpath  }
     IOpath { Leg ("/" Leg)* }
     Leg { PeelGroup }
@@ -38,6 +38,6 @@ Sunpit { Sunpitness (IOing | SunpitHead) }
     PeelItem { PeelKey (Colon PeelVal)? }
     PeelKey { Sigil? Name Sigil? }
     PeelVal { Sigil? Name Sigil? | Number }
-
-    SunpitHead { Number | Number Heading | Heading }
+    // < could be Sunpitness (IOing | SunpitHead) much later...
+    //SunpitHead { Number | Number Heading | Heading }
     Heading { Title  }

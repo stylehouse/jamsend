@@ -38,7 +38,7 @@
         const H = this
         H.i({ A: 'LangTiles' }).i({ w: 'LangTiles' })
         H.i({ A: 'Cyto'      }).i({ w: 'Cyto'      })
-        H.i({ A: 'Pantheate' }).i({ w: 'Theatrate' })
+        H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
         console.log(`🟦 ${H.name} LangTiles wired`)
     },
 
