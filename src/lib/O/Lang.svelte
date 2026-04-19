@@ -1,6 +1,11 @@
 <script lang="ts">
     // Lang.svelte — ghost for Language / CodeMirror / Lezer integration.
     //
+    // This is the high-level "join" ghost.  Most of the compilation guts live
+    // in LangCompiling.svelte (Lang_compile / Lang_compile_step / …); Lang.svelte
+    // keeps the per-tile lifecycle (plan / whatsthis / bookmark actions) and
+    // threads the compile trigger + reply-polling into that lifecycle.
+    //
     // Deposits:
     //   whatsthis(state, container, {from?, to?})
     //     — walks the EditorState's Lezer parse tree and i()s TheC nodes
@@ -26,6 +31,7 @@
     import type { House } from "$lib/O/Housing.svelte";
     import { EditorView } from "codemirror";
     import LangWhatwhere from "./LangWhatwhere.svelte";
+    import LangCompiling from "./LangCompiling.svelte";
 
     let { M } = $props()
 
@@ -95,6 +101,11 @@
             { label: '-marks', fn: () => this.Lang_debookmark(w) })
         wa.oai({ action: 1, role: 'enbookmark'   },
             { label: '+marks', fn: () => this.Lang_enbookmark(w) })
+        // compile trigger — translates the doc and writes the resulting
+        // module to src/lib/gen/Somewhere.svelte via the Wormhole, then
+        // notifies Pantheate.  Machinery provides Lang_compile.
+        wa.oai({ action: 1, role: 'compile'      },
+            { label: 'compile', fn: () => this.Lang_compile(A, w) })
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
@@ -191,6 +202,13 @@ theCompiledStuff(A,w) {
         let on_change = () => this.main()
         await this.i_actions_to_c(w, 'compo',{ stashed: true, on_change })
         await this.i_actions_to_c(w, 'compi',{ stashed: true, on_change })
+
+        // compile reply polling — if an earlier Lang_compile kicked off a
+        // Wormhole rw_op 'write', Lang_compile_step re-polls i_elvis_req
+        // here until the reply lands, then notifies Pantheate.
+        if (w.c.compile_pending) {
+            await this.Lang_compile_step(A, w)
+        }
 
         const model     = w.c.model as TheC
         const state     = w.c.editorState
@@ -370,6 +388,7 @@ threads of inquiry stack up on the left
     regroup() {
         ` // < this
 we shall do this change in phases I can confirm good:
+ - update the grammar to match a complete set of expressions put in the end of Lang_default_text() string
  - Expression Translation, its Selection.process(), if ok can write the gen/*
  - Map building, persisting and exchanging the meaningful bits
 
@@ -779,3 +798,4 @@ Sunpit
 </script>
 
 <LangWhatwhere {M} />
+<LangCompiling {M} />
