@@ -32,6 +32,7 @@
     import { EditorView } from "codemirror";
     import LangWhatwhere from "./LangWhatwhere.svelte";
     import LangCompiling from "./LangCompiling.svelte";
+    import LangSion from "./LangSion.svelte";
 
     let { M } = $props()
 
@@ -156,16 +157,16 @@
 theCompiledStuff(A,w) {
     i hut/toot:3
     o hut/toot$
-    i hut/$toot
+    let la = i hut/$toot
     o hut/although:1,they,can,be,mixed
-    o $la/something
+    i $la/something
     i thung/with/etc
     i yeses/because,it:2
     i yeses/because,it:5
 
     [3]
     S o yeses/because
-        let val = because.sc.it
+        // let val = because.sc.it
         // i figiura/datch:$val
     
 }
@@ -800,3 +801,4 @@ Sunpit
 
 <LangWhatwhere {M} />
 <LangCompiling {M} />
+<LangSion {M} />

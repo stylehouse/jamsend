@@ -8,35 +8,24 @@
     onMount(async () => {
     await H.eatfunc({
 
-    async theCompiledStuff(A: TheC, w: TheC) {
-        // yeti
-        // etc
-        // theCompiledStuff(
-        // A,
-        // w)
-        // {
-        w.i({hut: 1}).i({toot: 3})
-        let toot = w.oa({hut: 1})?.[0]?.o({toot: 1})?.[0]
-        w.i({hut: 1}).i({toot})
-        (w.oa({hut: 1})?.[0]?.o({although: 1, they: 1, can: 1, be: 1, mixed: 1}, { exactly: {although: true} }) ?? [])
-        la.o({something: 1})
-        w.i({thung: 1}).i({with: 1}).i({etc: 1})
-        w.i({yeses: 1}).i({because: 1, it: 2})
-        w.i({yeses: 1}).i({because: 1, it: 5})
+// yeti etc
+theCompiledStuff(A,w) {
+    this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
+    let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
+    let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
+    la.i({something: 1})
+    this._i_drill(w, [{sc: {thung: 1}}, {sc: {with: 1}}, {sc: {etc: 1}}])
+    this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
+    this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 5}}])
 
-        // [3]
-        for (const because of (w.o({yeses: 1}).flatMap((__x: any) => __x.o({because: 1})))) {
-        // let
-        // val
-        // = because.
-        // sc.
-        // it
-        w.i({figiura: 1}).i({datch: val})
-        // }
-        // // yepo
+    [3]
+    for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) { /* body… */ }
+        // let val = because.sc.it
+        // this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: val}}])
+    
+}
 
-
-    },
 
     })
     })

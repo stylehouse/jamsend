@@ -43,6 +43,8 @@
             H.ghostsHaunt(hash)
         }
     }
+    // so H can be used for lib/gen/ ghosts.
+    // M.eatfunc(M)
     // < extract what we will keep from Agency, etc...
 </script>
 <Agency    {M} />

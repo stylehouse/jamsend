@@ -50,7 +50,7 @@
     },
     // compiled code receiver
     async Pantheate(A: TheC, w: TheC) {
-        w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop())
+        w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop(n))
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"
@@ -65,9 +65,7 @@
             }
         }
         if (w.oa({include:1})) {
-            let fn = this.theCompiledStuff
-            if (!fn) throw `nocompilo`
-            await fn(A,w)
+            await this.theCompiledStuff(A,w)
         }
     },
 

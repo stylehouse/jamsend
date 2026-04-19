@@ -8,11 +8,13 @@
     // Deposits onto H via M.eatfunc():
     //
     //   Lang_compile(A, w)
-    //     Entry.  Collects expressions from the current editorState, translates
-    //     them, assembles a <script> module, kicks off the rw_op 'write' through
-    //     the Wormhole.  Stashes the pending request on w so Lang_compile_step
-    //     can pick it up next tick.  Also publishes per-chunk {result:1,...}
-    //     particles on w/** for inspection/testing.
+    //     Entry.  Walks the document line-by-line; passes each line through
+    //     verbatim, swapping only the IOing/Sunpit span (if any) for its
+    //     translated JS.  Assembles the result inside a single
+    //     `await H.eatfunc({ … })` wrapper, kicks off the rw_op 'write' via
+    //     the Wormhole, stashes the pending request on w so Lang_compile_step
+    //     can pick it up next tick.  Publishes per-translated-line
+    //     {result:1,…} particles on w/** for inspection.
     //
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) on every tick while w.c.compile_pending is set.
@@ -20,12 +22,14 @@
     //     Pantheate via Ghost_update_notify and clears the flag.
     //
     //   Translation:
-    //     Lang_compile_collect(state)   → top-level {IOing|Sunpit|raw} chunks
-    //     Lang_compile_IOing(node,…)    → one TS statement
-    //     Lang_compile_Sunpit(node,…)   → one TS for-of header
-    //     Lang_compile_Leg(node,…)      → {sc_src, exactly_src, receiver_hint?, capture_var?}
-    //     Lang_compile_PeelItem(node,…) → one property in the sc (+exactly flag)
-    //     Lang_compile_PeelVal(node,…)  → value expression (literal number or identifier)
+    //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
+    //     Lang_compile_IOing(node,…)     → one TS expression
+    //     Lang_compile_Sunpit(node,…)    → one TS for-of header
+    //     Lang_compile_Leg(node,…)       → {sc_src, exactly_src, receiver_hint?, capture_var?}
+    //     Lang_compile_PeelItem(node,…)  → one property in the sc (+exactly flag)
+    //     Lang_compile_PeelVal(node,…)   → value expression (literal number or identifier)
+    //     Lang_compile_leg_obj_src(leg)  → {sc:…, exactly:…}  — the JSON-ish
+    //                                       shape backend helpers receive
     //
     // Translation rules (from the regroup() spec, in summary):
     //
@@ -33,24 +37,44 @@
     //   (e.g. "$la" in "o $la/something"), that name is the JS variable the
     //   chain starts from.  Otherwise the receiver is w.
     //
-    //   i path            → receiver.i({leg0}).i({leg1})…
-    //   o single leg      → receiver.o({leg})[, {exactly:{…}}]
-    //   o multi-leg       → receiver.oa({leg0})?.[0]?.oa({leg1})?.[0]?.o({legN}[, q])
-    //                        — wrapped in ( … ?? [] ) so an intermediate miss is []
-    //   o with name$      → last leg is a single bare-name$ capture; the whole
-    //                        statement becomes  let name = …  .o({name:1})[0]
-    //   $name as a key    → {name}  (shorthand, uses the variable in scope)
-    //   key:$var          → {key: var}   (identifier)
-    //   key:3             → {key: 3}     (number literal)
-    //   any key with :val → lands in exactly:{key:true} so o() does a strict match
+    //   Tier 0 (single-leg, inline — clean native JS, easy to read):
+    //     i foo          → receiver.i({foo: 1})
+    //     o foo          → receiver.o({foo: 1})
+    //     o foo$         → let foo = receiver.o({foo: 1})[0]
+    //     o foo:3        → receiver.o({foo: 3}, { exactly: {foo: true} })
     //
-    //   S <IOing>         → for (const <iter> of (<iterable>)) { /* body… */ }
-    //                        — pythonic-indented body is phase 3, see regroup()
+    //   Tier 1 (multi-leg → backend function on H, defined in LangSion.svelte):
+    //     i a/b/c        → this._i_drill(receiver, [{sc:{a:1}}, {sc:{b:1}}, {sc:{c:1}}])
+    //     o a/b/c        → this._o_drill(receiver, [{sc:{a:1}}, {sc:{b:1}}, {sc:{c:1}}])
+    //     o a/b$         → let b = this._o_drill1(receiver, [{sc:{a:1}}, {sc:{b:1}}])
+    //     S o a/b        → for (const b of this._o_iter(receiver,
+    //                        [{sc:{a:1}}, {sc:{b:1}}])) { /* body… */ }
     //
-    // Output: wrapped as a ghost module at src/lib/gen/Somewhere.svelte containing
-    //   await M.eatfunc({ async theCompiledStuff(A, w) { … } })
-    // Pantheate picks it up via w/{include:'Somewhere.svelte'} after we post
-    // Ghost_update_notify.
+    //   Key shapes within an sc:
+    //     $name as a key → {name}   (ES6 shorthand; uses the variable `name` in scope)
+    //     key:$var       → {key: var}
+    //     key:3          → {key: 3}  (+ exactly_for:'key')
+    //     key            → {key: 1}  (wildcard)
+    //
+    //   .i drops `exactly` from its leg objects (insertion doesn't filter).
+    //   .o / Sunpit keep it so the helper can pass { exactly } along to C.o().
+    //
+    // Output shape (render_module): a .svelte ghost file carrying
+    //
+    //   <script lang="ts">
+    //     ...imports...
+    //     let { H } = $props()
+    //     onMount(async () => {
+    //         await H.eatfunc({
+    //             // …user's verbatim source with IOing/Sunpit substituted…
+    //         })
+    //     })
+    //   </anotherScriptTag>
+    //
+    // Pantheate dynamic-imports it and picks up its deposited methods via
+    // ghostsHaunt, same as any other ghost file.  theCompiledStuff is just
+    // an example function name; the user may write any number of methods
+    // as long as they're comma-separated inside the eatfunc's object literal.
 
     import { TheC } from "$lib/data/Stuff.svelte"
     import { syntaxTree } from "@codemirror/language"
@@ -81,31 +105,24 @@
 
         let file_source: string
         try {
-            const chunks = this.Lang_compile_collect(state)
-            const fn_body_lines: string[] = []
-            for (let i = 0; i < chunks.length; i++) {
-                const ch = chunks[i]
-                const ctx = { indent: '        ' }
-                let str = ''
-                if (ch.kind === 'IOing')       str = this.Lang_compile_IOing(ch.node!, state, ctx)
-                else if (ch.kind === 'Sunpit') str = this.Lang_compile_Sunpit(ch.node!, state, ctx)
-                else                            str = ch.text!       // 'raw' fallback — a comment
-                fn_body_lines.push(str)
+            const lines = this.Lang_compile_collect(state)
 
-                // meaningfully split so w/** is testable per spec
-                w.i({
-                    result: 1, chunk_i: i,
-                    kind: ch.kind,
-                    from: ch.from, to: ch.to,
-                    str,
-                })
+            // only the translated lines are interesting per-chunk — raw
+            // pass-through lines are already visible in the editor
+            let translated_i = 0
+            for (let i = 0; i < lines.length; i++) {
+                const ln = lines[i]
+                if (ln.kind === 'translated') {
+                    w.i({
+                        result: 1, chunk_i: translated_i++,
+                        line_number: i + 1,
+                        str: ln.text,
+                    })
+                }
             }
 
-            const fnName = 'theCompiledStuff'
-            const fn_src = this.Lang_compile_render_fn(fnName, fn_body_lines)
-            w.i({ result: 1, chunk_i: 'fn', name: fnName, str: fn_src })
-
-            file_source = this.Lang_compile_render_module([fn_src])
+            const body = lines.map(l => l.text).join('\n')
+            file_source = this.Lang_compile_render_module(body)
             w.i({ result: 1, chunk_i: 'file', str: file_source })
         } catch (err: any) {
             w.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
@@ -161,46 +178,57 @@
 //#endregion
 //#region collect
 
-    // Walk the Lezer tree and pull out Line-level IOing / Sunpit nodes.
-    // Lines that don't carry a translatable expression are kept as 'raw'
-    // so their content survives as a // comment — the compile is additive,
-    // not destructive.  Everything in Lang_default_text() that isn't stho
-    // (the "theCompiledStuff(A,w) {" wrapper, "[3]", blank lines) lands here.
+    // Walk the document line-by-line (via doc.line(n), independent of the
+    // syntax tree's own Line recovery).  For each doc-line we look into the
+    // syntax tree for the first IOing or Sunpit node strictly within the
+    // line's [from..to] range:
+    //
+    //   - found → substitute translated TS for the expression's span,
+    //             keeping the line's leading whitespace and anything after
+    //             the expression verbatim.  kind: 'translated'.
+    //   - not found → emit the line verbatim.  kind: 'raw'.
+    //
+    // This is how we "keep whole lines we don't understand" — the
+    // `theCompiledStuff(A,w) {` header, `[3]`, bare JS like
+    // `let val = because.sc.it`, the closing `}`, blank lines, comments
+    // all pass through unchanged.
     Lang_compile_collect(state: EditorState): Array<{
-        kind: 'IOing' | 'Sunpit' | 'raw',
-        node?: SyntaxNode,
-        text?: string,
-        from: number,
-        to: number,
+        kind: 'translated' | 'raw',
+        text: string,
     }> {
         const tree = syntaxTree(state)
-        const doc = state.doc
-        const out: any[] = []
+        const doc  = state.doc
+        const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
 
-        let ln = tree.topNode.firstChild
-        while (ln) {
-            if (ln.name === 'Line') {
-                let handled = false
-                let e = ln.firstChild
-                while (e) {
-                    if (e.name === 'IOing' || e.name === 'Sunpit') {
-                        out.push({ kind: e.name, node: e, from: e.from, to: e.to })
-                        handled = true
-                        break
+        for (let n = 1; n <= doc.lines; n++) {
+            const line = doc.line(n)
+
+            // first IOing/Sunpit whose span lies within this doc line
+            let hit: { name: string, node: SyntaxNode } | null = null
+            tree.iterate({
+                from: line.from,
+                to:   line.to,
+                enter: (ref) => {
+                    if (hit) return false
+                    if (ref.name === 'IOing' || ref.name === 'Sunpit') {
+                        if (ref.from >= line.from && ref.to <= line.to) {
+                            hit = { name: ref.name, node: ref.node }
+                            return false
+                        }
                     }
-                    e = e.nextSibling
-                }
-                if (!handled) {
-                    const raw = doc.sliceString(ln.from, ln.to)
-                    const trimmed = raw.replace(/\s+$/, '')
-                    // keep blank lines as blanks; everything else as a // comment
-                    const text = trimmed.trim()
-                        ? `// ${trimmed.replace(/^\s+/, '')}`
-                        : ''
-                    out.push({ kind: 'raw', text, from: ln.from, to: ln.to })
-                }
+                },
+            })
+
+            if (hit) {
+                const translated = hit.name === 'IOing'
+                    ? this.Lang_compile_IOing(hit.node, state, {})
+                    : this.Lang_compile_Sunpit(hit.node, state, {})
+                const before = line.text.slice(0, hit.node.from - line.from)
+                const after  = line.text.slice(hit.node.to   - line.from)
+                out.push({ kind: 'translated', text: before + translated + after })
+            } else {
+                out.push({ kind: 'raw', text: line.text })
             }
-            ln = ln.nextSibling
         }
         return out
     },
@@ -208,9 +236,9 @@
 //#endregion
 //#region IOing
 
-    // IOing → one TS statement.
-    // The optional capture ("name$" on the last leg) turns the whole
-    // statement into `let name = …`  with a trailing [0] on the final .o().
+    // IOing → one TS expression.  The optional capture ("name$" on the last
+    // leg) turns the whole expression into `let name = …` with a trailing
+    // [0]-style first-pick, whichever form the tier uses.
     Lang_compile_IOing(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ness = this.Lang_compile_IOness(node, state)
         const pathNode = node.getChild('IOpath')
@@ -228,69 +256,61 @@
             startIdx = 1
         }
 
-        // capture detection on the last leg — "name$" binds the result
-        const lastLeg = legs[legs.length - 1]
+        // remaining path after any receiver hint — this is the "real" path
+        // the tiers branch on.  (.at(-1) because JS destructuring doesn't
+        // allow [...rest, tail] — rest elements must be last.)
+        const path = legs.slice(startIdx)
+        const tail = path.at(-1)
+
         let prefix = ''
-        let pick_first_on_tail = false
-        if (lastLeg.capture_var) {
-            prefix = `let ${lastLeg.capture_var} = `
-            pick_first_on_tail = true
+        if (tail?.capture_var) {
+            prefix = `let ${tail.capture_var} = `
         }
 
-        if (startIdx >= legs.length) {
-            // pathological: only a receiver hint, no real legs; emit the bare var
+        if (!path.length) {
+            // pathological: only a receiver hint, no real legs
             return `${prefix}${receiver}`
         }
 
-        if (ness === 'i') {
-            // .i chain — always returns TheC, no need for optional chaining
-            let expr = receiver
-            for (let i = startIdx; i < legs.length; i++) {
-                expr += `.i(${legs[i].sc_src})`
+        // ── tier 0: single-leg, inline ──────────────────────────────
+        if (path.length === 1) {
+            const only = tail!
+            if (ness === 'i') {
+                return `${prefix}${receiver}.i(${only.sc_src})`
             }
-            return `${prefix}${expr}`
+            // o
+            const q = only.exactly_src ? `, { exactly: ${only.exactly_src} }` : ''
+            if (only.capture_var) {
+                return `${prefix}${receiver}.o(${only.sc_src}${q})[0]`
+            }
+            return `${prefix}${receiver}.o(${only.sc_src}${q})`
         }
 
-        // o — drill with .oa(leg)?.[0] through the middle, end with .o(tail)
-        //
-        // After the first ?.[0] the chain may be undefined, so every further
-        // step is gated with ?. — e.g.
-        //   o a/b/c → w.oa({a:1})?.[0]?.oa({b:1})?.[0]?.o({c:1})
-        // Non-capture multi-leg wraps the whole thing in ( … ?? [] ) so a
-        // missing intermediate collapses to [] rather than undefined (the
-        // caller expects an array).
-        const middle = legs.slice(startIdx, legs.length - 1)
-        const tail   = legs[legs.length - 1]
-        const q = tail.exactly_src ? `, { exactly: ${tail.exactly_src} }` : ''
+        // ── tier 1: multi-leg → backend function on H ───────────────
+        // .i ignores `exactly` so don't bother emitting it in the leg objects;
+        // .o / Sunpit keep it so the helper can forward it to C.o().
+        const include_exactly = ness === 'o'
+        const legs_src = path
+            .map(l => this.Lang_compile_leg_obj_src(l, { include_exactly }))
+            .join(', ')
 
-        let expr = receiver
-        for (let i = 0; i < middle.length; i++) {
-            const gate = (i === 0) ? '.' : '?.'
-            expr += `${gate}oa(${middle[i].sc_src})?.[0]`
+        if (ness === 'i') {
+            return `${prefix}this._i_drill(${receiver}, [${legs_src}])`
         }
-        const tailGate = middle.length ? '?.' : '.'
-        expr += `${tailGate}o(${tail.sc_src}${q})`
-
-        if (pick_first_on_tail) {
-            // let name = …  with [0] (or ?.[0] if the chain was optional)
-            const last = middle.length ? '?.[0]' : '[0]'
-            return `${prefix}${expr}${last}`
-        }
-        if (middle.length) {
-            return `${prefix}(${expr} ?? [])`
-        }
-        return `${prefix}${expr}`
+        const helper = tail!.capture_var ? '_o_drill1' : '_o_drill'
+        return `${prefix}this.${helper}(${receiver}, [${legs_src}])`
     },
 
 //#endregion
 //#region Sunpit
 
     // Sunpit := "S " IOing
-    // For phase 2 we emit a for-of header; the body is a placeholder comment.
-    // Phase 3 introduces pythonic indentation and body capture.
+    // For phase 2 we emit a for-of header using the backend iterator helper
+    // (_o_iter); the body is a placeholder comment.  Phase 3 introduces
+    // pythonic indentation and body capture.
     //
     //   S o yeses/because
-    //     → for (const because of (w.o({yeses:1}).flatMap((__x: any) => __x.o({because:1})))) { /* body… */ }
+    //     → for (const because of this._o_iter(w, [{sc:{yeses:1}}, {sc:{because:1}}])) { /* body… */ }
     Lang_compile_Sunpit(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ioing = node.getChild('IOing')
         if (!ioing) throw new Error('Sunpit: no IOing')
@@ -309,9 +329,8 @@
             startIdx = 1
         }
 
-        if (startIdx >= legs.length) {
-            return `/* S ${ness}: empty path */`
-        }
+        const path = legs.slice(startIdx)
+        if (!path.length) return `/* S ${ness}: empty path */`
 
         // iterator name = the last leg's single bare-Name key, else __n
         let iter_var = '__n'
@@ -322,16 +341,11 @@
             if (kNode) iter_var = state.doc.sliceString(kNode.from, kNode.to)
         }
 
-        // build iterable: use flatMap at every step so multiple matches at each
-        // level all get traversed — distinct from the .oa()?.[0] pattern used
-        // by plain o, which throws away siblings.  Sunpit is iteration.
-        let iter = `${receiver}.o(${legs[startIdx].sc_src})`
-        for (let i = startIdx + 1; i < legs.length; i++) {
-            iter = `${iter}.flatMap((__x: any) => __x.o(${legs[i].sc_src}))`
-        }
-
+        const legs_src = path
+            .map(l => this.Lang_compile_leg_obj_src(l))
+            .join(', ')
         const prefix = ness === 'i' ? '/* S i */ ' : ''
-        return `${prefix}for (const ${iter_var} of (${iter})) { /* body… */ }`
+        return `${prefix}for (const ${iter_var} of this._o_iter(${receiver}, [${legs_src}])) { /* body… */ }`
     },
 
 //#endregion
@@ -453,22 +467,31 @@
         throw new Error(`IOness unknown: "${s}"`)
     },
 
+    // Serialise a Leg into the JSON-ish shape the backend helpers receive:
+    //   {sc: <sc_src>}                              — default
+    //   {sc: <sc_src>, exactly: <exactly_src>}      — when exactly is set & requested
+    // For .i calls we drop exactly entirely since insertion doesn't filter.
+    Lang_compile_leg_obj_src(leg: {
+        sc_src: string, exactly_src: string,
+    }, opt: { include_exactly?: boolean } = {}): string {
+        const include = opt.include_exactly ?? true
+        if (include && leg.exactly_src) {
+            return `{sc: ${leg.sc_src}, exactly: ${leg.exactly_src}}`
+        }
+        return `{sc: ${leg.sc_src}}`
+    },
+
 //#endregion
 //#region rendering
 
-    // Assemble the translated lines into the named function body.
-    // 8-space indent inside the function body matches M.eatfunc({...}) style
-    // used by the rest of the codebase (Machinery.svelte, Lang.svelte …).
-    Lang_compile_render_fn(name: string, body_lines: string[]): string {
-        const indented = body_lines.map(l => l ? `        ${l}` : '').join('\n')
-        return `    async ${name}(A: TheC, w: TheC) {\n${indented}\n    }`
-    },
-
-    // Wrap the function(s) in a ghost module Pantheate can require().
-    // The shape mirrors any other ghost (Machinery, Lang, …): a <script>
-    // with an onMount that calls M.eatfunc({...fns}).
-    Lang_compile_render_module(fn_parts: string[]): string {
-        // dodge Svelte's script-tag tokenizer, which will get confused even by closing script tags in comments
+    // Wrap the user's (partially-translated) body in a Svelte ghost module
+    // Pantheate can dynamic-import.  The shape is minimal — just the script
+    // tag Svelte needs, plus `await H.eatfunc({ … })` around the user's
+    // source.  Function names, braces, commas between methods etc. all come
+    // from the user — we don't inject theCompiledStuff or any other wrapper.
+    Lang_compile_render_module(body: string): string {
+        // dodge Svelte's script-tag tokenizer, which will get confused even
+        // by closing script tags in comments
         const OPEN  = '<' + 'script lang="ts">'
         const CLOSE = '<' + '/script>'
         return (
@@ -482,7 +505,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-${fn_parts.join(',\n\n')},
+${body}
 
     })
     })
