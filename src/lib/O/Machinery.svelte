@@ -56,9 +56,12 @@
             if (!me.sc.include) throw "!Gun"
             // once required, it will HMR from here on
             if (!w.oa({include:me.sc.include})) {
-                let component = require(`$lib/gen/${me.sc.include}`)
+                const module = await import(`../../lib/gen/${me.sc.include}`)
+                // Extract the component from the .default property
+                const component = module.default;
                 const uis = this.oai_enroll(this, { watched: 'UIs' })
                 uis.oai({ UI: 'Pantheate-include', component })
+                w.i({include:me.sc.include})
             }
         }
         if (w.oa({include:1})) {
@@ -138,8 +141,6 @@
         // from here down is studying the same resolve() bug
         //  fixed in daf49c838fc30c7525a7bc2b315789fade0c45b1
         //     C.resolve() rejects longtail of pairings via UNAMBIGUITY_THRESHOLD
-        // there is still a problem:
-        //  see: should %migrate it
 
 
 

@@ -555,7 +555,7 @@
                     }
                 }
             }
-            if (Object.keys(constraints).length) console.log(`Constraints: `, constraints)
+            // if (Object.keys(constraints).length) console.log(`Constraints: `, constraints)
         } else {
             // wave with no constraints — clear out stale ones from the previous layout
             constraints = {}

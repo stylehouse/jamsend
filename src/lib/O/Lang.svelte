@@ -166,7 +166,8 @@ theCompiledStuff(A,w) {
     [3]
     S o yeses/because
         let val = because.sc.it
-        i figiura/datch:$val
+        // i figiura/datch:$val
+    
 }
 `
     },
@@ -387,9 +388,9 @@ threads of inquiry stack up on the left
 
     regroup() {
         ` // < this
-we shall do this change in phases I can confirm good:
- - update the grammar to match a complete set of expressions put in the end of Lang_default_text() string
+done:
  - Expression Translation, its Selection.process(), if ok can write the gen/*
+todo:
  - Map building, persisting and exchanging the meaningful bits
 
 
@@ -431,7 +432,7 @@ swap these i|o expressions for... something
   but not if it starts with just a variable:
    o $la/something ->  la.o({something:1})
   i lots/of/levels -> w.i({lots:1}).i({of:1}).i({levels:1})
-  o lots/of/levels -> (w.o({lots:1})?.o({of:1})?.o({levels:1})||[])
+  o lots/of/levels -> (w.o({lots:1})[0]?.o({of:1})[0]?.o({levels:1})||[])
   o thing -> w.o(thing)
  also allow
   o hut/toot$ -> let toot = o hut/toot  # gives toot the variable

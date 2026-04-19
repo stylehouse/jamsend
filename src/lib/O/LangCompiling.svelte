@@ -468,8 +468,7 @@
     // The shape mirrors any other ghost (Machinery, Lang, …): a <script>
     // with an onMount that calls M.eatfunc({...fns}).
     Lang_compile_render_module(fn_parts: string[]): string {
-        // dodge Svelte's script-tag tokenizer at authoring time by assembling
-        // the closing </script> from split pieces
+        // dodge Svelte's script-tag tokenizer, which will get confused even by closing script tags in comments
         const OPEN  = '<' + 'script lang="ts">'
         const CLOSE = '<' + '/script>'
         return (
@@ -478,10 +477,10 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-    let { M } = $props()
+    let { H } = $props()
 
     onMount(async () => {
-    await M.eatfunc({
+    await H.eatfunc({
 
 ${fn_parts.join(',\n\n')},
 
