@@ -26,7 +26,7 @@
     import dagre       from 'cytoscape-dagre'
 
     import type { House } from '$lib/O/Housing.svelte'
-    import { _C, type TheC }  from '$lib/data/Stuff.svelte'
+    import { _C, objectify, type TheC }  from '$lib/data/Stuff.svelte'
     import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
     import MatstyleEditor from './MatstyleEditor.svelte'
     let matstyles = $state<TheC[]>([])
@@ -422,6 +422,9 @@
         const ms = Math.round(dur * 1000)
 
         console.log(`🌊 apply() this wave: upsert x${wave.o({ upsert: 1 }).length}`)
+        for (let wa of wave.o()) {
+            console.log(`🌊 piece: ${objectify(wa)}`)
+        }
 
         // Hide overlays while we mutate the graph — freshly-created overlays
         // start at left:0/top:0 and would flash there for a frame before
