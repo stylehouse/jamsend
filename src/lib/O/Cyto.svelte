@@ -314,8 +314,16 @@
         const Se: Selection = w.c.cyto_Se
         // replace topD every tick: fresh .c.T; D/** (Dip, n_ref) preserved via resume_X
         Se.sc.topD = await Se.r({ cyto_scannery: 1 })
+        // this is quite a thing...
         const topC: TheC = _C({ cyto_root: 1 })
+        // debug: put it in the client
+        if (w.c.supports_constraints) {
+            await w.c.client_w.r({cyto_root: 1},{})
+            w.c.client_w.i(topC)
+        }
         Se.c.scan_goners_by_id = new Map<string, TheD>()
+        // so %cyto_cons can resolve left|right etc to ids for D%* resolve()
+        Se.c.scan_id_by_n = new Map<TheC, string>()
 
         await Se.process({
             n:          Scannable,
@@ -326,6 +334,7 @@
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 T.sc.inherits = ex({},T.up?.sc.inherits||{})
+                const parentC: TheC = T.sc.up?.sc.C ?? topC
 
                 // ── visibility filter via lematch ──────────────────────
                 // Rules from this.cyto_visibility (depth 0) plus any
@@ -352,8 +361,11 @@
                 if (lm.thence.length) T.sc.cyto_thence = lm.thence
 
                 let cls = this.cytyle_classify(n)
+                // a %cyto_dir is a %cyto_fold that dissolves now  - doesn't branch C**
                 if (w.c.supports_constraints && n.sc.cyto_dir) cls = 'invisible'
+                // avoid everything under n**
                 if (cls === 'skip')      { T.sc.not = 1; D.drop(D); return }
+                // a structure that vanishes - can overload and confuse resolve()
                 if (cls === 'invisible') {
                     if (T == T.c.path[0]) {
                         // Dip must begin on the topD
@@ -364,8 +376,36 @@
                 }
 
                 const scan_id = this.Dip_assign('scanid', D)
+                // a structure that remains only to group things
+                //  probably just for the next resolve() that happens
+                if (cls === 'group') {
+                    if (!n.sc.cyto_fold) throw "notafold"
+                    const C: TheC = parentC.i({
+                        cyto_group:1,
+                        scan_id,
+                        ...n.sc,
+                    })
+                    C.c.Se1_D = D   // link to Se1 D for cyto_scan_refs
+                    T.sc.C = C
+                    C.c.source_n = n
+                    return
+                }
+                if (w.c.supports_constraints) {
+                    // diagnostic — show which particles are being treated as brand-new
+                    // this tick vs matched against a previous-tick D. If you see the same
+                    // things upsert+removing with new ids ever wave|tick,
+                    //   the D%* trace for them is ambiguous to Stuff.resolve()
+                    //    and Dip_assign is allocating a fresh slot|identity.
+                    if (T.sc.Dip_scanid_is_new) {
+                        // console.log(`🆕 scan new: sid=${scan_id}`,D.sc)
+                        // < is it just me or is all this undefined:
+                            // { node: n.sc.node, from: n.sc.from, to: n.sc.to, str: n.sc.str,
+                            // parent_name: n.sc.parent_name })
+                        // if (n.sc.node == 'Name') console.log(`Dip_scanid_is_new: ${objectify(n)}`)
+                    }
+                }
 
-                const parentC: TheC = T.sc.up?.sc.C ?? topC
+                Se.c.scan_id_by_n.set(n,scan_id)
                 const nd = this.cyto_nstyle(w, n)
 
                 let no_parent_linkage = false
@@ -434,6 +474,12 @@
                 const sc: any = { tracing: 1 }
                 for (const [k, v] of Object.entries(n.sc ?? {})) {
                     if (typeof v !== 'object' && typeof v !== 'function') { sc[`the_${k}`] = v }
+                    if (typeof v == 'object' && v instanceof TheC) {
+                        // mention the ids of n%left=C%cyto_node etc
+                        // as long as the eg constraints are in a later C/* we know the nodes ids by now
+                        let v_id = Se.c.scan_id_by_n.get(v)
+                        if (v_id != null) sc[`id_of_C_${k}`] = v_id
+                    }
                 }
                 return uD.i(sc)
             },
@@ -521,7 +567,7 @@
         },
     ] as Array<any>,
 
-    cytyle_classify(n: TheC): 'skip' | 'invisible' | 'compound' | null {
+    cytyle_classify(n: TheC): 'skip' | 'invisible' | 'group' | 'compound' | null {
         const s = n.sc
         if (s.self || s.mo || s.chaFrom || s.wasLast || s.sunny_streak || s.seen
             || s.o_elvis || s.cyto_node || s.cyto_root || s.cyto_tracking
@@ -533,7 +579,7 @@
         // (so its cyto_cons / cyto_edge children are still emitted), but nothing
         // is drawn for the fold itself. mode:'cyto_fold' is the explicit marker
         // — also match bare cyto_fold:1 for robustness.
-        if (s.cyto_fold || s.mode === 'cyto_fold') return 'invisible'
+        if (s.cyto_fold || s.mode === 'cyto_fold') return 'group'
         if (s.H || s.A) return 'invisible'
         if (s.w) return 'compound'
         return null
@@ -743,6 +789,14 @@
                 if (C.sc.cyto_edge) {
                     C.sc.edge_id  = this.Dip_assign('cytoid', D)
                 }
+                else if (C.sc.cyto_cons) {
+                    // Constraints don't go into the cytoscape graph as elements — they're
+                    // just passed as options to relayout(). They only need a wave-local
+                    // key, which make_wave assigns on its own, so skip the cytoid Dip. 
+                }
+                else if (C.sc.cyto_migration) {
+                    // these belong to a C** but only become part of adjacent waves if etc
+                }
                 else {
                     C.sc.cyto_id = this.Dip_assign('cytoid', D)
                 }
@@ -951,18 +1005,15 @@
         const dur  = (w.sc.grawave_duration as number) ?? 0.3
         const wave = _C({ CytoWave:1, duration: dur })
         if (reset_Ze) wave.sc.absolute = 1
- 
+        // wave-local counter for constraints (they don't have cyto_ids anymore —
+        // see cyto_assign_ids). wave.sc.constraints is a fresh object per wave,
+        // so any unique-within-this-wave key works.
+        let cons_i = 0
         await Ze.process({
             n:          topC,
             process_D:  Ze.sc.topD,
             match_sc:   {},
             trace_sc:   { tracing: 1 },
- 
-            each_fn: async (D: TheD, C: TheC, T: Travel) => {
-                if (D.sc.cyto_root && C.sc.cyto_root) return
-                if (!C.sc.cyto_node && !C.sc.cyto_edge && !C.sc.cyto_cons) { T.sc.not = 1; return }
-                D.sc.is_edge = !!C.sc.cyto_edge
-            },
  
             trace_fn: async (uD: TheD, C: TheC) => {
                 if (C.sc.cyto_node) return uD.i({
@@ -984,12 +1035,12 @@
                 let label = C.c.Se1_D?.c.T.sc.n.sc.label
                 let etc = label != null ? {label} : {}
  
-                if (C.sc.resolved_constraint) {
+                if (C.sc.cyto_cons) {
                     if (!wave.sc.constraints) wave.sc.constraints = {};
-                    wave.sc.constraints[C.sc.cyto_id] = C.sc.resolved_constraint;
+                    if (!C.sc.resolved_constraint) throw `!resolved`
+                    wave.sc.constraints[`c${cons_i++}`] = C.sc.resolved_constraint;
                     return
                 }
-
                 if (C.sc.cyto_edge) {
                     const eid = C.sc.edge_id as string
                     if (!eid) return
@@ -1005,6 +1056,18 @@
                     }
                     return
                 }
+                if (C.sc.cyto_fold) {
+                    // semantically-transparent (for now) container
+                    //  helps partition resolve() space (~~ nicelybranching D**)
+                    return
+                }
+                if (C.sc.cyto_migration) {
+                    // these belong to a C** but only become part of adjacent waves if etc
+                    return
+                }
+                if (!C.sc.cyto_node) { console.warn(`unknown datatype %cyto_root:`,C); T.sc.not = 1; return }
+
+
  
                 // cyto_node
                 const id       = C.sc.cyto_id  as string
@@ -1039,8 +1102,8 @@
                 // walk the Ze D subtree of every goner — catches nested nodes
                 // (eg marble inside a goner leaf) that were never explicitly resolved
                 const emit_removes = (g: TheD) => {
-                    if (g.sc.is_edge) {
-                        if (g.sc.the_edge_id) wave.i({ edge_remove: 1, id: g.sc.the_edge_id })
+                    if (g.sc.the_edge_id) {
+                        wave.i({ edge_remove: 1, id: g.sc.the_edge_id })
                     } else {
                         if (g.sc.the_cyto_id) wave.i({ remove: 1, id: g.sc.the_cyto_id })
                     }

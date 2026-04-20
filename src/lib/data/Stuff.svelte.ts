@@ -791,7 +791,10 @@ export class Stuff extends TimeOffice {
         }
 
         // sort by unambiguity
-        let UNAMBIGUITY_THRESHOLD = 0.33
+        // give up on weak reductive logicality
+        //  you can break LangTiles playing with this. had to reduce from 0.33 for it.
+        let UNAMBIGUITY_THRESHOLD = 0.23
+        
         // /$ambiguity=0.234 /$n=neu/$ambiguity=0.234 /$n=old
         let ratings = sort_unambiguity(Over.X)
         ratings.forEach((unambiguity) => {

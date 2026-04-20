@@ -126,17 +126,17 @@ Snap:H
           see,CytoStep,through:001 see
             CytoWave,duration:0.3
               {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1","label":"test:C.resolve…"}
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_1","label":"tracing_run:1\nohyea:1\nthe_hand:left"}
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2","label":"tracing_run:1\nohyea:1\nthe_hand:right"}
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_3","label":"tracing_run:1\nohyea:1\nthe_whatsit:1"}
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_4","label":"tracing_run:1\nohyea:1\nthe_other:3"}
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_5","label":"tracing_run:1\nohyea:1\nthe_leaf:1"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_1","label":"tracing_run\nohyea\nthe_hand:left"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2","label":"tracing_run\nohyea\nthe_hand:right"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_3","label":"tracing_run\nohyea\nthe_whatsit"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_4","label":"tracing_run\nohyea\nthe_other:3"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_5","label":"tracing_run\nohyea\nthe_leaf"}
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_1,source:cytoid_1_1,target:cytoid_1_1_1
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_1,source:cytoid_1_1,target:cytoid_1_1_2
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2_2","label":"excellent:1"}
+              {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_2_2,label:excellent
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_2_1,source:cytoid_1_1_2,target:cytoid_1_1_2_2
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_3_1,source:cytoid_1_1,target:cytoid_1_1_3
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_3_2","label":"excellent:1"}
+              {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_3_2,label:excellent
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_3_2_1,source:cytoid_1_1_3,target:cytoid_1_1_3_2
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_4_1,source:cytoid_1_1,target:cytoid_1_1_4
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_5_1,source:cytoid_1_1,target:cytoid_1_1_5
@@ -150,16 +150,16 @@ Snap:H
             CytoWave,duration:0.3
               remove,id:cytoid_1_1_5
               edge_remove,id:cytoid_1_1_5_1
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_1_2","label":"tracing_run:1\nohyea:1\nthe_leaf:1"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_1_2","label":"tracing_run\nohyea\nthe_leaf"}
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
-              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2_3","label":"tangiuy:1"}
+              {"ref":{"style":"Object()"}}	upsert,id:cytoid_1_1_2_3,label:tangiuy
               {"ref":{"style":"Object()","data":"Object()"}}	edge_upsert,id:cytoid_1_1_2_3_1,source:cytoid_1_1_2,target:cytoid_1_1_2_3
               migrate,id:cytoid_1_1_5,toward:cytoid_1_1_1_2
           see,CytoStep,through:003 leaf moves left->right
             CytoWave,duration:0.3
               remove,id:cytoid_1_1_1_2
               edge_remove,id:cytoid_1_1_1_2_1
-              {"upsert":1,"id":"cytoid_1_1_2_2","label":"tracing_run:1\nohyea:1\nthe_leaf:1"}
+              {"ref":{"style":"Object()"}}	{"upsert":1,"id":"cytoid_1_1_2_2","label":"tracing_run\nohyea\nthe_leaf"}
               remove,id:cytoid_1_1_2_3
               edge_remove,id:cytoid_1_1_2_3_1
         {"test":"Selection: leaf moves from root/* to root/container/*"}
@@ -190,708 +190,823 @@ Snap:H
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
-    style,background-color:#181818
-    style,background-opacity:0.5
-    style,border-color:#2a2a2a
-    style,border-style:dashed
-    style,border-width
-    style,color:#4a6a4a
-    style,font-size:9px
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
     style,font-style:italic
-    style,font-weight:bold
-    style,padding:12px
-    style,text-halign:center
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
     style,text-valign:top
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_1","label":"test:C.resolve…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   upsert,id:cytoid_1_1_1_1,label:left,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_1_1_2","label":"bug:1\nshelf:1\nest:171717171717","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_1_1_3","label":"bug:1\nshelf:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_1_1_4","label":"bug:1\nthe_w:Ying","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_1_1_4_2","label":"terpestra:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
+  {"upsert":1,"id":"cytoid_1_1_1_1_2","label":"bug\nshelf\nest:171717171717","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_1_3","label":"bug\nshelf","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_1_4","label":"bug\nthe_w:Ying","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_1_1_4_2,label:terpestra,parent:cytoid_1_1
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2","label":"test:C.resolve…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1","label":"resolve_test:leaf vani…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_2","label":"C:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_3","label":"pairs:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1_2,label:C,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1_3,label:pairs,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_10","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_11","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_12","label":"before:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_13","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_14","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_15","label":"after:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_2","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_3","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_4","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_5","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_6","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_7","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_8","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_3_9","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_1_4","label":"resolve_coms:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1_4,label:resolve_coms,parent:cytoid_1_1
+    style,background-color:#bd36c9
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_10","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#32618f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_11","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#32618f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_12","label":"spawn:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#b12f4a
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_13","label":"gone:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#29d638
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_2","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bbdb43
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_3","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bbdb43
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_4","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bbdb43
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_5","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bbdb43
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_6","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bbdb43
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_7","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#32618f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_8","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#32618f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_1_4_9","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#32618f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2","label":"resolve_test:leaf vani…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_2_2","label":"C:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_2_2,label:C,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   upsert,id:cytoid_1_1_2_2_2_2,label:left,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
   upsert,id:cytoid_1_1_2_2_2_3,label:right,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_2_2_2_4","label":"whatsit:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
+  upsert,id:cytoid_1_1_2_2_2_4,label:whatsit,parent:cytoid_1_1
+    style,background-color:#8259c5
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_2_5","label":"other:3","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_2_3","label":"pairs:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#997429
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_2_3,label:pairs,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_10","label":"before:other:3","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_11","label":"after:other:3","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_12","label":"before:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_13","label":"after:self:1, e…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_14","label":"before:leaf:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_15","label":"after:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_2","label":"before:self:1, r…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_3","label":"after:self:1, r…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_4","label":"before:hand:left","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_5","label":"after:hand:left","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_6","label":"before:hand:right","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_7","label":"after:hand:right","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_8","label":"before:whatsit:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_2_3_9","label":"after:whatsit:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3","label":"resolve_test:leaf move…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_3_2","label":"C:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_3_3","label":"pairs:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_3_2,label:C,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_3_3,label:pairs,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3_3_2","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3_3_3","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3_3_4","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3_3_5","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3_3_6","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_3_3_7","label":"after:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4","label":"resolve_test:everythin…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_4_2","label":"C:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_4_3","label":"pairs:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_4_2,label:C,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_4_3,label:pairs,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4_3_2","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4_3_3","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4_3_4","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4_3_5","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4_3_6","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_4_3_7","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5","label":"resolve_test:one key c…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_5_2","label":"C:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_5_3","label":"pairs:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_5_2,label:C,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_5_3,label:pairs,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5_3_2","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5_3_3","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5_3_4","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5_3_5","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5_3_6","label":"before:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_5_3_7","label":"after:tracing:1…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6","label":"resolve_test:pattern_s…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_2_6_2","label":"C:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_6_2,label:C,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   upsert,id:cytoid_1_1_2_6_2_2,label:left,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
   upsert,id:cytoid_1_1_2_6_2_3,label:right,parent:cytoid_1_1
     style,background-color:#1a1a28
-    style,background-opacity:0.6
     style,border-color:#5a5a9a
     style,border-style:solid
     style,border-width
     style,color:#8888bb
-    style,font-size:8px
-    style,font-style:italic
-    style,padding:7px
-    style,text-valign:top
-  {"upsert":1,"id":"cytoid_1_1_2_6_3","label":"pairs:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
+  upsert,id:cytoid_1_1_2_6_3,label:pairs,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_10","label":"before:leaf:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_11","label":"after:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_2","label":"before:self:1, r…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_3","label":"after:self:1, r…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_4","label":"before:hand:left","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_5","label":"after:hand:left","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_6","label":"before:hand:right","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_7","label":"after:hand:right","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_8","label":"before:-","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_2_6_3_9","label":"after:self:1, e…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_3","label":"test:C.resolve…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_1","label":"tracing_run:1\nohyea:1\nthe_hand:left","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_2","label":"tracing_run:1\nohyea:1\nthe_hand:right","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_2_2","label":"tracing_run:1\nohyea:1\nthe_leaf:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_3","label":"tracing_run:1\nohyea:1\nthe_whatsit:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_3_2","label":"excellent:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_3_4","label":"tracing_run:1\nohyea:1\nthe_other:3","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_1","label":"tracing_run\nohyea\nthe_hand:left","parent":"cytoid_1_1"}
+    style,background-color:#24bcb6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_2","label":"tracing_run\nohyea\nthe_hand:right","parent":"cytoid_1_1"}
+    style,background-color:#24bcb6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_2_2","label":"tracing_run\nohyea\nthe_leaf","parent":"cytoid_1_1"}
+    style,background-color:#24bcb6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_3","label":"tracing_run\nohyea\nthe_whatsit","parent":"cytoid_1_1"}
+    style,background-color:#24bcb6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_3_3_2,label:excellent,parent:cytoid_1_1
+    style,background-color:#bd429e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_4","label":"tracing_run\nohyea\nthe_other:3","parent":"cytoid_1_1"}
+    style,background-color:#24bcb6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4","label":"test:Selection…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_1","label":"Traced:1\nsee:pass1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_1","label":"Traced\nsee:pass1","parent":"cytoid_1_1"}
+    style,background-color:#89d04e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_10","label":"moves:pass1.1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a6483a
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_10_2","label":"n_neu:root_node:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#36c974
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_10_3","label":"n_neu:container…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_11","label":"Traced:1\nsee:pass2\nresolved:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_12","label":"Reso:1\nsee:pass2\nat:root\ngoners:1\nneus:0","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_13","label":"Traced:1\nsee:pass2","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_14","label":"Reso:1\nsee:pass2\nat:box\ngoners:0\nneus:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_15","label":"Reso:1\nsee:pass2\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#36c974
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_11","label":"Traced\nsee:pass2\nresolved","parent":"cytoid_1_1"}
+    style,background-color:#89d04e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_12","label":"Reso\nsee:pass2\nat:root\ngoners\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_13","label":"Traced\nsee:pass2","parent":"cytoid_1_1"}
+    style,background-color:#89d04e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_14","label":"Reso\nsee:pass2\nat:box\ngoners:0\nneus","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_15","label":"Reso\nsee:pass2\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_16","label":"moves:pass2","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a6483a
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_16_2","label":"n_neu:root_node:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#36c974
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_16_3","label":"n_neu:leaf:1, n…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#36c974
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_16_4","label":"n_gone:leaf:1, n…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_16_5","label":"Migration:1\nn:wanderer\nfrom_depth:1\nto_depth:2","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_2","label":"Reso:1\nsee:pass1\nat:root\ngoners:0\nneus:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_3","label":"Reso:1\nsee:pass1\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#af43db
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_16_5","label":"Migration\nn:wanderer\nfrom_depth\nto_depth:2","parent":"cytoid_1_1"}
+    style,background-color:#8f8f32
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_2","label":"Reso\nsee:pass1\nat:root\ngoners:0\nneus","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_3","label":"Reso\nsee:pass1\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_4","label":"moves:pass1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#a6483a
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_4_2","label":"n_neu:root_node:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#36c974
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_4_4_3","label":"n_neu:leaf:1, n…","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_5","label":"Traced:1\nsee:pass1.1\nresolved:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_6","label":"Traced:1\nsee:pass1.1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_7","label":"Reso:1\nsee:pass1.1\nat:root\ngoners:0\nneus:1","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_8","label":"Reso:1\nsee:pass1.1\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
-  {"upsert":1,"id":"cytoid_1_1_4_9","label":"Reso:1\nsee:pass1.1\nat:box\ngoners:0\nneus:0","parent":"cytoid_1_1"}
-    style,background-color:#242424
-    style,color:#666
-    style,height:16
-    style,width:16
+    style,background-color:#36c974
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_5","label":"Traced\nsee:pass1.1\nresolved","parent":"cytoid_1_1"}
+    style,background-color:#89d04e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_6","label":"Traced\nsee:pass1.1","parent":"cytoid_1_1"}
+    style,background-color:#89d04e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_7","label":"Reso\nsee:pass1.1\nat:root\ngoners:0\nneus","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_8","label":"Reso\nsee:pass1.1\nat:wanderer\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_9","label":"Reso\nsee:pass1.1\nat:box\ngoners:0\nneus:0","parent":"cytoid_1_1"}
+    style,background-color:#1f35a3
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
   edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
   edge_upsert,id:cytoid_1_1_1_1_3_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_3

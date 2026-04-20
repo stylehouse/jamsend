@@ -720,8 +720,8 @@ Sunpit
             });
         };
 
-        await addBookmark(73, 93); // line 5
-        // await addBookmark(98, 132); // line 6
+        // await addBookmark(73, 93); // line 5
+        await addBookmark(98, 132); // line 6
     },
 
 

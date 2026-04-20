@@ -420,10 +420,11 @@
         rush_animations()
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
+        let length = wave.o({ upsert: 1 }).length
 
-        console.log(`🌊 apply() this wave: upsert x${wave.o({ upsert: 1 }).length}`)
+        console.log(`🌊 apply() this wave: upsert x${length}`)
         for (let wa of wave.o()) {
-            console.log(`🌊 piece: ${objectify(wa)}`)
+            // console.log(`🌊 piece: ${objectify(wa)}`)
         }
 
         // Hide overlays while we mutate the graph — freshly-created overlays
@@ -723,6 +724,26 @@
         cy.on('pan zoom',    () => { hide_overlays_now(); show_overlays_soon() })
         cy.on('layoutstart', () => hide_overlays_now())
         cy.on('layoutstop',  () => show_overlays_soon())
+        // ── click-to-identify ─────────────────────────────────────────────────
+        // Tap any node or edge to log its id / parent / data / style. Useful for
+        // finding mystery greys (which are usually n particles falling through
+        // cytyle_classify to the matstyle palette default) and for confirming
+        // what a given cytoid corresponds to in C**.
+        cy.on('tap', 'node', (evt) => {
+            const n = evt.target
+            const d = n.data()
+            console.log(
+                `🔎 node ${n.id()} parent:${n.parent().id() || '(root)'} label:${JSON.stringify(d.label ?? '')}`,
+                { data: d, bg: n.style('background-color') }
+            )
+        })
+        cy.on('tap', 'edge', (evt) => {
+            const e = evt.target
+            console.log(
+                `🔎 edge ${e.id()} ${e.source().id()} → ${e.target().id()} label:${JSON.stringify(e.data('label') ?? '')}`,
+                e.data()
+            )
+        })
 
         // rebuild from scratch on HMR
         H.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
