@@ -511,7 +511,7 @@ Sunpit
     // subcontainer, this one uses oai() with stable keys so repeat walks
     // (same syntax span seen by two bookmarks) converge on the same TheC.
     //
-    // Line addressing: {Line: from}  — doc position is the natural identity.
+    // Line addressing: {Line: line_number, from, to}
     // node addressing: {node: name, from, to} under its Line.
     // text addressing: {text: 1, from, to} under its Line.
     //
@@ -521,9 +521,6 @@ Sunpit
     // Text nodes get measured_width/height from measureText() so Cyto can
     // size them to fit their string content. They also get an `order` index
     // (0-based, left-to-right within the Line) for constraint generation.
-    //
-    // Lines get a `line_number` (0-based, top-to-bottom in doc order) for
-    // vertical ordering constraints.
     whatsthis_into(
         state: EditorState,
         model: TheC,
@@ -578,17 +575,29 @@ Sunpit
         }
 
         for (const { line_from, line_to } of line_entries) {
-            const LineC = model.oai({ Line: line_from, line_to })
+            // Key LineC by doc line number — Lezer may emit several "Line" nodes per
+            // doc line (one per statement/expression). Visually they must converge
+            // on one L<n> compound. Multiple Lezer-Line hits on the same doc line
+            // reinforce the same LineC; we remember the full doc-line span for
+            // callers that want a concrete range.
+            const docLine = doc.lineAt(line_from)
+            // < should really include all these properties in the .oai(), once?
+            //    paranoid mode: blow up on subsequent calls if c arg isn't as the found LineC is
+            //   as it is we don't index properties set on sc after the .oai(),
+            //    but because of the way we only use the index for the first column,
+            //     any o %Line,* will work since Line is indexed in the call to .oai() / .i()
+            const LineC = model.oai({ Line: docLine.number }, {
+                line_from: docLine.from,
+                line_to: docLine.to,
+            })
+
             // Tag this Line with the bookmark id — may already be tagged by
             // a prior bookmark. Tags come and go across ticks via replace().
             LineC.sc[opt.bm_key] = 1
 
             // line_number = the actual document line number, so sorting by
             // it always puts Lines in doc order regardless of which bookmark
-            // created them first. (Earlier versions used an insertion-order
-            // counter — that ordered by bookmark-creation order, not doc
-            // order, which is wrong when bookmarks are added out of sequence.)
-            const docLine = doc.lineAt(line_from)
+            // created them first.
             LineC.sc.line_number = docLine.number
             LineC.sc.label       = `L${docLine.number}`
 
