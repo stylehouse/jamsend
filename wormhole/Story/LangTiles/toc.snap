@@ -69,6 +69,8 @@ story:LangTiles
       style:background-color,v:#42bd9f
   Plan
   Opt
+    Figures
+    trickle
   TimeSpool
     TimeTotal:beliefs,avg:112.389
       sample:0.145,at:1776041031

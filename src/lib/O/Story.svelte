@@ -943,10 +943,7 @@
         H.watch_c(stylesC, () => H.story_save())
 
         // i The/Opt
-        H.watch_c(this.The_Opt(w), () => {
-            console.log(`in i The/Opt, to story_save()`)
-            H.story_save()
-        })
+        H.watch_c(this.The_Opt(w), () => H.story_save())
         H.push_opt_to_run(w)
 
         // ── commission Cyto ───────────────────────────────────────────
@@ -1121,7 +1118,9 @@
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
         if (this.The_Opt_val(w, 'trickle')) Run.main(true)
-        if (this.The_Opt_val(w, 'trickle')) console.log(`Truckle:`,this.The_Opt(w).o({})?.[0])
+        // < be more a part of requesty_serial
+        wh.o({finished:1}).map(n => n.drop(n))
+
         w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
@@ -1562,8 +1561,10 @@
             label: 'trickle',
             on_change: (next: boolean) => {
                 if (next) {
-                    const sub = this.Story_subHouse(null, w)
-                    if (sub) sub.Run.main(true)
+                    // we 
+                    // on engage, wake them immediately?
+                    // const sub = this.Story_subHouse(null, w)
+                    // if (sub) sub.Run.main(true)
                 }
             },
         })
