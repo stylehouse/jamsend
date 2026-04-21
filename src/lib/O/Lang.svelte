@@ -106,7 +106,7 @@
         // module to src/lib/gen/Somewhere.svelte via the Wormhole, then
         // notifies Pantheate.  Machinery provides Lang_compile.
         wa.oai({ action: 1, role: 'compile'      },
-            { label: 'compile', fn: () => this.Lang_compile(A, w) })
+            { label: 'compile', fn: () => this.elvisto(w, 'Lang_compile') })
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
@@ -208,7 +208,7 @@ theCompiledStuff(A,w) {
         // compile reply polling — if an earlier Lang_compile kicked off a
         // Wormhole rw_op 'write', Lang_compile_step re-polls i_elvis_req
         // here until the reply lands, then notifies Pantheate.
-        if (w.c.compile_pending) {
+        if (w.oa({ Compile: 1 })) {
             await this.Lang_compile_step(A, w)
         }
 

@@ -64,8 +64,14 @@
                 w.i({include:me.sc.include})
             }
         }
+        
         if (w.oa({include:1})) {
-            await this.theCompiledStuff(A,w)
+            if (!this.theCompiledStuff) {
+                this.elvisto(w,'think')
+            }
+            else {
+                await this.theCompiledStuff(A,w)
+            }
         }
     },
 

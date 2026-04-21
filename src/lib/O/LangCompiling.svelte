@@ -77,6 +77,7 @@
     // as long as they're comma-separated inside the eatfunc's object literal.
 
     import { TheC } from "$lib/data/Stuff.svelte"
+    import { dig } from "$lib/Y.svelte";
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import type { SyntaxNode } from "@lezer/common"
@@ -89,6 +90,11 @@
 
 //#region entry
 
+    // Beliefs-time entry for the compile action button.
+    // Fired via elvisto so Story can detect Lang settling after a compile.
+    async e_Lang_compile(A: TheC, w: TheC, _e: TheC) {
+        await this.Lang_compile(A, w)
+    },
     // Fired by the "compile" action button in Lang_plan.  Synchronously
     // builds the module source (so the user gets immediate {result:1} chunks
     // to inspect even if the disk write is slow), then kicks off the Wormhole
@@ -100,10 +106,9 @@
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
 
         // clear previous outputs / errors so a fresh compile is visible
-        await w.r({ result: 1 }, {})
         await w.r({ compile_error: 1 }, {})
 
-        let file_source: string
+        let source: string
         try {
             const lines = this.Lang_compile_collect(state)
 
@@ -122,18 +127,18 @@
             }
 
             const body = lines.map(l => l.text).join('\n')
-            file_source = this.Lang_compile_render_module(body)
-            w.i({ result: 1, chunk_i: 'file', str: file_source })
+            source = this.Lang_compile_render_module(body)
         } catch (err: any) {
             w.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
             return
         }
 
-        // stash the source to be written and flip the pending flag;
-        // Lang(A,w) picks this up on the next tick via Lang_compile_step.
-        w.c.compile_source = file_source
-        w.c.compile_name   = 'Somewhere.svelte'
-        w.c.compile_pending = true
+        // Park the job as a particle so Lang_compile_step (and Story) can
+        // observe it properly.  Large source stays in .c to keep sc clean.
+        const job = w.oai({ Compile: 1 })
+        job.empty()
+        job.oai({Output:1,name:'Somewhere.go',source,dige:await dig(source)})
+        job.oai({Pending: 1})
         H.elvisto(w, 'think')
     },
 
@@ -142,15 +147,19 @@
     // and that re-runs Lang(A,w) which re-enters this.
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
-        if (!w.c.compile_pending) return
+        const job = w.o({ Compile: 1 })[0] as TheC | undefined
+        if (!job) throw "!job"
+        if (!job.oa({Pending:1})) return
+        let [ou,...more] = job.o({Output:1})
+        if (more.length) throw "many job/Output"
 
         // stable req lives on w so we don't re-send on every tick
         const req = w.oai(
             { compile_write: 1 },
             {
                 rw_op:   'write',
-                rw_name: `src/lib/gen/${w.c.compile_name}`,
-                rw_data: w.c.compile_source,
+                rw_name: `src/lib/gen/${ou.sc.name}`,
+                rw_data: ou.sc.source,
             },
         )
 
@@ -162,17 +171,16 @@
         if (reply?.error) {
             w.i({ compile_error: 1, msg: `write gen: ${reply.error}` })
         } else {
-            w.i({ see: `📝 wrote src/lib/gen/${w.c.compile_name}` })
+            w.i({ see: `📝 wrote src/lib/gen/${ou.sc.name}` })
             // notify Pantheate so it require()s the fresh module
             H.elvisto('Pantheate/Pantheate', 'Ghost_update_notify',
-                { include: w.c.compile_name })
+                { include: ou.sc.name })
         }
 
-        // cleanup so the next compile starts fresh
+        // cleanup
         await w.r({ compile_write: 1 }, {})
-        w.c.compile_pending = false
-        w.c.compile_source  = null
-        w.c.compile_name    = null
+        // Compile stays until the next job comes in
+        await job.r({Pending:1},{})
     },
 
 //#endregion
