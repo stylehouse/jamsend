@@ -43,6 +43,26 @@ story:LangTiles
       style:background-color,v:#24bcb6
     matstyle:bookmark
       style:background-color,v:#bd429e
+    matstyle:result
+      style:background-color,v:#89d04e
+    matstyle:include
+      style:background-color,v:#1f35a3
+    matstyle:hut
+      style:background-color,v:#a6483a
+    matstyle:toot
+      style:background-color,v:#36c974
+    matstyle:something
+      style:background-color,v:#af43db
+    matstyle:thung
+      style:background-color,v:#8f8f32
+    matstyle:with
+      style:background-color,v:#2f8bb1
+    matstyle:etc
+      style:background-color,v:#d62970
+    matstyle:yeses
+      style:background-color,v:#66c559
+    matstyle:because
+      style:background-color,v:#3c2999
   TimeSpool
     TimeTotal:beliefs,avg:112.389
       sample:0.145,at:1776041031
@@ -55,7 +75,7 @@ story:LangTiles
       sample:0.288,at:1776063293
       sample:0.184,at:1776064957
       sample:1121.604,at:1776082665
-  step,dige:97fc772c2f5f4b0d
+  step,dige:fe99a96f8f8a0a07
     note,frontier
   step:2,dige:794adef643585793
   step:3,dige:728ba99e93433414

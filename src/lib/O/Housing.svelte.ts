@@ -1067,8 +1067,8 @@ export class House extends StorableHousing {
             fn: () => {
                 const next = !w.c[key]
                 w.c[key] = next
-                if (do_stash) H.stashed[key] = next
-                opts.on_change?.(next)   // ← add this
+                opts.on_change?.(next)
+                if (do_stash) H.stashed[key] = w.c[key]
                 H.main()
             },
         })

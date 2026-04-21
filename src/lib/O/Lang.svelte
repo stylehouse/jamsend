@@ -392,7 +392,12 @@ threads of inquiry stack up on the left
 done:
  - Expression Translation, its Selection.process(), if ok can write the gen/*
 todo:
+ - Sunpit-as-iteration and pythonic indentation
  - Map building, persisting and exchanging the meaningful bits
+definitely not in the next phase:
+ - Sunpit as Travel underneath
+ - all Sunpits contribute clues to the local Selection...
+    Se/* becomes its configuration and state.
 
 
 to continuously compile this code we're editing
@@ -440,7 +445,7 @@ swap these i|o expressions for... something
   o hut/$toot -> hut.o({toot})          # takes toot the variable
   o hut/toot:3 -> hut.o({toot:3},{exactly:{toot:true}})
    turns off wildcard - for they could have just said /toot to mean any toot
-    although:1,they,can,be,mixed (although must == 1, others may be anything)
+    although:1,they,can,be,mixed (%although must == 1, others may be anything)
    note it looks like peel() format, but variables can:$be,in:$it
 
 and put the resulting typescript ghost code (wrapped in eatfunc etc)
@@ -452,8 +457,14 @@ and put the resulting typescript ghost code (wrapped in eatfunc etc)
 
 
 
-later we'll do the Sunpit-as-iteration and pythonic indentation.
+pythonic indent
+  if oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
 
+Sunpit
+ the new lump of potentially non-trivial activity
+ S <IOing>
+  is iteration, heading of a pythonic-indented block
+  becomes a for loop containing that IOing!
 
 
 
@@ -463,19 +474,8 @@ IOing
   Travel if multi-layered. inline a big json of of the path (as iooia can do) is the parsed version of the syntax.
     in the story_rule_matches format for it.
 
-pythonic indent
-  if oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
-
 Sunpit
- the new lump of potentially non-trivial activity
- S <IOing>
-  is iteration, heading of a pythonic-indented block
-  becomes a for loop containing that IOing
-   which may be multi-lined
-
-Sunpit
-  but is a pretty basic luxury iterator
-   uses Travel to expand rows with names that can come out as /$names$/
+  but is a pretty basic luxury iterator 
 
  wonder if it is possible to allow these two expr: C o walls | o C/walls
   it might be ambiguous, needing to not be so casually slipped into javascript.

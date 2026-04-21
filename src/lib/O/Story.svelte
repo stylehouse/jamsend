@@ -1433,10 +1433,6 @@
                 }
             },
         })
-        // On load from stashed, promote boolean true → Book name
-        if (w.c.trickle && w.c.trickle !== false && w.c.trickle !== w.sc.Book) {
-            w.c.trickle = w.sc.Book
-        }
 
         // < is this weird. Baroquely, an information channel in a button
         await wa.roai({ action: 1, role: 'status' }, {
