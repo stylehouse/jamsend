@@ -198,6 +198,7 @@ theCompiledStuff(A,w) {
     // is actually w:LangTiles, the test, for now calling this.
     async Lang(A: TheC, w: TheC) {
         const H = this
+        console.log(`Lang!`)
 
         if (!w.c.plan_done) await this.Lang_plan(A, w)
         // these go every time so their toggle state can visually change

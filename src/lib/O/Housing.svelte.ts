@@ -1073,6 +1073,34 @@ export class House extends StorableHousing {
             },
         })
     }
+    // i_actions_to_C: persist a toggle directly in The/Opt — no w.c mirror.
+    // Particle {<key>:1} present = on, absent = off.
+    // Changes fire story_save() via watch_c already wired on The_Opt in Story_plan.
+    // < does it only do toggles?
+    async i_actions_to_C(C: TheC, key: string, opts: { label?: string, on_change?: (next: boolean) => void } = {}) {
+        const H     = this as House
+        const label = opts.label ?? key
+        const wa    = H.o({ watched: 'actions' })[0]
+        if (!wa) return
+
+        const current = !!C.oa({ [key]: 1 })
+
+        await wa.r({ action: 1, role: key }, {
+            label,
+            icon: current ? `${label} ✓` : label,
+            cls:  current ? 'toggle-on'  : 'toggle-off',
+            fn: () => {
+                const next = !C.oa({ [key]: 1 })
+                if (next) {
+                    C.oai({ [key]: 1 })
+                } else {
+                    C.r({ [key]: 1 },{})
+                }
+                opts.on_change?.(next)
+                H.main()
+            },
+        })
+    }
 
 
 //#endregion

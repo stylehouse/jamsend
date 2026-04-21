@@ -136,7 +136,7 @@
 
 //#region The helpers — canonical disk-backed toc tree
 
-    step_c(container: TheC, n: number, key: string): TheC {
+    step_c(container: TheC, n: number, key: string, soft=false): TheC|undefined {
         // Universal find-or-create for any step-keyed particle.
         // Works for both The/{step:n} and This/{Step:n} (and any future container).
         // Always bumps container version on creation so watchers see the new particle.
@@ -150,6 +150,7 @@
         sc[key] = n
         const existing = container.o(exactly(sc))[0]
         if (existing) return existing
+        if (soft) return undefined
         const c = container.i(sc)
         container.bump_version()
         return c
@@ -260,6 +261,49 @@
         sw.i({ note_coloring: type, color })
     },
 
+//#endregion
+//#region The/Styles|Opt|Plan — the Story's instructions
+
+    // The_Styles(w): Story's specific way of finding its styles bucket —
+    // it lives under w.c.The/{Styles:1}.  Other clients (LangTiles etc.)
+    // can either call this with their own w that has a .c.The, or bring
+    // their own plain TheC with {Styles:1} sc.
+    The_Styles(w: TheC): TheC {
+        const The = w.c.The as TheC
+        if (!The) throw '!The for matstyles'
+        return The.o({ Styles: 1 })[0] as TheC ?? The.i({ Styles: 1 })
+    },
+    
+    The_Opt(w: TheC): TheC {
+        // find-or-create The/{Opt:1}, the options bucket.
+        // mirrors The_Styles — same pattern, same rules.
+        const The = w.c.The as TheC
+        if (!The) throw '!The for Opt'
+        return (The.o({ Opt: 1 })[0] as TheC) ?? The.i({ Opt: 1 })
+    },
+ 
+    The_Plan(w: TheC): TheC {
+        // find-or-create The/{Plan:1}, the phases bucket.
+        const The = w.c.The as TheC
+        if (!The) throw '!The for Plan'
+        return (The.o({ Plan: 1 })[0] as TheC) ?? The.i({ Plan: 1 })
+    },
+ 
+    The_Plan_phase(w: TheC, n: number,soft=false): TheC {
+        // find-or-create The/Plan/{Phase:N}.
+        // Delegates to step_c so it bumps planC version on creation,
+        // using the same find-or-create idiom as The_step.
+        return this.step_c(this.The_Plan(w), n, 'Phase',soft)
+    },
+
+    async Story_prepare_Phase(w:TheC,Run:House,run:TheC) {
+        let n = run.c.step_n
+        let Phase = this.The_Plan_phase(w,n,true)
+        run.c.Phase = Phase
+        if (Phase) {
+            // < inject w** at this step, similar to Opt/For/w:Such
+        }
+    },
 
 //#region snap codec
     // ── encode_toc_snap ───────────────────────────────────────────────────────
@@ -331,22 +375,22 @@
     decode_toc_snap(snap: string, w: TheC) {
         if (!snap) return
         const The = w.c.The as TheC
-
+ 
         // parents[d] = the C that a line at depth d+1 should be inserted under
         const parents: TheC[] = [The]
-
+ 
         for (const line of snap.split('\n').filter(Boolean)) {
             let parsed: ReturnType<typeof this.deL> | null = null
             try { parsed = this.deL(line) } catch { continue }
             if (!parsed) continue
             const sc: Record<string, any> = { ...parsed.stringies }
             const d = parsed.d as number
-
+ 
             if (d === 0) continue   // story root — informational, validation hook
-
+ 
             const parent = parents[d - 1] ?? The
             let particle: TheC
-
+ 
             if (sc.step != null) {
                 // %step inline rule (mirror of encoder)
                 particle = this.The_step(w, sc.step as number)
@@ -354,8 +398,29 @@
             } else if (sc.Styles != null && d === 1) {
                 // reuse the Styles bucket created by Story_plan
                 particle = this.The_Styles(w)
-
                 ex(particle.sc, sc)
+            } else if (sc.Opt != null && d === 1) {
+                // reuse the Opt bucket created by Story_plan.
+                // Children (For, bucket names, option particles) are inserted
+                // generically below — the special case is only the bucket itself
+                // so identity is stable (same C object as w.c.Opt).
+                particle = this.The_Opt(w)
+                ex(particle.sc, sc)
+            } else if (sc.Plan != null && d === 1) {
+                // reuse the Plan bucket created by Story_plan.
+                particle = this.The_Plan(w)
+                ex(particle.sc, sc)
+            } else if (sc.Phase != null && d === 2 && parents[0] != null) {
+                // Phase particles under Plan — use The_Plan_phase for stable identity.
+                // parents[1] is The/Plan; we check it is actually planC.
+                const planC = this.The_Plan(w)
+                if (parents[1] === planC) {
+                    particle = this.The_Plan_phase(w, sc.Phase as number)
+                    ex(particle.sc, sc)
+                } else {
+                    // Phase at depth 2 but not under Plan — generic insert
+                    particle = parent.i(sc)
+                }
             } else {
                 particle = parent.i(sc)
                 if (sc.note) {
@@ -364,10 +429,11 @@
                     }
                 }
             }
-
+ 
             parents[d] = particle
         }
     },
+
 
     // ── sum_beliefs_time ──────────────────────────────────────────────────────
     // Pair-walk a Run_trace and sum the time spent inside the beliefs mutex.
@@ -854,6 +920,9 @@
         // lazy-creates Styles bucket — encode_toc_snap walks The/** so this is free.
         // Matstyle ghost autovivifies entries here during cyto_scan.
         this.The_Styles(w)
+        // phases bucket — stubbed; story_drive will consult this before each step.
+        this.The_Plan(w)
+
         w.c.This = w.i({ This: 1, Story: book })
 
         const ave   = H.oai_enroll(H, { watched: 'ave' })
@@ -870,11 +939,19 @@
         const uis = H.oai_enroll(H, { watched: 'UIs' })
         uis.oai({ UI: 'Story', component: StoryRun })
 
+        const stylesC = this.The_Styles(w)
+        H.watch_c(stylesC, () => H.story_save())
+
+        // i The/Opt
+        H.watch_c(this.The_Opt(w), () => {
+            console.log(`in i The/Opt, to story_save()`)
+            H.story_save()
+        })
+        H.push_opt_to_run(w)
+
         // ── commission Cyto ───────────────────────────────────────────
         // Cyto reads Scannable/Styles/client_w/capability flags from this
         // req; watch_c on stylesC drives save-on-edit.
-        const stylesC = this.The_Styles(w)
-        H.watch_c(stylesC, () => H.story_save())
         // Cyto puts its given commission%Styles into H.ave for us
         
 
@@ -897,6 +974,52 @@
         return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
     },
 
+    push_opt_to_run(w: TheC) {
+        // Walk The/Opt/For/* and for each {w:Name} bucket, find the matching
+        // worker particle in Run (%A/%w:Name) and w.i() each option child into it.
+        //
+        // The/Opt/For/{w:LangTiles}     ← For/* must be {w:SomeName}, throws otherwise
+        //   /{key:val, ...}             ← each child is i()'d verbatim into the target
+        //   → Run/%A/%w:LangTiles       ← any A; matched by w key
+        //
+        // The option particles are the actual TheC objects from The**, so they
+        // round-trip through toc.snap as part of The and don't need separate saving.
+        const H    = this as any
+        const optC = w.c.Opt as TheC | undefined
+        if (!optC) return
+ 
+        const forC = optC.o({ For: 1 })[0] as TheC | undefined
+        if (!forC) return
+ 
+        // get the Run sub-house; cheap when it already exists
+        const sub = H.Story_subHouse(null, w)
+        if (!sub) return
+        const { Run } = sub
+ 
+        for (const bucketC of forC.o({}) as TheC[]) {
+            // For/* must be {w:SomeName} — anything else is a config error
+            const w_name = bucketC.sc.w as string | undefined
+            if (!w_name) throw `The/Opt/For/* must have a w key — got: ${JSON.stringify(bucketC.sc)}`
+ 
+            // find Run/%A/%w:Name — search all actors for the matching worker
+            const target = (Run.o({ A: 1 }) as TheC[])
+                .flatMap(a => a.o({ w: w_name }) as TheC[])
+                [0]
+            if (!target) {
+                // worker not yet mounted — safe to skip, push_opt_to_run is called
+                // once at Story_plan time; the worker is responsible for reading
+                // its own Opt on first tick if it mounts after plan time.
+                continue
+            }
+ 
+            // i() each option child verbatim into the target worker particle.
+            // These are the real TheC objects from The**, so any future mutation
+            // to them is visible in both The and the target without a second push.
+            for (const optParticle of bucketC.o({}) as TheC[]) {
+                target.i(optParticle)
+            }
+        }
+    },
 
 //#region w:Story
 
@@ -997,7 +1120,8 @@
 
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
-        if (w.c.trickle === w.sc.Book) Run.main(true)
+        if (this.The_Opt_val(w, 'trickle')) Run.main(true)
+        if (this.The_Opt_val(w, 'trickle')) console.log(`Truckle:`,this.The_Opt(w).o({})?.[0])
         w.i({ see: `${book} ${run.sc.done} [${run.sc.mode}]${run.sc.paused ? ' ⏸' : ''}` })
     },
 
@@ -1133,6 +1257,7 @@
             run.c.began_step = now_in_seconds_with_ms()
             Run.trace_enable()
             Run.trace('step', String(n))
+            await this.Story_prepare_Phase(w,Run,run)
             setTimeout(() => { if (run.c.driving) Run.elvisto(Run, 'think') }, 1)
             setTimeout(poll_step, TICK)
         }
@@ -1429,16 +1554,14 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'waitCyto',      { stashed: true, label: 'waitCyto'    })
+        let Opt = this.The_Opt(w)
         // trickle: when toggled on, stores the current Book name (not boolean true).
         // This means only this Book gets the trickle treatment — other Books in
         // the same House don't accidentally inherit it from stashed.
-        await this.i_actions_to_c(w, 'trickle', {
-            stashed: true,
+        await this.i_actions_to_C(Opt, 'trickle', {
             label: 'trickle',
             on_change: (next: boolean) => {
-                w.c.trickle = next ? w.sc.Book : false
-                if (w.c.trickle) {
-                    // immediately warm up Run
+                if (next) {
                     const sub = this.Story_subHouse(null, w)
                     if (sub) sub.Run.main(true)
                 }
@@ -1478,6 +1601,10 @@
                 this.post_do(resume, { see: 'Resnap button' })
             },
         })
+    },
+    // The_Opt_val: read a simple bool from The/Opt — true if {<key>:1} present.
+    The_Opt_val(w: TheC, key: string): boolean {
+        return !!this.The_Opt(w).oa({ [key]: 1 })
     },
 
 

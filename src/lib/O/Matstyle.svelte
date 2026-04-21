@@ -110,19 +110,6 @@
 
 
 //#endregion
-//#region The_Styles — Story's persistence finder
-
-    // The_Styles(w): Story's specific way of finding its styles bucket —
-    // it lives under w.c.The/{Styles:1}.  Other clients (LangTiles etc.)
-    // can either call this with their own w that has a .c.The, or bring
-    // their own plain TheC with {Styles:1} sc.
-    The_Styles(w: TheC): TheC {
-        const The = w.c.The as TheC
-        if (!The) throw '!The for matstyles'
-        return The.o({ Styles: 1 })[0] as TheC ?? The.i({ Styles: 1 })
-    },
-
-//#endregion
 //#region CRUD — all take stylesC explicitly
 
     matstyle_all(stylesC: TheC): TheC[] {
