@@ -651,7 +651,7 @@
 //  This is the "deL munges any ref still on %Story we didn't know about" rule:
 //  unknown refs are automatically neutralised rather than causing errors or
 //  polluting the diff.
-
+    // see lematch
     story_matching: [
         {
             // House-level particles: mung timer ids (they change every run)
@@ -689,6 +689,16 @@
             matching_any: [{ sc: { Story: 1 } }],
             means: { thence_matching: [] }
         },
+        {
+            // source code comes out readable
+            matching_any: [{ sc: { Compile:1, } }],
+            means: {
+                thence_matching: [
+                    { matching_any: [{ sc: { Output:1, name:1, source:1, dige:1 } }],
+                      means: { blockquote_these_sc: {source:1} } },
+                ]
+            }
+        },
     ] as Array<any>,
 
     // classify one particle during the snap walk.
@@ -704,14 +714,15 @@
             ...(T.sc.up?.sc.thence_matching ?? []),
         ]
         const q: any = { d: T.c.path.length - 1, rules: active }
-        const line = this.enLine(n, q)
+        const lines = this.enLine(n, q)
 
         if (q.skip) { T.sc.not = 1; return }
+        if (!lines) throw "!lines"
 
         D.sc.stringies = q.stringies
         D.sc.objecties = q.objecties
         D.sc.copy = { ...n.sc }
-        D.sc.snap_line = line ?? ''
+        D.sc.snap_line = lines.join("\n")
         if (q.mung?.length) { D.c.munged ??= []; D.c.munged.push(q.mung) }
         if (q.thence?.length) T.sc.thence_matching = q.thence
     },

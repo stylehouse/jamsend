@@ -35,6 +35,34 @@
     //   stringies: peel format "k:v  k2:v2" when all keys/values are sayable,
     //              otherwise JSON (always starts with "{" so deL can detect it).
     //
+    // ── block-quoting (BQ) extension ───────────────────────────────────────────
+    //
+    //   Selected string keys may be encoded as YAML-style literal block scalars
+    //   instead of inline.  This is opt-in via lematch rules supplying
+    //   blockquote_these_sc: { source: 1, ... } in their means.
+    //
+    //   Format (parent at depth D, i.e. 2*D leading spaces):
+    //
+    //     <2*D spaces>Output,name:Somewhere.svelte,dige:131313113
+    //      <2*D+1 space>source: |
+    //        <2*D+3 spaces><first line of source>
+    //        <2*D+3 spaces><second line of source>
+    //        ...
+    //     <2*D spaces>Methods        ← 2*D spaces → ends all BQ keys for parent
+    //
+    //   Rules:
+    //     • BQ key line:  exactly 2*D+1 leading spaces, then "key: |"
+    //     • BQ body lines: at least 2*D+3 leading spaces (the source lines verbatim,
+    //                       each trimmed of exactly 2*D+3 leading spaces on decode)
+    //     • A BQ key ends when a line has ≤ 2*D+1 leading spaces.
+    //     • The blockquoted string value MUST end with \n (YAML literal block
+    //       scalar semantics — trailing newline is part of the value).
+    //       enLine returns an error marker in q.bq_errors if it does not.
+    //     • Only keys listed in blockquote_these_sc are blockquoted; all others
+    //       remain in the inline stringies on the parent line as usual.
+    //     • Multiple BQ keys are emitted in order after the parent line,
+    //       each at 2*D+1 spaces.
+    //
     // ── Dif codec ─────────────────────────────────────────────────────────────
     //
     //   enDif and deDif are a symmetric pair, mirroring enL/deL.
@@ -137,7 +165,7 @@
 
                 // Encode via enLine with q.check so mung is flagged.
                 const q: any = { d }
-                const line = H.enLine(n, q)
+                const lines = H.enLine(n, q)
 
                 if (q.objecties?.mung) {
                     // Build path from ancestor snap_Lines stored in prior each_fn calls.
@@ -149,10 +177,15 @@
                     return
                 }
 
-                // Store snap_Line on c.c (not c.sc) so it's available for child
+                // Collect BQ errors
+                for (const bqe of q.bq_errors ?? []) {
+                    errors.push(`blockquote error at depth ${d}: ${bqe}`)
+                }
+
+                // Store first snap line on c.c (not c.sc) so it's available for child
                 // path debug without polluting the snap output.
-                n.c.snap_Line = line ?? ''
-                snap_lines.push(line ?? '')
+                n.c.snap_Line = lines?.[0] ?? ''
+                for (const line of lines ?? []) snap_lines.push(line)
             },
         })
 
@@ -175,23 +208,104 @@
     //       note:1 todo:fix       ← stack [Library, LeafJuggle, note]
     //     Book:LeafFarm           ← pop note+LeafJuggle, stack [Library, LeafFarm]
     //
+    // Block-scalar handling: after parsing a normal line onto the stack,
+    // consume any immediately following BQ key lines (odd indent = 2*D+1)
+    // and their body lines, merging the decoded values into the freshly
+    // created TheC's sc before pushing it.
+    //
     // Errors:
     //   • More than one depth-0 line → error, second root ignored.
     //   • Depth jump > 1 (e.g. d=0 → d=2) → error, line skipped.
     //   • objecties.mung present → error, line skipped (encoded mung = bad encode).
     //   • Object value in stringies → error, line skipped.
+    //   • BQ body missing (key: | with no following body) → error, key skipped.
 
     decode_wh_lines(snap: string): { C: TheC | null, errors: string[] } {
         const errors: string[] = []
         if (!snap?.trim()) return { C: null, errors: ['empty snap'] }
+
+        // Split into non-empty lines, keeping track of our position with an index
+        // so BQ consumption can advance past the main loop cursor.
+        const all_lines = snap.split('\n')
+        let li = 0   // mutable cursor shared with BQ consumer below
 
         interface SE { d: number; C: TheC }
         const stack: SE[] = []
         let root: TheC | null = null
         let prev_d = -1
 
-        for (const raw of snap.split('\n')) {
+        // count_spaces: leading space count of a raw line.
+        const count_spaces = (line: string) => line.match(/^ */)?.[0].length ?? 0
+
+        // consume_bq_keys: after parsing a node at depth D (2*D spaces),
+        // look ahead for lines with exactly 2*D+1 leading spaces ("key: |")
+        // and their body lines (≥ 2*D+3 spaces).  Merge decoded values into sc.
+        // Advances li past everything consumed.
+        const consume_bq_keys = (sc: Record<string, any>, parent_d: number) => {
+            const bq_sp     = parent_d * 2 + 1   // spaces for BQ key line
+            const body_min  = parent_d * 2 + 3   // minimum spaces for body lines
+
+            while (li < all_lines.length) {
+                const raw = all_lines[li]
+                if (!raw.trim()) { li++; continue }  // skip blank lines inside BQ section
+                const sp = count_spaces(raw)
+                if (sp !== bq_sp) break   // not a BQ key for this parent — stop
+
+                // Parse "key: |" — only the literal-block-scalar form is supported
+                const key_part = raw.slice(sp).trimEnd()
+                const bq_match = key_part.match(/^(\w+):\s*\|$/)
+                if (!bq_match) break   // not a BQ key line — stop (leave for normal decode)
+                const key = bq_match[1]
+                li++
+
+                // Collect body lines (all lines with ≥ body_min spaces)
+                const body_lines: string[] = []
+                while (li < all_lines.length) {
+                    const braw = all_lines[li]
+                    // Blank lines within the body are kept as empty lines in the value
+                    if (!braw.trim()) {
+                        // A blank line inside body is kept; we'll decide below whether
+                        // we're still in body by checking the next non-blank line.
+                        // Simple approach: treat blank as body continuation.
+                        body_lines.push('')
+                        li++
+                        continue
+                    }
+                    if (count_spaces(braw) < body_min) break   // body ended
+                    // Strip exactly body_min leading spaces; preserve the rest verbatim
+                    body_lines.push(braw.slice(body_min))
+                    li++
+                }
+
+                if (!body_lines.length) {
+                    errors.push(`BQ key "${key}" at depth ${parent_d} has no body lines`)
+                    continue
+                }
+
+                // Trim trailing blank lines that were collected past the real content
+                while (body_lines.length && body_lines[body_lines.length - 1] === '') {
+                    body_lines.pop()
+                }
+
+                // Reassemble with \n between lines, and the required trailing \n
+                sc[key] = body_lines.join('\n') + '\n'
+            }
+        }
+
+        while (li < all_lines.length) {
+            const raw = all_lines[li]
+            li++
             if (!raw.trim()) continue
+
+            const sp = count_spaces(raw)
+
+            // Odd space count means this is a BQ key line orphaned without a parent —
+            // this shouldn't happen in well-formed snap but guard it.
+            if (sp % 2 !== 0) {
+                // Could be a BQ key that was supposed to be consumed above; skip.
+                errors.push(`unexpected odd-indent line: "${raw.trim()}"`)
+                continue
+            }
 
             let parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null = null
             try { parsed = this.deL(raw) } catch {
@@ -216,7 +330,13 @@
                 continue
             }
 
-            const C = _C({ ...sc })
+            const sc_merged = { ...sc }
+
+            // Consume any BQ keys that follow this line before building the TheC,
+            // so the TheC gets its full sc including blockquoted values.
+            consume_bq_keys(sc_merged, d)
+
+            const C = _C({ ...sc_merged })
 
             if (d === 0) {
                 if (root !== null) {
@@ -263,6 +383,9 @@
     //   any key or value contains unsafe characters (:,\t\n).
     //   Peel rule: key /^\w+$/, value is number|boolean or a string with no
     //   colons, commas, tabs, or newlines.
+    //
+    //   Note: keys that will be blockquoted are excluded from sc before this
+    //   is called, so they never appear inline.
 
     encode_stringies(obj: Record<string,any>): string {
         const unsafe = /[:,\t\n]/
@@ -279,6 +402,10 @@
     //   Encode one parsed snap-line descriptor back to a string.
     //   Omits the tab entirely when there are no objecties (obj_part empty) —
     //   this is the canonical form; deL handles both tab-present and tab-absent.
+    //
+    //   Returns a single string (the parent line only).
+    //   Block-scalar lines for BQ keys are produced by enLine, not enL, since
+    //   they require knowing which keys to blockquote and depth for body indent.
 
     enL(parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> }): string {
         const obj_part = Object.keys(parsed.objecties||{}).length ? this.enj(parsed.objecties) : ''
@@ -298,6 +425,9 @@
     //   The tab is the separator between obj_part and str_part only when
     //   obj_part is present.  A line with no tab is stringies-only.
     //   stringies: peel format "k:v k2:v2" or JSON (starts with "{").
+    //
+    //   Note: deL only decodes the single line — BQ key/body lines that follow
+    //   a node line are consumed separately by decode_wh_lines.
 
     deL(line: string): { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null {
         const spaces  = line.match(/^ */)?.[0].length ?? 0
@@ -315,20 +445,35 @@
     // ── enLine ──────────────────────────────────────────────────────────────────
     // General-purpose single-particle snap line encoder.
     //
-    //   enLine(n, q) → snap_line string, or null when rules say skip.
+    //   enLine(n, q) → array of snap lines (parent line, then any BQ key/body
+    //                   lines), or null when rules say skip.
     //
     // q is both config (in) and result carrier (out):
-    //   in:   q.d       — enL depth
-    //         q.rules   — optional matching rules (same schema as story_matching)
-    //   out:  q.skip, q.thence, q.stringies, q.objecties, q.mung, q.snap_line
+    //   in:   q.d                   — enL depth
+    //         q.rules               — optional matching rules (same schema as story_matching)
+    //   out:  q.skip, q.thence, q.stringies, q.objecties, q.mung
+    //         q.snap_line           — the parent line (first element of return array)
+    //         q.bq_errors           — array of blockquote validation errors (non-fatal
+    //                                 in the sense that encoding continues, but callers
+    //                                 should surface them — a BQ string not ending in \n
+    //                                 is always an error)
     //
     // Rule schema:
     //   { matching_any: [ {sc:{...}} | {sc_only:{...}} ],
-    //     means: { skip?, munging?: [{sc:{key:1}, type}], thence_matching? } }
+    //     means: { skip?, munging?: [{sc:{key:1}, type}],
+    //              blockquote_these_sc?: {key:1, ...},
+    //              thence_matching? } }
+    //
+    //   blockquote_these_sc: keys in this map that are also present in n.sc and
+    //   have string values ending in \n will be emitted as YAML literal block
+    //   scalars after the parent line.  Keys that do NOT end in \n are an error
+    //   (recorded in q.bq_errors) and are emitted inline instead so data is not
+    //   lost.  Keys with non-string values are silently left inline.
     //
     // Object/function values on n.sc are always put into objecties.ref (excluded
     // from diff), regardless of rules.  Rules may additionally mung scalar keys.
     // T is never touched — callers proxy q.skip → T.sc.not, q.thence → T.sc.thence_matching.
+
     enLine(n: TheC, q: {
         d: number
         rules?: Array<any>
@@ -339,23 +484,61 @@
         skip?: boolean
         thence?: Array<any>
         mung?: string[]
-    }): string | null {
+        bq_errors?: string[]
+    }): string[] | null {
         const mr = n.lematch(q.rules ?? [])
         q.skip   = mr.skip
         q.thence = mr.thence
         if (q.skip) return null
 
+        // Collect blockquote_these_sc from all matched rules (union of all means)
+        const bq_keys: Record<string, 1> = {}
+        for (const rule of q.rules ?? []) {
+            // lematch already checked matching — we need to re-check here or just
+            // collect from mr.munging's companion.  Simpler: walk rules directly.
+            // (lematch doesn't expose which rules matched, only their combined effects,
+            //  so we re-examine means.blockquote_these_sc from any rule that fired.)
+            const matched = (rule.matching_any as any[] ?? []).some((entry: any) => {
+                if (entry.sc_only) {
+                    const want = Object.keys(entry.sc_only)
+                    if (Object.keys(n.sc).length !== want.length) return false
+                    return n.matches(entry.sc_only)
+                }
+                return n.matches(entry.sc)
+            })
+            if (matched && rule.means?.blockquote_these_sc) {
+                Object.assign(bq_keys, rule.means.blockquote_these_sc)
+            }
+        }
+
         const stringies: Record<string, any> = {}
         const ref: Record<string, string> = {}
         const mung: string[] = []
+        const bq_pending: Array<{ key: string, value: string }> = []
+        q.bq_errors = []
 
         for (const [k, v] of Object.entries(n.sc ?? {})) {
             if (v !== null && (typeof v === 'object' || typeof v === 'function')) {
                 ref[k] = objectify(v)
                 continue
             }
-            const m = mr.munging.find(r => Object.hasOwn(r.sc, k))
-            if (m) { mung.push(k); continue }
+            const is_munged = mr.munging.find(r => Object.hasOwn(r.sc, k))
+            if (is_munged) { mung.push(k); continue }
+
+            // blockquote_these_sc: only strings ending in \n get BQ treatment
+            if (bq_keys[k]) {
+                if (typeof v === 'string') {
+                    if (v.endsWith('\n')) {
+                        bq_pending.push({ key: k, value: v })
+                        continue   // excluded from inline stringies
+                    } else {
+                        // Error: must end with \n to be a valid BQ value
+                        q.bq_errors.push(`key "${k}" marked for blockquote but value does not end with \\n — encoding inline`)
+                        // fall through to stringies (data preserved, error surfaced)
+                    }
+                }
+                // non-string: leave inline silently
+            }
             stringies[k] = v
         }
 
@@ -367,15 +550,41 @@
         q.objecties = Object.keys(objecties).length ? objecties : undefined
         q.mung      = mung
 
-        const line = this.enL({ d: q.d, objecties: q.objecties, stringies })
-        q.snap_line = line
-        return line
+        // Parent line — inline keys only (BQ keys excluded above)
+        const parent_line = this.enL({ d: q.d, objecties: q.objecties ?? {}, stringies })
+        q.snap_line = parent_line
+
+        const out_lines: string[] = [parent_line]
+
+        // BQ key/body lines: each BQ key becomes:
+        //   " ".repeat(2*d+1) + "key: |"
+        //   " ".repeat(2*d+3) + <each source line verbatim>
+        // The trailing \n of the value is not emitted as a body line — it is
+        // implied by the block scalar form and re-added on decode.
+        if (bq_pending.length) {
+            const key_indent  = ' '.repeat(q.d * 2 + 1)   // 2*d+1 spaces
+            const body_indent = ' '.repeat(q.d * 2 + 3)   // 2*d+3 spaces
+
+            for (const { key, value } of bq_pending) {
+                out_lines.push(`${key_indent}${key}: |`)
+                // Split on \n; the trailing \n produces a final empty string — drop it.
+                const body_lines = value.split('\n')
+                if (body_lines[body_lines.length - 1] === '') body_lines.pop()
+                for (const bl of body_lines) {
+                    out_lines.push(`${body_indent}${bl}`)
+                }
+            }
+        }
+
+        return out_lines
     },
 
     // ── snap_indent ────────────────────────────────────────────────────────────
     // Shift every line in a snap string by +d depth levels.
     // Since enL encodes depth as leading '  ' pairs, prepending '  '.repeat(d)
     // is exactly equivalent to having been encoded at depth+d.
+    // Note: BQ key lines (odd indent) and body lines will shift correctly since
+    // we're just prepending an even number of spaces.
 
     snap_indent(snap: string, d: number): string {
         if (!d) return snap
@@ -392,6 +601,10 @@
     //   "    w:farm" → 2.
     //   Used by squish_context for ancestor walking and by enDif/deDif to map
     //   original_depth ↔ child_depth under a Dif marker.
+    //
+    //   Note: BQ key lines have odd space counts (2*d+1) — depth_of will return
+    //   a fractional-ish result via Math.floor, but BQ lines are never passed
+    //   to depth_of in normal diff flow (they are opaque body lines).
 
     depth_of(line: string): number {
         return Math.floor((line.match(/^ */)?.[0].length ?? 0) / 2)
@@ -441,6 +654,11 @@
     //
     //   DMP runs on the normalized text to get alignment; original lines are
     //   substituted back so display and char ops always use the real content.
+    //
+    //   BQ key and body lines (odd-indent or body-indent) are treated as opaque
+    //   text lines by compute_diff — they diff correctly since they're just
+    //   strings.  The squish_context ancestor-walker uses depth_of which floors
+    //   odd indents, so BQ key lines won't be mistaken for parent anchors.
 
     compute_diff(text_left: string, text_right: string): any[] {
         if (!text_left && !text_right) return []
@@ -450,6 +668,8 @@
             .map(line => ({ kind: 'left_only', line: line.trimEnd() }))
 
         // norm_line: canonical stringies JSON for alignment, indent preserved for depth.
+        // BQ key lines ("  key: |") and body lines pass through as-is since they
+        // don't parse as snap lines — that's fine, they'll align with their counterparts.
         const norm_line = (line: string): string => {
             const indent  = line.match(/^ */)?.[0] ?? ''
             const tab     = line.indexOf('\t')
@@ -602,6 +822,12 @@
     //   Tab handling: the tab in objectied lines ({"mung":...}\t...) is not
     //   leading whitespace.  re_indent() uses replace(/^ +/, '') which strips
     //   only spaces, so tabs in objectied lines survive intact.
+    //
+    //   BQ lines (odd-indent key lines and their body lines) are treated as
+    //   opaque content lines.  re_indent shifts their leading spaces by the same
+    //   dif_depth+1+orig_d offset as normal lines — this means the odd-space
+    //   property is shifted but the body lines remain ≥ 3 spaces deeper than
+    //   their key line, so deDif's restore_snap correctly inverts them.
     //
     //   Encoding:
     //     Dif:same      — got line as only child
