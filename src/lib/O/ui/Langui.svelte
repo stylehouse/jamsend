@@ -24,7 +24,7 @@
     import { onMount, onDestroy } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
-    import { Decoration, type DecorationSet, keymap, ViewUpdate } from "@codemirror/view"
+    import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 
@@ -154,7 +154,9 @@
         const extra = /[{:]$/.test(trimmed) ? 4 : 0
         return baseIndent + extra
     })
-    let usualSetup = [EditorView.lineWrapping, indentUnit.of("    "), autoIndent];
+    let usualSetup = [EditorView.lineWrapping, indentUnit.of("    "), autoIndent,
+        drawSelection(),
+        ];
     let Keys = keymap.of([
         // makes this element inescapable by Tab to keyboard navigators
         //  the Esc,Tab is supposed to work around that, but
@@ -202,7 +204,6 @@
                 doc: initial,
                 extensions: [
                     basicSetup,
-                    usualSetup,
 
                     // < is this per lang?
                     simpleLezerLinter(),
@@ -219,6 +220,7 @@
                         Lang_i_elvis(view,'Lang_set_doc', {text})
                         schedule_update_bookmarks(v.view);
                     }),
+                    usualSetup,
                 ],
             }),
         });
@@ -261,7 +263,7 @@
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
     .lte-cm    { min-height: 200px; max-height: 50vh; overflow: auto; }
-    .lte-cm :global(.cm-editor)  { height: 100%; background: transparent; }
+    .lte-cm :global(.cm-editor)  { height: 100%; }
     .lte-cm :global(.cm-content) { font-size: 12px; }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
