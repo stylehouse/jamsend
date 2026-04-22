@@ -10,7 +10,19 @@
     Comma { "," }
     Colon { ":" }
     space  { @whitespace }
-    @precedence {IOness, Number, Comma, Colon, Title, Sunpitness, Name}
+
+    // Pythonic control-flow keywords.  Trailing space is part of the token so
+    // bare words ("iffy", "foreach") still fall through to Name.
+    // "else if"/"elsif" must beat plain "else" in precedence — listed first.
+    // The condition is whatever remains on the line (Title); the compiler bails
+    // to verbatim when it starts with "(" (raw JS with user-managed brackets).
+    // Continuation lines starting with &&, ||, ?, :, . are detected by the
+    // collector, not here.
+    ElseIfKeyword { "else if " | "elsif " }
+    ElseKeyword   { "else" }
+    ControlKeyword { "if " | "for " | "while " | "until " }
+
+    @precedence {ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, Number, Comma, Colon, Title, Name}
     @precedence {nl, space}
 }
 
@@ -21,7 +33,14 @@ inline { Comment | expression }
 
 Comment { "#" nonnl+ }
 
-expression { Name | Number | IOing | Sunpit | Flug }
+expression { Name | Number | IOing | Sunpit | ControlFlow | Flug }
+
+// Pythonic if/else/for/while/until block header.
+// Body is indented lines consumed by the collector (_collect_line), same as Sunpit.
+// "else"/"else if"/"elsif" can chain as the next same-indent line after a block.
+// ControlFlowHead tells the collector which keyword it's dealing with.
+ControlFlow { ControlFlowHead Title? }
+ControlFlowHead { ElseIfKeyword | ControlKeyword | ElseKeyword }
 
 // testing https://lezer.codemirror.net/docs/guide/#allowing-ambiguity
 Flug { Flugenzoid | Flugamata }

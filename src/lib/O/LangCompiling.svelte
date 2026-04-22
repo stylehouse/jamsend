@@ -225,7 +225,7 @@
             to:   line.to,
             enter: (ref) => {
                 if (hit) return false
-                if ((ref.name === 'IOing' || ref.name === 'Sunpit')
+                if ((ref.name === 'IOing' || ref.name === 'Sunpit' || ref.name === 'ControlFlow')
                         && ref.from >= line.from && ref.to <= line.to) {
                     hit = { name: ref.name, node: ref.node }
                     return false
@@ -260,6 +260,75 @@
 
             // closing brace aligned with the `S` line
             out.push({ kind: 'raw', text: ' '.repeat(sunpit_indent) + '}' })
+            return n
+        }
+
+        if (hit?.name === 'ControlFlow') {
+            const headNode  = hit.node.getChild('ControlFlowHead')
+            const titleNode = hit.node.getChild('Title')
+            // keyword is "if", "for", "while", "until", "else if", "elsif", or "else"
+            const keyword   = state.doc.sliceString(headNode.from, headNode.to).trim()
+            let condition   = titleNode
+                ? state.doc.sliceString(titleNode.from, titleNode.to).trim()
+                : ''
+            const before     = line.text.slice(0, hit.node.from - line.from)
+            const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
+
+            // bail to verbatim — user wrote their own brackets, or condition
+            // contains a // comment (which would eat our closing ") {")
+            if (condition.startsWith('(') || condition.includes('//')) {
+                out.push({ kind: 'raw', text: line.text })
+                return n + 1
+            }
+
+            n++
+
+            // consume continuation lines — operators that can only open a
+            // continuation (&&, || spelled fully; also ternary/chain: ?, :, .)
+            const CONTINUATION = /^\s*(&&|\|\||[?:.])/
+            while (n <= doc.lines) {
+                const peek = doc.line(n)
+                if (!CONTINUATION.test(peek.text)) break
+                condition += ' ' + peek.text.trim()
+                n++
+            }
+
+            // emit header — ") {" lands on this line, after the full condition
+            let header: string
+            if (keyword === 'else') {
+                header = `${before}} else {`
+            } else if (keyword === 'else if' || keyword === 'elsif') {
+                header = `${before}} else if (${condition}) {`
+            } else {
+                // if, for, while, until
+                header = `${before}${keyword} (${condition}) {`
+            }
+            out.push({ kind: 'translated', text: header })
+
+            // consume indented body lines (same pattern as Sunpit)
+            while (n <= doc.lines) {
+                const peek = doc.line(n)
+                if (peek.text.trim() === '') {
+                    out.push({ kind: 'raw', text: peek.text })
+                    n++
+                    continue
+                }
+                const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                if (peek_indent <= cf_indent) break
+                n = this._collect_line(n, tree, doc, state, out)
+            }
+
+            // closing brace — suppressed when the very next same-indent line is
+            // else-family, which will open with "} else {" itself
+            const ELSE_FAMILY = /^\s*(else\b|elsif\s)/
+            const nextLine   = n <= doc.lines ? doc.line(n) : null
+            const nextIsElse = nextLine
+                && (nextLine.text.match(/^(\s*)/) ?? ['', ''])[1].length === cf_indent
+                && ELSE_FAMILY.test(nextLine.text)
+            if (!nextIsElse) {
+                out.push({ kind: 'raw', text: ' '.repeat(cf_indent) + '}' })
+            }
+
             return n
         }
 

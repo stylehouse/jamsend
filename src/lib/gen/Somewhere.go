@@ -23,8 +23,18 @@ theCompiledStuff(A,w) {
     for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) {
         let val = because.sc.it
         this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: val}}])
-    
     }
+    if (3) {
+        w.i({know: 1})
+    }
+    if (0) {
+        this._i_drill(w, [{sc: {dont: 1}}, {sc: {know: 1}}])
+    } else if (1 && 0 && 50) {
+        this._i_drill(w, [{sc: {never: 1}}, {sc: {knew: 1}}])
+    } else if (50 > 5 && 3 > 2) {
+        w.i({helped: 1})
+    }
+    w.i({yep: 1})
 }
 
 

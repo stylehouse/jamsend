@@ -168,7 +168,17 @@ theCompiledStuff(A,w) {
     S o yeses/because
         let val = because.sc.it
         i figiura/datch:$val
-    
+    if 3
+        i know
+    if 0
+        i dont/know
+    elsif 1 && 0
+        && 50
+        i never/knew
+    elsif 50 > 5
+            && 3 > 2
+        i helped
+    i yep
 }
 `
     },
