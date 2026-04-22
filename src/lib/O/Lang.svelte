@@ -179,12 +179,10 @@ theCompiledStuff(A,w) {
         w.c.clearAllBookmarks = e.sc.clearAllBookmarks
         w.c.editorState = e.sc.state
         w.c.editorView = e.sc.view
-        // this.post_do(async () => {
-            await this.test__couple_of_bookmarks(A,w)
-        // },{ see: 'onMount test__couple_of_bookmarks'})
+        w.i({received:1,editorBegins:1})
     },
     async e_langtiles_set_doc(A: TheC, w: TheC, e: TheC) {
-        if (!A.sc.A) debugger
+        if (!A.sc.A) throw "!A"
         const docC = w.c.docC as TheC | undefined
         if (!docC) return
         const text = e?.sc.text as string | undefined
@@ -227,7 +225,7 @@ theCompiledStuff(A,w) {
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
-        H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+        !H.sc.Run && 0 || H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
     },
 
     whatsthis(state:EditorState,model:TheC,bookmarks:TheC[],opt={}) {
@@ -786,7 +784,7 @@ Sunpit
     // deleted" by simply omitting it. (Not yet consumed, but the shape allows
     // future pruning: compare w/%bookmark ids against updates[].id.)
     async e_langtiles_update_bookmarks(A: TheC, w: TheC, e: TheC) {
-        if (!A.sc.A) debugger
+        if (!A.sc.A) throw "!A"
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
         const state   = e?.sc.state
         if (updates) {

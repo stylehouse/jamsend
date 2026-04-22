@@ -67,10 +67,21 @@ story:LangTiles
       style:background-color,v:#bc6a24
     matstyle:Output
       style:background-color,v:#42bd9f
+    matstyle:received
+      style:background-color,v:#d04eca
+    matstyle:Pending
+      style:background-color,v:#76a31f
+    matstyle:compile_write
+      style:background-color,v:#3a62a6
+    matstyle:req_sent
+      style:background-color,v:#c93641
   Plan
+    Phase:2
+      elvisto:LangTiles,e:test__couple_of_bookmarks
+    Phase:3
+      elvisto:LangTiles,e:Lang_compile
   Opt
-    Figures
-    trickle
+    no_Cyto
   TimeSpool
     TimeTotal:beliefs,avg:112.389
       sample:0.145,at:1776041031
@@ -83,9 +94,9 @@ story:LangTiles
       sample:0.288,at:1776063293
       sample:0.184,at:1776064957
       sample:1121.604,at:1776082665
-  step,dige:e6cacbeaed534b5c
+  step,dige:b3a342cfcf6d415a
+  step:2,dige:a36f203a3d9c10ae
+  step:3,dige:78b1b7bdd20dfbb5
     note,frontier
-  step:2,dige:794adef643585793
-  step:3,dige:728ba99e93433414
   step:4,dige:8fdbe62088c1d521
   step:5,dige:5a2056066f57eff3

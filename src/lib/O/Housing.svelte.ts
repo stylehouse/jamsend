@@ -176,7 +176,11 @@ abstract class Housing extends TheC {
     elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
         const h = this._find_house(target)
 
-        const Aw = typeof target === 'string' ? target
+        const Aw = typeof target === 'string' ? (
+                // < un-hack A/w targeting
+                target.includes('/') ? target
+                    : target+'/'+target
+            )
             : target instanceof TheC ? (
                 `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
             )

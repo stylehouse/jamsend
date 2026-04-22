@@ -1,0 +1,1 @@
+../data/Stuff.svelte.ts

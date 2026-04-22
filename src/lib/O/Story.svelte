@@ -116,7 +116,7 @@
     import type { TheD }                  from "$lib/mostly/Selection.svelte"
     import { Selection, Travel }          from "$lib/mostly/Selection.svelte"
     import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
-    import { onMount }                    from "svelte"
+    import { onMount, tick }                    from "svelte"
     import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
@@ -301,7 +301,22 @@
         let Phase = this.The_Plan_phase(w,n,true)
         run.c.Phase = Phase
         if (Phase) {
+            let some = false
             // < inject w** at this step, similar to Opt/For/w:Such
+            for (let ha of Phase.o()) {
+                if (ha.sc.elvisto && ha.sc.e) {
+                    let esc = {}
+                    ha.o({esc:1}).map(n => esc[n.sc.esc] = n.sc.v)
+                    Run.elvisto(ha.sc.elvisto,ha.sc.e,esc)
+                    some = true
+                }
+                else {
+                    throw `unknown Plan/Phase/* ${objectify(ha)}`
+                }
+            }
+            if (some) {
+                await new Promise(resolve => setTimeout(resolve, 100))
+            }
         }
     },
 
@@ -1193,7 +1208,7 @@
         run.c.driving = true
 
         const H    = this as House
-        const TICK = ANSWER_CALLS_TICK_MS
+        const TICK_MS = ANSWER_CALLS_TICK_MS
 
         const update_status = async (label: string, cls = 'default') => {
             const wa = () => H.o({ watched: 'actions' })[0]
@@ -1258,7 +1273,7 @@
             Run.trace('step', String(n))
             await this.Story_prepare_Phase(w,Run,run)
             setTimeout(() => { if (run.c.driving) Run.elvisto(Run, 'think') }, 1)
-            setTimeout(poll_step, TICK)
+            setTimeout(poll_step, TICK_MS)
         }
 
         // Phase 2: poll_step — wait for Run to go quiescent
@@ -1267,9 +1282,12 @@
             const f = Run.c.finished_run as number | null
             const quiescent = f != null
                 && f > (run.c.began_step as number)
-                && (now_in_seconds_with_ms() - f) < TICK * 1.5
-            if (!quiescent) { setTimeout(poll_step, TICK); return }
-            ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n}`)
+                && (now_in_seconds_with_ms() - f) > ((TICK_MS/1000) * 1.5)
+                && !Run.todo.length
+            if (!quiescent) { setTimeout(poll_step, TICK_MS); return }
+            let ago = (now_in_seconds_with_ms() - f)
+            Run.trace('quiescent', ago.toFixed(3))
+            ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             H.post_do(snap_step, { see: 'story_snap' })
         }
 
@@ -1357,7 +1375,7 @@
                     step.sc.checking = true
                     run.sc.check_snap = n
                     H.main()
-                    setTimeout(poll_check, TICK)
+                    setTimeout(poll_check, TICK_MS)
                 } else {
                     await snap_step_finish()
                 }
@@ -1380,7 +1398,7 @@
             if (!run.c.driving) return
             const n = run.c.step_n as number
             const check_step = H.i_step(w, n)
-            if (check_step.sc.checking) { setTimeout(poll_check, TICK); return }
+            if (check_step.sc.checking) { setTimeout(poll_check, TICK_MS); return }
             if (check_step.sc.disk_ok === false) {
                 check_step.sc.ok = false
                 run.c.driving = false
