@@ -876,10 +876,10 @@
         const h_snap  = await this.snap_H(Run)
         const h_block = this.snap_indent(h_snap, 1)
 
-        // no_Cyto: this Story has no Cyto of its own (e.g. only Lang's Cyto is
+        // noCyto: this Story has no Cyto of its own (e.g. only Lang's Cyto is
         // active in this test). Skip the cytowave block entirely — it's not part
         // of the model being tested, and waiting for it adds ~2s per step.
-        if (H.The_Opt_val(w, 'no_Cyto')) {
+        if (H.The_Opt_val(w, 'noCyto')) {
             return this.enL({ d: 0, stringies: { Snap: 'H' } }) + '\n' + h_block
         }
 
@@ -972,11 +972,11 @@
         // Cyto reads Scannable/Styles/client_w/capability flags from this
         // req; watch_c on stylesC drives save-on-edit.
         // Cyto puts its given commission%Styles into H.ave for us.
-        // Skipped when no_Cyto — Story won't use its own Cyto in this test
+        // Skipped when noCyto — Story won't use its own Cyto in this test
         // (e.g. only Lang's Cyto is active), so don't commission one.
 
         // < this is possibly meant to be an i_elvis_req(), but pretending works too...
-        if (!H.The_Opt_val(w, 'no_Cyto')) {
+        if (!H.The_Opt_val(w, 'noCyto')) {
             let Run = H.o({H:1,Run:1})[0]
             if (!Run) throw "!H/%H,Run"
             const commission = new TheC({ c: {}, sc: {
@@ -1203,7 +1203,7 @@
 //     Trims (got|exp)_snap 5 steps behind (unless keep_snaps toggle is on).
 //     If snap_checking and ok: sets step.sc.checking, queues poll_check.
 //     Otherwise calls advance() — which either hands off to w:Cyto
-//     (when The/Opt/waitCyto is set and !no_Cyto) or calls schedule() directly.
+//     (when The/Opt/waitCyto is set and !noCyto) or calls schedule() directly.
 //
 //   Phase 4 — poll_check  (plain setTimeout, snap_checking mode only)
 //     waits for Story() to read NNN.snap from disk, verify its dige,
@@ -1308,8 +1308,8 @@
             run.sc.done = n
             Run.trace('snap', String(n))
 
-            // no_Cyto: bypass the wave handshake entirely and snap immediately.
-            if (H.The_Opt_val(w, 'no_Cyto')) {
+            // noCyto: bypass the wave handshake entirely and snap immediately.
+            if (H.The_Opt_val(w, 'noCyto')) {
                 await snap_step_after_wave()
                 return
             }
@@ -1322,7 +1322,7 @@
         }
 
         // Reachable by two paths:
-        //  - Directly from snap_step if Opt/no_Cyto
+        //  - Directly from snap_step if Opt/noCyto
         //  - From e_Cyto_wave_done via run.c.snap_step_after_wave otherwise
         //      and if Opt/waitCyto, in snap_step_finish, we wait for e:Cyto_animation_done
         const snap_step_after_wave = async () => {
@@ -1402,7 +1402,7 @@
         // Post-snap phase: pause for animation if waitCyto, else advance directly.
         // Reached from snap_step_after_wave (both modes) and poll_check.
         const snap_step_finish = async () => {
-            if (H.The_Opt_val(w, 'waitCyto') && !H.The_Opt_val(w, 'no_Cyto')) {
+            if (H.The_Opt_val(w, 'waitCyto') && !H.The_Opt_val(w, 'noCyto')) {
                 run.c.awaiting_anim_done = true
                 run.c.driving = false
                 V.Story && console.log(`⏸ snap_step finished, paused for Cyto_animation_done`)
@@ -1588,13 +1588,13 @@
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         let Opt = this.The_Opt(w)
-        // waitCyto and no_Cyto live in The/Opt so they round-trip through toc.snap.
+        // waitCyto and noCyto live in The/Opt so they round-trip through toc.snap.
         // waitCyto: after each snap, pause until Cyto's animation finishes before advancing.
-        // no_Cyto: skip Story's own Cyto entirely (commission + wave handshake).
+        // noCyto: skip Story's own Cyto entirely (commission + wave handshake).
         //   Both are per-Book — stored in The/Opt, not stashed, so they don't bleed
         //   across Books the way a stashed bool would.
         await this.i_actions_to_C(Opt, 'waitCyto', { label: 'waitCyto' })
-        await this.i_actions_to_C(Opt, 'no_Cyto',  { label: 'no_Cyto'  })
+        await this.i_actions_to_C(Opt, 'noCyto',  { label: 'noCyto'  })
         // trickle: when toggled on, stores the current Book name (not boolean true).
         // This means only this Book gets the trickle treatment — other Books in
         // the same House don't accidentally inherit it from stashed.
