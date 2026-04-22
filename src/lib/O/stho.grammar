@@ -22,13 +22,11 @@
     ElseKeyword   { "else" }
     ControlKeyword { "if " | "for " | "while " | "until " }
 
-    // Method declarations and calls.  "async " beats Name so it's first.
-    // LParen/RParen/LBrace are punctuation; they don't conflict with anything
-    // already in the grammar (IOing etc. use no parens or braces).
+    // Method declarations and calls: [async] name( ...
+    // The grammar marks the opening — the collector reads the rest from raw
+    // line text (closing ")", optional "{", multi-line args by indent).
     AsyncKeyword { "async " }
     LParen { "(" }
-    RParen { ")" }
-    LBrace { "{" }
 
     @precedence {AsyncKeyword, ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, Number, Comma, Colon, Title, Name}
     @precedence {nl, space}
@@ -43,12 +41,10 @@ Comment { "#" nonnl+ }
 
 expression { Name | Number | IOing | Sunpit | ControlFlow | MethodLike | Flug }
 
-// Method declaration or call: [async] name(params) [{]
-// RParen and LBrace are both optional so multi-line params work — the closing
-// ")" may be on a later line at the same indentation as the opening.
-// The collector distinguishes declaration from call by whether the next
-// non-blank line is more indented; it adds "{" and emits "}," if needed.
-MethodLike { AsyncKeyword? Name LParen Title? RParen? (space* LBrace)? }
+// Method declaration or call: [async] name( ...
+// Grammar marks the opening paren only; the collector inspects raw line text
+// for the closing ")", optional "{", and multi-line args (by indentation).
+MethodLike { AsyncKeyword? Name LParen }
 
 // Pythonic if/else/for/while/until block header.
 // Body is indented lines consumed by the collector (_collect_line), same as Sunpit.

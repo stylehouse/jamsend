@@ -100,6 +100,11 @@
     // write request and hands off to Lang_compile_step for the reply phase.
     async Lang_compile(A: TheC, w: TheC) {
         const H = this
+        // Park the job as a particle so Lang_compile_step (and Story) can
+        // observe it properly.  Large source stays in .c to keep sc clean.
+        const job = w.oai({ Compile: 1 })
+        job.empty()
+        job.oai({Pending: 1})
 
         const state = w.c.editorState as EditorState | undefined
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
@@ -109,7 +114,7 @@
 
         let source: string
         try {
-            const lines = this.Lang_compile_collect(state, w)
+            const lines = this.Lang_compile_collect(state, job)
 
             // < maybe pile up interesting objects...
             let translated_i = 0
@@ -131,12 +136,7 @@
             return
         }
 
-        // Park the job as a particle so Lang_compile_step (and Story) can
-        // observe it properly.  Large source stays in .c to keep sc clean.
-        const job = w.oai({ Compile: 1 })
-        job.empty()
         job.oai({Output:1,name:'Somewhere.go',source,dige:await dig(source)})
-        job.oai({Pending: 1})
         H.elvisto(w, 'think')
     },
 
@@ -150,6 +150,7 @@
         if (!job.oa({Pending:1})) return
         let [ou,...more] = job.o({Output:1})
         if (more.length) throw "many job/Output"
+        if (!ou.sc.name) throw "!job/Output%name"
 
         // stable req lives on w so we don't re-send on every tick
         const req = w.oai(
@@ -198,7 +199,7 @@
     // `theCompiledStuff(A,w) {` header, `[3]`, bare JS like
     // `let val = because.sc.it`, the closing `}`, blank lines, comments
     // all pass through unchanged.
-    Lang_compile_collect(state: EditorState, w?: TheC): Array<{
+    Lang_compile_collect(state: EditorState, job: TheC): Array<{
         kind: 'translated' | 'raw',
         text: string,
     }> {
@@ -214,18 +215,20 @@
         }
 
         // flush word index into Stuff:
-        //   w / Compile / Output / methods / {def:1,  method:'name'}
-        //   w / Compile / Output / methods / {call:1, method:'name', from:'caller'}
-        if (w && words.length) {
-            const job     = w.oai({ Compile: 1 })
-            const output  = job.oai({ Output: 1 })
-            const methods = output.oai({ methods: 1 })
+        //   job%Compile / Output / methods / {def:1,  method:'name'}
+        //   job%Compile / Output / methods / {call:1, method:'name', from:'caller'}
+        if (words.length) {
+            const methods = job.oai({ methods: 1 })
             // clear stale entries from a previous compile
             methods.empty()
             for (const word of words) {
                 methods.i(word)
             }
         }
+        else {
+            throw "nonin"
+        }
+
 
         return out
     },
@@ -357,8 +360,10 @@
         if (hit?.name === 'MethodLike') {
             const nameNode  = hit.node.getChild('Name')
             const funcName  = state.doc.sliceString(nameNode.from, nameNode.to)
-            const hasRParen = !!hit.node.getChild('RParen')
-            const hasBrace  = !!hit.node.getChild('LBrace')
+            // read closing paren and brace from raw text — grammar stops at "("
+            const afterParen = line.text.slice(hit.node.to - line.from)
+            const hasRParen  = afterParen.includes(')')
+            const hasBrace   = afterParen.includes('{')
             const decl_indent = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
 
             // consume multi-line args — closing ")" at same indent as opening line
@@ -384,24 +389,30 @@
             if (isDecl) {
                 // record definition
                 ctx.words.push({ def: 1, method: funcName })
-                // add "{" if the user wrote pythonic style (no brace on header line)
-                const headerText = hasBrace ? line.text : line.text.trimEnd() + ' {'
-                out.push({ kind: 'translated', text: headerText })
 
-                // recurse into body with current_method set
-                const inner_ctx = { words: ctx.words, current_method: funcName }
-                while (n <= doc.lines) {
-                    const peek = doc.line(n)
-                    if (peek.text.trim() === '') {
-                        out.push({ kind: 'raw', text: peek.text })
-                        n++
-                        continue
+                if (hasBrace) {
+                    // user wrote their own "{" — they'll write the closing "}," too.
+                    // pass the header through verbatim and don't touch the body.
+                    out.push({ kind: 'raw', text: line.text })
+                } else {
+                    // pythonic style — strip optional trailing ":", add "{", inject closing "},"
+                    out.push({ kind: 'translated', text: line.text.trimEnd().replace(/:$/, '') + ' {' })
+
+                    // recurse into body with current_method set
+                    const inner_ctx = { words: ctx.words, current_method: funcName }
+                    while (n <= doc.lines) {
+                        const peek = doc.line(n)
+                        if (peek.text.trim() === '') {
+                            out.push({ kind: 'raw', text: peek.text })
+                            n++
+                            continue
+                        }
+                        const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                        if (peek_indent <= decl_indent) break
+                        n = this._collect_line(n, tree, doc, state, out, inner_ctx)
                     }
-                    const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
-                    if (peek_indent <= decl_indent) break
-                    n = this._collect_line(n, tree, doc, state, out, inner_ctx)
+                    out.push({ kind: 'raw', text: ' '.repeat(decl_indent) + '},' })
                 }
-                out.push({ kind: 'raw', text: ' '.repeat(decl_indent) + '},' })
             } else {
                 // it's a call — record with enclosing method as from
                 const entry: any = { call: 1, method: funcName }

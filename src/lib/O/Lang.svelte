@@ -179,7 +179,19 @@ theCompiledStuff(A,w) {
             && 3 > 2
         i helped
     i yep
-}
+    H.severally(A,w,555)
+},
+severally(A,w,thing):
+    i miles,of,words
+    i miles,of,wordings
+    i thingure:thing,of,wordings
+    i thingure:$thing,of,wording
+    thing += 6
+    H.laterally(A,w,thing)
+
+laterally(A,w,thing):
+    i thingure:$thing,of,word:$thing/really
+
 `
     },
 

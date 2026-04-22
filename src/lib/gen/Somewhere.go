@@ -35,8 +35,22 @@ theCompiledStuff(A,w) {
         w.i({helped: 1})
     }
     w.i({yep: 1})
-}
+    H.severally(A,w,555)
+},
+severally(A,w,thing) {
+    w.i({miles: 1, of: 1, words: 1})
+    w.i({miles: 1, of: 1, wordings: 1})
+    w.i({thingure: thing, of: 1, wordings: 1})
+    w.i({thingure: thing, of: 1, wording: 1})
+    thing += 6
+    H.laterally(A,w,thing)
 
+},
+laterally(A,w,thing) {
+    this._i_drill(w, [{sc: {thingure: thing, of: 1, word: thing}}, {sc: {really: 1}}])
+
+
+},
 
     })
     })

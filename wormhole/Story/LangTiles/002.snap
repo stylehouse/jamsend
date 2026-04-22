@@ -495,7 +495,7 @@ Snap:H
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo ✓,cls:toggle-on
       {"ref":{"fn":"Function()"}}	action,role:compi,label:compi,icon:compi,cls:toggle-off
     watched:ave
-      {"langtiles_doc":1,"text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n}\n"}
+      {"langtiles_doc":1,"text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    H.severally(A,w,555)\n},\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n\n"}
       Styles
         matstyle:w
           style:background-color,v:#8f3232
