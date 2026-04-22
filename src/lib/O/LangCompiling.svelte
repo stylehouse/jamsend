@@ -10,11 +10,8 @@
     //   Lang_compile(A, w)
     //     Entry.  Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
-    //     translated JS.  Assembles the result inside a single
-    //     `await H.eatfunc({ … })` wrapper, kicks off the rw_op 'write' via
-    //     the Wormhole, stashes the pending request on w so Lang_compile_step
-    //     can pick it up next tick.  Publishes per-translated-line
-    //     {result:1,…} particles on w/** for inspection.
+    //     translated JS. Kicks off the rw_op 'write' via the Wormhole,
+    //     and stashes w/Compile/Output...
     //
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) on every tick while w.c.compile_pending is set.
@@ -112,12 +109,11 @@
         try {
             const lines = this.Lang_compile_collect(state)
 
-            // only the translated lines are interesting per-chunk — raw
-            // pass-through lines are already visible in the editor
+            // < maybe pile up interesting objects...
             let translated_i = 0
             for (let i = 0; i < lines.length; i++) {
                 const ln = lines[i]
-                if (ln.kind === 'translated') {
+                if (0 && ln.kind === 'translated') {
                     w.i({
                         result: 1, chunk_i: translated_i++,
                         line_number: i + 1,

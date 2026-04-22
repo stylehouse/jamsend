@@ -467,12 +467,12 @@ Sunpit
 
 
 
+
+
+
 IOing
   Travel if multi-layered. inline a big json of of the path (as iooia can do) is the parsed version of the syntax.
     in the story_rule_matches format for it.
-
-Sunpit
-  but is a pretty basic luxury iterator 
 
  wonder if it is possible to allow these two expr: C o walls | o C/walls
   it might be ambiguous, needing to not be so casually slipped into javascript.

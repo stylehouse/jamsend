@@ -185,16 +185,6 @@ Snap:H
             {"ref":{"top":"node:PeelKey, from:127, to:132, str:mixed, parent_name:PeelItem, parent_from:127, parent_to:132","bottom":"node:Name, from:127, to:132, str:mixed, parent_name:PeelKey, parent_from:127, parent_to:132"}}	cyto_cons,label:parentAbove,type:relativePlacementConstraint,axis:vertical,gap:14
         received,editorBegins
         {"bookmark":"bm_98_132","from":98,"to":132,"label":"o hut/although:1,they,ca"}
-        {"result":1,"chunk_i":0,"line_number":3,"str":"    this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])"}
-        {"result":1,"chunk_i":1,"line_number":4,"str":"    let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])"}
-        {"result":1,"chunk_i":2,"line_number":5,"str":"    let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])"}
-        {"result":1,"chunk_i":3,"line_number":6,"str":"    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])"}
-        {"result":1,"chunk_i":4,"line_number":7,"str":"    la.i({something: 1})"}
-        {"result":1,"chunk_i":5,"line_number":8,"str":"    this._i_drill(w, [{sc: {thung: 1}}, {sc: {with: 1}}, {sc: {etc: 1}}])"}
-        {"result":1,"chunk_i":6,"line_number":9,"str":"    this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])"}
-        {"result":1,"chunk_i":7,"line_number":10,"str":"    this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 5}}])"}
-        {"result":1,"chunk_i":8,"line_number":13,"str":"    for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) { /* body… */ }"}
-        {"result":1,"chunk_i":9,"line_number":15,"str":"        // this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: val}}])"}
         Compile
           Output,name:Somewhere.go,dige:ca941d572f337628
            source: |
