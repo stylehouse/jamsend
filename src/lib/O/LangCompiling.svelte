@@ -206,8 +206,10 @@
         const tree  = syntaxTree(state)
         const doc   = state.doc
         const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
-        // accumulates {def|call:1, method, from?} during the walk; flushed below
-        const words: Array<{ def?: 1, call?: 1, method: string, from?: string }> = []
+        // accumulates {def|call:1, method, via?, from, to, line} during the walk; flushed below
+        // `via` = enclosing method name for calls (renamed from `from` to avoid collision)
+        // `from`, `to`, `line` = character offsets and 1-based line number in the document
+        const words: Array<{ def?: 1, call?: 1, method: string, via?: string, from?: number, to?: number, line?: number }> = []
 
         let n = 1
         while (n <= doc.lines) {
@@ -215,8 +217,8 @@
         }
 
         // flush word index into Stuff:
-        //   job%Compile / Output / methods / {def:1,  method:'name'}
-        //   job%Compile / Output / methods / {call:1, method:'name', from:'caller'}
+        //   job%Compile / Output / methods / {def:1,  method:'name', from, to, line}
+        //   job%Compile / Output / methods / {call:1, method:'name', via:'caller', from, to, line}
         if (words.length) {
             const methods = job.oai({ methods: 1 })
             // clear stale entries from a previous compile
@@ -235,7 +237,7 @@
 
     // Process doc-line n, push result(s) into out, return next n to process.
     // ctx carries:
-    //   words          — accumulated {def|call,method,from?} entries
+    //   words          — accumulated {def|call,method,via?,from,to,line} entries
     //   current_method — name of the enclosing MethodLike decl, or null at top level
     _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
         words: any[], current_method: string | null
@@ -387,36 +389,40 @@
             const isDecl = nextIndent > decl_indent
 
             if (isDecl) {
-                // record definition
-                ctx.words.push({ def: 1, method: funcName })
+                // record definition with position info
+                ctx.words.push({ def: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1 })
 
                 if (hasBrace) {
                     // user wrote their own "{" — they'll write the closing "}," too.
-                    // pass the header through verbatim and don't touch the body.
                     out.push({ kind: 'raw', text: line.text })
                 } else {
                     // pythonic style — strip optional trailing ":", add "{", inject closing "},"
                     out.push({ kind: 'translated', text: line.text.trimEnd().replace(/:$/, '') + ' {' })
+                }
 
-                    // recurse into body with current_method set
-                    const inner_ctx = { words: ctx.words, current_method: funcName }
-                    while (n <= doc.lines) {
-                        const peek = doc.line(n)
-                        if (peek.text.trim() === '') {
-                            out.push({ kind: 'raw', text: peek.text })
-                            n++
-                            continue
-                        }
-                        const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
-                        if (peek_indent <= decl_indent) break
-                        n = this._collect_line(n, tree, doc, state, out, inner_ctx)
+                // recurse into body with current_method set, for both brace and pythonic styles,
+                // so that via tracking works for H./this. calls inside the body
+                const inner_ctx = { words: ctx.words, current_method: funcName }
+                while (n <= doc.lines) {
+                    const peek = doc.line(n)
+                    if (peek.text.trim() === '') {
+                        out.push({ kind: 'raw', text: peek.text })
+                        n++
+                        continue
                     }
+                    const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                    if (peek_indent <= decl_indent) break
+                    n = this._collect_line(n, tree, doc, state, out, inner_ctx)
+                }
+
+                // pythonic style needs an injected closing "}," — brace style has its own
+                if (!hasBrace) {
                     out.push({ kind: 'raw', text: ' '.repeat(decl_indent) + '},' })
                 }
             } else {
-                // it's a call — record with enclosing method as from
-                const entry: any = { call: 1, method: funcName }
-                if (ctx.current_method) entry.from = ctx.current_method
+                // it's a call — record with enclosing method as `via`, plus position
+                const entry: any = { call: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1 }
+                if (ctx.current_method) entry.via = ctx.current_method
                 ctx.words.push(entry)
                 out.push({ kind: 'raw', text: line.text })
             }
@@ -427,9 +433,13 @@
         // (inline calls, chained calls, calls inside raw JS expressions)
         const CALL_RE = /(?:this|H)\.(\w+)\s*\(/g
         for (const m of line.text.matchAll(CALL_RE)) {
+            // m.index is the offset within the line; translate to doc offsets
+            const from = line.from + m.index!
+            const to   = from + m[0].length
             ctx.words.push({
                 call: 1, method: m[1],
-                ...(ctx.current_method ? { from: ctx.current_method } : {})
+                from, to, line: n,
+                ...(ctx.current_method ? { via: ctx.current_method } : {})
             })
         }
 

@@ -187,11 +187,11 @@ Snap:H
         {"bookmark":"bm_98_132","from":98,"to":132,"label":"o hut/although:1,they,ca"}
         Compile
           methods
-            def,method:theCompiledStuff
-            call,method:severally
-            def,method:severally
-            call,method:laterally,from:severally
-            def,method:laterally
+            def,method:theCompiledStuff,from:12,to:29,line:2
+            call,method:severally,from:492,to:502,line:27,via:theCompiledStuff
+            def,method:severally,from:514,to:524,line:29
+            call,method:laterally,from:668,to:678,line:35,via:severally
+            def,method:laterally,from:690,to:700,line:37
           Output,name:Somewhere.go,dige:6e8d8d6b281b8132
            source: |
              <script lang="ts">
