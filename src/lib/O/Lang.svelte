@@ -39,47 +39,6 @@
     onMount(async () => {
     await M.eatfunc({
 
-//#region text measurement
-
-    // ── measureText ──────────────────────────────────────────────────────
-    // Monospace text measurement via OffscreenCanvas (or hidden canvas).
-    // Returns { width, height } in px for a given string at a given font size.
-    //
-    // Since we use a monospace font, the per-char width is constant —
-    // we cache the char width per fontSize and multiply by str.length.
-    // Non-printable / tab chars get a fixed slot width.
-    //
-    // The measurement canvas is created once and reused across all calls.
-    // Font: 'Berkeley Mono', 'Fira Code', monospace — same as Cytui.
-    _measure_cache: {} as Record<number, number>,
-    _measure_ctx: null as CanvasRenderingContext2D | null,
-
-    measureText(str: string, fontSize = 12): { width: number, height: number } {
-        if (!str) return { width: 0, height: 0 }
-
-        if (!this._measure_ctx) {
-            const canvas = document.createElement('canvas')
-            canvas.width = 300; canvas.height = 40
-            this._measure_ctx = canvas.getContext('2d')!
-        }
-        const ctx = this._measure_ctx
-        const FONT = `${fontSize}px 'Berkeley Mono','Fira Code',monospace`
-
-        let charW = this._measure_cache[fontSize]
-        if (!charW) {
-            ctx.font = FONT
-            // measure a reference character — 'M' is widest in most fonts
-            charW = ctx.measureText('M').width
-            this._measure_cache[fontSize] = charW
-        }
-
-        // padding: 8px left + 8px right internal to the node
-        const PAD = 16
-        const width  = Math.ceil(str.length * charW) + PAD
-        const height = Math.ceil(fontSize * 1.6) + 8  // line-height ~1.6 + vertical pad
-        return { width, height }
-    },
-
 //#endregion
 //#region plan
 
@@ -267,36 +226,6 @@ laterally(A,w,thing):
                 ...opt,
             })
         }
-
-        return;
-        // Second pass: edge each bookmark to every Line it touches.
-        // Lines carry the_bm_${id}:1 tags from whatsthis_into, so we
-        // can find them by tag without re-walking the tree.
-        for (const bm of bookmarks) {
-            const bm_id = bm.sc.bookmark as string
-            const bm_key = `the_bm_${bm_id}`
-            // mirror the bookmark itself into the model so Cyto can
-            // treat it as a node (and as edge endpoint)
-            const bmC = model.oai({
-                bookmark_node: 1,
-                bm_id,
-                label: bm.sc.label ?? '',
-                from:  bm.sc.from,
-                to:    bm.sc.to,
-            })
-            const Lines = model.o({ Line: 1 }).filter((L: TheC) => L.sc[bm_key])
-            for (const L of Lines) {
-                model.oai({
-                    cyto_edge: 1,
-                    bm_id,
-                    the_line_from: L.sc.Line,
-                }, {
-                    source: bmC,
-                    target: L,
-                    label:  '@',
-                })
-            }
-        }
     },
     // Helper function to check if r2 is contained by r1
     range_contained (r1: {from: number, to: number}, r2: {from: number, to: number}) {
@@ -415,6 +344,7 @@ done:
  - Sunpit-as-iteration and pythonic indentation
 todo:
  - Map building, persisting and exchanging the meaningful bits
+< &somefunc,A,w -> this.somefunc(A,w)
 definitely not in the next phase:
  - Sunpit as Travel underneath
  - all Sunpits contribute clues to the local Selection...
@@ -521,179 +451,6 @@ IOing
         
     },
 
-
-//#region whatsthis
-
-    // whatsthis_into — dedup-friendly walker.
-    //
-    // Unlike the old whatsthis() which did bare .i() into a per-bookmark
-    // subcontainer, this one uses oai() with stable keys so repeat walks
-    // (same syntax span seen by two bookmarks) converge on the same TheC.
-    //
-    // Line addressing: {Line: line_number, from, to}
-    // node addressing: {node: name, from, to} under its Line.
-    // text addressing: {text: 1, from, to} under its Line.
-    //
-    // The bm_key tag (the_bm_${id}:1) is stamped on every Line this bookmark
-    // touches, so multiple bookmarks on one Line coexist as multiple tags.
-    //
-    // Text nodes get measured_width/height from measureText() so Cyto can
-    // size them to fit their string content. They also get an `order` index
-    // (0-based, left-to-right within the Line) for constraint generation.
-    whatsthis_into(
-        state: EditorState,
-        model: TheC,
-        opt: { from: number, to: number, bm_id: string, bm_key: string, bm: TheC,
-                compound_nodes: Boolean,
-        },
-    ) {
-        const tree = syntaxTree(state)
-        if (!tree || tree.length === 0) return
-
-        const doc = state.doc
-
-        // Walk Line-by-Line. tree.iterate() with a range enters Lines whose
-        // span intersects [from..to]. For each Line we gather its nodes +
-        // text-boundary splits locally, then i() them as Line/node, Line/text.
-        //
-        // Two parallel sequences under each Line, both ordered by `from`:
-        //   Line/node:Foo, Line/node:Bar, ...
-        //   Line/text:{...}, Line/text:{...}, ...
-        //
-        // We don't nest nodes structurally here (flat under Line) — that
-        // matches the request's "Line/node:Sunpitness/node:IOpath" ideal
-        // being a later extension, while keeping dedup trivial for now.
-
-        // Collect Lines in range first so we can set up per-Line boundary sets.
-        //
-        // tree.iterate with a range is too permissive — it can enter a Line
-        // whose `from` equals our `opt.to` (or whose `to` equals `opt.from`),
-        // pulling in the neighbouring Line. Apply a strict intersection filter
-        // after collecting: a Line must satisfy `line.from < opt.to` AND
-        // `line.to > opt.from` with strict inequality both ways. This is the
-        // standard open-interval intersection test and correctly excludes
-        // Lines that just abut our range.
-        const line_entries: Array<{ line_from: number, line_to: number }> = []
-        tree.iterate({
-            from: opt.from,
-            to:   opt.to,
-            enter: (ref) => {
-                if (ref.name === 'Line') {
-                    if (ref.from < opt.to && ref.to > opt.from) {
-                        line_entries.push({ line_from: ref.from, line_to: ref.to })
-                    }
-                }
-            },
-        })
-
-        // Handle the degenerate case where the selection is zero-width and
-        // falls between Lines — fall back to the containing Line.
-        if (!line_entries.length) {
-            const line = doc.lineAt(opt.from)
-            line_entries.push({ line_from: line.from, line_to: line.to })
-        }
-
-        for (const { line_from, line_to } of line_entries) {
-            // Key LineC by doc line number — Lezer may emit several "Line" nodes per
-            // doc line (one per statement/expression). Visually they must converge
-            // on one L<n> compound. Multiple Lezer-Line hits on the same doc line
-            // reinforce the same LineC; we remember the full doc-line span for
-            // callers that want a concrete range.
-            const docLine = doc.lineAt(line_from)
-            // < should really include all these properties in the .oai(), once?
-            //    paranoid mode: blow up on subsequent calls if c arg isn't as the found LineC is
-            //   as it is we don't index properties set on sc after the .oai(),
-            //    but because of the way we only use the index for the first column,
-            //     any o %Line,* will work since Line is indexed in the call to .oai() / .i()
-            const LineC = model.oai({ Line: docLine.number }, {
-                line_from: docLine.from,
-                line_to: docLine.to,
-            })
-
-            // Tag this Line with the bookmark id — may already be tagged by
-            // a prior bookmark. Tags come and go across ticks via replace().
-            LineC.sc[opt.bm_key] = 1
-
-            // line_number = the actual document line number, so sorting by
-            // it always puts Lines in doc order regardless of which bookmark
-            // created them first.
-            LineC.sc.line_number = docLine.number
-            LineC.sc.label       = `L${docLine.number}`
-
-            // containium flag — tells Cyto this particle is a compound node
-            // that visually wraps its model-children (the text/node particles
-            // oai'd onto this LineC below). Cyto's supports_constraints path
-            // reads this to set isCompound in cyto_nstyle.
-            if (opt.compound_nodes) LineC.sc.containium = 1
-
-            LineC.bump_version()
-
-            // Gather syntax nodes + text boundaries within this Line.
-            //
-            // For each syntax hit we also capture parent_name / parent_from /
-            // parent_to so wherewhatis can find the parent node by address
-            // (two different hits in one Line could share a name — address
-            // is the only reliable identifier).
-            const boundaries = new Set<number>([line_from, line_to])
-            const syntax_hits: Array<{
-                name: string, from: number, to: number,
-                parent_name?: string, parent_from?: number, parent_to?: number,
-            }> = []
-
-            tree.iterate({
-                from: line_from,
-                to:   line_to,
-                enter: (ref) => {
-                    const { name, from, to } = ref
-                    if (name === 'Program' || name === 'Line') return
-                    const str = doc.sliceString(from, to)
-                    if (!str.trim()) return
-                    boundaries.add(from)
-                    boundaries.add(to)
-                    const parent = ref.node.parent
-                    const hasParent = parent && parent.name !== 'Line' && parent.name !== 'Program'
-                    syntax_hits.push({
-                        name, from, to,
-                        parent_name: hasParent ? parent.name : undefined,
-                        parent_from: hasParent ? parent.from : undefined,
-                        parent_to:   hasParent ? parent.to   : undefined,
-                    })
-                },
-            })
-
-            // i() nodes under Line with stable keys for dedup across bookmarks.
-            for (const h of syntax_hits) {
-                const nodeC = LineC.oai({ node: h.name, from: h.from, to: h.to })
-                const s = doc.sliceString(h.from, h.to)
-                if (s.length <= 120 && nodeC.sc.str == null) nodeC.sc.str = s
-                if (h.parent_name && nodeC.sc.parent_name == null) {
-                    nodeC.sc.parent_name = h.parent_name
-                    nodeC.sc.parent_from = h.parent_from
-                    nodeC.sc.parent_to   = h.parent_to
-                }
-            }
-
-            // text segments between boundaries, also direct children of Line.
-            // Each gets an `order` index (0-based L→R) and measured dimensions.
-            const sorted = [...boundaries].sort((a, b) => a - b)
-            let text_order = 0
-            for (let i = 0; i < sorted.length - 1; i++) {
-                const f = sorted[i], t = sorted[i + 1]
-                const s = doc.sliceString(f, t)
-                if (!s.trim()) continue
-                const tC = LineC.oai({ text: 1, from: f, to: t })
-                if (tC.sc.str == null) tC.sc.str = s
-
-                // measure for Cyto node sizing — monospace at 12px
-                const m = this.measureText(s, 12)
-                tC.sc.measured_width  = m.width
-                tC.sc.measured_height = m.height
-                tC.sc.order = text_order++
-
-                tC.bump_version()
-            }
-        }
-    },
 
 
 
@@ -822,6 +579,47 @@ IOing
         this.elvisto(w, 'think', {})
     },
 
+
+//#region text measurement
+
+    // ── measureText ──────────────────────────────────────────────────────
+    // Monospace text measurement via OffscreenCanvas (or hidden canvas).
+    // Returns { width, height } in px for a given string at a given font size.
+    //
+    // Since we use a monospace font, the per-char width is constant —
+    // we cache the char width per fontSize and multiply by str.length.
+    // Non-printable / tab chars get a fixed slot width.
+    //
+    // The measurement canvas is created once and reused across all calls.
+    // Font: 'Berkeley Mono', 'Fira Code', monospace — same as Cytui.
+    _measure_cache: {} as Record<number, number>,
+    _measure_ctx: null as CanvasRenderingContext2D | null,
+
+    measureText(str: string, fontSize = 12): { width: number, height: number } {
+        if (!str) return { width: 0, height: 0 }
+
+        if (!this._measure_ctx) {
+            const canvas = document.createElement('canvas')
+            canvas.width = 300; canvas.height = 40
+            this._measure_ctx = canvas.getContext('2d')!
+        }
+        const ctx = this._measure_ctx
+        const FONT = `${fontSize}px 'Berkeley Mono','Fira Code',monospace`
+
+        let charW = this._measure_cache[fontSize]
+        if (!charW) {
+            ctx.font = FONT
+            // measure a reference character — 'M' is widest in most fonts
+            charW = ctx.measureText('M').width
+            this._measure_cache[fontSize] = charW
+        }
+
+        // padding: 8px left + 8px right internal to the node
+        const PAD = 16
+        const width  = Math.ceil(str.length * charW) + PAD
+        const height = Math.ceil(fontSize * 1.6) + 8  // line-height ~1.6 + vertical pad
+        return { width, height }
+    },
 
 
 
