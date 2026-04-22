@@ -209,24 +209,6 @@ laterally(A,w,thing):
         !H.sc.Run && 0 || H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
     },
 
-    whatsthis(state:EditorState,model:TheC,bookmarks:TheC[],opt={}) {
-        // First pass: walk the syntax tree for each bookmark.
-        // whatsthis_into() finds-or-creates Line / node / text
-        // at stable addresses on `model` so duplicate bookmarks
-        // collapse onto the same particles.
-        for (const bm of bookmarks) {
-            const bm_id = bm.sc.bookmark as string
-            const bm_key = `the_bm_${bm_id}`
-            this.whatsthis_into(state, model, {
-                from:  bm.sc.from as number,
-                to:    bm.sc.to   as number,
-                bm_id,
-                bm_key,
-                bm,
-                ...opt,
-            })
-        }
-    },
     // Helper function to check if r2 is contained by r1
     range_contained (r1: {from: number, to: number}, r2: {from: number, to: number}) {
         return r1.from <= r2.from && r1.to >= r2.to;
