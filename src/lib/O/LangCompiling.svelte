@@ -109,7 +109,7 @@
 
         let source: string
         try {
-            const lines = this.Lang_compile_collect(state)
+            const lines = this.Lang_compile_collect(state, w)
 
             // < maybe pile up interesting objects...
             let translated_i = 0
@@ -198,34 +198,56 @@
     // `theCompiledStuff(A,w) {` header, `[3]`, bare JS like
     // `let val = because.sc.it`, the closing `}`, blank lines, comments
     // all pass through unchanged.
-    Lang_compile_collect(state: EditorState): Array<{
+    Lang_compile_collect(state: EditorState, w?: TheC): Array<{
         kind: 'translated' | 'raw',
         text: string,
     }> {
-        const tree = syntaxTree(state)
-        const doc  = state.doc
+        const tree  = syntaxTree(state)
+        const doc   = state.doc
         const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
+        // accumulates {def|call:1, method, from?} during the walk; flushed below
+        const words: Array<{ def?: 1, call?: 1, method: string, from?: string }> = []
 
         let n = 1
         while (n <= doc.lines) {
-            n = this._collect_line(n, tree, doc, state, out)
+            n = this._collect_line(n, tree, doc, state, out, { words, current_method: null })
         }
+
+        // flush word index into Stuff:
+        //   w / Compile / Output / methods / {def:1,  method:'name'}
+        //   w / Compile / Output / methods / {call:1, method:'name', from:'caller'}
+        if (w && words.length) {
+            const job     = w.oai({ Compile: 1 })
+            const output  = job.oai({ Output: 1 })
+            const methods = output.oai({ methods: 1 })
+            // clear stale entries from a previous compile
+            methods.empty()
+            for (const word of words) {
+                methods.i(word)
+            }
+        }
+
         return out
     },
 
     // Process doc-line n, push result(s) into out, return next n to process.
-    // For Sunpit: also consumes indented body lines and closes the brace.
-    _collect_line(n: number, tree, doc, state: EditorState, out): number {
+    // ctx carries:
+    //   words          — accumulated {def|call,method,from?} entries
+    //   current_method — name of the enclosing MethodLike decl, or null at top level
+    _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
+        words: any[], current_method: string | null
+    }): number {
         const line = doc.line(n)
 
-        // first IOing/Sunpit whose span lies within this doc line
+        // first recognisable node whose span lies within this doc line
         let hit: { name: string, node: SyntaxNode } | null = null
         tree.iterate({
             from: line.from,
             to:   line.to,
             enter: (ref) => {
                 if (hit) return false
-                if ((ref.name === 'IOing' || ref.name === 'Sunpit' || ref.name === 'ControlFlow')
+                if ((ref.name === 'IOing' || ref.name === 'Sunpit'
+                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike')
                         && ref.from >= line.from && ref.to <= line.to) {
                     hit = { name: ref.name, node: ref.node }
                     return false
@@ -254,8 +276,8 @@
                 }
                 const peek_indent = (peek.text.match(/^(\s*)/) ?? ['',''])[1].length
                 if (peek_indent <= sunpit_indent) break  // body ended
-                // recurse so nested Sunpits and IOings are translated too
-                n = this._collect_line(n, tree, doc, state, out)
+                // recurse so nested nodes are translated too
+                n = this._collect_line(n, tree, doc, state, out, ctx)
             }
 
             // closing brace aligned with the `S` line
@@ -315,7 +337,7 @@
                 }
                 const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
                 if (peek_indent <= cf_indent) break
-                n = this._collect_line(n, tree, doc, state, out)
+                n = this._collect_line(n, tree, doc, state, out, ctx)
             }
 
             // closing brace — suppressed when the very next same-indent line is
@@ -330,6 +352,74 @@
             }
 
             return n
+        }
+
+        if (hit?.name === 'MethodLike') {
+            const nameNode  = hit.node.getChild('Name')
+            const funcName  = state.doc.sliceString(nameNode.from, nameNode.to)
+            const hasRParen = !!hit.node.getChild('RParen')
+            const hasBrace  = !!hit.node.getChild('LBrace')
+            const decl_indent = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
+
+            // consume multi-line args — closing ")" at same indent as opening line
+            n++
+            if (!hasRParen) {
+                while (n <= doc.lines) {
+                    const peek = doc.line(n)
+                    const isClose = /^\s*\)/.test(peek.text)
+                        && (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length <= decl_indent
+                    out.push({ kind: 'raw', text: peek.text })
+                    n++
+                    if (isClose) break
+                }
+            }
+
+            // peek past blank lines to decide: declaration or call?
+            let peekN = n
+            while (peekN <= doc.lines && !doc.line(peekN).text.trim()) peekN++
+            const nextIndent = peekN <= doc.lines
+                ? (doc.line(peekN).text.match(/^(\s*)/) ?? ['', ''])[1].length : -1
+            const isDecl = nextIndent > decl_indent
+
+            if (isDecl) {
+                // record definition
+                ctx.words.push({ def: 1, method: funcName })
+                // add "{" if the user wrote pythonic style (no brace on header line)
+                const headerText = hasBrace ? line.text : line.text.trimEnd() + ' {'
+                out.push({ kind: 'translated', text: headerText })
+
+                // recurse into body with current_method set
+                const inner_ctx = { words: ctx.words, current_method: funcName }
+                while (n <= doc.lines) {
+                    const peek = doc.line(n)
+                    if (peek.text.trim() === '') {
+                        out.push({ kind: 'raw', text: peek.text })
+                        n++
+                        continue
+                    }
+                    const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                    if (peek_indent <= decl_indent) break
+                    n = this._collect_line(n, tree, doc, state, out, inner_ctx)
+                }
+                out.push({ kind: 'raw', text: ' '.repeat(decl_indent) + '},' })
+            } else {
+                // it's a call — record with enclosing method as from
+                const entry: any = { call: 1, method: funcName }
+                if (ctx.current_method) entry.from = ctx.current_method
+                ctx.words.push(entry)
+                out.push({ kind: 'raw', text: line.text })
+            }
+            return n
+        }
+
+        // scan every line for this./H. calls not caught by MethodLike
+        // (inline calls, chained calls, calls inside raw JS expressions)
+        const CALL_RE = /(?:this|H)\.(\w+)\s*\(/g
+        for (const m of line.text.matchAll(CALL_RE)) {
+            ctx.words.push({
+                call: 1, method: m[1],
+                ...(ctx.current_method ? { from: ctx.current_method } : {})
+            })
         }
 
         if (hit?.name === 'IOing') {

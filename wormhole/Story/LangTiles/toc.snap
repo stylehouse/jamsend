@@ -83,9 +83,7 @@ story:LangTiles
   Opt
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:1.365
-      sample:1.833,at:1776837264
-      sample:1.182,at:1776837274
+    TimeTotal:beliefs,avg:1.369
       sample:1.406,at:1776838535
       sample:1.121,at:1776838545
       sample:1.308,at:1776840226
@@ -94,6 +92,8 @@ story:LangTiles
       sample:1.491,at:1776845715
       sample:1.506,at:1776845735
       sample:1.423,at:1776845747
+      sample:1.354,at:1776854699
+      sample:1.703,at:1776854721
   step,dige:503be4f9b67aae6e
   step:2,dige:6d967dee21b75e01
   step:3,dige:9d11308f176c09cc
