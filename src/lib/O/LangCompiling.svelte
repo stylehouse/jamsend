@@ -240,8 +240,20 @@
 
             // text segments between boundaries, also direct children of Line.
             // Each gets an `order` index (0-based L→R) and measured dimensions.
+            //
+            // IMPORTANT: order must be assigned after ALL boundaries for this
+            // line are known — not with a local counter that restarts each
+            // bookmark walk.  Two bookmarks on the same line produce different
+            // boundary sets; a mid-line bookmark's counter would restart at 0
+            // and overwrite the order of nodes the first bookmark already
+            // created, leaving commas / tokens with stale low-order values and
+            // breaking the horizontal chain in wherewhatis.
+            //
+            // Fix: oai() / measure all segments first, then do a single
+            // re-ordering pass sorted by `from` across every text child of
+            // this Line — so the final order values are always consistent
+            // with left-to-right document position regardless of walk order.
             const sorted = [...boundaries].sort((a, b) => a - b)
-            let text_order = 0
             for (let i = 0; i < sorted.length - 1; i++) {
                 const f = sorted[i], t = sorted[i + 1]
                 const s = doc.sliceString(f, t)
@@ -253,9 +265,17 @@
                 const m = this.measureText(s, 12)
                 tC.sc.measured_width  = m.width
                 tC.sc.measured_height = m.height
-                tC.sc.order = text_order++
 
                 tC.bump_version()
+            }
+
+            // Re-assign order for ALL text children of this Line in one pass,
+            // sorted by from — this is idempotent and correct even when
+            // multiple bookmarks contribute boundaries to the same line.
+            const allTexts = (LineC.o({ text: 1 }) as TheC[])
+                .sort((a, b) => (a.sc.from as number) - (b.sc.from as number))
+            for (let idx = 0; idx < allTexts.length; idx++) {
+                allTexts[idx].sc.order = idx
             }
         }
     },
