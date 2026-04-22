@@ -32,6 +32,7 @@
     import Auto from "./Auto.go";
     import Matstyle from "./Matstyle.svelte";
     import Lang from "$lib/O/Lang.svelte";
+    import Hovercraft from "./Hovercraft.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -48,6 +49,7 @@
     // < extract what we will keep from Agency, etc...
 </script>
 <Agency    {M} />
+<Hovercraft {M} />
 <!-- below are all AI -->
 <Machinery {M} />
 <Story     {M} />
