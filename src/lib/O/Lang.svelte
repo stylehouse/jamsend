@@ -166,8 +166,8 @@ theCompiledStuff(A,w) {
 
     [3]
     S o yeses/because
-        // let val = because.sc.it
-        // i figiura/datch:$val
+        let val = because.sc.it
+        i figiura/datch:$val
     
 }
 `
@@ -390,8 +390,8 @@ threads of inquiry stack up on the left
         ` // < this
 done:
  - Expression Translation, its Selection.process(), if ok can write the gen/*
-todo:
  - Sunpit-as-iteration and pythonic indentation
+todo:
  - Map building, persisting and exchanging the meaningful bits
 definitely not in the next phase:
  - Sunpit as Travel underneath

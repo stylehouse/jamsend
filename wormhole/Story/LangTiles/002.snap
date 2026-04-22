@@ -495,7 +495,7 @@ Snap:H
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo ✓,cls:toggle-on
       {"ref":{"fn":"Function()"}}	action,role:compi,label:compi,icon:compi,cls:toggle-off
     watched:ave
-      {"langtiles_doc":1,"text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        // let val = because.sc.it\n        // i figiura/datch:$val\n    \n}\n"}
+      {"langtiles_doc":1,"text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    \n}\n"}
       Styles
         matstyle:w
           style:background-color,v:#8f3232

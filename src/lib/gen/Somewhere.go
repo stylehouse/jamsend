@@ -20,10 +20,11 @@ theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 5}}])
 
     [3]
-    for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) { /* body… */ }
-        // let val = because.sc.it
-        // this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: val}}])
+    for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) {
+        let val = because.sc.it
+        this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: val}}])
     
+    }
 }
 
 

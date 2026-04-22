@@ -45,7 +45,9 @@
     //     o a/b/c        → this._o_drill(receiver, [{sc:{a:1}}, {sc:{b:1}}, {sc:{c:1}}])
     //     o a/b$         → let b = this._o_drill1(receiver, [{sc:{a:1}}, {sc:{b:1}}])
     //     S o a/b        → for (const b of this._o_iter(receiver,
-    //                        [{sc:{a:1}}, {sc:{b:1}}])) { /* body… */ }
+    //                        [{sc:{a:1}}, {sc:{b:1}}])) {
+    //                          <indented body lines, translated>
+    //                        }   — pythonic-indented body capture
     //
     //   Key shapes within an sc:
     //     $name as a key → {name}   (ES6 shorthand; uses the variable `name` in scope)
@@ -204,37 +206,72 @@
         const doc  = state.doc
         const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
 
-        for (let n = 1; n <= doc.lines; n++) {
-            const line = doc.line(n)
-
-            // first IOing/Sunpit whose span lies within this doc line
-            let hit: { name: string, node: SyntaxNode } | null = null
-            tree.iterate({
-                from: line.from,
-                to:   line.to,
-                enter: (ref) => {
-                    if (hit) return false
-                    if (ref.name === 'IOing' || ref.name === 'Sunpit') {
-                        if (ref.from >= line.from && ref.to <= line.to) {
-                            hit = { name: ref.name, node: ref.node }
-                            return false
-                        }
-                    }
-                },
-            })
-
-            if (hit) {
-                const translated = hit.name === 'IOing'
-                    ? this.Lang_compile_IOing(hit.node, state, {})
-                    : this.Lang_compile_Sunpit(hit.node, state, {})
-                const before = line.text.slice(0, hit.node.from - line.from)
-                const after  = line.text.slice(hit.node.to   - line.from)
-                out.push({ kind: 'translated', text: before + translated + after })
-            } else {
-                out.push({ kind: 'raw', text: line.text })
-            }
+        let n = 1
+        while (n <= doc.lines) {
+            n = this._collect_line(n, tree, doc, state, out)
         }
         return out
+    },
+
+    // Process doc-line n, push result(s) into out, return next n to process.
+    // For Sunpit: also consumes indented body lines and closes the brace.
+    _collect_line(n: number, tree, doc, state: EditorState, out): number {
+        const line = doc.line(n)
+
+        // first IOing/Sunpit whose span lies within this doc line
+        let hit: { name: string, node: SyntaxNode } | null = null
+        tree.iterate({
+            from: line.from,
+            to:   line.to,
+            enter: (ref) => {
+                if (hit) return false
+                if ((ref.name === 'IOing' || ref.name === 'Sunpit')
+                        && ref.from >= line.from && ref.to <= line.to) {
+                    hit = { name: ref.name, node: ref.node }
+                    return false
+                }
+            },
+        })
+
+        if (hit?.name === 'Sunpit') {
+            // emit the for-header (open brace only; _collect_line closes it below)
+            const header  = this.Lang_compile_Sunpit(hit.node, state, {})
+            const before  = line.text.slice(0, hit.node.from - line.from)
+            out.push({ kind: 'translated', text: before + header })
+            n++
+
+            // indentation of the `S` line — body must be strictly deeper
+            const sunpit_indent = (line.text.match(/^(\s*)/) ?? ['',''])[1].length
+
+            // consume and translate body lines while they are more indented
+            while (n <= doc.lines) {
+                const peek = doc.line(n)
+                // blank lines stay inside the loop body
+                if (peek.text.trim() === '') {
+                    out.push({ kind: 'raw', text: peek.text })
+                    n++
+                    continue
+                }
+                const peek_indent = (peek.text.match(/^(\s*)/) ?? ['',''])[1].length
+                if (peek_indent <= sunpit_indent) break  // body ended
+                // recurse so nested Sunpits and IOings are translated too
+                n = this._collect_line(n, tree, doc, state, out)
+            }
+
+            // closing brace aligned with the `S` line
+            out.push({ kind: 'raw', text: ' '.repeat(sunpit_indent) + '}' })
+            return n
+        }
+
+        if (hit?.name === 'IOing') {
+            const translated = this.Lang_compile_IOing(hit.node, state, {})
+            const before = line.text.slice(0, hit.node.from - line.from)
+            const after  = line.text.slice(hit.node.to   - line.from)
+            out.push({ kind: 'translated', text: before + translated + after })
+        } else {
+            out.push({ kind: 'raw', text: line.text })
+        }
+        return n + 1
     },
 
 //#endregion
@@ -309,12 +346,12 @@
 //#region Sunpit
 
     // Sunpit := "S " IOing
-    // For phase 2 we emit a for-of header using the backend iterator helper
-    // (_o_iter); the body is a placeholder comment.  Phase 3 introduces
-    // pythonic indentation and body capture.
+    // Emits only the for-of header (open brace).  Lang_compile_collect's
+    // _collect_line captures the pythonic-indented body and appends the
+    // closing }.
     //
     //   S o yeses/because
-    //     → for (const because of this._o_iter(w, [{sc:{yeses:1}}, {sc:{because:1}}])) { /* body… */ }
+    //     → for (const because of this._o_iter(w, [{sc:{yeses:1}}, {sc:{because:1}}])) {
     Lang_compile_Sunpit(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ioing = node.getChild('IOing')
         if (!ioing) throw new Error('Sunpit: no IOing')
@@ -349,7 +386,7 @@
             .map(l => this.Lang_compile_leg_obj_src(l))
             .join(', ')
         const prefix = ness === 'i' ? '/* S i */ ' : ''
-        return `${prefix}for (const ${iter_var} of this._o_iter(${receiver}, [${legs_src}])) { /* body… */ }`
+        return `${prefix}for (const ${iter_var} of this._o_iter(${receiver}, [${legs_src}])) {`
     },
 
 //#endregion
