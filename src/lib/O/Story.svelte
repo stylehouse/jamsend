@@ -1293,7 +1293,7 @@
             const quiescent = f != null
                 && f > (run.c.began_step as number)
                 && (now_in_seconds_with_ms() - f) > ((TICK_MS/1000) * 1.5)
-                && !H.todo.length
+                && !Run.todo.length
             if (!quiescent) { setTimeout(poll_step, TICK_MS); return }
             let ago = (now_in_seconds_with_ms() - f)
             Run.trace('quiescent', ago.toFixed(3))

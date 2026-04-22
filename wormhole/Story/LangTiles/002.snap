@@ -4,7 +4,7 @@ Snap:H
       {"mung":["age"]}	self,round:6
       w:LangTiles
         model,cyto_dir
-          Line:6,line_from:94,line_to:132,the_bm_bm_mo9k5gkj_g03o,line_number:6,label:L6,containium
+          Line:6,line_from:94,line_to:132,the_bm_bm_98_132,line_number:6,label:L6,containium
             {"node":"IOing","from":98,"to":132,"str":"o hut/although:1,they,can,be,mixed"}
             node:IOness,from:98,to:100,str:o ,parent_name:IOing,parent_from:98,parent_to:132
             {"node":"IOpath","from":100,"to":132,"str":"hut/although:1,they,can,be,mixed","parent_name":"IOing","parent_from":98,"parent_to":132}
@@ -184,7 +184,7 @@ Snap:H
             {"ref":{"source":"node:PeelKey, from:127, to:132, str:mixed, parent_name:PeelItem, parent_from:127, parent_to:132","target":"node:Name, from:127, to:132, str:mixed, parent_name:PeelKey, parent_from:127, parent_to:132","style":"Object()"}}	cyto_edge,syntax_parent_edge,child_from:127,child_to:132,parent_from:127,parent_to:132,parent_name:PeelKey,label:
             {"ref":{"top":"node:PeelKey, from:127, to:132, str:mixed, parent_name:PeelItem, parent_from:127, parent_to:132","bottom":"node:Name, from:127, to:132, str:mixed, parent_name:PeelKey, parent_from:127, parent_to:132"}}	cyto_cons,label:parentAbove,type:relativePlacementConstraint,axis:vertical,gap:14
         received,editorBegins
-        {"bookmark":"bm_mo9k5gkj_g03o","from":98,"to":132,"label":"o hut/although:1,they,ca"}
+        {"bookmark":"bm_98_132","from":98,"to":132,"label":"o hut/although:1,they,ca"}
         {"mung":["age"]}	self,round:6
         see:🟦 tiles 1 bookmarks
         cyto_root,cyto_id:cytoid_1

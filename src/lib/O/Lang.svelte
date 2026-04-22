@@ -451,8 +451,6 @@ and put the resulting typescript ghost code (wrapped in eatfunc etc)
  via the Wormhole, into src/lib/gen/Somewhere.svelte
   and then notify a downstream at w:Pantheate
    includes it as %watched:UIs, and may do more later...
- and also .i({result:1,chunk_i:$i,str:'...',name:"thatFunction"}) the resulting typescript
-  meaningfully split up (it's a (k:v), situation) so we can test it. w/** is testable.
 
 
 
@@ -756,8 +754,9 @@ Sunpit
             return;
         }
 
-        // Add the bookmark to the editor
-        const id = `bm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+        // Deterministic id keyed on position — same range always gets the same id,
+        // so TheC keys and CodeMirror decoration ids survive reloads and round-trips.
+        const id = `bm_${from}_${to}`;
         view.dispatch({
             effects: w.c.addBookmarkMark.of({ id, from, to }),
         });
