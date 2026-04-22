@@ -110,7 +110,7 @@
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
-        // UI pushes via elvis 'langtiles_set_doc' → e_langtiles_set_doc below.
+        // UI pushes via elvis 'Lang_set_doc' → e_Lang_set_doc below.
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const docC = ave.oai({ langtiles_doc: 1 })
         if (docC.sc.text == null) {
@@ -181,7 +181,7 @@ theCompiledStuff(A,w) {
         w.c.editorView = e.sc.view
         w.i({received:1,editorBegins:1})
     },
-    async e_langtiles_set_doc(A: TheC, w: TheC, e: TheC) {
+    async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const docC = w.c.docC as TheC | undefined
         if (!docC) return
@@ -708,7 +708,7 @@ IOing
             });
             await tick();
             const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
-            this.elvisto('LangTiles/LangTiles', 'langtiles_add_bookmark', {
+            this.elvisto('LangTiles/LangTiles', 'Lang_add_bookmark', {
                 from,
                 to,
                 label,
@@ -726,11 +726,11 @@ IOing
     // Ctrl+B from the editor — create a w/%bookmark at the current selection.
     //
     // The editor marks the range with a CodeMirror Decoration.mark so from/to
-    // track document edits automatically. Periodic e_langtiles_update_bookmarks
+    // track document edits automatically. Periodic e_Lang_update_bookmarks
     // calls push the live mark positions (and a fresh editorState) back here.
     //
     // e.sc carries: from, to, label?, editorState
-    async e_langtiles_add_bookmark(A: TheC, w: TheC, e: TheC) {
+    async e_Lang_add_bookmark(A: TheC, w: TheC, e: TheC) {
         let from  = e?.sc.from  as number | undefined;
         let to    = e?.sc.to    as number | undefined;
         const label = (e?.sc.label as string | undefined) ?? '';
@@ -738,7 +738,7 @@ IOing
         const state = e?.sc.state as EditorState | undefined;
 
         if (from == null || to == null || !view || !state) {
-            console.warn("Missing required fields in e_langtiles_add_bookmark");
+            console.warn("Missing required fields in e_Lang_add_bookmark");
             return;
         }
         if (from === to) {
@@ -782,7 +782,7 @@ IOing
     // lets the editor also use this event to report "this bookmark's mark was
     // deleted" by simply omitting it. (Not yet consumed, but the shape allows
     // future pruning: compare w/%bookmark ids against updates[].id.)
-    async e_langtiles_update_bookmarks(A: TheC, w: TheC, e: TheC) {
+    async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
         const state   = e?.sc.state

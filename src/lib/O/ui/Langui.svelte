@@ -8,13 +8,11 @@
     //   marks.map(tr.changes) in update() automatically remaps from/to on
     //   every subsequent edit (RangeSet is the source of truth for positions).
     //
-    //   On each dispatch we fire an elvis to w:LangTiles:
-    //     - Ctrl+B:           langtiles_add_bookmark {from,to,label,editorState}
-    //     - 800ms post-edit:  langtiles_update_bookmarks {updates,editorState}
-    //     - any text change:  langtiles_set_doc       {text}
-    //
-    //   Note: langtiles_set_doc no longer carries editorState — only the two
-    //   bookmark elvises do, because whatsthis() only runs scoped to bookmarks.
+    //   On each dispatch we fire an elvis to w:LangTiles with view,state:view.state:
+    //     - Ctrl+B:           Lang_add_bookmark {from,to,label}
+    //     - 800ms post-edit:  Lang_update_bookmarks {updates}
+    //     - any text change:  Lang_set_doc      {text}
+    //     - Escape key     :  Lang_compile      {}
     //
     // ── Immutability note ────────────────────────────────────────────────────
     //
@@ -25,8 +23,12 @@
 
     import { onMount, onDestroy } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
-    import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
-    import { Decoration, type DecorationSet, keymap } from "@codemirror/view"
+    import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
+    import { Decoration, type DecorationSet, keymap, ViewUpdate } from "@codemirror/view"
+    import { indentService, indentUnit } from "@codemirror/language";
+    import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+
+
     import { stho, simpleLezerLinter } from "$lib/O/stho"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -71,12 +73,15 @@
         })
     })
 
+
     // message the backend about CodeMirror
     //  we have to get the immutable view.state now, pass both via elvis
     function Lang_i_elvis(view,method,sc) {
         sc = {view,state:view.state, ...(sc||{})}
         H.elvisto('LangTiles/LangTiles', method, sc)
     }
+
+    //#region bookmarks
     // ── bookmark StateField ──────────────────────────────────────────────
     //
     //   addBookmarkMark(v)    — install a Decoration.mark spanning v.from..v.to
@@ -125,20 +130,56 @@
         }
         return out
     }
+    
+    // ── debounced doc-change → Lang_update_bookmarks ────────────────
+    function schedule_update_bookmarks(v: EditorView) {
+        if (update_timer) clearTimeout(update_timer)
+        update_timer = setTimeout(() => {
+            update_timer = null
+            if (!view) return
+            const updates = readBookmarks(view)
+            Lang_i_elvis(view,'Lang_update_bookmarks', {updates})
+        }, UPDATE_DELAY_MS)
+    }
 
-    // ── Ctrl+B: add bookmark at current selection ────────────────────────
-    //
-    //   Empty selection → expand to the enclosing line, so single-click
-    //   bookmarking gives something non-zero-width for whatsthis() to scope
-    //   over.  Non-empty selection is used verbatim.
-    const ctrlB = keymap.of([{
+
+    //#region editor
+
+    const autoIndent = indentService.of((context, pos) => {
+        const prevLine = context.lineAt(pos, -1)
+        const match = prevLine.text.match(/^(\s*)/)
+        const baseIndent = match ? match[1].length : 0
+        // Increase indent after lines ending with { or :
+        const trimmed = prevLine.text.trimEnd()
+        const extra = /[{:]$/.test(trimmed) ? 4 : 0
+        return baseIndent + extra
+    })
+    let usualSetup = [EditorView.lineWrapping, indentUnit.of("    "), autoIndent];
+    let Keys = keymap.of([
+        // makes this element inescapable by Tab to keyboard navigators
+        //  the Esc,Tab is supposed to work around that, but
+        indentWithTab,
+        //   we bind Escape preventing the above from working
+        // Esc to compile and run
+        {
+            key: "Escape",
+            run: () => {
+                Lang_i_elvis(view,'Lang_compile', {})
+                return true;
+            },
+        },
+        // ── Ctrl+B: add bookmark at current selection ────────────────────────
+        //
+        //   Empty selection → expand to the enclosing line, so single-click
+        //   bookmarking gives something non-zero-width for whatsthis() to scope
+        //   over.  Non-empty selection is used verbatim.
+        {
         key: 'Mod-b',
         run: (view) => {
             const sel = view.state.selection.main;
             let from = sel.from, to = sel.to;
             const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
-            // Dispatch a fake elvis to e_langtiles_add_bookmark
-            Lang_i_elvis(view,'langtiles_add_bookmark', {
+            Lang_i_elvis(view,'Lang_add_bookmark', {
                 from,
                 to,
                 label,
@@ -150,17 +191,8 @@
     }])
 
 
-    // ── debounced doc-change → langtiles_update_bookmarks ────────────────
 
-    function schedule_update_bookmarks(v: EditorView) {
-        if (update_timer) clearTimeout(update_timer)
-        update_timer = setTimeout(() => {
-            update_timer = null
-            if (!view) return
-            const updates = readBookmarks(view)
-            Lang_i_elvis(view,'langtiles_update_bookmarks', {updates})
-        }, UPDATE_DELAY_MS)
-    }
+
 
     onMount(() => {
         const initial = (docC?.sc.text as string) ?? '';
@@ -170,17 +202,22 @@
                 doc: initial,
                 extensions: [
                     basicSetup,
+                    usualSetup,
+
+                    // < is this per lang?
+                    simpleLezerLinter(),
+                    // < switchable lang via Compartment
                     stho(),
                     bookmarkField,
-                    ctrlB,
-                    EditorView.updateListener.of(u => {
-                        const sel = u.state.selection.main;
+                    Keys,
+                    EditorView.updateListener.of((v: ViewUpdate) => {
+                        const sel = v.state.selection.main;
                         sel_from = sel.from;
                         sel_to = sel.to;
-                        if (!u.docChanged) return;
-                        const text = u.state.doc.toString();
-                        Lang_i_elvis(view,'langtiles_set_doc', {text})
-                        schedule_update_bookmarks(u.view);
+                        if (!v.docChanged) return;
+                        const text = v.state.doc.toString();
+                        Lang_i_elvis(view,'Lang_set_doc', {text})
+                        schedule_update_bookmarks(v.view);
                     }),
                 ],
             }),
