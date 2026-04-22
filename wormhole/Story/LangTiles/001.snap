@@ -100,41 +100,12 @@ Snap:H
           style:background-color,v:#42bd9f
         matstyle:received
           style:background-color,v:#d04eca
+        matstyle:Pending
+          style:background-color,v:#76a31f
+        matstyle:compile_write
+          style:background-color,v:#3a62a6
+        matstyle:req_sent
+          style:background-color,v:#c93641
     watched:graph
       cyto_graph,layout_name:fcose
     {"mung":["id"]}	mo:main,interval:3.6
-Snap:cytowave
-  upsert,id:cytoid_1_1,label:LangTiles,isCompound:true
-    style,background-color:#8f3232
-    style,background-opacity:0.6
-    style,color:#ccc
-    style,font-size:8px
-    style,font-style:italic
-    style,height:20
-    style,padding:7px
-    style,shape:ellipse
-    style,text-valign:top
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_1_1","label":"model\ncyto_dir","parent":"cytoid_1_1"}
-    style,background-color:#8f8f32
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2","label":"see:🟦 tiles …","parent":"cytoid_1_1"}
-    style,background-color:#c5b759
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
-  upsert,id:cytoid_1_2,label:Pantheate,isCompound:true
-    style,background-color:#8f3232
-    style,background-opacity:0.6
-    style,color:#ccc
-    style,font-size:8px
-    style,font-style:italic
-    style,height:20
-    style,padding:7px
-    style,shape:ellipse
-    style,text-valign:top
-    style,width:20

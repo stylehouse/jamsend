@@ -872,6 +872,17 @@
     async story_snap(w:TheC,run:TheC,Run: House): Promise<string> {
         const H = this as House
 
+        // Snap:H — indent +1 so content nests under the header
+        const h_snap  = await this.snap_H(Run)
+        const h_block = this.snap_indent(h_snap, 1)
+
+        // no_Cyto: this Story has no Cyto of its own (e.g. only Lang's Cyto is
+        // active in this test). Skip the cytowave block entirely — it's not part
+        // of the model being tested, and waiting for it adds ~2s per step.
+        if (H.The_Opt_val(w, 'no_Cyto')) {
+            return this.enL({ d: 0, stringies: { Snap: 'H' } }) + '\n' + h_block
+        }
+
         // Snap:Cytowave — read whatever wave Cyto has currently.
         // Cyto is commissioned in Story_plan and watches Scannable (=Run)
         // for version changes, so its wave is already current by the time
@@ -882,10 +893,6 @@
         const wave     = cyto_w?.c.gn?.sc.wave as any
         if (!wave) throw "!wave"
         const cw_block = this.snap_cytowave_str(wave)
-
-        // Snap:H — indent +1 so content nests under the header
-        const h_snap  = await this.snap_H(Run)
-        const h_block = this.snap_indent(h_snap, 1)
 
         return this.enL({ d: 0, stringies: { Snap: 'H' } })        + '\n' + h_block
             + this.enL({ d: 0, stringies: { Snap: 'cytowave' } }) + '\n' + cw_block
@@ -964,23 +971,26 @@
         // ── commission Cyto ───────────────────────────────────────────
         // Cyto reads Scannable/Styles/client_w/capability flags from this
         // req; watch_c on stylesC drives save-on-edit.
-        // Cyto puts its given commission%Styles into H.ave for us
-        
+        // Cyto puts its given commission%Styles into H.ave for us.
+        // Skipped when no_Cyto — Story won't use its own Cyto in this test
+        // (e.g. only Lang's Cyto is active), so don't commission one.
 
         // < this is possibly meant to be an i_elvis_req(), but pretending works too...
-        let Run = H.o({H:1,Run:1})[0]
-        if (!Run) throw "!H/%H,Run"
-        const commission = new TheC({ c: {}, sc: {
-            Scannable:          Run,
-            Styles:             stylesC,
-            client_w:           w,
-            supports_seek:      true,
-            supports_takeTurns: true,
-            wants_wave_done:      true,  // always — Story needs the wave before snapping
-            wants_animation_done: true,  // Cyto sends these unconditionally
-                                         //  Story ignores when !waitCyto
-        }})
-        H.elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
+        if (!H.The_Opt_val(w, 'no_Cyto')) {
+            let Run = H.o({H:1,Run:1})[0]
+            if (!Run) throw "!H/%H,Run"
+            const commission = new TheC({ c: {}, sc: {
+                Scannable:          Run,
+                Styles:             stylesC,
+                client_w:           w,
+                supports_seek:      true,
+                supports_takeTurns: true,
+                wants_wave_done:      true,  // always — Story needs the wave before snapping
+                wants_animation_done: true,  // Cyto sends these unconditionally
+                                             //  Story ignores when !waitCyto
+            }})
+            H.elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
+        }
 
         let total = 5
         return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
@@ -1298,6 +1308,12 @@
             run.sc.done = n
             Run.trace('snap', String(n))
 
+            if (H.The_Opt_val(w, 'no_Cyto')) {
+                // bypass the wave handshake entirely and snap immediately.
+                await snap_step_after_wave()
+                return
+            }
+
             // Always wait for wave_done — the wave is test data, not decoration.
             run.c.awaiting_wave_done = true
             run.c.driving = false
@@ -1385,7 +1401,7 @@
         // Post-snap phase: pause for animation if waitCyto, else advance directly.
         // Reached from snap_step_after_wave (both modes) and poll_check.
         const snap_step_finish = async () => {
-            if (w.c.waitCyto) {
+            if (w.c.waitCyto && !H.The_Opt_val(w, 'no_Cyto')) {
                 run.c.awaiting_anim_done = true
                 run.c.driving = false
                 V.Story && console.log(`⏸ snap_step finished, paused for Cyto_animation_done`)
@@ -1572,6 +1588,10 @@
         await this.i_actions_to_c(w, 'keep_snaps',    { stashed: true, label: 'keep snaps'   })
         await this.i_actions_to_c(w, 'waitCyto',      { stashed: true, label: 'waitCyto'    })
         let Opt = this.The_Opt(w)
+        // no_Cyto: when set, Story skips commissioning its own Cyto and bypasses the
+        // wave handshake in snap_step.  Use when only another house's Cyto (e.g. Lang's)
+        // is active in this test — Story's Cyto would add ~2s per step and misread the model.
+        await this.i_actions_to_C(Opt, 'no_Cyto', { label: 'no_Cyto' })
         // trickle: when toggled on, stores the current Book name (not boolean true).
         // This means only this Book gets the trickle treatment — other Books in
         // the same House don't accidentally inherit it from stashed.
