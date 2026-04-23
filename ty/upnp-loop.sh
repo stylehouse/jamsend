@@ -28,7 +28,7 @@ forward_ports() {
     forward_port TCP 5349
 
     # CoTURN relay port range — one per concurrent TURN session
-    for port in $(seq 49152 49182); do
+    for port in $(seq 49152 49168); do
         forward_port UDP $port
     done
 
