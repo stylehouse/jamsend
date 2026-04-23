@@ -78,7 +78,7 @@
     //  we have to get the immutable view.state now, pass both via elvis
     function Lang_i_elvis(view,method,sc) {
         sc = {view,state:view.state, ...(sc||{})}
-        H.elvisto('LangTiles/LangTiles', method, sc)
+        H.i_elvisto('LangTiles/LangTiles', method, sc)
     }
 
     //#region bookmarks

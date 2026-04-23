@@ -90,7 +90,7 @@
 //#region entry
 
     // Beliefs-time entry for the compile action button.
-    // Fired via elvisto so Story can detect Lang settling after a compile.
+    // Fired via i_elvisto so Story can detect Lang settling after a compile.
     async e_Lang_compile(A: TheC, w: TheC, _e: TheC) {
         await this.Lang_compile(A, w)
     },
@@ -137,7 +137,7 @@
         }
 
         job.oai({Output:1,name:'Somewhere.go',source,dige:await dig(source)})
-        H.elvisto(w, 'think')
+        H.i_elvisto(w, 'think')
     },
 
     // Called from Lang(A,w) while compile_pending.  The Wormhole will
@@ -172,7 +172,7 @@
         } else {
             w.i({ see: `📝 wrote src/lib/gen/${ou.sc.name}` })
             // notify Pantheate so it require()s the fresh module
-            H.elvisto('Pantheate/Pantheate', 'Ghost_update_notify',
+            H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify',
                 { include: ou.sc.name })
         }
 

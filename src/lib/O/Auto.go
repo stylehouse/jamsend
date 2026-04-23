@@ -234,7 +234,7 @@
             S.sc.Run = undefined   // clear any stale flag
             S.i({ A: 'Story' }).i({ w: 'Story', Book: bname })
             S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
-            S.elvisto(S, 'think')
+            S.i_elvisto(S, 'think')
             console.log(`▶ Story subHouse created for ${bname}`)
         }, { see: `activate ${bname}` })
     },

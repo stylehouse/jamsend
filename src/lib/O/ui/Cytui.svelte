@@ -746,7 +746,7 @@
         })
 
         // rebuild from scratch on HMR
-        H.elvisto('Cyto/Cyto', 'Cyto_wipe', {})
+        H.i_elvisto('Cyto/Cyto', 'Cyto_wipe', {})
         return () => {
             lay?.stop()
             clear_all_overlays()

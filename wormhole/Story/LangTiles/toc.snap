@@ -77,15 +77,13 @@ story:LangTiles
       style:background-color,v:#c93641
   Plan
     Phase:2
-      elvisto:LangTiles,e:test__couple_of_bookmarks
+      i_elvisto:LangTiles,e:test__couple_of_bookmarks
     Phase:3
-      elvisto:LangTiles,e:Lang_compile
+      i_elvisto:LangTiles,e:Lang_compile
   Opt
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:1.391
-      sample:1.34,at:1776862816
-      sample:1.751,at:1776862958
+    TimeTotal:beliefs,avg:1.312
       sample:1.458,at:1776863008
       sample:1.331,at:1776863441
       sample:1.42,at:1776863762
@@ -94,6 +92,8 @@ story:LangTiles
       sample:1.501,at:1776864742
       sample:1.382,at:1776866892
       sample:0.857,at:1776909055
+      sample:0.988,at:1776909562
+      sample:1.314,at:1776910159
   step,dige:a5c3f88ab171471b
   step:2,dige:d0fe1b7be3e5a059
   step:3,dige:2debb6b44acc3a69

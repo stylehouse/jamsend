@@ -85,11 +85,11 @@
     }
 
     function activate(book: TheC) {
-        H.elvisto('Auto/Auto', 'activateBook', { Book: book.sc.Book })
+        H.i_elvisto('Auto/Auto', 'activateBook', { Book: book.sc.Book })
     }
 
     function reset_story() {
-        H.elvisto('Auto/Auto', 'resetStory', {})
+        H.i_elvisto('Auto/Auto', 'resetStory', {})
     }
 
     function fmt_ms(ms: number | null | undefined): string {

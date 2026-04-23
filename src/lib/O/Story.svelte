@@ -304,10 +304,10 @@
             let some = false
             // < inject w** at this step, similar to Opt/For/w:Such
             for (let ha of Phase.o()) {
-                if (ha.sc.elvisto && ha.sc.e) {
+                if (ha.sc.i_elvisto && ha.sc.e) {
                     let esc = {}
                     ha.o({esc:1}).map(n => esc[n.sc.esc] = n.sc.v)
-                    Run.elvisto(ha.sc.elvisto,ha.sc.e,esc)
+                    Run.i_elvisto(ha.sc.i_elvisto,ha.sc.e,esc)
                     some = true
                 }
                 else {
@@ -538,7 +538,7 @@
 
 //#region note event handlers
 //
-//  Dispatched by the UI via storyH.elvisto('Story/Story', 'story_add_note', {…}).
+//  Dispatched by the UI via storyH.i_elvisto('Story/Story', 'story_add_note', {…}).
 //
 //  note_sc format: { note:1, <typeKey>:<value>, … }
 //    e.g. { note:1, frontier:1 }     — moves the frontier to this step
@@ -989,7 +989,7 @@
                 wants_animation_done: true,  // Cyto sends these unconditionally
                                              //  Story ignores when !The/Opt/waitCyto
             }})
-            H.elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
+            H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
         let total = 5
@@ -1191,7 +1191,7 @@
 //  All phases are closures over run and the drive locals.
 //
 //   Phase 1 — do_step  (inside H beliefs mutex via post_do)
-//     checks termination conditions, fires Run.elvisto(Run,'think') after 1ms,
+//     checks termination conditions, fires Run.i_elvisto(Run,'think') after 1ms,
 //     then hands off to poll_step.
 //
 //   Phase 2 — poll_step  (plain setTimeout chain, no mutex)
@@ -1255,7 +1255,7 @@
                 H.story_save()
                 await update_status('recorded ✓', 'start')
                 console.log(`✓ Story: complete (${run.sc.total} steps)`)
-                H.top_House().elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'new' })
+                H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'new' })
                 return
             }
             if (run.sc.mode === 'check' && !H.The_step_dige(w, n)) {
@@ -1273,7 +1273,7 @@
                 H.story_save()
                 await update_status('done ✓', 'start')
                 console.log(`✓ Story: check complete at n=${n}`)
-                H.top_House().elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
+                H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
                 return
             }
 
@@ -1282,7 +1282,7 @@
             Run.trace_enable()
             Run.trace('step', String(n))
             await this.Story_prepare_Phase(w,Run,run)
-            setTimeout(() => { if (run.c.driving) Run.elvisto(Run, 'think') }, 1)
+            setTimeout(() => { if (run.c.driving) Run.i_elvisto(Run, 'think') }, 1)
             setTimeout(poll_step, TICK_MS)
         }
 
@@ -1317,7 +1317,7 @@
             // Always wait for wave_done — the wave is test data, not decoration.
             run.c.awaiting_wave_done = true
             run.c.driving = false
-            H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: n })
+            H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { story_step: n })
             V.Story && console.log(`⏸ snap_step paused for Cyto_wave_done step=${n}`)
         }
 
@@ -1532,7 +1532,7 @@
         // find our book name from the Story worker so Auto knows what to restart
         const bname = (this.o({ A: 'Story' })[0] as TheC | undefined)
             ?.o({ w: 'Story' })[0]?.sc.Book as string | undefined
-        topH.elvisto('Auto/Auto', 'resetStory', bname ? { Book: bname } : {})
+        topH.i_elvisto('Auto/Auto', 'resetStory', bname ? { Book: bname } : {})
         console.log(`Otro: 🔄 ${this.name}/${bname} story_reset`)
     },
 

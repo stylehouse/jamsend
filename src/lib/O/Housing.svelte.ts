@@ -153,27 +153,27 @@ abstract class Housing extends TheC {
             }
             h = h.up!
         }
-        throw `elvisto: no House has A:${Aname} (target=${target})`
+        throw `i_elvisto: no House has A:${Aname} (target=${target})`
     }
 
 //#endregion
 //#region elvis
 
-    // elvistwo: post an elvis to whichever House owns the target A.
+    // i_elvistwo: post an elvis to whichever House owns the target A.
     //  with the first arg being the w|A|H we are coming from
-    elvistwo(source:TheC|Housing, target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
+    i_elvistwo(source:TheC|Housing, target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
         // this should be able to become target later
         extra.sourceHousing = source
-        return this.elvisto(target,method,extra)
+        return this.i_elvisto(target,method,extra)
     }
     // -------------------------------------------------------------------------
-    // elvisto: post an elvis to whichever House owns the target A.
+    // i_elvisto: post an elvis to whichever House owns the target A.
     // target: string 'AgencyName/workName' | 'AgencyName', or a Housing instance
     //   — if a Housing instance, walks .up to find the root House and injects there.
     // method: the method name to call on the target instance
     // extra:  any extra sc to attach to the elvis particle
     // -------------------------------------------------------------------------
-    elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
+    i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
         const h = this._find_house(target)
 
         const Aw = typeof target === 'string' ? (
@@ -198,7 +198,7 @@ abstract class Housing extends TheC {
     }
 
     // -------------------------------------------------------------------------
-    // i_elvis / _i_elvis: derive target from w's own A/w address, call elvisto().
+    // i_elvis / _i_elvis: derive target from w's own A/w address, call i_elvisto().
     // -------------------------------------------------------------------------
     i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
         return this._i_elvis(w, type, extra)
@@ -207,7 +207,7 @@ abstract class Housing extends TheC {
     _i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
         const target = (extra.Aw as string) ?? `${w.sc.A ?? ''}/${w.sc.w ?? ''}`.replace(/^\//, '')
         const { Aw: _drop, ...rest } = extra
-        this.elvistwo(w, target, type, { ...rest })
+        this.i_elvistwo(w, target, type, { ...rest })
     }
 
     // -------------------------------------------------------------------------
@@ -238,7 +238,7 @@ abstract class Housing extends TheC {
 
     // -------------------------------------------------------------------------
     // _push_todo: push an elvis particle onto this Housing's own root House.
-    // When called via elvisto(), `this` is already the correct target House.
+    // When called via i_elvisto(), `this` is already the correct target House.
     // When called from Agency/Work internals (post_do, main, concretion),
     // `this` is a House too — so the .up walk is just a safety net.
     // -------------------------------------------------------------------------
@@ -263,7 +263,7 @@ abstract class Housing extends TheC {
         if (!req.oa({ req_sent: 1 })) {
             req.i({ req_sent: 1 })
             const { req: _drop, ...rest } = extra
-            this.elvistwo(source, target, type, { ...rest, req })
+            this.i_elvistwo(source, target, type, { ...rest, req })
         }
         return false
     }
@@ -273,7 +273,7 @@ abstract class Housing extends TheC {
             const finish = (reply: any) => {
                 req.sc.reply = reply
                 req.sc.finished = true
-                this.elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
+                this.i_elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
             }
             return { e, req, finish }
         })
@@ -1132,7 +1132,7 @@ export class House extends StorableHousing {
         // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafJuggle' })
         // // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'StuffFlipping' })
         // S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
-        // S.elvisto(S, 'think')
+        // S.i_elvisto(S, 'think')
     }
 
     async Blank(A: TheC, w: TheC) {
@@ -1197,7 +1197,7 @@ export class House extends StorableHousing {
             fn: async () => {
                 await fsh.requestDirectoryAccess()
                 await w.r({ wants_directory: 1 }, {})
-                ;(this as House).elvisto(this as House, 'think')
+                ;(this as House).i_elvisto(this as House, 'think')
             },
         })
     }

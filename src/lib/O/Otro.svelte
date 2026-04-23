@@ -45,7 +45,7 @@
         },1)
 
         setTimeout(() => {
-            // S.elvisto(S, 'think')
+            // S.i_elvisto(S, 'think')
             // S.todo.push("Blanks")
         },444)
 
@@ -62,13 +62,13 @@
     let houses = $state([])
 
     function go_busily() {
-        H.elvisto(H, 'think')
+        H.i_elvisto(H, 'think')
     }
 
     function upthings() {
         H.stashed.things ||= 0
         H.stashed.things += 1
-        H.elvisto(H, 'think')
+        H.i_elvisto(H, 'think')
     }
 
 

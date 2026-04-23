@@ -141,7 +141,7 @@
 
         wa.oai({ action: 1, role: 'cyto_wipe' }, {
             label: 'wipe', icon: '⌀', cls: 'remove',
-            fn: () => H.elvisto(w, 'Cyto_wipe', {}),
+            fn: () => H.i_elvisto(w, 'Cyto_wipe', {}),
         })
 
         const engines = [
@@ -159,7 +159,7 @@
             value:   gn.sc.layout_name ?? 'fcose',
             on_pick: (name: string) => {
                 if (H.stashed) H.stashed.Cyto_layout_name = name
-                H.elvisto(w, 'Cyto_set_layout', { layout_name: name })
+                H.i_elvisto(w, 'Cyto_set_layout', { layout_name: name })
             },
         })
     },
@@ -1202,7 +1202,7 @@
 //
 //  Client (if supports_takeTurns) sends e_Cyto_animation_request to pause
 //  its own drive while Cyto renders and animates the current step.  Cyto
-//  runs cyto_update_wave then elvistwos back to w.c.client_w as
+//  runs cyto_update_wave then i_elvistwos back to w.c.client_w as
 //  'animation_done' after the grawave duration has elapsed.
 //
 //  The client handler is just e_${Clientname}_animation_done on its worker.
@@ -1217,14 +1217,14 @@
         // Wave is ready to be read synchronously by the client.
         const client = w.c.client_w as TheC | undefined
         if (client && w.c.wants_wave_done) {
-            this.elvistwo(w, client, 'Cyto_wave_done', { story_step })
+            this.i_elvistwo(w, client, 'Cyto_wave_done', { story_step })
         }
         // Animation plays for grawave_duration. After that, the motion is
         // visually complete and the client can proceed to its next step.
         const dur = ((w.sc.grawave_duration as number) ?? 0.3) * 1000
         setTimeout(() => {
             if (client && w.c.wants_animation_done) {
-                this.elvistwo(w, client, 'Cyto_animation_done', { story_step })
+                this.i_elvistwo(w, client, 'Cyto_animation_done', { story_step })
             }
         }, dur + 100)
     }

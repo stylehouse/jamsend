@@ -67,7 +67,7 @@
         
         if (w.oa({include:1})) {
             if (!this.theCompiledStuff) {
-                this.elvisto(w,'think')
+                this.i_elvisto(w,'think')
             }
             else {
                 await this.theCompiledStuff(A,w)

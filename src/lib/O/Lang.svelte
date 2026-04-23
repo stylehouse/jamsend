@@ -65,7 +65,7 @@
         // module to src/lib/gen/Somewhere.svelte via the Wormhole, then
         // notifies Pantheate.  Machinery provides Lang_compile.
         wa.oai({ action: 1, role: 'compile'      },
-            { label: 'compile', fn: () => this.elvisto(w, 'Lang_compile') })
+            { label: 'compile', fn: () => this.i_elvisto(w, 'Lang_compile') })
 
         // doc api — a single C on H.ave holding the whole document string.
         // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
@@ -107,7 +107,7 @@
             wants_animation_done: false,
         }})
         // target our local A:Cyto/w:Cyto, not H:Story's
-        H.elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
+        H.i_elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
 
         w.c.plan_done = true
     },
@@ -206,7 +206,7 @@ laterally(A,w,thing):
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
-        !H.sc.Run && 0 || H.elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+        !H.sc.Run && 0 || H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
     },
 
     // Helper function to check if r2 is contained by r1
@@ -440,7 +440,7 @@ IOing
     // onMount() ONLY, automate the test
 
     async Lang_enbookmark(w) {
-        this.elvisto('LangTiles/LangTiles', 'test__couple_of_bookmarks')
+        this.i_elvisto('LangTiles/LangTiles', 'test__couple_of_bookmarks')
     },
     async Lang_debookmark(w) {
         const view = w.c.editorView
@@ -448,7 +448,7 @@ IOing
             view.dispatch({ effects: w.c.clearAllBookmarks.of(null) })
         }
         await w.r({ bookmark: 1 },{})
-        this.elvisto(w, 'think', {})
+        this.i_elvisto(w, 'think', {})
     },
     async e_test__couple_of_bookmarks(A,w,e) {
         await this.test__couple_of_bookmarks(A,w)
@@ -469,7 +469,7 @@ IOing
             });
             await tick();
             const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
-            this.elvisto('LangTiles/LangTiles', 'Lang_add_bookmark', {
+            this.i_elvisto('LangTiles/LangTiles', 'Lang_add_bookmark', {
                 from,
                 to,
                 label,
@@ -526,7 +526,7 @@ IOing
         w.i({ bookmark: id, from, to, label });
         w.c.editorState = state;
         console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${label}`);
-        this.elvisto(w, 'think', {});
+        this.i_elvisto(w, 'think', {});
     },
 
 
@@ -558,7 +558,7 @@ IOing
             }
         }
         if (state) w.c.editorState = state
-        this.elvisto(w, 'think', {})
+        this.i_elvisto(w, 'think', {})
     },
 
 

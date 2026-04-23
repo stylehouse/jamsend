@@ -397,7 +397,7 @@
 
     //#region selection + accept 
     //
-    //   All mutations go via H.elvisto to the Story worker.  The worker calls
+    //   All mutations go via H.i_elvisto to the Story worker.  The worker calls
     //   story_analysis() which bumps ave, which triggers the $effect above,
     //   which reassigns display — completing the reactive loop without any
     //   direct state mutation from here.
@@ -409,12 +409,12 @@
         const text = add_note_text.trim()
         if (!text) return
         const note_sc = { note: 1, ...peel(text) }
-        H.elvisto('Story/Story', 'story_add_note', { step_n: n, note_sc })
+        H.i_elvisto('Story/Story', 'story_add_note', { step_n: n, note_sc })
         add_note_text = ''
     }
 
     function do_delete_note(n: number, idx: number) {
-        H.elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
+        H.i_elvisto('Story/Story', 'story_delete_note', { step_n: n, note_idx: idx })
     }
 
     //#region diff[] collect 
@@ -540,12 +540,12 @@
             diff_anchor     = null
         }
         const new_sel = n
-        H.elvisto('Story/Story', 'story_sel', { open_at: new_sel })
+        H.i_elvisto('Story/Story', 'story_sel', { open_at: new_sel })
     }
 
     function close_panel() {
         diff_mode = null
-        H.elvisto('Story/Story', 'story_sel', { open_at: null })
+        H.i_elvisto('Story/Story', 'story_sel', { open_at: null })
     }
     $effect(() => {
         displayed_at   // subscribe
@@ -556,7 +556,7 @@
     // exp_snap arrives and the diff panel catches up.
     $effect(() => {
         if (display.open_at) {
-            setTimeout(() => H.elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
+            setTimeout(() => H.i_elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
         }
     })
 
@@ -584,10 +584,10 @@
     })
 
     function accept(n: number) {
-        H.elvisto('Story/Story', 'story_accept', { accept_n: n })
+        H.i_elvisto('Story/Story', 'story_accept', { accept_n: n })
     }
     function accept_all() {
-        H.elvisto('Story/Story', 'story_accept_all', {})
+        H.i_elvisto('Story/Story', 'story_accept_all', {})
     }
 </script>
 
