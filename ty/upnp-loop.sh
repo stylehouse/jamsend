@@ -3,24 +3,35 @@
 
 echo "UPnP port forwarder started"
 
+# Exit immediately if a forward fails
+forward_port() {
+    proto=$1
+    port=$2
+    upnpc -r $port $proto
+    if [ $? -ne 0 ]; then
+        echo "$(date): FAILED to forward $proto $port — bailing"
+        exit 1
+    fi
+}
+
 forward_ports() {
     echo "$(date): Starting UPnP port forwards"
-    
-    # PeerJS port
-    upnpc -r 9999 TCP
-    echo "Port 9999 TCP: exit code $?"
-    
-    # CoTURN STUN/TURN
-    upnpc -r 3478 UDP
-    echo "Port 3478 UDP: exit code $?"
-    
-    upnpc -r 3478 TCP
-    echo "Port 3478 TCP: exit code $?"
-    
-    # CoTURN TLS (optional)
-    upnpc -r 5349 TCP
-    echo "Port 5349 TCP: exit code $?"
-    
+
+    # PeerJS signaling
+    forward_port TCP 9999
+
+    # CoTURN main STUN/TURN ports
+    forward_port UDP 3478
+    forward_port TCP 3478
+
+    # CoTURN TURNS (TLS)
+    forward_port TCP 5349
+
+    # CoTURN relay port range — one per concurrent TURN session
+    for port in $(seq 49152 49182); do
+        forward_port UDP $port
+    done
+
     echo "$(date): UPnP forwards completed"
 }
 
