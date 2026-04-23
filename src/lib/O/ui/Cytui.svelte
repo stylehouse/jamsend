@@ -729,6 +729,7 @@
         // finding mystery greys (which are usually n particles falling through
         // cytyle_classify to the matstyle palette default) and for confirming
         // what a given cytoid corresponds to in C**.
+        // < I guess ideally we would click on the syntax node that's wrong, then be able to probe when|where in the process (which we can replay deterministically) it began, what has happened in regards to resolving it and its neighbours...
         cy.on('tap', 'node', (evt) => {
             const n = evt.target
             const d = n.data()

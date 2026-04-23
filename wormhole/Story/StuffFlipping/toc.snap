@@ -60,8 +60,14 @@ story:StuffFlipping
       style:background-color,v:#8f8f32
     matstyle:answers
       style:background-color,v:#2f8bb1
+    matstyle:ok
+      style:background-color,v:#d62970
+    matstyle:all_ok
+      style:background-color,v:#66c559
+  Plan
+  Opt
   TimeSpool
-    TimeTotal:beliefs,avg:0.096
+    TimeTotal:beliefs,avg:0.098
       sample:0.086,at:1775641380
       sample:0.095,at:1775641396
       sample:0.097,at:1775913575
@@ -71,4 +77,5 @@ story:StuffFlipping
       sample:0.085,at:1776682230
       sample:0.138,at:1776682322
       sample:0.116,at:1776682362
+      sample:0.114,at:1776914296
   step,dige:306870d455330fee

@@ -59,10 +59,11 @@ story:LeafFarm
       style:color,v:#90ffc0
       style:shape,v:round-rectangle
       style:width,v:24
+  Plan
+  Opt
+    waitCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.376
-      sample:0.536,at:1775988056
-      sample:0.317,at:1775988248
+    TimeTotal:beliefs,avg:0.366
       sample:0.259,at:1775988682
       sample:0.259,at:1775988769
       sample:0.387,at:1775990746
@@ -71,19 +72,21 @@ story:LeafFarm
       sample:0.329,at:1775991112
       sample:0.515,at:1775995263
       sample:0.511,at:1775996360
-  step,dige:4b2b5c6d35ce4eba,snap_link:001.snap
-  step:2,dige:c99275c88144331b,snap_link:002.snap
-  step:3,dige:3ff365f3177db59e,snap_link:003.snap
-  step:4,dige:c793d181a9b73a72,snap_link:004.snap
-  step:5,dige:b4caa6a52a5fa78c,snap_link:005.snap
-  step:6,dige:4b5173cf0769d956,snap_link:006.snap
-  step:7,dige:1e360089a70ebc22,snap_link:007.snap
-  step:8,dige:06e3e1b2ab568ecc,snap_link:008.snap
-  step:9,dige:ea443b10cc5507c1,snap_link:009.snap
-  step:10,dige:e32943ca07cd417c,snap_link:010.snap
-  step:11,dige:ce780a1dfa5a01ef,snap_link:011.snap
-  step:12,dige:ae184f3dbc15487f,snap_link:012.snap
-  step:13,dige:94c6aa4efaa18f41,snap_link:013.snap
+      sample:0.465,at:1776914629
+      sample:0.288,at:1776914741
+  step,dige:16af8162fcae6222,snap_link:001.snap
+  step:2,dige:de8ea36813915842,snap_link:002.snap
+  step:3,dige:09f230e0ef6e7be9,snap_link:003.snap
+  step:4,dige:bd2debd2450b924f,snap_link:004.snap
+  step:5,dige:64fbf6e9443e8ec4,snap_link:005.snap
+  step:6,dige:3fb862be265ee0fd,snap_link:006.snap
+  step:7,dige:daae29c13761801f,snap_link:007.snap
+  step:8,dige:044a6c6797eca344,snap_link:008.snap
+  step:9,dige:0cc7b5c411b41f17,snap_link:009.snap
+  step:10,dige:14ec1cdc56f352a9,snap_link:010.snap
+  step:11,dige:792d7f18ccbf0d7d,snap_link:011.snap
+  step:12,dige:d809587678025d52,snap_link:012.snap
+  step:13,dige:0addbfd95e5cccd5,snap_link:013.snap
   step:14,dige:bc768747ab0b6d4b,snap_link:014.snap
   step:15,dige:35850ca5f3c792bf,snap_link:015.snap
   step:16,dige:c8373421631cc7d4,snap_link:016.snap
