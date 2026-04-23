@@ -324,6 +324,13 @@
         Se.c.scan_goners_by_id = new Map<string, TheD>()
         // so %cyto_cons can resolve left|right etc to ids for D%* resolve()
         Se.c.scan_id_by_n = new Map<TheC, string>()
+        
+        // this island is all debugging:
+        let DEBUG_RESOLVES = false
+        w.c.dip_history ||= new Map()   // scanid → [{tick, node, from, to}]
+        Se.c.tick ||= 0
+        Se.c.tick++
+        let tick = Se.c.tick
 
         await Se.process({
             n:          Scannable,
@@ -491,13 +498,25 @@
             },
 
             resolved_fn: async (T: Travel, _N: Travel[], goners: TheD[]) => {
-                let {D} = T.sc
+                let {n,D} = T.sc
                 V.gone_debug && goners.length && D.i({goners}) // debug
 
-                for (const g of goners)
+                for (const g of goners) {
                     this.cyto_collect_goner_scan_ids(g, Se.c.scan_goners_by_id as Map<string,TheD>)
+                }
+
+                if (DEBUG_RESOLVES) {
+                    // debug resolves
+                    const scanid = D.o({Dip:'scanid'})[0]?.sc.value
+                    if (scanid && n.sc.node) {
+                        const row = w.c.dip_history.get(scanid) || []
+                        row.push({ tick, node: n.sc.node, from: n.sc.from, to: n.sc.to, is_new: T.sc.Dip_scanid_is_new })
+                        w.c.dip_history.set(scanid, row)
+                    }
+                }
             },
         })
+        if (DEBUG_RESOLVES) console.log(`Cyto dip history: `,w.c.dip_history)
 
         // build neu_scan_ids here — T** are populated, _is_new flags are set
         const neu = new Set<string>()

@@ -188,19 +188,6 @@
 
             // text segments between boundaries, also direct children of Line.
             // Each gets an `order` index (0-based L→R) and measured dimensions.
-            //
-            // IMPORTANT: order must be assigned after ALL boundaries for this
-            // line are known — not with a local counter that restarts each
-            // bookmark walk.  Two bookmarks on the same line produce different
-            // boundary sets; a mid-line bookmark's counter would restart at 0
-            // and overwrite the order of nodes the first bookmark already
-            // created, leaving commas / tokens with stale low-order values and
-            // breaking the horizontal chain in wherewhatis.
-            //
-            // Fix: oai() / measure all segments first, then do a single
-            // re-ordering pass sorted by `from` across every text child of
-            // this Line — so the final order values are always consistent
-            // with left-to-right document position regardless of walk order.
             const sorted = [...boundaries].sort((a, b) => a - b)
             for (let i = 0; i < sorted.length - 1; i++) {
                 const f = sorted[i], t = sorted[i + 1]

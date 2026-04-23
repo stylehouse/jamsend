@@ -67,9 +67,7 @@ story:StuffFlipping
   Plan
   Opt
   TimeSpool
-    TimeTotal:beliefs,avg:0.098
-      sample:0.086,at:1775641380
-      sample:0.095,at:1775641396
+    TimeTotal:beliefs,avg:0.097
       sample:0.097,at:1775913575
       sample:0.103,at:1776670186
       sample:0.073,at:1776681959
@@ -78,4 +76,6 @@ story:StuffFlipping
       sample:0.138,at:1776682322
       sample:0.116,at:1776682362
       sample:0.114,at:1776914296
-  step,dige:306870d455330fee
+      sample:0.092,at:1776929359
+      sample:0.079,at:1776929364
+  step,dige:9dd9d9d558891cea

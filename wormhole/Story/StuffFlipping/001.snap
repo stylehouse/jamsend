@@ -187,6 +187,13 @@ Snap:H
             {"n_neu":"leaf:1, name:wanderer"}
             {"n_gone":"leaf:1, name:wanderer"}
             Migration,n:wanderer,from_depth,to_depth:2
+        {"test":"resolve() Leg-split: from-anchor vs to-anchor tie"}
+          {"ok":"split-right: old Leg(6–10) paired (not dropped)"}
+          {"ok":"split-right: old Leg(6–10) → new Leg(6–8) via from-anchor"}
+          {"ok":"split-right: new Leg(9–10) is unfound (null a-side)"}
+          {"ok":"split-left: old Leg(6–10) → new Leg(6–7) via from-anchor"}
+          {"ok":"range-narrow: still resolves (not dropped)"}
+          all_ok
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
@@ -1007,6 +1014,48 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5","label":"test:resolve()…","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5_1","label":"ok:split-rig…","parent":"cytoid_1_1"}
+    style,background-color:#d62970
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5_2","label":"ok:split-rig…","parent":"cytoid_1_1"}
+    style,background-color:#d62970
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5_3","label":"ok:split-rig…","parent":"cytoid_1_1"}
+    style,background-color:#d62970
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5_4","label":"ok:split-lef…","parent":"cytoid_1_1"}
+    style,background-color:#d62970
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5_5","label":"ok:range-nar…","parent":"cytoid_1_1"}
+    style,background-color:#d62970
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_5_6,label:all_ok,parent:cytoid_1_1
+    style,background-color:#66c559
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
   edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
   edge_upsert,id:cytoid_1_1_1_1_3_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_3
@@ -1135,3 +1184,9 @@ Snap:cytowave
   edge_upsert,id:cytoid_1_1_4_7_1,source:cytoid_1_1_4,target:cytoid_1_1_4_7
   edge_upsert,id:cytoid_1_1_4_8_1,source:cytoid_1_1_4,target:cytoid_1_1_4_8
   edge_upsert,id:cytoid_1_1_4_9_1,source:cytoid_1_1_4,target:cytoid_1_1_4_9
+  edge_upsert,id:cytoid_1_1_5_1_1,source:cytoid_1_1_5,target:cytoid_1_1_5_1
+  edge_upsert,id:cytoid_1_1_5_2_1,source:cytoid_1_1_5,target:cytoid_1_1_5_2
+  edge_upsert,id:cytoid_1_1_5_3_1,source:cytoid_1_1_5,target:cytoid_1_1_5_3
+  edge_upsert,id:cytoid_1_1_5_4_1,source:cytoid_1_1_5,target:cytoid_1_1_5_4
+  edge_upsert,id:cytoid_1_1_5_5_1,source:cytoid_1_1_5,target:cytoid_1_1_5_5
+  edge_upsert,id:cytoid_1_1_5_6_1,source:cytoid_1_1_5,target:cytoid_1_1_5_6

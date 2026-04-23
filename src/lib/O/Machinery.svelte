@@ -108,88 +108,18 @@
 
     async StuffFlipping(A, w) {
 
-        // ── resolve() Leg-split: the_from vs the_to tie ──────────────────────
-        // Regression for the scan_id mismatch seen in LangTiles step 3→4.
-        //
-        // When one Leg(from:6, to:10) splits into Leg(6–8) + Leg(9–10),
-        // both halves score unambiguity 1.0 against the old node:
-        //   new Leg(6–8)  via the_from:6  → 1.0
-        //   new Leg(9–10) via the_to:10   → 1.0
-        // The correct match is old → new Leg(6–8) because `from` is the
-        // stable left-anchor of a span when content splits rightward.
-        {
-            let o = w.i({ test: "resolve() Leg-split: from-anchor vs to-anchor tie" })
-            let fails = 0
-            const assert = (label, ok) => {
-                if (ok) o.i({ ok: label })
-                else  { o.i({ fail: label }); fails++ }
-            }
- 
-            // test 1: split on the right — the_to changes, the_from survives
-            // old: Leg(1–5) Leg(6–10)
-            // new: Leg(1–5) Leg(6–8) Leg(9–10)   ← 6–10 split at 8|9
-            {
-                const parent = _C({})
-                await parent.replace({ tracing: 1 }, async () => {
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 10 })
-                })
-                const pairs = []
-                await parent.replace({ tracing: 1 }, async () => {
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 8  })
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 9, the_to: 10 })
-                }, { pairs_fn: async (a, b) => pairs.push([a, b]) })
- 
-                const match = pairs.find(([a]) => a?.sc.the_from === 6 && a?.sc.the_to === 10)
-                assert("split-right: old Leg(6–10) paired (not dropped)",
-                    !!match && match[1] != null)
-                assert("split-right: old Leg(6–10) → new Leg(6–8) via from-anchor",
-                    match?.[1]?.sc.the_from === 6 && match?.[1]?.sc.the_to === 8)
-                assert("split-right: new Leg(9–10) is unfound (null a-side)",
-                    pairs.some(([a, b]) => a == null && b?.sc.the_from === 9))
-            }
- 
-            // test 2: split on the left — the_from changes, the_to survives
-            // old: Leg(6–10)
-            // new: Leg(6–7) Leg(8–10)   ← still prefer from-anchor
-            {
-                const parent = _C({})
-                await parent.replace({ tracing: 1 }, async () => {
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 10 })
-                })
-                const pairs = []
-                await parent.replace({ tracing: 1 }, async () => {
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 7  })
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 8, the_to: 10 })
-                }, { pairs_fn: async (a, b) => pairs.push([a, b]) })
- 
-                const match = pairs.find(([a]) => a?.sc.the_from === 6 && a?.sc.the_to === 10)
-                assert("split-left: old Leg(6–10) → new Leg(6–7) via from-anchor",
-                    match?.[1]?.sc.the_from === 6 && match?.[1]?.sc.the_to === 7)
-            }
- 
-            // test 3: sanity — plain range-narrow (no split) still resolves
-            // old: Leg(6–10)
-            // new: Leg(6–9)   ← to shrinks, nothing ambiguous
-            {
-                const parent = _C({})
-                await parent.replace({ tracing: 1 }, async () => {
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 10 })
-                })
-                const pairs = []
-                await parent.replace({ tracing: 1 }, async () => {
-                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 9 })
-                }, { pairs_fn: async (a, b) => pairs.push([a, b]) })
- 
-                assert("range-narrow: still resolves (not dropped)",
-                    pairs.some(([a, b]) => a?.sc.the_from === 6 && b?.sc.the_from === 6))
-            }
- 
-            if (!fails) o.i({ all_ok: 1 })
-        }
+
+
+
+
+
+
+
+
+
+
+
+        
 
 
         let o = w.i({test:"C.resolve() unambiguity in the past and future"})
@@ -212,6 +142,11 @@
         finally {
             lh.resolve = temporary
         }
+
+
+
+
+
 
 
 
@@ -445,6 +380,94 @@
 
 
 
+
+
+
+
+
+        // < GONER? it doesn't reproduce the problem.
+        // ── resolve() Leg-split: the_from vs the_to tie ──────────────────────
+        // Regression for the scan_id mismatch seen in LangTiles step 3→4.
+        //
+        // When one Leg(from:6, to:10) splits into Leg(6–8) + Leg(9–10),
+        // both halves score unambiguity 1.0 against the old node:
+        //   new Leg(6–8)  via the_from:6  → 1.0
+        //   new Leg(9–10) via the_to:10   → 1.0
+        // The correct match is old → new Leg(6–8) because `from` is the
+        // stable left-anchor of a span when content splits rightward.
+        {
+            let o = w.i({ test: "resolve() Leg-split: from-anchor vs to-anchor tie" })
+            let fails = 0
+            const assert = (label, ok) => {
+                if (ok) o.i({ ok: label })
+                else  { o.i({ fail: label }); fails++ }
+            }
+ 
+            // test 1: split on the right — the_to changes, the_from survives
+            // old: Leg(1–5) Leg(6–10)
+            // new: Leg(1–5) Leg(6–8) Leg(9–10)   ← 6–10 split at 8|9
+            {
+                const parent = _C({})
+                await parent.replace({ tracing: 1 }, async () => {
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 10 })
+                })
+                const pairs = []
+                await parent.replace({ tracing: 1 }, async () => {
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 8  })
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 9, the_to: 10 })
+                }, { pairs_fn: async (a, b) => pairs.push([a, b]) })
+ 
+                const match = pairs.find(([a]) => a?.sc.the_from === 6 && a?.sc.the_to === 10)
+                assert("split-right: old Leg(6–10) paired (not dropped)",
+                    !!match && match[1] != null)
+                assert("split-right: old Leg(6–10) → new Leg(6–8) via from-anchor",
+                    match?.[1]?.sc.the_from === 6 && match?.[1]?.sc.the_to === 8)
+                assert("split-right: new Leg(9–10) is unfound (null a-side)",
+                    pairs.some(([a, b]) => a == null && b?.sc.the_from === 9))
+            }
+ 
+            // test 2: split on the left — the_from changes, the_to survives
+            // old: Leg(6–10)
+            // new: Leg(6–7) Leg(8–10)   ← still prefer from-anchor
+            {
+                const parent = _C({})
+                await parent.replace({ tracing: 1 }, async () => {
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 10 })
+                })
+                const pairs = []
+                await parent.replace({ tracing: 1 }, async () => {
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 1, the_to: 5  })
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 7  })
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 8, the_to: 10 })
+                }, { pairs_fn: async (a, b) => pairs.push([a, b]) })
+ 
+                const match = pairs.find(([a]) => a?.sc.the_from === 6 && a?.sc.the_to === 10)
+                assert("split-left: old Leg(6–10) → new Leg(6–7) via from-anchor",
+                    match?.[1]?.sc.the_from === 6 && match?.[1]?.sc.the_to === 7)
+            }
+ 
+            // test 3: sanity — plain range-narrow (no split) still resolves
+            // old: Leg(6–10)
+            // new: Leg(6–9)   ← to shrinks, nothing ambiguous
+            {
+                const parent = _C({})
+                await parent.replace({ tracing: 1 }, async () => {
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 10 })
+                })
+                const pairs = []
+                await parent.replace({ tracing: 1 }, async () => {
+                    parent.i({ tracing: 1, the_node: 'Leg', the_from: 6, the_to: 9 })
+                }, { pairs_fn: async (a, b) => pairs.push([a, b]) })
+ 
+                assert("range-narrow: still resolves (not dropped)",
+                    pairs.some(([a, b]) => a?.sc.the_from === 6 && b?.sc.the_from === 6))
+            }
+ 
+            if (!fails) o.i({ all_ok: 1 })
+        }
 
 
     },
