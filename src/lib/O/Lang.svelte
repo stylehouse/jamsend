@@ -158,6 +158,7 @@ laterally(A,w,thing):
     async e_Lang_editorBegins(A,w,e) {
         w.c.addBookmarkMark = e.sc.addBookmarkMark
         w.c.clearAllBookmarks = e.sc.clearAllBookmarks
+        w.c.saveEffect = e.sc.saveEffect
         w.c.editorState = e.sc.state
         w.c.editorView = e.sc.view
         w.i({received:1,editorBegins:1})
@@ -440,7 +441,8 @@ IOing
     // onMount() ONLY, automate the test
 
     async Lang_enbookmark(w) {
-        this.i_elvisto('LangTiles/LangTiles', 'test__couple_of_bookmarks')
+        // +marks button: place a bookmark on line 6 via the generic handler
+        this.i_elvisto('LangTiles/LangTiles', 'Lang_i_bookmark', { from: 98, to: 132 })
     },
     async Lang_debookmark(w) {
         const view = w.c.editorView
@@ -450,36 +452,99 @@ IOing
         await w.r({ bookmark: 1 },{})
         this.i_elvisto(w, 'think', {})
     },
-    async e_test__couple_of_bookmarks(A,w,e) {
-        await this.test__couple_of_bookmarks(A,w)
-    },
-    async test__couple_of_bookmarks(A,w) {
-        // Get the editor view from the state
+
+    // ── e_Lang_i_bookmark ────────────────────────────────────────────────────
+    //
+    //   Generic Plan/Phase action: place a bookmark at a given char range.
+    //   No action button — params must come from the Phase esc children:
+    //
+    //     Phase:2
+    //       i_elvisto:LangTiles,e:Lang_i_bookmark
+    //         esc:from,v:98
+    //         esc:to,v:132
+    //
+    //   from / to are char offsets into the doc.  If omitted or equal, the
+    //   handler expands to the enclosing line (same as Ctrl+B on empty selection).
+    async e_Lang_i_bookmark(A, w, e) {
         const view = w.c.editorView
-        // < why did AI want to:
-        // view =  w.c.editorState?.field(EditorView) as EditorView | undefined;
-        if (!view) throw new Error("No editor view found");
-        await new Promise((resolve) => setTimeout(resolve, 30));
-        await tick();
+        if (!view) throw new Error("e_Lang_i_bookmark — no editor view")
+        await new Promise(resolve => setTimeout(resolve, 30))
+        await tick()
 
-        // Function to add a bookmark via elvis
-        const addBookmark = async (from, to) => {
-            view.dispatch({
-                selection: { anchor: from, head: to },
-            });
-            await tick();
-            const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ');
-            this.i_elvisto('LangTiles/LangTiles', 'Lang_add_bookmark', {
-                from,
-                to,
-                label,
-                view,
-                state: view.state,
-            });
-        };
+        let from = e?.sc.from as number | undefined
+        let to   = e?.sc.to   as number | undefined
+        // expand to enclosing line if range is absent or zero-width
+        if (from == null || to == null || from === to) {
+            const pos  = from ?? 0
+            const line = view.state.doc.lineAt(pos)
+            from = line.from
+            to   = line.to
+        }
+        view.dispatch({ selection: { anchor: from, head: to } })
+        await tick()
+        const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ')
+        this.i_elvisto('LangTiles/LangTiles', 'Lang_add_bookmark', {
+            from, to, label, view, state: view.state,
+        })
+    },
 
-        // await addBookmark(73, 93); // line 5
-        await addBookmark(98, 132); // line 6
+    // ── e_Lang_i_alterationStation ───────────────────────────────────────────
+    //
+    //   Generic Plan/Phase action: surgically replace a substring within a line.
+    //   Operates within the existing text so CM can remap any bookmark decorations
+    //   that span the edit — a whole-line replace would destroy them.
+    //   No action button — params must come from the Phase esc children:
+    //
+    //     Phase:4
+    //       i_elvisto:LangTiles,e:Lang_i_alterationStation
+    //         esc:line_n,v:6
+    //         esc:sanity,v:    o hut/although:1,they,can,be,mixed
+    //         esc:match,v:",they,can,be,mixed"
+    //         esc:replacement,v:"/they,can,be,mixed"
+    //
+    //   line_n      — 1-based CodeMirror line number
+    //   sanity      — expected full line text; warns on mismatch but still proceeds
+    //   match       — JSON-encoded string: substring to find within that line (first occurrence)
+    //   replacement — JSON-encoded string: what to replace it with (may be different length)
+    //
+    //   match and replacement are JSON-encoded so commas in values don't collide
+    //   with the snap key:value,key:value delimiter format.
+    //
+    //   After dispatching, saveEffect flushes bookmark positions immediately so
+    //   e_Lang_update_bookmarks receives the fresh editorState and calls think().
+    async e_Lang_i_alterationStation(A, w, e) {
+        const view = w.c.editorView
+        if (!view) throw new Error("e_Lang_i_alterationStation — no editor view")
+
+        const line_n      = e?.sc.line_n      as number
+        const sanity      = e?.sc.sanity      as string | undefined
+        const match   = e?.sc.match       as string
+        const replacement    = e?.sc.replacement as string
+        if (!line_n || match == null || replacement == null)
+            throw "e_Lang_i_alterationStation — needs line_n, match, and replacement"
+
+        const line = view.state.doc.line(line_n)
+        if (sanity != null && line.text !== sanity) {
+            // warn but still proceed — test is re-runnable after the first replacement
+            console.warn(`Lang_i_alterationStation — line ${line_n} sanity mismatch\n  expected: ${JSON.stringify(sanity)}\n  got:      ${JSON.stringify(line.text)}`)
+        }
+
+        const idx = line.text.indexOf(match)
+        if (idx < 0) {
+            console.warn(`Lang_i_alterationStation — match ${JSON.stringify(match)} not found in line ${line_n}: ${JSON.stringify(line.text)}`)
+            return
+        }
+
+        // Surgical replace — CM remaps any decoration whose range spans this
+        // position, so bookmarks within the line survive intact.
+        // updateListener fires Lang_set_doc (docC updated) and arms the 800ms timer.
+        view.dispatch({ changes: { from: line.from + idx, to: line.from + idx + match.length, insert: replacement } })
+
+        // saveEffect flushes bookmark positions immediately — updateListener cancels
+        // the debounce and fires Lang_update_bookmarks with the fresh editorState.
+        // That handler sets w.c.editorState and calls think().
+        view.dispatch({ effects: w.c.saveEffect.of(null) })
+        console.log(`Lang_i_alterationStation — line ${line_n} [${match}] → [${replacement}], saveEffect dispatched`)
     },
 
 
@@ -530,24 +595,20 @@ IOing
     },
 
 
-    // Fired by the editor ~800ms after the most recent doc-change transaction.
+    // Fired by the editor after the debounce (or immediately via saveEffect).
     //
-    // Carries the live from/to for every bookmark (the editor is the source of
-    // truth for positions — CodeMirror remaps decoration marks on every change,
-    // so we read them out and push here) plus a fresh editorState so the next
-    // tick's whatsthis() walks see the updated parse tree.
+    // Carries the live from/to for every bookmark still present in the CM
+    // decoration set, plus a fresh editorState so whatsthis() sees the updated
+    // parse tree.  Any known bookmark id absent from updates[] has vanished —
+    // its decoration was wiped by an edit that fully replaced its span.
     //
     // e.sc carries: updates=[{id, from, to}], editorState
-    //
-    // Bookmarks whose id isn't in updates[] are implicitly untouched — this
-    // lets the editor also use this event to report "this bookmark's mark was
-    // deleted" by simply omitting it. (Not yet consumed, but the shape allows
-    // future pruning: compare w/%bookmark ids against updates[].id.)
     async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
         const state   = e?.sc.state
         if (updates) {
+            const seen = new Set(updates.map(u => u.id))
             for (const u of updates) {
                 const bm = w.o({ bookmark: u.id })[0] as TheC | undefined
                 if (!bm) continue
@@ -556,9 +617,40 @@ IOing
                 bm.sc.to   = u.to
                 bm.bump_version()
             }
+            // detect vanished bookmarks — present in w but absent from CM's live set
+            for (const bm of w.o({ bookmark: 1 }) as TheC[]) {
+                if (!seen.has(bm.sc.bookmark)) {
+                    this.Lang_bookmark_vanished(w, bm)
+                }
+            }
         }
         if (state) w.c.editorState = state
         this.i_elvisto(w, 'think', {})
+    },
+
+    // ── Lang_bookmark_vanished ───────────────────────────────────────────────
+    //
+    //   Called when a bookmark's CM decoration is absent from the live set —
+    //   meaning an edit fully replaced or deleted the span it was anchored to.
+    //
+    //   < STUB: eventually this should attempt re-anchoring by scanning the
+    //     parse tree for the nearest surviving syntactic landmark (same Line:N,
+    //     same node type, same label text) and re-dispatching addBookmarkMark
+    //     at the recovered position.
+    //
+    //   < Copy+paste tracking: when a paste lands, compare incoming text chunks
+    //     against the label/content of vanished bookmarks and re-anchor any that
+    //     appear in the new location.  This is a separate reflective pass that
+    //     runs after the doc settles — it should not block the current wave.
+    //
+    //   For now: log and leave the w/%bookmark particle in place so the user can
+    //   see it went missing.  whatsthis() will simply find no CM range for it
+    //   and produce no nodes — a silent gap rather than a crash.
+    Lang_bookmark_vanished(w: TheC, bm: TheC) {
+        console.warn(`🔖 bookmark vanished: ${bm.sc.bookmark} was [${bm.sc.from}..${bm.sc.to}] "${bm.sc.label}"`)
+        bm.i({ vanished: 1 })
+        // < re-anchor attempt goes here
+        // < copy+paste recovery pass goes here
     },
 
 

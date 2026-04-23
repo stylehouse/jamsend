@@ -13,6 +13,15 @@
     //     - 800ms post-edit:  Lang_update_bookmarks {updates}
     //     - any text change:  Lang_set_doc      {text}
     //     - Escape key     :  Lang_compile      {}
+    //     - saveEffect     :  Lang_update_bookmarks immediately (cancels debounce)
+    //
+    // ── saveEffect ───────────────────────────────────────────────────────────
+    //
+    //   A zero-payload StateEffect dispatched after a programmatic doc change
+    //   by e_Lang_i_alterationStation to flush bookmark positions immediately
+    //   without waiting for the 800ms debounce.  The updateListener detects it,
+    //   cancels any pending timer, and calls fire_update_bookmarks() right away —
+    //   so e_Lang_update_bookmarks receives the fresh editorState and calls think().
     //
     // ── Immutability note ────────────────────────────────────────────────────
     //
@@ -94,6 +103,9 @@
 
     const addBookmarkMark = StateEffect.define<{ id: string, from: number, to: number }>()
     const clearAllBookmarks = StateEffect.define<null>()
+    // saveEffect — dispatched externally to flush bookmark positions immediately.
+    // Exported via Lang_editorBegins so e_Lang_i_alterationStation can dispatch it.
+    const saveEffect = StateEffect.define<null>()
 
     const bookmarkField = StateField.define<DecorationSet>({
         create: () => Decoration.none,
@@ -131,14 +143,24 @@
         return out
     }
     
-    // ── debounced doc-change → Lang_update_bookmarks ────────────────
+    // ── fire_update_bookmarks ────────────────────────────────────────────────
+    // Core send: read live bookmark positions from CM and elvis them to the backend.
+    // Called directly for an instant flush (saveEffect path) or via the debounce wrapper.
+    function fire_update_bookmarks(v: EditorView) {
+        const updates = readBookmarks(v)
+        Lang_i_elvis(v, 'Lang_update_bookmarks', { updates })
+    }
+
+    // ── debounced doc-change → Lang_update_bookmarks ─────────────────────────
+    // Arms a timer so rapid keystrokes coalesce. saveEffect cancels it and calls
+    // fire_update_bookmarks() directly so the fresh editorState reaches the backend
+    // without delay.
     function schedule_update_bookmarks(v: EditorView) {
         if (update_timer) clearTimeout(update_timer)
         update_timer = setTimeout(() => {
             update_timer = null
             if (!view) return
-            const updates = readBookmarks(view)
-            Lang_i_elvis(view,'Lang_update_bookmarks', {updates})
+            fire_update_bookmarks(view)
         }, UPDATE_DELAY_MS)
     }
 
@@ -215,6 +237,12 @@
                         const sel = v.state.selection.main;
                         sel_from = sel.from;
                         sel_to = sel.to;
+                        // saveEffect: flush bookmark positions immediately, cancel debounce
+                        if (v.transactions.some(tr => tr.effects.some(e => e.is(saveEffect)))) {
+                            if (update_timer) { clearTimeout(update_timer); update_timer = null }
+                            fire_update_bookmarks(v.view)
+                            return
+                        }
                         if (!v.docChanged) return;
                         const text = v.state.doc.toString();
                         Lang_i_elvis(view,'Lang_set_doc', {text})
@@ -226,7 +254,7 @@
         });
 
         // Dispatch e:editorBegins with the initial editorState
-        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, clearAllBookmarks})
+        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, clearAllBookmarks, saveEffect})
     });
 
     onDestroy(() => {
