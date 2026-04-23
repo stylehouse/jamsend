@@ -122,7 +122,7 @@ services:
       /bin/sh -c "
       apt-get update && apt-get install -y curl &&
       sed \"s|^external-ip=$|external-ip=$(curl -s -4 ifconfig.me)/192.168.1.11|\" /etc/coturn/turnserver.conf > /tmp/turnserver.conf &&
-      exec turnserver -c /tmp/turnserver.conf -n --log-file stdout --no-stdout-log"
+      exec turnserver -c /tmp/turnserver.conf --log-file stdout --no-stdout-log"
     deploy:
       resources:
         limits:
