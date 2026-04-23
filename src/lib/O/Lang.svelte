@@ -54,7 +54,7 @@
 
         // UI registration — Otro mounts this alongside Cytui for H:Lang
         const uis = H.oai_enroll(H, { watched: 'UIs' })
-        uis.oai({ UI: 'Langui', component: Langui })
+        uis.oai({ UI: 'Langui' }, { component: Langui })
 
         const wa = H.oai_enroll(H, { watched: 'actions' })
         wa.oai({ action: 1, role: 'debookmark'   },

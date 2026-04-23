@@ -92,7 +92,7 @@
 
     Cyto_plan(w: TheC) {
         const uis = this.oai_enroll(this, { watched: 'UIs' })
-        uis.oai({ UI: 'Cyto', component: Cytui })
+        uis.oai({ UI: 'Cyto' }, { component: Cytui })
         const wa  = this.oai_enroll(this, { watched: 'graph' })
         w.c.gn        = wa.oai({ cyto_graph: 1 })
         w.c.plan_done = true

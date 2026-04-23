@@ -74,7 +74,7 @@
             w.c.ave = ave
             H.oai_enroll(H, { watched: 'actions' })
             const uis = H.oai_enroll(H, { watched: 'UIs' })
-            uis.oai({ UI: 'Library', component: LibraryRun })
+            uis.oai({ UI: 'Library' }, { component: LibraryRun })
         }
 
         // ── load Library from disk once ───────────────────────────────────────

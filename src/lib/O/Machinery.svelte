@@ -60,7 +60,7 @@
                 // Extract the component from the .default property
                 const component = module.default;
                 const uis = this.oai_enroll(this, { watched: 'UIs' })
-                uis.oai({ UI: 'Pantheate-include', component })
+                uis.oai({ UI: 'Pantheate-include' }, { component })
                 w.i({include:me.sc.include})
             }
         }
