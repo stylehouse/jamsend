@@ -1,0 +1,18 @@
+[Unit]
+Description=jamsend Chrome Launcher (host-side socket server)
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+# Ensure we have the display environment for Chromium
+Environment=DISPLAY=:0
+# Same config file that docker-compose reads
+EnvironmentFile=/home/s/src/jamsend/ty/jamsend-supervisor.conf
+ExecStart=/usr/bin/python3 /home/s/src/jamsend/ty/launcher.py
+ExecStopPost=/bin/rm -f /tmp/jamsend-supervisor/chrome_launcher.sock
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

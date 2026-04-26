@@ -1,0 +1,16 @@
+[Unit]
+Description=jamsend Watchdog (Docker heartbeat container)
+Requires=docker.service jamsend-launcher.service
+After=docker.service network-online.target jamsend-launcher.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/s/src/jamsend/ty
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose down
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

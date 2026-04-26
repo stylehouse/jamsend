@@ -1,13 +1,23 @@
 services:
   watchdog:
-    build: .
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:20-slim
+        WORKDIR /app
+        COPY package.json .
+        RUN npm install
+        COPY launchability.js .
+        CMD ["node", "launchability.js"]
     container_name: jamsend-watchdog
     restart: always
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - /tmp/chrome_launcher.sock:/tmp/chrome_launcher.sock
+      # Mount the whole directory so Docker doesn't turn the socket path into a dir
+      - /tmp/jamsend-supervisor:/tmp/jamsend-supervisor
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
+    env_file: jamsend-supervisor.conf
