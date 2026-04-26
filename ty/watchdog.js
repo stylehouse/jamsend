@@ -31,8 +31,8 @@ async function checkProfile(name, config) {
     try {
         const browser = await puppeteer.connect({
             browserURL: `http://localhost:${config.port}`,
-            // If Chrome is dead, fail fast rather than hanging
-            protocolTimeout: 5000,
+            // If Chrome is dead, fail fast (15s) rather than hanging
+            protocolTimeout: 15000,
         });
         const pages = await browser.pages();
         // If the renderer crashed, pages will be empty or throw
@@ -59,12 +59,7 @@ async function checkAll() {
         await checkProfile(name, config);
     }
 }
-
-// Initial trigger to start all Chrome profiles on boot
-// (launcher.py also does this on startup, but belt-and-suspenders for timing races)
-for (const name of Object.keys(PROFILES)) {
-    triggerRestart(name);
-}
-
+// now ish
+setTimeout(checkAll, 3000);
 // Check every 30 seconds
 setInterval(checkAll, 30000);

@@ -7,8 +7,8 @@ services:
         WORKDIR /app
         COPY package.json .
         RUN npm install
-        COPY launchability.js .
-        CMD ["node", "launchability.js"]
+        COPY watchdog.js .
+        CMD ["node", "watchdog.js"]
     container_name: jamsend-watchdog
     restart: always
     network_mode: host

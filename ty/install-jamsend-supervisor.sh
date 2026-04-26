@@ -3,11 +3,15 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 1. Build the watchdog container
+# 1. Install system dependencies
+echo "Installing system dependencies..."
+sudo apt install -y python3-psutil
+
+# 2. Build the watchdog container
 echo "Building watchdog container..."
 cd "$SCRIPT_DIR" && docker compose build
 
-# 2. Deploy Systemd Units
+# 3. Deploy Systemd Units
 install_unit() {
     local NAME="$1"
     local SOURCE="$SCRIPT_DIR/$NAME"

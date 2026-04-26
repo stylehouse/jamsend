@@ -6,6 +6,9 @@
 import socket
 import os
 import subprocess
+import select
+import psutil
+
 
 SOCKET_DIR  = "/tmp/jamsend-supervisor"
 SOCKET_PATH = f"{SOCKET_DIR}/chrome_launcher.sock"
@@ -25,6 +28,24 @@ for i, entry in enumerate(os.environ["CHROME_PROFILES"].split(",")):
 print("Configured profiles:")
 for name, cfg in PROFILES.items():
     print(f"  {name}: port={cfg['port']}  url={cfg['url']}")
+
+
+# per chrome
+MEMORY_LIMIT_GB = 1.0
+def check_memory():
+    for name, proc in list(processes.items()):
+        if proc.poll() is not None:
+            continue  # already dead
+        try:
+            p = psutil.Process(proc.pid)
+            # include_children=True catches Chrome's renderer subprocesses
+            mem_gb = p.memory_info().rss / 1e9
+            if mem_gb > MEMORY_LIMIT_GB:
+                print(f"Chrome '{name}' using {mem_gb:.1f}GB — restarting", flush=True)
+                launch_profile(name, PROFILES[name])
+        except psutil.NoSuchProcess:
+            pass
+
 
 # --- Socket setup ---
 
@@ -73,17 +94,26 @@ server.listen(1)
 
 print(f"Launcher listening on {SOCKET_PATH}...")
 
-# Launch all profiles immediately on startup
-for name, config in PROFILES.items():
-    launch_profile(name, config)
-
 while True:
-    conn, _ = server.accept()
-    data = conn.recv(1024).decode().strip()
-    if data.startswith("RESTART:"):
-        name = data.split(":", 1)[1]
-        if name in PROFILES:
-            launch_profile(name, PROFILES[name])
-        else:
-            print(f"Unknown profile: {name}")
-    conn.close()
+    print("Waiting...", flush=True)  # confirm the loop is alive
+    readable, _, _ = select.select([server], [], [], 30)  # 30s timeout
+    if readable:
+        conn, _ = server.accept()
+        data = conn.recv(1024).decode().strip()
+        print(f"Received: {data!r}", flush=True)
+        if data.startswith("RESTART:"):
+            name = data.split(":", 1)[1]
+            if name in PROFILES:
+                launch_profile(name, PROFILES[name])
+            else:
+                print(f"Unknown profile: {name}", flush=True)
+        conn.close()
+    else:
+        # Timeout branch — no socket message, do housekeeping
+        check_memory()
+
+
+
+
+
+
