@@ -84,9 +84,11 @@ Eg *PeeringSharing* has a *DirectoryShares* object that can be given to the *Thi
 
 We can note the name of a C variable, and some relevant structure and properties like so:
 
-``D%nib=dir`` is probably in a tree of D**, and its nib is dir.
-
 ``%record/*%preview`` is the many %preview inside a %record
+
+``record/preview,duration`` is about the same, less plurality implied, and refers to the duration property, as well as the mainkey ``preview``, which most of their data falls under, like an object type.
+
+``D%nib:dir`` is probably in a tree of D**, and its nib is dir.
 
 *Stuffing* puts them on the screen efficiently, grouping like stuff, compressing communication.
 

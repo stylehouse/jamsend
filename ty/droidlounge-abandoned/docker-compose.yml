@@ -1,0 +1,169 @@
+x-healthcheckia: &healthcheckia
+  interval: 3s
+  timeout: 5s
+  retries: 3
+  start_period: 5s
+
+x-droid-common: &droid-common
+  restart: always
+  stop_grace_period: 1s  # Kill immediately on restart/stop
+  image: seleniarm/standalone-chromium:latest
+  entrypoint: 
+    - "/bin/sh"
+    - "-c"
+    - |
+      # $$ is used to escape the variable for the container shell
+      rm -f /tmp/.X$${DISPLAY#:*}-lock
+      rm -f /home/seluser/chrome-profile/Singleton*
+      # Start Xvfb manually on the specific DISPLAY
+      Xvfb $$DISPLAY -screen 0 $${SCREEN_WIDTH}x$${SCREEN_HEIGHT}x24 &
+      /opt/bin/entry_point.sh
+  network_mode: host
+  shm_size: 2gb
+  mem_limit: 2g
+  environment: &droid-env
+    # we Start Xvfb manually above in entrypoint or chrome fails to start,
+    #  but we need this here to keep fluxbox and novnc starting
+    START_XVFB: "true"
+    VNC_NO_PASSWORD: "1"
+    SCREEN_WIDTH: "988"
+    SCREEN_HEIGHT: "1200"
+    NODE_MAX_SESSIONS: "1"
+    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --allow-file-access-from-files --hide-crash-restore-bubble --unlimited-storage --disable-web-security --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --disable-features=VizDisplayCompositor --force-device-scale-factor=1"
+    SE_NODE_SESSION_TIMEOUT: "86400"
+    SE_SESSION_REQUEST_TIMEOUT: "3600"
+    SE_EVENT_BUS_HOST: "127.0.0.1"
+
+x-bot-common: &bot-common
+  restart: always
+  stop_grace_period: 1s  # Kill immediately on restart/stop
+  network_mode: host
+  mem_limit: 0.3g
+  build:
+    context: .
+    dockerfile_inline: |
+      FROM node:20-alpine
+      WORKDIR /app
+      RUN npm install selenium-webdriver
+      CMD ["node", "ty/bot.js"]
+  volumes:
+    - .:/app/ty
+    - ./logs:/app/logs
+  environment: &bot-env
+    TARGET_URL: "https://jamsend.duckdns.org:9999/"
+    CHROME_PROFILE_DIR: "/home/seluser/chrome-profile"
+
+services:
+
+  # --- SUPERVISOR (:103) ---
+  supervisor-droid:
+    <<: *droid-common
+    container_name: jamsend-supervisor-droid
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      DISPLAY: ":103"
+      SE_NODE_PORT: "4444"
+      SE_VNC_PORT: "5900"
+      SE_NO_VNC_PORT: "7900"
+      SE_EVENT_BUS_PUBLISH_PORT: "4442"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+    volumes:
+      - ./.env.chrome-profiles/supervisor:/home/seluser/chrome-profile
+
+  supervisor-bot:
+    <<: *bot-common
+    depends_on: { supervisor-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      DISPLAY: ":103.0"
+      SELENIUM_REMOTE_URL: "http://localhost:4444/wd/hub"
+      BOT_NAME: "supervisor"
+
+  # --- PUBLIC (:100) ---
+  public-droid:
+    <<: *droid-common
+    container_name: jamsend-public-droid
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4445/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      DISPLAY: ":100"
+      SE_NODE_PORT: "4445"
+      SE_OPTS: "--port 4445"
+      SE_VNC_PORT: "5901"
+      SE_NO_VNC_PORT: "7901"
+      SE_EVENT_BUS_PUBLISH_PORT: "4452"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4453"
+    volumes:
+      - /mnt/jamsend-public:/home/seluser/music
+      - ./.env.chrome-profiles/public:/home/seluser/chrome-profile
+
+  public-bot:
+    <<: *bot-common
+    depends_on: { public-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      DISPLAY: ":100.0"
+      SELENIUM_REMOTE_URL: "http://localhost:4445/wd/hub"
+      BOT_NAME: "public"
+
+  # --- PRIVATE (:101) ---
+  private-droid:
+    <<: *droid-common
+    container_name: jamsend-private-droid
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4446/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      DISPLAY: ":101"
+      SE_NODE_PORT: "4446"
+      SE_OPTS: "--port 4446"
+      SE_VNC_PORT: "5902"
+      SE_NO_VNC_PORT: "7902"
+      SE_EVENT_BUS_PUBLISH_PORT: "4462"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4463"
+    volumes:
+      - /mnt/jamsend-music:/home/seluser/music
+      - ./.env.chrome-profiles/private:/home/seluser/chrome-profile
+
+  private-bot:
+    <<: *bot-common
+    depends_on: { private-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      DISPLAY: ":101.0"
+      SELENIUM_REMOTE_URL: "http://localhost:4446/wd/hub"
+      BOT_NAME: "private"
+
+  # --- TYRANT (:102) ---
+  tyrant-droid:
+    <<: *droid-common
+    container_name: jamsend-tyrant-droid
+    healthcheck:
+      <<: *healthcheckia
+      test: ["CMD", "curl", "-f", "http://localhost:4447/wd/hub/status"]
+    environment:
+      <<: *droid-env
+      DISPLAY: ":102"
+      SE_NODE_PORT: "4447"
+      SE_OPTS: "--port 4447"
+      SE_VNC_PORT: "5903"
+      SE_NO_VNC_PORT: "7903"
+      SE_EVENT_BUS_PUBLISH_PORT: "4472"
+      SE_EVENT_BUS_SUBSCRIBE_PORT: "4473"
+    volumes:
+      - ./.env.chrome-profiles/tyrant:/home/seluser/chrome-profile
+
+  tyrant-bot:
+    <<: *bot-common
+    depends_on: { tyrant-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      DISPLAY: ":102.0"
+      SELENIUM_REMOTE_URL: "http://localhost:4447/wd/hub"
+      BOT_NAME: "tyrant"
