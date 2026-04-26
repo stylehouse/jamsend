@@ -38,8 +38,15 @@ def check_memory():
             continue  # already dead
         try:
             p = psutil.Process(proc.pid)
-            # include_children=True catches Chrome's renderer subprocesses
-            mem_gb = p.memory_info().rss / 1e9
+            # Sum parent + all renderer/GPU/extension subprocesses
+            children = p.children(recursive=True)
+            total_rss = p.memory_info().rss
+            for child in children:
+                try:
+                    total_rss += child.memory_info().rss
+                except psutil.NoSuchProcess:
+                    pass  # child exited between listing and measuring — skip it
+            mem_gb = total_rss / 1e9
             if mem_gb > MEMORY_LIMIT_GB:
                 print(f"Chrome '{name}' using {mem_gb:.1f}GB — restarting", flush=True)
                 launch_profile(name, PROFILES[name])
