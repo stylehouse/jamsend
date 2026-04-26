@@ -11,8 +11,7 @@ services:
         CMD ["node", "launchability.js"]
     container_name: jamsend-watchdog
     restart: always
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    network_mode: host
     volumes:
       # Mount the whole directory so Docker doesn't turn the socket path into a dir
       - /tmp/jamsend-supervisor:/tmp/jamsend-supervisor

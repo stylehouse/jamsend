@@ -24,17 +24,32 @@ const triggerRestart = (profileName) => {
     client.on('error', (e) => console.error(`Socket error for ${profileName}:`, e.message));
 };
 
+const RESTART_COOLDOWN_MS = 30000;
+const lastRestart = {};  // track when we last restarted each profile
+
 async function checkProfile(name, config) {
     try {
         const browser = await puppeteer.connect({
-            browserURL: `http://host.docker.internal:${config.port}`
+            browserURL: `http://localhost:${config.port}`,
+            // If Chrome is dead, fail fast rather than hanging
+            protocolTimeout: 5000,
         });
         const pages = await browser.pages();
         // If the renderer crashed, pages will be empty or throw
         if (pages.length === 0) throw new Error("No pages found");
         await browser.disconnect();
     } catch (err) {
-        console.log(`Heartbeat failed for '${name}', signaling restart...`);
+        const now = Date.now();
+        const lastTime = lastRestart[name] || 0;
+
+        // Don't restart if we just did — Chrome may still be starting up
+        if (now - lastTime < RESTART_COOLDOWN_MS) {
+            console.log(`Heartbeat failed for '${name}' but in cooldown, skipping (${err.message})`);
+            return;
+        }
+
+        console.log(`Check failed for '${name}': ${err.message} — signaling restart`);
+        lastRestart[name] = now;
         triggerRestart(name);
     }
 }
@@ -51,5 +66,5 @@ for (const name of Object.keys(PROFILES)) {
     triggerRestart(name);
 }
 
-// Check every 10 seconds
-setInterval(checkAll, 10000);
+// Check every 30 seconds
+setInterval(checkAll, 30000);

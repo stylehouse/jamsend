@@ -28,18 +28,39 @@ for name, cfg in PROFILES.items():
 
 # --- Socket setup ---
 
+processes = {}  # track live Popen objects by profile name
+
 def launch_profile(name, config):
     profile_dir = f"{PROFILE_BASE}/{name}"
     print(f"Killing and restarting Chromium for profile: {name}")
-    # Kill only the instance using this profile's debug port
-    subprocess.run(["pkill", "-f", f"--remote-debugging-port={config['port']}"])
-    subprocess.Popen([
-        "chromium",
-        f"--remote-debugging-port={config['port']}",
-        f"--user-data-dir={profile_dir}",
-        "--no-first-run",
-        config["url"],
-    ])
+
+    # Kill the specific known process instead of pattern-matching all cmdlines
+    if name in processes:
+        proc = processes[name]
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)  # ensure it's actually gone before relaunching
+        except subprocess.TimeoutExpired:
+            print(f"Profile '{name}' didn't exit cleanly, sending SIGKILL...")
+            proc.kill()
+            proc.wait()  # reap the zombie after SIGKILL (no timeout — SIGKILL is not ignorable)
+
+    processes[name] = subprocess.Popen([
+            "chromium",
+            f"--remote-debugging-port={config['port']}",
+            f"--user-data-dir={profile_dir}",
+            "--no-first-run",
+            "--autoplay-policy=no-user-gesture-required",  # suppress "tap to unmute"
+            "--disable-restore-session-state",              # suppress "Restore pages?" after our SIGTERM/SIGKILL
+            "--disable-infobars",                           # suppress other notification bars
+            config["url"],
+        ],
+        stderr=subprocess.PIPE  # capture crash reason
+    )
+    # give it a moment then check if it already died
+    import time; time.sleep(1)
+    if processes[name].poll() is not None:
+        print(f"Chrome for '{name}' died immediately: {processes[name].stderr.read().decode()}", flush=True)
 
 os.makedirs(SOCKET_DIR, exist_ok=True)
 if os.path.exists(SOCKET_PATH):

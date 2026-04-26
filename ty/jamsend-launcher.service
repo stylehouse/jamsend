@@ -4,10 +4,12 @@ After=graphical-session.target
 Wants=graphical-session.target
 
 [Service]
+User=1000
 Type=simple
 # Ensure we have the display environment for Chromium
 Environment=DISPLAY=:0
-# Same config file that docker-compose reads
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+# Same config file that docker-compose reads 
 EnvironmentFile=/home/s/src/jamsend/ty/jamsend-supervisor.conf
 ExecStart=/usr/bin/python3 /home/s/src/jamsend/ty/launcher.py
 ExecStopPost=/bin/rm -f /tmp/jamsend-supervisor/chrome_launcher.sock
