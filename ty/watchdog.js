@@ -31,23 +31,30 @@ async function checkProfile(name, config) {
     try {
         const browser = await puppeteer.connect({
             browserURL: `http://localhost:${config.port}`,
-            // If Chrome is dead, fail fast (15s) rather than hanging
-            protocolTimeout: 15000,
+            protocolTimeout: 5 * 60 * 1000, // 5m timeout
         });
         const pages = await browser.pages();
-        // If the renderer crashed, pages will be empty or throw
         if (pages.length === 0) throw new Error("No pages found");
+
+        for (const page of pages) {
+            try {
+                await page.evaluate(() => true);  // throws if renderer crashed
+            } catch (e) {
+                // Crashed tab — close it and open a fresh one instead of restarting Chrome
+                console.log(`Crashed tab in '${name}', recovering without full restart...`);
+                await page.close().catch(() => {});
+                const fresh = await browser.newPage();
+                await fresh.goto(config.url);
+            }
+        }
         await browser.disconnect();
     } catch (err) {
         const now = Date.now();
         const lastTime = lastRestart[name] || 0;
-
-        // Don't restart if we just did — Chrome may still be starting up
         if (now - lastTime < RESTART_COOLDOWN_MS) {
             console.log(`Heartbeat failed for '${name}' but in cooldown, skipping (${err.message})`);
             return;
         }
-
         console.log(`Check failed for '${name}': ${err.message} — signaling restart`);
         lastRestart[name] = now;
         triggerRestart(name);
@@ -61,5 +68,5 @@ async function checkAll() {
 }
 // now ish
 setTimeout(checkAll, 3000);
-// Check every 30 seconds
-setInterval(checkAll, 30000);
+// Check every 2 minutes
+setInterval(checkAll, 2 * 60 * 1000);
