@@ -496,8 +496,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
     // ── e_Lang_i_bookmark ────────────────────────────────────────────────────
     //
-    //   Generic Plan/Phase action: place a bookmark at a given char range.
-    //   No action button — params must come from the Phase esc children.
+    //   Generic Plan/Prep action: place a bookmark at a given char range.
+    //   No action button — params must come from the Prep/esc children.
     //   from / to are char offsets into the doc.  If omitted or equal, the
     //   handler expands to the enclosing line (same as Ctrl+B on empty selection).
     async e_Lang_i_bookmark(A, w, e) {
@@ -526,12 +526,12 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
     // ── e_Lang_i_alterationStation ───────────────────────────────────────────
     //
-    //   Generic Plan/Phase action: surgically replace a substring within a line.
+    //   Generic Plan/Prep action: surgically replace a substring within a line.
     //   Operates within the existing text so CM can remap any bookmark decorations
     //   that span the edit — a whole-line replace would destroy them.
-    //   No action button — params must come from the Phase esc children:
+    //   No action button — params must come from the Prep/esc children:
     //
-    //     Phase:4
+    //     Prep:4
     //       i_elvisto:LangTiles,e:Lang_i_alterationStation
     //         esc:line_n,v:6
     //         esc:sanity,v:    o hut/although:1,they,can,be,mixed

@@ -11,7 +11,7 @@
     //     means soft-compile only (abstractions extracted, nothing written).
     //   - Hands text to Lang via e:Lang_open_doc.
     //
-    //   Story Plan Phases open documents via e:LieSurgery_open_doc {path}.
+    //   Story Plan Preps open documents via e:LieSurgery_open_doc {path}.
     //   No default document is seeded — the test fixture lives at
     //   Ghost/test/LangTiles.g and is opened explicitly from the Plan.
     //
@@ -45,10 +45,10 @@
 
     // ── e_LieSurgery_open_doc ────────────────────────────────────────────────
     //
-    //   Entry point from Story Plan Phases.  Queues an open_req; the main
+    //   Entry point from Story Plan Preps.  Queues an open_req; the main
     //   LieSurgery loop does the Wormhole read + Lang handoff.
     //
-    //     Phase:1
+    //     Prep:1
     //       i_elvisto:LieSurgery,e:LieSurgery_open_doc
     //         esc:path,v:Ghost/test/LangTiles.g
     //

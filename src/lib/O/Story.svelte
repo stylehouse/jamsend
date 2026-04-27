@@ -289,21 +289,21 @@
         return (The.o({ Plan: 1 })[0] as TheC) ?? The.i({ Plan: 1 })
     },
  
-    The_Plan_phase(w: TheC, n: number,soft=false): TheC {
-        // find-or-create The/Plan/{Phase:N}.
+    The_Plan_Prep(w: TheC, n: number,soft=false): TheC {
+        // find-or-create The/Plan/{Prep:N}.
         // Delegates to step_c so it bumps planC version on creation,
         // using the same find-or-create idiom as The_step.
-        return this.step_c(this.The_Plan(w), n, 'Phase',soft)
+        return this.step_c(this.The_Plan(w), n, 'Prep',soft)
     },
 
-    async Story_prepare_Phase(w:TheC,Run:House,run:TheC) {
+    async Story_prepare_Prep(w:TheC,Run:House,run:TheC) {
         let n = run.c.step_n
-        let Phase = this.The_Plan_phase(w,n,true)
-        run.c.Phase = Phase
-        if (Phase) {
+        let Prep = this.The_Plan_Prep(w,n,true)
+        run.c.Prep = Prep
+        if (Prep) {
             let some = false
             // < inject w** at this step, similar to Opt/For/w:Such
-            for (let ha of Phase.o()) {
+            for (let ha of Prep.o()) {
                 if (ha.sc.i_elvisto && ha.sc.e) {
                     let esc = {}
                     ha.o({esc:1}).map(n => esc[n.sc.esc] = n.sc.v)
@@ -311,7 +311,7 @@
                     some = true
                 }
                 else {
-                    throw `unknown Plan/Phase/* ${objectify(ha)}`
+                    throw `unknown Plan/Prep/* ${objectify(ha)}`
                 }
             }
             if (some) {
@@ -425,15 +425,15 @@
                 // reuse the Plan bucket created by Story_plan.
                 particle = this.The_Plan(w)
                 ex(particle.sc, sc)
-            } else if (sc.Phase != null && d === 2 && parents[0] != null) {
-                // Phase particles under Plan — use The_Plan_phase for stable identity.
+            } else if (sc.Prep != null && d === 2 && parents[0] != null) {
+                // Prep particles under Plan — use The_Plan_Prep for stable identity.
                 // parents[1] is The/Plan; we check it is actually planC.
                 const planC = this.The_Plan(w)
                 if (parents[1] === planC) {
-                    particle = this.The_Plan_phase(w, sc.Phase as number)
+                    particle = this.The_Plan_Prep(w, sc.Prep as number)
                     ex(particle.sc, sc)
                 } else {
-                    // Phase at depth 2 but not under Plan — generic insert
+                    // Prep at depth 2 but not under Plan — generic insert
                     particle = parent.i(sc)
                 }
             } else {
@@ -1281,7 +1281,7 @@
             run.c.began_step = now_in_seconds_with_ms()
             Run.trace_enable()
             Run.trace('step', String(n))
-            await this.Story_prepare_Phase(w,Run,run)
+            await this.Story_prepare_Prep(w,Run,run)
             setTimeout(() => { if (run.c.driving) Run.i_elvisto(Run, 'think') }, 1)
             setTimeout(poll_step, TICK_MS)
         }

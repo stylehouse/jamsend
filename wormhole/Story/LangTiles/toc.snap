@@ -76,16 +76,16 @@ story:LangTiles
     matstyle:req_sent
       style:background-color,v:#c93641
   Plan
-    Phase
+    Prep
       i_elvisto:LieSurgery,e:LieSurgery_open_doc
         esc:path,v:Ghost/test/LangTiles.g
-    Phase:2
+    Prep:2
       i_elvisto:LangTiles,e:Lang_i_bookmark
         esc:from,v:98
         esc:to,v:132
-    Phase:3
+    Prep:3
       i_elvisto:LangTiles,e:Lang_compile
-    Phase:4
+    Prep:4
       i_elvisto:LangTiles,e:Lang_i_alterationStation
         esc:line_n,v:6
         {"esc":"match","v":",they,can,be,mixed"}
@@ -93,8 +93,7 @@ story:LangTiles
   Opt
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:1.51
-      sample:1.964,at:1777262402
+    TimeTotal:beliefs,avg:1.425
       sample:1.848,at:1777266786
       sample:2.571,at:1777268449
       sample:1.954,at:1777275648
@@ -104,6 +103,7 @@ story:LangTiles
       sample:1.769,at:1777276725
       sample:0.995,at:1777276984
       sample:1.004,at:1777277168
+      sample:1.119,at:1777278377
   step,dige:3a9dfd380de6bf7d
   step:2,dige:a715237a6a8907bf
   step:3,dige:6d2484cb33be89e1
