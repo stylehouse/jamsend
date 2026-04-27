@@ -245,6 +245,7 @@ laterally(A,w,thing):
 
         // CM StateEffects are per-view, so they live on docC.c — not w.c.
         docC.c.addBookmarkMark   = e.sc.addBookmarkMark
+        docC.c.removeBookmarkMark = e.sc.removeBookmarkMark
         docC.c.clearAllBookmarks = e.sc.clearAllBookmarks
         docC.c.saveEffect        = e.sc.saveEffect
 
@@ -620,10 +621,14 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         // bookmarks live on docC, not w, so they can be r()'d per doc
         const existingBookmark = docC.o({ bookmark: 1 }).find((bm: TheC) =>
             bm.sc.from === from && bm.sc.to === to
-        );
+        ) as TheC | undefined;
         if (existingBookmark) {
-            console.log(`🔖 Bookmark already exists for [${from}..${to}]. Skipping.`);
-            return;
+            // Ctrl+B on an already-bookmarked range removes it
+            view.dispatch({ effects: docC.c.removeBookmarkMark.of({ id: existingBookmark.sc.bookmark }) })
+            await docC.r({ bookmark: existingBookmark.sc.bookmark }, {})
+            console.log(`🔖 remove_bookmark id=${existingBookmark.sc.bookmark} [${from}..${to}]`)
+            this.i_elvisto(w, 'think', {})
+            return
         }
 
         // Deterministic id keyed on position — same range always gets the same id,

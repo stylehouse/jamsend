@@ -116,8 +116,9 @@
     //                           [{id, from, to}] so elvises can report the
     //                           current positions to w:LangTiles.
 
-    const addBookmarkMark = StateEffect.define<{ id: string, from: number, to: number }>()
-    const clearAllBookmarks = StateEffect.define<null>()
+    const addBookmarkMark    = StateEffect.define<{ id: string, from: number, to: number }>()
+    const removeBookmarkMark = StateEffect.define<{ id: string }>()
+    const clearAllBookmarks  = StateEffect.define<null>()
     // saveEffect — dispatched externally to flush bookmark positions immediately.
     // Exported via Lang_editorBegins so e_Lang_i_alterationStation can dispatch it.
     const saveEffect = StateEffect.define<null>()
@@ -139,6 +140,12 @@
                         bookmark_id: e.value.id,
                     } as any).range(e.value.from, e.value.to)
                     marks = marks.update({ add: [deco] })
+                }
+                if (e.is(removeBookmarkMark)) {
+                    const target = e.value.id
+                    marks = marks.update({
+                        filter: (_f, _t, value) => (value.spec as any).bookmark_id !== target,
+                    })
                 }
             }
             return marks
@@ -267,7 +274,7 @@
 
         // Dispatch e:editorBegins — hands the backend the CM StateEffects it
         // needs to drive bookmarks, and registers view+state via Lang_doc_from_event.
-        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, clearAllBookmarks, saveEffect})
+        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect})
     });
 
     onDestroy(() => {
