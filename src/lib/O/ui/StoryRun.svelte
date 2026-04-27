@@ -589,6 +589,18 @@
     function accept_all() {
         H.i_elvisto('Story/Story', 'story_accept_all', {})
     }
+
+    // diff2_body: the two-column grid; .sr-diff2-col children sync their scrollLeft
+    let diff2_body = $state<HTMLElement | null>(null)
+
+    function sync_col_scroll(e: Event) {
+        if (!diff2_body) return
+        const src = e.currentTarget as HTMLElement
+        const x   = src.scrollLeft
+        for (const col of diff2_body.querySelectorAll<HTMLElement>('.sr-diff2-col')) {
+            if (col !== src && col.scrollLeft !== x) col.scrollLeft = x
+        }
+    }
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -727,36 +739,42 @@
                             <div class="sr-dlabel ref">{col_labels.left}</div>
                             <div class="sr-dlabel got">{col_labels.right}</div>
                         </div>
-                        <div class="sr-diff2-body">
-                            {#each diff_rows as row, i (i)}
-                                {#if row.kind === 'squish'}
-                                    <!-- collapsed run of uninteresting same lines -->
-                                    <div class="sr-squish">… {row.count} unchanged</div>
-                                {:else if row.kind === 'pair' && row.tag === 'same'}
-                                    <div class="sr-diff2-row same">
+                        <div class="sr-diff2-body" bind:this={diff2_body}>
+
+                            <!-- left column: each cell clips and scrolls horizontally -->
+                            <div class="sr-diff2-col" onscroll={sync_col_scroll}>
+                                {#each diff_rows as row, i (i)}
+                                    {#if row.kind === 'squish'}
+                                        <div class="sr-squish">… {row.count} unchanged</div>
+                                    {:else if row.kind === 'pair' && row.tag === 'same'}
                                         <div class="sr-diff2-cell">{@render line_content(row.left)}</div>
+                                    {:else if row.kind === 'pair' && row.tag === 'changed'}
+                                        <div class="sr-diff2-cell changed">{@render intra_line(row.left, row.ops, 'left')}</div>
+                                    {:else if row.kind === 'left_only'}
+                                        <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
+                                    {:else if row.kind === 'right_only'}
+                                        <div class="sr-diff2-cell neu sr-empty-cell"></div>
+                                    {/if}
+                                {/each}
+                            </div>
+
+                            <!-- right column: invisible squish spacers keep row heights in sync -->
+                            <div class="sr-diff2-col" onscroll={sync_col_scroll}>
+                                {#each diff_rows as row, i (i)}
+                                    {#if row.kind === 'squish'}
+                                        <div class="sr-squish" style="visibility:hidden" aria-hidden="true">… {row.count} unchanged</div>
+                                    {:else if row.kind === 'pair' && row.tag === 'same'}
                                         <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
-                                    </div>
-                                {:else if row.kind === 'pair' && row.tag === 'changed'}
-                                    <!-- intra_line renders per-character del/ins highlights via ops -->
-                                    <div class="sr-diff2-row changed">
-                                        <div class="sr-diff2-cell">{@render intra_line(row.left, row.ops, 'left')}</div>
-                                        <div class="sr-diff2-cell">{@render intra_line(row.right, row.ops, 'right')}</div>
-                                    </div>
-                                {:else if row.kind === 'left_only'}
-                                    <!-- gone: present in reference, absent in got -->
-                                    <div class="sr-diff2-row gone">
-                                        <div class="sr-diff2-cell">{@render line_content(row.line)}</div>
-                                        <div class="sr-diff2-cell sr-empty-cell"></div>
-                                    </div>
-                                {:else if row.kind === 'right_only'}
-                                    <!-- neu: absent in reference, present in got -->
-                                    <div class="sr-diff2-row neu">
-                                        <div class="sr-diff2-cell sr-empty-cell"></div>
-                                        <div class="sr-diff2-cell">{@render line_content(row.line)}</div>
-                                    </div>
-                                {/if}
-                            {/each}
+                                    {:else if row.kind === 'pair' && row.tag === 'changed'}
+                                        <div class="sr-diff2-cell changed">{@render intra_line(row.right, row.ops, 'right')}</div>
+                                    {:else if row.kind === 'left_only'}
+                                        <div class="sr-diff2-cell gone sr-empty-cell"></div>
+                                    {:else if row.kind === 'right_only'}
+                                        <div class="sr-diff2-cell neu">{@render line_content(row.line)}</div>
+                                    {/if}
+                                {/each}
+                            </div>
+
                         </div>
                     </div>
                 {/if}
@@ -1044,28 +1062,37 @@
 .sr-line.gone    { background: #1a0000; border-left-color: #c55; opacity: 0.6; }
 
 /* ── two-column proper diff ─────────────────────────────────────────────── */
+/* .sr-diff2-body is a 2-column grid; each .sr-diff2-col scrolls horizontally */
+/* as one unit and they stay in lockstep via sync_col_scroll.                 */
+/* Vertical scroll is on the body; columns are overflow-y:hidden inside it.   */
 .sr-diff2-hdr {
     display: grid; grid-template-columns: 1fr 1fr;
     border-bottom: 1px solid #1e1e1e;
 }
 .sr-diff2-body {
-    overflow: auto; max-height: 400px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    overflow-y: auto; max-height: 400px;
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
-    font-size: 11px; line-height: 1.55; white-space: pre;
+    font-size: 11px; line-height: 1.55;
 }
-.sr-diff2-row { display: grid; grid-template-columns: 1fr 1fr; }
-.sr-diff2-row:hover { background: #181818; }
-.sr-diff2-row.changed { background: #1e1600; }
-.sr-diff2-row.gone    { background: #1a0000; }
-.sr-diff2-row.neu     { background: #001a10; }
+/* each column clips and scrolls horizontally; scrollbar hidden (no room) */
+.sr-diff2-col {
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; min-width: 0; white-space: pre;
+}
+.sr-diff2-col::-webkit-scrollbar { display: none; }
+.sr-diff2-col:last-child { border-left: 1px solid #1a1a1a; }
+
 .sr-diff2-cell {
     padding: 0 8px; border-left: 2px solid transparent;
-    overflow: hidden; text-overflow: ellipsis;
 }
-.sr-diff2-cell + .sr-diff2-cell { border-left: 1px solid #1a1a1a; }
-.sr-diff2-row.changed .sr-diff2-cell             { border-left-color: #a80; }
-.sr-diff2-row.gone    .sr-diff2-cell:first-child  { border-left-color: #c55; }
-.sr-diff2-row.neu     .sr-diff2-cell:last-child   { border-left-color: #4a9; }
+.sr-diff2-cell:hover { background: #181818; }
+/* row-kind backgrounds and accents — applied per-cell now that rows are gone */
+.sr-diff2-cell.changed                    { background: #1e1600; border-left-color: #a80; }
+.sr-diff2-cell.gone                       { background: #1a0000; }
+.sr-diff2-cell.gone:not(.sr-empty-cell)   { border-left-color: #c55; }
+.sr-diff2-cell.neu                        { background: #001a10; }
+.sr-diff2-cell.neu:not(.sr-empty-cell)    { border-left-color: #4a9; }
 .sr-empty-cell { opacity: 0.12; }
 
 /* squish: collapsed run of uninteresting same lines */
