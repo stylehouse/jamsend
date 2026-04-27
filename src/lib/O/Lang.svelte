@@ -172,16 +172,25 @@
 
     // ── Lang_set_active_doc ──────────────────────────────────────────────────
     //
-    //   Marks a path as active. Stamps docC.sc.active so other observers
-    //   (e.g. a tabs UI) can see which doc is foregrounded.
+    //   Marks a path as active. Stamps docC.sc.active so a tabs UI can see
+    //   which doc is foregrounded, and updates ave/{active_doc:1}.path so
+    //   Langui can reactively switch its EditorView to the right content
+    //   without needing to know the path at mount time.
     Lang_set_active_doc(w: TheC, path: string) {
         w.c.active_doc_path = path
         const docs = w.o({ docs: 1 })[0] as TheC | undefined
-        if (!docs) return
-        for (const d of docs.o({ doc: 1 }) as TheC[]) {
-            if (d.sc.doc === path) d.sc.active = 1
-            else delete d.sc.active
+        if (docs) {
+            for (const d of docs.o({ doc: 1 }) as TheC[]) {
+                if (d.sc.doc === path) d.sc.active = 1
+                else delete d.sc.active
+            }
         }
+        // ave/{active_doc:1} is the reactive signal Langui watches to know
+        // which ave/{langtiles_doc:path} particle to pull text from.
+        const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
+        const sig = ave.oai({ active_doc: 1 })
+        sig.sc.path = path
+        sig.bump_version()
     },
 
 //#region e
@@ -210,24 +219,27 @@
     // ── e_Lang_open_doc ──────────────────────────────────────────────────────
     //
     //   Called by LieSurgery after it loads a Ghost source file.
-    //   Creates the docC particle under w/{docs:1}, stores gen_path on it,
-    //   populates the ave text-sync particle so Langui can pull the content,
-    //   and sets this doc as the active one.
+    //   Creates the docC particle under w/{docs:1}, populates the ave
+    //   text-sync particle so Langui pulls the content, and sets this doc
+    //   as the active one.
     //
-    //   e.sc: { path, gen_path, text }
+    //   gen_path is optional — if absent the doc can be soft-compiled
+    //   (abstractions extracted) but the result is not written to disk.
+    //
+    //   e.sc: { path, text, gen_path? }
     async e_Lang_open_doc(A: TheC, w: TheC, e: TheC) {
         const H = this as House
-        const path     = e.sc.path     as string
-        const gen_path = e.sc.gen_path as string
-        const text     = (e.sc.text    as string) ?? ''
-        if (!path || !gen_path) throw 'e_Lang_open_doc: needs path + gen_path'
+        const path     = e.sc.path as string
+        const gen_path = e.sc.gen_path as string | undefined   // optional
+        const text     = (e.sc.text as string) ?? ''
+        if (!path) throw 'e_Lang_open_doc: needs path'
 
-        // create the docC particle, stamping gen_path so compile knows where to write
+        // create the docC particle; stamp gen_path only when present
         const docs = w.oai({ docs: 1 })
         const docC = docs.oai({ doc: path })
-        docC.sc.gen_path = gen_path
+        if (gen_path) docC.sc.gen_path = gen_path
 
-        // populate the ave text-sync particle for this path so Langui pulls it
+        // populate the ave text-sync particle so Langui pulls it
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const docTextC = ave.oai({ langtiles_doc: path })
         if (docTextC.sc.text !== text) {
@@ -235,8 +247,8 @@
             docTextC.bump_version()
         }
 
-        // set active — first opened doc wins; tab switching calls Lang_set_active_doc later
-        if (!w.c.active_doc_path) this.Lang_set_active_doc(w, path)
+        // always activate — LieSurgery owns doc order, last open wins for now
+        this.Lang_set_active_doc(w, path)
 
         w.i({ received: 1, doc_opened: 1, doc: path })
         console.log(`📄 Lang opened doc: ${path}`)

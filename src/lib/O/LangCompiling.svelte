@@ -149,9 +149,15 @@
         }
 
         // gen_path comes from docC (set by e_Lang_open_doc via LieSurgery).
-        const gen_path = (docC.sc.gen_path as string)
-        if (!gen_path) throw "!job/Output%gen_path"
+        // Absent gen_path means soft-compile only — abstractions are extracted
+        // (methods/calls index in job/{methods:1}) but nothing is written to disk.
+        const gen_path = docC.sc.gen_path as string | undefined
         job.oai({Output:1, gen_path, source, dige:await dig(source)})
+        if (!gen_path) {
+            await job.r({Pending:1},{})   // no write step — soft compile done
+            w.i({ see: `🔍 soft-compiled ${docC.sc.doc}` })
+            return
+        }
         H.i_elvisto(w, 'think')
     },
 

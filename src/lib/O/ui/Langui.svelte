@@ -68,24 +68,46 @@
     let sel_from = $state(0)
     let sel_to   = $state(0)
 
-    // Find this doc's text particle on H.ave.  Keyed by path so multiple
-    // Langui instances each track their own ave/{langtiles_doc:path} particle.
-    let docC: TheC | undefined = $state()
+    // ── active doc tracking ──────────────────────────────────────────────────
+    //
+    //   Langui is mounted once (with a fallback `doc` prop) but must show
+    //   whichever doc Lang_set_active_doc has made current.  The backend
+    //   stamps ave/{active_doc:1}.path whenever the active doc changes, so
+    //   we watch that signal rather than the fixed prop.
+    //
+    //   active_path drives both the ave text lookup and the `doc` stamp on
+    //   every CM event — so the backend always knows which doc an event
+    //   came from, even after the active doc switches.
+    let active_path = $state(doc)   // start with prop, upgraded once ave connects
+
+    $effect(() => {
+        const ave = H.ave
+        if (!ave?.length) return
+        for (const p of ave) void p.version   // touch all to track additions
+        const sig = ave.find((p: TheC) => p.sc.active_doc === 1 || p.sc.active_doc === true)
+        if (sig?.sc.path) active_path = sig.sc.path as string
+    })
+
+    // ── ave text-sync ────────────────────────────────────────────────────────
+    //
+    //   Watch the ave/{langtiles_doc:active_path} particle for the current doc.
+    //   When active_path changes (doc switch) or the text is updated from
+    //   outside (load from disk), push the new content into the EditorView.
+    let docTextC: TheC | undefined = $state()
     let pullable_text = $derived.by(() => {
-        void docC?.version
-        return (docC?.sc.text as string) ?? ''
+        void docTextC?.version
+        return (docTextC?.sc.text as string) ?? ''
     })
 
     $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
-        // bump reactivity: touch every particle's version so we re-run on any change
         for (const p of ave) void p.version
-        const found = ave.find((p: TheC) => p.sc.langtiles_doc === doc) as TheC | undefined
-        docC = found
+        const path = active_path
+        docTextC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
     })
 
-    // pull: when docC.text changes from outside (e.g. load from disk), push into the editor
+    // pull: when docTextC.text changes from outside (e.g. load from disk), push into the editor
     $effect(() => {
         if (!view) return
         const incoming = pullable_text
@@ -100,8 +122,10 @@
     //   Central CM→backend bridge.  Stamps { doc, view, state } on every event
     //   so Lang_doc_from_event can update docC.c.view/state in one place,
     //   and the backend always knows which document the event came from.
+    //   Uses active_path (not the fixed prop) so the stamp stays correct
+    //   after a doc switch.
     function Lang_i_elvis(view, method, sc) {
-        sc = { doc, view, state: view.state, ...(sc || {}) }
+        sc = { doc: active_path, view, state: view.state, ...(sc || {}) }
         H.i_elvisto('LangTiles/LangTiles', method, sc)
     }
 
@@ -238,7 +262,7 @@
 
 
     onMount(() => {
-        const initial = (docC?.sc.text as string) ?? '';
+        const initial = (docTextC?.sc.text as string) ?? '';
         view = new EditorView({
             parent: container,
             state: EditorState.create({
@@ -288,7 +312,7 @@
         <span class="lte-title">LangTiles editor</span>
         <span class="lte-hint">Ctrl+B — add mark</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
-        <span class="lte-len">{(docC?.sc.text as string ?? '').length} chars</span>
+        <span class="lte-len">{(docTextC?.sc.text as string ?? '').length} chars</span>
     </div>
     <div class="lte-cm" bind:this={container}></div>
 </div>

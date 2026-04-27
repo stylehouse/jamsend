@@ -92,6 +92,7 @@ story:LangTiles
         {"esc":"replacement","v":"/they,can,be,mixed"}
   Opt
     noCyto
+    trickle
   TimeSpool
     TimeTotal:beliefs,avg:1.608
       sample:1.038,at:1777188045
@@ -105,6 +106,7 @@ story:LangTiles
       sample:1.848,at:1777266786
       sample:2.571,at:1777268449
   step,dige:e5ebf5553718a96f
+    note,frontier
   step:2,dige:345182bcabe67b10
   step:3,dige:9c318fe97629fcb7
   step:4,dige:93a618f7684c2a59
