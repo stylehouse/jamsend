@@ -33,7 +33,7 @@
     import Matstyle from "./Matstyle.svelte";
     import Lang from "$lib/O/Lang.svelte";
     import Hovercraft from "./Hovercraft.svelte";
-    import LieSurgery from "./LieSurgery.svelte";
+    import Lies from "./Lies.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -62,4 +62,4 @@
 <Auto  {M} />
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
-<LieSurgery {M} />
+<Lies {M} />

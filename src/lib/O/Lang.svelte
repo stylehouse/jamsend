@@ -100,7 +100,7 @@
         // ── doc registry ────────────────────────────────────────────
         // w/{docs:1} — container for all open document particles.
         // Individual {doc:path} particles are created lazily via
-        // e_Lang_open_doc when LieSurgery hands us a loaded file.
+        // e_Lang_open_doc when Lies hands us a loaded file.
         w.oai({ docs: 1 })
 
         // ── reach across to Story's Styles ──────────────────────────
@@ -206,7 +206,7 @@
         docC.c.saveEffect        = e.sc.saveEffect
 
         // Only activate if we have a real path — empty string means the doc
-        // isn't known yet and LieSurgery hasn't fired e_Lang_open_doc yet.
+        // isn't known yet and Lies hasn't fired e_Lang_open_doc yet.
         // The $effect in Langui re-fires editorBegins once active_path is real.
         if (!w.c.active_doc_path && e.sc.doc) {
             this.Lang_set_active_doc(w, e.sc.doc as string)
@@ -217,7 +217,7 @@
 
     // ── e_Lang_open_doc ──────────────────────────────────────────────────────
     //
-    //   Called by LieSurgery after it loads a Ghost source file.
+    //   Called by Lies after it loads a Ghost source file.
     //   Creates the docC particle under w/{docs:1}, populates the ave
     //   text-sync particle so Langui pulls the content, and sets this doc
     //   as the active one.
@@ -246,7 +246,7 @@
             docTextC.bump_version()
         }
 
-        // always activate — LieSurgery owns doc order, last open wins for now
+        // always activate — Lies owns doc order, last open wins for now
         this.Lang_set_active_doc(w, path)
 
         w.i({ received: 1, doc_opened: 1, doc: path })

@@ -1,7 +1,7 @@
 <script lang="ts">
-    // LieSurgerui.svelte — reactive UI for LieSurgery.
+    // Liesui.svelte — reactive UI for Lies.
     //
-    // Mounted by Otro via H/{watched:UIs}/{UI:'LieSurgery'}.
+    // Mounted by Otro via H/{watched:UIs}/{UI:'Lies'}.
     // Receives H (the root Mundo house).
     //
     // Shows:
@@ -9,7 +9,7 @@
     //   • pending compiles — in-flight write indicator.
     //   • compile errors surfaced from w/{compile_error:1}.
     //
-    // Opt toggles (write / run) are registered as stashed actions in LieSurgery
+    // Opt toggles (write / run) are registered as stashed actions in Lies
     // and appear in the generic actions bar — no bespoke buttons here.
     //
     // < doc tabs (switch active doc)
@@ -21,9 +21,9 @@
 
     let { H }: { H: House } = $props()
 
-    // ── locate LieSurgery's w via H.ave ───────────────────────────────────
-    // LieSurgery places its w into H.ave in setup (ave.i(w)).
-    // w carries sc.w:'LieSurgery' so we can find it reliably even before
+    // ── locate Lies's w via H.ave ───────────────────────────────────
+    // Lies places its w into H.ave in setup (ave.i(w)).
+    // w carries sc.w:'Lies' so we can find it reliably even before
     // it exists — the $effect re-runs whenever ave changes.
     let LS: TheC | undefined = $state()
 
@@ -31,7 +31,7 @@
         const ave = H.ave
         if (!ave?.length) return
         for (const p of ave) void p.version   // touch all to track additions
-        LS = ave.find((n: TheC) => n.sc.w === 'LieSurgery') as TheC | undefined
+        LS = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
     })
 
     let loaded_docs = $derived(LS ? LS.o({ loaded_doc: 1 }) as TheC[] : [])
@@ -47,11 +47,11 @@
 
 <div class="ls-ui">
     <div class="ls-header">
-        <span class="ls-title">🔪 LieSurgery</span>
+        <span class="ls-title">🔪 Lies</span>
     </div>
 
     {#if !LS}
-        <div class="ls-empty">waiting for LieSurgery…</div>
+        <div class="ls-empty">waiting for Lies…</div>
     {:else}
 
     {#if errors.length}

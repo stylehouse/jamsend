@@ -12,18 +12,18 @@
     //     Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
     //     translated JS.  For hard-compiles (gen_path present), hands off
-    //     to LieSurgery via e:LieSurgery_compiled — LieSurgery owns the
+    //     to Lies via e:Lies_compiled — Lies owns the
     //     write and optional Pantheate notify.  Stashes docC/Compile/Output.
     //
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) on every tick while docC/Compile/Pending is set.
-    //     Waits for e:LieSurgery_compile_settled {path} fired back by LieSurgery,
+    //     Waits for e:Lies_compile_settled {path} fired back by Lies,
     //     then clears docC/Compile/Pending so Story sees Lang settle.
     //
     //   All compile state (Compile, compile_error) lives on
     //   docC — not on w — so it can be r()'d independently per document and
     //   multiple open docs don't share compile state.
-    //   compile_write has moved to LieSurgery's w (keyed by path).
+    //   compile_write has moved to Lies's w (keyed by path).
     //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
@@ -106,13 +106,13 @@
     // builds the module source (so the user gets immediate {result:1} chunks
     // to inspect even if the disk write is slow).
     //
-    // For hard-compiles (gen_path present): fires e:LieSurgery_compiled and
-    // leaves Compile/Pending set.  LieSurgery is the airlock: it decides
+    // For hard-compiles (gen_path present): fires e:Lies_compiled and
+    // leaves Compile/Pending set.  Lies is the airlock: it decides
     // whether to write to disk (opt_write) and/or notify Pantheate (opt_run),
-    // then fires back e:LieSurgery_compile_settled to clear Pending.
+    // then fires back e:Lies_compile_settled to clear Pending.
     //
     // For soft-compiles (no gen_path): clears Pending immediately — nothing
-    // to write or run.  LieSurgery is not involved.
+    // to write or run.  Lies is not involved.
     //
     // All compile state lives on docC (not w) so multiple open docs don't
     // share compile state and each can be r()'d independently.
@@ -157,7 +157,7 @@
             return
         }
 
-        // gen_path comes from docC (set by e_Lang_open_doc via LieSurgery).
+        // gen_path comes from docC (set by e_Lang_open_doc via Lies).
         // Absent gen_path means soft-compile only — abstractions are extracted
         // (methods/calls index in job/{methods:1}) but nothing is written to disk.
         const gen_path = docC.sc.gen_path as string | undefined
@@ -169,20 +169,20 @@
             return
         }
 
-        // Hand off to LieSurgery as the compile airlock.
-        // LieSurgery checks opt_write and opt_run, does the Wormhole write
-        // and/or notifies Pantheate, then fires e:LieSurgery_compile_settled
+        // Hand off to Lies as the compile airlock.
+        // Lies checks opt_write and opt_run, does the Wormhole write
+        // and/or notifies Pantheate, then fires e:Lies_compile_settled
         // back to w so Lang_compile_step can clear Pending.
-        H.i_elvisto('LieSurgery/LieSurgery', 'LieSurgery_compiled', {
+        H.i_elvisto('Lies/Lies', 'Lies_compiled', {
             path: docC.sc.doc, gen_path, source, dige,
         })
         H.i_elvisto(w, 'think')
     },
 
     // Called from Lang(A,w) while docC/Compile/Pending is set.
-    // Waits for e:LieSurgery_compile_settled {path} fired back by LieSurgery,
+    // Waits for e:Lies_compile_settled {path} fired back by Lies,
     // then clears docC/Compile/Pending so Story sees Lang settle.
-    // (The actual write and Pantheate notify have moved to LieSurgery.)
+    // (The actual write and Pantheate notify have moved to Lies.)
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
         const docC = this.Lang_active_docC(w)
@@ -192,9 +192,9 @@
         if (!job) throw "!job"
         if (!job.oa({Pending:1})) return
 
-        // Consume any LieSurgery_compile_settled elvises that landed on w.
+        // Consume any Lies_compile_settled elvises that landed on w.
         // There may be one per recently-settled doc (multi-doc scenario).
-        for (const ev of this.o_elvis(w, 'LieSurgery_compile_settled')) {
+        for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
             const settled_path = ev.sc.path as string
             const docs = w.o({ docs: 1 })[0] as TheC | undefined
             const targetDocC = docs?.o({ doc: settled_path })[0] as TheC | undefined

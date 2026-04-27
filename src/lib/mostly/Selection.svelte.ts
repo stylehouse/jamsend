@@ -477,7 +477,7 @@ class Dierarchy extends SelectionItself {
         let seq = T.c.path.length - 1
         // < seq=1 matches everything! what do we do about that...
         //    use an exotic unicode character in the code, compile to an Any()?
-        //     obscured by LieSurgery
+        //     obscured by Lies
         let path = j.o({path:1,seq:1})
         let here = path[seq]
         if (!here || here.sc.path != bit) return 0

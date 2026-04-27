@@ -39,7 +39,7 @@
     // Auto spawns H:LangTiles as a subHouse and calls Run_A_LangTiles on it.
     Run_A_LangTiles(this: House) {
         const H = this
-        H.i({ A: 'LieSurgery' }).i({ w: 'LieSurgery' })
+        H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang' }).i({ w: 'Lang' })
         H.i({ A: 'Cyto'      }).i({ w: 'Cyto'      })
         H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
@@ -81,7 +81,7 @@
 
     Run_A_LakeSurfer(this: House) {
         const H = this
-        H.i({ A: 'LieSurgery' }).i({ w: 'LieSurgery' })
+        H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Cyto'       }).i({ w: 'Cyto'      })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
