@@ -149,7 +149,7 @@
         // Internally-fired events (e.g. e_Lang_i_bookmark → Lang_add_bookmark,
         // or automated test macros) don't go through Langui, so fall back to
         // the active doc — which is always the right target in that case.
-        const path = (e.sc.doc as string) ?? (w.c.active_doc_path as string)
+        const path = (e.sc.doc as string) || (w.c.active_doc_path as string)
         if (!path) throw 'Lang_doc_from_event: no doc and no active doc yet'
         const docs = w.oai({ docs: 1 })
         const docC = docs.oai({ doc: path })
@@ -205,11 +205,10 @@
         docC.c.clearAllBookmarks = e.sc.clearAllBookmarks
         docC.c.saveEffect        = e.sc.saveEffect
 
-        // Make this doc active.  'default' is the Langui fallback prop value —
-        // it must never steal active_doc_path from a real doc opened by LieSurgery.
-        // Real docs call Lang_set_active_doc via e_Lang_open_doc; 'default' only
-        // wins if nothing else has registered yet AND no real doc is coming.
-        if (!w.c.active_doc_path && e.sc.doc !== 'default') {
+        // Only activate if we have a real path — empty string means the doc
+        // isn't known yet and LieSurgery hasn't fired e_Lang_open_doc yet.
+        // The $effect in Langui re-fires editorBegins once active_path is real.
+        if (!w.c.active_doc_path && e.sc.doc) {
             this.Lang_set_active_doc(w, e.sc.doc as string)
         }
 
@@ -303,21 +302,14 @@
         const doc_unchanged  = state && state.doc === docC?.c.last_whatsthis_doc
         const docC_unchanged = docC?.version === docC?.c.last_docC_version
 
-        
-        if (state && bookmarks.length) {
-            if (!(doc_unchanged && docC_unchanged)) {
-                model.empty()
-                this.whatsthis(state, model, bookmarks, opt)
-                this.wherewhatis(model, opt)
-                if (docC) {
-                    docC.c.last_whatsthis_doc   = state.doc
-                    docC.c.last_docC_version  = docC.version
-                }
+        model.empty()
+        if (state && bookmarks.length && !(doc_unchanged && docC_unchanged)) {
+            this.whatsthis(state, model, bookmarks, opt)
+            this.wherewhatis(model, opt)
+            if (docC) {
+                docC.c.last_whatsthis_doc = state.doc
+                docC.c.last_docC_version  = docC.version
             }
-            // model remains
-        }
-        else {
-            model.empty()
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })

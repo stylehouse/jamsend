@@ -54,7 +54,7 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, doc = 'default' }: { H: House, doc: string } = $props()
+    let { H, doc = '' }: { H: House, doc: string } = $props()
 
     let container: HTMLDivElement
     let view: EditorView | undefined
@@ -78,7 +78,7 @@
     //   active_path drives both the ave text lookup and the `doc` stamp on
     //   every CM event — so the backend always knows which doc an event
     //   came from, even after the active doc switches.
-    let active_path = $state(doc)   // start with prop, upgraded once ave connects
+    let active_path = $state(doc)   // start empty, upgraded once ave/{active_doc:1} lands
 
     $effect(() => {
         const ave = H.ave
@@ -86,6 +86,15 @@
         for (const p of ave) void p.version   // touch all to track additions
         const sig = ave.find((p: TheC) => p.sc.active_doc === 1 || p.sc.active_doc === true)
         if (sig?.sc.path) active_path = sig.sc.path as string
+    })
+
+    // Re-register view + state with the backend whenever the active path changes.
+    // editorBegins also fires from onMount (when active_path may still be ''),
+    // so this $effect covers the case where LieSurgery opens a doc after mount.
+    $effect(() => {
+        if (!view || !active_path) return
+        void active_path   // track changes
+        Lang_i_elvis(view, 'Lang_editorBegins', { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
     })
 
     // ── ave text-sync ────────────────────────────────────────────────────────
@@ -298,7 +307,7 @@
 
         // Dispatch e:editorBegins — hands the backend the CM StateEffects it
         // needs to drive bookmarks, and registers view+state via Lang_doc_from_event.
-        Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect})
+        // Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect})
     });
 
     onDestroy(() => {
