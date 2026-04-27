@@ -43,8 +43,6 @@ async function checkProfile(name, config) {
                 // Crashed tab — close it and open a fresh one instead of restarting Chrome
                 console.log(`Crashed tab in '${name}', recovering without full restart...`);
                 await page.close().catch(() => {});
-                const fresh = await browser.newPage();
-                await fresh.goto(config.url);
             }
         }
         await browser.disconnect();

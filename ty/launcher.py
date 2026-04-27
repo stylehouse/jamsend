@@ -31,7 +31,7 @@ for name, cfg in PROFILES.items():
 
 
 # per chrome
-MEMORY_LIMIT_GB = 1.0
+MEMORY_LIMIT_GB = 3.14159
 def check_memory():
     for name, proc in list(processes.items()):
         if proc.poll() is not None:
