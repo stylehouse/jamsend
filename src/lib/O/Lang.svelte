@@ -3,21 +3,53 @@
     //
     // This is the high-level "join" ghost.  Most of the compilation guts live
     // in LangCompiling.svelte (Lang_compile / Lang_compile_step / …); Lang.svelte
-    // keeps the per-tile lifecycle (plan / whatsthis / bookmark actions) and
+    // keeps the per-doc lifecycle (plan / whatsthis / bookmark actions) and
     // threads the compile trigger + reply-polling into that lifecycle.
     //
-    // Deposits:
-    //   whatsthis(state, container, {from?, to?})
+    // ── Document registry ────────────────────────────────────────────────────
+    //
+    //   w/{docs:1}/{doc:path} — one particle per open document.
+    //     c: { view, state, addBookmarkMark, clearAllBookmarks, saveEffect,
+    //          last_whatsthis_doc }
+    //     sc: { doc:path, active:1? }
+    //     {bookmark:'bm_…', from, to, label}
+    //     {Compile:1}
+    //       {Output:1, name, source, dige}
+    //       {Pending:1}
+    //
+    //   Bookmarks and compile live on docC, not w, so they can be r()'d per doc.
+    //
+    // ── Reactive text sync ───────────────────────────────────────────────────
+    //
+    //   ave/{langtiles_doc:path} — one per doc, holds sc.text.
+    //   Lang_plan seeds it with default text on first run.
+    //   Langui (keyed by `doc` prop) watches its own particle.
+    //
+    // ── Active doc ───────────────────────────────────────────────────────────
+    //
+    //   w.c.active_doc_path — routing concern (not business state, not r()'able).
+    //   Lang_active_docC(w) resolves it to the {doc:path} particle.
+    //   Lang_set_active_doc(w, path) sets it and marks docC.sc.active.
+    //
+    // ── DRY state update ─────────────────────────────────────────────────────
+    //
+    //   All CM events carry { doc:path, view, state } in e.sc.
+    //   Lang_doc_from_event(w, e) finds-or-creates the docC particle and
+    //   writes docC.c.view / docC.c.state in exactly one place — eliminating
+    //   the scattered w.c.editorState = e.sc.state pattern.
+    //
+    // ── whatsthis cache ──────────────────────────────────────────────────────
+    //
+    //   docC.c.last_whatsthis_doc — the EditorState.doc rope from the last
+    //   whatsthis() call.  CM doc ropes are immutable value objects; identity
+    //   equality is O(1) and reliable.  Skipped when doc and bookmarks haven't
+    //   changed since last tick.
+    //
+    // ── Deposits ─────────────────────────────────────────────────────────────
+    //
+    //   whatsthis(state, container, bookmarks, opt)
     //     — walks the EditorState's Lezer parse tree and i()s TheC nodes
     //       (Line, node, texts, text) into `container`.
-    //
-    //     Caller owns container lifecycle — whatsthis never empties anything
-    //     itself. Pass in a fresh subcontainer per logical scope (eg one per
-    //     bookmark) so the caller can delete scopes as units.
-    //
-    //     opt.from / opt.to (optional) scope the walk via tree.iterate's
-    //     range filter — Lezer only enters nodes whose span intersects
-    //     [from, to]. Omitting them walks the whole doc.
     //
     // Consumed by w:LangTiles, which runs one whatsthis() call per w/%bookmark
     // into a per-bookmark subcontainer under model/**.
@@ -47,8 +79,6 @@
 
         // ── the permanent viewable model ────────────────────────────
         // w/{model:1} — a stable TheC we hand to Cyto as Scannable.
-        // i_elvis_req keyed on the req particle won't re-send while this
-        // is the same object, so commissioning happens exactly once.
         const model = w.i({ model: 1, cyto_dir:1 })
         w.c.model = model
 
@@ -67,22 +97,25 @@
         wa.oai({ action: 1, role: 'compile'      },
             { label: 'compile', fn: () => this.i_elvisto(w, 'Lang_compile') })
 
-        // doc api — a single C on H.ave holding the whole document string.
-        // UI pulls via H.ave.find(p => p.sc.langtiles_doc).sc.text
-        // UI pushes via elvis 'Lang_set_doc' → e_Lang_set_doc below.
+        // ── doc registry ────────────────────────────────────────────
+        // w/{docs:1} — container for all open document particles.
+        // Individual {doc:path} particles are created lazily by
+        // Lang_doc_from_event when Langui fires editorBegins.
+        w.oai({ docs: 1 })
+
+        // ── ave text-sync particle for the default doc ───────────────
+        // ave/{langtiles_doc:'default'} holds sc.text for Langui to pull.
+        // When the Ghost TOC is loaded, additional particles are seeded per path.
         const ave = H.oai_enroll(H, { watched: 'ave' })
-        const docC = ave.oai({ langtiles_doc: 1 })
-        if (docC.sc.text == null) {
-            docC.sc.text = this.Lang_default_text()
-            docC.bump_version()
+        const docTextC = ave.oai({ langtiles_doc: 'default' })
+        if (docTextC.sc.text == null) {
+            docTextC.sc.text = this.Lang_default_text()
+            docTextC.bump_version()
         }
-        w.c.docC = docC
 
         // ── reach across to Story's Styles ──────────────────────────
         // Story persists Styles under its w.c.The/{Styles:1}.
         // We call The_Styles(storyw) so we get the same TheC.
-        // Story's watch_c on that bucket handles save-on-change for
-        // edits made from either Cytui.
         const topH    = H.top_House()
         let stylesC: TheC | null = null
         try {
@@ -95,7 +128,6 @@
         // ── commission our own Cyto ─────────────────────────────────
         // Scannable = the permanent model C.
         // client_w  = w:Lang itself, so animation_done events come here.
-        // No seek / takeTurns yet — this is the simple observer path.
         const commission = new TheC({ c: {}, sc: {
             Scannable:            w.c.model,
             Styles:               stylesC,
@@ -111,6 +143,7 @@
 
         w.c.plan_done = true
     },
+
     Lang_default_text() {
         return `// yeti etc
 theCompiledStuff(A,w) {
@@ -154,27 +187,87 @@ laterally(A,w,thing):
 `
     },
 
+//#region doc routing helpers
+
+    // ── Lang_doc_from_event ──────────────────────────────────────────────────
+    //
+    //   DRY central router called at the top of every CM event handler.
+    //   Every event from Langui carries { doc:path, view, state } in e.sc.
+    //   This creates-or-finds the {doc:path} particle under w/{docs:1} and
+    //   updates docC.c.view / docC.c.state in exactly one place.
+    //
+    //   Returns the docC so the caller can operate on it directly.
+    Lang_doc_from_event(w: TheC, e: TheC): TheC {
+        const path = e.sc.doc as string
+        if (!path) throw 'Lang_doc_from_event: no doc key on event'
+        const docs = w.oai({ docs: 1 })
+        const docC = docs.oai({ doc: path })
+        // update view + state in exactly one place
+        if (e.sc.view)  docC.c.view  = e.sc.view
+        if (e.sc.state) docC.c.state = e.sc.state
+        return docC
+    },
+
+    // ── Lang_active_docC ─────────────────────────────────────────────────────
+    //
+    //   Returns the {doc:path} particle for the currently active doc, or
+    //   undefined if no doc has been registered yet (pre-editorBegins).
+    Lang_active_docC(w: TheC): TheC | undefined {
+        const path = w.c.active_doc_path as string | undefined
+        if (!path) return undefined
+        const docs = w.o({ docs: 1 })[0] as TheC | undefined
+        return docs?.o({ doc: path })[0] as TheC | undefined
+    },
+
+    // ── Lang_set_active_doc ──────────────────────────────────────────────────
+    //
+    //   Marks a path as active. Stamps docC.sc.active so other observers
+    //   (e.g. a tabs UI) can see which doc is foregrounded.
+    Lang_set_active_doc(w: TheC, path: string) {
+        w.c.active_doc_path = path
+        const docs = w.o({ docs: 1 })[0] as TheC | undefined
+        if (!docs) return
+        for (const d of docs.o({ doc: 1 }) as TheC[]) {
+            if (d.sc.doc === path) d.sc.active = 1
+            else delete d.sc.active
+        }
+    },
+
 //#region e
-    async e_Lang_editorBegins(A,w,e) {
-        w.c.addBookmarkMark = e.sc.addBookmarkMark
-        w.c.clearAllBookmarks = e.sc.clearAllBookmarks
-        w.c.saveEffect = e.sc.saveEffect
-        w.c.editorState = e.sc.state
-        w.c.editorView = e.sc.view
+
+    async e_Lang_editorBegins(A, w, e) {
+        // Register view + state via the DRY router.
+        const docC = this.Lang_doc_from_event(w, e)
+
+        // CM StateEffects are per-view, so they live on docC.c — not w.c.
+        docC.c.addBookmarkMark   = e.sc.addBookmarkMark
+        docC.c.clearAllBookmarks = e.sc.clearAllBookmarks
+        docC.c.saveEffect        = e.sc.saveEffect
+
+        // Make this doc active (first one in wins; tab switching calls
+        // Lang_set_active_doc explicitly later).
+        if (!w.c.active_doc_path) this.Lang_set_active_doc(w, e.sc.doc as string)
+
         w.i({received:1,editorBegins:1})
     },
+
     async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
-        const docC = w.c.docC as TheC | undefined
-        if (!docC) return
+        const path = e.sc.doc as string | undefined
+        if (!path) return
+        // update the ave text-sync particle for this doc path
+        const ave = this.oai_enroll(this as House, { watched: 'ave' })
+        const docTextC = ave.oai({ langtiles_doc: path })
         const text = e?.sc.text as string | undefined
         if (text == null) return
-        if (docC.sc.text === text) return
-        docC.sc.text = text
-        docC.bump_version()
+        if (docTextC.sc.text === text) return
+        docTextC.sc.text = text
+        docTextC.bump_version()
         // no main() — UI initiated this, no one else needs waking
     },
+
 //#region w:Lang
+
     // is actually w:LangTiles, the test, for now calling this.
     async Lang(A: TheC, w: TheC) {
         const H = this
@@ -186,24 +279,35 @@ laterally(A,w,thing):
         await this.i_actions_to_c(w, 'compo',{ stashed: true, on_change })
         await this.i_actions_to_c(w, 'compi',{ stashed: true, on_change })
 
-        // compile reply polling — if an earlier Lang_compile kicked off a
-        // Wormhole rw_op 'write', Lang_compile_step re-polls i_elvis_req
-        // here until the reply lands, then notifies Pantheate.
-        if (w.oa({ Compile: 1 })) {
+        const docC = this.Lang_active_docC(w)
+
+        // compile reply polling — re-polls i_elvis_req while w/{docC}/Compile/Pending
+        // is set; when the Wormhole reply lands, notifies Pantheate.
+        if (docC?.oa({ Compile: 1 })) {
             await this.Lang_compile_step(A, w)
         }
 
         const model     = w.c.model as TheC
-        const state     = w.c.editorState
+        const state     = docC?.c.state
         const opt       = {compound_nodes: !!w.c.compo}
-        const bookmarks = w.o({ bookmark: 1 }) as TheC[]
+        const bookmarks = (docC?.o({ bookmark: 1 }) ?? []) as TheC[]
 
-        // we do our best to send Cyto's Se1 a Line%* that trace all bookmark ids in it.
-        //  so it can notice when Line 3 becomes Line 4 upon the user hitting enter
+        // ── whatsthis cache check ────────────────────────────────────
+        // CM doc ropes are immutable — identity equality is O(1) and reliable.
+        // Skip the walk entirely when neither the doc text nor bookmarks have
+        // changed since the last tick.
+        const doc_unchanged       = state && state.doc === docC?.c.last_whatsthis_doc
+        const bookmark_epoch      = bookmarks.reduce((s, bm) => s + bm.version, 0)
+        const bookmarks_unchanged = bookmark_epoch === docC?.c.last_bookmark_epoch
+
         model.empty()
-        if (state && bookmarks.length) {
-            this.whatsthis(state,model,bookmarks,opt)
-            this.wherewhatis(model,opt)
+        if (state && bookmarks.length && !(doc_unchanged && bookmarks_unchanged)) {
+            this.whatsthis(state, model, bookmarks, opt)
+            this.wherewhatis(model, opt)
+            if (docC) {
+                docC.c.last_whatsthis_doc   = state.doc
+                docC.c.last_bookmark_epoch  = bookmark_epoch
+            }
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
@@ -275,10 +379,7 @@ having a new Cyto cluster spawn within (by location trickery) another
    in a hairball of over-connected everything with everySuch<->everySuch
 
 
-
-
-
- `
+`
 
         
     },
@@ -313,7 +414,7 @@ threads of inquiry stack up on the left
 
 
 
- `
+`
 
         
     },
@@ -366,74 +467,10 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     since our schema definition will be in this society of objects we're maintaining
      and we can connect definitions to calls, etc, supposing we parse them as such later.
 
-swap these i|o expressions for... something
- we will scale the complexity depending on how complex IOing** gets
- we can assume the first thing in the path is implied to be w for now,
-  but not if it starts with just a variable:
-   o $la/something ->  la.o({something:1})
-  i lots/of/levels -> w.i({lots:1}).i({of:1}).i({levels:1})
-  o lots/of/levels -> (w.o({lots:1})[0]?.o({of:1})[0]?.o({levels:1})||[])
-  o thing -> w.o(thing)
- also allow
-  o hut/toot$ -> let toot = o hut/toot  # gives toot the variable
-  o hut/$toot -> hut.o({toot})          # takes toot the variable
-  o hut/toot:3 -> hut.o({toot:3},{exactly:{toot:true}})
-   turns off wildcard - for they could have just said /toot to mean any toot
-    although:1,they,can,be,mixed (%although must == 1, others may be anything)
-   note it looks like peel() format, but variables can:$be,in:$it
-
-and put the resulting typescript ghost code (wrapped in eatfunc etc)
- via the Wormhole, into src/lib/gen/Somewhere.svelte
-  and then notify a downstream at w:Pantheate
-   includes it as %watched:UIs, and may do more later...
-
-
-
-pythonic indent
-  if oa thisQua -> if (w.oa({thisQua:1})) {   // and somewhere the closing brace
-
-Sunpit
- the new lump of potentially non-trivial activity
- S <IOing>
-  is iteration, heading of a pythonic-indented block
-  becomes a for loop containing that IOing!
-
-
-
-
-
-
-
-
-IOing
-  Travel if multi-layered. inline a big json of of the path (as iooia can do) is the parsed version of the syntax.
-    in the story_rule_matches format for it.
-
- wonder if it is possible to allow these two expr: C o walls | o C/walls
-  it might be ambiguous, needing to not be so casually slipped into javascript.
-
-
- Se <IOing>
-  as above but creates a named Selection() that can react to changes upstream etc
-   persists as usual, use concretion() to begin (interrupts the w)
-   perhaps initially it perhaps (approximately):
-    Se i scan/i/$model -> w.oai(%Se:scan).i(%i).i(model)
-   then:
-    Se i scan/trace/D
-        compose a D from an n
-         "trace" sounds like it ends in sc
-   and all other details could probably be wedged in somehow...
-   so a Selection can be composed without the big fat calls
-   potentially broken down into quite small parts
-   the pieces as they are are embryos that could sprout a new limb anywhere
-
-
-
- `
+`
 
         
     },
-
 
 
 
@@ -445,28 +482,25 @@ IOing
         this.i_elvisto('LangTiles/LangTiles', 'Lang_i_bookmark', { from: 98, to: 132 })
     },
     async Lang_debookmark(w) {
-        const view = w.c.editorView
-        if (view && w.c.clearAllBookmarks) {
-            view.dispatch({ effects: w.c.clearAllBookmarks.of(null) })
+        const docC = this.Lang_active_docC(w)
+        const view = docC?.c.view
+        if (view && docC?.c.clearAllBookmarks) {
+            view.dispatch({ effects: docC.c.clearAllBookmarks.of(null) })
         }
-        await w.r({ bookmark: 1 },{})
+        // r() on the docC particle — bookmarks live there, not on w
+        if (docC) await docC.r({ bookmark: 1 }, {})
         this.i_elvisto(w, 'think', {})
     },
 
     // ── e_Lang_i_bookmark ────────────────────────────────────────────────────
     //
     //   Generic Plan/Phase action: place a bookmark at a given char range.
-    //   No action button — params must come from the Phase esc children:
-    //
-    //     Phase:2
-    //       i_elvisto:LangTiles,e:Lang_i_bookmark
-    //         esc:from,v:98
-    //         esc:to,v:132
-    //
+    //   No action button — params must come from the Phase esc children.
     //   from / to are char offsets into the doc.  If omitted or equal, the
     //   handler expands to the enclosing line (same as Ctrl+B on empty selection).
     async e_Lang_i_bookmark(A, w, e) {
-        const view = w.c.editorView
+        const docC = this.Lang_active_docC(w)
+        const view = docC?.c.view
         if (!view) throw new Error("e_Lang_i_bookmark — no editor view")
         await new Promise(resolve => setTimeout(resolve, 30))
         await tick()
@@ -509,11 +543,9 @@ IOing
     //
     //   match and replacement are JSON-encoded so commas in values don't collide
     //   with the snap key:value,key:value delimiter format.
-    //
-    //   After dispatching, saveEffect flushes bookmark positions immediately so
-    //   e_Lang_update_bookmarks receives the fresh editorState and calls think().
     async e_Lang_i_alterationStation(A, w, e) {
-        const view = w.c.editorView
+        const docC = this.Lang_active_docC(w)
+        const view = docC?.c.view
         if (!view) throw new Error("e_Lang_i_alterationStation — no editor view")
 
         const line_n      = e?.sc.line_n      as number
@@ -542,21 +574,22 @@ IOing
 
         // saveEffect flushes bookmark positions immediately — updateListener cancels
         // the debounce and fires Lang_update_bookmarks with the fresh editorState.
-        // That handler sets w.c.editorState and calls think().
-        view.dispatch({ effects: w.c.saveEffect.of(null) })
+        view.dispatch({ effects: docC.c.saveEffect.of(null) })
         console.log(`Lang_i_alterationStation — line ${line_n} [${match}] → [${replacement}], saveEffect dispatched`)
     },
 
 
 //#region bm e
-    // Ctrl+B from the editor — create a w/%bookmark at the current selection.
+    // Ctrl+B from the editor — create a w/{docC}/%bookmark at the current selection.
     //
     // The editor marks the range with a CodeMirror Decoration.mark so from/to
     // track document edits automatically. Periodic e_Lang_update_bookmarks
     // calls push the live mark positions (and a fresh editorState) back here.
     //
-    // e.sc carries: from, to, label?, editorState
+    // e.sc carries: doc, from, to, label?, view, state
     async e_Lang_add_bookmark(A: TheC, w: TheC, e: TheC) {
+        const docC = this.Lang_doc_from_event(w, e)
+
         let from  = e?.sc.from  as number | undefined;
         let to    = e?.sc.to    as number | undefined;
         const label = (e?.sc.label as string | undefined) ?? '';
@@ -572,7 +605,9 @@ IOing
             from = line.from;
             to = line.to;
         }
-        const existingBookmark = w.o({ bookmark: 1 }).find((bm: TheC) =>
+
+        // bookmarks live on docC, not w, so they can be r()'d per doc
+        const existingBookmark = docC.o({ bookmark: 1 }).find((bm: TheC) =>
             bm.sc.from === from && bm.sc.to === to
         );
         if (existingBookmark) {
@@ -584,12 +619,10 @@ IOing
         // so TheC keys and CodeMirror decoration ids survive reloads and round-trips.
         const id = `bm_${from}_${to}`;
         view.dispatch({
-            effects: w.c.addBookmarkMark.of({ id, from, to }),
+            effects: docC.c.addBookmarkMark.of({ id, from, to }),
         });
 
-        // Update the backend
-        w.i({ bookmark: id, from, to, label });
-        w.c.editorState = state;
+        docC.i({ bookmark: id, from, to, label });
         console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${label}`);
         this.i_elvisto(w, 'think', {});
     },
@@ -602,29 +635,29 @@ IOing
     // parse tree.  Any known bookmark id absent from updates[] has vanished —
     // its decoration was wiped by an edit that fully replaced its span.
     //
-    // e.sc carries: updates=[{id, from, to}], editorState
+    // e.sc carries: doc, updates=[{id, from, to}], view, state
     async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
+        const docC = this.Lang_doc_from_event(w, e)
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
-        const state   = e?.sc.state
         if (updates) {
             const seen = new Set(updates.map(u => u.id))
             for (const u of updates) {
-                const bm = w.o({ bookmark: u.id })[0] as TheC | undefined
+                const bm = docC.o({ bookmark: u.id })[0] as TheC | undefined
                 if (!bm) continue
                 if (bm.sc.from === u.from && bm.sc.to === u.to) continue
                 bm.sc.from = u.from
                 bm.sc.to   = u.to
                 bm.bump_version()
             }
-            // detect vanished bookmarks — present in w but absent from CM's live set
-            for (const bm of w.o({ bookmark: 1 }) as TheC[]) {
+            // detect vanished bookmarks — present in docC but absent from CM's live set
+            for (const bm of docC.o({ bookmark: 1 }) as TheC[]) {
                 if (!seen.has(bm.sc.bookmark)) {
-                    this.Lang_bookmark_vanished(w, bm)
+                    this.Lang_bookmark_vanished(docC, bm)
                 }
             }
         }
-        if (state) w.c.editorState = state
+        // state already updated by Lang_doc_from_event above
         this.i_elvisto(w, 'think', {})
     },
 
@@ -640,13 +673,10 @@ IOing
     //
     //   < Copy+paste tracking: when a paste lands, compare incoming text chunks
     //     against the label/content of vanished bookmarks and re-anchor any that
-    //     appear in the new location.  This is a separate reflective pass that
-    //     runs after the doc settles — it should not block the current wave.
+    //     appear in the new location.
     //
-    //   For now: log and leave the w/%bookmark particle in place so the user can
-    //   see it went missing.  whatsthis() will simply find no CM range for it
-    //   and produce no nodes — a silent gap rather than a crash.
-    Lang_bookmark_vanished(w: TheC, bm: TheC) {
+    //   Takes docC (not w) so the log context is clearly per-document.
+    Lang_bookmark_vanished(docC: TheC, bm: TheC) {
         console.warn(`🔖 bookmark vanished: ${bm.sc.bookmark} was [${bm.sc.from}..${bm.sc.to}] "${bm.sc.label}"`)
         bm.i({ vanished: 1 })
         // < re-anchor attempt goes here

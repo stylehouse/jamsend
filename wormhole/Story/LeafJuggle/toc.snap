@@ -29,8 +29,7 @@ story:LeafJuggle
   Opt
     waitCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.174
-      sample:0.239,at:1775984962
+    TimeTotal:beliefs,avg:0.163
       sample:0.208,at:1775984989
       sample:0.131,at:1776060067
       sample:0.198,at:1776061241
@@ -40,6 +39,7 @@ story:LeafJuggle
       sample:0.209,at:1776741179
       sample:0.211,at:1776914942
       sample:0.077,at:1777253630
+      sample:0.128,at:1777260458
   step,dige:c1a033d6c1ee6596
   step:2,dige:4421ff865a1d03e3
   step:3,dige:77a951ce69904d3b

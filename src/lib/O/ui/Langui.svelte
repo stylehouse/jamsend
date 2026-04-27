@@ -1,5 +1,18 @@
 <script lang="ts">
-    // Langui — CodeMirror view over w/%langtiles_doc with bookmarks.
+    // Langui — CodeMirror view over one document, identified by `doc` (path string).
+    //
+    // ── Multi-doc ────────────────────────────────────────────────────────────
+    //
+    //   Each mounted Langui instance owns exactly one EditorView for one doc.
+    //   The parent renders one Langui per open doc, hiding inactive ones with
+    //   CSS (display:none) so EditorViews are never destroyed on tab switch.
+    //
+    //   `doc` prop — the path string that keys this instance in
+    //   w/{docs:1}/{doc:path}.  Defaults to 'default' for the bootstrapping
+    //   phase before the Ghost TOC is loaded.
+    //
+    //   Every CM event carries { doc, view, state } so Lang_doc_from_event
+    //   on the backend can DRY the state update in exactly one place.
     //
     // ── Bookmark pipeline ────────────────────────────────────────────────────
     //
@@ -8,7 +21,7 @@
     //   marks.map(tr.changes) in update() automatically remaps from/to on
     //   every subsequent edit (RangeSet is the source of truth for positions).
     //
-    //   On each dispatch we fire an elvis to w:LangTiles with view,state:view.state:
+    //   On each dispatch we fire an elvis to w:LangTiles with doc,view,state:
     //     - Ctrl+B:           Lang_add_bookmark {from,to,label}
     //     - 800ms post-edit:  Lang_update_bookmarks {updates}
     //     - any text change:  Lang_set_doc      {text}
@@ -32,17 +45,16 @@
 
     import { onMount, onDestroy } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
-    import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
+    import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
-
 
     import { stho, simpleLezerLinter } from "$lib/O/stho"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H }: { H: House } = $props()
+    let { H, doc = 'default' }: { H: House, doc: string } = $props()
 
     let container: HTMLDivElement
     let view: EditorView | undefined
@@ -56,7 +68,8 @@
     let sel_from = $state(0)
     let sel_to   = $state(0)
 
-    // Find the doc C on H.ave. Same pattern as StoryRun's display effect.
+    // Find this doc's text particle on H.ave.  Keyed by path so multiple
+    // Langui instances each track their own ave/{langtiles_doc:path} particle.
     let docC: TheC | undefined = $state()
     let pullable_text = $derived.by(() => {
         void docC?.version
@@ -68,11 +81,11 @@
         if (!ave?.length) return
         // bump reactivity: touch every particle's version so we re-run on any change
         for (const p of ave) void p.version
-        const found = ave.find((p: TheC) => p.sc.langtiles_doc) as TheC | undefined
+        const found = ave.find((p: TheC) => p.sc.langtiles_doc === doc) as TheC | undefined
         docC = found
     })
 
-    // pull: when docC.text changes from outside, push it into the editor
+    // pull: when docC.text changes from outside (e.g. load from disk), push into the editor
     $effect(() => {
         if (!view) return
         const incoming = pullable_text
@@ -82,11 +95,13 @@
         })
     })
 
-
-    // message the backend about CodeMirror
-    //  we have to get the immutable view.state now, pass both via elvis
-    function Lang_i_elvis(view,method,sc) {
-        sc = {view,state:view.state, ...(sc||{})}
+    // ── Lang_i_elvis ─────────────────────────────────────────────────────────
+    //
+    //   Central CM→backend bridge.  Stamps { doc, view, state } on every event
+    //   so Lang_doc_from_event can update docC.c.view/state in one place,
+    //   and the backend always knows which document the event came from.
+    function Lang_i_elvis(view, method, sc) {
+        sc = { doc, view, state: view.state, ...(sc || {}) }
         H.i_elvisto('LangTiles/LangTiles', method, sc)
     }
 
@@ -215,9 +230,6 @@
     }])
 
 
-
-
-
     onMount(() => {
         const initial = (docC?.sc.text as string) ?? '';
         view = new EditorView({
@@ -253,7 +265,8 @@
             }),
         });
 
-        // Dispatch e:editorBegins with the initial editorState
+        // Dispatch e:editorBegins — hands the backend the CM StateEffects it
+        // needs to drive bookmarks, and registers view+state via Lang_doc_from_event.
         Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, clearAllBookmarks, saveEffect})
     });
 

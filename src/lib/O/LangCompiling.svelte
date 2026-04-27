@@ -8,15 +8,20 @@
     // Deposits onto H via M.eatfunc():
     //
     //   Lang_compile(A, w)
-    //     Entry.  Walks the document line-by-line; passes each line through
+    //     Entry.  Resolves the active docC via Lang_active_docC(w).
+    //     Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
     //     translated JS. Kicks off the rw_op 'write' via the Wormhole,
-    //     and stashes w/Compile/Output...
+    //     and stashes docC/Compile/Output...
     //
     //   Lang_compile_step(A, w)
-    //     Called from Lang(A,w) on every tick while w.c.compile_pending is set.
+    //     Called from Lang(A,w) on every tick while docC/Compile/Pending is set.
     //     Re-polls i_elvis_req; when the Wormhole reply lands, notifies
     //     Pantheate via Ghost_update_notify and clears the flag.
+    //
+    //   All compile state (Compile, compile_write, compile_error) lives on
+    //   docC — not on w — so it can be r()'d independently per document and
+    //   multiple open docs don't share compile state.
     //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
@@ -94,23 +99,30 @@
     async e_Lang_compile(A: TheC, w: TheC, _e: TheC) {
         await this.Lang_compile(A, w)
     },
+
     // Fired by the "compile" action button in Lang_plan.  Synchronously
     // builds the module source (so the user gets immediate {result:1} chunks
     // to inspect even if the disk write is slow), then kicks off the Wormhole
     // write request and hands off to Lang_compile_step for the reply phase.
+    //
+    // All compile state lives on docC (not w) so multiple open docs don't
+    // share compile state and each can be r()'d independently.
     async Lang_compile(A: TheC, w: TheC) {
         const H = this
+        const docC = this.Lang_active_docC(w)
+        if (!docC) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
+
         // Park the job as a particle so Lang_compile_step (and Story) can
         // observe it properly.  Large source stays in .c to keep sc clean.
-        const job = w.oai({ Compile: 1 })
+        const job = docC.oai({ Compile: 1 })
         job.empty()
         job.oai({Pending: 1})
 
-        const state = w.c.editorState as EditorState | undefined
+        const state = docC.c.state as EditorState | undefined
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
 
         // clear previous outputs / errors so a fresh compile is visible
-        await w.r({ compile_error: 1 }, {})
+        await docC.r({ compile_error: 1 }, {})
 
         let source: string
         try {
@@ -121,7 +133,7 @@
             for (let i = 0; i < lines.length; i++) {
                 const ln = lines[i]
                 if (0 && ln.kind === 'translated') {
-                    w.i({
+                    docC.i({
                         result: 1, chunk_i: translated_i++,
                         line_number: i + 1,
                         str: ln.text,
@@ -132,7 +144,7 @@
             const body = lines.map(l => l.text).join('\n')
             source = this.Lang_compile_render_module(body)
         } catch (err: any) {
-            w.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
+            docC.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
             return
         }
 
@@ -140,20 +152,23 @@
         H.i_elvisto(w, 'think')
     },
 
-    // Called from Lang(A,w) while compile_pending.  The Wormhole will
-    // 'think' us back when the write completes (see o_elvis_req.finish),
+    // Called from Lang(A,w) while docC/Compile/Pending is set.  The Wormhole
+    // will 'think' us back when the write completes (see o_elvis_req.finish),
     // and that re-runs Lang(A,w) which re-enters this.
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
-        const job = w.o({ Compile: 1 })[0] as TheC | undefined
+        const docC = this.Lang_active_docC(w)
+        if (!docC) return
+
+        const job = docC.o({ Compile: 1 })[0] as TheC | undefined
         if (!job) throw "!job"
         if (!job.oa({Pending:1})) return
         let [ou,...more] = job.o({Output:1})
         if (more.length) throw "many job/Output"
         if (!ou.sc.name) throw "!job/Output%name"
 
-        // stable req lives on w so we don't re-send on every tick
-        const req = w.oai(
+        // stable req lives on docC so we don't re-send on every tick
+        const req = docC.oai(
             { compile_write: 1 },
             {
                 rw_op:   'write',
@@ -168,7 +183,7 @@
         // reply is in
         const reply = req.sc.reply
         if (reply?.error) {
-            w.i({ compile_error: 1, msg: `write gen: ${reply.error}` })
+            docC.i({ compile_error: 1, msg: `write gen: ${reply.error}` })
         } else {
             w.i({ see: `📝 wrote src/lib/gen/${ou.sc.name}` })
             // notify Pantheate so it require()s the fresh module
@@ -176,9 +191,9 @@
                 { include: ou.sc.name })
         }
 
-        // cleanup
-        await w.r({ compile_write: 1 }, {})
-        // Compile stays until the next job comes in
+        // cleanup — req lives on docC, so r() it there
+        await docC.r({ compile_write: 1 }, {})
+        // Compile particle stays until the next job comes in
         await job.r({Pending:1},{})
     },
 
