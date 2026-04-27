@@ -36,6 +36,7 @@
     // Auto spawns H:LangTiles as a subHouse and calls Run_A_LangTiles on it.
     Run_A_LangTiles(this: House) {
         const H = this
+        H.i({ A: 'LieSurgery' }).i({ w: 'LieSurgery' })
         H.i({ A: 'LangTiles' }).i({ w: 'LangTiles' })
         H.i({ A: 'Cyto'      }).i({ w: 'Cyto'      })
         H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })

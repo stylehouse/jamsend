@@ -149,8 +149,7 @@
         }
 
         // gen_path comes from docC (set by e_Lang_open_doc via LieSurgery).
-        // Falls back to a safe default if somehow absent.
-        const gen_path = (docC.sc.gen_path as string) ?? 'gen/unknown.go'
+        const gen_path = (docC.sc.gen_path as string)
         job.oai({Output:1, gen_path, source, dige:await dig(source)})
         H.i_elvisto(w, 'think')
     },

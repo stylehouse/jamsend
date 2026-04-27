@@ -76,6 +76,9 @@ story:LangTiles
     matstyle:req_sent
       style:background-color,v:#c93641
   Plan
+    Phase
+      i_elvisto:LieSurgery,e:LieSurgery_open_doc
+        esc:path,v:Ghost/test/LangTiles.g
     Phase:2
       i_elvisto:LangTiles,e:Lang_i_bookmark
         esc:from,v:98

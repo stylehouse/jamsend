@@ -77,12 +77,13 @@
             // request and return.  Wormhole calls think() when done.  On
             // re-entry, oai() finds the same req particle with the reply on it.
             const rw  = await H.requesty_serial(w, 'rw_queue')
-            const req = await rw.oai({ rw_name: `wormhole/${path}`, rw_op: 'read' })
+            const req = await rw.oai({ rw_name: `${path}`, rw_op: 'read' })
             if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
                 return w.i({ see: `⏳ loading ${path}…` })
 
             // file absent on first run → open blank doc; user writes from scratch,
             // compile + write-back will create it.
+            if (req.sc.reply?.not_found) throw "nofoundo"
             const text: string = req.sc.reply?.not_found
                 ? ''
                 : (req.sc.reply?.content ?? '')
@@ -104,8 +105,9 @@
     // Ghost/test/LangTiles.g  →  gen/test/LangTiles.go
     // Ghost/Foo.g             →  gen/Foo.go
     LieSurgery_gen_path(path: string): string {
+        if (!path.match(/^.*Ghost\//)) throw "can't derive gen_path without seeing a Ghost/ directory"
         return path
-            .replace(/^Ghost\//, 'gen/')
+            .replace(/^.*Ghost\//, 'gen/')
             .replace(/\.g$/, '.go')
     },
 
