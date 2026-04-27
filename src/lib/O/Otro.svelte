@@ -5,8 +5,8 @@
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { Travel } from "$lib/mostly/Selection.svelte";
-    import { tick } from "svelte";
     import StoryRun from "./ui/StoryRun.svelte";
+    import NaviScroll from "./ui/NaviScroll.svelte";
 
     // A Work subclass with a withitall() method
     class WithItAll extends Work {
@@ -53,7 +53,7 @@
     })
     $effect(() => {
         if (!setup_done) return
-        houses = H.all_House 
+        houses = H.all_House
     })
 
     // ── reactive house list via H.all_House ───────────────────────────────────
@@ -70,321 +70,60 @@
         H.stashed.things += 1
         H.i_elvisto(H, 'think')
     }
-
-
-    
-    
-    //#region naviscroll
-    const HEADER_HEIGHT_REM = 1.75 // keep in sync with CSS
-    const RESTORE_WINDOW_MS = 3000 // after Mundo start / resetStory, seek newcomers
-
-
-    function remToPx(rem: number) {
-        return rem * parseFloat(getComputedStyle(document.documentElement).fontSize)
-    }
-
-    // direct children of house
-    function childrenOf(house) {
-        const ip = house?.c?.ip
-        if (!ip) return []
-        const depth = ip.split('_').length
-        return houses.filter(h =>
-            h.c?.ip?.startsWith(ip + '_')
-            && h.c.ip.split('_').length === depth + 1
-        )
-    }
-    
-    // walk up from a house collecting names, excluding the root Mundo
-    function house_path(house): string {
-        const parts: string[] = []
-        let h = house
-        while (h?.up) {          // stop before the root
-            parts.unshift(h.name)
-            h = h.up
-        }
-        return parts.join('/')
-    }
-
-    // find current house matching a stored path
-    function house_by_path(path: string) {
-        if (!path) return undefined
-        const parts = path.split('/')
-        let h = H              // start from root Mundo
-        for (const name of parts) {
-            h = h?.subHouses?.find(c => c.name === name)
-            if (!h) return undefined
-        }
-        return h
-    }
-
-    function scrollToHouseIdx(idx: number) {
-        if (idx < 0 || idx >= houses.length) return
-        const house = houses[idx]
-        if (H?.stashed && house) {
-            H.stashed.gazed_house_path = house_path(house)
-        }
-        _scrollToHouseEl(house, idx)
-    }
-
-    function _scrollToHouseEl(house, idx: number) {
-        const header = document.getElementById(`house-${house.c.ip}`)
-        if (!header) return
-
-        const headerPx = remToPx(HEADER_HEIGHT_REM)
-        const sticky_before = houses.slice(0, idx)
-            .filter(h => h?.actions?.length > 0).length
-        const this_is_sticky = house?.actions?.length > 0
-
-        if (this_is_sticky) {
-            const content = header.nextElementSibling as HTMLElement | null
-            if (!content) return
-            const contentTop = content.getBoundingClientRect().top + window.scrollY
-            window.scrollTo({
-                top: contentTop - (sticky_before + 1) * headerPx,
-                behavior: 'smooth',
-            })
-        } else {
-            const headerTop = header.getBoundingClientRect().top + window.scrollY
-            window.scrollTo({
-                top: headerTop - sticky_before * headerPx,
-                behavior: 'smooth',
-            })
-        }
-    }
-
-    function scrollToHouseIp(ip: string) {
-        scrollToHouseIdx(houses.findIndex(h => h.c?.ip === ip))
-    }
-
-    //#region gaze restoration
-    // Track which House ips have appeared so we can detect newcomers.
-    // Within RESTORE_WINDOW_MS of Mundo starting (or a resetStory elvis), if
-    // the gazed ip turns up in all_House, seek to it.
-    let seen_ips = new Set<string>()
-    let restore_deadline = 0          // Date.now() ms; 0 = not restoring
-    let restored_once = false          // don't chase the same ip forever
-
-    // Mundo start: open window once
-    $effect(() => {
-        if (!H?.started) return
-        H.c.restore_window_until = Date.now() + RESTORE_WINDOW_MS
-        restored_once = false
-    })
-
-    // Whenever the houses list changes, note new ips and maybe seek the gazed one.
-    let last_seen_deadline = 0
-    $effect(() => {
-        if (!houses?.length) return
-        const gazed_path = H?.stashed?.gazed_house_path as string | undefined
-        const deadline = H?.c?.restore_window_until ?? 0
-
-        // new window opened since we last looked — reset
-        if (deadline > last_seen_deadline) {
-            last_seen_deadline = deadline
-            restored_once = false
-        }
-
-        const current_ips = new Set(houses.map(h => h.c?.ip).filter(Boolean))
-        const newcomers: string[] = []
-        for (const ip of current_ips) {
-            if (!seen_ips.has(ip)) newcomers.push(ip)
-        }
-        seen_ips = current_ips
-
-        if (!gazed_path || restored_once) return
-        if (Date.now() > deadline) return
-        if (!newcomers.length) return
-
-        const target = house_by_path(gazed_path)
-        if (!target || !newcomers.includes(target.c.ip)) return
-
-        restored_once = true
-        setTimeout(async () => {
-            await tick()
-            scrollToHouseIpStable(target.c.ip)
-        }, 50)
-    })
-
-    // Phase 1: poll fn() until two consecutive reads match (layout settled).
-    // Phase 2: wait confirm_ms, read once more, must still match.
-    // Phase 3: scroll to target, then for chase_ms keep re-reading every
-    //          chase_interval_ms; if drift > 5px, scroll again. User scroll
-    //          detection aborts phase 3 immediately.
-    function settle_then_chase(
-        fn: () => number | null,
-        scroll_to: () => void,
-        opts: {
-            interval_ms?: number
-            max_attempts?: number
-            confirm_ms?: number
-            chase_ms?: number
-            chase_interval_ms?: number
-            drift_px?: number
-            still_ms?: number
-        } = {},
-    ) {
-        const interval_ms       = opts.interval_ms       ?? 50
-        const max_attempts      = opts.max_attempts      ?? 40
-        const confirm_ms        = opts.confirm_ms        ?? 100
-        const chase_ms          = opts.chase_ms          ?? 1500
-        const chase_interval_ms = opts.chase_interval_ms ?? 100
-        const drift_px          = opts.drift_px          ?? 5
-        const still_ms          = opts.still_ms          ?? 500
-
-        let prev: number | null = null
-        let attempts = 0
-
-        // ── phase 1: settle ────────────────────────────────────────────
-        const settle_tick = () => {
-            attempts++
-            const v = fn()
-            if (v == null) {
-                if (attempts < max_attempts) setTimeout(settle_tick, interval_ms)
-                return
-            }
-            if (prev != null && v === prev) {
-                // two matched — phase 2
-                setTimeout(() => confirm_tick(v), confirm_ms)
-                return
-            }
-            prev = v
-            if (attempts < max_attempts) setTimeout(settle_tick, interval_ms)
-        }
-
-        // ── phase 2: confirm ───────────────────────────────────────────
-        const confirm_tick = (expected: number) => {
-            const v = fn()
-            if (v == null || v !== expected) {
-                // lost it — back to settling
-                prev = v
-                if (attempts < max_attempts) setTimeout(settle_tick, interval_ms)
-                return
-            }
-            // confirmed — phase 3
-            begin_chase()
-        }
-
-        // ── phase 3: scroll + chase ────────────────────────────────────
-        const begin_chase = () => {
-            scroll_to()
-
-            // snapshot scroll position right after scrollTo starts
-            // (smooth scroll is async, so sample after a tick)
-            let last_scroll_y = window.scrollY
-            let user_scrolled = false
-            const chase_start = Date.now()
-            let last_drift_t = Date.now()       // ← last time target moved
-
-            // Settle our baseline a moment after scrollTo fires
-            setTimeout(() => { last_scroll_y = window.scrollY }, chase_interval_ms)
-
-            const chase_tick = () => {
-                if (user_scrolled) return
-                if (Date.now() - chase_start > chase_ms) return
-                if (Date.now() - last_drift_t > still_ms) return   // ← bail if still
-
-                const dy = Math.abs(window.scrollY - last_scroll_y)
-                if (dy > drift_px) last_scroll_y = window.scrollY
-
-                const v = fn()
-                if (v != null && Math.abs(v - (prev ?? v)) > drift_px) {
-                    // target drifted — re-scroll, update prev
-                    prev = v
-                    last_drift_t = Date.now()                       // ← drift resets timer
-                    scroll_to()
-                    setTimeout(() => { last_scroll_y = window.scrollY }, chase_interval_ms)
-                }
-
-                setTimeout(chase_tick, chase_interval_ms)
-            }
-
-            // user scroll listener — any wheel/touch/keydown input aborts chase
-            const abort = () => { user_scrolled = true }
-            window.addEventListener('wheel',     abort, { once: true, passive: true })
-            window.addEventListener('touchmove', abort, { once: true, passive: true })
-            window.addEventListener('keydown',   abort, { once: true })
-            // cleanup after chase window
-            setTimeout(() => {
-                window.removeEventListener('wheel',     abort)
-                window.removeEventListener('touchmove', abort)
-                window.removeEventListener('keydown',   abort)
-            }, chase_ms + 100)
-
-            setTimeout(chase_tick, chase_interval_ms)
-        }
-
-        settle_tick()
-    }
-
-    function scrollToHouseIpStable(ip: string) {
-        const idx = houses.findIndex(h => h.c?.ip === ip)
-        if (idx < 0) return
-        const house = houses[idx]
-
-        const measure = () => {
-            const header = document.getElementById(`house-${house.c.ip}`)
-            if (!header) return null
-            const content = header.nextElementSibling as HTMLElement | null
-            const el = (house?.actions?.length > 0 && content) ? content : header
-            return Math.round(el.getBoundingClientRect().top + window.scrollY)
-        }
-
-        settle_then_chase(measure, () => scrollToHouseIdx(idx))
-    }
-
-    //#region each house
 </script>
 
-{#each houses as house, i (house.c.ip)}
-    {@const hasActions = house?.actions?.length > 0}
-    {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
-    {@const kids = childrenOf(house)}
-    <div class="house-header"
-        class:sticky={hasActions}
-        id="house-{house.c.ip}"
-        style="--stack-index: {stickyIndex};">
-        <h2 class="house-name" title="navigate to this House"
-            class:clickable={hasActions}
-            onclick={hasActions ? () => scrollToHouseIdx(i) : null}>
-            {house.name}
-            {#if !house.started}<span class='ungood'>off</span>{/if}
-            <span class="todo-count">{house.todo.length || ''}</span>
-        </h2>
-        <div class="house-nav">
-            <span class="arrow arrow-up" title="navigate to the previous House"
-                class:disabled={i === 0}
-                onclick={() => i > 0 && scrollToHouseIdx(i - 1)}>▲</span>
-            <span class="arrow arrow-down" title="navigate to the next House"
-                class:disabled={i === houses.length - 1}
-                onclick={() => i < houses.length - 1 && scrollToHouseIdx(i + 1)}>▼</span>
-        </div>
-        {#if kids.length}
-            <span class="kids-sep">/</span>
-            <div class="house-kids">
-                {#each kids as kid (kid.c.ip)}
-                    <span class="kid" title="navigate to this House"
-                        onclick={() => scrollToHouseIp(kid.c.ip)}>
-                        {kid.name}
-                    </span>
-                {/each}
+<NaviScroll {H} {houses}>
+    {#snippet children({ scrollToHouseIdx, scrollToHouseIp, childrenOf })}
+        {#each houses as house, i (house.c.ip)}
+            {@const hasActions = house?.actions?.length > 0}
+            {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
+            {@const kids = childrenOf(house)}
+            <div class="house-header"
+                class:sticky={hasActions}
+                id="house-{house.c.ip}"
+                style="--stack-index: {stickyIndex};">
+                <h2 class="house-name" title="navigate to this House"
+                    class:clickable={hasActions}
+                    onclick={hasActions ? () => scrollToHouseIdx(i) : null}>
+                    {house.name}
+                    {#if !house.started}<span class='ungood'>off</span>{/if}
+                    <span class="todo-count">{house.todo.length || ''}</span>
+                </h2>
+                <div class="house-nav">
+                    <span class="arrow arrow-up" title="navigate to the previous House"
+                        class:disabled={i === 0}
+                        onclick={() => i > 0 && scrollToHouseIdx(i - 1)}>▲</span>
+                    <span class="arrow arrow-down" title="navigate to the next House"
+                        class:disabled={i === houses.length - 1}
+                        onclick={() => i < houses.length - 1 && scrollToHouseIdx(i + 1)}>▼</span>
+                </div>
+                {#if kids.length}
+                    <span class="kids-sep">/</span>
+                    <div class="house-kids">
+                        {#each kids as kid (kid.c.ip)}
+                            <span class="kid" title="navigate to this House"
+                                onclick={() => scrollToHouseIp(kid.c.ip)}>
+                                {kid.name}
+                            </span>
+                        {/each}
+                    </div>
+                {/if}
+
+                {#if hasActions}
+                    <div class="house-actions">
+                        <Actions N={house.actions} />
+                    </div>
+                {/if}
             </div>
-        {/if}
-
-
-
-        {#if hasActions}
-            <div class="house-actions">
-                <Actions N={house.actions} />
-            </div>
-        {/if}
-    </div>
-    {#each house.UIs ?? [] as uiC (uiC.sc.UI)}
-        <svelte:component this={uiC.sc.component} H={house} />
-    {/each}
-    {#if house.stashed}
-        <Stuffing mem={house.imem('current')} stuff={house} M={house} />
-    {/if}
-{/each}
+            {#each house.UIs ?? [] as uiC (uiC.sc.UI)}
+                <svelte:component this={uiC.sc.component} H={house} />
+            {/each}
+            {#if house.stashed}
+                <Stuffing mem={house.imem('current')} stuff={house} M={house} />
+            {/if}
+        {/each}
+    {/snippet}
+</NaviScroll>
 
 {#if H?.stashed}
     <button onclick={upthings}>upthings ({H.stashed?.things ?? 0})</button>
