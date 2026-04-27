@@ -11,17 +11,19 @@
     //     Entry.  Resolves the active docC via Lang_active_docC(w).
     //     Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
-    //     translated JS. Kicks off the rw_op 'write' via the Wormhole,
-    //     and stashes docC/Compile/Output...
+    //     translated JS.  For hard-compiles (gen_path present), hands off
+    //     to LieSurgery via e:LieSurgery_compiled — LieSurgery owns the
+    //     write and optional Pantheate notify.  Stashes docC/Compile/Output.
     //
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) on every tick while docC/Compile/Pending is set.
-    //     Re-polls i_elvis_req; when the Wormhole reply lands, notifies
-    //     Pantheate via Ghost_update_notify and clears the flag.
+    //     Waits for e:LieSurgery_compile_settled {path} fired back by LieSurgery,
+    //     then clears docC/Compile/Pending so Story sees Lang settle.
     //
-    //   All compile state (Compile, compile_write, compile_error) lives on
+    //   All compile state (Compile, compile_error) lives on
     //   docC — not on w — so it can be r()'d independently per document and
     //   multiple open docs don't share compile state.
+    //   compile_write has moved to LieSurgery's w (keyed by path).
     //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
@@ -102,8 +104,15 @@
 
     // Fired by the "compile" action button in Lang_plan.  Synchronously
     // builds the module source (so the user gets immediate {result:1} chunks
-    // to inspect even if the disk write is slow), then kicks off the Wormhole
-    // write request and hands off to Lang_compile_step for the reply phase.
+    // to inspect even if the disk write is slow).
+    //
+    // For hard-compiles (gen_path present): fires e:LieSurgery_compiled and
+    // leaves Compile/Pending set.  LieSurgery is the airlock: it decides
+    // whether to write to disk (opt_write) and/or notify Pantheate (opt_run),
+    // then fires back e:LieSurgery_compile_settled to clear Pending.
+    //
+    // For soft-compiles (no gen_path): clears Pending immediately — nothing
+    // to write or run.  LieSurgery is not involved.
     //
     // All compile state lives on docC (not w) so multiple open docs don't
     // share compile state and each can be r()'d independently.
@@ -152,18 +161,28 @@
         // Absent gen_path means soft-compile only — abstractions are extracted
         // (methods/calls index in job/{methods:1}) but nothing is written to disk.
         const gen_path = docC.sc.gen_path as string | undefined
-        job.oai({Output:1, gen_path, source, dige:await dig(source)})
+        const dige = await dig(source)
+        job.oai({Output:1, gen_path, source, dige})
         if (!gen_path) {
             await job.r({Pending:1},{})   // no write step — soft compile done
             w.i({ see: `🔍 soft-compiled ${docC.sc.doc}` })
             return
         }
+
+        // Hand off to LieSurgery as the compile airlock.
+        // LieSurgery checks opt_write and opt_run, does the Wormhole write
+        // and/or notifies Pantheate, then fires e:LieSurgery_compile_settled
+        // back to w so Lang_compile_step can clear Pending.
+        H.i_elvisto('LieSurgery/LieSurgery', 'LieSurgery_compiled', {
+            path: docC.sc.doc, gen_path, source, dige,
+        })
         H.i_elvisto(w, 'think')
     },
 
-    // Called from Lang(A,w) while docC/Compile/Pending is set.  The Wormhole
-    // will 'think' us back when the write completes (see o_elvis_req.finish),
-    // and that re-runs Lang(A,w) which re-enters this.
+    // Called from Lang(A,w) while docC/Compile/Pending is set.
+    // Waits for e:LieSurgery_compile_settled {path} fired back by LieSurgery,
+    // then clears docC/Compile/Pending so Story sees Lang settle.
+    // (The actual write and Pantheate notify have moved to LieSurgery.)
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
         const docC = this.Lang_active_docC(w)
@@ -172,38 +191,19 @@
         const job = docC.o({ Compile: 1 })[0] as TheC | undefined
         if (!job) throw "!job"
         if (!job.oa({Pending:1})) return
-        let [ou,...more] = job.o({Output:1})
-        if (more.length) throw "many job/Output"
-        if (!ou.sc.gen_path) throw "!job/Output%gen_path"
 
-        // stable req lives on docC so we don't re-send on every tick
-        const req = docC.oai(
-            { compile_write: 1 },
-            {
-                rw_op:   'write',
-                rw_name: `src/lib/${ou.sc.gen_path}`,
-                rw_data: ou.sc.source,
-            },
-        )
-
-        const done = H.i_elvis_req(w, 'Wormhole/Wormhole', 'rw_op', { req })
-        if (!done) return   // still waiting; Wormhole will 'think' us when finished
-
-        // reply is in
-        const reply = req.sc.reply
-        if (reply?.error) {
-            docC.i({ compile_error: 1, msg: `write gen: ${reply.error}` })
-        } else {
-            w.i({ see: `📝 wrote src/lib/${ou.sc.gen_path}` })
-            // notify Pantheate so it require()s the fresh module
-            H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify',
-                { include: ou.sc.gen_path })
+        // Consume any LieSurgery_compile_settled elvises that landed on w.
+        // There may be one per recently-settled doc (multi-doc scenario).
+        for (const ev of this.o_elvis(w, 'LieSurgery_compile_settled')) {
+            const settled_path = ev.sc.path as string
+            const docs = w.o({ docs: 1 })[0] as TheC | undefined
+            const targetDocC = docs?.o({ doc: settled_path })[0] as TheC | undefined
+            if (!targetDocC) continue
+            const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
+            // Compile particle stays; only clear the Pending flag
+            if (targetJob) await targetJob.r({ Pending: 1 }, {})
+            w.i({ see: `✅ compiled ${settled_path}` })
         }
-
-        // cleanup — req lives on docC, so r() it there
-        await docC.r({ compile_write: 1 }, {})
-        // Compile particle stays until the next job comes in
-        await job.r({Pending:1},{})
     },
 
 //#endregion

@@ -1034,11 +1034,12 @@
                 continue
             }
  
-            // i() each option child verbatim into the target worker particle.
+            // i() each option child into the target's {Opt:1} container.
             // These are the real TheC objects from The**, so any future mutation
-            // to them is visible in both The and the target without a second push.
+            // is visible in both The and the target without a second push.
+            const targetOpt = target.oai({ Opt: 1 })
             for (const optParticle of bucketC.o({}) as TheC[]) {
-                target.i(optParticle)
+                targetOpt.i(optParticle)
             }
         }
     },
@@ -1486,6 +1487,25 @@
             storyH.The_set_frontier(w, frontier)
         } else {
             storyH.The_set_frontier(w, 0)   // clean: no outstanding mismatch
+        }
+
+        // Collect H%Run worker w/{Opt:1}/* into The/Opt/For/w:*/* so they
+        // persist in toc.snap.  Opts added at runtime (via action button) won't
+        // be in For yet — oai() is idempotent for already-multi-placed particles.
+        const run_name = w.sc.Book as string | undefined
+        const runH = run_name ? storyH.o({ H: run_name })[0] as House | undefined : undefined
+        if (runH) {
+            const For = storyH.The_Opt(w).oai({ For: 1 })
+            for (const actor of runH.o({ A: 1 }) as TheC[]) {
+                const wname  = actor.sc.A as string
+                const gw     = actor.o({ w: wname })[0] as TheC | undefined
+                const gwOpt  = gw?.o({ Opt: 1 })[0] as TheC | undefined
+                if (!gwOpt) continue
+                const opts   = gwOpt.o({}) as TheC[]
+                if (!opts.length) continue
+                const forW   = For.oai({ w: wname })
+                for (const p of opts) forW.oai(p.sc)
+            }
         }
 
         const snap       = await storyH.encode_toc_snap(w)

@@ -12,8 +12,14 @@ story:LakeSurfer
       style:background-color,v:#c5b759
     matstyle:error
       style:background-color,v:#298699
+    matstyle:Opt
+      style:background-color,v:#bc2476
   Plan
   Opt
+    For
+      w:LieSurgery
+        nogen
+    trickle
   TimeSpool
     TimeTotal:beliefs,avg:0.074
       sample:0.159,at:1777284360
