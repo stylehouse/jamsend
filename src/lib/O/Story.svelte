@@ -9,7 +9,7 @@
     //           Uppercase key: {Step:N}
     //           Carries: got_snap, exp_snap, dige, ok, hollow, accepted, saved.
     //           Has {watched:'ave'} in sc so enroll_watched() picks it up and
-    //           any version bump on a Step is visible to StoryRun as a reactive
+    //           any version bump on a Step is visible to Storui as a reactive
     //           change, even though the Step is not inside the ave container.
     //
     //   The   — the canonical record; what was on disk plus what was accepted.
@@ -47,7 +47,7 @@
     //
     // ── UI registration ──────────────────────────────────────────────────────
     //
-    //   Story_plan registers StoryRun into H:Story/%watched:UIs so Otro can
+    //   Story_plan registers Storui into H:Story/%watched:UIs so Otro can
     //   mount it automatically alongside whichever house it finds it on.
     //   The same container holds Cytui (registered by w:Cyto on its first tick).
     //   H.UIs = C.o({}) is populated by enroll_watched() on every bump.
@@ -119,7 +119,7 @@
     import { onMount, tick }                    from "svelte"
     import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
-    import StoryRun                       from "$lib/O/ui/StoryRun.svelte"
+    import Storui                       from "$lib/O/Storui.svelte"
 
     let { M } = $props()
     let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
@@ -934,7 +934,7 @@
         //     /%This,Story:book — same C particle as w's This (multi-placed)
         //     /%story_analysis:1
         //   H/%watched:UIs
-        //     /%UI:Story,component:StoryRun  — Otro mounts this via house.UIs
+        //     /%UI:Story,component:Storui  — Otro mounts this via house.UIs
         //
         const H = this
 
@@ -955,11 +955,11 @@
 
         H.oai_enroll(H, { watched: 'actions' })
 
-        // Register StoryRun in %watched:UIs so Otro can mount it for this house.
+        // Register Storui in %watched:UIs so Otro can mount it for this house.
         // oai_enroll creates the container once and calls enroll_watched();
         // oai on the child is idempotent — subsequent Story_plan calls are no-ops.
         const uis = H.oai_enroll(H, { watched: 'UIs' })
-        uis.oai({ UI: 'Story', component: StoryRun })
+        uis.oai({ UI: 'Story', component: Storui })
 
         const stylesC = this.The_Styles(w)
         H.watch_c(stylesC, () => H.story_save())
@@ -1108,7 +1108,7 @@
             // If disk dige ≠ toc dige the file is stale or corrupt.  We promote
             // disk_dige into The so the diff panel shows the right "expected" content
             // and Accept works normally from there.  step.sc.disk_ok surfaces the fact
-            // in StoryRun.  step.sc.checking is only set for snap_checking ok steps —
+            // in Storui.  step.sc.checking is only set for snap_checking ok steps —
             // clearing it here unblocks poll_check in that path; for mismatches it
             // was never set so clearing is a no-op.
             const n        = run.sc.check_snap as number
@@ -1582,7 +1582,7 @@
         // Toggle actions backed by w.c.* and optionally H.stashed.* (stashed:true).
         //   snap_checking: after each ok step, fetch NNN.snap from disk and verify its
         //     dige against toc.snap.  Adds one beliefs round per step (rarely needed).
-        //     Surfaces corruption as step.sc.disk_ok===false in StoryRun.
+        //     Surfaces corruption as step.sc.disk_ok===false in Storui.
         //   keep_snaps: suppress the 5-step trim of (got|exp)_snap.  Useful when you
         //     want to inspect snap content across many steps in the same session.
         await this.i_actions_to_c(w, 'snap_checking', { stashed: true, label: 'verify snaps' })

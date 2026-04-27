@@ -28,7 +28,7 @@
     import type { House } from '$lib/O/Housing.svelte'
     import { _C, objectify, type TheC }  from '$lib/data/Stuff.svelte'
     import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
-    import MatstyleEditor from './MatstyleEditor.svelte'
+    import MatstyleEditor from './ui/MatstyleEditor.svelte'
     let matstyles = $state<TheC[]>([])
     let ms_palette: string[] = []
     let ms_shapes: string[]  = []

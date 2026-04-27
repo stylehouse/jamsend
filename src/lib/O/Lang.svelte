@@ -59,7 +59,7 @@
     import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"
 
-    import Langui from "$lib/O/ui/Langui.svelte"
+    import Langui from "$lib/O/Langui.svelte"
     import type { House } from "$lib/O/Housing.svelte";
     import { EditorView } from "codemirror";
     import LangWhatwhere from "./LangWhatwhere.svelte";

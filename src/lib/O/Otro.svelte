@@ -4,8 +4,6 @@
     import { House, Work, register_class } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
-    import { Travel } from "$lib/mostly/Selection.svelte";
-    import StoryRun from "./ui/StoryRun.svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
 
     // A Work subclass with a withitall() method

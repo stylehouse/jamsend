@@ -3,16 +3,8 @@
     //  duplicate copy of requesty_serial(), where it can be shown to AI
 
     import { _C, TheC } from "$lib/data/Stuff.svelte"
-    import { syntaxTree } from "@codemirror/language"
-    import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"
 
-    import Langui from "$lib/O/ui/Langui.svelte"
-    import type { House } from "$lib/O/Housing.svelte";
-    import { EditorView } from "codemirror";
-    import LangWhatwhere from "./LangWhatwhere.svelte";
-    import LangCompiling from "./LangCompiling.svelte";
-    import LangSion from "./LangSion.svelte";
     import { exactly, grop } from "$lib/Y.svelte";
 
     let { M } = $props()

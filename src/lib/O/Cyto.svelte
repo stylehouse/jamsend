@@ -69,7 +69,7 @@
     import type { TheD, Travel } from "$lib/mostly/Selection.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount }   from "svelte"
-    import Cytui         from "./ui/Cytui.svelte"
+    import Cytui         from "./Cytui.svelte"
     import { ex, indent, sex } from "$lib/Y.svelte";
 
     let { M } = $props()
