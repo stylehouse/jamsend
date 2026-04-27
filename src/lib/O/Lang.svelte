@@ -54,7 +54,7 @@
     // Consumed by w:LangTiles, which runs one whatsthis() call per w/%bookmark
     // into a per-bookmark subcontainer under model/**.
 
-    import { _C, objectify, TheC } from "$lib/data/Stuff.svelte"
+    import { _C, TheC } from "$lib/data/Stuff.svelte"
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"
@@ -298,20 +298,21 @@ laterally(A,w,thing):
 
         // ── whatsthis cache check ────────────────────────────────────
         // CM doc ropes are immutable — identity equality is O(1) and reliable.
-        // Skip the walk entirely when neither the doc text nor bookmarks have
-        // changed since the last tick.
-        const doc_unchanged       = state && state.doc === docC?.c.last_whatsthis_doc
-        const bookmark_epoch      = bookmarks.reduce((s, bm) => `${s}+${objectify(bm.sc)}`, 0)
-        const bookmarks_unchanged = bookmark_epoch === docC?.c.last_bookmark_epoch
+        // docC.version covers everything on the doc particle: bookmark adds,
+        // removes, position updates, compile state — no need to sum child
+        // versions (they all start at 0 anyway, making a sum unreliable).
+        const doc_unchanged  = state && state.doc === docC?.c.last_whatsthis_doc
+        const docC_unchanged = docC?.version === docC?.c.last_docC_version
 
+        
         if (state && bookmarks.length) {
-            if (!(doc_unchanged && bookmarks_unchanged)) {
+            if (!(doc_unchanged && docC_unchanged)) {
                 model.empty()
                 this.whatsthis(state, model, bookmarks, opt)
                 this.wherewhatis(model, opt)
                 if (docC) {
                     docC.c.last_whatsthis_doc   = state.doc
-                    docC.c.last_bookmark_epoch  = bookmark_epoch
+                    docC.c.last_docC_version  = docC.version
                 }
             }
             // model remains
