@@ -13,7 +13,7 @@ theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
     let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1}, exactly: {although: true}}, {sc: {they: 1, can: 1, be: 1, mixed: 1}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
     la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {with: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])

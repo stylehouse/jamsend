@@ -89,11 +89,8 @@ story:LangTiles
         {"esc":"replacement","v":"/they,can,be,mixed"}
   Opt
     noCyto
-    trickle
   TimeSpool
-    TimeTotal:beliefs,avg:1.63
-      sample:1.605,at:1776912946
-      sample:2.497,at:1776929384
+    TimeTotal:beliefs,avg:1.611
       sample:2.399,at:1776933862
       sample:2.05,at:1777165556
       sample:1.038,at:1777188045
@@ -102,8 +99,10 @@ story:LangTiles
       sample:1.442,at:1777192172
       sample:1.324,at:1777204424
       sample:1.003,at:1777253562
+      sample:1.955,at:1777262392
+      sample:1.964,at:1777262402
   step,dige:e5ebf5553718a96f
   step:2,dige:345182bcabe67b10
   step:3,dige:9c318fe97629fcb7
-  step:4,dige:f1ad96fac69589a1
+  step:4,dige:93a618f7684c2a59
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone

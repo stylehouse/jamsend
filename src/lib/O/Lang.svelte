@@ -54,7 +54,7 @@
     // Consumed by w:LangTiles, which runs one whatsthis() call per w/%bookmark
     // into a per-bookmark subcontainer under model/**.
 
-    import { _C, TheC } from "$lib/data/Stuff.svelte"
+    import { _C, objectify, TheC } from "$lib/data/Stuff.svelte"
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"
@@ -198,8 +198,12 @@ laterally(A,w,thing):
     //
     //   Returns the docC so the caller can operate on it directly.
     Lang_doc_from_event(w: TheC, e: TheC): TheC {
-        const path = e.sc.doc as string
-        if (!path) throw 'Lang_doc_from_event: no doc key on event'
+        // e.sc.doc is stamped by Langui's Lang_i_elvis on every CM-sourced event.
+        // Internally-fired events (e.g. e_Lang_i_bookmark → Lang_add_bookmark,
+        // or automated test macros) don't go through Langui, so fall back to
+        // the active doc — which is always the right target in that case.
+        const path = (e.sc.doc as string) ?? (w.c.active_doc_path as string)
+        if (!path) throw 'Lang_doc_from_event: no doc and no active doc yet'
         const docs = w.oai({ docs: 1 })
         const docC = docs.oai({ doc: path })
         // update view + state in exactly one place
@@ -297,17 +301,23 @@ laterally(A,w,thing):
         // Skip the walk entirely when neither the doc text nor bookmarks have
         // changed since the last tick.
         const doc_unchanged       = state && state.doc === docC?.c.last_whatsthis_doc
-        const bookmark_epoch      = bookmarks.reduce((s, bm) => s + bm.version, 0)
+        const bookmark_epoch      = bookmarks.reduce((s, bm) => `${s}+${objectify(bm.sc)}`, 0)
         const bookmarks_unchanged = bookmark_epoch === docC?.c.last_bookmark_epoch
 
-        model.empty()
-        if (state && bookmarks.length && !(doc_unchanged && bookmarks_unchanged)) {
-            this.whatsthis(state, model, bookmarks, opt)
-            this.wherewhatis(model, opt)
-            if (docC) {
-                docC.c.last_whatsthis_doc   = state.doc
-                docC.c.last_bookmark_epoch  = bookmark_epoch
+        if (state && bookmarks.length) {
+            if (!(doc_unchanged && bookmarks_unchanged)) {
+                model.empty()
+                this.whatsthis(state, model, bookmarks, opt)
+                this.wherewhatis(model, opt)
+                if (docC) {
+                    docC.c.last_whatsthis_doc   = state.doc
+                    docC.c.last_bookmark_epoch  = bookmark_epoch
+                }
             }
+            // model remains
+        }
+        else {
+            model.empty()
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
