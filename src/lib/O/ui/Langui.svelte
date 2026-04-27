@@ -7,9 +7,9 @@
     //   The parent renders one Langui per open doc, hiding inactive ones with
     //   CSS (display:none) so EditorViews are never destroyed on tab switch.
     //
-    //   `doc` prop — the path string that keys this instance in
-    //   w/{docs:1}/{doc:path}.  Defaults to 'default' for the bootstrapping
-    //   phase before the Ghost TOC is loaded.
+    //   Langui receives no doc prop — it is mounted by the UIs loop with only H.
+    //   It waits for ave/{langtiles_doc:path} to arrive before rendering anything.
+    //   Until then the whole template is suppressed via {#if docC}.
     //
     //   Every CM event carries { doc, view, state } so Lang_doc_from_event
     //   on the backend can DRY the state update in exactly one place.
@@ -43,7 +43,7 @@
     //   with `vu.docChanged`, so cursor movement alone doesn't send update
     //   traffic — only actual document edits schedule the 800ms re-run.
 
-    import { onMount, onDestroy } from "svelte"
+    import { onDestroy } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
@@ -54,9 +54,11 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, doc = '' }: { H: House, doc: string } = $props()
+    let { H }: { H: House } = $props()
 
-    let container: HTMLDivElement
+    // container is $state so the creation $effect tracks when the div appears.
+    // The div only renders once docC is truthy, so this naturally gates construction.
+    let container: HTMLDivElement | undefined = $state()
     let view: EditorView | undefined
 
     const UPDATE_DELAY_MS = 800
@@ -70,15 +72,15 @@
 
     // ── active doc tracking ──────────────────────────────────────────────────
     //
-    //   Langui is mounted once (with a fallback `doc` prop) but must show
-    //   whichever doc Lang_set_active_doc has made current.  The backend
-    //   stamps ave/{active_doc:1}.path whenever the active doc changes, so
-    //   we watch that signal rather than the fixed prop.
+    //   Langui is mounted once (with no doc prop) but must show whichever doc
+    //   Lang_set_active_doc has made current.  The backend stamps
+    //   ave/{active_doc:1}.path whenever the active doc changes, so we watch
+    //   that signal rather than a fixed prop.
     //
     //   active_path drives both the ave text lookup and the `doc` stamp on
     //   every CM event — so the backend always knows which doc an event
     //   came from, even after the active doc switches.
-    let active_path = $state(doc)   // start empty, upgraded once ave/{active_doc:1} lands
+    let active_path = $state('')   // starts empty; upgraded once ave/{active_doc:1} lands
 
     $effect(() => {
         const ave = H.ave
@@ -88,9 +90,9 @@
         if (sig?.sc.path) active_path = sig.sc.path as string
     })
 
-    // Re-register view + state with the backend whenever the active path changes.
-    // editorBegins also fires from onMount (when active_path may still be ''),
-    // so this $effect covers the case where LieSurgery opens a doc after mount.
+    // Re-register view + state with the backend whenever the active path changes
+    // after the initial editorBegins (which is fired inline after view creation).
+    // This $effect handles doc switches that happen after the view already exists.
     $effect(() => {
         if (!view || !active_path) return
         void active_path   // track changes
@@ -102,10 +104,13 @@
     //   Watch the ave/{langtiles_doc:active_path} particle for the current doc.
     //   When active_path changes (doc switch) or the text is updated from
     //   outside (load from disk), push the new content into the EditorView.
-    let docTextC: TheC | undefined = $state()
+    //
+    //   docC arriving for the first time also unblocks {#if docC} in the
+    //   template, which renders the container div and triggers view creation.
+    let docC: TheC | undefined = $state()
     let pullable_text = $derived.by(() => {
-        void docTextC?.version
-        return (docTextC?.sc.text as string) ?? ''
+        void docC?.version
+        return (docC?.sc.text as string) ?? ''
     })
 
     $effect(() => {
@@ -113,10 +118,10 @@
         if (!ave?.length) return
         for (const p of ave) void p.version
         const path = active_path
-        docTextC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
+        docC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
     })
 
-    // pull: when docTextC.text changes from outside (e.g. load from disk), push into the editor
+    // pull: when docC.text changes from outside (e.g. load from disk), push into the editor
     $effect(() => {
         if (!view) return
         const incoming = pullable_text
@@ -131,7 +136,7 @@
     //   Central CM→backend bridge.  Stamps { doc, view, state } on every event
     //   so Lang_doc_from_event can update docC.c.view/state in one place,
     //   and the backend always knows which document the event came from.
-    //   Uses active_path (not the fixed prop) so the stamp stays correct
+    //   Uses active_path (not a fixed prop) so the stamp stays correct
     //   after a doc switch.
     function Lang_i_elvis(view, method, sc) {
         sc = { doc: active_path, view, state: view.state, ...(sc || {}) }
@@ -269,9 +274,19 @@
         },
     }])
 
-
-    onMount(() => {
-        const initial = (docTextC?.sc.text as string) ?? '';
+    // ── EditorView construction ──────────────────────────────────────────────
+    //
+    //   Deferred until container is bound, which only happens after {#if docC}
+    //   becomes true (i.e. the first ave/%langtiles_doc particle has arrived).
+    //   We use docC.sc.text as the initial content so the editor is never
+    //   constructed with an empty-string placeholder.
+    //
+    //   Lang_editorBegins is fired inline here (active_path is already set by
+    //   the time docC arrives).  The separate active_path $effect above handles
+    //   subsequent doc switches that happen after the view exists.
+    $effect(() => {
+        if (!container || view) return   // only create once; wait for the div
+        const initial = (docC?.sc.text as string) ?? 'there was no docC%text'
         view = new EditorView({
             parent: container,
             state: EditorState.create({
@@ -307,8 +322,8 @@
 
         // Dispatch e:editorBegins — hands the backend the CM StateEffects it
         // needs to drive bookmarks, and registers view+state via Lang_doc_from_event.
-        // Lang_i_elvis(view,'Lang_editorBegins', {addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect})
-    });
+        Lang_i_elvis(view, 'Lang_editorBegins', { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
+    })
 
     onDestroy(() => {
         if (update_timer) clearTimeout(update_timer)
@@ -316,15 +331,17 @@
     })
 </script>
 
+{#if docC}
 <div class="lte">
     <div class="lte-bar">
         <span class="lte-title">LangTiles editor</span>
         <span class="lte-hint">Ctrl+B — add mark</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
-        <span class="lte-len">{(docTextC?.sc.text as string ?? '').length} chars</span>
+        <span class="lte-len">{(docC.sc.text as string ?? '').length} chars</span>
     </div>
     <div class="lte-cm" bind:this={container}></div>
 </div>
+{/if}
 
 <style>
     .lte {

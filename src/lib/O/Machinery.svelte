@@ -56,8 +56,10 @@
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"
             // once required, it will HMR from here on
+            // < check the in-compiled-code-meta-data dige we expect comes on
+            //   or there could be a vite compile problem
             if (!w.oa({include:me.sc.include})) {
-                const module = await import(`../../lib/gen/${me.sc.include}`)
+                const module = await import(`../../lib/${me.sc.include}`)
                 // Extract the component from the .default property
                 const component = module.default;
                 const uis = this.oai_enroll(this, { watched: 'UIs' })

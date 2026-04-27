@@ -775,7 +775,7 @@
             matching_any: [{ sc: { Compile:1, } }],
             means: {
                 thence_matching: [
-                    { matching_any: [{ sc: { Output:1, name:1, source:1, dige:1 } }],
+                    { matching_any: [{ sc: { Output:1, source:1, dige:1 } }],
                       means: { blockquote_these_sc: {source:1} } },
                 ]
             }

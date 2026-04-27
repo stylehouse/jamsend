@@ -1,7 +1,17 @@
 Snap:H
   H:LangTiles,Run
+    A:LieSurgery
+      {"mung":["age"]}	self,round:5
+      w:LieSurgery
+        open_req,path:Ghost/test/LangTiles.g,done
+        requesty_rw_queue_serial,i:2
+        {"ref":{"reply":"Object()"}}	requesty_rw_queue,rw_name:Ghost/test/LangTiles.g,rw_op:read,req_i,finished:true
+          req_sent
+        loaded_doc,path:Ghost/test/LangTiles.g,gen_path:gen/test/LangTiles.go
+        {"mung":["age"]}	self,round:5
+        see:🗂 1 doc
     A:LangTiles
-      {"mung":["age"]}	self,round:6
+      {"mung":["age"]}	self,round:7
       w:LangTiles
         model,cyto_dir
           Line:6,line_from:94,line_to:132,the_bm_bm_98_132,line_number:6,label:L6,containium
@@ -184,10 +194,11 @@ Snap:H
             {"ref":{"source":"node:PeelKey, from:127, to:132, str:mixed, parent_name:PeelItem, parent_from:127, parent_to:132","target":"node:Name, from:127, to:132, str:mixed, parent_name:PeelKey, parent_from:127, parent_to:132","style":"Object()"}}	cyto_edge,syntax_parent_edge,child_from:127,child_to:132,parent_from:127,parent_to:132,parent_name:PeelKey,label:
             {"ref":{"top":"node:PeelKey, from:127, to:132, str:mixed, parent_name:PeelItem, parent_from:127, parent_to:132","bottom":"node:Name, from:127, to:132, str:mixed, parent_name:PeelKey, parent_from:127, parent_to:132"}}	cyto_cons,label:parentAbove,type:relativePlacementConstraint,axis:vertical,gap:14
         docs
-          doc:default,active
+          doc:Ghost/test/LangTiles.g,gen_path:gen/test/LangTiles.go,active
             {"bookmark":"bm_98_132","from":98,"to":132,"label":"o hut/although:1,they,ca"}
+        received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins
-        {"mung":["age"]}	self,round:6
+        {"mung":["age"]}	self,round:7
         see:🟦 tiles 1 bookmarks
         cyto_root,cyto_id:cytoid_1
           {"ref":{"style":"Object()"}}	{"cyto_node":1,"scan_id":"scanid_1_1","label":"L6","isCompound":true,"parent":null,"cyto_id":"cytoid_1_1"}
@@ -496,8 +507,9 @@ Snap:H
       {"ref":{"options":"[Object(),Object(),Object(),Object()]","on_pick":"Function()"}}	action,role:layout_picker,kind:dropdown,label:layout engine,icon:,cls:default,value:fcose
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo ✓,cls:toggle-on
       {"ref":{"fn":"Function()"}}	action,role:compi,label:compi,icon:compi,cls:toggle-off
+    watched:graph
+      {"ref":{"wave":"CytoWave:1, duration:0.4, constraints:Object(), step_n:null","waves":"[]"}}	cyto_graph,layout_name:fcose,tick
     watched:ave
-      {"langtiles_doc":"default","text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    H.severally(A,w,555)\n},\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n\n"}
       Styles
         matstyle:w
           style:background-color,v:#8f3232
@@ -574,6 +586,6 @@ Snap:H
           style:background-color,v:#3a62a6
         matstyle:req_sent
           style:background-color,v:#c93641
-    watched:graph
-      {"ref":{"wave":"CytoWave:1, duration:0.4, constraints:Object(), step_n:null","waves":"[]"}}	cyto_graph,layout_name:fcose,tick
+      {"langtiles_doc":"Ghost/test/LangTiles.g","text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    H.severally(A,w,555)\n},\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n"}
+      active_doc,path:Ghost/test/LangTiles.g
     {"mung":["id"]}	mo:main,interval:3.6
