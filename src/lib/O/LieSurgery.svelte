@@ -43,16 +43,6 @@
     onMount(async () => {
     await M.eatfunc({
 
-    // ── wiring ───────────────────────────────────────────────────────────────
-    //
-    //   Called from Run_A_LangTiles after the other wires.
-    //   Adds w:LieSurgery under the same A:LangTiles as w:Lang.
-    Run_A_LieSurgery(this: House) {
-        const A = this.o({ A: 'LangTiles' })[0] || this.i({ A: 'LangTiles' })
-        if (!A.o({ w: 'LieSurgery' }).length) A.i({ w: 'LieSurgery' })
-        console.log(`🗂 ${this.name} LieSurgery wired`)
-    },
-
     // ── e_LieSurgery_open_doc ────────────────────────────────────────────────
     //
     //   Entry point from Story Plan Phases.  Queues an open_req; the main

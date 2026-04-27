@@ -758,11 +758,11 @@
                                 {/each}
                             </div>
 
-                            <!-- right column: invisible squish spacers keep row heights in sync -->
+                            <!-- right column: identical squish markup keeps row heights in sync -->
                             <div class="sr-diff2-col" onscroll={sync_col_scroll}>
                                 {#each diff_rows as row, i (i)}
                                     {#if row.kind === 'squish'}
-                                        <div class="sr-squish" style="visibility:hidden" aria-hidden="true">… {row.count} unchanged</div>
+                                        <div class="sr-squish">… {row.count} unchanged</div>
                                     {:else if row.kind === 'pair' && row.tag === 'same'}
                                         <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
                                     {:else if row.kind === 'pair' && row.tag === 'changed'}
@@ -1085,6 +1085,9 @@
 
 .sr-diff2-cell {
     padding: 0 8px; border-left: 2px solid transparent;
+    /* empty placeholder cells (left_only/right_only) have no content, so they'd collapse
+       to zero height without this — causing column height drift over many such rows */
+    min-height: 1lh;
 }
 .sr-diff2-cell:hover { background: #181818; }
 /* row-kind backgrounds and accents — applied per-cell now that rows are gone */
