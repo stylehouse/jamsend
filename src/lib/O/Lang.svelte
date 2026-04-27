@@ -196,9 +196,13 @@
         docC.c.clearAllBookmarks = e.sc.clearAllBookmarks
         docC.c.saveEffect        = e.sc.saveEffect
 
-        // Make this doc active (first one in wins; tab switching calls
-        // Lang_set_active_doc explicitly later).
-        if (!w.c.active_doc_path) this.Lang_set_active_doc(w, e.sc.doc as string)
+        // Make this doc active.  'default' is the Langui fallback prop value —
+        // it must never steal active_doc_path from a real doc opened by LieSurgery.
+        // Real docs call Lang_set_active_doc via e_Lang_open_doc; 'default' only
+        // wins if nothing else has registered yet AND no real doc is coming.
+        if (!w.c.active_doc_path && e.sc.doc !== 'default') {
+            this.Lang_set_active_doc(w, e.sc.doc as string)
+        }
 
         w.i({received:1,editorBegins:1})
     },

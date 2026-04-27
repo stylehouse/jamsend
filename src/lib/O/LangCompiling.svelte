@@ -150,6 +150,7 @@
 
         // gen_path comes from docC (set by e_Lang_open_doc via LieSurgery).
         const gen_path = (docC.sc.gen_path as string)
+        if (!gen_path) throw "!job/Output%gen_path"
         job.oai({Output:1, gen_path, source, dige:await dig(source)})
         H.i_elvisto(w, 'think')
     },
