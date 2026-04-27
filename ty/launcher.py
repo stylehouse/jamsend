@@ -8,6 +8,7 @@ import os
 import subprocess
 import select
 import psutil
+import signal
 
 
 SOCKET_DIR  = "/tmp/jamsend-supervisor"
@@ -62,15 +63,18 @@ def launch_profile(name, config):
     profile_dir = f"{PROFILE_BASE}/{name}"
     print(f"Killing and restarting Chromium for profile: {name}")
 
-    # Kill the specific known process instead of pattern-matching all cmdlines
+    # Kill the entire process group — SIGTERM to the coordinator alone leaves
+    # renderer subprocesses (including Oh Snap tabs) alive and hanging
     if name in processes:
         proc = processes[name]
-        proc.terminate()
         try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             proc.wait(timeout=5)  # ensure it's actually gone before relaunching
+        except ProcessLookupError:
+            pass  # already dead
         except subprocess.TimeoutExpired:
             print(f"Profile '{name}' didn't exit cleanly, sending SIGKILL...")
-            proc.kill()
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
             proc.wait()  # reap the zombie after SIGKILL (no timeout — SIGKILL is not ignorable)
 
     processes[name] = subprocess.Popen([
@@ -83,7 +87,8 @@ def launch_profile(name, config):
             "--disable-infobars",                           # suppress other notification bars
             config["url"],
         ],
-        stderr=subprocess.PIPE  # capture crash reason
+        start_new_session=True,  # puts Chrome in its own process group so killpg works
+        stderr=subprocess.PIPE   # capture crash reason
     )
     # give it a moment then check if it already died
     import time; time.sleep(1)
