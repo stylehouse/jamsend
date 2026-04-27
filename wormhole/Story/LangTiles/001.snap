@@ -10,9 +10,9 @@ Snap:H
         {"mung":["age"]}	self,round:4
         loaded_doc,path:Ghost/test/LangTiles.g,gen_path:gen/test/LangTiles.go
         see:🗂 1 doc
-    A:LangTiles
+    A:Lang
       {"mung":["age"]}	self,round:3
-      w:LangTiles
+      w:Lang
         model,cyto_dir
         docs
           doc:Ghost/test/LangTiles.g,gen_path:gen/test/LangTiles.go,active

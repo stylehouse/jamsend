@@ -3,7 +3,7 @@
     //
     // ── Commission protocol ──────────────────────────────────────────────────
     //
-    //   A client (Story, LangTiles, etc.) posts e_Cyto_commission with a req
+    //   A client (Story, Lang, etc.) posts e_Cyto_commission with a req
     //   whose sc carries:
     //
     //     Scannable          — the TheC to treat as RunH-equivalent (scanned
@@ -103,7 +103,7 @@
     },
 
     // ── e_Cyto_commission ────────────────────────────────────────────────
-    // Client (Story, LangTiles, etc.) posts this with a req whose sc carries
+    // Client (Story, Lang, etc.) posts this with a req whose sc carries
     // Scannable, Styles, client_w, and capability flags.  We cache everything
     // on w.c for fast access, and watch_c the Scannable so future mutations
     // fire cyto_update_wave automatically.
@@ -562,7 +562,7 @@
     // its direct children — only A particles allowed, and A:Cyto skipped
     // outright so a Cyto never draws itself.
     //
-    // For non-H Scannables (eg LangTiles model C), the depth-0 particle
+    // For non-H Scannables (eg Lang/model C), the depth-0 particle
     // has no H key — no rule matches — no thence carries — every child
     // proceeds normally.
     cyto_visibility: [

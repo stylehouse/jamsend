@@ -265,7 +265,7 @@
 //#region The/Styles|Opt|Plan — the Story's instructions
 
     // The_Styles(w): Story's specific way of finding its styles bucket —
-    // it lives under w.c.The/{Styles:1}.  Other clients (LangTiles etc.)
+    // it lives under w.c.The/{Styles:1}.  Other clients (Lang etc.)
     // can either call this with their own w that has a .c.The, or bring
     // their own plain TheC with {Styles:1} sc.
     The_Styles(w: TheC): TheC {
@@ -1000,9 +1000,9 @@
         // Walk The/Opt/For/* and for each {w:Name} bucket, find the matching
         // worker particle in Run (%A/%w:Name) and w.i() each option child into it.
         //
-        // The/Opt/For/{w:LangTiles}     ← For/* must be {w:SomeName}, throws otherwise
+        // The/Opt/For/{w:Lang}     ← For/* must be {w:SomeName}, throws otherwise
         //   /{key:val, ...}             ← each child is i()'d verbatim into the target
-        //   → Run/%A/%w:LangTiles       ← any A; matched by w key
+        //   → Run/%A/%w:Lang       ← any A; matched by w key
         //
         // The option particles are the actual TheC objects from The**, so they
         // round-trip through toc.snap as part of The and don't need separate saving.

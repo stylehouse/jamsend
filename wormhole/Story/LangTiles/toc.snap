@@ -80,23 +80,20 @@ story:LangTiles
       i_elvisto:LieSurgery,e:LieSurgery_open_doc
         esc:path,v:Ghost/test/LangTiles.g
     Prep:2
-      i_elvisto:LangTiles,e:Lang_i_bookmark
+      i_elvisto:Lang,e:Lang_i_bookmark
         esc:from,v:98
         esc:to,v:132
     Prep:3
-      i_elvisto:LangTiles,e:Lang_compile
+      i_elvisto:Lang,e:Lang_compile
     Prep:4
-      i_elvisto:LangTiles,e:Lang_i_alterationStation
+      i_elvisto:Lang,e:Lang_i_alterationStation
         esc:line_n,v:6
         {"esc":"match","v":",they,can,be,mixed"}
         {"esc":"replacement","v":"/they,can,be,mixed"}
   Opt
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:1.425
-      sample:1.848,at:1777266786
-      sample:2.571,at:1777268449
-      sample:1.954,at:1777275648
+    TimeTotal:beliefs,avg:1.126
       sample:1.079,at:1777275659
       sample:0.985,at:1777276019
       sample:0.931,at:1777276033
@@ -104,8 +101,11 @@ story:LangTiles
       sample:0.995,at:1777276984
       sample:1.004,at:1777277168
       sample:1.119,at:1777278377
-  step,dige:3a9dfd380de6bf7d
-  step:2,dige:a715237a6a8907bf
-  step:3,dige:6d2484cb33be89e1
-  step:4,dige:a8d3a2e25a9b86a2
+      sample:1.07,at:1777284327
+      sample:1.222,at:1777285722
+      sample:1.081,at:1777285744
+  step,dige:49488ca3b4f6cb41
+  step:2,dige:fdfd123f3c8ca0e4
+  step:3,dige:f39600e706b72567
+  step:4,dige:ffb5643369439053
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone

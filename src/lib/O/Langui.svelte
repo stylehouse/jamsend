@@ -21,7 +21,7 @@
     //   marks.map(tr.changes) in update() automatically remaps from/to on
     //   every subsequent edit (RangeSet is the source of truth for positions).
     //
-    //   On each dispatch we fire an elvis to w:LangTiles with doc,view,state:
+    //   On each dispatch we fire an elvis to w:Lang with doc,view,state:
     //     - Ctrl+B:           Lang_add_bookmark {from,to,label}
     //     - 800ms post-edit:  Lang_update_bookmarks {updates}
     //     - any text change:  Lang_set_doc      {text}
@@ -140,7 +140,7 @@
     //   after a doc switch.
     function Lang_i_elvis(view, method, sc) {
         sc = { doc: active_path, view, state: view.state, ...(sc || {}) }
-        H.i_elvisto('LangTiles/LangTiles', method, sc)
+        H.i_elvisto('Lang/Lang', method, sc)
     }
 
     //#region bookmarks
@@ -152,7 +152,7 @@
     //
     //   readBookmarks(view)   — iterate the field and hand back the live
     //                           [{id, from, to}] so elvises can report the
-    //                           current positions to w:LangTiles.
+    //                           current positions to w:Lang.
 
     const addBookmarkMark    = StateEffect.define<{ id: string, from: number, to: number }>()
     const removeBookmarkMark = StateEffect.define<{ id: string }>()
@@ -334,7 +334,7 @@
 {#if docC}
 <div class="lte">
     <div class="lte-bar">
-        <span class="lte-title">LangTiles editor</span>
+        <span class="lte-title">Lang editor</span>
         <span class="lte-hint">Ctrl+B — add mark</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length} chars</span>

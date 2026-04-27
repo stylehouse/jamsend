@@ -51,7 +51,7 @@
     //     — walks the EditorState's Lezer parse tree and i()s TheC nodes
     //       (Line, node, texts, text) into `container`.
     //
-    // Consumed by w:LangTiles, which runs one whatsthis() call per w/%bookmark
+    // Consumed by w:Lang, which runs one whatsthis() call per w/%bookmark
     // into a per-bookmark subcontainer under model/**.
 
     import { _C, TheC } from "$lib/data/Stuff.svelte"
@@ -270,7 +270,6 @@
 
 //#region w:Lang
 
-    // is actually w:LangTiles, the test, for now calling this.
     async Lang(A: TheC, w: TheC) {
         const H = this
         console.log(`Lang!`)
@@ -481,7 +480,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
     async Lang_enbookmark(w) {
         // +marks button: place a bookmark on line 6 via the generic handler
-        this.i_elvisto('LangTiles/LangTiles', 'Lang_i_bookmark', { from: 98, to: 132 })
+        this.i_elvisto('Lang/Lang', 'Lang_i_bookmark', { from: 98, to: 132 })
     },
     async Lang_debookmark(w) {
         const docC = this.Lang_active_docC(w)
@@ -519,7 +518,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         view.dispatch({ selection: { anchor: from, head: to } })
         await tick()
         const label = view.state.doc.sliceString(from, to).slice(0, 24).replace(/\s+/g, ' ')
-        this.i_elvisto('LangTiles/LangTiles', 'Lang_add_bookmark', {
+        this.i_elvisto('Lang/Lang', 'Lang_add_bookmark', {
             from, to, label, view, state: view.state,
         })
     },
@@ -532,7 +531,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //   No action button — params must come from the Prep/esc children:
     //
     //     Prep:4
-    //       i_elvisto:LangTiles,e:Lang_i_alterationStation
+    //       i_elvisto:Lang,e:Lang_i_alterationStation
     //         esc:line_n,v:6
     //         esc:sanity,v:    o hut/although:1,they,can,be,mixed
     //         esc:match,v:",they,can,be,mixed"

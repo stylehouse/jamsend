@@ -914,6 +914,10 @@ export class House extends StorableHousing {
         } else {
             method = w.sc.w as string
         }
+        // < unused, potentially gets you a test method
+        //    while appearing as some famous target eg w:Lang
+        //   targeting is just primitive.
+        if (method == w.sc.w && w.sc.method) method = w.sc.method
 
         // resolve handler: inst first, then H.* (ghost-injected methods)
         const handler: Function | undefined =

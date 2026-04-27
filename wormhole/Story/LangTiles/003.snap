@@ -10,9 +10,9 @@ Snap:H
         loaded_doc,path:Ghost/test/LangTiles.g,gen_path:gen/test/LangTiles.go
         {"mung":["age"]}	self,round:6
         see:🗂 1 doc
-    A:LangTiles
+    A:Lang
       {"mung":["age"]}	self,round:11
-      w:LangTiles
+      w:Lang
         model,cyto_dir
           Line:6,line_from:94,line_to:132,the_bm_bm_98_132,line_number:6,label:L6,containium
             {"node":"IOing","from":98,"to":132,"str":"o hut/although:1,they,can,be,mixed"}

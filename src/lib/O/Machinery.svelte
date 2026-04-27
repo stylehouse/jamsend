@@ -10,6 +10,9 @@
     onMount(async () => {
     await M.eatfunc({
 
+
+
+
 //#endregion
 //#region LangTiles
 
@@ -20,14 +23,14 @@
     //   H:Story commissions its Cyto with Scannable=H (everything), giving the
     //   low-frequency overview wave.  H:LangTiles commissions its own Cyto
     //   with Scannable=w.c.model — a permanent TheC it owns — for a tighter,
-    //   higher-detail wave of just the LangTiles viewable model.
+    //   higher-detail wave of just the Lang viewable model.
     //
     //   Both Cytos share the same Styles bucket: Story's The/Styles.  We reach
     //   across via top_House().Awo('Story','Story').c.The and call The_Styles.
     //   Any matstyle edit from either Cytui writes to the same place and both
     //   graphs restyle.  Story's watch_c on stylesC handles save-on-change.
     //
-    //   Client for LangTiles's Cyto is w:LangTiles itself, so Cyto_animation_done
+    //   Client for LangTiles's Cyto is w:Lang itself, so Cyto_animation_done
     //   etc. route back here.  Story's Cyto still talks to w:Story.
     //
 
@@ -37,17 +40,10 @@
     Run_A_LangTiles(this: House) {
         const H = this
         H.i({ A: 'LieSurgery' }).i({ w: 'LieSurgery' })
-        H.i({ A: 'LangTiles' }).i({ w: 'LangTiles' })
+        H.i({ A: 'Lang' }).i({ w: 'Lang' })
         H.i({ A: 'Cyto'      }).i({ w: 'Cyto'      })
         H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
         console.log(`🟦 ${H.name} LangTiles wired`)
-    },
-
-//#endregion
-//#region w:LangTiles
-
-    async LangTiles(A: TheC, w: TheC) {
-        await this.Lang(A,w)
     },
     // compiled code receiver
     async Pantheate(A: TheC, w: TheC) {
@@ -78,6 +74,19 @@
         }
     },
 
+
+//#endregion
+//#region LakeSurfer
+
+
+    Run_A_LakeSurfer(this: House) {
+        const H = this
+        H.i({ A: 'LieSurgery' }).i({ w: 'LieSurgery' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Cyto'       }).i({ w: 'Cyto'      })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeSurfer wired`)
+    },
 
 
 

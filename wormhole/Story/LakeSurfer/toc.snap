@@ -1,0 +1,25 @@
+story:LakeSurfer
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:model
+      style:background-color,v:#2fb155
+    matstyle:docs
+      style:background-color,v:#8e29d6
+    matstyle:see
+      style:background-color,v:#c5b759
+    matstyle:error
+      style:background-color,v:#298699
+  Plan
+  Opt
+  TimeSpool
+    TimeTotal:beliefs,avg:0.074
+      sample:0.159,at:1777284360
+      sample:0.052,at:1777284496
+      sample:0.053,at:1777284533
+      sample:0.034,at:1777285899
+      sample:0.057,at:1777286131
+      sample:0.086,at:1777286992
+  step,dige:fdcf530277fc6c94

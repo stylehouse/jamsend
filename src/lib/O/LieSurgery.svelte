@@ -1,7 +1,7 @@
 <script lang="ts">
-    // LieSurgery.svelte — Ghost document manager for Lang/LangTiles.
+    // LieSurgery.svelte — Ghost document manager for Lang.
     //
-    // Wires: A:LangTiles / w:LieSurgery
+    // Wires: A:Lang / w:LieSurgery
     //
     // ── Responsibilities (current phase) ─────────────────────────────────────
     //
@@ -12,7 +12,7 @@
     //   - Hands text to Lang via e:Lang_open_doc.
     //
     //   Story Plan Preps open documents via e:LieSurgery_open_doc {path}.
-    //   No default document is seeded — the test fixture lives at
+    //   No default document is seeded — the LangTiles test has
     //   Ghost/test/LangTiles.g and is opened explicitly from the Plan.
     //
     // ── Path conventions ─────────────────────────────────────────────────────
@@ -88,7 +88,7 @@
 
             // hand to Lang — creates docC, sets active, populates ave text particle.
             // gen_path may be undefined for soft-compile-only docs.
-            H.i_elvisto('LangTiles/LangTiles', 'Lang_open_doc', { path, gen_path, text })
+            H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text })
 
             req_p.sc.done = 1
             w.oai({ loaded_doc: 1, path, gen_path })

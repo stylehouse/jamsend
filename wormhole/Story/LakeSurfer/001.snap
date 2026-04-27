@@ -1,0 +1,111 @@
+Snap:H
+  H:LakeSurfer,Run
+    A:LakeSurfer
+      {"mung":["age"]}	self,round
+      w:LakeSurfer,method:LieSurgery
+        {"mung":["age"]}	self,round
+        see:🗂 0 docs
+    A:Lang
+      {"mung":["age"]}	self,round
+      w:Lang
+        {"mung":["age"]}	self,round
+        model,cyto_dir
+        docs
+        see:🟦 tiles 0 bookmarks
+        cyto_root,cyto_id:cytoid_1
+    A:Cyto
+      {"mung":["age"]}	self,round:4
+      w:Cyto,grawave_duration:0.4
+        {"mung":["age"]}	self,round:4
+        {"ref":{"C":"cyto_root:1, cyto_id:cytoid_1"}}	{"CytoStep":1}
+    A:Pantheate
+      {"mung":["age"]}	self,round
+      w:Pantheate
+        {"mung":["age"]}	self,round
+        o_elvis:Ghost_update_notify
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:Langui
+      {"ref":{"component":"Function()"}}	UI:Cyto
+    watched:actions
+      {"ref":{"fn":"Function()"}}	action,role:debookmark,label:-marks
+      {"ref":{"fn":"Function()"}}	action,role:enbookmark,label:+marks
+      {"ref":{"fn":"Function()"}}	action,role:compile,label:compile
+      {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo,cls:toggle-off
+      {"ref":{"fn":"Function()"}}	action,role:compi,label:compi,icon:compi,cls:toggle-off
+      {"ref":{"fn":"Function()"}}	action,role:cyto_wipe,label:wipe,icon:⌀,cls:remove
+      {"ref":{"options":"[Object(),Object(),Object(),Object()]","on_pick":"Function()"}}	action,role:layout_picker,kind:dropdown,label:layout engine,icon:,cls:default,value:fcose
+    watched:graph
+      cyto_graph,layout_name:fcose
+    watched:ave
+      Styles
+        matstyle:w
+          style:background-color,v:#8f3232
+          meta:is_compound,v
+          meta:label,fmt:%s,keys:w
+        matstyle:model
+          style:background-color,v:#2fb155
+        matstyle:docs
+          style:background-color,v:#8e29d6
+        matstyle:see
+          style:background-color,v:#c5b759
+        matstyle:error
+          style:background-color,v:#298699
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:LakeSurfer,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1","label":"see:🗂 0 docs","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_2,label:Lang,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_2_1","label":"model\ncyto_dir","parent":"cytoid_1_2"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_2_2,label:docs,parent:cytoid_1_2
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_2_3","label":"see:🟦 tiles …","parent":"cytoid_1_2"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_3,label:Pantheate,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20

@@ -11,7 +11,7 @@
     //
     //   All CRUD functions take stylesC as an explicit first argument rather
     //   than reaching for Story's The/Styles via Awo('Story').  This lets
-    //   Cyto clients (Story, LangTiles, anything else) supply their own
+    //   Cyto clients (Story, Lang, anything else) supply their own
     //   stylesC via the commission req — or share Story's by passing the
     //   same TheC through.
     //
@@ -62,7 +62,7 @@
     //   C.c.source_n backlinks, recomputes styles for matching nodes,
     //   and pushes a targeted wave.  No full rescan needed.
     //   cyto_w is now explicit — caller decides which graph instance to
-    //   restyle (could be H:Story's Cyto, or H:LangTiles's Cyto).
+    //   restyle (could be H:Story's Cyto, or H:Lang's Cyto).
 
     import { _C, objectify, type TheC } from "$lib/data/Stuff.svelte"
     import { throttle } from "$lib/Y.svelte"
