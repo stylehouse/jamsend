@@ -148,7 +148,10 @@
             return
         }
 
-        job.oai({Output:1,name:'Somewhere.go',source,dige:await dig(source)})
+        // gen_path comes from docC (set by e_Lang_open_doc via LieSurgery).
+        // Falls back to a safe default if somehow absent.
+        const gen_path = (docC.sc.gen_path as string) ?? 'gen/unknown.go'
+        job.oai({Output:1, gen_path, source, dige:await dig(source)})
         H.i_elvisto(w, 'think')
     },
 
@@ -165,14 +168,14 @@
         if (!job.oa({Pending:1})) return
         let [ou,...more] = job.o({Output:1})
         if (more.length) throw "many job/Output"
-        if (!ou.sc.name) throw "!job/Output%name"
+        if (!ou.sc.gen_path) throw "!job/Output%gen_path"
 
         // stable req lives on docC so we don't re-send on every tick
         const req = docC.oai(
             { compile_write: 1 },
             {
                 rw_op:   'write',
-                rw_name: `src/lib/gen/${ou.sc.name}`,
+                rw_name: `src/lib/${ou.sc.gen_path}`,
                 rw_data: ou.sc.source,
             },
         )
@@ -185,10 +188,10 @@
         if (reply?.error) {
             docC.i({ compile_error: 1, msg: `write gen: ${reply.error}` })
         } else {
-            w.i({ see: `📝 wrote src/lib/gen/${ou.sc.name}` })
+            w.i({ see: `📝 wrote src/lib/${ou.sc.gen_path}` })
             // notify Pantheate so it require()s the fresh module
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify',
-                { include: ou.sc.name })
+                { include: ou.sc.gen_path })
         }
 
         // cleanup — req lives on docC, so r() it there

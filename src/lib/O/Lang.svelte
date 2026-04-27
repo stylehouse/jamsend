@@ -99,19 +99,9 @@
 
         // ── doc registry ────────────────────────────────────────────
         // w/{docs:1} — container for all open document particles.
-        // Individual {doc:path} particles are created lazily by
-        // Lang_doc_from_event when Langui fires editorBegins.
+        // Individual {doc:path} particles are created lazily via
+        // e_Lang_open_doc when LieSurgery hands us a loaded file.
         w.oai({ docs: 1 })
-
-        // ── ave text-sync particle for the default doc ───────────────
-        // ave/{langtiles_doc:'default'} holds sc.text for Langui to pull.
-        // When the Ghost TOC is loaded, additional particles are seeded per path.
-        const ave = H.oai_enroll(H, { watched: 'ave' })
-        const docTextC = ave.oai({ langtiles_doc: 'default' })
-        if (docTextC.sc.text == null) {
-            docTextC.sc.text = this.Lang_default_text()
-            docTextC.bump_version()
-        }
 
         // ── reach across to Story's Styles ──────────────────────────
         // Story persists Styles under its w.c.The/{Styles:1}.
@@ -256,6 +246,41 @@ laterally(A,w,thing):
         w.i({received:1,editorBegins:1})
     },
 
+    // ── e_Lang_open_doc ──────────────────────────────────────────────────────
+    //
+    //   Called by LieSurgery after it loads a Ghost source file.
+    //   Creates the docC particle under w/{docs:1}, stores gen_path on it,
+    //   populates the ave text-sync particle so Langui can pull the content,
+    //   and sets this doc as the active one.
+    //
+    //   e.sc: { path, gen_path, text }
+    async e_Lang_open_doc(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        const path     = e.sc.path     as string
+        const gen_path = e.sc.gen_path as string
+        const text     = (e.sc.text    as string) ?? ''
+        if (!path || !gen_path) throw 'e_Lang_open_doc: needs path + gen_path'
+
+        // create the docC particle, stamping gen_path so compile knows where to write
+        const docs = w.oai({ docs: 1 })
+        const docC = docs.oai({ doc: path })
+        docC.sc.gen_path = gen_path
+
+        // populate the ave text-sync particle for this path so Langui pulls it
+        const ave = H.oai_enroll(H, { watched: 'ave' })
+        const docTextC = ave.oai({ langtiles_doc: path })
+        if (docTextC.sc.text !== text) {
+            docTextC.sc.text = text
+            docTextC.bump_version()
+        }
+
+        // set active — first opened doc wins; tab switching calls Lang_set_active_doc later
+        if (!w.c.active_doc_path) this.Lang_set_active_doc(w, path)
+
+        w.i({ received: 1, doc_opened: 1, doc: path })
+        console.log(`📄 Lang opened doc: ${path}`)
+    },
+
     async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const path = e.sc.doc as string | undefined
@@ -305,21 +330,14 @@ laterally(A,w,thing):
         const doc_unchanged  = state && state.doc === docC?.c.last_whatsthis_doc
         const docC_unchanged = docC?.version === docC?.c.last_docC_version
 
-        
-        if (state && bookmarks.length) {
-            if (!(doc_unchanged && docC_unchanged)) {
-                model.empty()
-                this.whatsthis(state, model, bookmarks, opt)
-                this.wherewhatis(model, opt)
-                if (docC) {
-                    docC.c.last_whatsthis_doc   = state.doc
-                    docC.c.last_docC_version  = docC.version
-                }
+        model.empty()
+        if (state && bookmarks.length && !(doc_unchanged && docC_unchanged)) {
+            this.whatsthis(state, model, bookmarks, opt)
+            this.wherewhatis(model, opt)
+            if (docC) {
+                docC.c.last_whatsthis_doc = state.doc
+                docC.c.last_docC_version  = docC.version
             }
-            // model remains
-        }
-        else {
-            model.empty()
         }
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
