@@ -67,7 +67,8 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     # Each block: 2-space-indented service name, then all more-deeply-indented
     #   or blank lines, stopping before the next 2-space-indented key or top-level key.
     perl -0777 -i -pe '
-      s/\n  (?:upnp-forwarder|coturn):\n(?:(?!  \S|\S)[^\n]*\n)*//g
+      s/\n  (?:upnp-forwarder):\n(?:(?!  \S|\S)[^\n]*\n)*//g;
+      s/\n  (?:coturn):\n(?:(?!  \S|\S)[^\n]*\n)*//g
     ' docker-compose.yml
 
     # coturn was the only consumer of leproxy_caddy_data; remove that volume entry too
