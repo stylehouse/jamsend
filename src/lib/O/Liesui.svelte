@@ -81,7 +81,11 @@
         const ave = H.ave
         if (!ave?.length) return
         for (const p of ave) void p.version
-        LS = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
+        // Guard: only reassign LS when the particle actually changes.
+        // Without this, every H.ave touch (even returning the same TheC)
+        // would cause LS to change, re-rendering the whole tree on every think().
+        const found = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
+        if (found !== LS) LS = found
     })
 
     let loaded_docs = $derived(LS ? LS.o({ loaded_doc: 1 }) as TheC[] : [])
@@ -159,10 +163,17 @@
         LS.bump_version()
     }
 
+    // ── imperative focus refs ─────────────────────────────────────────
+    // Keyed by waft key / doc path so each form can focus its own input.
+    // Used instead of use:focus_on_mount, which re-fires on every re-render.
+    let doc_ghost_inputs:  Record<string, HTMLInputElement | null> = $state({})
+    let point_val_inputs:  Record<string, HTMLInputElement | null> = $state({})
+
     // ── +Doc ─────────────────────────────────────────────────────────
     function toggle_add_doc(waft: TheC) {
         const key = waft.sc.Waft as string
         adding_doc[key] = adding_doc[key] ? null : { ghost: '', libsrc: '', free: '' }
+        if (adding_doc[key]) setTimeout(() => doc_ghost_inputs[key]?.focus(), 0)
     }
     function submit_add_doc(waft: TheC) {
         const key  = waft.sc.Waft as string
@@ -205,14 +216,16 @@
         const was = point_form_open[dpath]
         point_form_open[dpath] = !was
         point_edit_idx[dpath]  = null
-        if (!was) { point_form_val[dpath] = ''; point_form_sc[dpath] = '' }
+        if (!was) {
+            point_form_val[dpath] = ''
+            point_form_sc[dpath]  = ''
+            setTimeout(() => point_val_inputs[dpath]?.focus(), 0)
+        }
     }
 
     function start_edit_point(dpath: string, idx: number, pt: TheC) {
         point_form_open[dpath] = true
         point_edit_idx[dpath]  = idx
-        // Split the Point sc back into val + extra sc for the two-field form.
-        // sc = { Point: val, method: 'Foo', ... } → val field + 'method:Foo,...'
         const sc   = pt.sc as Record<string, any>
         const pval = sc.Point
         point_form_val[dpath] = (pval === 1 || pval === true) ? '' : String(pval ?? '')
@@ -221,6 +234,7 @@
             .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
             .join(',')
         point_form_sc[dpath]  = extras
+        setTimeout(() => point_val_inputs[dpath]?.focus(), 0)
     }
 
     function submit_point(doc: TheC, waft: TheC) {
@@ -459,8 +473,8 @@
                 <div class="ls-add-doc-row">
                     <span class="ls-prefix-label">Ghost/</span>
                     <input class="ls-input ls-input-path" bind:value={add_form.ghost}
-                        onkeydown={(ev) => ev.key==='Enter' && submit_add_doc(waft)}
-                        use:focus_on_mount />
+                        bind:this={doc_ghost_inputs[wkey]}
+                        onkeydown={(ev) => ev.key==='Enter' && submit_add_doc(waft)} />
                     <span class="ls-prefix-dim">.g</span>
                 </div>
                 <div class="ls-add-doc-row">
@@ -527,6 +541,7 @@
 
         <!-- sub-Wafts (recursive) -->
         {#each sub_wafts as sw (sw.sc.Waft)}
+            <input value="NOTHING-out">
             {@render render_waft(sw, depth + 1)}
         {/each}
 
@@ -542,14 +557,14 @@
     <div class="ls-point-form">
         <span class="ls-prefix-label">Point:</span>
         <input class="ls-input ls-point-val-input"
-            placeholder="story_save / if runH"
+            placeholder="fuzzyName"
             title="Point's value — empty defaults to 1 when extra sc is given"
             bind:value={point_form_val[dpath]}
-            onkeydown={(ev) => { if (ev.key==='Enter') submit_point(doc, waft); if (ev.key==='Escape') { point_form_open[dpath]=false; point_edit_idx[dpath]=null } }}
-            use:focus_on_mount />
+            bind:this={point_val_inputs[dpath]}
+            onkeydown={(ev) => { if (ev.key==='Enter') submit_point(doc, waft); if (ev.key==='Escape') { point_form_open[dpath]=false; point_edit_idx[dpath]=null } }} />
         <span class="ls-prefix-dim">,</span>
         <input class="ls-input ls-point-sc-input"
-            placeholder="method:Idzeugnosis"
+            placeholder="method:Name,call"
             title="extra peelable sc: method:Foo or key:val,key2:val2"
             bind:value={point_form_sc[dpath]}
             onkeydown={(ev) => { if (ev.key==='Enter') submit_point(doc, waft); if (ev.key==='Escape') { point_form_open[dpath]=false; point_edit_idx[dpath]=null } }} />
@@ -561,10 +576,16 @@
 {/snippet}
 
 <script module>
-    // Action: focus and select an element on mount.
+    // Action: focus and select an element on mount — but only when no input/textarea
+    // is already focused.  Without this guard, every Lies think() tick that causes
+    // a snippet re-render would yank focus back to the first field mid-typing.
     export function focus_on_mount(node: HTMLElement) {
-        node.focus()
-        if (node instanceof HTMLInputElement) node.select()
+        const active = document.activeElement
+        const already_in_input = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement
+        if (!already_in_input) {
+            node.focus()
+            if (node instanceof HTMLInputElement) node.select()
+        }
         return {}
     }
 </script>
