@@ -992,7 +992,7 @@
             H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
-        let total = 5
+        let total = 1   // user builds up the test step-by-step via Resume
         return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
     },
 
@@ -1565,23 +1565,27 @@
         const paused = run.sc.paused
         const mode   = run.sc.mode ?? 'new'
 
-        const at_end = (run.sc.done ?? 0) >= (run.sc.total ?? 30)
-            && run.sc.paused
-        
+        // at_end: done has reached total while paused — next step doesn’t exist yet
+        const at_end = (run.sc.done ?? 0) >= (run.sc.total ?? 1) && run.sc.paused
+
         await wa.roai({ action: 1, role: 'pause' }, {
-            label: at_end ? '+step' : paused ? 'Resume' : 'Pause',
-            icon:  at_end ? '+'    : paused ? '▶'      : '⏸',
-            cls:   at_end ? 'save' : paused ? 'start'   : 'stop',
+            label: paused ? 'Resume' : 'Pause',
+            icon:  paused ? '▶'     : '⏸',
+            cls:   paused ? 'start' : 'stop',
             fn: () => {
                 if (!run.sc.paused) {
                     run.sc.paused = 2
                     return
                 }
-                if (at_end) {
-                    run.sc.total = ((run.sc.total ?? 30) as number) + 1
+                // Extend total when paused at the ceiling or blocked by a failed step
+                if (at_end || run.sc.failed_at) {
+                    run.sc.total = ((run.sc.total ?? 1) as number) + 1
                 }
+                if (run.sc.failed_at) delete run.sc.failed_at
+                // seems to need this to get another step to fully work
+                // < why it half does things without this...
+                if (at_end) run.sc.mode = 'new'
                 run.sc.paused = 0
-                run.sc.mode = 'new'
                 if (!run.c.driving) this.story_drive(Run, w, run)
             },
         })
