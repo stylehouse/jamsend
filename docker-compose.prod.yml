@@ -107,10 +107,11 @@ services:
       #  because we are running against uid=1000
       # nproc: 100
       nofile: 1024
-  
-  
-  
-# these two are removed by prod.sh in tunnel mode
+
+
+
+
+
   coturn:
     image: coturn/coturn:latest
     build:
@@ -139,6 +140,8 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
+
+  
   upnp-forwarder:
     build:
       context: .
