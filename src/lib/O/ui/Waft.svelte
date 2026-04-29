@@ -6,21 +6,22 @@
     // this component survives Liesui re-renders, keeping form state and
     // focused inputs stable across think() ticks.
     //
-    // doc_row is a snippet prop from Liesui — keeps the doc header markup
-    // DRY.  The snippet captures loaded/pending state from Liesui's closure.
+    // DocRow.svelte handles the doc header row reactively — it reads
+    // doc.version and w.version directly so loaded/pending state stays live
+    // even when Liesui is not re-rendering.
 
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
     import { peel, depeel } from "$lib/Y.svelte"
-    import type { Snippet } from "svelte"
+    import DocRow           from "$lib/O/ui/DocRow.svelte"
 
-    let { H, waft, depth = 0, on_active, on_delete, doc_row }: {
+    let { H, w, waft, depth = 0, on_active, on_delete }: {
         H:         House
+        w:         TheC          // Lies's w particle — passed to DocRow for live state
         waft:      TheC
         depth?:    number
         on_active: (waft: TheC) => void
         on_delete: (waft: TheC) => void
-        doc_row:   Snippet<[doc: TheC, waft: TheC | null, on_del: ((doc: TheC) => void) | null]>
     } = $props()
 
     // ── reactive reads — only waft.version ───────────────────────────
@@ -32,7 +33,6 @@
 
     // ── all form state is local ───────────────────────────────────────
     let renaming_waft = $state<string | null>(null)
-    let renaming_doc: Record<string, string | null> = $state({})
     let adding_doc = $state<{ ghost: string, libsrc: string, free: string } | null>(null)
 
     let point_form_open: Record<string, boolean>       = $state({})
@@ -132,23 +132,35 @@
         waft.bump_version()
     }
 
-    // ── Rename (Enter only — onblur fires during parent re-renders) ───
+    // ── Rename Waft (Enter only — onblur fires during parent re-renders) ──
     function commit_rename_waft() {
         const n = renaming_waft?.trim() ?? ''
         renaming_waft = null
         if (!n || n === wkey) return
         waft.sc.Waft = n
     }
-    function commit_rename_doc(doc: TheC) {
-        const old = doc.sc.path as string
-        const n   = renaming_doc[old]?.trim() ?? ''
-        renaming_doc[old] = null
-        if (!n || n === old) return
-        doc.sc.path = n
-        waft.bump_version()
+
+    // ── Rename Doc ────────────────────────────────────────────────────
+    //
+    //   Called by DocRow's on_rename.  Clears stale session flags, mutates
+    //   doc.sc.path, bumps waft (triggers watch_c → Lies_sync_waft_docs which
+    //   queues a fresh open_req for the new path), then fires e:Lies_rename_doc
+    //   so Lies can drop the old open_req / loaded_doc.
+    //
+    //   If the doc was not_found, the rename lets Lies try to load the new
+    //   path — the common case of fixing a typo or moving a file into place.
+    function do_rename_doc(doc: TheC, old_path: string, new_path: string) {
+        if (!new_path || new_path === old_path) return
+        // Clear session flags before rename so DocRow shows the new path cleanly.
+        // Lies will re-set not_found if the new path also can't be found.
+        delete doc.sc.not_found
+        delete doc.sc.new
+        doc.sc.path = new_path
+        waft.bump_version()   // triggers watch_c → Lies_sync_waft_docs → new open_req
+        H.i_elvisto('Lies/Lies', 'Lies_rename_doc', { old_path, new_path })
     }
 
-    // ── Delete ───────────────────────────────────────────────────────
+    // ── Delete Doc ───────────────────────────────────────────────────
     function delete_doc(doc: TheC) {
         waft.drop(doc)
         waft.bump_version()
@@ -213,7 +225,8 @@
         </div>
     {/if}
 
-    <!-- Doc list -->
+    <!-- Doc list — keyed on path; key changes after rename so a fresh
+         DocRow is mounted for the new path (old one commits rename first). -->
     {#each waft_docs as doc (doc.sc.path)}
         {@const dpath = doc.sc.path as string}
         {@const ptC   = doc.o({ Points: 1 })[0] as TheC | undefined}
@@ -224,19 +237,10 @@
              class:ls-doc-new={!!doc.sc.new}
              class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
 
-            <!-- doc header from Liesui snippet (has loaded/pending context) -->
-            {#if renaming_doc[dpath] !== null && renaming_doc[dpath] !== undefined}
-                <div class="ls-doc-hdr">
-                    <input class="ls-input ls-rename-input"
-                        value={renaming_doc[dpath]}
-                        oninput={(ev) => renaming_doc[dpath] = (ev.target as HTMLInputElement).value}
-                        onkeydown={(ev) => { if (ev.key==='Enter') commit_rename_doc(doc); if (ev.key==='Escape') renaming_doc[dpath]=null }}
-                        use:focus_on_mount />
-                    <button class="ls-icon-btn ls-del-btn" onclick={() => renaming_doc[dpath]=null}>×</button>
-                </div>
-            {:else}
-                {@render doc_row(doc, waft, delete_doc)}
-            {/if}
+            <!-- DocRow reads doc.version + w.version directly — stays live. -->
+            <DocRow {w} {doc} {waft}
+                on_del={delete_doc}
+                on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
 
             <!-- Points -->
             {#if pts.length}
@@ -268,10 +272,10 @@
         </div>
     {/each}
 
-    <!-- sub-Wafts (recursive) -->
+    <!-- sub-Wafts (recursive) — pass w through so DocRow has live Lies state -->
     {#each sub_wafts as sw (sw.sc.Waft)}
-        <svelte:self {H} waft={sw} depth={depth + 1}
-            {on_active} {on_delete} {doc_row} />
+        <svelte:self {H} {w} waft={sw} depth={depth + 1}
+            {on_active} {on_delete} />
     {/each}
 
 </div>
@@ -385,4 +389,14 @@
         cursor: pointer; font-size: 0.76rem; padding: 0.2rem 0.3rem;
     }
     .ls-cancel-btn:hover { color: #999 }
+
+    /* Shared icon button styles — declared :global here so DocRow.svelte
+       and any other child component can use these class names. */
+    :global(.ls-icon-btn) {
+        background: none; border: none; color: #444;
+        cursor: pointer; font-size: 0.8rem; line-height: 1;
+        padding: 0 0.15rem; flex-shrink: 0;
+    }
+    :global(.ls-icon-btn:hover) { color: #aaa }
+    :global(.ls-del-btn:hover)  { color: #f66 }
 </style>

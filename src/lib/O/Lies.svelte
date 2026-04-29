@@ -83,6 +83,8 @@
     //
     //   doc.sc.new = 1         — set by Liesui on creation; cleared on load
     //   doc.sc.not_found = 1   — set when wormhole says absent; cleared on load
+    //                            rename (e:Lies_rename_doc) clears both so the
+    //                            new path loads fresh (not_found set again if absent)
     //
     // ── future ────────────────────────────────────────────────────────────────
     //   < full close on Doc removal (drop loaded_doc, tell Lang)
@@ -139,6 +141,42 @@
         for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
         waft.sc.active = 1
         w.bump_version()
+    },
+
+    // ── e_Lies_rename_doc ──────────────────────────────────────────────
+    //
+    //   Fired by Waft.svelte's do_rename_doc after the Doc particle's path
+    //   has already been mutated and waft.bump_version() called.
+    //
+    //   By the time this elvis arrives, Lies_sync_waft_docs (triggered by
+    //   watch_c on the waft) has already queued a fresh open_req for the
+    //   new path.  This handler cleans up the old path's particles:
+    //     - drops old open_req (done or not)
+    //     - drops old loaded_doc so the stale entry leaves the flat list
+    //     - < future: tells Lang to close the old editor slot
+    //
+    //   The gen_path for the old path is never stored — it was computed at
+    //   load time — so no gen_path cascade is needed.
+    //
+    //   e.sc: { old_path, new_path }
+    async e_Lies_rename_doc(A: TheC, w: TheC, e: TheC) {
+        const old_path = e.sc.old_path as string | undefined
+        const new_path = e.sc.new_path as string | undefined
+        if (!old_path || !new_path || old_path === new_path) return
+
+        // Drop old open_req regardless of done state — the new path gets
+        // its own fresh open_req from Lies_sync_waft_docs.
+        for (const req of w.o({ open_req: 1, path: old_path }) as TheC[]) {
+            w.drop(req)
+        }
+        // Drop old loaded_doc so it leaves the flat list in Liesui.
+        for (const ld of w.o({ loaded_doc: 1, path: old_path }) as TheC[]) {
+            w.drop(ld)
+        }
+        // < future: H.i_elvisto('Lang/Lang', 'Lang_close_doc', { path: old_path })
+
+        console.log(`🔪 Lies: renamed ${old_path} → ${new_path}`)
+        this.i_elvisto(w, 'think')
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
@@ -482,10 +520,15 @@
         if (!w.c[throttle_key]) {
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
-                    // Filter to scalar values only — same guard as auto_save_library.
+                    // Filter to scalar values only, and exclude session-only flags that
+                    // must not be persisted: not_found and new are set/cleared by Lies
+                    // at load time; active is waft-level and already excluded at the
+                    // root (encode root is {Waft:path} only), but guard here too.
+                    const SESSION_KEYS = new Set(['not_found', 'new', 'active'])
                     const scalar = (sc: Record<string, any>) => Object.fromEntries(
-                        Object.entries(sc).filter(([, v]) =>
-                            v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+                        Object.entries(sc).filter(([k, v]) =>
+                            !SESSION_KEYS.has(k) &&
+                            (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
                         )
                     )
                     // Build items: one per Doc, with Points children if present.
