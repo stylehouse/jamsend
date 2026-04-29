@@ -38,11 +38,14 @@
     //
     // Point editing
     // ─────────────
-    //   Points display via depeel as 'Point,method:Foo' (full sc including Point key).
-    //   [+ Point] button expands an input.  Prefix label shows "Point:" and the user
-    //   types the rest (peel format: method:Foo or method:Foo,other:Bar).
-    //   On submit: peel('Point:' + input) → { Point: ..., method: 'Foo', ... }.
-    //   [✎] (edit) on an existing Point pre-fills with everything after 'Point,' or 'Point:'.
+    //   Form: Point:[val],[extra sc]
+    //     val input (focused): the Point's value — empty string → 1 when extra sc present.
+    //     sc input: extra peelable sc, e.g. method:Idzeugnosis or key:val,key2:val2.
+    //   Examples:
+    //     val='story_save / if runH', sc=''           → { Point: 'story_save / if runH' }
+    //     val='',                     sc='method:Foo' → { Point: 1, method: 'Foo' }
+    //     val='Whatever',             sc='method:Foo' → { Point: 'Whatever', method: 'Foo' }
+    //   [✎] (edit) splits the existing sc back into val + extra fields.
     //
     // +Doc form
     // ─────────
@@ -118,7 +121,8 @@
 
     // ── Point add/edit state per doc path ────────────────────────────
     let point_form_open: Record<string, boolean>       = $state({})  // +Point form toggle
-    let point_form_val:  Record<string, string>        = $state({})  // current input value
+    let point_form_val:  Record<string, string>        = $state({})  // Point's value (empty → 1)
+    let point_form_sc:   Record<string, string>        = $state({})  // extra peelable sc
     let point_edit_idx:  Record<string, number | null> = $state({})  // which point is being edited
 
     // ── errors ───────────────────────────────────────────────────────
@@ -201,27 +205,39 @@
         const was = point_form_open[dpath]
         point_form_open[dpath] = !was
         point_edit_idx[dpath]  = null
-        if (!was) point_form_val[dpath] = ''
+        if (!was) { point_form_val[dpath] = ''; point_form_sc[dpath] = '' }
     }
 
     function start_edit_point(dpath: string, idx: number, pt: TheC) {
         point_form_open[dpath] = true
         point_edit_idx[dpath]  = idx
-        // Pre-fill with everything after 'Point,' so user edits just the payload
-        const full = point_to_peel(pt)   // e.g. 'Point,method:Idzeugnosis'
-        point_form_val[dpath]  = full.replace(/^Point[,:]?/, '')
+        // Split the Point sc back into val + extra sc for the two-field form.
+        // sc = { Point: val, method: 'Foo', ... } → val field + 'method:Foo,...'
+        const sc   = pt.sc as Record<string, any>
+        const pval = sc.Point
+        point_form_val[dpath] = (pval === 1 || pval === true) ? '' : String(pval ?? '')
+        const extras = Object.entries(sc)
+            .filter(([k]) => k !== 'Point')
+            .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
+            .join(',')
+        point_form_sc[dpath]  = extras
     }
 
     function submit_point(doc: TheC, waft: TheC) {
-        const dpath = doc.sc.path as string
-        const val   = (point_form_val[dpath] ?? '').trim()
-        if (!val) return
-        // Same pattern as %note: { Point:1, ...peel(typed_text) }
-        // peel('method:Foo') → { method:'Foo' }
-        // peel('method:Foo,other:Bar') → { method:'Foo', other:'Bar' }
-        const sc = { Point: 1, ...peel(val) }
+        const dpath  = doc.sc.path as string
+        const val    = (point_form_val[dpath] ?? '').trim()
+        const sc_str = (point_form_sc[dpath]  ?? '').trim()
+        if (!val && !sc_str) return
 
-        const pointsC = (doc.o({ Points: 1 })[0] as TheC | undefined) ?? doc.i({ Points: 1 })
+        // Point value: empty → 1 when extra sc present, otherwise the typed string.
+        // { Point: 'story_save / if runH' }         — vague, matches broadly
+        // { Point: 1, method: 'Idzeugnosis' }        — val blank, extra sc given
+        // { Point: 'Whatever', method: 'Foo' }       — both fields filled
+        const point_val: any = val === '' ? 1 : val
+        const extra_sc = sc_str ? peel(sc_str) : {}
+        const sc = { Point: point_val, ...extra_sc }
+
+        const pointsC  = (doc.o({ Points: 1 })[0] as TheC | undefined) ?? doc.i({ Points: 1 })
         const edit_idx = point_edit_idx[dpath] ?? null
         const all_pts  = pointsC.o({ Point: 1 }) as TheC[]
 
@@ -237,6 +253,7 @@
         point_form_open[dpath] = false
         point_edit_idx[dpath]  = null
         point_form_val[dpath]  = ''
+        point_form_sc[dpath]   = ''
     }
 
     function delete_point(pt: TheC, pointsC: TheC, waft: TheC) {
@@ -524,10 +541,18 @@
 {#snippet point_input_row(dpath: string, doc: TheC, waft: TheC, mode: 'add' | 'update')}
     <div class="ls-point-form">
         <span class="ls-prefix-label">Point:</span>
-        <input class="ls-input ls-input-sm" placeholder="method:Idzeugnosis"
+        <input class="ls-input ls-point-val-input"
+            placeholder="story_save / if runH"
+            title="Point's value — empty defaults to 1 when extra sc is given"
             bind:value={point_form_val[dpath]}
             onkeydown={(ev) => { if (ev.key==='Enter') submit_point(doc, waft); if (ev.key==='Escape') { point_form_open[dpath]=false; point_edit_idx[dpath]=null } }}
             use:focus_on_mount />
+        <span class="ls-prefix-dim">,</span>
+        <input class="ls-input ls-point-sc-input"
+            placeholder="method:Idzeugnosis"
+            title="extra peelable sc: method:Foo or key:val,key2:val2"
+            bind:value={point_form_sc[dpath]}
+            onkeydown={(ev) => { if (ev.key==='Enter') submit_point(doc, waft); if (ev.key==='Escape') { point_form_open[dpath]=false; point_edit_idx[dpath]=null } }} />
         <button class="ls-add-btn ls-add-btn-sm"
                 onclick={() => submit_point(doc, waft)}>{mode === 'add' ? '+' : '✓'}</button>
         <button class="ls-cancel-btn"
@@ -656,6 +681,8 @@
     }
     .ls-add-point-btn:hover { color: #88a }
     .ls-point-form { display: flex; align-items: center; gap: 0.2rem; margin-top: 0.15rem }
+    .ls-point-val-input { width: 9rem }
+    .ls-point-sc-input  { flex: 1; min-width: 5rem }
 
     /* ── shared controls ── */
     .ls-prefix-label { font-family: monospace; font-size: 0.74rem; color: #556; flex-shrink: 0; white-space: nowrap }
