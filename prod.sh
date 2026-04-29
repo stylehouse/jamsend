@@ -117,8 +117,9 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     # turnserver.conf lives in this repo; copy it into there/ for the jump server
     if [[ -f ty/turnserver.conf ]]; then
         mkdir -p there/ty
-        cp ty/turnserver.conf there/ty/turnserver.conf
-        echo "  Copied ty/turnserver.conf → there/ty/"
+        cp ty/coturn-entrypoint.sh there/coturn-entrypoint.sh
+        cp ty/turnserver.conf there/turnserver.conf
+        echo "  Copied ty/turnserver.conf & coturn-entrypoint.sh → there"
     else
         echo "  Warning: ty/turnserver.conf not found. coturn on the jump server won't start."
     fi
@@ -170,24 +171,24 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
   #   extracted from leproxy's running Caddy by prod.sh.
   coturn:
     image: coturn/coturn:latest
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM coturn/coturn:latest
+        USER root
+        RUN apt-get update -qq && apt-get install -y -qq curl
+        COPY coturn-entrypoint.sh /entrypoint.sh
+        RUN chmod +x /entrypoint.sh
+        ENTRYPOINT ["/entrypoint.sh"]
     container_name: jamsend-prod-coturn
     user: "0:0"
     network_mode: host
     volumes:
-      - ./ty/turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
     environment:
       - TLS_CERT=${TLS_CERT}
       - TLS_KEY=${TLS_KEY}
     restart: always
-    entrypoint: >
-      /bin/sh -c "
-      apt-get update -qq && apt-get install -y -qq curl &&
-      echo \"$$TLS_CERT\" | base64 -d > /etc/ssl/coturn.crt &&
-      echo \"$$TLS_KEY\"  | base64 -d > /etc/ssl/coturn.key &&
-      chmod 600 /etc/ssl/coturn.key &&
-      sed \"s|^external-ip=\$|external-ip=\$(curl -s -4 ifconfig.me)|\" \
-        /etc/coturn/turnserver.conf > /tmp/turnserver.conf &&
-      exec turnserver -c /tmp/turnserver.conf --log-file stdout --no-stdout-log"
     deploy:
       resources:
         limits:
