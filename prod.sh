@@ -180,7 +180,7 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
       dockerfile_inline: |
         FROM coturn/coturn:latest
         USER root
-        RUN apt-get update -qq && apt-get install -y -qq curl
+        RUN apt-get update -qq && apt-get install -y -qq curl iproute2
         COPY coturn-entrypoint.sh /entrypoint.sh
         RUN chmod +x /entrypoint.sh
         ENTRYPOINT ["/entrypoint.sh"]
