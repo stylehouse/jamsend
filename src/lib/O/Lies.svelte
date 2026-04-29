@@ -15,6 +15,31 @@
     //   No default document is seeded — the LangTiles test has
     //   Ghost/test/LangTiles.g and is opened explicitly from the Plan.
     //
+    // ── W:Such — wormhole-backed document sets ────────────────────────────────
+    //
+    //   A W:Such is a persisted list of open_docs stored at wormhole/PATH/toc.snap.
+    //   Story Plan Preps create one via e:Lies_open_wuch {path}.
+    //
+    //   Examples:
+    //     Prep:2
+    //       i_elvisto:Lies,e:Lies_open_wuch
+    //         esc:path,v:Ghost/Tour
+    //
+    //   W:'Ghost/Tour' lives at wormhole/Ghost/Tour/toc.snap and is the Ghost
+    //   overworld hub — a structured registry of Ghosts and their metadata.
+    //
+    //   Particle layout:
+    //     w/{W:'Ghost/Tour', path:'Ghost/Tour'}   — the Such container on w
+    //       /{open_doc:1, path:'Ghost/foo.g'}     — one per open document
+    //
+    //   open_doc children are reflected into open_req (tagged from_wuch) so the
+    //   normal document-load loop picks them up.  If an open_doc is removed,
+    //   its open_req is dropped before loading completes (already-loaded docs
+    //   stay open — full close is future work).
+    //
+    //   CRUD from Liesui or Plan Preps mutates the wuch TheC directly; watch_c
+    //   fires a per-path throttled save back to wormhole/PATH/toc.snap.
+    //
     // ── Compile airlock ───────────────────────────────────────────────────────
     //
     //   LangCompiling fires e:Lies_compiled {path, gen_path, source, dige}
@@ -39,7 +64,7 @@
     //   Story's waitCyto/noCyto/trickle.  Backed directly by the particle, no w.c.
     //   Collected into The/Opt/For/w:Lies by story_save() when saving.
     //
-    //   Other H%Run clients read opts via o_Opt_k(w, k) rather than Story's The_Opt_val().
+    //   Other H%Run clients read opts via o_Opt_k(w, k) rather than Story's The_Opt_val()
     //
     // ── Path conventions ─────────────────────────────────────────────────────
     //
@@ -53,22 +78,28 @@
     // ── Document lifecycle particles ──────────────────────────────────────────
     //
     //   w/{open_req:1, path}              — queued by e_Lies_open_doc
+    //     + {from_wuch}                   — tagged when reflected from a W:Such
     //   w/{loaded_doc:1, path, gen_path}  — after successful load + Lang handoff
     //   w/{compile_pending:1, path, gen_path, source, dige}
     //                                     — waiting for write (or immediate settle)
+    //   w/{W:path, path}                  — W:Such container, loaded from wormhole
+    //     /{open_doc:1, path}             — persisted list of docs to have open
+    //   w/{open_wuch_req:1, path}         — queued by e_Lies_open_wuch
     //   w/{Opt:1}                         — always present
     //     /{write:1}                      — opt: write compiled output to disk
     //     /{run:1}                        — opt: notify Pantheate to run
     //
     // ── future ────────────────────────────────────────────────────────────────
-    //   < write compiled output back to source (push/pull/merge)
+    //   < full close on open_doc removal (drop loaded_doc, tell Lang to close)
+    //   < %pending_write / %surprise_read / diff per loaded_doc
     //   < multi-doc Cyto (inter-ghost call graph)
     //   < recording, zoom, pose
 
-    import { TheC } from "$lib/data/Stuff.svelte"
-    import type { House } from "$lib/O/Housing.svelte"
-    import { onMount } from "svelte"
-    import Liesui from "$lib/O/Liesui.svelte"
+    import { _C, TheC }     from "$lib/data/Stuff.svelte"
+    import type { House }   from "$lib/O/Housing.svelte"
+    import { throttle }     from "$lib/Y.svelte"
+    import { onMount }      from "svelte"
+    import Liesui           from "$lib/O/Liesui.svelte"
 
     let { M } = $props()
 
@@ -89,6 +120,25 @@
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_open_doc: needs path'
         w.oai({ open_req: 1, path })
+        this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_open_wuch ───────────────────────────────────────────────
+    //
+    //   Entry point from Story Plan Preps (or Liesui).  Queues an
+    //   open_wuch_req; the Lies loop loads wormhole/PATH/toc.snap,
+    //   creates the W:Such container, and reflects open_doc children
+    //   into open_req for the normal document-load loop.
+    //
+    //     Prep:2
+    //       i_elvisto:Lies,e:Lies_open_wuch
+    //         esc:path,v:Ghost/Tour
+    //
+    //   Idempotent: same path only ever creates one open_wuch_req.
+    async e_Lies_open_wuch(A: TheC, w: TheC, e: TheC) {
+        const path = e.sc.path as string | undefined
+        if (!path) throw 'e_Lies_open_wuch: needs path'
+        w.oai({ open_wuch_req: 1, path })
         this.i_elvisto(w, 'think')
     },
 
@@ -140,6 +190,54 @@
         // round-trips through toc.snap and is collected by story_save.
         const Opt = w.o({ Opt: 1 })[0] as TheC
         await this.i_actions_to_C(Opt, 'nogen', { label: 'nogen' })
+
+        // ── load W:Such containers from wormhole ──────────────────────────────
+        for (const wuch_req of w.o({ open_wuch_req: 1 }) as TheC[]) {
+            const path = wuch_req.sc.path as string
+            if (wuch_req.sc.done) {
+                // Already loaded — re-sync open_doc→open_req in case CRUD changed.
+                const wuch = w.o({ W: path })[0] as TheC | undefined
+                if (wuch) H.Lies_sync_wuch_docs(w, wuch)
+                continue
+            }
+
+            const snap_path = H.Lies_wuch_snap_path(path)
+            const rw  = await H.requesty_serial(w, 'rw_queue')
+            const req = await rw.oai({ rw_name: snap_path, rw_op: 'read' })
+            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
+                return w.i({ see: `⏳ loading W:${path}…` })
+
+            // Build the wuch container — start empty when file absent.
+            const wuch: TheC = (() => {
+                if (req.sc.reply?.not_found) {
+                    console.log(`🗂 W:${path} not found — starting empty`)
+                    return _C({ W: path, path })
+                }
+                const { C, errors } = H.decode_wh_lines(req.sc.reply?.content ?? '')
+                if (errors.length || !C) {
+                    console.error(`W:${path} decode errors:`, errors)
+                    const empty = _C({ W: path, path })
+                    for (const msg of errors) empty.i({ mung_error: 1, msg })
+                    return empty
+                }
+                // Normalise root sc in case the decoder put different keys there.
+                C.sc.W    = path
+                C.sc.path = path
+                return C
+            })()
+
+            w.i(wuch)
+            H.Lies_sync_wuch_docs(w, wuch)
+
+            // Every mutation triggers a throttled wormhole write.
+            H.watch_c(wuch, () => {
+                H.Lies_sync_wuch_docs(w, wuch)
+                H.Lies_wuch_save(w, wuch)
+            })
+
+            wuch_req.sc.done = 1
+            console.log(`🗂 W:${path} opened (${(wuch.o({ open_doc: 1 }) as TheC[]).length} docs)`)
+        }
 
         // ── load open_reqs from disk ──────────────────────────────────────────
         for (const req_p of w.o({ open_req: 1 }) as TheC[]) {
@@ -222,7 +320,8 @@
         }
 
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
-        w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}` })
+        const wuchs  = (w.o({ W: 1 }) as TheC[]).length
+        w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wuchs ? ` · ${wuchs} W:Such` : ''}` })
     },
 
 //#region helpers
@@ -246,6 +345,82 @@
         return path
             .replace(/^.*Ghost\//, 'gen/')
             .replace(/\.g$/, '.go')
+    },
+
+    // 'Ghost/Tour' → 'wormhole/Ghost/Tour/toc.snap'
+    Lies_wuch_snap_path(path: string): string {
+        return `wormhole/${path}/toc.snap`
+    },
+
+//#region W:Such helpers
+
+    // ── Lies_sync_wuch_docs ───────────────────────────────────────────────────
+    //
+    //   Reflect {open_doc:1,path} children of wuch into {open_req:1,path,from_wuch}
+    //   on w.  Adds open_reqs for new open_docs; drops open_reqs (tagged
+    //   from_wuch) whose open_doc has been removed.
+    //
+    //   Already-loaded docs (loaded_doc exists) are left open — full close on
+    //   removal is future work.
+    Lies_sync_wuch_docs(w: TheC, wuch: TheC) {
+        const wpath = wuch.sc.path as string
+        const live_paths = new Set(
+            (wuch.o({ open_doc: 1 }) as TheC[]).map(d => d.sc.path as string)
+        )
+
+        // Ensure an open_req exists for each live open_doc.
+        for (const p of live_paths) {
+            w.oai({ open_req: 1, path: p }, { from_wuch: wpath })
+        }
+
+        // Drop open_reqs from this wuch that no longer have a matching open_doc.
+        // Skip already-done ones — their loaded_doc owns the open state now.
+        for (const req of w.o({ open_req: 1, from_wuch: wpath }) as TheC[]) {
+            if (req.sc.done) continue   // < future: close loaded doc on removal
+            if (!live_paths.has(req.sc.path as string)) {
+                w.drop(req)
+            }
+        }
+    },
+
+    // ── Lies_wuch_save ────────────────────────────────────────────────────────
+    //
+    //   Throttled write of a W:Such container back to its wormhole snap path.
+    //   One throttle function is created lazily per path and stored in w.c so
+    //   rapid CRUD bursts collapse into a single post_do.
+    //
+    //   Mirrors auto_save_library — strips non-scalar sc values before encoding.
+    Lies_wuch_save(w: TheC, wuch: TheC) {
+        const H    = this as House
+        const path = wuch.sc.path as string
+        const key  = `wuch_save_throttle_${path}`
+        if (!w.c[key]) {
+            w.c[key] = throttle(() => {
+                H.post_do(async () => {
+                    const docs = wuch.o({ open_doc: 1 }) as TheC[]
+                    const items = docs.map(d => {
+                        // Strip non-scalar values — same guard as auto_save_library.
+                        const sc: Record<string, any> = {}
+                        for (const [k, v] of Object.entries(d.sc)) {
+                            if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
+                                sc[k] = v
+                        }
+                        return { sc }
+                    })
+                    const { snap, errors } = await H.encode_wh_lines({ W: path, path }, items)
+                    if (errors.length) {
+                        console.error(`W:${path} encode errors (save aborted):`, errors)
+                        return
+                    }
+                    const snap_path = H.Lies_wuch_snap_path(path)
+                    const rw  = await H.requesty_serial(w, 'rw_queue')
+                    const req = await rw.i({ rw_name: snap_path, rw_op: 'write', rw_data: snap })
+                    H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+                    console.log(`💾 W:${path} saved (${docs.length} open_docs)`)
+                }, { see: `wuch_save_${path}` })
+            }, 800)
+        }
+        w.c[key]()
     },
 
     })

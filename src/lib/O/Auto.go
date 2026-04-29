@@ -38,7 +38,7 @@
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
-    const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping']
+    const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
     const HEAD = 'Present'
 
     let { M } = $props()

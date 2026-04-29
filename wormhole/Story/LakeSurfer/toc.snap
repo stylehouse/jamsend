@@ -14,18 +14,47 @@ story:LakeSurfer
       style:background-color,v:#298699
     matstyle:Opt
       style:background-color,v:#bc2476
+    matstyle:open_req
+      style:background-color,v:#61bd42
+    matstyle:requesty_rw_queue_serial
+      style:background-color,v:#534ed0
+    matstyle:requesty_rw_queue
+      style:background-color,v:#a34b1f
+    matstyle:req_sent
+      style:background-color,v:#3aa67e
+    matstyle:loaded_doc
+      style:background-color,v:#bd36c9
+    matstyle:doc
+      style:background-color,v:#bbdb43
+    matstyle:received
+      style:background-color,v:#32618f
+    matstyle:open_wuch_req
+      style:background-color,v:#b12f4a
+    matstyle:W
+      style:background-color,v:#29d638
   Plan
+    Prep
+      i_elvisto:Lies,e:Lies_open_doc
+        esc:path,v:Ghost/test/LangTiles.g
+    Prep:2
+      i_elvisto:Lies,e:Lies_open_wuch
+        esc:path,v:Ghost/Tour
   Opt
     For
       w:LieSurgery
         nogen
-    trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.074
-      sample:0.159,at:1777284360
-      sample:0.052,at:1777284496
-      sample:0.053,at:1777284533
-      sample:0.034,at:1777285899
-      sample:0.057,at:1777286131
-      sample:0.086,at:1777286992
-  step,dige:fdcf530277fc6c94
+    TimeTotal:beliefs,avg:0.107
+      sample:0.076,at:1777426058
+      sample:0.061,at:1777426971
+      sample:0.047,at:1777427036
+      sample:0.106,at:1777427776
+      sample:0.106,at:1777427778
+      sample:0.112,at:1777427783
+      sample:0.112,at:1777427786
+      sample:0.13,at:1777427803
+      sample:0.13,at:1777427813
+      sample:0.187,at:1777427905
+  step,dige:d57fc3880abb869f
+    note,frontier
+  step:2,dige:cda6c7eafc89e978
