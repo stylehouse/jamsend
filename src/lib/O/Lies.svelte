@@ -100,6 +100,10 @@
     // Everything else is soft-compile only regardless of Ghost/ location.
     const GEN_ABLE_CODETYPES = ['g']
 
+    // Middle extensions that form compound codetypes when detected.
+    // e.g. Housing.svelte.ts → codetype 'svelte.ts'
+    const SECOND_LEVEL_FILETYPES = ['svelte']
+
     let { M } = $props()
 
     onMount(async () => {
@@ -274,18 +278,16 @@
 
             if (req.sc.reply?.not_found) {
                 // File absent — open as empty so Lang has an editable slot.
-                // Mark the Doc in its Waft so Liesui can surface this.
+                // Set not_found; keep new if already set (new takes display priority).
                 H.Lies_flag_doc(w, path, 'not_found', 1)
-                H.Lies_flag_doc(w, path, 'new', undefined)   // clear new, not_found takes over
                 H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text: '' })
                 console.warn(`🗂 Lies: not found: ${path} (opened empty)`)
             } else {
                 const text: string = req.sc.reply?.content ?? ''
-                // Clear both flags — the file exists and has content.
+                // File found — clear not_found regardless.
                 H.Lies_flag_doc(w, path, 'not_found', undefined)
-                H.Lies_flag_doc(w, path, 'new', undefined)
-                // hand to Lang — creates docC, sets active, populates ave text particle.
-                // gen_path may be undefined for soft-compile-only docs.
+                // Clear new only when the file has actual content; empty = not yet written.
+                if (text) H.Lies_flag_doc(w, path, 'new', undefined)
                 H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text })
                 console.log(`🗂 Lies opened ${path}${gen_path ? ` → ${gen_path}` : ' (soft only)'}`)
             }
@@ -383,10 +385,16 @@
     },
 
     // ── Lies_codetype ─────────────────────────────────────────────────────────
-    //   Extract file extension from path: 'Ghost/test/Foo.g' → 'g'
-    //   Not stored on Doc particles — always derived at read time.
+    //   Extract effective file type from path.
+    //   No dot → '' (no extension — avoids returning the filename as codetype).
+    //   Second-level: Foo.svelte.ts → 'svelte.ts' (prev in SECOND_LEVEL_FILETYPES).
     Lies_codetype(path: string): string {
-        return path.split('.').pop() ?? ''
+        const parts = path.split('.')
+        if (parts.length <= 1) return ''
+        const ext  = parts[parts.length - 1]
+        const prev = parts.length >= 3 ? parts[parts.length - 2] : ''
+        if (prev && SECOND_LEVEL_FILETYPES.includes(prev)) return `${prev}.${ext}`
+        return ext
     },
 
     // ── Lies_waft_snap_path ───────────────────────────────────────────────────

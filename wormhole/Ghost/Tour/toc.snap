@@ -2,3 +2,6 @@ Waft:Ghost/Tour
   Doc,path:Ghost/test/Hello.g
     Points
       Point,method:Idzeugnosis
+  Doc,path:Ghost/Thinks.g,new,not_found
+    Points
+      Point,Pants

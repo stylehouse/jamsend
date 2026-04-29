@@ -74,35 +74,35 @@ story:LeafFarm
       sample:0.511,at:1775996360
       sample:0.465,at:1776914629
       sample:0.288,at:1776914741
-  step,dige:16af8162fcae6222,snap_link:001.snap
-  step:2,dige:de8ea36813915842,snap_link:002.snap
-  step:3,dige:09f230e0ef6e7be9,snap_link:003.snap
-  step:4,dige:bd2debd2450b924f,snap_link:004.snap
-  step:5,dige:64fbf6e9443e8ec4,snap_link:005.snap
-  step:6,dige:3fb862be265ee0fd,snap_link:006.snap
-  step:7,dige:daae29c13761801f,snap_link:007.snap
-  step:8,dige:044a6c6797eca344,snap_link:008.snap
-  step:9,dige:0cc7b5c411b41f17,snap_link:009.snap
-  step:10,dige:14ec1cdc56f352a9,snap_link:010.snap
-  step:11,dige:792d7f18ccbf0d7d,snap_link:011.snap
-  step:12,dige:d809587678025d52,snap_link:012.snap
-  step:13,dige:0addbfd95e5cccd5,snap_link:013.snap
-  step:14,dige:bc768747ab0b6d4b,snap_link:014.snap
-  step:15,dige:35850ca5f3c792bf,snap_link:015.snap
-  step:16,dige:c8373421631cc7d4,snap_link:016.snap
-  step:17,dige:fae100759ec46a9a,snap_link:017.snap
-  step:18,dige:b87640aee547a8fc,snap_link:018.snap
-  step:19,dige:a864c975d82d14e4,snap_link:019.snap
+  step,dige:16af8162fcae6222
+  step:2,dige:de8ea36813915842
+  step:3,dige:09f230e0ef6e7be9
+  step:4,dige:bd2debd2450b924f
+  step:5,dige:64fbf6e9443e8ec4
+  step:6,dige:3fb862be265ee0fd
+  step:7,dige:daae29c13761801f
+  step:8,dige:044a6c6797eca344
+  step:9,dige:0cc7b5c411b41f17
+  step:10,dige:14ec1cdc56f352a9
+  step:11,dige:792d7f18ccbf0d7d
+  step:12,dige:d809587678025d52
+  step:13,dige:0addbfd95e5cccd5
+  step:14,dige:bc768747ab0b6d4b
+  step:15,dige:35850ca5f3c792bf
+  step:16,dige:c8373421631cc7d4
+  step:17,dige:fae100759ec46a9a
+  step:18,dige:b87640aee547a8fc
+  step:19,dige:a864c975d82d14e4
     note,that:leaf_2_0 is about to get harvested
-  step:20,dige:62f971a22b5520e5,snap_link:020.snap
+  step:20,dige:62f971a22b5520e5
     note,that:leaf_2_0 emerges again
-  step:21,dige:4ea5531fe6bb1c1d,snap_link:021.snap
-  step:22,dige:66bb832282c73732,snap_link:022.snap
-  step:23,dige:0e8a3fa2a15b5e19,snap_link:023.snap
-  step:24,dige:36b74a5c833ee022,snap_link:024.snap
-  step:25,dige:83e73807225fc4b8,snap_link:025.snap
-  step:26,dige:28613ed195364009,snap_link:026.snap
-  step:27,dige:3c6597251e870672,snap_link:027.snap
-  step:28,dige:e54e8b905c3d9d97,snap_link:028.snap
-  step:29,dige:185d7ba3b46da097,snap_link:029.snap
-  step:30,dige:4a39559a751d5966,snap_link:030.snap
+  step:21,dige:4ea5531fe6bb1c1d
+  step:22,dige:66bb832282c73732
+  step:23,dige:0e8a3fa2a15b5e19
+  step:24,dige:36b74a5c833ee022
+  step:25,dige:83e73807225fc4b8
+  step:26,dige:28613ed195364009
+  step:27,dige:3c6597251e870672
+  step:28,dige:e54e8b905c3d9d97
+  step:29,dige:185d7ba3b46da097
+  step:30,dige:4a39559a751d5966
