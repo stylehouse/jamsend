@@ -67,10 +67,11 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     # Each block: 2-space-indented service name, then all more-deeply-indented
     #   or blank lines, stopping before the next 2-space-indented key or top-level key.
     perl -0777 -i -pe '
-      s/\n  (?:upnp-forwarder):\n(?:(?!  \S|\S)[^\n]*\n)*//g;
-      s/\n  (?:coturn):\n(?:(?!  \S|\S)[^\n]*\n)*//g
+      # Each block: service line, then any lines that are blank or start with whitespace
+      s/\n  (?:upnp-forwarder|coturn):(?:\n(?:[ \t]+[^\n]*|))*//g;
+      # Remove the external volume entry the same way
+      s/\n  leproxy_caddy_data:(?:\n(?:[ \t]+[^\n]*|))*//g;
     ' docker-compose.yml
-
     # coturn was the only consumer of leproxy_caddy_data; remove that volume entry too
     perl -0777 -i -pe '
       s/\n  leproxy_caddy_data:\n    external: true\n//g
