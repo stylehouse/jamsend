@@ -148,6 +148,7 @@ docker run --rm -v .:/app jamsend-app:latest npm install
 docker compose up
 # maybe eventually
 cd ..; git clone jamsend prod-jamsend; cd prod-jamsend; ./prod.sh
+# having already configured leproxy to tunnel or not, etc.
 ```
 
 If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), edit *docker-compose.yml* and related things until it works. You should then look at `docker compose ps` to see where it's listening, it may need to be on localhost. Getting it on the interweb is left a bit hard, just help this project until we make an app scripting language and the community can develop what you need.
