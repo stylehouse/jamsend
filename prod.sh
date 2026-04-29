@@ -71,6 +71,8 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
       s/\n  (?:upnp-forwarder|coturn):(?:\n(?:[ \t]+[^\n]*|))*//g;
       # Remove the external volume entry the same way
       s/\n  leproxy_caddy_data:(?:\n(?:[ \t]+[^\n]*|))*//g;
+      # Remove volumes: if it ends up empty (nothing but optional whitespace after it)
+      s/\nvolumes:\s*$//;
     ' docker-compose.yml
     # coturn was the only consumer of leproxy_caddy_data; remove that volume entry too
     perl -0777 -i -pe '
