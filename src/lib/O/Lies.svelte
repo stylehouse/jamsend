@@ -7,99 +7,117 @@
     //
     //   Owns the list of open Ghost source documents.  For each:
     //   - Loads source from disk via rw_op:'read'.
-    //   - Derives gen_path when the source is under Ghost/ — absent gen_path
-    //     means soft-compile only (abstractions extracted, nothing written).
+    //   - Derives gen_path when the source is under Ghost/ and its codetype is
+    //     in GEN_ABLE_EXTENSIONS — absent gen_path means soft-compile only.
     //   - Hands text to Lang via e:Lang_open_doc.
     //
-    //   Story Plan Preps open documents via e:Lies_open_doc {path}.
-    //   No default document is seeded — the LangTiles test has
-    //   Ghost/test/LangTiles.g and is opened explicitly from the Plan.
+    //   Story Plan Preps open documents via e:Lies_open_doc {path}, or open
+    //   Waft containers via e:Lies_open_waft {path}.
     //
-    // ── W:Such — wormhole-backed document sets ────────────────────────────────
+    // ── Two phases: LiesPersist → LiesRealised ────────────────────────────────
     //
-    //   A W:Such is a persisted list of open_docs stored at wormhole/PATH/toc.snap.
-    //   Story Plan Preps create one via e:Lies_open_wuch {path}.
+    //   Every Lies tick runs LiesPersist first.  If any IO is still in flight,
+    //   LiesPersist sets the see indicator and returns false — LiesRealised
+    //   does not run until everything is settled.
     //
-    //   Examples:
+    //   LiesPersist — all disk IO: Waft loading, open_req loading.
+    //   LiesRealised — compile airlock, future thinking/analysis.
+    //
+    // ── Waft — wormhole-backed document sets ──────────────────────────────────
+    //
+    //   A Waft is a persisted list of Docs stored at wormhole/PATH/toc.snap.
+    //   "Rafts of sense drawn together from the flotsam of Ghost/*."
+    //   Plan Preps open one via e:Lies_open_waft {path}.
+    //
+    //   Example:
     //     Prep:2
-    //       i_elvisto:Lies,e:Lies_open_wuch
+    //       i_elvisto:Lies,e:Lies_open_waft
     //         esc:path,v:Ghost/Tour
     //
-    //   W:'Ghost/Tour' lives at wormhole/Ghost/Tour/toc.snap and is the Ghost
-    //   overworld hub — a structured registry of Ghosts and their metadata.
+    //   Waft:'Ghost/Tour' lives at wormhole/Ghost/Tour/toc.snap.
+    //   Waft,path is derived: path == sc.Waft (no redundant field stored).
     //
-    //   Particle layout:
-    //     w/{W:'Ghost/Tour', path:'Ghost/Tour'}   — the Such container on w
-    //       /{open_doc:1, path:'Ghost/foo.g'}     — one per open document
+    //   Snap format (wormhole/Ghost/Tour/toc.snap):
+    //     Waft:Ghost/Tour
+    //       Doc:1 path:Ghost/test/Hello.g codetype:g
+    //         Points:1
+    //           Point:1 method:Idzeugnosis
     //
-    //   open_doc children are reflected into open_req (tagged from_wuch) so the
-    //   normal document-load loop picks them up.  If an open_doc is removed,
-    //   its open_req is dropped before loading completes (already-loaded docs
-    //   stay open — full close is future work).
+    //   Doc children are reflected into open_req (tagged from_waft) so the
+    //   normal document-load loop picks them up.
     //
-    //   CRUD from Liesui or Plan Preps mutates the wuch TheC directly; watch_c
-    //   fires a per-path throttled save back to wormhole/PATH/toc.snap.
+    //   CRUD from Liesui mutates the Waft TheC; watch_c fires a per-path
+    //   throttled save back to wormhole/PATH/toc.snap.
     //
-    // ── Compile airlock ───────────────────────────────────────────────────────
+    // ── Waft:Look — session tracking ─────────────────────────────────────────
+    //
+    //   When a doc is opened, Lies spawns a Waft:Look/YMD/HH_$i on w to
+    //   track what the user does with it (searches, highlights, etc.).
+    //   These are session-only initially — they survive renames and can then
+    //   be persisted.
+    //   sc: { Waft: 'Look/2025-04-29/14_0', look_doc: path }
+    //
+    // ── Compile airlock (LiesRealised) ───────────────────────────────────────
     //
     //   LangCompiling fires e:Lies_compiled {path, gen_path, source, dige}
-    //   after building a module.  Lies decides — based on opt particles
-    //   on its own w — whether to write the file and/or notify Pantheate.
+    //   after building a module.  Lies decides — based on opt particles —
+    //   whether to write the file and/or notify Pantheate.
     //
-    //   This keeps the write I/O and Pantheate wakeup out of Lang, and means
-    //   compile-for-analysis works without touching disk or running anything.
+    //   When done, Lies fires e:Lies_compile_settled {path} back to w:Lang.
     //
-    //   When done, Lies fires e:Lies_compile_settled {path} back
-    //   to w:Lang so Lang_compile_step can clear docC/{Compile/Pending}.
+    // ── Gen-able extensions ───────────────────────────────────────────────────
+    //
+    //   GEN_ABLE_EXTENSIONS: only these source file types produce gen/ output.
+    //   Everything else is soft-compile only (abstractions extracted, no write).
     //
     // ── Opt particles ─────────────────────────────────────────────────────────
     //
-    //   w/{Opt:1}               — always seeded in setup (oai, so push_opt_to_run
-    //     /{nogen:1}              wins if Story distributed it before first tick)
+    //   w/{Opt:1}               — always seeded in setup
+    //     /{nogen:1}              nogen: skip write and Pantheate notify
     //
-    //   nogen present → skip gen/ write and Pantheate notify (analyse only).
-    //   nogen absent  → write and run normally.
-    //
-    //   Managed by i_actions_to_C(Opt, 'nogen', …) every tick — same pattern as
-    //   Story's waitCyto/noCyto/trickle.  Backed directly by the particle, no w.c.
-    //   Collected into The/Opt/For/w:Lies by story_save() when saving.
-    //
-    //   Other H%Run clients read opts via o_Opt_k(w, k) rather than Story's The_Opt_val()
+    //   Managed by i_actions_to_C(Opt, 'nogen', …) every tick.
+    //   Collected into The/Opt/For/w:Lies by story_save().
     //
     // ── Path conventions ─────────────────────────────────────────────────────
     //
     //   Ghost/ is a real directory at the project root (not a symlink).
-    //   Paths are passed as-is to the Wormhole — no resolution needed.
+    //   Waft snap path:     wormhole/${waft.sc.Waft}/toc.snap
+    //   gen_path:           Ghost/test/Foo.g → gen/test/Foo.go
     //
-    //   gen_path derivation:  Ghost/test/LangTiles.g → gen/test/LangTiles.go
-    //   gen_path is optional: if the source path doesn't match Ghost/, it is
-    //   omitted and Lang will soft-compile only.
+    // ── Particle layout ───────────────────────────────────────────────────────
     //
-    // ── Document lifecycle particles ──────────────────────────────────────────
+    //   w/{open_waft_req:1, path}              — queued by e_Lies_open_waft
+    //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
+    //     /{Doc:1, path, codetype}             — persisted doc entry
+    //       /{Points:1}                        — optional structured metadata
+    //         /{Point:1, method}               — individual point
+    //   w/{Waft:'Look/YMD/HH_$i', look_doc}   — session tracking Waft
+    //   w/{open_req:1, path, from_waft?}       — queued by e_Lies_open_doc or reflected
+    //   w/{loaded_doc:1, path, gen_path}       — after successful load + Lang handoff
+    //   w/{compile_pending:1, path, ...}       — waiting for write (or immediate settle)
+    //   w/{Opt:1}                              — options container
     //
-    //   w/{open_req:1, path}              — queued by e_Lies_open_doc
-    //     + {from_wuch}                   — tagged when reflected from a W:Such
-    //   w/{loaded_doc:1, path, gen_path}  — after successful load + Lang handoff
-    //   w/{compile_pending:1, path, gen_path, source, dige}
-    //                                     — waiting for write (or immediate settle)
-    //   w/{W:path, path}                  — W:Such container, loaded from wormhole
-    //     /{open_doc:1, path}             — persisted list of docs to have open
-    //   w/{open_wuch_req:1, path}         — queued by e_Lies_open_wuch
-    //   w/{Opt:1}                         — always present
-    //     /{write:1}                      — opt: write compiled output to disk
-    //     /{run:1}                        — opt: notify Pantheate to run
+    // ── Doc flags ────────────────────────────────────────────────────────────
+    //
+    //   doc.sc.new = 1         — set by Liesui on creation; cleared on first load
+    //   doc.sc.not_found = 1   — set by Lies when wormhole says file absent;
+    //                            cleared when the file is later found and loaded
     //
     // ── future ────────────────────────────────────────────────────────────────
-    //   < full close on open_doc removal (drop loaded_doc, tell Lang to close)
+    //   < full close on Doc removal (drop loaded_doc, tell Lang to close)
     //   < %pending_write / %surprise_read / diff per loaded_doc
+    //   < nested Waft save (currently saves Docs and their Points only)
+    //   < rename Waft: old snap persists, new path is written fresh
     //   < multi-doc Cyto (inter-ghost call graph)
-    //   < recording, zoom, pose
 
     import { _C, TheC }     from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
     import { throttle }     from "$lib/Y.svelte"
     import { onMount }      from "svelte"
     import Liesui           from "$lib/O/Liesui.svelte"
+
+    // Only .g files get written to gen/; everything else is soft-compile only.
+    const GEN_ABLE_EXTENSIONS = ['g']
 
     let { M } = $props()
 
@@ -108,8 +126,8 @@
 
     // ── e_Lies_open_doc ────────────────────────────────────────────────
     //
-    //   Entry point from Story Plan Preps.  Queues an open_req; the main
-    //   Lies loop does the Wormhole read + Lang handoff.
+    //   Entry point from Story Plan Preps.  Queues an open_req; LiesPersist
+    //   does the Wormhole read + Lang handoff.
     //
     //     Prep:1
     //       i_elvisto:Lies,e:Lies_open_doc
@@ -123,32 +141,31 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── e_Lies_open_wuch ───────────────────────────────────────────────
+    // ── e_Lies_open_waft ───────────────────────────────────────────────
     //
-    //   Entry point from Story Plan Preps (or Liesui).  Queues an
-    //   open_wuch_req; the Lies loop loads wormhole/PATH/toc.snap,
-    //   creates the W:Such container, and reflects open_doc children
-    //   into open_req for the normal document-load loop.
+    //   Entry point from Story Plan Preps or Liesui.  Queues an
+    //   open_waft_req; LiesPersist loads wormhole/PATH/toc.snap, creates
+    //   the Waft container, and reflects Doc children into open_req.
     //
     //     Prep:2
-    //       i_elvisto:Lies,e:Lies_open_wuch
+    //       i_elvisto:Lies,e:Lies_open_waft
     //         esc:path,v:Ghost/Tour
     //
-    //   Idempotent: same path only ever creates one open_wuch_req.
-    async e_Lies_open_wuch(A: TheC, w: TheC, e: TheC) {
+    //   Idempotent: same path only ever creates one open_waft_req.
+    async e_Lies_open_waft(A: TheC, w: TheC, e: TheC) {
         const path = e.sc.path as string | undefined
-        if (!path) throw 'e_Lies_open_wuch: needs path'
-        w.oai({ open_wuch_req: 1, path })
+        if (!path) throw 'e_Lies_open_waft: needs path'
+        w.oai({ open_waft_req: 1, path })
+        debugger
         this.i_elvisto(w, 'think')
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
     //
     //   Fired by LangCompiling after a hard-compile succeeds (gen_path present).
-    //   Parks a compile_pending particle for the main loop to process.
+    //   Parks a compile_pending particle for LiesRealised to process.
     //
     //   Soft-compile (no gen_path) goes nowhere — Lang settles it immediately.
-    //
     //   e.sc: { path, gen_path, source, dige }
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
         const path     = e.sc.path     as string
@@ -167,8 +184,8 @@
         this.i_elvisto(w, 'think')
     },
 
-//#region w:Lies
-    
+//#region w:Lies — main tick
+
     async Lies(A: TheC, w: TheC) {
         const H = this as House
 
@@ -191,52 +208,74 @@
         const Opt = w.o({ Opt: 1 })[0] as TheC
         await this.i_actions_to_C(Opt, 'nogen', { label: 'nogen' })
 
-        // ── load W:Such containers from wormhole ──────────────────────────────
-        for (const wuch_req of w.o({ open_wuch_req: 1 }) as TheC[]) {
-            const path = wuch_req.sc.path as string
-            if (wuch_req.sc.done) {
-                // Already loaded — re-sync open_doc→open_req in case CRUD changed.
-                const wuch = w.o({ W: path })[0] as TheC | undefined
-                if (wuch) H.Lies_sync_wuch_docs(w, wuch)
+        // ── LiesPersist — all disk IO; must settle before LiesRealised runs ────
+        const settled = await this.LiesPersist(A, w)
+        if (!settled) return
+
+        // ── LiesRealised — compile airlock and future thinking ────────────────
+        await this.LiesRealised(A, w)
+
+        const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
+        const wafts  = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !String(wf.sc.Waft).startsWith('Look/')).length
+        w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
+    },
+
+//#region LiesPersist — disk IO phase
+    //
+    //   Returns true when every open_waft_req and open_req is done.
+    //   Returns false (and sets w.see) if any IO is still in flight.
+    //   Only when this returns true does LiesRealised run.
+
+    async LiesPersist(A: TheC, w: TheC): Promise<boolean> {
+        const H = this as House
+
+        // ── load Waft containers from wormhole ────────────────────────────────
+        for (const waft_req of w.o({ open_waft_req: 1 }) as TheC[]) {
+            const path = waft_req.sc.path as string
+            if (waft_req.sc.done) {
+                // Already loaded — re-sync Doc→open_req in case CRUD changed.
+                const waft = w.o({ Waft: path })[0] as TheC | undefined
+                if (waft) H.Lies_sync_waft_docs(w, waft)
                 continue
             }
 
-            const snap_path = H.Lies_wuch_snap_path(path)
+            const snap_path = H.Lies_waft_snap_path(path)
             const rw  = await H.requesty_serial(w, 'rw_queue')
             const req = await rw.oai({ rw_name: snap_path, rw_op: 'read' })
-            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
-                return w.i({ see: `⏳ loading W:${path}…` })
+            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+                w.i({ see: `⏳ loading Waft:${path}…` })
+                return false
+            }
 
-            // Build the wuch container — start empty when file absent.
-            const wuch: TheC = (() => {
+            // Build Waft container — start empty when file absent.
+            const waft: TheC = (() => {
                 if (req.sc.reply?.not_found) {
-                    console.log(`🗂 W:${path} not found — starting empty`)
-                    return _C({ W: path, path })
+                    console.log(`🗂 Waft:${path} not found — starting empty`)
+                    return _C({ Waft: path })
                 }
                 const { C, errors } = H.decode_wh_lines(req.sc.reply?.content ?? '')
                 if (errors.length || !C) {
-                    console.error(`W:${path} decode errors:`, errors)
-                    const empty = _C({ W: path, path })
+                    console.error(`Waft:${path} decode errors:`, errors)
+                    const empty = _C({ Waft: path })
                     for (const msg of errors) empty.i({ mung_error: 1, msg })
                     return empty
                 }
-                // Normalise root sc in case the decoder put different keys there.
-                C.sc.W    = path
-                C.sc.path = path
+                // Ensure the root sc has the canonical Waft key.
+                C.sc.Waft = path
                 return C
             })()
 
-            w.i(wuch)
-            H.Lies_sync_wuch_docs(w, wuch)
+            w.i(waft)
+            H.Lies_sync_waft_docs(w, waft)
 
-            // Every mutation triggers a throttled wormhole write.
-            H.watch_c(wuch, () => {
-                H.Lies_sync_wuch_docs(w, wuch)
-                H.Lies_wuch_save(w, wuch)
+            // Every CRUD mutation triggers a throttled wormhole write.
+            H.watch_c(waft, () => {
+                H.Lies_sync_waft_docs(w, waft)
+                H.Lies_waft_save(w, waft)
             })
 
-            wuch_req.sc.done = 1
-            console.log(`🗂 W:${path} opened (${(wuch.o({ open_doc: 1 }) as TheC[]).length} docs)`)
+            waft_req.sc.done = 1
+            console.log(`🗂 Waft:${path} opened (${(waft.o({ Doc: 1 }) as TheC[]).length} docs)`)
         }
 
         // ── load open_reqs from disk ──────────────────────────────────────────
@@ -244,30 +283,53 @@
             const path = req_p.sc.path as string
             if (req_p.sc.done) continue   // already loaded
 
-            // gen_path only for Ghost/ sources — others are soft-compile only
+            // gen_path only for Ghost/ sources with gen-able codetype.
             const gen_path = H.Lies_gen_path(path)
 
             // requesty_serial + i_elvis_req: on first pass we fire the read
-            // request and return.  Wormhole calls think() when done.  On
+            // request and return false.  Wormhole calls think() when done.  On
             // re-entry, oai() finds the same req particle with the reply on it.
             const rw  = await H.requesty_serial(w, 'rw_queue')
             const req = await rw.oai({ rw_name: path, rw_op: 'read' })
-            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
-                return w.i({ see: `⏳ loading ${path}…` })
+            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+                w.i({ see: `⏳ loading ${path}…` })
+                return false
+            }
 
-            // not_found is fatal for an explicitly requested path
-            if (req.sc.reply?.not_found) throw `Lies: not found: ${path}`
-
-            const text: string = req.sc.reply?.content ?? ''
-
-            // hand to Lang — creates docC, sets active, populates ave text particle.
-            // gen_path may be undefined for soft-compile-only docs.
-            H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text })
+            if (req.sc.reply?.not_found) {
+                // File absent — open as empty so Lang has an editable slot.
+                // Mark the Doc in its Waft (if any) so Liesui can surface this.
+                H.Lies_flag_doc(w, path, 'not_found', 1)
+                H.Lies_flag_doc(w, path, 'new', undefined)   // clear new, not_found takes over
+                H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text: '' })
+                console.warn(`🗂 Lies: not found: ${path} (opened empty)`)
+            } else {
+                const text: string = req.sc.reply?.content ?? ''
+                // Clear both flags — the file exists and has content.
+                H.Lies_flag_doc(w, path, 'not_found', undefined)
+                H.Lies_flag_doc(w, path, 'new', undefined)
+                // hand to Lang — creates docC, sets active, populates ave text particle.
+                // gen_path may be undefined for soft-compile-only docs.
+                H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text })
+                console.log(`🗂 Lies opened ${path}${gen_path ? ` → ${gen_path}` : ' (soft only)'}`)
+            }
 
             req_p.sc.done = 1
             w.oai({ loaded_doc: 1, path, gen_path })
-            console.log(`🗂 Lies opened ${path}${gen_path ? ` → ${gen_path}` : ' (soft only)'}`)
+
+            // Spawn a session Waft to track what the user does with this doc.
+            H.Lies_spawn_look_waft(w, path)
         }
+
+        return true   // all IO settled — LiesRealised may proceed
+    },
+
+//#region LiesRealised — compile airlock and future thinking
+    //
+    //   Only called when LiesPersist returns true (no IO in flight).
+
+    async LiesRealised(A: TheC, w: TheC) {
+        const H = this as House
 
         // ── compile airlock ───────────────────────────────────────────────────
         //
@@ -293,7 +355,7 @@
                     { rw_op: 'write', rw_name: `src/lib/${gen_path}`, rw_data: source },
                 )
                 if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
-                    return w.i({ see: `⏳ writing ${gen_path}…` })
+                    return   // IO in flight; will re-run on next tick
 
                 const reply = req.sc.reply
                 if (reply?.error) {
@@ -318,10 +380,6 @@
             const flags = do_write ? 'write+run' : 'nogen'
             console.log(`🔪 Lies compile settled: ${path} [${flags}]`)
         }
-
-        const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
-        const wuchs  = (w.o({ W: 1 }) as TheC[]).length
-        w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wuchs ? ` · ${wuchs} W:Such` : ''}` })
     },
 
 //#region helpers
@@ -337,45 +395,56 @@
         return !!w.o({ Opt: 1 })[0]?.oa({ [k]: 1 })
     },
 
-    // Ghost/test/LangTiles.g  →  gen/test/LangTiles.go
-    // Returns undefined for paths that don't belong under Ghost/ — those
-    // docs are soft-compile only and don't get written to gen/.
+    // ── Lies_gen_path ─────────────────────────────────────────────────────────
+    //
+    //   Ghost/test/Foo.g  →  gen/test/Foo.go  (only for GEN_ABLE_EXTENSIONS)
+    //   Returns undefined for non-Ghost/ paths or non-gen-able codetypes —
+    //   those docs are soft-compile only and don't get written to gen/.
     Lies_gen_path(path: string): string | undefined {
         if (!path.match(/^.*Ghost\//)) return undefined
+        const codetype = path.split('.').pop() ?? ''
+        if (!GEN_ABLE_EXTENSIONS.includes(codetype)) return undefined
         return path
             .replace(/^.*Ghost\//, 'gen/')
             .replace(/\.g$/, '.go')
     },
 
-    // 'Ghost/Tour' → 'wormhole/Ghost/Tour/toc.snap'
-    Lies_wuch_snap_path(path: string): string {
-        return `wormhole/${path}/toc.snap`
+    // ── Lies_codetype ─────────────────────────────────────────────────────────
+    //   Extract file extension from path: 'Ghost/test/Foo.g' → 'g'
+    Lies_codetype(path: string): string {
+        return path.split('.').pop() ?? ''
     },
 
-//#region W:Such helpers
+    // ── Lies_waft_snap_path ───────────────────────────────────────────────────
+    //   'Ghost/Tour' → 'wormhole/Ghost/Tour/toc.snap'
+    Lies_waft_snap_path(waft_path: string): string {
+        return `wormhole/${waft_path}/toc.snap`
+    },
 
-    // ── Lies_sync_wuch_docs ───────────────────────────────────────────────────
+//#region Waft helpers
+
+    // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
     //
-    //   Reflect {open_doc:1,path} children of wuch into {open_req:1,path,from_wuch}
-    //   on w.  Adds open_reqs for new open_docs; drops open_reqs (tagged
-    //   from_wuch) whose open_doc has been removed.
+    //   Reflect {Doc:1, path} children of waft into {open_req:1, path, from_waft}
+    //   on w.  Adds open_reqs for new Docs; drops unloaded open_reqs whose Doc
+    //   has been removed (from_waft tag identifies which waft owns them).
     //
     //   Already-loaded docs (loaded_doc exists) are left open — full close on
-    //   removal is future work.
-    Lies_sync_wuch_docs(w: TheC, wuch: TheC) {
-        const wpath = wuch.sc.path as string
+    //   Doc removal is future work.
+    Lies_sync_waft_docs(w: TheC, waft: TheC) {
+        const wpath = waft.sc.Waft as string
         const live_paths = new Set(
-            (wuch.o({ open_doc: 1 }) as TheC[]).map(d => d.sc.path as string)
+            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.path as string)
         )
 
-        // Ensure an open_req exists for each live open_doc.
+        // Ensure an open_req exists for each live Doc.
         for (const p of live_paths) {
-            w.oai({ open_req: 1, path: p }, { from_wuch: wpath })
+            w.oai({ open_req: 1, path: p }, { from_waft: wpath })
         }
 
-        // Drop open_reqs from this wuch that no longer have a matching open_doc.
-        // Skip already-done ones — their loaded_doc owns the open state now.
-        for (const req of w.o({ open_req: 1, from_wuch: wpath }) as TheC[]) {
+        // Drop open_reqs from this waft that no longer have a matching Doc.
+        // Skip done ones — their loaded_doc owns the open state now.
+        for (const req of w.o({ open_req: 1, from_waft: wpath }) as TheC[]) {
             if (req.sc.done) continue   // < future: close loaded doc on removal
             if (!live_paths.has(req.sc.path as string)) {
                 w.drop(req)
@@ -383,44 +452,96 @@
         }
     },
 
-    // ── Lies_wuch_save ────────────────────────────────────────────────────────
+    // ── Lies_flag_doc ─────────────────────────────────────────────────────────
     //
-    //   Throttled write of a W:Such container back to its wormhole snap path.
-    //   One throttle function is created lazily per path and stored in w.c so
-    //   rapid CRUD bursts collapse into a single post_do.
+    //   Set or clear a flag key on the Doc particle in any Waft that owns
+    //   the given path.  Used to surface not_found / new state to Liesui.
+    //   No-ops silently when no Doc with that path exists.
+    Lies_flag_doc(w: TheC, path: string, key: string, val: any) {
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const doc = (waft.o({ Doc: 1 }) as TheC[]).find(d => d.sc.path === path)
+            if (!doc) continue
+            if (val === undefined) delete doc.sc[key]
+            else doc.sc[key] = val
+            waft.bump_version()
+            return
+        }
+    },
+
+    // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
     //
-    //   Mirrors auto_save_library — strips non-scalar sc values before encoding.
-    Lies_wuch_save(w: TheC, wuch: TheC) {
+    //   Spawn a session Waft:Look/YMD/HH_$i on w to track user activity
+    //   (searches, highlights, etc.) for the doc just opened.
+    //   w.c.look_seq provides the $i counter, incrementing per doc.
+    //   Idempotent: reuses an existing Look waft for the same path+hour.
+    Lies_spawn_look_waft(w: TheC, path: string) {
+        const now = new Date()
+        const ymd = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+        const hh  = String(now.getHours()).padStart(2,'0')
+        // reuse an existing Look waft for this doc+hour if one exists already
+        const existing = (w.o({ Waft: 1 }) as TheC[]).find(wf =>
+            String(wf.sc.Waft).startsWith(`Look/${ymd}/${hh}`) &&
+            wf.sc.look_doc === path
+        )
+        if (existing) return
+        w.c.look_seq = (w.c.look_seq ?? 0) + 1
+        const key = `Look/${ymd}/${hh}_${w.c.look_seq}`
+        w.i({ Waft: key, look_doc: path })
+        console.log(`👁 spawned ${key} for ${path}`)
+    },
+
+    // ── Lies_waft_save ────────────────────────────────────────────────────────
+    //
+    //   Throttled write of a Waft container back to its wormhole snap path.
+    //   One throttle per Waft path, created lazily on w.c.
+    //   Rapid CRUD bursts collapse into a single post_do.
+    //
+    //   Saves: root Waft sc, Doc children, Points grandchildren.
+    //   Strips non-scalar sc values (same guard as auto_save_library).
+    //   Look wafts are session-only and not persisted until renamed.
+    Lies_waft_save(w: TheC, waft: TheC) {
         const H    = this as House
-        const path = wuch.sc.path as string
-        const key  = `wuch_save_throttle_${path}`
-        if (!w.c[key]) {
-            w.c[key] = throttle(() => {
+        const path = waft.sc.Waft as string
+
+        // Look wafts are session-only — don't persist them (until renamed).
+        if (path.startsWith('Look/')) return
+
+        const throttle_key = `waft_save_throttle_${path}`
+        if (!w.c[throttle_key]) {
+            w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
-                    const docs = wuch.o({ open_doc: 1 }) as TheC[]
-                    const items = docs.map(d => {
-                        // Strip non-scalar values — same guard as auto_save_library.
-                        const sc: Record<string, any> = {}
-                        for (const [k, v] of Object.entries(d.sc)) {
-                            if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
-                                sc[k] = v
-                        }
-                        return { sc }
+                    const scalar = (sc: Record<string, any>) => Object.fromEntries(
+                        Object.entries(sc).filter(([, v]) =>
+                            v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+                        )
+                    )
+                    // Build items: one per Doc, with Points children if present.
+                    const docs = waft.o({ Doc: 1 }) as TheC[]
+                    const items = docs.map(doc => {
+                        const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
+                        const children = pointsC ? [{
+                            sc: { Points: 1 },
+                            children: (pointsC.o({ Point: 1 }) as TheC[]).map(pt => ({
+                                sc: scalar(pt.sc)
+                            }))
+                        }] : []
+                        return { sc: scalar(doc.sc), children }
                     })
-                    const { snap, errors } = await H.encode_wh_lines({ W: path, path }, items)
+
+                    const { snap, errors } = await H.encode_wh_lines({ Waft: path }, items)
                     if (errors.length) {
-                        console.error(`W:${path} encode errors (save aborted):`, errors)
+                        console.error(`Waft:${path} encode errors (save aborted):`, errors)
                         return
                     }
-                    const snap_path = H.Lies_wuch_snap_path(path)
+                    const snap_path = H.Lies_waft_snap_path(path)
                     const rw  = await H.requesty_serial(w, 'rw_queue')
                     const req = await rw.i({ rw_name: snap_path, rw_op: 'write', rw_data: snap })
                     H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-                    console.log(`💾 W:${path} saved (${docs.length} open_docs)`)
-                }, { see: `wuch_save_${path}` })
+                    console.log(`💾 Waft:${path} saved (${docs.length} docs)`)
+                }, { see: `waft_save_${path}` })
             }, 800)
         }
-        w.c[key]()
+        w.c[throttle_key]()
     },
 
     })

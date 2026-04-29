@@ -34,10 +34,7 @@ story:LakeSurfer
       style:background-color,v:#29d638
   Plan
     Prep
-      i_elvisto:Lies,e:Lies_open_doc
-        esc:path,v:Ghost/test/LangTiles.g
-    Prep:2
-      i_elvisto:Lies,e:Lies_open_wuch
+      i_elvisto:Lies,e:Lies_open_Waft
         esc:path,v:Ghost/Tour
   Opt
     For
