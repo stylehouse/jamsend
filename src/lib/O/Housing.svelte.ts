@@ -616,6 +616,10 @@ export class House extends StorableHousing {
         this.trace('beliefs','done')
         this.c.finished_run = now_in_seconds_with_ms()
     }
+    async all_clear() {
+        const top = this.top_House()
+        if (top.c._mutex_beliefs) await top.c._mutex_beliefs
+    }
 
 
 //#endregion

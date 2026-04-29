@@ -34,7 +34,17 @@
     // Throttled updater — reads structural arrays from Lies's w at most
     // once per interval rather than on every think() tick.  This prevents
     // rapid $state writes from rebuilding DOM nodes and yanking focus.
-    const update_from_Lies = throttle((found: TheC) => {
+    //
+    // Async: waits for the top House's beliefs mutex to release before reading.
+    // Without this, H.ave fires mid-think() and we'd read partial state while
+    // ghosts are still mid-tick.  The mutex promise resolves as soon as the
+    // current beliefs() call finishes, at which point w/* is in a sane state.
+    const update_from_Lies = throttle(async (found: TheC) => {
+        // < not sure this is needed
+        //    and throttle() should check we're not waiting ages
+        //   throttle(fn,delay,{notnow:1}) should be perfected, called delay_throttle()
+        //    right now it breaks this component completely if notnow is on.
+        // await H.all_clear()
         loaded_docs   = found.o({ loaded_doc: 1 })     as TheC[]
         errors        = found.o({ compile_error: 1 })  as TheC[]
         all_wafts     = found.o({ Waft: 1 })           as TheC[]
@@ -43,7 +53,7 @@
                 .filter(p => !p.sc.done)
                 .map(p => p.sc.path as string)
         )
-    }, 150, {notnow:true})
+    }, 150)
 
     $effect(() => {
         const ave = H.ave
@@ -185,6 +195,7 @@
     {@const path     = doc.sc.path as string}
     {@const codetype = ls_codetype(path)}
     {@const is_new   = !!doc.sc.new}
+    {@const thang   = doc.sc.thang}
     {@const show_nf  = !!doc.sc.not_found && !is_new}
     {@const is_pend  = pending_paths.has(path)}
     {@const is_loaded = loaded_docs.some(l => l.sc.path === path)}
@@ -198,6 +209,10 @@
         {:else if show_nf}
             <span class="ls-flag ls-flag-missing"
                 title="file not found on disk — opened empty">?</span>
+        {/if}
+        {#if thang}
+            <span class="ls-flag ls-flag-new"
+                title="counter for debug">{thang}</span>
         {/if}
         {#if is_pend}
             <span class="ls-state-ind" title="writing…">⏳</span>
