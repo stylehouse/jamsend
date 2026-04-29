@@ -80,12 +80,14 @@
     $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
-        for (const p of ave) void p.version
-        // Guard: only reassign LS when the particle actually changes.
-        // Without this, every H.ave touch (even returning the same TheC)
-        // would cause LS to change, re-rendering the whole tree on every think().
+        // Don't touch p.version here — subscribing to every particle causes
+        // every think() tick that bumps w to re-trigger this effect and
+        // re-render the whole tree.  Version tracking belongs in render deriveds.
         const found = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
-        if (found !== LS) LS = found
+        if (found !== LS) {
+            console.log(`🔪 Liesui: LS ${LS ? 'changed' : 'found'}`)
+            LS = found
+        }
     })
 
     let loaded_docs = $derived(LS ? LS.o({ loaded_doc: 1 }) as TheC[] : [])
@@ -363,8 +365,12 @@
 
     <!-- ── Waft** recursive tree ── -->
     {#if all_wafts.length}
+        <!-- diagnostic A: outside {#each} — focus survives think() if component is stable -->
+        <input class="ls-diag" placeholder="diag A: outside each" />
         <div class="ls-waft-section">
             {#each all_wafts as waft (waft.sc.Waft)}
+                <!-- diagnostic B: inside {#each} outside snippet — remounts if each re-keys -->
+                <input class="ls-diag" placeholder="diag B: inside each ({waft.sc.Waft})" />
                 {@render render_waft(waft, 0)}
             {/each}
         </div>
@@ -393,7 +399,6 @@
             <input class="ls-input ls-rename-input"
                 value={renaming[path]}
                 oninput={(ev) => renaming[path] = (ev.target as HTMLInputElement).value}
-                onblur={() => commit_rename_doc(doc, waft)}
                 onkeydown={(ev) => { if (ev.key==='Enter') commit_rename_doc(doc, waft); if (ev.key==='Escape') renaming[path]=null }}
                 use:focus_on_mount />
         {:else}
@@ -437,13 +442,14 @@
     {@const add_form   = adding_doc[wkey]}
 
     <div class="ls-waft" style="margin-left: {depth * 14}px" class:ls-waft-active={is_active}>
+        <!-- diagnostic C: inside snippet — remounts if snippet is re-rendered as new DOM -->
+        <input class="ls-diag" placeholder="diag C: inside snippet ({wkey})" />
 
         <!-- Waft header: [key] [spacer] [●/○] [+ Doc] [✎] [×] -->
         <div class="ls-waft-hdr">
             {#if renaming[wkey] !== null && renaming[wkey] !== undefined}
                 <input class="ls-input ls-rename-input" value={renaming[wkey]}
                     oninput={(ev) => renaming[wkey] = (ev.target as HTMLInputElement).value}
-                    onblur={() => commit_rename_waft(waft)}
                     onkeydown={(ev) => { if (ev.key==='Enter') commit_rename_waft(waft); if (ev.key==='Escape') renaming[wkey]=null }}
                     use:focus_on_mount />
             {:else}
@@ -541,7 +547,6 @@
 
         <!-- sub-Wafts (recursive) -->
         {#each sub_wafts as sw (sw.sc.Waft)}
-            <input value="NOTHING-out">
             {@render render_waft(sw, depth + 1)}
         {/each}
 
@@ -646,6 +651,14 @@
     .ls-state-ind { font-size: 0.72rem; flex-shrink: 0 }
     .ls-dim       { color: #555 }
     .ls-spacer    { flex: 1 }
+
+    /* ── diagnostic inputs (remove after focus investigation) ── */
+    .ls-diag {
+        display: block; width: 100%; background: #0d0d20; border: 1px dashed #446;
+        border-radius: 2px; color: #66a; font-family: monospace; font-size: 0.7rem;
+        padding: 0.1rem 0.3rem; outline: none; margin-bottom: 0.15rem;
+    }
+    .ls-diag:focus { border-color: #88c; color: #aac }
 
     /* ── Waft tree ── */
     .ls-waft-section { margin-top: 0.4rem; border-top: 1px solid #222; padding-top: 0.3rem }
