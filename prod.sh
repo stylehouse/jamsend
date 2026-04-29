@@ -247,5 +247,5 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     echo "=== Jump Server (${LEPROXY_PUBLIC_IP}) ==="
     echo "Deploy there/ with:"
     echo "  rsync -av --delete there/ c:leproxy/"
-    echo "  ssh jamsend-fe 'cd leproxy && docker compose up -d --build'"
+    echo "  ssh c 'cd leproxy && docker compose up -d --build'"
 fi
