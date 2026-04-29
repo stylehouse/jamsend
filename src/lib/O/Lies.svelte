@@ -7,18 +7,18 @@
     //
     //   Owns the list of open Ghost source documents.  For each:
     //   - Loads source from disk via rw_op:'read'.
-    //   - Derives gen_path when the source is under Ghost/ and its codetype is
-    //     in GEN_ABLE_EXTENSIONS — absent gen_path means soft-compile only.
+    //   - Derives gen_path when the source is under Ghost/ and its codetype
+    //     (extension) is in GEN_ABLE_CODETYPES — absent means soft-compile only.
     //   - Hands text to Lang via e:Lang_open_doc.
     //
-    //   Story Plan Preps open documents via e:Lies_open_doc {path}, or open
-    //   Waft containers via e:Lies_open_waft {path}.
+    //   Plan Preps open Wafts (not individual docs) via e:Lies_open_Waft.
+    //   Each Waft carries Doc children that drive the open_req loop.
     //
     // ── Two phases: LiesPersist → LiesRealised ────────────────────────────────
     //
     //   Every Lies tick runs LiesPersist first.  If any IO is still in flight,
-    //   LiesPersist sets the see indicator and returns false — LiesRealised
-    //   does not run until everything is settled.
+    //   LiesPersist sets w.see and returns false — LiesRealised does not run
+    //   until all Waft loads and open_reqs are fully settled.
     //
     //   LiesPersist — all disk IO: Waft loading, open_req loading.
     //   LiesRealised — compile airlock, future thinking/analysis.
@@ -27,47 +27,43 @@
     //
     //   A Waft is a persisted list of Docs stored at wormhole/PATH/toc.snap.
     //   "Rafts of sense drawn together from the flotsam of Ghost/*."
-    //   Plan Preps open one via e:Lies_open_waft {path}.
-    //
-    //   Example:
-    //     Prep:2
-    //       i_elvisto:Lies,e:Lies_open_waft
-    //         esc:path,v:Ghost/Tour
-    //
-    //   Waft:'Ghost/Tour' lives at wormhole/Ghost/Tour/toc.snap.
-    //   Waft,path is derived: path == sc.Waft (no redundant field stored).
     //
     //   Snap format (wormhole/Ghost/Tour/toc.snap):
     //     Waft:Ghost/Tour
-    //       Doc:1 path:Ghost/test/Hello.g codetype:g
+    //       Doc:1,path:Ghost/test/Hello.g
     //         Points:1
-    //           Point:1 method:Idzeugnosis
+    //           Point:1,method:Idzeugnosis
     //
-    //   Doc children are reflected into open_req (tagged from_waft) so the
-    //   normal document-load loop picks them up.
+    //   codetype is derived from path extension — never stored on the particle.
+    //   Waft,path is derived: path == sc.Waft (no redundant field stored).
     //
-    //   CRUD from Liesui mutates the Waft TheC; watch_c fires a per-path
-    //   throttled save back to wormhole/PATH/toc.snap.
+    //   Plan Prep usage:
+    //     Prep
+    //       i_elvisto:Lies,e:Lies_open_Waft
+    //         esc:path,v:Ghost/Tour
+    //
+    // ── Active Waft ───────────────────────────────────────────────────────────
+    //
+    //   Seeded in setup at Waft:'Active'.  Any stray e:Lies_open_Doc call
+    //   (without a Waft context) creates a Doc here and triggers the normal
+    //   sync loop.  Active persists at wormhole/Active/toc.snap.
     //
     // ── Waft:Look — session tracking ─────────────────────────────────────────
     //
-    //   When a doc is opened, Lies spawns a Waft:Look/YMD/HH_$i on w to
-    //   track what the user does with it (searches, highlights, etc.).
-    //   These are session-only initially — they survive renames and can then
-    //   be persisted.
-    //   sc: { Waft: 'Look/2025-04-29/14_0', look_doc: path }
+    //   e:Lies_now_Waft (triggered by the +Now button in Liesui) spawns a
+    //   Waft:Look/YMD/HH_$i for quick session notes.
+    //   sc: { Waft: 'Look/2025-04-29/14_1' }
+    //   Session-only until renamed to a non-Look path.
     //
     // ── Compile airlock (LiesRealised) ───────────────────────────────────────
     //
-    //   LangCompiling fires e:Lies_compiled {path, gen_path, source, dige}
-    //   after building a module.  Lies decides — based on opt particles —
-    //   whether to write the file and/or notify Pantheate.
+    //   LangCompiling fires e:Lies_compiled {path, gen_path, source, dige}.
+    //   Lies decides — based on Opt — whether to write gen/ and notify Pantheate.
+    //   Fires e:Lies_compile_settled {path} back to w:Lang when done.
     //
-    //   When done, Lies fires e:Lies_compile_settled {path} back to w:Lang.
+    // ── Gen-able codetypes ────────────────────────────────────────────────────
     //
-    // ── Gen-able extensions ───────────────────────────────────────────────────
-    //
-    //   GEN_ABLE_EXTENSIONS: only these source file types produce gen/ output.
+    //   GEN_ABLE_CODETYPES: file extensions that produce gen/ output.
     //   Everything else is soft-compile only (abstractions extracted, no write).
     //
     // ── Opt particles ─────────────────────────────────────────────────────────
@@ -75,40 +71,29 @@
     //   w/{Opt:1}               — always seeded in setup
     //     /{nogen:1}              nogen: skip write and Pantheate notify
     //
-    //   Managed by i_actions_to_C(Opt, 'nogen', …) every tick.
-    //   Collected into The/Opt/For/w:Lies by story_save().
-    //
-    // ── Path conventions ─────────────────────────────────────────────────────
-    //
-    //   Ghost/ is a real directory at the project root (not a symlink).
-    //   Waft snap path:     wormhole/${waft.sc.Waft}/toc.snap
-    //   gen_path:           Ghost/test/Foo.g → gen/test/Foo.go
-    //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
-    //   w/{open_waft_req:1, path}              — queued by e_Lies_open_waft
+    //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
-    //     /{Doc:1, path, codetype}             — persisted doc entry
-    //       /{Points:1}                        — optional structured metadata
-    //         /{Point:1, method}               — individual point
-    //   w/{Waft:'Look/YMD/HH_$i', look_doc}   — session tracking Waft
-    //   w/{open_req:1, path, from_waft?}       — queued by e_Lies_open_doc or reflected
-    //   w/{loaded_doc:1, path, gen_path}       — after successful load + Lang handoff
-    //   w/{compile_pending:1, path, ...}       — waiting for write (or immediate settle)
+    //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
+    //       /{Points:1}                        — optional metadata
+    //         /{Point:1,method}                — individual point
+    //   w/{Waft:'Look/YMD/HH_$i'}             — session note Waft
+    //   w/{open_req:1,path,from_waft?}         — reflected from Doc or stray
+    //   w/{loaded_doc:1,path,gen_path}         — after load + Lang handoff
+    //   w/{compile_pending:1,path,...}         — waiting for gen/ write
     //   w/{Opt:1}                              — options container
     //
-    // ── Doc flags ────────────────────────────────────────────────────────────
+    // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
     //
-    //   doc.sc.new = 1         — set by Liesui on creation; cleared on first load
-    //   doc.sc.not_found = 1   — set by Lies when wormhole says file absent;
-    //                            cleared when the file is later found and loaded
+    //   doc.sc.new = 1         — set by Liesui on creation; cleared on load
+    //   doc.sc.not_found = 1   — set when wormhole says absent; cleared on load
     //
     // ── future ────────────────────────────────────────────────────────────────
-    //   < full close on Doc removal (drop loaded_doc, tell Lang to close)
+    //   < full close on Doc removal (drop loaded_doc, tell Lang)
     //   < %pending_write / %surprise_read / diff per loaded_doc
-    //   < nested Waft save (currently saves Docs and their Points only)
-    //   < rename Waft: old snap persists, new path is written fresh
-    //   < multi-doc Cyto (inter-ghost call graph)
+    //   < nested Waft save
+    //   < rename Waft: write fresh snap at new path
 
     import { _C, TheC }     from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -116,48 +101,60 @@
     import { onMount }      from "svelte"
     import Liesui           from "$lib/O/Liesui.svelte"
 
-    // Only .g files get written to gen/; everything else is soft-compile only.
-    const GEN_ABLE_EXTENSIONS = ['g']
+    // File extensions that produce gen/ output.
+    // Everything else is soft-compile only regardless of Ghost/ location.
+    const GEN_ABLE_CODETYPES = ['g']
 
     let { M } = $props()
 
     onMount(async () => {
     await M.eatfunc({
 
-    // ── e_Lies_open_doc ────────────────────────────────────────────────
+    // ── e_Lies_open_Waft ───────────────────────────────────────────────
     //
-    //   Entry point from Story Plan Preps.  Queues an open_req; LiesPersist
-    //   does the Wormhole read + Lang handoff.
+    //   Entry point from Plan Preps or Liesui.  Queues an open_waft_req;
+    //   LiesPersist loads wormhole/PATH/toc.snap, creates the Waft container,
+    //   and reflects Doc children into open_req.
     //
-    //     Prep:1
-    //       i_elvisto:Lies,e:Lies_open_doc
-    //         esc:path,v:Ghost/test/LangTiles.g
-    //
-    //   Idempotent: same path only ever creates one open_req particle.
-    async e_Lies_open_doc(A: TheC, w: TheC, e: TheC) {
-        const path = e.sc.path as string | undefined
-        if (!path) throw 'e_Lies_open_doc: needs path'
-        w.oai({ open_req: 1, path })
-        this.i_elvisto(w, 'think')
-    },
-
-    // ── e_Lies_open_waft ───────────────────────────────────────────────
-    //
-    //   Entry point from Story Plan Preps or Liesui.  Queues an
-    //   open_waft_req; LiesPersist loads wormhole/PATH/toc.snap, creates
-    //   the Waft container, and reflects Doc children into open_req.
-    //
-    //     Prep:2
-    //       i_elvisto:Lies,e:Lies_open_waft
+    //     Prep
+    //       i_elvisto:Lies,e:Lies_open_Waft
     //         esc:path,v:Ghost/Tour
     //
     //   Idempotent: same path only ever creates one open_waft_req.
-    async e_Lies_open_waft(A: TheC, w: TheC, e: TheC) {
+    async e_Lies_open_Waft(A: TheC, w: TheC, e: TheC) {
         const path = e.sc.path as string | undefined
-        if (!path) throw 'e_Lies_open_waft: needs path'
+        if (!path) throw 'e_Lies_open_Waft: needs path'
         w.oai({ open_waft_req: 1, path })
-        debugger
         this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_open_Doc ────────────────────────────────────────────────
+    //
+    //   Stray doc open — for paths not yet in any explicit Waft.
+    //   Creates a Doc in the Active Waft, which sync_waft_docs then
+    //   reflects into open_req for the normal load loop.
+    //   Active Waft is seeded in setup at Waft:'Active'.
+    //
+    //   Idempotent: same path only ever creates one Doc in Active.
+    async e_Lies_open_Doc(A: TheC, w: TheC, e: TheC) {
+        const path = e.sc.path as string | undefined
+        if (!path) throw 'e_Lies_open_Doc: needs path'
+        const active = w.o({ Waft: 'Active' })[0] as TheC | undefined
+        if (!active) throw 'e_Lies_open_Doc: Active Waft not set up yet'
+        active.oai({ Doc: 1, path })
+        active.bump_version()   // triggers watch_c → sync_waft_docs
+        this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_now_Waft ────────────────────────────────────────────────
+    //
+    //   Fired by the +Now button in Liesui.  Spawns a session
+    //   Waft:Look/YMD/HH_$i for quick development notes.
+    //   Session-only until renamed to a non-Look path.
+    e_Lies_now_Waft(A: TheC, w: TheC) {
+        const H = this as House
+        H.Lies_spawn_look_waft(w)
+        w.bump_version()
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
@@ -200,6 +197,9 @@
             // populated it before the first tick; oai is a no-op if so.
             w.oai({ Opt: 1 })
             H.oai_enroll(H, { watched: 'actions' })
+            // seed the Active Waft so stray e_Lies_open_Doc calls have a home;
+            // goes through the normal open_waft_req load path so it persists.
+            w.oai({ open_waft_req: 1, path: 'Active' })
         }
 
         // ── opts — every tick, like story_ui ─────────────────────────────────
@@ -224,7 +224,6 @@
     //
     //   Returns true when every open_waft_req and open_req is done.
     //   Returns false (and sets w.see) if any IO is still in flight.
-    //   Only when this returns true does LiesRealised run.
 
     async LiesPersist(A: TheC, w: TheC): Promise<boolean> {
         const H = this as House
@@ -275,7 +274,7 @@
             })
 
             waft_req.sc.done = 1
-            console.log(`🗂 Waft:${path} opened (${(waft.o({ Doc: 1 }) as TheC[]).length} docs)`)
+            console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }
 
         // ── load open_reqs from disk ──────────────────────────────────────────
@@ -298,7 +297,7 @@
 
             if (req.sc.reply?.not_found) {
                 // File absent — open as empty so Lang has an editable slot.
-                // Mark the Doc in its Waft (if any) so Liesui can surface this.
+                // Mark the Doc in its Waft so Liesui can surface this.
                 H.Lies_flag_doc(w, path, 'not_found', 1)
                 H.Lies_flag_doc(w, path, 'new', undefined)   // clear new, not_found takes over
                 H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text: '' })
@@ -316,9 +315,6 @@
 
             req_p.sc.done = 1
             w.oai({ loaded_doc: 1, path, gen_path })
-
-            // Spawn a session Waft to track what the user does with this doc.
-            H.Lies_spawn_look_waft(w, path)
         }
 
         return true   // all IO settled — LiesRealised may proceed
@@ -397,13 +393,13 @@
 
     // ── Lies_gen_path ─────────────────────────────────────────────────────────
     //
-    //   Ghost/test/Foo.g  →  gen/test/Foo.go  (only for GEN_ABLE_EXTENSIONS)
+    //   Ghost/test/Foo.g  →  gen/test/Foo.go  (only for GEN_ABLE_CODETYPES)
     //   Returns undefined for non-Ghost/ paths or non-gen-able codetypes —
     //   those docs are soft-compile only and don't get written to gen/.
     Lies_gen_path(path: string): string | undefined {
         if (!path.match(/^.*Ghost\//)) return undefined
         const codetype = path.split('.').pop() ?? ''
-        if (!GEN_ABLE_EXTENSIONS.includes(codetype)) return undefined
+        if (!GEN_ABLE_CODETYPES.includes(codetype)) return undefined
         return path
             .replace(/^.*Ghost\//, 'gen/')
             .replace(/\.g$/, '.go')
@@ -411,6 +407,7 @@
 
     // ── Lies_codetype ─────────────────────────────────────────────────────────
     //   Extract file extension from path: 'Ghost/test/Foo.g' → 'g'
+    //   Not stored on Doc particles — always derived at read time.
     Lies_codetype(path: string): string {
         return path.split('.').pop() ?? ''
     },
@@ -425,16 +422,16 @@
 
     // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
     //
-    //   Reflect {Doc:1, path} children of waft into {open_req:1, path, from_waft}
+    //   Reflect {Doc:1,path} children of waft into {open_req:1,path,from_waft}
     //   on w.  Adds open_reqs for new Docs; drops unloaded open_reqs whose Doc
-    //   has been removed (from_waft tag identifies which waft owns them).
+    //   has been removed (from_waft tag identifies ownership).
     //
     //   Already-loaded docs (loaded_doc exists) are left open — full close on
     //   Doc removal is future work.
     Lies_sync_waft_docs(w: TheC, waft: TheC) {
         const wpath = waft.sc.Waft as string
         const live_paths = new Set(
-            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.path as string)
+            waft.o({ Doc: 1 }).map(d => (d as TheC).sc.path as string)
         )
 
         // Ensure an open_req exists for each live Doc.
@@ -459,7 +456,7 @@
     //   No-ops silently when no Doc with that path exists.
     Lies_flag_doc(w: TheC, path: string, key: string, val: any) {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = (waft.o({ Doc: 1 }) as TheC[]).find(d => d.sc.path === path)
+            const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
             if (!doc) continue
             if (val === undefined) delete doc.sc[key]
             else doc.sc[key] = val
@@ -470,24 +467,17 @@
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
     //
-    //   Spawn a session Waft:Look/YMD/HH_$i on w to track user activity
-    //   (searches, highlights, etc.) for the doc just opened.
-    //   w.c.look_seq provides the $i counter, incrementing per doc.
-    //   Idempotent: reuses an existing Look waft for the same path+hour.
-    Lies_spawn_look_waft(w: TheC, path: string) {
+    //   Spawn a session Waft:Look/YMD/HH_$i for quick development notes.
+    //   Called by e_Lies_now_Waft (the +Now button) — not automatically.
+    //   Session-only; not persisted until renamed to a non-Look path.
+    Lies_spawn_look_waft(w: TheC) {
         const now = new Date()
         const ymd = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
         const hh  = String(now.getHours()).padStart(2,'0')
-        // reuse an existing Look waft for this doc+hour if one exists already
-        const existing = (w.o({ Waft: 1 }) as TheC[]).find(wf =>
-            String(wf.sc.Waft).startsWith(`Look/${ymd}/${hh}`) &&
-            wf.sc.look_doc === path
-        )
-        if (existing) return
         w.c.look_seq = (w.c.look_seq ?? 0) + 1
         const key = `Look/${ymd}/${hh}_${w.c.look_seq}`
-        w.i({ Waft: key, look_doc: path })
-        console.log(`👁 spawned ${key} for ${path}`)
+        w.i({ Waft: key })
+        console.log(`👁 spawned ${key}`)
     },
 
     // ── Lies_waft_save ────────────────────────────────────────────────────────
@@ -510,20 +500,19 @@
         if (!w.c[throttle_key]) {
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
+                    // Filter to scalar values only — same guard as auto_save_library.
                     const scalar = (sc: Record<string, any>) => Object.fromEntries(
                         Object.entries(sc).filter(([, v]) =>
                             v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
                         )
                     )
                     // Build items: one per Doc, with Points children if present.
-                    const docs = waft.o({ Doc: 1 }) as TheC[]
-                    const items = docs.map(doc => {
+                    const items = waft.o({ Doc: 1 }).map(raw => {
+                        const doc     = raw as TheC
                         const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
                         const children = pointsC ? [{
                             sc: { Points: 1 },
-                            children: (pointsC.o({ Point: 1 }) as TheC[]).map(pt => ({
-                                sc: scalar(pt.sc)
-                            }))
+                            children: pointsC.o({ Point: 1 }).map(pt => ({ sc: scalar((pt as TheC).sc) }))
                         }] : []
                         return { sc: scalar(doc.sc), children }
                     })
@@ -537,7 +526,7 @@
                     const rw  = await H.requesty_serial(w, 'rw_queue')
                     const req = await rw.i({ rw_name: snap_path, rw_op: 'write', rw_data: snap })
                     H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-                    console.log(`💾 Waft:${path} saved (${docs.length} docs)`)
+                    console.log(`💾 Waft:${path} saved (${items.length} docs)`)
                 }, { see: `waft_save_${path}` })
             }, 800)
         }

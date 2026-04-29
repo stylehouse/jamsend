@@ -28,10 +28,18 @@ story:LakeSurfer
       style:background-color,v:#bbdb43
     matstyle:received
       style:background-color,v:#32618f
-    matstyle:open_wuch_req
-      style:background-color,v:#b12f4a
-    matstyle:W
-      style:background-color,v:#29d638
+    matstyle:open_Waft_req
+      style:background-color,v:#8259c5
+    matstyle:Waft
+      style:background-color,v:#997429
+    matstyle:Doc
+      style:background-color,v:#24bcb6
+    matstyle:Points
+      style:background-color,v:#bd429e
+    matstyle:Point
+      style:background-color,v:#89d04e
+    matstyle:open_waft_req
+      style:background-color,v:#bd429e
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft

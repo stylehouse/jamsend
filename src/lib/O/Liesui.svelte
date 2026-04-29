@@ -6,33 +6,38 @@
     //
     // Layout
     // ──────
-    //   [🔪 Lies]  [Waft: _____ +]       ← header row: +Waft inline
+    //   [🔪 Lies]  [+ Waft] [+ Now]       ← header: +Waft toggles input, +Now fires instantly
+    //              [____________] [+]       ← input appears below buttons when +Waft clicked
     //
     //   loaded docs table (flat, all open docs)
     //
     //   Waft** recursive tree
-    //     Waft:Ghost/Tour  [rename] [×]
-    //       Doc  Ghost/test/Hello.g  [g]  [rename] [×]
-    //         Points  Idzeugnosis  [×]
-    //         [+ Point ___]
+    //     Waft:Ghost/Tour  [✎ rename] [× delete]
+    //       Doc  Ghost/test/Hello.g  [g]  [✎] [×]
+    //         Point  Idzeugnosis  [×]
+    //         [+ Point ___________]
     //       [+ Doc] → expands 3-input form:
-    //         Ghost/[_____]    lib/src/[_____]    [_____]
+    //         Ghost/ [_____________]
+    //         lib/src/ [___________]
+    //         path: [________________]
     //       Sub-Waft (recursive…)
-    //     Waft:Look/2025-04-29/14_1  (look_doc: …)
+    //     Waft:Active  (stray docs land here)
+    //     Waft:Look/2025-04-29/14_1  (session note, italic)
     //
     // CRUD mechanics
     // ──────────────
     //   Waft / Doc / Point mutations go directly to the TheC particles;
-    //   watch_c in Lies fires the throttled waft_save.
+    //   watch_c in Lies fires the throttled Waft save.
     //
-    //   +Waft (header): fires e:Lies_open_waft{path} — same as a Plan Prep.
-    //   +Doc (per Waft): expands a 3-input form; first non-empty prefix wins.
-    //     Ghost/[___]  →  Ghost/${input}
-    //     lib/src/[___]  →  lib/src/${input}
-    //     [___]  →  ${input}  (any path)
-    //   The Doc particle gains sc.new=1; Lies clears it on successful load.
-    //
-    //   Rename: inline input replaces label on click; Enter/blur commits.
+    //   +Waft button: click toggles an input; Enter or second click submits.
+    //     Fires i_elvisto 'Lies_open_Waft' (no e_ prefix — i_elvisto adds it).
+    //     Empty path is not submitted.
+    //   +Now button: fires i_elvisto 'Lies_now_Waft' immediately (no input).
+    //   +Doc (per Waft): expands 3-input form — Ghost/, lib/src/, free path.
+    //     Ghost/ input is auto-focused.  First non-empty prefix wins on submit.
+    //     New Doc gains sc.new=1; Lies clears it on successful load.
+    //   codetype is never stored — always derived from path.split('.').pop().
+    //   Rename: inline input replaces label; Enter/blur commits, Escape cancels.
     //   Delete: drop() the particle and bump_version() the parent.
     //
     // < doc tabs (switch active doc)
@@ -69,18 +74,17 @@
         return LS.o({ Waft: 1 }) as TheC[]
     })())
 
-    // ── UI state ─────────────────────────────────────────────────────
+    // ── header UI state ──────────────────────────────────────────────
+    let waft_input_open = $state(false)
+    let new_waft_path   = $state('')
 
-    // +Waft inline form in header
-    let new_waft_path = $state('')
-
-    // Rename state: key → new value being typed (null = not renaming)
+    // ── rename state: particle key → text being typed (null = closed) ──
     let renaming: Record<string, string | null> = $state({})
 
-    // +Doc form state per waft key: null = closed, obj = open
+    // ── +Doc form state per waft key ─────────────────────────────────
     let adding_doc: Record<string, { ghost: string, libsrc: string, free: string } | null> = $state({})
 
-    // +Point form state per doc path
+    // ── +Point input per doc path ────────────────────────────────────
     let adding_point: Record<string, string> = $state({})
 
     // ── errors ───────────────────────────────────────────────────────
@@ -92,11 +96,23 @@
     }
 
     // ── +Waft ────────────────────────────────────────────────────────
-    function open_new_waft() {
+    function toggle_waft_input() {
+        waft_input_open = !waft_input_open
+        if (!waft_input_open) new_waft_path = ''
+    }
+
+    function submit_new_waft() {
         const path = new_waft_path.trim()
-        if (!path || !LS) return
-        H.i_elvisto('Lies/Lies', 'e_Lies_open_waft', { path })
-        new_waft_path = ''
+        if (!path) return   // never open Waft:''
+        // i_elvisto without e_ prefix — the dispatcher prepends it
+        H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
+        new_waft_path   = ''
+        waft_input_open = false
+    }
+
+    // ── +Now ─────────────────────────────────────────────────────────
+    function fire_now_waft() {
+        H.i_elvisto('Lies/Lies', 'Lies_now_Waft', {})
     }
 
     // ── +Doc ─────────────────────────────────────────────────────────
@@ -110,13 +126,12 @@
         const form = adding_doc[key]
         if (!form) return
         let path = ''
-        if (form.ghost.trim())  path = `Ghost/${form.ghost.trim()}`
+        if (form.ghost.trim())       path = `Ghost/${form.ghost.trim()}`
         else if (form.libsrc.trim()) path = `lib/src/${form.libsrc.trim()}`
         else if (form.free.trim())   path = form.free.trim()
         if (!path) return
-        const codetype = path.split('.').pop() ?? ''
+        // codetype is not stored — derived from path at display time
         const doc = waft.oai({ Doc: 1, path })
-        doc.sc.codetype = codetype
         doc.sc.new = 1   // Lies clears this on successful load
         waft.bump_version()
         adding_doc[key] = null
@@ -126,8 +141,7 @@
     function add_point(doc: TheC, waft: TheC) {
         const method = (adding_point[doc.sc.path as string] ?? '').trim()
         if (!method) return
-        let pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
-        if (!pointsC) { pointsC = doc.i({ Points: 1 }); doc.bump_version() }
+        const pointsC = (doc.o({ Points: 1 })[0] as TheC | undefined) ?? doc.i({ Points: 1 })
         pointsC.oai({ Point: 1, method })
         pointsC.bump_version()
         waft.bump_version()
@@ -140,21 +154,20 @@
     }
 
     function commit_rename_waft(waft: TheC) {
-        const key     = waft.sc.Waft as string
-        const newPath = renaming[key]?.trim()
-        renaming[key] = null
-        if (!newPath || newPath === key) return
+        const old     = waft.sc.Waft as string
+        const newPath = renaming[old]?.trim() ?? ''
+        renaming[old] = null
+        if (!newPath || newPath === old) return
         waft.sc.Waft  = newPath
         LS?.bump_version()
     }
 
     function commit_rename_doc(doc: TheC, waft: TheC) {
-        const key     = doc.sc.path as string
-        const newPath = renaming[key]?.trim()
-        renaming[key] = null
-        if (!newPath || newPath === key) return
-        doc.sc.path     = newPath
-        doc.sc.codetype = newPath.split('.').pop() ?? ''
+        const old     = doc.sc.path as string
+        const newPath = renaming[old]?.trim() ?? ''
+        renaming[old] = null
+        if (!newPath || newPath === old) return
+        doc.sc.path = newPath
         waft.bump_version()
     }
 
@@ -179,19 +192,32 @@
 
 <div class="ls-ui">
 
-    <!-- ── header row with inline +Waft form ── -->
+    <!-- ── header row ── -->
     <div class="ls-header">
         <span class="ls-title">🔪 Lies</span>
-        <form class="ls-new-waft" onsubmit={(ev) => { ev.preventDefault(); open_new_waft() }}>
-            <span class="ls-prefix-label">Waft:</span>
-            <input
-                class="ls-input ls-input-sm"
-                placeholder="Ghost/Tour"
-                bind:value={new_waft_path}
-            />
-            <button class="ls-add-btn ls-add-btn-sm" type="submit">+</button>
-        </form>
+        <div class="ls-header-btns">
+            <button
+                class="ls-hdr-btn"
+                class:ls-hdr-btn-active={waft_input_open}
+                onclick={toggle_waft_input}
+                title="Open a Waft"
+            >+ Waft</button>
+            <button class="ls-hdr-btn" onclick={fire_now_waft} title="Spawn a Look/Now waft">+ Now</button>
+        </div>
     </div>
+
+    <!-- +Waft input row — only visible when toggled -->
+    {#if waft_input_open}
+        <div class="ls-waft-input-row">
+            <input
+                class="ls-input ls-waft-path-input"
+                bind:value={new_waft_path}
+                onkeydown={(ev) => { if (ev.key === 'Enter') submit_new_waft(); if (ev.key === 'Escape') toggle_waft_input() }}
+                use:focus_on_mount
+            />
+            <button class="ls-add-btn" onclick={submit_new_waft} disabled={!new_waft_path.trim()}>+</button>
+        </div>
+    {/if}
 
     {#if !LS}
         <div class="ls-empty">waiting for Lies…</div>
@@ -211,25 +237,16 @@
     <!-- ── loaded docs flat table ── -->
     {#if loaded_docs.length}
         <table class="ls-table">
-            <thead>
-                <tr>
-                    <th>source path</th>
-                    <th>gen path</th>
-                    <th>state</th>
-                </tr>
-            </thead>
+            <thead><tr><th>source path</th><th>gen path</th><th>state</th></tr></thead>
             <tbody>
                 {#each loaded_docs as doc (doc.sc.path)}
-                    {@const isPending = pending.some((p: TheC) => p.sc.path === doc.sc.path)}
+                    {@const isPending = pending.some(p => p.sc.path === doc.sc.path)}
                     <tr class:ls-pending={isPending}>
                         <td class="ls-path">{doc.sc.path}</td>
                         <td class="ls-gen">{doc.sc.gen_path ?? '— soft only'}</td>
                         <td class="ls-state">
-                            {#if isPending}
-                                <span class="ls-writing">⏳ writing…</span>
-                            {:else}
-                                <span class="ls-ok">✓</span>
-                            {/if}
+                            {#if isPending}<span class="ls-writing">⏳ writing…</span>
+                            {:else}<span class="ls-ok">✓</span>{/if}
                         </td>
                     </tr>
                 {/each}
@@ -251,15 +268,15 @@
     {/if}
 </div>
 
-<!-- ── recursive Waft snippet ────────────────────────────────────────────── -->
-<!--
-    Renders one Waft and all its children (Docs, Points, sub-Wafts) at the
-    given indent depth.  Sub-Wafts recurse via {@render render_waft(sw, depth+1)}.
-    version touches establish Svelte 5 fine-grained reactivity on mutations.
--->
+<!-- ─────────────────────────────────────────────────────────────────────────
+     Recursive Waft snippet.
+     version touches establish Svelte 5 fine-grained reactivity on mutations.
+     Sub-Wafts (Waft children of Waft) recurse at depth+1.
+──────────────────────────────────────────────────────────────────────────── -->
 {#snippet render_waft(waft: TheC, depth: number)}
     {@const wkey      = waft.sc.Waft as string}
     {@const is_look   = wkey.startsWith('Look/')}
+    {@const is_active = wkey === 'Active'}
     {@const waft_docs = (() => { void waft.version; return waft.o({ Doc: 1 }) as TheC[] })()}
     {@const sub_wafts = (() => { void waft.version; return waft.o({ Waft: 1 }) as TheC[] })()}
     {@const waft_mungs = waft.o({ mung_error: 1 }) as TheC[]}
@@ -275,13 +292,15 @@
                     value={renaming[wkey]}
                     oninput={(ev) => renaming[wkey] = (ev.target as HTMLInputElement).value}
                     onblur={() => commit_rename_waft(waft)}
-                    onkeydown={(ev) => { if (ev.key === 'Enter') commit_rename_waft(waft); if (ev.key === 'Escape') { renaming[wkey] = null } }}
+                    onkeydown={(ev) => {
+                        if (ev.key === 'Enter') commit_rename_waft(waft)
+                        if (ev.key === 'Escape') renaming[wkey] = null
+                    }}
                     use:focus_on_mount
                 />
             {:else}
-                <span class="ls-waft-key" class:ls-look={is_look}>
+                <span class="ls-waft-key" class:ls-look={is_look} class:ls-active={is_active}>
                     Waft:{wkey}
-                    {#if is_look}<span class="ls-look-doc"> ↳ {waft.sc.look_doc}</span>{/if}
                 </span>
             {/if}
             <span class="ls-spacer"></span>
@@ -301,11 +320,12 @@
         <!-- Doc list -->
         {#each waft_docs as doc (doc.sc.path)}
             {@const dpath     = doc.sc.path as string}
-            {@const codetype  = doc.sc.codetype as string || dpath.split('.').pop() || ''}
+            {@const codetype  = dpath.split('.').pop() ?? ''}
             {@const pointsC   = doc.o({ Points: 1 })[0] as TheC | undefined}
             {@const points    = (() => { void pointsC?.version; return pointsC ? pointsC.o({ Point: 1 }) as TheC[] : [] })()}
             {@const is_new    = !!doc.sc.new}
             {@const not_found = !!doc.sc.not_found}
+
             <div class="ls-doc" class:ls-doc-new={is_new} class:ls-doc-missing={not_found}>
 
                 <!-- Doc header row -->
@@ -316,7 +336,10 @@
                             value={renaming[dpath]}
                             oninput={(ev) => renaming[dpath] = (ev.target as HTMLInputElement).value}
                             onblur={() => commit_rename_doc(doc, waft)}
-                            onkeydown={(ev) => { if (ev.key === 'Enter') commit_rename_doc(doc, waft); if (ev.key === 'Escape') { renaming[dpath] = null } }}
+                            onkeydown={(ev) => {
+                                if (ev.key === 'Enter') commit_rename_doc(doc, waft)
+                                if (ev.key === 'Escape') renaming[dpath] = null
+                            }}
                             use:focus_on_mount
                         />
                     {:else}
@@ -327,7 +350,7 @@
                     {#if not_found}<span class="ls-flag ls-flag-missing">?</span>{/if}
                     <span class="ls-spacer"></span>
                     <button class="ls-icon-btn" title="rename" onclick={() => start_rename(dpath, dpath)}>✎</button>
-                    <button class="ls-icon-btn ls-del-btn" title="remove doc" onclick={() => delete_doc(doc, waft)}>×</button>
+                    <button class="ls-icon-btn ls-del-btn" title="remove" onclick={() => delete_doc(doc, waft)}>×</button>
                 </div>
 
                 <!-- Points -->
@@ -336,17 +359,18 @@
                         {#each points as pt (pt.sc.method)}
                             <div class="ls-point">
                                 <span class="ls-point-method">{pt.sc.method}</span>
-                                <button class="ls-icon-btn ls-del-btn" title="remove point" onclick={() => delete_point(pt, pointsC!, waft)}>×</button>
+                                <button class="ls-icon-btn ls-del-btn" onclick={() => delete_point(pt, pointsC!, waft)}>×</button>
                             </div>
                         {/each}
                     </div>
                 {/if}
 
-                <!-- +Point form (shown when Points container exists or always as a stub) -->
+                <!-- +Point — always shown; creates Points container on first use -->
                 <div class="ls-add-point">
+                    <span class="ls-prefix-dim">Point:</span>
                     <input
                         class="ls-input ls-input-sm"
-                        placeholder={pointsC ? 'method name' : '+ Points: method'}
+                        placeholder="method name"
                         bind:value={adding_point[dpath]}
                         onkeydown={(ev) => ev.key === 'Enter' && add_point(doc, waft)}
                     />
@@ -356,7 +380,7 @@
             </div>
         {/each}
 
-        <!-- +Doc button / 3-input form -->
+        <!-- +Doc button / 3-input form — not shown on Look wafts -->
         {#if !is_look}
             {#if add_form}
                 <div class="ls-add-doc-form">
@@ -364,7 +388,6 @@
                         <span class="ls-prefix-label">Ghost/</span>
                         <input
                             class="ls-input ls-input-path"
-                            placeholder="test/Foo.g"
                             bind:value={add_form.ghost}
                             onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
                             use:focus_on_mount
@@ -374,16 +397,14 @@
                         <span class="ls-prefix-label">lib/src/</span>
                         <input
                             class="ls-input ls-input-path"
-                            placeholder="some/file.ts"
                             bind:value={add_form.libsrc}
                             onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
                         />
                     </div>
                     <div class="ls-add-doc-row">
-                        <span class="ls-prefix-label ls-prefix-any">path:</span>
+                        <span class="ls-prefix-label ls-prefix-dim">path:</span>
                         <input
                             class="ls-input ls-input-path"
-                            placeholder="any/path"
                             bind:value={add_form.free}
                             onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
                         />
@@ -406,9 +427,9 @@
     </div>
 {/snippet}
 
-<!-- ── focus_on_mount Svelte 5 action ── -->
 <script module>
-    // Action: focus the element as soon as it mounts (rename inputs, first Doc path input).
+    // Action: focus and select the element immediately on mount.
+    // Used for rename inputs and the first +Doc path input.
     export function focus_on_mount(node: HTMLElement) {
         node.focus()
         if (node instanceof HTMLInputElement) node.select()
@@ -431,25 +452,29 @@
     .ls-header {
         display: flex;
         align-items: center;
-        gap: 0.4rem;
-        margin-bottom: 0.4rem;
-        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.3rem;
     }
-    .ls-title  { font-weight: bold; flex-shrink: 0 }
-    .ls-new-waft {
+    .ls-title { font-weight: bold; flex-shrink: 0 }
+    .ls-header-btns { display: flex; gap: 0.25rem; margin-left: auto }
+    .ls-hdr-btn {
+        background: #1a1a28;
+        border: 1px solid #334;
+        border-radius: 3px;
+        color: #88a;
+        cursor: pointer;
+        font-size: 0.74rem;
+        padding: 0.15rem 0.4rem;
+    }
+    .ls-hdr-btn:hover      { background: #222238; color: #aac }
+    .ls-hdr-btn-active     { background: #222238; border-color: #556; color: #aac }
+
+    .ls-waft-input-row {
         display: flex;
-        align-items: center;
-        gap: 0.2rem;
-        margin-left: auto;
+        gap: 0.25rem;
+        margin-bottom: 0.3rem;
     }
-    .ls-prefix-label {
-        font-family: monospace;
-        font-size: 0.76rem;
-        color: #666;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-    .ls-prefix-any { color: #555 }
+    .ls-waft-path-input { flex: 1 }
 
     /* ── errors ── */
     .ls-errors {
@@ -459,132 +484,107 @@
     }
     .ls-dismiss { margin-left: auto; background: none; border: none; color: #f88; cursor: pointer; font-size: 1rem; line-height: 1 }
     .ls-error-msg { width: 100%; font-size: 0.76rem; font-family: monospace }
-    .ls-mung-errors { margin: 0.2rem 0 }
+    .ls-mung-errors { margin: 0.15rem 0 }
 
     /* ── loaded docs table ── */
-    .ls-empty { color: #666; padding: 0.2rem 0; font-style: italic }
-    .ls-table { width: 100%; border-collapse: collapse; margin-bottom: 0.4rem }
+    .ls-empty  { color: #666; padding: 0.2rem 0; font-style: italic }
+    .ls-table  { width: 100%; border-collapse: collapse; margin-bottom: 0.4rem }
     .ls-table th { text-align: left; color: #888; font-weight: normal; padding: 0.1rem 0.3rem; border-bottom: 1px solid #333 }
     .ls-table td { padding: 0.2rem 0.3rem; border-bottom: 1px solid #1c1c1c; vertical-align: middle }
     .ls-pending td { background: #1a1a2a }
-    .ls-path  { font-family: monospace; font-size: 0.76rem; color: #9ab }
-    .ls-gen   { font-family: monospace; font-size: 0.76rem; color: #777 }
-    .ls-state { white-space: nowrap }
+    .ls-path   { font-family: monospace; font-size: 0.76rem; color: #9ab }
+    .ls-gen    { font-family: monospace; font-size: 0.76rem; color: #777 }
+    .ls-state  { white-space: nowrap }
     .ls-writing { color: #aa8; font-style: italic }
     .ls-ok      { color: #4a8 }
 
-    /* ── Waft section ── */
-    .ls-waft-section { margin-top: 0.5rem; border-top: 1px solid #222; padding-top: 0.4rem }
+    /* ── Waft tree ── */
+    .ls-waft-section { margin-top: 0.4rem; border-top: 1px solid #222; padding-top: 0.3rem }
     .ls-waft {
         background: #13131d;
         border: 1px solid #252535;
         border-radius: 3px;
         padding: 0.3rem 0.4rem;
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.25rem;
     }
     .ls-waft-hdr {
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        margin-bottom: 0.25rem;
         min-height: 1.4rem;
+        margin-bottom: 0.2rem;
     }
-    .ls-waft-key {
-        font-family: monospace;
-        font-size: 0.76rem;
-        color: #8ab;
-        font-weight: bold;
-    }
-    .ls-look { color: #778; font-style: italic }
-    .ls-look-doc { color: #556; font-weight: normal }
-    .ls-spacer { flex: 1 }
+    .ls-waft-key { font-family: monospace; font-size: 0.76rem; color: #8ab; font-weight: bold }
+    .ls-look     { color: #667; font-style: italic; font-weight: normal }
+    .ls-active   { color: #688 }
+    .ls-spacer   { flex: 1 }
 
     /* ── Doc row ── */
     .ls-doc {
-        margin: 0.15rem 0 0.2rem 0.6rem;
+        margin: 0.1rem 0 0.2rem 0.5rem;
         border-left: 2px solid #2a2a3a;
-        padding-left: 0.4rem;
+        padding-left: 0.35rem;
     }
     .ls-doc-new     { border-left-color: #3a5a3a }
     .ls-doc-missing { border-left-color: #5a3a2a; opacity: 0.8 }
     .ls-doc-hdr {
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: 0.2rem;
         flex-wrap: wrap;
+        min-height: 1.4rem;
     }
     .ls-doc-path { font-family: monospace; font-size: 0.76rem; color: #9ab }
     .ls-badge {
         font-size: 0.68rem;
-        background: #222;
+        background: #1c1c28;
         border: 1px solid #333;
         border-radius: 2px;
         padding: 0 0.2rem;
-        color: #888;
+        color: #778;
         flex-shrink: 0;
     }
-    .ls-flag {
-        font-size: 0.68rem;
-        border-radius: 2px;
-        padding: 0 0.2rem;
-        flex-shrink: 0;
-    }
+    .ls-flag { font-size: 0.68rem; border-radius: 2px; padding: 0 0.2rem; flex-shrink: 0 }
     .ls-flag-new     { background: #1a3a1a; color: #6a9; border: 1px solid #2a5a2a }
     .ls-flag-missing { background: #3a2010; color: #c84; border: 1px solid #5a3010 }
 
     /* ── Points ── */
-    .ls-points { margin: 0.15rem 0 0.1rem 0.4rem }
-    .ls-point {
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.05rem 0;
-        border-bottom: 1px solid #1c1c28;
-    }
+    .ls-points { margin: 0.1rem 0 0.1rem 0.3rem }
+    .ls-point  { display: flex; align-items: center; gap: 0.3rem; padding: 0.05rem 0; border-bottom: 1px solid #1c1c28 }
     .ls-point-method { font-family: monospace; font-size: 0.74rem; color: #a8c; flex: 1 }
 
     /* ── +Doc form ── */
     .ls-add-doc-btn {
-        margin-top: 0.2rem;
+        margin-top: 0.15rem;
         background: #1a1a28;
         border: 1px dashed #334;
         border-radius: 3px;
-        color: #668;
+        color: #558;
         font-size: 0.74rem;
         cursor: pointer;
-        padding: 0.15rem 0.4rem;
+        padding: 0.1rem 0.4rem;
         width: 100%;
         text-align: left;
     }
     .ls-add-doc-btn:hover { color: #88a; border-color: #446 }
     .ls-add-doc-form {
-        margin-top: 0.25rem;
+        margin-top: 0.2rem;
         background: #0e0e1a;
         border: 1px solid #2a2a40;
         border-radius: 3px;
-        padding: 0.35rem 0.4rem;
+        padding: 0.3rem 0.35rem;
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;
+        gap: 0.18rem;
     }
-    .ls-add-doc-row {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    .ls-input-path { flex: 1 }
-    .ls-add-doc-actions {
-        display: flex;
-        gap: 0.3rem;
-        margin-top: 0.1rem;
-    }
+    .ls-add-doc-row { display: flex; align-items: center; gap: 0.2rem }
+    .ls-input-path  { flex: 1 }
+    .ls-add-doc-actions { display: flex; gap: 0.3rem; margin-top: 0.1rem }
 
     /* ── +Point ── */
-    .ls-add-point {
-        display: flex;
-        gap: 0.2rem;
-        margin-top: 0.2rem;
-    }
+    .ls-add-point { display: flex; align-items: center; gap: 0.2rem; margin-top: 0.15rem }
+    .ls-prefix-label { font-family: monospace; font-size: 0.74rem; color: #556; flex-shrink: 0; white-space: nowrap }
+    .ls-prefix-dim   { font-family: monospace; font-size: 0.74rem; color: #444; flex-shrink: 0 }
 
     /* ── shared controls ── */
     .ls-input {
@@ -594,12 +594,12 @@
         color: #aaa;
         font-family: monospace;
         font-size: 0.76rem;
-        padding: 0.2rem 0.4rem;
+        padding: 0.2rem 0.35rem;
         outline: none;
     }
-    .ls-input:focus  { border-color: #446 }
-    .ls-input-sm     { width: 9rem }
-    .ls-rename-input { flex: 1; min-width: 6rem }
+    .ls-input:focus   { border-color: #446 }
+    .ls-input-sm      { width: 8.5rem }
+    .ls-rename-input  { flex: 1; min-width: 6rem }
     .ls-add-btn {
         background: #1a1a2a;
         border: 1px solid #334;
@@ -611,12 +611,13 @@
         white-space: nowrap;
         flex-shrink: 0;
     }
-    .ls-add-btn:hover   { background: #222238; color: #aac }
-    .ls-add-btn-sm      { padding: 0.15rem 0.35rem }
+    .ls-add-btn:hover    { background: #222238; color: #aac }
+    .ls-add-btn:disabled { opacity: 0.35; cursor: default }
+    .ls-add-btn-sm       { padding: 0.15rem 0.3rem }
     .ls-cancel-btn {
         background: none;
         border: none;
-        color: #666;
+        color: #555;
         cursor: pointer;
         font-size: 0.76rem;
         padding: 0.2rem 0.3rem;
@@ -625,7 +626,7 @@
     .ls-icon-btn {
         background: none;
         border: none;
-        color: #555;
+        color: #444;
         cursor: pointer;
         font-size: 0.8rem;
         line-height: 1;
