@@ -227,25 +227,6 @@ fi
 
 
 
-# Also update/create a 'prod' tag that always points to latest production
-echo ""
-echo "Step 8: Updating 'prod' tag to point to current deployment..."
-
-# Delete old prod tag (local and remote)
-if git show-ref --tags | grep -q "refs/tags/prod"; then
-  git tag -d prod
-fi
-git push origin :refs/tags/prod 2>/dev/null || true
-# Create and push the new prod tag
-git tag -f prod "$COMMIT_AFTER"
-git push -f origin prod
-
-if [ $? -ne 0 ]; then
-  echo "Warning: Failed to update 'prod' tag on origin."
-else
-  echo "✓ Updated 'prod' tag on origin"
-fi
-
 echo ""
 echo "=== Deployment Complete ==="
 echo "✓ Services are running"
