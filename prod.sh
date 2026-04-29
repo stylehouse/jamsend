@@ -113,10 +113,10 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     mkdir -p there
     cp -r "${LEPROXY_DIR}/there/." there/
     echo "  Copied leproxy/there/ → ./there/"
+    rm there/ssh_config
 
     # turnserver.conf lives in this repo; copy it into there/ for the jump server
     if [[ -f ty/turnserver.conf ]]; then
-        mkdir -p there/ty
         cp ty/coturn-entrypoint.sh there/coturn-entrypoint.sh
         cp ty/turnserver.conf there/turnserver.conf
         echo "  Copied ty/turnserver.conf & coturn-entrypoint.sh → there"
@@ -242,6 +242,6 @@ if [[ "${TUNNEL_MODE}" == "true" ]]; then
     echo ""
     echo "=== Jump Server (${LEPROXY_PUBLIC_IP}) ==="
     echo "Deploy there/ with:"
-    echo "  rsync -av --delete there/ jamsend-fe:leproxy/"
+    echo "  rsync -av --delete there/ c:leproxy/"
     echo "  ssh jamsend-fe 'cd leproxy && docker compose up -d --build'"
 fi

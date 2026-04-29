@@ -107,7 +107,38 @@ services:
       #  because we are running against uid=1000
       # nproc: 100
       nofile: 1024
-
+  
+  
+  
+# these two are removed by prod.sh in tunnel mode
+  coturn:
+    image: coturn/coturn:latest
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM coturn/coturn:latest
+        USER root
+        RUN apt-get update -qq && apt-get install -y -qq curl
+        COPY coturn-entrypoint.sh /entrypoint.sh
+        RUN chmod +x /entrypoint.sh
+        ENTRYPOINT ["/entrypoint.sh"]
+    container_name: jamsend-prod-coturn
+    user: "0:0"
+    network_mode: host
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+    environment:
+      - TLS_CERT=${TLS_CERT}
+      - TLS_KEY=${TLS_KEY}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
   upnp-forwarder:
     build:
       context: .
