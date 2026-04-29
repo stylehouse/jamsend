@@ -1,80 +1,63 @@
 <script lang="ts">
     // Liesui.svelte — reactive UI for Lies.
     //
-    // Mounted by Otro via H/{watched:UIs}/{UI:'Lies'}.
-    // Receives H (the root Mundo house).
-    //
     // Reactivity strategy
     // ───────────────────
-    //   LS (the Lies w particle) is found once from H.ave and cached in $state.
-    //   The $effect that finds it does NOT subscribe to any particle versions —
-    //   it only re-runs when H.ave (the array reference) is replaced.
+    //   H.ave fires every think() tick (Housing reassigns the array whenever any
+    //   enrolled particle bumps its version, which Lies does on every tick).
+    //   The $effect runs on every such reassignment, but update_from_Lies is
+    //   throttled so the actual $state writes (and thus DOM updates) happen at
+    //   most once per interval — keeping focused inputs stable between ticks.
     //
-    //   loaded_docs, errors, all_wafts are $state arrays updated from the same
-    //   $effect, avoiding $derived subscriptions to LS.version.  Without this,
-    //   every think() tick that calls w.i({see:...}) would bump LS.version,
-    //   re-derive those arrays, and rebuild DOM nodes — losing focused inputs.
+    //   The Waft tree renders <WaftComp> components.  Components survive parent
+    //   re-renders as long as their key (waft.sc.Waft) is stable.  All form state
+    //   lives inside WaftComp.
     //
-    //   The Waft tree is rendered via <WaftComp> components (Waft.svelte).
-    //   Components survive parent re-renders as long as their key (waft.sc.Waft)
-    //   doesn't change — Svelte reconciles in-place.  All form state lives inside
-    //   WaftComp so it is never affected by Liesui re-renders.
-    //
-    // Layout
-    // ──────
-    //   [🔪 Lies]  [+ Waft] [+ Now]
-    //              [____________] [+]   ← +Waft input when toggled
-    //   loaded docs (flat — path, codetype, pending/loaded state)
-    //   Waft** tree (WaftComp components)
+    //   doc_row is a snippet defined here (where loaded/pending context lives)
+    //   and passed to WaftComp as a prop, keeping the rendering DRY.
 
-    import type { House } from "$lib/O/Housing.svelte"
-    import type { TheC }  from "$lib/data/Stuff.svelte"
-    import WaftComp       from "$lib/O/ui/Waft.svelte"
+    import type { House }   from "$lib/O/Housing.svelte"
+    import type { TheC }    from "$lib/data/Stuff.svelte"
+    import { throttle }     from "$lib/Y.svelte"
+    import WaftComp         from "$lib/O/ui/Waft.svelte"
+    import type { Snippet } from "svelte"
 
     let { H }: { H: House } = $props()
 
-    // ── reactive state — updated only from $effect ────────────────────
-    // None of these subscribe to LS.version; the $effect re-runs only when
-    // H.ave itself is reassigned (new particle enrolled or ave rebuilt).
-    let LS:          TheC | undefined    = $state()
-    let loaded_docs: TheC[]              = $state([])
-    let errors:      TheC[]              = $state([])
-    let all_wafts:   TheC[]              = $state([])
+    // ── state ─────────────────────────────────────────────────────────
+    let Lies:          TheC | undefined = $state()
+    let loaded_docs:   TheC[]           = $state([])
+    let errors:        TheC[]           = $state([])
+    let all_wafts:     TheC[]           = $state([])
+    let pending_paths: Set<string>      = $state(new Set())
+
+    // Throttled updater — reads structural arrays from Lies's w at most
+    // once per interval rather than on every think() tick.  This prevents
+    // rapid $state writes from rebuilding DOM nodes and yanking focus.
+    const update_from_Lies = throttle((found: TheC) => {
+        loaded_docs   = found.o({ loaded_doc: 1 })     as TheC[]
+        errors        = found.o({ compile_error: 1 })  as TheC[]
+        all_wafts     = found.o({ Waft: 1 })           as TheC[]
+        pending_paths = new Set(
+            (found.o({ compile_pending: 1 }) as TheC[])
+                .filter(p => !p.sc.done)
+                .map(p => p.sc.path as string)
+        )
+    }, 66)
 
     $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
         const found = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
-        if (found !== LS) {
-            console.log(`🔪 Liesui: LS ${LS ? 'changed' : 'found'}`)
-            LS = found
+        if (!found) return
+        if (found !== Lies) {
+            console.log(`🔪 Liesui: Lies found`)
+            Lies = found
         }
-        if (!found) return
-        // Read structural lists — no version subscription.
-        // These update when H.ave changes; fine-grained version tracking
-        // lives inside WaftComp and the Lies loop, not here.
-        loaded_docs = found.o({ loaded_doc: 1 }) as TheC[]
-        errors      = found.o({ compile_error: 1 }) as TheC[]
-        all_wafts   = found.o({ Waft: 1 }) as TheC[]
+        update_from_Lies(found)
     })
 
-
-    // pending: compile writes in flight — keyed by path for render_doc_row
-    // Also from $effect so it doesn't subscribe independently to LS.version.
-    let pending_paths: Set<string> = $state(new Set())
-    $effect(() => {
-        const ave = H.ave
-        if (!ave?.length) return
-        const found = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
-        if (!found) return
-        const ps = (found.o({ compile_pending: 1 }) as TheC[])
-            .filter(p => !p.sc.done)
-            .map(p => p.sc.path as string)
-        pending_paths = new Set(ps)
-        console.log("The pending path")
-    })
-
-    // ── codetype (same as in Waft.svelte) ────────────────────────────
+    // ── codetype ─────────────────────────────────────────────────────
     const SECOND_LEVEL_FILETYPES = ['svelte']
     function ls_codetype(path: string): string {
         const parts = path.split('.')
@@ -89,7 +72,6 @@
     let waft_input_open = $state(false)
     let new_waft_path   = $state('')
 
-    // ── +Waft ─────────────────────────────────────────────────────────
     function toggle_waft_input() {
         waft_input_open = !waft_input_open
         if (!waft_input_open) new_waft_path = ''
@@ -98,35 +80,31 @@
         const path = new_waft_path.trim()
         if (!path) return
         H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
-        new_waft_path   = ''
+        new_waft_path = ''
         waft_input_open = false
     }
-
-    // ── +Now ─────────────────────────────────────────────────────────
     function fire_now_waft() {
         H.i_elvisto('Lies/Lies', 'Lies_now_Waft', {})
     }
 
-    // ── active toggle (needs LS to clear siblings) ────────────────────
+    // ── active / delete (need Lies to touch siblings) ─────────────────
     function set_waft_active(waft: TheC) {
-        if (!LS) return
-        for (const w of LS.o({ Waft: 1 }) as TheC[]) delete w.sc.active
+        if (!Lies) return
+        for (const w of Lies.o({ Waft: 1 }) as TheC[]) delete w.sc.active
         waft.sc.active = 1
-        LS.bump_version()
+        Lies.bump_version()
     }
-
-    // ── delete waft (needs LS) ────────────────────────────────────────
     function delete_waft(waft: TheC) {
-        if (!LS) return
-        LS.drop(waft)
-        LS.bump_version()
+        if (!Lies) return
+        Lies.drop(waft)
+        Lies.bump_version()
     }
 
     // ── errors ───────────────────────────────────────────────────────
     function dismiss_errors() {
-        if (!LS) return
-        for (const e of errors) LS.drop(e)
-        LS.bump_version()
+        if (!Lies) return
+        for (const e of errors) Lies.drop(e)
+        Lies.bump_version()
     }
 </script>
 
@@ -151,11 +129,10 @@
         </div>
     {/if}
 
-    {#if !LS}
+    {#if !Lies}
         <div class="ls-empty">waiting for Lies…</div>
     {:else}
 
-    <!-- ── compile errors ── -->
     {#if errors.length}
         <div class="ls-errors">
             <strong>⛔ compile errors</strong>
@@ -167,44 +144,73 @@
     {/if}
 
     <!-- ── loaded docs flat list ── -->
-    <input />
     {#if loaded_docs.length}
         <div class="ls-loaded-section">
             {#each loaded_docs as ld (ld.sc.path)}
-                {@const path    = ld.sc.path as string}
-                {@const ct      = ls_codetype(path)}
-                {@const pend    = pending_paths.has(path)}
-                {@const not_yet = !pend && !ld.sc.gen_path && !(ld.sc.path)}
-                <div class="ls-loaded-row">
-                    <span class="ls-doc-path">{path}</span>
-                    {#if ct}<span class="ls-badge">{ct}</span>{/if}
-                    {#if pend}
-                        <span class="ls-state-ind" title="writing…">⏳</span>
-                    {:else}
-                        <span class="ls-state-ind ls-dim" title="not yet loaded">…</span>
-                    {/if}
-                </div>
+                {@render doc_row(ld, null, null)}
             {/each}
         </div>
     {:else}
         <div class="ls-empty">no docs open</div>
     {/if}
 
-    <!-- ── Waft tree (WaftComp — stable component boundary) ── -->
-    <input placeholder="outside" />
+    <!-- ── Waft tree ── -->
     {#if all_wafts.length}
-        <input />
         <div class="ls-waft-section">
             {#each all_wafts as waft (waft.sc.Waft)}
                 <WaftComp {H} {waft} depth={0}
                     on_active={set_waft_active}
-                    on_delete={delete_waft} />
+                    on_delete={delete_waft}
+                    {doc_row} />
             {/each}
         </div>
     {/if}
 
     {/if}
 </div>
+
+<!-- ─────────────────────────────────────────────────────────────────────
+     doc_row snippet — passed to WaftComp so Waft/Doc items use the same
+     markup as the loaded-docs list.
+
+     doc    — the Doc TheC from a Waft (has sc.new, sc.not_found, sc.path).
+              For loaded-docs rows, pass the loaded_doc particle instead.
+     waft   — parent Waft TheC (for delete/rename callbacks); null in flat list.
+     on_del — deletion callback; null in flat list.
+
+     pending and loaded status are derived from pending_paths / loaded_docs,
+     which are captured from the Liesui closure and update via throttle.
+──────────────────────────────────────────────────────────────────────── -->
+{#snippet doc_row(doc: TheC, waft: TheC | null, on_del: ((doc: TheC) => void) | null)}
+    {@const path     = doc.sc.path as string}
+    {@const codetype = ls_codetype(path)}
+    {@const is_new   = !!doc.sc.new}
+    {@const show_nf  = !!doc.sc.not_found && !is_new}
+    {@const is_pend  = pending_paths.has(path)}
+    {@const is_loaded = loaded_docs.some(l => l.sc.path === path)}
+
+    <div class="ls-doc-hdr">
+        <span class="ls-doc-path">{path}</span>
+        {#if codetype}<span class="ls-badge">{codetype}</span>{/if}
+        {#if is_new}
+            <span class="ls-flag ls-flag-new"
+                title="created here, not yet written to disk — a spawning ghost">new</span>
+        {:else if show_nf}
+            <span class="ls-flag ls-flag-missing"
+                title="file not found on disk — opened empty">?</span>
+        {/if}
+        {#if is_pend}
+            <span class="ls-state-ind" title="writing…">⏳</span>
+        {:else if !is_loaded && !is_new && !show_nf}
+            <span class="ls-state-ind ls-dim" title="not yet loaded">…</span>
+        {/if}
+        <span class="ls-spacer"></span>
+        {#if on_del && waft}
+            <button class="ls-icon-btn ls-del-btn" title="remove"
+                    onclick={() => on_del!(doc)}>×</button>
+        {/if}
+    </div>
+{/snippet}
 
 <script module>
     export function focus_on_mount(node: HTMLElement) {
@@ -231,30 +237,41 @@
     .ls-hdr-btn-active    { background: #222238; border-color: #556; color: #aac }
     .ls-waft-input-row    { display: flex; gap: 0.25rem; margin-bottom: 0.3rem }
     .ls-waft-path-input   { flex: 1 }
-
     .ls-errors {
         background: #300; border: 1px solid #c44; border-radius: 3px;
         padding: 0.3rem 0.5rem; margin-bottom: 0.4rem;
         color: #f88; display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: flex-start;
     }
-    .ls-dismiss  { margin-left: auto; background: none; border: none; color: #f88; cursor: pointer; font-size: 1rem; line-height: 1 }
+    .ls-dismiss   { margin-left: auto; background: none; border: none; color: #f88; cursor: pointer; font-size: 1rem; line-height: 1 }
     .ls-error-msg { width: 100%; font-size: 0.76rem; font-family: monospace }
-
     .ls-loaded-section { margin-bottom: 0.4rem }
-    .ls-loaded-row {
+    .ls-empty  { color: #666; padding: 0.2rem 0; font-style: italic }
+    .ls-waft-section { margin-top: 0.4rem; border-top: 1px solid #222; padding-top: 0.3rem }
+
+    /* doc_row shared styles (also used inside WaftComp via the snippet) */
+    :global(.ls-doc-hdr) {
         display: flex; align-items: center; gap: 0.25rem;
-        border-bottom: 1px solid #1c1c1c; padding: 0.1rem 0; flex-wrap: wrap;
+        flex-wrap: wrap; min-height: 1.4rem;
+        border-bottom: 1px solid #1c1c1c; padding: 0.1rem 0;
     }
-    .ls-empty     { color: #666; padding: 0.2rem 0; font-style: italic }
-    .ls-doc-path  { font-family: monospace; font-size: 0.76rem; color: #9ab; flex: 1 }
-    .ls-badge {
+    :global(.ls-doc-path)  { font-family: monospace; font-size: 0.76rem; color: #9ab; flex: 1 }
+    :global(.ls-badge) {
         font-size: 0.68rem; background: #1c1c28;
         border: 1px solid #333; border-radius: 2px; padding: 0 0.2rem; color: #778; flex-shrink: 0;
     }
-    .ls-state-ind { font-size: 0.72rem; flex-shrink: 0 }
-    .ls-dim       { color: #555 }
-
-    .ls-waft-section { margin-top: 0.4rem; border-top: 1px solid #222; padding-top: 0.3rem }
+    :global(.ls-flag)        { font-size: 0.68rem; border-radius: 2px; padding: 0 0.2rem; flex-shrink: 0; cursor: default }
+    :global(.ls-flag-new)    { background: #1a3a1a; color: #6a9; border: 1px solid #2a5a2a }
+    :global(.ls-flag-missing){ background: #3a2010; color: #c84; border: 1px solid #5a3010 }
+    :global(.ls-state-ind)   { font-size: 0.72rem; flex-shrink: 0 }
+    :global(.ls-dim)         { color: #555 }
+    :global(.ls-spacer)      { flex: 1 }
+    :global(.ls-icon-btn) {
+        background: none; border: none; color: #444;
+        cursor: pointer; font-size: 0.8rem; line-height: 1;
+        padding: 0 0.15rem; flex-shrink: 0;
+    }
+    :global(.ls-icon-btn:hover) { color: #aaa }
+    :global(.ls-del-btn:hover)  { color: #f66 }
 
     .ls-input {
         background: #0d0d14; border: 1px solid #333; border-radius: 3px;
