@@ -6,39 +6,32 @@
     //
     // Layout
     // ──────
-    //   [🔪 Lies]  [+ Waft] [+ Now]       ← header: +Waft toggles input, +Now fires instantly
-    //              [____________] [+]       ← input appears below buttons when +Waft clicked
+    //   [🔪 Lies]  [+ Waft] [+ Now]       ← header
+    //              [____________] [+]       ← +Waft input when toggled
     //
     //   loaded docs table (flat, all open docs)
     //
     //   Waft** recursive tree
-    //     Waft:Ghost/Tour  [✎ rename] [× delete]
+    //     Waft:Ghost/Tour  [○] [+ Doc] [✎] [×]   ← ○ = set active
     //       Doc  Ghost/test/Hello.g  [g]  [✎] [×]
     //         Point  Idzeugnosis  [×]
-    //         [+ Point ___________]
-    //       [+ Doc] → expands 3-input form:
-    //         Ghost/ [_____________]
-    //         lib/src/ [___________]
-    //         path: [________________]
+    //         [Point: ___________  +]
+    //       [+ Doc form when expanded]
     //       Sub-Waft (recursive…)
-    //     Waft:Active  (stray docs land here)
-    //     Waft:Look/2025-04-29/14_1  (session note, italic)
+    //     Waft:Look/2025-04-29/14  (hourly scratch, treated same as any Waft)
     //
     // CRUD mechanics
     // ──────────────
-    //   Waft / Doc / Point mutations go directly to the TheC particles;
-    //   watch_c in Lies fires the throttled Waft save.
-    //
-    //   +Waft button: click toggles an input; Enter or second click submits.
-    //     Fires i_elvisto 'Lies_open_Waft' (no e_ prefix — i_elvisto adds it).
-    //     Empty path is not submitted.
-    //   +Now button: fires i_elvisto 'Lies_now_Waft' immediately (no input).
-    //   +Doc (per Waft): expands 3-input form — Ghost/, lib/src/, free path.
+    //   +Waft button: toggles an input; Enter or + submits (empty path blocked).
+    //     Fires i_elvisto 'Lies_open_Waft'.
+    //   +Now button: fires 'Lies_now_Waft' — spawns/reuses Look/YMD/HH, sets active.
+    //   ○/● active button (per Waft): sets sc.active=1 on this, clears others.
+    //     active is session-only — the encode root for snapshots is {Waft:path}
+    //     only, so active never appears in the saved toc.snap.
+    //   +Doc (per Waft, on header line): expands 3-input form in the Waft body.
     //     Ghost/ input is auto-focused.  First non-empty prefix wins on submit.
     //     New Doc gains sc.new=1; Lies clears it on successful load.
-    //   codetype is never stored — always derived from path.split('.').pop().
-    //   Rename: inline input replaces label; Enter/blur commits, Escape cancels.
-    //   Delete: drop() the particle and bump_version() the parent.
+    //   codetype never stored — always derived from path.split('.').pop().
     //
     // < doc tabs (switch active doc)
     // < per-doc opt overrides
@@ -171,7 +164,14 @@
         waft.bump_version()
     }
 
-    // ── Delete ───────────────────────────────────────────────────────
+    // ── set active ───────────────────────────────────────────────────
+    // active is session-only — not persisted (encode root is {Waft:path} only).
+    function set_waft_active(waft: TheC) {
+        if (!LS) return
+        for (const w of LS.o({ Waft: 1 }) as TheC[]) delete w.sc.active
+        waft.sc.active = 1
+        LS.bump_version()
+    }
     function delete_waft(waft: TheC) {
         if (!LS) return
         LS.drop(waft)
@@ -275,16 +275,15 @@
 ──────────────────────────────────────────────────────────────────────────── -->
 {#snippet render_waft(waft: TheC, depth: number)}
     {@const wkey      = waft.sc.Waft as string}
-    {@const is_look   = wkey.startsWith('Look/')}
-    {@const is_active = wkey === 'Active'}
+    {@const is_active = !!waft.sc.active}
     {@const waft_docs = (() => { void waft.version; return waft.o({ Doc: 1 }) as TheC[] })()}
     {@const sub_wafts = (() => { void waft.version; return waft.o({ Waft: 1 }) as TheC[] })()}
     {@const waft_mungs = waft.o({ mung_error: 1 }) as TheC[]}
     {@const add_form  = adding_doc[wkey]}
 
-    <div class="ls-waft" style="margin-left: {depth * 14}px">
+    <div class="ls-waft" style="margin-left: {depth * 14}px" class:ls-waft-active={is_active}>
 
-        <!-- Waft header row -->
+        <!-- Waft header row: [key] [spacer] [●/○ active] [+ Doc] [✎] [×] -->
         <div class="ls-waft-hdr">
             {#if renaming[wkey] !== undefined && renaming[wkey] !== null}
                 <input
@@ -299,14 +298,17 @@
                     use:focus_on_mount
                 />
             {:else}
-                <span class="ls-waft-key" class:ls-look={is_look} class:ls-active={is_active}>
-                    Waft:{wkey}
-                </span>
+                <span class="ls-waft-key">{wkey}</span>
             {/if}
             <span class="ls-spacer"></span>
-            {#if !is_look}
-                <button class="ls-icon-btn" title="rename" onclick={() => start_rename(wkey, wkey)}>✎</button>
-            {/if}
+            <button
+                class="ls-icon-btn ls-active-btn"
+                class:ls-is-active={is_active}
+                title={is_active ? 'active' : 'set active'}
+                onclick={() => set_waft_active(waft)}
+            >{is_active ? '●' : '○'}</button>
+            <button class="ls-icon-btn ls-adddoc-btn" title="add Doc" onclick={() => toggle_add_doc(waft)}>+ Doc</button>
+            <button class="ls-icon-btn" title="rename" onclick={() => start_rename(wkey, wkey)}>✎</button>
             <button class="ls-icon-btn ls-del-btn" title="delete" onclick={() => delete_waft(waft)}>×</button>
         </div>
 
@@ -314,6 +316,41 @@
         {#if waft_mungs.length}
             <div class="ls-mung-errors">
                 {#each waft_mungs as m}<div class="ls-error-msg">⛔ {m.sc.msg}</div>{/each}
+            </div>
+        {/if}
+
+        <!-- +Doc form — expands when header +Doc is clicked -->
+        {#if add_form}
+            <div class="ls-add-doc-form">
+                <div class="ls-add-doc-row">
+                    <span class="ls-prefix-label">Ghost/</span>
+                    <input
+                        class="ls-input ls-input-path"
+                        bind:value={add_form.ghost}
+                        onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
+                        use:focus_on_mount
+                    />
+                </div>
+                <div class="ls-add-doc-row">
+                    <span class="ls-prefix-label">lib/src/</span>
+                    <input
+                        class="ls-input ls-input-path"
+                        bind:value={add_form.libsrc}
+                        onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
+                    />
+                </div>
+                <div class="ls-add-doc-row">
+                    <span class="ls-prefix-label ls-prefix-dim">path:</span>
+                    <input
+                        class="ls-input ls-input-path"
+                        bind:value={add_form.free}
+                        onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
+                    />
+                </div>
+                <div class="ls-add-doc-actions">
+                    <button class="ls-add-btn" onclick={() => submit_add_doc(waft)}>Add Doc</button>
+                    <button class="ls-cancel-btn" onclick={() => adding_doc[wkey] = null}>cancel</button>
+                </div>
             </div>
         {/if}
 
@@ -379,45 +416,6 @@
 
             </div>
         {/each}
-
-        <!-- +Doc button / 3-input form — not shown on Look wafts -->
-        {#if !is_look}
-            {#if add_form}
-                <div class="ls-add-doc-form">
-                    <div class="ls-add-doc-row">
-                        <span class="ls-prefix-label">Ghost/</span>
-                        <input
-                            class="ls-input ls-input-path"
-                            bind:value={add_form.ghost}
-                            onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
-                            use:focus_on_mount
-                        />
-                    </div>
-                    <div class="ls-add-doc-row">
-                        <span class="ls-prefix-label">lib/src/</span>
-                        <input
-                            class="ls-input ls-input-path"
-                            bind:value={add_form.libsrc}
-                            onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
-                        />
-                    </div>
-                    <div class="ls-add-doc-row">
-                        <span class="ls-prefix-label ls-prefix-dim">path:</span>
-                        <input
-                            class="ls-input ls-input-path"
-                            bind:value={add_form.free}
-                            onkeydown={(ev) => ev.key === 'Enter' && submit_add_doc(waft)}
-                        />
-                    </div>
-                    <div class="ls-add-doc-actions">
-                        <button class="ls-add-btn" onclick={() => submit_add_doc(waft)}>Add Doc</button>
-                        <button class="ls-cancel-btn" onclick={() => adding_doc[wkey] = null}>cancel</button>
-                    </div>
-                </div>
-            {:else}
-                <button class="ls-add-doc-btn" onclick={() => toggle_add_doc(waft)}>+ Doc</button>
-            {/if}
-        {/if}
 
         <!-- sub-Wafts (recursive) -->
         {#each sub_wafts as sw (sw.sc.Waft)}
@@ -507,17 +505,21 @@
         padding: 0.3rem 0.4rem;
         margin-bottom: 0.25rem;
     }
+    .ls-waft-active { border-color: #446 }
     .ls-waft-hdr {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.25rem;
         min-height: 1.4rem;
         margin-bottom: 0.2rem;
     }
     .ls-waft-key { font-family: monospace; font-size: 0.76rem; color: #8ab; font-weight: bold }
-    .ls-look     { color: #667; font-style: italic; font-weight: normal }
-    .ls-active   { color: #688 }
     .ls-spacer   { flex: 1 }
+    .ls-active-btn    { color: #446; font-size: 0.7rem }
+    .ls-active-btn.ls-is-active { color: #88c }
+    .ls-active-btn:hover { color: #88c }
+    .ls-adddoc-btn    { font-size: 0.72rem; color: #558; padding: 0 0.2rem }
+    .ls-adddoc-btn:hover { color: #88a }
 
     /* ── Doc row ── */
     .ls-doc {
@@ -554,19 +556,6 @@
     .ls-point-method { font-family: monospace; font-size: 0.74rem; color: #a8c; flex: 1 }
 
     /* ── +Doc form ── */
-    .ls-add-doc-btn {
-        margin-top: 0.15rem;
-        background: #1a1a28;
-        border: 1px dashed #334;
-        border-radius: 3px;
-        color: #558;
-        font-size: 0.74rem;
-        cursor: pointer;
-        padding: 0.1rem 0.4rem;
-        width: 100%;
-        text-align: left;
-    }
-    .ls-add-doc-btn:hover { color: #88a; border-color: #446 }
     .ls-add-doc-form {
         margin-top: 0.2rem;
         background: #0e0e1a;

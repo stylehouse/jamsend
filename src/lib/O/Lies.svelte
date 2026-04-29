@@ -42,18 +42,12 @@
     //       i_elvisto:Lies,e:Lies_open_Waft
     //         esc:path,v:Ghost/Tour
     //
-    // ── Active Waft ───────────────────────────────────────────────────────────
+    // ── Waft:Look — session scratch ───────────────────────────────────────────
     //
-    //   Seeded in setup at Waft:'Active'.  Any stray e:Lies_open_Doc call
-    //   (without a Waft context) creates a Doc here and triggers the normal
-    //   sync loop.  Active persists at wormhole/Active/toc.snap.
-    //
-    // ── Waft:Look — session tracking ─────────────────────────────────────────
-    //
-    //   e:Lies_now_Waft (triggered by the +Now button in Liesui) spawns a
-    //   Waft:Look/YMD/HH_$i for quick session notes.
-    //   sc: { Waft: 'Look/2025-04-29/14_1' }
-    //   Session-only until renamed to a non-Look path.
+    //   e:Lies_now_Waft (the +Now button in Liesui) spawns or reuses a
+    //   Waft:Look/YMD/HH for scratch notes.  One slot per hour; idempotent.
+    //   Persists at wormhole/Look/YMD/HH/toc.snap like any other Waft.
+    //   The spawned Waft gains sc.active=1 (session-only, not saved to snap).
     //
     // ── Compile airlock (LiesRealised) ───────────────────────────────────────
     //
@@ -78,7 +72,8 @@
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
     //       /{Points:1}                        — optional metadata
     //         /{Point:1,method}                — individual point
-    //   w/{Waft:'Look/YMD/HH_$i'}             — session note Waft
+    //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
+    //     sc.active = 1                        — session-only; never written to snap
     //   w/{open_req:1,path,from_waft?}         — reflected from Doc or stray
     //   w/{loaded_doc:1,path,gen_path}         — after load + Lang handoff
     //   w/{compile_pending:1,path,...}         — waiting for gen/ write
@@ -128,32 +123,17 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── e_Lies_open_Doc ────────────────────────────────────────────────
-    //
-    //   Stray doc open — for paths not yet in any explicit Waft.
-    //   Creates a Doc in the Active Waft, which sync_waft_docs then
-    //   reflects into open_req for the normal load loop.
-    //   Active Waft is seeded in setup at Waft:'Active'.
-    //
-    //   Idempotent: same path only ever creates one Doc in Active.
-    async e_Lies_open_Doc(A: TheC, w: TheC, e: TheC) {
-        const path = e.sc.path as string | undefined
-        if (!path) throw 'e_Lies_open_Doc: needs path'
-        const active = w.o({ Waft: 'Active' })[0] as TheC | undefined
-        if (!active) throw 'e_Lies_open_Doc: Active Waft not set up yet'
-        active.oai({ Doc: 1, path })
-        active.bump_version()   // triggers watch_c → sync_waft_docs
-        this.i_elvisto(w, 'think')
-    },
-
     // ── e_Lies_now_Waft ────────────────────────────────────────────────
     //
-    //   Fired by the +Now button in Liesui.  Spawns a session
-    //   Waft:Look/YMD/HH_$i for quick development notes.
-    //   Session-only until renamed to a non-Look path.
+    //   Fired by the +Now button in Liesui.  Spawns or reuses the
+    //   Waft:Look/YMD/HH slot for this hour, sets it active, clears
+    //   active on all other Wafts.
     e_Lies_now_Waft(A: TheC, w: TheC) {
-        const H = this as House
-        H.Lies_spawn_look_waft(w)
+        const H    = this as House
+        const waft = H.Lies_spawn_look_waft(w)
+        // active is session-only — not written to snap (encode root is {Waft:path} only)
+        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
+        waft.sc.active = 1
         w.bump_version()
     },
 
@@ -197,9 +177,6 @@
             // populated it before the first tick; oai is a no-op if so.
             w.oai({ Opt: 1 })
             H.oai_enroll(H, { watched: 'actions' })
-            // seed the Active Waft so stray e_Lies_open_Doc calls have a home;
-            // goes through the normal open_waft_req load path so it persists.
-            w.oai({ open_waft_req: 1, path: 'Active' })
         }
 
         // ── opts — every tick, like story_ui ─────────────────────────────────
@@ -216,7 +193,7 @@
         await this.LiesRealised(A, w)
 
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
-        const wafts  = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !String(wf.sc.Waft).startsWith('Look/')).length
+        const wafts  = w.o({ Waft: 1 }).length
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
     },
 
@@ -467,17 +444,17 @@
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
     //
-    //   Spawn a session Waft:Look/YMD/HH_$i for quick development notes.
-    //   Called by e_Lies_now_Waft (the +Now button) — not automatically.
-    //   Session-only; not persisted until renamed to a non-Look path.
-    Lies_spawn_look_waft(w: TheC) {
+    //   Spawn or reuse the Waft:Look/YMD/HH slot for this hour.
+    //   One per hour — oai is idempotent, so rapid clicks reuse the same Waft.
+    //   Returns the (possibly pre-existing) Waft TheC.
+    Lies_spawn_look_waft(w: TheC): TheC {
         const now = new Date()
         const ymd = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
         const hh  = String(now.getHours()).padStart(2,'0')
-        w.c.look_seq = (w.c.look_seq ?? 0) + 1
-        const key = `Look/${ymd}/${hh}_${w.c.look_seq}`
-        w.i({ Waft: key })
-        console.log(`👁 spawned ${key}`)
+        const key = `Look/${ymd}/${hh}`
+        const waft = w.oai({ Waft: key })
+        console.log(`👁 Look waft: ${key}`)
+        return waft
     },
 
     // ── Lies_waft_save ────────────────────────────────────────────────────────
@@ -486,15 +463,12 @@
     //   One throttle per Waft path, created lazily on w.c.
     //   Rapid CRUD bursts collapse into a single post_do.
     //
-    //   Saves: root Waft sc, Doc children, Points grandchildren.
-    //   Strips non-scalar sc values (same guard as auto_save_library).
-    //   Look wafts are session-only and not persisted until renamed.
+    //   The encode root is always {Waft:path} — sc.active and other session
+    //   fields on the waft particle are never included in the snap.
+    //   Saves: Doc children, Points grandchildren.
     Lies_waft_save(w: TheC, waft: TheC) {
         const H    = this as House
         const path = waft.sc.Waft as string
-
-        // Look wafts are session-only — don't persist them (until renamed).
-        if (path.startsWith('Look/')) return
 
         const throttle_key = `waft_save_throttle_${path}`
         if (!w.c[throttle_key]) {

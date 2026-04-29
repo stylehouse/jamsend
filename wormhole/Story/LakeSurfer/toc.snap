@@ -48,6 +48,7 @@ story:LakeSurfer
     For
       w:LieSurgery
         nogen
+    trickle
   TimeSpool
     TimeTotal:beliefs,avg:0.107
       sample:0.076,at:1777426058
