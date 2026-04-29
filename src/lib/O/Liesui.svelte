@@ -43,7 +43,7 @@
                 .filter(p => !p.sc.done)
                 .map(p => p.sc.path as string)
         )
-    }, 66)
+    }, 150, {notnow:true})
 
     $effect(() => {
         const ave = H.ave

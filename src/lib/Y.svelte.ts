@@ -150,7 +150,7 @@ export function indent(d) {
 }
 
 // slow down calls to a function
-export function throttle(func, interval_ms = 200) {
+export function throttle(func, interval_ms = 200, q:{notnow?:Boolean}={}) {
     let isWaiting = false;
     let nextArgs:null|Array<any> = null;
     function handle(...args) {
@@ -159,7 +159,9 @@ export function throttle(func, interval_ms = 200) {
             return;
         }
         isWaiting = true;
-        func(...args);
+        if (!q.notnow) func(...args);
+        else nextArgs = args
+
 
         setTimeout(() => {
             isWaiting = false;
