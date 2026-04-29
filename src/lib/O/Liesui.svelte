@@ -21,12 +21,14 @@
     // render_doc_row snippet
     // ──────────────────────
     //   Shared by both the loaded-docs list and each Waft/Doc item.
-    //   Shows: path, codetype badge, gen_path, is_new/not_found flags with
-    //   tooltips, pending/✓ state, and (when doc+waft supplied) edit+delete.
+    //   Shows: path, codetype badge, is_new/not_found flags with tooltips,
+    //   pending indicator or '...' when not yet loaded, and (when doc+waft
+    //   supplied) edit+delete buttons.
     //
-    //   is_new   "created here, not yet written to disk" — stays until file
-    //            has non-empty content. Takes display priority over not_found.
-    //   not_found "file not found on disk" — stays while file absent.
+    //   is_new   "created here, not yet written to disk — a spawning ghost"
+    //            stays until file has non-empty content.  Display priority.
+    //   not_found "file not found on disk — opened empty"
+    //            stays while file absent.  Hidden when is_new also set.
     //
     // Codetype detection
     // ──────────────────
@@ -36,11 +38,11 @@
     //
     // Point editing
     // ─────────────
-    //   Points display their sc as peel text (minus the Point key).
-    //   [+ Point] button expands an input.  Prefix label shows "Point:"
-    //   and the user types the rest (peel format: method:Foo,other:Bar).
-    //   On submit: { Point: 1, ...peel(input) }.
-    //   [edit] on an existing Point pre-fills with its current peel text.
+    //   Points display via depeel as 'Point,method:Foo' (full sc including Point key).
+    //   [+ Point] button expands an input.  Prefix label shows "Point:" and the user
+    //   types the rest (peel format: method:Foo or method:Foo,other:Bar).
+    //   On submit: peel('Point:' + input) → { Point: ..., method: 'Foo', ... }.
+    //   [✎] (edit) on an existing Point pre-fills with everything after 'Point,' or 'Point:'.
     //
     // +Doc form
     // ─────────
@@ -49,7 +51,7 @@
 
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
-    import { peel }       from "$lib/Y.svelte"
+    import { peel, depeel } from "$lib/Y.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -181,12 +183,18 @@
 
     // ── Points ───────────────────────────────────────────────────────
 
-    // Render a Point's sc as peel text (minus the Point key itself).
+    // Render a Point's sc as depeel text for display.
+    // Format: Point,method:Foo  (depeel of the full sc, then strip leading 'Point,')
+    // depeel produces comma-separated scalar k:v pairs — throws via us if non-scalar
+    // values sneak in (object, null), or if 'Point' doesn't appear first in the output.
     function point_to_peel(pt: TheC): string {
-        return Object.entries(pt.sc)
-            .filter(([k]) => k !== 'Point')
-            .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
-            .join(',')
+        const sc = pt.sc as Record<string, any>
+        for (const [, v] of Object.entries(sc)) {
+            if (v === null || typeof v === 'object') throw `point_to_peel: non-scalar value in Point sc`
+        }
+        const d = depeel(sc)   // e.g. 'Point,method:Idzeugnosis'
+        if (!d.startsWith('Point,') && d !== 'Point') throw `point_to_peel: 'Point' not first in depeel: ${d}`
+        return d   // keep the full string including Point — displayed as Point,method:Foo
     }
 
     function toggle_point_form(dpath: string) {
@@ -199,13 +207,18 @@
     function start_edit_point(dpath: string, idx: number, pt: TheC) {
         point_form_open[dpath] = true
         point_edit_idx[dpath]  = idx
-        point_form_val[dpath]  = point_to_peel(pt)
+        // Pre-fill with everything after 'Point,' so user edits just the payload
+        const full = point_to_peel(pt)   // e.g. 'Point,method:Idzeugnosis'
+        point_form_val[dpath]  = full.replace(/^Point[,:]?/, '')
     }
 
     function submit_point(doc: TheC, waft: TheC) {
         const dpath = doc.sc.path as string
         const val   = (point_form_val[dpath] ?? '').trim()
         if (!val) return
+        // Same pattern as %note: { Point:1, ...peel(typed_text) }
+        // peel('method:Foo') → { method:'Foo' }
+        // peel('method:Foo,other:Bar') → { method:'Foo', other:'Bar' }
         const sc = { Point: 1, ...peel(val) }
 
         const pointsC = (doc.o({ Points: 1 })[0] as TheC | undefined) ?? doc.i({ Points: 1 })
@@ -342,6 +355,7 @@
     {@const not_found = !!doc?.sc.not_found}
     {@const show_new  = is_new}
     {@const show_nf   = not_found && !is_new}
+    {@const is_loaded = gen_path !== undefined || (!is_new && !not_found)}
 
     <div class="ls-doc-hdr">
         {#if doc && waft && renaming[path] !== null && renaming[path] !== undefined}
@@ -356,11 +370,7 @@
         {/if}
 
         {#if codetype}<span class="ls-badge">{codetype}</span>{/if}
-        {#if gen_path != null}
-            <span class="ls-badge ls-badge-gen" title="gen path">{gen_path}</span>
-        {/if}
 
-        <!-- flags: is_new takes priority; tooltip explains each -->
         {#if show_new}
             <span class="ls-flag ls-flag-new"
                 title="created here, not yet written to disk — a spawning ghost">new</span>
@@ -369,11 +379,10 @@
                 title="file not found on disk — opened empty">?</span>
         {/if}
 
-        <!-- state indicator -->
         {#if is_pending}
             <span class="ls-state-ind" title="writing…">⏳</span>
-        {:else if !is_new && !not_found}
-            <span class="ls-state-ind ls-ok" title="loaded">✓</span>
+        {:else if !is_loaded}
+            <span class="ls-state-ind ls-dim" title="not yet loaded">…</span>
         {/if}
 
         <span class="ls-spacer"></span>
@@ -515,7 +524,7 @@
 {#snippet point_input_row(dpath: string, doc: TheC, waft: TheC, mode: 'add' | 'update')}
     <div class="ls-point-form">
         <span class="ls-prefix-label">Point:</span>
-        <input class="ls-input ls-input-sm" placeholder="method:Foo"
+        <input class="ls-input ls-input-sm" placeholder="method:Idzeugnosis"
             bind:value={point_form_val[dpath]}
             onkeydown={(ev) => { if (ev.key==='Enter') submit_point(doc, waft); if (ev.key==='Escape') { point_form_open[dpath]=false; point_edit_idx[dpath]=null } }}
             use:focus_on_mount />
@@ -585,12 +594,11 @@
         font-size: 0.68rem; background: #1c1c28;
         border: 1px solid #333; border-radius: 2px; padding: 0 0.2rem; color: #778; flex-shrink: 0;
     }
-    .ls-badge-gen { color: #677 }
     .ls-flag { font-size: 0.68rem; border-radius: 2px; padding: 0 0.2rem; flex-shrink: 0; cursor: default }
     .ls-flag-new     { background: #1a3a1a; color: #6a9; border: 1px solid #2a5a2a }
     .ls-flag-missing { background: #3a2010; color: #c84; border: 1px solid #5a3010 }
     .ls-state-ind { font-size: 0.72rem; flex-shrink: 0 }
-    .ls-ok        { color: #4a8 }
+    .ls-dim       { color: #555 }
     .ls-spacer    { flex: 1 }
 
     /* ── Waft tree ── */
