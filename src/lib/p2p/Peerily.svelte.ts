@@ -132,7 +132,7 @@ abstract class VerilyPeerily {
             }
 
             // TURNS needs more time for TLS handshake
-            let timeout = protocol === 'TURNS' ? 8000 : 5000
+            let timeout = protocol === 'TURNS' ? 15000 : 5000
             
             setTimeout(() => {
                 if (pc.signalingState !== 'closed') {
