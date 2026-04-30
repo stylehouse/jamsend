@@ -132,12 +132,19 @@
         waft.bump_version()
     }
 
-    // ── Rename Waft (Enter only — onblur fires during parent re-renders) ──
+    // ── Rename Waft ───────────────────────────────────────────────────
+    //
+    //   Fires e:Lies_rename_waft so Lies can persist a waft_rename_job before
+    //   touching any wormhole files.  We do NOT mutate waft.sc.Waft here —
+    //   Lies does that after writing the new snap successfully.
+    //   Renaming a Waft is a move: Lies writes to the new snap path and leaves
+    //   the old snap in place (no delete — user may have other references).
+    function cancel_rename_waft() { renaming_waft = null }
     function commit_rename_waft() {
         const n = renaming_waft?.trim() ?? ''
         renaming_waft = null
         if (!n || n === wkey) return
-        waft.sc.Waft = n
+        H.i_elvisto('Lies/Lies', 'Lies_rename_waft', { old_path: wkey, new_path: n })
     }
 
     // ── Rename Doc ────────────────────────────────────────────────────
@@ -157,7 +164,7 @@
         delete doc.sc.new
         doc.sc.path = new_path
         waft.bump_version()   // triggers watch_c → Lies_sync_waft_docs → new open_req
-        H.i_elvisto('Lies/Lies', 'Lies_rename_doc', { old_path, new_path })
+        H.i_elvisto('Lies/Lies', 'Lies_rename_doc', { old_path, new_path, waft_path: wkey })
     }
 
     // ── Delete Doc ───────────────────────────────────────────────────
@@ -172,24 +179,28 @@
     <!-- header -->
     <div class="ls-waft-hdr">
         {#if renaming_waft !== null}
+            <!-- rename form: [rename] cancel, cursor placed at stem boundary -->
             <input class="ls-input ls-rename-input"
                 value={renaming_waft}
                 oninput={(ev) => renaming_waft = (ev.target as HTMLInputElement).value}
-                onkeydown={(ev) => { if (ev.key==='Enter') commit_rename_waft(); if (ev.key==='Escape') renaming_waft=null }}
-                use:focus_on_mount />
+                onkeydown={(ev) => { if (ev.key==='Enter') commit_rename_waft(); if (ev.key==='Escape') cancel_rename_waft() }}
+                use:place_cursor_at_stem />
+            <button class="ls-add-btn ls-add-btn-sm" onclick={commit_rename_waft}
+                    disabled={!renaming_waft?.trim() || renaming_waft.trim() === wkey}>rename</button>
+            <button class="ls-cancel-btn" onclick={cancel_rename_waft}>cancel</button>
         {:else}
             <span class="ls-waft-key">{wkey}</span>
+            <span class="ls-spacer"></span>
+            <button class="ls-icon-btn ls-active-btn" class:ls-is-active={is_active}
+                    title={is_active ? 'active' : 'set active'}
+                    onclick={() => on_active(waft)}>{is_active ? '●' : '○'}</button>
+            <button class="ls-icon-btn ls-adddoc-btn" title="add Doc"
+                    onclick={toggle_add_doc}>+ Doc</button>
+            <button class="ls-icon-btn" title="rename"
+                    onclick={() => renaming_waft = wkey}>✎</button>
+            <button class="ls-icon-btn ls-del-btn" title="delete"
+                    onclick={() => on_delete(waft)}>×</button>
         {/if}
-        <span class="ls-spacer"></span>
-        <button class="ls-icon-btn ls-active-btn" class:ls-is-active={is_active}
-                title={is_active ? 'active' : 'set active'}
-                onclick={() => on_active(waft)}>{is_active ? '●' : '○'}</button>
-        <button class="ls-icon-btn ls-adddoc-btn" title="add Doc"
-                onclick={toggle_add_doc}>+ Doc</button>
-        <button class="ls-icon-btn" title="edit name"
-                onclick={() => renaming_waft = wkey}>✎</button>
-        <button class="ls-icon-btn ls-del-btn" title="delete"
-                onclick={() => on_delete(waft)}>×</button>
     </div>
 
     {#if waft_mungs.length}
@@ -301,10 +312,21 @@
 {/snippet}
 
 <script module>
-    // Rename inputs are genuinely once-mounted (inside {#if renaming ...}).
-    export function focus_on_mount(node: HTMLElement) {
+    // place_cursor_at_stem — positions cursor before the stem's first dot,
+    // selecting just the stem portion so it can be edited or suffixed.
+    // Imported by reference from DocRow but duplicated here to avoid cross-
+    // component module imports which Svelte doesn't support cleanly.
+    export function place_cursor_at_stem(node: HTMLInputElement) {
         node.focus()
-        if (node instanceof HTMLInputElement) node.select()
+        const val     = node.value
+        const slash_i = val.lastIndexOf('/')
+        const base    = slash_i >= 0 ? val.slice(slash_i + 1) : val
+        const dot_i   = base.indexOf('.')
+        const stem_end   = slash_i >= 0
+            ? slash_i + 1 + (dot_i >= 0 ? dot_i : base.length)
+            : (dot_i >= 0 ? dot_i : base.length)
+        const stem_start = slash_i >= 0 ? slash_i + 1 : 0
+        node.setSelectionRange(stem_start, stem_end)
         return {}
     }
 </script>

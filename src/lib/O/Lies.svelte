@@ -72,11 +72,13 @@
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
     //       /{Points:1}                        — optional metadata
     //         /{Point:1,method}                — individual point
+    //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
     //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
     //     sc.active = 1                        — session-only; never written to snap
     //   w/{open_req:1,path,from_waft?}         — reflected from Doc or stray
     //   w/{loaded_doc:1,path,gen_path}         — after load + Lang handoff
     //   w/{compile_pending:1,path,...}         — waiting for gen/ write
+    //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
     //   w/{Opt:1}                              — options container
     //
     // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
@@ -91,6 +93,26 @@
     //   < %pending_write / %surprise_read / diff per loaded_doc
     //   < nested Waft save
     //   < rename Waft: write fresh snap at new path
+    let future = `
+
+future directions for Lies as a code editor trainstation
+
+Small/crisp:
+
+Escape → Lang_compile with permission — the belief that the current editor state is trustworthy enough to compile. Probably a flag on loaded_doc or docC that the user explicitly arms, and the escape key checks it before firing.
+Dige tracking — stamp each gen/* write with the dige of the source it came from; DocRow shows a ⚠ when the source has changed since last write.
+
+Medium:
+
+Pull-before-push / pending_write / surprise_read — when Lies is about to write a compiled gen file, it first reads the current disk state. If it differs from what it read at load time, that's a surprise_read. Surface it in Liesui with a diff view and a "Push OK" button to unblock. The loaded_doc grows /%pending_write and /%surprise_read children.
+
+Larger/more inventive:
+
+Rename cascade — when a Doc is renamed, the old gen/ file should be deleted and the new path compiled fresh. Needs Lies to coordinate with Lang and track the old gen_path.
+Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy locator that matches method defs, call sites, and comments, with ranking (defs before calls). A whole new subsystem.
+    
+    
+    `
 
     import { _C, TheC }     from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -145,37 +167,135 @@
 
     // ── e_Lies_rename_doc ──────────────────────────────────────────────
     //
-    //   Fired by Waft.svelte's do_rename_doc after the Doc particle's path
-    //   has already been mutated and waft.bump_version() called.
+    //   Fired by Waft.svelte's do_rename_doc after doc.sc.path has already
+    //   been mutated and waft.bump_version() called (which triggers watch_c
+    //   → Lies_sync_waft_docs → fresh open_req for the new path).
     //
-    //   By the time this elvis arrives, Lies_sync_waft_docs (triggered by
-    //   watch_c on the waft) has already queued a fresh open_req for the
-    //   new path.  This handler cleans up the old path's particles:
-    //     - drops old open_req (done or not)
-    //     - drops old loaded_doc so the stale entry leaves the flat list
-    //     - < future: tells Lang to close the old editor slot
+    //   Doc rename is path-only — no wormhole file is moved.  The Waft snap
+    //   will be saved by the watch_c-triggered Lies_waft_save that already
+    //   fired.  This handler only needs to clean up w-level particles for the
+    //   old path so the flat loaded-docs list and open_reqs stay tidy.
     //
-    //   The gen_path for the old path is never stored — it was computed at
-    //   load time — so no gen_path cascade is needed.
+    //   A doc_rename_job is persisted on the Waft before any w mutation so
+    //   that a crash between the two steps leaves an auditable record.
+    //   The job is cleared once cleanup is done.
     //
-    //   e.sc: { old_path, new_path }
+    //   e.sc: { old_path, new_path, waft_path }
     async e_Lies_rename_doc(A: TheC, w: TheC, e: TheC) {
-        const old_path = e.sc.old_path as string | undefined
-        const new_path = e.sc.new_path as string | undefined
+        const old_path  = e.sc.old_path  as string | undefined
+        const new_path  = e.sc.new_path  as string | undefined
+        const waft_path = e.sc.waft_path as string | undefined
         if (!old_path || !new_path || old_path === new_path) return
 
-        // Drop old open_req regardless of done state — the new path gets
+        // Persist a rename job on the Waft particle before touching w.
+        // This survives a crash between mutation and cleanup.
+        const waft = waft_path ? w.o({ Waft: waft_path })[0] as TheC | undefined : undefined
+        const job  = waft?.oai({ doc_rename_job: 1, old_path, new_path })
+
+        // Drop old open_req regardless of done state — the new path has
         // its own fresh open_req from Lies_sync_waft_docs.
         for (const req of w.o({ open_req: 1, path: old_path }) as TheC[]) {
             w.drop(req)
         }
-        // Drop old loaded_doc so it leaves the flat list in Liesui.
+        // Drop old loaded_doc so the stale entry leaves the flat list in Liesui.
         for (const ld of w.o({ loaded_doc: 1, path: old_path }) as TheC[]) {
             w.drop(ld)
         }
         // < future: H.i_elvisto('Lang/Lang', 'Lang_close_doc', { path: old_path })
 
-        console.log(`🔪 Lies: renamed ${old_path} → ${new_path}`)
+        // Job complete — clear the marker.
+        if (job) waft!.drop(job)
+
+        console.log(`🔪 Lies doc renamed: ${old_path} → ${new_path}`)
+        this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_rename_waft ────────────────────────────────────────────
+    //
+    //   Fired by Waft.svelte's commit_rename_waft.  The Waft sc.Waft key
+    //   has NOT been mutated yet — this handler owns that mutation so it
+    //   can bracket it with a persisted waft_rename_job.
+    //
+    //   A Waft rename is a snap move: the new snap path is written first,
+    //   then sc.Waft is updated in-memory, then the open_waft_req path is
+    //   updated so future saves go to the new location.  The old snap is
+    //   left in place (no delete — other references may exist).
+    //
+    //   e.sc: { old_path, new_path }
+    async e_Lies_rename_waft(A: TheC, w: TheC, e: TheC) {
+        const H        = this as House
+        const old_path = e.sc.old_path as string | undefined
+        const new_path = e.sc.new_path as string | undefined
+        if (!old_path || !new_path || old_path === new_path) return
+
+        const waft = w.o({ Waft: old_path })[0] as TheC | undefined
+        if (!waft) {
+            console.warn(`Lies_rename_waft: Waft:${old_path} not found in w`)
+            return
+        }
+
+        // Persist the rename job on w before any IO.
+        const job = w.oai({ waft_rename_job: 1, old_path, new_path })
+
+        // Read the old snap to re-encode under the new path.
+        // (We could re-encode from in-memory waft, but reading first confirms
+        // the old snap exists and gives us a canonical round-trip.)
+        const old_snap_path = H.Lies_waft_snap_path(old_path)
+        const rw  = await H.requesty_serial(w, 'rw_queue')
+        const req = await rw.oai({ rw_name: old_snap_path, rw_op: 'read' })
+        if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+            w.i({ see: `⏳ rename: reading Waft:${old_path}…` })
+            return   // will re-run on next tick with req settled
+        }
+
+        // Re-encode from in-memory waft (authoritative after any CRUD).
+        const SESSION_KEYS = new Set(['not_found', 'new', 'active'])
+        const scalar = (sc: Record<string, any>) => Object.fromEntries(
+            Object.entries(sc).filter(([k, v]) =>
+                !SESSION_KEYS.has(k) &&
+                (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
+            )
+        )
+        const items = waft.o({ Doc: 1 }).map(raw => {
+            const doc     = raw as TheC
+            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
+            const children = pointsC ? [{
+                sc: { Points: 1 },
+                children: pointsC.o({ Point: 1 }).map(pt => ({ sc: scalar((pt as TheC).sc) }))
+            }] : []
+            return { sc: scalar(doc.sc), children }
+        })
+        const { snap, errors } = await H.encode_wh_lines({ Waft: new_path }, items)
+        if (errors.length) {
+            console.error(`Waft rename encode errors:`, errors)
+            w.drop(job)
+            return
+        }
+
+        // Write the new snap path.
+        const new_snap_path = H.Lies_waft_snap_path(new_path)
+        const rw2  = await H.requesty_serial(w, 'rw_queue')
+        const req2 = await rw2.oai(
+            { waft_rename_write: 1, old_path },
+            { rw_op: 'write', rw_name: new_snap_path, rw_data: snap }
+        )
+        if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req: req2 })) {
+            w.i({ see: `⏳ rename: writing Waft:${new_path}…` })
+            return
+        }
+
+        // Snap written — now mutate the in-memory waft and its req.
+        waft.sc.Waft = new_path
+        const waft_req = w.o({ open_waft_req: 1, path: old_path })[0] as TheC | undefined
+        if (waft_req) waft_req.sc.path = new_path
+        // Throttle key on w.c is path-scoped — create fresh one for new path,
+        // let the old key lapse (no harm, it's just a cached fn).
+        w.bump_version()
+
+        // Job complete — clear the marker.
+        w.drop(job)
+
+        console.log(`🗂 Waft renamed: ${old_path} → ${new_path} (old snap left in place)`)
         this.i_elvisto(w, 'think')
     },
 

@@ -1,6 +1,6 @@
 <script lang="ts">
     // DocRow.svelte — reactive doc header row used in both the Liesui flat list
-    // and inside WaftComp for each Doc entry.
+    // and inside Waft.svelte for each Doc entry.
     //
     // Why a component and not a snippet:
     //   Snippets capture their outer closure at definition time.  When Liesui
@@ -9,14 +9,20 @@
     //   doc.version (for path / flags) and w.version (for Lies-wide state)
     //   independently and always reflects the current particle state.
     //
+    // Rename UX:
+    //   Inline form with [rename] and cancel, replacing the path row.
+    //   The input opens with the cursor placed just before the first '.' that
+    //   is to the right of the last '/' — i.e. at the stem boundary — so the
+    //   stem can be immediately edited, suffixed, or deleted with shift+backspace.
+    //   e.g.  Ghost/test/Hello.g  →  cursor before '.g',  selection = 'Hello'
+    //         Ghost/Tour          →  cursor at end (no extension)
+    //
     // Props:
     //   w         — Lies's w particle (compile_pending, loaded_doc live here)
     //   doc       — Doc TheC (sc.path, sc.new?, sc.not_found?) or a loaded_doc
     //   waft      — parent Waft particle; null in the flat loaded-docs list
-    //   on_del    — deletion callback; omit in flat list (shows no × button)
+    //   on_del    — deletion callback; omit in flat list (no × button)
     //   on_rename — (old_path, new_path) → void; omit in flat list (no ✎ button)
-    //               Caller is responsible for mutating doc.sc.path and cleaning
-    //               up the old open_req/loaded_doc via e:Lies_rename_doc.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
 
@@ -29,10 +35,6 @@
     } = $props()
 
     // ── reactive reads ────────────────────────────────────────────────
-    // void doc.version subscribes to any mutation on the doc particle
-    // (path rename, flag changes).  void w.version subscribes to Lies-wide
-    // changes (new loaded_doc, compile_pending settle).
-
     let path      = $derived((() => { void doc.version; return doc.sc.path as string })())
     let is_new    = $derived((() => { void doc.version; return !!doc.sc.new })())
     let show_nf   = $derived((() => { void doc.version; return !!doc.sc.not_found && !doc.sc.new })())
@@ -40,7 +42,7 @@
     let codetype  = $derived(ls_codetype(path))
 
     // Look up loaded / pending state from w every time w changes.
-    let is_loaded  = $derived((() => {
+    let is_loaded = $derived((() => {
         void w.version
         return !!(w.o({ loaded_doc: 1, path }) as object[])[0]
     })())
@@ -63,10 +65,6 @@
     }
 
     // ── rename state ──────────────────────────────────────────────────
-    // Local to this component — survives Liesui and Waft re-renders because
-    // DocRow is keyed on doc.sc.path in the parent {#each}.
-    // Note: when a rename commits, the key changes and this instance is
-    // destroyed/replaced — that's fine; state has been flushed by then.
     let renaming = $state<string | null>(null)
 
     function start_rename()  { renaming = path }
@@ -81,7 +79,7 @@
 
 <div class="ls-doc-hdr">
     {#if renaming !== null}
-        <!-- rename input replaces the entire row while active -->
+        <!-- rename form — mirrors the +Doc form style (input + [rename] cancel) -->
         <input class="ls-input ls-rename-input"
             value={renaming}
             oninput={(ev) => renaming = (ev.target as HTMLInputElement).value}
@@ -89,8 +87,10 @@
                 if (ev.key === 'Enter')  commit_rename()
                 if (ev.key === 'Escape') cancel_rename()
             }}
-            use:focus_on_mount />
-        <button class="ls-icon-btn" onclick={cancel_rename}>×</button>
+            use:place_cursor_at_stem />
+        <button class="ls-add-btn ls-add-btn-sm" onclick={commit_rename}
+                disabled={!renaming?.trim() || renaming.trim() === path}>rename</button>
+        <button class="ls-cancel-btn" onclick={cancel_rename}>cancel</button>
     {:else}
         <span class="ls-doc-path">{path}</span>
         {#if codetype}<span class="ls-badge">{codetype}</span>{/if}
@@ -121,19 +121,32 @@
 </div>
 
 <script module>
-    // focus_on_mount: imperative focus for rename inputs.
-    // Rename inputs are inside {#if renaming !== null} so they are genuinely
-    // once-mounted — this action fires exactly once per rename session.
-    export function focus_on_mount(node: HTMLElement) {
+    // place_cursor_at_stem — Svelte use: action for rename inputs.
+    //
+    //   Places the cursor just before the first '.' to the right of the last '/',
+    //   so the file stem is selected and the extension is preserved.
+    //
+    //   e.g.  Ghost/test/Hello.g    → selects 'Hello', cursor before '.g'
+    //         Ghost/test/Foo.svelte.ts → selects 'Foo', cursor before '.svelte.ts'
+    //         Ghost/Tour              → cursor at end (no extension)
+    //
+    //   Called once on mount (the input is inside {#if renaming !== null}).
+    export function place_cursor_at_stem(node: HTMLInputElement) {
         node.focus()
-        if (node instanceof HTMLInputElement) node.select()
+        const val      = node.value
+        const slash_i  = val.lastIndexOf('/')
+        const base     = slash_i >= 0 ? val.slice(slash_i + 1) : val
+        const dot_i    = base.indexOf('.')
+        const stem_end = slash_i >= 0
+            ? slash_i + 1 + (dot_i >= 0 ? dot_i : base.length)
+            : (dot_i >= 0 ? dot_i : base.length)
+        const stem_start = slash_i >= 0 ? slash_i + 1 : 0
+        node.setSelectionRange(stem_start, stem_end)
         return {}
     }
 </script>
 
 <style>
-    /* These class names match the :global declarations in Liesui.svelte so
-       that shared styles (ls-spacer, ls-icon-btn, etc) apply here too. */
     .ls-doc-hdr {
         display: flex; align-items: center; gap: 0.25rem;
         flex-wrap: wrap; min-height: 1.4rem;
@@ -153,9 +166,21 @@
     .ls-input {
         background: #0d0d14; border: 1px solid #333; border-radius: 3px;
         color: #aaa; font-family: monospace; font-size: 0.76rem;
-        padding: 0.2rem 0.35rem; outline: none;
+        padding: 0.2rem 0.35rem; outline: none; flex: 1; min-width: 6rem;
     }
     .ls-input:focus  { border-color: #446 }
-    .ls-rename-input { flex: 1; min-width: 6rem }
-    /* ls-icon-btn / ls-del-btn / ls-icon-btn:hover declared :global in Liesui */
+    .ls-add-btn {
+        background: #1a1a2a; border: 1px solid #334; border-radius: 3px;
+        color: #88a; cursor: pointer; font-size: 0.76rem; padding: 0.2rem 0.4rem;
+        white-space: nowrap; flex-shrink: 0;
+    }
+    .ls-add-btn:hover    { background: #222238; color: #aac }
+    .ls-add-btn:disabled { opacity: 0.35; cursor: default }
+    .ls-add-btn-sm       { padding: 0.15rem 0.3rem }
+    .ls-cancel-btn {
+        background: none; border: none; color: #555;
+        cursor: pointer; font-size: 0.76rem; padding: 0.2rem 0.3rem; flex-shrink: 0;
+    }
+    .ls-cancel-btn:hover { color: #999 }
+    /* ls-icon-btn / ls-del-btn declared :global in Waft.svelte */
 </style>
