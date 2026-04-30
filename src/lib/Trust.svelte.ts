@@ -124,7 +124,8 @@ class stashedHavingThingsIsms extends ThingsIsms {
             }
         }
 
-        let prepub = da.Id.pub.slice(0,16)
+        let prepub = da.Id.pub.slice(0,16) || da.prepub
+        if (!prepub) throw "thawEnteredStashed !prepub"
         let S = await this.add_Thing({name:prepub})
         // wait for UI to make .stashed exist
         await S.promise_stashed

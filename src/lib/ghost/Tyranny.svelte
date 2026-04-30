@@ -334,7 +334,10 @@
             if (this.USE_PRESIGS) sign = sign.slice(0,16)
             let Idzeuginance = `${whowhat}-${sign}`
 
-            let url = new URL(location.origin+location.pathname)
+            // long story. I have these appserver chrome profiles stuck on this location
+            //   but they give out invites at the normal https port.
+            let origin = location.origin.replace(/(?<=org):9999$/,'')
+            let url = new URL(origin+location.pathname)
             url.hash = this.PREHASH + Idzeuginance
             let Idzeugi = url.toString()
 
