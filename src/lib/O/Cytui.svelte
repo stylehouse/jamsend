@@ -686,7 +686,7 @@
                         label: 'data(label)', 'text-valign': 'center',
                         'text-wrap': 'wrap', 'text-max-width': '72px',
                         'font-size': '9px',
-                        'font-family': "'Berkeley Mono','Fira Code',monospace",
+                        'font-family': "Berkeley Mono,Fira Code,monospace",
                         color: '#ddd', 'background-color': '#222',
                         width: 24, height: 24,
                     },

@@ -75,7 +75,7 @@
             if (v === null || typeof v === 'object') throw `point_to_peel: non-scalar in Point sc`
         }
         const d = depeel(sc)
-        if (!d.startsWith('Point,') && d !== 'Point') throw `point_to_peel: 'Point' not first: ${d}`
+        if (!d.startsWith('Point') && d !== 'Point') throw `point_to_peel: 'Point' not first: ${d}`
         return d
     }
 

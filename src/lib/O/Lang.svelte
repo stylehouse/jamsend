@@ -739,7 +739,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
             this._measure_ctx = canvas.getContext('2d')!
         }
         const ctx = this._measure_ctx
-        const FONT = `${fontSize}px 'Berkeley Mono','Fira Code',monospace`
+        const FONT = `${fontSize}px Berkeley Mono,Fira Code,monospace`
 
         let charW = this._measure_cache[fontSize]
         if (!charW) {
