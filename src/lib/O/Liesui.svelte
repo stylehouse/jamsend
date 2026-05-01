@@ -47,11 +47,6 @@
     // ghosts are still mid-tick.  The mutex promise resolves as soon as the
     // current beliefs() call finishes, at which point w/* is in a sane state.
     const update_from_Lies = throttle(async (lies_w: TheC, ex: TheC) => {
-        // < not sure this is needed
-        //    and throttle() should check we're not waiting ages
-        //   throttle(fn,delay,{notnow:1}) should be perfected, called delay_throttle()
-        //    right now it breaks this component completely if notnow is on.
-        // await H.all_clear()
         loaded_docs = lies_w.o({ loaded_doc: 1 })     as TheC[]
         errors      = lies_w.o({ compile_error: 1 })  as TheC[]
         all_wafts   = lies_w.o({ Waft: 1 })           as TheC[]
@@ -62,8 +57,6 @@
     $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
-        // examining replaces the old w in ave (w.bump_version() never propagated
-        // to ave.version, so H.ave was never reassigned after the first tick).
         // examining.c.w is the Lies work particle — still used to read Wafts etc.
         const ex = ave.find((n: TheC) => n.sc.examining) as TheC | undefined
         if (!ex) return
@@ -73,7 +66,13 @@
             console.log(`🔪 Liesui: Lies found`)
             Lies = lies_w
         }
-        update_from_Lies(lies_w, ex)
+        (async () => {
+            // < throttle(fn,delay,{notnow:1}) should be perfected, called delay_throttle()
+            //    right now it breaks this component completely if notnow is on.
+            // this is needed to avoid UI updating out of time
+            await H.all_clear()
+            update_from_Lies(lies_w, ex)
+        })()
     })
 
     // ── header state ─────────────────────────────────────────────────

@@ -44,6 +44,7 @@
     //   traffic — only actual document edits schedule the 800ms re-run.
 
     import { onDestroy } from "svelte"
+    import { throttle } from "$lib/Y.svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
@@ -85,63 +86,58 @@
     //   from it here and pass them to <Actions> — isolated from H.actions which
     //   belongs to the global button rack shown elsewhere.
     let lang_actions: TheC[] = $state([])
-    $effect(() => {
-        const ave = H.ave
-        if (!ave?.length) return
-        for (const p of ave) void p.version
-        const la = ave.find((p: TheC) => p.sc.lang_actions === 1) as TheC | undefined
-        lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
-    })
 
     // ── active doc tracking ──────────────────────────────────────────────────
-    //
-    //   Langui is mounted once (with no doc prop) but must show whichever doc
-    //   Lang_set_active_doc has made current.  The backend stamps
-    //   ave/{active_doc:1}.path whenever the active doc changes, so we watch
-    //   that signal rather than a fixed prop.
-    //
-    //   active_path drives both the ave text lookup and the `doc` stamp on
-    //   every CM event — so the backend always knows which doc an event
-    //   came from, even after the active doc switches.
     let active_path = $state('')   // starts empty; upgraded once ave/{active_doc:1} lands
 
-    $effect(() => {
+    // ── ave text-sync ────────────────────────────────────────────────────────
+    let docC: TheC | undefined = $state()
+
+    // pull_ave: consolidates all H.ave reads.
+    //
+    //   Throttled sync function — all reads happen here on settled state.
+    //   Called only after H.all_clear() (see $effect below), so we never
+    //   race a mid-flight beliefs tick.
+    //
+    //   The generic shape for any UI that reads from H.ave:
+    //     const run = throttle(() => { read H.ave; write $state }, delay)
+    //     $effect(() => { for p of H.ave: void p.version
+    //                     ;(async () => { await H.all_clear(); run() })() })
+    //
+    //   await-before-throttle is intentional: many effect fires during one
+    //   beliefs run all await all_clear together, then burst-call run() at once.
+    //   The throttle collapses that burst to one read of fully settled state.
+    const pull_ave = throttle(() => {
         const ave = H.ave
         if (!ave?.length) return
-        for (const p of ave) void p.version   // touch all to track additions
-        const sig = ave.find((p: TheC) => p.sc.active_doc === 1 || p.sc.active_doc === true)
-        if (sig?.sc.path) active_path = sig.sc.path as string
+
+        const la = ave.find((p: TheC) => p.sc.lang_actions === 1) as TheC | undefined
+        lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
+
+        const sig  = ave.find((p: TheC) => !!p.sc.active_doc) as TheC | undefined
+        const path = (sig?.sc.path as string | undefined) ?? active_path
+        if (sig?.sc.path) active_path = path
+
+        // docC uses local `path`, not the $state — avoids async ordering subtlety
+        docC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
+    }, 50)
+
+    $effect(() => {
+        for (const p of H.ave) void p.version  // track every particle; any bump re-fires
+        ;(async () => { await H.all_clear(); pull_ave() })()
     })
 
-    // Re-register view + state with the backend whenever the active path changes
-    // after the initial editorBegins (which is fired inline after view creation).
-    // This $effect handles doc switches that happen after the view already exists.
+    // Re-register view + state whenever the active path changes so the backend
+    // knows which doc CM events are coming from.
     $effect(() => {
         if (!view || !active_path) return
-        void active_path   // track changes
+        void active_path
         Lang_i_elvis(view, 'Lang_editorBegins', { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
     })
 
-    // ── ave text-sync ────────────────────────────────────────────────────────
-    //
-    //   Watch the ave/{langtiles_doc:active_path} particle for the current doc.
-    //   When active_path changes (doc switch) or the text is updated from
-    //   outside (load from disk), push the new content into the EditorView.
-    //
-    //   docC arriving for the first time also unblocks {#if docC} in the
-    //   template, which renders the container div and triggers view creation.
-    let docC: TheC | undefined = $state()
     let pullable_text = $derived.by(() => {
         void docC?.version
         return (docC?.sc.text as string) ?? ''
-    })
-
-    $effect(() => {
-        const ave = H.ave
-        if (!ave?.length) return
-        for (const p of ave) void p.version
-        const path = active_path
-        docC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
     })
 
     // pull: when docC.text changes from outside (e.g. load from disk), push into the editor

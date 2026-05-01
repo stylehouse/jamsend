@@ -529,6 +529,7 @@
     // When collecting and a different step is clicked: collect [anchor, n], done.
     // When collecting and the same step is clicked: cancel.
     // diff_mode reset on every pick so eff_mode re-evaluates for the new step.
+    // Re-focuses sr_el so arrow-key navigation continues without another click.
     function pick(n: number) {
         if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
             collect_range(diff_anchor, n)
@@ -541,6 +542,9 @@
         }
         const new_sel = n
         H.i_elvisto('Story/Story', 'story_sel', { open_at: new_sel })
+        // Return focus to the container so ← / → keep navigating.
+        // sr_el has tabindex="0" so it accepts focus programmatically.
+        sr_el?.focus()
     }
 
     function close_panel() {
@@ -562,26 +566,26 @@
 
     // Arrow-key navigation through the pip strip.
     // Left/right move open_at by one step; sticky_mode carries forward.
-    // Ignored when focus is in an input to avoid clobbering text entry.
-    $effect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if (e.target instanceof HTMLInputElement) return
-            if (e.target instanceof HTMLTextAreaElement) return
-            if (display.open_at == null) return
-            const idx = display.steps.findIndex(ts => ts.n === display.open_at)
-            if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
-                e.preventDefault()
-                ;(document.activeElement as HTMLElement)?.blur()
-                pick(display.steps[idx + 1].n)
-            } else if (e.key === 'ArrowLeft' && idx > 0) {
-                e.preventDefault()
-                ;(document.activeElement as HTMLElement)?.blur()
-                pick(display.steps[idx - 1].n)
-            }
+    // Fires only when the .sr container has focus — so it never grabs keys
+    // from the editor, inputs, or anything outside this widget.
+    // pick() re-focuses sr_el after navigating so repeated arrows keep working.
+    let sr_el = $state<HTMLElement | null>(null)
+
+    function handle_strip_keys(e: KeyboardEvent) {
+        // Don't intercept keys typed into inputs/textareas inside the panel
+        // (note input, etc.) even though they're children of .sr.
+        if (e.target instanceof HTMLInputElement) return
+        if (e.target instanceof HTMLTextAreaElement) return
+        if (display.open_at == null) return
+        const idx = display.steps.findIndex(ts => ts.n === display.open_at)
+        if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
+            e.preventDefault()
+            pick(display.steps[idx + 1].n)
+        } else if (e.key === 'ArrowLeft' && idx > 0) {
+            e.preventDefault()
+            pick(display.steps[idx - 1].n)
         }
-        document.addEventListener('keydown', handler)
-        return () => document.removeEventListener('keydown', handler)
-    })
+    }
 
     function accept(n: number) {
         H.i_elvisto('Story/Story', 'story_accept', { accept_n: n })
@@ -604,7 +608,9 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sr">
+<!-- tabindex="0" makes the container focusable so onkeydown fires when     -->
+<!-- the user is interacting with pips — not globally on document.          -->
+<div class="sr" tabindex="0" bind:this={sr_el} onkeydown={handle_strip_keys}>
 
     {#if !This}
         <div class="sr-empty">no Story</div>
@@ -846,7 +852,7 @@
                         class:playhead={ph}
                         class:has-notes={flags.length > 0}
                         class:is-anchor={is_anchor}
-                        onclick={e => { (e.currentTarget as HTMLElement).blur(); pick(n) }}
+                        onclick={() => pick(n)}
                         title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
                     >{hollow ? '○' : ok ? '·' : '✗'}</button>
                 </div>
@@ -922,6 +928,7 @@
     font-size: 11px; color: #ccc; background: #111;
     border: 1px solid #2a2a2a; border-radius: 4px;
     overflow: hidden; min-width: 320px;
+    outline: none;   /* suppress browser focus ring on the container */
 }
 .sr-empty { padding: 8px 12px; color: #555; }
 
