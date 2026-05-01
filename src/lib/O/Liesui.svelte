@@ -144,7 +144,7 @@
     {#if loaded_docs.length}
         <div class="ls-loaded-section">
             {#each loaded_docs as ld (ld.sc.path)}
-                <DocRow w={Lies} doc={ld} />
+                <DocRow {H} w={Lies} doc={ld} />
             {/each}
         </div>
     {:else}

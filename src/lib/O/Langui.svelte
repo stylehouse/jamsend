@@ -53,6 +53,7 @@
     import { stho, simpleLezerLinter } from "$lib/O/stho"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
+    import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
 
     let { H }: { H: House } = $props()
 
@@ -69,6 +70,28 @@
     // update the header readout immediately).
     let sel_from = $state(0)
     let sel_to   = $state(0)
+
+    // ── doc list for display ─────────────────────────────────────────────────
+    //   Derives the short name of the active doc for the bar header.
+    //   The full doc list lives in lang_actions (derived from ave/{lang_actions:1}) registered by Lang.
+    let active_name = $derived.by(() => {
+        const p = active_path
+        if (!p) return 'no doc'
+        return p.split('/').pop() ?? p
+    })
+
+    // ── private Lang action bar ──────────────────────────────────────────────
+    //   Lang enrolls w/{lang_actions:1} into ave.  We derive the action children
+    //   from it here and pass them to <Actions> — isolated from H.actions which
+    //   belongs to the global button rack shown elsewhere.
+    let lang_actions: TheC[] = $state([])
+    $effect(() => {
+        const ave = H.ave
+        if (!ave?.length) return
+        for (const p of ave) void p.version
+        const la = ave.find((p: TheC) => p.sc.lang_actions === 1) as TheC | undefined
+        lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
+    })
 
     // ── active doc tracking ──────────────────────────────────────────────────
     //
@@ -334,10 +357,12 @@
 {#if docC}
 <div class="lte">
     <div class="lte-bar">
-        <span class="lte-title">Lang editor</span>
-        <span class="lte-hint">Ctrl+B — add mark</span>
+        <!-- doc-picker dropdown + any other Lang actions (compo/compi toggles etc) -->
+        <Actions N={lang_actions} />
+        <span class="lte-doc" title={active_path}>{active_name}</span>
+        <span class="lte-hint">Ctrl+B</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
-        <span class="lte-len">{(docC.sc.text as string ?? '').length} chars</span>
+        <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
     </div>
     <div class="lte-cm" bind:this={container}></div>
 </div>
@@ -356,8 +381,8 @@
         border-bottom: 1px solid #181818;
         font-size: 10px; color: #666;
     }
-    .lte-title { color: #7ab0d4; }
-    .lte-hint  { flex: 1; color: #3a3a3a; font-style: italic; }
+    .lte-doc   { color: #9ab0c4; font-family: monospace; font-size: 0.78em; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lte-hint  { color: #3a3a3a; font-style: italic; }
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
     .lte-cm    { min-height: 200px; max-height: 50vh; overflow: auto; }

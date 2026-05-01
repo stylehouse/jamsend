@@ -215,6 +215,31 @@
         w.i({received:1,editorBegins:1})
     },
 
+    // ── e_Doc_open ───────────────────────────────────────────────────────────
+    //
+    //   Fired by Liesui / Waft / DocRow when the user clicks a Doc label or a
+    //   Point inside one.  Switches the active doc to `path`.
+    //
+    //   e.sc.point (optional) — the Point value to navigate to once the doc is
+    //   active.  Finding + scrolling to it is handled here on the w:Lang side;
+    //   the UI just passes the raw Point sc value and forgets about it.
+    //
+    //   e.sc: { path, point? }
+    async e_Doc_open(A: TheC, w: TheC, e: TheC) {
+        const path  = e.sc.path  as string | undefined
+        const point = e.sc.point as string | undefined
+        if (!path) return
+
+        // Switch active doc — Langui's $effect on ave/{active_doc:1} reacts.
+        this.Lang_set_active_doc(w, path)
+
+        // < point navigation: find the matching bookmark or text range and
+        //   scroll the EditorView to it.  Deferred until Cyto/Lies design is settled.
+        if (point) console.log(`📄 Doc_open: ${path} @ point:${point} (navigation TODO)`)
+
+        this.i_elvisto(w, 'think')
+    },
+
     // ── e_Lang_open_doc ──────────────────────────────────────────────────────
     //
     //   Called by Lies after it loads a Ghost source file.
@@ -384,6 +409,7 @@ having a new Cyto cluster spawn within (by location trickery) another
 
         
     },
+
 
 
 //#region assail

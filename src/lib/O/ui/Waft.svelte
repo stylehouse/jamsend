@@ -57,7 +57,7 @@
             if (!g.includes('.')) g += '.g'
             path = `Ghost/${g}`
         } else if (adding_doc.libsrc.trim()) {
-            path = `lib/src/${adding_doc.libsrc.trim()}`
+            path = `src/lib/${adding_doc.libsrc.trim()}`
         } else if (adding_doc.free.trim()) {
             path = adding_doc.free.trim()
         }
@@ -220,7 +220,7 @@
                 <span class="ls-prefix-dim">.g</span>
             </div>
             <div class="ls-add-doc-row">
-                <span class="ls-prefix-label">lib/src/</span>
+                <span class="ls-prefix-label">src/lib/</span>
                 <input class="ls-input ls-input-path" bind:value={adding_doc.libsrc}
                     onkeydown={(ev) => ev.key==='Enter' && submit_add_doc()} />
             </div>
@@ -249,7 +249,7 @@
              class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
 
             <!-- DocRow reads doc.version + w.version directly — stays live. -->
-            <DocRow {w} {doc} {waft}
+            <DocRow {H} {w} {doc} {waft}
                 on_del={delete_doc}
                 on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
 
@@ -261,7 +261,12 @@
                             {#if pform && point_edit_idx[dpath] === idx}
                                 {@render point_input(dpath, doc, '✓')}
                             {:else}
-                                <span class="ls-point-peel">{point_to_peel(pt)}</span>
+                                <!-- clicking a Point label opens that doc and hints at the point to navigate to -->
+                                <button class="ls-point-peel ls-point-open-btn"
+                                        title="open {dpath} at this point"
+                                        onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path: dpath, point: pt.sc.Point })}>
+                                    {point_to_peel(pt)}
+                                </button>
                                 <button class="ls-icon-btn" title="edit"
                                         onclick={() => start_edit_point(dpath, idx, pt)}>✎</button>
                                 <button class="ls-icon-btn ls-del-btn"
@@ -376,6 +381,11 @@
         padding: 0.05rem 0; border-bottom: 1px solid #1c1c28; flex-wrap: wrap;
     }
     .ls-point-peel { font-family: monospace; font-size: 0.74rem; color: #a8c; flex: 1 }
+    .ls-point-open-btn {
+        background: none; border: none; cursor: pointer; text-align: left; padding: 0;
+        font-family: monospace; font-size: 0.74rem; color: #a8c; flex: 1;
+    }
+    .ls-point-open-btn:hover { color: #d0b0f0; text-decoration: underline; }
 
     .ls-add-point-btn {
         background: none; border: none; color: #448; cursor: pointer;

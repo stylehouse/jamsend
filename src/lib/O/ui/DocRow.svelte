@@ -25,8 +25,10 @@
     //   on_rename — (old_path, new_path) → void; omit in flat list (no ✎ button)
 
     import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { House } from "$lib/O/Housing.svelte"
 
-    let { w, doc, waft = null, on_del, on_rename }: {
+    let { H, w, doc, waft = null, on_del, on_rename }: {
+        H:          House
         w:          TheC
         doc:        TheC
         waft?:      TheC | null
@@ -92,7 +94,11 @@
                 disabled={!renaming?.trim() || renaming.trim() === path}>rename</button>
         <button class="ls-cancel-btn" onclick={cancel_rename}>cancel</button>
     {:else}
-        <span class="ls-doc-path">{path}</span>
+        <!-- clicking the path label switches the active doc in Lang -->
+        <button class="ls-doc-path ls-doc-open-btn" title="open in editor"
+                onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path })}>
+            {path}
+        </button>
         {#if codetype}<span class="ls-badge">{codetype}</span>{/if}
         {#if is_new}
             <span class="ls-flag ls-flag-new"
@@ -153,6 +159,12 @@
         border-bottom: 1px solid #1c1c1c; padding: 0.1rem 0;
     }
     .ls-doc-path  { font-family: monospace; font-size: 0.76rem; color: #9ab; flex: 1 }
+    .ls-doc-open-btn {
+        background: none; border: none; cursor: pointer; text-align: left;
+        padding: 0; font-family: monospace; font-size: 0.76rem; color: #9ab;
+        flex: 1; white-space: nowrap;
+    }
+    .ls-doc-open-btn:hover { color: #c8dff0; text-decoration: underline; }
     .ls-badge {
         font-size: 0.68rem; background: #1c1c28;
         border: 1px solid #333; border-radius: 2px; padding: 0 0.2rem; color: #778; flex-shrink: 0;
