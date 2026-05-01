@@ -21,19 +21,23 @@
     //   w         — Lies's w particle (compile_pending, loaded_doc live here)
     //   doc       — Doc TheC (sc.path, sc.new?, sc.not_found?) or a loaded_doc
     //   waft      — parent Waft particle; null in the flat loaded-docs list
+    //   examining — from Liesui; carries examining.sc.active_path (Lang's active doc).
+    //               version bumps when Lang_set_active_doc fires — is_examining reacts
+    //               without a Liesui re-render (pure Svelte 5 $derived reactivity).
     //   on_del    — deletion callback; omit in flat list (no × button)
     //   on_rename — (old_path, new_path) → void; omit in flat list (no ✎ button)
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, w, doc, waft = null, on_del, on_rename }: {
+    let { H, w, doc, waft = null, on_del, on_rename, examining }: {
         H:          House
         w:          TheC
         doc:        TheC
         waft?:      TheC | null
         on_del?:    (doc: TheC) => void
         on_rename?: (old_path: string, new_path: string) => void
+        examining?: TheC | null
     } = $props()
 
     // ── reactive reads ────────────────────────────────────────────────
@@ -51,6 +55,14 @@
     let is_pending = $derived((() => {
         void w.version
         return (w.o({ compile_pending: 1 }) as TheC[]).some(p => !p.sc.done && p.sc.path === path)
+    })())
+
+    // Glow when this doc is the one currently open in Lang.
+    // examining.sc.active_path mirrors ave/{active_doc:1}.sc.path and bumps when
+    // Lang_set_active_doc fires — no Liesui re-render required, pure Svelte 5.
+    let is_examining = $derived((() => {
+        void examining?.version
+        return !!examining && examining.sc.active_path === path
     })())
 
     // ── codetype derivation ───────────────────────────────────────────
@@ -96,6 +108,7 @@
     {:else}
         <!-- clicking the path label switches the active doc in Lang -->
         <button class="ls-doc-path ls-doc-open-btn" title="open in editor"
+                class:ls-doc-examining={is_examining}
                 onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path })}>
             {path}
         </button>
@@ -165,6 +178,9 @@
         flex: 1; white-space: nowrap;
     }
     .ls-doc-open-btn:hover { color: #c8dff0; text-decoration: underline; }
+    /* Active doc in Lang — title glows blue-white.
+       Works for both loaded_doc flat list and Waft/Doc entries. */
+    .ls-doc-examining { color: #d4eeff !important; text-shadow: 0 0 7px #4488cc99; }
     .ls-badge {
         font-size: 0.68rem; background: #1c1c28;
         border: 1px solid #333; border-radius: 2px; padding: 0 0.2rem; color: #778; flex-shrink: 0;

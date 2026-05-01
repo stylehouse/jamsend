@@ -32,6 +32,12 @@
     let all_wafts:   TheC[]           = $state([])
     // pending_paths removed — DocRow derives pending state from w.version directly
 
+    // examining — the %examining particle from Lies's w, placed in watched:ave.
+    // Passed down to Waft and DocRow; DocRow derives is_examining from it.
+    // examining.sc.active_path mirrors Lang's active_doc so DocRow glows without
+    // needing a Liesui re-render — DocRow's $derived tracks examining.version directly.
+    let examining: TheC | undefined = $state()
+
     // Throttled updater — reads structural arrays from Lies's w at most
     // once per interval rather than on every think() tick.  This prevents
     // rapid $state writes from rebuilding DOM nodes and yanking focus.
@@ -40,27 +46,34 @@
     // Without this, H.ave fires mid-think() and we'd read partial state while
     // ghosts are still mid-tick.  The mutex promise resolves as soon as the
     // current beliefs() call finishes, at which point w/* is in a sane state.
-    const update_from_Lies = throttle(async (found: TheC) => {
+    const update_from_Lies = throttle(async (lies_w: TheC, ex: TheC) => {
         // < not sure this is needed
         //    and throttle() should check we're not waiting ages
         //   throttle(fn,delay,{notnow:1}) should be perfected, called delay_throttle()
         //    right now it breaks this component completely if notnow is on.
         // await H.all_clear()
-        loaded_docs = found.o({ loaded_doc: 1 })     as TheC[]
-        errors      = found.o({ compile_error: 1 })  as TheC[]
-        all_wafts   = found.o({ Waft: 1 })           as TheC[]
+        loaded_docs = lies_w.o({ loaded_doc: 1 })     as TheC[]
+        errors      = lies_w.o({ compile_error: 1 })  as TheC[]
+        all_wafts   = lies_w.o({ Waft: 1 })           as TheC[]
+        examining   = ex
+        console.log(`🔪 Liesui: more...`)
     }, 150)
 
     $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
-        const found = ave.find((n: TheC) => n.sc.w === 'Lies') as TheC | undefined
-        if (!found) return
-        if (found !== Lies) {
+        // examining replaces the old w in ave (w.bump_version() never propagated
+        // to ave.version, so H.ave was never reassigned after the first tick).
+        // examining.c.w is the Lies work particle — still used to read Wafts etc.
+        const ex = ave.find((n: TheC) => n.sc.examining) as TheC | undefined
+        if (!ex) return
+        const lies_w = ex.c?.w as TheC | undefined
+        if (!lies_w) return
+        if (lies_w !== Lies) {
             console.log(`🔪 Liesui: Lies found`)
-            Lies = found
+            Lies = lies_w
         }
-        update_from_Lies(found)
+        update_from_Lies(lies_w, ex)
     })
 
     // ── header state ─────────────────────────────────────────────────
@@ -144,7 +157,7 @@
     {#if loaded_docs.length}
         <div class="ls-loaded-section">
             {#each loaded_docs as ld (ld.sc.path)}
-                <DocRow {H} w={Lies} doc={ld} />
+                <DocRow {H} w={Lies} doc={ld} {examining} />
             {/each}
         </div>
     {:else}
@@ -157,6 +170,7 @@
         <div class="ls-waft-section">
             {#each all_wafts as waft (waft.sc.Waft)}
                 <WaftComp {H} w={Lies} {waft} depth={0}
+                    {examining}
                     on_active={set_waft_active}
                     on_delete={delete_waft} />
             {/each}

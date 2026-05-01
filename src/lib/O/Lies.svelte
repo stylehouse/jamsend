@@ -67,6 +67,10 @@
     //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
+    //   w/{examining:1,active_path?}            — reactive signal in watched:ave;
+    //                                            bumps when w changes or active_doc changes.
+    //                                            examining.c.w = w (back-ref for Liesui).
+    //                                            examining.sc.active_path mirrors Lang's sig.
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
@@ -333,12 +337,61 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             w.c.Lies_setup = true
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
+
+            // %examining — the reactive signal for Liesui, Waft, and DocRow.
+            // Replaces the old ave.i(w) pattern (w.bump_version() didn't propagate
+            // to ave.version, so Liesui's $effect never re-fired after the first tick).
+            //
+            //   examining.c.w        — back-ref so Liesui can reach w from examining
+            //   examining.sc.active_path — mirrors Lang's active_doc path; wired below
+            //
+            // Any w.version bump (new Waft, new loaded_doc, …) now cascades:
+            //   watch_c(w) → examining.bump_version() + ave.bump_version()
+            //   → H.ave reassigned → Liesui $effect re-fires.
+            const examining = w.oai({ examining: 1 })
+            examining.c.w = w   // back-ref so Liesui can reach w from examining
             const ave = H.oai_enroll(H, { watched: 'ave' })
-            ave.i(w)
+            ave.i(examining)
+            H.watch_c(w, () => {
+                examining.bump_version()
+                ave.bump_version()
+            })
+
             // seed Opt container — Story's push_opt_to_run may already have
             // populated it before the first tick; oai is a no-op if so.
             w.oai({ Opt: 1 })
             H.oai_enroll(H, { watched: 'actions' })
+        }
+
+        // ── active_doc → examining — lazy wire for the DocRow glow ───────────
+        //
+        //   Lang's ave/{active_doc:1} sig bumps via sig.bump_version() when the
+        //   user opens a doc (e_Doc_open → Lang_set_active_doc → sig.bump_version()).
+        //   We wire a watch_c on sig so the bump propagates without a Lies tick:
+        //     sig.bump_version()
+        //     → watch_c handler (Housing's start_watched_C_effect flush)
+        //     → examining.sc.active_path updated + examining.bump_version()
+        //     → DocRow's $derived on examining.version re-runs (pure Svelte 5)
+        //     → is_examining glow toggles live, no Liesui re-render needed.
+        //
+        //   sig is created lazily by Lang on first Doc_open, so we retry each tick.
+        const examining = w.o({ examining: 1 })[0] as TheC
+        if (examining) {
+            const ave_C = H.o({ watched: 'ave' })[0] as TheC | undefined
+            const sig   = ave_C?.o({ active_doc: 1 })[0] as TheC | undefined
+            if (sig && !w.c.examining_sig_watch) {
+                w.c.examining_sig_watch = true
+                H.watch_c(sig, () => {
+                    examining.sc.active_path = sig.sc.path as string | undefined
+                    examining.bump_version()
+                })
+            }
+            // Initial sync on this tick in case sig existed before the watch was wired.
+            const active_path = sig?.sc.path as string | undefined
+            if (active_path !== examining.sc.active_path) {
+                examining.sc.active_path = active_path
+                examining.bump_version()
+            }
         }
 
         // ── opts — every tick, like story_ui ─────────────────────────────────
@@ -413,6 +466,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             })
 
             waft_req.sc.done = 1
+            w.bump_version()
             console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }
 
@@ -451,6 +505,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             }
 
             req_p.sc.done = 1
+            w.bump_version()
             w.oai({ loaded_doc: 1, path, gen_path })
         }
 

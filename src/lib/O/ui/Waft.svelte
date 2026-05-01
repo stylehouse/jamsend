@@ -15,13 +15,14 @@
     import { peel, depeel } from "$lib/Y.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
 
-    let { H, w, waft, depth = 0, on_active, on_delete }: {
+    let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
         H:         House
         w:         TheC          // Lies's w particle — passed to DocRow for live state
         waft:      TheC
         depth?:    number
         on_active: (waft: TheC) => void
         on_delete: (waft: TheC) => void
+        examining?: TheC         // from Liesui; DocRow uses it to derive is_examining glow
     } = $props()
 
     // ── reactive reads — only waft.version ───────────────────────────
@@ -249,7 +250,7 @@
              class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
 
             <!-- DocRow reads doc.version + w.version directly — stays live. -->
-            <DocRow {H} {w} {doc} {waft}
+            <DocRow {H} {w} {doc} {waft} {examining}
                 on_del={delete_doc}
                 on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
 
@@ -290,7 +291,7 @@
 
     <!-- sub-Wafts (recursive) — pass w through so DocRow has live Lies state -->
     {#each sub_wafts as sw (sw.sc.Waft)}
-        <svelte:self {H} {w} waft={sw} depth={depth + 1}
+        <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
             {on_active} {on_delete} />
     {/each}
 
