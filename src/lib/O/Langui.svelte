@@ -67,6 +67,7 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
+    import Langminimap from "./ui/Langminimap.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -384,7 +385,10 @@
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
     </div>
-    <div class="lte-cm" bind:this={container}></div>
+    <div class="lte-cm-wrap">
+        <div class="lte-cm" bind:this={container}></div>
+        <Langminimap {H} {view} {active_path} />
+    </div>
 </div>
 {/if}
 
@@ -405,9 +409,14 @@
     .lte-hint  { color: #3a3a3a; font-style: italic; }
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
-    .lte-cm    { min-height: 200px; max-height: 50vh; overflow: auto; }
+    .lte-cm-wrap {
+        position: relative;        /* positioning context for Langminimap overlay */
+        display: flex;
+        min-height: 200px; max-height: 50vh;
+    }
+    .lte-cm    { flex: 1; min-height: 0; overflow: auto; }
     .lte-cm :global(.cm-editor)  { height: 100%; }
-    .lte-cm :global(.cm-content) { font-size: 12px; }
+    .lte-cm :global(.cm-content) { font-size: 12px; padding-right: 180px; /* clear minimap */ }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
        ranges read clearly. One rule works even when marks overlap because
