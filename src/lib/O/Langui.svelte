@@ -1,7 +1,7 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc
+    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────
     //
     //   One EditorView, many EditorStates.  On doc switch:
     //     1. Current EditorState (including full undo history, scroll, selection,
@@ -67,7 +67,7 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
-    import Langminimap from "./ui/Langminimap.svelte"
+    import Langminimap from "./Langminimap.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -411,12 +411,12 @@
     .lte-len   { color: #3a3a3a; }
     .lte-cm-wrap {
         position: relative;        /* positioning context for Langminimap overlay */
-        display: flex;
-        min-height: 200px; max-height: 50vh;
+        height: 50vh; min-height: 200px;
+        overflow: hidden;          /* keep the minimap inside this box */
     }
-    .lte-cm    { flex: 1; min-height: 0; overflow: auto; }
+    .lte-cm    { height: 100%; overflow: auto; }
     .lte-cm :global(.cm-editor)  { height: 100%; }
-    .lte-cm :global(.cm-content) { font-size: 12px; padding-right: 180px; /* clear minimap */ }
+    .lte-cm :global(.cm-content) { font-size: 12px; }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
        ranges read clearly. One rule works even when marks overlap because

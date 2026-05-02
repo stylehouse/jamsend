@@ -327,147 +327,188 @@
 
 {#if visible}
 <div class="lmm">
-    <div class="lmm-head" title="Toggle minimap">
-        <button class="lmm-toggle" onclick={() => visible = false} aria-label="Hide minimap">‹</button>
+    <div class="lmm-head">
+        <button class="lmm-toggle" onclick={() => visible = false} aria-label="Hide minimap" title="Hide">‹</button>
         <span class="lmm-title">{regions.length} region{regions.length === 1 ? '' : 's'}</span>
     </div>
 
     <div class="lmm-strip">
-        <!-- top-level defs (defs not inside any region) — rendered as ticks
-             positioned by line, shown above the bands so they don't visually
-             collide with region headings. -->
-        {#each top_level_defs as d (d.from)}
-            <button class="lmm-def lmm-def-top"
-                    style="top: {band_top(d.line)}"
-                    title="{d.method} (line {d.line})"
-                    onclick={() => go_to(d.from, d.to)}>
-                <span class="lmm-def-label">{d.method}</span>
-            </button>
-        {/each}
-
-        <!-- region bands — rendered in source order; depth controls left inset
-             so nested bands appear stacked rightward. -->
+        <!-- Colored stripes: one per region, just a tinted vertical block.
+             Width-shrunk by depth so nesting reads as a stack of stripes. -->
         {#each regions as r (r.from_line + ':' + r.label)}
-            <div class="lmm-band"
+            <div class="lmm-stripe"
                  style="top: {band_top(r.from_line)};
                         height: {band_height(r.from_line, r.to_line)};
-                        left: {r.depth * 6}px;
+                        left: {r.depth * 5}px;
                         background: {band_color(r.depth)};
-                        border-left: 2px solid {band_border(r.depth)};">
-                <div class="lmm-band-head">
-                    <button class="lmm-chev"
-                            onclick={() => toggle_collapse(r)}
-                            aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
-                    <button class="lmm-label"
-                            onclick={() => go_to(r.from_char, r.from_char)}
-                            title="line {r.from_line}–{r.to_line}">{r.label}</button>
-                    <button class="lmm-fold"
-                            onclick={() => toggle_fold(r)}
-                            title="Fold/unfold in editor">⌐</button>
-                </div>
-                {#if !is_collapsed(r)}
-                    {#each r.defs as d (d.from)}
-                        <button class="lmm-def"
-                                style="top: {band_top(d.line)}"
-                                title="{d.method} (line {d.line})"
-                                onclick={() => go_to(d.from, d.to)}>
-                            <span class="lmm-def-label">{d.method}</span>
-                        </button>
-                    {/each}
-                {/if}
+                        border-left: 2px solid {band_border(r.depth)};"
+                 aria-hidden="true"></div>
+        {/each}
+
+        <!-- Labels: rendered separately so band height doesn't squash them.
+             Each is an absolutely-positioned row at the region's top line.
+             Overflow is allowed — long labels extend left over the strip. -->
+        {#each regions as r (r.from_line + ':' + r.label)}
+            <div class="lmm-row"
+                 style="top: {band_top(r.from_line)}; padding-left: {r.depth * 5 + 4}px;">
+                <button class="lmm-chev"
+                        onclick={() => toggle_collapse(r)}
+                        aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
+                <button class="lmm-label"
+                        onclick={() => go_to(r.from_char, r.from_char)}
+                        title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
+                <button class="lmm-fold"
+                        onclick={() => toggle_fold(r)}
+                        title="Fold/unfold in editor">f</button>
             </div>
+
+            {#if !is_collapsed(r)}
+                {#each r.defs as d (d.from)}
+                    <button class="lmm-def"
+                            style="top: {band_top(d.line)}; left: {r.depth * 5 + 4}px;"
+                            title="{d.method} (line {d.line})"
+                            onclick={() => go_to(d.from, d.to)}>
+                        <span class="lmm-def-tick"></span>
+                        <span class="lmm-def-label">{d.method}</span>
+                    </button>
+                {/each}
+            {/if}
+        {/each}
+
+        <!-- Top-level defs (defs not inside any region) — same tick style,
+             rendered last so they paint over any stripe edges. -->
+        {#each top_level_defs as d (d.from)}
+            <button class="lmm-def lmm-def-top"
+                    style="top: {band_top(d.line)}; left: 4px;"
+                    title="{d.method} (line {d.line})"
+                    onclick={() => go_to(d.from, d.to)}>
+                <span class="lmm-def-tick"></span>
+                <span class="lmm-def-label">{d.method}</span>
+            </button>
         {/each}
     </div>
 </div>
 {:else}
-    <button class="lmm-show" onclick={() => visible = true} aria-label="Show minimap">›</button>
+    <button class="lmm-show" onclick={() => visible = true} aria-label="Show minimap" title="Show minimap">›</button>
 {/if}
 
 <style>
     .lmm {
         position: absolute; top: 0; right: 0; bottom: 0;
-        width: 180px;
+        width: 200px;
         display: flex; flex-direction: column;
-        background: rgba(10, 10, 14, 0.82);
+        background: rgba(10, 10, 14, 0.78);
         border-left: 1px solid #1a1a1a;
         backdrop-filter: blur(4px);
         font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
-        font-size: 10px; color: #aab;
+        font-size: 11px; color: #aab;
         z-index: 10;
         pointer-events: auto;
     }
     .lmm-head {
         display: flex; align-items: center; gap: 6px;
-        padding: 3px 6px; background: rgba(0, 0, 0, 0.3);
+        padding: 4px 6px; background: rgba(0, 0, 0, 0.3);
         border-bottom: 1px solid #1a1a1a;
         flex-shrink: 0;
     }
-    .lmm-toggle, .lmm-show {
+    .lmm-toggle {
         background: none; border: none; color: #6a8a9a; cursor: pointer;
-        font-size: 13px; padding: 0 4px; line-height: 1;
+        font-size: 14px; padding: 0 4px; line-height: 1;
     }
+    .lmm-toggle:hover { color: #a0c0d0; }
     .lmm-show {
         position: absolute; top: 24px; right: 0;
         background: rgba(10, 10, 14, 0.7);
         border: 1px solid #1a1a1a; border-right: none;
         border-radius: 3px 0 0 3px;
         padding: 4px 6px;
+        color: #6a8a9a; cursor: pointer;
         z-index: 10;
     }
-    .lmm-title { color: #556; font-size: 9px; }
+    .lmm-show:hover { color: #a0c0d0; }
+    .lmm-title { color: #678; font-size: 10px; }
+
+    /* Strip surface holds three layers, all absolute-positioned within it:
+         .lmm-stripe — colored bands sized by region line span (z-index 0)
+         .lmm-row    — region label rows at each region's top line (z-index 2)
+         .lmm-def    — method ticks at each def's line (z-index 1)
+       overflow:hidden on the strip itself; rows are allowed to extend
+       leftward over their parent stripes via negative margin if needed. */
     .lmm-strip {
         position: relative;
         flex: 1;
         overflow: hidden;
     }
-    /* Region band — absolute-positioned vertical block over the strip. */
-    .lmm-band {
+
+    .lmm-stripe {
+        position: absolute; right: 0;
+        z-index: 0;
+        pointer-events: none;
+        min-height: 2px;
+    }
+
+    /* Region label row — fixed height, positioned at the region's top line.
+       Sits above stripes, allowed to overflow horizontally if label is long.
+       The row height adds some pixels which can extend slightly beyond the
+       stripe in tiny regions, but that's better than clipped text. */
+    .lmm-row {
         position: absolute; right: 0; left: 0;
-        border-top: 1px solid;          /* color set inline per depth */
-        border-top-color: inherit;
-        min-height: 14px;
-    }
-    .lmm-band-head {
+        z-index: 2;
         display: flex; align-items: center; gap: 2px;
-        padding: 1px 4px;
-        font-size: 10px;
-        background: rgba(0, 0, 0, 0.4);
-        position: sticky; top: 0; z-index: 1;
+        height: 16px; margin-top: -1px;
+        background: rgba(0, 0, 0, 0.55);
+        border-top: 1px solid rgba(120, 140, 170, 0.25);
+        padding-right: 4px;
+        white-space: nowrap;
     }
+
     .lmm-chev, .lmm-fold {
         background: none; border: none; color: #6a8a9a;
-        cursor: pointer; padding: 0 2px; font-size: 10px; line-height: 1;
+        cursor: pointer; padding: 0 3px; line-height: 1;
+        font-size: 10px;
+        font-family: inherit;
+        flex-shrink: 0;
     }
-    .lmm-fold { color: #4a5a6a; }
+    .lmm-chev:hover, .lmm-fold:hover { color: #c0d0e0; }
+    .lmm-fold { color: #4a5a6a; font-style: italic; }
+
     .lmm-label {
         background: none; border: none; cursor: pointer;
         color: #c0d0e0; padding: 0; flex: 1; text-align: left;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
         font-family: inherit; font-size: inherit;
+        line-height: 1.2;
     }
     .lmm-label:hover { color: #fff; }
 
-    /* Method def tick — small clickable marker positioned by line within
-       its parent (region band, or .lmm-strip for top-level). */
+    /* Method def — tick + hover label.  No background, no clipping; the
+       label fades in on hover and is allowed to extend beyond the strip. */
     .lmm-def {
-        position: absolute; left: 2px; right: 2px; top: 0;
-        height: 2px;
-        background: rgba(180, 200, 220, 0.4);
-        border: none; padding: 0; cursor: pointer;
-        overflow: visible;
+        position: absolute; right: 4px;
+        z-index: 1;
+        background: none; border: none; padding: 0; cursor: pointer;
+        height: 8px; margin-top: -4px;
+        display: flex; align-items: center; gap: 4px;
     }
-    .lmm-def:hover { background: rgba(180, 200, 220, 0.9); height: 3px; }
+    .lmm-def-tick {
+        display: block;
+        width: 14px; height: 2px;
+        background: rgba(180, 200, 220, 0.45);
+        flex-shrink: 0;
+    }
+    .lmm-def:hover .lmm-def-tick { background: rgba(180, 200, 220, 0.95); height: 3px; }
+
     .lmm-def-label {
-        position: absolute; left: 6px; top: -4px;
         font-size: 9px; color: #889;
-        white-space: nowrap;
         opacity: 0;
         transition: opacity 0.1s;
         pointer-events: none;
+        white-space: nowrap;
     }
-    .lmm-def:hover .lmm-def-label { opacity: 1; }
-    .lmm-def-top {
-        background: rgba(220, 200, 140, 0.4);
-    }
-    .lmm-def-top:hover { background: rgba(220, 200, 140, 0.9); }
+    .lmm-def:hover .lmm-def-label { opacity: 1; color: #c0d0e0; }
+
+    /* Top-level defs (no enclosing region) get a warmer tick color so they
+       stand out from in-region defs at a glance. */
+    .lmm-def-top .lmm-def-tick { background: rgba(220, 200, 140, 0.45); }
+    .lmm-def-top:hover .lmm-def-tick { background: rgba(220, 200, 140, 0.95); }
 </style>
