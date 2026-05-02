@@ -557,6 +557,64 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
 //#region helpers
 
+    // ── e_Lies_point_issues ────────────────────────────────────────────────────
+    //
+    //   Fired by e_Lang_point_navigate (in LangRegions) after resolving a Point
+    //   spec.  Stamps the resolve result and any diagnostics onto the matching
+    //   Point particle so Liesui can surface imperfections inline.
+    //
+    //   Flow:
+    //     Perfect resolve: kind/from/to stamped on point.sc; no issue children.
+    //     Imperfect resolve: same sc fields, plus {Point_issue:1, msg} children
+    //       under the Points container.  Stale issues from a prior navigate are
+    //       cleared first so re-navigating to the same Point shows fresh diags.
+    //     No resolve (null result): only the issue "no compiled index" lands here.
+    //
+    //   e.sc: { doc, point, kind?, from?, to?, issues: string[] }
+    async e_Lies_point_issues(A: TheC, w: TheC, e: TheC) {
+        const doc_path = e.sc.doc    as string   | undefined
+        const spec     = e.sc.point  as string   | undefined
+        const issues   = e.sc.issues as string[] | undefined
+        if (!doc_path || !spec) return
+
+        // Find the Point particle across all Wafts that own this doc.
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
+            if (!doc) continue
+            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
+            if (!pointsC) continue
+            const point = pointsC.o({ Point: 1, method: spec })[0] as TheC | undefined
+            if (!point) continue
+
+            // Clear stale resolve metadata and issue children from prior navigate.
+            delete point.sc.diag_kind
+            delete point.sc.diag_from
+            delete point.sc.diag_to
+            await pointsC.r({ Point_issue: 1, method: spec }, {})
+
+            // Stamp fresh resolve metadata.
+            if (e.sc.kind  != null) point.sc.diag_kind = e.sc.kind
+            if (e.sc.from  != null) point.sc.diag_from = e.sc.from
+            if (e.sc.to    != null) point.sc.diag_to   = e.sc.to
+
+            // Create a child for each imperfection so Liesui can list them.
+            if (issues?.length) {
+                for (const msg of issues) {
+                    pointsC.i({ Point_issue: 1, method: spec, msg })
+                }
+                console.warn(`📍 Point '${spec}' issues:`, issues)
+            }
+
+            pointsC.bump_version()
+            return
+        }
+
+        // Point not in any Waft — log but don't crash (doc may not have a Waft yet).
+        if (issues?.length) {
+            console.warn(`Lies_point_issues: Point method='${spec}' not in any Waft for ${doc_path}:`, issues)
+        }
+    },
+
     // ── o_Opt_k ──────────────────────────────────────────────────────────────
     //
     //   Read a named opt from w/{Opt:1}/{k:1}.

@@ -65,6 +65,7 @@
     import LangWhatwhere from "./LangWhatwhere.svelte";
     import LangCompiling from "./LangCompiling.svelte";
     import LangSion from "./LangSion.svelte";
+    import LangRegions from "./LangRegions.svelte";
 
     let { M } = $props()
 
@@ -233,9 +234,13 @@
         // Switch active doc — Langui's $effect on ave/{active_doc:1} reacts.
         this.Lang_set_active_doc(w, path)
 
-        // < point navigation: find the matching bookmark or text range and
-        //   scroll the EditorView to it.  Deferred until Cyto/Lies design is settled.
-        if (point) console.log(`📄 Doc_open: ${path} @ point:${point} (navigation TODO)`)
+        // Point navigation: resolve the point spec against the compiled methods
+        // index, apply region-based openness (fold/unfold), and scroll the view.
+        // e_Lang_point_navigate (in LangRegions) handles the full cycle and
+        // reports issues back to Lies via e:Lies_point_issues.
+        if (point) {
+            this.i_elvisto('Lang/Lang', 'Lang_point_navigate', { point, doc: path })
+        }
 
         this.i_elvisto(w, 'think')
     },
@@ -765,3 +770,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangWhatwhere {M} />
 <LangCompiling {M} />
 <LangSion {M} />
+<LangRegions {M} />

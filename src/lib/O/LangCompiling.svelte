@@ -230,29 +230,34 @@
         const tree  = syntaxTree(state)
         const doc   = state.doc
         const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
-        // accumulates {def|call:1, method, via?, from, to, line} during the walk; flushed below
+        // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below
         // `via` = enclosing method name for calls (renamed from `from` to avoid collision)
         // `from`, `to`, `line` = character offsets and 1-based line number in the document
-        const words: Array<{ def?: 1, call?: 1, method: string, via?: string, from?: number, to?: number, line?: number }> = []
+        // `region_path` = snapshot of region_stack at the time each entry is recorded
+        const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
+                             method?: string, label?: string, keyword?: string, title?: string,
+                             via?: string, from?: number, to?: number, line?: number,
+                             region_path?: string[] }> = []
+
+        // region_stack persists across all lines — it is the "Indian stack" of open regions.
+        // Shared via ctx reference so nested recursive calls in _collect_line see the same stack.
+        const region_stack: string[] = []
 
         let n = 1
         while (n <= doc.lines) {
-            n = this._collect_line(n, tree, doc, state, out, { words, current_method: null })
+            n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, region_stack })
         }
 
         // flush word index into Stuff:
-        //   job%Compile / Output / methods / {def:1,  method:'name', from, to, line}
-        //   job%Compile / Output / methods / {call:1, method:'name', via:'caller', from, to, line}
-        if (words.length) {
-            const methods = job.oai({ methods: 1 })
-            // clear stale entries from a previous compile
-            methods.empty()
-            for (const word of words) {
-                methods.i(word)
-            }
-        }
-        else {
-            throw "nonin"
+        //   job%Compile / Output / methods / {def:1,  method:'name', from, to, line, region_path}
+        //   job%Compile / Output / methods / {call:1, method:'name', via:'caller', from, to, line, region_path}
+        //   job%Compile / Output / methods / {region:1, label:'name', from, to, line, depth}
+        //   job%Compile / Output / methods / {controlflow:1, keyword, title, from, to, line, via?, region_path}
+        const methods = job.oai({ methods: 1 })
+        // clear stale entries from a previous compile
+        methods.empty()
+        for (const word of words) {
+            methods.i(word)
         }
 
 
@@ -261,12 +266,39 @@
 
     // Process doc-line n, push result(s) into out, return next n to process.
     // ctx carries:
-    //   words          — accumulated {def|call,method,via?,from,to,line} entries
+    //   words          — accumulated {def|call|region|controlflow,…} entries
     //   current_method — name of the enclosing MethodLike decl, or null at top level
+    //   region_stack   — stack of region labels currently open (push on //#region,
+    //                    pop on //#endregion); persists across all doc lines
     _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
-        words: any[], current_method: string | null
+        words: any[], current_method: string | null, region_stack: string[]
     }): number {
         const line = doc.line(n)
+
+        // ── Region markers ────────────────────────────────────────────────────
+        //
+        // //#region LABEL  and  //#endregion  are JS/TS-style markers that do
+        // not exist in the stho grammar.  Detect them before the syntax tree
+        // walk so they always pass through as 'raw' and the region stack stays
+        // accurate.  The stack is used to stamp region_path on every word entry.
+        const REGION_RE    = /^[\t ]*\/\/#region\s+(.+)$/
+        const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
+        const regionM = line.text.match(REGION_RE)
+        if (regionM) {
+            const label = regionM[1].trim()
+            const depth = ctx.region_stack.length
+            ctx.region_stack.push(label)
+            // Record region boundary in words so Lang_resolve_point can search it.
+            ctx.words.push({ region: 1, label, depth, from: line.from, to: line.to, line: n,
+                             region_path: [...ctx.region_stack] })
+            out.push({ kind: 'raw', text: line.text })
+            return n + 1
+        }
+        if (ENDREGION_RE.test(line.text)) {
+            if (ctx.region_stack.length) ctx.region_stack.pop()
+            out.push({ kind: 'raw', text: line.text })
+            return n + 1
+        }
 
         // first recognisable node whose span lies within this doc line
         let hit: { name: string, node: SyntaxNode } | null = null
@@ -324,6 +356,19 @@
                 : ''
             const before     = line.text.slice(0, hit.node.from - line.from)
             const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
+
+            // Record control-flow header in the words index so Point resolution
+            // can match stack-path segments like "e_Doc_open / if point".
+            ctx.words.push({
+                controlflow: 1,
+                keyword: keyword.trim(),
+                title: condition,
+                from: hit.node.from,
+                to: hit.node.to,
+                line: n,
+                ...(ctx.current_method ? { via: ctx.current_method } : {}),
+                region_path: [...ctx.region_stack],
+            })
 
             // bail to verbatim — user wrote their own brackets, or condition
             // contains a // comment (which would eat our closing ") {")
@@ -414,7 +459,8 @@
 
             if (isDecl) {
                 // record definition with position info
-                ctx.words.push({ def: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1 })
+                ctx.words.push({ def: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1,
+                                 region_path: [...ctx.region_stack] })
 
                 if (hasBrace) {
                     // user wrote their own "{" — they'll write the closing "}," too.
@@ -426,7 +472,7 @@
 
                 // recurse into body with current_method set, for both brace and pythonic styles,
                 // so that via tracking works for H./this. calls inside the body
-                const inner_ctx = { words: ctx.words, current_method: funcName }
+                const inner_ctx = { words: ctx.words, current_method: funcName, region_stack: ctx.region_stack }
                 while (n <= doc.lines) {
                     const peek = doc.line(n)
                     if (peek.text.trim() === '') {
@@ -445,7 +491,8 @@
                 }
             } else {
                 // it's a call — record with enclosing method as `via`, plus position
-                const entry: any = { call: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1 }
+                const entry: any = { call: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1,
+                                     region_path: [...ctx.region_stack] }
                 if (ctx.current_method) entry.via = ctx.current_method
                 ctx.words.push(entry)
                 out.push({ kind: 'raw', text: line.text })
@@ -463,6 +510,7 @@
             ctx.words.push({
                 call: 1, method: m[1],
                 from, to, line: n,
+                region_path: [...ctx.region_stack],
                 ...(ctx.current_method ? { via: ctx.current_method } : {})
             })
         }
