@@ -964,6 +964,13 @@ export class House extends StorableHousing {
     // these are derived from H/%watched:actions/*
     // reactive pile-up of any H/H, so Otro can hoist H**
     subHouses: TheC[] = $state([])
+
+    // data replicated from Atime to UItime, by the %watched:*
+    // eg H/%watched:UIs/%any,C,is,watchable
+    //   via the watched system seeing its TheC.version $state change
+    //   then you grasp the UI side reactively thus: H.ave.bo({any:1,C:1})
+    //    which listens to H.ave.version, which bumps for UItime, which is outside Atime.
+
     // UI components registered by ghosts via H/%watched:UIs
     UIs: TheC[] = $state([])
     // this is a general for-any-UI conveyor
@@ -990,7 +997,17 @@ export class House extends StorableHousing {
 
     start_watched_C_effect() {
         let pending = false
-        const flush = () => {
+        // flush: fires watched handlers after beliefs has fully settled.
+        //
+        //   await this.all_clear() is the Atime→UItime gate: watched containers
+        //   (ave, actions, UIs, …) are never reassigned mid-beliefs tick.
+        //   pending stays true during the wait so rapid bumps don't queue multiple flushes —
+        //   when all_clear resolves, one flush reads the fully committed state.
+        //
+        //   This is why UI components don't need their own await H.all_clear():
+        //   H.ave (and siblings) are only ever updated here, after the mutex releases.
+        const flush = async () => {
+            await this.all_clear()
             pending = false
             for (let i = 0; i < this.watched.length; i++) {
                 const C = this.watched[i].C
@@ -1003,8 +1020,8 @@ export class House extends StorableHousing {
         }
         $effect(() => {
             // track all watched C versions — Svelte re-runs this when any change.
-            // handlers are not called here; the setTimeout lets the beliefs tick
-            // finish so flush always reads a fully committed X.
+            // The setTimeout lets the current beliefs tick finish accumulating bumps
+            // before flush fires; all_clear inside flush handles any subsequent rounds.
             for (const { C } of this.watched) void C.version
             if (!pending) { pending = true; setTimeout(flush, ANSWER_CALLS_TICK_MS / 2) }
         })

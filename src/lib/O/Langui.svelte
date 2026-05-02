@@ -44,7 +44,6 @@
     //   traffic — only actual document edits schedule the 800ms re-run.
 
     import { onDestroy } from "svelte"
-    import { throttle } from "$lib/Y.svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
@@ -93,21 +92,9 @@
     // ── ave text-sync ────────────────────────────────────────────────────────
     let docC: TheC | undefined = $state()
 
-    // pull_ave: consolidates all H.ave reads.
-    //
-    //   Throttled sync function — all reads happen here on settled state.
-    //   Called only after H.all_clear() (see $effect below), so we never
-    //   race a mid-flight beliefs tick.
-    //
-    //   The generic shape for any UI that reads from H.ave:
-    //     const run = throttle(() => { read H.ave; write $state }, delay)
-    //     $effect(() => { for p of H.ave: void p.version
-    //                     ;(async () => { await H.all_clear(); run() })() })
-    //
-    //   await-before-throttle is intentional: many effect fires during one
-    //   beliefs run all await all_clear together, then burst-call run() at once.
-    //   The throttle collapses that burst to one read of fully settled state.
-    const pull_ave = throttle(() => {
+    // H.ave is assigned by Housing's flush after all_clear() — already throttled
+    // and settled by the time this $effect fires. No local throttle needed.
+    $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
 
@@ -118,13 +105,8 @@
         const path = (sig?.sc.path as string | undefined) ?? active_path
         if (sig?.sc.path) active_path = path
 
-        // docC uses local `path`, not the $state — avoids async ordering subtlety
+        // use local path, not the $state, to avoid async ordering subtlety
         docC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
-    }, 50)
-
-    $effect(() => {
-        for (const p of H.ave) void p.version  // track every particle; any bump re-fires
-        ;(async () => { await H.all_clear(); pull_ave() })()
     })
 
     // Re-register view + state whenever the active path changes so the backend

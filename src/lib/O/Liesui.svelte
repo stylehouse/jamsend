@@ -19,7 +19,6 @@
 
     import type { House }   from "$lib/O/Housing.svelte"
     import type { TheC }    from "$lib/data/Stuff.svelte"
-    import { throttle }     from "$lib/Y.svelte"
     import WaftComp         from "$lib/O/ui/Waft.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
 
@@ -38,22 +37,8 @@
     // needing a Liesui re-render — DocRow's $derived tracks examining.version directly.
     let examining: TheC | undefined = $state()
 
-    // Throttled updater — reads structural arrays from Lies's w at most
-    // once per interval rather than on every think() tick.  This prevents
-    // rapid $state writes from rebuilding DOM nodes and yanking focus.
-    //
-    // Async: waits for the top House's beliefs mutex to release before reading.
-    // Without this, H.ave fires mid-think() and we'd read partial state while
-    // ghosts are still mid-tick.  The mutex promise resolves as soon as the
-    // current beliefs() call finishes, at which point w/* is in a sane state.
-    const update_from_Lies = throttle(async (lies_w: TheC, ex: TheC) => {
-        loaded_docs = lies_w.o({ loaded_doc: 1 })     as TheC[]
-        errors      = lies_w.o({ compile_error: 1 })  as TheC[]
-        all_wafts   = lies_w.o({ Waft: 1 })           as TheC[]
-        examining   = ex
-        console.log(`🔪 Liesui: more...`)
-    }, 150)
-
+    // H.ave is assigned by Housing's flush after all_clear() — already throttled
+    // and settled by the time this $effect fires. No local throttle needed.
     $effect(() => {
         const ave = H.ave
         if (!ave?.length) return
@@ -66,13 +51,10 @@
             console.log(`🔪 Liesui: Lies found`)
             Lies = lies_w
         }
-        (async () => {
-            // < throttle(fn,delay,{notnow:1}) should be perfected, called delay_throttle()
-            //    right now it breaks this component completely if notnow is on.
-            // this is needed to avoid UI updating out of time
-            await H.all_clear()
-            update_from_Lies(lies_w, ex)
-        })()
+        loaded_docs = lies_w.o({ loaded_doc: 1 })  as TheC[]
+        errors      = lies_w.o({ compile_error: 1 }) as TheC[]
+        all_wafts   = lies_w.o({ Waft: 1 })         as TheC[]
+        examining   = ex
     })
 
     // ── header state ─────────────────────────────────────────────────
