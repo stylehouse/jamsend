@@ -191,6 +191,7 @@
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
         const sig = ave.oai({ active_doc: 1 })
         sig.sc.path = path
+        console.log(`Lang set %active_doc=${sig.sc.path}  ~`)
         sig.bump_version()
     },
 

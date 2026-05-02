@@ -1,11 +1,18 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc ────────────────────────────────────────────────────────────
+    // ── Multi-doc
     //
-    //   Each mounted Langui instance owns exactly one EditorView for one doc.
-    //   The parent renders one Langui per open doc, hiding inactive ones with
-    //   CSS (display:none) so EditorViews are never destroyed on tab switch.
+    //   One EditorView, many EditorStates.  On doc switch:
+    //     1. Current EditorState (including full undo history, scroll, selection,
+    //        and bookmark decorations) is saved to stateCache[prev_path].
+    //     2. view.setState(stateCache[arriving]) restores a previously-seen doc,
+    //        or creates a fresh EditorState from ave text for a first visit.
+    //
+    //   view.setState() is CM's documented multi-doc API.  It replaces all state
+    //   atomically without destroying the view, so decorations and plugins
+    //   survive.  All EditorStates on one view must share the same extension list
+    //   (editorExtensions) — stho() theme is called once at construction.
     //
     //   Langui receives no doc prop — it is mounted by the UIs loop with only H.
     //   It waits for ave/{langtiles_doc:path} to arrive before rendering anything.
@@ -36,14 +43,20 @@
     //   cancels any pending timer, and calls fire_update_bookmarks() right away —
     //   so e_Lang_update_bookmarks receives the fresh editorState and calls think().
     //
-    // ── Immutability note ────────────────────────────────────────────────────
+    // ── Reactive chain ───────────────────────────────────────────────────────
     //
-    //   EditorState is immutable; every transaction (including selection-only
-    //   moves) produces a new one. The debounced updateListener below guards
-    //   with `vu.docChanged`, so cursor movement alone doesn't send update
-    //   traffic — only actual document edits schedule the 800ms re-run.
+    //   Signal $effect: reads H.ave.ob({active_doc:1}) + sig?.ob() to subscribe
+    //     to sig.version changes.  Writes active_path ($state) and docC ($state).
+    //
+    //   Switch $effect: reads active_path (only reactive dep).  When it changes,
+    //     saves departing state → view.setState(arriving state).  All CM state
+    //     (history, scroll, selection, decorations) moves with the switch.
+    //     No reactive chain needed — one $effect, one imperative call.
+    //
+    //   External-change $effect: handles disk-reload of the active doc only.
+    //     Guards against firing during a switch (active_path !== prev_path).
 
-    import { onDestroy } from "svelte"
+    import { onDestroy, untrack } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
@@ -71,61 +84,89 @@
     let sel_from = $state(0)
     let sel_to   = $state(0)
 
-    // ── doc list for display ─────────────────────────────────────────────────
-    //   Derives the short name of the active doc for the bar header.
-    //   The full doc list lives in lang_actions (derived from ave/{lang_actions:1}) registered by Lang.
-    let active_name = $derived.by(() => {
-        const p = active_path
-        if (!p) return 'no doc'
-        return p.split('/').pop() ?? p
-    })
+    // ── per-doc state cache ──────────────────────────────────────────────────
+    //   One EditorState per path, saved on departure and restored on arrival.
+    //   CM EditorState carries full undo history, selection, scroll, and all
+    //   installed StateField values (including bookmark decorations).
+    //   Plain Map — not reactive.  The switch $effect is the only writer.
+    const stateCache = new Map<string, EditorState>()
 
-    // ── private Lang action bar ──────────────────────────────────────────────
-    //   Lang enrolls w/{lang_actions:1} into ave.  We derive the action children
-    //   from it here and pass them to <Actions> — isolated from H.actions which
-    //   belongs to the global button rack shown elsewhere.
+    // The extension list is created once at view construction and shared by
+    // every EditorState on this view.  CM requires that all states on one view
+    // use the same extension set.  Stored here so makeState() can reference it.
+    let editorExtensions: any[] | undefined
+
+    // ── reactive signals from ave ─────────────────────────────────────────────
+    //   lang_actions: action buttons registered by Lang ghost
+    //   active_path:  path of the currently-shown doc ($state so template reacts)
+    //   docC:         the langtiles_doc particle for active_path (for disk-reload)
     let lang_actions: TheC[] = $state([])
-
-    // ── active doc tracking ──────────────────────────────────────────────────
-    let active_path = $state('')   // starts empty; upgraded once ave/{active_doc:1} lands
-
-    // ── ave text-sync ────────────────────────────────────────────────────────
+    let active_path  = $state('')
     let docC: TheC | undefined = $state()
 
-    // H.ave is a stable TheC; ob() tracks H.ave.version for Svelte reactivity.
+    // Short filename for the bar header.
+    let active_name = $derived(active_path ? (active_path.split('/').pop() ?? active_path) : 'no doc')
+
+    // ── signal $effect ────────────────────────────────────────────────────────
+    //   Reads H.ave for lang_actions, active_doc, and langtiles_doc.
+    //   sig?.ob() subscribes to sig.version so path changes inside the same
+    //   sig particle (bump_version only, no re-i()) still wake this effect.
     $effect(() => {
         const la = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
 
         const sig  = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
-        const path = (sig?.sc.path as string | undefined) ?? active_path
-        if (sig?.sc.path) active_path = path
-
-        // use local path, not the $state, to avoid async ordering subtlety
-        docC = H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined
+        sig?.ob()  // track sig.version — path changes bump it without re-enrolling
+        const path = (sig?.sc.path as string | undefined) ?? ''
+        if (path) active_path = path
+        docC = path ? H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined : undefined
     })
 
-    // Re-register view + state whenever the active path changes so the backend
-    // knows which doc CM events are coming from.
+    // ── switch $effect ────────────────────────────────────────────────────────
+    //   Runs whenever active_path changes.  Saves the departing EditorState,
+    //   then calls view.setState() with the arriving one.
+    //   view.setState() is CM's documented multi-doc API — it replaces all state
+    //   atomically without destroying the view or its plugins.
+    //   untrack() around the save prevents docC reads from creating a dependency.
+    let prev_path = ''   // plain let — not reactive; switch $effect is sole writer
     $effect(() => {
-        if (!view || !active_path) return
-        void active_path
-        Lang_i_elvis(view, 'Lang_editorBegins', { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
-    })
+        const arriving = active_path
+        if (!view || !arriving || arriving === prev_path) return
 
-    let pullable_text = $derived.by(() => {
-        void docC?.version
-        return (docC?.sc.text as string) ?? ''
-    })
+        untrack(() => {
+            // Save current state before switching (skip if no doc loaded yet).
+            if (prev_path) stateCache.set(prev_path, view!.state)
 
-    // pull: when docC.text changes from outside (e.g. load from disk), push into the editor
-    $effect(() => {
-        if (!view) return
-        const incoming = pullable_text
-        if (incoming === view.state.doc.toString()) return  // already in sync, skip
-        view.dispatch({
-            changes: { from: 0, to: view.state.doc.length, insert: incoming },
+            const cached = stateCache.get(arriving)
+            if (cached) {
+                // Restore previously-seen doc — history and decorations intact.
+                view!.setState(cached)
+            } else {
+                // First visit: build a fresh state from ave text.
+                const text = (docC?.sc.text as string | undefined) ?? ''
+                view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
+            }
+
+            prev_path = arriving
+
+            // Re-register view+state with backend so CM events carry the right doc.
+            Lang_i_elvis(view!, 'Lang_editorBegins',
+                { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
         })
+    })
+
+    // ── disk-reload $effect ───────────────────────────────────────────────────
+    //   When the active doc is reloaded from disk (docC.text changes externally),
+    //   push the new content into the editor — replacing history is acceptable
+    //   here because the file changed on disk, not in the editor.
+    //   Guards with active_path === prev_path to avoid firing mid-switch.
+    $effect(() => {
+        void docC?.version
+        const incoming = (docC?.sc.text as string | undefined) ?? ''
+        if (!view || !incoming) return
+        if (active_path !== prev_path) return   // switch in progress
+        if (incoming === view.state.doc.toString()) return
+        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: incoming } })
     })
 
     // ── Lang_i_elvis ─────────────────────────────────────────────────────────
@@ -274,52 +315,57 @@
     // ── EditorView construction ──────────────────────────────────────────────
     //
     //   Deferred until container is bound, which only happens after {#if docC}
-    //   becomes true (i.e. the first ave/%langtiles_doc particle has arrived).
-    //   We use docC.sc.text as the initial content so the editor is never
-    //   constructed with an empty-string placeholder.
+    //   becomes true (first ave/%langtiles_doc particle arrived).
     //
-    //   Lang_editorBegins is fired inline here (active_path is already set by
-    //   the time docC arrives).  The separate active_path $effect above handles
-    //   subsequent doc switches that happen after the view exists.
+    //   editorExtensions is extracted and stored so every subsequent EditorState
+    //   created by the switch $effect shares the identical extension set — CM
+    //   requires this for view.setState() to work correctly.
+    //
+    //   After construction the switch $effect fires immediately (active_path is
+    //   already set) and calls Lang_editorBegins to register the view with backend.
     $effect(() => {
         if (!container || view) return   // only create once; wait for the div
-        const initial = (docC?.sc.text as string) ?? 'there was no docC%text'
+
+        // Build extensions once; reused by all EditorStates on this view.
+        editorExtensions = [
+            basicSetup,
+            simpleLezerLinter(),
+            // < switchable lang via Compartment
+            stho(),
+            bookmarkField,
+            Keys,
+            EditorView.updateListener.of((v: ViewUpdate) => {
+                const sel = v.state.selection.main
+                sel_from = sel.from
+                sel_to   = sel.to
+                // saveEffect: flush bookmark positions immediately, cancel debounce
+                if (v.transactions.some(tr => tr.effects.some(e => e.is(saveEffect)))) {
+                    if (update_timer) { clearTimeout(update_timer); update_timer = null }
+                    fire_update_bookmarks(v.view)
+                    return
+                }
+                if (!v.docChanged) return
+                const text = v.state.doc.toString()
+                Lang_i_elvis(view, 'Lang_set_doc', { text })
+                schedule_update_bookmarks(v.view)
+            }),
+            usualSetup,
+        ]
+
+        const initial = (docC?.sc.text as string) ?? ''
         view = new EditorView({
             parent: container,
-            state: EditorState.create({
-                doc: initial,
-                extensions: [
-                    basicSetup,
+            state: EditorState.create({ doc: initial, extensions: editorExtensions }),
+        })
 
-                    // < is this per lang?
-                    simpleLezerLinter(),
-                    // < switchable lang via Compartment
-                    stho(),
-                    bookmarkField,
-                    Keys,
-                    EditorView.updateListener.of((v: ViewUpdate) => {
-                        const sel = v.state.selection.main;
-                        sel_from = sel.from;
-                        sel_to = sel.to;
-                        // saveEffect: flush bookmark positions immediately, cancel debounce
-                        if (v.transactions.some(tr => tr.effects.some(e => e.is(saveEffect)))) {
-                            if (update_timer) { clearTimeout(update_timer); update_timer = null }
-                            fire_update_bookmarks(v.view)
-                            return
-                        }
-                        if (!v.docChanged) return;
-                        const text = v.state.doc.toString();
-                        Lang_i_elvis(view,'Lang_set_doc', {text})
-                        schedule_update_bookmarks(v.view);
-                    }),
-                    usualSetup,
-                ],
-            }),
-        });
+        // Cache this first state so the switch $effect doesn't create a duplicate
+        // fresh state the first time active_path is seen.
+        if (active_path) stateCache.set(active_path, view.state)
+        prev_path = active_path
 
-        // Dispatch e:editorBegins — hands the backend the CM StateEffects it
-        // needs to drive bookmarks, and registers view+state via Lang_doc_from_event.
-        Lang_i_elvis(view, 'Lang_editorBegins', { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
+        // Register view+state with backend.
+        Lang_i_elvis(view, 'Lang_editorBegins',
+            { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
     })
 
     onDestroy(() => {
