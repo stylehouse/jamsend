@@ -37,13 +37,9 @@
     // needing a Liesui re-render — DocRow's $derived tracks examining.version directly.
     let examining: TheC | undefined = $state()
 
-    // H.ave is assigned by Housing's flush after all_clear() — already throttled
-    // and settled by the time this $effect fires. No local throttle needed.
+    // H.ave is a stable TheC; ob() tracks H.ave.version for Svelte reactivity.
     $effect(() => {
-        const ave = H.ave
-        if (!ave?.length) return
-        // examining.c.w is the Lies work particle — still used to read Wafts etc.
-        const ex = ave.find((n: TheC) => n.sc.examining) as TheC | undefined
+        const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
         if (!ex) return
         const lies_w = ex.c?.w as TheC | undefined
         if (!lies_w) return

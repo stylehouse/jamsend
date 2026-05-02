@@ -52,11 +52,9 @@
     // Overlay state lives in the //#region overlays block further down
     // (overlays, overlay_bgs, overlay_container, OVERLAY_QUIET_MS, …).
 
-    // the UI channel - %matstyle come from Story
+    // H.ave and H.graph are stable TheC; ob() tracks their version for Svelte reactivity.
     $effect(() => {
-        const ave = H.ave
-        if (!ave?.length) return
-        const styles_C = ave.find((n: TheC) => n.sc.Styles) as TheC | undefined
+        const styles_C = H.ave.ob({ Styles: 1 })[0] as TheC | undefined
         matstyles  = styles_C?.o({ matstyle: 1 }) ?? []
         ms_palette = (H as any).MATSTYLE_PALETTE ?? []
         ms_shapes  = (H as any).MATSTYLE_SHAPES ?? []
@@ -64,7 +62,7 @@
     })
     // the graph data channel - %cyto_graph,wave=
     $effect(() => {
-        const gn = H?.graph?.find((n: TheC) => n.sc.cyto_graph) as TheC | undefined
+        const gn = H.graph.ob({ cyto_graph: 1 })[0] as TheC | undefined
         if (!gn) return
  
         seek_warning = (gn.sc.seek_warning as string | null) ?? null

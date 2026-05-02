@@ -257,6 +257,17 @@ class StuffIO {
         return this.o(c,q)
     }
 
+    // ob: o() with version tracking for UItime $effect / $derived.
+    // Use when reading a watched-destination TheC from a UI component:
+    //   H.ave.ob({ examining: 1 })
+    // Reads this.version (Svelte tracks it), then queries this/*.
+    // H.ave.version is only bumped by Housing's flush() after all_clear(),
+    // so $effects re-run exactly once per settled beliefs cycle.
+    ob(c?:TheUniversal,q?):TheN|TheC|any {
+        void this.version
+        return this.o(c,q)
+    }
+
     // returning null rather than empty arrays if no rows
     //  good for boolean logic
     oa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {

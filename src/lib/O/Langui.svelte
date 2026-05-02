@@ -92,21 +92,17 @@
     // ── ave text-sync ────────────────────────────────────────────────────────
     let docC: TheC | undefined = $state()
 
-    // H.ave is assigned by Housing's flush after all_clear() — already throttled
-    // and settled by the time this $effect fires. No local throttle needed.
+    // H.ave is a stable TheC; ob() tracks H.ave.version for Svelte reactivity.
     $effect(() => {
-        const ave = H.ave
-        if (!ave?.length) return
-
-        const la = ave.find((p: TheC) => p.sc.lang_actions === 1) as TheC | undefined
+        const la = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
 
-        const sig  = ave.find((p: TheC) => !!p.sc.active_doc) as TheC | undefined
+        const sig  = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
         const path = (sig?.sc.path as string | undefined) ?? active_path
         if (sig?.sc.path) active_path = path
 
         // use local path, not the $state, to avoid async ordering subtlety
-        docC = ave.find((p: TheC) => p.sc.langtiles_doc === path) as TheC | undefined
+        docC = H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined
     })
 
     // Re-register view + state whenever the active path changes so the backend

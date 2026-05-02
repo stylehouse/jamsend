@@ -39,7 +39,7 @@
         const parts = path.split('/')
         let h = H
         for (const name of parts) {
-            h = h?.subHouses?.find(c => c.name === name)
+            h = h?.subHouses.o({name})[0]
             if (!h) return undefined
         }
         return h
@@ -60,8 +60,8 @@
 
         const headerPx = remToPx(HEADER_HEIGHT_REM)
         const sticky_before = houses.slice(0, idx)
-            .filter(h => h?.actions?.length > 0).length
-        const this_is_sticky = house?.actions?.length > 0
+            .filter(h => h?.actions.o().length > 0).length
+        const this_is_sticky = house?.actions.o().length > 0
 
         if (this_is_sticky) {
             const content = header.nextElementSibling as HTMLElement | null

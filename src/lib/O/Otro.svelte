@@ -73,8 +73,8 @@
 <NaviScroll {H} {houses}>
     {#snippet children({ scrollToHouseIdx, scrollToHouseIp, childrenOf })}
         {#each houses as house, i (house.c.ip)}
-            {@const hasActions = house?.actions?.length > 0}
-            {@const stickyIndex = houses.slice(0, i).filter(h => h?.actions?.length).length}
+            {@const hasActions = house.actions.ob({}).length > 0}
+            {@const stickyIndex = houses.slice(0, i).filter(h => h.actions.ob({}).length).length}
             {@const kids = childrenOf(house)}
             <div class="house-header"
                 class:sticky={hasActions}
@@ -109,11 +109,11 @@
 
                 {#if hasActions}
                     <div class="house-actions">
-                        <Actions N={house.actions} />
+                        <Actions N={house.actions.ob({ action: 1 })} />
                     </div>
                 {/if}
             </div>
-            {#each house.UIs ?? [] as uiC (uiC.sc.UI)}
+            {#each house.UIs.ob({ UI: 1 }) as uiC (uiC.sc.UI)}
                 <svelte:component this={uiC.sc.component} H={house} />
             {/each}
             {#if house.stashed}

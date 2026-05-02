@@ -444,7 +444,7 @@ export class House extends StorableHousing {
     get all_House(): House[] {
         let more = (H) => {
             let N = []
-            for (let oH of H.subHouses) {
+            for (let oH of H.subHouses.ob({}) as House[]) {
                 N.push(...more(oH))
             }
             return [H,...N]
@@ -961,24 +961,22 @@ export class House extends StorableHousing {
 
 //#endregion
 //#region watched
-    // these are derived from H/%watched:actions/*
-    // reactive pile-up of any H/H, so Otro can hoist H**
-    subHouses: TheC[] = $state([])
-
     // data replicated from Atime to UItime, by the %watched:*
     // eg H/%watched:UIs/%any,C,is,watchable
     //   via the watched system seeing its TheC.version $state change
-    //   then you grasp the UI side reactively thus: H.ave.bo({any:1,C:1})
+    //   then you grasp the UI side reactively thus: H.ave.ob({any:1,C:1})
     //    which listens to H.ave.version, which bumps for UItime, which is outside Atime.
 
+    // reactive pile-up of any H/H, so Otro can hoist H**
+    subHouses: TheC = $state(new TheC({ sc: { watched: 'subHouses' } }))
     // UI components registered by ghosts via H/%watched:UIs
-    UIs: TheC[] = $state([])
-    // this is a general for-any-UI conveyor
-    ave: TheC[] = $state([])
-    // for the button rack, subset of ave
-    actions: TheC[] = $state([])
-    // cytoscape subset of ave
-    graph: TheC[] = $state([])
+    UIs:       TheC = $state(new TheC({ sc: { watched: 'UIs'       } }))
+    // general for-any-UI conveyor
+    ave:       TheC = $state(new TheC({ sc: { watched: 'ave'       } }))
+    // for the button rack
+    actions:   TheC = $state(new TheC({ sc: { watched: 'actions'   } }))
+    // cytoscape
+    graph:     TheC = $state(new TheC({ sc: { watched: 'graph'     } }))
 
     // %watched pattern: ghost creates a %watched:key particle on H, calls
     // enroll_watched().  Default handler sets H[key] = C.o({}); custom fn
@@ -998,14 +996,9 @@ export class House extends StorableHousing {
     start_watched_C_effect() {
         let pending = false
         // flush: fires watched handlers after beliefs has fully settled.
-        //
-        //   await this.all_clear() is the Atime→UItime gate: watched containers
-        //   (ave, actions, UIs, …) are never reassigned mid-beliefs tick.
-        //   pending stays true during the wait so rapid bumps don't queue multiple flushes —
-        //   when all_clear resolves, one flush reads the fully committed state.
-        //
-        //   This is why UI components don't need their own await H.all_clear():
-        //   H.ave (and siblings) are only ever updated here, after the mutex releases.
+        // await all_clear() is the Atime→UItime gate — dest TheC fields
+        // (H.ave, H.UIs, …) are only ever mutated here, after mutex releases.
+        // pending stays true during the wait so rapid bumps share one flush.
         const flush = async () => {
             await this.all_clear()
             pending = false
@@ -1019,9 +1012,6 @@ export class House extends StorableHousing {
             }
         }
         $effect(() => {
-            // track all watched C versions — Svelte re-runs this when any change.
-            // The setTimeout lets the current beliefs tick finish accumulating bumps
-            // before flush fires; all_clear inside flush handles any subsequent rounds.
             for (const { C } of this.watched) void C.version
             if (!pending) { pending = true; setTimeout(flush, ANSWER_CALLS_TICK_MS / 2) }
         })
@@ -1039,7 +1029,14 @@ export class House extends StorableHousing {
                 if (this.watched.some(w => w.C === C)) continue
                 const key = C.sc.watched as string
                 const fn: Function = C.sc.fn ?? (() => {
-                    (this as any)[key] = C.o({})
+                    // Replicate source C's watchables into the dest TheC on H.
+                    // dest.version bumps (via i()) so ob() in UItime $effects re-runs.
+                    const dest = (this as any)[key] as TheC | undefined
+                    if (!dest) return
+                    dest.empty()
+                    for (const n of C.o({}) as TheC[]) dest.i(n)
+                    // belt-and-suspenders bump in case C was empty (i() didn't fire)
+                    dest.bump_version()
                 })
                 this.watch_c(C, fn)
             }

@@ -4,7 +4,7 @@
     // Mounted by Otro via H/{watched:UIs}/{UI:'Library'}.
     // Receives H (the root Mundo house).
     //
-    // Shows each Book particle from Li = H.ave.find({Library:1}):
+    // Shows each Book particle from Li = H.ave.ob({Library:1}):
     //   • name (read-only label)
     //   • ok_pct % and last_run_ms (formatted)
     //   • editable peel textfield for extra sc (everything except Book/ok_pct/last_run_ms/active)
@@ -22,11 +22,14 @@
     let { H }: { H: House } = $props()
 
     // ── reactive Library particle from H.ave ─────────────────────────────
-    let Li = $derived((H.ave ?? []).find((c: TheC) => c.sc.Library != null) ?? null)
-    let books = $derived(Li ? (Li as TheC).o({ Book: 1 }) as TheC[] : [])
-    let mung_errors = $derived(Li ? (Li as TheC).o({ mung_error: 1 }) as TheC[] : [])
-    let activeBook = $derived((H.ave ?? []).find((c: TheC) => c.sc.activeBook != null)
-        ?.sc.Book ?? null)
+    // ob() tracks Li.version so these re-derive when Li.bump_version() fires
+    // in Atime (e.g. after book.sc.active is mutated). o() would not track it.
+    let Li = $derived(H.ave.ob({Library:1})[0])
+    let books       = $derived(Li?.ob({Book:1})      || [])
+    let mung_errors = $derived(Li?.ob({mung_error:1}) || [])
+    // activeBook lives at the ave level (w.c.ave.roai({activeBook:1},...)),
+    // not inside Li — so query H.ave directly.
+    let activeBook  = $derived(H.ave.ob({activeBook:1})[0]?.sc.Book ?? null)
     let isActive = (book) => book.sc.Book == activeBook
     
     // ── add book ──────────────────────────────────────────────────────────
@@ -149,7 +152,7 @@
             </thead>
             <tbody>
                 {#each books as book (book.sc.Book)}
-                    <tr class:lr-active={book.sc.active}>
+                    <tr class:lr-active={isActive(book)}>
                         <td class="lr-name">{book.sc.Book}</td>
                         <td class="lr-stat">{fmt_pct(book.sc.ok_pct)}</td>
                         <td class="lr-stat lr-ms">{fmt_ms(book.sc.last_run_ms)}</td>
@@ -174,7 +177,7 @@
                             <button
                                 class="lr-btn {isActive(book) ? 'active' : 'idle'}"
                                 onclick={() => activate(book)}
-                            >{book.sc.active ? '▶ active' : 'activate'}</button>
+                            >{isActive(book) ? '▶ active' : 'activate'}</button>
                         </td>
                         <td>
                             <button class="lr-btn remove"
