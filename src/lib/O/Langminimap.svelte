@@ -70,6 +70,13 @@
         active_path: string
     } = $props()
 
+    // Diagnostic — should fire once view prop is set (after Langui constructs).
+    // If this never fires after CM appears, the prop isn't reactive and clicks
+    // will silently no-op.
+    $effect(() => {
+        console.log(`🗺 minimap view prop = ${view ? 'EditorView OK' : 'undefined'}, active_path = ${active_path}`)
+    })
+
     // Visibility toggle — collapsible strip.  Persisted only in module memory
     // for now (no Stuff sc storage); flip with the chevron on the strip header.
     let visible = $state(true)
@@ -191,9 +198,7 @@
                 else top_points.push(mark)
             }
 
-            if (point_specs.length || list.length) {
-                console.log(`🗺 minimap ${active_path}: ${list.length} regions, ${def_entries.length} defs, ${point_specs.length} Points (${top_points.reduce((n,p) => n + (p.unresolved ? 1 : 0), 0)} top-unresolved)`)
-            }
+            console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_specs.length} unresolved=${top_points.reduce((n,p) => n + (p.unresolved ? 1 : 0), 0)}`)
             return { regions: list, top_level_defs: top_defs, top_level_points: top_points }
         }
 
@@ -206,9 +211,7 @@
             spec, method: spec, line: 1, from: 0, to: 0, unresolved: true,
         }))
 
-        if (point_specs.length) {
-            console.log(`🗺 minimap ${active_path}: ${point_specs.length} Points but no compile index yet — run compile to resolve`)
-        }
+        console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_specs.length} (all unresolved)`)
         return {
             regions:          fallback_regions,
             top_level_defs:   [],
@@ -397,6 +400,7 @@
     // overflow surface).  The effect tells CM exactly where to scroll and
     // CM walks up the DOM to find scrollable ancestors.
     function go_to(from: number, to: number, label: string) {
+        console.log(`🗺 minimap go_to('${label}' [${from}..${to}]): view=${view ? 'OK' : 'UNDEFINED'} active_path=${active_path}`)
         if (!view) return
         view.dispatch({
             selection: { anchor: from, head: to },

@@ -191,7 +191,6 @@
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
         const sig = ave.oai({ active_doc: 1 })
         sig.sc.path = path
-        console.log(`Lang set %active_doc=${sig.sc.path}  ~`)
         sig.bump_version()
     },
 
@@ -215,6 +214,17 @@
         }
 
         w.i({received:1,editorBegins:1})
+
+        // Auto-compile now that docC.c.state is populated.  Extracts methods,
+        // regions, controlflow, and Point-resolution index without the user
+        // clicking compile.  For .g files this writes generated output and
+        // notifies Pantheate (gen_path is set by Lies); for everything else
+        // it's a soft compile — methods index only, no disk side-effects.
+        // Skipped if no real doc is active yet (editorBegins fires once at
+        // mount with an empty placeholder before any doc loads).
+        if (e.sc.doc && w.c.active_doc_path) {
+            this.i_elvisto(w, 'Lang_compile')
+        }
     },
 
     // ── e_Doc_open ───────────────────────────────────────────────────────────
@@ -282,6 +292,9 @@
 
         w.i({ received: 1, doc_opened: 1, doc: path })
         console.log(`📄 Lang opened doc: ${path}`)
+        // Compile fires from e_Lang_editorBegins once docC.c.state is populated
+        // — this handler lands before the EditorView exists, so calling
+        // Lang_compile here would bail with `no editorState yet`.
     },
 
     async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {

@@ -44,6 +44,12 @@ story:LakeSurfer
       style:background-color,v:#89d04e
     matstyle:examining
       style:background-color,v:#1f35a3
+    matstyle:Compile
+      style:background-color,v:#a6483a
+    matstyle:methods
+      style:background-color,v:#36c974
+    matstyle:Output
+      style:background-color,v:#af43db
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
