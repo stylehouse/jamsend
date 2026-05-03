@@ -563,26 +563,20 @@
 
     // Arrow-key navigation through the pip strip.
     // Left/right move open_at by one step; sticky_mode carries forward.
-    // Ignored when focus is in an input to avoid clobbering text entry.
-    $effect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if (e.target instanceof HTMLInputElement) return
-            if (e.target instanceof HTMLTextAreaElement) return
-            if (display.open_at == null) return
-            const idx = display.steps.findIndex(ts => ts.n === display.open_at)
-            if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
-                e.preventDefault()
-                ;(document.activeElement as HTMLElement)?.blur()
-                pick(display.steps[idx + 1].n)
-            } else if (e.key === 'ArrowLeft' && idx > 0) {
-                e.preventDefault()
-                ;(document.activeElement as HTMLElement)?.blur()
-                pick(display.steps[idx - 1].n)
-            }
+    // Handler lives on the strip element itself (tabindex=0) so it only fires
+    // when the strip has focus — CodeMirror, inputs, and textareas are never
+    // disturbed because clicking into them naturally moves focus away.
+    function handle_strip_key(e: KeyboardEvent) {
+        if (display.open_at == null) return
+        const idx = display.steps.findIndex(ts => ts.n === display.open_at)
+        if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
+            e.preventDefault()
+            pick(display.steps[idx + 1].n)
+        } else if (e.key === 'ArrowLeft' && idx > 0) {
+            e.preventDefault()
+            pick(display.steps[idx - 1].n)
         }
-        document.addEventListener('keydown', handler)
-        return () => document.removeEventListener('keydown', handler)
-    })
+    }
 
     function accept(n: number) {
         H.i_elvisto('Story/Story', 'story_accept', { accept_n: n })
@@ -590,6 +584,11 @@
     function accept_all() {
         H.i_elvisto('Story/Story', 'story_accept_all', {})
     }
+
+    // strip_el: the pip strip div; made focusable (tabindex=0) so arrow-key
+    // navigation is scoped to it — keys only fire when the strip has focus,
+    // so CodeMirror and other editors are never disturbed.
+    let strip_el = $state<HTMLElement | null>(null)
 
     // diff2_body: the two-column grid; .sr-diff2-col children sync their scrollLeft
     let diff2_body = $state<HTMLElement | null>(null)
@@ -820,7 +819,8 @@
         <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
         <!-- hollow: step in The but not yet reached this session.             -->
         <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
-        <div class="sr-strip">
+        <!-- tabindex=0: focusable so arrow-key nav is scoped here, not global -->
+        <div class="sr-strip" tabindex="0" bind:this={strip_el} onkeydown={handle_strip_key}>
             {#each display.steps as ts (ts.n)}
                 {@const n         = ts.n}
                 {@const Step      = live_step(n)}
@@ -847,7 +847,7 @@
                         class:playhead={ph}
                         class:has-notes={flags.length > 0}
                         class:is-anchor={is_anchor}
-                        onclick={e => { (e.currentTarget as HTMLElement).blur(); pick(n) }}
+                        onclick={() => { strip_el?.focus(); pick(n) }}
                         title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
                     >{hollow ? '○' : ok ? '·' : '✗'}</button>
                 </div>
@@ -951,6 +951,8 @@
     border-bottom: 1px solid #1e1e1e;
     max-height: 100px; overflow-y: auto; align-items: flex-end;
 }
+/* strip is focusable for arrow-key nav; outline suppressed — focus is functional not visual */
+.sr-strip:focus { outline: none; }
 .sr-pip-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 /* flags row: always rendered as spacer so pips stay bottom-aligned */
 .sr-flags    { display: flex; flex-direction: row; gap: 1px; min-height: 6px; align-items: flex-end; }

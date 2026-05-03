@@ -1,0 +1,25 @@
+story:Peeringinst
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:scheme
+      style:background-color,v:#2fb155
+    matstyle:Peering
+      style:background-color,v:#8e29d6
+    matstyle:Pier
+      style:background-color,v:#c5b759
+    matstyle:see
+      style:background-color,v:#298699
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg:0.009
+      sample:0.003,at:1777811270
+      sample:0.008,at:1777811300
+      sample:0.007,at:1777811420
+      sample:0.016,at:1777811725
+  step,dige:c1a96652c6af1528
+  step:2,dige:f05e1667a0114f1a

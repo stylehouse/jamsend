@@ -1,0 +1,91 @@
+Snap:H
+  H:Peeringinst,Run
+    A:Peeringinst
+      {"mung":["age"]}	self,round
+      w:Peeringinst
+        {"mung":["age"]}	self,round
+        scheme:Peering
+          Peering
+        scheme:Pier
+          Pier
+        Peering,name:testPeering
+        Pier,name:alice
+        Pier,name:bob
+        {"see":"Peering: testPeering awaiting concretion..."}
+        {"see":"Pier: alice awaiting concretion..."}
+        {"see":"Pier: bob awaiting concretion..."}
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:Peeringinst,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1","label":"scheme:Peering","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_1_1,label:Peering,parent:cytoid_1_1
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_2","label":"scheme:Pier","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1,label:Pier,parent:cytoid_1_1
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3","label":"Peering\nname:testPeering","parent":"cytoid_1_1"}
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4","label":"Pier\nname:alice","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5","label":"Pier\nname:bob","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_6","label":"see:Peering: …","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_7","label":"see:Pier: ali…","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_8","label":"see:Pier: bob…","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge_upsert,id:cytoid_1_1_2_1_1,source:cytoid_1_1_2,target:cytoid_1_1_2_1
