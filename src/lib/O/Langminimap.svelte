@@ -35,7 +35,7 @@
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import type { EditorView } from "@codemirror/view"
+    import { EditorView } from "@codemirror/view"
     import type { EditorState } from "@codemirror/state"
     import { foldEffect, unfoldEffect } from "@codemirror/language"
 
@@ -47,8 +47,22 @@
         from_char: number
         to_char:   number
         defs:      Def[]    // method defs that fall inside this region's range
+        points:    PointMark[]    // resolved Points that fall inside this region's range
     }
     type Def = { method: string, line: number, from: number, to: number }
+
+    // A Point becomes a PointMark once resolved against the methods index.
+    // `spec` is the original method-spec string (may be fuzzy / stack-path);
+    // `unresolved` flags Points we couldn't locate so the strip can show
+    // them as warnings rather than dropping them silently.
+    type PointMark = {
+        spec:       string
+        method:     string   // the resolved def method name (or spec if unresolved)
+        line:       number
+        from:       number
+        to:         number
+        unresolved: boolean
+    }
 
     let { H, view, active_path }: {
         H:           House
@@ -103,21 +117,34 @@
         return n
     })
 
-    // Pull regions and defs from the compiled methods index.  When no index
-    // exists yet we fall back to a live regex scan so the strip still shows
-    // structure on first paint.  controlflow entries are not surfaced here
-    // (too dense for an overview); they remain available to Lang_resolve_point.
+    // Pull regions, defs, and Points for the active doc.
     //
-    // Both `regions` and `top_level_defs` are produced by one $derived so the
-    // bucket logic can mutate the region's defs[] without crossing into a
-    // separate $effect.  The .by callback returns both via a single object.
-    let _structure = $derived.by((): { regions: Region[], top_level_defs: Def[] } => {
+    //   regions, defs come from the compiled methods index at
+    //     ave/{langtiles_doc:path}/{Compile:1}/{Output:1}/{methods:1}
+    //
+    //   Points live elsewhere — under Lies's Wafts at
+    //     w/{Waft:p}/{Doc:1,path}/{Points:1}/{Point:1, method:'spec'}
+    //   so we walk all Wafts to find any Doc whose `path` matches.  Each
+    //   Point's `method` spec is resolved against the methods index here
+    //   (a simplified version of Lang_resolve_point — exact def then fuzzy).
+    //
+    // Both `regions` and `top_level_defs` and `top_level_points` are produced
+    // by one $derived so the bucket logic can mutate region children without
+    // crossing into a separate $effect.
+    let _structure = $derived.by((): {
+        regions: Region[], top_level_defs: Def[], top_level_points: PointMark[],
+    } => {
         void docC?.version
-        if (!docC) return { regions: [], top_level_defs: [] }
+        if (!docC) return { regions: [], top_level_defs: [], top_level_points: [] }
 
         const job     = docC.o({ Compile: 1 })[0]    as TheC | undefined
         const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
         const methods = output?.o({ methods: 1 })[0] as TheC | undefined
+
+        // Collect Point specs for this doc — independent of whether the
+        // methods index exists, because Points are user-promoted and we
+        // want to surface them even before first compile (as unresolved).
+        const point_specs = collect_point_specs_for_path(active_path)
 
         if (methods) {
             const region_entries = methods.o({ region: 1 }) as TheC[]
@@ -131,6 +158,7 @@
                 from_char: r.sc.from  as number,
                 to_char:   r.sc.to    as number,         // patched below from text scan
                 defs:      [],
+                points:    [],
             }))
 
             // Patch to_line / to_char by scanning forward in the doc for
@@ -140,7 +168,7 @@
             patch_region_extents(list, text, total_lines)
 
             // Bucket defs into their containing region (innermost wins).
-            const top: Def[] = []
+            const top_defs: Def[] = []
             for (const d of def_entries) {
                 const def: Def = {
                     method: d.sc.method as string,
@@ -150,21 +178,106 @@
                 }
                 const owner = innermost_region_for_line(list, def.line)
                 if (owner) owner.defs.push(def)
-                else top.push(def)
+                else top_defs.push(def)
             }
-            return { regions: list, top_level_defs: top }
+
+            // Resolve each Point spec against the def index.
+            const top_points: PointMark[] = []
+            for (const spec of point_specs) {
+                const mark = resolve_point_to_mark(spec, def_entries)
+                if (!mark) continue
+                const owner = innermost_region_for_line(list, mark.line)
+                if (owner) owner.points.push(mark)
+                else top_points.push(mark)
+            }
+
+            if (point_specs.length || list.length) {
+                console.log(`🗺 minimap ${active_path}: ${list.length} regions, ${def_entries.length} defs, ${point_specs.length} Points (${top_points.reduce((n,p) => n + (p.unresolved ? 1 : 0), 0)} top-unresolved)`)
+            }
+            return { regions: list, top_level_defs: top_defs, top_level_points: top_points }
         }
 
-        // Fallback: regex-scan doc text directly.  No def info in this branch
-        // — defs come from the compile step only.
+        // Fallback path: no compiled methods index yet.  Scan regions
+        // directly from doc text and surface any Points as unresolved
+        // (they'll cluster at line 1 in red, indicating the user should
+        // run compile to land them properly).
+        const fallback_regions = scan_regions_from_text((docC.sc.text as string) ?? '')
+        const fallback_top_points: PointMark[] = point_specs.map(spec => ({
+            spec, method: spec, line: 1, from: 0, to: 0, unresolved: true,
+        }))
+
+        if (point_specs.length) {
+            console.log(`🗺 minimap ${active_path}: ${point_specs.length} Points but no compile index yet — run compile to resolve`)
+        }
         return {
-            regions:        scan_regions_from_text((docC.sc.text as string) ?? ''),
-            top_level_defs: [],
+            regions:          fallback_regions,
+            top_level_defs:   [],
+            top_level_points: fallback_top_points,
         }
     })
 
-    let regions        = $derived(_structure.regions)
-    let top_level_defs = $derived(_structure.top_level_defs)
+    let regions          = $derived(_structure.regions)
+    let top_level_defs   = $derived(_structure.top_level_defs)
+    let top_level_points = $derived(_structure.top_level_points)
+
+    // Collect Point specs for `path` by walking H.ave.examining/c/w/Waft*/Doc.
+    // Reactive on H.ave (ob) so when Wafts/Points change the strip refreshes.
+    function collect_point_specs_for_path(path: string): string[] {
+        const out: string[] = []
+        if (!path) return out
+        const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
+        const lies_w = ex?.c?.w as TheC | undefined
+        if (!lies_w) {
+            console.log(`🗺 minimap: no examining.c.w found — Lies not booted yet?`)
+            return out
+        }
+
+        const wafts = lies_w.o({ Waft: 1 }) as TheC[]
+        let docs_matched = 0
+        for (const waft of wafts) {
+            const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
+            if (!doc) continue
+            docs_matched++
+            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
+            if (!pointsC) continue
+            for (const p of pointsC.o({ Point: 1 }) as TheC[]) {
+                const spec = p.sc.method as string | undefined
+                if (spec) out.push(spec)
+            }
+        }
+        if (wafts.length && !out.length) {
+            console.log(`🗺 minimap: ${wafts.length} Wafts, ${docs_matched} matched Doc:${path}, 0 Points`)
+        }
+        return out
+    }
+
+    // Resolve a Point's method-spec against the def list.  Mirrors the simpler
+    // half of Lang_resolve_point: exact match → fuzzy substring → unresolved.
+    // (Stack-path resolution is left to Lang_resolve_point in the backend.)
+    function resolve_point_to_mark(spec: string, defs: TheC[]): PointMark | null {
+        const exact = defs.find(d => d.sc.method === spec)
+        if (exact) return {
+            spec,
+            method: exact.sc.method as string,
+            line:   exact.sc.line   as number,
+            from:   exact.sc.from   as number,
+            to:     exact.sc.to     as number,
+            unresolved: false,
+        }
+        const lc = spec.toLowerCase()
+        const fuzzy = defs.find(d => (d.sc.method as string)?.toLowerCase().includes(lc))
+        if (fuzzy) return {
+            spec,
+            method: fuzzy.sc.method as string,
+            line:   fuzzy.sc.line   as number,
+            from:   fuzzy.sc.from   as number,
+            to:     fuzzy.sc.to     as number,
+            unresolved: false,
+        }
+        // Unresolved Points are still returned with line 0 so the strip can
+        // surface them — they'll cluster at the top with a warning style.
+        return { spec, method: spec, line: 1, from: 0, to: 0, unresolved: true }
+    }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
@@ -203,6 +316,7 @@
                     from_char: line_from,
                     to_char:   text.length,
                     defs:      [],
+                    points:    [],
                 }
                 all.push(region)
                 stack.push(region)
@@ -276,11 +390,17 @@
     // Scroll CM to a doc-char offset and place the cursor there.  Pushes a
     // history entry unless we're navigating via back()/forward() (in which
     // case nav_pos is being moved without recording a new step).
+    //
+    // Uses EditorView.scrollIntoView as a StateEffect (more reliable than the
+    // boolean `scrollIntoView: true` on TransactionSpec — that one only scrolls
+    // the cm-scroller, but our outer .lte-cm wraps it and may be the actual
+    // overflow surface).  The effect tells CM exactly where to scroll and
+    // CM walks up the DOM to find scrollable ancestors.
     function go_to(from: number, to: number, label: string) {
         if (!view) return
         view.dispatch({
             selection: { anchor: from, head: to },
-            scrollIntoView: true,
+            effects: EditorView.scrollIntoView(from, { y: 'center' }),
         })
         view.focus()
 
@@ -297,14 +417,20 @@
         if (!can_back || !view) return
         nav_pos = nav_pos - 1
         const e = nav_hist[nav_pos]
-        view.dispatch({ selection: { anchor: e.from, head: e.to }, scrollIntoView: true })
+        view.dispatch({
+            selection: { anchor: e.from, head: e.to },
+            effects: EditorView.scrollIntoView(e.from, { y: 'center' }),
+        })
         view.focus()
     }
     function go_forward() {
         if (!can_forward || !view) return
         nav_pos = nav_pos + 1
         const e = nav_hist[nav_pos]
-        view.dispatch({ selection: { anchor: e.from, head: e.to }, scrollIntoView: true })
+        view.dispatch({
+            selection: { anchor: e.from, head: e.to },
+            effects: EditorView.scrollIntoView(e.from, { y: 'center' }),
+        })
         view.focus()
     }
 
@@ -399,10 +525,17 @@
 
         <!-- Labels: rendered separately so band height doesn't squash them.
              Each is an absolutely-positioned row at the region's top line.
-             Overflow is allowed — long labels extend left over the strip. -->
+             Overflow allowed — long labels extend left over the strip.
+             Depth shrinks font-size and dims color so nesting reads visually
+             rather than just from indent: top-level labels are bold and bright,
+             children are smaller and dimmer. -->
         {#each regions as r (r.from_line + ':' + r.label)}
-            <div class="lmm-row"
-                 style="top: {band_top(r.from_line)}; padding-left: {r.depth * 5 + 4}px;">
+            <div class="lmm-row" style="
+                    top: {band_top(r.from_line)};
+                    padding-left: {r.depth * 5 + 4}px;
+                    font-size: {Math.max(11 - r.depth, 8)}px;
+                    opacity: {Math.max(1 - r.depth * 0.12, 0.6)};
+                ">
                 <button class="lmm-chev"
                         onclick={() => toggle_collapse(r)}
                         aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
@@ -415,6 +548,19 @@
             </div>
 
             {#if !is_collapsed(r)}
+                <!-- Points: promoted methods, shown as full-width rows with
+                     method name always visible.  Higher z-index so they sit
+                     on top of stripes; warning style when unresolved. -->
+                {#each r.points as p (p.spec)}
+                    <button class="lmm-point" class:lmm-point-bad={p.unresolved}
+                            style="top: {band_top(p.line)}; left: {r.depth * 5 + 4}px;"
+                            title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → {p.method} line {p.line}"
+                            onclick={() => go_to(p.from, p.to, p.method)}>
+                        <span class="lmm-point-dot"></span>
+                        <span class="lmm-point-label">{p.method}</span>
+                    </button>
+                {/each}
+
                 {#each r.defs as d (d.from)}
                     <button class="lmm-def"
                             style="top: {band_top(d.line)}; left: {r.depth * 5 + 4}px;"
@@ -425,6 +571,17 @@
                     </button>
                 {/each}
             {/if}
+        {/each}
+
+        <!-- Top-level Points — promoted methods that aren't inside any region. -->
+        {#each top_level_points as p (p.spec)}
+            <button class="lmm-point" class:lmm-point-bad={p.unresolved}
+                    style="top: {band_top(p.line)}; left: 4px;"
+                    title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → {p.method} line {p.line}"
+                    onclick={() => go_to(p.from, p.to, p.method)}>
+                <span class="lmm-point-dot"></span>
+                <span class="lmm-point-label">{p.method}</span>
+            </button>
         {/each}
 
         <!-- Top-level defs (defs not inside any region) — same tick style,
@@ -576,4 +733,41 @@
        stand out from in-region defs at a glance. */
     .lmm-def-top .lmm-def-tick { background: rgba(220, 200, 140, 0.45); }
     .lmm-def-top:hover .lmm-def-tick { background: rgba(220, 200, 140, 0.95); }
+
+    /* Points — user-promoted methods, always-visible label, sit above defs.
+       The dot anchors the position; label extends to the right.  z-index 3
+       so they're above both stripes (0) and rows (2). */
+    .lmm-point {
+        position: absolute; right: 4px;
+        z-index: 3;
+        background: rgba(0, 0, 0, 0.4);
+        border: none; border-radius: 2px;
+        padding: 1px 4px 1px 2px;
+        cursor: pointer;
+        margin-top: -7px;
+        display: flex; align-items: center; gap: 4px;
+        font-family: inherit;
+    }
+    .lmm-point:hover { background: rgba(0, 0, 0, 0.7); }
+    .lmm-point-dot {
+        display: block;
+        width: 6px; height: 6px;
+        background: #e5c07b;            /* gold — matches stho title tag */
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .lmm-point-label {
+        font-size: 10px;
+        color: #e5c07b;
+        white-space: nowrap;
+        max-width: 140px;
+        overflow: hidden; text-overflow: ellipsis;
+    }
+    .lmm-point:hover .lmm-point-label { color: #fff; }
+
+    /* Unresolved Point — strikethrough + warning red. */
+    .lmm-point-bad .lmm-point-dot { background: #e06c75; }
+    .lmm-point-bad .lmm-point-label {
+        color: #e06c75; text-decoration: line-through;
+    }
 </style>

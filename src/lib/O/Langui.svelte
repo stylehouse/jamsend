@@ -1,7 +1,7 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc
+    // ── Multi-doc!
     //
     //   One EditorView, many EditorStates.  On doc switch:
     //     1. Current EditorState (including full undo history, scroll, selection,
