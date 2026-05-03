@@ -184,7 +184,7 @@ abstract class Housing extends TheC {
             : target instanceof TheC ? (
                 `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
             )
-            : target instanceof Work ? `${(target.up as Agency)?.name ?? ''}/${target.name}`.replace(/^\//, '')
+            : target instanceof Housing ? `${(target.up as Housing)?.name ?? ''}/${target.name}`.replace(/^\//, '')
             : (target as Housing).name
 
         const e = new TheC({ c: {}, sc: {
@@ -640,26 +640,32 @@ export class House extends StorableHousing {
         const level = T.sc.level = T.sc.level || this.get_scheme_level(T)
         if (!level) return
 
-        const path_bit_ark = T.sc.path_bit_ark = level.ark
+        // col: the D.sc column name for global-scheme levels (A/w/r).
+        // Undefined for lematch levels — they are not column-indexed.
+        const col = T.sc.path_bit_ark = level.ark
 
         if (level.is_inst) {
             T.sc.inst = n
             return
         }
 
+        // class: particle-level wins, then lematch-level declaration
+        const class_key = (n.sc.class as string | undefined) ?? (level.class as string | undefined)
+        // concretion dedup tag: column name for global-scheme nodes,
+        //   class name for lematch nodes (no column)
+        const ctag = col ?? class_key
+
         // check for an already-spawned instance
-        const existing = D.o({ inst: 1, concretion: path_bit_ark })[0]
+        const existing = D.o({ inst: 1, concretion: ctag })[0]
         if (existing) {
             const inst = existing.sc.inst as Housing
             T.sc.inst = inst
-            if ('wake' in inst && !(inst as Work).wake()) {
+            if ('wake' in inst && !(inst as any).wake()) {
                 T.c.top.sc.needed_concretion = true
             }
             return
         }
 
-        // no existing inst — only concretion if n.sc.class is given
-        const class_key = n.sc.class as string | undefined
         if (!class_key) {
             // no class specified: inst stays undefined, _Aw_think will use H.*
             return
@@ -667,9 +673,9 @@ export class House extends StorableHousing {
 
         // class specified but not yet spawned — need concretion
         T.c.top.sc.needed_concretion = true
-        V.organise && console.log(`  apply_scheme: needs concretion for ${path_bit_ark}:${D.sc[path_bit_ark]} (class:${class_key})`)
+        V.organise && console.log(`  apply_scheme: needs concretion ${ctag} (class:${class_key})`)
 
-        const began = { began_wanting: 'concretion', concretion: path_bit_ark }
+        const began = { began_wanting: 'concretion', concretion: ctag }
         if (D.oa(began)) return
         D.i(began)
 
@@ -682,32 +688,81 @@ export class House extends StorableHousing {
             }
             if (original_e) this._push_todo(original_e)
         }, {
-            see: `concretion ${level.ark}:${D.sc[level.ark]}`,
+            see: `concretion ${ctag}:${n.sc.name ?? (col ? D.sc[col] : '')}`,
             for_n: n,
         })
     }
 
+    // -------------------------------------------------------------------------
+    // get_scheme_level: return the level descriptor for the node at T plus
+    //   `addition` extra depths.
+    //
+    //   Global scheme (H/A/w/r): the returned object has .ark (the column name
+    //   in D.sc) and .sc (child-match pattern).
+    //
+    //   Lematch extension (from w/%scheme:X children): when a parent node has
+    //   %scheme particles, those particles' direct children are match declarations
+    //   with {sc:{…}, class?:'ClassName'} in their sc.
+    //   Accessed via sp.o({}) — NOT via o({lematch:1}), to avoid colliding with
+    //   any existing .lematch method in the system.
+    //   The returned object has .sc and .class but no .ark — use class_key as
+    //   the concretion dedup tag (see apply_scheme / concretion).
+    //
+    //   When addition=1 and the parent has %scheme, returns sentinel {_schemes}
+    //   so each_fn can union all pattern matches for T.sc.more.
+    // -------------------------------------------------------------------------
     get_scheme_level(T: Travel, addition = 0) {
-        const depth = T.c.path.length - 1
-        return scheme[depth + addition]
+        const targetDepth = T.c.path.length - 1 + addition
+        const parent_n = (T.c.path[targetDepth - 1] as any)?.sc?.n as TheC | undefined
+
+        if (parent_n) {
+            const schemes = parent_n.o({ scheme: 1 }) as TheC[]
+            if (schemes.length) {
+                if (addition === 0) {
+                    // find which scheme child matches the current node
+                    const cur_n = T.sc.n as TheC | undefined
+                    if (cur_n) {
+                        for (const sp of schemes) {
+                            for (const pat of sp.o({}) as TheC[]) {
+                                if (pat.sc.sc && cur_n.matches(pat.sc.sc)) {
+                                    // no .ark — these aren't column-indexed nodes
+                                    return { sc: pat.sc.sc, class: pat.sc.class as string | undefined }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // sentinel: each_fn must union all scheme pattern matches
+                    return { _schemes: schemes }
+                }
+            }
+        }
+
+        return scheme[targetDepth]
     }
     // -------------------------------------------------------------------------
     // concretion: spawn the Housing subclass for a D particle.
-    // Uses n.sc.class as the registry key (falls back to path_bit_ark).
-    //  < making the A/w variables we play with Agency and Work
-    //     to extend Housing which extends TheC
-    //  < stretching the A column, etc, eg H/A/A/w/r/r/r
+    //
+    //   Class key: n.sc.class beats level.class beats col (scheme ark).
+    //   Name:      D.sc[col] if col exists, else n.sc.name, else class_key.
+    //   Concretion dedup tag (ctag): col for global-scheme levels,
+    //     class_key for lematch levels (no column).
+    //   Inst also stamped on n.c.inst for direct access without D** walk.
     // -------------------------------------------------------------------------
     concretion(T: Travel) {
-        const { D, path_bit_ark } = T.sc
+        const { D } = T.sc
         const n = T.sc.n as any
-        const class_key = n?.sc?.class ?? path_bit_ark
+        const col = T.sc.path_bit_ark as string | undefined
+        const class_key = (n?.sc?.class ?? T.sc.level?.class ?? col) as string
+        const ctag = col ?? class_key
         const _class = classes[class_key]
-        if (!_class) throw `concretion: unknown class "${class_key}" for ark "${path_bit_ark}"`
-        const name = D.sc[path_bit_ark]
+        if (!_class) throw `concretion: unknown class "${class_key}"`
+        const name = (col ? D.sc[col] : undefined) ?? n?.sc?.name ?? class_key
         const inst = new _class({ name })
-        if (D.oa({ inst: 1, concretion: path_bit_ark })) throw `concretion repeat`
-        D.i({ inst, concretion: path_bit_ark })
+        if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
+        D.i({ inst, concretion: ctag })
+        // also stamp directly on n so callers reach it via n.c.inst without D**
+        if (n) n.c.inst = inst
         return inst
     }
 
@@ -773,8 +828,17 @@ export class House extends StorableHousing {
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 this.apply_scheme(T, e)
                 if (!T.sc.level) { T.sc.not = 1; return }
-                const nextle = this.get_scheme_level(T, 1)
-                T.sc.more = nextle?.sc ? n.o(nextle.sc) : []
+                const nextle = this.get_scheme_level(T, 1) as any
+                if (nextle?._schemes) {
+                    // n has %scheme particles — union all pattern matches as children
+                    T.sc.more = (nextle._schemes as TheC[]).flatMap((sp: TheC) =>
+                        (sp.o({}) as TheC[]).flatMap((pat: TheC) =>
+                            pat.sc.sc ? n.o(pat.sc.sc) as TheC[] : []
+                        )
+                    )
+                } else {
+                    T.sc.more = nextle?.sc ? n.o(nextle.sc) : []
+                }
                 V.organise && console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
             },
 
@@ -1498,37 +1562,28 @@ export class Street extends Housing {
 }
 
 //#endregion
-//#region Agency / Work / Request
+// < Agency / Work / Request subclasses removed — they added nothing beyond Housing.
+// < If the scheme machinery should spawn typed Housing subclasses per level
+//   (an Agency-class for A-nodes, etc.), one option is to overload House.i()
+//   to detect the current scheme depth from the path context and instantiate
+//   the right class rather than a plain TheC. Not needed yet.
 
-export class Agency extends Housing {
-    start() { this.started = true }
-}
-
-export class Work extends Housing {
-    wake(): boolean { return this.started }
-    start() { this.started = true }
-}
-
-export class Request extends Housing {
-    wake(): boolean { return this.started }
-    start() { this.started = true }
-}
-
-//#endregion
 //#region class registry
 
+// Feature-named classes register here. The global scheme's four arks (H/A/w/r)
+//  no longer need entries — they don't trigger concretion unless n.sc.class
+//  or a %scheme lematch names a class explicitly.
 export const classes: Record<string, new (opt: any) => Housing> = {
     H: House,
-    A: Agency,
-    w: Work,
-    r: Request,
 }
 
-// The scheme drives Selection.process() depth by depth:
+// The base scheme drives Selection.process() depth by depth:
 //   depth 0: House itself  (is_inst — House is its own instance)
 //   depth 1: A particles   -> find {A:1}
 //   depth 2: w particles   -> find {w:1}
 //   depth 3: r particles   -> find {r:1}
+// Beyond depth 3, w/%scheme lematch particles extend the walk — see
+//   _lematch_levels / get_scheme_level / the each_fn in organise().
 const scheme = [
     { ark: 'H', is_inst: true },
     { ark: 'A', sc: { A: 1 } },

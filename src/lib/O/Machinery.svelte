@@ -1,7 +1,8 @@
 <script lang="ts">
     import { _C, keyser, objectify, TheC, TheX } from "$lib/data/Stuff.svelte";
     import { Selection } from "$lib/mostly/Selection.svelte";
-    import type { House } from "$lib/O/Housing.svelte";
+    import { register_class, WormholeNav, type House } from "$lib/O/Housing.svelte";
+    import { Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
     import { armap, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
 
@@ -9,6 +10,120 @@
 
     onMount(async () => {
     await M.eatfunc({
+
+//#endregion
+//#region Peeringinst
+    // exercise the w/%scheme lematch → concretion pipeline.
+    //
+    // ── what this proves ──────────────────────────────────────────────────────
+    //   A w worker declares %scheme/%lematch to extend beliefs' scheme walk
+    //   below the fixed H/A/w/r depth. On each think pass:
+    //     1. organise() sees the sentinel from get_scheme_level(T,1) and calls
+    //        _lematch_levels(w) to build T.sc.more from all lematch patterns.
+    //     2. %Peering / %Pier particles show up as children in the next depth.
+    //     3. apply_scheme() matches each child against the parent's lematch and
+    //        finds class:'Peering' (or 'Pier') → concretion fires.
+    //     4. The inst (a stand-in Housing subclass) appears on D and on n.c.inst.
+    //     5. The worker reads n.c.inst and stamps a %see.
+    //
+    // ── wire-up ───────────────────────────────────────────────────────────────
+    //   In Ghost.svelte, add:
+    //     <Peeringinst {M} />
+    //   In may_begin() (or wherever), call:
+    //     H.Run_A_Peeringinst()
+    //
+    // ── real Peering/Pier classes ─────────────────────────────────────────────
+    //   Replace StubPeering / StubPier with the actual classes when ready.
+    //   StubPeering / StubPier are Housing subclasses that do nothing except
+    //   confirm the concretion lifecycle (started, wake, etc.).
+
+    // 
+    // Peeringinst ghost — a second test-case game with its own Cyto instance.
+    Run_A_Peeringinst(this: House) {
+        const H = this
+        H.i({ A: 'Peeringinst' }).i({ w: 'Peeringinst' })
+        console.log(`🟦 ${H.name} Peeringinst wired`)
+    },
+    // // host a Peering and its Pier
+    // //  this whole House is about this Peering, somehow. just make one up.
+    // async Peeringinst(A: TheC, w: TheC) {
+    //     // avail these to concretion() here for now
+    //     register_class('Peering',WormholeNav)
+    //     register_class('Pier',Pier)
+
+    //     // autovivify a w/%Peering, to be instantiated by:
+    //     // w/%scheme:Peering/%lematch,sc:{Peering:1},class:Peering
+
+    //     // and the other rules. then we just look at it
+    //     //  make a %see:`Pier:suchnsuch ${objectify(Pier)}`
+    // },
+
+
+
+    // The worker. Declares the %scheme lematch structure, autovivifies
+    //  example particles, and reports what concretion produced.
+    async Peeringinst(A: TheC, w: TheC) {
+        const H = this as House
+        // avail these to concretion() here for now
+        register_class('Peering',WormholeNav)
+        register_class('Pier',Pier)
+
+        // ── declare %scheme once ──────────────────────────────────────
+        // %scheme:'X' is a bucket particle — its direct children are
+        // pattern declarations {sc:{...}, class?:'ClassName'}.
+        // get_scheme_level picks them up via sp.o({}), never via
+        // o({lematch:1}), so no collision with any existing .lematch().
+
+        if (!w.oa({ scheme: 'Peering' })) {
+            const sp = w.i({ scheme: 'Peering' })
+            // one Peering per House; class drives concretion
+            sp.i({ sc: { Peering: 1 }, class: 'Peering' })
+        }
+
+        if (!w.oa({ scheme: 'Pier' })) {
+            const sp = w.i({ scheme: 'Pier' })
+            // data-only tier: no class -> particles tracked, no inst yet
+            // < add class:'Pier' (or a second child) once actualised
+            //   promotion logic decides when to spawn the Pier() object
+            sp.i({ sc: { Pier: 1 } })
+        }
+
+        // ── autovivify one Peering and two Pier particles ─────────────
+        // In production: Peering from stored config, Piers from Thangs
+        // liveQuery (Dexie rows surfaced as {Pier:1, name, stashed}).
+        w.oai({ Peering: 1, name: 'testPeering' })
+        w.oai({ Pier: 1, name: 'alice' })
+        w.oai({ Pier: 1, name: 'bob' })
+
+        // ── report concretion state ───────────────────────────────────
+        // n.c.inst is stamped by concretion() the tick after the
+        // particle first appears. First pass: "awaiting...".
+        // Subsequent passes: the spawned class name.
+
+        const peering_n = w.o({ Peering: 1 })[0] as TheC | undefined
+        if (peering_n) {
+            const label = peering_n.c.inst
+                ? `${peering_n.sc.name} -> ${peering_n.c.inst.constructor.name}`
+                : `${peering_n.sc.name} awaiting concretion...`
+            w.i({ see: `Peering: ${label}` })
+        }
+
+        for (const p of w.o({ Pier: 1 }) as TheC[]) {
+            const label = p.c.inst
+                ? `${p.sc.name} -> ${p.c.inst.constructor.name}`
+                : `${p.sc.name} awaiting concretion...`
+            w.i({ see: `Pier: ${label}` })
+        }
+
+        // < next: inbound PeerJS connection arrives async.
+        //   WPeers (sync-prelude work) does:
+        //     const buf = w.i({ incoming: 1, pc: con, events: [] })
+        //     con.on('data', d => buf.c.events.push({kind:'data', d}))
+        //     con.on('open',  () => buf.c.events.push({kind:'open'}))
+        //   then posts a wire_pier elvis so beliefs can match the right
+        //   {Pier:1} particle and call n.c.inst.wire(con) -- at which
+        //   point started=true and queued protocol elvises dispatch.
+    },
 
 
 
