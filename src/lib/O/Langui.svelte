@@ -1,7 +1,7 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────
+    // ── Multi-doc
     //
     //   One EditorView, many EditorStates.  On doc switch:
     //     1. Current EditorState (including full undo history, scroll, selection,
@@ -325,7 +325,13 @@
     //   After construction the switch $effect fires immediately (active_path is
     //   already set) and calls Lang_editorBegins to register the view with backend.
     $effect(() => {
-        if (!container || view) return   // only create once; wait for the div
+        if (!container || view || !docC) return   // need container, no view yet, and a docC to read text from
+
+        // Read docC fresh from ave at construction-time.  active_path is set
+        // before {#if docC} flips, so by the time this $effect fires the
+        // langtiles_doc particle is in ave and its text is populated.
+        const fresh_docC = H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined
+        const initial    = (fresh_docC?.sc.text as string) ?? (docC?.sc.text as string) ?? ''
 
         // Build extensions once; reused by all EditorStates on this view.
         editorExtensions = [
@@ -353,7 +359,6 @@
             usualSetup,
         ]
 
-        const initial = (docC?.sc.text as string) ?? ''
         view = new EditorView({
             parent: container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
@@ -385,15 +390,14 @@
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
     </div>
-    <div class="lte-cm-wrap">
-        <div class="lte-cm" bind:this={container}></div>
-        <Langminimap {H} {view} {active_path} />
-    </div>
+    <div class="lte-cm" bind:this={container}></div>
+    <Langminimap {H} {view} {active_path} />
 </div>
 {/if}
 
 <style>
     .lte {
+        position: relative;        /* positioning context for Langminimap overlay */
         display: flex; flex-direction: column;
         border: 1px solid #1a1a1a; border-radius: 4px;
         background: #0a0a0a; overflow: hidden;
@@ -409,12 +413,7 @@
     .lte-hint  { color: #3a3a3a; font-style: italic; }
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
-    .lte-cm-wrap {
-        position: relative;        /* positioning context for Langminimap overlay */
-        height: 50vh; min-height: 200px;
-        overflow: hidden;          /* keep the minimap inside this box */
-    }
-    .lte-cm    { height: 100%; overflow: auto; }
+    .lte-cm    { min-height: 200px; max-height: 50vh; overflow: auto; }
     .lte-cm :global(.cm-editor)  { height: 100%; }
     .lte-cm :global(.cm-content) { font-size: 12px; }
 
@@ -426,4 +425,5 @@
         border-bottom: 1px solid rgba(122, 176, 212, 0.5);
         border-radius: 1px;
     }
+
 </style>

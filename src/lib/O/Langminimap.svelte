@@ -64,6 +64,27 @@
     // Keyed by `${from_line}:${label}` so re-orderings don't bleed state.
     let collapsed = $state(new Map<string, boolean>())
 
+    // ── navigation history ───────────────────────────────────────────────────
+    //   A simple stack of {path, from, to, label} entries: every region/def
+    //   click pushes one.  back()/forward() step through.  history is reset on
+    //   doc switch — cross-doc nav goes through Lang_point_navigate instead.
+    type NavEntry = { path: string, from: number, to: number, label: string }
+    let nav_hist: NavEntry[] = $state([])
+    let nav_pos               = $state(-1)   // index of current entry, -1 = none
+    let can_back     = $derived(nav_pos > 0)
+    let can_forward  = $derived(nav_pos < nav_hist.length - 1)
+
+    // Reset history when the active doc changes — the entries reference char
+    // offsets that only make sense in their original doc.
+    let _last_path = ''
+    $effect(() => {
+        if (active_path !== _last_path) {
+            nav_hist = []
+            nav_pos = -1
+            _last_path = active_path
+        }
+    })
+
     // ── data sources ─────────────────────────────────────────────────────────
     //   docC drives total_lines (for proportional layout) and the methods
     //   index.  H.ave.ob() makes ave-version-bumps wake this $effect.
@@ -252,13 +273,38 @@
 
     // ── interactions ─────────────────────────────────────────────────────────
 
-    // Scroll CM to a doc-char offset and place the cursor there.
-    function go_to(from: number, to: number) {
+    // Scroll CM to a doc-char offset and place the cursor there.  Pushes a
+    // history entry unless we're navigating via back()/forward() (in which
+    // case nav_pos is being moved without recording a new step).
+    function go_to(from: number, to: number, label: string) {
         if (!view) return
         view.dispatch({
             selection: { anchor: from, head: to },
             scrollIntoView: true,
         })
+        view.focus()
+
+        // Truncate any forward history (classic browser-style behaviour: a new
+        // navigation drops everything past the current position) then append.
+        const truncated = nav_hist.slice(0, nav_pos + 1)
+        truncated.push({ path: active_path, from, to, label })
+        nav_hist = truncated
+        nav_pos  = truncated.length - 1
+    }
+
+    // Move backward / forward through nav_hist without recording a new entry.
+    function go_back() {
+        if (!can_back || !view) return
+        nav_pos = nav_pos - 1
+        const e = nav_hist[nav_pos]
+        view.dispatch({ selection: { anchor: e.from, head: e.to }, scrollIntoView: true })
+        view.focus()
+    }
+    function go_forward() {
+        if (!can_forward || !view) return
+        nav_pos = nav_pos + 1
+        const e = nav_hist[nav_pos]
+        view.dispatch({ selection: { anchor: e.from, head: e.to }, scrollIntoView: true })
         view.focus()
     }
 
@@ -329,7 +375,13 @@
 <div class="lmm">
     <div class="lmm-head">
         <button class="lmm-toggle" onclick={() => visible = false} aria-label="Hide minimap" title="Hide">‹</button>
-        <span class="lmm-title">{regions.length} region{regions.length === 1 ? '' : 's'}</span>
+        <button class="lmm-nav" onclick={go_back} disabled={!can_back}
+                title="Back" aria-label="Back">◂</button>
+        <button class="lmm-nav" onclick={go_forward} disabled={!can_forward}
+                title="Forward" aria-label="Forward">▸</button>
+        <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
+            {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
+        </span>
     </div>
 
     <div class="lmm-strip">
@@ -355,7 +407,7 @@
                         onclick={() => toggle_collapse(r)}
                         aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
                 <button class="lmm-label"
-                        onclick={() => go_to(r.from_char, r.from_char)}
+                        onclick={() => go_to(r.from_char, r.from_char, r.label)}
                         title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
                 <button class="lmm-fold"
                         onclick={() => toggle_fold(r)}
@@ -367,7 +419,7 @@
                     <button class="lmm-def"
                             style="top: {band_top(d.line)}; left: {r.depth * 5 + 4}px;"
                             title="{d.method} (line {d.line})"
-                            onclick={() => go_to(d.from, d.to)}>
+                            onclick={() => go_to(d.from, d.to, d.method)}>
                         <span class="lmm-def-tick"></span>
                         <span class="lmm-def-label">{d.method}</span>
                     </button>
@@ -381,7 +433,7 @@
             <button class="lmm-def lmm-def-top"
                     style="top: {band_top(d.line)}; left: 4px;"
                     title="{d.method} (line {d.line})"
-                    onclick={() => go_to(d.from, d.to)}>
+                    onclick={() => go_to(d.from, d.to, d.method)}>
                 <span class="lmm-def-tick"></span>
                 <span class="lmm-def-label">{d.method}</span>
             </button>
@@ -394,7 +446,9 @@
 
 <style>
     .lmm {
-        position: absolute; top: 0; right: 0; bottom: 0;
+        position: absolute; top: 24px; right: 0; bottom: 0;
+        /* top:24px clears the .lte-bar; bottom:0 fills rest of .lte's height.
+           Anchored to .lte (position:relative) so it sits over .lte-cm only. */
         width: 200px;
         display: flex; flex-direction: column;
         background: rgba(10, 10, 14, 0.78);
@@ -416,6 +470,13 @@
         font-size: 14px; padding: 0 4px; line-height: 1;
     }
     .lmm-toggle:hover { color: #a0c0d0; }
+    .lmm-nav {
+        background: none; border: none; cursor: pointer;
+        color: #6a8a9a; padding: 0 3px; font-size: 12px; line-height: 1;
+        font-family: inherit;
+    }
+    .lmm-nav:hover:not(:disabled) { color: #c0d0e0; }
+    .lmm-nav:disabled { color: #2a3a45; cursor: default; }
     .lmm-show {
         position: absolute; top: 24px; right: 0;
         background: rgba(10, 10, 14, 0.7);
@@ -426,7 +487,11 @@
         z-index: 10;
     }
     .lmm-show:hover { color: #a0c0d0; }
-    .lmm-title { color: #678; font-size: 10px; }
+    .lmm-title {
+        color: #678; font-size: 10px;
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
 
     /* Strip surface holds three layers, all absolute-positioned within it:
          .lmm-stripe — colored bands sized by region line span (z-index 0)
