@@ -215,16 +215,10 @@
 
         w.i({received:1,editorBegins:1})
 
-        // Auto-compile now that docC.c.state is populated.  Extracts methods,
-        // regions, controlflow, and Point-resolution index without the user
-        // clicking compile.  For .g files this writes generated output and
-        // notifies Pantheate (gen_path is set by Lies); for everything else
-        // it's a soft compile — methods index only, no disk side-effects.
-        // Skipped if no real doc is active yet (editorBegins fires once at
-        // mount with an empty placeholder before any doc loads).
-        if (e.sc.doc && w.c.active_doc_path) {
-            this.i_elvisto(w, 'Lang_compile')
-        }
+        // < auto-compile here?  Tried firing Lang_compile; saw oscillation +
+        //   apparent reload — likely a feedback loop via ave bumps.  Park
+        //   it for now; user can click compile manually.  When we revisit:
+        //   gate by !job?.oa({Pending:1}) and only on first editorBegins per doc.
     },
 
     // ── e_Doc_open ───────────────────────────────────────────────────────────

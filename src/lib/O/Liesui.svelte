@@ -1,7 +1,7 @@
 <script lang="ts">
     // Liesui.svelte — reactive UI for Lies.
     //
-    // Reactivity strategy
+    // Reactivity strategy!!!
     // ───────────────────
     //   H.ave fires every think() tick (Housing reassigns the array whenever any
     //   enrolled particle bumps its version, which Lies does on every tick).

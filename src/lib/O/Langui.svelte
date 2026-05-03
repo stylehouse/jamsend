@@ -1,7 +1,7 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc!!
+    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────!!!!
     //
     //   One EditorView, many EditorStates.  On doc switch:
     //     1. Current EditorState (including full undo history, scroll, selection,
@@ -74,7 +74,10 @@
     // container is $state so the creation $effect tracks when the div appears.
     // The div only renders once docC is truthy, so this naturally gates construction.
     let container: HTMLDivElement | undefined = $state()
-    let view: EditorView | undefined
+    // view is $state so child components passed `view` as a prop get the
+    // EditorView reference once construction has completed (otherwise the
+    // prop captures undefined at mount and never updates).
+    let view: EditorView | undefined = $state()
 
     const UPDATE_DELAY_MS = 800
     let update_timer: ReturnType<typeof setTimeout> | null = null
@@ -324,8 +327,14 @@
     //
     //   After construction the switch $effect fires immediately (active_path is
     //   already set) and calls Lang_editorBegins to register the view with backend.
+    //
+    //   `view` is $state (so child components see its assignment), but reading
+    //   it here would make this effect depend on itself.  untrack() around
+    //   the read keeps the only reactive dep on `container` and `docC`.
     $effect(() => {
-        if (!container || view || !docC) return   // need container, no view yet, and a docC to read text from
+        if (!container || !docC) return
+        const already = untrack(() => view)
+        if (already) return
 
         // Read docC fresh from ave at construction-time.  active_path is set
         // before {#if docC} flips, so by the time this $effect fires the
@@ -363,6 +372,15 @@
             parent: container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
+
+        // CM measures its container once at construction.  If the parent's
+        // flex layout hasn't settled when this runs (common when {#if docC}
+        // first flips and the editor mounts in the same tick), the measured
+        // height is 0 and CM stops painting until the next forced re-measure.
+        // Two-stage requestMeasure: once immediately to capture the post-layout
+        // dimensions, and once on the next animation frame as a safety net.
+        view.requestMeasure()
+        requestAnimationFrame(() => view?.requestMeasure())
 
         // Cache this first state so the switch $effect doesn't create a duplicate
         // fresh state the first time active_path is seen.
@@ -425,5 +443,4 @@
         border-bottom: 1px solid rgba(122, 176, 212, 0.5);
         border-radius: 1px;
     }
-
 </style>

@@ -77,6 +77,11 @@
         console.log(`🗺 minimap view prop = ${view ? 'EditorView OK' : 'undefined'}, active_path = ${active_path}`)
     })
 
+    // Dedupe the rebuild logs — _structure recomputes on every H.ave bump,
+    // which can be 30+ times per page action.  Only log when the structural
+    // summary (region/def/point counts) actually changes.
+    let last_log_summary = ''
+
     // Visibility toggle — collapsible strip.  Persisted only in module memory
     // for now (no Stuff sc storage); flip with the chevron on the strip header.
     let visible = $state(true)
@@ -198,7 +203,11 @@
                 else top_points.push(mark)
             }
 
-            console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_specs.length} unresolved=${top_points.reduce((n,p) => n + (p.unresolved ? 1 : 0), 0)}`)
+            const summary = `${list.length}r ${def_entries.length}d ${point_specs.length}p`
+            if (summary !== last_log_summary) {
+                console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_specs.length} unresolved=${top_points.reduce((n,p) => n + (p.unresolved ? 1 : 0), 0)}`)
+                last_log_summary = summary
+            }
             return { regions: list, top_level_defs: top_defs, top_level_points: top_points }
         }
 
@@ -211,7 +220,11 @@
             spec, method: spec, line: 1, from: 0, to: 0, unresolved: true,
         }))
 
-        console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_specs.length} (all unresolved)`)
+        const summary = `${fallback_regions.length}r 0d ${point_specs.length}p (no compile)`
+        if (summary !== last_log_summary) {
+            console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_specs.length} (all unresolved)`)
+            last_log_summary = summary
+        }
         return {
             regions:          fallback_regions,
             top_level_defs:   [],
