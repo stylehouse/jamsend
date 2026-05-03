@@ -184,7 +184,6 @@ abstract class Housing extends TheC {
             : target instanceof TheC ? (
                 `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
             )
-            : target instanceof Housing ? `${(target.up as Housing)?.name ?? ''}/${target.name}`.replace(/^\//, '')
             : (target as Housing).name
 
         const e = new TheC({ c: {}, sc: {
@@ -763,6 +762,7 @@ export class House extends StorableHousing {
         D.i({ inst, concretion: ctag })
         // also stamp directly on n so callers reach it via n.c.inst without D**
         if (n) n.c.inst = inst
+        console.log(`Concretioned: ${class_key}`)
         return inst
     }
 

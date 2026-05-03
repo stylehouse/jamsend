@@ -1,7 +1,7 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────!!!!!
+    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────!!!!
     //
     //   One EditorView, many EditorStates.  On doc switch:
     //     1. Current EditorState (including full undo history, scroll, selection,
@@ -209,6 +209,7 @@
         const path = (sig?.sc.path as string | undefined) ?? ''
         if (path) active_path = path
         docC = path ? H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined : undefined
+        console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_path=${active_path}`)
     })
 
     // ── switch $effect ────────────────────────────────────────────────────────
@@ -220,6 +221,7 @@
     let prev_path = ''   // plain let — not reactive; switch $effect is sole writer
     $effect(() => {
         const arriving = active_path
+        console.log(`🔀 switch $effect: arriving=${arriving} prev=${prev_path} view=${!!untrack(()=>view)}`)
         if (!view || !arriving || arriving === prev_path) return
 
         untrack(() => {
@@ -453,15 +455,30 @@
     let container_ro: ResizeObserver | undefined
 
     $effect(() => {
-        if (!container || !docC) return
+        console.log(`🏗 construction $effect: container=${!!container} docC=${!!docC} view=${!!untrack(()=>view)}`)
+        if (!container || !active_path) return
         const already = untrack(() => view)
-        if (already) return
+        if (already) { console.log(`🏗 construction $effect: already have view, bailing`); return }
 
-        // Read docC fresh from ave at construction-time.  active_path is set
-        // before {#if docC} flips, so by the time this $effect fires the
-        // langtiles_doc particle is in ave and its text is populated.
-        const fresh_docC = H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined
-        const initial    = (fresh_docC?.sc.text as string) ?? (docC?.sc.text as string) ?? ''
+        // Capture what we need from reactive scope before the setTimeout.
+        const captured_container = container
+        const captured_path      = active_path
+        const captured_docC      = docC
+        console.log(`🏗 construction $effect: scheduling setTimeout for path=${captured_path} container.clientHeight=${captured_container.clientHeight}`)
+
+        // Defer EditorView construction by one task so the browser has done
+        // a layout pass after {#if docC} flips.  The $effect fires in the
+        // same microtask as the DOM insertion — the container exists but has
+        // zero clientHeight, so CM measures 0 and stops painting.
+        // HMR works because Svelte remounts into a settled layout; cold load
+        // now behaves the same way.
+        setTimeout(() => {
+        console.log(`🏗 setTimeout fired: isConnected=${captured_container.isConnected} clientHeight=${captured_container.clientHeight}`)
+        if (!captured_container.isConnected) return   // destroyed while we waited
+
+        // Read docC fresh — text may have arrived during the delay.
+        const fresh_docC = H.ave.ob({ langtiles_doc: captured_path })[0] as TheC | undefined
+        const initial    = (fresh_docC?.sc.text as string) ?? (captured_docC?.sc.text as string) ?? ''
 
         // Build extensions once; reused by all EditorStates on this view.
         editorExtensions = [
@@ -495,39 +512,36 @@
         ]
 
         view = new EditorView({
-            parent: container,
+            parent: captured_container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
+        console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 
         // Seed the spool with the initial text so the very first echo
         // (e_Lang_set_doc bumping docC after our first keystroke) is
         // recognised cleanly even before any local edits land.
-        spool_remember(active_path, initial)
+        spool_remember(captured_path, initial)
 
-        // CM measures its container once at construction.  If the parent's
-        // flex layout hasn't settled when this runs (common when {#if docC}
-        // first flips and the editor mounts in the same tick), the measured
-        // height is 0 and CM stops painting until the next forced re-measure.
-        // Two-stage requestMeasure (now + next animation frame) caught the
-        // common case but missed late settling — fonts loading, sibling
-        // expanding, parent flex resolving on a tick we didn't anticipate.
-        // ResizeObserver is the canonical signal: it fires whenever the
-        // observed element's size actually changes, including the 0→N
-        // transition that breaks first-load.  Kept the immediate
-        // requestMeasure as a belt-and-braces nudge for the case where the
-        // container is already non-zero at construction.
-        view.requestMeasure()
-        container_ro = new ResizeObserver(() => view?.requestMeasure())
-        container_ro.observe(container)
+        // No requestMeasure() here — layout has already settled by the time
+        // this setTimeout fires.  ResizeObserver handles any subsequent changes
+        // (e.g. sidebars opening, fonts loading late).
+        container_ro = new ResizeObserver((entries) => {
+            const h = entries[0]?.contentRect.height ?? 0
+            console.log(`🏗 ResizeObserver fired: height=${h}`)
+            view?.requestMeasure()
+        })
+        container_ro.observe(captured_container)
 
         // Cache this first state so the switch $effect doesn't create a duplicate
         // fresh state the first time active_path is seen.
-        if (active_path) stateCache.set(active_path, view.state)
-        prev_path = active_path
+        if (captured_path) stateCache.set(captured_path, view.state)
+        prev_path = captured_path
 
         // Register view+state with backend.
+        console.log(`🏗 firing Lang_editorBegins for path=${captured_path}`)
         Lang_i_elvis(view, 'Lang_editorBegins',
             { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
+        }, 0)
     })
 
     onDestroy(() => {
@@ -538,8 +552,9 @@
     })
 </script>
 
-{#if docC}
+{#if active_path}
 <div class="lte">
+    {#if docC}
     <div class="lte-bar">
         <!-- doc-picker dropdown + any other Lang actions (compo/compi toggles etc) -->
         <Actions N={lang_actions} />
@@ -548,6 +563,8 @@
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
     </div>
+    {/if}
+    <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}></div>
     <Langminimap {H} {view} {active_path} />
 </div>
