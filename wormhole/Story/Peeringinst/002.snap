@@ -1,19 +1,19 @@
 Snap:H
   H:Peeringinst,Run
     A:Peeringinst
-      {"mung":["age"]}	self,round:2
+      {"mung":["age"]}	self,round:4
       w:Peeringinst
         scheme:Peering
           {"ref":{"sc_has":"Object()"}}	lematch,class:Peering
         scheme:Pier
-          {"ref":{"sc_has":"Object()"}}	lematch,class:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
         Peering,name:testPeering
         Pier,name:alice
         Pier,name:bob
-        {"mung":["age"]}	self,round:2
+        {"mung":["age"]}	self,round:4
         {"see":"Peering: testPeering -> WormholeNav"}
-        {"see":"Pier: alice awaiting concretion..."}
-        {"see":"Pier: bob awaiting concretion..."}
+        {"see":"Pier: alice -> Pier"}
+        {"see":"Pier: bob -> Pier"}
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:Peeringinst,isCompound:true

@@ -6,7 +6,7 @@ Snap:H
         scheme:Peering
           {"ref":{"sc_has":"Object()"}}	lematch,class:Peering
         scheme:Pier
-          {"ref":{"sc_has":"Object()"}}	lematch,class:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
         {"mung":["age"]}	self,round
         Peering,name:testPeering
         Pier,name:alice

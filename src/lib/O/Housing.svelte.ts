@@ -737,9 +737,10 @@ export class House extends StorableHousing {
                 if (lv) return lv
             } else if (parent_lv.scheme_haver) {
                 const parent_n = parent_T.sc.n as TheC | undefined
-                const sp = parent_n?.o({ scheme: 1 })[0] as TheC | undefined
-                if (sp) {
-                    const lv = this.find_lematch(cur_n, sp.o({ lematch: 1 }) as TheC[])
+                const sps = (parent_n?.o({ scheme: 1 }) ?? []) as TheC[]
+                const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
+                if (all_lm.length) {
+                    const lv = this.find_lematch(cur_n, all_lm)
                     if (lv) return lv
                 }
             }
@@ -761,9 +762,9 @@ export class House extends StorableHousing {
                 return (level.next_lematches as TheC[]).map(p => this.unwrap_lematch(p))
             }
             if (level.scheme_haver && cur_n) {
-                const sp = cur_n.o({ scheme: 1 })[0] as TheC | undefined
-                // if (cur_n?.sc.w == 'Peeringinst') debugger
-                if (sp) return (sp.o({ lematch: 1 }) as TheC[]).map(p => this.unwrap_lematch(p))
+                const sps = cur_n.o({ scheme: 1 }) as TheC[]
+                const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
+                if (all_lm.length) return all_lm.map(p => this.unwrap_lematch(p))
             }
         }
         const next = organise_scheme[T.c.path.length]
@@ -781,16 +782,35 @@ export class House extends StorableHousing {
     concretion(T: Travel) {
         const { D } = T.sc
         const n = T.sc.n as any
+        const level = T.sc.level as Record<string, any> | undefined
         const col = T.sc.path_bit_ark as string | undefined
-        const class_key = (n?.sc?.class ?? T.sc.level?.class ?? col) as string
+        const class_key = (n?.sc?.class ?? level?.class ?? col) as string
         const ctag = col ?? class_key
         const _class = classes[class_key]
         if (!_class) throw `concretion: unknown class "${class_key}"`
-        const name = (col ? D.sc[col] : undefined) ?? n?.sc?.name ?? class_key
-        const inst = new _class({ name })
+
+        let ctor_args: any[]
+        if (col) {
+            // global-scheme level (H/A/w/r)
+            ctor_args = [{ name: D.sc[col] ?? n?.sc?.name ?? class_key }]
+        } else {
+            // lematch level: strip the type-marker keys (sc_has lives on level, not n)
+            const sc_has = level?.sc_has ?? {}
+            const guess_opt: Record<string, any> = Object.fromEntries(
+                Object.entries(n?.sc ?? {}).filter(([k]) => !(k in sc_has))
+            )
+            // name may have been absent on the particle; fall back to the matched type key
+            guess_opt.name ??= Object.keys(sc_has)[0]
+
+            ctor_args = level?.args_fn
+                ? level.args_fn(n, guess_opt, T)
+                : [guess_opt]
+        }
+
+        const inst = new _class(...ctor_args)
         if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
         D.i({ inst, concretion: ctag })
-        // also stamp directly on n so callers reach it via n.c.inst without D**
+        // stamp on n so callers reach inst via n.c.inst without D** walk
         if (n) n.c.inst = inst
         return inst
     }

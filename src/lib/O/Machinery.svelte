@@ -61,7 +61,8 @@
             // data-only tier: no class -> particles tracked, no inst yet
             // < add class:'Pier' (or a second child) once actualised
             //   promotion logic decides when to spawn the Pier() object
-            sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier' })
+            sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier',
+                args_fn: (n,T) => { return [{prepub:n.sc.name}]  }})
         }
 
         
