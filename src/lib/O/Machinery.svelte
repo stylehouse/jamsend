@@ -77,7 +77,7 @@
         if (!w.oa({ scheme: 'Peering' })) {
             const sp = w.i({ scheme: 'Peering' })
             // one Peering per House; class drives concretion
-            sp.i({ sc: { Peering: 1 }, class: 'Peering' })
+            sp.i({ lematch: 1, sc: { Peering: 1 }, class: 'Peering' })
         }
 
         if (!w.oa({ scheme: 'Pier' })) {
@@ -85,7 +85,7 @@
             // data-only tier: no class -> particles tracked, no inst yet
             // < add class:'Pier' (or a second child) once actualised
             //   promotion logic decides when to spawn the Pier() object
-            sp.i({ sc: { Pier: 1 } })
+            sp.i({ lematch: 1, sc: { Pier: 1 }, class: 'Pier' })
         }
 
         // ── autovivify one Peering and two Pier particles ─────────────

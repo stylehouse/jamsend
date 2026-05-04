@@ -16,10 +16,12 @@ story:Peeringinst
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:0.009
+    TimeTotal:beliefs,avg:0.007
       sample:0.003,at:1777811270
       sample:0.008,at:1777811300
       sample:0.007,at:1777811420
       sample:0.016,at:1777811725
+      sample:0.003,at:1777857905
+      sample:0.003,at:1777857913
   step,dige:c1a96652c6af1528
   step:2,dige:f05e1667a0114f1a

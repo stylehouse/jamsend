@@ -693,51 +693,75 @@ export class House extends StorableHousing {
     }
 
     // -------------------------------------------------------------------------
-    // get_scheme_level: return the level descriptor for the node at T plus
-    //   `addition` extra depths.
-    //
-    //   Global scheme (H/A/w/r): the returned object has .ark (the column name
-    //   in D.sc) and .sc (child-match pattern).
-    //
-    //   Lematch extension (from w/%scheme:X children): when a parent node has
-    //   %scheme particles, those particles' direct children are match declarations
-    //   with {sc:{…}, class?:'ClassName'} in their sc.
-    //   Accessed via sp.o({}) — NOT via o({lematch:1}), to avoid colliding with
-    //   any existing .lematch method in the system.
-    //   The returned object has .sc and .class but no .ark — use class_key as
-    //   the concretion dedup tag (see apply_scheme / concretion).
-    //
-    //   When addition=1 and the parent has %scheme, returns sentinel {_schemes}
-    //   so each_fn can union all pattern matches for T.sc.more.
+    // unwrap_lematch: strip the %lematch envelope from pat.sc.
+    //   pat.sc = { lematch:1, sc:{match pattern}, class?:'Ctor', ...rest }
+    //   pat.o({lematch:1}) = child %lematch particles for the next depth
+    //   Returns { sc, class?, next_lematches, ...rest }.
+    //   next_lematches trickles down T** so deeper nodes never re-query the tree.
     // -------------------------------------------------------------------------
-    get_scheme_level(T: Travel, addition = 0) {
-        const targetDepth = T.c.path.length - 1 + addition
-        const parent_n = (T.c.path[targetDepth - 1] as any)?.sc?.n as TheC | undefined
+    unwrap_lematch(pat: TheC): Record<string, any> {
+        const { lematch: _, ...desc } = pat.sc as any
+        desc.next_lematches = pat.o({ lematch: 1 }) as TheC[]
+        return desc
+    }
 
-        if (parent_n) {
-            const schemes = parent_n.o({ scheme: 1 }) as TheC[]
-            if (schemes.length) {
-                if (addition === 0) {
-                    // find which scheme child matches the current node
-                    const cur_n = T.sc.n as TheC | undefined
-                    if (cur_n) {
-                        for (const sp of schemes) {
-                            for (const pat of sp.o({}) as TheC[]) {
-                                if (pat.sc.sc && cur_n.matches(pat.sc.sc)) {
-                                    // no .ark — these aren't column-indexed nodes
-                                    return { sc: pat.sc.sc, class: pat.sc.class as string | undefined }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // sentinel: each_fn must union all scheme pattern matches
-                    return { _schemes: schemes }
+    // Match cur_n against an array of %lematch particles.
+    //  Returns the first unwrapped level whose .sc matches, or null.
+    find_lematch(cur_n: TheC, lm_particles: TheC[]): Record<string, any> | null {
+        for (const pat of lm_particles) {
+            const lv = this.unwrap_lematch(pat)
+            if (lv.sc && cur_n.matches(lv.sc)) return lv
+        }
+        return null
+    }
+
+    // -------------------------------------------------------------------------
+    // get_scheme_level: level descriptor for the CURRENT node T.sc.n.
+    //   1. parent_level.next_lematches  — trickled from prior depth's match
+    //   2. parent_level.scheme_haver    — one-time read of w/%scheme/%lematch
+    //   3. global scheme[depth]
+    // -------------------------------------------------------------------------
+    get_scheme_level(T: Travel): Record<string, any> {
+        const depth = T.c.path.length - 1
+        const parent_T  = T.c.path[depth - 1] as any
+        const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
+        const cur_n     = T.sc.n as TheC | undefined
+        if (cur_n && parent_lv) {
+            if (parent_lv.next_lematches?.length) {
+                const lv = this.find_lematch(cur_n, parent_lv.next_lematches)
+                if (lv) return lv
+            } else if (parent_lv.scheme_haver) {
+                const parent_n = parent_T.sc.n as TheC | undefined
+                const sp = parent_n?.o({ scheme: 1 })[0] as TheC | undefined
+                if (sp) {
+                    const lv = this.find_lematch(cur_n, sp.o({ lematch: 1 }) as TheC[])
+                    if (lv) return lv
                 }
             }
         }
+        return scheme[depth]
+    }
 
-        return scheme[targetDepth]
+    // -------------------------------------------------------------------------
+    // get_next_levels: level descriptors for the CHILDREN of T.sc.n.
+    //   1. level.next_lematches  — trickle continues
+    //   2. level.scheme_haver    — one-time read of w/%scheme/%lematch
+    //   3. [global scheme[next_depth]]
+    // -------------------------------------------------------------------------
+    get_next_levels(T: Travel): Array<Record<string, any>> {
+        const level = T.sc.level as Record<string, any> | undefined
+        const cur_n = T.sc.n as TheC | undefined
+        if (level) {
+            if (level.next_lematches?.length) {
+                return (level.next_lematches as TheC[]).map(p => this.unwrap_lematch(p))
+            }
+            if (level.scheme_haver && cur_n) {
+                const sp = cur_n.o({ scheme: 1 })[0] as TheC | undefined
+                if (sp) return (sp.o({ lematch: 1 }) as TheC[]).map(p => this.unwrap_lematch(p))
+            }
+        }
+        const next = scheme[T.c.path.length]
+        return next ? [next] : []
     }
     // -------------------------------------------------------------------------
     // concretion: spawn the Housing subclass for a D particle.
@@ -762,7 +786,6 @@ export class House extends StorableHousing {
         D.i({ inst, concretion: ctag })
         // also stamp directly on n so callers reach it via n.c.inst without D**
         if (n) n.c.inst = inst
-        console.log(`Concretioned: ${class_key}`)
         return inst
     }
 
@@ -828,17 +851,8 @@ export class House extends StorableHousing {
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
                 this.apply_scheme(T, e)
                 if (!T.sc.level) { T.sc.not = 1; return }
-                const nextle = this.get_scheme_level(T, 1) as any
-                if (nextle?._schemes) {
-                    // n has %scheme particles — union all pattern matches as children
-                    T.sc.more = (nextle._schemes as TheC[]).flatMap((sp: TheC) =>
-                        (sp.o({}) as TheC[]).flatMap((pat: TheC) =>
-                            pat.sc.sc ? n.o(pat.sc.sc) as TheC[] : []
-                        )
-                    )
-                } else {
-                    T.sc.more = nextle?.sc ? n.o(nextle.sc) : []
-                }
+                const nextles = this.get_next_levels(T)
+                T.sc.more = nextles.flatMap(lv => lv.sc ? n.o(lv.sc) as TheC[] : [])
                 V.organise && console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
             },
 
@@ -1580,14 +1594,15 @@ export const classes: Record<string, new (opt: any) => Housing> = {
 // The base scheme drives Selection.process() depth by depth:
 //   depth 0: House itself  (is_inst — House is its own instance)
 //   depth 1: A particles   -> find {A:1}
-//   depth 2: w particles   -> find {w:1}
+//   depth 2: w particles   -> find {w:1}  scheme_haver: may host %scheme/%lematch
 //   depth 3: r particles   -> find {r:1}
-// Beyond depth 3, w/%scheme lematch particles extend the walk — see
-//   _lematch_levels / get_scheme_level / the each_fn in organise().
+// Beyond depth 2, w/%scheme/%lematch particles extend the walk.
+// Any other node that wants to host sub-schemes can stamp scheme_haver:1 on its
+//   returned level descriptor (or carry it in a %lematch's sc).
 const scheme = [
     { ark: 'H', is_inst: true },
     { ark: 'A', sc: { A: 1 } },
-    { ark: 'w', sc: { w: 1 } },
+    { ark: 'w', sc: { w: 1 }, scheme_haver: 1 },
     { ark: 'r', sc: { r: 1 } },
 ]
 
