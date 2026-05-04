@@ -1,0 +1,19 @@
+Snap:H
+  H:PeeringLive,Run
+    A:Bearing
+      {"mung":["age"]}	self,round:3
+      w:Bearing
+        {"mung":["age"]}	self,round:3
+        see:✅ Bearing  1ba6cebaa5cb5529
+        {"see":"Bearing  hello:true/true  trust:true/true  dc:false"}
+        see:🎉 Bearing hellos complete
+        see:🔒 Bearing trust exchanged
+    A:Nearing
+      {"mung":["age"]}	self,round:3
+      w:Nearing
+        {"mung":["age"]}	self,round:3
+        see:✅ Nearing  687bcd2c3bfb19fd
+        {"see":"Nearing  hello:true/true  trust:true/true  dc:false"}
+        see:🎉 Nearing hellos complete
+        see:🔒 Nearing trust exchanged
+    {"mung":["id"]}	mo:main,interval:3.6

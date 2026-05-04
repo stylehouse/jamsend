@@ -1,0 +1,15 @@
+Snap:H
+  H:PeeringLive,Run
+    A:Bearing
+      {"mung":["age"]}	self,round:2
+      w:Bearing
+        {"mung":["age"]}	self,round:2
+        see:✅ Bearing  1ba6cebaa5cb5529
+        {"see":"Bearing  hello:false/false  trust:false/false  dc:true"}
+    A:Nearing
+      {"mung":["age"]}	self,round:2
+      w:Nearing
+        {"mung":["age"]}	self,round:2
+        see:✅ Nearing  687bcd2c3bfb19fd
+        waits:inbound connection
+    {"mung":["id"]}	mo:main,interval:3.6

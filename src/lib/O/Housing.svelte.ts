@@ -1056,6 +1056,13 @@ export class House extends StorableHousing {
             }
         }
     }
+    // this is an elvis method that does nothing,
+    //  but counts towards "busy", so Story will wait for a stream of these...
+    //   a primitive way to lock in experiment running time
+    //    away from the quick-as-possible nature of most steps
+    e_nichtstun(A,w,e) {
+        // < become e:noop, which currently actually does think(), but allows a w targeted
+    }
 
     // -------------------------------------------------------------------------
     // self_timekeeping, agency_officing, Aw_satisfied, i_unemits_o_Aw

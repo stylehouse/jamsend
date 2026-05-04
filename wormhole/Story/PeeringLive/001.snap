@@ -1,0 +1,11 @@
+Snap:H
+  H:PeeringLive,Run
+    A:Bearing
+      {"mung":["age"]}	self,round
+      w:Bearing
+        {"mung":["age"]}	self,round
+    A:Nearing
+      {"mung":["age"]}	self,round
+      w:Nearing
+        {"mung":["age"]}	self,round
+    {"mung":["id"]}	mo:main,interval:3.6

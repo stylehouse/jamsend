@@ -1,0 +1,27 @@
+story:PeeringLive
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:see
+      style:background-color,v:#2fb155
+    matstyle:waits
+      style:background-color,v:#8e29d6
+  Plan
+  Opt
+    For
+    noCyto
+  TimeSpool
+    TimeTotal:beliefs,avg:0.111
+      sample:0.125,at:1777870583
+      sample:0.152,at:1777870602
+      sample:0.157,at:1777870612
+      sample:0.162,at:1777870640
+      sample:0.067,at:1777870665
+      sample:0.067,at:1777870701
+      sample:0.045,at:1777870756
+  step,dige:933e32bc4d5c6b5d
+  step:2,dige:6fa13fdc19b23179
+  step:3,dige:a539df9a3b7090b7
+  step:4,dige:f3ee2aa94bec922f
