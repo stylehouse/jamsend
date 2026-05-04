@@ -4,7 +4,7 @@ Snap:H
       {"mung":["age"]}	self,round:4
       w:Bearing
         {"mung":["age"]}	self,round:4
-        see:✅ Bearing  1ba6cebaa5cb5529
+        see:✅ Bearing  7acf614d876d69a4
         {"see":"Bearing  hello:true/true  trust:true/true  dc:false"}
         see:🎉 Bearing hellos complete
         see:🔒 Bearing trust exchanged
@@ -12,7 +12,7 @@ Snap:H
       {"mung":["age"]}	self,round:4
       w:Nearing
         {"mung":["age"]}	self,round:4
-        see:✅ Nearing  687bcd2c3bfb19fd
+        see:✅ Nearing  8cbc667bb0c8e748
         {"see":"Nearing  hello:true/true  trust:true/true  dc:false"}
         see:🎉 Nearing hellos complete
         see:🔒 Nearing trust exchanged

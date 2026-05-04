@@ -40,8 +40,23 @@ export class IdentoCrypto {
     public publicKey:ed.Bytes = $state()
     public privateKey:ed.Bytes = $state()
 
-    async generateKeys() {
-        const privateKey = ed.utils.randomPrivateKey()
+    async generateKeys(seed?: string | Uint8Array) {
+        let privateKey: Uint8Array;
+
+        if (seed) {
+            // Deterministic path for testing
+            if (typeof seed === 'string') {
+                // Hash the string to ensure a consistent 32-byte array
+                const encoder = new TextEncoder();
+                const dataBuffer = encoder.encode(seed);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+                privateKey = new Uint8Array(hashBuffer);
+            } else {
+                privateKey = seed; // If passing raw bytes directly
+            }
+        } else {
+            privateKey = ed.utils.randomPrivateKey()
+        }
         const publicKey = await ed.getPublicKeyAsync(privateKey)
 
         this.replaceKeys({ publicKey, privateKey })

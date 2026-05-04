@@ -57,7 +57,7 @@
             //   then main() brings us back in for normal beliefs flow.
             H.post_do(async () => {
                 const Id = new Idento()
-                await Id.generateKeys()
+                await Id.generateKeys(w.sc.w)
                 const prepub   = Id.pretty_pubkey()
                 A.c.Id         = Id
                 A.c.prepub     = prepub
