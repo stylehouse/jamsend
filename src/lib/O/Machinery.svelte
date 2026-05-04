@@ -41,7 +41,30 @@
     // Peeringinst ghost — a second test-case game with its own Cyto instance.
     Run_A_Peeringinst(this: House) {
         const H = this
-        H.i({ A: 'Peeringinst' }).i({ w: 'Peeringinst' })
+        let w = H.i({ A: 'Peeringinst' }).i({ w: 'Peeringinst' })
+
+
+        // ── declare %scheme once ──────────────────────────────────────
+        // %scheme:'X' is a bucket particle — its direct children are
+        // pattern declarations {sc:{...}, class?:'ClassName'}.
+        // get_scheme_level picks them up via sp.o({}), never via
+        // o({lematch:1}), so no collision with any existing .lematch().
+
+        if (!w.oa({ scheme: 'Peering' })) {
+            const sp = w.i({ scheme: 'Peering' })
+            // one Peering per House; class drives concretion
+            sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering' })
+        }
+
+        if (!w.oa({ scheme: 'Pier' })) {
+            const sp = w.i({ scheme: 'Pier' })
+            // data-only tier: no class -> particles tracked, no inst yet
+            // < add class:'Pier' (or a second child) once actualised
+            //   promotion logic decides when to spawn the Pier() object
+            sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier' })
+        }
+
+        
         console.log(`🟦 ${H.name} Peeringinst wired`)
     },
     // // host a Peering and its Pier
@@ -67,26 +90,6 @@
         // avail these to concretion() here for now
         register_class('Peering',WormholeNav)
         register_class('Pier',Pier)
-
-        // ── declare %scheme once ──────────────────────────────────────
-        // %scheme:'X' is a bucket particle — its direct children are
-        // pattern declarations {sc:{...}, class?:'ClassName'}.
-        // get_scheme_level picks them up via sp.o({}), never via
-        // o({lematch:1}), so no collision with any existing .lematch().
-
-        if (!w.oa({ scheme: 'Peering' })) {
-            const sp = w.i({ scheme: 'Peering' })
-            // one Peering per House; class drives concretion
-            sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering' })
-        }
-
-        if (!w.oa({ scheme: 'Pier' })) {
-            const sp = w.i({ scheme: 'Pier' })
-            // data-only tier: no class -> particles tracked, no inst yet
-            // < add class:'Pier' (or a second child) once actualised
-            //   promotion logic decides when to spawn the Pier() object
-            sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier' })
-        }
 
         // ── autovivify one Peering and two Pier particles ─────────────
         // In production: Peering from stored config, Piers from Thangs

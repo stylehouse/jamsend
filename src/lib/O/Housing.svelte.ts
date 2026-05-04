@@ -700,7 +700,7 @@ export class House extends StorableHousing {
     //   next_lematches trickles down T** so deeper nodes never re-query the tree.
     // -------------------------------------------------------------------------
     unwrap_lematch(pat: TheC): Record<string, any> {
-        const { lematch: _, ...desc } = pat.sc_has as any
+        const { lematch: _, ...desc } = pat.sc as any
         desc.next_lematches = pat.o({ lematch: 1 }) as TheC[]
         return desc
     }
@@ -729,7 +729,8 @@ export class House extends StorableHousing {
         const parent_T  = T.c.path[depth - 1] as any
         const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
         const cur_n     = T.sc.n as TheC | undefined
-        if (cur_n?.sc.w == 'Peeringinst') debugger
+        let pan = parent_T?.sc?.n
+        // if (pan?.sc.w == 'Peeringinst') debugger
         if (cur_n && parent_lv) {
             if (parent_lv.next_lematches?.length) {
                 const lv = this.find_lematch(cur_n, parent_lv.next_lematches)
@@ -761,6 +762,7 @@ export class House extends StorableHousing {
             }
             if (level.scheme_haver && cur_n) {
                 const sp = cur_n.o({ scheme: 1 })[0] as TheC | undefined
+                // if (cur_n?.sc.w == 'Peeringinst') debugger
                 if (sp) return (sp.o({ lematch: 1 }) as TheC[]).map(p => this.unwrap_lematch(p))
             }
         }
@@ -856,7 +858,7 @@ export class House extends StorableHousing {
                 this.apply_scheme(T, e)
                 if (!T.sc.level) { T.sc.not = 1; return }
                 const nextles = this.get_next_levels(T)
-                T.sc.more = nextles.flatMap(lv => lv.sc ? n.o(lv.sc) as TheC[] : [])
+                T.sc.more = nextles.flatMap(lv => lv.sc_has ? n.o(lv.sc_has) as TheC[] : [])
                 V.organise && console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
             },
 

@@ -4,14 +4,14 @@ Snap:H
       {"mung":["age"]}	self,round:2
       w:Peeringinst
         scheme:Peering
-          Peering
+          {"ref":{"sc_has":"Object()"}}	lematch,class:Peering
         scheme:Pier
-          Pier
+          {"ref":{"sc_has":"Object()"}}	lematch,class:Pier
         Peering,name:testPeering
         Pier,name:alice
         Pier,name:bob
         {"mung":["age"]}	self,round:2
-        {"see":"Peering: testPeering awaiting concretion..."}
+        {"see":"Peering: testPeering -> WormholeNav"}
         {"see":"Pier: alice awaiting concretion..."}
         {"see":"Pier: bob awaiting concretion..."}
     {"mung":["id"]}	mo:main,interval:3.6
@@ -33,8 +33,8 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  upsert,id:cytoid_1_1_1_1,label:Peering,parent:cytoid_1_1
-    style,background-color:#8e29d6
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"lematch\nclass:Peering","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
     style,color:#ccc
     style,height:20
     style,shape:ellipse
@@ -45,8 +45,8 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  upsert,id:cytoid_1_1_2_1,label:Pier,parent:cytoid_1_1
-    style,background-color:#c5b759
+  {"upsert":1,"id":"cytoid_1_1_2_1","label":"lematch\nclass:Pier","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
     style,color:#ccc
     style,height:20
     style,shape:ellipse
