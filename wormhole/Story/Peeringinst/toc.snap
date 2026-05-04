@@ -12,6 +12,8 @@ story:Peeringinst
       style:background-color,v:#c5b759
     matstyle:see
       style:background-color,v:#298699
+    matstyle:lematch
+      style:background-color,v:#bc2476
   Plan
   Opt
     For

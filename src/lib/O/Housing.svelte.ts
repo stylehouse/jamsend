@@ -537,7 +537,7 @@ export class House extends StorableHousing {
         const depth = T.c.path.length - 1
         if (depth === 0) return 1
 
-        const level = scheme[depth]
+        const level = organise_scheme[depth]
         if (!level || level.is_inst) return 1
 
         const n = T.sc.n as TheC
@@ -694,23 +694,26 @@ export class House extends StorableHousing {
 
     // -------------------------------------------------------------------------
     // unwrap_lematch: strip the %lematch envelope from pat.sc.
-    //   pat.sc = { lematch:1, sc:{match pattern}, class?:'Ctor', ...rest }
+    //   pat.sc = { lematch:1, sc_has:{match pattern}, class?:'Ctor', ...rest }
     //   pat.o({lematch:1}) = child %lematch particles for the next depth
     //   Returns { sc, class?, next_lematches, ...rest }.
     //   next_lematches trickles down T** so deeper nodes never re-query the tree.
     // -------------------------------------------------------------------------
     unwrap_lematch(pat: TheC): Record<string, any> {
-        const { lematch: _, ...desc } = pat.sc as any
+        const { lematch: _, ...desc } = pat.sc_has as any
         desc.next_lematches = pat.o({ lematch: 1 }) as TheC[]
         return desc
     }
 
     // Match cur_n against an array of %lematch particles.
-    //  Returns the first unwrapped level whose .sc matches, or null.
+    //  Returns the first unwrapped level whose .sc_has matches, or null.
+    //  Throws if any particle still uses the deprecated 'sc' key —
+    //   that collides with TheC's constructor signature via _C().
     find_lematch(cur_n: TheC, lm_particles: TheC[]): Record<string, any> | null {
         for (const pat of lm_particles) {
             const lv = this.unwrap_lematch(pat)
-            if (lv.sc && cur_n.matches(lv.sc)) return lv
+            if ('sc' in lv) throw `%lematch particle uses deprecated key 'sc' — rename to 'sc_has'`
+            if (lv.sc_has && cur_n.matches(lv.sc_has)) return lv
         }
         return null
     }
@@ -726,6 +729,7 @@ export class House extends StorableHousing {
         const parent_T  = T.c.path[depth - 1] as any
         const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
         const cur_n     = T.sc.n as TheC | undefined
+        if (cur_n?.sc.w == 'Peeringinst') debugger
         if (cur_n && parent_lv) {
             if (parent_lv.next_lematches?.length) {
                 const lv = this.find_lematch(cur_n, parent_lv.next_lematches)
@@ -739,7 +743,7 @@ export class House extends StorableHousing {
                 }
             }
         }
-        return scheme[depth]
+        return organise_scheme[depth]
     }
 
     // -------------------------------------------------------------------------
@@ -760,7 +764,7 @@ export class House extends StorableHousing {
                 if (sp) return (sp.o({ lematch: 1 }) as TheC[]).map(p => this.unwrap_lematch(p))
             }
         }
-        const next = scheme[T.c.path.length]
+        const next = organise_scheme[T.c.path.length]
         return next ? [next] : []
     }
     // -------------------------------------------------------------------------
@@ -1599,11 +1603,11 @@ export const classes: Record<string, new (opt: any) => Housing> = {
 // Beyond depth 2, w/%scheme/%lematch particles extend the walk.
 // Any other node that wants to host sub-schemes can stamp scheme_haver:1 on its
 //   returned level descriptor (or carry it in a %lematch's sc).
-const scheme = [
+const organise_scheme = [
     { ark: 'H', is_inst: true },
-    { ark: 'A', sc: { A: 1 } },
-    { ark: 'w', sc: { w: 1 }, scheme_haver: 1 },
-    { ark: 'r', sc: { r: 1 } },
+    { ark: 'A', sc_has: { A: 1 } },
+    { ark: 'w', sc_has: { w: 1 }, scheme_haver: 1 },
+    { ark: 'r', sc_has: { r: 1 } },
 ]
 
 export function register_class(key: string, ctor: new (opt: any) => Housing) {

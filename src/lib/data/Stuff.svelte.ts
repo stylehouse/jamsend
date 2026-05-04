@@ -428,8 +428,10 @@ class StuffIO {
     }
 
     // lematch — generalised rule matcher
-    //   { matching_any: [{sc:{...}} | {sc_only:{...}}],
+    //   { matching_any: [{sc_has:{...}} | {sc_only:{...}}],
     //     means: { skip?, munging?, thence_matching? } }
+    //  sc_has: like .o(), C contains (at least) these keys/values.
+    //  sc_only: C contains exactly these keys/values and no more.
     lematch(rules: any[] = []): {
         skip: boolean
         munging: any[]
@@ -442,12 +444,13 @@ class StuffIO {
 
         for (const rule of rules) {
             const matched = (rule.matching_any as any[]).some((entry: any) => {
+                if ('sc' in entry) throw `lematch rule uses deprecated key 'sc' — rename to 'sc_has'`
                 if (entry.sc_only) {
                     const want = Object.keys(entry.sc_only)
                     if (Object.keys(this.sc).length !== want.length) return false
                     return this.matches(entry.sc_only)
                 }
-                return this.matches(entry.sc)
+                return this.matches(entry.sc_has)
             })
             if (!matched) continue
             for (const m of rule.means?.munging ?? []) munging.push(m)

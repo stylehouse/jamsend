@@ -568,17 +568,17 @@
     cyto_visibility: [
         {
             // depth 0: the scannable H — skip it, install child filter
-            matching_any: [{ sc: { H: 1 } }],
+            matching_any: [{ sc_has: { H: 1 } }],
             means: {
                 thence_matching: [
                     {
                         // depth 1: only A particles allowed; A:Cyto skipped
-                        matching_any: [{ sc: { A: 'Cyto' } }],
+                        matching_any: [{ sc_has: { A: 'Cyto' } }],
                         means: { skip: true },
                     },
                     {
                         // any non-A at depth 1 → skip
-                        matching_any: [{ sc: { watched: 1 } }],
+                        matching_any: [{ sc_has: { watched: 1 } }],
                         means: { skip: true },
                     },
                 ],

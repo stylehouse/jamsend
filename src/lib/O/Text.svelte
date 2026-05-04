@@ -522,7 +522,7 @@
                 ref[k] = objectify(v)
                 continue
             }
-            const is_munged = mr.munging.find(r => Object.hasOwn(r.sc, k))
+            const is_munged = mr.munging.find(r => Object.hasOwn(r.these_sc, k))
             if (is_munged) { mung.push(k); continue }
 
             // blockquote_these_sc: only strings ending in \n get BQ treatment

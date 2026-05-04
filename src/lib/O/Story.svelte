@@ -736,27 +736,27 @@
     story_matching: [
         {
             // House-level particles: mung timer ids (they change every run)
-            matching_any: [{ sc: { H: 1 } }],
+            matching_any: [{ sc_has: { H: 1 } }],
             means: {
                 thence_matching: [
                     { matching_any: [{ sc_only: { mo: 1, interval: 1, id: 1 } }],
-                      means: { munging: [{ sc: { id: 1 }, type: 'timer_id' }] } },
+                      means: { munging: [{ these_sc: { id: 1 }, type: 'timer_id' }] } },
                 ]
             }
         },
         {
             // Actor / worker level: skip self-ref bookkeeping; mung timestamps
-            matching_any: [{ sc: { A: 1 } }, { sc: { w: 1 } }],
+            matching_any: [{ sc_has: { A: 1 } }, { sc_has: { w: 1 } }],
             means: {
                 thence_matching: [
                     { matching_any: [{ sc_only: { self: 1, est: 1 } }],
                       means: { skip: true } },
                     { matching_any: [{ sc_only: { self: 1, round: 1, age: 1 } }],
-                      means: { munging: [{ sc: { age: 1 }, type: 'time' }] } },
+                      means: { munging: [{ these_sc: { age: 1 }, type: 'time' }] } },
                     { matching_any: [{ sc_only: { wasLast: 1, at: 1 } }],
-                      means: { munging: [{ sc: { at: 1 }, type: 'time' }] } },
+                      means: { munging: [{ these_sc: { at: 1 }, type: 'time' }] } },
                     { matching_any: [{ sc_only: { chaFrom: 1, was: 1, v: 1, at: 1 } }],
-                      means: { munging: [{ sc: { at: 1 }, type: 'time' }] } },
+                      means: { munging: [{ these_sc: { at: 1 }, type: 'time' }] } },
                 ]
             }
         },
@@ -767,15 +767,15 @@
             // objecties.ref.  That ref is excluded from diff comparisons (only
             // stringies are diffed), so it is effectively munged without explicit
             // listing.  Add explicit munging entries here if a ref becomes noisy.
-            matching_any: [{ sc: { Story: 1 } }],
+            matching_any: [{ sc_has: { Story: 1 } }],
             means: { thence_matching: [] }
         },
         {
             // source code comes out readable
-            matching_any: [{ sc: { Compile:1, } }],
+            matching_any: [{ sc_has: { Compile:1, } }],
             means: {
                 thence_matching: [
-                    { matching_any: [{ sc: { Output:1, source:1, dige:1 } }],
+                    { matching_any: [{ sc_has: { Output:1, source:1, dige:1 } }],
                       means: { blockquote_these_sc: {source:1} } },
                 ]
             }
