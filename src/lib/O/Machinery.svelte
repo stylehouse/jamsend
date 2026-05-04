@@ -3,7 +3,7 @@
     import { Selection } from "$lib/mostly/Selection.svelte";
     import { register_class, WormholeNav, type House } from "$lib/O/Housing.svelte";
     import { Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
-    import { armap, peel, sex } from "$lib/Y.svelte";
+    import { armap, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
 
     let {M} = $props()
@@ -26,17 +26,6 @@
     //     4. The inst (a stand-in Housing subclass) appears on D and on n.c.inst.
     //     5. The worker reads n.c.inst and stamps a %see.
     //
-    // ── wire-up ───────────────────────────────────────────────────────────────
-    //   In Ghost.svelte, add:
-    //     <Peeringinst {M} />
-    //   In may_begin() (or wherever), call:
-    //     H.Run_A_Peeringinst()
-    //
-    // ── real Peering/Pier classes ─────────────────────────────────────────────
-    //   Replace StubPeering / StubPier with the actual classes when ready.
-    //   StubPeering / StubPier are Housing subclasses that do nothing except
-    //   confirm the concretion lifecycle (started, wake, etc.).
-
     // 
     // Peeringinst ghost — a second test-case game with its own Cyto instance.
     Run_A_Peeringinst(this: House) {
@@ -62,7 +51,10 @@
             // < add class:'Pier' (or a second child) once actualised
             //   promotion logic decides when to spawn the Pier() object
             sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier',
-                args_fn: (n,T) => { return [{prepub:n.sc.name}]  }})
+                args_fn: (n,opt,T) => {
+                    let optia = nex({},opt,'name')
+                    return [{prepub:n.sc.name, lemonsia:4, ...optia}]  
+                }})
         }
 
         
@@ -96,7 +88,7 @@
         // In production: Peering from stored config, Piers from Thangs
         // liveQuery (Dexie rows surfaced as {Pier:1, name, stashed}).
         w.oai({ Peering: 1, name: 'testPeering' })
-        w.oai({ Pier: 1, name: 'alice' })
+        w.oai({ Pier: 1, name: 'alice', pantsathonia:4 })
         w.oai({ Pier: 1, name: 'bob' })
 
         // ── report concretion state ───────────────────────────────────
@@ -114,7 +106,7 @@
 
         for (const p of w.o({ Pier: 1 }) as TheC[]) {
             const label = p.c.inst
-                ? `${p.sc.name} -> ${p.c.inst.constructor.name}`
+                ? `${p.sc.name} -> ${p.c.inst.constructor.name} (${p.c.inst.lemonsia}:${p.c.inst.pantsathonia})`
                 : `${p.sc.name} awaiting concretion...`
             w.i({ see: `Pier: ${label}` })
         }

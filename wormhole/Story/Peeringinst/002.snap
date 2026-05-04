@@ -8,12 +8,12 @@ Snap:H
         scheme:Pier
           {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
         Peering,name:testPeering
-        Pier,name:alice
+        Pier,name:alice,pantsathonia:4
         Pier,name:bob
         {"mung":["age"]}	self,round:4
         {"see":"Peering: testPeering -> WormholeNav"}
-        {"see":"Pier: alice -> Pier"}
-        {"see":"Pier: bob -> Pier"}
+        {"see":"Pier: alice -> Pier (4:4)"}
+        {"see":"Pier: bob -> Pier (4:undefined)"}
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:Peeringinst,isCompound:true
@@ -57,7 +57,7 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_4","label":"Pier\nname:alice","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"Pier\nname:alice\npantsathonia:4","parent":"cytoid_1_1"}
     style,background-color:#c5b759
     style,color:#ccc
     style,height:20
