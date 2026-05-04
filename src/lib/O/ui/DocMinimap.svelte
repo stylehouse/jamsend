@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Langminimap — floating overview strip for the active CM doc.
+    // DocMinimap — floating overview strip for the active CM doc.
     //
     // ── Mount ────────────────────────────────────────────────────────────────
     //
@@ -37,7 +37,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { EditorView } from "@codemirror/view"
     import type { EditorState } from "@codemirror/state"
-    import { foldEffect, unfoldEffect } from "@codemirror/language"
+    import { foldEffect, unfoldEffect, foldedRanges } from "@codemirror/language"
 
     type Region = {
         label:     string
@@ -473,21 +473,26 @@
         const fold_to     = Math.min(region.to_char, state.doc.length)
         if (fold_from >= fold_to) return
 
-        // Detect whether this range is currently folded by checking if any
-        // visible character exists between fold_from and fold_to in the
-        // viewport.  Cheaper than introspecting the fold state directly:
-        // if the line at the fold midpoint is in viewport, it's unfolded.
-        const mid = Math.floor((fold_from + fold_to) / 2)
-        const block = view.lineBlockAt(mid)
-        const is_currently_visible = block.from <= mid && block.to >= mid &&
-                                     block.bottom > block.top + 1
+        // foldedRanges() returns the RangeSet CM maintains internally.
+        // Walk it to check if any fold already covers our range.
+        // Checking block geometry (lineBlockAt) was unreliable — CM still
+        // returns a block for folded ranges, just with zero height, which
+        // varied with CM version and zoom level.
+        const folds  = foldedRanges(state)
+        let is_folded = false
+        const cursor = folds.iter()
+        while (cursor.value !== null) {
+            if (cursor.from <= fold_from && cursor.to >= fold_to) {
+                is_folded = true
+                break
+            }
+            cursor.next()
+        }
 
         view.dispatch({
-            effects: [
-                is_currently_visible
-                    ? foldEffect.of({ from: fold_from, to: fold_to })
-                    : unfoldEffect.of({ from: fold_from, to: fold_to })
-            ]
+            effects: is_folded
+                ? unfoldEffect.of({ from: fold_from, to: fold_to })
+                : foldEffect.of({ from: fold_from, to: fold_to })
         })
     }
 

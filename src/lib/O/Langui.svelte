@@ -98,7 +98,7 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
-    import Langminimap from "./Langminimap.svelte"
+    import DocMinimap from "./ui/DocMinimap.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -566,13 +566,13 @@
     {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}></div>
-    <Langminimap {H} {view} {active_path} />
+    <DocMinimap {H} {view} {active_path} />
 </div>
 {/if}
 
 <style>
     .lte {
-        position: relative;        /* positioning context for Langminimap overlay */
+        position: relative;        /* positioning context for DocMinimap overlay */
         display: flex; flex-direction: column;
         border: 1px solid #1a1a1a; border-radius: 4px;
         background: #0a0a0a; overflow: hidden;
