@@ -680,8 +680,12 @@ export class House extends StorableHousing {
 
         const original_e = e
         this.post_do(async () => {
+            // puts it in D/%inst and T%inst
             const inst = this.concretion(T)
-            T.sc.inst = inst
+            // more available hidden on the client particle:
+            if (n) n.c.inst = inst
+
+            if (level.post_fn) level.post_fn(inst, n, this)
             if ('started' in inst && !(inst as any).started) {
                 await this.inst_started(inst)
             }
@@ -810,8 +814,7 @@ export class House extends StorableHousing {
         const inst = new _class(...ctor_args)
         if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
         D.i({ inst, concretion: ctag })
-        // stamp on n so callers reach inst via n.c.inst without D** walk
-        if (n) n.c.inst = inst
+        T.sc.inst = inst
         return inst
     }
 
