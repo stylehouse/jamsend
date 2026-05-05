@@ -1092,6 +1092,10 @@
         }
     },
     async radiostock(A,w) {
+        if (!w.oa({consumers:1,of:'radiostock'})) {
+            // once at init - don't be the exact same randomness each time
+            M.prng = [...crypto.getRandomValues(new Uint32Array(4))]
+        }
         // races to keep stock ahead of pointers
         // < needs timeout? await Pier.promise_destroy?
         let co = await w.r({consumers:1,of:'radiostock'})
