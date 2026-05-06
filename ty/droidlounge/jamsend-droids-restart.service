@@ -4,5 +4,5 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/home/s/src/jamsend/ty
+WorkingDirectory=/home/s/src/prod-jamsend/ty/droidlounge
 ExecStart=/usr/bin/docker compose down && /usr/bin/docker compose up -d

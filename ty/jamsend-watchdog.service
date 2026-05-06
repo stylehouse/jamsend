@@ -7,7 +7,7 @@ Wants=network-online.target
 [Service]
 User=1000
 Type=simple
-WorkingDirectory=/home/s/src/jamsend/ty
+WorkingDirectory=/home/s/src/prod-jamsend/ty
 ExecStart=/usr/bin/docker compose up
 ExecStop=/usr/bin/docker compose down
 Restart=always

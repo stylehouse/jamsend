@@ -20,19 +20,19 @@ forward_ports() {
     # the Caddy ports we expose to the web - 443 is disallowed by upnp. you'll have to log in to your router.
     forward_port TCP 9999
 
-    # CoTURN main STUN/TURN ports
-    forward_port UDP 3478
-    forward_port TCP 3478
+    # # CoTURN main STUN/TURN ports
+    # forward_port UDP 3478
+    # forward_port TCP 3478
 
-    # CoTURN TURNS (TLS)
-    forward_port TCP 5349
+    # # CoTURN TURNS (TLS)
+    # forward_port TCP 5349
 
-    # CoTURN relay port range — one per concurrent TURN session
-    #  you'll have to log in to your router for a bigger range
-    #   I don't have much proof this helps.
-    for port in $(seq 49152 49168); do
-        forward_port UDP $port
-    done
+    # # CoTURN relay port range — one per concurrent TURN session
+    # #  you'll have to log in to your router for a bigger range
+    # #   I don't have much proof this helps.
+    # for port in $(seq 49152 49168); do
+    #     forward_port UDP $port
+    # done
 
     echo "$(date): UPnP forwards completed"
 }

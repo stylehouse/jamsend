@@ -10,8 +10,8 @@ Type=simple
 Environment=DISPLAY=:0
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 # Same config file that docker-compose reads 
-EnvironmentFile=/home/s/src/jamsend/ty/jamsend-supervisor.conf
-ExecStart=/usr/bin/python3 /home/s/src/jamsend/ty/launcher.py
+EnvironmentFile=/home/s/src/prod-jamsend/ty/jamsend-supervisor.conf
+ExecStart=/usr/bin/python3 /home/s/src/prod-jamsend/ty/launcher.py
 ExecStopPost=/bin/rm -f /tmp/jamsend-supervisor/chrome_launcher.sock
 Restart=always
 RestartSec=3
