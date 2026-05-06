@@ -15,7 +15,11 @@ ExecStart=/bin/bash -c ' \
         sleep 5; \
     done; \
     echo "/mnt/music is ready. Performing bind mounts..."; \
-    mount --bind -o ro /mnt/music /mnt/jamsend-music; \
+    # < some day just do this, is on ubuntu24 but not debian13:
+    #mount --bind -o ro /mnt/music /mnt/jamsend-music; \
+    mount --bind /mnt/music /mnt/jamsend-music; \
+    mount -o remount,bind,ro /mnt/jamsend-music; \
+
     mount --bind /mnt/jamsend-appcache /mnt/jamsend-music/.jamsend; \
     echo "Mounts complete."'
 ExecStop=/bin/bash -c ' \
