@@ -11,7 +11,6 @@
     import Pirating from "./Pirating.svelte";
    
     let {M} = $props()
-    M.prng = [...crypto.getRandomValues(new Uint32Array(4))]
     // making moves to provision and consume radio
     // < raterm infers when %irecord_ts is near live edge
     //    from pr steadily arriving almost late
