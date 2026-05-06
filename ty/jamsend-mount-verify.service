@@ -5,6 +5,10 @@ After=local-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# in case /mnt/music is an sshfs mount
+MountFlags=shared
+BindPaths=/mnt/music
+
 ExecStart=/bin/bash -c ' \
     until [ "$(ls -A /mnt/music 2>/dev/null)" ]; do \
         echo "Waiting for /mnt/music to be decrypted and populated..."; \
