@@ -2,7 +2,7 @@
 user=$(id -u)
 group=$(id -g)
 SERVICE_NAME="jamsend-mount-verify.service"
-SOURCE_SERVICE="ty/$SERVICE_NAME"
+SOURCE_SERVICE="$SERVICE_NAME"
 
 sudo mkdir -p /mnt/jamsend-music
 sudo mkdir -p /mnt/jamsend-appcache
