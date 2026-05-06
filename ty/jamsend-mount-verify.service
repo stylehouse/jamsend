@@ -9,14 +9,14 @@ RemainAfterExit=yes
 MountFlags=shared
 BindPaths=/mnt/music
 
+# < some day just do this, is on ubuntu24 but not debian13:
+#mount --bind -o ro /mnt/music /mnt/jamsend-music; \
 ExecStart=/bin/bash -c ' \
     until [ "$(ls -A /mnt/music 2>/dev/null)" ]; do \
         echo "Waiting for /mnt/music to be decrypted and populated..."; \
         sleep 5; \
     done; \
     echo "/mnt/music is ready. Performing bind mounts..."; \
-    # < some day just do this, is on ubuntu24 but not debian13:
-    #mount --bind -o ro /mnt/music /mnt/jamsend-music; \
     mount --bind /mnt/music /mnt/jamsend-music; \
     mount -o remount,bind,ro /mnt/jamsend-music; \
 
