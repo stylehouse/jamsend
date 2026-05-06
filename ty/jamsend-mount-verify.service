@@ -19,7 +19,6 @@ ExecStart=/bin/bash -c ' \
     echo "/mnt/music is ready. Performing bind mounts..."; \
     mount --bind /mnt/music /mnt/jamsend-music; \
     mount -o remount,bind,ro /mnt/jamsend-music; \
-
     mount --bind /mnt/jamsend-appcache /mnt/jamsend-music/.jamsend; \
     echo "Mounts complete."'
 ExecStop=/bin/bash -c ' \
