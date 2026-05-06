@@ -5,10 +5,6 @@ After=local-fs.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# in case /mnt/music is an sshfs mount
-MountFlags=shared
-BindPaths=/mnt/music
-
 # < some day just do this, is on ubuntu24 but not debian13:
 #mount --bind -o ro /mnt/music /mnt/jamsend-music; \
 ExecStart=/bin/bash -c ' \
