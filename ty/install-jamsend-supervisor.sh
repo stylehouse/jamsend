@@ -59,3 +59,8 @@ echo "  journalctl -u jamsend-watchdog.service -f"
 
 echo "Or more broadly:"
 echo "  systemctl status 'jamsend*'"
+
+echo "Remote view with:"
+echo "  ty/xvfb-viewer.sh w"
+echo "Restart remote viewing services, in order, with:"
+echo "  ty/restart.sh"

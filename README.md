@@ -56,7 +56,9 @@ There are many non-frontend things to do. See Issues on github, or comments star
 
 DevTools with 'pause on exception' will need to ignore the line in Decoder.ts with a meaningless RangeError, etc, it sometimes adds random breakpoints, which can be ignored or switched off in the expandy-rack to the right, between Watch and Scope.
 
-To use *prod.sh*, see *Peer_OPTIONS*.
+To use *prod.sh*, see *Peer_OPTIONS*. See also *ty/* to run a flock of chrome instances with your identities.
+
+Identities (an OurPeering) can be copied out of and into the UI somewhere, if you defeat the FaceSucker
 
 ## objects, data layer
 
@@ -155,8 +157,4 @@ If your docker0 interface isnt 172.17.0.1 (so eg _leproxy_ can reverse to it), e
 
 ## Licensing
 
-This project is licensed under the terms of the **GNU Affero General Public License v3.0 or later**. The full text of the license can be found in the [LICENSE](LICENSE) file.
-
-Also you must release everything you build with it that is useful, eg makes money, entirely enough to be as useful as it is for you, with luscious writes about how it all is. Don't hold back! You're about to die!
-
-Copyright (c) 2025 github.com/stylehouse
+Is AGPL 3.0 or later, no holding back releasing your derived work and notes and all. We want working systems here on Earth, remain open. Copyright (c) 2025 github.com/stylehouse
