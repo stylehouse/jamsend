@@ -1,0 +1,18 @@
+[Unit]
+Description=Jamsend Puppeteer Watchdog (VM-native)
+Documentation=Monitors Chrome via CDP; signals virtreset.py on the host via shared Unix socket
+After=jamsend-chromium.service
+Requires=jamsend-chromium.service
+
+[Service]
+User=jamsend
+Type=simple
+WorkingDirectory=/opt/jamsend-src/ty
+EnvironmentFile=/opt/jamsend-src/ty/jamsend-supervisor.conf
+EnvironmentFile=-/opt/jamsend-src/ty/jamsend-supervisor-vm.conf
+ExecStart=/usr/bin/node /opt/jamsend-src/ty/watchdog.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

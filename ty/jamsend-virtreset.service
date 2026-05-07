@@ -1,0 +1,18 @@
+[Unit]
+Description=Jamsend VM Reset Controller
+Documentation=Reverts jamsend-appservers to snap3 on watchdog signal or memory pressure
+After=libvirtd.service network.target
+Requires=libvirtd.service
+
+[Service]
+User=1000
+Type=simple
+# __PROD_DIR__ is substituted by install-jamsend-virt.sh at deploy time
+EnvironmentFile=__PROD_DIR__/ty/jamsend-supervisor.conf
+ExecStart=/usr/bin/python3 __PROD_DIR__/ty/virtreset.py
+ExecStopPost=/bin/rm -f /tmp/jamsend-supervisor/chrome_launcher.sock
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
