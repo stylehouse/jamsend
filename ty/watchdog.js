@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer-core');
 const net = require('net');
+process.stdout._handle?.setBlocking(true);
 
 const SOCKET_PATH = '/tmp/jamsend-supervisor/chrome_launcher.sock';
 
