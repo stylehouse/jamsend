@@ -19,6 +19,15 @@ install_unit() {
     sudo chmod 644 "$DEST"
 }
 
+# Required for -R tunnels to bind to specific addresses (not just 127.0.0.1)
+if ! sudo grep -q "^GatewayPorts clientspecified" /etc/ssh/sshd_config; then
+    echo "Configuring sshd: GatewayPorts clientspecified..."
+    echo "GatewayPorts clientspecified" | sudo tee -a /etc/ssh/sshd_config
+    sudo systemctl restart sshd
+else
+    echo "sshd GatewayPorts already configured."
+fi
+
 install_unit "jamsend-prod.service"
 
 echo "Reloading systemd daemon..."

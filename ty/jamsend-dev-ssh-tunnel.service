@@ -1,0 +1,20 @@
+[Unit]
+Description=SSH Reverse Tunnel - Expose jamsend-dev (172.17.0.1:9091) on wi:172.17.0.1:9091
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# User service inherits SSH_AUTH_SOCK from the session keyring
+ExecStart=ssh \
+    -N \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=10 \
+    -o ServerAliveCountMax=3 \
+    -R 172.17.0.1:9091:172.17.0.1:9091 wi
+# Retry quickly — tunnel drops often on flaky links
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
