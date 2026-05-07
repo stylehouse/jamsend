@@ -1,0 +1,14 @@
+[Unit]
+Description=Window manager for jamsend virtual display
+After=jamsend-xvfb.service
+Requires=jamsend-xvfb.service
+
+[Service]
+User=1000
+Environment=DISPLAY=:10
+ExecStart=/usr/bin/openbox --config-file /home/s/src/prod-jamsend/ty/openbox-rc.xml
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
