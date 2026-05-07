@@ -211,7 +211,7 @@
         grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
         gap: 1em;
         max-width: 80vw;
-        max-height: calc(80vh - 100px);
+        max-height: 100vh;
         overflow: auto;
     }
     
