@@ -17,125 +17,141 @@
 // Particle layout:
 //   w:Bearing / w:Nearing
 //     {Peerily:1}         .c.P = Peerily instance
-//     {Peering:1}         .c.inst = Peering  (pre-set — bypasses concretion,
-//                          .sc.prepub          create_Peering wires all eer handlers)
+//     {Peering:1}         .c.inst = Peering  (via concretion + post_fn)
 //       /{open:1}             present while connected to PeerServer
-//       /{stashed:1, k, v}    live dump of eer.stashed
 //       /{Id:1}           .c.Id = Idento
-//     {Pier:1, pub:'…'}   .c.inst = Pier  (concretion fires outbound;
-//                                           shim pre-sets c.inst inbound)
-//       /{stashed:1, k, v}    live dump of pier.stashed
+//       /{stashed:1,k,v}      live dump of eer.stashed
+//     {Pier:1, pub:'…'}   .c.inst = Pier
+//       /{stashed:1,k,v}      live dump of pier.stashed
 //
 //   H/{w_PeeringLive:1}/{side:'Bearing'|'Nearing'}.c.w
 //   H/{poke_PeeringLive:1}/{wanted_by:'Bearing'|'Nearing'}
 //
 // Run_A_PeeringLive is async (keygens). Call: await H.Run_A_PeeringLive()
-// then H.main() to begin beliefs.
- 
+// then H.main() to start beliefs.
+
     async Run_A_PeeringLive(this: House) {
         const H = this
- 
+
+        register_class('Peering', Peering)
         register_class('Pier', Pier)
- 
+
         // ── keygen: both in parallel ──────────────────────────────────────────
         const [Id_B, Id_N] = await Promise.all([
             (async () => { const id = new Idento(); await id.generateKeys('Bearing'); return id })(),
             (async () => { const id = new Idento(); await id.generateKeys('Nearing'); return id })(),
         ])
         console.log(`🔑 Bearing ${Id_B}  Nearing ${Id_N}`)
- 
-        // ── H-level structures ────────────────────────────────────────────────
+
         H.c._live ??= {}
         const reg  = H.i({ w_PeeringLive: 1 })
         const poke = H.i({ poke_PeeringLive: 1 })
- 
+
         for (const [side, Id] of [['Bearing', Id_B], ['Nearing', Id_N]] as [string, Idento][]) {
             const w = H.i({ A: side }).i({ w: side })
             reg.i({ side }).c.w = w
             poke.i({ wanted_by: side })
- 
+
             const P = new Peerily({
                 on_Peering: null,
                 on_error:   (e: any) => console.error(`${side} P.error:`, e),
                 save_stash: null,
             })
             w.i({ Peerily: 1 }).c.P = P
- 
-            // shim before i_Peering — create_Peering captures P.Trusting in
-            //   its eer.on('connection') closure when it registers the handler
+
+            // shim before %scheme declaration — create_Peering (called from post_fn)
+            //   registers eer.on('connection', ...) which captures P.Trusting
             P.Trusting = H._PeeringLive_shim(H, w, side)
- 
-            // i_Peering wires all eer handlers (open/connection/disconnected/error)
-            //   and sets P.addresses; pre-set c.inst to bypass concretion
-            const eer   = P.i_Peering(Id)
-            const pn    = w.i({ Peering: 1, name: side.toLowerCase() })
-            pn.c.inst   = eer
-            pn.sc.prepub = Id + ''
-            pn.i({ Id: 1 }).c.Id = Id
- 
-            // %scheme:Pier — concretion fires for outbound {Pier:1} particles
-            //   inbound Piers have c.inst pre-set by the shim, so concretion skips them
+
+            // %scheme:Peering
+            //   concretion:  new Peering(P, Id, {})  — creates PeerJS Peer
+            //   post_fn:     P.i_Peering(Id, eer)    — wires all event handlers
+            //                  (synchronous, before any event can fire)
+            if (!w.oa({ scheme: 'Peering' })) {
+                const sp = w.i({ scheme: 'Peering' })
+                const w_c = w, P_c = P, Id_c = Id
+                sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering',
+                    args_fn: (n: TheC) => [P_c, n.c.Id ?? Id_c, {}],
+                    post_fn: (eer: Peering, n: TheC) => {
+                        const id = n.c.Id ?? Id_c
+                        P_c.i_Peering(id, eer)   // wires handlers + addresses
+                        n.sc.prepub = id + ''
+                        // eer.Peer open/disconnected → update {open:1} + poke demand
+                        eer.Peer.on('open', () => {
+                            n.oai({ open: 1 })
+                            H.c._live[`${side}_prepub`] = id + ''
+                            const wb = poke.o({ wanted_by: side })[0] as TheC | undefined
+                            if (wb) poke.drop(wb)
+                            console.log(`✅ ${side} open`)
+                            H.main()
+                        })
+                        eer.Peer.on('disconnected', () => {
+                            const open_n = n.o({ open: 1 })[0] as TheC | undefined
+                            if (open_n) n.drop(open_n)
+                            console.log(`🔌 ${side} disconnected`)
+                            H.main()
+                        })
+                    }
+                })
+            }
+
+            // %scheme:Pier — outbound Pier particles land here for concretion
+            //   inbound Piers have c.inst pre-set by the shim (concretion skips them)
             if (!w.oa({ scheme: 'Pier' })) {
                 const sp = w.i({ scheme: 'Pier' })
                 const w_c = w
                 sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier',
                     args_fn: (n: TheC) => [{
-                        P:   w_c.o({ Peerily: 1 })[0]?.c.P,
-                        eer: w_c.o({ Peering: 1 })[0]?.c.inst,
-                        pub: n.sc.pub as string,
+                        P:       w_c.o({ Peerily: 1 })[0]?.c.P,
+                        eer:     w_c.o({ Peering: 1 })[0]?.c.inst,
+                        pub:     n.sc.pub as string,
                         stashed: { trust: [] },
                     }]
                 })
             }
- 
-            // eer.Peer open/disconnected — update {open:1} particle + poke demand
-            eer.Peer.on('open', () => {
-                pn.oai({ open: 1 })
-                H.c._live[`${side}_prepub`] = Id + ''
-                const wb = poke.oa({ wanted_by: side }) as TheC | undefined
-                if (wb) poke.drop(wb)
-                console.log(`✅ ${side} open`)
-                H.main()
-            })
-            eer.Peer.on('disconnected', () => {
-                const open_n = pn.oa({ open: 1 }) as TheC | undefined
-                if (open_n) pn.drop(open_n)
-                console.log(`🔌 ${side} disconnected`)
-                H.main()
-            })
+
+            // autovivify the Peering particle; args_fn picks up n.c.Id
+            const pn = w.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
+            pn.c.Id = Id
+            pn.i({ Id: 1 }).c.Id = Id
         }
- 
-        // poke timer: drives e:nichtstun to both ws while any {wanted_by} remains
+
+        // poke timer: drives e:nichtstun to both ws while {wanted_by} particles exist.
+        //   Stops when all wanted_by are dropped or H stops.
+        //   o() (not oa()) used to get the particle; oa() is for boolean guard only.
         H.c._poke_PeeringLive = setInterval(() => {
-            const poke_n = H.oa({ poke_PeeringLive: 1 }) as TheC | undefined
-            if (!poke_n?.o({ wanted_by: 1 }).length) {
-                clearInterval(H.c._poke_PeeringLive)
-                H.c._poke_PeeringLive = null
-                return
+            if (H.stopped) {
+                clearInterval(H.c._poke_PeeringLive); H.c._poke_PeeringLive = null; return
             }
-            for (const sn of (H.oa({ w_PeeringLive: 1 }) as TheC).o({ side: 1 }) as TheC[]) {
+            const poke_n = H.o({ poke_PeeringLive: 1 })[0] as TheC | undefined
+            if (!poke_n?.o({ wanted_by: 1 }).length) {
+                clearInterval(H.c._poke_PeeringLive); H.c._poke_PeeringLive = null; return
+            }
+            const reg_n = H.o({ w_PeeringLive: 1 })[0] as TheC | undefined
+            for (const sn of reg_n?.o({ side: 1 }) ?? [] as TheC[]) {
                 if (sn.c.w) H.i_elvisto(sn.c.w as TheC, 'nichtstun')
             }
         }, 50)
- 
+
         console.log(`🌐 PeeringLive ready`)
         H.main()
     },
- 
-    // shim satisfying P.Trusting.M, wired before P.i_Peering so that
-    //   create_Peering's eer.on('connection') closure captures it
+
+    // shim satisfying P.Trusting.M — set on P before i_Peering (and therefore
+    //   before create_Peering registers its eer.on('connection') closure)
     _PeeringLive_shim(H: House, w: TheC, side: string) {
         return { M: {
-            // called via `await` inside an async connection handler —
-            //   init_begins still runs first, before any further await,
-            //   so con.on('open') is registered before the channel can advance
-            async Peering_i_Pier(eer: any, pub: string, con: any, _inbound: boolean) {
+            // called via `await` in create_Peering's async connection handler.
+            //   init_begins runs first (synchronous), registering con.on('open')
+            //   before the DataChannel can advance to open state.
+            async Peering_i_Pier(_eer: any, pub: string, con: any, _inbound: boolean) {
                 console.log(`🔗 ${side} inbound from ${pub}`)
                 const P    = w.o({ Peerily: 1 })[0]?.c.P
+                const eer  = w.o({ Peering: 1 })[0]?.c.inst
                 const pier = new Pier({ P, eer, pub, stashed: { trust: [] } })
-                pier.init_begins(eer, con, true)    // sync — before any await
+                pier.init_begins(eer, con, true)        // sync — before any await
                 const pn   = w.oai({ Pier: 1, pub, name: pub }) as TheC
-                pn.c.inst  = pier                   // pre-set → concretion skips
+                pn.c.inst  = pier                       // pre-set → concretion skips
                 H.post_do(async () => { H.main() })
             },
             Pier_init_completo(ier: Pier) {
@@ -149,7 +165,7 @@
             ier_is_Good(_ier: Pier): boolean { return true },
             Pier_wont_connect(pub: string) {
                 console.warn(`💔 ${side} wont_connect  ${pub}`)
-                const pn = w.oa({ Pier: 1, pub }) as TheC | undefined
+                const pn = w.o({ Pier: 1, pub })[0] as TheC | undefined
                 if (pn) w.drop(pn)
                 H.main()
             },
@@ -163,71 +179,69 @@
             unemitIntro() {},
         }}
     },
- 
+
     async Bearing(A: TheC, w: TheC) {
         await (this as House)._PeeringLive_main(A, w, 'Bearing')
     },
     async Nearing(A: TheC, w: TheC) {
         await (this as House)._PeeringLive_main(A, w, 'Nearing')
     },
- 
+
     async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
         const H = this as House
- 
+
         const peering_n = w.o({ Peering: 1 })[0] as TheC | undefined
         const eer       = peering_n?.c.inst as Peering | undefined
-        if (!eer) return   // Run_A not yet called
- 
-        // dump eer.stashed into sub-particles each cycle
+        if (!eer) return   // Run_A not yet called or concretion pending
+
+        // dump eer.stashed each cycle
         for (const [k, v] of Object.entries(eer.stashed ?? {})) {
             peering_n!.oai({ stashed: 1, k }).sc.v = v
         }
- 
+
         if (!peering_n!.oa({ open: 1 })) {
             w.oai({ see: `⏳ ${side} → PeerServer…` })
             return
         }
         w.i({ see: `✅ ${side}  ${peering_n!.sc.prepub}` })
- 
-        // ── Phase 2: Bearing initiates outbound connection ────────────────
+
+        // ── Phase 2: Bearing initiates outbound connection ──────────────────
         if (side === 'Bearing') {
             const npub = (H.c._live as any).Nearing_prepub as string | undefined
             if (!npub) { w.oai({ waits: 'Nearing open' }); return }
             if (!w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
                 w.i({ pier_dialling: 1 })
                 const con = eer.connect(npub)
-                // c.inst absent → concretion fires next cycle via %scheme:Pier
+                // place without c.inst → concretion fires next cycle via %scheme:Pier
                 const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
                 pn.c.con  = con   // init_begins picks this up once inst exists
                 console.log(`🐻 Bearing → Nearing  ${npub}`)
             }
         }
- 
-        // ── Pier: outbound gets concretion, inbound shim pre-sets c.inst ─
+
+        // ── Pier reporting ──────────────────────────────────────────────────
         const pier_n = w.o({ Pier: 1 })[0] as TheC | undefined
         if (!pier_n) { w.oai({ waits: 'Pier' }); return }
         const pier   = pier_n.c.inst as Pier | undefined
- 
         if (!pier) { w.oai({ see: `⏳ ${side} Pier awaiting concretion…` }); return }
- 
+
         // outbound: first cycle after concretion, call init_begins with stored con
         if (!pier_n.c.began && pier_n.c.con) {
             pier_n.c.began = true
             pier.init_begins(eer, pier_n.c.con, false)
         }
- 
+
         // dump pier.stashed
         for (const [k, v] of Object.entries(pier.stashed ?? {})) {
             pier_n.oai({ stashed: 1, k }).sc.v = v
         }
- 
+
         w.i({ see: `${side} Pier ${pier.pub?.slice(0, 8)}…  hello:${pier.said_hello}/${pier.heard_hello}  trust:${pier.said_trust}/${pier.heard_trust}` })
         if (pier.said_hello && pier.heard_hello) w.oai({ see: `🎉 ${side} hellos complete` })
         if (pier.heard_trust)                    w.oai({ see: `🔒 ${side} trust exchanged` })
     },
 
 //#endregion
-
 
 
 //#region Peeringinst

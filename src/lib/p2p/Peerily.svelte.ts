@@ -353,20 +353,20 @@ export class Peerily extends VerilyPeerily {
     // < if there are many, it doesn't matter which does outgoing connect()s?
     address_to_connect_from:Peering|null = null
     // create a new listen address (eer)
-    i_Peering(Id:Idento) {
+    i_Peering(Id:Idento, eer?:Peering) {
         let prepub = Id+''
         // this'll track this.addresses/$prepub = eer
-        let eer = this.addresses.get(prepub)
-        if (!eer) {
-            eer = this.create_Peering(Id)
-            this.addresses.set(prepub,eer)
+        if (!this.addresses.get(prepub)) {
+            eer = this.create_Peering(Id, eer)
+            this.addresses.set(prepub, eer)
         }
-        return eer
+        return this.addresses.get(prepub)!
     }
 
-    create_Peering(Id:Idento) {
-        // these listen to one address (for us) each
-        let eer = new Peering(this, Id, Peer_OPTIONS())
+    create_Peering(Id:Idento, eer?:Peering) {
+        // eer may arrive pre-constructed (eg from concretion); wire it up.
+        //   Otherwise create it fresh. Either way all handlers are registered here.
+        eer ||= new Peering(this, Id, Peer_OPTIONS())
         
 
         eer.disconnected = true
