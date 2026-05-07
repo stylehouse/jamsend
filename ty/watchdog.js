@@ -24,14 +24,14 @@ const triggerRestart = (profileName) => {
     client.on('error', (e) => console.error(`Socket error for ${profileName}:`, e.message));
 };
 
-const RESTART_COOLDOWN_MS = 30000;
+const RESTART_COOLDOWN_MS = 25 * 1000;
 const lastRestart = {};  // track when we last restarted each profile
 
 async function checkProfile(name, config) {
     try {
         const browser = await puppeteer.connect({
             browserURL: `http://localhost:${config.port}`,
-            protocolTimeout: 5 * 60 * 1000, // 5m timeout
+            protocolTimeout: 9 * 1000,
         });
         const pages = await browser.pages();
         if (pages.length === 0) throw new Error("No pages found");
