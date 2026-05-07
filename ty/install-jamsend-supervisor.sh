@@ -58,4 +58,4 @@ echo "  journalctl -u jamsend-launcher.service -f"
 echo "  journalctl -u jamsend-watchdog.service -f"
 
 echo "Or more broadly:"
-echo "  sudo systemctl status 'jamsend*'"
+echo "  systemctl status 'jamsend*'"
