@@ -38,13 +38,15 @@ VM_DISK_GB=20
 
 IMAGE_NAME="debian-13-genericcloud-amd64.qcow2"
 BACKING_IMAGE="$SCRIPT_DIR/$IMAGE_NAME"
-OVERLAY="$SCRIPT_DIR/virtualised-appservers.qcow2"
+# overlay lives in libvirt's standard image dir — libvirt-qemu already has access there
+# backing image stays in ty/ as a download cache
+OVERLAY="/var/lib/libvirt/images/jamsend-appservers.qcow2"
 SEED_ISO="$SCRIPT_DIR/jamsend-seed.iso"
 DEBIAN_CLOUD_URL="https://cloud.debian.org/images/cloud/trixie/latest/$IMAGE_NAME"
 
-# gitignore the VM disk images — they're large and non-reproducible
+# gitignore the large/non-reproducible files that live in ty/
 GITIGNORE="$SCRIPT_DIR/.gitignore"
-for entry in "$IMAGE_NAME" "virtualised-appservers.qcow2" "jamsend-seed.iso"; do
+for entry in "$IMAGE_NAME" "jamsend-seed.iso"; do
     grep -qxF "$entry" "$GITIGNORE" 2>/dev/null || echo "$entry" >> "$GITIGNORE"
 done
 
