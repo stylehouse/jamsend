@@ -1,13 +1,14 @@
 [Unit]
 Description=jamsend Chrome Launcher (host-side socket server)
-After=graphical-session.target
+After=jamsend-xvfb.service
+Requires=jamsend-xvfb.service
 Wants=graphical-session.target
 
 [Service]
 User=1000
 Type=simple
 # Ensure we have the display environment for Chromium
-Environment=DISPLAY=:0
+Environment=DISPLAY=:10
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 # Same config file that docker-compose reads 
 EnvironmentFile=/home/s/src/prod-jamsend/ty/jamsend-supervisor.conf
