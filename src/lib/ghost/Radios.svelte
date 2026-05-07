@@ -1026,7 +1026,7 @@
     // shelf to DJ desk
     async pull_stock(A,w,io) {
         // our stream of %records shall be
-        let rec = await io.sc.o(w)
+        let rec = await io.sc.o(this.PF.Pier.prepub)
         if (rec) {
             A.i(rec)
             let very = rec.oa({in_progress:1}) ? "very " : ""
