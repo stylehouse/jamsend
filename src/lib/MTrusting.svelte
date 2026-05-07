@@ -186,7 +186,7 @@
                 <div class='uiing bottom'>
                     <div class='controls'>
                         <span class='rigid'>
-                            {#if !P.dodgy_user}
+                            {#if 1 || !P.dodgy_user}
                                 <button onclick={() => toggle_fullscreen()} class='small'>etc</button>
                             {/if}
                         </span>
