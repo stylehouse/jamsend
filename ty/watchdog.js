@@ -67,5 +67,5 @@ async function checkAll() {
 }
 // now ish
 setTimeout(checkAll, 3000);
-// Check every 2 minutes
-setInterval(checkAll, 2 * 60 * 1000);
+// Check every 30 seconds
+setInterval(checkAll, 30 * 1000);
