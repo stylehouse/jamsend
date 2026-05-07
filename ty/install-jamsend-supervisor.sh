@@ -56,3 +56,6 @@ echo "  journalctl -u jamsend-wm.service -f"
 echo "  journalctl -u jamsend-x11vnc.service -f"
 echo "  journalctl -u jamsend-launcher.service -f"
 echo "  journalctl -u jamsend-watchdog.service -f"
+
+echo "Or more broadly:"
+echo "  sudo systemctl status 'jamsend*'"

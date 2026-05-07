@@ -5,7 +5,7 @@ Requires=jamsend-xvfb.service
 
 [Service]
 User=1000
-ExecStart=/usr/bin/x11vnc -display :10 -localhost -nopw -forever -rfbport 5910
+ExecStart=/usr/bin/x11vnc -display :10 -localhost -nopw -forever -rfbport 5910 -ncache 10 -ncache_cr
 Restart=always
 RestartSec=3
 
