@@ -882,6 +882,7 @@
             }
             if (this.sent_re_client_enids[`${client} ${re.sc.enid}`]) {
                 console.warn("sendeth: DUP "+re.sc.enid)
+                await this.co_cursor_save(co,client,re)  // advance past the DUP
                 return
             }
             this.sent_re_client_enids[`${client} ${re.sc.enid}`] = true
