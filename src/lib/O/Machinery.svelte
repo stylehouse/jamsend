@@ -11,6 +11,14 @@
     onMount(async () => {
     await M.eatfunc({
 
+
+
+
+
+
+
+
+        
 //#region PeeringLive
 // Two real Peerily/Peering/Pier objects connecting inside one House.
 //
@@ -19,11 +27,11 @@
 // A:Bearing/w:Bearing, A:Nearing/w:Nearing — each side's worker.
 //
 // Poke mechanism:
-//   Bearing and Nearing register {poke_w: <w>, side} on w:PeeringLive while
+//   Bearing and Nearing register {poke_w:1, side} on w:PeeringLive while
 //   waiting for eer.open. The interval targets the first registrant's
-//   sc.poke_w with e:nichtstun — a specific method, so _Aw_think dispatches
+//   sc.side with e:nichtstun — a specific method, so _Aw_think dispatches
 //   it without a full think(). Story sees busy; interval stops when no more
-//   {poke_w} particles remain.
+//   {poke_w:1} particles remain.
 //
 // Particle layout per side (Bearing shown):
 //   A:Bearing / w:Bearing
@@ -36,8 +44,8 @@
 //                                                   shim pre-sets inbound)
 //       /{stashed:1, k, v}         live dump of pier.stashed
 //   A:PeeringLive / w:PeeringLive
-//     {poke_w: <w:Bearing n-particle>, side:'Bearing'}
-//     {poke_w: <w:Nearing n-particle>, side:'Nearing'}
+//     {poke_w:1, side:'Bearing'}
+//     {poke_w:1, side:'Nearing'}
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -155,7 +163,7 @@
             }
             const first = w.o({ poke_w: 1 })[0] as TheC | undefined
             if (!first) { clearInterval(w.c._poke); w.c._poke = null; return }
-            H.i_elvisto(first.sc.poke_w as TheC, 'nichtstun')
+            H.i_elvisto(first.sc.side as string, 'nichtstun')
         }, 50)
 
         // ── overall status ────────────────────────────────────────────────────
@@ -230,7 +238,7 @@
         //   w is the n-particle from attend, c.up is already set — i_elvisto works.
         if (!is_open) {
             if (!pl_w.oa({ side })) {
-                pl_w.oai({ poke_w: w, side })
+                pl_w.oai({ poke_w: 1, side })
             }
             if (!peering_n) { w.oai({ see: `⏳ ${side} keygen pending…` }); return }
             w.oai({ see: `⏳ ${side} → PeerServer…` })
@@ -285,9 +293,6 @@
     },
 
 //#endregion
-
-
-
 
 //#region Peeringinst
     // exercise the w/%scheme lematch → concretion pipeline.

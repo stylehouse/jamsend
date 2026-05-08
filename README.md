@@ -56,9 +56,11 @@ There are many non-frontend things to do. See Issues on github, or comments star
 
 DevTools with 'pause on exception' will need to ignore the line in Decoder.ts with a meaningless RangeError, etc, it sometimes adds random breakpoints, which can be ignored or switched off in the expandy-rack to the right, between Watch and Scope.
 
-To use *prod.sh*, see *Peer_OPTIONS*. See also *ty/* to run a flock of chrome instances with your identities.
-
 Identities (an OurPeering) can be copied out of and into the UI somewhere, if you defeat the FaceSucker
+
+## prod
+
+To use *prod.sh*, see *Peer_OPTIONS*. I would ./install.sh then scp (clone) the entire leproxy repo to the server at ~/src/leproxy, then run ~/src/prod-jamsend/prod.sh (that repo is git cloned from my machine, this pulls), then that produces a there/ to scp to your proxy host. See also *ty/* to run a flock of chrome instances with your identities.
 
 ## objects, data layer
 
