@@ -24,8 +24,8 @@ The old approach ran Chrome under Xvfb on the bare host, with a Python launcher 
 
 The new approach runs the entire Xvfb+Chrome stack inside a KVM virtual machine. Instead of restarting Chrome when something goes wrong, the VM is reverted to a saved snapshot that was taken when all three Chromes were healthy and had their handles granted. The handles survive because they're part of the VM's frozen memory state, and the filesystem directories they point to are virtiofs mounts from the host — so they're still there when the VM wakes up.
 
-The install has two stages. The slow part downloads a Debian cloud image, creates a copy-on-write overlay disk, and lets cloud-init install packages — this takes ~30 minutes on the hardware and produces snap0. The fast part SSHes in, drops the service files, starts everything, and takes snap1 — this takes seconds and is re-runnable whenever a service needs fixing.
+It downloads a Debian cloud image, creates a copy-on-write overlay disk, lets cloud-init install packages, SSHes in, drops the service files, starts everything, and takes snap1 — broken into two steps, it can take an hour on a 12 year old laptop. Watching the qcow2 filesize will tell you it is still going.
 
 The grant ceremony happens once after snap1: you VNC in, grant Directory Handles in all three Chrome windows, enable the watchdog, and take snap3. That's the snapshot everything reverts to from then on.
 
-The host runs two services. virtreset listens on the same Unix socket the watchdog writes to, and also polls VM balloon memory — if Chrome signals distress or the VM hits 90% memory, it does virsh snapshot-revert back to snap3. jamsend-virt-vnc-forward socat-forwards port 5910 so the existing xvfb-viewer.sh still works without knowing there's a VM involved.
+The host runs two services. virtreset listens on the same Unix socket the watchdog writes to, and also polls VM balloon memory — if Chrome signals distress or the VM hits 90% memory, it does virsh snapshot-revert back to snap3. virt-viewer.sh does remote viewing.

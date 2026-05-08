@@ -126,13 +126,9 @@ install_rendered_unit() {
 
 install_rendered_unit "jamsend-virtreset.service"
 
-sudo cp "$SCRIPT_DIR/jamsend-virt-vnc-forward.service" /etc/systemd/system/
-sudo chown root:root /etc/systemd/system/jamsend-virt-vnc-forward.service
-sudo chmod 644 /etc/systemd/system/jamsend-virt-vnc-forward.service
-
 sudo systemctl daemon-reload
-sudo systemctl enable jamsend-virtreset.service jamsend-virt-vnc-forward.service
-sudo systemctl restart jamsend-virtreset.service jamsend-virt-vnc-forward.service
+sudo systemctl enable jamsend-virtreset.service
+sudo systemctl restart jamsend-virtreset.service
 
 # =============================================================================
 # Done

@@ -241,6 +241,8 @@ packages:
   - chromium
   - nodejs
   - npm
+  - net-tools
+  - vim
 
 # cloud-init only gets the VM to a usable base: packages installed, virtiofs
 # mounted, npm deps ready. Service setup runs in install-jamsend-virt-step2.sh
