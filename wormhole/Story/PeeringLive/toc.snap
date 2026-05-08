@@ -25,6 +25,7 @@ story:PeeringLive
       sample:0.327,at:1778204886
       sample:0.357,at:1778222618
   step,dige:48e1cb615abbe47c
-  step:2,dige:ea2e16b263077e2c
+  step:2,dige:f0d9c524f14c674a
+    note,frontier
   step:3,dige:f9c2445d69e94f44
   step:4,dige:ed99cf3b34b77762
