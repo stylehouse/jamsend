@@ -16,15 +16,19 @@
 #   jamsend-vnc-forward — socat 127.0.0.1:5910 → VM:5910 (xvfb-viewer.sh unchanged)
 #
 # Snapshot workflow:
-#   snap1  freshly-installed    (services on disk; Chrome starting on first boot)
+#   snap1  freshly-installed    (cloud-init done; Chrome starting)
 #   snap2  chromes-open-waiting (Chrome visible, needs Directory Handle grants)
 #   snap3  handles-ready        (normal resume point; virtreset reverts here)
 #
 # Re-running this script tears everything down and rebuilds from scratch.
 # The backing cloud image is kept and re-used (no re-download).
+#
+# All VM-side setup runs inside cloud-init (write_files + runcmd).
+# The script just waits for cloud-init to finish, then takes snap1.
+# This avoids any race between the SSH poller and package installation.
 
 set -e
-# virsh defaults to qemu:///session for non-root users; we need the system daemon
+# virsh defaults to qemu:///session for non-root users; we always want the system daemon
 export LIBVIRT_DEFAULT_URI=qemu:///system
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -40,41 +44,37 @@ VM_DISK_GB=20
 
 IMAGE_NAME="debian-13-genericcloud-amd64.qcow2"
 BACKING_IMAGE="$SCRIPT_DIR/$IMAGE_NAME"
-OVERLAY="$SCRIPT_DIR/virtualised-appservers.qcow2"
-SEED_ISO="$SCRIPT_DIR/jamsend-seed.iso"
+OVERLAY="$SCRIPT_DIR/jamsend-virt-appservers.qcow2"
+SEED_ISO="$SCRIPT_DIR/jamsend-virt-seed.iso"
 DEBIAN_CLOUD_URL="https://cloud.debian.org/images/cloud/trixie/latest/$IMAGE_NAME"
 
 # gitignore the large/non-reproducible files in ty/
 GITIGNORE="$SCRIPT_DIR/.gitignore"
-for entry in "$IMAGE_NAME" "virtualised-appservers.qcow2" "jamsend-seed.iso"; do
+for entry in "$IMAGE_NAME" "jamsend-virt-appservers.qcow2" "jamsend-virt-seed.iso"; do
     grep -qxF "$entry" "$GITIGNORE" 2>/dev/null || echo "$entry" >> "$GITIGNORE"
 done
 
 # =============================================================================
-# Preflight checks — catch common screwups before touching anything
+# Preflight checks
 # =============================================================================
 
 PREFLIGHT_OK=1
 
 if [ ! -e /dev/kvm ]; then
     echo "ERROR: /dev/kvm not found."
-    echo "       Enable Intel VT-x / AMD-V in BIOS, or load the module:"
-    echo "         sudo modprobe kvm-intel   # or kvm-amd"
+    echo "       Enable Intel VT-x / AMD-V in BIOS, then: sudo modprobe kvm-intel (or kvm-amd)"
     PREFLIGHT_OK=0
 elif [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; then
-    echo "ERROR: /dev/kvm exists but is not accessible to $USER."
-    echo "       Add yourself to the kvm group:  sudo usermod -aG kvm $USER"
-    echo "       Then re-login."
+    echo "ERROR: /dev/kvm not accessible to $USER."
+    echo "       sudo usermod -aG kvm $USER  then re-login"
     PREFLIGHT_OK=0
 fi
 
-# virtiofsd ships separately from qemu on Debian 13 and is easy to miss
 if ! command -v virtiofsd &>/dev/null && [ ! -x /usr/lib/qemu/virtiofsd ]; then
-    echo "ERROR: virtiofsd not found. Install it:  sudo apt install virtiofsd"
+    echo "ERROR: virtiofsd not found.  sudo apt install virtiofsd"
     PREFLIGHT_OK=0
 fi
 
-# the virtiofs source dirs must exist on the host before the VM can start
 for dir in /mnt/jamsend-music /mnt/jamsend-appcache /mnt/jamsend-public /tmp/jamsend-supervisor; do
     if [ ! -d "$dir" ]; then
         echo "ERROR: host directory $dir does not exist."
@@ -86,6 +86,8 @@ done
 
 [ "$PREFLIGHT_OK" -eq 0 ] && exit 1
 
+# =============================================================================
+# 0. Teardown any previous install
 # =============================================================================
 
 echo "=== Tearing down previous install (if any) ==="
@@ -126,7 +128,6 @@ fi
 
 sudo systemctl enable --now libvirtd
 
-# Create the default NAT network (virbr0) if it doesn't exist, then ensure it's running
 if ! virsh net-info default &>/dev/null; then
     echo "Creating default NAT network..."
     virsh net-define /dev/stdin <<'NETXML'
@@ -167,9 +168,8 @@ qemu-img create -f qcow2 \
     -b "$BACKING_IMAGE" -F qcow2 \
     "$OVERLAY" "${VM_DISK_GB}G"
 
-# libvirt-qemu runs QEMU as an unprivileged user and can't traverse home dirs by default;
-# grant it execute rights on every directory in the path down to ty/,
-# and read rights on the disk images themselves
+# libvirt-qemu runs QEMU unprivileged and can't traverse home dirs by default;
+# grant execute on every directory in the path to ty/, read on the disk images
 echo "=== Granting libvirt-qemu access to disk images ==="
 _DIR="$SCRIPT_DIR"
 while [[ "$_DIR" != "/" ]]; do
@@ -181,6 +181,10 @@ sudo setfacl -m u:libvirt-qemu:r "$BACKING_IMAGE"
 
 # =============================================================================
 # 4. Cloud-init seed ISO
+#
+# runcmd mounts the virtiofs shares first, then reads service files straight
+# from the live repo mount — no files are inlined into user-data.
+# By the time cloud-init reports 'done', the VM is fully configured.
 # =============================================================================
 
 echo "=== Building cloud-init seed ISO ==="
@@ -188,8 +192,6 @@ echo "=== Building cloud-init seed ISO ==="
 SEED_DIR=$(mktemp -d)
 trap "rm -rf $SEED_DIR" EXIT
 
-# --- SSH keys ---
-# ty/authorized_keys takes precedence over ~/.ssh/authorized_keys
 if [ -f "$SCRIPT_DIR/authorized_keys" ]; then
     AUTH_KEYS="$SCRIPT_DIR/authorized_keys"
     echo "SSH keys: ty/authorized_keys"
@@ -198,12 +200,16 @@ else
     echo "SSH keys: ~/.ssh/authorized_keys"
 fi
 if [ ! -s "$AUTH_KEYS" ]; then
-    echo "Error: no SSH keys found at $AUTH_KEYS"
-    exit 1
+    echo "Error: no SSH keys found at $AUTH_KEYS"; exit 1
 fi
 
-# Indent each key for the YAML ssh_authorized_keys list
 SSH_KEY_LIST=$(sed 's/^/      - /' "$AUTH_KEYS")
+
+# Service file content is written directly into user-data.
+# Paths are the VM-side paths (/opt/jamsend-src/ty/); the host path ($SCRIPT_DIR)
+# is irrelevant inside the VM — virtiofs maps $PROD_DIR to /opt/jamsend-src.
+# PROFILE_BASE is overridden inline so Chrome profiles land on the VM disk
+# (captured in snapshots) rather than on the host.
 
 cat > "$SEED_DIR/user-data" <<EOF
 #cloud-config
@@ -228,15 +234,50 @@ packages:
   - nodejs
   - npm
 
+# All VM-side setup happens in runcmd.
+# virtiofs is mounted first, then service files are read straight from the repo.
+# The shared services (xvfb, wm, x11vnc) have User=1000 and the host's ty/ path
+# baked in — sed fixes both on the way to /etc/systemd/system/.
+# The virt-specific services already have correct paths and User=jamsend.
+
 runcmd:
   - systemctl enable --now qemu-guest-agent
   - systemctl enable --now ssh
-  # Chrome profiles live on the VM disk so they're captured in snapshots
-  - mkdir -p /home/$VM_USER/.chrome-profiles
-  - chown $VM_USER:$VM_USER /home/$VM_USER/.chrome-profiles
-  # virtiofs mount points
   - mkdir -p /mnt/jamsend-music /mnt/jamsend-appcache /mnt/jamsend-public
   - mkdir -p /tmp/jamsend-supervisor /opt/jamsend-src
+  - mkdir -p /home/$VM_USER/.chrome-profiles
+  - |
+    printf '%s\n' \
+      'jamsend-music      /mnt/jamsend-music      virtiofs  defaults,_netdev  0 0' \
+      'jamsend-appcache   /mnt/jamsend-appcache   virtiofs  defaults,_netdev  0 0' \
+      'jamsend-public     /mnt/jamsend-public     virtiofs  defaults,_netdev  0 0' \
+      'jamsend-supervisor /tmp/jamsend-supervisor virtiofs  defaults,_netdev  0 0' \
+      'jamsend-src        /opt/jamsend-src        virtiofs  defaults,_netdev  0 0' \
+      >> /etc/fstab
+  - mount -a
+  - |
+    TY=/opt/jamsend-src/ty
+    # shared services: fix User=1000 and the host's openbox config-file path
+    sed -e 's|User=1000|User=$VM_USER|' \
+        \$TY/jamsend-xvfb.service \
+        > /etc/systemd/system/jamsend-xvfb.service
+    sed -e 's|User=1000|User=$VM_USER|' \
+        -e 's|--config-file .*|--config-file '\$TY'/openbox-rc.xml|' \
+        \$TY/jamsend-wm.service \
+        > /etc/systemd/system/jamsend-wm.service
+    sed -e 's|User=1000|User=$VM_USER|' \
+        \$TY/jamsend-x11vnc.service \
+        > /etc/systemd/system/jamsend-x11vnc.service
+    # virt-specific services already reference /opt/jamsend-src/ty/ and User=jamsend
+    cp \$TY/jamsend-virt-chromium.service /etc/systemd/system/
+    cp \$TY/jamsend-virt-watchdog.service /etc/systemd/system/
+  - npm install --prefix /opt/jamsend-src/ty
+  - chown -R $VM_USER:$VM_USER /home/$VM_USER/.chrome-profiles
+  - systemctl daemon-reload
+  - systemctl enable jamsend-xvfb.service jamsend-wm.service jamsend-x11vnc.service jamsend-virt-chromium.service
+  # watchdog intentionally left disabled: enabling it before snap3 risks a reset loop
+  # during the Directory Handle grant ceremony
+  - systemctl start jamsend-xvfb.service jamsend-wm.service jamsend-x11vnc.service jamsend-virt-chromium.service
 EOF
 
 cat > "$SEED_DIR/meta-data" <<EOF
@@ -244,7 +285,6 @@ instance-id: $VM_NAME
 local-hostname: jamsend-appservers
 EOF
 
-# Static IP matched by MAC address — the VM is always at VM_IP on virbr0
 cat > "$SEED_DIR/network-config" <<EOF
 version: 2
 ethernets:
@@ -261,7 +301,6 @@ ethernets:
       addresses: [8.8.8.8, 8.8.4.4]
 EOF
 
-# cloud-localds from cloud-image-utils bundles these into a NoCloud seed ISO
 cloud-localds -N "$SEED_DIR/network-config" "$SEED_ISO" \
     "$SEED_DIR/user-data" "$SEED_DIR/meta-data"
 
@@ -271,7 +310,6 @@ cloud-localds -N "$SEED_DIR/network-config" "$SEED_ISO" \
 
 echo "=== Defining VM ==="
 
-# virtiofs requires memfd-backed shared memory between host and guest
 virsh define /dev/stdin <<XMLEOF
 <domain type='kvm'>
   <name>$VM_NAME</name>
@@ -320,6 +358,15 @@ virsh define /dev/stdin <<XMLEOF
       <target type='virtio' name='org.qemu.guest_agent.0'/>
     </channel>
 
+    <!-- SPICE console: lets virt-manager show the desktop over ssh -X -->
+    <!-- bound to localhost only; access via ssh -X then virt-manager on the client -->
+    <graphics type='spice' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
+    <video>
+      <model type='virtio'/>
+    </video>
+
     <!-- virtiofs: host directories passed through to the VM kernel -->
     <filesystem type='mount' accessmode='passthrough'>
       <driver type='virtiofs'/>
@@ -349,15 +396,6 @@ virsh define /dev/stdin <<XMLEOF
       <target dir='jamsend-src'/>
     </filesystem>
 
-    <!-- SPICE console: lets virt-manager show the graphical desktop over ssh -X -->
-    <!-- bound to localhost only; access via ssh -X virt-manager on the client -->
-    <graphics type='spice' autoport='yes' listen='127.0.0.1'>
-      <listen type='address' address='127.0.0.1'/>
-    </graphics>
-    <video>
-      <model type='virtio'/>
-    </video>
-
     <!-- serial console: virsh console jamsend-appservers (Ctrl+] to exit) -->
     <serial type='pty'><target type='isa-serial' port='0'/></serial>
     <console type='pty'><target type='serial' port='0'/></console>
@@ -366,104 +404,45 @@ virsh define /dev/stdin <<XMLEOF
 XMLEOF
 
 # =============================================================================
-# 6. Start VM, wait for SSH
+# 6. Start VM, wait for cloud-init to finish
+#
+# SSH comes up well before cloud-init finishes installing packages.
+# We wait for SSH first (quick), then cloud-init status (however long it takes).
+# No hard timeout: this machine may be slow.
+# Watch progress with: virsh console jamsend-appservers  (Ctrl+] to exit)
 # =============================================================================
 
 echo "=== Starting VM ==="
 virsh start "$VM_NAME"
 
-# cloud-init on first boot installs chromium + nodejs + npm — allow 20 minutes
-# on slow hardware (cpumark ~1500 takes ~15 min); watch progress with:
-#   virsh console jamsend-appservers   (Ctrl+] to exit)
-echo "=== Waiting for SSH at $VM_IP (first boot: up to 20 min on slow hardware) ==="
+echo "=== Waiting for SSH at $VM_IP ==="
+echo "    (watch boot: virsh console $VM_NAME  —  Ctrl+] to exit)"
 SSH_OPTS="-o ConnectTimeout=3 -o StrictHostKeyChecking=no -o BatchMode=yes"
-echo "ssh $SSH_OPTS $VM_USER@$VM_IP"
-for i in $(seq 1 240); do
-    if ssh $SSH_OPTS "$VM_USER@$VM_IP" true 2>/dev/null; then
-        echo "SSH up."
-        break
-    fi
-    [ "$i" -eq 240 ] && { echo "Timed out waiting for SSH after 20 min"; exit 1; }
-    printf "  %d/240 (~%d min elapsed)...\r" "$i" "$(( i * 5 / 60 ))"
+i=0
+while ! ssh $SSH_OPTS "$VM_USER@$VM_IP" true 2>/dev/null; do
+    i=$(( i + 1 ))
+    printf "  %d min elapsed...\r" "$(( i * 5 / 60 ))"
     sleep 5
 done
+echo "SSH up after $(( i * 5 ))s."
+
+echo "=== Waiting for cloud-init to finish (package install takes ~15 min on slow hardware) ==="
+ssh $SSH_OPTS "$VM_USER@$VM_IP" 'sudo cloud-init status --wait --long'
 
 # =============================================================================
-# 7. VM-side setup (runs inside the VM via SSH)
-# =============================================================================
-
-echo "=== Setting up VM internals ==="
-
-# HOST_TY_PATH is passed as an env var so the VM-side bash can substitute
-# it out of the existing service files (which hardcode the host's ty/ path)
-ssh $SSH_OPTS "$VM_USER@$VM_IP" env HOST_TY_PATH="$SCRIPT_DIR" bash <<'VMSETUP'
-set -e
-
-echo "Waiting for cloud-init to finish..."
-sudo cloud-init status --wait
-
-# --- virtiofs fstab entries ---
-# _netdev: wait for virtio devices before mounting (they're not real block devices)
-sudo tee -a /etc/fstab <<'FSTAB'
-jamsend-music       /mnt/jamsend-music       virtiofs  defaults,_netdev  0 0
-jamsend-appcache    /mnt/jamsend-appcache    virtiofs  defaults,_netdev  0 0
-jamsend-public      /mnt/jamsend-public      virtiofs  defaults,_netdev  0 0
-jamsend-supervisor  /tmp/jamsend-supervisor  virtiofs  defaults,_netdev  0 0
-jamsend-src         /opt/jamsend-src         virtiofs  defaults,_netdev  0 0
-FSTAB
-
-sudo mount -a
-echo "virtiofs mounts active."
-
-# --- npm deps for watchdog ---
-cd /opt/jamsend-src/ty && npm install
-
-# --- existing services: substitute the host's ty/ path out; keep everything else ---
-for unit in jamsend-xvfb.service jamsend-wm.service jamsend-x11vnc.service; do
-    sed \
-        -e "s|$HOST_TY_PATH/|/opt/jamsend-src/ty/|g" \
-        -e 's|User=1000|User=jamsend|g' \
-        "/opt/jamsend-src/ty/$unit" \
-        | sudo tee "/etc/systemd/system/$unit" > /dev/null
-done
-
-# --- new VM-specific services already reference /opt/jamsend-src/ty/ ---
-sudo cp /opt/jamsend-src/ty/jamsend-chromium.service /etc/systemd/system/
-sudo cp /opt/jamsend-src/ty/jamsend-watchdog-vm.service \
-        /etc/systemd/system/jamsend-watchdog.service
-sudo chmod 644 /etc/systemd/system/jamsend-{xvfb,wm,x11vnc,chromium,watchdog}.service
-
-sudo systemctl daemon-reload
-
-sudo systemctl enable jamsend-xvfb.service
-sudo systemctl enable jamsend-wm.service
-sudo systemctl enable jamsend-x11vnc.service
-sudo systemctl enable jamsend-chromium.service
-# watchdog intentionally left disabled: enabling it before snap3 risks a reset loop
-# during the grant ceremony
-
-sudo systemctl start jamsend-xvfb.service
-sudo systemctl start jamsend-wm.service
-sudo systemctl start jamsend-x11vnc.service
-sudo systemctl start jamsend-chromium.service
-
-echo "VM services started. Chrome should be opening now."
-VMSETUP
-
-# =============================================================================
-# 8. snap1
+# 7. snap1
 # =============================================================================
 
 echo "=== Taking snap1: freshly-installed ==="
 virsh snapshot-create-as \
     --domain "$VM_NAME" \
     --name snap1 \
-    --description "Services installed; Chrome starting on first boot" \
+    --description "cloud-init done; services enabled; Chrome starting" \
     --memspec snapshot=internal \
     --atomic
 
 # =============================================================================
-# 9. Host-side services
+# 8. Host-side services
 # =============================================================================
 
 echo "=== Installing virtreset and VNC forwarder on host ==="
@@ -479,46 +458,44 @@ install_rendered_unit() {
 }
 
 install_rendered_unit "jamsend-virtreset.service"
-sudo cp "$SCRIPT_DIR/jamsend-vnc-forward.service" /etc/systemd/system/
-sudo chown root:root /etc/systemd/system/jamsend-vnc-forward.service
-sudo chmod 644 /etc/systemd/system/jamsend-vnc-forward.service
+sudo cp "$SCRIPT_DIR/jamsend-virt-vnc-forward.service" /etc/systemd/system/
+sudo chown root:root /etc/systemd/system/jamsend-virt-vnc-forward.service
+sudo chmod 644 /etc/systemd/system/jamsend-virt-vnc-forward.service
 
 sudo systemctl daemon-reload
 sudo systemctl enable jamsend-virtreset.service
-sudo systemctl enable jamsend-vnc-forward.service
+sudo systemctl enable jamsend-virt-vnc-forward.service
 sudo systemctl restart jamsend-virtreset.service
-sudo systemctl restart jamsend-vnc-forward.service
+sudo systemctl restart jamsend-virt-vnc-forward.service
 
 # =============================================================================
-# Done — print the grant ceremony instructions
+# Done
 # =============================================================================
 
 cat <<INSTRUCTIONS
 
 === snap1 taken. Next: the grant ceremony ===
 
-VNC in to see Chrome opening:
-  ty/xvfb-viewer.sh localhost    (or your remote host alias)
+VNC in to see Chrome:
+  ty/xvfb-viewer.sh localhost
 
-Once Chrome windows are visible and asking for permissions, take snap2:
+Or use virt-manager (ssh -X to this host, then run virt-manager).
+
+Once Chrome windows are visible and awaiting permission grants, take snap2:
   virsh snapshot-create-as --domain $VM_NAME --name snap2 \\
     --description "Chromes open, awaiting Directory Handle grants" \\
     --memspec snapshot=internal --atomic
 
 Grant Directory Handles and open shares in all three Chrome windows.
 
-Enable the watchdog (it must be running to be in the snapshot), then take snap3:
-  ssh $VM_USER@$VM_IP 'sudo systemctl enable --now jamsend-watchdog.service'
+Enable the watchdog (it must be running before snap3), then take snap3:
+  ssh $VM_USER@$VM_IP 'sudo systemctl enable --now jamsend-virt-watchdog.service'
   virsh snapshot-create-as --domain $VM_NAME --name snap3 \\
     --description "Handles ready — virtreset resumes from here" \\
     --memspec snapshot=internal --atomic
 
-Verify virtreset is watching:
-  systemctl status jamsend-virtreset.service
-  journalctl -u jamsend-virtreset.service -f
-
 To update snap3 after a key rotation or config change:
   virsh snapshot-delete --domain $VM_NAME --snapshotname snap3
-  (repeat from the grant ceremony above)
+  (repeat grant ceremony above)
 
 INSTRUCTIONS

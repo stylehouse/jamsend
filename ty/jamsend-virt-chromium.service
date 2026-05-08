@@ -1,18 +1,18 @@
 [Unit]
 Description=Jamsend Chrome profiles (cold start)
-Documentation=On cold boot, starts all profiles; normal operation resumes from snap3
 After=jamsend-xvfb.service
 Requires=jamsend-xvfb.service
 
 [Service]
 User=jamsend
 Type=oneshot
-# RemainAfterExit: the Chromes outlive this script; the unit stays "active" so dependents are happy
+# RemainAfterExit: the Chromes outlive this script; the unit stays active so dependents are happy
 RemainAfterExit=yes
 Environment=DISPLAY=:10
 Environment=XDG_RUNTIME_DIR=/run/user/1000
+# PROFILE_BASE overridden here: profiles live on the VM disk, captured in snapshots
+Environment=PROFILE_BASE=/home/jamsend/.chrome-profiles
 EnvironmentFile=/opt/jamsend-src/ty/jamsend-supervisor.conf
-EnvironmentFile=-/opt/jamsend-src/ty/jamsend-supervisor-vm.conf
 ExecStart=/usr/bin/python3 /opt/jamsend-src/ty/chrome-starter.py
 
 [Install]
