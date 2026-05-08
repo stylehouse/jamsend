@@ -1,19 +1,43 @@
 Snap:H
   H:PeeringLive,Run
+    A:PeeringLive
+      {"mung":["age"]}	self,round:6
+      w:PeeringLive
+        keygen_running
+        keygen_done
+        {"mung":["age"]}	self,round:6
+        {"see":"PeeringLive  open:2/2  poke_subs:0"}
     A:Bearing
-      {"mung":["age"]}	self,round:4
+      {"mung":["age"]}	self,round:21
       w:Bearing
-        {"mung":["age"]}	self,round:4
+        scheme:Peering
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
+        scheme:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
+        Peerily
+        Peering,name:bearing,prepub:7acf614d876d69a4
+          Id
+          open
+        pier_dialling
+        Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
+          {"ref":{"v":"[]"}}	stashed,k:trust
+        {"mung":["age"]}	self,round:21
         see:✅ Bearing  7acf614d876d69a4
-        {"see":"Bearing  hello:true/true  trust:true/true  dc:false"}
-        see:🎉 Bearing hellos complete
-        see:🔒 Bearing trust exchanged
+        {"see":"Bearing Pier 8cbc667b…  hello:false/false  trust:false/false"}
     A:Nearing
-      {"mung":["age"]}	self,round:4
+      {"mung":["age"]}	self,round:19
       w:Nearing
-        {"mung":["age"]}	self,round:4
+        scheme:Peering
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
+        scheme:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
+        Peerily
+        Peering,name:nearing,prepub:8cbc667bb0c8e748
+          Id
+          open
+        Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
+          {"ref":{"v":"[]"}}	stashed,k:trust
+        {"mung":["age"]}	self,round:19
         see:✅ Nearing  8cbc667bb0c8e748
-        {"see":"Nearing  hello:true/true  trust:true/true  dc:false"}
-        see:🎉 Nearing hellos complete
-        see:🔒 Nearing trust exchanged
+        {"see":"Nearing Pier 7acf614d…  hello:false/false  trust:false/false"}
     {"mung":["id"]}	mo:main,interval:3.6

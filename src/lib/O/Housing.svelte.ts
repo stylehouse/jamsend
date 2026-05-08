@@ -680,15 +680,15 @@ export class House extends StorableHousing {
 
         const original_e = e
         this.post_do(async () => {
-            // puts it in D/%inst and T%inst
             const inst = this.concretion(T)
-            // more available hidden on the client particle:
-            if (n) n.c.inst = inst
-
-            if (level.post_fn) level.post_fn(inst, n, this)
+            T.sc.inst = inst
             if ('started' in inst && !(inst as any).started) {
                 await this.inst_started(inst)
             }
+            // post_fn: optional hook run synchronously after concretion,
+            //   before any await, so the inst can be wired before events fire.
+            //   Declared on the %lematch particle alongside args_fn.
+            if (level.post_fn) level.post_fn(inst, n, this)
             if (original_e) this._push_todo(original_e)
         }, {
             see: `concretion ${ctag}:${n.sc.name ?? (col ? D.sc[col] : '')}`,
@@ -814,7 +814,8 @@ export class House extends StorableHousing {
         const inst = new _class(...ctor_args)
         if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
         D.i({ inst, concretion: ctag })
-        T.sc.inst = inst
+        // stamp on n so callers reach inst via n.c.inst without D** walk
+        if (n) n.c.inst = inst
         return inst
     }
 
