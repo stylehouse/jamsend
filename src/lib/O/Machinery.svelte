@@ -10,6 +10,7 @@
 
     onMount(async () => {
     await M.eatfunc({
+
 //#region PeeringLive
 // Two real Peerily/Peering/Pier objects connecting inside one House.
 //
@@ -18,24 +19,25 @@
 // A:Bearing/w:Bearing, A:Nearing/w:Nearing — each side's worker.
 //
 // Poke mechanism:
-//   Bearing and Nearing register {poke_w:1} on w:PeeringLive while waiting
-//   for eer.open. The interval targets the first registrant's w with
-//   e:nichtstun — a specific method, so _Aw_think doesn't need think().
-//   Story sees busy; interval stops when no more {poke_w:1}.
+//   Bearing and Nearing register {poke_w: <w>, side} on w:PeeringLive while
+//   waiting for eer.open. The interval targets the first registrant's
+//   sc.poke_w with e:nichtstun — a specific method, so _Aw_think dispatches
+//   it without a full think(). Story sees busy; interval stops when no more
+//   {poke_w} particles remain.
 //
 // Particle layout per side (Bearing shown):
 //   A:Bearing / w:Bearing
-//     {Peerily:1}            .c.P = Peerily
-//     {Peering:1,name:'bearing',prepub}   .c.inst = Peering  (concretion+post_fn)
-//       /{open:1}            present while PeerServer connected
-//       /{Id:1}              .c.Id = Idento
-//       /{stashed:1,k,v}     live dump of eer.stashed
-//     {Pier:1, pub:'…'}      .c.inst = Pier  (concretion outbound;
-//                                              shim pre-sets inbound)
-//       /{stashed:1,k,v}     live dump of pier.stashed
+//     {Peerily:1}                .c.P = Peerily
+//     {Peering:1, name:'bearing', prepub}  .c.inst = Peering (concretion+post_fn)
+//       /{open:1}                  present while PeerServer connected
+//       /{Id:1}                    .c.Id = Idento
+//       /{stashed:1, k, v}         live dump of eer.stashed
+//     {Pier:1, pub:'…'}           .c.inst = Pier  (concretion outbound;
+//                                                   shim pre-sets inbound)
+//       /{stashed:1, k, v}         live dump of pier.stashed
 //   A:PeeringLive / w:PeeringLive
-//     {poke_w:1, side:'Bearing'}  .c.target = w:Bearing n-particle
-//     {poke_w:1, side:'Nearing'}  .c.target = w:Nearing n-particle
+//     {poke_w: <w:Bearing n-particle>, side:'Bearing'}
+//     {poke_w: <w:Nearing n-particle>, side:'Nearing'}
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -52,20 +54,20 @@
 
             // %scheme:Peering
             //   args_fn reads n.c.P and n.c.Id set by w:PeeringLive post_do
-            //   post_fn wires event handlers synchronously after new Peering(...)
+            //   post_fn wires all PeerJS handlers synchronously after new Peering(...)
             if (!w.oa({ scheme: 'Peering' })) {
                 const sp = w.i({ scheme: 'Peering' })
                 sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering',
                     args_fn: (n: TheC) => [n.c.P, n.c.Id, {}],
                     post_fn: (eer: Peering, n: TheC, H: House) => {
-                        // wires all PeerJS handlers — must be synchronous
                         n.c.P.i_Peering(n.c.Id, eer)
                         n.sc.prepub = n.c.Id + ''
                         const Side = (n.sc.name as string).replace(/^./, c => c.toUpperCase())
                         eer.Peer.on('open', () => {
                             n.oai({ open: 1 })
+                            // drop this side's poke subscription
                             const pl_w = H.Awo('PeeringLive')
-                            const reg  = pl_w.o({ poke_w: 1, side: Side })[0] as TheC | undefined
+                            const reg  = pl_w.o({ side: Side })[0] as TheC | undefined
                             if (reg) pl_w.drop(reg)
                             console.log(`✅ ${Side} open  ${n.sc.prepub}`)
                             H.main()
@@ -107,11 +109,12 @@
         if (!w.oa({ keygen_done: 1 })) {
             if (w.oa({ keygen_running: 1 })) return
             w.i({ keygen_running: 1 })
-            // post_do is inside the beliefs mutex — Awo() works here
             H.post_do(async () => {
+                // random keys each run — deterministic seeding reuses PeerServer IDs
+                //   across HMR/Story_reset and causes "ID is taken" errors
                 const [Id_B, Id_N] = await Promise.all([
-                    (async () => { const id = new Idento(); await id.generateKeys('Bearing'); return id })(),
-                    (async () => { const id = new Idento(); await id.generateKeys('Nearing'); return id })(),
+                    (async () => { const id = new Idento(); await id.generateKeys(); return id })(),
+                    (async () => { const id = new Idento(); await id.generateKeys(); return id })(),
                 ])
                 for (const [side, Id] of [['Bearing', Id_B], ['Nearing', Id_N]] as [string, Idento][]) {
                     const P = new Peerily({
@@ -123,10 +126,9 @@
                     //   eer.on('connection') closure when it registers
                     P.Trusting = H._PeeringLive_shim(H, side)
 
-                    // place Peering and Peerily particles on the side's w
-                    const sw  = H.Awo(side)
+                    const sw = H.Awo(side)
                     sw.oai({ Peerily: 1 }).c.P = P
-                    const pn  = sw.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
+                    const pn = sw.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
                     pn.c.P  = P
                     pn.c.Id = Id
                     pn.i({ Id: 1 }).c.Id = Id
@@ -139,19 +141,27 @@
         }
 
         // ── poke interval (once) ──────────────────────────────────────────────
-        // targets the first {poke_w:1} subscriber's n-particle with e:nichtstun
-        //   so _Aw_think dispatches a specific method, not a full think()
+        // w is the n-particle from attend — lives for the duration of the test.
+        // Stops when all subscribers drop, or H.stop() is called (Story_reset).
+        // P.stop() tears down PeerJS connections so IDs are freed at the server.
         w.c._poke ||= setInterval(() => {
-            if (H.stopped) { clearInterval(w.c._poke); w.c._poke = null; return }
+            if (H.stopped) {
+                clearInterval(w.c._poke); w.c._poke = null
+                // free PeerJS IDs at the server so a re-run can reuse them
+                for (const side of ['Bearing', 'Nearing']) {
+                    try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
+                }
+                return
+            }
             const first = w.o({ poke_w: 1 })[0] as TheC | undefined
             if (!first) { clearInterval(w.c._poke); w.c._poke = null; return }
-            H.i_elvisto(first.c.target as TheC, 'nichtstun')
+            H.i_elvisto(first.sc.poke_w as TheC, 'nichtstun')
         }, 50)
 
         // ── overall status ────────────────────────────────────────────────────
-        const sides = ['Bearing', 'Nearing']
-        const open_count = sides.filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
-        w.i({ see: `PeeringLive  open:${open_count}/2  poke_subs:${w.o({poke_w:1}).length}` })
+        const open_count = ['Bearing', 'Nearing']
+            .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
+        w.i({ see: `PeeringLive  open:${open_count}/2  poke_subs:${w.o({ poke_w: 1 }).length}` })
     },
 
     // ── shim — P.Trusting.M interface for both sides ─────────────────────────
@@ -184,9 +194,8 @@
             ier_is_Good(_ier: Pier): boolean { return true },
             Pier_wont_connect(pub: string) {
                 console.warn(`💔 ${side} wont_connect  ${pub}`)
-                const sw = H.Awo(side)
-                const pn = sw.o({ Pier: 1, pub })[0] as TheC | undefined
-                if (pn) sw.drop(pn)
+                const pn = H.Awo(side).o({ Pier: 1, pub })[0] as TheC | undefined
+                if (pn) H.Awo(side).drop(pn)
                 H.main()
             },
             Pier_reconnect(ier: Pier) {
@@ -213,15 +222,15 @@
     async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
         const H = this as House
 
-        // subscribe to poke while not yet open (w is the n-particle from attend —
-        //   c.up is set, so i_elvisto targeting it works correctly)
         const peering_n = w.o({ Peering: 1 })[0] as TheC | undefined
         const is_open   = !!peering_n?.oa({ open: 1 })
         const pl_w      = H.Awo('PeeringLive')
 
+        // subscribe to poke while waiting for open.
+        //   w is the n-particle from attend, c.up is already set — i_elvisto works.
         if (!is_open) {
-            if (!pl_w.oa({ poke_w: 1, side })) {
-                pl_w.oai({ poke_w: 1, side }).c.target = w
+            if (!pl_w.oa({ side })) {
+                pl_w.oai({ poke_w: w, side })
             }
             if (!peering_n) { w.oai({ see: `⏳ ${side} keygen pending…` }); return }
             w.oai({ see: `⏳ ${side} → PeerServer…` })
@@ -229,7 +238,7 @@
         }
 
         // open — drop poke subscription if still present
-        const reg = pl_w.o({ poke_w: 1, side })[0] as TheC | undefined
+        const reg = pl_w.o({ side })[0] as TheC | undefined
         if (reg) pl_w.drop(reg)
 
         const eer = peering_n!.c.inst as Peering
@@ -276,7 +285,9 @@
     },
 
 //#endregion
-//#endregion
+
+
+
 
 //#region Peeringinst
     // exercise the w/%scheme lematch → concretion pipeline.
