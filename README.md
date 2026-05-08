@@ -141,7 +141,6 @@ And now these are the important user-mind things to persist in *Modusmem* and be
 # setup
 
 ```bash
-snap install docker
 # get such a container
 docker compose build
 # populate your ./node_modules, mounted in the container under /app

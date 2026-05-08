@@ -9,12 +9,7 @@ services:
       dockerfile_inline: |
         FROM alpine:3.19
         WORKDIR /app
-        RUN apk add --no-cache \
-            nodejs \
-            npm
-        COPY package*.json ./
-        RUN npm install
-        COPY . .
+        RUN apk add --no-cache nodejs npm
     container_name: jamsend-prod
     working_dir: /app
     volumes:
