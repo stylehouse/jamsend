@@ -139,7 +139,7 @@ cat <<INSTRUCTIONS
 === snap1 taken. Next: the grant ceremony ===
 
 VNC in to see Chrome:
-  ty/xvfb-viewer.sh localhost
+  /virt-viewer.sh wi
 
 Or open virt-manager (ssh -X to this host, then: virt-manager --connect qemu:///system).
 

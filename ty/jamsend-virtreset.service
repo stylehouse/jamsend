@@ -8,6 +8,10 @@ User=1000
 Type=simple
 # __PROD_DIR__ is substituted by install-jamsend-virt.sh at deploy time
 EnvironmentFile=__PROD_DIR__/ty/jamsend-supervisor.conf
+
+# refuse to start (and therefore refuse to bring up the VM) if music isn't mounted and readable
+ExecStartPre=/bin/bash -c 'find /mnt/jamsend-music -maxdepth 2 -type f -readable | grep -q .'
+
 ExecStart=/usr/bin/python3 __PROD_DIR__/ty/virtreset.py
 ExecStopPost=/bin/rm -f /tmp/jamsend-supervisor/chrome_launcher.sock
 Restart=always
