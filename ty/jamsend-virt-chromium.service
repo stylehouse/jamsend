@@ -10,9 +10,10 @@ Type=oneshot
 RemainAfterExit=yes
 Environment=DISPLAY=:10
 Environment=XDG_RUNTIME_DIR=/run/user/1000
-# PROFILE_BASE overridden here: profiles live on the VM disk, captured in snapshots
-Environment=PROFILE_BASE=/home/jamsend/.chrome-profiles
 EnvironmentFile=/opt/jamsend-src/ty/jamsend-supervisor.conf
+# PROFILE_BASE must come after EnvironmentFile so it overrides the host path in the conf;
+# profiles live on the VM disk so they're captured in snapshots
+Environment=PROFILE_BASE=/home/jamsend/.chrome-profiles
 ExecStart=/usr/bin/python3 /opt/jamsend-src/ty/chrome-starter.py
 
 [Install]

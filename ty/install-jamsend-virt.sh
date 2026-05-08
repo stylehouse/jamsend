@@ -45,12 +45,12 @@ VM_DISK_GB=20
 IMAGE_NAME="debian-13-genericcloud-amd64.qcow2"
 BACKING_IMAGE="$SCRIPT_DIR/$IMAGE_NAME"
 OVERLAY="$SCRIPT_DIR/jamsend-virt-appservers.qcow2"
-SEED_ISO="$SCRIPT_DIR/jamsend-virt-seed.iso"
+SEED_ISO="$SCRIPT_DIR/jamsend-virt-appservers-seed.iso"
 DEBIAN_CLOUD_URL="https://cloud.debian.org/images/cloud/trixie/latest/$IMAGE_NAME"
 
 # gitignore the large/non-reproducible files in ty/
 GITIGNORE="$SCRIPT_DIR/.gitignore"
-for entry in "$IMAGE_NAME" "jamsend-virt-appservers.qcow2" "jamsend-virt-seed.iso"; do
+for entry in "$IMAGE_NAME" "jamsend-virt-appservers.qcow2" "jamsend-virt-appservers-seed.iso"; do
     grep -qxF "$entry" "$GITIGNORE" 2>/dev/null || echo "$entry" >> "$GITIGNORE"
 done
 
@@ -414,6 +414,9 @@ XMLEOF
 
 echo "=== Starting VM ==="
 virsh start "$VM_NAME"
+
+# Clear any stale host key from a previous install — we know this IP is ours
+ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$VM_IP" 2>/dev/null || true
 
 echo "=== Waiting for SSH at $VM_IP ==="
 echo "    (watch boot: virsh console $VM_NAME  —  Ctrl+] to exit)"
