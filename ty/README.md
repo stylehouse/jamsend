@@ -2,13 +2,15 @@
 
 hardcoded /home/s/ in various places
 
-# for running server instances
+# running server instances
 
 install-jamsend-prod.sh shall install a service, depends on leproxy, see also ../prod.sh
 
-# for running chrome appservers
+# running chrome appservers
 
 We seem to expose a lot of instability in chrome or something doing this... Chrome runs best on the host desktop environment, but once they go Oh Snap how do you restart them? And they lose their handles, see below.
+
+Ultimately, hopefully we can separate a single user's concerns, becoming an operating system for programs... Hosting the file handles in a separate chrome tab that almost never crashes because it doesn't do anything else, talking to the latest in a series of other tabs we shunt the real work along, like a progress bar of failure... The user bulk-reloads every week or so? Who knows. They could be in a different browser profile if user had another Pier just for the filehandle tab, they could WebRTC to each other.
 
 ## badly
 
