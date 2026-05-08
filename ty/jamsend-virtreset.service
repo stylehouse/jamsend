@@ -5,6 +5,7 @@ Requires=libvirtd.service
 
 [Service]
 User=1000
+Environment=LIBVIRT_DEFAULT_URI=qemu:///system
 Type=simple
 # __PROD_DIR__ is substituted by install-jamsend-virt.sh at deploy time
 EnvironmentFile=__PROD_DIR__/ty/jamsend-supervisor.conf
