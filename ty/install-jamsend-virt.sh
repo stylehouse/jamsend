@@ -92,6 +92,14 @@ done
 
 echo "=== Tearing down previous install (if any) ==="
 
+# Stop and disable old service names from previous installs
+for old in jamsend-vnc-forward.service jamsend-watchdog-vm.service jamsend-chromium.service; do
+    if systemctl list-unit-files "$old" 2>/dev/null | grep -q "$old"; then
+        sudo systemctl disable --now "$old" 2>/dev/null || true
+        sudo rm -f "/etc/systemd/system/$old"
+    fi
+done
+
 if virsh dominfo "$VM_NAME" &>/dev/null; then
     if virsh dominfo "$VM_NAME" | grep -q "State:.*running"; then
         echo "  Destroying running VM..."
