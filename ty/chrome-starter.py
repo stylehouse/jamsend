@@ -12,7 +12,7 @@ import subprocess
 PROFILE_BASE = os.environ["PROFILE_BASE"]
 PORT_BASE    = int(os.environ.get("CHROME_DEBUG_PORT_BASE", "9222"))
 TARGET_URL   = os.environ["TARGET_URL"]
-+print(f"Chrome profile base = {PROFILE_BASE}.", flush=True)
+print(f"Chrome profile base = {PROFILE_BASE}.", flush=True)
 
 # Parse "public,private,tyrant" or "public,private:/stream,tyrant:/admin"
 # same logic as launcher.py and watchdog.js
