@@ -1,6 +1,5 @@
 [Unit]
 Description=Jamsend Puppeteer Watchdog (VM-native)
-Documentation=Monitors Chrome via CDP; signals virtreset.py on the host via shared Unix socket
 After=jamsend-chromium.service
 Requires=jamsend-chromium.service
 

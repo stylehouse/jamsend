@@ -1,6 +1,5 @@
 [Unit]
-Description=Jamsend VM Reset Controller
-Documentation=Reverts jamsend-appservers to snap3 on watchdog signal or memory pressure
+Description=Jamsend VM Reset, reverts jamsend-appservers to snap3 on watchdog signal or memory pressure
 After=libvirtd.service network.target
 Requires=libvirtd.service
 

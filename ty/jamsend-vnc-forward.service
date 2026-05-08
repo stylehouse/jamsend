@@ -1,6 +1,5 @@
 [Unit]
 Description=Forward VNC from jamsend VM (192.168.122.100:5910) to host 127.0.0.1:5910
-Documentation=Keeps ty/xvfb-viewer.sh working unchanged now that x11vnc runs inside the VM
 After=libvirtd.service jamsend-virtreset.service
 
 [Service]

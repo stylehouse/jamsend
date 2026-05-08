@@ -20,11 +20,13 @@
 #   snap2  chromes-open-waiting (Chrome visible, needs Directory Handle grants)
 #   snap3  handles-ready        (normal resume point; virtreset reverts here)
 #
-# Re-running this script after snap3 exists:
-#   skips download + overlay creation; redeploys host services only.
-#   To rebuild from scratch: delete virtualised-appservers.qcow2 and re-run.
+# Re-running this script tears everything down and rebuilds from scratch.
+# The backing cloud image is kept and re-used (no re-download).
 
 set -e
+# virsh defaults to qemu:///session for non-root users; we need the system daemon
+export LIBVIRT_DEFAULT_URI=qemu:///system
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROD_DIR="$(dirname "$SCRIPT_DIR")"   # parent of ty/
 
@@ -38,31 +40,70 @@ VM_DISK_GB=20
 
 IMAGE_NAME="debian-13-genericcloud-amd64.qcow2"
 BACKING_IMAGE="$SCRIPT_DIR/$IMAGE_NAME"
-# overlay lives in libvirt's standard image dir — libvirt-qemu already has access there
-# backing image stays in ty/ as a download cache
-OVERLAY="/var/lib/libvirt/images/jamsend-appservers.qcow2"
+OVERLAY="$SCRIPT_DIR/virtualised-appservers.qcow2"
 SEED_ISO="$SCRIPT_DIR/jamsend-seed.iso"
 DEBIAN_CLOUD_URL="https://cloud.debian.org/images/cloud/trixie/latest/$IMAGE_NAME"
 
-# gitignore the large/non-reproducible files that live in ty/
+# gitignore the large/non-reproducible files in ty/
 GITIGNORE="$SCRIPT_DIR/.gitignore"
-for entry in "$IMAGE_NAME" "jamsend-seed.iso"; do
+for entry in "$IMAGE_NAME" "virtualised-appservers.qcow2" "jamsend-seed.iso"; do
     grep -qxF "$entry" "$GITIGNORE" 2>/dev/null || echo "$entry" >> "$GITIGNORE"
 done
 
-# --- SSH keys ---
-# ty/authorized_keys takes precedence over ~/.ssh/authorized_keys
-if [ -f "$SCRIPT_DIR/authorized_keys" ]; then
-    AUTH_KEYS="$SCRIPT_DIR/authorized_keys"
-    echo "SSH keys: ty/authorized_keys"
-else
-    AUTH_KEYS="$HOME/.ssh/authorized_keys"
-    echo "SSH keys: ~/.ssh/authorized_keys"
+# =============================================================================
+# Preflight checks — catch common screwups before touching anything
+# =============================================================================
+
+PREFLIGHT_OK=1
+
+if [ ! -e /dev/kvm ]; then
+    echo "ERROR: /dev/kvm not found."
+    echo "       Enable Intel VT-x / AMD-V in BIOS, or load the module:"
+    echo "         sudo modprobe kvm-intel   # or kvm-amd"
+    PREFLIGHT_OK=0
+elif [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; then
+    echo "ERROR: /dev/kvm exists but is not accessible to $USER."
+    echo "       Add yourself to the kvm group:  sudo usermod -aG kvm $USER"
+    echo "       Then re-login."
+    PREFLIGHT_OK=0
 fi
-if [ ! -s "$AUTH_KEYS" ]; then
-    echo "Error: no SSH keys found at $AUTH_KEYS"
-    exit 1
+
+# virtiofsd ships separately from qemu on Debian 13 and is easy to miss
+if ! command -v virtiofsd &>/dev/null && [ ! -x /usr/lib/qemu/virtiofsd ]; then
+    echo "ERROR: virtiofsd not found. Install it:  sudo apt install virtiofsd"
+    PREFLIGHT_OK=0
 fi
+
+# the virtiofs source dirs must exist on the host before the VM can start
+for dir in /mnt/jamsend-music /mnt/jamsend-appcache /mnt/jamsend-public /tmp/jamsend-supervisor; do
+    if [ ! -d "$dir" ]; then
+        echo "ERROR: host directory $dir does not exist."
+        echo "       Run install-jamsend-mount-verify.sh first, or:"
+        echo "         sudo mkdir -p $dir && sudo chown $USER:$USER $dir"
+        PREFLIGHT_OK=0
+    fi
+done
+
+[ "$PREFLIGHT_OK" -eq 0 ] && exit 1
+
+# =============================================================================
+
+echo "=== Tearing down previous install (if any) ==="
+
+if virsh dominfo "$VM_NAME" &>/dev/null; then
+    if virsh dominfo "$VM_NAME" | grep -q "State:.*running"; then
+        echo "  Destroying running VM..."
+        virsh destroy "$VM_NAME"
+    fi
+    # undefine removes the domain and all its snapshot metadata in one shot
+    echo "  Undefining domain + snapshots..."
+    virsh undefine --snapshots-metadata "$VM_NAME"
+fi
+
+[ -f "$OVERLAY"  ] && { echo "  Removing overlay...";  rm -f "$OVERLAY";  }
+[ -f "$SEED_ISO" ] && { echo "  Removing seed ISO..."; rm -f "$SEED_ISO"; }
+
+echo "  Done."
 
 # =============================================================================
 # 1. Host dependencies
@@ -75,6 +116,7 @@ sudo apt install -y \
     libvirt-clients \
     virtiofsd \
     cloud-image-utils \
+    acl \
     socat
 
 if ! groups | grep -q libvirt; then
@@ -84,8 +126,23 @@ fi
 
 sudo systemctl enable --now libvirtd
 
-# Bring up the default NAT network (virbr0) if it isn't already running
-if ! virsh net-info default 2>/dev/null | grep -q "Active:.*yes"; then
+# Create the default NAT network (virbr0) if it doesn't exist, then ensure it's running
+if ! virsh net-info default &>/dev/null; then
+    echo "Creating default NAT network..."
+    virsh net-define /dev/stdin <<'NETXML'
+<network>
+  <name>default</name>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+    </dhcp>
+  </ip>
+</network>
+NETXML
+fi
+if ! virsh net-info default | grep -q "Active:.*yes"; then
     virsh net-autostart default
     virsh net-start default
 fi
@@ -102,18 +159,25 @@ else
 fi
 
 # =============================================================================
-# 3. Overlay disk
+# 3. Overlay disk + ACLs
 # =============================================================================
 
-if [ -f "$OVERLAY" ]; then
-    echo "=== Overlay already exists — skipping creation ==="
-    echo "    Delete it and re-run to start from scratch."
-else
-    echo "=== Creating ${VM_DISK_GB}G overlay backed by $IMAGE_NAME ==="
-    qemu-img create -f qcow2 \
-        -b "$BACKING_IMAGE" -F qcow2 \
-        "$OVERLAY" "${VM_DISK_GB}G"
-fi
+echo "=== Creating ${VM_DISK_GB}G overlay backed by $IMAGE_NAME ==="
+qemu-img create -f qcow2 \
+    -b "$BACKING_IMAGE" -F qcow2 \
+    "$OVERLAY" "${VM_DISK_GB}G"
+
+# libvirt-qemu runs QEMU as an unprivileged user and can't traverse home dirs by default;
+# grant it execute rights on every directory in the path down to ty/,
+# and read rights on the disk images themselves
+echo "=== Granting libvirt-qemu access to disk images ==="
+_DIR="$SCRIPT_DIR"
+while [[ "$_DIR" != "/" ]]; do
+    sudo setfacl -m u:libvirt-qemu:x "$_DIR"
+    _DIR="$(dirname "$_DIR")"
+done
+sudo setfacl -m u:libvirt-qemu:r "$OVERLAY"
+sudo setfacl -m u:libvirt-qemu:r "$BACKING_IMAGE"
 
 # =============================================================================
 # 4. Cloud-init seed ISO
@@ -123,6 +187,20 @@ echo "=== Building cloud-init seed ISO ==="
 
 SEED_DIR=$(mktemp -d)
 trap "rm -rf $SEED_DIR" EXIT
+
+# --- SSH keys ---
+# ty/authorized_keys takes precedence over ~/.ssh/authorized_keys
+if [ -f "$SCRIPT_DIR/authorized_keys" ]; then
+    AUTH_KEYS="$SCRIPT_DIR/authorized_keys"
+    echo "SSH keys: ty/authorized_keys"
+else
+    AUTH_KEYS="$HOME/.ssh/authorized_keys"
+    echo "SSH keys: ~/.ssh/authorized_keys"
+fi
+if [ ! -s "$AUTH_KEYS" ]; then
+    echo "Error: no SSH keys found at $AUTH_KEYS"
+    exit 1
+fi
 
 # Indent each key for the YAML ssh_authorized_keys list
 SSH_KEY_LIST=$(sed 's/^/      - /' "$AUTH_KEYS")
@@ -191,14 +269,10 @@ cloud-localds -N "$SEED_DIR/network-config" "$SEED_ISO" \
 # 5. Define VM
 # =============================================================================
 
-if virsh dominfo "$VM_NAME" &>/dev/null; then
-    echo "=== VM '$VM_NAME' already defined — skipping define ==="
-    echo "    (virsh undefine --nvram $VM_NAME to redefine)"
-else
-    echo "=== Defining VM ==="
+echo "=== Defining VM ==="
 
-    # virtiofs requires memfd-backed shared memory between host and guest
-    virsh define /dev/stdin <<XMLEOF
+# virtiofs requires memfd-backed shared memory between host and guest
+virsh define /dev/stdin <<XMLEOF
 <domain type='kvm'>
   <name>$VM_NAME</name>
   <memory unit='MiB'>$VM_RAM_MB</memory>
@@ -275,34 +349,42 @@ else
       <target dir='jamsend-src'/>
     </filesystem>
 
-    <!-- no graphical console; VNC is served by x11vnc inside the VM on port 5910 -->
-    <graphics type='none'/>
-    <video><model type='none'/></video>
+    <!-- SPICE console: lets virt-manager show the graphical desktop over ssh -X -->
+    <!-- bound to localhost only; access via ssh -X virt-manager on the client -->
+    <graphics type='spice' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
+    </graphics>
+    <video>
+      <model type='virtio'/>
+    </video>
+
+    <!-- serial console: virsh console jamsend-appservers (Ctrl+] to exit) -->
     <serial type='pty'><target type='isa-serial' port='0'/></serial>
     <console type='pty'><target type='serial' port='0'/></console>
   </devices>
 </domain>
 XMLEOF
-fi
 
 # =============================================================================
 # 6. Start VM, wait for SSH
 # =============================================================================
 
-if ! virsh dominfo "$VM_NAME" | grep -q "State:.*running"; then
-    echo "=== Starting VM ==="
-    virsh start "$VM_NAME"
-fi
+echo "=== Starting VM ==="
+virsh start "$VM_NAME"
 
-echo "=== Waiting for SSH at $VM_IP (cloud-init takes ~60–90s on first boot) ==="
+# cloud-init on first boot installs chromium + nodejs + npm — allow 20 minutes
+# on slow hardware (cpumark ~1500 takes ~15 min); watch progress with:
+#   virsh console jamsend-appservers   (Ctrl+] to exit)
+echo "=== Waiting for SSH at $VM_IP (first boot: up to 20 min on slow hardware) ==="
 SSH_OPTS="-o ConnectTimeout=3 -o StrictHostKeyChecking=no -o BatchMode=yes"
-for i in $(seq 1 90); do
+echo "ssh $SSH_OPTS $VM_USER@$VM_IP"
+for i in $(seq 1 240); do
     if ssh $SSH_OPTS "$VM_USER@$VM_IP" true 2>/dev/null; then
         echo "SSH up."
         break
     fi
-    [ "$i" -eq 90 ] && { echo "Timed out waiting for SSH"; exit 1; }
-    printf "  %d/90...\r" "$i"
+    [ "$i" -eq 240 ] && { echo "Timed out waiting for SSH after 20 min"; exit 1; }
+    printf "  %d/240 (~%d min elapsed)...\r" "$i" "$(( i * 5 / 60 ))"
     sleep 5
 done
 
@@ -357,8 +439,8 @@ sudo systemctl enable jamsend-xvfb.service
 sudo systemctl enable jamsend-wm.service
 sudo systemctl enable jamsend-x11vnc.service
 sudo systemctl enable jamsend-chromium.service
-# watchdog is intentionally left disabled here:
-# enabling it before snap3 is taken risks a reset loop during the grant ceremony
+# watchdog intentionally left disabled: enabling it before snap3 risks a reset loop
+# during the grant ceremony
 
 sudo systemctl start jamsend-xvfb.service
 sudo systemctl start jamsend-wm.service
