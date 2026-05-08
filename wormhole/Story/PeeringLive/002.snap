@@ -8,27 +8,27 @@ Snap:H
         {"mung":["age"]}	self,round:3
         {"see":"PeeringLive  open:0/2  poke_subs:2"}
     A:Bearing
-      {"mung":["age"]}	self,round:14
+      {"mung":["age"]}	self,round:13
       w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
           {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
         Peerily
-        Peering,name:bearing,prepub:d3c459f0b7e3df40
+        Peering,name:bearing,prepub:7acf614d876d69a4
           Id
           open
-        {"mung":["age"]}	self,round:14
+        {"mung":["age"]}	self,round:13
     A:Nearing
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round:17
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
           {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
         Peerily
-        Peering,name:nearing,prepub:f89e3732d38d5d9f
+        Peering,name:nearing,prepub:8cbc667bb0c8e748
           Id
           open
-        {"mung":["age"]}	self,round:16
+        {"mung":["age"]}	self,round:17
     {"mung":["id"]}	mo:main,interval:3.6

@@ -221,10 +221,10 @@
         if (existing) {
             // stop all drives
             for (const w2 of existing.o({ w: 1 }) as TheC[]) {
+                throw "forgot A"
                 for (const run of w2.o({ run: 1 }) as TheC[]) run.c.driving = false
             }
             existing.stop()
-            existing.destroy()
             H.drop(existing)
         }
 

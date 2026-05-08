@@ -4,6 +4,7 @@
     import { House, register_class } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
+    import { onDestroy } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
 
     // // A Work subclass with a withitall() method
@@ -62,6 +63,10 @@
     function go_busily() {
         H.i_elvisto(H, 'think')
     }
+
+    onDestroy(() => {
+        H?.stop()
+    })
 
     function upthings() {
         H.stashed.things ||= 0

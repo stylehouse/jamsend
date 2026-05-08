@@ -52,9 +52,17 @@ abstract class Housing extends TheC {
     // true while the beliefs mutex is held — gates UI reactivity
     believing = $state(false)
 
-    // set to true to pause main() — call stop() to set it
     stopped = false
-    stop() { this.stopped = true }
+    _hangup_cbs: Array<() => void> = []
+    on_hangup(cb: () => void) { this._hangup_cbs.push(cb) }
+    stop() {
+        this.stopped = true
+        this.#cleanup()
+        for (const cb of this._hangup_cbs) {
+            try { cb() } catch(e) { console.error('on_hangup cb threw:', e) }
+        }
+    }
+
 
     #cleanup: () => void
     destroy() { this.#cleanup() }
@@ -485,6 +493,11 @@ export class House extends StorableHousing {
         const wa = this.oai_enroll(this, { watched: 'subHouses' })
         wa.i(child)
         return child
+    }
+    override stop() {
+        super.stop()
+        // propagate hangup down the tree
+        for (const sub of this.subHouses.ob({}) as House[]) sub.stop()
     }
 
 //#endregion

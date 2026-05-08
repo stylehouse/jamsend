@@ -151,19 +151,20 @@
         }
 
         // ── poke service (long-lived; only ends on H.stop()) ──────────────────
-        // Stays alive after both sides open so its H.stopped branch runs P.stop()
-        //   on each Peerily — releases server IDs for the next deterministic run.
-        w.c._poke ||= setInterval(() => {
-            if (H.stopped) {
+        if (!w.c._poke) {
+            // Release PeerServer IDs on hangup — deterministic prepubs can be
+            //   reclaimed cleanly by the next test run.
+            H.on_hangup(() => {
                 clearInterval(w.c._poke); w.c._poke = null
                 for (const side of ['Bearing', 'Nearing']) {
                     try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
                 }
-                return
-            }
-            const first = w.o({ poke_w: 1 })[0] as TheC | undefined
-            if (first) H.i_elvisto(first.sc.side as string, 'nichtstun')
-        }, 50)
+            })
+            w.c._poke = setInterval(() => {
+                const first = w.o({ poke_w: 1 })[0] as TheC | undefined
+                if (first) H.i_elvisto(first.sc.side as string, 'nichtstun')
+            }, 50)
+        }
 
         const open_count = ['Bearing', 'Nearing']
             .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
