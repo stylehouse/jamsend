@@ -242,11 +242,9 @@ packages:
   - nodejs
   - npm
 
-# All VM-side setup happens in runcmd.
-# virtiofs is mounted first, then service files are read straight from the repo.
-# The shared services (xvfb, wm, x11vnc) have User=1000 and the host's ty/ path
-# baked in — sed fixes both on the way to /etc/systemd/system/.
-# The virt-specific services already have correct paths and User=jamsend.
+# cloud-init only gets the VM to a usable base: packages installed, virtiofs
+# mounted, npm deps ready. Service setup runs in install-jamsend-virt-step2.sh
+# so it can be re-run in seconds without rebuilding the whole VM.
 
 runcmd:
   - systemctl enable --now qemu-guest-agent
@@ -263,29 +261,8 @@ runcmd:
       'jamsend-src        /opt/jamsend-src        virtiofs  defaults,_netdev  0 0' \
       >> /etc/fstab
   - mount -a
-  - |
-    TY=/opt/jamsend-src/ty
-    # shared services: fix User=1000 and the host's openbox config-file path
-    sed -e 's|User=1000|User=$VM_USER|' \
-        \$TY/jamsend-xvfb.service \
-        > /etc/systemd/system/jamsend-xvfb.service
-    sed -e 's|User=1000|User=$VM_USER|' \
-        -e 's|--config-file .*|--config-file '\$TY'/openbox-rc.xml|' \
-        \$TY/jamsend-wm.service \
-        > /etc/systemd/system/jamsend-wm.service
-    sed -e 's|User=1000|User=$VM_USER|' \
-        \$TY/jamsend-x11vnc.service \
-        > /etc/systemd/system/jamsend-x11vnc.service
-    # virt-specific services already reference /opt/jamsend-src/ty/ and User=jamsend
-    cp \$TY/jamsend-virt-chromium.service /etc/systemd/system/
-    cp \$TY/jamsend-virt-watchdog.service /etc/systemd/system/
   - npm install --prefix /opt/jamsend-src/ty
   - chown -R $VM_USER:$VM_USER /home/$VM_USER/.chrome-profiles
-  - systemctl daemon-reload
-  - systemctl enable jamsend-xvfb.service jamsend-wm.service jamsend-x11vnc.service jamsend-virt-chromium.service
-  # watchdog intentionally left disabled: enabling it before snap3 risks a reset loop
-  # during the Directory Handle grant ceremony
-  - systemctl start jamsend-xvfb.service jamsend-wm.service jamsend-x11vnc.service jamsend-virt-chromium.service
 EOF
 
 cat > "$SEED_DIR/meta-data" <<EOF
@@ -441,72 +418,16 @@ echo "=== Waiting for cloud-init to finish (package install takes ~15 min on slo
 ssh $SSH_OPTS "$VM_USER@$VM_IP" 'sudo cloud-init status --wait --long'
 
 # =============================================================================
-# 7. snap1
+# 7. snap0: base system
 # =============================================================================
 
-echo "=== Taking snap1: freshly-installed ==="
+echo "=== Taking snap0: base-system ==="
 virsh snapshot-create-as \
     --domain "$VM_NAME" \
-    --name snap1 \
-    --description "cloud-init done; services enabled; Chrome starting" \
+    --name snap0 \
+    --description "packages installed, virtiofs mounted, npm ready; no services yet" \
     --memspec snapshot=internal \
     --atomic
 
-# =============================================================================
-# 8. Host-side services
-# =============================================================================
-
-echo "=== Installing virtreset and VNC forwarder on host ==="
-
-install_rendered_unit() {
-    local NAME="$1"
-    # substitute __PROD_DIR__ placeholder with the actual path
-    sed "s|__PROD_DIR__|$PROD_DIR|g" "$SCRIPT_DIR/$NAME" \
-        | sudo tee "/etc/systemd/system/$NAME" > /dev/null
-    sudo chown root:root "/etc/systemd/system/$NAME"
-    sudo chmod 644 "/etc/systemd/system/$NAME"
-    echo "Deployed $NAME"
-}
-
-install_rendered_unit "jamsend-virtreset.service"
-sudo cp "$SCRIPT_DIR/jamsend-virt-vnc-forward.service" /etc/systemd/system/
-sudo chown root:root /etc/systemd/system/jamsend-virt-vnc-forward.service
-sudo chmod 644 /etc/systemd/system/jamsend-virt-vnc-forward.service
-
-sudo systemctl daemon-reload
-sudo systemctl enable jamsend-virtreset.service
-sudo systemctl enable jamsend-virt-vnc-forward.service
-sudo systemctl restart jamsend-virtreset.service
-sudo systemctl restart jamsend-virt-vnc-forward.service
-
-# =============================================================================
-# Done
-# =============================================================================
-
-cat <<INSTRUCTIONS
-
-=== snap1 taken. Next: the grant ceremony ===
-
-VNC in to see Chrome:
-  ty/xvfb-viewer.sh localhost
-
-Or use virt-manager (ssh -X to this host, then run virt-manager).
-
-Once Chrome windows are visible and awaiting permission grants, take snap2:
-  virsh snapshot-create-as --domain $VM_NAME --name snap2 \\
-    --description "Chromes open, awaiting Directory Handle grants" \\
-    --memspec snapshot=internal --atomic
-
-Grant Directory Handles and open shares in all three Chrome windows.
-
-Enable the watchdog (it must be running before snap3), then take snap3:
-  ssh $VM_USER@$VM_IP 'sudo systemctl enable --now jamsend-virt-watchdog.service'
-  virsh snapshot-create-as --domain $VM_NAME --name snap3 \\
-    --description "Handles ready — virtreset resumes from here" \\
-    --memspec snapshot=internal --atomic
-
-To update snap3 after a key rotation or config change:
-  virsh snapshot-delete --domain $VM_NAME --snapshotname snap3
-  (repeat grant ceremony above)
-
-INSTRUCTIONS
+echo "=== snap0 done. Running step 2... ==="
+exec "$SCRIPT_DIR/install-jamsend-virt-step2.sh"
