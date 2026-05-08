@@ -538,6 +538,7 @@ export class Pier {
         // haphazardry.
         let times = 10
         let interval = setInterval(() => {
+            if (this.P.destroyed) { clearInterval(interval); return }
             this.emit('noop',{nothing:1})
             times -= 1
             if (times < 1) clearInterval(interval)
