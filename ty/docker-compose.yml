@@ -1,3 +1,6 @@
+# used by install-jamsend-supervisor.sh (bare-host Xvfb path) only
+# the virt path (install-jamsend-virt.sh) runs watchdog.js directly inside the VM
+# via jamsend-virt-watchdog.service — Docker is not involved
 services:
   watchdog:
     build:
