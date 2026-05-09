@@ -18,7 +18,7 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           Id
           open
-        requesty_expects_serial,i:5
+        requesty_expects_serial,i:4
           {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
@@ -46,7 +46,7 @@ Snap:H
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           Id
           open
-        requesty_expects_serial,i:5
+        requesty_expects_serial,i:4
           {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering

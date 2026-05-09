@@ -18,7 +18,7 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           Id
           open
-        requesty_expects_serial,i:5
+        requesty_expects_serial,i:4
           {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
@@ -34,7 +34,6 @@ Snap:H
         requesty_expects,name:said_hello,demand:800,req_i:2
         requesty_expects,name:heard_hello,demand:800,req_i:3
         {"mung":["age"]}	self,round:6
-        requesty_expects,name:open,demand:5000,req_i:4,finished:true
         {"see":"Bearing 8cbc667b…  hello:n/n  trust:n/n"}
     A:Nearing
       {"mung":["age"]}	self,round:6
@@ -47,7 +46,7 @@ Snap:H
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           Id
           open
-        requesty_expects_serial,i:5
+        requesty_expects_serial,i:4
           {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
@@ -62,6 +61,5 @@ Snap:H
         requesty_expects,name:said_hello,demand:800,req_i:2
         requesty_expects,name:heard_hello,demand:800,req_i:3
         {"mung":["age"]}	self,round:6
-        requesty_expects,name:open,demand:5000,req_i:4,finished:true
         {"see":"Nearing 7acf614d…  hello:n/n  trust:n/n"}
     {"mung":["id"]}	mo:main,interval:3.6

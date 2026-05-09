@@ -167,7 +167,6 @@
 
     let diff_mode   = $state<DiffMode | null>(null)
     let show_trace = $state(false)
-    $effect(() => { displayed_at; show_trace = false }) // to close it when you navigate steps
     let sticky_mode = $state<DiffMode | null>(null)
 
     //#region ops_for_display 
@@ -278,7 +277,12 @@
     // exp_naive is never auto — it must be explicitly chosen.
     let eff_mode = $derived.by((): DiffMode => {
         if (diff_mode) return diff_mode
-        if (sticky_mode) return sticky_mode
+        // sticky_mode carries across pip nav, but only when its required snap exists.
+        // Without this guard, navigating to a step where prev/exp is absent would
+        // silently fall back to naive while still showing sticky's button as active.
+        if (sticky_mode === 'naive') return sticky_mode
+        if (sticky_mode === 'prev' && has_prev_snap) return sticky_mode
+        if ((sticky_mode === 'exp' || sticky_mode === 'exp_naive') && has_exp_snap) return sticky_mode
         const n    = display.open_at
         const Step = n != null ? live_step(n) : null
         void Step?.version
@@ -623,7 +627,7 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sr" class:expanded bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
+<div class="sr" class:expanded class:trace-open={show_trace} bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
 
     {#if !This}
         <div class="sr-empty">no Story</div>
@@ -751,6 +755,9 @@
                 <div style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
                 {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
+                {:else if !(Step?.sc.got_snap)}
+                    <!-- snap ran but content not yet fetched; story_sel will queue the load -->
+                    <div class="sr-hollow-body">snap not yet loaded</div>
                 {:else if eff_mode === 'naive'}
                     <!-- raw: single pre, full got_snap text, no diff colouring -->
                     <pre class="sr-pre sr-tree-pre">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>
@@ -878,8 +885,8 @@
                 </div>
             {/each}
         </div>
-        <button class="sr-expand" onclick={() => expanded = !expanded}
-                title="{expanded ? 'collapse' : 'expand'}">{expanded ? '↙' : '↗'}</button>
+        <button class="sr-expand" class:open={expanded} onclick={() => expanded = !expanded}
+                title="{expanded ? 'collapse' : 'expand'}">V</button>
         </div>
 
     {/if}
@@ -990,13 +997,19 @@
 .sr:focus { outline: none; }
 
 .sr-expand {
-    position: absolute; top: 6px; right: 6px;
-    background: none; border: 1px solid #222; border-radius: 2px;
-    color: #444; cursor: pointer; font-size: 10px;
-    width: 16px; height: 16px; line-height: 14px; text-align: center;
-    padding: 0; transition: color 0.15s, border-color 0.15s;
+    position: absolute; top: 4px; right: 6px;
+    background: none; border: none;
+    color: #484848; cursor: pointer;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 16px; font-weight: 400; line-height: 1;
+    width: 20px; height: 20px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, transform 0.2s;
+    transform-origin: center;
 }
-.sr-expand:hover { color: #79b; border-color: #79b; }
+.sr-expand:hover { color: #79b; }
+/* V reflected upside-down when the panel is open */
+.sr-expand.open { transform: rotate(180deg); }
 
 /* ── expanded layout ────────────────────────────────────────────────────── */
 /* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
@@ -1017,6 +1030,11 @@
 /* notes and trace stay at natural height; they shrink-wrap */
 .sr.expanded .sr-notes,
 .sr.expanded .sr-trace { flex-shrink: 0; }
+/* when trace is open in expanded view, give it 40% of the sr height so the
+   diff body still breathes above it — trace becomes independently scrollable */
+.sr.expanded.trace-open .sr-trace {
+    flex: 0 0 40%; min-height: 0; overflow-y: auto; max-height: none;
+}
 /* strip-wrap pins to bottom; strip max-height relaxes a little */
 .sr.expanded .sr-strip-wrap { flex-shrink: 0; }
 .sr.expanded .sr-strip      { max-height: 140px; }
