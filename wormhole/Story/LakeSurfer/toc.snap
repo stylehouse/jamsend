@@ -50,6 +50,10 @@ story:LakeSurfer
       style:background-color,v:#36c974
     matstyle:Output
       style:background-color,v:#af43db
+    matstyle:cyto_cons
+      style:background-color,v:#8f8f32
+    matstyle:cyto_edge
+      style:background-color,v:#2f8bb1
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
@@ -60,8 +64,7 @@ story:LakeSurfer
         nogen
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.107
-      sample:0.076,at:1777426058
+    TimeTotal:beliefs,avg:0.127
       sample:0.061,at:1777426971
       sample:0.047,at:1777427036
       sample:0.106,at:1777427776
@@ -71,6 +74,6 @@ story:LakeSurfer
       sample:0.13,at:1777427803
       sample:0.13,at:1777427813
       sample:0.187,at:1777427905
+      sample:0.275,at:1778281426
   step,dige:d57fc3880abb869f
-    note,frontier
   step:2,dige:cda6c7eafc89e978

@@ -26,9 +26,12 @@ Snap:H
           Pier
             {"ref":{"v":"[]"}}	stashed,k:trust
             protocol,said_hello:false,heard_hello:false,said_trust:false,heard_trust:false
+            protocol,said_hello:true,heard_hello:true,said_trust:true,heard_trust:true
         {"mung":["age"]}	self,round:18
         see:✅ Bearing  7acf614d876d69a4
-        {"see":"Bearing Pier 8cbc667b…  hello:false/false  trust:false/false"}
+        {"see":"Bearing Pier 8cbc667b…  hello:true/true  trust:true/true"}
+        see:🎉 Bearing hellos complete
+        see:🔒 Bearing trust exchanged
     A:Nearing
       {"mung":["age"]}	self,round:20
       w:Nearing
