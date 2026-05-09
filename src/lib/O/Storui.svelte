@@ -277,9 +277,9 @@
     // exp_naive is never auto — it must be explicitly chosen.
     let eff_mode = $derived.by((): DiffMode => {
         if (diff_mode) return diff_mode
-        // sticky_mode carries across pip nav, but only when its required snap exists.
-        // Without this guard, navigating to a step where prev/exp is absent would
-        // silently fall back to naive while still showing sticky's button as active.
+        // sticky_mode carries across pip nav, but only when its required snap is present.
+        // Without this guard, navigating to a step whose prev/exp snap is absent would
+        // return e.g. 'prev' while showing naive content — mode button hidden, no feedback.
         if (sticky_mode === 'naive') return sticky_mode
         if (sticky_mode === 'prev' && has_prev_snap) return sticky_mode
         if ((sticky_mode === 'exp' || sticky_mode === 'exp_naive') && has_exp_snap) return sticky_mode
@@ -567,7 +567,7 @@
 
     // story focus: any focused child of .sr bubbles keydown here.
     //   Guard against inputs so typing in the note field is never stolen.
-    //   Arrow keys need a panel open; 'e' has its own hollow guard.
+    //   Arrow keys need a panel open; 'e', 'r', 't' have their own hollow guards.
     function handle_story_key(e: KeyboardEvent) {
         const tag = (e.target as HTMLElement).tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA') return
@@ -592,6 +592,17 @@
                 if      (has_exp_snap)  toggle_mode('exp')
                 else if (has_prev_snap) toggle_mode('prev')
             }
+        } else if (e.key === 'r') {
+            // r: always go raw — one-way, pressing again does nothing
+            if (displayed_at == null || !live_step(displayed_at)) return
+            e.preventDefault()
+            diff_mode   = 'naive'
+            sticky_mode = 'naive'
+        } else if (e.key === 't') {
+            // t: toggle trace panel (persists across pip nav)
+            if (displayed_at == null || !live_step(displayed_at)) return
+            e.preventDefault()
+            show_trace = !show_trace
         }
     }
 
@@ -627,7 +638,7 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sr" class:expanded class:trace-open={show_trace} bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
+<div class="sr" class:expanded bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
 
     {#if !This}
         <div class="sr-empty">no Story</div>
@@ -655,6 +666,50 @@
             {#if display.bad_count > 1}
                 <button class="sr-accept-all" onclick={accept_all}>Accept All ({display.bad_count})</button>
             {/if}
+        </div>
+
+        <!-- ── pip strip ────────────────────────────────────────────────── -->
+        <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
+        <!-- hollow: step in The but not yet reached this session.             -->
+        <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
+        <!-- tabindex=0: Tab-key entry point for story focus; arrow/e/r/t keys -->
+        <!--   bubble from any focused child up to the .sr root handler.       -->
+        <div class="sr-strip-wrap">
+        <div class="sr-strip" tabindex="0" bind:this={strip_el}>
+            {#each display.steps as ts (ts.n)}
+                {@const n         = ts.n}
+                {@const Step      = live_step(n)}
+                {@const ok        = !!(Step && Step.sc.ok)}
+                {@const hollow    = !Step}
+                {@const accepted  = !!(Step && Step.sc.accepted)}
+                {@const on        = display.open_at === n}
+                {@const ph        = n === playhead_n()}
+                {@const flags     = note_flags_for(n)}
+                {@const is_anchor = diff_collecting && n === diff_anchor}
+                <div class="sr-pip-cell">
+                    <div class="sr-flags">
+                        {#each flags as f (f.type)}
+                            <span class="sr-flag" style="background:{f.color}" title={f.type}></span>
+                        {/each}
+                    </div>
+                    <button
+                        class="sr-pip"
+                        class:ok
+                        class:accepted
+                        class:fail={!ok && !hollow && !accepted}
+                        class:hollow
+                        class:on
+                        class:playhead={ph}
+                        class:has-notes={flags.length > 0}
+                        class:is-anchor={is_anchor}
+                        onclick={() => pick(n)}
+                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
+                    >{hollow ? '○' : ok ? '·' : '✗'}</button>
+                </div>
+            {/each}
+        </div>
+        <button class="sr-expand" class:open={expanded} onclick={() => expanded = !expanded}
+                title="{expanded ? 'collapse' : 'expand'}">V</button>
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
@@ -709,9 +764,7 @@
                             {/if}
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
-                            {#if has_exp_snap && has_prev_snap}
-                                <span class="sr-ekey">[e]</span>
-                            {/if}
+                            <span class="sr-ekey">[e r t]</span>
                         </span>
                     {/if}
 
@@ -752,7 +805,10 @@
                 <!-- body ──────────────────────────────────────────────── -->
                 <!-- waiting_for_exp: exp_snap is in flight — dim the     -->
                 <!-- vs-prev placeholder so it doesn't read as final.     -->
-                <div style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
+                <!-- sr-body: flex child of sr-panel that owns flex:1;    -->
+                <!--   without this class the diff/pre would push trace   -->
+                <!--   below the panel's overflow:hidden in expanded view. -->
+                <div class="sr-body" style="opacity:{waiting_for_exp ? 0.5 : 1}; transition:opacity 0.3s">
                 {#if hollow}
                     <div class="sr-hollow-body">step {String(n).padStart(3,'0')} not yet run this session</div>
                 {:else if !(Step?.sc.got_snap)}
@@ -842,52 +898,6 @@
 
             </div>
         {/if}
-
-
-
-        <!-- ── pip strip ────────────────────────────────────────────────── -->
-        <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
-        <!-- hollow: step in The but not yet reached this session.             -->
-        <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
-        <!-- tabindex=0: Tab-key entry point for story focus; arrow/e keys     -->
-        <!--   bubble from any focused child up to the .sr root handler.       -->
-        <div class="sr-strip-wrap">
-        <div class="sr-strip" tabindex="0" bind:this={strip_el}>
-            {#each display.steps as ts (ts.n)}
-                {@const n         = ts.n}
-                {@const Step      = live_step(n)}
-                {@const ok        = !!(Step && Step.sc.ok)}
-                {@const hollow    = !Step}
-                {@const accepted  = !!(Step && Step.sc.accepted)}
-                {@const on        = display.open_at === n}
-                {@const ph        = n === playhead_n()}
-                {@const flags     = note_flags_for(n)}
-                {@const is_anchor = diff_collecting && n === diff_anchor}
-                <div class="sr-pip-cell">
-                    <div class="sr-flags">
-                        {#each flags as f (f.type)}
-                            <span class="sr-flag" style="background:{f.color}" title={f.type}></span>
-                        {/each}
-                    </div>
-                    <button
-                        class="sr-pip"
-                        class:ok
-                        class:accepted
-                        class:fail={!ok && !hollow && !accepted}
-                        class:hollow
-                        class:on
-                        class:playhead={ph}
-                        class:has-notes={flags.length > 0}
-                        class:is-anchor={is_anchor}
-                        onclick={() => pick(n)}
-                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
-                    >{hollow ? '○' : ok ? '·' : '✗'}</button>
-                </div>
-            {/each}
-        </div>
-        <button class="sr-expand" class:open={expanded} onclick={() => expanded = !expanded}
-                title="{expanded ? 'collapse' : 'expand'}">V</button>
-        </div>
 
     {/if}
 </div>
@@ -1002,6 +1012,7 @@
     color: #484848; cursor: pointer;
     font-family: Georgia, 'Times New Roman', serif;
     font-size: 16px; font-weight: 400; line-height: 1;
+    /* fixed footprint so it never collapses smaller */
     width: 20px; height: 20px; padding: 0;
     display: flex; align-items: center; justify-content: center;
     transition: color 0.15s, transform 0.2s;
@@ -1013,7 +1024,7 @@
 
 /* ── expanded layout ────────────────────────────────────────────────────── */
 /* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
-/* the middle and the pip strip pins to the bottom.                         */
+/* the middle and the pip strip pins to the top.                            */
 .sr.expanded {
     height: 70vh;
     display: flex; flex-direction: column;
@@ -1022,20 +1033,28 @@
     flex: 1; display: flex; flex-direction: column;
     min-height: 0; overflow: hidden;
 }
+/* sr-body is the opacity-wrapper around the diff/pre area.                  */
+/* It must be flex:1 so the diff fills available space in the panel column;  */
+/* without this, the diff expands to full content height, pushing trace      */
+/* and notes below overflow:hidden and making them unreachable.              */
+.sr.expanded .sr-body {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+}
+/* sr-diff2 must also propagate flex:1 down to sr-diff2-body */
+.sr.expanded .sr-diff2 {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+}
 /* let the diff scroll area fill whatever space the panel gives it */
 .sr.expanded .sr-diff2-body,
 .sr.expanded .sr-pre {
     flex: 1; min-height: 0; max-height: none;
 }
-/* notes and trace stay at natural height; they shrink-wrap */
+/* notes and trace take natural height; they shrink-wrap below the diff */
 .sr.expanded .sr-notes,
 .sr.expanded .sr-trace { flex-shrink: 0; }
-/* when trace is open in expanded view, give it 40% of the sr height so the
-   diff body still breathes above it — trace becomes independently scrollable */
-.sr.expanded.trace-open .sr-trace {
-    flex: 0 0 40%; min-height: 0; overflow-y: auto; max-height: none;
-}
-/* strip-wrap pins to bottom; strip max-height relaxes a little */
+/* strip-wrap pins to top (it's before the panel in DOM order); strip max-height relaxes */
 .sr.expanded .sr-strip-wrap { flex-shrink: 0; }
 .sr.expanded .sr-strip      { max-height: 140px; }
 .sr-pip-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
