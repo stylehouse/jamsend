@@ -172,6 +172,27 @@
         const open_count = ['Bearing', 'Nearing']
             .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
         w.i({ see: `PeeringLive  open:${open_count}/2` })
+
+        // wire once — on_step_ending is called by Story's poll_step at the
+        //   moment of quiescence, before the snap is taken. 'timeout' means
+        //   leave_running_until elapsed; 'causal' means work finished itself.
+        //   timeDoubt is written only on timeout with pending expects, so it
+        //   appears in the snap exactly once and only when it's true.
+        //   the particle drops cleanly on a subsequent causal ending.
+        if (!H.c.on_step_ending) {
+            H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
+                const unsettled = ['Bearing', 'Nearing']
+                    .filter(s => !H._PeeringLive_settled(H.Awo(s)))
+                const mgr = H.Awo('PeeringLive')
+                if (mode === 'timeout' && unsettled.length) {
+                    mgr.oai({ timeDoubt: 1 })
+                    H.trace('timeDoubt', `demand elapsed, unsettled: ${unsettled.join(', ')}`)
+                } else {
+                    const td = mgr.o({ timeDoubt: 1 })[0] as TheC | undefined
+                    if (td) mgr.drop(td)
+                }
+            }
+        }
     },
 
 //#endregion

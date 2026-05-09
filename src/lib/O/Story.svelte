@@ -1288,18 +1288,41 @@
         }
 
         // Phase 2: poll_step — wait for Run to go quiescent
+        let may_be_demanding = false
         const poll_step = () => {
             if (!run.c.driving) return
             const f = Run.c.finished_run as number | null
-            const quiescent = f != null
+            let not_in_Atime = f != null
                 && f > (run.c.began_step as number)
+            let long_after_Atime = not_in_Atime
                 && (now_in_seconds_with_ms() - f) > ((TICK_MS/1000) * 1.5)
-                && !Run.todo.length
-                && !(Run.c.leave_running_until > now_in_seconds_with_ms())
+            let dont_want_Atime = !Run.todo.length
+
+            let dont_leave_running = () => {
+                let leave_running = Run.c.leave_running_until > now_in_seconds_with_ms()
+                if (!may_be_demanding && leave_running) {
+                    Run.trace('leave running...')
+                    may_be_demanding = true
+                }
+                if (!leave_running) may_be_demanding = false
+                return !leave_running
+            }
+            
+            const quiescent = long_after_Atime
+                && dont_want_Atime
+                && dont_leave_running()
             if (!quiescent) { setTimeout(poll_step, TICK_MS); return }
             let ago = (now_in_seconds_with_ms() - f)
             Run.trace('quiescent', ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
+            // on_step_ending: called once at quiescence, before the snap.
+            //   'timeout'  → leave_running_until was set this step and just elapsed.
+            //   'causal'   → todo emptied and no demand was set, or demand was never
+            //                reached this step. clean self-driven completion.
+            // wires written here appear in the snap — that is the intent.
+            const lru = Run.c.leave_running_until as number | null
+            const timed_out = lru != null && lru > (run.c.began_step as number)
+            Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
             H.post_do(snap_step, { see: 'story_snap' })
         }
 

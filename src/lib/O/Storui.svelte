@@ -1026,7 +1026,7 @@
 /* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
 /* the middle and the pip strip pins to the top.                            */
 .sr.expanded {
-    height: 70vh;
+    height: 86vh;
     display: flex; flex-direction: column;
 }
 .sr.expanded .sr-panel {
