@@ -7,13 +7,12 @@
 #
 # xvfb              provides DISPLAY=:10 to:
 #  → wm                       window decorations, Alt+drag
-#  → x11vnc                   remote viewing (forwarded to host:5910 by socat)
+#  → x11vnc                   remote viewing (see virt-viewer.sh)
 #  → chromium                 three profiles with open Directory Handles
 #    → watchdog               signals virtreset.py on the HOST via shared socket
 #
 # HOST side services installed here:
 #   jamsend-virtreset   — socket listener + VM memory watchdog; reverts to snap3
-#   jamsend-vnc-forward — socat 127.0.0.1:5910 → VM:5910 (xvfb-viewer.sh unchanged)
 #
 # Snapshot workflow:
 #   snap1  freshly-installed    (cloud-init done; Chrome starting)
@@ -38,7 +37,7 @@ VM_NAME="jamsend-appservers"
 VM_IP="192.168.122.100"               # static IP on libvirt's default NAT network
 VM_USER="jamsend"
 VM_MAC="52:54:00:4a:4d:53"           # fixed MAC so cloud-init network-config matches reliably
-VM_RAM_MB=4096
+VM_RAM_MB=8192
 VM_CPUS=2
 VM_DISK_GB=20
 
@@ -92,14 +91,6 @@ done
 
 echo "=== Tearing down previous install (if any) ==="
 
-# Stop and disable old service names from previous installs
-for old in jamsend-vnc-forward.service jamsend-watchdog-vm.service jamsend-chromium.service; do
-    if systemctl list-unit-files "$old" 2>/dev/null | grep -q "$old"; then
-        sudo systemctl disable --now "$old" 2>/dev/null || true
-        sudo rm -f "/etc/systemd/system/$old"
-    fi
-done
-
 if virsh dominfo "$VM_NAME" &>/dev/null; then
     if virsh dominfo "$VM_NAME" | grep -q "State:.*running"; then
         echo "  Destroying running VM..."
@@ -127,14 +118,14 @@ sudo apt install -y \
     virtiofsd \
     cloud-image-utils \
     acl \
-    socat
+    zram-tools
 
 if ! groups | grep -q libvirt; then
     sudo usermod -aG libvirt "$USER"
     echo "Added $USER to libvirt group (re-login for passwordless virsh)"
 fi
 
-sudo systemctl enable --now libvirtd
+sudo systemctl enable --now libvirtd zramswap
 
 if ! virsh net-info default &>/dev/null; then
     echo "Creating default NAT network..."
@@ -243,6 +234,7 @@ packages:
   - npm
   - net-tools
   - vim
+  - zram-tools
 
 # cloud-init only gets the VM to a usable base: packages installed, virtiofs
 # mounted, npm deps ready. Service setup runs in install-jamsend-virt-step2.sh
@@ -265,6 +257,7 @@ runcmd:
   - mount -a
   - npm install --prefix /opt/jamsend-src/ty
   - chown -R $VM_USER:$VM_USER /home/$VM_USER/.chrome-profiles
+  - systemctl enable --now zramswap
 EOF
 
 cat > "$SEED_DIR/meta-data" <<EOF

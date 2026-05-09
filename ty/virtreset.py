@@ -34,8 +34,18 @@ def vm_is_running():
     r = virsh("dominfo", VM_NAME)
     return "running" in r.stdout
 
+def vm_state():
+    r = virsh("dominfo", VM_NAME)
+    for line in r.stdout.splitlines():
+        if line.startswith("State:"):
+            return line.split(":", 1)[1].strip()
+    return "unknown"
 
 def revert_to_ready(reason):
+    state = vm_state()
+    if state == "paused":
+        print(f"  VM is paused (revert already in progress?) — skipping", flush=True)
+        return
     print(f"Reverting {VM_NAME} to {SNAP_READY} ({reason})", flush=True)
     r = virsh("snapshot-revert", "--domain", VM_NAME,
               "--snapshotname", SNAP_READY, "--running")
@@ -44,20 +54,18 @@ def revert_to_ready(reason):
     else:
         print(f"  VM resumed from {SNAP_READY}", flush=True)
 
-
 def check_memory():
-    # virsh domstats --balloon returns balloon.current and balloon.maximum in KiB
-    # balloon.current is what the guest balloon driver reports as in-use
+    if not vm_is_running():
+        return False  # shut-off VM reports maximum/maximum; not a meaningful reading
     r = virsh("domstats", "--balloon", VM_NAME)
-    current = maximum = None
+    unused = available = maximum = None
     for line in r.stdout.splitlines():
-        if "balloon.current" in line:
-            current = int(line.split("=")[1].strip())
-        elif "balloon.maximum" in line:
-            maximum = int(line.split("=")[1].strip())
-    if current is None or maximum is None or maximum == 0:
-        return  # balloon driver not loaded in guest; < no memory monitoring
-    usage = current / maximum
+        if "balloon.unused"     in line: unused     = int(line.split("=")[1])
+        elif "balloon.available" in line: available  = int(line.split("=")[1])
+        elif "balloon.maximum"   in line: maximum    = int(line.split("=")[1])
+    if None in (unused, available, maximum) or maximum == 0:
+        return False  # < balloon stats not reporting; no memory monitoring
+    usage = (available - unused) / maximum
     if usage > MEMORY_LIMIT:
         print(f"VM memory {usage:.0%} > {MEMORY_LIMIT:.0%} — reverting", flush=True)
         return True
