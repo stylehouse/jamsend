@@ -563,6 +563,10 @@
 
     // Arrow-key navigation through the pip strip.
     // Left/right move open_at by one step; sticky_mode carries forward.
+    // 'e' cycles the comparison anchor: exp → prev → exp (the jitterbug).
+    //   sticky_mode carries the choice across step navigation so you can
+    //   hold a mode and flip through steps without re-pressing.
+    //   Skips unavailable anchors silently; no-op on hollow steps.
     // Handler lives on the strip element itself (tabindex=0) so it only fires
     // when the strip has focus — CodeMirror, inputs, and textareas are never
     // disturbed because clicking into them naturally moves focus away.
@@ -575,6 +579,19 @@
         } else if (e.key === 'ArrowLeft' && idx > 0) {
             e.preventDefault()
             pick(display.steps[idx - 1].n)
+        } else if (e.key === 'e') {
+            if (displayed_at == null || !live_step(displayed_at)) return
+            e.preventDefault()
+            const in_exp = eff_mode === 'exp' || eff_mode === 'exp_naive'
+            if (in_exp) {
+                if (has_prev_snap) toggle_mode('prev')
+            } else if (eff_mode === 'prev') {
+                if (has_exp_snap)  toggle_mode('exp')
+            } else {
+                // naive / auto — jump to first available anchor
+                if      (has_exp_snap)  toggle_mode('exp')
+                else if (has_prev_snap) toggle_mode('prev')
+            }
         }
     }
 
@@ -671,6 +688,7 @@
                     <!-- vs prev: sequential DMP diff since last step.      -->
                     <!-- raw: got_snap verbatim.                            -->
                     <!-- Clicking the active button resets to auto.         -->
+                    <!-- [e] key cycles exp ↔ prev while strip has focus.  -->
                     {#if !hollow}
                         <span class="sr-diff-modes">
                             {#if has_exp_snap}
@@ -685,6 +703,9 @@
                             {/if}
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
+                            {#if has_exp_snap && has_prev_snap}
+                                <span class="sr-ekey">[e]</span>
+                            {/if}
                         </span>
                     {/if}
 
@@ -1017,6 +1038,11 @@
 
 /* ── diff[] range collector ─────────────────────────────────────────────── */
 /* sits after the mode buttons, before Accept.                               */
+.sr-ekey {
+    font-size: 9px; color: #333; letter-spacing: 0.05em;
+    margin-left: 3px; user-select: none;
+}
+
 /* collecting: pulses teal while waiting for the second click.               */
 /* sr-diffstatus: brief feedback badge, auto-clears after 3s.               */
 .sr-diffrange {

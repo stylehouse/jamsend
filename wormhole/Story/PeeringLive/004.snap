@@ -6,9 +6,9 @@ Snap:H
         keygen_running
         keygen_done
         {"mung":["age"]}	self,round:6
-        {"see":"PeeringLive  open:2/2  poke_subs:0"}
+        {"see":"PeeringLive  open:2/2"}
     A:Bearing
-      {"mung":["age"]}	self,round:17
+      {"mung":["age"]}	self,round:6
       w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -18,19 +18,26 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           Id
           open
-        pier_dialling
-        Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
+        requesty_expects_serial,i:5
+          {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
             Id,prikey:923f93162c566c1da4d936a6cb7b84e517f7133042ee493968b763f6a16b39ce,pubkey:7acf614d876d69a411d125cb242cfda3f63502775628331e0abce13bb5fe85fc,prepub:7acf614d876d69a4
           Pier
             {"ref":{"v":"[]"}}	stashed,k:trust
             protocol,said_hello:false,heard_hello:false,said_trust:false,heard_trust:false
-        {"mung":["age"]}	self,round:17
-        see:✅ Bearing  7acf614d876d69a4
-        {"see":"Bearing Pier 8cbc667b…  hello:false/false  trust:false/false"}
+          expects
+            {"expect":"said_hello","demand":800}
+            {"expect":"heard_hello","demand":800}
+        pier_dialling
+        Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
+        requesty_expects,name:said_hello,demand:800,req_i:2
+        requesty_expects,name:heard_hello,demand:800,req_i:3
+        {"mung":["age"]}	self,round:6
+        requesty_expects,name:open,demand:5000,req_i:4,finished:true
+        {"see":"Bearing 8cbc667b…  hello:n/n  trust:n/n"}
     A:Nearing
-      {"mung":["age"]}	self,round:19
+      {"mung":["age"]}	self,round:6
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -40,14 +47,21 @@ Snap:H
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           Id
           open
+        requesty_expects_serial,i:5
+          {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
             Id,prikey:b4c5b5e9ab6ced515595475dd3faaedc209f096064de726240180c248b4c7763,pubkey:8cbc667bb0c8e748f109da3cb94f8067ce20e7c407a9e0ea80a5e925aa03e986,prepub:8cbc667bb0c8e748
           Pier
             {"ref":{"v":"[]"}}	stashed,k:trust
             protocol,said_hello:false,heard_hello:false,said_trust:false,heard_trust:false
+          expects
+            {"expect":"said_hello","demand":800}
+            {"expect":"heard_hello","demand":800}
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        {"mung":["age"]}	self,round:19
-        see:✅ Nearing  8cbc667bb0c8e748
-        {"see":"Nearing Pier 7acf614d…  hello:false/false  trust:false/false"}
+        requesty_expects,name:said_hello,demand:800,req_i:2
+        requesty_expects,name:heard_hello,demand:800,req_i:3
+        {"mung":["age"]}	self,round:6
+        requesty_expects,name:open,demand:5000,req_i:4,finished:true
+        {"see":"Nearing 7acf614d…  hello:n/n  trust:n/n"}
     {"mung":["id"]}	mo:main,interval:3.6

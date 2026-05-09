@@ -30,7 +30,7 @@
         let M = this
         let requlator:any; requlator = {
             pending: w.o(({...reqc})).length,
-            async i(c,sc={}) {
+            async i(c,sc={}):Promise<TheC> {
                 await ison()
                 let req = await w.r(exactly({...reqc,...c}),{...c,...sc})
                 req.sc.req_i ||= req_serial.sc.i++
@@ -40,13 +40,14 @@
                 req.c.category = `reqy:${t}`
                 return req
             },
-            async oai(c,sc={}) {
+            // note this is async! not like TheC.oai()
+            async oai(c,sc={}):Promise<TheC> {
                 let had = requlator.o(exactly(c))
                 if (had.length > 1) throw "reqy oai many"
                 if (had.length) return had[0]
                 return await requlator.i(c,sc)
             },
-            o(sc={}) {
+            o(sc={}):TheC[] {
                 // you can use sc to check for existing workpiece id before you .i()
                 //  if your quest has a bouncy beginning (tries to i many times)
                 return w.o(({...reqc,...sc}))

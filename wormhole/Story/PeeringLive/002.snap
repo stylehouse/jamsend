@@ -6,9 +6,9 @@ Snap:H
         keygen_running
         keygen_done
         {"mung":["age"]}	self,round:3
-        {"see":"PeeringLive  open:0/2  poke_subs:2"}
+        {"see":"PeeringLive  open:0/2"}
     A:Bearing
-      {"mung":["age"]}	self,round:14
+      {"mung":["age"]}	self,round:3
       w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -18,9 +18,18 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           Id
           open
-        {"mung":["age"]}	self,round:14
+        requesty_expects_serial,i:2
+          {"had_aim":1,"category":"reqy:expects"}
+        requesty_expects,name:open,demand:5000,req_i
+        more_visuals
+          Peering
+            Id,prikey:923f93162c566c1da4d936a6cb7b84e517f7133042ee493968b763f6a16b39ce,pubkey:7acf614d876d69a411d125cb242cfda3f63502775628331e0abce13bb5fe85fc,prepub:7acf614d876d69a4
+          expects
+            {"expect":"open","demand":5000}
+        {"mung":["age"]}	self,round:3
+        see:⏳ Bearing → PeerServer…
     A:Nearing
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round:3
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -30,5 +39,14 @@ Snap:H
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           Id
           open
-        {"mung":["age"]}	self,round:16
+        requesty_expects_serial,i:2
+          {"had_aim":1,"category":"reqy:expects"}
+        requesty_expects,name:open,demand:5000,req_i
+        more_visuals
+          Peering
+            Id,prikey:b4c5b5e9ab6ced515595475dd3faaedc209f096064de726240180c248b4c7763,pubkey:8cbc667bb0c8e748f109da3cb94f8067ce20e7c407a9e0ea80a5e925aa03e986,prepub:8cbc667bb0c8e748
+          expects
+            {"expect":"open","demand":5000}
+        {"mung":["age"]}	self,round:3
+        see:⏳ Nearing → PeerServer…
     {"mung":["id"]}	mo:main,interval:3.6

@@ -3,7 +3,7 @@
     import { Selection } from "$lib/mostly/Selection.svelte";
     import { register_class, WormholeNav, type House } from "$lib/O/Housing.svelte";
     import { Peerily, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
-    import { armap, Idento, nex, peel, sex } from "$lib/Y.svelte";
+    import { armap, enhex, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
 
     let {M} = $props()
@@ -13,46 +13,57 @@
 
 
 
-
-
-
-        //#region PeeringLive
+//#region PeeringLive
 // Two real Peerily/Peering/Pier objects connecting inside one House.
 //
-// A:PeeringLive/w:PeeringLive — manager: keygen (post_do), poke service,
-//   PeerJS cleanup on H.stop().
+// A:PeeringLive/w:PeeringLive — manager: keygen (post_do), PeerJS cleanup on H.stop().
 // A:Bearing/w:Bearing, A:Nearing/w:Nearing — each side's worker.
 //
-// Poke mechanism:
-//   Bearing and Nearing register {poke_w:1, side} on w:PeeringLive while
-//   waiting for eer.open. The interval pokes the first registrant via
-//   sc.side with e:nichtstun — a specific method, so _Aw_think dispatches
-//   it without a full think(). Story sees busy.
-//   The interval is long-lived (until H.stop()) so H.stopped reliably
-//   triggers P.stop() — which destroys PeerJS connections and frees the
-//   server-side IDs, letting deterministic prepubs be reused next run.
+// Each side runs a requesty_serial(w,'expects') state machine. Each
+//   %requesty_expects,name:foo,demand:N is %finished when its predicate
+//   matches the live world. While unfinished it demands time and self-
+//   schedules a recheck at demand×0.7 ms — protocol bools (said_hello,
+//   said_trust…) don't fire H.main() on their own, so the timer is the
+//   read-side beat. One pending recheck per req, flag-gated.
 //
-// Testing dump:
-//   _PeeringLive_dump rebuilds w/{more_visuals:1}/... each cycle with
-//   private keys, stashed bags, and Pier protocol bools — for snapshot
-//   verification of cryptographic and protocol state.
+// Cross-side short-circuit: once the other side's expects are all
+//   %finished, this side stops demanding time — story snaps and any
+//   gap here is captured as the failure it is.
+//
+// Step actions (send_test_binary, force_disconnect) are triggered by
+//   Story Prep elvises and mark %test,kind,seq particles on each side's
+//   w. The expects driver seeds the corresponding expects on sight of
+//   those particles; phase tracking for disconnect/reconnect latches
+//   transitions on the test particle itself.
 //
 // Particle layout per side (Bearing shown):
-//   A:Bearing / w:Bearing
-//     {Peerily:1}                  .c.P = Peerily
-//     {Peering:1, name:'bearing', prepub}  .c.inst = Peering
-//       /{open:1}                  present while PeerServer connected
-//       /{Id:1}                    .c.Id = Idento
-//     {Pier:1, pub:'…'}            .c.inst = Pier
-//     {more_visuals:1}             ── dumped each cycle ─────────────
-//       /{Peering:1}
-//         /{Id:1, prikey, pubkey, prepub}
-//         /{stashed:1, k, v}       eer.stashed entries
-//       /{Pier:1}
-//         /{stashed:1, k, v}       pier.stashed entries
-//         /{protocol:1, said_hello, heard_hello, said_trust, heard_trust}
+//   A:Bearing/w:Bearing
+//     %Peerily:1                            .c.P = Peerily
+//     %Peering:1,name:bearing,prepub        .c.inst = Peering
+//       /open:1                             present while PeerServer connected
+//       /Id:1                               .c.Id = Idento
+//     %Pier:1,pub:…                         .c.inst = Pier
+//     %test:binary,seq:S,sent:1             step 5 sender marker
+//     %test:binary,seq:S,expecting:1        step 5 receiver marker (mirrored)
+//       received:1,received_len,received_dige  — set by test_binary handler
+//     %test:disconnect,seq:S,role:closer    step 6+ — phases latch here
+//       phase_disc,phase_open,phase_hello,phase_trust
+//     %requesty_expects_serial,i:N
+//     %requesty_expects,name:…,demand:N[,seq:S][,finished:1]
+//     %more_visuals:1                       ── dumped each cycle ──────────────
+//       /Peering:1
+//         /Id:1,prikey,pubkey,prepub
+//         /stashed:1,k,v
+//       /Pier:1
+//         /stashed:1,k,v
+//         /protocol:1,said_hello,heard_hello,said_trust,heard_trust
+//       /test:binary,…                      copy for snap
+//       /test:disconnect,…                  copy for snap
+//       /expects:1                          unfinished expects — empty in a clean run
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
+
+//#region Setup
 
     Run_A_PeeringLive(this: House) {
         const H = this
@@ -110,7 +121,11 @@
         console.log(`🟦 ${H.name} PeeringLive wired`)
     },
 
-    // ── w:PeeringLive — manager ──────────────────────────────────────────────
+//#endregion
+//#region Manager
+
+    // deterministic keygen so the same prepubs are used every run.
+    //   PeerServer ID conflicts are prevented by P.stop() on H.stopped.
     async PeeringLive(A: TheC, w: TheC) {
         const H = this as House
         let DETERMINISTIC_KEYS = 1
@@ -119,8 +134,6 @@
             if (w.oa({ keygen_running: 1 })) return
             w.i({ keygen_running: 1 })
             H.post_do(async () => {
-                // deterministic seed by side name — same prepubs every run.
-                //   PeerServer ID conflicts are prevented by P.stop() on H.stopped.
                 const [Id_B, Id_N] = await Promise.all([
                     (async () => { const id = new Idento(); await id.generateKeys(DETERMINISTIC_KEYS && 'Bearing'); return id })(),
                     (async () => { const id = new Idento(); await id.generateKeys(DETERMINISTIC_KEYS && 'Nearing'); return id })(),
@@ -161,9 +174,14 @@
         w.i({ see: `PeeringLive  open:${open_count}/2` })
     },
 
-    // ── shim — P.Trusting.M interface ─────────────────────────────────────────
-    // Set on P before i_Peering so create_Peering's eer.on('connection')
-    //   closure captures it correctly when registered.
+//#endregion
+//#region Shim
+
+    // P.Trusting interface — set on P before i_Peering so create_Peering's
+    //   eer.on('connection') closure captures it correctly when registered.
+    // Test handlers are hotwired onto each Pier in Pier_init_completo.
+    //   They run inside Pier.handleMessage with full crypto verification,
+    //   so they arrive only after the signature chain is satisfied.
     _PeeringLive_shim(H: House, side: string) {
         return { M: {
             // called via `await` in create_Peering's async connection handler.
@@ -182,6 +200,19 @@
             },
             Pier_init_completo(ier: Pier) {
                 console.log(`🎉 ${side} init_completo  ${ier.pub}`)
+                // hotwire once — ||= guards against rewiring on reconnect
+                ier.handlers.test_binary ||= async (data: any) => {
+                    const sw  = H.Awo(side)
+                    const seq = data.seq as number
+                    const len = (data.buffer as ArrayBuffer | undefined)?.byteLength ?? 0
+                    const received_dige = await H._PeeringLive_dige(data.buffer)
+                    // upsert onto the expecting particle mirrored by the sender
+                    const t = sw.o({ test: 'binary', seq })[0] ?? sw.i({ test: 'binary', seq })
+                    t.sc.received      = 1
+                    t.sc.received_len  = len
+                    t.sc.received_dige = received_dige
+                    H.main()
+                }
                 H.main()
             },
             Pier_i_publicKey(ier: Pier) {
@@ -206,9 +237,258 @@
         }}
     },
 
-    // ── testing data dump ────────────────────────────────────────────────────
-    // Re-poured each cycle into w/{more_visuals:1}/... — snapshots of this
-    //   subtree verify cryptographic identity and protocol progression.
+//#endregion
+//#region Sides
+
+    async Bearing(A: TheC, w: TheC) {
+        await (this as House)._PeeringLive_main(A, w, 'Bearing')
+    },
+
+    async Nearing(A: TheC, w: TheC) {
+        await (this as House)._PeeringLive_main(A, w, 'Nearing')
+    },
+
+    async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
+        const H = this as House
+
+        const Peering = w.o({ Peering: 1 })[0] as TheC | undefined
+        const eer     = Peering?.c.inst as Peering | undefined
+
+        // Phase 1: keygen or concretion not yet done
+        if (!Peering) {
+            w.oai({ see: `⏳ ${side} keygen pending…` })
+            H.demand_time_to_think(3000)
+            return
+        }
+        if (!eer) {
+            w.oai({ see: `⏳ ${side} Peering concretion…` })
+            H.demand_time_to_think(2000)
+            return
+        }
+
+        if (!Peering.oa({ open: 1 })) w.oai({ see: `⏳ ${side} → PeerServer…` })
+
+        // Phase 2: Bearing initiates outbound when Nearing's prepub is known.
+        //   Nearing learns Bearing's pub from the inbound connection.
+        if (side === 'Bearing' && Peering.oa({ open: 1 })) {
+            const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+            if (npub && !w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
+                w.i({ pier_dialling: 1 })
+                const con = eer.connect(npub)
+                const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
+                pn.c.con  = con
+                console.log(`🐻 Bearing → Nearing  ${npub}`)
+            }
+        }
+
+        // Pier handle: outbound init_begins fires once when con is in hand.
+        //   Inbound path already called init_begins inside Peering_i_Pier.
+        const PierN = w.o({ Pier: 1 })[0] as TheC | undefined
+        let ier: Pier | undefined
+        if (PierN) {
+            ier = PierN.c.inst as Pier | undefined
+            if (ier && eer && !PierN.c.began && PierN.c.con) {
+                PierN.c.began = true
+                ier.init_begins(eer, PierN.c.con, false)
+            }
+            if (!ier) H.demand_time_to_think(3000)  // concretion in flight
+        }
+
+        // phase tracking must run before drive_expects seeds re_* gates
+        H._PeeringLive_track_phases(w, ier)
+
+        await H._PeeringLive_drive_expects(w, side, eer, ier)
+
+        if (ier) {
+            const hh = (b: boolean) => b ? 'y' : 'n'
+            w.i({ see: `${side} ${ier.pub?.slice(0, 8)}…  hello:${hh(ier.said_hello)}/${hh(ier.heard_hello)}  trust:${hh(ier.said_trust)}/${hh(ier.heard_trust)}` })
+        } else if (Peering.oa({ open: 1 })) {
+            w.oai({ see: `${side} open, awaiting Pier` })
+        }
+
+        H._PeeringLive_dump(w, side)
+    },
+
+//#endregion
+//#region Expects
+
+    // Per tick: seed expects appropriate to current state (idempotent via
+    //   oai), then drain — evaluate predicate for each unfinished req.
+    //   Finished → H.main(). Still pending → demand time and self-schedule
+    //   a recheck at demand×0.7 ms unless the other side has already
+    //   settled, in which case stop demanding and let Story snap.
+    async _PeeringLive_drive_expects(w: TheC, side: string, eer?: Peering, ier?: Pier) {
+        const H = this as House
+        const ex = await H.requesty_serial(w, 'expects')
+
+        // protocol march — each gate prevents seeding until predecessor fires.
+        //   every ex.oai() is awaited: the fast path (particle exists) returns
+        //   immediately; the slow path calls w.r() and must not overlap.
+        if (eer)              await ex.oai({ name: 'open' },        { demand: 5000 })
+        if (ier)              await ex.oai({ name: 'said_hello' },  { demand:  800 })
+        if (ier)              await ex.oai({ name: 'heard_hello' }, { demand:  800 })
+        if (ier?.heard_hello) await ex.oai({ name: 'said_trust' },  { demand: 1500 })
+        if (ier?.heard_hello) await ex.oai({ name: 'heard_trust' }, { demand: 1500 })
+
+        // step 5: binary roundtrip — one seq per Prep step
+        for (const t of w.o({ test: 'binary' }) as TheC[]) {
+            const seq = t.sc.seq as number
+            if (t.sc.sent)      await ex.oai({ name: 'said_test_binary',  seq }, { demand:  500 })
+            if (t.sc.expecting) await ex.oai({ name: 'heard_test_binary', seq }, { demand: 1500 })
+        }
+
+        // step 6+: disconnect/reconnect — phases gate next seed so we
+        //   don't evaluate re_open before disconnect is confirmed, etc.
+        for (const t of w.o({ test: 'disconnect' }) as TheC[]) {
+            const seq = t.sc.seq as number
+                                  await ex.oai({ name: 're_disc',  seq }, { demand: 1000 })
+            if (t.sc.phase_disc)  await ex.oai({ name: 're_open',  seq }, { demand: 4000 })
+            if (t.sc.phase_open)  await ex.oai({ name: 're_hello', seq }, { demand: 1500 })
+            if (t.sc.phase_hello) await ex.oai({ name: 're_trust', seq }, { demand: 2000 })
+        }
+
+        // once other side has seeded and finished all its expects, stop
+        //   demanding — the gap on this side is the result, not a retry target
+        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        const other_settled = H._PeeringLive_settled(H.Awo(other))
+
+        await ex.do(async (req: TheC) => {
+            if (req.sc.finished) return
+            const ok = H._PeeringLive_predicate(req, w, eer, ier)
+            if (ok) { req.sc.finished = true; H.main(); return }
+            if (other_settled) return
+            H.demand_time_to_think(req.sc.demand as number)
+            // self-schedule a recheck before the demand expires — said_hello,
+            //   said_trust etc. flip without firing H.main(); this is the
+            //   read-side beat that surfaces those transitions. one pending
+            //   recheck per req so we don't accumulate timers across ticks.
+            if (!req.c.recheck_pending) {
+                req.c.recheck_pending = true
+                setTimeout(() => {
+                    req.c.recheck_pending = false
+                    H.main()
+                }, (req.sc.demand as number) * 0.7)
+            }
+        })
+    },
+
+    // has the other side seeded its expects machine and finished everything?
+    //   absence of %requesty_expects_serial means it hasn't started yet —
+    //   without that guard an empty o() would false-positive as settled.
+    _PeeringLive_settled(side_w: TheC): boolean {
+        if (!side_w.oa({ requesty_expects_serial: 1 })) return false
+        return !(side_w.o({ requesty_expects: 1 }) as TheC[]).some(r => !r.sc.finished)
+    },
+
+    // single truth for what each %requesty_expects,name:… asks of the world.
+    //   adding a new step: seed it in drive_expects and add a branch here.
+    _PeeringLive_predicate(req: TheC, w: TheC, eer?: Peering, ier?: Pier): boolean {
+        const seq = req.sc.seq as number | undefined
+        switch (req.sc.name) {
+            case 'open':             return !!(eer as any)?.Peer?.open
+            case 'said_hello':       return !!ier?.said_hello
+            case 'heard_hello':      return !!ier?.heard_hello
+            case 'said_trust':       return !!ier?.said_trust
+            case 'heard_trust':      return !!ier?.heard_trust
+            case 'said_test_binary': return !!(w.o({ test: 'binary', seq, sent:     1 }) as TheC[])[0]
+            case 'heard_test_binary':return !!(w.o({ test: 'binary', seq, received: 1 }) as TheC[])[0]
+            case 're_disc':          return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_disc
+            case 're_open':          return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_open
+            case 're_hello':         return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_hello
+            case 're_trust':         return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_trust
+        }
+        return false
+    },
+
+//#endregion
+//#region Phases
+
+    // observe protocol transitions and latch them onto the test particle.
+    //   each phase flag is one-way: once set it stays set for that seq,
+    //   even when the Pier object is replaced on reconnect.
+    // < could latch heard_hello too; left out while said_trust/heard_trust
+    //   reliably confirm a full round-trip.
+    _PeeringLive_track_phases(w: TheC, ier: Pier | undefined) {
+        if (!ier) return
+        for (const t of w.o({ test: 'disconnect' }) as TheC[]) {
+            if (!t.sc.phase_disc  &&  ier.disconnected)                       t.sc.phase_disc  = 1
+            if ( t.sc.phase_disc  && !t.sc.phase_open  && !ier.disconnected)  t.sc.phase_open  = 1
+            if ( t.sc.phase_open  && !t.sc.phase_hello &&  ier.said_hello)    t.sc.phase_hello = 1
+            if ( t.sc.phase_hello && !t.sc.phase_trust &&  ier.heard_trust)   t.sc.phase_trust = 1
+        }
+    },
+
+//#endregion
+//#region Steps
+
+    // Triggered by Story Prep — The/Plan/{Prep:N}/{i_elvisto, e, esc[{esc,v}]}.
+    //   Each receives (A, w, e?) where e carries the esc fields in its sc.
+
+    // Send a deterministic binary buffer Bearing→Nearing (or any side→other).
+    //   Buffer content is seq-seeded so the dige is stable across runs.
+    //   Mirrors an expecting:1 marker onto the other side so its driver
+    //   seeds heard_test_binary without needing its own Prep particle.
+    //
+    //   Prep wiring example (steps 5a, 5b for both directions):
+    //     The/Plan/{Prep:5}/{i_elvisto:'PeeringLive/Bearing',e:'send_test_binary'}/{esc:'seq',v:1}
+    async send_test_binary(_A: TheC, w: TheC, e?: TheC) {
+        const H    = this as House
+        const side = w.sc.w as string
+        const seq  = (e?.sc.seq ?? 1) as number
+        const ier  = (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+        if (!ier) { console.warn(`send_test_binary: no Pier on ${side}`); return }
+
+        // deterministic content — same dige every run for snap stability
+        const buf = new Uint8Array(256)
+        for (let i = 0; i < 256; i++) buf[i] = (i * 31 + seq * 7) & 0xff
+        const dige = await H._PeeringLive_dige(buf.buffer)
+
+        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        w.i({ test: 'binary', seq, sent: 1, len: buf.length, dige })
+        H.Awo(other).i({ test: 'binary', seq, expecting: 1, len: buf.length, dige })
+
+        await ier.emit('test_binary', { seq, buffer: buf })
+        console.log(`📦 ${side} → ${other}  test_binary seq=${seq}  ${dige.slice(0, 12)}…`)
+        H.main()
+    },
+
+    // Close this side's connection and let auto_reconnect bring it back.
+    //   Marks both sides with a test:disconnect particle so each side's
+    //   drive_expects seeds the re_* chain and phase_track observes it.
+    //
+    //   For repeats, use a distinct seq per Prep step:
+    //     The/Plan/{Prep:6}/{i_elvisto:'PeeringLive/Bearing',e:'force_disconnect'}/{esc:'seq',v:1}
+    //     The/Plan/{Prep:7}/{…}/{esc:'seq',v:2}
+    //     The/Plan/{Prep:8}/{…}/{esc:'seq',v:3}
+    async force_disconnect(_A: TheC, w: TheC, e?: TheC) {
+        const H    = this as House
+        const side = w.sc.w as string
+        const seq  = (e?.sc.seq ?? 1) as number
+        const ier  = (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+        if (!ier) { console.warn(`force_disconnect: no Pier on ${side}`); return }
+
+        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        w.i({ test: 'disconnect', seq, role: 'closer'   })
+        H.Awo(other).i({ test: 'disconnect', seq, role: 'receiver' })
+
+        console.log(`🪓 ${side} closing con  seq=${seq}`)
+        ier.con.close()
+        H.main()
+    },
+
+    // SHA-256 hex of a buffer — compact, stable, displays cleanly in snap diffs.
+    async _PeeringLive_dige(buffer: ArrayBuffer | undefined): Promise<string> {
+        if (!buffer) return ''
+        return enhex(new Uint8Array(await crypto.subtle.digest('SHA-256', buffer)))
+    },
+
+//#endregion
+//#region Dump
+
+    // Re-poured each cycle into w/%more_visuals:1/… — snapshots of this
+    //   subtree verify crypto identity, protocol state, test-step results
+    //   (binary dige/len match, disconnect phases), and any outstanding expects.
+    //   A clean run shows no /expects:1 block at all.
     _PeeringLive_dump(w: TheC, _side: string) {
         const mv = w.oai({ more_visuals: 1 }) as TheC
         mv.empty()
@@ -220,107 +500,43 @@
             const mv_p = mv.oai({ Peering: 1 }) as TheC
             if (Id?.privateKey) {
                 const f = Id.freeze()
-                mv_p.oai({ Id: 1, prikey: f.key, pubkey: f.pub, prepub: Id+'' })
+                mv_p.oai({ Id: 1, prikey: f.key, pubkey: f.pub, prepub: Id + '' })
             }
             for (const [k, v] of Object.entries(eer?.stashed ?? {})) {
                 mv_p.oai({ stashed: 1, k }).sc.v = v
             }
         }
 
-        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
-        const ier  = Pier?.c.inst as Pier | undefined
+        const PierN = w.o({ Pier: 1 })[0] as TheC | undefined
+        const ier   = PierN?.c.inst as Pier | undefined
         if (ier) {
             const mv_pi = mv.oai({ Pier: 1 }) as TheC
             for (const [k, v] of Object.entries(ier.stashed ?? {})) {
                 mv_pi.oai({ stashed: 1, k }).sc.v = v
             }
-        }
-    },
-
-    // ── w:Bearing ────────────────────────────────────────────────────────────
-    async Bearing(A: TheC, w: TheC) {
-        await (this as House)._PeeringLive_main(A, w, 'Bearing')
-    },
-
-    // ── w:Nearing ────────────────────────────────────────────────────────────
-    async Nearing(A: TheC, w: TheC) {
-        await (this as House)._PeeringLive_main(A, w, 'Nearing')
-    },
-
-    async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
-        const H = this as House
-
-        const Peering = w.o({ Peering: 1 })[0] as TheC | undefined
-
-        // waiting for PeerServer — comms not possible yet, stay back
-        if (!Peering?.oa({ open: 1 })) {
-            H.demand_time_to_think(3000)
-            if (!Peering) { w.oai({ see: `⏳ ${side} keygen pending…` }); return }
-            w.oai({ see: `⏳ ${side} → PeerServer…` })
-            return
+            mv_pi.oai({ protocol: 1,
+                said_hello:  ier.said_hello,  heard_hello: ier.heard_hello,
+                said_trust:  ier.said_trust,  heard_trust: ier.heard_trust })
         }
 
-        const eer = Peering.c.inst as Peering
+        // test-step particles — copied so snap diffs catch sent/received/phase mismatches
+        for (const t of w.o({ test: 1 }) as TheC[]) {
+            mv.i({ ...t.sc })
+        }
 
-        // ── Phase 2: Bearing initiates outbound connection ──────────────────
-        if (side === 'Bearing') {
-            const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-            if (!npub) { w.oai({ waits: 'Nearing open' }); return }
-            if (!w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
-                w.i({ pier_dialling: 1 })
-                const con = eer.connect(npub)
-                const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
-                pn.c.con  = con
-                console.log(`🐻 Bearing → Nearing  ${npub}`)
+        // unfinished expects only — a clean step leaves no /expects:1 here
+        const unfinished = (w.o({ requesty_expects: 1 }) as TheC[]).filter(r => !r.sc.finished)
+        if (unfinished.length) {
+            const mv_e = mv.oai({ expects: 1 }) as TheC
+            for (const r of unfinished) {
+                mv_e.i({ expect: r.sc.name, seq: r.sc.seq, demand: r.sc.demand })
             }
         }
-
-        // ── Pier reporting ──────────────────────────────────────────────────
-        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
-        if (Pier) {
-            const ier = Pier.c.inst as Pier | undefined
-            if (!ier) {
-                w.i({ see: `⏳ ${side} Pier awaiting concretion…` })
-                H.demand_time_to_think(3000)
-            } else {
-                if (!Pier.c.began && Pier.c.con) {
-                    Pier.c.began = true
-                    ier.init_begins(eer, Pier.c.con, false)
-                }
-                w.i({ see: `${side} Pier ${ier.pub?.slice(0,8)}…  hello:${ier.said_hello}/${ier.heard_hello}  trust:${ier.said_trust}/${ier.heard_trust}` })
-                // comms in flight — stay back until both sides have exchanged
-                if (!ier.heard_hello || !ier.heard_trust) H.demand_time_to_think(3000)
-                if (ier.said_hello && ier.heard_hello) w.i({ see: `🎉 ${side} hellos complete` })
-                if (ier.heard_trust)                    w.i({ see: `🔒 ${side} trust exchanged` })
-            }
-        } else {
-            w.oai({ waits: 'Pier' })
-            H.demand_time_to_think(3000)   // waiting for inbound connection
-        }
-
-        H._PeeringLive_dump(w, side)
     },
 
 //#endregion
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//#endregion PeeringLive
 
 
 
@@ -339,12 +555,10 @@
     //     4. The inst (a stand-in Housing subclass) appears on D and on n.c.inst.
     //     5. The worker reads n.c.inst and stamps a %see.
     //
-    // 
     // Peeringinst ghost — a second test-case game with its own Cyto instance.
     Run_A_Peeringinst(this: House) {
         const H = this
         let w = H.i({ A: 'Peeringinst' }).i({ w: 'Peeringinst' })
-
 
         // ── declare %scheme once ──────────────────────────────────────
         // %scheme:'X' is a bucket particle — its direct children are
@@ -370,24 +584,8 @@
                 }})
         }
 
-        
         console.log(`🟦 ${H.name} Peeringinst wired`)
     },
-    // // host a Peering and its Pier
-    // //  this whole House is about this Peering, somehow. just make one up.
-    // async Peeringinst(A: TheC, w: TheC) {
-    //     // avail these to concretion() here for now
-    //     register_class('Peering',WormholeNav)
-    //     register_class('Pier',Pier)
-
-    //     // autovivify a w/%Peering, to be instantiated by:
-    //     // w/%scheme:Peering/%lematch,sc:{Peering:1},class:Peering
-
-    //     // and the other rules. then we just look at it
-    //     //  make a %see:`Pier:suchnsuch ${objectify(Pier)}`
-    // },
-
-
 
     // The worker. Declares the %scheme lematch structure, autovivifies
     //  example particles, and reports what concretion produced.

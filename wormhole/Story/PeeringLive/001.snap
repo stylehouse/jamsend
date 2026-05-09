@@ -5,8 +5,6 @@ Snap:H
       w:PeeringLive
         {"mung":["age"]}	self,round
         keygen_running
-        poke_w,side:Bearing
-        poke_w,side:Nearing
         keygen_done
     A:Bearing
       {"mung":["age"]}	self,round
