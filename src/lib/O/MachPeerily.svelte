@@ -182,16 +182,26 @@
     // Test handlers are hotwired onto each Pier in Pier_init_completo.
     //   They run inside Pier.handleMessage with full crypto verification,
     //   so they arrive only after the signature chain is satisfied.
+    //
+    // All methods trace on H (= Run) so events appear in Story's trace panel.
+    //   If Peering_i_Pier never appears in the trace, the inbound offer from
+    //   Bearing never reached Nearing — signaling or PeerJS issue.
+    //   If Peering_i_Pier fires but Pier_init_completo does not, the DataChannel
+    //   ICE handshake is failing or stalling before on('open').
     _PeeringLive_shim(H: House, side: string) {
         return { M: {
             // called via `await` in create_Peering's async connection handler.
             //   init_begins runs first (sync) so con.on('open') is registered
             //   before the DataChannel can advance to open state.
             async Peering_i_Pier(_eer: any, pub: string, con: any, _inbound: boolean) {
-                console.log(`🔗 ${side} inbound from ${pub}`)
+                const tag = `${side}←${pub.slice(0,8)}`
+                console.log(`🔗 shim Peering_i_Pier  ${tag}  con.type:${con?.type}`)
+                H.trace('shim', `Peering_i_Pier  ${tag}`)
                 const sw   = H.Awo(side)
                 const P    = sw.o({ Peerily: 1 })[0]?.c.P
                 const eer  = sw.o({ Peering: 1 })[0]?.c.inst
+                if (!P)   console.warn(`⚠ shim Peering_i_Pier: no P on ${side}`)
+                if (!eer) console.warn(`⚠ shim Peering_i_Pier: no eer on ${side}`)
                 const pier = new Pier({ P, eer, pub, stashed: { trust: [] } })
                 pier.init_begins(eer, con, true)        // sync — before any await
                 const pn   = sw.oai({ Pier: 1, pub, name: pub }) as TheC
@@ -199,7 +209,9 @@
                 H.post_do(async () => { H.main() })
             },
             Pier_init_completo(ier: Pier) {
-                console.log(`🎉 ${side} init_completo  ${ier.pub}`)
+                const tag = `${side}↔${ier.pub?.slice(0,8)}  ${ier.inbound?'in':'out'}`
+                console.log(`🎉 shim Pier_init_completo  ${tag}`)
+                H.trace('shim', `Pier_init_completo  ${tag}`)
                 // hotwire once — ||= guards against rewiring on reconnect
                 ier.handlers.test_binary ||= async (data: any) => {
                     const sw  = H.Awo(side)
@@ -216,24 +228,38 @@
                 H.main()
             },
             Pier_i_publicKey(ier: Pier) {
-                console.log(`🔑 ${side} publicKey  ${ier.pub}`)
+                const tag = `${side}←${ier.pub?.slice(0,8)}`
+                console.log(`🔑 shim Pier_i_publicKey  ${tag}`)
+                H.trace('shim', `Pier_i_publicKey  ${tag}`)
                 H.main()
             },
-            ier_is_Good(_ier: Pier): boolean { return true },
+            ier_is_Good(_ier: Pier): boolean {
+                // called before say_trust — not traced, fires on every trust attempt
+                return true
+            },
             Pier_wont_connect(pub: string) {
-                console.warn(`💔 ${side} wont_connect  ${pub}`)
+                const tag = `${side}→${pub.slice(0,8)}`
+                console.warn(`💔 shim Pier_wont_connect  ${tag}`)
+                H.trace('shim', `Pier_wont_connect  ${tag}`)
                 const pn = H.Awo(side).o({ Pier: 1, pub })[0] as TheC | undefined
                 if (pn) H.Awo(side).drop(pn)
                 H.main()
             },
             Pier_reconnect(ier: Pier) {
+                const tag = `${side}→${ier.pub?.slice(0,8)}`
+                console.log(`🔄 shim Pier_reconnect  ${tag}`)
+                H.trace('shim', `Pier_reconnect  ${tag}`)
                 const con = ier.eer.connect(ier.pub)
                 ier.init_begins(ier.eer, con, false)
                 H.main()
             },
             // < ping and intro not exercised in this test
-            unemitPing()  {},
-            unemitIntro() {},
+            unemitPing(ier: Pier)  {
+                H.trace('shim', `unemitPing  ${side}←${ier?.pub?.slice(0,8)}`)
+            },
+            unemitIntro(ier: Pier) {
+                H.trace('shim', `unemitIntro  ${side}←${ier?.pub?.slice(0,8)}`)
+            },
         }}
     },
 
@@ -324,7 +350,9 @@
         // protocol march — each gate prevents seeding until predecessor fires.
         //   every ex.oai() is awaited: the fast path (particle exists) returns
         //   immediately; the slow path calls w.r() and must not overlap.
-        if (eer)              await ex.oai({ name: 'open' },        { demand: 5000 })
+        //   'open' is only seeded while PeerServer isn't connected yet — once
+        //   finished+dropped it would otherwise respawn every tick needlessly.
+        if (eer && !(eer as any).Peer?.open) await ex.oai({ name: 'open' }, { demand: 5000 })
         if (ier)              await ex.oai({ name: 'said_hello' },  { demand:  800 })
         if (ier)              await ex.oai({ name: 'heard_hello' }, { demand:  800 })
         if (ier?.heard_hello) await ex.oai({ name: 'said_trust' },  { demand: 1500 })
