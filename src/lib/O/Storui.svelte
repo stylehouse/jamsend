@@ -561,17 +561,13 @@
         }
     })
 
-    // Arrow-key navigation through the pip strip.
-    // Left/right move open_at by one step; sticky_mode carries forward.
-    // 'e' cycles the comparison anchor: exp → prev → exp (the jitterbug).
-    //   sticky_mode carries the choice across step navigation so you can
-    //   hold a mode and flip through steps without re-pressing.
-    //   Skips unavailable anchors silently; no-op on hollow steps.
-    // Handler lives on the strip element itself (tabindex=0) so it only fires
-    // when the strip has focus — CodeMirror, inputs, and textareas are never
-    // disturbed because clicking into them naturally moves focus away.
-    function handle_strip_key(e: KeyboardEvent) {
-        if (display.open_at == null) return
+    // story focus: any focused child of .sr bubbles keydown here.
+    //   Guard against inputs so typing in the note field is never stolen.
+    //   Arrow keys need a panel open; 'e' has its own hollow guard.
+    function handle_story_key(e: KeyboardEvent) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        if (display.open_at == null && e.key !== 'e') return
         const idx = display.steps.findIndex(ts => ts.n === display.open_at)
         if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
             e.preventDefault()
@@ -602,10 +598,16 @@
         H.i_elvisto('Story/Story', 'story_accept_all', {})
     }
 
-    // strip_el: the pip strip div; made focusable (tabindex=0) so arrow-key
-    // navigation is scoped to it — keys only fire when the strip has focus,
-    // so CodeMirror and other editors are never disturbed.
+    // sr_el: the whole Storui root. tabindex=-1 lets sr_el.focus() park story
+    //   focus here when clicking non-interactive areas (diff body, panel bg).
+    //   onkeydown sits here so any focused child bubbles nav keys up to it.
+    // strip_el: still focusable (tabindex=0) for Tab-key entry into story focus.
+    let sr_el    = $state<HTMLElement | null>(null)
     let strip_el = $state<HTMLElement | null>(null)
+
+    // expanded: toggles the whole Storui to 70vh so the diff body can breathe.
+    //   The expand button lives beside the pip strip.
+    let expanded = $state(false)
 
     // diff2_body: the two-column grid; .sr-diff2-col children sync their scrollLeft
     let diff2_body = $state<HTMLElement | null>(null)
@@ -621,7 +623,7 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sr">
+<div class="sr" class:expanded bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
 
     {#if !This}
         <div class="sr-empty">no Story</div>
@@ -840,8 +842,10 @@
         <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
         <!-- hollow: step in The but not yet reached this session.             -->
         <!-- is-anchor: diff[] collection started from this step — teal ring.  -->
-        <!-- tabindex=0: focusable so arrow-key nav is scoped here, not global -->
-        <div class="sr-strip" tabindex="0" bind:this={strip_el} onkeydown={handle_strip_key}>
+        <!-- tabindex=0: Tab-key entry point for story focus; arrow/e keys     -->
+        <!--   bubble from any focused child up to the .sr root handler.       -->
+        <div class="sr-strip-wrap">
+        <div class="sr-strip" tabindex="0" bind:this={strip_el}>
             {#each display.steps as ts (ts.n)}
                 {@const n         = ts.n}
                 {@const Step      = live_step(n)}
@@ -868,11 +872,14 @@
                         class:playhead={ph}
                         class:has-notes={flags.length > 0}
                         class:is-anchor={is_anchor}
-                        onclick={() => { strip_el?.focus(); pick(n) }}
+                        onclick={() => pick(n)}
                         title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
                     >{hollow ? '○' : ok ? '·' : '✗'}</button>
                 </div>
             {/each}
+        </div>
+        <button class="sr-expand" onclick={() => expanded = !expanded}
+                title="{expanded ? 'collapse' : 'expand'}">{expanded ? '↙' : '↗'}</button>
         </div>
 
     {/if}
@@ -966,14 +973,53 @@
 /* ── pip strip ──────────────────────────────────────────────────────────── */
 /* padding-top leaves room for the playhead triangle above pips.            */
 /* align-items:flex-end keeps pips bottom-aligned when flag rows vary.      */
+.sr-strip-wrap {
+    position: relative;
+    border-bottom: 1px solid #1e1e1e;
+}
 .sr-strip {
     display: flex; flex-wrap: wrap; gap: 2px;
     padding: 10px 8px 6px; background: #0e0e0e;
-    border-bottom: 1px solid #1e1e1e;
     max-height: 100px; overflow-y: auto; align-items: flex-end;
+    padding-right: 28px;  /* clear the expand button */
 }
-/* strip is focusable for arrow-key nav; outline suppressed — focus is functional not visual */
+/* strip is focusable for Tab-key story-focus entry; no visible outline —
+   story focus is implicit (any child focused), not a ring on the strip */
 .sr-strip:focus { outline: none; }
+/* .sr itself suppresses outline too; focus is tracked via activeElement */
+.sr:focus { outline: none; }
+
+.sr-expand {
+    position: absolute; top: 6px; right: 6px;
+    background: none; border: 1px solid #222; border-radius: 2px;
+    color: #444; cursor: pointer; font-size: 10px;
+    width: 16px; height: 16px; line-height: 14px; text-align: center;
+    padding: 0; transition: color 0.15s, border-color 0.15s;
+}
+.sr-expand:hover { color: #79b; border-color: #79b; }
+
+/* ── expanded layout ────────────────────────────────────────────────────── */
+/* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
+/* the middle and the pip strip pins to the bottom.                         */
+.sr.expanded {
+    height: 70vh;
+    display: flex; flex-direction: column;
+}
+.sr.expanded .sr-panel {
+    flex: 1; display: flex; flex-direction: column;
+    min-height: 0; overflow: hidden;
+}
+/* let the diff scroll area fill whatever space the panel gives it */
+.sr.expanded .sr-diff2-body,
+.sr.expanded .sr-pre {
+    flex: 1; min-height: 0; max-height: none;
+}
+/* notes and trace stay at natural height; they shrink-wrap */
+.sr.expanded .sr-notes,
+.sr.expanded .sr-trace { flex-shrink: 0; }
+/* strip-wrap pins to bottom; strip max-height relaxes a little */
+.sr.expanded .sr-strip-wrap { flex-shrink: 0; }
+.sr.expanded .sr-strip      { max-height: 140px; }
 .sr-pip-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 /* flags row: always rendered as spacer so pips stay bottom-aligned */
 .sr-flags    { display: flex; flex-direction: row; gap: 1px; min-height: 6px; align-items: flex-end; }
