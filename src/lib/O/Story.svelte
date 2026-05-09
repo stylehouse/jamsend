@@ -1295,6 +1295,7 @@
                 && f > (run.c.began_step as number)
                 && (now_in_seconds_with_ms() - f) > ((TICK_MS/1000) * 1.5)
                 && !Run.todo.length
+                && !(Run.c.leave_running_until > now_in_seconds_with_ms())
             if (!quiescent) { setTimeout(poll_step, TICK_MS); return }
             let ago = (now_in_seconds_with_ms() - f)
             Run.trace('quiescent', ago.toFixed(3))

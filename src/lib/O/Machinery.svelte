@@ -117,7 +117,6 @@
         const H = this as House
         let DETERMINISTIC_KEYS = 1
 
-        // ── keygen (once, via post_do in Atime/beliefs mutex) ────────────────
         if (!w.oa({ keygen_done: 1 })) {
             if (w.oa({ keygen_running: 1 })) return
             w.i({ keygen_running: 1 })
@@ -135,7 +134,6 @@
                         save_stash: null,
                     })
                     P.Trusting = H._PeeringLive_shim(H, side)
-
                     const sw = H.Awo(side)
                     sw.oai({ Peerily: 1 }).c.P = P
                     const pn = sw.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
@@ -150,25 +148,19 @@
             return
         }
 
-        // ── poke service (long-lived; only ends on H.stop()) ──────────────────
-        if (!w.c._poke) {
-            // Release PeerServer IDs on hangup — deterministic prepubs can be
-            //   reclaimed cleanly by the next test run.
+        // release PeerJS IDs on hangup — deterministic prepubs reclaimed by next run
+        if (!w.c._hangup_registered) {
+            w.c._hangup_registered = true
             H.on_hangup(() => {
-                clearInterval(w.c._poke); w.c._poke = null
                 for (const side of ['Bearing', 'Nearing']) {
                     try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
                 }
             })
-            w.c._poke = setInterval(() => {
-                const first = w.o({ poke_w: 1 })[0] as TheC | undefined
-                if (first) H.i_elvisto(first.sc.side as string, 'nichtstun')
-            }, 50)
         }
 
         const open_count = ['Bearing', 'Nearing']
             .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
-        w.i({ see: `PeeringLive  open:${open_count}/2  poke_subs:${w.o({ poke_w: 1 }).length}` })
+        w.i({ see: `PeeringLive  open:${open_count}/2` })
     },
 
     // ── shim — P.Trusting.M interface ─────────────────────────────────────────
@@ -221,14 +213,15 @@
     //   subtree verify cryptographic identity and protocol progression.
     _PeeringLive_dump(w: TheC, _side: string) {
         const mv = w.oai({ more_visuals: 1 }) as TheC
+        mv.empty()
 
-        const peering_n = w.o({ Peering: 1 })[0] as TheC | undefined
-        if (peering_n) {
-            const eer = peering_n.c.inst as Peering | undefined
-            const Id  = peering_n.c.Id  as Idento  | undefined
+        const Peering = w.o({ Peering: 1 })[0] as TheC | undefined
+        if (Peering) {
+            const eer  = Peering.c.inst as Peering | undefined
+            const Id   = Peering.c.Id  as Idento  | undefined
             const mv_p = mv.oai({ Peering: 1 }) as TheC
             if (Id?.privateKey) {
-                const f = Id.freeze()   // {pub: hex, key: hex}
+                const f = Id.freeze()
                 mv_p.oai({ Id: 1, prikey: f.key, pubkey: f.pub, prepub: Id+'' })
             }
             for (const [k, v] of Object.entries(eer?.stashed ?? {})) {
@@ -236,20 +229,13 @@
             }
         }
 
-        const pier_n = w.o({ Pier: 1 })[0] as TheC | undefined
-        const pier   = pier_n?.c.inst as Pier | undefined
-        if (pier) {
+        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
+        const ier  = Pier?.c.inst as Pier | undefined
+        if (ier) {
             const mv_pi = mv.oai({ Pier: 1 }) as TheC
-            for (const [k, v] of Object.entries(pier.stashed ?? {})) {
+            for (const [k, v] of Object.entries(ier.stashed ?? {})) {
                 mv_pi.oai({ stashed: 1, k }).sc.v = v
             }
-            mv_pi.oai({
-                protocol:    1,
-                said_hello:  pier.said_hello,
-                heard_hello: pier.heard_hello,
-                said_trust:  pier.said_trust,
-                heard_trust: pier.heard_trust,
-            })
         }
     },
 
@@ -266,24 +252,17 @@
     async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
         const H = this as House
 
-        const peering_n = w.o({ Peering: 1 })[0] as TheC | undefined
-        const is_open   = !!peering_n?.oa({ open: 1 })
-        const pl_w      = H.Awo('PeeringLive')
+        const Peering = w.o({ Peering: 1 })[0] as TheC | undefined
 
-        // subscribe to poke while waiting for open
-        if (!is_open) {
-            if (!pl_w.oa({ side })) pl_w.oai({ poke_w: 1, side })
-            if (!peering_n) { w.oai({ see: `⏳ ${side} keygen pending…` }); return }
+        // waiting for PeerServer — comms not possible yet, stay back
+        if (!Peering?.oa({ open: 1 })) {
+            H.demand_time_to_think(3000)
+            if (!Peering) { w.oai({ see: `⏳ ${side} keygen pending…` }); return }
             w.oai({ see: `⏳ ${side} → PeerServer…` })
             return
         }
 
-        // open — drop any lingering subscription
-        const reg = pl_w.o({ side })[0] as TheC | undefined
-        if (reg) pl_w.drop(reg)
-
-        const eer = peering_n!.c.inst as Peering
-        w.i({ see: `✅ ${side}  ${peering_n!.sc.prepub}` })
+        const eer = Peering.c.inst as Peering
 
         // ── Phase 2: Bearing initiates outbound connection ──────────────────
         if (side === 'Bearing') {
@@ -293,31 +272,34 @@
                 w.i({ pier_dialling: 1 })
                 const con = eer.connect(npub)
                 const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
-                pn.c.con  = con   // init_begins picks this up once concretion fires
+                pn.c.con  = con
                 console.log(`🐻 Bearing → Nearing  ${npub}`)
             }
         }
 
         // ── Pier reporting ──────────────────────────────────────────────────
-        const pier_n = w.o({ Pier: 1 })[0] as TheC | undefined
-        if (pier_n) {
-            const pier = pier_n.c.inst as Pier | undefined
-            if (!pier) {
-                w.oai({ see: `⏳ ${side} Pier awaiting concretion…` })
+        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
+        if (Pier) {
+            const ier = Pier.c.inst as Pier | undefined
+            if (!ier) {
+                w.i({ see: `⏳ ${side} Pier awaiting concretion…` })
+                H.demand_time_to_think(3000)
             } else {
-                if (!pier_n.c.began && pier_n.c.con) {
-                    pier_n.c.began = true
-                    pier.init_begins(eer, pier_n.c.con, false)
+                if (!Pier.c.began && Pier.c.con) {
+                    Pier.c.began = true
+                    ier.init_begins(eer, Pier.c.con, false)
                 }
-                w.i({ see: `${side} Pier ${pier.pub?.slice(0, 8)}…  hello:${pier.said_hello}/${pier.heard_hello}  trust:${pier.said_trust}/${pier.heard_trust}` })
-                if (pier.said_hello && pier.heard_hello) w.oai({ see: `🎉 ${side} hellos complete` })
-                if (pier.heard_trust)                    w.oai({ see: `🔒 ${side} trust exchanged` })
+                w.i({ see: `${side} Pier ${ier.pub?.slice(0,8)}…  hello:${ier.said_hello}/${ier.heard_hello}  trust:${ier.said_trust}/${ier.heard_trust}` })
+                // comms in flight — stay back until both sides have exchanged
+                if (!ier.heard_hello || !ier.heard_trust) H.demand_time_to_think(3000)
+                if (ier.said_hello && ier.heard_hello) w.i({ see: `🎉 ${side} hellos complete` })
+                if (ier.heard_trust)                    w.i({ see: `🔒 ${side} trust exchanged` })
             }
         } else {
             w.oai({ waits: 'Pier' })
+            H.demand_time_to_think(3000)   // waiting for inbound connection
         }
 
-        // dump testing detail for snapshot verification
         H._PeeringLive_dump(w, side)
     },
 

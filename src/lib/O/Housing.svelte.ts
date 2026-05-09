@@ -628,9 +628,18 @@ export class House extends StorableHousing {
         this.trace('beliefs','done')
         this.c.finished_run = now_in_seconds_with_ms()
     }
+    
+    // waits for the next moment outside Atime (aka UItime)
     async all_clear() {
         const top = this.top_House()
         if (top.c._mutex_beliefs) await top.c._mutex_beliefs
+    }
+    // an overall this-house-is-busy quality, see Story / poll_step
+    demand_time_to_think(ms = 2000) {
+        // push leave_running_until further out, never backwards
+        const until = now_in_seconds_with_ms() + ms / 1000
+        if (!(this.c.leave_running_until > until))
+            this.c.leave_running_until = until
     }
 
 
