@@ -186,14 +186,16 @@ class StuffIO {
     coms?: TheC
     // delete a C (filter it out of results)
     drop(n:TheC) {
-        if (!n) return
+        // < drop() is weird... meant for the host.
+        //   but it can just filter o() by !nc&drop from now on...
+        n ||= this
         if (!n.sc) throw "!drop(C)"
         n.c.drop = 1
         this.X?.bump_version()
     }
 
     // attachment, materialisation. indexes build up, forming X/.../$n to be with
-    i(n: TheC|TheUniversal) {
+    i(n: TheC|TheUniversal):TheC {
         n = _C(n)
         this.Xify()
         // failed ideas here include:
@@ -236,7 +238,9 @@ class StuffIO {
     //   > thinking about going into particular X/$k/$v, depending on $key=1
     //   > joining many reads on the X/$k/$v table
     // o(...)[0] for the first row
-    o(sc?:TheUniversal,q?):TheN|TheC|any|undefined {
+    //  given that there is q.one_value_mode etc this could return type |TheC|any
+    //   but it really confuses LLMs, only oai() and r() return TheC...
+    o(sc?:TheUniversal,q?):TheN {
         q ||= {}
         sc ||= {}
         // bold call, avoids "Svelte error: state_unsafe_mutation" from a component doing C.o()
@@ -250,7 +254,7 @@ class StuffIO {
     // from the previous time during replace()
     //  which would have the complete set of stuff
     //   while the new one is filling itself out
-    bo(c?:TheUniversal,q?):TheN|TheC|any {
+    bo(c?:TheUniversal,q?):TheN {
         q ||= {}
         q.X ||= this.X_before
         if (!q.X) return []
@@ -263,17 +267,17 @@ class StuffIO {
     // Reads this.version (Svelte tracks it), then queries this/*.
     // H.ave.version is only bumped by Housing's flush() after all_clear(),
     // so $effects re-run exactly once per settled beliefs cycle.
-    ob(c?:TheUniversal,q?):TheN|TheC|any {
+    ob(c?:TheUniversal,q?):TheN {
         void this.version
         return this.o(c,q)
     }
 
     // returning null rather than empty arrays if no rows
-    //  good for boolean logic
-    oa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+    //  good for boolean logic, is a presence check
+    oa(c?:TheUniversal,q?):TheN|undefined|null {
         return nonemptyArray_or_null(this.o(c,q))
     }
-    boa(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+    boa(c?:TheUniversal,q?):TheN|undefined|null {
         return nonemptyArray_or_null(this.bo(c,q))
     }
 
@@ -296,20 +300,21 @@ class StuffIO {
         let M = this.o_query(sc,q)
         return this.o_results(M,sc,q)
     }
-    bo1(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+    bo1(c?:TheUniversal,q?):TheN|undefined|null {
         q = this.one_column_mode_q(q)
         return this.bo(c,q)
     }
-    oa1(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+    oa1(c?:TheUniversal,q?):TheN|undefined|null {
         return nonemptyArray_or_null(this.o1(c,q))
     }
-    boa1(c?:TheUniversal,q?):TheN|TheC|any|undefined|null {
+    boa1(c?:TheUniversal,q?):TheN|undefined|null {
         return nonemptyArray_or_null(this.bo1(c,q))
     }
 
     // select or insert - when you want .r() but keeping the C object
+    //  oai(match_sc,props_sc) doesn't merge props onto the found particle, only if created. see roai
     // < could upsert, index-safely?
-    oai(s,c={}) {
+    oai(s,c={}):TheC {
         return this.o(s)[0] || this.i({...s,...c})
     }
     // as above but you want it replaced when these intended C%* change
