@@ -181,15 +181,34 @@
         //   the particle drops cleanly on a subsequent causal ending.
         if (!H.c.on_step_ending) {
             H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
+                // clear the shared heartbeat — step is ending
+                if (H.c._pl_heartbeat) {
+                    clearInterval(H.c._pl_heartbeat)
+                    H.c._pl_heartbeat = null
+                }
+
                 const unsettled = ['Bearing', 'Nearing']
                     .filter(s => !H._PeeringLive_settled(H.Awo(s)))
                 const mgr = H.Awo('PeeringLive')
+
+                // three states: (mode='timeout' means demand_time_to_think was ever called)
+                //   timeout + unsettled  → time ran out with pending expects  → timeDoubt
+                //   timeout + all done   → expects satisfied before expiry    → timeSatisfied
+                //   causal               → never demanded extra time at all   → neither
+                const td = mgr.o({ timeDoubt:    1 })[0] as TheC | undefined
+                const ts = mgr.o({ timeSatisfied: 1 })[0] as TheC | undefined
                 if (mode === 'timeout' && unsettled.length) {
+                    if (ts) mgr.drop(ts)
                     mgr.oai({ timeDoubt: 1 })
                     H.trace('timeDoubt', `demand elapsed, unsettled: ${unsettled.join(', ')}`)
-                } else {
-                    const td = mgr.o({ timeDoubt: 1 })[0] as TheC | undefined
+                } else if (mode === 'timeout') {
+                    // demanded time, all expects resolved before expiry — causal ending
                     if (td) mgr.drop(td)
+                    mgr.oai({ timeSatisfied: 1 })
+                    H.trace('timeSatisfied', 'all expects resolved before demand elapsed')
+                } else {
+                    if (td) mgr.drop(td)
+                    if (ts) mgr.drop(ts)
                 }
             }
         }
@@ -317,28 +336,29 @@
 
         // Phase 2: Bearing initiates outbound when Nearing's prepub is known.
         //   Nearing learns Bearing's pub from the inbound connection.
+        //   Mirror the inbound shim path exactly: create %Pier and call init_begins
+        //   synchronously before any tick so con.on('open') is wired before the
+        //   DataChannel can open — if we wait for concretion to produce ier the
+        //   event fires while we're still unlocking the mutex and is lost forever.
         if (side === 'Bearing' && Peering.oa({ open: 1 })) {
             const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
             if (npub && !w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
                 w.i({ pier_dialling: 1 })
-                const con = eer.connect(npub)
-                const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
-                pn.c.con  = con
+                const P    = w.o({ Peerily: 1 })[0]?.c.P
+                const con  = eer.connect(npub)
+                const pier = new Pier({ P, eer, pub: npub, stashed: { trust: [] } })
+                pier.init_begins(eer, con, false)       // sync — before any await
+                const pn   = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
+                pn.c.inst  = pier                       // pre-set → concretion skips
                 console.log(`🐻 Bearing → Nearing  ${npub}`)
             }
         }
 
-        // Pier handle: outbound init_begins fires once when con is in hand.
-        //   Inbound path already called init_begins inside Peering_i_Pier.
+        // Pier handle: c.inst is pre-set above (outbound) or by Peering_i_Pier (inbound).
         const PierN = w.o({ Pier: 1 })[0] as TheC | undefined
         let ier: Pier | undefined
         if (PierN) {
             ier = PierN.c.inst as Pier | undefined
-            if (ier && eer && !PierN.c.began && PierN.c.con) {
-                PierN.c.began = true
-                ier.init_begins(eer, PierN.c.con, false)
-            }
-            if (!ier) H.demand_time_to_think(3000)  // concretion in flight
         }
 
         // phase tracking must run before drive_expects seeds re_* gates
@@ -419,6 +439,18 @@
                 }, (req.sc.demand as number) * 0.7)
             }
         })
+
+        // coarser shared heartbeat while any expects are live on this side —
+        //   supplements per-req timers when protocol bools flip between ticks.
+        //   keyed on H.c so Bearing and Nearing share one interval.
+        //   on_step_ending always clears it.
+        const any_pending = (w.o({ requesty_expects: 1 }) as TheC[]).some(r => !r.sc.finished)
+        if (any_pending && !H.c._pl_heartbeat) {
+            H.c._pl_heartbeat = setInterval(() => {
+                H.trace("pl_heartbeat")
+                H.main()
+            }, 250)
+        }
     },
 
     // has the other side seeded its expects machine and finished everything?

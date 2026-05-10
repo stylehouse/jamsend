@@ -514,6 +514,8 @@ export class House extends StorableHousing {
 
     // -------------------------------------------------------------------------
     // main: throttled push of an ambient think elvis onto H.todo.
+    //  if your intention to think wants to ignore H.c.no_ambient
+    //   use H.main(true), or H.i_elvisto(w, 'think', {})
     // Multiple rapid calls collapse into one think pass.
     // -------------------------------------------------------------------------
     main_throttle?: Function
