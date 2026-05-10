@@ -41,8 +41,7 @@
     // each ghost calls M.eatfunc(hash) on onMount.
     const M = {
         eatfunc(hash: Record<string, Function>) {
-            // merge and push to all known Houses
-            H.ghostsHaunt(hash)
+            H.eatfunc(hash)
         }
     }
     // so H can be used for lib/gen/ ghosts.

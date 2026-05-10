@@ -220,13 +220,6 @@ abstract class Housing extends TheC {
 
     // misfits:
 
-    async eatfunc(hash) {
-        throw "GONER"
-        Object.assign(this, hash)
-        await this.on_code_change?.()
-        if (this.oa()) this.main()
-    }
-
     // -------------------------------------------------------------------------
     // unwrap_lematch: strip the %lematch envelope from pat.sc.
     //   pat.sc = { lematch:1, sc_has:{match pattern}, class?:'Ctor', ...rest }
@@ -449,6 +442,16 @@ export class House extends StorableHousing {
         return (h as House).all_House
     }
 
+    async eatfunc(hash) {
+        // merge and push to all known Houses
+        this.ghostsHaunt(hash)
+
+        // < no use yet? wants to avoid initial ghost component mount-wave
+        // await this.on_code_change?.()
+
+        // if (this.oa()) this.main()
+    }
+    
     // merge new code into every H.*, from a ghost doing onMount|HMR
     ghostsHaunt(hash: Record<string, Function>) {
         // merge into H.ghosts

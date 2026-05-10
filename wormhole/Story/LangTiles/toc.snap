@@ -77,8 +77,8 @@ story:LangTiles
       style:background-color,v:#c93641
   Plan
     Prep
-      i_elvisto:LieSurgery,e:LieSurgery_open_doc
-        esc:path,v:Ghost/test/LangTiles.g
+      i_elvisto:Lies,e:Lies_open_Waft
+        esc:path,v:Story/LangTiles/Waftily
     Prep:2
       i_elvisto:Lang,e:Lang_i_bookmark
         esc:from,v:98
@@ -94,10 +94,7 @@ story:LangTiles
     noCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg:1.126
-      sample:1.079,at:1777275659
-      sample:0.985,at:1777276019
-      sample:0.931,at:1777276033
+    TimeTotal:beliefs,avg:1.171
       sample:1.769,at:1777276725
       sample:0.995,at:1777276984
       sample:1.004,at:1777277168
@@ -105,8 +102,11 @@ story:LangTiles
       sample:1.07,at:1777284327
       sample:1.222,at:1777285722
       sample:1.081,at:1777285744
-  step,dige:49488ca3b4f6cb41
-  step:2,dige:fdfd123f3c8ca0e4
-  step:3,dige:f39600e706b72567
-  step:4,dige:ffb5643369439053
+      sample:1.047,at:1778414031
+      sample:1.047,at:1778414286
+      sample:1.352,at:1778414344
+  step,dige:7a15b2c6a22e2c2b
+  step:2,dige:2b5ae10652b435a4
+  step:3,dige:f4108d1cbd6387c5
+  step:4,dige:00c29f79afc9e574
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
