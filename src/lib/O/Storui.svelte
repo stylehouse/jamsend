@@ -1118,7 +1118,7 @@
 /* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
 /* the middle and the pip strip pins to the top.                            */
 .sr.expanded {
-    height: 70vh;
+    height: 90vh;
     display: flex; flex-direction: column;
 }
 .sr.expanded .sr-panel {
@@ -1141,11 +1141,10 @@
 /* let the diff scroll area fill whatever space the panel gives it */
 .sr.expanded .sr-diff2-body,
 .sr.expanded .sr-pre {
-    flex: 1; min-height: 40vh; max-height: none;
+    flex: 1; min-height: 0; max-height: none;
 }
-/* notes and trace take natural height; they shrink-wrap below the diff */
-.sr.expanded .sr-notes,
-.sr.expanded .sr-trace { flex-shrink: 0; }
+/* trace caps at 30vh in expanded so the diff always has ~40vh of the 70vh panel */
+.sr.expanded .sr-trace { flex-shrink: 0; max-height: 30vh; }
 /* strip-wrap pins to top (it's before the panel in DOM order); strip max-height relaxes */
 .sr.expanded .sr-strip-wrap { flex-shrink: 0; }
 .sr.expanded .sr-strip      { max-height: 140px; }
@@ -1253,7 +1252,7 @@
 
 /* ── naive / tree pre ───────────────────────────────────────────────────── */
 .sr-pre {
-    margin: 0; padding: 4px 0; overflow: auto; min-height: 12em;
+    margin: 0; padding: 4px 0; overflow: auto; min-height: 12em; max-height: min(30vh, 666px);
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px; line-height: 1.55; color: #bbb;
     background: transparent; white-space: pre; tab-size: 2;
@@ -1275,7 +1274,7 @@
 }
 .sr-diff2-body {
     display: grid; grid-template-columns: 1fr 1fr;
-    overflow-y: auto; min-height: 12em;
+    overflow-y: auto; min-height: 12em; max-height: min(30vh, 666px);
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px; line-height: 1.55;
 }
@@ -1334,7 +1333,7 @@
     font-size:10px; line-height:1.4; background:#090909;
     padding:4px 0; overflow-x:auto; overflow-y:auto; white-space:pre;
     border-top:1px solid #1a1a1a;
-    max-height: 40vh; min-height: 10em;
+    max-height: 26vh; min-height: 6em;
 }
 .sr-trace-axis {
     display:flex; justify-content:space-between;

@@ -2,7 +2,7 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms:1778414022.281,done:4,last_pct_change:1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms:1778413662.75,done:6,last_pct_change:1778378075.558
   Book:StuffFlipping,ok_pct,last_run_ms:1778378566.947,done,last_pct_change:1776929364.203
-  Book:LangTiles,ok_pct,last_pct_change:1778414344.845,done:4,last_run_ms:1778414479.371
-  Book:LakeSurfer,ok_pct:0,last_pct_change:1777427938.462,done,last_run_ms:1778412603.624,active
+  Book:LangTiles,ok_pct:0.75,last_pct_change:1778416268.489,done:4,last_run_ms:1778417947.669
+  Book:LakeSurfer,ok_pct:0,last_pct_change:1777427938.462,done,last_run_ms:1778416258.632
   Book:Peeringinst,ok_pct,last_pct_change:1777865143.246,done:2,last_run_ms:1778412450.623
-  Book:PeeringLive,ok_pct:0.5,last_pct_change:1778412382.905,done:6,last_run_ms:1778412408.591
+  Book:PeeringLive,ok_pct:0.67,last_pct_change:1778417958.273,done:6,last_run_ms:1778417958.273,active
