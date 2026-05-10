@@ -567,11 +567,11 @@
 
     // story focus: any focused child of .sr bubbles keydown here.
     //   Guard against inputs so typing in the note field is never stolen.
-    //   Arrow keys need a panel open; 'e', 'r', 't' have their own hollow guards.
+    //   Arrow keys need a panel open; 'e', 'r', 't', 'a' have their own hollow guards.
     function handle_story_key(e: KeyboardEvent) {
         const tag = (e.target as HTMLElement).tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA') return
-        if (display.open_at == null && e.key !== 'e') return
+        if (display.open_at == null && e.key !== 'e' && e.key !== 'a') return
         const idx = display.steps.findIndex(ts => ts.n === display.open_at)
         if (e.key === 'ArrowRight' && idx < display.steps.length - 1) {
             e.preventDefault()
@@ -603,6 +603,10 @@
             if (displayed_at == null || !live_step(displayed_at)) return
             e.preventDefault()
             show_trace = !show_trace
+        } else if (e.key === 'a') {
+            // a: toggle expand (V button — upside-down A shape when closed)
+            e.preventDefault()
+            expanded = !expanded
         }
     }
 
@@ -717,6 +721,10 @@
             {@const n          = displayed_at}
             {@const ts_sel     = display.steps.find(t => t.n === n)}
             {@const Step       = live_step(n)}
+            <!-- void Step.version subscribes this block to Step mutations —
+                 disk_ok arrives async from check_snap, so without this the
+                 ⚠ disk stale badge would never appear after initial render -->
+            {@const _sv        = Step?.version}
             {@const ok         = !!(Step && Step.sc.ok)}
             {@const hollow     = !Step}
             {@const accepted   = !!(Step && Step.sc.accepted)}
@@ -764,7 +772,7 @@
                             {/if}
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
-                            <span class="sr-ekey">[e r t]</span>
+                            <span class="sr-ekey">[e r t a]</span>
                         </span>
                     {/if}
 
@@ -1017,16 +1025,18 @@
     display: flex; align-items: center; justify-content: center;
     transition: color 0.15s, transform 0.2s;
     transform-origin: center;
+    /* default: Λ — upside-down V, mnemonically the A key that toggles this */
+    transform: rotate(180deg);
 }
 .sr-expand:hover { color: #79b; }
-/* V reflected upside-down when the panel is open */
-.sr-expand.open { transform: rotate(180deg); }
+/* open: right-side-up V — pointing down like an open drawer */
+.sr-expand.open { transform: rotate(0deg); }
 
 /* ── expanded layout ────────────────────────────────────────────────────── */
 /* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
 /* the middle and the pip strip pins to the top.                            */
 .sr.expanded {
-    height: 86vh;
+    height: 70vh;
     display: flex; flex-direction: column;
 }
 .sr.expanded .sr-panel {
