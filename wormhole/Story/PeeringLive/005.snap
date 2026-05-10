@@ -1,14 +1,14 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:21
+      {"mung":["age"]}	self,round:22
       w:PeeringLive
         keygen_running
         keygen_done
-        {"mung":["age"]}	self,round:21
+        {"mung":["age"]}	self,round:22
         {"see":"PeeringLive  open:2/2"}
     A:Bearing
-      {"mung":["age"]}	self,round:21
+      {"mung":["age"]}	self,round:22
       w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -28,14 +28,10 @@ Snap:H
             protocol,said_hello:true,heard_hello:true,said_trust:true,heard_trust:true
         pier_dialling
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-        {"mung":["age"]}	self,round:21
-        requesty_expects,name:said_hello,demand:800,req_i:18,finished:true
-        requesty_expects,name:heard_hello,demand:800,req_i:19,finished:true
-        requesty_expects,name:said_trust,demand:1500,req_i:20,finished:true
-        requesty_expects,name:heard_trust,demand:1500,req_i:21,finished:true
+        {"mung":["age"]}	self,round:22
         {"see":"Bearing 8cbc667b…  hello:y/y  trust:y/y"}
     A:Nearing
-      {"mung":["age"]}	self,round:21
+      {"mung":["age"]}	self,round:22
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -54,10 +50,6 @@ Snap:H
             {"ref":{"v":"[]"}}	stashed,k:trust
             protocol,said_hello:true,heard_hello:true,said_trust:true,heard_trust:true
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        {"mung":["age"]}	self,round:21
-        requesty_expects,name:said_hello,demand:800,req_i:18,finished:true
-        requesty_expects,name:heard_hello,demand:800,req_i:19,finished:true
-        requesty_expects,name:said_trust,demand:1500,req_i:20,finished:true
-        requesty_expects,name:heard_trust,demand:1500,req_i:21,finished:true
+        {"mung":["age"]}	self,round:22
         {"see":"Nearing 7acf614d…  hello:y/y  trust:y/y"}
     {"mung":["id"]}	mo:main,interval:3.6

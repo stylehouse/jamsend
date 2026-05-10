@@ -1,14 +1,14 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:18
+      {"mung":["age"]}	self,round:20
       w:PeeringLive
         keygen_running
         keygen_done
-        {"mung":["age"]}	self,round:18
+        {"mung":["age"]}	self,round:20
         {"see":"PeeringLive  open:2/2"}
     A:Bearing
-      {"mung":["age"]}	self,round:18
+      {"mung":["age"]}	self,round:20
       w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -18,7 +18,7 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           Id
           open
-        requesty_expects_serial,i:14
+        requesty_expects_serial,i:18
           {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
@@ -28,10 +28,10 @@ Snap:H
             protocol,said_hello:true,heard_hello:true,said_trust:true,heard_trust:true
         pier_dialling
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-        {"mung":["age"]}	self,round:18
+        {"mung":["age"]}	self,round:20
         {"see":"Bearing 8cbc667b…  hello:y/y  trust:y/y"}
     A:Nearing
-      {"mung":["age"]}	self,round:18
+      {"mung":["age"]}	self,round:20
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -41,7 +41,7 @@ Snap:H
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           Id
           open
-        requesty_expects_serial,i:14
+        requesty_expects_serial,i:18
           {"had_aim":1,"category":"reqy:expects"}
         more_visuals
           Peering
@@ -50,6 +50,6 @@ Snap:H
             {"ref":{"v":"[]"}}	stashed,k:trust
             protocol,said_hello:true,heard_hello:true,said_trust:true,heard_trust:true
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        {"mung":["age"]}	self,round:18
+        {"mung":["age"]}	self,round:20
         {"see":"Nearing 7acf614d…  hello:y/y  trust:y/y"}
     {"mung":["id"]}	mo:main,interval:3.6

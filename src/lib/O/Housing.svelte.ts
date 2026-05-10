@@ -6,6 +6,13 @@ import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 import { tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
+const V: Record<string, any> = {}
+V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
+V.beliefs = 0
+
+export const ANSWER_CALLS_TICK_MS = 50
+export const AMBIENT_MAIN_TICK_MS = 200
+// see also reset_interval() 3600ms
 
 //#region Dexie
 
@@ -25,13 +32,40 @@ db.version(2).stores({
 })
 
 //#endregion
-const V: Record<string, any> = {}
-V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
-V.beliefs = 0
 
-export const ANSWER_CALLS_TICK_MS = 50
-export const AMBIENT_MAIN_TICK_MS = 200
-// see also reset_interval() 3600ms
+//#region class registry
+
+// w/%scheme can extend our ability to organise() different objects
+//  it does a register_class() for each, but:
+// < the w/%scheme/** could have the class object, sublating this interface?
+// < If the scheme machinery should spawn typed Housing subclasses per level
+//   (an Agency-class for A-nodes, etc.), one option is to overload House.i()
+//   to detect the current scheme depth from the path context and instantiate
+//   the right class rather than a plain TheC. Not needed yet.
+
+// Feature-named classes register here. The global scheme's four arks (H/A/w/r)
+//  no longer need entries — they don't trigger concretion unless n.sc.class
+//  or a %scheme lematch names a class explicitly.
+export const classes: Record<string, new (opt: any) => Housing> = {}
+export function register_class(key: string, ctor: new (opt: any) => Housing) {
+    classes[key] = ctor
+}
+// The base scheme drives Selection.process() depth by depth:
+//   depth 0: House itself  (is_inst — House is its own instance)
+//   depth 1: A particles   -> find {A:1}
+//   depth 2: w particles   -> find {w:1}  scheme_haver: may host %scheme/%lematch
+//   depth 3: r particles   -> find {r:1}
+// Beyond depth 2, w/%scheme/%lematch particles extend the walk.
+// Any other node that wants to host sub-schemes can stamp scheme_haver:1 on its
+//   returned level descriptor (or carry it in a %lematch's sc).
+const organise_scheme = [
+    { ark: 'H', is_inst: true },
+    { ark: 'A', sc_has: { A: 1 } },
+    { ark: 'w', sc_has: { w: 1 }, scheme_haver: 1 },
+    { ark: 'r', sc_has: { r: 1 } },
+]
+
+//#endregion
 
 //#region Housing
 
@@ -127,6 +161,7 @@ abstract class Housing extends TheC {
     // Override in eg PeeringSharing to include all peer/feature Houses.
     // -------------------------------------------------------------------------
     every_House(): House[] {
+        throw "GONE?"
         let h: Housing = this
         while (h.up) h = h.up
         return [h as House]
@@ -164,147 +199,74 @@ abstract class Housing extends TheC {
         throw `i_elvisto: no House has A:${Aname} (target=${target})`
     }
 
-//#endregion
-//#region elvis
-
-    // i_elvistwo: post an elvis to whichever House owns the target A.
-    //  with the first arg being the w|A|H we are coming from
-    i_elvistwo(source:TheC|Housing, target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
-        // this should be able to become target later
-        extra.sourceHousing = source
-        return this.i_elvisto(target,method,extra)
-    }
-    // -------------------------------------------------------------------------
-    // i_elvisto: post an elvis to whichever House owns the target A.
-    // target: string 'AgencyName/workName' | 'AgencyName', or a Housing instance
-    //   — if a Housing instance, walks .up to find the root House and injects there.
-    // method: the method name to call on the target instance
-    // extra:  any extra sc to attach to the elvis particle
-    // Returns e immediately; targeting resolves async.
-    i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC {
-        const Aw = typeof target === 'string' ? (
-                target.includes('/') ? target : target + '/' + target
-            )
-            : target instanceof TheC ? (
-                `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
-            )
-            : (target as Housing).name
-
-        // e is real now — callers can attach to e.c.* immediately,
-        // but e is not yet in any todo queue.
-        const e = new TheC({ c: {}, sc: { elvis: method, Aw, ...extra } })
-
-        // targeting: deferred to UItime so it never races a beliefs cycle.
-        // The promise is stored on e.c so callers who need sequencing can await it.
-        e.c.targeting = (async () => {
-            await this.all_clear()
-            const h = this._find_house(target)
-            h._expand_Aw(e)
-            h._push_todo(e)
-        })()
-
-        // callers don't await us, but devtools may be open
-        ;(e.c.targeting as Promise<void>).catch(err => { throw err })
-
-        return e
+    // ── Awo: climb the A/w path by name ─────────────────────────────────
+    // Awo('Story')         → finds {A:'Story'}/{w:'Story'}, returns w
+    // Awo('Story','Cyto')  → finds {A:'Story'}/{w:'Cyto'}, returns w
+    // Blows up if multiple rows come out anywhere.
+    Awo(Aname: string, wname?: string): TheC {
+        wname ??= Aname
+        const As = this.o({ A: Aname }) as TheC[]
+        if (!As.length) throw `Awo: !A:${Aname}`
+        if (As.length > 1) throw `Awo: ${As.length}x A:${Aname}`
+        const A = As[0]
+        const ws = A.o({ w: wname }) as TheC[]
+        if (!ws.length) throw `Awo: !w:${wname} in A:${Aname}`
+        if (ws.length > 1) throw `Awo: ${ws.length}x w:${wname} in A:${Aname}`
+        return ws[0]
     }
 
-    // clear(fn): create+do a UItime isolation — waits for all_clear(), then runs fn()
-    //  before the next beliefs cycle can begin.
-    // show: hospital staff call it to isolate the patient for an electric shock
-    async clear(fn: () => void | Promise<void>): Promise<void> {
-        await this.all_clear()
-        let H = this.top_House()
-        await H.mutex('beliefs', async () => {
-            await fn()
-        })
+
+
+
+    // misfits:
+
+    async eatfunc(hash) {
+        throw "GONER"
+        Object.assign(this, hash)
+        await this.on_code_change?.()
+        if (this.oa()) this.main()
     }
 
     // -------------------------------------------------------------------------
-    // i_elvis / _i_elvis: derive target from w's own A/w address, call i_elvisto().
+    // unwrap_lematch: strip the %lematch envelope from pat.sc.
+    //   pat.sc = { lematch:1, sc_has:{match pattern}, class?:'Ctor', ...rest }
+    //   pat.o({lematch:1}) = child %lematch particles for the next depth
+    //   Returns { sc, class?, next_lematches, ...rest }.
+    //   next_lematches trickles down T** so deeper nodes never re-query the tree.
     // -------------------------------------------------------------------------
-    i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
-        return this._i_elvis(w, type, extra)
+    unwrap_lematch(pat: TheC): Record<string, any> {
+        const { lematch: _, ...desc } = pat.sc as any
+        desc.next_lematches = pat.o({ lematch: 1 }) as TheC[]
+        return desc
     }
 
-    _i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
-        const target = (extra.Aw as string) ?? `${w.sc.A ?? ''}/${w.sc.w ?? ''}`.replace(/^\//, '')
-        const { Aw: _drop, ...rest } = extra
-        this.i_elvistwo(w, target, type, { ...rest })
-    }
-
-    // -------------------------------------------------------------------------
-    // o_elvis / _o_elvis: declare and consume a typed elvis inside a worker method.
-    // Usage inside any w:Foo method:
-    //   async Foo(A: TheC, w: TheC, e?: TheC) {
-    //       for (const ev of this.o_elvis(w, 'doThing')) {
-    //           await this.handle_thing(w, ev.sc.payload)
-    //       }
-    //       // … ambient work …
-    //   }
-    // Two effects:
-    //   1. Stamps w/{o_elvis:'doThing'} so _Aw_think knows this method handles
-    //      that elvis type directly — rather than dispatching to H.doThing
-    //   2. Returns [e] if the current tick's e.sc.elvis === type; else [].
-    //      Maybe many at once in the future.
-    // -------------------------------------------------------------------------
-    o_elvis(w: TheC, type: string): TheC[] {
-        return this._o_elvis(w, type)
-    }
-
-    _o_elvis(w: TheC, type: string): TheC[] {
-        w.oai({ o_elvis: type })
-        const e = w.c.e as TheC | undefined
-        if (!e || e.sc.elvis !== type) return []
-        return [e]
-    }
-
-    // -------------------------------------------------------------------------
-    // _push_todo: push an elvis particle onto this Housing's own root House.
-    // When called via i_elvisto(), `this` is already the correct target House.
-    // When called from Agency/Work internals (post_do, main, concretion),
-    // `this` is a House too — so the .up walk is just a safety net.
-    // -------------------------------------------------------------------------
-    _push_todo(e: TheC) {
-        let h: Housing = this
-        while (h.up && !(h instanceof House)) h = h.up
-        const H = h as House
-        V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
-        const tag = e.sc.fn
-            ? `fn:${e.sc.see ?? '?'}`
-            : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
-        H.trace('todo', tag)
-        H.todo = [...H.todo, e]
-    }
-
-    // a higher level, client call returns true when req%reply
-
-    i_elvis_req(source:TheC|Housing, target: string | TheC | Housing, type: string, extra: Partial<TheUniversal> = {}) {
-        const req = extra.req as TheC
-        if (!req) throw `i_elvis_req: no req`
-        if (req.sc.finished) return true
-        if (!req.oa({ req_sent: 1 })) {
-            req.i({ req_sent: 1 })
-            const { req: _drop, ...rest } = extra
-            this.i_elvistwo(source, target, type, { ...rest, req })
+    // Match cur_n against an array of %lematch particles.
+    //  Returns the first unwrapped level whose .sc_has matches, or null.
+    //  Throws if any particle still uses the deprecated 'sc' key —
+    //   that collides with TheC's constructor signature via _C().
+    find_lematch(cur_n: TheC, lm_particles: TheC[]): Record<string, any> | null {
+        for (const pat of lm_particles) {
+            const lv = this.unwrap_lematch(pat)
+            if ('sc' in lv) throw `%lematch particle uses deprecated key 'sc' — rename to 'sc_has'`
+            if (lv.sc_has && cur_n.matches(lv.sc_has)) return lv
         }
-        return false
+        return null
     }
-    o_elvis_req(w: TheC, type: string): Array<{ e: TheC; req: TheC; finish: (reply: any) => void }> {
-        return this.o_elvis(w, type).map(e => {
-            const req = e.sc.req as TheC
-            const finish = (reply: any) => {
-                req.sc.reply = reply
-                req.sc.finished = true
-                this.i_elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
-            }
-            return { e, req, finish }
-        })
-    }
-    
+
+//#endregion
+
+
+
+
+
+
+
 }
 
-//#endregion
+
+
+
+
 //#region StorableHousing
 
 abstract class StorableHousing extends Housing {
@@ -449,6 +411,11 @@ export class House extends StorableHousing {
         })
         this.start_watched_C_effect()
     }
+    override stop() {
+        super.stop()
+        // propagate hangup down the tree
+        for (const sub of this.subHouses.ob({}) as House[]) sub.stop()
+    }
 
     trace_log: TraceEvent[] | null = null   // null = noop
 
@@ -475,7 +442,7 @@ export class House extends StorableHousing {
         return more(this)
     }
 
-    // every house anywhere
+    // every house anywhere (H^^**)
     override every_House(): House[] {
         let h: Housing = this
         while (h.up) h = h.up
@@ -510,11 +477,133 @@ export class House extends StorableHousing {
         wa.i(sub)
         return sub
     }
-    override stop() {
-        super.stop()
-        // propagate hangup down the tree
-        for (const sub of this.subHouses.ob({}) as House[]) sub.stop()
+
+//#endregion
+//#region elvis
+
+    // i_elvistwo: post an elvis to whichever House owns the target A.
+    //  with the first arg being the w|A|H we are coming from
+    i_elvistwo(source:TheC|Housing, target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
+        // this should be able to become target later
+        extra.sourceHousing = source
+        return this.i_elvisto(target,method,extra)
     }
+    // -------------------------------------------------------------------------
+    // i_elvisto: post an elvis to whichever House owns the target A.
+    // target: string 'AgencyName/workName' | 'AgencyName', or a Housing instance
+    //   — if a Housing instance, walks .up to find the root House and injects there.
+    // method: the method name to call on the target instance
+    // extra:  any extra sc to attach to the elvis particle
+    // Returns e immediately; targeting resolves async.
+    i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC {
+        const Aw = typeof target === 'string' ? (
+                target.includes('/') ? target : target + '/' + target
+            )
+            : target instanceof TheC ? (
+                `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
+            )
+            : (target as Housing).name
+
+        // e is real now — callers can attach to e.c.* immediately,
+        // but e is not yet in any todo queue.
+        const e = new TheC({ c: {}, sc: { elvis: method, Aw, ...extra } })
+
+        // targeting: deferred to UItime so it never races a beliefs cycle.
+        // The promise is stored on e.c so callers who need sequencing can await it.
+        e.c.targeting = this.clear(async () => {
+            const h = this._find_house(target)
+            h._expand_Aw(e)
+            h._push_todo(e)
+        })
+
+        // callers don't await us, but devtools may be open
+        ;(e.c.targeting as Promise<void>).catch(err => { throw err })
+
+        return e
+    }
+
+    // -------------------------------------------------------------------------
+    // i_elvis / _i_elvis: derive target from w's own A/w address, call i_elvisto().
+    // -------------------------------------------------------------------------
+    i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
+        return this._i_elvis(w, type, extra)
+    }
+
+    _i_elvis(w: TheC, type: string, extra: Partial<TheUniversal> = {}) {
+        const target = (extra.Aw as string) ?? `${w.sc.A ?? ''}/${w.sc.w ?? ''}`.replace(/^\//, '')
+        const { Aw: _drop, ...rest } = extra
+        this.i_elvistwo(w, target, type, { ...rest })
+    }
+
+    // -------------------------------------------------------------------------
+    // o_elvis / _o_elvis: declare and consume a typed elvis inside a worker method.
+    // Usage inside any w:Foo method:
+    //   async Foo(A: TheC, w: TheC, e?: TheC) {
+    //       for (const ev of this.o_elvis(w, 'doThing')) {
+    //           await this.handle_thing(w, ev.sc.payload)
+    //       }
+    //       // … ambient work …
+    //   }
+    // Two effects:
+    //   1. Stamps w/{o_elvis:'doThing'} so _Aw_think knows this method handles
+    //      that elvis type directly — rather than dispatching to H.doThing
+    //   2. Returns [e] if the current tick's e.sc.elvis === type; else [].
+    //      Maybe many at once in the future.
+    // -------------------------------------------------------------------------
+    o_elvis(w: TheC, type: string): TheC[] {
+        return this._o_elvis(w, type)
+    }
+
+    _o_elvis(w: TheC, type: string): TheC[] {
+        w.oai({ o_elvis: type })
+        const e = w.c.e as TheC | undefined
+        if (!e || e.sc.elvis !== type) return []
+        return [e]
+    }
+
+    // -------------------------------------------------------------------------
+    // _push_todo: push an elvis particle onto this Housing's own root House.
+    // When called via i_elvisto(), `this` is already the correct target House.
+    // When called from Agency/Work internals (post_do, main, concretion),
+    // `this` is a House too — so the .up walk is just a safety net.
+    // -------------------------------------------------------------------------
+    _push_todo(e: TheC) {
+        let h: Housing = this
+        while (h.up && !(h instanceof House)) h = h.up
+        const H = h as House
+        V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
+        const tag = e.sc.fn
+            ? `fn:${e.sc.see ?? '?'}`
+            : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
+        H.trace('todo', tag)
+        H.todo = [...H.todo, e]
+    }
+
+    // a higher level, client call returns true when req%reply
+
+    i_elvis_req(source:TheC|Housing, target: string | TheC | Housing, type: string, extra: Partial<TheUniversal> = {}) {
+        const req = extra.req as TheC
+        if (!req) throw `i_elvis_req: no req`
+        if (req.sc.finished) return true
+        if (!req.oa({ req_sent: 1 })) {
+            req.i({ req_sent: 1 })
+            const { req: _drop, ...rest } = extra
+            this.i_elvistwo(source, target, type, { ...rest, req })
+        }
+        return false
+    }
+    o_elvis_req(w: TheC, type: string): Array<{ e: TheC; req: TheC; finish: (reply: any) => void }> {
+        return this.o_elvis(w, type).map(e => {
+            const req = e.sc.req as TheC
+            const finish = (reply: any) => {
+                req.sc.reply = reply
+                req.sc.finished = true
+                this.i_elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
+            }
+            return { e, req, finish }
+        })
+    }
+    
 
 //#endregion
 //#region i todo
@@ -664,9 +753,20 @@ export class House extends StorableHousing {
     }
     
     // waits for the next moment outside Atime (aka UItime)
+    // < prefer using H.clear()
     async all_clear() {
         const top = this.top_House()
         if (top.c._mutex_beliefs) await top.c._mutex_beliefs
+    }
+    // clear(fn): create+do a UItime isolation — waits for all_clear(), then runs fn()
+    //  before the next beliefs cycle (Atime) can begin.
+    // show: hospital staff call it to isolate the patient for an electric shock
+    async clear(fn: () => void | Promise<void>): Promise<void> {
+        await this.all_clear()
+        let H = this.top_House()
+        await H.mutex('beliefs', async () => {
+            await fn()
+        })
     }
     // an overall this-house-is-busy quality, see Story / poll_step
     demand_time_to_think(ms = 2000) {
@@ -675,222 +775,6 @@ export class House extends StorableHousing {
         if (this.c.leave_running_until < until)
             this.trace('demand time',ms)
             this.c.leave_running_until = until
-    }
-
-
-//#endregion
-//#region scheme
-
-    // -------------------------------------------------------------------------
-    // apply_scheme: set T.sc.level, T.sc.path_bit_ark, T.sc.inst (optional).
-    //
-    // inst is only created when n.sc has a 'class' key (eg w.sc.class = 'WithItAll'),
-    // looked up in the classes registry. Without one, T.sc.inst stays undefined and
-    // _Aw_think falls back to H.* (ghost-injected) methods.
-    // needed_concretion is only set when a class was specified but inst isn't ready yet.
-    // < define as slope. interesting area. see also Text / enLine / rules
-    // -------------------------------------------------------------------------
-    apply_scheme(T: Travel, e?: TheC) {
-        const D = T.sc.D as TheD
-        const n = T.sc.n as TheC
-        const level = T.sc.level = T.sc.level || this.get_scheme_level(T)
-        if (!level) return
-
-        // col: the D.sc column name for global-scheme levels (A/w/r).
-        // Undefined for lematch levels — they are not column-indexed.
-        const col = T.sc.path_bit_ark = level.ark
-
-        if (level.is_inst) {
-            T.sc.inst = n
-            return
-        }
-
-        // class: particle-level wins, then lematch-level declaration
-        const class_key = (n.sc.class as string | undefined) ?? (level.class as string | undefined)
-        // concretion dedup tag: column name for global-scheme nodes,
-        //   class name for lematch nodes (no column)
-        const ctag = col ?? class_key
-
-        // check for an already-spawned instance
-        const existing = D.o({ inst: 1, concretion: ctag })[0]
-        if (existing) {
-            const inst = existing.sc.inst as Housing
-            T.sc.inst = inst
-            if ('wake' in inst && !(inst as any).wake()) {
-                T.c.top.sc.needed_concretion = true
-            }
-            return
-        }
-
-        if (!class_key) {
-            // no class specified: inst stays undefined, _Aw_think will use H.*
-            return
-        }
-
-        // class specified but not yet spawned — need concretion
-        T.c.top.sc.needed_concretion = true
-        V.organise && console.log(`  apply_scheme: needs concretion ${ctag} (class:${class_key})`)
-
-        const began = { began_wanting: 'concretion', concretion: ctag }
-        if (D.oa(began)) return
-        D.i(began)
-
-        const original_e = e
-        this.post_do(async () => {
-            const inst = this.concretion(T)
-            T.sc.inst = inst
-            if ('started' in inst && !(inst as any).started) {
-                await this.inst_started(inst)
-            }
-            // post_fn: optional hook run synchronously after concretion,
-            //   before any await, so the inst can be wired before events fire.
-            //   Declared on the %lematch particle alongside args_fn.
-            if (level.post_fn) level.post_fn(inst, n, this)
-            if (original_e) this._push_todo(original_e)
-        }, {
-            see: `concretion ${ctag}:${n.sc.name ?? (col ? D.sc[col] : '')}`,
-            for_n: n,
-        })
-    }
-
-    // -------------------------------------------------------------------------
-    // unwrap_lematch: strip the %lematch envelope from pat.sc.
-    //   pat.sc = { lematch:1, sc_has:{match pattern}, class?:'Ctor', ...rest }
-    //   pat.o({lematch:1}) = child %lematch particles for the next depth
-    //   Returns { sc, class?, next_lematches, ...rest }.
-    //   next_lematches trickles down T** so deeper nodes never re-query the tree.
-    // -------------------------------------------------------------------------
-    unwrap_lematch(pat: TheC): Record<string, any> {
-        const { lematch: _, ...desc } = pat.sc as any
-        desc.next_lematches = pat.o({ lematch: 1 }) as TheC[]
-        return desc
-    }
-
-    // Match cur_n against an array of %lematch particles.
-    //  Returns the first unwrapped level whose .sc_has matches, or null.
-    //  Throws if any particle still uses the deprecated 'sc' key —
-    //   that collides with TheC's constructor signature via _C().
-    find_lematch(cur_n: TheC, lm_particles: TheC[]): Record<string, any> | null {
-        for (const pat of lm_particles) {
-            const lv = this.unwrap_lematch(pat)
-            if ('sc' in lv) throw `%lematch particle uses deprecated key 'sc' — rename to 'sc_has'`
-            if (lv.sc_has && cur_n.matches(lv.sc_has)) return lv
-        }
-        return null
-    }
-
-    // -------------------------------------------------------------------------
-    // get_scheme_level: level descriptor for the CURRENT node T.sc.n.
-    //   1. parent_level.next_lematches  — trickled from prior depth's match
-    //   2. parent_level.scheme_haver    — one-time read of w/%scheme/%lematch
-    //   3. global scheme[depth]
-    // -------------------------------------------------------------------------
-    get_scheme_level(T: Travel): Record<string, any> {
-        const depth = T.c.path.length - 1
-        const parent_T  = T.c.path[depth - 1] as any
-        const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
-        const cur_n     = T.sc.n as TheC | undefined
-        let pan = parent_T?.sc?.n
-        // if (pan?.sc.w == 'Peeringinst') debugger
-        if (cur_n && parent_lv) {
-            if (parent_lv.next_lematches?.length) {
-                const lv = this.find_lematch(cur_n, parent_lv.next_lematches)
-                if (lv) return lv
-            } else if (parent_lv.scheme_haver) {
-                const parent_n = parent_T.sc.n as TheC | undefined
-                const sps = (parent_n?.o({ scheme: 1 }) ?? []) as TheC[]
-                const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
-                if (all_lm.length) {
-                    const lv = this.find_lematch(cur_n, all_lm)
-                    if (lv) return lv
-                }
-            }
-        }
-        return organise_scheme[depth]
-    }
-
-    // -------------------------------------------------------------------------
-    // get_next_levels: level descriptors for the CHILDREN of T.sc.n.
-    //   1. level.next_lematches  — trickle continues
-    //   2. level.scheme_haver    — one-time read of w/%scheme/%lematch
-    //   3. [global scheme[next_depth]]
-    // -------------------------------------------------------------------------
-    get_next_levels(T: Travel): Array<Record<string, any>> {
-        const level = T.sc.level as Record<string, any> | undefined
-        const cur_n = T.sc.n as TheC | undefined
-        if (level) {
-            if (level.next_lematches?.length) {
-                return (level.next_lematches as TheC[]).map(p => this.unwrap_lematch(p))
-            }
-            if (level.scheme_haver && cur_n) {
-                const sps = cur_n.o({ scheme: 1 }) as TheC[]
-                const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
-                if (all_lm.length) return all_lm.map(p => this.unwrap_lematch(p))
-            }
-        }
-        const next = organise_scheme[T.c.path.length]
-        return next ? [next] : []
-    }
-    // -------------------------------------------------------------------------
-    // concretion: spawn the Housing subclass for a D particle.
-    //
-    //   Class key: n.sc.class beats level.class beats col (scheme ark).
-    //   Name:      D.sc[col] if col exists, else n.sc.name, else class_key.
-    //   Concretion dedup tag (ctag): col for global-scheme levels,
-    //     class_key for lematch levels (no column).
-    //   Inst also stamped on n.c.inst for direct access without D** walk.
-    // -------------------------------------------------------------------------
-    concretion(T: Travel) {
-        const { D } = T.sc
-        const n = T.sc.n as any
-        const level = T.sc.level as Record<string, any> | undefined
-        const col = T.sc.path_bit_ark as string | undefined
-        const class_key = (n?.sc?.class ?? level?.class ?? col) as string
-        const ctag = col ?? class_key
-        const _class = classes[class_key]
-        if (!_class) throw `concretion: unknown class "${class_key}"`
-
-        let ctor_args: any[]
-        if (col) {
-            // global-scheme level (H/A/w/r)
-            ctor_args = [{ name: D.sc[col] ?? n?.sc?.name ?? class_key }]
-        } else {
-            // lematch level: strip the type-marker keys (sc_has lives on level, not n)
-            const sc_has = level?.sc_has ?? {}
-            const guess_opt: Record<string, any> = Object.fromEntries(
-                Object.entries(n?.sc ?? {}).filter(([k]) => !(k in sc_has))
-            )
-            // name may have been absent on the particle; fall back to the matched type key
-            guess_opt.name ??= Object.keys(sc_has)[0]
-
-            ctor_args = level?.args_fn
-                ? level.args_fn(n, guess_opt, T)
-                : [guess_opt]
-        }
-
-        const inst = new _class(...ctor_args)
-        if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
-        D.i({ inst, concretion: ctag })
-        // stamp on n so callers reach inst via n.c.inst without D** walk
-        if (n) n.c.inst = inst
-        return inst
-    }
-
-    async inst_started(inst: Housing): Promise<void> {
-        return new Promise(resolve => {
-            const check = () => {
-                if ((inst as any).started) return resolve()
-                queueMicrotask(check)
-            }
-            check()
-        })
-    }
-
-
-    async eatfunc(hash) {
-        Object.assign(this, hash)
-        await this.on_code_change?.()
-        if (this.oa()) this.main()
     }
 
 
@@ -1026,32 +910,7 @@ export class House extends StorableHousing {
         const AN = ATN.map(AT => AT.sc.n as TheC)
         await this.agency_officing(AwN.map(({ A, w }) => ({ A, w })), AN)
     }
-    // -------------------------------------------------------------------------
-    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
-    // -------------------------------------------------------------------------
-    Awr_to_inst(n: TheC): Housing | undefined {
-        let found: Housing | undefined
-        this.Se.c.T?.sc.N?.forEach((T: Travel) => {
-            if (T.sc.n === n && T.sc.inst) found = T.sc.inst
-        })
-        return found
-    }
 
-    // ── Awo: climb the A/w path by name ─────────────────────────────────
-    // Awo('Story')         → finds {A:'Story'}/{w:'Story'}, returns w
-    // Awo('Story','Cyto')  → finds {A:'Story'}/{w:'Cyto'}, returns w
-    // Blows up if multiple rows come out anywhere.
-    Awo(Aname: string, wname?: string): TheC {
-        wname ??= Aname
-        const As = this.o({ A: Aname }) as TheC[]
-        if (!As.length) throw `Awo: !A:${Aname}`
-        if (As.length > 1) throw `Awo: ${As.length}x A:${Aname}`
-        const A = As[0]
-        const ws = A.o({ w: wname }) as TheC[]
-        if (!ws.length) throw `Awo: !w:${wname} in A:${Aname}`
-        if (ws.length > 1) throw `Awo: ${ws.length}x w:${wname} in A:${Aname}`
-        return ws[0]
-    }
 
 //#endregion
 //#region think
@@ -1132,6 +991,208 @@ export class House extends StorableHousing {
     // -------------------------------------------------------------------------
 
 //#endregion
+
+// < could move to Hovercraft
+
+
+//#region scheme
+
+    // -------------------------------------------------------------------------
+    // apply_scheme: set T.sc.level, T.sc.path_bit_ark, T.sc.inst (optional).
+    //
+    // inst is only created when n.sc has a 'class' key (eg w.sc.class = 'WithItAll'),
+    // looked up in the classes registry. Without one, T.sc.inst stays undefined and
+    // _Aw_think falls back to H.* (ghost-injected) methods.
+    // needed_concretion is only set when a class was specified but inst isn't ready yet.
+    // < define as slope. interesting area. see also Text / enLine / rules
+    // -------------------------------------------------------------------------
+    apply_scheme(T: Travel, e?: TheC) {
+        const D = T.sc.D as TheD
+        const n = T.sc.n as TheC
+        const level = T.sc.level = T.sc.level || this.get_scheme_level(T)
+        if (!level) return
+
+        // col: the D.sc column name for global-scheme levels (A/w/r).
+        // Undefined for lematch levels — they are not column-indexed.
+        const col = T.sc.path_bit_ark = level.ark
+
+        if (level.is_inst) {
+            T.sc.inst = n
+            return
+        }
+
+        // class: particle-level wins, then lematch-level declaration
+        const class_key = (n.sc.class as string | undefined) ?? (level.class as string | undefined)
+        // concretion dedup tag: column name for global-scheme nodes,
+        //   class name for lematch nodes (no column)
+        const ctag = col ?? class_key
+
+        // check for an already-spawned instance
+        const existing = D.o({ inst: 1, concretion: ctag })[0]
+        if (existing) {
+            const inst = existing.sc.inst as Housing
+            T.sc.inst = inst
+            if ('wake' in inst && !(inst as any).wake()) {
+                T.c.top.sc.needed_concretion = true
+            }
+            return
+        }
+
+        if (!class_key) {
+            // no class specified: inst stays undefined, _Aw_think will use H.*
+            return
+        }
+
+        // class specified but not yet spawned — need concretion
+        T.c.top.sc.needed_concretion = true
+        V.organise && console.log(`  apply_scheme: needs concretion ${ctag} (class:${class_key})`)
+
+        const began = { began_wanting: 'concretion', concretion: ctag }
+        if (D.oa(began)) return
+        D.i(began)
+
+        const original_e = e
+        this.post_do(async () => {
+            const inst = this.concretion(T)
+            T.sc.inst = inst
+            if ('started' in inst && !(inst as any).started) {
+                await this.inst_started(inst)
+            }
+            // post_fn: optional hook run synchronously after concretion,
+            //   before any await, so the inst can be wired before events fire.
+            //   Declared on the %lematch particle alongside args_fn.
+            if (level.post_fn) level.post_fn(inst, n, this)
+            if (original_e) this._push_todo(original_e)
+        }, {
+            see: `concretion ${ctag}:${n.sc.name ?? (col ? D.sc[col] : '')}`,
+            for_n: n,
+        })
+    }
+
+    // -------------------------------------------------------------------------
+    // get_scheme_level: level descriptor for the CURRENT node T.sc.n.
+    //   1. parent_level.next_lematches  — trickled from prior depth's match
+    //   2. parent_level.scheme_haver    — one-time read of w/%scheme/%lematch
+    //   3. global scheme[depth]
+    // -------------------------------------------------------------------------
+    get_scheme_level(T: Travel): Record<string, any> {
+        const depth = T.c.path.length - 1
+        const parent_T  = T.c.path[depth - 1] as any
+        const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
+        const cur_n     = T.sc.n as TheC | undefined
+        let pan = parent_T?.sc?.n
+        // if (pan?.sc.w == 'Peeringinst') debugger
+        if (cur_n && parent_lv) {
+            if (parent_lv.next_lematches?.length) {
+                const lv = this.find_lematch(cur_n, parent_lv.next_lematches)
+                if (lv) return lv
+            } else if (parent_lv.scheme_haver) {
+                const parent_n = parent_T.sc.n as TheC | undefined
+                const sps = (parent_n?.o({ scheme: 1 }) ?? []) as TheC[]
+                const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
+                if (all_lm.length) {
+                    const lv = this.find_lematch(cur_n, all_lm)
+                    if (lv) return lv
+                }
+            }
+        }
+        return organise_scheme[depth]
+    }
+
+    // -------------------------------------------------------------------------
+    // get_next_levels: level descriptors for the CHILDREN of T.sc.n.
+    //   1. level.next_lematches  — trickle continues
+    //   2. level.scheme_haver    — one-time read of w/%scheme/%lematch
+    //   3. [global scheme[next_depth]]
+    // -------------------------------------------------------------------------
+    get_next_levels(T: Travel): Array<Record<string, any>> {
+        const level = T.sc.level as Record<string, any> | undefined
+        const cur_n = T.sc.n as TheC | undefined
+        if (level) {
+            if (level.next_lematches?.length) {
+                return (level.next_lematches as TheC[]).map(p => this.unwrap_lematch(p))
+            }
+            if (level.scheme_haver && cur_n) {
+                const sps = cur_n.o({ scheme: 1 }) as TheC[]
+                const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
+                if (all_lm.length) return all_lm.map(p => this.unwrap_lematch(p))
+            }
+        }
+        const next = organise_scheme[T.c.path.length]
+        return next ? [next] : []
+    }
+    // -------------------------------------------------------------------------
+    // concretion: spawn the Housing subclass for a D particle.
+    //
+    //   Class key: n.sc.class beats level.class beats col (scheme ark).
+    //   Name:      D.sc[col] if col exists, else n.sc.name, else class_key.
+    //   Concretion dedup tag (ctag): col for global-scheme levels,
+    //     class_key for lematch levels (no column).
+    //   Inst also stamped on n.c.inst for direct access without D** walk.
+    // -------------------------------------------------------------------------
+    concretion(T: Travel) {
+        const { D } = T.sc
+        const n = T.sc.n as any
+        const level = T.sc.level as Record<string, any> | undefined
+        const col = T.sc.path_bit_ark as string | undefined
+        const class_key = (n?.sc?.class ?? level?.class ?? col) as string
+        const ctag = col ?? class_key
+        const _class = classes[class_key]
+        if (!_class) throw `concretion: unknown class "${class_key}"`
+
+        let ctor_args: any[]
+        if (col) {
+            // global-scheme level (H/A/w/r)
+            ctor_args = [{ name: D.sc[col] ?? n?.sc?.name ?? class_key }]
+        } else {
+            // lematch level: strip the type-marker keys (sc_has lives on level, not n)
+            const sc_has = level?.sc_has ?? {}
+            const guess_opt: Record<string, any> = Object.fromEntries(
+                Object.entries(n?.sc ?? {}).filter(([k]) => !(k in sc_has))
+            )
+            // name may have been absent on the particle; fall back to the matched type key
+            guess_opt.name ??= Object.keys(sc_has)[0]
+
+            ctor_args = level?.args_fn
+                ? level.args_fn(n, guess_opt, T)
+                : [guess_opt]
+        }
+
+        const inst = new _class(...ctor_args)
+        if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
+        D.i({ inst, concretion: ctag })
+        // stamp on n so callers reach inst via n.c.inst without D** walk
+        if (n) n.c.inst = inst
+        return inst
+    }
+
+    async inst_started(inst: Housing): Promise<void> {
+        return new Promise(resolve => {
+            const check = () => {
+                if ((inst as any).started) return resolve()
+                queueMicrotask(check)
+            }
+            check()
+        })
+    }
+
+    // -------------------------------------------------------------------------
+    // Awr_to_inst: given a particle n (A or w or r), find its Housing instance.
+    // -------------------------------------------------------------------------
+    Awr_to_inst(n: TheC): Housing | undefined {
+        let found: Housing | undefined
+        this.Se.c.T?.sc.N?.forEach((T: Travel) => {
+            if (T.sc.n === n && T.sc.inst) found = T.sc.inst
+        })
+        return found
+    }
+
+
+
+//#endregion
+
+
+
 //#region watched
     // data replicated from Atime to UItime, by the %watched:*
     // eg H/%watched:UIs/%any,C,is,watchable
@@ -1171,8 +1232,7 @@ export class House extends StorableHousing {
         // await all_clear() is the Atime→UItime gate — dest TheC fields
         // (H.ave, H.UIs, …) are only ever mutated here, after mutex releases.
         // pending stays true during the wait so rapid bumps share one flush.
-        const flush = async () => {
-            await this.all_clear()
+        const flush = () => this.clear(async () => {
             pending = false
             for (let i = 0; i < this.watched.length; i++) {
                 const C = this.watched[i].C
@@ -1182,7 +1242,7 @@ export class House extends StorableHousing {
                     this.watched[i].handler()
                 }
             }
-        }
+        })
         $effect(() => {
             for (const { C } of this.watched) void C.version
             if (!pending) { pending = true; setTimeout(flush, ANSWER_CALLS_TICK_MS / 2) }
@@ -1570,6 +1630,8 @@ export class House extends StorableHousing {
 
 
 }
+
+register_class('H',House)
 const pad = (n: number) => String(n).padStart(3, '0')
 
 export class WormholeNav {
@@ -1667,41 +1729,6 @@ export class Street extends Housing {
     async remove_house(name: string) {
         await db.House.delete(name)
     }
-}
-
-//#endregion
-// < Agency / Work / Request subclasses removed — they added nothing beyond Housing.
-// < If the scheme machinery should spawn typed Housing subclasses per level
-//   (an Agency-class for A-nodes, etc.), one option is to overload House.i()
-//   to detect the current scheme depth from the path context and instantiate
-//   the right class rather than a plain TheC. Not needed yet.
-
-//#region class registry
-
-// Feature-named classes register here. The global scheme's four arks (H/A/w/r)
-//  no longer need entries — they don't trigger concretion unless n.sc.class
-//  or a %scheme lematch names a class explicitly.
-export const classes: Record<string, new (opt: any) => Housing> = {
-    H: House,
-}
-
-// The base scheme drives Selection.process() depth by depth:
-//   depth 0: House itself  (is_inst — House is its own instance)
-//   depth 1: A particles   -> find {A:1}
-//   depth 2: w particles   -> find {w:1}  scheme_haver: may host %scheme/%lematch
-//   depth 3: r particles   -> find {r:1}
-// Beyond depth 2, w/%scheme/%lematch particles extend the walk.
-// Any other node that wants to host sub-schemes can stamp scheme_haver:1 on its
-//   returned level descriptor (or carry it in a %lematch's sc).
-const organise_scheme = [
-    { ark: 'H', is_inst: true },
-    { ark: 'A', sc_has: { A: 1 } },
-    { ark: 'w', sc_has: { w: 1 }, scheme_haver: 1 },
-    { ark: 'r', sc_has: { r: 1 } },
-]
-
-export function register_class(key: string, ctor: new (opt: any) => Housing) {
-    classes[key] = ctor
 }
 
 //#endregion

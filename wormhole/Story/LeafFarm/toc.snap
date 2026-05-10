@@ -63,8 +63,7 @@ story:LeafFarm
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:0.246
-      sample:0.239,at:1778377928
+    TimeTotal:beliefs,avg:0.247
       sample:0.251,at:1778377982
       sample:0.251,at:1778378015
       sample:0.251,at:1778378035
@@ -74,6 +73,7 @@ story:LeafFarm
       sample:0.223,at:1778378110
       sample:0.277,at:1778378154
       sample:0.231,at:1778378447
+      sample:0.253,at:1778413662
   step,dige:16af8162fcae6222
   step:2,dige:de8ea36813915842
   step:3,dige:09f230e0ef6e7be9
