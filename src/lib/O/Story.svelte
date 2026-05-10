@@ -1288,7 +1288,8 @@
         }
 
         // Phase 2: poll_step — wait for Run to go quiescent
-        let may_be_demanding = false
+        let wants_left_running = false
+        let was_left_running = false
         const poll_step = () => {
             if (!run.c.driving) return
             const f = Run.c.finished_run as number | null
@@ -1300,28 +1301,35 @@
 
             let dont_leave_running = () => {
                 let leave_running = Run.c.leave_running_until > now_in_seconds_with_ms()
-                if (!may_be_demanding && leave_running) {
+                if (!wants_left_running && leave_running) {
                     Run.trace('leave running...')
-                    may_be_demanding = true
+                    wants_left_running = true
+                    was_left_running = true
                 }
-                if (!leave_running) may_be_demanding = false
+                if (!leave_running) wants_left_running = false
                 return !leave_running
             }
             
+            // the crux:
             const quiescent = long_after_Atime
                 && dont_want_Atime
                 && dont_leave_running()
-            if (!quiescent) { setTimeout(poll_step, TICK_MS); return }
+            
+            if (!quiescent) {
+                setTimeout(poll_step, TICK_MS)
+                return
+            }
+            // wanted more time
+            // < but does it still? or does it clear leave_running_until once satisfied? 
+            let timed_out = was_left_running
+            was_left_running = false
+            wants_left_running = false
+
+
             let ago = (now_in_seconds_with_ms() - f)
             Run.trace('quiescent', ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
-            //   'timeout'  → leave_running_until was set this step and just elapsed.
-            //   'causal'   → todo emptied and no demand was set, or demand was never
-            //                reached this step. clean self-driven completion.
-            // wires written here appear in the snap — that is the intent.
-            const lru = Run.c.leave_running_until as number | null
-            const timed_out = lru != null && lru > (run.c.began_step as number)
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
             H.post_do(snap_step, { see: 'story_snap' })
         }

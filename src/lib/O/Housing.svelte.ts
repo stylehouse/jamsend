@@ -638,7 +638,8 @@ export class House extends StorableHousing {
     demand_time_to_think(ms = 2000) {
         // push leave_running_until further out, never backwards
         const until = now_in_seconds_with_ms() + ms / 1000
-        if (!(this.c.leave_running_until > until))
+        if (this.c.leave_running_until < until)
+            this.trace('demand time',ms)
             this.c.leave_running_until = until
     }
 
