@@ -584,6 +584,12 @@
     // When collecting and a different step is clicked: collect [anchor, n], done.
     // When collecting and the same step is clicked: cancel.
     // diff_mode reset on every pick so eff_mode re-evaluates for the new step.
+    // last_user_pick: plain variable, intentionally NOT $state.
+    // The re-assert effect reads it for comparison — plain reads are untracked,
+    // so pick() setting it cannot re-trigger the effect. $state here would create
+    // a loop: pick() → last_user_pick changes → re-assert fires again mid-flight.
+    let last_user_pick: number | null = null
+
     function pick(n: number) {
         if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
             collect_range(diff_anchor, n)
@@ -594,17 +600,27 @@
             diff_collecting = false
             diff_anchor     = null
         }
-        const new_sel = n
-        H.i_elvisto('Story/Story', 'story_sel', { open_at: new_sel })
+        last_user_pick = n
+        H.i_elvisto('Story/Story', 'story_sel', { open_at: n })
     }
 
     function close_panel() {
-        diff_mode = null
+        diff_mode      = null
+        last_user_pick = null
         H.i_elvisto('Story/Story', 'story_sel', { open_at: null })
     }
     $effect(() => {
         displayed_at   // subscribe
         diff_mode = null
+    })
+    // re-assert when server pushes a different open_at while we have a step visible
+    $effect(() => {
+        const server_at = display.open_at
+        if (server_at == null)            return   // server closed — fine
+        if (displayed_at == null)         return   // nothing open yet — let server decide
+        if (server_at === last_user_pick) return   // this was our own pick echoing back
+        // server jumped to a different step — re-assert what the user was looking at
+        pick(displayed_at)
     })
     // cyto seek tracks display.open_at directly — not displayed_at —
     // so the graph moves immediately when a pip is clicked, before
@@ -612,6 +628,16 @@
     $effect(() => {
         if (display.open_at) {
             setTimeout(() => H.i_elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
+        }
+    })
+    // when the panel opens from outside (server-pushed open_at: end of run,
+    // failed step, stash restore), return focus to the strip so arrow keys work.
+    // Guard: if focus is already inside .sr the user is driving — don't interrupt.
+    $effect(() => {
+        void display.open_at   // subscribe
+        if (!display.open_at) return
+        if (sr_el && !sr_el.contains(document.activeElement)) {
+            setTimeout(() => strip_el?.focus(), 0)
         }
     })
 

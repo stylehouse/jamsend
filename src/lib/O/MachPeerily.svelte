@@ -106,7 +106,7 @@
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
                             if (open_n) n.drop(open_n)
                             console.log(`🔌 ${Side} disconnected`)
-                            H.ponder()
+                            H.feebly_ponder()
                         })
                     }
                 })

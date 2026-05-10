@@ -47,14 +47,16 @@
     //
     // ── UI registration ──────────────────────────────────────────────────────
     //
-    //   Story_plan registers Storui into H:Story/%watched:UIs so Otro can
-    //   mount it automatically alongside whichever house it finds it on.
-    //   The same container holds Cytui (registered by w:Cyto on its first tick).
+    //   Story_plan registers Storui for Otro via H:Story/%watched:UIs so Otro can
+    //   mount it automatically alongside whichever house it finds itself on.
+    //   The same container holds Cytui etc (registered by w:Cyto on its first tick).
     //   H.UIs = C.o({}) is populated by enroll_watched() on every bump.
 
     let spect = `
     
     further design:
+      snap after every Atime, and make the %see sparkle about things like airborne cinnamon.
+       we currently snap after every Runtime (Run.c.runtime=false, it is minimally conceptualised)
       assertions, pointers
        crawl code forward by compiling pauses everywhere
       the UI

@@ -180,28 +180,44 @@ abstract class Housing extends TheC {
     //   — if a Housing instance, walks .up to find the root House and injects there.
     // method: the method name to call on the target instance
     // extra:  any extra sc to attach to the elvis particle
-    // -------------------------------------------------------------------------
-    i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}) {
-        const h = this._find_house(target)
-
+    // Returns e immediately; targeting resolves async.
+    i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC {
         const Aw = typeof target === 'string' ? (
-                // < un-hack A/w targeting
-                target.includes('/') ? target
-                    : target+'/'+target
+                target.includes('/') ? target : target + '/' + target
             )
             : target instanceof TheC ? (
                 `${(target.c.up as TheC)?.sc.A ?? ''}/${target.sc.w ?? target.sc.A ?? ''}`.replace(/^\//, '')
             )
             : (target as Housing).name
 
-        const e = new TheC({ c: {}, sc: {
-            elvis: method,
-            Aw,
-            ...extra,
-        }})
-        h._expand_Aw(e)
-        h._push_todo(e)
+        // e is real now — callers can attach to e.c.* immediately,
+        // but e is not yet in any todo queue.
+        const e = new TheC({ c: {}, sc: { elvis: method, Aw, ...extra } })
+
+        // targeting: deferred to UItime so it never races a beliefs cycle.
+        // The promise is stored on e.c so callers who need sequencing can await it.
+        e.c.targeting = (async () => {
+            await this.all_clear()
+            const h = this._find_house(target)
+            h._expand_Aw(e)
+            h._push_todo(e)
+        })()
+
+        // callers don't await us, but devtools may be open
+        ;(e.c.targeting as Promise<void>).catch(err => { throw err })
+
         return e
+    }
+
+    // clear(fn): create+do a UItime isolation — waits for all_clear(), then runs fn()
+    //  before the next beliefs cycle can begin.
+    // show: hospital staff call it to isolate the patient for an electric shock
+    async clear(fn: () => void | Promise<void>): Promise<void> {
+        await this.all_clear()
+        let H = this.top_House()
+        await H.mutex('beliefs', async () => {
+            await fn()
+        })
     }
 
     // -------------------------------------------------------------------------
@@ -484,15 +500,15 @@ export class House extends StorableHousing {
         if (!this.ghosts) throw `subHouse(${name}): H.ghosts not ready yet`
         const existing = this.o({ H: name })[0] as House | undefined
         if (existing) return existing
-        const child = new House({ name })
-        child.up = this
-        child.c.ip = `${this.c.ip}_${++this.c.ip_i}`
-        child.ghosts = this.ghosts
-        Object.assign(child, this.ghosts)
-        this.i(child)
+        const sub = new House({ name })
+        sub.up = this
+        sub.c.ip = `${this.c.ip}_${++this.c.ip_i}`
+        sub.ghosts = this.ghosts
+        Object.assign(sub, this.ghosts)
+        this.i(sub)
         const wa = this.oai_enroll(this, { watched: 'subHouses' })
-        wa.i(child)
-        return child
+        wa.i(sub)
+        return sub
     }
     override stop() {
         super.stop()

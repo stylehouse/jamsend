@@ -12,7 +12,7 @@ Snap:H
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
-          {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         {"mung":["age"]}	self,round
         see:⏳ Bearing keygen pending…
         Peerily
@@ -24,7 +24,7 @@ Snap:H
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
-          {"ref":{"sc_has":"Object()","args_fn":"Function()"}}	lematch,class:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         {"mung":["age"]}	self,round
         see:⏳ Nearing keygen pending…
         Peerily
