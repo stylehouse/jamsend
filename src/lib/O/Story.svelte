@@ -1280,6 +1280,8 @@
 
             run.c.step_n     = n
             run.c.began_step = now_in_seconds_with_ms()
+            // reset so ===0 detection below only fires for THIS step's alleviation
+            Run.c.leave_running_until = null
             Run.trace_enable()
             Run.trace('step', String(n))
             await this.Story_prepare_Prep(w,Run,run)
@@ -1306,6 +1308,12 @@
                     wants_left_running = true
                     was_left_running = true
                 }
+                // ===0: demanded and alleviated before any poll tick noticed it —
+                //   satisfying code (keygen, heartbeat) zeroed it explicitly.
+                //   null means this step never demanded time at all.
+                if (Run.c.leave_running_until === 0 && !was_left_running) {
+                    was_left_running = true
+                }
                 if (!leave_running) wants_left_running = false
                 return !leave_running
             }
@@ -1319,8 +1327,6 @@
                 setTimeout(poll_step, TICK_MS)
                 return
             }
-            // wanted more time
-            // < but does it still? or does it clear leave_running_until once satisfied? 
             let timed_out = was_left_running
             was_left_running = false
             wants_left_running = false

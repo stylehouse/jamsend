@@ -338,8 +338,17 @@
                 const tag = `${side}→${pub.slice(0,8)}`
                 console.warn(`💔 shim Pier_wont_connect  ${tag}`)
                 H.trace('shim', `Pier_wont_connect  ${tag}`)
-                const pn = H.Awo(side).o({ Pier: 1, pub })[0] as TheC | undefined
-                if (pn) H.Awo(side).drop(pn)
+                const sw = H.Awo(side)
+                const pn = sw.o({ Pier: 1, pub })[0] as TheC | undefined
+                if (pn) {
+                    // null the buffer before dropping — prevents in-flight concretion
+                    //   post_fn from calling init_begins on the dead connection
+                    pn.c._pl_buf = null
+                    sw.drop(pn)
+                }
+                // clear pier_dialling so Bearing can re-dial once Nearing is up
+                const pd = sw.o({ pier_dialling: 1 })[0] as TheC | undefined
+                if (pd) sw.drop(pd)
                 H.main(true)
             },
             Pier_reconnect(ier: Pier) {
@@ -394,13 +403,17 @@
 
         if (!Peering.oa({ open: 1 })) w.oai({ see: `⏳ ${side} → PeerServer…` })
 
-        // Phase 2: Bearing initiates outbound when Nearing's prepub is known.
-        //   Nearing learns Bearing's pub from the inbound connection.
-        //   We dial and buffer — post_fn on %scheme:Pier will call init_begins
-        //   once concretion produces the Pier, replaying any events from the gap.
+        // Phase 2: Bearing initiates outbound when both sides are registered on PeerServer.
+        //   Nearing must be open before we dial — connecting before it registers yields
+        //   peer-unavailable, which would kill the con the buffer is attached to.
+        //   Nearing learns Bearing's pub from the inbound connection, not from dialling.
+        //   We dial and buffer — post_fn on %scheme:Pier calls init_begins once concretion
+        //   produces the Pier, then replays any events that arrived in the gap.
         if (side === 'Bearing' && Peering.oa({ open: 1 })) {
-            const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-            if (npub && !w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
+            const nPeering = H.Awo('Nearing').o({ Peering: 1 })[0]
+            const npub  = nPeering?.sc.prepub as string | undefined
+            const nOpen = nPeering?.oa({ open: 1 })
+            if (npub && nOpen && !w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
                 w.i({ pier_dialling: 1 })
                 const con = eer.connect(npub)
                 const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
