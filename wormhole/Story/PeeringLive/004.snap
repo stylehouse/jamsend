@@ -5,9 +5,9 @@ Snap:H
       w:PeeringLive
         keygen_running
         keygen_done
+        timeDoubt
         {"mung":["age"]}	self,round:6
         {"see":"PeeringLive  open:2/2"}
-        timeDoubt
     A:Bearing
       {"mung":["age"]}	self,round:6
       w:Bearing
