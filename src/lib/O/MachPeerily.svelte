@@ -6,6 +6,15 @@
     import { armap, enhex, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
 
+    // events buffered between "con obtained" and "Pier concretized by Housing"
+    interface _PierConBuf {
+        con:      any
+        eer:      any
+        inbound:  boolean
+        events:   { event: string; args: any[] }[]
+        off_fns:  (() => void)[]
+    }
+
     let {M} = $props()
 
     onMount(async () => {
@@ -91,19 +100,22 @@
                             const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
                             if (reg) H.Awo('PeeringLive').drop(reg)
                             console.log(`✅ ${Side} open  ${n.sc.prepub}`)
-                            H.main()
+                            H.main(true)
                         })
                         eer.Peer.on('disconnected', () => {
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
                             if (open_n) n.drop(open_n)
                             console.log(`🔌 ${Side} disconnected`)
-                            H.main()
+                            H.main(true)
                         })
                     }
                 })
             }
 
-            // %scheme:Pier — args_fn auto-detects P and eer from sibling particles
+            // %scheme:Pier — args_fn auto-detects P and eer from sibling particles.
+            //   post_fn drains the con buffer that Peering_i_Pier or pier_dialling
+            //   attached before concretion ran — this is how we handle the race between
+            //   the DataChannel firing con.on('open') and concretion being async.
             if (!w.oa({ scheme: 'Pier' })) {
                 const sp = w.i({ scheme: 'Pier' })
                 const w_c = w
@@ -113,7 +125,21 @@
                         eer:     w_c.o({ Peering: 1 })[0]?.c.inst,
                         pub:     n.sc.pub as string,
                         stashed: { trust: [] },
-                    }]
+                    }],
+                    post_fn: (ier: Pier, pn: TheC, _H: House) => {
+                        const buf = pn.c._pl_buf as _PierConBuf | undefined
+                        if (!buf) return
+                        pn.c._pl_buf = null             // consumed — block reconnect path
+                        // detach capturing handlers before replaying — otherwise the
+                        //   replay would re-buffer the same events a second time
+                        for (const off of buf.off_fns) off()
+                        // connect the freshly-concretized Pier to its DataChannel
+                        ier.init_begins(buf.eer, buf.con, buf.inbound)
+                        // replay any events that arrived during the concretion gap
+                        for (const { event, args } of buf.events) {
+                            ;(buf.con as any).emit(event, ...args)
+                        }
+                    },
                 })
             }
         }
@@ -144,6 +170,7 @@
                         on_error:   (e: any) => console.error(`${side} P.error:`, e),
                         save_stash: null,
                     })
+                    P.Otromode = true    // Housing manages Pier lifecycle via concretion
                     P.Trusting = H._PeeringLive_shim(H, side)
                     const sw = H.Awo(side)
                     sw.oai({ Peerily: 1 }).c.P = P
@@ -154,6 +181,13 @@
                     console.log(`🔑 ${side} ${Id}`)
                 }
                 w.oai({ keygen_done: 1 })
+                // release the keygen-pending demand so the step snaps promptly —
+                //   demand_time_to_think always assigns (missing-braces in its body
+                //   means the trace is conditional but the write is not), so zeroing
+                //   here genuinely clears it regardless of the current value.
+                //   H.main() is no_ambient-suppressed so no new think is scheduled;
+                //   poll_step will quiesce on its next TICK after long_after_Atime.
+                H.c.leave_running_until = 0
                 H.main()
             }, { see: 'PeeringLive keygen' })
             return
@@ -228,30 +262,53 @@
     //   Bearing never reached Nearing — signaling or PeerJS issue.
     //   If Peering_i_Pier fires but Pier_init_completo does not, the DataChannel
     //   ICE handshake is failing or stalling before on('open').
+    // -------------------------------------------------------------------------
+    // _PierConBuf — carries a DataChannel and its buffered events across the
+    //   async gap between "inbound/outbound con obtained" and "Pier concretized".
+    //   Attached to %Pier.c._pl_buf; consumed once by %scheme:Pier post_fn.
+    //   Replaying: off_fns detaches capture handlers so con.emit() in post_fn
+    //   reaches only the real init_begins handlers, not the capturing ones.
+    // -------------------------------------------------------------------------
+    _pl_buf_attach(con: any, eer: any, inbound: boolean): _PierConBuf {
+        const buf: _PierConBuf = { con, eer, inbound, events: [], off_fns: [] }
+        // buffer open/close/error — data cannot arrive before open (DataChannel invariant)
+        for (const event of ['open', 'close', 'error'] as const) {
+            const handler = (...args: any[]) => buf.events.push({ event, args })
+            con.on(event, handler)
+            buf.off_fns.push(() => con.off(event, handler))
+        }
+        return buf
+    },
+
     _PeeringLive_shim(H: House, side: string) {
         return { M: {
             // called via `await` in create_Peering's async connection handler.
-            //   init_begins runs first (sync) so con.on('open') is registered
-            //   before the DataChannel can advance to open state.
+            //   We must NOT touch init_begins here — con.on('open') etc. are registered
+            //   by %scheme:Pier post_fn once concretion produces the Pier.
+            //   We buffer instead so events that fire in the concretion gap aren't lost.
             async Peering_i_Pier(_eer: any, pub: string, con: any, _inbound: boolean) {
                 const tag = `${side}←${pub.slice(0,8)}`
                 console.log(`🔗 shim Peering_i_Pier  ${tag}  con.type:${con?.type}`)
                 H.trace('shim', `Peering_i_Pier  ${tag}`)
-                const sw   = H.Awo(side)
-                const P    = sw.o({ Peerily: 1 })[0]?.c.P
-                const eer  = sw.o({ Peering: 1 })[0]?.c.inst
-                if (!P)   console.warn(`⚠ shim Peering_i_Pier: no P on ${side}`)
+                const sw  = H.Awo(side)
+                const eer = sw.o({ Peering: 1 })[0]?.c.inst
                 if (!eer) console.warn(`⚠ shim Peering_i_Pier: no eer on ${side}`)
-                const pier = new Pier({ P, eer, pub, stashed: { trust: [] } })
-                pier.init_begins(eer, con, true)        // sync — before any await
-                const pn   = sw.oai({ Pier: 1, pub, name: pub }) as TheC
-                pn.c.inst  = pier                       // pre-set → concretion skips
-                H.post_do(async () => { H.main() })
+                const pn  = sw.oai({ Pier: 1, pub, name: pub }) as TheC
+                pn.c._pl_buf = H._pl_buf_attach(con, eer, true)
+                // inbound connection — hello exchange will begin once Pier is concretized.
+                //   demand_time_to_think always assigns (housing missing-braces),
+                //   so this freshly demands 2000ms from now regardless of prior value.
+                H.demand_time_to_think(2000)
+                H.post_do(async () => { H.main(true) })
             },
             Pier_init_completo(ier: Pier) {
                 const tag = `${side}↔${ier.pub?.slice(0,8)}  ${ier.inbound?'in':'out'}`
                 console.log(`🎉 shim Pier_init_completo  ${tag}`)
                 H.trace('shim', `Pier_init_completo  ${tag}`)
+                // DataChannel is open and protocol state reset — say_hello (outbound)
+                //   or hear_hello-triggered say_hello (inbound) is about to fire.
+                //   Demand 1500ms so the hello+publicKey exchange can complete.
+                H.demand_time_to_think(1500)
                 // hotwire once — ||= guards against rewiring on reconnect
                 ier.handlers.test_binary ||= async (data: any) => {
                     const sw  = H.Awo(side)
@@ -263,15 +320,15 @@
                     t.sc.received      = 1
                     t.sc.received_len  = len
                     t.sc.received_dige = received_dige
-                    H.main()
+                    H.main(true)
                 }
-                H.main()
+                H.main(true)
             },
             Pier_i_publicKey(ier: Pier) {
                 const tag = `${side}←${ier.pub?.slice(0,8)}`
                 console.log(`🔑 shim Pier_i_publicKey  ${tag}`)
                 H.trace('shim', `Pier_i_publicKey  ${tag}`)
-                H.main()
+                H.main(true)
             },
             ier_is_Good(_ier: Pier): boolean {
                 // called before say_trust — not traced, fires on every trust attempt
@@ -283,15 +340,18 @@
                 H.trace('shim', `Pier_wont_connect  ${tag}`)
                 const pn = H.Awo(side).o({ Pier: 1, pub })[0] as TheC | undefined
                 if (pn) H.Awo(side).drop(pn)
-                H.main()
+                H.main(true)
             },
             Pier_reconnect(ier: Pier) {
                 const tag = `${side}→${ier.pub?.slice(0,8)}`
                 console.log(`🔄 shim Pier_reconnect  ${tag}`)
                 H.trace('shim', `Pier_reconnect  ${tag}`)
+                // reconnect produces a new con — buffer it onto the existing Pier
+                //   particle so post_fn can call init_begins when the buffer is drained.
                 const con = ier.eer.connect(ier.pub)
-                ier.init_begins(ier.eer, con, false)
-                H.main()
+                const pn  = H.Awo(side).o({ Pier: 1, pub: ier.pub })[0] as TheC | undefined
+                if (pn) pn.c._pl_buf = H._pl_buf_attach(con, ier.eer, false)
+                H.main(true)
             },
             // < ping and intro not exercised in this test
             unemitPing(ier: Pier)  {
@@ -336,29 +396,37 @@
 
         // Phase 2: Bearing initiates outbound when Nearing's prepub is known.
         //   Nearing learns Bearing's pub from the inbound connection.
-        //   Mirror the inbound shim path exactly: create %Pier and call init_begins
-        //   synchronously before any tick so con.on('open') is wired before the
-        //   DataChannel can open — if we wait for concretion to produce ier the
-        //   event fires while we're still unlocking the mutex and is lost forever.
+        //   We dial and buffer — post_fn on %scheme:Pier will call init_begins
+        //   once concretion produces the Pier, replaying any events from the gap.
         if (side === 'Bearing' && Peering.oa({ open: 1 })) {
             const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
             if (npub && !w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
                 w.i({ pier_dialling: 1 })
-                const P    = w.o({ Peerily: 1 })[0]?.c.P
-                const con  = eer.connect(npub)
-                const pier = new Pier({ P, eer, pub: npub, stashed: { trust: [] } })
-                pier.init_begins(eer, con, false)       // sync — before any await
-                const pn   = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
-                pn.c.inst  = pier                       // pre-set → concretion skips
+                const con = eer.connect(npub)
+                const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
+                pn.c._pl_buf = H._pl_buf_attach(con, eer, false)
                 console.log(`🐻 Bearing → Nearing  ${npub}`)
             }
         }
 
-        // Pier handle: c.inst is pre-set above (outbound) or by Peering_i_Pier (inbound).
+        // Pier handle: concretion populates c.inst via post_fn after draining _pl_buf.
+        //   Until concretion runs, PierN exists but ier is undefined — drive_expects
+        //   sees this and skips hello/trust seeds until ier arrives.
+        //   Reconnect: concretion already ran so post_fn won't fire again — drain
+        //   the reconnect buffer here when ier is already in hand.
         const PierN = w.o({ Pier: 1 })[0] as TheC | undefined
         let ier: Pier | undefined
         if (PierN) {
             ier = PierN.c.inst as Pier | undefined
+            if (ier && PierN.c._pl_buf) {
+                const buf = PierN.c._pl_buf as _PierConBuf
+                PierN.c._pl_buf = null
+                for (const off of buf.off_fns) off()
+                ier.init_begins(buf.eer, buf.con, buf.inbound)
+                for (const { event, args } of buf.events) {
+                    ;(buf.con as any).emit(event, ...args)
+                }
+            }
         }
 
         // phase tracking must run before drive_expects seeds re_* gates
@@ -424,7 +492,7 @@
         await ex.do(async (req: TheC) => {
             if (req.sc.finished) return
             const ok = H._PeeringLive_predicate(req, w, eer, ier)
-            if (ok) { req.sc.finished = true; H.main(); return }
+            if (ok) { req.sc.finished = true; H.main(true); return }
             if (other_settled) return
             H.demand_time_to_think(req.sc.demand as number)
             // self-schedule a recheck before the demand expires — said_hello,
@@ -435,7 +503,7 @@
                 req.c.recheck_pending = true
                 setTimeout(() => {
                     req.c.recheck_pending = false
-                    H.main()
+                    H.main(true)
                 }, (req.sc.demand as number) * 0.7)
             }
         })
@@ -444,11 +512,21 @@
         //   supplements per-req timers when protocol bools flip between ticks.
         //   keyed on H.c so Bearing and Nearing share one interval.
         //   on_step_ending always clears it.
+        //   main(true) bypasses no_ambient — the heartbeat must actually schedule thinks.
         const any_pending = (w.o({ requesty_expects: 1 }) as TheC[]).some(r => !r.sc.finished)
         if (any_pending && !H.c._pl_heartbeat) {
             H.c._pl_heartbeat = setInterval(() => {
-                H.trace("pl_heartbeat")
-                H.main()
+                H.trace('pl_heartbeat')
+                // alleviate leave_running if all expects on both sides resolved while
+                //   we were still in the demanded window — same pattern as keygen.
+                //   poll_step quiesces within one TICK after long_after_Atime.
+                const both_settled = ['Bearing', 'Nearing']
+                    .every(s => H._PeeringLive_settled(H.Awo(s)))
+                if (both_settled && H.c.leave_running_until > 0) {
+                    H.trace('leave running alleviated')
+                    H.c.leave_running_until = 0
+                }
+                H.main(true)
             }, 250)
         }
     },
@@ -530,7 +608,7 @@
 
         await ier.emit('test_binary', { seq, buffer: buf })
         console.log(`📦 ${side} → ${other}  test_binary seq=${seq}  ${dige.slice(0, 12)}…`)
-        H.main()
+        H.main(true)
     },
 
     // Close this side's connection and let auto_reconnect bring it back.
@@ -554,7 +632,7 @@
 
         console.log(`🪓 ${side} closing con  seq=${seq}`)
         ier.con.close()
-        H.main()
+        H.main(true)
     },
 
     // SHA-256 hex of a buffer — compact, stable, displays cleanly in snap diffs.

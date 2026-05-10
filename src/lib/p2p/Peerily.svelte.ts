@@ -298,6 +298,9 @@ export class Peering {
 export class Peerily extends VerilyPeerily {
     stash:TheStash = $state({})
     Trusting:Trusting
+    // Housing manages Pier lifecycle — concretion creates Piers, post_fn wires them.
+    //   Suppresses init_begins guards that assume standalone Peerily operation.
+    Otromode = false
     // UI:Intro via M:Trusting
     fade_splash = $state(false)
     // < stop F|PF features spawning until:
@@ -462,7 +465,7 @@ export class Pier {
     // we are the peer that was first reached out to
     inbound = false
     init_begins(eer,con,inbound=false) {
-        if (this.con) {
+        if (this.con && !this.P.Otromode) {
             // < gets messy (send on a disconnected handle) without con.close here
             if (this.con == con) throw `concon`
             this.con.close()
