@@ -29,3 +29,10 @@ It downloads a Debian cloud image, creates a copy-on-write overlay disk, lets cl
 The grant ceremony happens once after snap1: you VNC in, grant Directory Handles in all three Chrome windows, enable the watchdog, and take snap3. That's the snapshot everything reverts to from then on.
 
 The host runs two services. virtreset listens on the same Unix socket the watchdog writes to, and also polls VM balloon memory — if Chrome signals distress or the VM hits 90% memory, it does virsh snapshot-revert back to snap3. virt-viewer.sh does remote viewing.
+
+You may need to:
+```
+echo 'vm.swappiness = 160' | sudo tee /etc/sysctl.d/60-jamsend-host.conf
+echo 'vm.watermark_scale_factor = 200' | sudo tee -a /etc/sysctl.d/60-jamsend-host.conf
+sudo sysctl --system
+```

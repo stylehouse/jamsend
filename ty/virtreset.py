@@ -53,6 +53,8 @@ def revert_to_ready(reason):
         print(f"  snapshot-revert failed: {r.stderr.strip()}", flush=True)
     else:
         print(f"  VM resumed from {SNAP_READY}", flush=True)
+        virsh("guest-agent-command", VM_NAME, 
+            '{"execute": "guest-exec", "arguments": {"path": "/usr/bin/systemctl", "arg": ["restart", "jamsend-chromium.service"]}}')             
 
 def check_memory():
     if not vm_is_running():

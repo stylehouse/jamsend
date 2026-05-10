@@ -29,13 +29,15 @@ for name, config in PROFILES.items():
             "chromium",
             f"--remote-debugging-port={config['port']}",
             f"--user-data-dir={profile_dir}",
+        
+            # no --disable-restore-session-state
             "--no-first-run",
             "--autoplay-policy=no-user-gesture-required",
-            "--disable-restore-session-state",
-            "--disable-infobars",
+            "--allow-file-access-from-files", 
+
             config["url"],
         ],
-        start_new_session=True,  # Chrome in its own process group; systemd doesn't track children
+        #start_new_session=True,  # Chrome in its own process group; systemd doesn't track children
         stderr=subprocess.PIPE
     )
 
