@@ -169,6 +169,56 @@
     let show_trace = $state(false)
     let sticky_mode = $state<DiffMode | null>(null)
 
+    // ── stash: persist open pip, diff mode, and expanded across reloads ──────
+    // Keyed by Book so different stories don't collide.
+    // restore_pip: a step number waiting to be opened once display.steps
+    //   contains it — the step may not exist yet when the Book first mounts.
+    let restore_pip  = $state<number | null>(null)
+    // stash_loaded: one-shot guard so the restore effect never re-fires after
+    //   the first book appearance. Without this, every story_analysis() creates
+    //   a new display.run_sc object, re-triggering the effect and looping:
+    //   restore → pick → e_story_sel → story_analysis → display.run_sc → loop.
+    let stash_loaded = $state(false)
+
+    $effect(() => {
+        if (stash_loaded) return
+        const book = display.run_sc?.run as string | undefined
+        if (!book) return
+        stash_loaded = true   // arm the guard before any mutations below
+        const saved = H.stashed?.['Storui:' + book] as { open_at?: number, sticky_mode?: DiffMode, expanded?: boolean } | undefined
+        if (!saved) return
+        if (saved.expanded    != null) expanded     = saved.expanded
+        if (saved.sticky_mode != null) sticky_mode  = saved.sticky_mode
+        if (saved.open_at     != null) restore_pip  = saved.open_at
+    })
+
+    // once the stashed step has content, open it.
+    // Subscribes to run_sc.done — advances after each completed step — so the
+    // effect re-fires as the run progresses, not just when step?.version bumps.
+    // Gating on got_snap prevents opening a hollow skeleton before snap arrives.
+    $effect(() => {
+        const n = restore_pip
+        if (n == null) return
+        void display.run_sc?.done   // re-evaluate as steps complete
+        const step = live_step(n)
+        void step?.version          // also re-check when snap arrives async
+        if (step?.sc.got_snap) {
+            restore_pip = null
+            pick(n)
+        }
+    })
+
+    // write on every interesting change
+    $effect(() => {
+        const book = display.run_sc?.run as string | undefined
+        if (!book) return
+        const open_at = display.open_at
+        const _sm     = sticky_mode   // subscribe
+        const _exp    = expanded      // subscribe
+        H.stashed ??= {}
+        H.stashed['Storui:' + book] = { open_at, sticky_mode, expanded }
+    })
+
     //#region ops_for_display 
     //
     //   Rendering-only — the one diff function that stays in StoryRun.
@@ -731,6 +781,9 @@
             {@const dige       = String(Step && Step.sc.dige || ts_sel && ts_sel.dige || '').slice(0, 8)}
             {@const can_accept = !ok && !hollow}
             {@const step_notes = display.notes[n] ?? []}
+            <!-- trace_span: ms from first to last trace event — the step's wall clock -->
+            {@const trace_events = Step?.sc.Run_trace as TraceEvent[] | undefined}
+            {@const trace_span   = trace_events?.length ? (trace_events.at(-1)!.t - trace_events[0].t) : null}
 
             <div class="sr-panel">
 
@@ -806,6 +859,9 @@
                     {#if can_accept}
                         <!-- Accept: promote dige into The, save, resume drive -->
                         <button class="sr-accept" onclick={() => accept(n)}>Accept</button>
+                    {/if}
+                    {#if trace_span != null}
+                        <span class="sr-ptime">{trace_span.toFixed(1)}ms</span>
                     {/if}
                     <button class="sr-close" onclick={close_panel}>×</button>
                 </div>
@@ -950,7 +1006,7 @@
     {@const scale = (t: number) => Math.round((t - t0) / span * COLS)}
     <div class="sr-trace">
         <div class="sr-trace-axis">
-            <span>0</span>
+            <span class="sr-trace-axis-lbl">trace</span>
             <span>{span.toFixed(1)}ms</span>
         </div>
         {#each events as ev}
@@ -1059,7 +1115,7 @@
 /* let the diff scroll area fill whatever space the panel gives it */
 .sr.expanded .sr-diff2-body,
 .sr.expanded .sr-pre {
-    flex: 1; min-height: 0; max-height: none;
+    flex: 1; min-height: 40vh; max-height: none;
 }
 /* notes and trace take natural height; they shrink-wrap below the diff */
 .sr.expanded .sr-notes,
@@ -1171,7 +1227,7 @@
 
 /* ── naive / tree pre ───────────────────────────────────────────────────── */
 .sr-pre {
-    margin: 0; padding: 4px 0; overflow: auto; max-height: 400px;
+    margin: 0; padding: 4px 0; overflow: auto; min-height: 12em;
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px; line-height: 1.55; color: #bbb;
     background: transparent; white-space: pre; tab-size: 2;
@@ -1193,7 +1249,7 @@
 }
 .sr-diff2-body {
     display: grid; grid-template-columns: 1fr 1fr;
-    overflow-y: auto; max-height: 400px;
+    overflow-y: auto; min-height: 12em;
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px; line-height: 1.55;
 }
@@ -1250,18 +1306,25 @@
 .sr-trace {
     font-family:'Berkeley Mono','Fira Code',ui-monospace,monospace;
     font-size:10px; line-height:1.4; background:#090909;
-    padding:4px 0; overflow-x:auto; white-space:pre;
+    padding:4px 0; overflow-x:auto; overflow-y:auto; white-space:pre;
     border-top:1px solid #1a1a1a;
+    max-height: 40vh; min-height: 10em;
 }
 .sr-trace-axis {
     display:flex; justify-content:space-between;
     color:#333; font-size:8px; padding:0 4px 2px;
     border-bottom:1px solid #161616;
 }
+.sr-trace-axis-lbl { color:#254535; letter-spacing:0.08em; text-transform:uppercase; }
 .sr-trace-row { white-space:pre; }
 .sr-trace-dot { color:#555; margin-right:1px; }
 .sr-trace-lbl { color:#7ab0d4; }
 .sr-trace-row:hover .sr-trace-lbl { color:#aad; }
+/* step wall-clock — right-aligned in the panel header, dimmer than the dige */
+.sr-ptime {
+    margin-left: auto; color: #4a6a5a;
+    font-size: 9px; letter-spacing: 0.04em;
+}
 
 /* ── notes panel ────────────────────────────────────────────────────────── */
 .sr-notes {
@@ -1302,11 +1365,14 @@
 /* ── scrollbars ─────────────────────────────────────────────────────────── */
 .sr-strip::-webkit-scrollbar,
 .sr-pre::-webkit-scrollbar,
+.sr-trace::-webkit-scrollbar,
 .sr-diff2-body::-webkit-scrollbar         { width: 4px; height: 4px; }
 .sr-strip::-webkit-scrollbar-track,
 .sr-pre::-webkit-scrollbar-track,
+.sr-trace::-webkit-scrollbar-track,
 .sr-diff2-body::-webkit-scrollbar-track   { background: #0e0e0e; }
 .sr-strip::-webkit-scrollbar-thumb,
 .sr-pre::-webkit-scrollbar-thumb,
+.sr-trace::-webkit-scrollbar-thumb,
 .sr-diff2-body::-webkit-scrollbar-thumb   { background: #2a2a2a; border-radius: 2px; }
 </style>
