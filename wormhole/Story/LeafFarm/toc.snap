@@ -61,19 +61,19 @@ story:LeafFarm
       style:width,v:24
   Plan
   Opt
-    waitCyto
+    For
   TimeSpool
-    TimeTotal:beliefs,avg:0.366
-      sample:0.259,at:1775988682
-      sample:0.259,at:1775988769
-      sample:0.387,at:1775990746
-      sample:0.336,at:1775990826
-      sample:0.313,at:1775990959
-      sample:0.329,at:1775991112
-      sample:0.515,at:1775995263
-      sample:0.511,at:1775996360
-      sample:0.465,at:1776914629
-      sample:0.288,at:1776914741
+    TimeTotal:beliefs,avg:0.246
+      sample:0.239,at:1778377928
+      sample:0.251,at:1778377982
+      sample:0.251,at:1778378015
+      sample:0.251,at:1778378035
+      sample:0.251,at:1778378052
+      sample:0.251,at:1778378056
+      sample:0.234,at:1778378089
+      sample:0.223,at:1778378110
+      sample:0.277,at:1778378154
+      sample:0.231,at:1778378447
   step,dige:16af8162fcae6222
   step:2,dige:de8ea36813915842
   step:3,dige:09f230e0ef6e7be9
@@ -87,22 +87,22 @@ story:LeafFarm
   step:11,dige:792d7f18ccbf0d7d
   step:12,dige:d809587678025d52
   step:13,dige:0addbfd95e5cccd5
-  step:14,dige:bc768747ab0b6d4b
-  step:15,dige:35850ca5f3c792bf
-  step:16,dige:c8373421631cc7d4
-  step:17,dige:fae100759ec46a9a
-  step:18,dige:b87640aee547a8fc
-  step:19,dige:a864c975d82d14e4
+  step:14,dige:d122d490c2409db3
+  step:15,dige:0b6de2ffa139205e
+  step:16,dige:ab038d246ba48ff0
+  step:17,dige:144545d158f4060e
+  step:18,dige:4e33c2e9f58499f1
+  step:19,dige:1bd63eb39ca36f70
     note,that:leaf_2_0 is about to get harvested
-  step:20,dige:62f971a22b5520e5
+  step:20,dige:cf378eac7715c370
     note,that:leaf_2_0 emerges again
-  step:21,dige:4ea5531fe6bb1c1d
-  step:22,dige:66bb832282c73732
-  step:23,dige:0e8a3fa2a15b5e19
-  step:24,dige:36b74a5c833ee022
-  step:25,dige:83e73807225fc4b8
-  step:26,dige:28613ed195364009
-  step:27,dige:3c6597251e870672
-  step:28,dige:e54e8b905c3d9d97
-  step:29,dige:185d7ba3b46da097
-  step:30,dige:4a39559a751d5966
+  step:21,dige:9a153bba3b5bac66
+  step:22,dige:1b3f3a54323f4216
+  step:23,dige:f738324971edfe4f
+  step:24,dige:2933c31dbfcf19f0
+  step:25,dige:7d5dbe35826f6b28
+  step:26,dige:ee72258b306dc140
+  step:27,dige:6f8eba6df9c1e935
+  step:28,dige:658cf6e1ba4ba836
+  step:29,dige:733a86973e0cf932
+  step:30,dige:0e055868a11d8fa0
