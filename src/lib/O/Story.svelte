@@ -1282,6 +1282,7 @@
             run.c.began_step = now_in_seconds_with_ms()
             // reset so ===0 detection below only fires for THIS step's alleviation
             Run.c.leave_running_until = null
+            Run.c.runtime = true          // feebly_ponder and ponder are now live
             Run.trace_enable()
             Run.trace('step', String(n))
             await this.Story_prepare_Prep(w,Run,run)
@@ -1337,6 +1338,7 @@
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')
+            Run.c.runtime = false         // feebly_ponder is now no-op; ponder throws
             H.post_do(snap_step, { see: 'story_snap' })
         }
 

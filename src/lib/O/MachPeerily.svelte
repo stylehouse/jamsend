@@ -100,13 +100,13 @@
                             const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
                             if (reg) H.Awo('PeeringLive').drop(reg)
                             console.log(`✅ ${Side} open  ${n.sc.prepub}`)
-                            H.main(true)
+                            H.ponder()
                         })
                         eer.Peer.on('disconnected', () => {
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
                             if (open_n) n.drop(open_n)
                             console.log(`🔌 ${Side} disconnected`)
-                            H.main(true)
+                            H.ponder()
                         })
                     }
                 })
@@ -299,7 +299,7 @@
                 //   demand_time_to_think always assigns (housing missing-braces),
                 //   so this freshly demands 2000ms from now regardless of prior value.
                 H.demand_time_to_think(2000)
-                H.post_do(async () => { H.main(true) })
+                H.post_do(async () => { H.feebly_ponder() })
             },
             Pier_init_completo(ier: Pier) {
                 const tag = `${side}↔${ier.pub?.slice(0,8)}  ${ier.inbound?'in':'out'}`
@@ -320,15 +320,15 @@
                     t.sc.received      = 1
                     t.sc.received_len  = len
                     t.sc.received_dige = received_dige
-                    H.main(true)
+                    H.ponder()
                 }
-                H.main(true)
+                H.ponder()
             },
             Pier_i_publicKey(ier: Pier) {
                 const tag = `${side}←${ier.pub?.slice(0,8)}`
                 console.log(`🔑 shim Pier_i_publicKey  ${tag}`)
                 H.trace('shim', `Pier_i_publicKey  ${tag}`)
-                H.main(true)
+                H.ponder()
             },
             ier_is_Good(_ier: Pier): boolean {
                 // called before say_trust — not traced, fires on every trust attempt
@@ -349,7 +349,7 @@
                 // clear pier_dialling so Bearing can re-dial once Nearing is up
                 const pd = sw.o({ pier_dialling: 1 })[0] as TheC | undefined
                 if (pd) sw.drop(pd)
-                H.main(true)
+                H.ponder()
             },
             Pier_reconnect(ier: Pier) {
                 const tag = `${side}→${ier.pub?.slice(0,8)}`
@@ -360,7 +360,7 @@
                 const con = ier.eer.connect(ier.pub)
                 const pn  = H.Awo(side).o({ Pier: 1, pub: ier.pub })[0] as TheC | undefined
                 if (pn) pn.c._pl_buf = H._pl_buf_attach(con, ier.eer, false)
-                H.main(true)
+                H.ponder()
             },
             // < ping and intro not exercised in this test
             unemitPing(ier: Pier)  {
@@ -505,7 +505,7 @@
         await ex.do(async (req: TheC) => {
             if (req.sc.finished) return
             const ok = H._PeeringLive_predicate(req, w, eer, ier)
-            if (ok) { req.sc.finished = true; H.main(true); return }
+            if (ok) { req.sc.finished = true; H.feebly_ponder(); return }
             if (other_settled) return
             H.demand_time_to_think(req.sc.demand as number)
             // self-schedule a recheck before the demand expires — said_hello,
@@ -516,7 +516,7 @@
                 req.c.recheck_pending = true
                 setTimeout(() => {
                     req.c.recheck_pending = false
-                    H.main(true)
+                    H.feebly_ponder()
                 }, (req.sc.demand as number) * 0.7)
             }
         })
@@ -525,7 +525,8 @@
         //   supplements per-req timers when protocol bools flip between ticks.
         //   keyed on H.c so Bearing and Nearing share one interval.
         //   on_step_ending always clears it.
-        //   main(true) bypasses no_ambient — the heartbeat must actually schedule thinks.
+        //   feebly_ponder: bypasses no_ambient but no-ops outside Runtime so the
+        //   heartbeat can't interleave with Story snapping or advancing.
         const any_pending = (w.o({ requesty_expects: 1 }) as TheC[]).some(r => !r.sc.finished)
         if (any_pending && !H.c._pl_heartbeat) {
             H.c._pl_heartbeat = setInterval(() => {
@@ -539,7 +540,7 @@
                     H.trace('leave running alleviated')
                     H.c.leave_running_until = 0
                 }
-                H.main(true)
+                H.feebly_ponder()
             }, 250)
         }
     },
@@ -621,7 +622,7 @@
 
         await ier.emit('test_binary', { seq, buffer: buf })
         console.log(`📦 ${side} → ${other}  test_binary seq=${seq}  ${dige.slice(0, 12)}…`)
-        H.main(true)
+        H.feebly_ponder()
     },
 
     // Close this side's connection and let auto_reconnect bring it back.
@@ -645,7 +646,7 @@
 
         console.log(`🪓 ${side} closing con  seq=${seq}`)
         ier.con.close()
-        H.main(true)
+        H.feebly_ponder()
     },
 
     // SHA-256 hex of a buffer — compact, stable, displays cleanly in snap diffs.

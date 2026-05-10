@@ -529,6 +529,22 @@ export class House extends StorableHousing {
         this.main_throttle()
     }
 
+    // feebly_ponder: bypasses no_ambient but respects Runtime.
+    //   background timers (heartbeat, per-req recheck) use this — they want a think
+    //   but must not interleave with Story snapping or advancing between steps.
+    feebly_ponder() {
+        if (!this.c.runtime) return
+        this.main(true)
+    }
+
+    // ponder: bypasses no_ambient AND asserts Runtime.
+    //   use for event-driven callbacks that must only fire during a step.
+    //   throws outside Runtime — that is always a bug (like a nested replace()).
+    ponder() {
+        if (!this.c.runtime) throw `ponder() outside Runtime — spurious event during snap or between steps`
+        this.main(true)
+    }
+
     // -------------------------------------------------------------------------
     // _expand_Aw: convert e.sc.Aw string into e/%Aw_path segments.
     // -------------------------------------------------------------------------
