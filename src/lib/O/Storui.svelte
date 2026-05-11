@@ -916,8 +916,9 @@
                             <div class="sr-dlabel got">{col_labels.right}</div>
                         </div>
                         <div class="sr-diff2-body" bind:this={diff2_body}>
+                        <div class="sr-diff2-grid">
 
-                            <!-- left column: each cell clips and scrolls horizontally -->
+                            <!-- left column: clips and scrolls horizontally -->
                             <div class="sr-diff2-col" onscroll={sync_col_scroll}>
                                 {#each diff_rows as row, i (i)}
                                     {#if row.kind === 'squish'}
@@ -951,6 +952,7 @@
                                 {/each}
                             </div>
 
+                        </div>
                         </div>
                     </div>
                 {/if}
@@ -1130,18 +1132,22 @@
 /* without this, the diff expands to full content height, pushing trace      */
 /* and notes below overflow:hidden and making them unreachable.              */
 .sr.expanded .sr-body {
-    flex: 1; min-height: 0;
+    flex: 1; min-height: 0; overflow: hidden;
     display: flex; flex-direction: column;
 }
 /* sr-diff2 must also propagate flex:1 down to sr-diff2-body */
 .sr.expanded .sr-diff2 {
-    flex: 1; min-height: 0;
+    flex: 1; min-height: 0; overflow: hidden;
     display: flex; flex-direction: column;
 }
-/* let the diff scroll area fill whatever space the panel gives it */
-.sr.expanded .sr-diff2-body,
+/* let the vertical scroll wrapper fill the panel and scroll both columns together */
+.sr.expanded .sr-diff2-body {
+    flex: 1; min-height: 0; max-height: none; overflow-y: auto;
+}
+/* grid inside it: no height constraint, just grows to content */
+.sr.expanded .sr-diff2-grid { max-height: none; }
 .sr.expanded .sr-pre {
-    flex: 1; min-height: 0; max-height: none;
+    flex: 1; min-height: 0; max-height: none; overflow-y: auto;
 }
 /* trace caps at 30vh in expanded so the diff always has ~40vh of the 70vh panel */
 .sr.expanded .sr-trace { flex-shrink: 0; max-height: 30vh; }
@@ -1270,17 +1276,25 @@
 /* Vertical scroll is on the body; columns are overflow-y:hidden inside it.   */
 .sr-diff2-hdr {
     display: grid; grid-template-columns: 1fr 1fr;
+    font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
+    font-size: 11px;
     border-bottom: 1px solid #1e1e1e;
 }
+/* sr-diff2-body: vertical scroll wrapper — constrains height and scrolls both
+   columns together. The grid inside grows to full content height, unclipped. */
 .sr-diff2-body {
-    display: grid; grid-template-columns: 1fr 1fr;
     overflow-y: auto; min-height: 12em; max-height: min(30vh, 666px);
+}
+/* sr-diff2-grid: the actual 2-column grid — full content height, no overflow.
+   Grid rows align both columns automatically; wrapper above does the scrolling. */
+.sr-diff2-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
     font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
     font-size: 11px; line-height: 1.55;
 }
-/* each column clips and scrolls horizontally; scrollbar hidden (no room) */
+/* each column clips and scrolls horizontally only; vertical is the wrapper's job */
 .sr-diff2-col {
-    overflow-x: auto; overflow-y: hidden;
+    overflow-x: auto; overflow-y: visible;
     scrollbar-width: none; min-width: 0; white-space: pre;
 }
 .sr-diff2-col::-webkit-scrollbar { display: none; }
