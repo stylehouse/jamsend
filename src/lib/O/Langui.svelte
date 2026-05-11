@@ -11,7 +11,7 @@
     //        is saved to stateCache[prev_path].
     //     4. view.setState(stateCache[arriving]) restores a previously-seen doc,
     //        or creates a fresh EditorState from ave text for a first visit.
-    //     5. Scroll position is restored via requestAnimationFrame.
+    //     5. Scroll position is restored via EditorView.scrollIntoView effect.
     //
     //   view.setState() is CM's documented multi-doc API.  It replaces all state
     //   atomically without destroying the view, so decorations and plugins
@@ -131,10 +131,28 @@
     const stateCache = new Map<string, EditorState>()
 
     // ── per-doc scroll cache ─────────────────────────────────────────────────
-    //   EditorState does not carry DOM scroll position — save it alongside the
-    //   stateCache so switching docs restores where you were reading.
-    //   Restored via requestAnimationFrame after view.setState() settles.
-    const scrollCache = new Map<string, number>()
+    //   EditorState does not carry DOM scroll position.
+    //
+    //   We save the CHARACTER POSITION at the top of the visible viewport
+    //   (not a pixel offset).  On restore we dispatch EditorView.scrollIntoView
+    //   as a CM transaction effect — this is the only reliable approach because:
+    //
+    //   view.setState() itself does not reset scrollDOM.scrollTop.  CM then
+    //   schedules a measure pass (requestMeasure) that scrolls the selection
+    //   into view, overriding any direct scrollTop writes we make.  Setting
+    //   scrollTop synchronously or in a single rAF both lose the race to CM's
+    //   own measure callbacks.  A dispatched scrollIntoView effect is processed
+    //   inside CM's own update pipeline and wins over the automatic
+    //   scroll-to-selection behaviour.
+    const scrollCache = new Map<string, number>()   // path → char offset at viewport top
+
+    // Return the character offset at the very top-left of the visible viewport.
+    // posAtCoords is CM's own coordinate→position resolver, so it handles any
+    // padding or decorations that would make scrollTop unreliable as a position.
+    function get_top_pos(v: EditorView): number {
+        const rect = v.dom.getBoundingClientRect()
+        return v.posAtCoords({ x: rect.left, y: rect.top + 2 }) ?? 0
+    }
 
     // ── text spool (echo guard) ──────────────────────────────────────────────
     //   text_spool[path] = recent editor texts (most-recent first), bounded.
@@ -230,6 +248,10 @@
     // updates live whenever bookmarks are added, removed, or fuzzified.
     let bookmarks: TheC[] = $derived(active_doc ? active_doc.ob({ bookmark: 1 }) as TheC[] : [])
 
+    // minimap_open: toggle lives here (not inside DocMinimap) so the button
+    // stays at a fixed position in the bar regardless of minimap visibility.
+    let minimap_open = $state(true)
+
     // ── signal $effect ────────────────────────────────────────────────────────
     //   Reads H.ave for lang_actions, active_doc, and langtiles_doc.
     //   sig?.ob() subscribes to sig.version so path changes inside the same
@@ -275,9 +297,10 @@
                 // doc's (possibly empty) bookmark list to the wrong docC.
                 flush_update_bookmarks_for_path(prev_path)
 
-                // Save scroll position before the state is captured.
-                // EditorState doesn't carry DOM scroll.
-                scrollCache.set(prev_path, view!.scrollDOM.scrollTop)
+                // Save char position at top of visible viewport.
+                // EditorState doesn't carry DOM scroll; we use a character
+                // position so restore can use CM's own scrollIntoView effect.
+                scrollCache.set(prev_path, get_top_pos(view!))
 
                 // Save departing EditorState (history, selection, decorations).
                 stateCache.set(prev_path, view!.state)
@@ -298,14 +321,12 @@
             prev_path = arriving
 
             // ── Scroll restoration ────────────────────────────────────────────
-            // CM6 schedules a measure pass after view.setState() that scrolls
-            // the selection into view, overriding a single rAF write.
-            // Set synchronously first (catches the common case), then again in
-            // rAF (wins after CM's own measure).  Two writes, no flicker.
-            const saved_scroll = scrollCache.get(arriving) ?? 0
-            view!.scrollDOM.scrollTop = saved_scroll
-            requestAnimationFrame(() => {
-                if (view) view.scrollDOM.scrollTop = saved_scroll
+            // Dispatch scrollIntoView as a CM transaction effect so it runs
+            // inside CM's own update pipeline — reliably beats the automatic
+            // scroll-to-selection that fires from view.setState().
+            const saved_pos = scrollCache.get(arriving) ?? 0
+            view!.dispatch({
+                effects: EditorView.scrollIntoView(saved_pos, { y: 'start', yMargin: 0 })
             })
 
             // Re-register view+state with backend so CM events carry the right doc.
@@ -619,11 +640,19 @@
         <span class="lte-hint">Ctrl+B</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
+        <!-- minimap toggle — fixed in bar so it never moves when minimap closes.
+             V rendered upside-down (Λ) when open, right-side-up when closed,
+             matching the Storui expand button idiom. -->
+        <button class="lte-mm-toggle" class:open={minimap_open}
+                onclick={() => minimap_open = !minimap_open}
+                title="{minimap_open ? 'hide minimap' : 'show minimap'}">V</button>
     </div>
     {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}></div>
+    {#if minimap_open}
     <DocMinimap {H} {view} {active_path} />
+    {/if}
     {#if active_doc && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">
@@ -653,9 +682,49 @@
     .lte-hint  { color: #3a3a3a; font-style: italic; }
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
-    .lte-cm    { min-height: 200px; max-height: 50vh; overflow: auto; }
+
+    /* ── minimap toggle button ──────────────────────────────────────────── */
+    /* Lives in the bar so its position never moves when the minimap opens  */
+    /* or closes.  Uses Storui's upside-down-V idiom: Λ when open, V when  */
+    /* closed — the same visual language as .sr-expand in Storui.svelte.   */
+    .lte-mm-toggle {
+        background: none; border: none;
+        color: #383848; cursor: pointer;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 14px; font-weight: 400; line-height: 1;
+        width: 18px; height: 18px; padding: 0; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        transition: color 0.15s, transform 0.2s;
+        transform-origin: center;
+        /* open: Λ (upside-down V) — minimap is visible, pointing inward */
+        transform: rotate(180deg);
+    }
+    .lte-mm-toggle:hover { color: #7090b0; }
+    /* closed: right-side-up V — points down, suggesting "expand" */
+    .lte-mm-toggle.open { transform: rotate(0deg); }
+
+    /* ── editor area with scrollbar gutter ──────────────────────────────── */
+    /* The CM scroller's native scrollbar is restyled to 2em wide.          */
+    /* DocMinimap sits to the left of the scrollbar, overlapping the editor */
+    /* canvas.  The gutter keeps them visually separated.                   */
+    .lte-cm    { min-height: 200px; max-height: 50vh; overflow: hidden; }
     .lte-cm :global(.cm-editor)  { height: 100%; }
     .lte-cm :global(.cm-content) { font-size: 12px; }
+    /* cm-scroller is CM's actual scroll container — the native bar is here */
+    .lte-cm :global(.cm-scroller) { overflow-y: auto; }
+
+    /* 2em-wide custom scrollbar — matches Storui's dark-panel aesthetic   */
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar       { width: 2em; }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-track { background: #080810; }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb {
+        background: #161625;
+        border-radius: 3px;
+        /* inset border creates the "rail" feel without a separate element */
+        border: 4px solid #080810;
+        min-height: 32px;
+    }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb:hover { background: #22223a; }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb:active { background: #2a2a50; }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
        ranges read clearly. One rule works even when marks overlap because
