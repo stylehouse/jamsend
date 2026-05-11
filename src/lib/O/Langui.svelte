@@ -11,7 +11,7 @@
     //        is saved to stateCache[prev_path].
     //     4. view.setState(stateCache[arriving]) restores a previously-seen doc,
     //        or creates a fresh EditorState from ave text for a first visit.
-    //     5. Scroll position is restored via EditorView.scrollIntoView effect.
+    //     5. Scroll position is restored by dispatching view.scrollSnapshot().
     //
     //   view.setState() is CM's documented multi-doc API.  It replaces all state
     //   atomically without destroying the view, so decorations and plugins
@@ -133,26 +133,13 @@
     // ── per-doc scroll cache ─────────────────────────────────────────────────
     //   EditorState does not carry DOM scroll position.
     //
-    //   We save the CHARACTER POSITION at the top of the visible viewport
-    //   (not a pixel offset).  On restore we dispatch EditorView.scrollIntoView
-    //   as a CM transaction effect — this is the only reliable approach because:
-    //
-    //   view.setState() itself does not reset scrollDOM.scrollTop.  CM then
-    //   schedules a measure pass (requestMeasure) that scrolls the selection
-    //   into view, overriding any direct scrollTop writes we make.  Setting
-    //   scrollTop synchronously or in a single rAF both lose the race to CM's
-    //   own measure callbacks.  A dispatched scrollIntoView effect is processed
-    //   inside CM's own update pipeline and wins over the automatic
-    //   scroll-to-selection behaviour.
-    const scrollCache = new Map<string, number>()   // path → char offset at viewport top
-
-    // Return the character offset at the very top-left of the visible viewport.
-    // posAtCoords is CM's own coordinate→position resolver, so it handles any
-    // padding or decorations that would make scrollTop unreliable as a position.
-    function get_top_pos(v: EditorView): number {
-        const rect = v.dom.getBoundingClientRect()
-        return v.posAtCoords({ x: rect.left, y: rect.top + 2 }) ?? 0
-    }
+    //   view.scrollSnapshot() captures the full scroll state as an opaque
+    //   StateEffect (a ScrollTarget with isSnapshot=true).  Dispatching it
+    //   back via view.dispatch({ effects: snap }) is the only public API
+    //   that correctly restores scroll after view.setState() — pixel writes to
+    //   scrollDOM.scrollTop and posAtCoords-based scrollIntoView both lose
+    //   the race to CM's internal measure passes that fire after setState().
+    const scrollCache = new Map<string, ReturnType<EditorView['scrollSnapshot']>>()
 
     // ── text spool (echo guard) ──────────────────────────────────────────────
     //   text_spool[path] = recent editor texts (most-recent first), bounded.
@@ -297,10 +284,8 @@
                 // doc's (possibly empty) bookmark list to the wrong docC.
                 flush_update_bookmarks_for_path(prev_path)
 
-                // Save char position at top of visible viewport.
-                // EditorState doesn't carry DOM scroll; we use a character
-                // position so restore can use CM's own scrollIntoView effect.
-                scrollCache.set(prev_path, get_top_pos(view!))
+                // Snapshot full scroll state before departing.
+                scrollCache.set(prev_path, view!.scrollSnapshot())
 
                 // Save departing EditorState (history, selection, decorations).
                 stateCache.set(prev_path, view!.state)
@@ -321,13 +306,10 @@
             prev_path = arriving
 
             // ── Scroll restoration ────────────────────────────────────────────
-            // Dispatch scrollIntoView as a CM transaction effect so it runs
-            // inside CM's own update pipeline — reliably beats the automatic
-            // scroll-to-selection that fires from view.setState().
-            const saved_pos = scrollCache.get(arriving) ?? 0
-            view!.dispatch({
-                effects: EditorView.scrollIntoView(saved_pos, { y: 'start', yMargin: 0 })
-            })
+            // Dispatch the saved snapshot effect.  On first visit there is no
+            // snapshot, so skip — CM will default to showing the top.
+            const snap = scrollCache.get(arriving)
+            if (snap) view!.dispatch({ effects: snap })
 
             // Re-register view+state with backend so CM events carry the right doc.
             // Pass current bookmark positions so the backend can reconcile docC
@@ -707,7 +689,7 @@
     /* The CM scroller's native scrollbar is restyled to 2em wide.          */
     /* DocMinimap sits to the left of the scrollbar, overlapping the editor */
     /* canvas.  The gutter keeps them visually separated.                   */
-    .lte-cm    { min-height: 200px; max-height: 50vh; overflow: hidden; }
+    .lte-cm    { min-height: 200px; max-height: 50vh; overflow:scroll }
     .lte-cm :global(.cm-editor)  { height: 100%; }
     .lte-cm :global(.cm-content) { font-size: 12px; }
     /* cm-scroller is CM's actual scroll container — the native bar is here */
