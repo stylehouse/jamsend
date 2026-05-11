@@ -401,6 +401,35 @@
         return null
     },
 
+    // ── Lang_def_at_offset ───────────────────────────────────────────────────
+    //
+    //   Find the innermost method def whose compiled source range contains
+    //   `offset`.  Returns the method name, or undefined when the compile
+    //   index is absent or no def encloses the offset.
+    //
+    //   Used by e_Lang_point_fuzzify to upgrade a positional bookmark to a
+    //   named method pointer.  "Innermost" = smallest span, so a helper
+    //   nested inside a larger function resolves to the helper name.
+    Lang_def_at_offset(docC: TheC, offset: number): string | undefined {
+        const job     = docC.o({ Compile: 1 })[0]   as TheC | undefined
+        const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
+        const methods = output?.o({ methods: 1 })[0] as TheC | undefined
+        if (!methods) return undefined
+
+        const defs = methods.o({ def: 1 }) as TheC[]
+        // keep only defs whose range encloses the offset
+        const containing = defs.filter(d =>
+            (d.sc.from as number) <= offset && (d.sc.to as number) >= offset
+        )
+        if (!containing.length) return undefined
+        // innermost = smallest span
+        containing.sort((a, b) =>
+            ((a.sc.to as number) - (a.sc.from as number)) -
+            ((b.sc.to as number) - (b.sc.from as number))
+        )
+        return containing[0].sc.method as string
+    },
+
 //#endregion
 //#region Lang_apply_openness
 

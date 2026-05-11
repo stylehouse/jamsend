@@ -1,22 +1,22 @@
 <script lang="ts">
     // Langui — CodeMirror view over one document, identified by `doc` (path string).
     //
-    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────!!!!
+    // ── Multi-doc (Option B: one view, per-path EditorState cache) ───────────!!!!!!
     //
     //   One EditorView, many EditorStates.  On doc switch:
-    //     1. Current EditorState (including full undo history, scroll, selection,
-    //        and bookmark decorations) is saved to stateCache[prev_path].
-    //     2. view.setState(stateCache[arriving]) restores a previously-seen doc,
+    //     1. Bookmark positions for the departing doc are flushed immediately
+    //        (bypassing the 800ms debounce) so docC never has stale positions.
+    //     2. Scroll position is saved to scrollCache (EditorState doesn't carry it).
+    //     3. Current EditorState (undo history, selection, bookmark decorations)
+    //        is saved to stateCache[prev_path].
+    //     4. view.setState(stateCache[arriving]) restores a previously-seen doc,
     //        or creates a fresh EditorState from ave text for a first visit.
+    //     5. Scroll position is restored via requestAnimationFrame.
     //
     //   view.setState() is CM's documented multi-doc API.  It replaces all state
     //   atomically without destroying the view, so decorations and plugins
     //   survive.  All EditorStates on one view must share the same extension list
     //   (editorExtensions) — stho() theme is called once at construction.
-    //
-    //   Langui receives no doc prop — it is mounted by the UIs loop with only H.
-    //   It waits for ave/{langtiles_doc:path} to arrive before rendering anything.
-    //   Until then the whole template is suppressed via {#if docC}.
     //
     //   Every CM event carries { doc, view, state } so Lang_doc_from_event
     //   on the backend can DRY the state update in exactly one place.
@@ -35,6 +35,13 @@
     //     - Escape key     :  Lang_compile      {}
     //     - saveEffect     :  Lang_update_bookmarks immediately (cancels debounce)
     //
+    //   Bookmark flush on switch: flush_update_bookmarks_for_path(prev_path) is
+    //   called before saving the departing EditorState.  This cancels any pending
+    //   800ms debounce and immediately sends the live positions to docC so they
+    //   can't be clobbered by a stale timer firing after the switch.
+    //   editorBegins also carries `updates` so the backend can re-apply any
+    //   bookmarks that exist in docC but are absent from a freshly-restored CM state.
+    //
     // ── saveEffect ───────────────────────────────────────────────────────────
     //
     //   A zero-payload StateEffect dispatched after a programmatic doc change
@@ -49,9 +56,9 @@
     //     to sig.version changes.  Writes active_path ($state) and docC ($state).
     //
     //   Switch $effect: reads active_path (only reactive dep).  When it changes,
-    //     saves departing state → view.setState(arriving state).  All CM state
-    //     (history, scroll, selection, decorations) moves with the switch.
-    //     No reactive chain needed — one $effect, one imperative call.
+    //     flushes bookmarks + scroll for departing doc → saves departing state →
+    //     calls view.setState(arriving state).  All CM state (history, scroll,
+    //     selection, decorations) moves with the switch.
     //
     //   External-change $effect: handles disk-reload of the active doc only.
     //     Guards against firing during a switch (active_path !== prev_path).
@@ -75,10 +82,6 @@
     //   treats any incoming text already in the spool as an echo and skips it.
     //   Genuine remote changes (text we've never been at) still apply.
     //
-    //   This is the minimum primitive that gets us toward the eventual
-    //   high-frequency-git merge: pulls will later carry their parent so we
-    //   can decide ancestor-vs-merge with more confidence than substring-match.
-    //
     // ── Push throttle ────────────────────────────────────────────────────────
     //
     //   Lang_set_doc is throttled (~60ms) so the elvis queue isn't fed faster
@@ -99,6 +102,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
     import DocMinimap from "./ui/DocMinimap.svelte"
+    import DocPoint   from "./ui/DocPoint.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -121,10 +125,16 @@
 
     // ── per-doc state cache ──────────────────────────────────────────────────
     //   One EditorState per path, saved on departure and restored on arrival.
-    //   CM EditorState carries full undo history, selection, scroll, and all
-    //   installed StateField values (including bookmark decorations).
+    //   CM EditorState carries full undo history, selection, and all installed
+    //   StateField values (including bookmark decorations).
     //   Plain Map — not reactive.  The switch $effect is the only writer.
     const stateCache = new Map<string, EditorState>()
+
+    // ── per-doc scroll cache ─────────────────────────────────────────────────
+    //   EditorState does not carry DOM scroll position — save it alongside the
+    //   stateCache so switching docs restores where you were reading.
+    //   Restored via requestAnimationFrame after view.setState() settles.
+    const scrollCache = new Map<string, number>()
 
     // ── text spool (echo guard) ──────────────────────────────────────────────
     //   text_spool[path] = recent editor texts (most-recent first), bounded.
@@ -180,6 +190,22 @@
         if (push_timer) { clearTimeout(push_timer); flush_push_text() }
     }
 
+    // ── bookmark-position flush ───────────────────────────────────────────────
+    //   flush_update_bookmarks_for_path(path): cancel the 800ms debounce and
+    //   immediately send the live bookmark positions for `path` to the backend.
+    //
+    //   Called before a doc switch so the departing doc's positions land in
+    //   docC before active_path changes — preventing a stale debounce timer
+    //   from firing later and sending the wrong doc's (empty) bookmark list to
+    //   the arriving doc's docC, which would flag all its bookmarks as vanished.
+    function flush_update_bookmarks_for_path(path: string) {
+        if (update_timer) { clearTimeout(update_timer); update_timer = null }
+        if (!view || !path) return
+        const updates = readBookmarks(view)
+        H.i_elvisto('Lang/Lang', 'Lang_update_bookmarks',
+            { doc: path, view, state: view.state, updates })
+    }
+
     // The extension list is created once at view construction and shared by
     // every EditorState on this view.  CM requires that all states on one view
     // use the same extension set.  Stored here so makeState() can reference it.
@@ -195,6 +221,10 @@
 
     // Short filename for the bar header.
     let active_name = $derived(active_path ? (active_path.split('/').pop() ?? active_path) : 'no doc')
+
+    // Reactive bookmark list — reads docC.version so the panel updates live
+    // when bookmarks are added, removed, or modified.
+    let bookmarks: TheC[] = $derived(docC ? docC.ob({ bookmark: 1 }) as TheC[] : [])
 
     // ── signal $effect ────────────────────────────────────────────────────────
     //   Reads H.ave for lang_actions, active_doc, and langtiles_doc.
@@ -213,8 +243,9 @@
     })
 
     // ── switch $effect ────────────────────────────────────────────────────────
-    //   Runs whenever active_path changes.  Saves the departing EditorState,
-    //   then calls view.setState() with the arriving one.
+    //   Runs whenever active_path changes.  Saves the departing EditorState
+    //   (after flushing bookmarks and scroll position), then calls
+    //   view.setState() with the arriving one.
     //   view.setState() is CM's documented multi-doc API — it replaces all state
     //   atomically without destroying the view or its plugins.
     //   untrack() around the save prevents docC reads from creating a dependency.
@@ -225,18 +256,22 @@
         if (!view || !arriving || arriving === prev_path) return
 
         untrack(() => {
-            // Flush any pending push for the departing path so the backend
-            // has the latest editor text before context swaps.  Without this,
-            // a stale Lang_set_doc could land after the switch and clobber
-            // docC for the doc we just left.
+            // Flush any pending text push for the departing path.
             flush_push_text_now()
 
-            // Save current state before switching (skip if no doc loaded yet).
             if (prev_path) {
+                // Flush departing bookmark positions immediately — bypass the
+                // 800ms debounce so docC always holds current positions.
+                // A stale timer firing later would otherwise send the arriving
+                // doc's (possibly empty) bookmark list to the wrong docC.
+                flush_update_bookmarks_for_path(prev_path)
+
+                // Save scroll position before the state is captured.
+                // EditorState doesn't carry DOM scroll.
+                scrollCache.set(prev_path, view!.scrollDOM.scrollTop)
+
+                // Save departing EditorState (history, selection, decorations).
                 stateCache.set(prev_path, view!.state)
-                // Departing text into the departing path's spool — covers the
-                // case where a push for this exact text is still in the elvis
-                // queue and arrives after we've come back here.
                 spool_remember(prev_path, view!.state.doc.toString())
             }
 
@@ -250,16 +285,21 @@
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
             }
 
-            // Whatever text we've just landed on is canonically "ours" —
-            // remember it so the disk-reload $effect doesn't immediately
-            // try to re-apply it as a remote change.
             spool_remember(arriving, view!.state.doc.toString())
-
             prev_path = arriving
 
+            // Restore scroll position — rAF gives CM one layout pass to settle.
+            const saved_scroll = scrollCache.get(arriving) ?? 0
+            requestAnimationFrame(() => {
+                if (view) view.scrollDOM.scrollTop = saved_scroll
+            })
+
             // Re-register view+state with backend so CM events carry the right doc.
+            // Pass current bookmark positions so the backend can reconcile docC
+            // against the restored CM state (re-anchoring any that drifted).
             Lang_i_elvis(view!, 'Lang_editorBegins',
-                { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
+                { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
+                  updates: readBookmarks(view!) })
         })
     })
 
@@ -538,9 +578,12 @@
         prev_path = captured_path
 
         // Register view+state with backend.
+        // Pass current bookmark positions for initial sync (normally empty on
+        // first construction, but included for consistency).
         console.log(`🏗 firing Lang_editorBegins for path=${captured_path}`)
         Lang_i_elvis(view, 'Lang_editorBegins',
-            { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect })
+            { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
+              updates: readBookmarks(view) })
         }, 0)
     })
 
@@ -567,6 +610,14 @@
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}></div>
     <DocMinimap {H} {view} {active_path} />
+    {#if docC && bookmarks.length}
+    <!-- Point panel: one DocPoint per bookmark on the active docC -->
+    <div class="lte-points">
+        {#each bookmarks as bm (bm.sc.bookmark)}
+            <DocPoint {H} {bm} doc_path={active_path} />
+        {/each}
+    </div>
+    {/if}
 </div>
 {/if}
 
@@ -599,5 +650,14 @@
         background: rgba(122, 176, 212, 0.12);
         border-bottom: 1px solid rgba(122, 176, 212, 0.5);
         border-radius: 1px;
+    }
+
+    /* Point panel — compact list of bookmarks below the editor */
+    .lte-points {
+        border-top: 1px solid #141420;
+        padding: 3px 4px;
+        display: flex; flex-direction: column; gap: 1px;
+        max-height: 160px; overflow-y: auto;
+        background: #080810;
     }
 </style>

@@ -62,11 +62,9 @@ story:LakeSurfer
     For
       w:Lies
         nogen
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.378
-      sample:0.187,at:1777427905
-      sample:0.275,at:1778281426
-      sample:0.26,at:1778376535
+    TimeTotal:beliefs,avg:0.415
       sample:0.276,at:1778376624
       sample:0.576,at:1778412459
       sample:0.381,at:1778414485
@@ -74,5 +72,8 @@ story:LakeSurfer
       sample:0.42,at:1778463417
       sample:0.332,at:1778463426
       sample:0.583,at:1778463622
+      sample:0.383,at:1778482257
+      sample:0.353,at:1778482435
+      sample:0.356,at:1778482539
   step,dige:d57fc3880abb869f
   step:2,dige:cda6c7eafc89e978

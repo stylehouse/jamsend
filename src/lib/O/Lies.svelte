@@ -615,6 +615,68 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
     },
 
+    // ── e_Lies_export_point ───────────────────────────────────────────────────
+    //
+    //   Export a Lang bookmark as a Point under a Waft Doc.
+    //   If the active (or first) Waft already has a Doc for this path, adds
+    //   the Point there.  If no Doc exists, creates it first.  If no Waft
+    //   exists at all, spawns an hourly Look Waft.
+    //
+    //   Point serial: a session-unique integer stored on w.c.  Seeds from
+    //   Date.now() on first use so serials are monotonically increasing
+    //   across reloads even without disk persistence.
+    //   < persist the counter in a stable Waft particle for true cross-session
+    //     uniqueness once the snap format has a dedicated global-state Waft.
+    //
+    //   Fires e:Lang_stamp_bookmark_serial back to w:Lang so the bookmark
+    //   particle carries the serial for dedup / UI feedback.
+    //
+    //   e.sc: { path, bookmark_id, from, to, method, label? }
+    async e_Lies_export_point(A: TheC, w: TheC, e: TheC) {
+        const H           = this as House
+        const path        = e.sc.path        as string | undefined
+        const bookmark_id = e.sc.bookmark_id as string | undefined
+        const from        = e.sc.from        as number
+        const to          = e.sc.to          as number
+        const method      = ((e.sc.method || e.sc.label || `bm_${from}`) as string).trim()
+        const label       = (e.sc.label as string | undefined) ?? ''
+
+        if (!path || !bookmark_id) throw 'e_Lies_export_point: needs path + bookmark_id'
+
+        // Session-unique serial, seeded from Date.now() on first use.
+        w.c.point_serial_next ||= Date.now()
+        const serial = w.c.point_serial_next++ as number
+
+        // Active Waft → first Waft → spawn a Look Waft.
+        let target_waft = w.o({ Waft: 1 }).find(wf => !!(wf as TheC).sc.active) as TheC | undefined
+        target_waft   ||= w.o({ Waft: 1 })[0] as TheC | undefined
+        if (!target_waft) {
+            target_waft = H.Lies_spawn_look_waft(w)
+            target_waft.sc.active = 1
+        }
+
+        // Find or create the Doc row for this path in the target Waft.
+        const doc     = target_waft.oai({ Doc: 1, path })
+        const pointsC = doc.oai({ Points: 1 })
+
+        // Skip if a Point with the same method already exists (same logical pointer).
+        const already = pointsC.o({ Point: 1, method })[0] as TheC | undefined
+        if (!already) {
+            pointsC.i({ Point: serial, method, label, from, to })
+            target_waft.bump_version()
+            H.Lies_waft_save(w, target_waft)
+            console.log(`📌 exported Point ${serial} method='${method}' to Waft:${target_waft.sc.Waft}`)
+        } else {
+            console.log(`📌 Point method='${method}' already in Waft — skipping`)
+        }
+
+        // Stamp serial back on the Lang bookmark so DocPoint can show the badge.
+        H.i_elvisto('Lang/Lang', 'Lang_stamp_bookmark_serial', {
+            bookmark_id, serial,
+        })
+        this.i_elvisto(w, 'think')
+    },
+
     // ── o_Opt_k ──────────────────────────────────────────────────────────────
     //
     //   Read a named opt from w/{Opt:1}/{k:1}.
