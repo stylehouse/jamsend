@@ -315,8 +315,8 @@
         if (!w.c.plan_done) await this.Lang_plan(A, w)
         // these go every time so their toggle state can visually change
         let on_change = () => this.main()
+        // whether Lang-Cyto does compound_nodes
         await this.i_actions_to_c(w, 'compo',{ stashed: true, on_change })
-        await this.i_actions_to_c(w, 'compi',{ stashed: true, on_change })
 
         const docC = this.Lang_active_docC(w)
 

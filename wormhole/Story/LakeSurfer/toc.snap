@@ -60,20 +60,19 @@ story:LakeSurfer
         esc:path,v:Ghost/Tour
   Opt
     For
-      w:LieSurgery
+      w:Lies
         nogen
-    trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.244
-      sample:0.112,at:1777427783
-      sample:0.112,at:1777427786
-      sample:0.13,at:1777427803
-      sample:0.13,at:1777427813
+    TimeTotal:beliefs,avg:0.378
       sample:0.187,at:1777427905
       sample:0.275,at:1778281426
       sample:0.26,at:1778376535
       sample:0.276,at:1778376624
       sample:0.576,at:1778412459
       sample:0.381,at:1778414485
+      sample:0.49,at:1778461752
+      sample:0.42,at:1778463417
+      sample:0.332,at:1778463426
+      sample:0.583,at:1778463622
   step,dige:d57fc3880abb869f
   step:2,dige:cda6c7eafc89e978
