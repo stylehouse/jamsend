@@ -214,22 +214,30 @@
     // ── reactive signals from ave ─────────────────────────────────────────────
     //   lang_actions: action buttons registered by Lang ghost
     //   active_path:  path of the currently-shown doc ($state so template reacts)
-    //   docC:         the langtiles_doc particle for active_path (for disk-reload)
+    //   docC:         the ave/{langtiles_doc:path} particle (text length display,
+    //                 disk-reload detection)
+    //   active_doc:   the actual {doc:path} particle from w:Lang
+    //                 (holds bookmarks; sig.c.doc set by Lang_set_active_doc)
     let lang_actions: TheC[] = $state([])
     let active_path  = $state('')
-    let docC: TheC | undefined = $state()
+    let docC:       TheC | undefined = $state()   // text-sync particle
+    let active_doc: TheC | undefined = $state()   // {doc:path} particle — has bookmarks
 
     // Short filename for the bar header.
     let active_name = $derived(active_path ? (active_path.split('/').pop() ?? active_path) : 'no doc')
 
-    // Reactive bookmark list — reads docC.version so the panel updates live
-    // when bookmarks are added, removed, or modified.
-    let bookmarks: TheC[] = $derived(docC ? docC.ob({ bookmark: 1 }) as TheC[] : [])
+    // Reactive bookmark list — tracks active_doc.version via ob() so the panel
+    // updates live whenever bookmarks are added, removed, or fuzzified.
+    let bookmarks: TheC[] = $derived(active_doc ? active_doc.ob({ bookmark: 1 }) as TheC[] : [])
 
     // ── signal $effect ────────────────────────────────────────────────────────
     //   Reads H.ave for lang_actions, active_doc, and langtiles_doc.
     //   sig?.ob() subscribes to sig.version so path changes inside the same
     //   sig particle (bump_version only, no re-i()) still wake this effect.
+    //
+    //   sig.c.doc is the {doc:path} particle stamped by Lang_set_active_doc.
+    //   It lives on .c (not .sc) because TheC references don't belong in the
+    //   index; the signal's version bump is what wakes this effect up.
     $effect(() => {
         const la = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
@@ -238,8 +246,9 @@
         sig?.ob()  // track sig.version — path changes bump it without re-enrolling
         const path = (sig?.sc.path as string | undefined) ?? ''
         if (path) active_path = path
-        docC = path ? H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined : undefined
-        console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_path=${active_path}`)
+        docC       = path ? H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined : undefined
+        active_doc = sig?.c.doc as TheC | undefined
+        console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_doc=${!!active_doc}`)
     })
 
     // ── switch $effect ────────────────────────────────────────────────────────
@@ -288,8 +297,13 @@
             spool_remember(arriving, view!.state.doc.toString())
             prev_path = arriving
 
-            // Restore scroll position — rAF gives CM one layout pass to settle.
+            // ── Scroll restoration ────────────────────────────────────────────
+            // CM6 schedules a measure pass after view.setState() that scrolls
+            // the selection into view, overriding a single rAF write.
+            // Set synchronously first (catches the common case), then again in
+            // rAF (wins after CM's own measure).  Two writes, no flicker.
             const saved_scroll = scrollCache.get(arriving) ?? 0
+            view!.scrollDOM.scrollTop = saved_scroll
             requestAnimationFrame(() => {
                 if (view) view.scrollDOM.scrollTop = saved_scroll
             })
@@ -610,8 +624,8 @@
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}></div>
     <DocMinimap {H} {view} {active_path} />
-    {#if docC && bookmarks.length}
-    <!-- Point panel: one DocPoint per bookmark on the active docC -->
+    {#if active_doc && bookmarks.length}
+    <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">
         {#each bookmarks as bm (bm.sc.bookmark)}
             <DocPoint {H} {bm} doc_path={active_path} />

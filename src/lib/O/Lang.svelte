@@ -191,6 +191,10 @@
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
         const sig = ave.oai({ active_doc: 1 })
         sig.sc.path = path
+        // sig.c.doc: the actual {doc:path} particle (holds bookmarks, view, state).
+        // Langui reads this via sig?.c.doc to derive its bookmark list.
+        // Stored on .c (not .sc) because TheC references don't belong in the index.
+        sig.c.doc = docs?.o({ doc: path })[0] as TheC | undefined
         sig.bump_version()
     },
 
@@ -198,13 +202,13 @@
 
     async e_Lang_editorBegins(A, w, e) {
         // Register view + state via the DRY router.
-        const docC = this.Lang_doc_from_event(w, e)
+        const doc = this.Lang_doc_from_event(w, e)
 
-        // CM StateEffects are per-view, so they live on docC.c — not w.c.
-        docC.c.addBookmarkMark   = e.sc.addBookmarkMark
-        docC.c.removeBookmarkMark = e.sc.removeBookmarkMark
-        docC.c.clearAllBookmarks = e.sc.clearAllBookmarks
-        docC.c.saveEffect        = e.sc.saveEffect
+        // CM StateEffects are per-view, so they live on doc.c — not w.c.
+        doc.c.addBookmarkMark    = e.sc.addBookmarkMark
+        doc.c.removeBookmarkMark = e.sc.removeBookmarkMark
+        doc.c.clearAllBookmarks  = e.sc.clearAllBookmarks
+        doc.c.saveEffect         = e.sc.saveEffect
 
         // Only activate if we have a real path — empty string means the doc
         // isn't known yet and Lies hasn't fired e_Lang_open_doc yet.
@@ -212,33 +216,38 @@
         if (!w.c.active_doc_path && e.sc.doc) {
             this.Lang_set_active_doc(w, e.sc.doc as string)
         }
+        // sig.c.doc may have been set before the doc particle existed (first open).
+        // Refresh it now that the particle is guaranteed to exist.
+        const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
+        const sig = ave.o({ active_doc: 1 })[0] as TheC | undefined
+        if (sig && !sig.c.doc) sig.c.doc = doc
 
         w.i({received:1,editorBegins:1})
 
         // ── Bookmark position sync ────────────────────────────────────────────
         //
         // Langui passes `updates` (live CM positions) on every editorBegins,
-        // including after each doc switch.  Reconcile them against the docC
+        // including after each doc switch.  Reconcile them against the doc
         // particles so whatsthis() never starts from stale from/to values.
         //
         // Also re-dispatch addBookmarkMark for any bookmarks that exist in
-        // docC but are absent from the restored CM state — can happen when a
-        // bookmark was created programmatically and the doc was switched before
-        // the StateField had a chance to capture it.
+        // doc but are absent from the restored CM state (can happen when a
+        // bookmark was created programmatically and the doc was switched
+        // before the StateField had a chance to capture it).
         const updates = e.sc.updates as Array<{id:string,from:number,to:number}> | undefined
         if (updates) {
             const seen = new Set(updates.map((u: any) => u.id))
             for (const u of updates) {
-                const bm = docC.o({ bookmark: u.id })[0] as TheC | undefined
+                const bm = doc.o({ bookmark: u.id })[0] as TheC | undefined
                 if (!bm) continue
                 if (bm.sc.from !== u.from || bm.sc.to !== u.to) {
                     bm.sc.from = u.from; bm.sc.to = u.to; bm.bump_version()
                 }
             }
-            // Re-apply bookmarks from docC that are absent from CM's live set.
-            for (const bm of docC.o({ bookmark: 1 }) as TheC[]) {
+            // Re-apply bookmarks present in doc but absent from CM's live set.
+            for (const bm of doc.o({ bookmark: 1 }) as TheC[]) {
                 if (!seen.has(bm.sc.bookmark as string) && !bm.sc.vanished) {
-                    docC.c.view?.dispatch({ effects: docC.c.addBookmarkMark.of({
+                    doc.c.addBookmarkMark && doc.c.view?.dispatch({ effects: doc.c.addBookmarkMark.of({
                         id:   bm.sc.bookmark as string,
                         from: bm.sc.from     as number,
                         to:   bm.sc.to       as number,
@@ -249,12 +258,12 @@
 
         // ── Auto-compile on first editorBegins per doc ────────────────────────
         //
-        // Fires once, gated by ever_began_compile on docC.c.
-        // Deferred 200ms so the EditorView fully settles first.
-        // Guards against triggering while another compile is already pending.
-        if (!docC.c.ever_began_compile) {
-            docC.c.ever_began_compile = true
-            const job = docC.o({ Compile: 1 })[0] as TheC | undefined
+        // One-shot per doc.c (not per tick) gated by ever_began_compile.
+        // 200ms deferred so the EditorView fully settles first.
+        // Guards against firing while another compile is already pending.
+        if (!doc.c.ever_began_compile) {
+            doc.c.ever_began_compile = true
+            const job = doc.o({ Compile: 1 })[0] as TheC | undefined
             if (!job?.oa({ Pending: 1 })) {
                 setTimeout(() => this.i_elvisto(w, 'Lang_compile', {}), 200)
             }
@@ -722,22 +731,22 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     // e.sc carries: doc, updates=[{id, from, to}], view, state
     async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
-        const docC = this.Lang_doc_from_event(w, e)
+        const doc = this.Lang_doc_from_event(w, e)
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
         if (updates) {
             const seen = new Set(updates.map(u => u.id))
             for (const u of updates) {
-                const bm = docC.o({ bookmark: u.id })[0] as TheC | undefined
+                const bm = doc.o({ bookmark: u.id })[0] as TheC | undefined
                 if (!bm) continue
                 if (bm.sc.from === u.from && bm.sc.to === u.to) continue
                 bm.sc.from = u.from
                 bm.sc.to   = u.to
                 bm.bump_version()
             }
-            // detect vanished bookmarks — present in docC but absent from CM's live set
-            for (const bm of docC.o({ bookmark: 1 }) as TheC[]) {
+            // detect vanished bookmarks — present in doc but absent from CM's live set
+            for (const bm of doc.o({ bookmark: 1 }) as TheC[]) {
                 if (!seen.has(bm.sc.bookmark)) {
-                    this.Lang_bookmark_vanished(docC, bm)
+                    this.Lang_bookmark_vanished(doc, bm)
                 }
             }
         }
@@ -758,9 +767,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //   < Copy+paste tracking: when a paste lands, compare incoming text chunks
     //     against the label/content of vanished bookmarks and re-anchor any that
     //     appear in the new location.
-    //
-    //   Takes docC (not w) so the log context is clearly per-document.
-    Lang_bookmark_vanished(docC: TheC, bm: TheC) {
+    Lang_bookmark_vanished(doc: TheC, bm: TheC) {
         console.warn(`🔖 bookmark vanished: ${bm.sc.bookmark} was [${bm.sc.from}..${bm.sc.to}] "${bm.sc.label}"`)
         bm.i({ vanished: 1 })
         // < re-anchor attempt goes here
@@ -769,51 +776,43 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
     // ── e_Lang_remove_bookmark ───────────────────────────────────────────────
     //
-    //   Remove a single bookmark by id — dispatches removeBookmarkMark to CM
-    //   and drops the particle from docC.  Inverse of the Ctrl+B add path
-    //   and the per-DocPoint delete button.
+    //   Remove one bookmark by id.  Dispatches removeBookmarkMark to CM
+    //   and drops the particle from the doc.  Wired to DocPoint's delete button.
     //
-    //   e.sc: { bookmark_id: string, doc?: string }
+    //   e.sc: { bookmark_id }
     async e_Lang_remove_bookmark(A: TheC, w: TheC, e: TheC) {
-        const docC = this.Lang_active_docC(w)
-        if (!docC) return
-        const bookmark_id = e.sc.bookmark_id as string | undefined
-        if (!bookmark_id) return
-
-        const bm = docC.o({ bookmark: bookmark_id })[0] as TheC | undefined
+        const doc = this.Lang_active_docC(w)
+        if (!doc) return
+        const id = e.sc.bookmark_id as string | undefined
+        if (!id) return
+        const bm = doc.o({ bookmark: id })[0] as TheC | undefined
         if (!bm) return
-
-        const view = docC.c.view as EditorView | undefined
-        if (view && docC.c.removeBookmarkMark) {
-            view.dispatch({ effects: docC.c.removeBookmarkMark.of({ id: bookmark_id }) })
+        if (doc.c.view && doc.c.removeBookmarkMark) {
+            doc.c.view.dispatch({ effects: doc.c.removeBookmarkMark.of({ id }) })
         }
-        await docC.r({ bookmark: bookmark_id }, {})
-        console.log(`🔖 remove_bookmark id=${bookmark_id}`)
+        await doc.r({ bookmark: id }, {})
+        console.log(`🔖 remove_bookmark id=${id}`)
         this.i_elvisto(w, 'think', {})
     },
 
     // ── e_Lang_point_fuzzify ─────────────────────────────────────────────────
     //
     //   Resolve a bookmark's char-offset range to the enclosing method name
-    //   via the compiled index — upgrading from a positional anchor to a
-    //   named method pointer.  Stamps bm.sc.method.
+    //   from the compile index.  Stamps bm.sc.method, upgrading from a
+    //   positional anchor to a named method pointer.
+    //   No-op with a hint when the compile index is absent.
     //
-    //   No-op with a hint when the compile index is absent (run compile first).
-    //
-    //   e.sc: { bookmark_id: string, doc?: string }
+    //   e.sc: { bookmark_id }
     async e_Lang_point_fuzzify(A: TheC, w: TheC, e: TheC) {
-        const docC = this.Lang_active_docC(w)
-        if (!docC) return
-        const bookmark_id = e.sc.bookmark_id as string | undefined
-        if (!bookmark_id) return
-        const bm = docC.o({ bookmark: bookmark_id })[0] as TheC | undefined
+        const doc = this.Lang_active_docC(w)
+        if (!doc) return
+        const bm = doc.o({ bookmark: e.sc.bookmark_id })[0] as TheC | undefined
         if (!bm) return
-
-        const method = this.Lang_def_at_offset(docC, bm.sc.from as number)
+        const method = this.Lang_def_at_offset(doc, bm.sc.from as number)
         if (method) {
             bm.sc.method = method
             bm.bump_version()
-            console.log(`🔖 fuzzified ${bookmark_id} → method:'${method}'`)
+            console.log(`🔖 fuzzified ${bm.sc.bookmark} → method:'${method}'`)
         } else {
             w.i({ see: `⚠ fuzzify: no def at ${bm.sc.from} — run compile first` })
         }
@@ -822,41 +821,19 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
     // ── e_Lang_stamp_bookmark_serial ─────────────────────────────────────────
     //
-    //   Stamp a global Point serial number onto a bookmark particle after it
-    //   has been exported to a Waft Doc via e_Lies_export_point.
-    //   The serial links the live bookmark to its persistent Point counterpart
-    //   so the DocPoint UI can show it's already exported.
+    //   Stamp a global Point serial onto a bookmark after it has been exported
+    //   to a Waft Doc via e_Lies_export_point.  The DocPoint UI shows this to
+    //   signal the bookmark is already persisted.
     //
-    //   e.sc: { bookmark_id: string, serial: number }
+    //   e.sc: { bookmark_id, serial }
     async e_Lang_stamp_bookmark_serial(A: TheC, w: TheC, e: TheC) {
-        const docC = this.Lang_active_docC(w)
-        if (!docC) return
-        const bm = docC.o({ bookmark: e.sc.bookmark_id })[0] as TheC | undefined
+        const doc = this.Lang_active_docC(w)
+        if (!doc) return
+        const bm = doc.o({ bookmark: e.sc.bookmark_id })[0] as TheC | undefined
         if (!bm) return
         bm.sc.point_serial = e.sc.serial as number
         bm.bump_version()
         this.i_elvisto(w, 'think', {})
-    },
-
-    // ── Lang_active_doc_in_waft ──────────────────────────────────────────────
-    //
-    //   Returns the {waft, doc} pair from Lies whose Doc.path matches the
-    //   active doc path on w:Lang.  Used by DocPoint export to know where a
-    //   bookmark should land in the Waft tree.
-    //
-    //   Returns undefined when Lies has no Waft that claims this path yet.
-    Lang_active_doc_in_waft(w: TheC): { waft: TheC, doc: TheC } | undefined {
-        const H    = this as House
-        const path = w.c.active_doc_path as string | undefined
-        if (!path) return undefined
-        try {
-            const lies_w = H.Awo('Lies', 'Lies')
-            for (const waft of lies_w.o({ Waft: 1 }) as TheC[]) {
-                const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
-                if (doc) return { waft, doc }
-            }
-        } catch { }
-        return undefined
     },
 
 

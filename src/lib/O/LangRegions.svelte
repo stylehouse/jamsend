@@ -162,9 +162,10 @@
         docC:        TheC,
         method_spec: string,
     ): { from: number, to: number, line: number, kind: string, issues: string[] } | null {
-        const job     = docC.o({ Compile: 1 })[0]   as TheC | undefined
-        const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
-        const methods = output?.o({ methods: 1 })[0] as TheC | undefined
+        const job     = docC.o({ Compile: 1 })[0]  as TheC | undefined
+        // methods is a direct child of Compile, not nested under Output.
+        // (Output holds source/dige; methods is a sibling.)
+        const methods = job?.o({ methods: 1 })[0]  as TheC | undefined
         if (!methods) return null   // no compiled index yet
 
         const defs    = methods.o({ def:         1 }) as TheC[]
@@ -407,22 +408,23 @@
     //   `offset`.  Returns the method name, or undefined when the compile
     //   index is absent or no def encloses the offset.
     //
+    //   "Innermost" = smallest span, so a helper nested inside a larger
+    //   function resolves to the helper name, not the outer one.
+    //
     //   Used by e_Lang_point_fuzzify to upgrade a positional bookmark to a
-    //   named method pointer.  "Innermost" = smallest span, so a helper
-    //   nested inside a larger function resolves to the helper name.
+    //   named method pointer without requiring the user to type a name.
     Lang_def_at_offset(docC: TheC, offset: number): string | undefined {
-        const job     = docC.o({ Compile: 1 })[0]   as TheC | undefined
-        const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
-        const methods = output?.o({ methods: 1 })[0] as TheC | undefined
+        // methods is a direct child of Compile (sibling of Output)
+        const job     = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const methods = job?.o({ methods: 1 })[0]  as TheC | undefined
         if (!methods) return undefined
 
         const defs = methods.o({ def: 1 }) as TheC[]
-        // keep only defs whose range encloses the offset
         const containing = defs.filter(d =>
             (d.sc.from as number) <= offset && (d.sc.to as number) >= offset
         )
         if (!containing.length) return undefined
-        // innermost = smallest span
+        // smallest span = innermost def
         containing.sort((a, b) =>
             ((a.sc.to as number) - (a.sc.from as number)) -
             ((b.sc.to as number) - (b.sc.from as number))
