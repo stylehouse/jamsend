@@ -147,7 +147,7 @@
         background: var(--background, rgb(215, 237, 255));
         padding: 0 0.5rem;
         min-height: 1.75rem;
-        z-index: 10;
+        z-index: 100;
     }
     .house-header.sticky {
         position: sticky;
