@@ -10,18 +10,23 @@ Peerily details omitted — this is the layer itself.
 ### De — Desire particle
 
 Lives directly on `w`. Represents one goal the side is currently trying to satisfy.
-Multiple Des coexist. Each has a **mazlow level** (`maz`, default 1, omitted from
-snap when 1 — depeel prints just `De:listen`).
+Multiple Des coexist. Each has a **mazlow level** (`maz`). `%maz` is always stamped —
+depeel elides value 1 to a bare `maz` key, so the snap stays clean for the common case.
 
 ```
-De:listen                      maz:1 implied
-De:connect,who:8cbc667b…
+De:listen,maz                  maz:1, depeel prints bare 'maz'
+De:connect,maz,who:8cbc667b…
 De:keepalive,maz:3,who:…       higher-level need, won't run until maz:1,2 stable
 ```
 
 The De particle persists across Story steps — it is the causal record of what this
 side is doing and why. It does not vanish when its reqs finish unless the De itself
 decides it's done.
+
+A De may carry `%waits:name` just like a req, interpreted the same way: the blocking
+De by that name is front of the search path. `De:connect,waits:listen` means the
+connect machinery sits idle until `De:listen` is `%finished`. The `do_fn` (or
+`H.De_connect()`) guards the same condition in code; `%waits` is the snap annotation.
 
 ### req — sub-goal particle
 
@@ -30,31 +35,33 @@ Each req has:
 
 - `c.do_fn` — its micro-main, set once at seeding. Called by `reqys().do()`.
 - `%waits:name` — declared dependency on another req by name. Display aid and
-  skip guard. Dropped at the start of each `do_fn` call, like `%see|error`.
-  The `do_fn` re-stamps it if still blocked. Its absence after a run signals
-  the dep was met; its presence in a frozen state signals why things stopped.
+  skip guard. Dropped by `w_noproblemo` before each `do_fn` call.
+  The `do_fn` re-stamps it if the dependency is still unmet and returns.
+  Presence in a frozen req is a diagnostic: "stopped here, waiting for this."
 - `%mutated` — set by `reqys().oai(c,sc)` when the two-arg form merges new
-  props into an existing req. Consumed by the req's `reprop_fn` if one is
-  provided, otherwise deleted by reqys() at the top of the next `do()` pass.
+  props into an existing req. Cleaned at the top of the next `do()` pass.
+- `%init_time` — stamped by reqys() on the first `do_fn` invocation.
+  Cleaned at the top of the second `do()` pass. A req can use it to know
+  whether this is its first run, without keeping that state itself.
 - `%finished` — set by reqys when the req completes. Causes De version bump.
-- `maz` — default 1. reqys() only calls reqs whose maz ≤ current frontier.
+- `maz` — always stamped. reqys() only calls reqs whose maz ≤ frontier.
 
 ```
-De:listen
-  req:keygen
-  req:register
+De:listen,maz
+  req:keygen,maz
+  req:register,maz
     waits:keygen
-  req:listening
+  req:listening,maz
     waits:register
-De:connect,who:8cbc667b…
-  req:dial
-  req:connected
+De:connect,maz,who:8cbc667b…
+  req:dial,maz
+  req:connected,maz
     waits:dial
 ```
 
-A req may seed further reqs inside its `do_fn` — the De can grow its chain
-lazily. `reqys().do()` re-reads the live req list on each call, so newly seeded
-reqs are visible on the next `_De_run`.
+A req may seed further reqs inside its `do_fn` — the De can grow its chain lazily.
+`reqys().do()` re-reads the live req list on each call, so newly seeded reqs are
+visible on the next `reqyscile`.
 
 ---
 
@@ -62,16 +69,15 @@ reqs are visible on the next `_De_run`.
 
 Forked from `requesty_serial()` in Hovercraft. Key differences:
 
-- Parent is a De particle, not raw `w`.
+- Parent is a De (or `w` for the De layer), not raw `w` only.
 - Understands `maz` ordering within the req set.
-- Version-bumps the De on every req `%finished` transition.
-- Emits an `all_done` signal when every req is finished (or none exist).
-- Does not drop finished reqs by default — they are the state record.
-  The De decides whether to cull them.
-- Drops `%waits` from each req at the start of its `do_fn` call.
-  The `do_fn` re-stamps `%waits` if the dependency is still unmet and returns.
-- Drops `%mutated` from all reqs at the top of each `do()` pass,
-  unless already consumed by a `reprop_fn`.
+- Version-bumps the parent on every `%finished` transition.
+- Signals `all_done` when every req is finished (or none exist).
+- Calls `w_noproblemo(req)` before each `do_fn` — drops `%waits`, `%error`, `%see`.
+- Drops `%mutated` and `%init_time` at the top of each `do()` pass
+  (after any `reprop_fn` has had a chance to consume `%mutated`).
+- Stamps `%init_time` on the first `do_fn` call for each req.
+- Culls finished reqs after a Story step boundary (see Culling).
 
 ### API
 
@@ -79,29 +85,52 @@ Forked from `requesty_serial()` in Hovercraft. Key differences:
 // obtain the requlator for a De — idempotent, call every tick
 const rq = H.reqys(De, 'req')
 
-// seed a req (idempotent via oai — single-arg form, no merge)
+// seed a req — idempotent, single-arg form, no merge
 const r = await rq.oai({ req: 'keygen' })
 r.c.do_fn ||= async (req, rq) => { ... }   // set once
 
-// seed or update a req (two-arg form — merges sc into existing, stamps %mutated)
-//   use sparingly; the re-prop cascade is the caller's or reprop_fn's problem.
-//   avoid two-arg oai() if you have no meaningful new props to send.
+// seed and immediately wire do_fn in one gesture:
+//   returns a setter fn if do_fn not yet set, null otherwise.
+//   ?.() makes it a no-op on repeat calls — safe to call every tick.
+//   w is captured from the enclosing scope, same object, no need to pass it.
+await rq.doai({ req: 'keygen' })?.(async (req, rq) => {
+    if (req.sc.running) return
+    req.sc.running = true
+    H.post_do(async () => {
+        const Id = new Idento()
+        await Id.generateKeys(side)
+        H.i_elvisto(w, 'De_listen_keygen', { Id })
+    })
+    H.demand_time_to_think(3000)
+})
+
+// seed or update a req — two-arg form merges sc, stamps %mutated if existed.
+//   avoid if you have no meaningful new props to send.
 const r = await rq.oai({ req: 'dial' }, { target: npub })
 
-// declare a dependency (display + skip guard — dropped before do_fn, re-stamped if still blocked)
+// declare a dependency
 r.i({ waits: 'keygen' })
 
 // run the frontier — calls do_fn for each unblocked, unfinished req
-//   in maz order, stopping at the first async boundary
+//   in maz order, stopping at the first async boundary.
+//   optional iteration fn receives (req, rq) for each trying req,
+//   used when the caller wants to drive a custom loop instead of do_fn dispatch.
 await rq.do()
+await rq.do((req, rq) => { ... })
 
-// check completion
+// completion
 rq.all_done()    // true when every seeded req is finished
 rq.pending()     // array of unfinished reqs
 
 // mark a req finished from outside (out-of-Atime completions)
-//   bumps De version, calls H.feebly_ponder()
+//   bumps parent version, calls H.feebly_ponder()
 rq.finish(req)
+
+// wire sub-reqys: sets each De's do_fn to run reqys(De,'req').do()
+//   and auto-hoists %finished onto the De when all its reqs are done.
+//   call before oai() so the do_fn is ready from the start.
+//   Des that already have an explicit do_fn are left alone.
+dq.subreqys('req')
 ```
 
 ### Mazlow within a De
@@ -117,47 +146,72 @@ In practice most reqs are maz:1 and this is invisible.
 Use maz:2 to express "only start this once all maz:1 work is done."
 
 ```
-req:keygen,maz:1
+req:keygen,maz
 req:register,maz:2          — won't run until keygen finished
 req:listening,maz:3         — won't run until register finished
 ```
 
 This replaces explicit `%waits` for strictly sequential chains, keeps the snap clean.
 
-### %mutated lifecycle
+### %mutated and %init_time lifecycle
 
-When `rq.oai(c, sc)` is called with a second arg and the req already exists,
-`sc` is merged in and `req.sc.mutated = 1` is stamped.
+Both follow the same pattern: stamped at a meaningful first moment, cleaned at the
+top of the following `do()` pass.
 
-At the top of the next `rq.do()` pass, before any `do_fn` runs:
+`%mutated` — `rq.oai(c, sc)` two-arg merges `sc` and stamps it when the req already
+existed. A `reprop_fn` on `req.c` may consume it first; otherwise reqys() deletes it
+directly. The response should be idempotent — `%mutated` is a hint, not a reliable event.
 
-1. If the req has a `reprop_fn` on its `c`, it is called once and `%mutated` is deleted.
-2. Otherwise reqys() deletes `%mutated` directly.
+`%init_time` — reqys() stamps it (as a timestamp) when `do_fn` is called the first
+time. The req can read it to know "this is my first run." The second `do()` pass drops
+it. Its window is exactly one run: from first invocation until the cycle that follows.
 
-The `do_fn` can also read `req.sc.mutated` inline and act on it before the next pass
-cleans it up, but doing so is the req's own concern. reqys() makes no guarantees about
-ordering relative to that read. `%mutated` is not a reliable event — it is a hint that
-something changed since last time. The rep-prop response should be idempotent.
+### Culling finished reqs
+
+reqys() culls finished reqs, but timing depends on context:
+
+- **No Story running**: cull on the next `do()` pass after finishing.
+  The De has already factored in their `%finished` state; their disappearance
+  removes them from the todo picture without any ceremony.
+- **Inside a Story run**: await `H.Runstepped()` before culling — a promise that
+  Story resolves when it advances to the next step. This guarantees the finished
+  reqs appear in at least one snap, making the completion visible in the record.
+
+`H.Runstepped()` queues a promise on `H.c` that Story's step-advance resolves.
+reqys() does not force a step to happen; it only waits for the next one that does.
 
 ---
 
 ## De layer as reqys() — mazlow between Des
 
-The set of Des on `w` can itself be managed as a reqys() at a higher level.
-A `maz:2` De does not begin work until all `maz:1` Des are `%finished`.
+The set of Des on `w` is itself a reqys(). A `maz:2` De does not begin work until
+all `maz:1` Des are `%finished`. The De-level requlator lives on `w.c.rq`.
 
 ```typescript
-const dq = H.reqys(w, 'De')
+// wired once at setup time
+w.c.rq = H.reqys(w, 'De')
+const dq = w.c.rq
 
-const dListen  = await dq.oai({ De: 'listen'  })   // maz:1 implied
-const dConnect = await dq.oai({ De: 'connect' })   // maz:1 implied
-const dSync    = await dq.oai({ De: 'sync' }, { maz: 3 })   // higher need
+// subreqys: Des without an explicit do_fn get one that runs reqys(De,'req').do()
+//   and auto-hoists De%finished when all their reqs are done.
+//   call before oai() so the wiring is ready.
+dq.subreqys('req')
 
-await dq.do()   // drives De mini-mains in maz order
+// seed Des
+const dListen  = await dq.oai({ De: 'listen'  })   // do_fn → H.De_listen() by name
+const dConnect = await dq.oai({ De: 'connect' })   // do_fn → H.De_connect() by name
+const dSync    = await dq.oai({ De: 'sync' }, { maz: 3 })   // explicit do_fn below
+dSync.c.do_fn ||= async (De) => { ... }
 ```
 
-`dq.do()` calls each De's mini-main. The De mini-main internally calls `reqys(De,'req').do()`.
-Two-level nested reqys — same middleware, different parent particle.
+Des without a `c.do_fn` at the dq level are handled by name convention:
+`dq.do()` looks up `H['De_' + De.sc.De]` and calls it as the do_fn.
+This makes `De:listen` dispatch to `H.De_listen()` automatically.
+The naming convention makes every handler-to-De pair text-searchable.
+
+`dq.do()` drives De mini-mains in maz order. Each mini-main calls
+`reqys(De,'req').do()` (wired by `subreqys`). Two-level nested reqys —
+same middleware, different parent particle.
 
 Higher-level Des (maz:3+, community-level "stay connected to known Piers") seed
 `maz:1` Des as their mechanism. The causal chain is: community intent seeds
@@ -165,69 +219,85 @@ connection intent seeds keygen/register/dial. Each level is Story-capturable.
 
 ---
 
-## want_savepoint()
+## w_noproblemo — nag-culture cleanup
 
-A convenience that encapsulates the "I want Story to snap before we go further" gesture:
+`w_noproblemo` lives alongside `reqys()` in Hovercraft as the standard way to clear
+per-cycle debris from a particle before its work runs. It replaces and extends
+`w_forgets_problems` from Agency.
+
+```typescript
+// standard — drops %waits, %error, %see
+H.w_noproblemo(req)
+
+// with options — also drops %log entries
+H.w_noproblemo(req, { log: 1 })
+```
+
+reqys() calls `w_noproblemo(req)` before every `do_fn`. Callers that want to also
+clear `%log` pass the option explicitly — `%log` is intentionally longer-lived so it
+survives to the snap, but a req that manages its own log cycle can opt in.
+
+---
+
+## want_savepoint()
 
 ```typescript
 H.want_savepoint()
 // expands to:
-if (H.sc.run) {   // only meaningful inside a Story-driven run
+if (H.sc.run) {
     H.c.leave_running_until = 0
     H.main()
 }
 ```
 
 `H.sc.run` is stamped by Story when it drives a step. Zeroing `leave_running_until`
-causes `poll_step` to see quiescence on the next tick and take a snap before the De
-chain continues. Callers that previously wrote `H.c.leave_running_until = 0; H.main()`
-directly should migrate here.
+causes `poll_step` to see quiescence on the next tick and snap before the De chain
+continues. A no-op outside Story — safe to call unconditionally from a `do_fn`.
 
-`_De_run` loops over sync-completable reqs within one Atime pass — only async
-boundaries (keygen, waiting for `open` event) naturally produce savepoints.
-`want_savepoint()` is how a `do_fn` that has completed synchronously can still
-request a Story breath before the next req begins.
+`reqyscile` loops over sync-completable reqs within one Atime pass — only async
+boundaries naturally produce savepoints. `want_savepoint()` is how a `do_fn` that
+has completed synchronously can still request a Story breath before the next req.
 
 ---
 
 ## %log — Story-aware trace on w
 
-`%see` is dropped every tick by `w_forgets_problems`, making it ephemeral within a
-single Atime. `%log` is the longer-lived counterpart: it persists on `w/%log` until
-Story takes a snap, at which point Story may clear it (or keep it as a named channel).
+`%see` is dropped every tick by `w_noproblemo`, ephemeral within a single Atime.
+`%log` is the longer-lived counterpart: it persists on `w/%log` until cleared
+explicitly (or by passing `{log:1}` to `w_noproblemo`).
 
 ```typescript
 w.oai({ log: 1 }).i({ msg: 'keygen started', at: now })
-// later in the same step or across several Atimes:
+// survives across Atimes:
 w.oai({ log: 1 }).i({ msg: 'keygen done', at: now })
 ```
 
-For now, `%log` lives only on `w/%log`. It is not hoisted into A or H. Its value is
-that it survives long enough for Story to capture the arc of an async operation in the
-snap, rather than just the instantaneous `%see` that was already gone by snap time.
-
-When Story eventually snaps after every Atime, `%see` may regain enough resolution
-that `%log` is redundant for fine-grained things — but `%log` still earns its keep for
-multi-Atime stories like "keygen took 120ms, here's the chain".
+`%log` lives only on `w/%log` for now. Its value is capturing the arc of an async
+operation — "keygen started → keygen done" — in the snap, rather than the
+instantaneous `%see` that was gone before Story looked.
 
 ---
 
 ## Elvis conventions
 
 All out-of-Atime activity reaches a req through a typed elvis.
-The dispatcher is a general `e_reqy_done` that handles the common work,
-wrapped by specific elvisors for tracing and context.
+`H.i_elvisto(w, 'De_listen_keygen', { Id })` dispatches to `e_De_listen_keygen`.
+Every such call site names exactly which `e_$name` method receives it —
+the pair is text-searchable across the codebase.
+
+On the w particle, `w.i({ o_elvis: 'De_listen_keygen' })` registers that this w
+handles that elvis type, making the set of expected elvisors visible in the snap.
 
 ### General dispatcher
 
 ```typescript
-// marks req finished, bumps De, re-runs the De's reqys
+// marks req finished, bumps De, re-enters reqyscile
 async e_reqy_done(_A, w, e) {
     const De  = e?.c.De  as TheC
     const req = e?.c.req as TheC
     if (!De || !req || req.sc.finished) return
     H.reqys(De, 'req').finish(req)   // bumps De, feebly_ponder
-    await H._De_run(De)              // continue the chain
+    await H.reqyscile(De)            // continue the chain
 }
 ```
 
@@ -243,49 +313,49 @@ async e_De_listen_keygen(_A, w, e) {
     H.i_elvisto(w, 'reqy_done', { c: { De, req: rKeygen } })
 }
 
-// corrupt_hello armed — no out-of-Atime needed, just seed and ponder
+// corrupt_hello armed — no out-of-Atime needed, just seed and reqyscile
 async e_De_corrupt_hello(_A, w, _e) {
     const De = w.oai({ De: 'corrupt_hello' })
     const rq = H.reqys(De, 'req')
-    const r  = await rq.oai({ req: 'arm' })
-    r.c.do_fn ||= async (req) => {
+    await rq.doai({ req: 'arm' })?.(async (req) => {
         w.oai({ hook: 1, corrupt: 'hello' })
         rq.finish(req)
-    }
-    await H._De_run(De)
+    })
+    await H.reqyscile(De)
 }
 ```
 
 The pattern: specific elvisors do only their specific thing (store data, name
-the event clearly in the trace) then hand off to `e_reqy_done` or `_De_run`.
+the event clearly in the trace) then hand off to `e_reqy_done` or `reqyscile`.
 No req-finishing logic lives outside reqys().
 
 ---
 
-## _De_run — the outer loop
+## reqyscile — the outer loop
 
-Called after any state change that might unblock reqs or advance Des.
-Must be called in Atime — do not call from background timers or post_do directly.
-State-changing callbacks (shim, post_fn) fire their own elvis to reach `_De_run`.
+Named for the cycle of req-work it drives. Replaces `_De_run`.
+Must be called in Atime — state-changing callbacks (shim, post_fn) reach it via elvis.
 
 ```typescript
-async _De_run(De: TheC) {
-    const rq = H.reqys(De, 'req')
-    await rq.do()
-    if (rq.all_done()) {
-        // De may seed more reqs, mark itself finished, or spawn a new De
+async reqyscile(De: TheC) {
+    // De.c.rq is the req-level requlator, set by subreqys
+    await De.c.rq.do()
+    if (De.c.rq.all_done()) {
         await De.c.on_all_done?.()
     }
 }
 ```
 
-`on_all_done` is set once on the De particle at seeding time, same as `c.do_fn` on req.
-It may:
+For the De layer, callers drive `w.c.rq.do()` directly — that in turn calls
+`reqyscile(De)` for each De via the subreqys-wired do_fn. The nesting is natural:
 
-- Add more reqs (De chain grows — `rq.oai()` new ones, return from `_De_run`)
-- Mark `De.sc.finished = true` and bump the parent `dq` if the De layer is
-  also a reqys()
-- Seed a new De at a higher maz level
+```
+w.c.rq.do()          → De.do_fn()   (discovered as H.De_X() or set explicitly)
+  H.De_listen(w, De) → De.c.rq.do() → req.do_fn()
+```
+
+`on_all_done` is set once on the De particle at seeding time, same as `c.do_fn` on req.
+It may add more reqs, mark `De.sc.finished`, or seed a new De at a higher maz level.
 
 ---
 
@@ -295,15 +365,22 @@ Story dispatches `Plan/Prep:N` at step-start time. Each child is an
 `o_elvisto,e` particle that fires the matching method with `(A, w, e)`
 where `e` carries the `esc` fields as children.
 
+When A and w share the same name, the slash form is omitted:
+`o_elvisto:Lies,e:Lies_open_Waft` addresses `A:Lies/w:Lies`.
+
+`Prep` with step 1 prints as bare `Prep` in depeel (value 1 elided).
 Multiple `o_elvisto` children under one `Prep` fire left-to-right.
 Multiple `Prep:N` on the same step number stack — no dedup inside a Prep.
 
-In depeel notation: commas separate co-properties of one particle; slash is depth.
-`o_elvisto` is the dispatch marker, `e` is the event name as a co-property.
-`esc,v` children set named escape fields on the event particle.
+In depeel notation: commas are co-properties of one particle; slash is depth.
+`o_elvisto` is the dispatch marker; `e` is the event name. `esc,v` children set
+named escape fields on the event particle.
 
 ```
 Plan
+  Prep
+    o_elvisto:Lies,e:Lies_open_Waft
+      esc:path,v:Ghost/Tour
   Prep:2
     o_elvisto:PeeringLive/PeeringLive,e:hold_offline
       esc:side,v:Nearing
@@ -311,10 +388,13 @@ Plan
     o_elvisto:PeeringLive/Bearing,e:corrupt_hello
 ```
 
-The toc.snap block (literal tabs, copied verbatim into the Plan particle):
+toc.snap block (literal tabs, copied verbatim into the Plan particle):
 
 ```json
 {"Plan":1}
+    {"Prep":1}
+        {"o_elvisto":"Lies","e":"Lies_open_Waft"}
+            {"esc":"path","v":"Ghost/Tour"}
     {"Prep":2}
         {"o_elvisto":"PeeringLive/PeeringLive","e":"hold_offline"}
             {"esc":"side","v":"Nearing"}
@@ -322,8 +402,8 @@ The toc.snap block (literal tabs, copied verbatim into the Plan particle):
         {"o_elvisto":"PeeringLive/Bearing","e":"corrupt_hello"}
 ```
 
-A single `Prep` can carry multiple `o_elvisto` children to stack hazards and tweaks.
-There is no CRUD UI for these — edit the toc.snap file directly, respecting literal tabs.
+A single `Prep` can carry multiple `o_elvisto` children to stack hazards.
+No CRUD UI — edit the toc.snap file directly with literal tabs.
 
 ### Example scenarios
 
@@ -352,7 +432,7 @@ Plan
       esc:seq,v:1
 ```
 
-Scenario A then B stacked in the same run:
+Scenario A then B in the same run:
 ```
 Plan
   Prep:2
@@ -369,8 +449,8 @@ Plan
 ### Step 1 — keygen in flight
 
 ```
-De:listen
-  req:keygen,running
+De:listen,maz
+  req:keygen,maz,running
   log
     msg:keygen started,at:…
 ```
@@ -378,30 +458,30 @@ De:listen
 ### Step 2 — registered and open
 
 ```
-De:listen,finished
-  req:keygen,finished
-  req:register,finished
-  req:listening,finished
-De:connect,who:8cbc667b…,finished
-  req:dial,finished
-  req:connected,finished
+De:listen,maz,finished
+  req:keygen,maz,finished
+  req:register,maz,finished
+  req:listening,maz,finished
+De:connect,maz,who:8cbc667b…,finished
+  req:dial,maz,finished
+  req:connected,maz,finished
 ```
 
 ### Failed connection
 
 ```
-De:connect,who:8cbc667b…
+De:connect,maz,who:8cbc667b…
+  waits:listen
   state:failed,reason:peer-unavailable
-  req:dial,finished
-  req:connected
+  req:dial,maz,finished
+  req:connected,maz
     waits:dial
 ```
 
-`req:connected` was reached; its `do_fn` detected the failure and returned
-early, re-stamping `%waits:dial` to signal it's still blocked. The De itself
-is unfinished. A higher-level De (maz:3) may decide to retry by seeding a fresh
-`req:dial`. The `%state:failed` lives on the De particle itself, not the req —
-it is the De's conclusion, not a req's transient complaint.
+`De:connect` saw it couldn't proceed (De:listen not yet finished) and stamped
+`%waits:listen`. When the failure arrived from the shim, `%state:failed` was set
+on the De itself — the De's conclusion, not a req's transient complaint.
+`req:connected` re-stamped `%waits:dial` and returned early from its `do_fn`.
 
 ---
 
@@ -409,28 +489,40 @@ it is the De's conclusion, not a req's transient complaint.
 
 ```
 w
-  De:X,maz:N          — managed by reqys(w,'De')
-    req:Y             — managed by reqys(De,'req')
-      waits:Z         — dropped before do_fn, re-stamped if still blocked
-      mutated         — set by oai(c,sc) two-arg; cleared at top of next do()
-      c.do_fn         — micro-main, set once
-      c.reprop_fn     — optional; consumes %mutated before reqys() cleanup
-      finished        — set by rq.finish(req), bumps De version
-  log                 — longer-lived see; persists until Story snaps
+  c.rq = reqys(w,'De')          — De-level requlator stored on w
+  De:X,maz[:N]                  — maz always stamped; 1 prints as bare 'maz'
+    waits:Y                     — optional; assumes De:Y exists up the search path
+    c.do_fn                     — mini-main; or discovered as H.De_X() by name
+    c.on_all_done               — called when all reqs finish
+    req:Z,maz[:N]               — maz always stamped
+      waits:W                   — dropped before do_fn, re-stamped if still blocked
+      mutated                   — set by oai(c,sc) two-arg; cleared at top of next do()
+      init_time                 — stamped on first do_fn call; cleared on second do() pass
+      c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
+      c.reprop_fn               — optional; consumes %mutated before reqys() cleanup
+      finished                  — set by rq.finish(req), bumps De version
+  log                           — longer-lived see; persists until explicitly cleared
 
-reqys(parent, name)   — same middleware, different parent particle
-  .oai(c)            — idempotent seed, no merge
-  .oai(c, sc)        — idempotent seed; merges sc, stamps %mutated if existed
-  .do()              — drops %mutated, drops %waits, runs frontier in maz order
-  .finish(req)       — mark finished, bump parent version, feebly_ponder
-  .all_done()        — true when all reqs finished
-  .pending()         — unfinished reqs
+reqys(parent, name)             — same middleware, different parent particle
+  .oai(c)                      — idempotent seed, no merge
+  .oai(c, sc)                  — idempotent seed; merges sc, stamps %mutated if existed
+  .doai(c, sc)?.(fn)           — oai + set do_fn in one gesture; null if already set
+  .subreqys(name)              — wires default do_fn for Des; hoists %finished
+  .do()                        — cleans %mutated/%init_time, calls w_noproblemo,
+                                  runs frontier in maz order
+  .do(fn)                      — same but calls fn(req,rq) instead of do_fn dispatch
+  .finish(req)                 — mark finished, bump parent version, feebly_ponder
+  .all_done()                  — true when all reqs finished
+  .pending()                   — unfinished reqs
 
-want_savepoint()      — zeros leave_running_until if H.sc.run, then H.main()
+w_noproblemo(particle, opts?)  — drops %waits, %error, %see; opts.log drops %log too
+want_savepoint()               — zeros leave_running_until if H.sc.run, then H.main()
+H.Runstepped()                 — promise resolved when Story next advances a step
+reqyscile(De)                  — outer loop; runs De.c.rq.do(), then on_all_done
 
-e_reqy_done          — general out-of-Atime completion handler
-e_De_X_Y             — specific wrapper for named req in named De
-_De_run(De)          — call in Atime after any state change; runs reqys, checks all_done
+e_reqy_done                    — general out-of-Atime completion handler
+e_De_X_Y                       — specific wrapper for named req in named De
+                                  i_elvisto(w,'De_X_Y',…) → e_De_X_Y; text-searchable pair
 ```
 
 ---
@@ -439,9 +531,7 @@ _De_run(De)          — call in Atime after any state change; runs reqys, check
 
 - Does not fire `H.main()` — callers do that. reqys() is pure particle work.
 - Does not enforce `%waits` as a hard lock — the `do_fn` must guard itself.
-  `%waits` is a declared label for the snap and for reqys()'s skip-guard only.
-- Does not decide when to cull finished reqs — the De's `on_all_done` decides.
-- Does not know about Story steps — savepoints are the caller's responsibility.
-  Use `want_savepoint()` at async boundaries where a snap is meaningful.
-- Does not call `_De_run` — that is always the caller's or elvis's job.
+- Does not call `reqyscile` — that is always the caller's or elvis's job.
   reqys() is unaware of the De's lifecycle; it only manages the req set it holds.
+- Does not force a Story step to happen — only awaits the next one via `H.Runstepped()`
+  when holding a finished req for snap visibility.
