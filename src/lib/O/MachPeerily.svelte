@@ -17,6 +17,104 @@
 
     let {M} = $props()
 
+    // ── LabScript ─────────────────────────────────────────────────────────────
+    // Story dispatches Plan/Prep:N at step-start via Story_prepare_Prep.
+    // Each {i_elvisto,e} child fires Run.i_elvisto(path, event, {esc_key:v,...}).
+    // Multiple i_elvisto children under one Prep fire left-to-right.
+    // Multiple Prep:N under the same step number stack — no dedup inside a Prep.
+    //
+    // In depeel notation: value=1 prints as bare key. Indentation = C depth.
+    // Copy toc.snap blocks verbatim (literal tabs, not spaces) into the Plan block.
+    // Depths: Plan d=1, Prep d=2, i_elvisto d=3, esc d=4.
+
+    let examples = `
+
+── baseline: no Prep needed, auto-Desires seed themselves ────────────────────
+
+  depeel of running snap (step 2, both connected and trusted):
+
+  Bearing
+    Desire,to:listen
+      state:open
+    Desire,to:connect,target:8cbc667b…
+      state:connected
+    Peering,name:bearing,prepub:a1b2c3d4…
+      open
+      Id:a1b2c3d4…,prepri:e5f6a7b8
+    Pier,pub:8cbc667b…
+      Id:8cbc667b…,prepri:c9d0e1f2
+      protocol
+        hello
+          said
+          heard
+        trust
+          said
+          heard
+    self,round:21
+      mung:age
+    requesty_expects,name:said_hello,demand:800,req_i:18,finished
+    requesty_expects,name:heard_hello,demand:800,req_i:19,finished
+    requesty_expects,name:said_trust,demand:1500,req_i:20,finished
+    requesty_expects,name:heard_trust,demand:1500,req_i:21,finished
+
+── scenario A: Nearing not online — Bearing gets peer-unavailable ─────────────
+
+  depeel Plan block:
+    Plan
+      Prep:2
+        i_elvisto:PeeringLive/PeeringLive,e:hold_offline
+          esc:side,v:Nearing
+
+  toc.snap (literal tabs — copy verbatim):
+	{"Plan":1}
+		{"Prep":2}
+			{"i_elvisto":"PeeringLive/PeeringLive","e":"hold_offline"}
+				{"esc":"side","v":"Nearing"}
+
+  snap: Bearing/Desire,to:connect/state:failed,reason:peer-unavailable
+        no Pier on either side
+
+── scenario B: online, Bearing sends a corrupt hello ─────────────────────────
+
+  depeel Plan block:
+    Plan
+      Prep:2
+        i_elvisto:PeeringLive/Bearing,e:corrupt_hello
+
+  toc.snap:
+	{"Plan":1}
+		{"Prep":2}
+			{"i_elvisto":"PeeringLive/Bearing","e":"corrupt_hello"}
+
+  snap: Bearing/Pier/protocol/hello/said but no heard;
+        Nearing has no Pier (hear_hello threw "not them", Pier never upgrades)
+
+── scenario C: connects fine, Bearing disconnects at step 4 ──────────────────
+
+  depeel Plan block:
+    Plan
+      Prep:4
+        i_elvisto:PeeringLive/Bearing,e:force_disconnect
+          esc:seq,v:1
+
+  toc.snap:
+	{"Plan":1}
+		{"Prep":4}
+			{"i_elvisto":"PeeringLive/Bearing","e":"force_disconnect"}
+				{"esc":"seq","v":1}
+
+── scenario A then B (Nearing offline step 2, corrupt hello step 3) ──────────
+
+  toc.snap:
+	{"Plan":1}
+		{"Prep":2}
+			{"i_elvisto":"PeeringLive/PeeringLive","e":"hold_offline"}
+				{"esc":"side","v":"Nearing"}
+		{"Prep":3}
+			{"i_elvisto":"PeeringLive/Bearing","e":"corrupt_hello"}
+
+`
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -39,36 +137,35 @@
 //   %finished, this side stops demanding time — story snaps and any
 //   gap here is captured as the failure it is.
 //
-// Step actions (send_test_binary, force_disconnect) are triggered by
-//   Story Prep elvises and mark %test,kind,seq particles on each side's
-//   w. The expects driver seeds the corresponding expects on sight of
-//   those particles; phase tracking for disconnect/reconnect latches
-//   transitions on the test particle itself.
+// Step actions (send_test_binary, force_disconnect, corrupt_hello,
+//   hold_offline) are triggered by Story Prep elvises. See 'let examples'.
 //
 // Particle layout per side (Bearing shown):
 //   A:Bearing/w:Bearing
-//     %Peerily:1                            .c.P = Peerily
-//     %Peering:1,name:bearing,prepub        .c.inst = Peering
-//       /open:1                             present while PeerServer connected
-//       /Id:1                               .c.Id = Idento
-//     %Pier:1,pub:…                         .c.inst = Pier
-//     %test:binary,seq:S,sent:1             step 5 sender marker
-//     %test:binary,seq:S,expecting:1        step 5 receiver marker (mirrored)
-//       received:1,received_len,received_dige  — set by test_binary handler
-//     %test:disconnect,seq:S,role:closer    step 6+ — phases latch here
-//       phase_disc,phase_open,phase_hello,phase_trust
+//     %Desire:1,to:listen                      auto-seeded — want PeerServer presence
+//       /state:open                            set when {open:1} arrives
+//     %Desire:1,to:connect,target:prepub       auto-seeded for Bearing
+//       /state:dialling|connected|failed       progress sub-particle
+//       /reason:peer-unavailable               on failed
+//     %Peerily:1                               .c.P = Peerily
+//     %Peering:1,name:bearing,prepub:…         concretion → .c.inst = Peering
+//       /open:1                               present while PeerServer connected
+//       /Id:Idento,prepri:…                   Idento object in sc + short prikey fragment
+//     %Pier:1,pub:…                           concretion → .c.inst = Pier
+//       /Id:Idento,prepri:…                   their Idento (after publicKey received)
+//       /protocol:1                           rebuilt each tick from ier truth
+//         /hello:1  /said:1  /heard:1
+//         /trust:1  /said:1  /heard:1
+//     %hook:1,corrupt:hello                   armed by Plan/Prep, consumed on fire
+//     %test:binary,seq:S,sent:1               step 5+ sender marker
+//     %test:disconnect,seq:S,role:closer       step 6+ disconnect phases
 //     %requesty_expects_serial,i:N
 //     %requesty_expects,name:…,demand:N[,seq:S][,finished:1]
-//     %more_visuals:1                       ── dumped each cycle ──────────────
-//       /Peering:1
-//         /Id:1,prikey,pubkey,prepub
-//         /stashed:1,k,v
-//       /Pier:1
-//         /stashed:1,k,v
-//         /protocol:1,said_hello,heard_hello,said_trust,heard_trust
-//       /test:binary,…                      copy for snap
-//       /test:disconnect,…                  copy for snap
-//       /expects:1                          unfinished expects — empty in a clean run
+//     %more_visuals:1                          ── extra junk, rebuilt each cycle ──
+//       /Peering:1  /stashed:1,k,v
+//       /Pier:1     /stashed:1,k,v
+//       /test:binary,…  /test:disconnect,…    copies for snap
+//       /expects:1                            unfinished expects — empty in clean run
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -85,22 +182,25 @@
         for (const side of ['Bearing', 'Nearing']) {
             const w = H.i({ A: side }).i({ w: side })
 
-            // %scheme:Peering — args_fn reads n.c.P/n.c.Id set by w:PeeringLive
-            //   post_fn wires all PeerJS handlers synchronously after construction
+            // %scheme:Peering — args_fn reads n.c.P and n.o({Id:1})[0].sc.Id set by w:PeeringLive.
+            //   post_fn wires all PeerJS handlers synchronously after construction.
+            //   open_suppressed: hold_offline arms this on pn.sc; open handler respects it.
             if (!w.oa({ scheme: 'Peering' })) {
                 const sp = w.i({ scheme: 'Peering' })
                 sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering',
-                    args_fn: (n: TheC) => [n.c.P, n.c.Id, {}],
+                    args_fn: (n: TheC) => [n.c.P, n.o({ Id: 1 })[0]?.sc.Id, {}],
                     post_fn: (eer: Peering, n: TheC, H: House) => {
-                        n.c.P.i_Peering(n.c.Id, eer)
-                        n.sc.prepub = n.c.Id + ''
+                        const Id = n.o({ Id: 1 })[0]?.sc.Id as Idento
+                        n.c.P.i_Peering(Id, eer)
+                        n.sc.prepub = Id?.toString() ?? ''
                         const Side = (n.sc.name as string).replace(/^./, c => c.toUpperCase())
                         eer.Peer.on('open', () => {
+                            if (n.sc.open_suppressed) return   // held offline by a LabScript hook
                             n.oai({ open: 1 })
                             const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
                             if (reg) H.Awo('PeeringLive').drop(reg)
                             console.log(`✅ ${Side} open  ${n.sc.prepub}`)
-                            H.ponder()
+                            H.feebly_ponder()
                         })
                         eer.Peer.on('disconnected', () => {
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
@@ -113,7 +213,7 @@
             }
 
             // %scheme:Pier — args_fn auto-detects P and eer from sibling particles.
-            //   post_fn drains the con buffer that Peering_i_Pier or pier_dialling
+            //   post_fn drains the con buffer that Peering_i_Pier or Desire/connect
             //   attached before concretion ran — this is how we handle the race between
             //   the DataChannel firing con.on('open') and concretion being async.
             if (!w.oa({ scheme: 'Pier' })) {
@@ -175,9 +275,12 @@
                     const sw = H.Awo(side)
                     sw.oai({ Peerily: 1 }).c.P = P
                     const pn = sw.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
-                    pn.c.P  = P
-                    pn.c.Id = Id
-                    pn.i({ Id: 1 }).c.Id = Id
+                    pn.c.P    = P
+                    // immutable definition — Id key holds the Idento itself so args_fn
+                    //   can retrieve it via n.o({Id:1})[0].sc.Id; prepri is the
+                    //   uselessly short private key fragment (identifies key, useless for derivation)
+                    pn.i({ Id: Id, prepri: enhex(Id.privateKey).slice(0, 8) })
+                    pn.sc.prepub = Id.pretty_pubkey()   // on Peering sc for direct neighbourhood access
                     console.log(`🔑 ${side} ${Id}`)
                 }
                 w.oai({ keygen_done: 1 })
@@ -293,8 +396,8 @@
                 const sw  = H.Awo(side)
                 const eer = sw.o({ Peering: 1 })[0]?.c.inst
                 if (!eer) console.warn(`⚠ shim Peering_i_Pier: no eer on ${side}`)
-                const pn  = sw.oai({ Pier: 1, pub, name: pub }) as TheC
-                pn.c._pl_buf = H._pl_buf_attach(con, eer, true)
+                const Pier = sw.oai({ Pier: 1, pub, name: pub }) as TheC
+                Pier.c._pl_buf = H._pl_buf_attach(con, eer, true)
                 // inbound connection — hello exchange will begin once Pier is concretized.
                 //   demand_time_to_think always assigns (housing missing-braces),
                 //   so this freshly demands 2000ms from now regardless of prior value.
@@ -309,6 +412,11 @@
                 //   or hear_hello-triggered say_hello (inbound) is about to fire.
                 //   Demand 1500ms so the hello+publicKey exchange can complete.
                 H.demand_time_to_think(1500)
+
+                // Desire,to:connect arrives at connected state
+                const dConnect = H.Awo(side).o({ Desire: 1, to: 'connect' })[0] as TheC | undefined
+                dConnect?.roai({ state: 1 }, { state: 'connected' })
+
                 // hotwire once — ||= guards against rewiring on reconnect
                 ier.handlers.test_binary ||= async (data: any) => {
                     const sw  = H.Awo(side)
@@ -339,16 +447,18 @@
                 console.warn(`💔 shim Pier_wont_connect  ${tag}`)
                 H.trace('shim', `Pier_wont_connect  ${tag}`)
                 const sw = H.Awo(side)
-                const pn = sw.o({ Pier: 1, pub })[0] as TheC | undefined
-                if (pn) {
+
+                // Desire,to:connect reports the failure
+                const dConnect = sw.o({ Desire: 1, to: 'connect' })[0] as TheC | undefined
+                dConnect?.roai({ state: 1 }, { state: 'failed', reason: 'peer-unavailable' })
+
+                const Pier = sw.o({ Pier: 1, pub })[0] as TheC | undefined
+                if (Pier) {
                     // null the buffer before dropping — prevents in-flight concretion
                     //   post_fn from calling init_begins on the dead connection
-                    pn.c._pl_buf = null
-                    sw.drop(pn)
+                    Pier.c._pl_buf = null
+                    sw.drop(Pier)
                 }
-                // clear pier_dialling so Bearing can re-dial once Nearing is up
-                const pd = sw.o({ pier_dialling: 1 })[0] as TheC | undefined
-                if (pd) sw.drop(pd)
                 H.ponder()
             },
             Pier_reconnect(ier: Pier) {
@@ -357,9 +467,9 @@
                 H.trace('shim', `Pier_reconnect  ${tag}`)
                 // reconnect produces a new con — buffer it onto the existing Pier
                 //   particle so post_fn can call init_begins when the buffer is drained.
-                const con = ier.eer.connect(ier.pub)
-                const pn  = H.Awo(side).o({ Pier: 1, pub: ier.pub })[0] as TheC | undefined
-                if (pn) pn.c._pl_buf = H._pl_buf_attach(con, ier.eer, false)
+                const con  = ier.eer.connect(ier.pub)
+                const Pier = H.Awo(side).o({ Pier: 1, pub: ier.pub })[0] as TheC | undefined
+                if (Pier) Pier.c._pl_buf = H._pl_buf_attach(con, ier.eer, false)
                 H.ponder()
             },
             // < ping and intro not exercised in this test
@@ -403,37 +513,56 @@
 
         if (!Peering.oa({ open: 1 })) w.oai({ see: `⏳ ${side} → PeerServer…` })
 
-        // Phase 2: Bearing initiates outbound when both sides are registered on PeerServer.
+        // seed baseline Desires if absent — Plan/Prep can add more specific ones.
+        //   listen: both sides want to be reachable on PeerServer.
+        //   connect: Bearing auto-initiates toward Nearing (Nearing waits inbound).
+        if (!w.oa({ Desire: 1 })) {
+            w.i({ Desire: 1, to: 'listen' })
+            if (side === 'Bearing') w.i({ Desire: 1, to: 'connect' })
+        }
+
+        // mark listen Desire open once PeerServer confirms us
+        if (Peering.oa({ open: 1 })) {
+            w.o({ Desire: 1, to: 'listen' })[0]
+                ?.roai({ state: 1 }, { state: 'open' })
+        }
+
+        // Phase 2: Bearing initiates outbound when both sides are open on PeerServer.
         //   Nearing must be open before we dial — connecting before it registers yields
-        //   peer-unavailable, which would kill the con the buffer is attached to.
+        //   peer-unavailable, which would be confusable with the hold_offline scenario.
         //   Nearing learns Bearing's pub from the inbound connection, not from dialling.
         //   We dial and buffer — post_fn on %scheme:Pier calls init_begins once concretion
         //   produces the Pier, then replays any events that arrived in the gap.
         if (side === 'Bearing' && Peering.oa({ open: 1 })) {
             const nPeering = H.Awo('Nearing').o({ Peering: 1 })[0]
-            const npub  = nPeering?.sc.prepub as string | undefined
-            const nOpen = nPeering?.oa({ open: 1 })
-            if (npub && nOpen && !w.oa({ Pier: 1 }) && !w.oa({ pier_dialling: 1 })) {
-                w.i({ pier_dialling: 1 })
-                const con = eer.connect(npub)
-                const pn  = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
-                pn.c._pl_buf = H._pl_buf_attach(con, eer, false)
+            const npub     = nPeering?.sc.prepub as string | undefined
+            const nOpen    = nPeering?.oa({ open: 1 })
+            const dConnect = w.o({ Desire: 1, to: 'connect' })[0] as TheC | undefined
+            // any state sub-particle means we're already acting on this Desire
+            const already  = dConnect?.oa({ state: 1 })
+
+            if (npub && nOpen && !w.oa({ Pier: 1 }) && !already) {
+                if (dConnect) dConnect.sc.target = npub   // stamp target on first dial
+                dConnect?.roai({ state: 1 }, { state: 'dialling' })
+                const con  = eer.connect(npub)
+                const Pier = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
+                Pier.c._pl_buf = H._pl_buf_attach(con, eer, false)
                 console.log(`🐻 Bearing → Nearing  ${npub}`)
             }
         }
 
         // Pier handle: concretion populates c.inst via post_fn after draining _pl_buf.
-        //   Until concretion runs, PierN exists but ier is undefined — drive_expects
+        //   Until concretion runs, Pier exists but ier is undefined — drive_expects
         //   sees this and skips hello/trust seeds until ier arrives.
         //   Reconnect: concretion already ran so post_fn won't fire again — drain
         //   the reconnect buffer here when ier is already in hand.
-        const PierN = w.o({ Pier: 1 })[0] as TheC | undefined
+        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
         let ier: Pier | undefined
-        if (PierN) {
-            ier = PierN.c.inst as Pier | undefined
-            if (ier && PierN.c._pl_buf) {
-                const buf = PierN.c._pl_buf as _PierConBuf
-                PierN.c._pl_buf = null
+        if (Pier) {
+            ier = Pier.c.inst as Pier | undefined
+            if (ier && Pier.c._pl_buf) {
+                const buf = Pier.c._pl_buf as _PierConBuf
+                Pier.c._pl_buf = null
                 for (const off of buf.off_fns) off()
                 ier.init_begins(buf.eer, buf.con, buf.inbound)
                 for (const { event, args } of buf.events) {
@@ -442,17 +571,31 @@
             }
         }
 
+        // arm any pending hello corruption before protocol begins — one-shot wrap
+        //   of ier.emit that fires on the next 'hello' call, then restores.
+        //   hook particle is consumed on fire; guard re-checked each tick while
+        //   ier exists and hasn't said hello yet.
+        if (ier && !ier.said_hello) {
+            const hookN = w.o({ hook: 1, corrupt: 'hello' })[0] as TheC | undefined
+            if (hookN) {
+                const real_emit = ier.emit.bind(ier)
+                ier.emit = async (type: string, data: any, opts?: any) => {
+                    if (type === 'hello') {
+                        // bad prefix — hear_hello on the other side throws "not them"
+                        data = { ...data, publicKey: 'deadbeef' + (data.publicKey as string).slice(8) }
+                        ier!.emit = real_emit   // one-shot: restore before the call
+                        w.drop(hookN)
+                        w.i({ log: (w.c.log_i = (w.c.log_i ?? 0) + 1), msg: 'corrupt_hello fired' })
+                    }
+                    return real_emit(type, data, opts)
+                }
+            }
+        }
+
         // phase tracking must run before drive_expects seeds re_* gates
         H._PeeringLive_track_phases(w, ier)
 
         await H._PeeringLive_drive_expects(w, side, eer, ier)
-
-        if (ier) {
-            const hh = (b: boolean) => b ? 'y' : 'n'
-            w.i({ see: `${side} ${ier.pub?.slice(0, 8)}…  hello:${hh(ier.said_hello)}/${hh(ier.heard_hello)}  trust:${hh(ier.said_trust)}/${hh(ier.heard_trust)}` })
-        } else if (Peering.oa({ open: 1 })) {
-            w.oai({ see: `${side} open, awaiting Pier` })
-        }
 
         H._PeeringLive_dump(w, side)
     },
@@ -595,15 +738,12 @@
 //#region Steps
 
     // Triggered by Story Prep — The/Plan/{Prep:N}/{i_elvisto, e, esc[{esc,v}]}.
-    //   Each receives (A, w, e?) where e carries the esc fields in its sc.
+    //   Each receives (A, w, e?) where w is the target worker and e carries the esc fields.
 
     // Send a deterministic binary buffer Bearing→Nearing (or any side→other).
     //   Buffer content is seq-seeded so the dige is stable across runs.
     //   Mirrors an expecting:1 marker onto the other side so its driver
     //   seeds heard_test_binary without needing its own Prep particle.
-    //
-    //   Prep wiring example (steps 5a, 5b for both directions):
-    //     The/Plan/{Prep:5}/{i_elvisto:'PeeringLive/Bearing',e:'send_test_binary'}/{esc:'seq',v:1}
     async send_test_binary(_A: TheC, w: TheC, e?: TheC) {
         const H    = this as House
         const side = w.sc.w as string
@@ -630,9 +770,8 @@
     //   drive_expects seeds the re_* chain and phase_track observes it.
     //
     //   For repeats, use a distinct seq per Prep step:
-    //     The/Plan/{Prep:6}/{i_elvisto:'PeeringLive/Bearing',e:'force_disconnect'}/{esc:'seq',v:1}
-    //     The/Plan/{Prep:7}/{…}/{esc:'seq',v:2}
-    //     The/Plan/{Prep:8}/{…}/{esc:'seq',v:3}
+    //     Prep:6  force_disconnect seq:1
+    //     Prep:7  force_disconnect seq:2
     async force_disconnect(_A: TheC, w: TheC, e?: TheC) {
         const H    = this as House
         const side = w.sc.w as string
@@ -649,6 +788,36 @@
         H.feebly_ponder()
     },
 
+    // Arm a one-shot corruption of the next 'hello' emit on this side.
+    //   Fires on w = the target side's worker (i_elvisto:'PeeringLive/Bearing').
+    //   The actual wrap is applied in _PeeringLive_main each tick while ier
+    //   exists and hasn't said hello — hook particle consumed on fire.
+    //   hear_hello on the other side will throw "not them"; the Pier there
+    //   never upgrades past the raw DataChannel.
+    async corrupt_hello(_A: TheC, w: TheC, _e?: TheC) {
+        w.oai({ hook: 1, corrupt: 'hello' })
+        ;(this as House).feebly_ponder()
+    },
+
+    // Suppress {open:1} on target side so Bearing's dial gets peer-unavailable.
+    //   Fires on w = PeeringLive manager (i_elvisto:'PeeringLive/PeeringLive').
+    //   Drops any existing {open:1} and arms open_suppressed on the Peering
+    //   particle so the PeerJS open handler won't re-add it this step.
+    //   < harder version: destroy the Peering so PeerServer actually unregisters
+    async hold_offline(_A: TheC, w: TheC, e?: TheC) {
+        const H    = this as House
+        const side = (e?.sc.side as string | undefined) ?? 'Nearing'
+        const sw   = H.Awo(side)
+        const pn   = sw.o({ Peering: 1 })[0] as TheC | undefined
+        if (pn) {
+            const openN = pn.o({ open: 1 })[0] as TheC | undefined
+            if (openN) pn.drop(openN)
+            pn.sc.open_suppressed = true
+        }
+        w.i({ log: (w.c.log_i = (w.c.log_i ?? 0) + 1), msg: `hold_offline → ${side}` })
+        H.feebly_ponder()
+    },
+
     // SHA-256 hex of a buffer — compact, stable, displays cleanly in snap diffs.
     async _PeeringLive_dige(buffer: ArrayBuffer | undefined): Promise<string> {
         if (!buffer) return ''
@@ -658,10 +827,10 @@
 //#endregion
 //#region Dump
 
-    // Re-poured each cycle into w/%more_visuals:1/… — snapshots of this
-    //   subtree verify crypto identity, protocol state, test-step results
-    //   (binary dige/len match, disconnect phases), and any outstanding expects.
-    //   A clean run shows no /expects:1 block at all.
+    // Re-poured each cycle into w/%more_visuals:1/… for extra junk.
+    //   Primary protocol state (protocol/hello|trust/said|heard) lives on the
+    //   Pier particle itself, rebuilt each tick from ier truth.
+    //   A clean run shows no /expects:1 block.
     _PeeringLive_dump(w: TheC, _side: string) {
         const mv = w.oai({ more_visuals: 1 }) as TheC
         mv.empty()
@@ -669,27 +838,34 @@
         const Peering = w.o({ Peering: 1 })[0] as TheC | undefined
         if (Peering) {
             const eer  = Peering.c.inst as Peering | undefined
-            const Id   = Peering.c.Id  as Idento  | undefined
             const mv_p = mv.oai({ Peering: 1 }) as TheC
-            if (Id?.privateKey) {
-                const f = Id.freeze()
-                mv_p.oai({ Id: 1, prikey: f.key, pubkey: f.pub, prepub: Id + '' })
-            }
+            // prepub and prepri already live on the {Id:X} particle on Peering itself —
+            //   no private key material here
             for (const [k, v] of Object.entries(eer?.stashed ?? {})) {
                 mv_p.oai({ stashed: 1, k }).sc.v = v
             }
         }
 
-        const PierN = w.o({ Pier: 1 })[0] as TheC | undefined
-        const ier   = PierN?.c.inst as Pier | undefined
-        if (ier) {
+        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
+        const ier  = Pier?.c.inst as Pier | undefined
+
+        // protocol state on the Pier particle — primary narrative of connection progress,
+        //   not relegated to more_visuals. rebuilt each tick so it tracks ier truth exactly.
+        if (ier && Pier) {
+            const proto = Pier.oai({ protocol: 1 }) as TheC
+            proto.empty()
+            const hello = proto.oai({ hello: 1 }) as TheC
+            if (ier.said_hello)  hello.i({ said:  1 })
+            if (ier.heard_hello) hello.i({ heard: 1 })
+            const trust = proto.oai({ trust: 1 }) as TheC
+            if (ier.said_trust)  trust.i({ said:  1 })
+            if (ier.heard_trust) trust.i({ heard: 1 })
+
+            // Pier stashed goes to more_visuals
             const mv_pi = mv.oai({ Pier: 1 }) as TheC
             for (const [k, v] of Object.entries(ier.stashed ?? {})) {
                 mv_pi.oai({ stashed: 1, k }).sc.v = v
             }
-            mv_pi.oai({ protocol: 1,
-                said_hello:  ier.said_hello,  heard_hello: ier.heard_hello,
-                said_trust:  ier.said_trust,  heard_trust: ier.heard_trust })
         }
 
         // test-step particles — copied so snap diffs catch sent/received/phase mismatches

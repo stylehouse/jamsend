@@ -16,8 +16,8 @@ Snap:H
         {"mung":["age"]}	self,round
         see:⏳ Bearing keygen pending…
         Peerily
-        Peering,name:bearing
-          Id
+        Peering,name:bearing,prepub:7acf614d876d69a4
+          {"ref":{"Id":"Idento()"}}	prepri:923f9316
     A:Nearing
       {"mung":["age"]}	self,round
       w:Nearing
@@ -28,6 +28,6 @@ Snap:H
         {"mung":["age"]}	self,round
         see:⏳ Nearing keygen pending…
         Peerily
-        Peering,name:nearing
-          Id
+        Peering,name:nearing,prepub:8cbc667bb0c8e748
+          {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
     {"mung":["id"]}	mo:main,interval:3.6
