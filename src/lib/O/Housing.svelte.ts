@@ -451,7 +451,7 @@ export class House extends StorableHousing {
 
         // if (this.oa()) this.main()
     }
-    
+
     // merge new code into every H.*, from a ghost doing onMount|HMR
     ghostsHaunt(hash: Record<string, Function>) {
         // merge into H.ghosts
@@ -1203,6 +1203,7 @@ export class House extends StorableHousing {
     //   then you grasp the UI side reactively thus: H.ave.ob({any:1,C:1})
     //    which listens to H.ave.version, which bumps for UItime, which is outside Atime.
 
+    // < are all pointlessly $state()? it works via C.version=$state()
     // reactive pile-up of any H/H, so Otro can hoist H**
     subHouses: TheC = $state(new TheC({ sc: { watched: 'subHouses' } }))
     // UI components registered by ghosts via H/%watched:UIs

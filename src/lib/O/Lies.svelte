@@ -362,7 +362,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //     → is_examining glow toggles live, no Liesui re-render needed.
         //
         //   active_doc is created lazily by Lang on first Doc_open, so retry each tick.
-        const ave_C     = H.o({ watched: 'ave' })[0] as TheC | undefined
         const active_doc = ave?.o({ active_doc: 1 })[0] as TheC | undefined
         if (active_doc && !w.c.examining_sig_watch) {
             w.c.examining_sig_watch = true

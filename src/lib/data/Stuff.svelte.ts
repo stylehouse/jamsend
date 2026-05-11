@@ -251,9 +251,15 @@ class StuffIO {
         let M = this.o_query(sc,q)
         return this.o_results(M,sc,q)
     }
-    // from the previous time during replace()
+    // rarely used.
+    // if in replace(),
+    //  o() from before the replace began
     //  which would have the complete set of stuff
     //   while the new one is filling itself out
+    // else
+    //  < give the w|req's last post-do_fn state on X_stable ?
+    //   < implies we might have X_testing
+    //      virtualise C particularity entirely into X?
     bo(c?:TheUniversal,q?):TheN {
         q ||= {}
         q.X ||= this.X_before
