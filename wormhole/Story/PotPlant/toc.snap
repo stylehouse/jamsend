@@ -36,18 +36,22 @@ story:PotPlant
   Plan
   Opt
     For
+    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.022
-      sample:0.009,at:1778580914
-      sample:0.007,at:1778580921
-      sample:0.017,at:1778581731
-      sample:0.015,at:1778581851
-      sample:0.014,at:1778581885
-      sample:0.013,at:1778581893
-      sample:0.052,at:1778582502
-      sample:0.052,at:1778582510
-      sample:0.029,at:1778582738
-      sample:0.013,at:1778583230
-  step,dige:41747dcfb3eee5fe
-  step:2,dige:2a379431de285034
-  step:3,dige:d9c2905f78d532a4
+    TimeTotal:beliefs,avg:0.043
+      sample:0.025,at:1778583647
+      sample:0.025,at:1778583651
+      sample:0.036,at:1778583740
+      sample:0.036,at:1778583751
+      sample:0.039,at:1778583772
+      sample:0.039,at:1778583782
+      sample:0.048,at:1778583791
+      sample:0.057,at:1778583799
+      sample:0.057,at:1778583818
+      sample:0.069,at:1778583965
+  step,dige:a0495f9228abd61e
+  step:2,dige:4bf6dd431fab4c52
+  step:3,dige:2ee46e2b01dddf60
+  step:4,dige:47677855eefe1345
+  step:5,dige:c47358d90b2c57fa
+  step:6,dige:c47358d90b2c57fa

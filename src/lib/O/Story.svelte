@@ -1237,6 +1237,7 @@
                 run.sc.paused = 2
             }
             if (run.sc.paused) { run.c.driving = false; return }
+            Run._resolve_runstepped()   // snap just completed — fire any Runstepped callbacks
             schedule()
         }
 

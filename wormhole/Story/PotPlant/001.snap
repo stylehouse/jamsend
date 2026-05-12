@@ -20,6 +20,7 @@ Snap:H
         {"mung":["age"]}	self,round
         De:repot,init_seq
           req:move_outside,init_seq:2
+            waits:arrival
           req:repot,maz:2
           req:move_inside,maz:3
         De:celebrate,maz:2
@@ -132,6 +133,12 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5_1_2","label":"waits:arrival","parent":"cytoid_1_1"}
+    style,background-color:#32618f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
   {"upsert":1,"id":"cytoid_1_1_5_2","label":"req:repot\nmaz:2","parent":"cytoid_1_1"}
     style,background-color:#61bd42
     style,color:#ccc
@@ -161,5 +168,6 @@ Snap:cytowave
   edge_upsert,id:cytoid_1_1_2_3_3_1,source:cytoid_1_1_2_3,target:cytoid_1_1_2_3_3
   edge_upsert,id:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
   edge_upsert,id:cytoid_1_1_5_1_1,source:cytoid_1_1_5,target:cytoid_1_1_5_1
+  edge_upsert,id:cytoid_1_1_5_1_2_1,source:cytoid_1_1_5_1,target:cytoid_1_1_5_1_2
   edge_upsert,id:cytoid_1_1_5_2_1,source:cytoid_1_1_5,target:cytoid_1_1_5_2
   edge_upsert,id:cytoid_1_1_5_3_1,source:cytoid_1_1_5,target:cytoid_1_1_5_3

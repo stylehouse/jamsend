@@ -121,41 +121,36 @@
 
 
 
-
-
-
-
-
-
-
-
 //#endregion
 //#region PotPlant
 
-    // w/body,hands:2                    — snappable; body.o({pot:1}).length < hands = capacity
+    // w/body,hands:2                    — snappable; capacity = hands - body.o({pot:1}).length
     // w/shelf/*pot/plant|soil,dose:3    — starting positions
     // w/yard/*pot/plant|soil,dose:5     — destination after repotting
-    // w/yard/soil,dose:12               — bulk supply; 2 doses per pot (3+2=5)
+    // w/yard/soil,dose:12               — bulk supply; 2 doses per pot (3→5)
     //
-    // De:repot
-    //   req:move_outside                — shelf→body→yard via Runstepped snap
-    //   req:repot,maz:2                 — draw 2 from yard/soil, pot soil dose:3→5
-    //   req:move_inside,maz:3           — yard→body→shelf
+    // step 1: full shelf, no Des yet
+    // step 2+: De:repot seeded out of Atime after Runstepped resolves
+    //   req:move_outside       — body pots present on entry → unload to yard; then load from shelf
+    //   req:repot,maz:2        — draw 2 from yard/soil, pot soil dose:3→5
+    //   req:move_inside,maz:3  — body pots present on entry → unload to shelf; then load from yard
     // De:celebrate,maz:2
 
     Run_A_PotPlant(this: House) {
         const A = this.o({ A: 'PotPlant' })[0] || this.i({ A: 'PotPlant' })
         if (!A.o({ w: 'PotPlant' }).length) {
-            const w    = A.i({ w: 'PotPlant' })
+            const w  = A.i({ w: 'PotPlant' })
             w.i({ body: 1, hands: 2 })
-            const sh   = w.oai({ shelf: 1 })
+            const sh = w.oai({ shelf: 1 })
             for (const name of ['rose', 'fern', 'cactus']) {
                 const pot = sh.oai({ pot: name })
                 pot.i({ plant: 1 })
                 pot.i({ soil: 1, dose: 3 })
             }
-            const yard = w.oai({ yard: 1 })
-            yard.i({ soil: 1, dose: 12 })   // 3 pots × 2 doses each
+            w.oai({ yard: 1 }).i({ soil: 1, dose: 12 })   // 3 pots × 2 doses each
+            w.i({ arrival: 1 })   // dropped by Runstepped after step:1 snap; blocks move_outside
+
+            this.Runstepped().then(async () => { await w.r({ arrival: 1 }, {}) })
         }
         console.log(`🪴 ${this.name} PotPlant wired`)
     },
@@ -170,28 +165,27 @@
         dq.subreqys('req')
 
         // ── De:repot ──────────────────────────────────────────────────────────
+        // doai finds De:repot already seeded (by Runstepped), sets do_fn once
         dq.doai({ De: 'repot' })?.(async (De: TheC, dq) => {
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
 
             // req:move_outside
-            //   phase A: if body%is_there_yet, unload body→yard and clear flag
-            //   phase B: load shelf→body up to hands capacity, snap via Runstepped
+            //   body pots on entry → they arrived last step (post-snap) → unload to yard
+            //   then load fresh from shelf up to capacity; Runstepped gates the next unload
             rq.doai({ req: 'move_outside' })?.(async (req, rq) => {
-                if (body.c.is_there_yet) {
-                    body.c.is_there_yet = false
-                    for (const pot of body.o({ pot: 1 }) as TheC[]) {
-                        await body.r({ pot: pot.sc.pot }, {})
-                        yard.i(pot)
-                        w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} in yard` })
-                    }
+                if (w.o({ arrival: 1 }).length) { req.i({ waits: 'arrival' }); return }
+
+                for (const pot of body.o({ pot: 1 }) as TheC[]) {
+                    await body.r({ pot: pot.sc.pot }, {})
+                    yard.i(pot)
+                    w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} in yard` })
                 }
 
                 const onShelf  = shelf.o({ pot: 1 }) as TheC[]
-                const onBody   = body.o({ pot: 1 }) as TheC[]
-                const capacity = (body.sc.hands as number) - onBody.length
+                const capacity = (body.sc.hands as number) - body.o({ pot: 1 }).length
 
-                if (!onShelf.length && !onBody.length) {
+                if (!onShelf.length && !body.o({ pot: 1 }).length) {
                     rq.finish(req)
                     return
                 }
@@ -203,15 +197,11 @@
                 }
 
                 if (body.o({ pot: 1 }).length) {
-                    // snap body/pot:* before transit completes
-                    this.Runstepped().then(() => {
-                        body.c.is_there_yet = true
-                        this.feebly_ponder()
-                    })
+                    this.Runstepped().then(() => this.feebly_ponder())
                 }
             })
 
-            // req:repot,maz:2 — batch fn: top up each pot by 2 doses from yard supply
+            // req:repot,maz:2 — batch fn: top up each yard pot by 2 doses
             rq.oai({ req: 'repot', maz: 2 })
             await rq.do(async (req: TheC, rq) => {
                 if (req.sc.req !== 'repot') return
@@ -229,20 +219,16 @@
 
             // req:move_inside,maz:3 — mirror of move_outside
             rq.doai({ req: 'move_inside', maz: 3 })?.(async (req, rq) => {
-                if (body.c.is_there_yet) {
-                    body.c.is_there_yet = false
-                    for (const pot of body.o({ pot: 1 }) as TheC[]) {
-                        await body.r({ pot: pot.sc.pot }, {})
-                        shelf.i(pot)
-                        w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} back on shelf` })
-                    }
+                for (const pot of body.o({ pot: 1 }) as TheC[]) {
+                    await body.r({ pot: pot.sc.pot }, {})
+                    shelf.i(pot)
+                    w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} back on shelf` })
                 }
 
                 const inYard   = yard.o({ pot: 1 }) as TheC[]
-                const onBody   = body.o({ pot: 1 }) as TheC[]
-                const capacity = (body.sc.hands as number) - onBody.length
+                const capacity = (body.sc.hands as number) - body.o({ pot: 1 }).length
 
-                if (!inYard.length && !onBody.length) {
+                if (!inYard.length && !body.o({ pot: 1 }).length) {
                     rq.finish(req)
                     return
                 }
@@ -253,10 +239,7 @@
                 }
 
                 if (body.o({ pot: 1 }).length) {
-                    this.Runstepped().then(() => {
-                        body.c.is_there_yet = true
-                        this.feebly_ponder()
-                    })
+                    this.Runstepped().then(() => this.feebly_ponder())
                 }
             })
 
@@ -282,8 +265,6 @@
     },
 
 //#endregion
-
-
 
 
 
