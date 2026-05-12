@@ -239,7 +239,7 @@
     // Toggle lives here so the button position doesn't move when the map opens.
     let minimap_open = $state(true)
 
-    // expanded: makes cm-scroller take 90vh instead of the default 50vh.
+    // expanded: makes cm-scroller take 80vh instead of the default 50vh.
     // V button in bar — same Λ/V rotation idiom as Storui's diff-panel expand.
     let expanded = $state(false)
 
@@ -630,7 +630,7 @@
         <button class="lte-map-btn" class:active={minimap_open}
                 onclick={() => minimap_open = !minimap_open}
                 title="{minimap_open ? 'hide minimap' : 'show minimap'}">map</button>
-        <!-- V button: expand editor to 90vh / collapse to 50vh.
+        <!-- V button: expand editor to 80vh / collapse to 50vh.
              Λ (upside-down V) when expanded — same idiom as Storui's diff panel. -->
         <button class="lte-expand-btn" class:open={expanded}
                 onclick={() => expanded = !expanded}
@@ -638,10 +638,15 @@
     </div>
     {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
-    <!-- lte-mm-host is a child so it's sized to the editor area, not the whole panel -->
     <div class="lte-cm" bind:this={container}>
+        <!-- Horizontal V chevron — always at the minimap/scrollbar junction.
+             Stays in place whether or not minimap is open.
+             Points left (<) when closed, right (>) when open — same V char, ±90°. -->
+        <button class="lte-mm-chevron" class:open={minimap_open}
+                onclick={() => minimap_open = !minimap_open}
+                title="{minimap_open ? 'hide minimap' : 'show minimap'}">V</button>
         {#if minimap_open}
-        <!-- lte-mm-host overlays the editor; pins left of the scrollbar gutter -->
+        <!-- lte-mm-host overlays the editor canvas; chevron floats over the top corner (z-index 3) -->
         <div class="lte-mm-host">
             <DocMinimap {H} {view} {active_path} />
         </div>
@@ -668,7 +673,7 @@
 
         /* knob these two to move both scrollbar gutter and minimap together */
         --lte-scrollbar-w: 2em;
-        --lte-minimap-w:   70%;
+        --lte-minimap-w:   25%;
     }
     .lte-bar {
         display: flex; align-items: center; gap: 8px;
@@ -765,20 +770,48 @@
         border-radius: 0.8em;
     }
 
+    /* ── horizontal V chevron ────────────────────────────────────────────── */
+    /* Always rendered inside lte-cm; position:absolute keeps it at the     */
+    /* minimap/scrollbar junction regardless of minimap visibility.         */
+    /* Same Georgia V as the expand button, rotated ±90° to make < or >.   */
+    /* < (−90°) = closed, suggesting the minimap is to the left / hidden.  */
+    /* > (+90°) = open, suggesting the minimap is here, pointing into it.  */
+    .lte-mm-chevron {
+        position: absolute;
+        top:   2px;
+        right: var(--lte-scrollbar-w);
+        z-index: 3;
+        background: none; border: none;
+        color: #2a3040; cursor: pointer;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 13px; font-weight: 400; line-height: 1;
+        width: 18px; height: 18px; padding: 0;
+        display: flex; align-items: center; justify-content: center;
+        transition: color 0.15s, transform 0.2s;
+        transform-origin: center;
+        transform: rotate(-90deg);   /* < — closed */
+    }
+    .lte-mm-chevron:hover { color: #7090b0 }
+    .lte-mm-chevron.open  { transform: rotate(90deg); }  /* > — open */
+
     /* ── minimap overlay host ────────────────────────────────────────────── */
     /* Absolutely positioned inside lte-cm (its containing block), so       */
-    /* top/bottom track the editor area exactly — bar is not in scope.      */
+    /* top/bottom track the editor area exactly — canvas starts at top:0.   */
     /* overflow:hidden clips DocMinimap's canvas to the editor viewport.    */
-    /* DocMinimap fills this host; its own pointer-events handle clicks.    */
+    /* The chevron button floats over the canvas top-right corner (z-index  */
+    /* 3 vs host's 1) — no padding-top spacer needed.  The blank area at   */
+    /* the chevron position when minimap is open is handled by DocMinimap   */
+    /* having no header (remove its internal hide button — it's replaced by */
+    /* this chevron and the "map" button in the bar).                       */
     .lte-mm-host {
         position: absolute;
-        top:      0;
-        bottom:   0;
-        right:    var(--lte-scrollbar-w);
-        width:    var(--lte-minimap-w);
-        overflow: hidden;           /* clips minimap canvas to editor area */
-        pointer-events: none;       /* host is invisible; children re-enable as needed */
-        z-index:  1;                /* above the editor canvas, below any tooltips */
+        top:    0;
+        bottom: 0;
+        right:  var(--lte-scrollbar-w);
+        width:  var(--lte-minimap-w);
+        overflow:       hidden;     /* clips minimap canvas to editor viewport */
+        pointer-events: none;       /* host transparent; children re-enable */
+        z-index: 1;
     }
     .lte-mm-host > :global(*) { pointer-events: auto; }
 

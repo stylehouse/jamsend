@@ -82,10 +82,6 @@
     // summary (region/def/point counts) actually changes.
     let last_log_summary = ''
 
-    // Visibility toggle — collapsible strip.  Persisted only in module memory
-    // for now (no Stuff sc storage); flip with the chevron on the strip header.
-    let visible = $state(true)
-
     // Per-region collapsed state for the strip's own UI (independent of CM folds).
     // Keyed by `${from_line}:${label}` so re-orderings don't bleed state.
     let collapsed = $state(new Map<string, boolean>())
@@ -519,10 +515,8 @@
     }
 </script>
 
-{#if visible}
 <div class="lmm">
     <div class="lmm-head">
-        <button class="lmm-toggle" onclick={() => visible = false} aria-label="Hide minimap" title="Hide">‹</button>
         <button class="lmm-nav" onclick={go_back} disabled={!can_back}
                 title="Back" aria-label="Back">◂</button>
         <button class="lmm-nav" onclick={go_forward} disabled={!can_forward}
@@ -619,16 +613,12 @@
         {/each}
     </div>
 </div>
-{:else}
-    <button class="lmm-show" onclick={() => visible = true} aria-label="Show minimap" title="Show minimap">›</button>
-{/if}
 
 <style>
     .lmm {
-        position: absolute; top: 24px; right: 0; bottom: 0;
-        /* top:24px clears the .lte-bar; bottom:0 fills rest of .lte's height.
-           Anchored to .lte (position:relative) so it sits over .lte-cm only. */
-        width: 200px;
+        position: absolute; top: 0; right: 0; bottom: 0;
+        /* anchored to lte-mm-host (position:absolute), which is the containing block */
+        width: 100%;    /* host controls width via --lte-minimap-w */
         display: flex; flex-direction: column;
         background: rgba(10, 10, 14, 0.78);
         border-left: 1px solid #1a1a1a;
@@ -644,11 +634,6 @@
         border-bottom: 1px solid #1a1a1a;
         flex-shrink: 0;
     }
-    .lmm-toggle {
-        background: none; border: none; color: #6a8a9a; cursor: pointer;
-        font-size: 14px; padding: 0 4px; line-height: 1;
-    }
-    .lmm-toggle:hover { color: #a0c0d0; }
     .lmm-nav {
         background: none; border: none; cursor: pointer;
         color: #6a8a9a; padding: 0 3px; font-size: 12px; line-height: 1;
@@ -656,16 +641,6 @@
     }
     .lmm-nav:hover:not(:disabled) { color: #c0d0e0; }
     .lmm-nav:disabled { color: #2a3a45; cursor: default; }
-    .lmm-show {
-        position: absolute; top: 24px; right: 0;
-        background: rgba(10, 10, 14, 0.7);
-        border: 1px solid #1a1a1a; border-right: none;
-        border-radius: 3px 0 0 3px;
-        padding: 4px 6px;
-        color: #6a8a9a; cursor: pointer;
-        z-index: 10;
-    }
-    .lmm-show:hover { color: #a0c0d0; }
     .lmm-title {
         color: #678; font-size: 10px;
         flex: 1; min-width: 0;
