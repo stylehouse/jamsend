@@ -3,20 +3,23 @@ Snap:H
     A:PotPlant
       {"mung":["age"]}	self,round:6
       w:garden
-        pot:rose
-          plant
-          soil:3
-        pot:fern
-          plant
-          soil:3
-        pot:cactus
-          plant
-          soil:3
+        shelf
+          pot:rose
+            plant
+            soil,dose:3
+          pot:fern
+            plant
+            soil,dose:3
+          pot:cactus
+            plant
+            soil,dose:3
+        yard
+          soil,dose:15
         o_elvis:move_pot_done
-        De:gather_outside,init_time:1778573212048
-          req:move_pot,pot:rose,moving,init_time:1778573212049
-          req:move_pot,pot:fern,moving,init_time:1778573212049
-          req:move_pot,pot:cactus,moving,init_time:1778573212050
+        De:gather_outside,init_seq:6
+          req:move_pot,pot:rose,moving,init_seq:16
+          req:move_pot,pot:fern,moving,init_seq:17
+          req:move_pot,pot:cactus,moving,init_seq:18
         De:repot,maz:2
         De:celebrate,maz:3
         log
@@ -26,7 +29,7 @@ Snap:H
         {"mung":["age"]}	self,round:6
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_4","label":"De:gather_ou…\ninit_time:1778573199892"}
-  {"upsert":1,"id":"cytoid_1_1_4_1","label":"req:move_pot\npot:rose\nmoving\ninit_time:1778573199892"}
-  {"upsert":1,"id":"cytoid_1_1_4_2","label":"req:move_pot\npot:fern\nmoving\ninit_time:1778573199893"}
-  {"upsert":1,"id":"cytoid_1_1_4_3","label":"req:move_pot\npot:cactus\nmoving\ninit_time:1778573199893"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"De:gather_ou…\ninit_seq:6"}
+  {"upsert":1,"id":"cytoid_1_1_3_1","label":"req:move_pot\npot:rose\nmoving\ninit_seq:16"}
+  {"upsert":1,"id":"cytoid_1_1_3_2","label":"req:move_pot\npot:fern\nmoving\ninit_seq:17"}
+  {"upsert":1,"id":"cytoid_1_1_3_3","label":"req:move_pot\npot:cactus\nmoving\ninit_seq:18"}

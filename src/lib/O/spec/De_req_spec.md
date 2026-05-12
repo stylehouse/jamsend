@@ -85,7 +85,7 @@ Each req has:
   Presence in a frozen req is a diagnostic: "stopped here, waiting for this."
 - `%mutated` — set by `reqys().oai(c,sc)` when the two-arg form merges new
   props into an existing req. Cleaned at the top of the next `do()` pass.
-- `%init_time` — stamped by reqys() on the first `do_fn` invocation.
+- `%init_seq` — assigned by reqys() on the first `do_fn` invocation.
   Cleaned at the top of the second `do()` pass. A req can use it to know
   whether this is its first run, without keeping that state itself.
 - `%finished` — set by reqys when the req completes. Causes De version bump.
@@ -120,9 +120,9 @@ Forked from `requesty_serial()` in Hovercraft. Key differences:
 - Version-bumps the parent on every `%finished` transition.
 - Signals `all_done` when every req is finished (or none exist).
 - Calls `w_noproblemo(req)` before each `do_fn` — drops `%waits`, `%error`, `%see`.
-- Drops `%mutated` and `%init_time` at the top of each `do()` pass
+- Drops `%mutated` and `%init_seq` at the top of each `do()` pass
   (after any `reprop_fn` has had a chance to consume `%mutated`).
-- Stamps `%init_time` on the first `do_fn` call for each req.
+- Stamps `%init_seq` on the first `do_fn` call for each req.
 - Culls finished reqs after a Story step boundary (see Culling).
 
 ### API
@@ -199,7 +199,7 @@ req:listening,maz:3         — won't run until register finished
 
 This replaces explicit `%waits` for strictly sequential chains, keeps the snap clean.
 
-### %mutated and %init_time lifecycle
+### %mutated and %init_seq lifecycle
 
 Both follow the same pattern: stamped at a meaningful first moment, cleaned at the
 top of the following `do()` pass.
@@ -208,7 +208,7 @@ top of the following `do()` pass.
 existed. A `reprop_fn` on `req.c` may consume it first; otherwise reqys() deletes it
 directly. The response should be idempotent — `%mutated` is a hint, not a reliable event.
 
-`%init_time` — reqys() stamps it (as a timestamp) when `do_fn` is called the first
+`%init_seq` — reqys() stamps it (as a deterministic counter — parent.c._init_i incremented, Dip-style) when `do_fn` is called the first
 time. The req can read it to know "this is my first run." The second `do()` pass drops
 it. Its window is exactly one run: from first invocation until the cycle that follows.
 
@@ -543,7 +543,7 @@ w
     req:Z[,maz:N]               — maz omitted when 1
       waits:W                   — dropped before do_fn, re-stamped if still blocked
       mutated                   — set by oai(c,sc) two-arg; cleared at top of next do()
-      init_time                 — stamped on first do_fn call; cleared on second do() pass
+      init_seq                 — stamped on first do_fn call; cleared on second do() pass
       c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
       c.reprop_fn               — optional; consumes %mutated before reqys() cleanup
       finished                  — set by rq.finish(req), bumps De version
@@ -554,7 +554,7 @@ reqys(parent, name)             — same middleware, different parent particle
   .oai(c, sc)                  — idempotent seed; merges sc, stamps %mutated if existed
   .doai(c, sc)?.(fn)           — oai + set do_fn in one gesture; null if already set
   .subreqys(name)              — wires default do_fn for Des; hoists %finished
-  .do()                        — cleans %mutated/%init_time, calls w_noproblemo,
+  .do()                        — cleans %mutated/%init_seq, calls w_noproblemo,
                                   runs frontier in maz order
   .do(fn)                      — same but calls fn(req,rq) instead of do_fn dispatch
   .finish(req)                 — mark finished, bump parent version, feebly_ponder

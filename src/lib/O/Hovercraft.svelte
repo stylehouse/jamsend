@@ -12,7 +12,7 @@
     onMount(async () => {
     await M.eatfunc({
 
-//#region reqy
+//#region requesty_serial
     // have a queue of things to work on (and get finished)
     async requesty_serial(w,t) {
         let reqserialc = {}
@@ -110,7 +110,6 @@
     },
 //#endregion
 
-
 //#region reqys
 
     // Fork of requesty_serial() — see History in De_req_spec for the lineage.
@@ -200,7 +199,7 @@
                         delete req.sc.mutated
                     }
                     if (req.c._clean_init_next) {
-                        delete req.sc.init_time
+                        delete req.sc.init_seq
                         delete req.c._clean_init_next
                     }
                 }
@@ -224,9 +223,11 @@
                     // drop %waits, %error, %see before each do_fn — same as w before think()
                     await H.w_noproblemo(req)
 
-                    // stamp %init_time on first run; clean it at the top of the next pass
-                    if (!req.sc.init_time) {
-                        req.sc.init_time = Date.now()
+                    // stamp %init_seq on first run — deterministic counter on parent.c,
+                    //   same style as Dip_assign's i counter. clean it next pass.
+                    if (!req.sc.init_seq) {
+                        parent.c._init_i = (parent.c._init_i || 0) + 1
+                        req.sc.init_seq = parent.c._init_i
                         req.c._clean_init_next = true
                     }
 
