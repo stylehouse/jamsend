@@ -108,6 +108,189 @@
         }
         return requlator
     },
+//#endregion
+
+
+//#region reqys
+
+    // Fork of requesty_serial() — see History in De_req_spec for the lineage.
+    // parent: the De (or w for the De layer)
+    // t:      particle key name — 'req' inside a De, 'De' at the w layer
+    // q:      optional requlator config
+    //   q.do_fn        — fallback do_fn for particles that carry none of their own
+    //   q.tweak_process — caller annotation; stored on rq for external inspection
+
+    reqys(parent: TheC, t: string, q: { do_fn?: Function, tweak_process?: 1 } = {}) {
+        const H   = this
+        const key = { [t]: 1 }
+
+        let rq: any; rq = {
+
+            o(sc = {}): TheC[] {
+                return parent.o({ ...key, ...sc }) as TheC[]
+            },
+
+            // maz:1 is implied — never stamped.
+            // two-arg form merges sc into existing particle and stamps %mutated.
+            oai(c: Record<string,any>, sc: Record<string,any> = {}): TheC {
+                const maz = c.maz ?? sc.maz ?? 1
+                const existing = rq.o(c)[0]
+                if (existing) {
+                    if (Object.keys(sc).length) {
+                        // two-arg merge
+                        if (maz > 1) existing.sc.maz = maz; else delete existing.sc.maz
+                        Object.assign(existing.sc, sc)
+                        existing.sc.mutated = 1
+                    }
+                    return existing
+                }
+                const stamp: any = { ...key, ...c, ...sc }
+                if (maz <= 1) delete stamp.maz; else stamp.maz = maz
+                return parent.oai(stamp)
+            },
+
+            // seed + wire do_fn in one gesture.
+            //   returns a setter fn the first time (do_fn not yet set), null thereafter.
+            //   ?.() makes repeat calls a no-op — safe to call every tick.
+            doai(c: Record<string,any>, sc: Record<string,any> = {}) {
+                const particle = rq.oai(c, sc)
+                if (particle.c.do_fn) return null
+                return (fn: Function) => { particle.c.do_fn = fn }
+            },
+
+            // wire sub-reqys: De particles without a do_fn get one that
+            //   runs reqys(particle, name).do() and hoists %finished when all done.
+            //   stored as a flag; do() wires any newcomers lazily, so call order vs oai is free.
+            subreqys(name: string) {
+                rq._subreqys_name = name
+            },
+
+            // frontier: highest maz where all reqs at that level are %finished.
+            //   eligible reqs: maz ≤ frontier + 1.
+            _frontier(): number {
+                const all = rq.o()
+                if (!all.length) return 1
+                const levels = [...new Set(all.map((r: TheC) => (r.sc.maz as number) || 1))].sort((a,b)=>a-b)
+                for (const lv of levels) {
+                    if (all.filter((r:TheC)=>((r.sc.maz as number)||1)===lv).some((r:TheC)=>!r.sc.finished))
+                        return lv
+                }
+                return (levels[levels.length-1] as number) + 1
+            },
+
+            async do(fn?: Function) {
+                const all = rq.o()
+
+                // lazy subreqys wiring — pick up newly seeded particles
+                if (rq._subreqys_name) {
+                    for (const particle of all) {
+                        particle.c.rq ||= H.reqys(particle, rq._subreqys_name)
+                        particle.c.do_fn ||= async (p: TheC, dq: any) => {
+                            await particle.c.rq.do()
+                            if (particle.c.rq.all_done() && !particle.sc.finished)
+                                dq.finish(particle)
+                        }
+                    }
+                }
+
+                // clean %mutated (reprop_fn first) and %init_time at top of each pass
+                for (const req of all) {
+                    if (req.sc.mutated) {
+                        req.c.reprop_fn?.(req)
+                        delete req.sc.mutated
+                    }
+                    if (req.c._clean_init_next) {
+                        delete req.sc.init_time
+                        delete req.c._clean_init_next
+                    }
+                }
+
+                // cull finished — defer to next Story step when inside a run
+                for (const req of [...all]) {
+                    if (!req.sc.finished) continue
+                    if (H.c.runtime) {
+                        H.Runstepped().then(() => parent.drop(req))
+                    } else {
+                        parent.drop(req)
+                    }
+                }
+
+                const frontier = rq._frontier()
+                const eligible = all.filter((r: TheC) =>
+                    !r.sc.finished && ((r.sc.maz as number) || 1) <= frontier
+                )
+
+                for (const req of eligible) {
+                    // drop %waits, %error, %see before each do_fn — same as w before think()
+                    await H.w_noproblemo(req)
+
+                    // stamp %init_time on first run; clean it at the top of the next pass
+                    if (!req.sc.init_time) {
+                        req.sc.init_time = Date.now()
+                        req.c._clean_init_next = true
+                    }
+
+                    const handler = fn ?? req.c.do_fn ?? q.do_fn
+                    if (handler) await handler(req, rq)
+                }
+            },
+
+            // mark finished, bump parent version, ponder
+            finish(req: TheC) {
+                if (req.sc.finished) return
+                req.sc.finished = 1
+                parent.bump_version?.()
+                H.feebly_ponder()
+            },
+
+            all_done(): boolean {
+                const all = rq.o()
+                return all.length > 0 && all.every((r: TheC) => r.sc.finished)
+            },
+            pending(): TheC[] {
+                return rq.o().filter((r: TheC) => !r.sc.finished)
+            },
+        }
+
+        if (q.tweak_process) rq.tweak_process = 1
+        return rq
+    },
+
+    // outer loop for a De — runs De.c.rq.do() then on_all_done if complete.
+    //   always call in Atime; out-of-Atime state changes reach this via elvis.
+    async reqyscile(De: TheC) {
+        await De.c.rq?.do()
+        if (De.c.rq?.all_done()) await De.c.on_all_done?.()
+    },
+
+    // request a Story breath before the chain continues.
+    //   no-op outside a Story run — safe to call unconditionally from a do_fn.
+    want_savepoint() {
+        if (!this.c.runtime) return
+        this.c.leave_running_until = 0
+        this.main()
+    },
+
+    // promise resolved when Story next advances a step.
+    //   reqys() uses this to hold finished reqs until they appear in a snap.
+    //   Story calls _resolve_runstepped() at each step advance.
+    Runstepped(): Promise<void> {
+        this.c._runstepped_q ||= []
+        return new Promise(resolve => (this.c._runstepped_q as Function[]).push(resolve))
+    },
+    _resolve_runstepped() {
+        const q = (this.c._runstepped_q ?? []) as Function[]
+        this.c._runstepped_q = []
+        for (const resolve of q) resolve()
+    },
+
+    // extends w_forgets_problems with optional %log clearing
+    async w_noproblemo(particle: TheC, opts: { log?: 1 } = {}) {
+        await this.w_forgets_problems(particle)
+        if (opts.log) {
+            for (const log of particle.o({ log: 1 }) as TheC[]) particle.drop(log)
+        }
+    },
 
 //#endregion
 //#region Dip_assign

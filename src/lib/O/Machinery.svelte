@@ -115,7 +115,149 @@
 
 
 
+//#endregion
+//#region Stuff PotPlant
 
+    // De:gather_outside/req:move_pot  — carry pots outside, two hands at a time (async per pot)
+    // De:repot,maz:2 /req:repot,pot:$ — crack each pot, swap %soil:3 for %soil:5
+    // De:celebrate,maz:3/req:confetti — fires once everything is repotted
+    //
+    // proves: three-level De mazlow, %waits on a blocked req, %init_time first-run guard,
+    //         async elvis completion, %log arc on w, doai vs rq.do(fn) contrast
+
+    Run_A_PotPlant(this: House) {
+        const A = this.o({ A: 'PotPlant' })[0] || this.i({ A: 'PotPlant' })
+        if (!A.o({ w: 'garden' }).length) {
+            const w = A.i({ w: 'garden' })
+            for (const name of ['rose', 'fern', 'cactus'] as const) {
+                // pot/%plant and pot/%soil:3 are the starting state we'll transform
+                const pot = w.oai({ pot: name })
+                pot.i({ plant: 1 })
+                pot.i({ soil: 3 })
+            }
+        }
+        console.log(`🪴 ${this.name} PotPlant wired`)
+    },
+
+    async garden(A, w) {
+        // two hands per Atime — resets at top of every garden() call
+        w.c.hands = 2
+
+        // De-layer requlator stored on w.c.rq, wired once
+        w.c.rq ||= this.reqys(w, 'De')
+        const dq = w.c.rq
+
+        // move_pot_done is handled inline here, not by a separate e_ method
+        for (const ev of this.o_elvis(w, 'move_pot_done')) {
+            // stamps w/{o_elvis:'move_pot_done'} so _Aw_think routes here, not to H.e_move_pot_done
+            const De  = ev.c.De  as TheC
+            const req = ev.c.req as TheC
+            if (De && req && !req.sc.finished) {
+                w.oai({ log: 1 }).i({ msg: `${req.sc.pot} outside` })
+                this.reqys(De, 'req').finish(req)   // bumps De version, feebly_ponder
+                // reqyscile: re-run De's req layer in this Atime
+                //   if all done, hoist De%finished so maz:2 can unlock
+                await De.c.rq?.do()
+                if (De.c.rq?.all_done() && !De.sc.finished) {
+                    this.want_savepoint()   // Story snaps all-outside before repot begins
+                    dq.finish(De)
+                }
+            }
+        }
+
+        // ── De:gather_outside ──────────────────────────────────────────────────
+        // do_fn set once via doai; dq.do() calls it every tick regardless
+        await dq.doai({ De: 'gather_outside' })?.(async (De: TheC, dq) => {
+            De.c.rq ||= this.reqys(De, 'req')
+            const rq = De.c.rq
+
+            // one req per pot — oai is idempotent; doai sets do_fn once
+            for (const pot of w.o({ pot: 1 })) {
+                await rq.doai({ req: 'move_pot', pot: pot.sc.pot })?.(async (req, rq) => {
+                    if (req.sc.moving) return   // out-of-Atime carry in flight
+
+                    if (w.c.hands <= 0) {
+                        req.i({ waits: 'hands' })   // re-stamped each blocked run — diagnostic
+                        return
+                    }
+
+                    if (req.sc.init_time) {
+                        // first run only — init_time cleaned by reqys() at top of next do() pass
+                        w.oai({ log: 1 }).i({ msg: `carrying ${req.sc.pot}` })
+                    }
+
+                    w.c.hands--
+                    req.sc.moving = 1
+
+                    // out of Atime: simulate the trip, then elvis back
+                    this.post_do(async () => {
+                        await new Promise(r => setTimeout(r, 700))
+                        this.i_elvisto(w, 'move_pot_done', { c: { De, req } })
+                    })
+                    this.demand_time_to_think(1500)
+                })
+            }
+
+            await rq.do()
+
+            if (rq.all_done() && !De.sc.finished) {
+                this.want_savepoint()
+                dq.finish(De)
+            }
+        })
+
+        // ── De:repot,maz:2 ────────────────────────────────────────────────────
+        // only eligible once all maz:1 Des are finished
+        // uses rq.do(fn) — one batch function drives all reqs: the requesty_serial habit
+        //   contrast with doai above, where each req carries its own do_fn
+        await dq.doai({ De: 'repot' }, { maz: 2 })?.(async (De: TheC, dq) => {
+            De.c.rq ||= this.reqys(De, 'req')
+            const rq = De.c.rq
+
+            // seed all repot reqs without do_fns — batch fn below attends them
+            for (const pot of w.o({ pot: 1 })) {
+                await rq.oai({ req: 'repot', pot: pot.sc.pot })
+            }
+
+            // one function drives all trying reqs — no do_fn per req, requesty_serial style
+            await rq.do(async (req, rq) => {
+                const pot = w.o({ pot: req.sc.pot })[0]
+                if (!pot) return
+                // swap soil — synchronous, finish inline, no elvis needed
+                await pot.r({ soil: 1 }, {})
+                pot.i({ soil: 5 })
+                w.oai({ log: 1 }).i({ msg: `repotted ${req.sc.pot}` })
+                rq.finish(req)
+            })
+
+            if (rq.all_done() && !De.sc.finished) {
+                dq.finish(De)
+            }
+        })
+
+        // ── De:celebrate,maz:3 ────────────────────────────────────────────────
+        // a third mazlow tier — proves maz:3 waits for maz:1 and maz:2 both done
+        await dq.doai({ De: 'celebrate' }, { maz: 3 })?.(async (De: TheC, dq) => {
+            De.c.rq ||= this.reqys(De, 'req')
+            const rq = De.c.rq
+
+            await rq.doai({ req: 'confetti' })?.(async (req, rq) => {
+                // synchronous finish — no async needed for a confetti pop
+                w.i({ see: '🎉 all repotted!' })
+                rq.finish(req)
+            })
+
+            await rq.do()
+
+            if (rq.all_done() && !De.sc.finished) {
+                dq.finish(De)
+            }
+        })
+
+        await dq.do()
+    },
+
+//#endregion
 
 
 

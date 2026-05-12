@@ -5,17 +5,62 @@ Peerily details omitted — this is the layer itself.
 
 ---
 
+## History: requesty_serial
+
+reqys() is a fork of `requesty_serial()` in Hovercraft, which remains in use for
+IO-gating and other serial queues outside the De/req system.
+
+```ts
+async requesty_serial(w, t) → requlator
+```
+
+Returns a requlator object that wraps a serial queue of `{requesty_T:1}` particles
+in `w`. The first call does an `await w.r(...)` internally (inside `ison()`), so it
+must be awaited.
+
+The requlator is not a TheC — it's a plain object with `i()`, `oai()`, `o()`, `do()`.
+Its `i()` is async (also awaits `ison()`). Its `do(fn)` is the worker loop: drops
+finished reqs, forgets problems, calls `fn(req)` for each live req.
+
+The pattern for IO-gating:
+
+```ts
+// inside LiesPersist:
+const rw  = await H.requesty_serial(w, 'rw_queue')
+const req = await rw.oai({ rw_name: path, rw_op: 'read' })
+if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+    w.i({ see: '⏳ loading…' })
+    return false   // caller returns; Wormhole will i_elvisto think when done
+}
+// req.sc.reply is now populated
+```
+
+First Lies() tick: `i_elvis_req` returns false (request sent, not yet answered).
+Second tick: `oai` finds the existing req particle (same `rw_name`+`rw_op` key),
+`i_elvis_req` sees `req.sc.finished` → returns true. Proceed.
+
+This two-tick dance is the standard IO pattern throughout. Any function that contains
+it must be re-entrant — each tick sees an earlier-than-expected return.
+
+Note that `requesty_serial`'s `do(fn)` calls one `fn(req)` for every live req in the
+queue — a single worker function attends all of them. In reqys(), each req carries its
+own `c.do_fn`, which is the inverse: the worker is stored on the req, not passed to
+`do()`. `rq.do(fn)` still exists for cases where you want the requesty_serial habit —
+iterating all trying reqs with one function — but it is not the default idiom.
+
+---
+
 ## Concepts
 
 ### De — Desire particle
 
 Lives directly on `w`. Represents one goal the side is currently trying to satisfy.
-Multiple Des coexist. Each has a **mazlow level** (`maz`). `%maz` is always stamped —
-depeel elides value 1 to a bare `maz` key, so the snap stays clean for the common case.
+Multiple Des coexist. Each has a **mazlow level** (`maz`), default 1. `%maz` is only
+stamped when it is greater than 1 — the common maz:1 case is implied by absence.
 
 ```
-De:listen,maz                  maz:1, depeel prints bare 'maz'
-De:connect,maz,who:8cbc667b…
+De:listen                      maz:1 implied
+De:connect,who:8cbc667b…
 De:keepalive,maz:3,who:…       higher-level need, won't run until maz:1,2 stable
 ```
 
@@ -44,18 +89,19 @@ Each req has:
   Cleaned at the top of the second `do()` pass. A req can use it to know
   whether this is its first run, without keeping that state itself.
 - `%finished` — set by reqys when the req completes. Causes De version bump.
-- `maz` — always stamped. reqys() only calls reqs whose maz ≤ frontier.
+- `maz` — default 1, only stamped when greater than 1. reqys() only calls reqs
+  whose maz ≤ frontier.
 
 ```
-De:listen,maz
-  req:keygen,maz
-  req:register,maz
+De:listen
+  req:keygen
+  req:register
     waits:keygen
-  req:listening,maz
+  req:listening
     waits:register
-De:connect,maz,who:8cbc667b…
-  req:dial,maz
-  req:connected,maz
+De:connect,who:8cbc667b…
+  req:dial
+  req:connected
     waits:dial
 ```
 
@@ -146,7 +192,7 @@ In practice most reqs are maz:1 and this is invisible.
 Use maz:2 to express "only start this once all maz:1 work is done."
 
 ```
-req:keygen,maz
+req:keygen
 req:register,maz:2          — won't run until keygen finished
 req:listening,maz:3         — won't run until register finished
 ```
@@ -449,8 +495,8 @@ Plan
 ### Step 1 — keygen in flight
 
 ```
-De:listen,maz
-  req:keygen,maz,running
+De:listen
+  req:keygen,running
   log
     msg:keygen started,at:…
 ```
@@ -458,23 +504,23 @@ De:listen,maz
 ### Step 2 — registered and open
 
 ```
-De:listen,maz,finished
-  req:keygen,maz,finished
-  req:register,maz,finished
-  req:listening,maz,finished
-De:connect,maz,who:8cbc667b…,finished
-  req:dial,maz,finished
-  req:connected,maz,finished
+De:listen,finished
+  req:keygen,finished
+  req:register,finished
+  req:listening,finished
+De:connect,who:8cbc667b…,finished
+  req:dial,finished
+  req:connected,finished
 ```
 
 ### Failed connection
 
 ```
-De:connect,maz,who:8cbc667b…
+De:connect,who:8cbc667b…
   waits:listen
   state:failed,reason:peer-unavailable
-  req:dial,maz,finished
-  req:connected,maz
+  req:dial,finished
+  req:connected
     waits:dial
 ```
 
@@ -490,11 +536,11 @@ on the De itself — the De's conclusion, not a req's transient complaint.
 ```
 w
   c.rq = reqys(w,'De')          — De-level requlator stored on w
-  De:X,maz[:N]                  — maz always stamped; 1 prints as bare 'maz'
+  De:X[,maz:N]                  — maz omitted when 1
     waits:Y                     — optional; assumes De:Y exists up the search path
     c.do_fn                     — mini-main; or discovered as H.De_X() by name
     c.on_all_done               — called when all reqs finish
-    req:Z,maz[:N]               — maz always stamped
+    req:Z[,maz:N]               — maz omitted when 1
       waits:W                   — dropped before do_fn, re-stamped if still blocked
       mutated                   — set by oai(c,sc) two-arg; cleared at top of next do()
       init_time                 — stamped on first do_fn call; cleared on second do() pass
