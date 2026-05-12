@@ -125,7 +125,6 @@
 
 
 
-
 //#region reqys
 
     // Fork of requesty_serial() — see History in De_req_spec for the lineage.
@@ -281,7 +280,6 @@
         if (De.c.rq?.all_done()) await De.c.on_all_done?.()
     },
 
-    // < kind of immature? should not call main()?
     // request a Story breath before the chain continues.
     //   no-op outside a Story run — safe to call unconditionally from a do_fn.
     want_savepoint() {
@@ -311,17 +309,35 @@
         for (const cb of q) cb()
     },
 
-    // promise resolved when Story next takes a snap.
-    //   use to hold state (eg a finished req, or body/pot) until it appears in the record.
-    //   Story calls _resolve_runstepped() at each step advance.
+    // push to Run's queue — Run found via o({Run:1}), or self if we are Run
     Runstepped(): Promise<void> {
-        this.c._runstepped_q ||= []
-        return new Promise(resolve => (this.c._runstepped_q as Function[]).push(resolve))
+        const Run = this.o({ Run: 1 })[0] ?? this
+        Run.c._runstepped_q ||= []
+        return new Promise(resolve => (Run.c._runstepped_q as Function[]).push(resolve))
     },
+
+    // called on Run by Story after each snap — feebly_ponder is no-op here (runtime=false)
+    //   so callbacks that call feebly_ponder() only wake things up in the next do_step
+    // < w_noproblemo(w,{log:1}) for all A/w in this Run — clear %log at step boundary
     _resolve_runstepped() {
         const q = (this.c._runstepped_q ?? []) as Function[]
         this.c._runstepped_q = []
         for (const resolve of q) resolve()
+    },
+
+    // let at most one req be the active worker per step.
+    //   claims w/active_worker on first call; others stamp %waits and return false.
+    //   Runstepped clears the slot so the next step a different req can claim it.
+    be_active_worker_per_step(w: TheC, req: TheC): boolean {
+        const slot = w.oai({ active_worker: 1 })
+        if (slot.c.req === req) return true
+        if (!slot.c.req) {
+            slot.c.req = req
+            this.Runstepped().then(() => { delete slot.c.req })
+            return true
+        }
+        req.i({ waits: (slot.c.req as TheC).sc.req ?? 'worker' })
+        return false
     },
 
     // extends w_forgets_problems with optional %log clearing

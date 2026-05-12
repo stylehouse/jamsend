@@ -1,7 +1,7 @@
 Snap:H
   H:PotPlant,Run
     A:PotPlant
-      {"mung":["age"]}	self,round:11
+      {"mung":["age"]}	self,round:17
       w:PotPlant
         body,hands:2
         shelf
@@ -16,11 +16,11 @@ Snap:H
           pot:rose
             plant
             soil,dose:7
-        De:repot,init_seq:11
+        De:repot,init_seq:17
           req:move_inside,maz:3
-          req:move_outside,finished
-          req:repot,maz:2,init_seq:11
+          req:repot,maz:2,init_seq:17
             waits:soil
+          req:move_outside,finished
         De:celebrate,maz:2
         log
           msg:carrying rose
@@ -39,5 +39,5 @@ Snap:H
           {"msg":"repotted fern (yard soil: 0)"}
           msg:cactus in yard
           msg:rose in yard
-        {"mung":["age"]}	self,round:11
+        {"mung":["age"]}	self,round:17
     {"mung":["id"]}	mo:main,interval:3.6

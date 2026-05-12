@@ -124,16 +124,16 @@
 //#endregion
 //#region PotPlant
 
-    // w/body,hands:2                    — snappable; capacity = hands - body.o({pot:1}).length
+    // w/body,hands:2                    — capacity = hands - body.o({pot:1}).length
     // w/shelf/*pot/plant|soil,dose:3    — starting positions
-    // w/yard/*pot/plant|soil,dose:5     — destination after repotting
+    // w/yard/*pot/plant|soil,dose:5     — after repotting
     // w/yard/soil,dose:12               — bulk supply; 2 doses per pot (3→5)
+    // w/arrival                         — blocks move_outside until step:1 snap
     //
-    // step 1: full shelf, no Des yet
-    // step 2+: De:repot seeded out of Atime after Runstepped resolves
-    //   req:move_outside       — body pots present on entry → unload to yard; then load from shelf
-    //   req:repot,maz:2        — draw 2 from yard/soil, pot soil dose:3→5
-    //   req:move_inside,maz:3  — body pots present on entry → unload to shelf; then load from yard
+    // De:repot
+    //   req:move_outside       — shelf→body→yard; body pots on entry = last step's load
+    //   req:repot,maz:2        — draw 2 from yard/soil per pot, dose:3→5
+    //   req:move_inside,maz:3  — yard→body→shelf; same transit pattern
     // De:celebrate,maz:2
 
     Run_A_PotPlant(this: House) {
@@ -141,6 +141,8 @@
         if (!A.o({ w: 'PotPlant' }).length) {
             const w  = A.i({ w: 'PotPlant' })
             w.i({ body: 1, hands: 2 })
+            w.i({ arrival: 1 })   // dropped by Runstepped after step:1 snap
+
             const sh = w.oai({ shelf: 1 })
             for (const name of ['rose', 'fern', 'cactus']) {
                 const pot = sh.oai({ pot: name })
@@ -148,8 +150,9 @@
                 pot.i({ soil: 1, dose: 3 })
             }
             w.oai({ yard: 1 }).i({ soil: 1, dose: 12 })   // 3 pots × 2 doses each
-            w.i({ arrival: 1 })   // dropped by Runstepped after step:1 snap; blocks move_outside
 
+            // drop arrival after step:1 snap — feebly_ponder is no-op here (runtime=false),
+            //   so PotPlant() doesn't run until step:2's do_step
             this.Runstepped().then(async () => { await w.r({ arrival: 1 }, {}) })
         }
         console.log(`🪴 ${this.name} PotPlant wired`)
@@ -165,46 +168,49 @@
         dq.subreqys('req')
 
         // ── De:repot ──────────────────────────────────────────────────────────
-        // doai finds De:repot already seeded (by Runstepped), sets do_fn once
         dq.doai({ De: 'repot' })?.(async (De: TheC, dq) => {
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
 
             // req:move_outside
-            //   body pots on entry → they arrived last step (post-snap) → unload to yard
-            //   then load fresh from shelf up to capacity; Runstepped gates the next unload
+            //   body pots on entry = loaded last step and snapped → safe to unload now
+            //   is_there_yet: set by Runstepped callback (runtime=false, so no spurious wake)
             rq.doai({ req: 'move_outside' })?.(async (req, rq) => {
                 if (w.o({ arrival: 1 }).length) { req.i({ waits: 'arrival' }); return }
 
-                for (const pot of body.o({ pot: 1 }) as TheC[]) {
-                    await body.r({ pot: pot.sc.pot }, {})
-                    yard.i(pot)
-                    w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} in yard` })
+                if (body.c.is_there_yet) {
+                    body.c.is_there_yet = false
+                    for (const pot of body.o({ pot: 1 }) as TheC[]) {
+                        await body.r({ pot: pot.sc.pot }, {})
+                        yard.i(pot)
+                        w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} in yard` })
+                    }
                 }
 
-                const onShelf  = shelf.o({ pot: 1 }) as TheC[]
                 const capacity = (body.sc.hands as number) - body.o({ pot: 1 }).length
 
-                if (!onShelf.length && !body.o({ pot: 1 }).length) {
+                if (!shelf.o({ pot: 1 }).length && !body.o({ pot: 1 }).length) {
                     rq.finish(req)
                     return
                 }
 
-                for (const pot of onShelf.slice(0, capacity)) {
+                for (const pot of (shelf.o({ pot: 1 }) as TheC[]).slice(0, capacity)) {
                     await shelf.r({ pot: pot.sc.pot }, {})
                     body.i(pot)
                     w.oai({ log: 1 }).i({ msg: `carrying ${pot.sc.pot}` })
                 }
 
                 if (body.o({ pot: 1 }).length) {
-                    this.Runstepped().then(() => this.feebly_ponder())
+                    // snap body/pot:* before transit completes
+                    this.Runstepped().then(() => {
+                        body.c.is_there_yet = true
+                        this.feebly_ponder()
+                    })
                 }
             })
 
-            // req:repot,maz:2 — batch fn: top up each yard pot by 2 doses
-            rq.oai({ req: 'repot', maz: 2 })
-            await rq.do(async (req: TheC, rq) => {
-                if (req.sc.req !== 'repot') return
+            // req:repot,maz:2 — doai style; draws 2 doses per pot from yard supply
+            rq.doai({ req: 'repot', maz: 2 })?.(async (req, rq) => {
                 const ysoil = yard.o({ soil: 1 })[0]
                 if (!ysoil) return
                 for (const pot of yard.o({ pot: 1 }) as TheC[]) {
@@ -219,27 +225,32 @@
 
             // req:move_inside,maz:3 — mirror of move_outside
             rq.doai({ req: 'move_inside', maz: 3 })?.(async (req, rq) => {
-                for (const pot of body.o({ pot: 1 }) as TheC[]) {
-                    await body.r({ pot: pot.sc.pot }, {})
-                    shelf.i(pot)
-                    w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} back on shelf` })
+                if (body.c.is_there_yet) {
+                    body.c.is_there_yet = false
+                    for (const pot of body.o({ pot: 1 }) as TheC[]) {
+                        await body.r({ pot: pot.sc.pot }, {})
+                        shelf.i(pot)
+                        w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} back on shelf` })
+                    }
                 }
 
-                const inYard   = yard.o({ pot: 1 }) as TheC[]
                 const capacity = (body.sc.hands as number) - body.o({ pot: 1 }).length
 
-                if (!inYard.length && !body.o({ pot: 1 }).length) {
+                if (!yard.o({ pot: 1 }).length && !body.o({ pot: 1 }).length) {
                     rq.finish(req)
                     return
                 }
 
-                for (const pot of inYard.slice(0, capacity)) {
+                for (const pot of (yard.o({ pot: 1 }) as TheC[]).slice(0, capacity)) {
                     await yard.r({ pot: pot.sc.pot }, {})
                     body.i(pot)
                 }
 
                 if (body.o({ pot: 1 }).length) {
-                    this.Runstepped().then(() => this.feebly_ponder())
+                    this.Runstepped().then(() => {
+                        body.c.is_there_yet = true
+                        this.feebly_ponder()
+                    })
                 }
             })
 

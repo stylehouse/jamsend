@@ -4,6 +4,7 @@ Snap:H
       {"mung":["age"]}	self,round
       w:PotPlant
         body,hands:2
+        arrival
         shelf
           pot:rose
             plant
@@ -16,10 +17,9 @@ Snap:H
             soil,dose:3
         yard
           soil,dose:12
-        arrival
         {"mung":["age"]}	self,round
         De:repot,init_seq
-          req:move_outside,init_seq:2
+          req:move_outside,init_seq
             waits:arrival
           req:repot,maz:2
           req:move_inside,maz:3
