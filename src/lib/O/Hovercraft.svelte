@@ -281,6 +281,7 @@
         if (De.c.rq?.all_done()) await De.c.on_all_done?.()
     },
 
+    // < kind of immature? should not call main()?
     // request a Story breath before the chain continues.
     //   no-op outside a Story run — safe to call unconditionally from a do_fn.
     want_savepoint() {

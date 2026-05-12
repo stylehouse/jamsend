@@ -4,28 +4,26 @@ Snap:H
       {"mung":["age"]}	self,round:3
       w:PotPlant
         body,hands:2
+        shelf
           pot:rose
             plant
             soil,dose:3
           pot:fern
             plant
             soil,dose:3
-        shelf
           pot:cactus
             plant
             soil,dose:3
         yard
           soil,dose:12
+        arrival
         De:repot,init_seq:3
           req:move_outside,init_seq:6
           req:repot,maz:2
           req:move_inside,maz:3
         De:celebrate,maz:2
-        log
-          msg:carrying rose
-          msg:carrying fern
         {"mung":["age"]}	self,round:3
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_4","label":"De:repot\ninit_seq:2"}
-  {"upsert":1,"id":"cytoid_1_1_4_1","label":"req:move_outs…\ninit_seq:4"}
+  {"upsert":1,"id":"cytoid_1_1_5","label":"De:repot\ninit_seq:2"}
+  {"upsert":1,"id":"cytoid_1_1_5_1","label":"req:move_outs…\ninit_seq:4"}
