@@ -182,6 +182,12 @@ class StuffIO {
     get version() {
         return this.X?.serial_i || 0
     }
+    // terser and always true access to version(), for reactivity
+    //  is_exa = $derived(exa.vers && exa.sc.active_path == doc.sc.path)
+    get v() {
+        return this.version + 1
+    }
+
     // might have a channel to log (.i()) algorithm mumble to
     coms?: TheC
     // delete a C (filter it out of results)
@@ -577,10 +583,14 @@ export class Stuff extends TimeOffice {
             b.X = a.X
         }
     }
-    // in case C/* are recycled after you .r() something to begin from scratch
+    // forget C/* - everything in this C
     empty() {
+        // this makes Xify() resume and then bump the version
+        // < but it also breaks Otro or so, only H:Mundo appears...
+        // this.X_before = this.X
         this.X = null
         this.Xify()
+        // this.X_before = null
         return this
     }
     // assert this C has Isness, C/* are there already and don't recycle them.

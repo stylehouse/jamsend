@@ -2,6 +2,20 @@
 
 ---
 
+## Reactivity basics
+
+`C.bump_version()` — which `C.i|r|replace|drop` all do — makes anyone reading `C.v` react. In Atime that means `C.ob()`; in UItime it means `$derived` and `$effect` via the watched flush. Worker methods manipulate C trees directly with no Svelte involvement; Svelte only ever sees the version signals.
+
+**oai vs roai:**
+
+`oai(s, c)` — select-or-insert synchronously. If the particle is found, returns it unchanged (`c` is ignored). Good for idempotent one-time setup: `w.oai({ examining: 1 })`.
+
+`roai(s, c)` — async; same select-or-insert, but if found and any non-function value in the full `{...s,...c}` set has changed, calls `replace()` to update it in place. Good for keeping a derived-state particle current across ticks: `wa.roai({ action:1, role:'pause' }, { label, cls, fn })`.
+
+The practical difference: `oai` never changes a found particle; `roai` replaces it when stale. Use `oai` for structure, `roai` for display state.
+
+---
+
 ## The pipeline
 
 Two time regimes, separated by the beliefs mutex:
@@ -11,16 +25,15 @@ Atime (beliefs cycle)
   H.todo → answer_calls → _really_answer_calls → beliefs(e)
     → organise (Se.process)
     → attend  (_Aw_think → worker methods)
-      → C.i / C.r / C.replace → C.bump_version → C.X.serial_i++ ($state)
+      → C.i|r|replace|drop → C.bump_version → C.X.serial_i++ ($state)
 
-  start_watched_C_effect: $effect reads { C.version } for all watched Cs
-    when any bump → pending=true, setTimeout(flush, ~25ms)
+  start_watched_C_effect: $effect reads all { C.version } for enrolled Cs
+    any bump → pending=true, setTimeout(flush, ~25ms)
 
-flush: clear(async () => {
-    // inside beliefs mutex (Atime locked out)
-    for each watched C that bumped version:
-      handler() → dest.empty(); dest.i(n)...; dest.bump_version()
-        → H.ave.X.serial_i++ ($state)
+flush: H.clear(async () => {        ← inside beliefs mutex (Atime locked out)
+    for each watched C that changed version:
+      handler()  →  dest.empty(); for n of C.o({}): dest.i(n); dest.bump_version()
+                    ↑ H.ave.X.serial_i++ ($state)
 })
 
 UItime
@@ -29,67 +42,38 @@ UItime
     → DOM updates
 ```
 
-The mutex separation is the whole point: worker code sees a stable snapshot, UI sees a fully settled one. There is no mid-cycle partial state in the UI.
+The mutex separation is the point: workers see a stable snapshot, UI sees a fully settled one.
 
 ---
 
-## TheX, TheC, and where $state actually lives
+## Where $state actually lives
 
-Three $state declarations drive all of this:
+Three `$state` declarations drive all of this:
 
 ```ts
 // TheX — the index
-serial_i = $state(1)           // reactive signal; bumped on every write
+serial_i = $state(1)           // the reactive signal; bumped on every write
 
 // StuffIO
-X: TheX = $state()             // the index reference itself is reactive
-                               //  so swapping X (during replace()) is also reactive
+X: TheX = $state()             // the index reference is reactive —
+                               //  replace()'s X swap is also visible to Svelte
 
-// House fields
-ave: TheC = $state(new TheC()) // reference reactive; but ave is never reassigned —
-UIs: TheC = $state(new TheC()) //  the inner serial_i is what actually drives redraws
-...
+// House watched destinations
+ave:       TheC = $state(new TheC())   // never reassigned — inner serial_i fires effects
+UIs:       TheC = $state(new TheC())
 ```
 
-The outer `$state()` on `H.ave` etc. is defensive armour, not the reactive signal that fires effects. The signal is `H.ave.X.serial_i`. You reach it through `H.ave.version` (getter: `X?.serial_i || 0`), and `ob()` touches it for you.
-
-The double-wrapping (`TheX = $state()` + `serial_i = $state(1)`) is intentional:
-- `serial_i` in-place tracks incremental mutations
-- `X = $state()` means `empty()` / the `replace()` swap registers as a change too
+The outer `$state()` on `H.ave` etc. is defensive; those fields are never reassigned. The reactive signal is `H.ave.X.serial_i`, reached via `H.ave.version` (getter: `X?.serial_i || 0`). `ob()` touches it for you.
 
 ---
 
 ## ob() and the o() family
 
-All live on `StuffIO`. Morphology from a few combinatorial axes:
+`ob(sc)` reads `void this.version` before querying — subscribing to every bump on this C. A `$effect` doing `C.ob({tiny_key:1})` reruns on any mutation to C, not just that key.
 
-```
-b  = before  — uses X_before instead of X (reads the pre-replace snapshot)
-a  = absent  — returns null/undefined when the result would be []
-1  = column  — extracts sc values instead of returning TheC rows
-```
+The suffix notation: `b` = read from `X_before` (only meaningful inside a `replace()` callback); `a` = return null if empty; `1` = extract sc column values rather than TheC rows. They compose: `boa1` = before, null-if-empty, column.
 
-| method | version reactive | uses X_before | null-if-empty | extracts column |
-|--------|:---:|:---:|:---:|:---:|
-| `o(sc)` | ✗ | ✗ | ✗ | ✗ |
-| `ob(sc)` | ✓ | ✗ | ✗ | ✗ |
-| `oa(sc)` | ✗ | ✗ | ✓ | ✗ |
-| `bo(sc)` | ✗ | ✓ | ✗ | ✗ |
-| `boa(sc)` | ✗ | ✓ | ✓ | ✗ |
-| `o1(sc,key)` | ✗ | ✗ | ✗ | ✓ |
-| `bo1(sc)` | ✗ | ✓ | ✗ | ✓ |
-| `oa1(sc)` | ✗ | ✗ | ✓ | ✓ |
-
-`ob()` reads `void this.version` first — that is the entire reactive subscription. It subscribes to every version bump on this C, not to the specific keys queried. A `$effect` doing `C.ob({ tiny_key: 1 })` reruns on any mutation to C, even unrelated ones.
-
-`oa()` / `boa()` are idioms for presence checks: `if (w.oa({ wants_directory: 1 })) return`.
-
-`o1(sc, 0)` returns the first value of the first column — the deepest shorthand. `o1(sc, 1)` returns all values of the first column. `o1(sc, 'key')` returns all values of that named column.
-
-`oai(s, c)` — select-or-insert; **synchronous**. Does not `replace()`, does not merge `c` onto found.  
-`roai(s, c)` — async; same but calls `replace()` if any non-function key differs.
-
-`bo*` are only meaningful **inside** a `replace()` callback. Outside one, `X_before` is undefined and they return `[]`.
+`void particle.version` / `.v` (getter: `version + 1`, always truthy) inside a `$derived` subscribes to only that particle — useful for fine-grained per-row reactivity without subscribing to a whole container.
 
 ---
 
@@ -97,241 +81,84 @@ a  = absent  — returns null/undefined when the result would be []
 
 Five stable TheC objects on House, each a destination for one category of Atime data:
 
-| field | source particles | purpose |
-|-------|-----------------|---------|
-| `H.ave` | `w/{watched:'ave'}` particles across H/A/w | general per-tick UI data; Steps, examining, swatches, story_analysis |
-| `H.UIs` | `/{watched:'UIs'}` | component registry; Storui, Liesui, Cytui. Otro reads this to know what to mount |
-| `H.actions` | `/{watched:'actions'}` | button rack; `{action:1, role, icon, cls, fn}` particles |
-| `H.graph` | `/{watched:'graph'}` | Cyto graph state |
-| `H.subHouses` | `/{watched:'subHouses'}` | Houses below this one; Otro uses this to hoist H** |
+| field | purpose |
+|-------|---------|
+| `H.ave` | general per-tick UI data: Steps, examining, swatches, story_analysis |
+| `H.UIs` | component registry; Otro reads to know what to mount |
+| `H.actions` | button rack: `{action:1, role, icon, cls, fn}` particles |
+| `H.graph` | Cyto graph state |
+| `H.subHouses` | Houses below this one |
 
-The flush handler is default unless the watched particle carries `sc.fn`:
+The flush handler for each enrolled C: `dest.empty()`, then `dest.i(n)` for each row, then `dest.bump_version()`. `dest.i(n)` inserts `n` itself — same reference, not a copy. No identity discontinuity across flushes; the TheC objects in `H.ave.X.z` are the same objects as in the source C.
 
-```ts
-// default — replicate C.o({}) into dest
-dest.empty()
-for (const n of C.o({})) dest.i(n)
-dest.bump_version()   // belt-and-suspenders when C was empty and i() didn't fire
-```
+Source and dest versions are deliberately decoupled: source may bump many times during one beliefs cycle; dest bumps once per flush, after all_clear. This is the Atime→UItime gate.
 
-`dest.empty()` clears the TheX but the TheC objects inside it are the same references — they are moved wholesale into `dest.X.z`. So particles survive the replicate intact, including `n.c.*` properties.
-
-The version bump on `dest` (H.ave etc.) is a separate $state from the source C's version. They are deliberately decoupled: source may bump many times during one beliefs cycle; dest bumps once per flush, after all_clear. This is the Atime→UItime gate.
-
-### Enrolling into a watched destination
+### Enrolling into watched
 
 ```ts
-// find-or-create the {watched:'ave'} source particle on target (usually H),
-//  and call enroll_watched() to wire it into H.watched[] once.
-H.oai_enroll(H, { watched: 'ave' })
-
-// write into the source; flush will push it to H.ave
-ave.i({ examining: 1 })
-
-// fine-grained: watch something else and bump ave on changes
-H.watch_c(some_C, () => { examining.bump_version() })
+let ave = H.oai_enroll(H, { watched: 'ave' })  // find-or-create source, wire once
+let exa = ave.i({ examining: 1 })              // write to source; flush copies ref to H.ave
+exa.c.w = w                                    // fine — exa is the same object post-flush
+H.watch_c(w, () => { exa.bump_version() })     // bump exa when w changes
 ```
 
-`watch_c` is additive and deduplicated. Calling it twice with the same C is a no-op.
+`start_watched_C_effect()` sets up the single `$effect` that polls all enrolled C versions and schedules the flush. New entries to `H.watched[]` are picked up on the effect's next run.
 
 ### Reading in UItime
 
 ```ts
-// $effect — re-runs when H.ave.version bumps
+let exa: TheC | undefined = $state()
+
 $effect(() => {
-    const node = H.ave.ob({ examining: 1 })[0]
-    // ...
+    exa = H.ave.ob({ examining: 1 })[0] as TheC | undefined
+    // subscribes to all of H.ave — re-runs on any ave flush
 })
 
-// $derived — subscribes to the particle's own version for fine-grained updates
-let is_examining = $derived.by(() => {
-    void examining?.version   // subscribe to examining specifically
-    return examining?.sc.active_path === doc.sc.path
-})
+// subscribes only to exa, not all of H.ave
+let is_exa = $derived(exa?.v && exa.sc.active_path === doc.sc.path)
 ```
-
-Using `H.ave.ob(...)` subscribes to all of H.ave. Using `void particle.version` inside a `$derived` subscribes only to that particle. DocRow and Storui's `live_step()` use the finer form for per-pip updates that shouldn't redraw the whole panel.
 
 ---
 
-## replace() and ephemeral c.*
-
-**The single most important thing to know about `replace()`:**
+## replace() — what survives
 
 ```ts
+// C has many n inside C.X.z
 async replace(pattern_sc, fn, q?) {
-    this.X_before = this.X
-    this.empty()           // fresh X
-    await fn()             // fn inserts new particles via this.i(...)
-    // resolve() pairs new ←→ old by matching sc.* string values
-    // resume_X(a, b): b.X = a.X   — transfers the sub-tree
-    // but b is still a brand-new TheC object with empty .c
+    C.X_before = C.X
+    C.empty()              // fresh X; old n* gone from index (not from memory)
+    await fn()             // fn creates or re-inserts particles
+    // resolve() pairs C.X (new n*) ←→ C.X_before (old n*) by sc.* string values
+    // for each pair (a=old, b=new): resume_X(a, b)  →  b.X = a.X
 }
 ```
 
-After `replace()`, `C.o({...})` returns **new TheC instances** for conceptually-identical particles. `resolve()` transfers `.X` (sub-trees), but nothing in `.c`. The particle walks the same Stuff tree; the object reference is different.
+**If `fn` creates a new TheC:** b is fresh, `b.c.*` empty, `b.X` undefined until resume gives it `a.X`. resolve() matches by sc.* — if values are the same, the pair scores well and the sub-tree transfers cleanly.
 
-This has two consequences:
+**If `fn` does `C.i(n)` with an existing TheC:** b IS n — same object, same `c.*`, same `X`. resolve() scores this as an unambiguous match (sc.* values are identical). `resume_X(a,b)` is effectively a no-op on a self-same object. This is the stable pattern: deliberately re-inserting the same TheC preserves everything including `c.*`.
 
-**1. Anything stored in `n.c.*` is lost after replace().**
-
-Lies stores `examining.c.w = w` once in the setup guard `if (!w.c.Lies_setup)`. If `w` (the Lies work particle) goes through a replace(), the new `w` has empty `.c`, so `w.c.Lies_setup` is gone. On the next tick, the setup block re-runs: a new `examining` TheC is created, `examining.c.w` gets re-pointed, and the new examining is enrolled in ave. Liesui then sees `lies_w !== Lies` → true, and reassigns `Lies`. This unmounts the `{#if Lies}` block including all WaftComp instances.
-
-**2. UI components keyed by particle identity must key by `sc.*` values, not object reference.**
-
-`{#each all_wafts as waft (waft.sc.Waft)}` is correct. `{#each all_wafts as waft}` is not — object references change across replaces even when the logical waft is the same.
+**Concretely:** `w` (the Lies work particle inside A) is never the target of `replace()`. Se.process() only calls `replace()` on D particles — the trace mirror of n**. The n particles themselves (H, A, w) are traversed but not replaced. So `w.c.Lies_setup` and `w.c.*` generally are stable across beliefs cycles.
 
 ---
 
-## The +Doc form closing issue
+## Otro's UIs mounting
 
-The +Waft form (in Liesui, above `{#if Lies}`) lives in unconditional Liesui scope — it cannot close from reactivity unless Liesui itself remounts.
-
-The +Doc form lives inside WaftComp, inside `{#if Lies}{:else}...{/if}`. When `Lies` (the `lies_w` TheC) changes, the entire `{:else}` block tears down, WaftComp instances unmount, form state is gone.
-
-**Why `Lies` can change:**
-
-The chain is:
-1. Story trickle drives H:Story's beliefs cycle more aggressively
-2. H:Story (or Story worker on the main House) calls i_elvisto to Lies, triggering a Lies() tick
-3. Lies() calls `replace()` on some subset of its particles (open_req processing, waft loading)
-4. The `w:Lies` particle itself is an argument to `Lies()` — it's the work particle, not what's being replaced. But if organise()'s Se.process() calls `replace()` on Se or on the D-tree, and resolve() fails to match `w:Lies` → the old TheC pairs with null, a new TheC pairs with null from the other side, and the new w object has no `.c.Lies_setup`
-5. Next Lies() tick: setup re-runs, new examining, new `examining.c.w`, ave gets new examining
-6. Liesui's $effect: `ex.c?.w !== Lies` → `Lies = new_w`
-
-Actually step 4 is the uncertain part without seeing Selection.svelte. But the observed symptom is consistent with `.c.Lies_setup` getting lost. The immediate fix would be to not depend on `examining.c.w` as the stable back-ref to `w`, and instead find `w` from H directly:
-
-```ts
-// instead of ex.c?.w, find w by query on every tick:
-const lies_w = H.Awo('Lang', 'Lies')  // throws if missing, so wrap in try
+```svelte
+{#each house.UIs.ob({ UI: 1 }) as uiC (uiC.sc.UI)}
+    <svelte:component this={uiC.sc.component} H={house} />
+{/each}
 ```
 
-Or more robustly: make Liesui not depend on identity stability at all, and derive what it needs from `examining.sc.*` instead of `examining.c.*`.
-
-**Why Story trickle in particular triggers it:**
-
-Story `trickle` toggle stores the Book name rather than `true` so it's per-book. When on, Story drives H:Story more frequently and probably sends elvisto calls to the main House more often. Each main House beliefs cycle touches H.ave (Story's `if (!ave.oa({ Styles: 1 })) ave.i(...)` runs every Story() tick). This makes Liesui's $effect fire more frequently, increasing the chance of catching a window where `Lies` has churned. If Lies is mid-replace during one of these flush windows, the particles are the new objects.
-
-There's also the `examine` watching chain:
-
-```ts
-// Lies() worker:
-H.watch_c(w, () => {
-    examining.bump_version()
-})
-```
-
-If `w` churns (new TheC after a resolve), this `watch_c` is still registered on the OLD `w`. The new `w` is not watched. So examining no longer bumps when the new w changes — until the setup block re-runs and re-wires `H.watch_c(new_w, ...)`. This could cause stale examining state as a secondary effect.
+The particles returned by `house.UIs.ob(...)` are the same TheC references as in the source (flush inserts originals, not copies). Keyed by `uiC.sc.UI`, so Liesui, Storui etc. survive every UIs flush.
 
 ---
 
-## Confusing integration points
+## Open unknowns — to be chased with tests
 
-### $effect in non-component context
+**+Doc form closing (primary):** The form lives in WaftComp (`adding_doc = $state(null)`), keyed by `waft.sc.Waft`. Analysis shows: `Lies` (the lies_w reference in Liesui) does not change; w particles are never replace()d by Se.process(); waft TheC objects are stable sub-particles of a w that shares its X with any resolved counterpart. WaftComp should survive all of this. Yet the form closes during Story trickle. Mechanism unknown. Needs a test case that isolates a form inside a keyed component inside an H.ave-driven `$effect`.
 
-`Stuffing` registers a `$effect` in its constructor. Svelte 5 allows this only "while a parent effect is running." Housing provides that parent via `$effect.root(() => { this.start() })` in its constructor. The `$effect.root` creates an effect owner; any `$effect` called while `start()` runs is a child of that root.
+**watch_c granularity:** `H.watch_c(w, () => exa.bump_version())` fires on every w mutation — making the UI re-read examining even for w changes unrelated to examining. The right fix is for w to `roai` into exa when examining-relevant state changes, or for a Selection-like process to watch w/* and emit targeted bumps. Possibly points toward a UI-Se that notices when sub-particles of a presented C** need their own `bump_version()` to propagate reactivity inward, rather than blasting the whole container's version.
 
-**Gotcha:** If Stuffing is ever constructed outside a Housing.start() call (e.g., in a module-level or lazy-init context), the `$effect` silently registers to nothing and never re-runs. No error, no warning.
+**Stuffing over-creation:** `stuff.version` bumps on every `C.i|r|replace|drop`. Each bump in the Stuffing.svelte `$effect` creates a new `Stuffing` instance. If many bumps arrive before the first `Stuffing.started` fires, multiple instances run brackology in parallel, wastefully. The right throttle strategy — skip if one is already in flight, but always start fresh once done if stuff has since changed — to be confirmed with a test.
 
-### Ghost methods and reactivity
-
-`eatfunc` adds methods to the House instance via `Object.assign`. These are plain functions — not Svelte's reactive getters/setters. Mutations inside ghost methods (`n.sc.foo = val`) are **not automatically reactive** to Svelte's compile-time signal tracking. Reactivity comes from explicit `bump_version()` / `C.i()` / `C.r()` / `C.replace()` calls.
-
-### todo = [...H.todo, e] vs todo.push(e)
-
-Both are reactive in Svelte 5 (the field is `$state([])`, array methods are tracked through the proxy). The spread-assign pattern in `_push_todo` might predate rune-based proxying and is harmless either way.
-
-### believing = $state(false)
-
-This field exists to let UI components optionally avoid rendering during a beliefs cycle (`{#if !H.believing}`). But nothing in the shown components uses it as a gate — it's more of a debugging/tracing aid. The real UItime/Atime separation is via the flush timing (setTimeout after mutex release).
-
-### oai_enroll vs watch_c timing
-
-`oai_enroll` calls `enroll_watched()` immediately when a new watched particle is created. `enroll_watched()` walks all current `H/A*/w*` to find `{watched:X}` particles. **Particles that haven't been inserted yet won't be found.** Workers that create their watched source after `enroll_watched` has already run need to call `H.enroll_watched()` themselves, or ensure their source particle is created before the first beliefs cycle that might also create other watched particles. Calling it multiple times is idempotent (dedup'd by identity check).
-
-### The $state wrapping on class hierarchies
-
-```
-Housing extends TheC extends Stuff extends TimeOffice extends StuffIO
-  StuffIO:  X: TheX = $state()
-  TheX:     serial_i = $state(1)
-  Housing:  todo, started, believing, ghosts, subHouses, UIs, ave, ... = $state(...)
-```
-
-Each `$state` field at each level is independently tracked. A Housing is simultaneously: a reactive Stuff store (via X.serial_i), a Svelte-reactive object with its own fields (todo, believing, etc.), and a participant in the watched flush. Reading `H.ave.ob({})` subscribes to `H.ave.X.serial_i`. Reading `H.believing` subscribes to the Housing-level field. These are orthogonal signals.
-
----
-
-## Stuffing — C observer in Atime
-
-`Stuffing` lives in Atime but drives a `$effect`. It's the bridge for non-Housing Stuff watchers (like the Stuffing/Stuffusion/Stuffziad/Stuffziado tree for the data browser UI).
-
-```ts
-$effect(() => {
-    if (this.Stuff.version) {       // subscribe
-        if (this.Stuff.X_before) return   // mid-replace, wait
-        setTimeout(() => this.slowly_brackology(), 1)
-    }
-})
-```
-
-The `X_before` guard is important: during a `replace()`, version bumps multiple times (pre- and post-). Without the guard, `brackology()` would run on partial state. The guard makes it wait for the finalise bump in `replace()`'s `finally` block.
-
-`slowly_brackology` is throttled to 200ms — coarser than the watched flush (25ms), intentionally so, since re-grouping is expensive.
-
----
-
-## Wildcard 1 and exactly()
-
-`o({ step: 1 })` — wildcard: matches any particle having a `step` key, regardless of value.  
-`o(exactly({ step: 1 }))` — literal: matches only `step === 1`.
-
-`exactly()` stringifies values: `"1"` is not `1` in the index. `o_kv` knows to coerce strings back to numbers (see the `v * 1` block), so `exactly({step:1})` → `{step:"1"}` → coerced back → finds numeric `{step:1}`. The coercion path is there specifically because `exactly()` forces this situation.
-
-The naming convention: uppercase key (Step:N) = live/session; lowercase (step:n) = canonical/disk. `exactly()` is needed whenever the value is literally `1` and you want the specific one, not the wildcard behaviour.
-
----
-
-## requesty_serial
-
-```ts
-async requesty_serial(w, t) → requlator
-```
-
-Returns a requlator object that wraps a serial queue of `{requesty_T:1}` particles in `w`. The first call does an `await w.r(...)` internally (inside `ison()`), so it must be awaited.
-
-The requlator is not a TheC — it's a plain object with `i()`, `oai()`, `o()`, `do()`. Its `i()` is async (also awaits `ison()`). Its `do(fn)` is the worker loop: drops finished reqs, forgets problems, calls `fn(req)` for each live req.
-
-The pattern for IO-gating:
-
-```ts
-// inside LiesPersist:
-const rw  = await H.requesty_serial(w, 'rw_queue')
-const req = await rw.oai({ rw_name: path, rw_op: 'read' })
-if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
-    w.i({ see: '⏳ loading…' })
-    return false   // caller returns; Wormhole will i_elvisto think when done
-}
-// req.sc.reply is now populated
-```
-
-First Lies() tick: `i_elvis_req` returns false (request sent, not yet answered). Second tick: `oai` finds the existing req particle (same `rw_name`+`rw_op` key), `i_elvis_req` sees `req.sc.finished` → returns true. Proceed.
-
-This two-tick dance is the standard IO pattern throughout. Any function that contains it must be re-entrant — each tick sees an earlier-than-expected return.
-
----
-
-## Summary of likely remounting culprit
-
-The form closes because `Lies` (a `$state` variable in Liesui) gets assigned a new TheC, which causes the `{#if Lies}` block to fully remount.
-
-The `Lies` variable is derived from `examining.c.w`, a `.c.*` property. `.c.*` properties do not survive `replace()`. Something in the beliefs pipeline causes the `w:Lies` work particle to lose its `.c.*` and get setup re-run, producing a new examining TheC with a new `.c.w` back-ref.
-
-The fix is to not store `w` in `.c.w` as the stable reference back to the worker. Instead derive it freshly:
-
-```ts
-// in Liesui $effect:
-const lies_w = H.Awo('Lang', 'Lies')   // find by scheme walk, not by back-ref
-```
-
-or store the path (`examining.sc.Aname = 'Lies'`) and look it up on each tick. The `sc.*` of examining survives replace() via `resume_X`.
+**Missing inner C.v reactivity:** The suspect pattern: UI watches a container's version and re-reads everything on each bump, rather than watching sub-particle versions directly. This can look like it works but forces heavy reconciliation on every tick. If any form closes or remounts unexpectedly, it may be a symptom of this — the container's version bump cascading too broadly through Svelte's reconciler.

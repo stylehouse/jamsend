@@ -84,6 +84,7 @@ abstract class Housing extends TheC {
     up?: Housing
     
     // true while the beliefs mutex is held — gates UI reactivity
+    // < GOING, real UItime/Atime separation is via watched
     believing = $state(false)
 
     stopped = false
@@ -579,7 +580,7 @@ export class House extends StorableHousing {
             ? `fn:${e.sc.see ?? '?'}`
             : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
         H.trace('todo', tag)
-        H.todo = [...H.todo, e]
+        H.todo.push(e)
     }
 
     // a higher level, client call returns true when req%reply
