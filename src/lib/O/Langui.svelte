@@ -633,7 +633,11 @@
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}></div>
     {#if minimap_open}
-    <DocMinimap {H} {view} {active_path} />
+    <!-- lte-mm-host sizes the minimap overlay and pins it left of the scrollbar.
+         Width and scrollbar-gutter are kept in CSS vars so they can be knobbed. -->
+    <div class="lte-mm-host">
+        <DocMinimap {H} {view} {active_path} />
+    </div>
     {/if}
     {#if active_doc && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
@@ -653,6 +657,10 @@
         border: 1px solid #1a1a1a; border-radius: 4px;
         background: #0a0a0a; overflow: hidden;
         font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;
+
+        /* knob these two to move both scrollbar gutter and minimap together */
+        --lte-scrollbar-w: 2em;
+        --lte-minimap-w:   70%;
     }
     .lte-bar {
         display: flex; align-items: center; gap: 8px;
@@ -685,28 +693,70 @@
     /* closed: right-side-up V — points down, suggesting "expand" */
     .lte-mm-toggle.open { transform: rotate(0deg); }
 
-    /* ── editor area with scrollbar gutter ──────────────────────────────── */
-    /* The CM scroller's native scrollbar is restyled to 2em wide.          */
-    /* DocMinimap sits to the left of the scrollbar, overlapping the editor */
-    /* canvas.  The gutter keeps them visually separated.                   */
-    .lte-cm    { min-height: 200px; max-height: 50vh; overflow:scroll }
-    .lte-cm :global(.cm-editor)  { height: 100%; }
+    /* ── editor area ────────────────────────────────────────────────────── */
+    /* Height constraint lives on cm-scroller, not on .lte-cm.              */
+    /*                                                                       */
+    /* Why: CM's virtual-line renderer measures viewport height from         */
+    /* view.scrollDOM (= cm-scroller). Putting overflow/max-height on an     */
+    /* outer ancestor makes that measurement wrong — CM thinks the entire    */
+    /* document is on screen and stops painting lines outside the visible    */
+    /* band, which corrupts the display on long files.  Constraining the     */
+    /* scroller directly keeps CM's measure loop correct and leaves          */
+    /* scrollSnapshot()/dispatch restoration working without any JS changes. */
+    .lte-cm    { /* wrapper: shrinks to fit cm-editor, no overflow here */ }
+    .lte-cm :global(.cm-editor)  { /* auto height — driven by cm-scroller */ }
     .lte-cm :global(.cm-content) { font-size: 12px; }
-    /* cm-scroller is CM's actual scroll container — the native bar is here */
-    .lte-cm :global(.cm-scroller) { overflow-y: auto; }
 
-    /* 2em-wide custom scrollbar — matches Storui's dark-panel aesthetic   */
-    .lte-cm :global(.cm-scroller)::-webkit-scrollbar       { width: 2em; }
-    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-track { background: #080810; }
-    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb {
-        background: #161625;
-        border-radius: 3px;
-        /* inset border creates the "rail" feel without a separate element */
-        border: 4px solid #080810;
-        min-height: 32px;
+    /* cm-scroller is CM's actual scroll container and the source of truth   */
+    /* for scrollSnapshot().  Height caps go here; view.scrollDOM IS this.   */
+    .lte-cm :global(.cm-scroller) {
+        overflow: scroll;
+        min-height: 200px;
+        max-height: 50vh;
     }
-    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb:hover { background: #22223a; }
-    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb:active { background: #2a2a50; }
+
+    /* ── webkit scrollbar — vertical fat, horizontal skinny ─────────────── */
+    /* Applies to cm-scroller only.  Outer page scrollbars are unaffected.  */
+    /* The 2em vertical track creates the gutter that DocMinimap tucks into. */
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar {
+        width:  var(--lte-scrollbar-w);   /* vertical */
+        height: 0.5em;                    /* horizontal — stay out of the way */
+    }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb {
+        border-radius: 1em;
+        background: url(i/copper_anodes.jpg);
+    }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-track {
+        border-radius: 1em;
+    }
+
+    /* .fathandle — wider thumb for when minimap gutter is wider;            */
+    /* add class to cm-scroller via EditorView.scrollDOMAttributes           */
+    /* < wiring fathandle to an actual minimap-width setting is future work  */
+    .lte-cm :global(.cm-scroller.fathandle)::-webkit-scrollbar {
+        width:  3.14em;
+        height: 0.5em;
+        border-radius: 0.8em;
+    }
+    .lte-cm :global(.cm-scroller.fathandle)::-webkit-scrollbar-thumb {
+        width:  3.14em;
+        border-radius: 0.8em;
+    }
+
+    /* ── minimap overlay host ────────────────────────────────────────────── */
+    /* Absolutely positioned over the editor canvas, right edge flush with   */
+    /* the left edge of the scrollbar.  Width is the minimap fraction.       */
+    /* DocMinimap fills this host; its own pointer-events handle clicks.     */
+    .lte-mm-host {
+        position: absolute;
+        top:   0;
+        right: var(--lte-scrollbar-w);
+        width: var(--lte-minimap-w);
+        /* full lte height minus bar — DocMinimap clips internally */
+        bottom: 0;
+        pointer-events: none;   /* host is invisible; children re-enable as needed */
+    }
+    .lte-mm-host > :global(*) { pointer-events: auto; }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
        ranges read clearly. One rule works even when marks overlap because

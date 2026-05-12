@@ -118,153 +118,159 @@
 //#endregion
 
 
+
+
+
+
+
+
+
+
+
+
+
+//#endregion
 //#region PotPlant
 
-    // w/shelf/*pot,plant,soil,dose:3   — starting positions
-    // w/yard/*pot,plant,soil,dose:5    — destination after repotting
-    // w/yard/soil,dose:15              — bulk soil supply; consumed during repot
+    // w/body,hands:2                    — snappable; body.o({pot:1}).length < hands = capacity
+    // w/shelf/*pot/plant|soil,dose:3    — starting positions
+    // w/yard/*pot/plant|soil,dose:5     — destination after repotting
+    // w/yard/soil,dose:12               — bulk supply; 2 doses per pot (3+2=5)
     //
-    // De:gather_outside/req:move_pot:$ — carry shelf→yard, two hands at a time (async)
-    // De:repot,maz:2/req:repot,pot:$   — draw from yard/soil, update pot dose:3→5
-    // De:celebrate,maz:3/req:confetti  — fires once all repotted
-    //
-    // proves: three-level maz, %waits re-stamp, %init_seq first-run guard,
-    //         async elvis, %log arc on w, doai vs rq.do(fn) contrast,
-    //         two-arg oai %mutated (soil top-up mid-run), subreqys at De layer
+    // De:repot
+    //   req:move_outside                — shelf→body→yard via Runstepped snap
+    //   req:repot,maz:2                 — draw 2 from yard/soil, pot soil dose:3→5
+    //   req:move_inside,maz:3           — yard→body→shelf
+    // De:celebrate,maz:2
 
     Run_A_PotPlant(this: House) {
         const A = this.o({ A: 'PotPlant' })[0] || this.i({ A: 'PotPlant' })
-        if (!A.o({ w: 'garden' }).length) {
-            const w  = A.i({ w: 'garden' })
-            const sh = w.oai({ shelf: 1 })
+        if (!A.o({ w: 'PotPlant' }).length) {
+            const w    = A.i({ w: 'PotPlant' })
+            w.i({ body: 1, hands: 2 })
+            const sh   = w.oai({ shelf: 1 })
             for (const name of ['rose', 'fern', 'cactus']) {
                 const pot = sh.oai({ pot: name })
                 pot.i({ plant: 1 })
                 pot.i({ soil: 1, dose: 3 })
             }
-            // yard starts empty of pots but stocked with bulk soil
             const yard = w.oai({ yard: 1 })
-            yard.i({ soil: 1, dose: 15 })
+            yard.i({ soil: 1, dose: 12 })   // 3 pots × 2 doses each
         }
         console.log(`🪴 ${this.name} PotPlant wired`)
     },
 
-    async garden(A, w) {
-        // two hands per Atime — resets at top of every garden() call
-        w.c.hands = 2
-
+    async PotPlant(A, w) {
         const shelf = w.oai({ shelf: 1 })
         const yard  = w.oai({ yard:  1 })
+        const body  = w.oai({ body:  1 })
 
-        // De-layer requlator — subreqys wires default do_fn for Des that lack one;
-        //   here all three Des use doai so subreqys is exercised but left as safety net
         w.c.rq ||= this.reqys(w, 'De')
         const dq = w.c.rq
-        dq.subreqys('req')   // any De without a do_fn auto-runs its req layer
+        dq.subreqys('req')
 
-        // move_pot_done handled inline — stamps o_elvis so _Aw_think routes here
-        for (const ev of this.o_elvis(w, 'move_pot_done')) {
-            const De  = ev.c.De  as TheC
-            const req = ev.c.req as TheC
-            if (!De || !req || req.sc.finished) continue
-            // move the actual pot C from shelf to yard
-            const pot = shelf.o({ pot: req.sc.pot })[0]
-            if (pot) {
-                await shelf.drop(pot)
-                yard.i(pot)
-            }
-            w.oai({ log: 1 }).i({ msg: `${req.sc.pot} in yard` })
-            this.reqys(De, 'req').finish(req)
-            await De.c.rq?.do()
-            if (De.c.rq?.all_done() && !De.sc.finished) {
-                this.want_savepoint()   // snap: all pots outside before repot starts
-                dq.finish(De)
-            }
-        }
-
-        // ── De:gather_outside ─────────────────────────────────────────────────
-        await dq.doai({ De: 'gather_outside' })?.(async (De: TheC, dq) => {
+        // ── De:repot ──────────────────────────────────────────────────────────
+        dq.doai({ De: 'repot' })?.(async (De: TheC, dq) => {
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
 
-            for (const pot of shelf.o({ pot: 1 }) as TheC[]) {
-                await rq.doai({ req: 'move_pot', pot: pot.sc.pot })?.(async (req, rq) => {
-                    if (req.sc.moving) return   // carry already in flight
-
-                    if (w.c.hands <= 0) {
-                        req.i({ waits: 'hands' })   // re-stamped if still blocked
-                        return
+            // req:move_outside
+            //   phase A: if body%is_there_yet, unload body→yard and clear flag
+            //   phase B: load shelf→body up to hands capacity, snap via Runstepped
+            rq.doai({ req: 'move_outside' })?.(async (req, rq) => {
+                if (body.c.is_there_yet) {
+                    body.c.is_there_yet = false
+                    for (const pot of body.o({ pot: 1 }) as TheC[]) {
+                        await body.r({ pot: pot.sc.pot }, {})
+                        yard.i(pot)
+                        w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} in yard` })
                     }
-
-                    if (req.sc.init_seq) {
-                        // first run only — init_seq cleaned at top of next do() pass
-                        w.oai({ log: 1 }).i({ msg: `carrying ${req.sc.pot}` })
-                    }
-
-                    w.c.hands--
-                    req.sc.moving = 1
-
-                    this.post_do(async () => {
-                        await new Promise(r => setTimeout(r, 700))
-                        this.i_elvisto(w, 'move_pot_done', { c: { De, req } })
-                    })
-                    this.demand_time_to_think(1500)
-                })
-            }
-
-            await rq.do()
-            if (rq.all_done() && !De.sc.finished) {
-                this.want_savepoint()
-                dq.finish(De)
-            }
-        })
-
-        // ── De:repot,maz:2 ────────────────────────────────────────────────────
-        // uses rq.do(fn) — one batch fn attends all reqs: the requesty_serial habit
-        // also exercises two-arg oai: if yard soil runs low mid-run, a top-up
-        //   elvis could call rq.oai({req:'repot',pot:'rose'},{retried:1}) to stamp %mutated
-        await dq.doai({ De: 'repot' }, { maz: 2 })?.(async (De: TheC, dq) => {
-            De.c.rq ||= this.reqys(De, 'req')
-            const rq = De.c.rq
-
-            for (const pot of yard.o({ pot: 1 }) as TheC[]) {
-                await rq.oai({ req: 'repot', pot: pot.sc.pot })
-                // reprop_fn set once — logs if this req was mutated (eg soil top-up retry)
-                const r = rq.o({ req: 'repot', pot: pot.sc.pot })[0]
-                r.c.reprop_fn ||= (req: TheC) => {
-                    w.oai({ log: 1 }).i({ msg: `repot ${req.sc.pot} reproped` })
                 }
-            }
 
-            await rq.do(async (req: TheC, rq) => {
-                const pot  = yard.o({ pot: req.sc.pot })[0]
-                const soil = yard.o({ soil: 1 })[0]
-                if (!pot || !soil) return
+                const onShelf  = shelf.o({ pot: 1 }) as TheC[]
+                const onBody   = body.o({ pot: 1 }) as TheC[]
+                const capacity = (body.sc.hands as number) - onBody.length
 
-                const available = soil.sc.dose as number
-                if (available < 5) {
-                    req.i({ waits: 'soil' })   // blocked — re-stamped, visible in snap
+                if (!onShelf.length && !onBody.length) {
+                    rq.finish(req)
                     return
                 }
 
-                // consume from bulk supply, upgrade pot
-                soil.sc.dose = available - 5
-                await pot.r({ soil: 1 }, {})
-                pot.i({ soil: 1, dose: 5 })
-                w.oai({ log: 1 }).i({ msg: `repotted ${req.sc.pot} (yard soil: ${soil.sc.dose})` })
+                for (const pot of onShelf.slice(0, capacity)) {
+                    await shelf.r({ pot: pot.sc.pot }, {})
+                    body.i(pot)
+                    w.oai({ log: 1 }).i({ msg: `carrying ${pot.sc.pot}` })
+                }
+
+                if (body.o({ pot: 1 }).length) {
+                    // snap body/pot:* before transit completes
+                    this.Runstepped().then(() => {
+                        body.c.is_there_yet = true
+                        this.feebly_ponder()
+                    })
+                }
+            })
+
+            // req:repot,maz:2 — batch fn: top up each pot by 2 doses from yard supply
+            rq.oai({ req: 'repot', maz: 2 })
+            await rq.do(async (req: TheC, rq) => {
+                if (req.sc.req !== 'repot') return
+                const ysoil = yard.o({ soil: 1 })[0]
+                if (!ysoil) return
+                for (const pot of yard.o({ pot: 1 }) as TheC[]) {
+                    if ((ysoil.sc.dose as number) < 2) { req.i({ waits: 'soil' }); return }
+                    ysoil.sc.dose = (ysoil.sc.dose as number) - 2
+                    const psoil = pot.o({ soil: 1 })[0]
+                    if (psoil) psoil.sc.dose = (psoil.sc.dose as number) + 2   // 3→5
+                    w.oai({ log: 1 }).i({ msg: `repotted ${pot.sc.pot} (yard soil: ${ysoil.sc.dose})` })
+                }
                 rq.finish(req)
             })
 
+            // req:move_inside,maz:3 — mirror of move_outside
+            rq.doai({ req: 'move_inside', maz: 3 })?.(async (req, rq) => {
+                if (body.c.is_there_yet) {
+                    body.c.is_there_yet = false
+                    for (const pot of body.o({ pot: 1 }) as TheC[]) {
+                        await body.r({ pot: pot.sc.pot }, {})
+                        shelf.i(pot)
+                        w.oai({ log: 1 }).i({ msg: `${pot.sc.pot} back on shelf` })
+                    }
+                }
+
+                const inYard   = yard.o({ pot: 1 }) as TheC[]
+                const onBody   = body.o({ pot: 1 }) as TheC[]
+                const capacity = (body.sc.hands as number) - onBody.length
+
+                if (!inYard.length && !onBody.length) {
+                    rq.finish(req)
+                    return
+                }
+
+                for (const pot of inYard.slice(0, capacity)) {
+                    await yard.r({ pot: pot.sc.pot }, {})
+                    body.i(pot)
+                }
+
+                if (body.o({ pot: 1 }).length) {
+                    this.Runstepped().then(() => {
+                        body.c.is_there_yet = true
+                        this.feebly_ponder()
+                    })
+                }
+            })
+
+            await rq.do()
             if (rq.all_done() && !De.sc.finished) dq.finish(De)
         })
 
-        // ── De:celebrate,maz:3 ────────────────────────────────────────────────
-        await dq.doai({ De: 'celebrate' }, { maz: 3 })?.(async (De: TheC, dq) => {
+        // ── De:celebrate,maz:2 ────────────────────────────────────────────────
+        dq.doai({ De: 'celebrate' }, { maz: 2 })?.(async (De: TheC, dq) => {
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
 
-            await rq.doai({ req: 'confetti' })?.(async (req, rq) => {
-                w.i({ see: '🎉 all repotted!' })
+            rq.doai({ req: 'confetti' })?.(async (req, rq) => {
+                w.i({ see: '🎉 all repotted and shelved!' })
                 rq.finish(req)
             })
 
@@ -276,6 +282,15 @@
     },
 
 //#endregion
+
+
+
+
+
+
+
+
+
 
 
 

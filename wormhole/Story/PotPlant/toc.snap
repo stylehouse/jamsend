@@ -27,21 +27,25 @@ story:PotPlant
       style:width,v:24
     matstyle:yard
       style:background-color,v:#bd36c9
+    matstyle:body
+      style:background-color,v:#bbdb43
+    matstyle:waits
+      style:background-color,v:#32618f
   Plan
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:2.13
-      sample:2.137,at:1778574329
-      sample:2.137,at:1778574358
-      sample:2.126,at:1778577208
-      sample:2.13,at:1778577265
-      sample:2.133,at:1778577318
+    TimeTotal:beliefs,avg:1.069
       sample:2.126,at:1778577342
       sample:2.129,at:1778577857
       sample:2.126,at:1778579011
       sample:2.133,at:1778579045
       sample:2.124,at:1778579058
-  step,dige:02584723d8217451
-  step:2,dige:ec0f723033cea3a5
-  step:3,dige:c1570e1768de2347
+      sample:0.008,at:1778580297
+      sample:0.009,at:1778580909
+      sample:0.009,at:1778580914
+      sample:0.007,at:1778580921
+      sample:0.017,at:1778581731
+  step,dige:09fce86703b1c984
+  step:2,dige:8c24cf9e6e70c005
+  step:3,dige:a866b38f80608408

@@ -1,35 +1,181 @@
 Snap:H
   H:PotPlant,Run
     A:PotPlant
-      {"mung":["age"]}	self,round:5
-      w:garden
-        shelf
+      {"mung":["age"]}	self,round:2
+      w:PotPlant
+        body,hands:2
           pot:rose
             plant
             soil,dose:3
           pot:fern
             plant
             soil,dose:3
+        shelf
           pot:cactus
             plant
             soil,dose:3
         yard
-          soil,dose:15
-        o_elvis:move_pot_done
-        De:gather_outside,init_seq:5
-          req:move_pot,pot:rose,moving,init_seq:13
-          req:move_pot,pot:fern,moving,init_seq:14
-          req:move_pot,pot:cactus,moving,init_seq:15
-        De:repot,maz:2
-        De:celebrate,maz:3
+          soil,dose:12
+        De:repot,init_seq:2
+          req:move_outside,init_seq:4
+          req:repot,maz:2
+          req:move_inside,maz:3
+        De:celebrate,maz:2
         log
           msg:carrying rose
           msg:carrying fern
-          msg:carrying cactus
-        {"mung":["age"]}	self,round:5
+        {"mung":["age"]}	self,round:2
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
-  {"upsert":1,"id":"cytoid_1_1_3","label":"De:gather_ou…\ninit_seq:5"}
-  {"upsert":1,"id":"cytoid_1_1_3_1","label":"req:move_pot\npot:rose\nmoving\ninit_seq:13"}
-  {"upsert":1,"id":"cytoid_1_1_3_2","label":"req:move_pot\npot:fern\nmoving\ninit_seq:14"}
-  {"upsert":1,"id":"cytoid_1_1_3_3","label":"req:move_pot\npot:cactus\nmoving\ninit_seq:15"}
+  upsert,id:cytoid_1_1,label:PotPlant,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1","label":"body\nhands:2","parent":"cytoid_1_1"}
+    style,background-color:#bbdb43
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"pot:rose","parent":"cytoid_1_1"}
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_1_1_2,label:plant,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_1_3","label":"soil\ndose:3","parent":"cytoid_1_1"}
+    style,background-color:#8f3232
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_2","label":"pot:fern","parent":"cytoid_1_1"}
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_1_2_2,label:plant,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_2_3","label":"soil\ndose:3","parent":"cytoid_1_1"}
+    style,background-color:#8f3232
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2,label:shelf,parent:cytoid_1_1
+    style,background-color:#1a4828
+    style,color:#90ffc0
+    style,height:24
+    style,shape:round-rectangle
+    style,width:24
+  {"upsert":1,"id":"cytoid_1_1_2_1","label":"pot:cactus","parent":"cytoid_1_1"}
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1_2,label:plant,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_2_1_3","label":"soil\ndose:3","parent":"cytoid_1_1"}
+    style,background-color:#8f3232
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_3,label:yard,parent:cytoid_1_1
+    style,background-color:#bd36c9
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3_1","label":"soil\ndose:12","parent":"cytoid_1_1"}
+    style,background-color:#8f3232
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4","label":"De:repot\ninit_seq","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_1","label":"req:move_outs…\ninit_seq:2","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_2","label":"req:repot\nmaz:2","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4_3","label":"req:move_inside\nmaz:3","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5","label":"De:celebrate\nmaz:2","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_6,label:log,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_6_1","label":"msg:carrying …","parent":"cytoid_1_1"}
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_6_2","label":"msg:carrying …","parent":"cytoid_1_1"}
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge_upsert,id:cytoid_1_1_1_1_2_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_2
+  edge_upsert,id:cytoid_1_1_1_1_3_1,source:cytoid_1_1_1_1,target:cytoid_1_1_1_1_3
+  edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+  edge_upsert,id:cytoid_1_1_1_2_2_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_2
+  edge_upsert,id:cytoid_1_1_1_2_3_1,source:cytoid_1_1_1_2,target:cytoid_1_1_1_2_3
+  edge_upsert,id:cytoid_1_1_2_1_1,source:cytoid_1_1_2,target:cytoid_1_1_2_1
+  edge_upsert,id:cytoid_1_1_2_1_2_1,source:cytoid_1_1_2_1,target:cytoid_1_1_2_1_2
+  edge_upsert,id:cytoid_1_1_2_1_3_1,source:cytoid_1_1_2_1,target:cytoid_1_1_2_1_3
+  edge_upsert,id:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
+  edge_upsert,id:cytoid_1_1_4_1_1,source:cytoid_1_1_4,target:cytoid_1_1_4_1
+  edge_upsert,id:cytoid_1_1_4_2_1,source:cytoid_1_1_4,target:cytoid_1_1_4_2
+  edge_upsert,id:cytoid_1_1_4_3_1,source:cytoid_1_1_4,target:cytoid_1_1_4_3
+  edge_upsert,id:cytoid_1_1_6_1_1,source:cytoid_1_1_6,target:cytoid_1_1_6_1
+  edge_upsert,id:cytoid_1_1_6_2_1,source:cytoid_1_1_6,target:cytoid_1_1_6_2

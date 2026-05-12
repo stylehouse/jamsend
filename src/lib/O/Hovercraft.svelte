@@ -110,6 +110,22 @@
     },
 //#endregion
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //#region reqys
 
     // Fork of requesty_serial() — see History in De_req_spec for the lineage.
@@ -204,7 +220,8 @@
                     }
                 }
 
-                // cull finished — defer to next Story step when inside a run
+                // cull finished reqs — wait for snap if inside a Story run,
+                //   so the finished state appears in the record before disappearing
                 for (const req of [...all]) {
                     if (!req.sc.finished) continue
                     if (H.c.runtime) {
@@ -272,8 +289,29 @@
         this.main()
     },
 
-    // promise resolved when Story next advances a step.
-    //   reqys() uses this to hold finished reqs until they appear in a snap.
+    // queue a callback for when the Story step_n next changes.
+    //   cb fires an elvis inline — no async, no setTimeout needed.
+    //   couldbe_nexttime(w) must run at the top of the relevant w method each tick.
+    coulddo_nexttime(w: TheC, cb: Function) {
+        w.c._nexttime_q    ||= []
+        w.c._nexttime_step ||= this.sc.run?.sc?.step_n
+        ;(w.c._nexttime_q as Function[]).push(cb)
+    },
+
+    // call at the top of a w method each tick.
+    //   fires all queued cbs when step_n has advanced since they were registered.
+    couldbe_nexttime(w: TheC) {
+        const step = this.sc.run?.sc?.step_n
+        if (!w.c._nexttime_q?.length) { w.c._nexttime_step = step; return }
+        if (step === w.c._nexttime_step) return
+        const q = w.c._nexttime_q as Function[]
+        w.c._nexttime_q    = []
+        w.c._nexttime_step = step
+        for (const cb of q) cb()
+    },
+
+    // promise resolved when Story next takes a snap.
+    //   use to hold state (eg a finished req, or body/pot) until it appears in the record.
     //   Story calls _resolve_runstepped() at each step advance.
     Runstepped(): Promise<void> {
         this.c._runstepped_q ||= []
@@ -294,6 +332,28 @@
     },
 
 //#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //#region Dip_assign
 
     // Assign a branching hierarchical id to D under a named scheme.
