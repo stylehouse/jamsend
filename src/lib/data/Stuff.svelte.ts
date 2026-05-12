@@ -184,7 +184,7 @@ class StuffIO {
     }
     // terser and always true access to version(), for reactivity
     //  is_exa = $derived(exa.vers && exa.sc.active_path == doc.sc.path)
-    get v() {
+    get vers() {
         return this.version + 1
     }
 
@@ -280,7 +280,7 @@ class StuffIO {
     // H.ave.version is only bumped by Housing's flush() after all_clear(),
     // so $effects re-run exactly once per settled beliefs cycle.
     ob(c?:TheUniversal,q?):TheN {
-        void this.version
+        void this.vers // may be UI-buffered in the future...
         return this.o(c,q)
     }
 
@@ -323,8 +323,10 @@ class StuffIO {
         return nonemptyArray_or_null(this.bo1(c,q))
     }
 
-    // select or insert - when you want .r() but keeping the C object
-    //  oai(match_sc,props_sc) doesn't merge props onto the found particle, only if created. see roai
+    // select or insert but not update
+    //  when you want .r(), but preserving the first version of the C once matching s
+    //  oai(match_sc,props_sc) doesn't merge props onto the found particle, only if created
+    //   otherwise see roai()
     // < could upsert, index-safely?
     oai(s,c={}):TheC {
         return this.o(s)[0] || this.i({...s,...c})

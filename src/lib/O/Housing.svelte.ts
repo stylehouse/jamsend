@@ -1225,6 +1225,11 @@ export class House extends StorableHousing {
     watched:   Array<{ C: TheC, handler: Function }> = $state([])
     watched_v: number[] = []
 
+    // high level: create|return eg H/%watched:ave to .i(C_to_give_UI)
+    watch(channel_name:'UIs'|'ave'|'actions'|'graph') {
+        return this.oai_enroll(this, { watched: channel_name }) 
+    }
+    // low level: your handler reacts to ~C
     watch_c(C: TheC, handler: Function) {
         if (this.watched.some(w => w.C === C)) return
         this.watched.push({ C, handler })
