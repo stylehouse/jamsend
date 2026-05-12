@@ -235,9 +235,13 @@
     // updates live whenever bookmarks are added, removed, or fuzzified.
     let bookmarks: TheC[] = $derived(active_doc ? active_doc.ob({ bookmark: 1 }) as TheC[] : [])
 
-    // minimap_open: toggle lives here (not inside DocMinimap) so the button
-    // stays at a fixed position in the bar regardless of minimap visibility.
+    // minimap_open: toggled by the "map" button in the bar.
+    // Toggle lives here so the button position doesn't move when the map opens.
     let minimap_open = $state(true)
+
+    // expanded: makes cm-scroller take 90vh instead of the default 50vh.
+    // V button in bar — same Λ/V rotation idiom as Storui's diff-panel expand.
+    let expanded = $state(false)
 
     // ── signal $effect ────────────────────────────────────────────────────────
     //   Reads H.ave for lang_actions, active_doc, and langtiles_doc.
@@ -613,7 +617,7 @@
 </script>
 
 {#if active_path}
-<div class="lte">
+<div class="lte" class:lte-expanded={expanded}>
     {#if docC}
     <div class="lte-bar">
         <!-- doc-picker dropdown + any other Lang actions (compo/compi toggles etc) -->
@@ -622,23 +626,27 @@
         <span class="lte-hint">Ctrl+B</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
-        <!-- minimap toggle — fixed in bar so it never moves when minimap closes.
-             V rendered upside-down (Λ) when open, right-side-up when closed,
-             matching the Storui expand button idiom. -->
-        <button class="lte-mm-toggle" class:open={minimap_open}
+        <!-- "map" button: toggles minimap overlay, active when open -->
+        <button class="lte-map-btn" class:active={minimap_open}
                 onclick={() => minimap_open = !minimap_open}
-                title="{minimap_open ? 'hide minimap' : 'show minimap'}">V</button>
+                title="{minimap_open ? 'hide minimap' : 'show minimap'}">map</button>
+        <!-- V button: expand editor to 90vh / collapse to 50vh.
+             Λ (upside-down V) when expanded — same idiom as Storui's diff panel. -->
+        <button class="lte-expand-btn" class:open={expanded}
+                onclick={() => expanded = !expanded}
+                title="{expanded ? 'collapse editor' : 'expand editor'}">V</button>
     </div>
     {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
-    <div class="lte-cm" bind:this={container}></div>
-    {#if minimap_open}
-    <!-- lte-mm-host sizes the minimap overlay and pins it left of the scrollbar.
-         Width and scrollbar-gutter are kept in CSS vars so they can be knobbed. -->
-    <div class="lte-mm-host">
-        <DocMinimap {H} {view} {active_path} />
+    <!-- lte-mm-host is a child so it's sized to the editor area, not the whole panel -->
+    <div class="lte-cm" bind:this={container}>
+        {#if minimap_open}
+        <!-- lte-mm-host overlays the editor; pins left of the scrollbar gutter -->
+        <div class="lte-mm-host">
+            <DocMinimap {H} {view} {active_path} />
+        </div>
+        {/if}
     </div>
-    {/if}
     {#if active_doc && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">
@@ -673,11 +681,23 @@
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
 
-    /* ── minimap toggle button ──────────────────────────────────────────── */
-    /* Lives in the bar so its position never moves when the minimap opens  */
-    /* or closes.  Uses Storui's upside-down-V idiom: Λ when open, V when  */
-    /* closed — the same visual language as .sr-expand in Storui.svelte.   */
-    .lte-mm-toggle {
+    /* ── "map" button — minimap toggle ─────────────────────────────────── */
+    /* Plain word button; active state is colour, not rotation.             */
+    .lte-map-btn {
+        background: none; border: none;
+        color: #2a2a3a; cursor: pointer;
+        font-family: monospace; font-size: 9px;
+        letter-spacing: 0.08em; text-transform: lowercase;
+        padding: 1px 4px; border-radius: 2px; flex-shrink: 0;
+        transition: color 0.15s, background 0.15s;
+    }
+    .lte-map-btn:hover  { color: #7090b0 }
+    .lte-map-btn.active { color: #5080a0; background: #0d0d20 }
+
+    /* ── V / Λ expand button ────────────────────────────────────────────── */
+    /* Matches Storui's .sr-expand idiom: right-side-up V = "expand",       */
+    /* upside-down Λ = "collapse".  Rotates on open.                        */
+    .lte-expand-btn {
         background: none; border: none;
         color: #383848; cursor: pointer;
         font-family: Georgia, 'Times New Roman', serif;
@@ -686,12 +706,10 @@
         display: flex; align-items: center; justify-content: center;
         transition: color 0.15s, transform 0.2s;
         transform-origin: center;
-        /* open: Λ (upside-down V) — minimap is visible, pointing inward */
-        transform: rotate(180deg);
+        transform: rotate(0deg);   /* V — collapsed, points down → "expand" */
     }
-    .lte-mm-toggle:hover { color: #7090b0; }
-    /* closed: right-side-up V — points down, suggesting "expand" */
-    .lte-mm-toggle.open { transform: rotate(0deg); }
+    .lte-expand-btn:hover     { color: #7090b0 }
+    .lte-expand-btn.open      { transform: rotate(180deg) }  /* Λ — expanded */
 
     /* ── editor area ────────────────────────────────────────────────────── */
     /* Height constraint lives on cm-scroller, not on .lte-cm.              */
@@ -703,7 +721,8 @@
     /* band, which corrupts the display on long files.  Constraining the     */
     /* scroller directly keeps CM's measure loop correct and leaves          */
     /* scrollSnapshot()/dispatch restoration working without any JS changes. */
-    .lte-cm    { /* wrapper: shrinks to fit cm-editor, no overflow here */ }
+    /* wrapper: position:relative makes it the containing block for lte-mm-host */
+    .lte-cm    { position: relative; }
     .lte-cm :global(.cm-editor)  { /* auto height — driven by cm-scroller */ }
     .lte-cm :global(.cm-content) { font-size: 12px; }
 
@@ -714,6 +733,8 @@
         min-height: 200px;
         max-height: 50vh;
     }
+    /* lte-expanded: V button pressed — give the editor room to breathe     */
+    .lte-expanded .lte-cm :global(.cm-scroller) { max-height: 80vh }
 
     /* ── webkit scrollbar — vertical fat, horizontal skinny ─────────────── */
     /* Applies to cm-scroller only.  Outer page scrollbars are unaffected.  */
@@ -724,6 +745,7 @@
     }
     .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb {
         border-radius: 1em;
+        min-height: 4em;
         background: url(i/copper_anodes.jpg);
     }
     .lte-cm :global(.cm-scroller)::-webkit-scrollbar-track {
@@ -744,17 +766,19 @@
     }
 
     /* ── minimap overlay host ────────────────────────────────────────────── */
-    /* Absolutely positioned over the editor canvas, right edge flush with   */
-    /* the left edge of the scrollbar.  Width is the minimap fraction.       */
-    /* DocMinimap fills this host; its own pointer-events handle clicks.     */
+    /* Absolutely positioned inside lte-cm (its containing block), so       */
+    /* top/bottom track the editor area exactly — bar is not in scope.      */
+    /* overflow:hidden clips DocMinimap's canvas to the editor viewport.    */
+    /* DocMinimap fills this host; its own pointer-events handle clicks.    */
     .lte-mm-host {
         position: absolute;
-        top:   0;
-        right: var(--lte-scrollbar-w);
-        width: var(--lte-minimap-w);
-        /* full lte height minus bar — DocMinimap clips internally */
-        bottom: 0;
-        pointer-events: none;   /* host is invisible; children re-enable as needed */
+        top:      0;
+        bottom:   0;
+        right:    var(--lte-scrollbar-w);
+        width:    var(--lte-minimap-w);
+        overflow: hidden;           /* clips minimap canvas to editor area */
+        pointer-events: none;       /* host is invisible; children re-enable as needed */
+        z-index:  1;                /* above the editor canvas, below any tooltips */
     }
     .lte-mm-host > :global(*) { pointer-events: auto; }
 
