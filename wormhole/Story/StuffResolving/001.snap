@@ -5,14 +5,14 @@ Snap:H
       w:StuffResolving
         {"mung":["age"]}	self,round
         log
+          msg:resolved pair,before:n = blah,after:n = blah
           msg:resolved pair,before:etc,after:etc
-          msg:resolved pair,before:n = blah,after:blah
-          msg:resolved pair,before:blah,after:n = blah
+          msg:resolved pair,before:blah,after:blah
         item
           blah
-            first
-          blah,bang
             second
+          blah,bang
+            first
           etc
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave
@@ -33,19 +33,19 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_1_1","label":"msg:resolved …\nbefore:etc\nafter:etc","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"msg:resolved …\nbefore:n = blah\nafter:n = blah","parent":"cytoid_1_1"}
     style,background-color:#bc2476
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_1_2","label":"msg:resolved …\nbefore:n = blah\nafter:blah","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_2","label":"msg:resolved …\nbefore:etc\nafter:etc","parent":"cytoid_1_1"}
     style,background-color:#bc2476
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_1_3","label":"msg:resolved …\nbefore:blah\nafter:n = blah","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_1_3","label":"msg:resolved …\nbefore:blah\nafter:blah","parent":"cytoid_1_1"}
     style,background-color:#bc2476
     style,color:#ccc
     style,height:20
@@ -63,8 +63,8 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  upsert,id:cytoid_1_1_2_1_2,label:first,parent:cytoid_1_1
-    style,background-color:#a34b1f
+  upsert,id:cytoid_1_1_2_1_2,label:second,parent:cytoid_1_1
+    style,background-color:#3aa67e
     style,color:#ccc
     style,height:20
     style,shape:ellipse
@@ -75,8 +75,8 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  upsert,id:cytoid_1_1_2_2_2,label:second,parent:cytoid_1_1
-    style,background-color:#3aa67e
+  upsert,id:cytoid_1_1_2_2_2,label:first,parent:cytoid_1_1
+    style,background-color:#a34b1f
     style,color:#ccc
     style,height:20
     style,shape:ellipse

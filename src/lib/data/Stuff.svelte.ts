@@ -827,6 +827,13 @@ export class Stuff extends TimeOffice {
             claimed.push(oldn)
         }
 
+        // obvious a == b, can be out of ordered
+        for (let n of oldX.z) {
+            if (!unfound.includes(n)) continue
+            claim(n,n)
+        }
+
+
         // sort by unambiguity
         // give up on weak reductive logicality
         //  you can break LangTiles playing with this. had to reduce from 0.33 for it.
