@@ -1,96 +1,114 @@
 <script lang="ts">
     // ReactiveWaft.svelte
     //
-    // Subscribes to the same waft TheC two ways and logs each firing.
+    // Two subscriptions to the same waft TheC:
     //
-    //   gated   — reads H.ave.ob({Waft:1}).  H.ave.version only bumps after
-    //             flush/clear(), so this fires once per settled beliefs cycle.
+    //   gated   — H.ave.ob({Waft:1}): H.ave.version only bumps after flush/clear(),
+    //             once the beliefs cycle is fully done.
     //
-    //   ungated — reads void waft.version directly.  waft.X.serial_i is $state;
-    //             it bumps whenever Atime calls waft.i/r/replace/bump_version,
-    //             including between replace()'s internal await points.
+    //   ungated — void waft_in_ave?.version: the raw $state signal on waft.X.serial_i.
+    //             Fires at every waft.i/r/bump_version call, including between
+    //             replace()'s internal await points.
     //
-    // The rename_doc tick uses waft.r(), which calls replace() with several
-    // awaits.  Between those awaits Svelte can flush its microtask queue and
-    // run the ungated $effect — so the log should show intermediate states:
-    //   empty   (after replace's empty())
-    //   partial (after fn() fills in the new doc, before bo() restores others)
-    //   full    (after replace completes, after ave_s.bump_version() gates flush)
+    // Neither $effect writes to a $state variable inside itself.
+    // Instead they call H.c.UIlog via setTimeout(1) — breaking Svelte's
+    // reactive tracking chain so the w.i() inside UIlog doesn't re-trigger them.
     //
-    // If gated_n == ungated_n across all three ticks: no mid-cycle exposure.
-    // If ungated_n > gated_n: waft.version fired between beliefs cycles —
-    //   a C.vers buffer (UItime-only copy of version) would suppress the extras.
+    // Log rows are read from logC.version — a fine-grained subscription that
+    // fires only when UIlog writes a new entry, not on every H.ave bump.
+    //
+    // Snap assertions live in w** (uiLog particles), not in this component.
 
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
     let { H }: { H: House } = $props()
 
-    type Entry = { source: 'gated' | 'ungated', n: number, paths: string[] }
-    const log = $state<Entry[]>([])
-    let gated_n   = 0
-    let ungated_n = 0
+    // ── stable refs from H.ave ────────────────────────────────────────────────
+    let waft_in_ave = $state<TheC | undefined>()
+    let logC_in_ave = $state<TheC | undefined>()
 
-    function snap(waft: TheC): string[] {
-        return (waft.o({ Doc: 1 }) as TheC[]).map(d => {
-            const p = d.sc.path as string
-            return (d.sc as any).active ? p + '●' : p
-        })
+    // dedup sentinels — plain vars, not $state, so writes don't re-trigger effects
+    let prev_gated   = ''
+    let prev_ungated = ''
+    let gated_n      = 0
+    let ungated_n    = 0
+
+    function snap(waft: TheC): string {
+        return (waft.o({ Doc: 1 }) as TheC[])
+            .map(d => d.sc.path + ((d.sc as any).active ? '●' : ''))
+            .join('  ') || '∅'
     }
 
-    // ── gated ────────────────────────────────────────────────────────────────
-    // Subscribes to H.ave.version via ob().  Only fires after Housing flush/clear.
-    let waft = $state<TheC | undefined>()
-
+    // ── gated — subscribes to H.ave.version via ob() ─────────────────────────
     $effect(() => {
-        const found = H.ave.ob({ Waft: 1 })[0] as TheC | undefined
-        waft = found
-        if (!found) return
-        // log.push({ source: 'gated', n: ++gated_n, paths: snap(found) })
+        waft_in_ave = H.ave.ob({ Waft: 1 })[0] as TheC | undefined
+        logC_in_ave = H.ave.ob({ logC: 1 })[0] as TheC | undefined
+        if (!waft_in_ave) return
+        const docs = snap(waft_in_ave)
+        if (docs === prev_gated) return
+        prev_gated = docs
+        const n = ++gated_n
+        setTimeout(() => (H as any).c?.UIlog?.('gated', { docs, n }), 1)
     })
 
-    // ── ungated ──────────────────────────────────────────────────────────────
-    // Subscribes to waft.version — the raw Atime $state signal.
-    // Fires independently of the flush whenever waft is mutated in Atime.
+    // ── ungated — subscribes to waft.version directly ────────────────────────
+    // Fires between replace()'s await points — including mid-empty (docs='∅')
+    // and mid-fill — showing intermediate states the gated path never sees.
+    let ungated_docs = $derived.by(() => {
+        void waft_in_ave?.version
+        return waft_in_ave ? snap(waft_in_ave) : ''
+    })
+
     $effect(() => {
-        if (!waft) return
-        void (waft as TheC).version   // ungated Atime bump subscription
-        // log.push({ source: 'ungated', n: ++ungated_n, paths: snap(waft as TheC) })
+        const docs = ungated_docs
+        if (!docs || docs === prev_ungated) return
+        prev_ungated = docs
+        const n = ++ungated_n
+        setTimeout(() => (H as any).c?.UIlog?.('---->', { docs, n }), 1)
+    })
+
+    // ── log rows — fine-grained: only fires when UIlog writes a new entry ─────
+    let log_rows = $derived.by(() => {
+        void logC_in_ave?.version
+        return (logC_in_ave?.o({ uiLog: 1 }) ?? []) as TheC[]
     })
 </script>
 
 <div class="rw">
     <div class="rw-title">ReactiveWaft</div>
 
-    <!-- counts — the key readout -->
-    <div class="rw-counts">
-        <span class="g">gated {gated_n}</span>
-        <span class="sep">/</span>
-        <span class="u">ungated {ungated_n}</span>
-        {#if ungated_n > gated_n}
-            <span class="rw-note">← {ungated_n - gated_n} mid-cycle fire{ungated_n - gated_n > 1 ? 's' : ''}</span>
-        {/if}
-    </div>
-
-    <!-- current doc list from ungated (most up-to-date) -->
+    <!-- current doc list -->
     <div class="rw-docs">
-        {#if waft}
-            {#each (waft as TheC).o({ Doc: 1 }) as TheC[] as doc ((doc as TheC).sc.path)}
-                <span class="rw-doc" class:active={(doc as TheC).sc.active}>{(doc as TheC).sc.path}</span>
+        {#if waft_in_ave}
+            {#each waft_in_ave.o({ Doc: 1 }) as TheC[] as doc ((doc as TheC).sc.path)}
+                <span class="rw-doc" class:active={(doc as TheC).sc.active}>
+                    {(doc as TheC).sc.path}
+                </span>
             {:else}
-                <span class="rw-dim">(no docs)</span>
+                <span class="rw-dim">∅</span>
             {/each}
         {:else}
-            <span class="rw-dim">waiting for waft…</span>
+            <span class="rw-dim">waiting…</span>
         {/if}
     </div>
 
-    <!-- log — interleaved gated/ungated entries show firing order -->
+    <!-- counts -->
+    <div class="rw-counts">
+        <span class="g">G {gated_n}</span>
+        <span class="sep">/</span>
+        <span class="u">u {ungated_n}</span>
+        {#if ungated_n > gated_n}
+            <span class="rw-extra">+{ungated_n - gated_n} mid-cycle</span>
+        {/if}
+    </div>
+
+    <!-- log — written by UIlog into w**, read back via logC.version -->
     <div class="rw-log">
-        {#each log as e}
-            <div class="rw-row" class:g={e.source === 'gated'} class:u={e.source === 'ungated'}>
-                <span class="rw-src">{e.source === 'gated' ? 'G' : 'u'}{e.n}</span>
-                <span class="rw-paths">{e.paths.join('  ') || '∅'}</span>
+        {#each log_rows as row}
+            <div class="rw-row" class:g={(row as TheC).sc.src === 'gated'} class:u={(row as TheC).sc.src === 'ungated'}>
+                <span class="rw-src">{(row as TheC).sc.src === 'gated' ? 'G' : 'u'}{(row as TheC).sc.n ?? ''}</span>
+                <span class="rw-docs-val">{(row as TheC).sc.docs}</span>
             </div>
         {/each}
     </div>
@@ -100,32 +118,27 @@
 .rw {
     font-family: monospace; font-size: 0.8rem;
     padding: 0.5rem; background: #0e0e18;
-    border: 1px solid #2a2a3a; border-radius: 4px;
-    color: #ccc; min-width: 260px;
+    border: 1px solid #2a2a3a; border-radius: 4px; color: #ccc;
 }
-.rw-title  { font-weight: bold; color: #778; margin-bottom: 0.3rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em }
-.rw-counts { display: flex; gap: 0.4rem; align-items: baseline; margin-bottom: 0.35rem }
-.g  { color: #88c }
-.u  { color: #8a8 }
-.sep { color: #444 }
-.rw-note { color: #c84; font-size: 0.75rem; margin-left: 0.2rem }
-.rw-docs {
-    display: flex; gap: 0.25rem; flex-wrap: wrap;
-    min-height: 1.5rem; margin-bottom: 0.35rem;
-    padding: 0.2rem; background: #0a0a12; border-radius: 3px;
-}
-.rw-doc  { padding: 0.1rem 0.3rem; background: #1a1a2a; border-radius: 3px; color: #99b }
-.rw-doc.active { background: #162416; color: #8c8 }
-.rw-dim  { color: #333; font-style: italic }
-.rw-log  {
-    border-top: 1px solid #1a1a28; padding-top: 0.25rem;
-    max-height: 12rem; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 1px;
-}
-.rw-row  { display: flex; gap: 0.5rem; padding: 0.06rem 0; font-size: 0.75rem }
-.rw-row.g { color: #99b }
-.rw-row.u { color: #686 }
-.rw-src  { flex-shrink: 0; width: 2rem; text-align: right; color: inherit; font-weight: bold }
-.rw-paths { color: #556 }
-.rw-row.g .rw-paths { color: #aaa }
+.rw-title  { font-size: 0.72rem; color: #556; text-transform: uppercase;
+             letter-spacing: .05em; margin-bottom: .3rem }
+.rw-docs   { display: flex; gap: .3rem; flex-wrap: wrap; min-height: 1.4rem;
+             padding: .15rem .2rem; background: #0a0a12; border-radius: 3px;
+             margin-bottom: .3rem }
+.rw-doc    { padding: .05rem .25rem; background: #1a1a2a; border-radius: 2px; color: #99b }
+.rw-doc.active { background: #142014; color: #8c8 }
+.rw-dim    { color: #333; font-style: italic }
+.rw-counts { display: flex; gap: .4rem; align-items: baseline; margin-bottom: .3rem; font-size: .75rem }
+.g         { color: #88c }
+.u         { color: #8a8 }
+.sep       { color: #333 }
+.rw-extra  { color: #c84; font-size: .72rem }
+.rw-log    { border-top: 1px solid #1a1a28; padding-top: .2rem;
+             max-height: 11rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1px }
+.rw-row    { display: flex; gap: .4rem; font-size: .74rem; padding: .04rem 0 }
+.rw-row.g  { color: #99b }
+.rw-row.u  { color: #6a6 }
+.rw-src    { flex-shrink: 0; width: 2.2rem; text-align: right; font-weight: bold }
+.rw-docs-val { color: #445 }
+.rw-row.g .rw-docs-val { color: #aaa }
 </style>
