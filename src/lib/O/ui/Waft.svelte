@@ -14,6 +14,7 @@
     import type { House }   from "$lib/O/Housing.svelte"
     import { peel, depeel } from "$lib/Y.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
+    import ReactiveWaftComp from "../test/ReactiveWaftComp.svelte";
 
     let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
         H:         House

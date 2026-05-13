@@ -21,6 +21,7 @@
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import WaftComp         from "$lib/O/ui/Waft.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
+    import ReactiveWaftComp from "./test/ReactiveWaftComp.svelte";
 
     let { H }: { H: House } = $props()
 
@@ -39,6 +40,7 @@
 
     // H.ave is a stable TheC; ob() tracks H.ave.version for Svelte reactivity.
     $effect(() => {
+        console.log(`🔪 Liesui: ave++`)
         const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
         if (!ex) return
         const lies_w = ex.c?.w as TheC | undefined
@@ -47,10 +49,12 @@
             console.log(`🔪 Liesui: Lies found`)
             Lies = lies_w
         }
-        loaded_docs = lies_w.o({ loaded_doc: 1 })  as TheC[]
-        errors      = lies_w.o({ compile_error: 1 }) as TheC[]
-        all_wafts   = lies_w.o({ Waft: 1 })         as TheC[]
-        examining   = ex
+        H.clear(async () => {
+            loaded_docs = lies_w.o({ loaded_doc: 1 })  as TheC[]
+            errors      = lies_w.o({ compile_error: 1 }) as TheC[]
+            all_wafts   = lies_w.o({ Waft: 1 })         as TheC[]
+            examining   = ex
+        })
     })
 
     // ── header state ─────────────────────────────────────────────────
@@ -144,12 +148,14 @@
     <!-- ── Waft tree ── -->
     <!-- Pass Lies (the w particle) as w so DocRow inside WaftComp has live state. -->
     {#if all_wafts.length}
+        {@const thing = console.log("! all_wafts!!")}
         <div class="ls-waft-section">
             {#each all_wafts as waft (waft.sc.Waft)}
                 <WaftComp {H} w={Lies} {waft} depth={0}
                     {examining}
                     on_active={set_waft_active}
                     on_delete={delete_waft} />
+
             {/each}
         </div>
     {/if}

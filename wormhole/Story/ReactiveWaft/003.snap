@@ -1,0 +1,16 @@
+Snap:H
+  H:ReactiveWaft,Run
+    A:ReactiveWaft
+      {"mung":["age"]}	self,round:7
+      w:ReactiveWaft
+        Lies
+        Waft:test1
+          Doc,path:a.g
+          Doc,path:b.g
+        Waft:test2
+          Doc,path:x.g
+        {"mung":["age"]}	self,round:7
+    watched:ave
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:ReactiveWaft
+    {"mung":["id"]}	mo:main,interval:3.6

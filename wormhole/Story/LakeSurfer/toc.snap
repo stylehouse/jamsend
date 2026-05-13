@@ -68,16 +68,16 @@ story:LakeSurfer
         nogen
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.38
-      sample:0.31,at:1778565742
-      sample:0.37,at:1778570902
-      sample:0.624,at:1778571330
-      sample:0.375,at:1778571336
+    TimeTotal:beliefs,avg:0.343
       sample:0.359,at:1778571865
       sample:0.385,at:1778585806
       sample:0.3,at:1778585995
       sample:0.365,at:1778586005
       sample:0.34,at:1778586056
       sample:0.377,at:1778590893
+      sample:0.339,at:1778671308
+      sample:0.363,at:1778671531
+      sample:0.294,at:1778672267
+      sample:0.307,at:1778672527
   step,dige:d57fc3880abb869f
   step:2,dige:cda6c7eafc89e978

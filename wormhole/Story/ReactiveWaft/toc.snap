@@ -16,10 +16,20 @@ story:ReactiveWaft
   Opt
     For
     noCyto
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.007
-      sample:0.004,at:1778667438
-      sample:0.004,at:1778667466
+    TimeTotal:beliefs,avg:0.011
       sample:0.003,at:1778667497
       sample:0.016,at:1778667954
-  step,dige:c1f5650abf30b15c
+      sample:0.004,at:1778671144
+      sample:0.004,at:1778671188
+      sample:0.007,at:1778671190
+      sample:0.006,at:1778671210
+      sample:0.011,at:1778671234
+      sample:0.014,at:1778671235
+      sample:0.023,at:1778672898
+      sample:0.023,at:1778673128
+  step,dige:634e22a3e4ba8e20
+  step:2,dige:1e20a13a740cfa23
+  step:3,dige:fc544693b292de0a
+  step:4,dige:902ecfbaebef8972

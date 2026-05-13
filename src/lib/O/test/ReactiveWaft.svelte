@@ -1,61 +1,58 @@
 <script lang="ts">
-    // waft.version is the raw Atime $state signal — a UItime-buffered C.vers
-    // would require C→H awareness at bump time, which TheC doesn't have.
-    // Gated fires once per flush; ungated fires on every Atime waft bump,
-    // including between replace()'s internal await points.
-
-    // ReactiveVers
+    // Minimal Liesui emulation.
+    //
+    // Lies ($state) gates {#if Lies} — if it gets a new TheC object identity,
+    // the whole block tears down: all WaftComp instances remount, all adding_doc reset.
+    //
+    // all_wafts is $derived via H.ave.ob({Waft:1}) — re-runs on every H.ave flush.
+    // Each row is keyed by waft.sc.Waft so Svelte preserves WaftComp across re-derives
+    // as long as the key string is stable. Key stability is the second assertion.
+    //
+    // {@const _ = log_render(...)} fires on every re-render of a row (including
+    // non-remount re-derives). onMount inside WaftComp fires only on true remount.
+    // Comparing the two in the logger reveals re-render vs remount.
 
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
+    import WaftComp       from "./ReactiveWaftComp.svelte"
 
     let { H }: { H: House } = $props()
 
-    let waft_in_ave = $state<TheC | undefined>()
-
     const li = () => (H as any).c?.loggeri as ((end: string, sc?: Record<string,any>) => void) | undefined
 
-    function snap(waft: TheC): string {
-        return (waft.o({ Doc: 1 }) as TheC[])
-            .map(d => d.sc.path + ((d.sc as any).active ? '●' : ''))
-            .join('  ') || '∅'
-    }
+    let Lies     = $state<TheC | undefined>()
+    let lies_gen = 0
 
     $effect(() => {
-        waft_in_ave = H.ave.ob({ Waft: 1 })[0] as TheC | undefined
-        if (!waft_in_ave) return
-        const docs = snap(waft_in_ave)
-        setTimeout(() => li()?.('UI', { src: 'gateeed', docs }), 1)
+        const found = H.ave.ob({ Lies: 1 })[0] as TheC | undefined
+        if (found === Lies) return
+        Lies = found
+        setTimeout(() => li()?.('Lies', { gen: ++lies_gen }), 1)
     })
 
+    // mirrors Liesui: waft list is gated on Lies, read from ave
+    let all_wafts = $derived.by(() => {
+        if (!Lies) return [] as TheC[]
+        void H.ave.version   // gated — only re-derives on flush
+        return H.ave.ob({ Waft: 1 }) as TheC[]
+    })
+
+    function log_render(key: string) {
+        // fires on every re-render of a {#each} row — distinguishable from
+        // onMount (which fires only on actual DOM creation) in the logger
+        setTimeout(() => li()?.('render', { Waft: key }), 1)
+    }
 </script>
 
-<div class="rv">
-    <div class="rv-docs">
-        {#if waft_in_ave}
-            {#each waft_in_ave.o({ Doc: 1 }) as TheC[] as doc ((doc as TheC).sc.path)}
-                <span class="rv-doc" class:active={(doc as TheC).sc.active}>
-                    {(doc as TheC).sc.path}
-                </span>
-            {:else}
-                <span class="rv-dim">∅</span>
-            {/each}
-        {:else}
-            <span class="rv-dim">waiting…</span>
-        {/if}
-    </div>
-</div>
+{#if Lies}
+    {#each all_wafts as waft (waft.sc.Waft)}
+        {@const _ = log_render(waft.sc.Waft as string)}
+        <WaftComp {waft} {H} />
+    {/each}
+{:else}
+    <span class="rv-dim">waiting for Lies…</span>
+{/if}
 
 <style>
-.rv        { font-family: monospace; font-size: .8rem; padding: .4rem .5rem;
-             background: #0e0e18; border: 1px solid #2a2a3a; border-radius: 4px }
-.rv-counts { display: flex; gap: .35rem; align-items: baseline; margin-bottom: .25rem; font-size: .74rem }
-.g         { color: #88c }
-.u         { color: #8a8 }
-.sep       { color: #333 }
-.rv-extra  { color: #c84; font-size: .7rem }
-.rv-docs   { display: flex; gap: .25rem; flex-wrap: wrap; min-height: 1.2rem }
-.rv-doc    { padding: .04rem .22rem; background: #1a1a2a; border-radius: 2px; color: #99b; font-size: .75rem }
-.rv-doc.active { background: #142014; color: #8c8 }
-.rv-dim    { color: #333; font-style: italic; font-size: .75rem }
+.rv-dim { font-family: monospace; font-size: .75rem; color: #334 }
 </style>
