@@ -116,92 +116,81 @@
 
 
 //#region PotPlanet
-
  
-    // Fiction: a Desk receives an %order, which gets updated mid-flight.
-    // Each req is named for the feature it exercises.
+    // w/order,count:3                   — initial request; round:1 driver rewrites count:5
     //
-    // w/order,count:3                   — initial request; injector rewrites count:5
-    // w/De:receive
-    //   req:order                       — %init_seq, oai(c,sc) %mutated, reprop_fn,
-    //                                     want_savepoint
+    // De:receive
+    //   req:order                       — mutated_fn, want_savepoint
     //   req:confirm,maz:2               — pending(), Runstepped
-    // w/De:report,maz:2                 — De-level %waits, on_all_done,
+    // De:report,maz:2                   — De-level %waits, on_all_done,
     //                                     reqys(…,{do_fn}) fallback, w_noproblemo(…,{log:1})
     //   req:summarise                   — no c.do_fn; fallback carries it
-    //
-    // Injector: one Runstepped after setup fires oai(c,sc) on req:order → %mutated
-
-
+ 
     Run_A_PotPlanet(this: House) {
         const A = this.o({ A: 'PotPlanet' })[0] || this.i({ A: 'PotPlanet' })
         if (!A.o({ w: 'PotPlanet' }).length) {
             const w = A.i({ w: 'PotPlanet' })
-            w.oai({ order: 1 }).i({ count: 3 })   // starting request
         }
         console.log(`🪐 ${this.name} PotPlanet wired`)
     },
-
-    async PotPlanet(A, w) {
-        // ── one-shot injector: after the first step, push count:5 via oai(c,sc) ──
-        // Runstepped resolves at the next Story step boundary — the update lands
-        //   mid-flight on req:order, which already exists, so reqys stamps %mutated.
-        if (!w.sc.inject_armed) {
-            w.sc.inject_armed = true
-            this.Runstepped(async () => {
-                const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
-                if (dReceive) {
-                    const rq = this.reqys(dReceive, 'req')
-                    await rq.oai({ req: 'order' }, { count: 5 })
-                }
-                this.feebly_ponder()
-            })
-        }
  
+    async PotPlanet(A, w) {
+        this.logger(w)
+        const li    = this.c.loggeri
+        const self  = w.o({ self: 1 })[0]
+        const round = self?.sc.round as number | undefined
+ 
+        // ── test driver: mutations by round ───────────────────────────────────
+        ;({
+            1: () => {
+                debugger
+            },
+            4: () => {
+                debugger
+                li('driver_inject', { count: 5 })
+                const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
+                dReceive && this.reqys(dReceive, 'req').oai({ req: 'order' }, { count: 5 })
+            },
+        } as Record<number, () => void>)[round!]?.()
+ 
+        // ── business logic ────────────────────────────────────────────────────
         w.c.rq ||= this.reqys(w, 'De')
         const dq = w.c.rq
         dq.subreqys('req')
+        li('ran',{round})
  
-        // ── De:receive,maz:1 ─────────────────────────────────────────────────
+        // ── De:receive ────────────────────────────────────────────────────────
         dq.doai({ De: 'receive' })?.(async (De: TheC, dq) => {
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
  
             // req:order
-            //   reprop_fn: called by reqys on %mutated before cleanup;
-            //     updates req.sc.count from merged sc, logs the delta
-            //   do_fn first run (%init_seq): stamp initial log, want_savepoint for own snap
-            //   do_fn later runs: reprop_fn already handled the update; finish
+            //   mutated_fn: fires instead of do_fn when %mutated present;
+            //     old count lives in req.sc.mutated.count
+            //   do_fn: logs receipt; want_savepoint for its own snap; then finishes
             const rOrder = await rq.oai({ req: 'order' })
-            rOrder.sc.count ||= (w.o({ order: 1 })[0]?.sc.count as number || 0)
-            rOrder.c.reprop_fn ||= (req: TheC) => {
-                if (!req.sc.mutated) return
-                const prev          = rOrder.sc.count as number || 0
-                rOrder.sc.count     = (req.sc.count as number) || 0
-                w.oai({ log: 1 }).i({ msg: `order updated ${prev}→${rOrder.sc.count}` })
+            rOrder.sc.count     ||= (w.o({ order: 1 })[0]?.sc.count as number || 0)
+            rOrder.c.mutated_fn ||= async (req: TheC, rq: any) => {
+                li('order_updated', { prev: req.sc.mutated?.count || 0, now: req.sc.count || 0 })
             }
-            rq.doai({ req: 'order' })?.(async (req, rq) => {
-                if (req.sc.mutated) debugger
-                if (req.sc.init_seq) {
-                    w.oai({ log: 1 }).i({ msg: `order received count:${req.sc.count || 0}` })
-                    this.want_savepoint()   // snap init before mutation lands
-                    return
-                }
+            rq.doai({ req: 'order' })?.(async (req: TheC, rq: any) => {
+                li('order_received', { count: req.sc.count || 0 })
+                this.want_savepoint()
                 rq.finish(req)
             })
  
             // req:confirm,maz:2
-            //   pending(): holds until req:order leaves the unfinished set
-            //   Runstepped: confirmation staged across one step for snap visibility
-            rq.doai({ req: 'confirm', maz: 2 })?.(async (req, rq) => {
+            //   pending(): holds while req:order is still unfinished
+            //   Runstepped: completion staged across a step; loggeri call has no inA here
+            rq.doai({ req: 'confirm', maz: 2 })?.(async (req: TheC, rq: any) => {
                 if ((rq.pending() as TheC[]).some((r: TheC) => r.sc.req === 'order')) {
                     req.i({ waits: 'order' })
                     return
                 }
                 if (!req.sc.staged) {
-                    this.Runstepped(async () => {
+                    0 && this.Runstepped(async () => {
                         req.sc.staged = true
-                        w.oai({ log: 1 }).i({ msg: `confirmed count:${rOrder.sc.count || 0}` })
+                        li('confirmed', { count: rOrder.sc.count || 0 })
                         this.feebly_ponder()
                     })
                     return
@@ -214,10 +203,6 @@
         })
  
         // ── De:report,maz:2 ──────────────────────────────────────────────────
-        // De-level %waits: hold until De:receive is finished; re-stamped each pass
-        // on_all_done: De finishes via callback rather than inline check after rq.do()
-        // reqys(De,'req',{do_fn}): fallback handles req:summarise (no c.do_fn)
-        // w_noproblemo(req,{log:1}): fallback wipes %log before writing final see
         dq.doai({ De: 'report', maz: 2 })?.(async (De: TheC, dq) => {
             const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
             if (!dReceive?.sc.finished) {
@@ -225,18 +210,17 @@
                 return
             }
  
-            const fallback_do_fn = async (req: TheC, rq: any) => {
+            const fallback: Function = async (req: TheC, rq: any) => {
                 await this.w_noproblemo(req, { log: 1 })
-                const final = (w.o({ order: 1 })[0]?.sc.count as number) || 0
-                w.i({ see: `📋 final count: ${final}` })
+                li('report_final', { count: rOrder.sc.count || 0 })
+                w.i({ see: `📋 final count: ${rOrder.sc.count || 0}` })
                 rq.finish(req)
             }
  
-            De.c.rq         ||= this.reqys(De, 'req', { do_fn: fallback_do_fn })
+            De.c.rq          ||= this.reqys(De, 'req', { do_fn: fallback })
             De.c.on_all_done ||= async () => { if (!De.sc.finished) dq.finish(De) }
             const rq = De.c.rq
  
-            // req:summarise — no c.do_fn; fallback_do_fn above carries it
             await rq.oai({ req: 'summarise' })
  
             await rq.do()
@@ -246,7 +230,13 @@
         await dq.do()
     },
 
+
 //#endregion
+
+
+
+
+
 //#region PotPlant
 
     // w/body,hands:2                    — capacity = hands - body.o({pot:1}).length
