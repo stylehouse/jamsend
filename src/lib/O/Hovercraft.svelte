@@ -124,7 +124,6 @@
 
 
 
-
 //#region reqys
 
     // Fork of requesty_serial() — see History in De_req_spec for the lineage.
@@ -207,7 +206,7 @@
                     }
                 }
 
-                // clean %mutated (reprop_fn first) and %init_time at top of each pass
+                // clean %mutated (reprop_fn first) and %init_seq at top of each pass
                 for (const req of all) {
                     if (req.sc.mutated) {
                         req.c.reprop_fn?.(req)
@@ -219,16 +218,8 @@
                     }
                 }
 
-                // cull finished reqs — wait for snap if inside a Story run,
-                //   so the finished state appears in the record before disappearing
-                for (const req of [...all]) {
-                    if (!req.sc.finished) continue
-                    if (H.c.runtime) {
-                        H.Runstepped().then(() => parent.drop(req))
-                    } else {
-                        parent.drop(req)
-                    }
-                }
+                // finished reqs are NOT culled here — they are the state record.
+                //   the De's on_all_done or caller decides when to drop them.
 
                 const frontier = rq._frontier()
                 const eligible = all.filter((r: TheC) =>
@@ -317,12 +308,16 @@
     },
 
     // called on Run by Story after each snap — feebly_ponder is no-op here (runtime=false)
-    //   so callbacks that call feebly_ponder() only wake things up in the next do_step
-    // < w_noproblemo(w,{log:1}) for all A/w in this Run — clear %log at step boundary
+    //   so callbacks that call feebly_ponder() only wake things up in the next do_step.
+    //   also clears %log on all A/w in this Run at each step boundary.
     _resolve_runstepped() {
         const q = (this.c._runstepped_q ?? []) as Function[]
         this.c._runstepped_q = []
         for (const resolve of q) resolve()
+        // clear %log on all w in this Run
+        for (const A of this.o({ A: 1 }) as TheC[])
+            for (const w of A.o({ w: 1 }) as TheC[])
+                this.w_noproblemo(w, { log: 1 })
     },
 
     // let at most one req be the active worker per step.
