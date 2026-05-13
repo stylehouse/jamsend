@@ -4,19 +4,18 @@ Snap:H
       {"mung":["age"]}	self,round:3
       w:PotPlanet
         orders
-          order:rose
-            count:3
-          order:fern
-            count:7
-          order:rose_extra,count:5
+          order:rose,count:3
+          order:fern,count:7
         De:receive
           req:order,order:rose,count:5
-          req:order,order:fern
-          req:confirm,maz:2
+          req:order,order:fern,count:7
+          req:confirm
+            waits:staged
+          req:order,order:rose,count:3
+          req:order,order:rose_extra,count:2
         De:report,maz:2
         {"mung":["age"]}	self,round:3
         logger,n:2
-          driver[1],order:rose,count:5
-          extra_order,order:rose,gap:5
-        world
+          driver[3],order:rose,count:5,inA
+          extra_order,order:rose,gap:2,inA
     {"mung":["id"]}	mo:main,interval:3.6

@@ -17,8 +17,9 @@ story:ReactiveWaft
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.004
+    TimeTotal:beliefs,avg:0.007
       sample:0.004,at:1778667438
       sample:0.004,at:1778667466
       sample:0.003,at:1778667497
+      sample:0.016,at:1778667954
   step,dige:c1f5650abf30b15c

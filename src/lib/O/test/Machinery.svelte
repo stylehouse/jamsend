@@ -113,28 +113,32 @@
 //#endregion
 
 
-
 //#region PotPlanet
 
-    // w/orders/order:rose,count:3        — mutable incoming orders; each gets a req
+    // Fiction: a standing order desk receives two orders (rose:3, fern:7).
+    //   Mid-flight, rose is bumped to 5 — the delta of 2 spawns a rogue order
+    //   that arrived sideways into De:receive, not through the orders pipeline.
+    //
+    // w/orders/order:rose,count:3        — source; count on sc
     //          order:fern,count:7
-    // w/world/order:*                    — committed record; written by confirm; not mutated
+    // w/world/order:*,count:N            — committed record; written by confirm
     //
     // De:receive
-    //   req:order:rose,count:3           — one req per named order, flowed in by oai(c,sc)
-    //   req:order:fern,count:7             %mutated fires rq.mutated_fn → order_update
-    //   req:confirm,maz:2               — pending(), staged set by driver (no Runstepped)
+    //   req:order:rose,count:3           — permanent-state reqs; no do_fn; transparent
+    //   req:order:fern,count:7             to do(). mutations → rq.mutated_fn → order_update
+    //   req:order:rose_extra,count:2     — rogue; seeded inside order_update; has do_fn
+    //   req:confirm                      — staged by driver; De:receive completion signal
+    //
     // De:report,maz:2                   — De-level %waits, on_all_done,
-    //                                     reqys(…,{do_fn}) fallback, w_noproblemo(…,{log:1})
-    //   req:summarise                   — no c.do_fn; fallback carries it
+    //   req:summarise                      reqys(…,{do_fn}) fallback, w_noproblemo(…,{log:1})
 
     Run_A_PotPlanet(this: House) {
         const A = this.o({ A: 'PotPlanet' })[0] || this.i({ A: 'PotPlanet' })
         if (!A.o({ w: 'PotPlanet' }).length) {
             const w  = A.i({ w: 'PotPlanet' })
             const os = w.oai({ orders: 1 })
-            os.oai({ order: 'rose' }).i({ count: 3 })
-            os.oai({ order: 'fern' }).i({ count: 7 })
+            os.oai({ order: 'rose', count: 3 })   // count on sc — not a child
+            os.oai({ order: 'fern', count: 7 })
         }
         console.log(`🪐 ${this.name} PotPlanet wired`)
     },
@@ -144,21 +148,22 @@
         const li = this.c.loggeri
 
         // ── test driver ───────────────────────────────────────────────────────
+        // step 3: oai(c,sc) on req:order:rose → hakd sees 3→5 → %mutated → order_update
+        // step 4: arm confirm → De:receive closes; De:report opens
         await this.on_step({
             3: async () => {
-                // mutate rose count 3→5; hakd stamps %mutated on req:order:rose
-                li('driver[1]', { order: 'rose', count: 5 })
+                li('driver[3]', { order: 'rose', count: 5 })
                 const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
                 dReceive && this.reqys(dReceive, 'req')
-                    .oai({ req: 'order', order: 'rose' }, { count: 5 })
+                               .oai({ req: 'order', order: 'rose' }, { count: 5 })
             },
             4: async () => {
-                // flip staged on req:confirm — no Runstepped needed in business logic
-                li('driver[2]', { staged: 1 })
+                li('driver[4]', { staged: 1 })
                 const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
-                const rConfirm = dReceive && this.reqys(dReceive, 'req')
-                    .o({ req: 'confirm' })[0] as TheC | undefined
-                if (rConfirm) rConfirm.sc.staged = true
+                if (!dReceive) return
+                const rConf = this.reqys(dReceive, 'req')
+                                  .o({ req: 'confirm' })[0] as TheC | undefined
+                if (rConf) rConf.sc.staged = true
             },
         })
 
@@ -172,49 +177,46 @@
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
 
-            // order_update: balance check on mutation — how much of this order is
-            //   already in the world, spawn an extra to cover the gap
-            const order_update = async (req: TheC, _rq: any) => {
-                const shipped = w.oai({ world: 1 }).o({ order: req.sc.order })[0]
-                    ?.sc.count as number || 0
-                const gap = (req.sc.count as number || 0) - shipped
-                if (gap > 0) {
-                    w.oai({ orders: 1 }).i({ order: `${req.sc.order}_extra`, count: gap })
-                    li('extra_order', { order: req.sc.order, gap })
+            // order_update — rq.mutated_fn; called for any req with %mutated
+            //   req.sc.mutated.count carries the old value (before oai(c,sc) merged)
+            //   gap = delta only; spawns a rogue req directly into rq — not from orders
+            rq.mutated_fn = async (req: TheC, rq: any) => {
+                const old_count = req.sc.mutated?.count as number || 0
+                const new_count = req.sc.count as number || 0
+                const gap       = new_count - old_count
+                if (gap <= 0) return
+                const rogue = rq.oai(
+                    { req: 'order', order: `${req.sc.order as string}_extra`, count: gap }
+                )
+                rogue.c.do_fn ||= async (req: TheC, rq: any) => {
+                    li('rogue_done', { order: req.sc.order as string, count: req.sc.count as number || 0 })
+                    rq.finish(req)
                 }
+                li('extra_order', { order: req.sc.order as string, gap })
             }
 
-            // rq.mutated_fn: queue-level fallback for any req with %mutated and no c.mutated_fn
-            rq.mutated_fn = order_update
-
-            // flow all w/orders/order:* into reqs — oai(c,sc) detects changes via hakd
+            // permanent-state reqs — one per order; no do_fn; pass through do() silently.
+            //   mutations from the driver land here via oai(c,sc); hakd detects the diff.
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {
-                rq.oai({ req: 'order', order: order.sc.order }, order.sc)
+                rq.oai({ req: 'order', order: order.sc.order, count: order.sc.count as number || 0 })
             }
 
-            // req:confirm,maz:2
-            //   pending(): holds while any req:order is unfinished
-            //   staged: set by driver at step 2; no Runstepped in business logic
-            //   on finish: commit all order reqs to w/world
-            rq.doai({ req: 'confirm', maz: 2 })?.(async (req: TheC, rq: any) => {
-                if ((rq.pending() as TheC[]).some((r: TheC) => r.sc.req === 'order')) {
-                    req.i({ waits: 'order' })
-                    return
-                }
-                if (!req.sc.staged) {
-                    req.i({ waits: 'staged' })
-                    return
-                }
+            // req:confirm — staged by driver at step 4; commits all orders to world
+            //   serves as De:receive's completion signal (order reqs never finish)
+            rq.doai({ req: 'confirm' })?.(async (req: TheC, rq: any) => {
+                if (!req.sc.staged) { req.i({ waits: 'staged' }); return }
                 const world = w.oai({ world: 1 })
                 for (const or of rq.o({ req: 'order' }) as TheC[]) {
-                    world.oai({ order: or.sc.order }).sc.count = or.sc.count
+                    world.oai({ order: or.sc.order }).sc.count = or.sc.count as number || 0
                 }
                 li('confirmed')
                 rq.finish(req)
             })
 
             await rq.do()
-            if (rq.all_done() && !De.sc.finished) dq.finish(De)
+            // order reqs are permanent state; key De completion on confirm, not all_done()
+            const conf = rq.o({ req: 'confirm' })[0] as TheC | undefined
+            if (conf?.sc.finished && !De.sc.finished) dq.finish(De)
         })
 
         // ── De:report,maz:2 ──────────────────────────────────────────────────
