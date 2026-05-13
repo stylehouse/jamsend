@@ -157,9 +157,27 @@ Particles returned by `ob()` are the same TheC references as in the source. Keye
 
 ---
 
+## Failure modes
+
+### Liesui Waft/+Doc form closing
+
+Fixed in a80e5b4747ab860ca311155542db78a7775a67d6
+
+Bug: The form lives in WaftComp (`adding_doc = $state(null)`), keyed by `waft.sc.Waft`. `Lies` ($state in Liesui) does not change; w is never replaced; waft sub-particles of w are stable. WaftComp should survive. Yet the form closes during Story trickle. Mechanism unknown.
+
+Solution: I'm not sure exactly, try H.ave -> H.clear({} setting your state })
+```
+    $effect(() => {
+        const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
+        ...
+        H.clear(async () => {
+            loaded_docs = lies_w.o({ loaded_doc: 1 })  as TheC[]
+```
+Test: is fairly untamed, unexplained: ReactiveWaft
+
 ## Open unknowns — to be chased with tests
 
-**+Doc form closing:** The form lives in WaftComp (`adding_doc = $state(null)`), keyed by `waft.sc.Waft`. `Lies` ($state in Liesui) does not change; w is never replaced; waft sub-particles of w are stable. WaftComp should survive. Yet the form closes during Story trickle. Mechanism unknown.
+But are all low priority now Liesui panned out...
 
 **Sub-particle vers gating:** The flush gates `H.ave.vers`, but `H.ave` contains the actual `exa` TheC. If Atime bumps `exa.vers` directly, UItime reads see it immediately — bypassing the flush gate. A properly gated `exa.vers` would need to be a separately managed UItime-only signal. Whether this is causing mid-cycle re-reads is unknown but plausible as a contributor to the form issue. The related architectural direction — channel.roll() copies a clone of exa rather than exa itself, with a Selection-like process emitting targeted bumps on the clone — needs testing to know if it's necessary.
 

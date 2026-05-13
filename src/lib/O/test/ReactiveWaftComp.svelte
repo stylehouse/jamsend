@@ -1,13 +1,4 @@
 <script lang="ts">
-    // WaftComp — one per waft, keyed by waft.sc.Waft.
-    //
-    // adding_doc = $state(null) is the form state under test.
-    // If this component remounts (e.g. because the parent {#if Lies} tore down,
-    // or the key changed), adding_doc resets to null and the form closes.
-    //
-    // onMount logs 'mount' — compare with parent's 'render' log to distinguish
-    // full remount from mere re-render (re-render: render fires, mount does not).
-
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import { onMount }    from "svelte"
@@ -22,24 +13,24 @@
         li()?.('mount', { Waft: waft.sc.Waft })
     })
 
-    // log whenever adding_doc changes — open or close of the form
     $effect(() => {
         const v = adding_doc
         setTimeout(() => li()?.('form', { Waft: waft.sc.Waft, open: v !== null ? 1 : 0 }), 1)
     })
 
-    let docs = $derived(waft.o({ Doc: 1 }) as TheC[])
+    let docs = $derived.by(() => {
+        void waft.version
+        return waft.o({ Doc: 1 }) as TheC[]
+    })
 </script>
 
 <div class="wc">
     <div class="wc-name">{waft.sc.Waft}</div>
-
     <div class="wc-docs">
         {#each docs as doc ((doc as TheC).sc.path)}
             <span class="wc-doc">{(doc as TheC).sc.path}</span>
         {/each}
     </div>
-
     {#if adding_doc}
         <div class="wc-form">
             <input bind:value={adding_doc.text} placeholder="new doc path…" />

@@ -21,7 +21,6 @@
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import WaftComp         from "$lib/O/ui/Waft.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
-    import ReactiveWaftComp from "./test/ReactiveWaftComp.svelte";
 
     let { H }: { H: House } = $props()
 

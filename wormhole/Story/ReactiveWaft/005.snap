@@ -1,7 +1,7 @@
 Snap:H
   H:ReactiveWaft,Run
     A:ReactiveWaft
-      {"mung":["age"]}	self,round:4
+      {"mung":["age"]}	self,round:5
       w:ReactiveWaft
         Lies
         Waft:test1
@@ -11,7 +11,7 @@ Snap:H
           Doc,path:x.g
         Waft:test3
           Doc,path:q.g
-        logger,n:90
+        logger,n:88
           mount,Waft:test1,inA
           mount,Waft:test2,inA
           mount,Waft:test3,inA
@@ -68,7 +68,6 @@ Snap:H
           mount,Waft:test1,inA
           mount,Waft:test2,inA
           mount,Waft:test3,inA
-          rename doc in test1,inA
           wafts,n:3
           wafts,n:3
           render,Waft:test1
@@ -101,8 +100,7 @@ Snap:H
           form,Waft:test1,open:0
           form,Waft:test2,open:0
           form,Waft:test3,open:0
-          wafts,n:3
-        {"mung":["age"]}	self,round:4
+        {"mung":["age"]}	self,round:5
     watched:ave
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:ReactiveWaft

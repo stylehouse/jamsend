@@ -1,23 +1,19 @@
 Snap:H
   H:ReactiveWaft,Run
     A:ReactiveWaft
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round:6
       w:ReactiveWaft
         Lies
         Waft:test1
-          Doc,path:a.g
           Doc,path:b.g
+          Doc,path:aa.g
         Waft:test2
           Doc,path:x.g
-        {"mung":["age"]}	self,round:3
-        logger,n:5
-          add waft3,inA
-          mount,Waft:test3,inA
-          wafts,n:3
-          render,Waft:test3
-          form,Waft:test3,open:0
         Waft:test3
           Doc,path:q.g
+        logger,n
+          wafts,n:3
+        {"mung":["age"]}	self,round:6
     watched:ave
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:ReactiveWaft

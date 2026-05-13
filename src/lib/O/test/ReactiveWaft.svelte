@@ -1,16 +1,11 @@
 <script lang="ts">
-    // Minimal Liesui emulation.
+    // H.clear() gates all_wafts assignment so .o() never runs mid-replace.
+    // Without it, a replace() on a waft's sub-tree temporarily empties it;
+    // reading .o({Waft:1}) in that window gives [] and the {#each} collapses,
+    // destroying WaftComp instances and resetting their adding_doc state.
     //
-    // Lies ($state) gates {#if Lies} — if it gets a new TheC object identity,
-    // the whole block tears down: all WaftComp instances remount, all adding_doc reset.
-    //
-    // all_wafts is $derived via H.ave.ob({Waft:1}) — re-runs on every H.ave flush.
-    // Each row is keyed by waft.sc.Waft so Svelte preserves WaftComp across re-derives
-    // as long as the key string is stable. Key stability is the second assertion.
-    //
-    // {@const _ = log_render(...)} fires on every re-render of a row (including
-    // non-remount re-derives). onMount inside WaftComp fires only on true remount.
-    // Comparing the two in the logger reveals re-render vs remount.
+    // With H.clear(): the callback queues behind the beliefs mutex and runs
+    // only when Atime is idle — settled state guaranteed.
 
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
@@ -20,26 +15,41 @@
 
     const li = () => (H as any).c?.loggeri as ((end: string, sc?: Record<string,any>) => void) | undefined
 
-    let Lies     = $state<TheC | undefined>()
-    let lies_gen = 0
+    let Lies      = $state<TheC | undefined>()
+    let lies_gen  = 0
+    let all_wafts = $state<TheC[]>([])
 
     $effect(() => {
-        const found = H.ave.ob({ Lies: 1 })[0] as TheC | undefined
-        if (found === Lies) return
-        Lies = found
+        const ex = H.ave.ob({ Lies: 1 })[0] as TheC | undefined
+        if (ex === Lies) return
+        Lies = ex
         setTimeout(() => li()?.('Lies', { gen: ++lies_gen }), 1)
+
+        // H.clear() ensures .o() runs outside Atime — never sees mid-replace []
+        H.clear(async () => {
+            all_wafts = (ex?.c?.w as TheC | undefined)?.o({ Waft: 1 }) as TheC[] ?? []
+        })
     })
 
-    // mirrors Liesui: waft list is gated on Lies, read from ave
-    let all_wafts = $derived.by(() => {
-        if (!Lies) return [] as TheC[]
-        void H.ave.version   // gated — only re-derives on flush
-        return H.ave.ob({ Waft: 1 }) as TheC[]
+    // separate effect for waft list updates when Lies is stable but wafts change
+    $effect(() => {
+        if (!Lies) return
+        void H.ave.version   // subscribe to flush
+        let do_the_thing = () => {
+            all_wafts = (Lies!.c?.w as TheC | undefined)?.o({ Waft: 1 }) as TheC[] ?? []
+            setTimeout(() => li()?.('wafts', { n: all_wafts.length }), 1)
+        }
+        if (Lies?.c.be_weird) {
+            do_the_thing()
+        }
+        else {
+            H.clear(async () => {
+                do_the_thing()
+            })
+        }
     })
 
     function log_render(key: string) {
-        // fires on every re-render of a {#each} row — distinguishable from
-        // onMount (which fires only on actual DOM creation) in the logger
         setTimeout(() => li()?.('render', { Waft: key }), 1)
     }
 </script>
