@@ -1,0 +1,97 @@
+Snap:H
+  H:StuffResolving,Run
+    A:StuffResolving
+      {"mung":["age"]}	self,round
+      w:StuffResolving
+        {"mung":["age"]}	self,round
+        log
+          msg:resolved pair,before:etc,after:etc
+          msg:resolved pair,before:n = blah,after:blah
+          msg:resolved pair,before:blah,after:n = blah
+        item
+          blah
+            first
+          blah,bang
+            second
+          etc
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:StuffResolving,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  upsert,id:cytoid_1_1_1,label:log,parent:cytoid_1_1
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"msg:resolved …\nbefore:etc\nafter:etc","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_2","label":"msg:resolved …\nbefore:n = blah\nafter:blah","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1_3","label":"msg:resolved …\nbefore:blah\nafter:n = blah","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2,label:item,parent:cytoid_1_1
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1,label:blah,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_1_2,label:first,parent:cytoid_1_1
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_2_2","label":"blah\nbang","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_2_2,label:second,parent:cytoid_1_1
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_2_3,label:etc,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
+  edge_upsert,id:cytoid_1_1_1_3_1,source:cytoid_1_1_1,target:cytoid_1_1_1_3
+  edge_upsert,id:cytoid_1_1_2_1_1,source:cytoid_1_1_2,target:cytoid_1_1_2_1
+  edge_upsert,id:cytoid_1_1_2_1_2_1,source:cytoid_1_1_2_1,target:cytoid_1_1_2_1_2
+  edge_upsert,id:cytoid_1_1_2_2_1,source:cytoid_1_1_2,target:cytoid_1_1_2_2
+  edge_upsert,id:cytoid_1_1_2_2_2_1,source:cytoid_1_1_2_2,target:cytoid_1_1_2_2_2
+  edge_upsert,id:cytoid_1_1_2_3_1,source:cytoid_1_1_2,target:cytoid_1_1_2_3

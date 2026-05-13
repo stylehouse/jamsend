@@ -1,0 +1,21 @@
+Snap:H
+  H:PotPlanet,Run
+    A:PotPlanet
+      {"mung":["age"]}	self,round:8
+      w:PotPlanet
+        pot
+          plant
+          dose:7
+        arm
+          angle:15
+        De:measure,finished
+          req:scan,finished
+          req:log_reading,maz:2,init_seq:2,finished
+        De:adjust,maz:2,init_seq:8
+          req:position_arm,target_angle:0,init_seq:6,mutated
+          req:trim_dose,maz:2
+        De:celebrate,maz:3
+        {"mung":["age"]}	self,round:8
+        log
+          msg:arm retarget → 0°
+    {"mung":["id"]}	mo:main,interval:3.6

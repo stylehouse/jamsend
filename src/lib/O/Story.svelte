@@ -915,9 +915,13 @@
         Run.c.no_ambient = true   // story_drive owns the clock; suppress ambient tick
 
         if (!Run.oa({ A: 1 })) {
-            const init_fn = (Run as any)[`Run_A_${book}`] as Function | undefined
-            if (!init_fn) { w.i({ error: `!Run_A_${book}` }); return null }
-            init_fn.call(Run)
+            const recipe = (Run as any)[`Run_A_${book}`] as Function | undefined
+            if (recipe) {
+                recipe.call(Run)
+            } else {
+                Run.i({ A: book }).i({ w: book })
+            }
+
         }
         return { Run, book }
     },
