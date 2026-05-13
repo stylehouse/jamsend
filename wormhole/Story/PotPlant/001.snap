@@ -18,8 +18,8 @@ Snap:H
         yard
           soil,dose:12
         {"mung":["age"]}	self,round
-        De:repot,init_seq
-          req:move_outside,init_seq
+        De:repot
+          req:move_outside
             waits:arrival
           req:repot,maz:2
           req:move_inside,maz:3

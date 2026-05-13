@@ -19,8 +19,8 @@ Snap:H
         De:repot,finished
           req:move_outside,finished
           req:repot,maz:2,finished
-          req:move_inside,maz:3,init_seq:8,finished
-        De:celebrate,maz:2,finished
-          req:confetti,init_seq,finished
+          req:move_inside,maz:3,finished
+        De:celebrate,maz:2,finished,mutated
+          req:confetti,finished
         {"mung":["age"]}	self,round:12
     {"mung":["id"]}	mo:main,interval:3.6

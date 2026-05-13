@@ -204,18 +204,6 @@
                     }
                 }
 
-                // clean %mutated (reprop_fn first) and %init_seq at top of each pass
-                for (const req of all) {
-                    if (req.sc.mutated) {
-                        req.c.reprop_fn?.(req)
-                        delete req.sc.mutated
-                    }
-                    if (req.c._clean_init_next) {
-                        delete req.sc.init_seq
-                        delete req.c._clean_init_next
-                    }
-                }
-
                 // finished reqs are NOT culled here — they are the state record.
                 //   the De's on_all_done or caller decides when to drop them.
 
@@ -228,16 +216,14 @@
                     // drop %waits, %error, %see before each do_fn — same as w before think()
                     await H.w_noproblemo(req)
 
-                    // stamp %init_seq on first run — deterministic counter on parent.c,
-                    //   same style as Dip_assign's i counter. clean it next pass.
-                    if (!req.sc.init_seq) {
-                        parent.c._init_i = (parent.c._init_i || 0) + 1
-                        req.sc.init_seq = parent.c._init_i
-                        req.c._clean_init_next = true
-                    }
-
-                    const handler = fn ?? req.c.do_fn ?? q.do_fn
+                    const handler = fn // do(fn)
+                        ?? (req.sc.mutated && req.sc.mutated_fn)
+                        ?? req.c.do_fn ?? q.do_fn
                     if (handler) await handler(req, rq)
+                    // alas, this probably shouldn't hang around
+                    // < Story: observe tiny transient states of w/**
+                    //    eg being mutated while doing this req
+                    delete req.sc.mutated
                 }
             },
 

@@ -16,11 +16,11 @@ Snap:H
             soil,dose:3
         yard
           soil,dose:12
-        De:repot,init_seq:2
-          req:move_outside,init_seq:2
+        De:repot
+          req:move_outside
           req:repot,maz:2
           req:move_inside,maz:3
-        De:celebrate,maz:2
+        De:celebrate,maz:2,mutated
         {"mung":["age"]}	self,round:2
         log
           msg:carrying rose

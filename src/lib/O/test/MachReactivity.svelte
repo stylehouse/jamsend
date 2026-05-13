@@ -34,7 +34,6 @@
         const H     = this as House
         const waft  = w.oai({ Waft: 'test' })
         const ave_s = H.oai_enroll(H, { watched: 'ave' })
-        return
         if (!w.c.rw_setup) {
             w.c.rw_setup = true
 
@@ -51,6 +50,7 @@
             H.i_elvis(w, 'mark_doc',   { path: 'b.g',     flag: 'active'   })
         }
 
+        return
         // ── o_elvis handlers ─────────────────────────────────────────────
 
         for (const e of H.o_elvis(w, 'add_doc')) {
