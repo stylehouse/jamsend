@@ -6,6 +6,7 @@
     import { armap, depeel, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
     import MachPeerily from "./MachPeerily.svelte";
+    import MachReactivity from "./MachReactivity.svelte";
 
     let {M} = $props()
 
@@ -111,51 +112,6 @@
 
 //#endregion
 
-
-
-//#region StuffResolving
-
-
-
-    Run_A_StuffResolving(this: House) {
-        const A = this.o({ A: 'StuffResolving' })[0] || this.i({ A: 'StuffResolving' })
-        if (!A.o({ w: 'StuffResolving' }).length) A.i({ w: 'StuffResolving' })
-    },
- 
-    async StuffResolving(A: TheC, w: TheC) {
-        const H   = this as House
-        const log = w.oai({ log: 1 }) as TheC
-
-        let it = w.i({item:1})
-
-        let n = it.i({blah:1})
-        n.i({first:1})
-        it.i({blah:1}).i({second:1})
-        it.i({etc:1})
-
-        await it.replace({}, async () => {
-            it.i({blah:1})
-            it.i(n)
-            it.i({etc:1})
-        }, { pairs_fn: async (a, b) => {
-            let isn = (a) => a == n ? "n = " : ""
-            log.i({
-                msg:"resolved pair",
-                before: a ? isn(a)+depeel(a.sc) : '-',
-                after: b ? isn(b)+depeel(b.sc) : '-',
-            })
-        }})
-
-        n.sc.bang = 1
-
- 
-    },
- 
-
-
-
-
-//#endregion
 
 
 
@@ -495,6 +451,68 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region StuffResolving
+
+
+ 
+    async StuffResolving(A: TheC, w: TheC) {
+        const H   = this as House
+        const log = w.oai({ log: 1 }) as TheC
+
+        let it = w.i({item:1})
+
+        let n = it.i({blah:1})
+        n.i({first:1})
+        it.i({blah:1}).i({second:1})
+        it.i({etc:1})
+
+        await it.replace({}, async () => {
+            it.i({blah:1})
+            it.i(n)
+            it.i({etc:1})
+        }, { pairs_fn: async (a, b) => {
+            let isn = (a) => a == n ? "n = " : ""
+            log.i({
+                msg:"resolved pair",
+                before: a ? isn(a)+depeel(a.sc) : '-',
+                after: b ? isn(b)+depeel(b.sc) : '-',
+            })
+        }})
+
+        n.sc.bang = 1
+
+ 
+    },
+ 
+
+
+
+
+//#endregion
 
 
 
@@ -1338,3 +1356,4 @@
     })
 </script>
 <MachPeerily {M} />
+<MachReactivity {M} />

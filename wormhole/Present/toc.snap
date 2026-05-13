@@ -7,5 +7,5 @@ Library
   Book:Peeringinst,ok_pct,last_pct_change:1777865143.246,done:2,last_run_ms:1778412450.623
   Book:PeeringLive,ok_pct:0,last_pct_change:1778464277.774,done,last_run_ms:1778491523.915
   Book:PotPlant,ok_pct,last_pct_change:1778641707.291,done:9,last_run_ms:1778641785.182
-  Book:PotPlanet,ok_pct,last_pct_change:1778641647.569,done:6,last_run_ms:1778642783.748
-  Book:StuffResolving,active,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778646781.957
+  Book:PotPlanet,ok_pct,last_pct_change:1778641647.569,done:6,last_run_ms:1778642783.748,active
+  Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778647936.368

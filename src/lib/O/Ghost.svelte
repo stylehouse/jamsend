@@ -25,7 +25,7 @@
     //   Machinery), features (Story, Cyto), utilities (Textures).
 
     import Agency    from "$lib/ghost/Agency.svelte"
-    import Machinery from "$lib/O/Machinery.svelte"
+    import Machinery from "$lib/O/test/Machinery.svelte"
     import Story     from "$lib/O/Story.svelte"
     import Cyto      from "./Cyto.svelte"
     import Text  from "$lib/O/Text.svelte"

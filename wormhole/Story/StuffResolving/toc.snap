@@ -26,10 +26,7 @@ story:StuffResolving
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:0.004
-      sample:0.004,at:1778646538
-      sample:0.004,at:1778646556
-      sample:0.004,at:1778646574
+    TimeTotal:beliefs,avg:0.006
       sample:0.007,at:1778646672
       sample:0.004,at:1778646722
       sample:0.004,at:1778646731
@@ -37,4 +34,7 @@ story:StuffResolving
       sample:0.004,at:1778646757
       sample:0.004,at:1778646776
       sample:0.004,at:1778646781
+      sample:0.005,at:1778647260
+      sample:0.007,at:1778647469
+      sample:0.015,at:1778647932
   step,dige:3b3ba647c814c312
