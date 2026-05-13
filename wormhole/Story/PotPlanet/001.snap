@@ -4,12 +4,12 @@ Snap:H
       {"mung":["age"]}	self,round
       w:PotPlanet
         orders
-          order:rose,count:3
-          order:fern,count:7
+          order:rose,dose:3
+          order:fern,dose:7
         {"mung":["age"]}	self,round
         De:receive
-          req:order,order:rose,count:3
-          req:order,order:fern,count:7
+          req:order,order:rose,dose:3
+          req:order,order:fern,dose:7
           req:confirm
             waits:staged
         De:report,maz:2

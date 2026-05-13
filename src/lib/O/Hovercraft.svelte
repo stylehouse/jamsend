@@ -231,8 +231,7 @@
                     // < Story: tiny transient states of w/** not yet observable
                     const handler = fn
                         ?? (req.sc.mutated && (req.c.mutated_fn || rq.mutated_fn))
-                        ?? req.c.do_fn
-                        ?? q.do_fn
+                        ?? (req.c.do_fn || q.do_fn)
                     if (handler) await handler(req, rq)
                     // probably shouldn't hang around
                     // < Story: observe tiny transient states of w/**

@@ -112,33 +112,33 @@
 
 //#endregion
 
-
 //#region PotPlanet
 
-    // Fiction: a standing order desk receives two orders (rose:3, fern:7).
+    // Fiction: a standing order desk receives two orders (rose:3, fern:7 doses).
     //   Mid-flight, rose is bumped to 5 — the delta of 2 spawns a rogue order
     //   that arrived sideways into De:receive, not through the orders pipeline.
     //
-    // w/orders/order:rose,count:3        — source; count on sc
-    //          order:fern,count:7
-    // w/world/order:*,count:N            — committed record; written by confirm
+    // w/orders/order:rose,dose:3         — source; driver mutates dose here
+    //          order:fern,dose:7           orders loop flows changes → reqs via oai(c,sc)
+    // w/world/order:*,dose:N             — committed record; written by confirm
     //
     // De:receive
-    //   req:order:rose,count:3           — permanent-state reqs; no do_fn; transparent
-    //   req:order:fern,count:7             to do(). mutations → rq.mutated_fn → order_update
-    //   req:order:rose_extra,count:2     — rogue; seeded inside order_update; has do_fn
+    //   req:order:rose,dose:3            — permanent-state reqs; no do_fn; transparent
+    //   req:order:fern,dose:7              to do(). oai(c,sc) detects source change →
+    //                                      hakd → %mutated → rq.mutated_fn → order_update
+    //   req:order:rose_extra,dose:2      — rogue; seeded inside order_update; has do_fn
     //   req:confirm                      — staged by driver; De:receive completion signal
     //
     // De:report,maz:2                   — De-level %waits, on_all_done,
-    //   req:summarise                      reqys(…,{do_fn}) fallback, w_noproblemo(…,{log:1})
+    //   req:summarise                      do_fn fallback, w_noproblemo(w,{log:1})
 
     Run_A_PotPlanet(this: House) {
         const A = this.o({ A: 'PotPlanet' })[0] || this.i({ A: 'PotPlanet' })
         if (!A.o({ w: 'PotPlanet' }).length) {
             const w  = A.i({ w: 'PotPlanet' })
             const os = w.oai({ orders: 1 })
-            os.oai({ order: 'rose', count: 3 })   // count on sc — not a child
-            os.oai({ order: 'fern', count: 7 })
+            os.oai({ order: 'rose', dose: 3 })
+            os.oai({ order: 'fern', dose: 7 })
         }
         console.log(`🪐 ${this.name} PotPlanet wired`)
     },
@@ -148,14 +148,13 @@
         const li = this.c.loggeri
 
         // ── test driver ───────────────────────────────────────────────────────
-        // step 3: oai(c,sc) on req:order:rose → hakd sees 3→5 → %mutated → order_update
+        // step 3: mutate source order in w/orders — orders loop propagates to req
+        //           via oai(c,sc); hakd sees dose 3→5; %mutated → rq.mutated_fn
         // step 4: arm confirm → De:receive closes; De:report opens
         await this.on_step({
             3: async () => {
-                li('driver[3]', { order: 'rose', count: 5 })
-                const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
-                dReceive && this.reqys(dReceive, 'req')
-                               .oai({ req: 'order', order: 'rose' }, { count: 5 })
+                li('driver[3]', { order: 'rose', dose: 5 })
+                w.oai({ orders: 1 }).oai({ order: 'rose' }).sc.dose = 5
             },
             4: async () => {
                 li('driver[4]', { staged: 1 })
@@ -177,37 +176,42 @@
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
 
-            // order_update — rq.mutated_fn; called for any req with %mutated
-            //   req.sc.mutated.count carries the old value (before oai(c,sc) merged)
-            //   gap = delta only; spawns a rogue req directly into rq — not from orders
+            // order_update — rq.mutated_fn; fires for any req carrying %mutated
+            //   req.sc.mutated.dose is the old value before oai(c,sc) merged the source change
+            //   gap = delta only; rogue seeded directly into rq — not from w/orders pipeline
             rq.mutated_fn = async (req: TheC, rq: any) => {
-                const old_count = req.sc.mutated?.count as number || 0
-                const new_count = req.sc.count as number || 0
-                const gap       = new_count - old_count
+                const old_dose = req.sc.mutated?.dose as number || 0
+                const new_dose = req.sc.dose as number || 0
+                const gap      = new_dose - old_dose
                 if (gap <= 0) return
                 const rogue = rq.oai(
-                    { req: 'order', order: `${req.sc.order as string}_extra`, count: gap }
+                    { req: 'order', order: `${req.sc.order as string}_extra` },
+                    { dose: gap }
                 )
                 rogue.c.do_fn ||= async (req: TheC, rq: any) => {
-                    li('rogue_done', { order: req.sc.order as string, count: req.sc.count as number || 0 })
+                    li('rogue_done', { order: req.sc.order as string, dose: req.sc.dose as number || 0 })
                     rq.finish(req)
                 }
                 li('extra_order', { order: req.sc.order as string, gap })
             }
 
-            // permanent-state reqs — one per order; no do_fn; pass through do() silently.
-            //   mutations from the driver land here via oai(c,sc); hakd detects the diff.
+            // flow w/orders into permanent-state reqs via two-arg oai:
+            //   c = identity (order name); sc = data (dose)
+            //   hakd detects source changes each tick → stamps %mutated → rq.mutated_fn
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {
-                rq.oai({ req: 'order', order: order.sc.order, count: order.sc.count as number || 0 })
+                rq.oai(
+                    { req: 'order', order: order.sc.order },
+                    { dose: order.sc.dose as number || 0 }
+                )
             }
 
             // req:confirm — staged by driver at step 4; commits all orders to world
-            //   serves as De:receive's completion signal (order reqs never finish)
+            //   De:receive completion signal (order reqs are permanent state, never finish)
             rq.doai({ req: 'confirm' })?.(async (req: TheC, rq: any) => {
                 if (!req.sc.staged) { req.i({ waits: 'staged' }); return }
                 const world = w.oai({ world: 1 })
                 for (const or of rq.o({ req: 'order' }) as TheC[]) {
-                    world.oai({ order: or.sc.order }).sc.count = or.sc.count as number || 0
+                    world.oai({ order: or.sc.order }).sc.dose = or.sc.dose as number || 0
                 }
                 li('confirmed')
                 rq.finish(req)
@@ -227,19 +231,23 @@
                 return
             }
 
+            // fallback: wipes %logger from w before writing the final see;
+            //   subreqys pre-sets De.c.rq — wire do_fn explicitly after getting rq
             const fallback: Function = async (req: TheC, rq: any) => {
-                await this.w_noproblemo(req, { log: 1 })
+                await this.w_noproblemo(w, { log: 1 })
                 const world = w.oai({ world: 1 })
                 const total = (world.o({ order: 1 }) as TheC[])
-                    .reduce((s, o) => s + (o.sc.count as number || 0), 0)
+                    .reduce((s, o) => s + (o.sc.dose as number || 0), 0)
                 li('report_final', { total })
-                w.i({ see: `📋 world total: ${total}` })
+                w.i({ see: `📋 world total: ${total} doses` })
                 rq.finish(req)
             }
 
-            De.c.rq          ||= this.reqys(De, 'req', { do_fn: fallback })
+            De.c.rq          ||= this.reqys(De, 'req')
             De.c.on_all_done ||= async () => { if (!De.sc.finished) dq.finish(De) }
             const rq = De.c.rq
+            // subreqys may have pre-set rq without a do_fn; wire it now
+            rq.do_fn         ||= fallback
 
             await rq.oai({ req: 'summarise' })
 
@@ -251,7 +259,6 @@
     },
 
 //#endregion
-
 
 
 
