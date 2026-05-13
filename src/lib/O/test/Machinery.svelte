@@ -5,7 +5,7 @@
     import { Peerily, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
     import { armap, depeel, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
-    import MachPeerily from "./MachPeerily.svelte";
+    import MachPeerily from "../MachPeerily.svelte";
     import MachReactivity from "./MachReactivity.svelte";
 
     let {M} = $props()
@@ -123,14 +123,14 @@
     // w/world/order:*,dose:N             — committed record; written by confirm
     //
     // De:receive
-    //   req:order:rose,dose:3            — permanent-state reqs; no do_fn; transparent
-    //   req:order:fern,dose:7              to do(). oai(c,sc) detects source change →
-    //                                      hakd → %mutated → rq.mutated_fn → order_update
-    //   req:order:rose_extra,dose:2      — rogue; seeded inside order_update; has do_fn
-    //   req:confirm                      — staged by driver; De:receive completion signal
+    //   req:order:rose,dose               — permanent-state reqs (no do_fn); transparent
+    //   req:order:fern,dose                 to do(). oai(c,sc) propagates source changes →
+    //                                       hakd → %mutated → rq.mutated_fn → order_update
+    //   req:order:rose_extra,dose:2       — rogue; seeded inside order_update; has do_fn
+    //   req:confirm                       — staged by driver; De:receive completion signal
     //
-    // De:report,maz:2                   — De-level %waits, on_all_done,
-    //   req:summarise                      do_fn fallback, w_noproblemo(w,{log:1})
+    // De:report,maz:2                    — De-level %waits; do_fn fallback via q.do_fn
+    //   req:summarise                       all_done() → inline finish
 
     Run_A_PotPlanet(this: House) {
         const A = this.o({ A: 'PotPlanet' })[0] || this.i({ A: 'PotPlanet' })
@@ -149,7 +149,7 @@
 
         // ── test driver ───────────────────────────────────────────────────────
         // step 3: mutate source order in w/orders — orders loop propagates to req
-        //           via oai(c,sc); hakd sees dose 3→5; %mutated → rq.mutated_fn
+        //           via two-arg oai(c,sc); hakd sees dose 3→5 → %mutated → rq.mutated_fn
         // step 4: arm confirm → De:receive closes; De:report opens
         await this.on_step({
             3: async () => {
@@ -169,7 +169,6 @@
         // ── business logic ────────────────────────────────────────────────────
         w.c.rq ||= this.reqys(w, 'De')
         const dq = w.c.rq
-        dq.subreqys('req')
 
         // ── De:receive ────────────────────────────────────────────────────────
         dq.doai({ De: 'receive' })?.(async (De: TheC, dq) => {
@@ -177,8 +176,8 @@
             const rq = De.c.rq
 
             // order_update — rq.mutated_fn; fires for any req carrying %mutated
-            //   req.sc.mutated.dose is the old value before oai(c,sc) merged the source change
-            //   gap = delta only; rogue seeded directly into rq — not from w/orders pipeline
+            //   req.sc.mutated.dose is the pre-merge value; gap = delta only
+            //   rogue seeded directly into rq — not from w/orders pipeline
             rq.mutated_fn = async (req: TheC, rq: any) => {
                 const old_dose = req.sc.mutated?.dose as number || 0
                 const new_dose = req.sc.dose as number || 0
@@ -196,8 +195,8 @@
             }
 
             // flow w/orders into permanent-state reqs via two-arg oai:
-            //   c = identity (order name); sc = data (dose)
-            //   hakd detects source changes each tick → stamps %mutated → rq.mutated_fn
+            //   c = identity (order name only); sc = data (dose)
+            //   same particle found each tick; hakd detects source changes → %mutated
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {
                 rq.oai(
                     { req: 'order', order: order.sc.order },
@@ -218,7 +217,6 @@
             })
 
             await rq.do()
-            // order reqs are permanent state; key De completion on confirm, not all_done()
             const conf = rq.o({ req: 'confirm' })[0] as TheC | undefined
             if (conf?.sc.finished && !De.sc.finished) dq.finish(De)
         })
@@ -231,10 +229,11 @@
                 return
             }
 
-            // fallback: wipes %logger from w before writing the final see;
-            //   subreqys pre-sets De.c.rq — wire do_fn explicitly after getting rq
-            const fallback: Function = async (req: TheC, rq: any) => {
-                await this.w_noproblemo(w, { log: 1 })
+            De.c.rq ||= this.reqys(De, 'req')
+            const rq = De.c.rq
+
+            // q.do_fn: fallback for any req with no c.do_fn — carries req:summarise
+            rq.do_fn ||= async (req: TheC, rq: any) => {
                 const world = w.oai({ world: 1 })
                 const total = (world.o({ order: 1 }) as TheC[])
                     .reduce((s, o) => s + (o.sc.dose as number || 0), 0)
@@ -243,16 +242,10 @@
                 rq.finish(req)
             }
 
-            De.c.rq          ||= this.reqys(De, 'req')
-            De.c.on_all_done ||= async () => { if (!De.sc.finished) dq.finish(De) }
-            const rq = De.c.rq
-            // subreqys may have pre-set rq without a do_fn; wire it now
-            rq.do_fn         ||= fallback
-
-            await rq.oai({ req: 'summarise' })
+            rq.oai({ req: 'summarise' })
 
             await rq.do()
-            if (rq.all_done()) await De.c.on_all_done?.()
+            if (rq.all_done() && !De.sc.finished) dq.finish(De)
         })
 
         await dq.do()

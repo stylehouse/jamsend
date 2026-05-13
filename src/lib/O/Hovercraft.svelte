@@ -267,6 +267,18 @@
         if (De.c.rq?.all_done()) await De.c.on_all_done?.()
     },
 
+
+
+//#endregion
+
+
+
+
+//#region Story utils
+
+
+
+
     // request a Story breath before the chain continues.
     //   no-op outside a Story run — safe to call unconditionally from a do_fn.
     want_savepoint() {
@@ -344,30 +356,12 @@
         }
     },
 
-//#endregion
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//#region Story utils
     // this.logger(w) — arm the per-step w/%logger for H.c.loggeri
     //
     // w/logger,ui,s:gated,n:N           — wiped after each snap by Runstepped chain
