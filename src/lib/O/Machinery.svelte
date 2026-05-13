@@ -153,7 +153,7 @@
 
             // drop arrival after step:1 snap — feebly_ponder is no-op here (runtime=false),
             //   so PotPlant() doesn't run until step:2's do_step
-            this.Runstepped().then(async () => { await w.r({ arrival: 1 }, {}) })
+            this.Runstepped(async () => { await w.r({ arrival: 1 }, {}) })
         }
         console.log(`🪴 ${this.name} PotPlant wired`)
     },
@@ -202,7 +202,7 @@
 
                 if (body.o({ pot: 1 }).length) {
                     // snap body/pot:* before transit completes
-                    this.Runstepped().then(() => {
+                    this.Runstepped(async () => {
                         body.c.is_there_yet = true
                         this.feebly_ponder()
                     })
@@ -247,7 +247,7 @@
                 }
 
                 if (body.o({ pot: 1 }).length) {
-                    this.Runstepped().then(() => {
+                    this.Runstepped(async () => {
                         body.c.is_there_yet = true
                         this.feebly_ponder()
                     })

@@ -1231,13 +1231,13 @@
 
         // advance: called after snap_step completes and (for waitCyto path)
         // after the animation_done event has resumed the drive.
-        const advance = () => {
+        const advance = async () => {
             const n = run.c.step_n as number
             if (n != null && H.The_step(w, n).o({ note: 1, pause: 1 }).length) {
                 run.sc.paused = 2
             }
             if (run.sc.paused) { run.c.driving = false; return }
-            Run._resolve_runstepped()   // snap committed — fire Runstepped callbacks on Run
+            await Run._resolve_runstepped()   // snap committed — fire Runstepped callbacks on Run
             schedule()
         }
 

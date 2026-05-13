@@ -122,8 +122,6 @@
 
 
 
-
-
 //#region reqys
 
     // Fork of requesty_serial() — see History in De_req_spec for the lineage.
@@ -300,24 +298,29 @@
         for (const cb of q) cb()
     },
 
-    // push to Run's queue — Run found via o({Run:1}), or self if we are Run
-    Runstepped(): Promise<void> {
+    // push to Run's queue — Run found via o({Run:1}), or self if we are Run.
+    //   optional cb is queued to run in Atime via clear(), so w.r() is safe inside it.
+    Runstepped(cb?: () => Promise<void>) {
         const Run = this.o({ Run: 1 })[0] ?? this
         Run.c._runstepped_q ||= []
-        return new Promise(resolve => (Run.c._runstepped_q as Function[]).push(resolve))
+        Run.c._runstepped_q.push(cb)
     },
 
-    // called on Run by Story after each snap — feebly_ponder is no-op here (runtime=false)
-    //   so callbacks that call feebly_ponder() only wake things up in the next do_step.
+    // called on Run by Story after each snap — feebly_ponder is no-op here (runtime=false).
+    //   callbacks that need Atime (w.r, feebly_ponder) use the cb form of Runstepped().
     //   also clears %log on all A/w in this Run at each step boundary.
-    _resolve_runstepped() {
+    async _resolve_runstepped() {
         const q = (this.c._runstepped_q ?? []) as Function[]
         this.c._runstepped_q = []
-        for (const resolve of q) resolve()
-        // clear %log on all w in this Run
-        for (const A of this.o({ A: 1 }) as TheC[])
-            for (const w of A.o({ w: 1 }) as TheC[])
-                this.w_noproblemo(w, { log: 1 })
+        for (const cb of q) {
+            await this.clear(async () => cb())
+        }
+
+        for (const A of this.o({ A: 1 }) as TheC[]) {
+            for (const w of A.o({ w: 1 }) as TheC[]) {
+                await this.w_noproblemo(w, { log: 1 })
+            }
+        }
     },
 
     // let at most one req be the active worker per step.
@@ -328,7 +331,7 @@
         if (slot.c.req === req) return true
         if (!slot.c.req) {
             slot.c.req = req
-            this.Runstepped().then(() => { delete slot.c.req })
+            this.Runstepped(async () => { delete slot.c.req })
             return true
         }
         req.i({ waits: (slot.c.req as TheC).sc.req ?? 'worker' })

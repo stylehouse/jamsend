@@ -273,10 +273,10 @@ per-cycle debris from a particle before its work runs. It replaces and extends
 
 ```typescript
 // standard — drops %waits, %error, %see
-H.w_noproblemo(req)
+await H.w_noproblemo(req)
 
 // with options — also drops %log entries
-H.w_noproblemo(req, { log: 1 })
+await H.w_noproblemo(req, { log: 1 })
 ```
 
 reqys() calls `w_noproblemo(req)` before every `do_fn`. Callers that want to also

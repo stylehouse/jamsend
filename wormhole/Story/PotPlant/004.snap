@@ -22,11 +22,6 @@ Snap:H
           req:move_inside,maz:3
         De:celebrate,maz:2
         log
-          msg:carrying rose
-          msg:carrying fern
-          msg:rose in yard
-          msg:fern in yard
-          msg:carrying cactus
           msg:cactus in yard
           {"msg":"repotted rose (yard soil: 10)"}
           {"msg":"repotted fern (yard soil: 8)"}
