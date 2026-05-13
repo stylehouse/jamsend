@@ -1,7 +1,7 @@
 Snap:H
   H:PotPlant,Run
     A:PotPlant
-      {"mung":["age"]}	self,round:11
+      {"mung":["age"]}	self,round:10
       w:PotPlant
         body,hands:2
         shelf
@@ -22,5 +22,8 @@ Snap:H
           req:move_inside,maz:3,finished
         De:celebrate,maz:2,finished
           req:confetti,finished
-        {"mung":["age"]}	self,round:11
+        log
+          msg:cactus back on shelf
+        {"mung":["age"]}	self,round:10
+        see:🎉 all repotted and shelved!
     {"mung":["id"]}	mo:main,interval:3.6

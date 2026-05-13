@@ -38,10 +38,7 @@ story:PotPlant
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.061
-      sample:0.056,at:1778652891
-      sample:0.058,at:1778653767
-      sample:0.058,at:1778653817
+    TimeTotal:beliefs,avg:0.069
       sample:0.06,at:1778655148
       sample:0.06,at:1778655158
       sample:0.05,at:1778655174
@@ -49,12 +46,15 @@ story:PotPlant
       sample:0.066,at:1778655196
       sample:0.061,at:1778655204
       sample:0.077,at:1778655213
+      sample:0.085,at:1778657789
+      sample:0.085,at:1778657862
+      sample:0.076,at:1778657894
   step,dige:3c8fb9c9daacd294
   step:2,dige:ae22066928086c7b
   step:3,dige:5ab94a8562974d54
   step:4,dige:22e035c5719af78d
-  step:5,dige:ce4c0c5a05df8e7a
-  step:6,dige:3d0867c836924230
-  step:7,dige:17c7c7f0095f39bd
+  step:5,dige:a35c2e942a56943d
+  step:6,dige:79e196c2c82afe03
+  step:7,dige:7ec077b494857ed1
   step:8,dige:600e21b0f0cd59ff
   step:9,dige:3080232c32f2c0d4

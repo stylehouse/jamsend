@@ -10,12 +10,26 @@ story:ReactiveWaft
       style:background-color,v:#8e29d6
     matstyle:see
       style:background-color,v:#c5b759
+    matstyle:Storyinit
+      style:background-color,v:#298699
+    matstyle:logC
+      style:background-color,v:#bc2476
+    matstyle:uiLog
+      style:background-color,v:#61bd42
   Plan
   Opt
     For
+    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.005
-      sample:0.003,at:1778651273
-      sample:0.004,at:1778654399
+    TimeTotal:beliefs,avg:0.035
       sample:0.009,at:1778654905
-  step,dige:195df76dda84128c
+      sample:0.035,at:1778655703
+      sample:0.033,at:1778655808
+      sample:0.036,at:1778655954
+      sample:0.033,at:1778656073
+      sample:0.035,at:1778657565
+      sample:0.032,at:1778659492
+      sample:0.032,at:1778659510
+      sample:0.071,at:1778659514
+      sample:0.032,at:1778659763
+  step,dige:1f700588bf3671b3

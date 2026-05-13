@@ -1,27 +1,39 @@
 Snap:H
   H:ReactiveWaft,Run
     A:ReactiveWaft
-      {"mung":["age"]}	self,round
+      {"mung":["age"]}	self,round:9
       w:ReactiveWaft
-        {"mung":["age"]}	self,round
         Waft:test
-    {"mung":["id"]}	mo:main,interval:3.6
+          Doc,path:b.g,active
+          Doc,path:c.g
+          Doc,path:aa.g
+        Storyinit,done
+        logC
+          uiLog,src:gated,docs:a.g,n
+          uiLog,src:ungated,docs:a.g,n
+          uiLog,src:ungated,docs:a.g  b.g,n:2
+          uiLog,src:gated,docs:a.g  b.g,n:2
+          uiLog,src:ungated,docs:a.g  b.g  c.g,n:3
+          uiLog,src:gated,docs:a.g  b.g  c.g,n:3
+          uiLog,src:ungated,docs:a.g●  b.g  c.g,n:4
+          uiLog,src:gated,docs:a.g●  b.g  c.g,n:4
+          uiLog,src:ungated,docs:a.g  b.g●  c.g,n:5
+          uiLog,src:gated,docs:a.g  b.g●  c.g,n:5
+          uiLog,src:ungated,docs:a.g  b.g  c.g●,n:6
+          uiLog,src:gated,docs:a.g  b.g  c.g●,n:6
+          uiLog,src:gated,docs:aa.g,n:7
+          uiLog,src:ungated,docs:aa.g,n:7
+          uiLog,src:gated,docs:b.g  c.g●  aa.g,n:8
+          uiLog,src:ungated,docs:b.g  c.g●  aa.g,n:8
+          uiLog,src:ungated,docs:b.g  c.g  aa.g●,n:9
+          uiLog,src:gated,docs:b.g  c.g  aa.g●,n:9
+          uiLog,src:ungated,docs:b.g●  c.g  aa.g,n:10
+          uiLog,src:gated,docs:b.g●  c.g  aa.g,n:10
+        o_elvis:add_doc
+        o_elvis:set_active
+        o_elvis:rename_doc
+        {"mung":["age"]}	self,round:9
     watched:ave
-Snap:cytowave
-  upsert,id:cytoid_1_1,label:ReactiveWaft,isCompound:true
-    style,background-color:#8f3232
-    style,background-opacity:0.6
-    style,color:#ccc
-    style,font-size:8px
-    style,font-style:italic
-    style,height:20
-    style,padding:7px
-    style,shape:ellipse
-    style,text-valign:top
-    style,width:20
-  {"upsert":1,"id":"cytoid_1_1_1","label":"Waft:test","parent":"cytoid_1_1"}
-    style,background-color:#2fb155
-    style,color:#ccc
-    style,height:20
-    style,shape:ellipse
-    style,width:20
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:ReactiveWaft
+    {"mung":["id"]}	mo:main,interval:3.6

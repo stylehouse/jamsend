@@ -1217,6 +1217,7 @@
 //     and clear step.sc.checking.  Then calls advance().
 
     story_drive(Run: House, w: TheC, run: TheC) {
+        Run.c.run = run
         if (run.c.driving) return
         if (run.c.awaiting_wave_done || run.c.awaiting_anim_done) {
             console.log(`⏸ story_drive called while awaiting_*; ignored`)

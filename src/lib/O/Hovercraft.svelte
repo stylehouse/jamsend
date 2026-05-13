@@ -229,7 +229,7 @@
                     //   %mutated is consumed here — transient, not held for snap.
                     // < Story: tiny transient states of w/** not yet observable
                     const handler = fn
-                        ?? (req.sc.mutated && req.c.mutated_fn)
+                        ?? (req.sc.mutated && (req.c.mutated_fn || rq.mutated_fn))
                         ?? req.c.do_fn
                         ?? q.do_fn
                     if (handler) await handler(req, rq)
@@ -342,6 +342,62 @@
         if (opts.log) {
             for (const log of particle.o({ log: 1 }) as TheC[]) particle.drop(log)
         }
+    },
+
+//#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region Story utils
+    // this.logger(w) — arm the per-step w/%logger for H.c.loggeri
+    //
+    // w/logger,ui,s:gated,n:N           — wiped after each snap by Runstepped chain
+    //   end:1[,...sc,inA]               — one child per loggeri() call
+    //
+    // this.c.loggeri(end, sc?)          — log one line; inA when in Atime
+
+    logger(w: TheC) {
+        if (!w.c._logger_armed) {
+            w.c._logger_armed = true
+            const rearm = () => this.Runstepped(async () => {
+                await w.r({ logger: 1 }, {})
+                rearm()
+            })
+            rearm()
+        }
+
+        this.c.loggeri = (end: string, sc: Record<string,any> = {}) => {
+            const lg = w.oai({ logger: 1 })
+            lg.sc.n  = (lg.sc.n as number || 0) + 1
+            if (this.believing) sc.inA = 1
+            lg.i({ [end]: 1, ...sc })
+        }
+    },
+
+    // await this.on_step({ 1: async () => {...}, 2: async () => {...} })
+    //   dispatches the current step's function; no-op if step not in table or no run
+    async on_step(steps: Record<number, () => void | Promise<void>>) {
+        const n = this.c.run?.c.step_n as number | undefined
+        if (n != null) await steps[n]?.()
     },
 
 //#endregion
