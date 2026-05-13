@@ -6,6 +6,7 @@
     import { onMount, tick } from "svelte"
 
     import { exactly, grop, hakd } from "$lib/Y.svelte";
+    import { keyser, objectify } from "./Stuff.svelte";
 
     let { M } = $props()
 
@@ -388,7 +389,8 @@
         this.c.loggeri = (end: string, sc: Record<string,any> = {}) => {
             const lg = w.oai({ logger: 1 })
             lg.sc.n  = (lg.sc.n as number || 0) + 1
-            if (this.believing) sc.inA = 1
+            if (this.top_House().believing) sc.inA = 1
+            this.trace('logger:'+end,keyser(sc))
             lg.i({ [end]: 1, ...sc })
         }
     },

@@ -1,6 +1,7 @@
 <script lang="ts">
-    // waft.version is the raw Atime $state signal — a UItime-buffered C.vers
-    // would require C→H awareness at bump time, which TheC doesn't have.
+    // waft.version is the raw Atime $state signal 
+    // < a UItime-buffered C.vers
+    //    would require C→H awareness at bump time, which TheC doesn't have.
     // Gated fires once per flush; ungated fires on every Atime waft bump,
     // including between replace()'s internal await points.
 
@@ -12,6 +13,11 @@
     let { H }: { H: House } = $props()
 
     let waft_in_ave = $state<TheC | undefined>()
+
+    let prev_gated   = ''
+    let prev_ungated = ''
+    let gated_n      = 0
+    let ungated_n    = 0
 
     const li = () => (H as any).c?.loggeri as ((end: string, sc?: Record<string,any>) => void) | undefined
 
@@ -25,12 +31,32 @@
         waft_in_ave = H.ave.ob({ Waft: 1 })[0] as TheC | undefined
         if (!waft_in_ave) return
         const docs = snap(waft_in_ave)
-        setTimeout(() => li()?.('UI', { src: 'gateeed', docs }), 1)
+        if (docs === prev_gated) return
+        prev_gated = docs
+        const n = ++gated_n
+        setTimeout(() => li()?.('UI', { src: 'gated', docs, n }), 1)
     })
 
+    $effect(() => {
+        if (!waft_in_ave) return
+        void waft_in_ave.version
+        const docs = snap(waft_in_ave)
+        if (docs === prev_ungated) return
+        prev_ungated = docs
+        const n = ++ungated_n
+        setTimeout(() => li()?.('UI', { src: '---->', docs, n }), 1)
+    })
 </script>
 
 <div class="rv">
+    <div class="rv-counts">
+        <span class="g">G {gated_n}</span>
+        <span class="sep">/</span>
+        <span class="u">u {ungated_n}</span>
+        {#if ungated_n > gated_n}
+            <span class="rv-extra">+{ungated_n - gated_n} mid-cycle</span>
+        {/if}
+    </div>
     <div class="rv-docs">
         {#if waft_in_ave}
             {#each waft_in_ave.o({ Doc: 1 }) as TheC[] as doc ((doc as TheC).sc.path)}

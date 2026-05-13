@@ -1,0 +1,25 @@
+Snap:H
+  H:ReactiveVers,Run
+    A:ReactiveVers
+      {"mung":["age"]}	self,round:13
+      w:ReactiveVers
+        Waft:test
+          Doc,path:b.g
+          Doc,path:c.g,active
+          Doc,path:aa.g
+        o_elvis:add_doc
+        o_elvis:set_active
+        o_elvis:rename_doc
+        logger,n:7
+          rename,inA
+          Aw,renaming:a.g→aa.g,inA
+          Aw,renamed:a.g→aa.g,docs:b.g c.g● aa.g,inA
+          UI,src:gated,docs:aa.g,n:7,inA
+          UI,src:---->,docs:aa.g,n:7,inA
+          UI,src:gated,docs:b.g  c.g●  aa.g,n:8,inA
+          UI,src:---->,docs:b.g  c.g●  aa.g,n:8,inA
+        {"mung":["age"]}	self,round:13
+    watched:ave
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:ReactiveVers
+    {"mung":["id"]}	mo:main,interval:3.6

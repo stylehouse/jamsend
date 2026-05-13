@@ -1,0 +1,18 @@
+Snap:H
+  H:ReactiveVers,Run
+    A:ReactiveVers
+      {"mung":["age"]}	self,round
+      w:ReactiveVers
+        {"mung":["age"]}	self,round
+        Waft:test
+          Doc,path:a.g
+        logger,n:2
+          UI,src:gated,docs:a.g,n
+          UI,src:---->,docs:a.g,n
+        o_elvis:add_doc
+        o_elvis:set_active
+        o_elvis:rename_doc
+    {"mung":["id"]}	mo:main,interval:3.6
+    watched:ave
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:ReactiveVers
