@@ -1,0 +1,25 @@
+Snap:H
+  H:ReactiveWaft,Run
+    A:ReactiveWaft
+      {"mung":["age"]}	self,round:9
+      w:ReactiveWaft
+        Waft:test
+          Doc,path:a.g
+          Doc,path:b.g,active
+          Doc,path:c.g
+        o_elvis:add_doc
+        o_elvis:set_active
+        o_elvis:rename_doc
+        {"mung":["age"]}	self,round:9
+        logger,n:4
+          Aw,activating:b.g
+          Aw,activated:b.g
+          UI,src:---->,docs:a.g  b.g●  c.g,n:5
+          UI,src:gated,docs:a.g  b.g●  c.g,n:5
+    watched:ave
+      logger,n:2
+        UI,src:gated,docs:a.g,n
+        UI,src:---->,docs:a.g,n
+    watched:UIs
+      {"ref":{"component":"Function()"}}	UI:ReactiveWaft
+    {"mung":["id"]}	mo:main,interval:3.6

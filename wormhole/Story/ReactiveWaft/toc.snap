@@ -21,15 +21,22 @@ story:ReactiveWaft
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.035
-      sample:0.009,at:1778654905
-      sample:0.035,at:1778655703
-      sample:0.033,at:1778655808
-      sample:0.036,at:1778655954
-      sample:0.033,at:1778656073
-      sample:0.035,at:1778657565
-      sample:0.032,at:1778659492
-      sample:0.032,at:1778659510
-      sample:0.071,at:1778659514
-      sample:0.032,at:1778659763
-  step,dige:1f700588bf3671b3
+    TimeTotal:beliefs,avg:0.054
+      sample:0.02,at:1778661902
+      sample:0.02,at:1778661905
+      sample:0.028,at:1778661908
+      sample:0.064,at:1778661911
+      sample:0.073,at:1778661913
+      sample:0.071,at:1778661933
+      sample:0.073,at:1778661998
+      sample:0.059,at:1778662013
+      sample:0.068,at:1778662032
+      sample:0.066,at:1778662052
+  step,dige:ba5843437de9e1e9
+  step:2,dige:d9f4a99ab58e4e9c
+  step:3,dige:42d878847f52ec66
+  step:4,dige:c29735434e333d6a
+  step:5,dige:9a40a8736fa21b29
+  step:6,dige:5edd53b74f27e06d
+  step:7,dige:3103f5a282025e47
+  step:8,dige:0f71a8d77238cb74

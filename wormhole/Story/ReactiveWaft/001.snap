@@ -1,39 +1,18 @@
 Snap:H
   H:ReactiveWaft,Run
     A:ReactiveWaft
-      {"mung":["age"]}	self,round:9
+      {"mung":["age"]}	self,round
       w:ReactiveWaft
+        {"mung":["age"]}	self,round
         Waft:test
-          Doc,path:b.g,active
-          Doc,path:c.g
-          Doc,path:aa.g
-        Storyinit,done
-        logC
-          uiLog,src:gated,docs:a.g,n
-          uiLog,src:ungated,docs:a.g,n
-          uiLog,src:ungated,docs:a.g  b.g,n:2
-          uiLog,src:gated,docs:a.g  b.g,n:2
-          uiLog,src:ungated,docs:a.g  b.g  c.g,n:3
-          uiLog,src:gated,docs:a.g  b.g  c.g,n:3
-          uiLog,src:ungated,docs:a.g●  b.g  c.g,n:4
-          uiLog,src:gated,docs:a.g●  b.g  c.g,n:4
-          uiLog,src:ungated,docs:a.g  b.g●  c.g,n:5
-          uiLog,src:gated,docs:a.g  b.g●  c.g,n:5
-          uiLog,src:ungated,docs:a.g  b.g  c.g●,n:6
-          uiLog,src:gated,docs:a.g  b.g  c.g●,n:6
-          uiLog,src:gated,docs:aa.g,n:7
-          uiLog,src:ungated,docs:aa.g,n:7
-          uiLog,src:gated,docs:b.g  c.g●  aa.g,n:8
-          uiLog,src:ungated,docs:b.g  c.g●  aa.g,n:8
-          uiLog,src:ungated,docs:b.g  c.g  aa.g●,n:9
-          uiLog,src:gated,docs:b.g  c.g  aa.g●,n:9
-          uiLog,src:ungated,docs:b.g●  c.g  aa.g,n:10
-          uiLog,src:gated,docs:b.g●  c.g  aa.g,n:10
+          Doc,path:a.g
+        logger,n:2
+          UI,src:gated,docs:a.g,n
+          UI,src:---->,docs:a.g,n
         o_elvis:add_doc
         o_elvis:set_active
         o_elvis:rename_doc
-        {"mung":["age"]}	self,round:9
+    {"mung":["id"]}	mo:main,interval:3.6
     watched:ave
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:ReactiveWaft
-    {"mung":["id"]}	mo:main,interval:3.6

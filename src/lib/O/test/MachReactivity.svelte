@@ -18,84 +18,94 @@
 
 //#region ReactiveWaft
 //
-// Nine beliefs ticks: init + 8 i_elvis handlers.
-// Three o_elvis types — add_doc, set_active, rename_doc.
+// Nine steps: init seeds the waft, on_step 2–9 fire one elvis each.
+// Three o_elvis types — add_doc, set_active, rename_doc — each logs
+// what it does with li('Aw', ...) before and after the mutation.
 //
-// Measures how many times the ungated (waft.version) subscription fires
-// vs the gated (H.ave.version) subscription per tick.
-// rename_doc uses waft.r() which calls replace() with await gaps —
-// the ungated subscription fires at each gap: empty, partial, full.
+// logger(w) wipes w/{logger:1}/* after each snap via Runstepped,
+// so the snap shows only the log for that step.
 //
-// H.c.UIlog writes into w/{logC:1}/* so every UI observation is in the snap.
-// H.trace() mirrors each entry to the Run trace for timing context.
+// The UI calls H.c.loggeri('UI', { src, docs, n }) via setTimeout(1)
+// from its gated and ungated $effects — breaking out of Svelte's
+// reactive tracking to avoid subscription loops.
 //
-// The logC TheC is enrolled in ave alongside waft, so the UI reaches it
-// via H.ave.ob({logC:1})[0].  Its version is a fine-grained subscription:
-// only logC.i() bumps it — not H.ave.version — so reading log rows
-// never subscribes to the whole ave channel.
+// rename_doc uses waft.r() (replace()) — the ungated UI subscription
+// may fire between its internal await points, showing intermediate states.
+// A mid-cycle 'UI,ungated' entry appearing before 'Aw,renamed' in the log
+// confirms direct waft.version exposure during Atime.
+
+
 
     async ReactiveWaft(A: TheC, w: TheC) {
         const H     = this as House
         const waft  = w.oai({ Waft: 'test' })
         const ave_s = H.oai_enroll(H, { watched: 'ave' })
 
-        const init = w.oai({ Storyinit: 1 })
-        if (!init.sc.done) {
-            init.sc.done = 1
+        const li = H.c.loggeri as ((end: string, sc?: Record<string,any>) => void) | undefined
 
-            // seed the waft with one doc before any elvis fires
+        // ── init ─────────────────────────────────────────────────────────────
+        if (!w.c.initdone) {
+            w.c.initdone = 1
+
             waft.i({ Doc: 1, path: 'a.g' })
 
-            // logC: dedicated log container, enrolled in ave so the UI can reach it.
-            // UIlog writes here from UItime (via setTimeout in the UI's $effects).
-            const logC = w.oai({ logC: 1 })
+            // enroll waft and logger into ave so the UI reaches both
+            const lg = w.oai({ logger: 1 })
             ave_s.i(waft)
-            ave_s.i(logC)
+            ave_s.i(lg)
 
-            H.c.UIlog = (src: string, extra: Record<string, any> = {}) => {
-                // called from UItime — no setTimeout needed here, callers use it
-                logC.i({ uiLog: 1, src, ...extra })
-                H.trace(`UI:${src}`)
-            }
+            H.logger(w)   // arms w.c._logger_armed, H.c.loggeri
 
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'ReactiveWaft', component: ReactiveWaft })
-
-            // 8 sequential elvisses → 8 more beliefs ticks after this one
-            H.i_elvis(w, 'add_doc',    { path: 'b.g' })
-            H.i_elvis(w, 'add_doc',    { path: 'c.g' })
-            H.i_elvis(w, 'set_active', { path: 'a.g' })
-            H.i_elvis(w, 'set_active', { path: 'b.g' })
-            H.i_elvis(w, 'set_active', { path: 'c.g' })
-            H.i_elvis(w, 'rename_doc', { old: 'a.g', new: 'aa.g' })
-            H.i_elvis(w, 'set_active', { path: 'aa.g' })
-            H.i_elvis(w, 'set_active', { path: 'b.g'  })
         }
 
-        // ── o_elvis handlers ────────────────────────────────────────────────────
+        // ── test driver: one elvis per step ──────────────────────────────────
+        await H.on_step({
+            2: () => { H.i_elvis(w, 'add_doc',    { path: 'b.g'             }) },
+            3: () => { H.i_elvis(w, 'add_doc',    { path: 'c.g'             }) },
+            4: () => { li?.("switching active")
+                       H.i_elvis(w, 'set_active', { path: 'a.g'             }) },
+            5: () => { H.i_elvis(w, 'set_active', { path: 'b.g'             }) },
+            6: () => { H.i_elvis(w, 'set_active', { path: 'c.g'             }) },
+            7: () => { li?.("rename")
+                       H.i_elvis(w, 'rename_doc', { old: 'a.g', new: 'aa.g' }) },
+            8: () => { H.i_elvis(w, 'set_active', { path: 'aa.g'            }) },
+            9: () => { H.i_elvis(w, 'set_active', { path: 'b.g'             }) },
+        })
+
+        // ── o_elvis handlers ─────────────────────────────────────────────────
 
         for (const e of H.o_elvis(w, 'add_doc')) {
-            waft.i({ Doc: 1, path: e.sc.path as string })
+            const path = e.sc.path as string
+            li?.('Aw', { adding: path })
+            waft.i({ Doc: 1, path })
+            li?.('Aw', { added: path, docs: doc_list(waft) })
             ave_s.bump_version()
         }
 
         for (const e of H.o_elvis(w, 'set_active')) {
             const target = e.sc.path as string
+            li?.('Aw', { activating: target })
             for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
                 if (doc.sc.path === target) doc.sc.active = 1
                 else                        delete (doc.sc as any).active
             }
             waft.bump_version()
+            li?.('Aw', { activated: target })
             ave_s.bump_version()
         }
 
         for (const e of H.o_elvis(w, 'rename_doc')) {
-            // waft.r() calls replace() — await gaps between empty/fill/resolve
-            // are where ungated fires mid-cycle while gated is still silent
+            const { old: old_path, new: new_path } = e.sc as any
+            li?.('Aw', { renaming: `${old_path}→${new_path}` })
+            // waft.r() = replace() with several awaits — ungated UI subscription
+            // may fire between each, exposing mid-cycle states to the UI
             await waft.r(
-                { Doc: 1, path: e.sc.old as string },
-                { Doc: 1, path: e.sc.new as string },
+                { Doc: 1, path: old_path },
+                { Doc: 1, path: new_path },
             )
+            li?.('Aw', { renamed: `${old_path}→${new_path}`, docs: doc_list(waft) })
             ave_s.bump_version()
         }
     },
@@ -110,4 +120,11 @@
 
     })
     })
+
+
+    function doc_list(waft: TheC): string {
+        return (waft.o({ Doc: 1 }) as TheC[])
+            .map(d => d.sc.path + ((d.sc as any).active ? '●' : ''))
+            .join(' ') || '∅'
+    }
 </script>

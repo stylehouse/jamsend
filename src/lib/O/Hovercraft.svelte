@@ -397,6 +397,9 @@
     //   dispatches the current step's function; no-op if step not in table or no run
     async on_step(steps: Record<number, () => void | Promise<void>>) {
         const n = this.c.run?.c.step_n as number | undefined
+        // this limits this system is now one H-global callback, suitable for a Story main
+        if (this.c.did_on_step_n == n) return
+        this.c.did_on_step_n = n
         if (n != null) await steps[n]?.()
     },
 
