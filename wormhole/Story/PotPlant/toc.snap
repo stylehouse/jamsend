@@ -38,23 +38,23 @@ story:PotPlant
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.06
-      sample:0.063,at:1778641516
-      sample:0.062,at:1778641696
-      sample:0.062,at:1778641698
-      sample:0.071,at:1778641707
-      sample:0.052,at:1778641715
-      sample:0.063,at:1778641723
-      sample:0.054,at:1778652817
+    TimeTotal:beliefs,avg:0.061
       sample:0.056,at:1778652891
       sample:0.058,at:1778653767
       sample:0.058,at:1778653817
+      sample:0.06,at:1778655148
+      sample:0.06,at:1778655158
+      sample:0.05,at:1778655174
+      sample:0.066,at:1778655194
+      sample:0.066,at:1778655196
+      sample:0.061,at:1778655204
+      sample:0.077,at:1778655213
   step,dige:3c8fb9c9daacd294
-  step:2,dige:f3253374ca4952ea
-  step:3,dige:c24d3844954f097c
-  step:4,dige:579e9fb65cc91a87
-  step:5,dige:6ceb7e345a2f84c2
-  step:6,dige:fad7bbe10b3d4f7a
-  step:7,dige:7ec077b494857ed1
-  step:8,dige:b7536fa8b5f420da
-  step:9,dige:0d7cfa979c288cb3
+  step:2,dige:ae22066928086c7b
+  step:3,dige:5ab94a8562974d54
+  step:4,dige:22e035c5719af78d
+  step:5,dige:ce4c0c5a05df8e7a
+  step:6,dige:3d0867c836924230
+  step:7,dige:17c7c7f0095f39bd
+  step:8,dige:600e21b0f0cd59ff
+  step:9,dige:3080232c32f2c0d4

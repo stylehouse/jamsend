@@ -486,13 +486,6 @@ export function isst(s: any): boolean {
     return typeof s === 'string';
 }
 
-// s=Object number of keys, or has a d=key
-export function hak(s, d?:string) {
-    if (!s) return 0;
-    if (d != null) return s.hasOwnProperty(d)
-    return Object.keys(s).length
-}
-
 //#region data transforms
 
 
@@ -601,7 +594,39 @@ export function tax(s: Record<string, any>, c: Record<string, any>, take: any): 
     
     return s;
 }
-    
+
+
+// 有 — does s own key d?  omit d → key count
+export function hak(s: Record<string,any>, d?: string): number | boolean {
+    if (!s) return 0
+    return d == null
+        ? Object.keys(s).length
+        : Object.prototype.hasOwnProperty.call(s, d)
+}
+
+// 差 — keys whose values differ between s and d (symmetric)
+export function hakd(s: Record<string,any>, d: Record<string,any>): string[] {
+    const dif: Record<string,1> = {}
+    for (const [k,v] of Object.entries(s)) if (!hak(d,k) || d[k] !== v) dif[k] = 1
+    for (const [k,v] of Object.entries(d)) if (!hak(s,k) || s[k] !== v) dif[k] = 1
+    return Object.keys(dif)
+}
+
+// 等 — identical?  c restricts to those keys only
+export function heq(
+    s: Record<string,any>,
+    d: Record<string,any>,
+    c?: Record<string,any>
+): boolean {
+    if (c) {
+        const ks = Object.keys(c)
+        s = Object.fromEntries(ks.filter(k => hak(s,k)).map(k => [k, s[k]]))
+        d = Object.fromEntries(ks.filter(k => hak(d,k)).map(k => [k, d[k]]))
+    }
+    return !hakd(s, d).length
+}
+
+//#region peel
 // Hash from 'k:v' or comma-separated, v=1 if not given
 // Handles nestings of the : and , separators
 export function peel(s: any, d?: { sep?: string; hie?: string }): Record<string, any> {

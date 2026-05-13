@@ -46,7 +46,7 @@
         const found = H.ave.ob({ Waft: 1 })[0] as TheC | undefined
         waft = found
         if (!found) return
-        log.push({ source: 'gated', n: ++gated_n, paths: snap(found) })
+        // log.push({ source: 'gated', n: ++gated_n, paths: snap(found) })
     })
 
     // ── ungated ──────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@
     $effect(() => {
         if (!waft) return
         void (waft as TheC).version   // ungated Atime bump subscription
-        log.push({ source: 'ungated', n: ++ungated_n, paths: snap(waft as TheC) })
+        // log.push({ source: 'ungated', n: ++ungated_n, paths: snap(waft as TheC) })
     })
 </script>
 

@@ -5,7 +5,7 @@
     import { _C, TheC } from "$lib/data/Stuff.svelte"
     import { onMount, tick } from "svelte"
 
-    import { exactly, grop } from "$lib/Y.svelte";
+    import { exactly, grop, hakd } from "$lib/Y.svelte";
 
     let { M } = $props()
 
@@ -142,16 +142,24 @@
             },
 
             // maz:1 is implied — never stamped.
-            // two-arg form merges sc into existing particle and stamps %mutated.
-            oai(c: Record<string,any>, sc: Record<string,any> = {}): TheC {
-                const maz = c.maz ?? sc.maz ?? 1
+            // two-arg form computes the 差 against existing sc;
+            //   %mutated carries the old values of changed keys — req.sc.mutated.count = 3.
+            //   single-arg: idempotent seed, no merge.
+            oai(c: Record<string,any>, sc?: Record<string,any>): TheC {
+                const maz = c.maz ?? sc?.maz ?? 1
                 const existing = rq.o(c)[0]
                 if (existing) {
-                    if (Object.keys(sc).length) {
-                        // two-arg merge
-                        if (maz > 1) existing.sc.maz = maz; else delete existing.sc.maz
-                        Object.assign(existing.sc, sc)
-                        existing.sc.mutated = 1
+                    if (sc && Object.keys(sc).length) {
+                        const merged = { ...existing.sc, ...sc }
+                        const diffs  = hakd(existing.sc, merged)
+                        if (diffs.length) {
+                            // 変 — old values; caller reads req.sc.mutated.fieldname
+                            const mutated: Record<string,any> = {}
+                            for (const k of diffs) mutated[k] = existing.sc[k]
+                            Object.assign(existing.sc, sc)
+                            if (maz > 1) existing.sc.maz = maz; else delete existing.sc.maz
+                            existing.sc.mutated = mutated
+                        }
                     }
                     return existing
                 }
@@ -191,11 +199,11 @@
 
             async do(fn?: Function) {
                 const all = rq.o()
-
+ 
                 // lazy subreqys wiring — pick up newly seeded particles
                 if (rq._subreqys_name) {
                     for (const particle of all) {
-                        particle.c.rq ||= H.reqys(particle, rq._subreqys_name)
+                        particle.c.rq    ||= H.reqys(particle, rq._subreqys_name)
                         particle.c.do_fn ||= async (p: TheC, dq: any) => {
                             await particle.c.rq.do()
                             if (particle.c.rq.all_done() && !particle.sc.finished)
@@ -203,26 +211,30 @@
                         }
                     }
                 }
-
+ 
                 // finished reqs are NOT culled here — they are the state record.
                 //   the De's on_all_done or caller decides when to drop them.
-
+ 
                 const frontier = rq._frontier()
                 const eligible = all.filter((r: TheC) =>
                     !r.sc.finished && ((r.sc.maz as number) || 1) <= frontier
                 )
-
+ 
                 for (const req of eligible) {
-                    // drop %waits, %error, %see before each do_fn — same as w before think()
+                    // drop %waits, %error, %see before each do_fn
                     await H.w_noproblemo(req)
-
-                    const handler = fn // do(fn)
-                        ?? (req.sc.mutated && req.sc.mutated_fn)
-                        ?? req.c.do_fn ?? q.do_fn
+ 
+                    // 間 — mutated_fn takes priority when %mutated is present;
+                    //   otherwise do_fn, then queue fallback.
+                    //   %mutated is consumed here — transient, not held for snap.
+                    // < Story: tiny transient states of w/** not yet observable
+                    const handler = fn
+                        ?? (req.sc.mutated && req.c.mutated_fn)
+                        ?? req.c.do_fn
+                        ?? q.do_fn
                     if (handler) await handler(req, rq)
-                    // alas, this probably shouldn't hang around
+                    // probably shouldn't hang around
                     // < Story: observe tiny transient states of w/**
-                    //    eg being mutated while doing this req
                     delete req.sc.mutated
                 }
             },

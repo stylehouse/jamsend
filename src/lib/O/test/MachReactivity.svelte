@@ -44,13 +44,13 @@
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'ReactiveWaft', component: ReactiveWaft })
 
-            // three mutations, one per upcoming beliefs tick
-            H.i_elvis(w, 'add_doc',    { path: 'b.g' })
-            H.i_elvis(w, 'rename_doc', { old_path: 'a.g', new_path: 'aa.g' })
-            H.i_elvis(w, 'mark_doc',   { path: 'b.g',     flag: 'active'   })
         }
 
-        return
+        // three mutations, one per upcoming beliefs tick
+        // H.i_elvis(w, 'add_doc',    { path: 'b.g' })
+        // H.i_elvis(w, 'rename_doc', { old_path: 'a.g', new_path: 'aa.g' })
+        // H.i_elvis(w, 'mark_doc',   { path: 'b.g',     flag: 'active'   })
+
         // ── o_elvis handlers ─────────────────────────────────────────────
 
         for (const e of H.o_elvis(w, 'add_doc')) {

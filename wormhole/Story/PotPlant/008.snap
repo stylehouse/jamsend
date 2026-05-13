@@ -20,7 +20,7 @@ Snap:H
           req:move_outside,finished
           req:repot,maz:2,finished
           req:move_inside,maz:3,finished
-        De:celebrate,maz:2,finished,mutated
+        De:celebrate,maz:2,finished
           req:confetti,finished
         {"mung":["age"]}	self,round:12
     {"mung":["id"]}	mo:main,interval:3.6

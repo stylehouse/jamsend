@@ -6,10 +6,16 @@ story:ReactiveWaft
       meta:label,fmt:%s,keys:w
     matstyle:Waft
       style:background-color,v:#2fb155
+    matstyle:Doc
+      style:background-color,v:#8e29d6
+    matstyle:see
+      style:background-color,v:#c5b759
   Plan
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:0.003
+    TimeTotal:beliefs,avg:0.005
       sample:0.003,at:1778651273
+      sample:0.004,at:1778654399
+      sample:0.009,at:1778654905
   step,dige:195df76dda84128c
