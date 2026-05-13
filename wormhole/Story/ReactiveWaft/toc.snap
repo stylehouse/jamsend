@@ -1,0 +1,15 @@
+story:ReactiveWaft
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:Waft
+      style:background-color,v:#2fb155
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg:0.003
+      sample:0.003,at:1778651273
+  step,dige:195df76dda84128c

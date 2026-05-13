@@ -27,17 +27,17 @@ story:PotPlanet
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.038
-      sample:0.037,at:1778641615
-      sample:0.045,at:1778641624
-      sample:0.033,at:1778641632
-      sample:0.033,at:1778641641
-      sample:0.034,at:1778641647
-      sample:0.035,at:1778641653
+    TimeTotal:beliefs,avg:27.922
       sample:0.039,at:1778641659
       sample:0.038,at:1778641797
       sample:0.043,at:1778641810
       sample:0.043,at:1778647944
+      sample:0.04,at:1778647967
+      sample:0.038,at:1778649740
+      sample:0.032,at:1778650210
+      sample:0.027,at:1778651282
+      sample:278.89,at:1778651716
+      sample:0.03,at:1778651769
   step,dige:5a071ee709cbcdbd
   step:2,dige:3fc168df6ac27aa5
   step:3,dige:90d1f10d019dfcc8

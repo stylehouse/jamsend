@@ -117,168 +117,132 @@
 
 //#region PotPlanet
 
-    // w/pot/plant,dose:7                — single pot; arm clips it
-    // w/arm,angle:15                    — oblique arm; penalty = ⌊angle/5⌋ = 3 → dose 7→4
+ 
+    // Fiction: a Desk receives an %order, which gets updated mid-flight.
+    // Each req is named for the feature it exercises.
     //
-    // Untested-in-PotPlant features exercised here, one each:
-    //   oai(c,sc) %mutated              — position_arm gets target_angle injected mid-flight
-    //   reprop_fn                       — consumes %mutated; logs the retarget
-    //   %init_seq                       — position_arm uses it to know its first run
-    //   pending()                       — confetti guards until clear_log leaves pending()
-    //   reqys(De,'req',{do_fn})         — clear_log carried by third-arg fallback do_fn
-    //   on_all_done                     — De:adjust finishes via callback; no inline check
-    //   De-level %waits                 — De:adjust stamps waits:'measure' until done
-    //   w_noproblemo(req,{log:1})       — clear_log fallback wipes %log before the party
-    //   want_savepoint()                — scan requests a snap breath mid-chain
-    //   Runstepped()                    — position_arm stages arm movement across a step
+    // w/order,count:3                   — initial request; injector rewrites count:5
+    // w/De:receive
+    //   req:order                       — %init_seq, oai(c,sc) %mutated, reprop_fn,
+    //                                     want_savepoint
+    //   req:confirm,maz:2               — pending(), Runstepped
+    // w/De:report,maz:2                 — De-level %waits, on_all_done,
+    //                                     reqys(…,{do_fn}) fallback, w_noproblemo(…,{log:1})
+    //   req:summarise                   — no c.do_fn; fallback carries it
     //
-    // De:measure,maz:1
-    //   req:scan                        — reads arm angle; computes penalty; want_savepoint
-    //   req:log_reading,maz:2           — persists findings to %log
-    // De:adjust,maz:2,waits:measure    — holds until De:measure finished; on_all_done wired
-    //   req:position_arm                — %init_seq → oai(c,sc) → %mutated + reprop_fn
-    //                                     then Runstepped stages movement for snap visibility
-    //   req:trim_dose,maz:2            — corrects pot dose by penalty after arm settles
-    // De:celebrate,maz:3               — third-arg fallback; pending() guard; %log cleared
+    // Injector: one Runstepped after setup fires oai(c,sc) on req:order → %mutated
+
 
     Run_A_PotPlanet(this: House) {
         const A = this.o({ A: 'PotPlanet' })[0] || this.i({ A: 'PotPlanet' })
         if (!A.o({ w: 'PotPlanet' }).length) {
             const w = A.i({ w: 'PotPlanet' })
-
-            const pot = w.oai({ pot: 1 })
-            pot.i({ plant: 1 })
-            pot.i({ dose: 7 })
-
-            w.oai({ arm: 1 }).i({ angle: 15 })   // floor(15/5) = 3; dose 7→4
+            w.oai({ order: 1 }).i({ count: 3 })   // starting request
         }
         console.log(`🪐 ${this.name} PotPlanet wired`)
     },
 
     async PotPlanet(A, w) {
-        const pot = w.oai({ pot: 1 })
-        const arm = w.oai({ arm: 1 })
-
+        // ── one-shot injector: after the first step, push count:5 via oai(c,sc) ──
+        // Runstepped resolves at the next Story step boundary — the update lands
+        //   mid-flight on req:order, which already exists, so reqys stamps %mutated.
+        if (!w.sc.inject_armed) {
+            w.sc.inject_armed = true
+            this.Runstepped(async () => {
+                const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
+                if (dReceive) {
+                    const rq = this.reqys(dReceive, 'req')
+                    await rq.oai({ req: 'order' }, { count: 5 })
+                }
+                this.feebly_ponder()
+            })
+        }
+ 
         w.c.rq ||= this.reqys(w, 'De')
         const dq = w.c.rq
         dq.subreqys('req')
-
-        // ── De:measure,maz:1 ─────────────────────────────────────────────────
-        dq.doai({ De: 'measure' })?.(async (De: TheC, dq) => {
+ 
+        // ── De:receive,maz:1 ─────────────────────────────────────────────────
+        dq.doai({ De: 'receive' })?.(async (De: TheC, dq) => {
             De.c.rq ||= this.reqys(De, 'req')
             const rq = De.c.rq
-
-            // req:scan — reads arm state; stores penalty and corrected angle on De.c
-            //   want_savepoint: snap before log_reading so scan findings appear alone
-            rq.doai({ req: 'scan' })?.(async (req, rq) => {
-                const angle       = arm.sc.angle as number
-                De.c.penalty      = Math.floor(angle / 5)
-                De.c.target_angle = 0   // arm should be vertical
-                w.oai({ log: 1 }).i({ msg: `arm at ${angle}°; penalty ${De.c.penalty}` })
-                this.want_savepoint()
-                rq.finish(req)
-            })
-
-            // req:log_reading,maz:2 — runs after scan; persists findings to %log
-            rq.doai({ req: 'log_reading', maz: 2 })?.(async (req, rq) => {
-                w.oai({ log: 1 }).i({ msg: `pot dose: ${pot.sc.dose}; arm target: ${De.c.target_angle}°` })
-                rq.finish(req)
-            })
-
-            await rq.do()
-            if (rq.all_done() && !De.sc.finished) dq.finish(De)
-        })
-
-        // ── De:adjust,maz:2 ──────────────────────────────────────────────────
-        dq.doai({ De: 'adjust', maz: 2 })?.(async (De: TheC, dq) => {
-            // De-level %waits: hold until De:measure is snapped finished
-            //   w_noproblemo(De) drops this before each do_fn call; re-stamped if still blocked
-            const dMeasure = w.o({ De: 'measure' })[0] as TheC | undefined
-            if (!dMeasure?.sc.finished) {
-                De.i({ waits: 'measure' })
-                return
-            }
-
-            De.c.rq ||= this.reqys(De, 'req')
-            const rq = De.c.rq
-
-            // on_all_done: replaces the inline all_done() check after rq.do()
-            //   set once; called by the do_fn below instead of dq.finish(De) inline
-            De.c.on_all_done ||= async () => { if (!De.sc.finished) dq.finish(De) }
-
-            // req:position_arm
-            //   first run  (%init_seq): injects target_angle via oai(c,sc) two-arg form;
-            //                            stamps %mutated; reprop_fn logs it; returns
-            //   second run:              arm angle corrected; Runstepped stages it for snap
-            const rArm = await rq.oai({ req: 'position_arm' })
-            rArm.c.reprop_fn ||= (req: TheC) => {
-                // consumes %mutated before reqys cleanup; react to updated target_angle
+ 
+            // req:order
+            //   reprop_fn: called by reqys on %mutated before cleanup;
+            //     updates req.sc.count from merged sc, logs the delta
+            //   do_fn first run (%init_seq): stamp initial log, want_savepoint for own snap
+            //   do_fn later runs: reprop_fn already handled the update; finish
+            const rOrder = await rq.oai({ req: 'order' })
+            rOrder.sc.count ||= (w.o({ order: 1 })[0]?.sc.count as number || 0)
+            rOrder.c.reprop_fn ||= (req: TheC) => {
                 if (!req.sc.mutated) return
-                w.oai({ log: 1 }).i({ msg: `arm retarget → ${req.sc.target_angle}°` })
+                const prev          = rOrder.sc.count as number || 0
+                rOrder.sc.count     = (req.sc.count as number) || 0
+                w.oai({ log: 1 }).i({ msg: `order updated ${prev}→${rOrder.sc.count}` })
             }
-            rq.doai({ req: 'position_arm' })?.(async (req, rq) => {
+            rq.doai({ req: 'order' })?.(async (req, rq) => {
+                if (req.sc.mutated) debugger
                 if (req.sc.init_seq) {
-                    // oai two-arg: req exists → merges target_angle, stamps %mutated
-                    await rq.oai({ req: 'position_arm' }, { target_angle: dMeasure.c.target_angle })
-                    return   // next do() pass: reprop_fn fires on %mutated, then we continue
+                    w.oai({ log: 1 }).i({ msg: `order received count:${req.sc.count || 0}` })
+                    this.want_savepoint()   // snap init before mutation lands
+                    return
                 }
-
-                // reprop_fn already ran; proceed with corrected angle
-                if (!req.c.moved) {
-                    // arm movement is stepwise — Runstepped holds the finished state for snap
+                rq.finish(req)
+            })
+ 
+            // req:confirm,maz:2
+            //   pending(): holds until req:order leaves the unfinished set
+            //   Runstepped: confirmation staged across one step for snap visibility
+            rq.doai({ req: 'confirm', maz: 2 })?.(async (req, rq) => {
+                if ((rq.pending() as TheC[]).some((r: TheC) => r.sc.req === 'order')) {
+                    req.i({ waits: 'order' })
+                    return
+                }
+                if (!req.sc.staged) {
                     this.Runstepped(async () => {
-                        req.c.moved = true
-                        arm.sc.angle = (req.sc.target_angle as number) ?? 0
-                        w.oai({ log: 1 }).i({ msg: `arm now at ${arm.sc.angle}°` })
+                        req.sc.staged = true
+                        w.oai({ log: 1 }).i({ msg: `confirmed count:${rOrder.sc.count || 0}` })
                         this.feebly_ponder()
                     })
                     return
                 }
                 rq.finish(req)
             })
-
-            // req:trim_dose,maz:2 — runs only after arm is positioned
-            rq.doai({ req: 'trim_dose', maz: 2 })?.(async (req, rq) => {
-                const penalty = dMeasure.c.penalty as number
-                const before  = pot.sc.dose as number
-                pot.sc.dose   = Math.max(0, before - penalty)
-                w.oai({ log: 1 }).i({ msg: `dose ${before}→${pot.sc.dose}` })
-                rq.finish(req)
-            })
-
-            await rq.do()
-            if (rq.all_done()) await De.c.on_all_done?.()
-        })
-
-        // ── De:celebrate,maz:3 ───────────────────────────────────────────────
-        // fallback_do_fn passed as third arg to reqys — handles any req with no c.do_fn
-        //   clear_log has none, so it gets this; confetti has its own
-        dq.doai({ De: 'celebrate', maz: 3 })?.(async (De: TheC, dq) => {
-            const fallback_do_fn = async (req: TheC, rq: any) => {
-                // w_noproblemo(req,{log:1}): wipe accumulated %log before the party
-                await this.w_noproblemo(req, { log: 1 })
-                rq.finish(req)
-            }
-            De.c.rq ||= this.reqys(De, 'req', { do_fn: fallback_do_fn })
-            const rq = De.c.rq
-
-            // req:clear_log — no c.do_fn; fallback_do_fn above carries it
-            await rq.oai({ req: 'clear_log' })
-
-            // req:confetti — pending() guard: waits until clear_log leaves the unfinished set
-            rq.doai({ req: 'confetti' })?.(async (req, rq) => {
-                if ((rq.pending() as TheC[]).some(r => r.sc.req === 'clear_log')) {
-                    req.i({ waits: 'clear_log' })
-                    return
-                }
-                w.i({ see: '🎉 arm straight; pot thriving!' })
-                rq.finish(req)
-            })
-
+ 
             await rq.do()
             if (rq.all_done() && !De.sc.finished) dq.finish(De)
         })
-
+ 
+        // ── De:report,maz:2 ──────────────────────────────────────────────────
+        // De-level %waits: hold until De:receive is finished; re-stamped each pass
+        // on_all_done: De finishes via callback rather than inline check after rq.do()
+        // reqys(De,'req',{do_fn}): fallback handles req:summarise (no c.do_fn)
+        // w_noproblemo(req,{log:1}): fallback wipes %log before writing final see
+        dq.doai({ De: 'report', maz: 2 })?.(async (De: TheC, dq) => {
+            const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
+            if (!dReceive?.sc.finished) {
+                De.i({ waits: 'receive' })
+                return
+            }
+ 
+            const fallback_do_fn = async (req: TheC, rq: any) => {
+                await this.w_noproblemo(req, { log: 1 })
+                const final = (w.o({ order: 1 })[0]?.sc.count as number) || 0
+                w.i({ see: `📋 final count: ${final}` })
+                rq.finish(req)
+            }
+ 
+            De.c.rq         ||= this.reqys(De, 'req', { do_fn: fallback_do_fn })
+            De.c.on_all_done ||= async () => { if (!De.sc.finished) dq.finish(De) }
+            const rq = De.c.rq
+ 
+            // req:summarise — no c.do_fn; fallback_do_fn above carries it
+            await rq.oai({ req: 'summarise' })
+ 
+            await rq.do()
+            if (rq.all_done()) await De.c.on_all_done?.()
+        })
+ 
         await dq.do()
     },
 

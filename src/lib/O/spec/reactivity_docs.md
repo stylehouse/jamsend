@@ -159,8 +159,6 @@ Particles returned by `ob()` are the same TheC references as in the source. Keye
 
 ## Open unknowns — to be chased with tests
 
-**StuffResolving (first test):** When `fn` re-inserts the exact same TheC (`C.i(n)`), resolve() currently scores it like any other pair by sc.* matching. It should detect `old_n === new_n` (object identity) as a certain match and skip the scoring and resume entirely. This makes the re-insertion pattern explicit, safe, and cheaper.
-
 **+Doc form closing:** The form lives in WaftComp (`adding_doc = $state(null)`), keyed by `waft.sc.Waft`. `Lies` ($state in Liesui) does not change; w is never replaced; waft sub-particles of w are stable. WaftComp should survive. Yet the form closes during Story trickle. Mechanism unknown.
 
 **Sub-particle vers gating:** The flush gates `H.ave.vers`, but `H.ave` contains the actual `exa` TheC. If Atime bumps `exa.vers` directly, UItime reads see it immediately — bypassing the flush gate. A properly gated `exa.vers` would need to be a separately managed UItime-only signal. Whether this is causing mid-cycle re-reads is unknown but plausible as a contributor to the form issue. The related architectural direction — channel.roll() copies a clone of exa rather than exa itself, with a Selection-like process emitting targeted bumps on the clone — needs testing to know if it's necessary.
