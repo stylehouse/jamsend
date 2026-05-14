@@ -68,29 +68,26 @@ Making a De and seeding its first req:
 ```ts
 const dq = H.reqys(w, 'De')
 dq.subreqys()   // De/req: allows subreqys_do as least-precedence handler;
-                //   once all %finished, check_all_finished() sets %De,finished + ponder
+                //   once all %finished, check_all_finished() sets %De,finished + feebly_ponder
 
-const dListen = dq.oai({ De: 'listen' })
+// naming convention: De + two letters of value  →  Deli, Dece, Deco, Dere, …
+//   same pattern as C objects: re for %record, so rq for %req, De for %De, etc.
+const Deli = dq.oai({ De: 'listen' })
 // De:listen has no explicit do_fn — dq auto-discovers H.De_listen() by name convention,
 //   falling back to rq.subreqys_do
 
 // inside H.De_listen (called as the De's do_fn):
-const rq = H.reqys(dListen, 'req')
+const rq = H.reqys(Deli, 'req')
 await rq.doai({ req: 'keygen' })?.(async (req) => {
     if (!H.reqonce(req, 'running')) return
-    H.post_do(async () => {
-        const Id = await generateKeys()
-        H.reqyscile(req, { Id, see: 'keygen done' })  // Id merges → req.sc; trace: "De:listen  keygen done"
-    })
-    H.demand_time_to_think(3000)
+    // .then() — fires and returns; reqyscile arrives in its own Atime, not holding the mutex
+    generateKeys().then(Id => H.reqyscile(req, { Id, see: 'keygen done' }))
+    H.demand_time_to_think(3000)   // inside reqonce — advise once, not every tick
 })
-// a req with a more expressive see — trace reads "De:listen  incoming connection":
+// a more expressive see — trace reads "De:listen  incoming connection":
 await rq.doai({ req: 'listen' })?.(async (req) => {
     if (!H.reqonce(req, 'running')) return
-    H.post_do(async () => {
-        const con = await eer.waitForIncoming()
-        H.reqyscile(req, { con, see: 'incoming connection' })
-    })
+    eer.waitForIncoming().then(con => H.reqyscile(req, { con, see: 'incoming connection' }))
     H.demand_time_to_think(10000)
 })
 await rq.do()
@@ -167,21 +164,15 @@ const rq = H.reqys(De, 'req')
 
 // wire sub-reqys — call before oai() so the wiring is ready.
 //   allows subreqys_do as the least-precedence handler (no explicit assignment needed).
-//   installs default all_done_fn: check_all_finished() → %De,finished + ponder.
 rq.subreqys()            // submainkey:'req' implied
 rq.subreqys('subtask')   // explicit override
 
 // handler precedence in do() — highest to lowest:
 //   (%mutated? → c.mutated_fn ?? rq.mutated_fn) ?? c.do_fn ?? H['De_' + De.sc.De]?.bind(H) ?? (rq.submainkey && rq.subreqys_do)
 
-// check_all_finished() — shared by subreqys_do and reqyscile.
-//   gates on De%finished so all_done_fn fires at most once.
+// check_all_finished() — %finished self if all /* are, shared by subreqys_do and reqyscile.
 //   🚧 ponder() vs feebly_ponder() from async context — not yet settled.
 rq.check_all_finished()
-// expands to:
-//   if (!rq.all_done() || De.sc.finished) return
-//   De.sc.finished = 1
-//   await De.c.all_done_fn?.()   // or default: ponder()
 
 // seed a req — idempotent, single-arg form, no merge. req.c.host = De set here.
 const r = rq.oai({ req: 'keygen' })
@@ -192,11 +183,10 @@ r.c.do_fn ||= async (req, rq) => { ... }   // set once
 //   ?.() makes repeat calls a no-op — safe to call every tick.
 await rq.doai({ req: 'keygen' })?.(async (req, rq) => {
     if (!H.reqonce(req, 'running')) return
-    H.post_do(async () => {
-        const Id = await doTheWork()
-        H.reqyscile(req, { Id, see: 'keygen' })   // Id merges → req.sc; see: trace label
-    })
-    H.demand_time_to_think(3000)   // inside reqonce — extend once, not every tick
+    // .then() — fires and returns; callback arrives in its own Atime, not holding the mutex.
+    //   post_do(async () => { await work() }) would hold the mutex for the duration — avoid.
+    doTheWork().then(Id => H.reqyscile(req, { Id, see: 'keygen' }))
+    H.demand_time_to_think(3000)   // inside reqonce — advise once, not every tick
 })
 
 // seed or update a req — two-arg form merges sc, stamps %mutated if existed.
@@ -345,45 +335,6 @@ survives to the snap, but a req that manages its own log cycle can opt in.
 
 ---
 
-## want_savepoint()
-
-```typescript
-H.want_savepoint()
-// expands to:
-if (H.sc.run) {
-    H.c.leave_running_until = 0
-    H.main()
-}
-```
-
-`H.sc.run` is stamped by Story when it drives a step. Zeroing `leave_running_until`
-causes `poll_step` to see quiescence on the next tick and snap before the De chain
-continues. A no-op outside Story — safe to call unconditionally from a `do_fn`.
-
-`reqyscile` loops over sync-completable reqs within one Atime pass — only async
-boundaries naturally produce savepoints. `want_savepoint()` is how a `do_fn` that
-has completed synchronously can still request a Story breath before the next req.
-
-### Natural savepoints from slow async
-
-Async ops that take real time (keygen ~200ms, PeerServer connection ~1-3s) produce
-natural savepoints without any synthetic intervention. If:
-
-1. The do_fn calls `want_savepoint()` before launching the async op, and
-2. The op genuinely takes longer than poll_step's quiescence threshold (~75ms),
-
-then poll_step sees `leave_running_until = 0` and no pending work, snaps the step,
-and advances. The next step begins when the async op calls `H.reqyscile(req)`.
-
-This means a run with two real async boundaries (keygen, PeerServer open) will
-naturally produce three steps — without any `on_step` hold-backs or synthetic
-`Runstepped` barriers. Story captures the arc automatically.
-
-Ops that complete within a single Atime pass (sync or <75ms) will not naturally snap.
-Use `want_savepoint()` at the end of their do_fn to force a breath if the snap matters.
-
----
-
 ## %log — Story-aware trace on w
 
 `%see` is dropped every tick by `w_noproblemo`, ephemeral within a single Atime.
@@ -500,7 +451,7 @@ w
     %waits:$De                  — failure-informational; do_fn guards the real condition
     c.host = w
     c.do_fn                     — H.De_Foo() discovery; or subreqys_do (least precedence)
-    c.all_done_fn               — called once by check_all_finished(); default: %finished+ponder
+    c.all_done_fn               — called once by check_all_finished() after %De,finished; defaults to feebly_ponder
     %req:Bar(,maz:2)            — maz:1 implied, omitted
       %waits:$req               — dropped before do_fn, re-stamped if still blocked
       %mutated.key = old        — oai(c,sc) two-arg; cleared at top of next do()
@@ -522,8 +473,7 @@ reqys(host, mainkey)            — same middleware, different host
   .oai(c)                      — idempotent seed, no merge; sets c.host
   .oai(c, sc)                  — seed + merge sc; stamps %mutated if existed
   .doai(c, sc)?.(fn)           — oai + set do_fn in one gesture; null if already set
-  .subreqys(name?)             — sets submainkey; allows subreqys_do; installs default
-                                  all_done_fn (check_all_finished → %De,finished + ponder)
+  .subreqys(name?)             — sets submainkey; enables subreqys_do in handler chain
   .do()                        — %initialdo cleanup, w_noproblemo, frontier;
                                   handler = (%mutated? → c.mutated_fn ?? rq.mutated_fn) ?? c.do_fn ?? H.t_name ?? (submainkey && subreqys_do) ?? q.do_fn;
                                   %mutated deleted after handler
