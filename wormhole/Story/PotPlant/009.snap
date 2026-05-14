@@ -22,5 +22,6 @@ Snap:H
           req:move_inside,maz:3,finished
         De:celebrate,maz:2,finished
           req:confetti,finished
+        thus:🎉 all repotted and shelved!
         {"mung":["age"]}	self,round:13
     {"mung":["id"]}	mo:main,interval:3.6

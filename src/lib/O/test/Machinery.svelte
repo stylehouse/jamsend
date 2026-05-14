@@ -398,7 +398,7 @@
             const rq = De.c.rq
 
             rq.doai({ req: 'confetti' })?.(async (req, rq) => {
-                w.i({ see: '🎉 all repotted and shelved!' })
+                w.i({ thus: '🎉 all repotted and shelved!' })
                 rq.finish(req)
             })
 

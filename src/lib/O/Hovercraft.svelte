@@ -269,6 +269,20 @@
 
 
 
+
+//#endregion
+
+
+
+
+//#region id utils
+
+    mainkey(n: TheC): string | undefined {
+        const keys = Object.keys(n.sc ?? {})
+        return keys.length ? keys[0] : undefined
+    },
+
+
 //#endregion
 
 

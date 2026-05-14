@@ -103,11 +103,6 @@
         'hexagon', 'star', 'triangle', 'pentagon', 'tag',
     ] as string[],
 
-    mainkey(n: TheC): string | undefined {
-        const keys = Object.keys(n.sc ?? {})
-        return keys.length ? keys[0] : undefined
-    },
-
 
 //#endregion
 //#region CRUD — all take stylesC explicitly
