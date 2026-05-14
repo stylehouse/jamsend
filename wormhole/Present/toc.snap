@@ -6,8 +6,8 @@ Library
   Book:LakeSurfer,ok_pct:0,last_pct_change:1777427938.462,done,last_run_ms:1778756124.709
   Book:Peeringinst,ok_pct,last_pct_change:1777865143.246,done:2,last_run_ms:1778412450.623
   Book:PeeringLive,ok_pct:0,last_pct_change:1778464277.774,done,last_run_ms:1778753269.698
-  Book:PotPlant,ok_pct:0.67,last_pct_change:1778756130.774,done:9,last_run_ms:1778756152.227
-  Book:PotPlanet,ok_pct,last_pct_change:1778671069.228,done:6,last_run_ms:1778750430.142,active
+  Book:PotPlant,ok_pct,last_pct_change:1778762980.371,done:9,last_run_ms:1778763117.869
+  Book:PotPlanet,ok_pct:0.33,last_pct_change:1778763124.266,done:6,last_run_ms:1778763124.266,active
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778647936.368
   Book:ReactiveWaft,ok_pct,last_pct_change:1778674756.934,done:6,last_run_ms:1778676115.684
   Book:ReactiveVers,ok_pct,last_pct_change:1778667402.26,done:7,last_run_ms:1778667410.306
