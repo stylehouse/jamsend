@@ -126,13 +126,13 @@
 //#region reqys
 
     // Fork of requesty_serial() — see History in De_req_spec for the lineage.
-    // parent: the De (or w for the De layer)
-    // t:      particle key name — 'req' inside a De, 'De' at the w layer
-    // q:      optional requlator config
+    // host: the De (or w for the De layer)
+    // t:    particle key name — 'req' inside a De, 'De' at the w layer
+    // q:    optional requlator config
     //   q.do_fn        — fallback do_fn for particles that carry none of their own
     //   q.tweak_process — caller annotation; stored on rq for external inspection
 
-    reqys(parent: TheC, t: string, q: { do_fn?: Function, tweak_process?: 1 } = {}) {
+    reqys(host: TheC, t: string, q: { do_fn?: Function, tweak_process?: 1 } = {}) {
         const H   = this
         const key = { [t]: 1 }
 
@@ -142,66 +142,69 @@
             mainkey: t,
 
             o(sc = {}): TheC[] {
-                return parent.o({ ...key, ...sc }) as TheC[]
+                return host.o({ ...key, ...sc }) as TheC[]
             },
 
             // maz:1 is implied — never stamped.
-            // two-arg form merges sc and stamps %mutated when the req already existed.
+            // two-arg form merges sc; %mutated.key = old value of each changed key.
             //   single-arg: idempotent seed, no merge.
-            //   c.host set on new particles so e_reqyscile can climb to the De.
+            //   c.host set on new req so e_reqyscile can climb to the De.
             oai(c: Record<string,any>, sc?: Record<string,any>): TheC {
                 const maz = c.maz ?? sc?.maz ?? 1
-                const existing = rq.o(c)[0]
-                if (existing) {
+                const req = rq.o(c)[0]
+                if (req) {
                     if (sc && Object.keys(sc).length) {
-                        const merged = { ...existing.sc, ...sc }
-                        const diffs  = hakd(existing.sc, merged)
+                        const merged = { ...req.sc, ...sc }
+                        const diffs  = hakd(req.sc, merged)
                         if (diffs.length) {
-                            Object.assign(existing.sc, sc)
-                            if (maz > 1) existing.sc.maz = maz; else delete existing.sc.maz
-                            existing.sc.mutated = 1
+                            // 変 — old values; caller reads req.sc.mutated.fieldname
+                            const mutated: Record<string,any> = {}
+                            for (const k of diffs) mutated[k] = req.sc[k]
+                            Object.assign(req.sc, sc)
+                            if (maz > 1) req.sc.maz = maz; else delete req.sc.maz
+                            req.sc.mutated = mutated
                         }
                     }
-                    return existing
+                    return req
                 }
                 const stamp: any = { ...key, ...c, ...sc }
                 if (maz <= 1) delete stamp.maz; else stamp.maz = maz
-                const particle = parent.oai(stamp)
-                particle.c.host = parent
-                return particle
+                const req2 = host.oai(stamp)
+                req2.c.host = host
+                return req2
             },
 
             // seed + wire do_fn in one gesture.
             //   returns a setter fn the first time (do_fn not yet set), null thereafter.
             //   ?.() makes repeat calls a no-op — safe to call every tick.
             doai(c: Record<string,any>, sc: Record<string,any> = {}) {
-                const particle = rq.oai(c, sc)
-                if (particle.c.do_fn) return null
-                return (fn: Function) => { particle.c.do_fn = fn }
+                const req = rq.oai(c, sc)
+                if (req.c.do_fn) return null
+                return (fn: Function) => { req.c.do_fn = fn }
             },
 
-            // wire sub-reqys for this requlator's particles.
-            //   submainkey: particle key name for each particle's inner requlator (default 'req').
-            //   subreqys_do: fallback handler — runs inner reqys, then check_all_finished.
-            //   installs default all_done_fn on parent: feebly_ponder when all done.
-            //   🚧 may escalate to ponder() from async re-entry
+            // set submainkey — enables subreqys_do in the handler chain.
+            //   🚧 all_done_fn may escalate from feebly_ponder to ponder from async re-entry
             subreqys(name: string = 'req') {
                 rq.submainkey = name
-                parent.c.all_done_fn ||= async () => { H.feebly_ponder() }
-                rq.subreqys_do = async (particle: TheC) => {
-                    particle.c.rq ||= H.reqys(particle, rq.submainkey)
-                    await particle.c.rq.do()
-                    particle.c.rq.check_all_finished()
-                }
             },
 
-            // fires all_done_fn at most once — gates on parent%finished so it's idempotent.
+            // fallback handler when subreqys() has been called.
+            //   runs the inner reqys for this req, then check_all_finished on the De.
+            subreqys_do: async (req: TheC) => {
+                req.c.rq ||= H.reqys(req, rq.submainkey)
+                await req.c.rq.do()
+                req.c.rq.check_all_finished()
+            },
+
+            // fires all_done_fn at most once — gates on host%finished so it's idempotent.
             //   called by subreqys_do and reqyscile; either path gets there first.
+            //   defaults to feebly_ponder when host.c.all_done_fn is absent.
             //   🚧 ponder() vs feebly_ponder() from async context not yet settled.
             check_all_finished() {
-                if (!rq.all_done() || parent.sc.finished) return
-                parent.sc.finished = 1
-                parent.c.all_done_fn?.()
+                if (!rq.all_done() || host.sc.finished) return
+                host.sc.finished = 1
+                host.c.all_done_fn ? host.c.all_done_fn() : H.feebly_ponder()
             },
 
             // frontier: highest maz where all reqs at that level are %finished.
@@ -209,7 +212,7 @@
             _frontier(): number {
                 const all = rq.o()
                 if (!all.length) return 1
-                const levels = [...new Set(all.map((r: TheC) => (r.sc.maz as number) || 1))].sort((a,b)=>a-b)
+                const level = [...new Set(all.map((r: TheC) => (r.sc.maz as number) || 1))].sort((a,b)=>a-b)
                 for (const lv of levels) {
                     if (all.filter((r:TheC)=>((r.sc.maz as number)||1)===lv).some((r:TheC)=>!r.sc.finished))
                         return lv
@@ -254,19 +257,20 @@
                             req.sc.initialdo = 1
                         }
                         await handler(req, rq)
-                    delete req.sc.initialdo
+                        // also drop here — a req that finishes on its first call shouldn't carry it
+                        delete req.sc.initialdo
                     }
                 }
             },
 
             // mark finished; yoinks oncelers + their sc keys so snap collapses to %finished.
-            //   bumps parent version, feebly_ponder.
+            //   bumps host version, feebly_ponder.
             finish(req: TheC) {
                 if (req.sc.finished) return
                 for (const k of Object.keys(req.c.oncelers ?? {})) delete req.sc[k]
                 delete req.c.oncelers
                 req.sc.finished = 1
-                parent.bump_version?.()
+                host.bump_version?.()
                 H.feebly_ponder()
             },
 
@@ -281,7 +285,7 @@
         }
 
         // stored so reqyscile and e_reqyscile can find this requlator without recalling reqys()
-        parent.c.rq = rq
+        host.c.rq = rq
 
         if (q.tweak_process) rq.tweak_process = 1
         return rq
@@ -291,12 +295,12 @@
     //   then the req is finished and the De chain re-enters via reqyscile.
     //   async completions always arrive here; direct reqyscile() is in-Atime only.
     async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
-        const H      = this
-        const req    = e.sc.req as TheC
+        const H   = this
+        const req = e.sc.req as TheC
         if (!req || req.sc.finished) return
-        const host   = req.c.host as TheC
+        const host    = req.c.host as TheC
         const mainkey = (host.c.rq as any)?.mainkey ?? 'req'
-        const rq     = H.reqys(host, mainkey)
+        const rq      = H.reqys(host, mainkey)
         for (const [k, v] of Object.entries(e.sc)) {
             if (k !== 'req' && k !== 'see') req.sc[k] = v
         }
@@ -318,9 +322,9 @@
     reqysee(De: TheC, sc: Record<string,any>): string {
         const see = sc.see as string | undefined
         delete sc.see
-        const [dk, dv] = Object.entries(De.sc)[0] ?? []
-        const deIdent  = dk ? `${dk}:${dv}` : ''
-        const scStr    = Object.keys(sc).length ? keyser(sc) : ''
+        const mk      = this.mainkey(De)
+        const deIdent = mk ? `${mk}:${De.sc[mk]}` : ''
+        const scStr   = Object.keys(sc).length ? keyser(sc) : ''
         Object.assign(De.sc, sc)
         return [deIdent, see, scStr].filter(Boolean).join('  ')
     },
