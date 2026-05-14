@@ -232,19 +232,19 @@
                 )
 
                 for (const req of eligible) {
-                    // reprop_fn gets first look at %mutated; then both transients are cleared.
-                    //   %mutated and %initialdo: stamped at a moment, cleaned each following pass.
-                    req.c.reprop_fn?.(req)
-                    delete req.sc.mutated
+                    // %initialdo: clean the previous-pass stamp before this pass runs
                     delete req.sc.initialdo
 
                     // drop %waits, %error, %see before each handler
                     await H.w_noproblemo(req)
 
                     // handler precedence (highest to lowest):
-                    //   fn (do() override) → c.do_fn → H.t_name discovery → subreqys_do → q.do_fn
+                    //   fn → (%mutated? → c.reprop_fn ?? rq.mutated_fn) → c.do_fn → H.t_name → subreqys_do → q.do_fn
+                    // when %mutated, mutation handler fires instead of do_fn — upstream recipe changed.
+                    //   handler reads req.sc.mutated.fieldname for old values; deleted after.
                     const name = req.sc[t] as string | undefined
                     const handler = fn
+                        ?? (req.sc.mutated && (req.c.reprop_fn || rq.mutated_fn))
                         ?? req.c.do_fn
                         ?? (name && (H as any)[t + '_' + name]?.bind(H))
                         ?? (rq.submainkey && rq.subreqys_do)
@@ -257,9 +257,12 @@
                             req.sc.initialdo = 1
                         }
                         await handler(req, rq)
-                        // also drop here — a req that finishes on its first call shouldn't carry it
+                        // also drop after — a req that finishes on its first call shouldn't carry it
                         delete req.sc.initialdo
                     }
+
+                    // %mutated deleted after handler — mutated_fn/reprop_fn read old values there
+                    delete req.sc.mutated
                 }
             },
 

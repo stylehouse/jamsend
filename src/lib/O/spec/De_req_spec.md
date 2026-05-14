@@ -141,8 +141,10 @@ Same machinery as `requesty_serial()`, different host. Key differences:
 - Version-bumps the host on every `%finished` transition.
 - Signals `all_done` when every req is finished (or none exist).
 - Calls `w_noproblemo(req)` before each `do_fn` — drops `%waits`, `%error`, `%see`.
-- Drops `%mutated` and `%initialdo` at the top of each `do()` pass
-  (after any `reprop_fn` has had a chance to consume `%mutated`).
+- Drops `%initialdo` at the top of each `do()` pass (and again after the handler,
+  so a req that finishes on its first call never leaves it on `%finished`).
+- Drops `%mutated` after the handler — `mutated_fn` and `reprop_fn` read the old
+  values there.
 - Stamps `%initialdo` on the first `do_fn` call for each req.
 - Sets `req.c.host` at seed time (via `oai`).
 - `rq.finish(req)` yoinks `req.c.oncelers` and its corresponding `sc` keys.
@@ -162,7 +164,7 @@ rq.subreqys()            // submainkey:'req' implied
 rq.subreqys('subtask')   // explicit override
 
 // handler precedence in do() — highest to lowest:
-//   De.c.do_fn ?? H['De_' + De.sc.De]?.bind(H) ?? (rq.submainkey && rq.subreqys_do)
+//   (%mutated? → c.reprop_fn ?? rq.mutated_fn) ?? c.do_fn ?? H['De_' + De.sc.De]?.bind(H) ?? (rq.submainkey && rq.subreqys_do)
 
 // check_all_finished() — shared by subreqys_do and reqyscile.
 //   gates on De%finished so all_done_fn fires at most once.
@@ -203,7 +205,7 @@ rq.pending()        // array of unfinished reqs
 
 // mark a req finished from outside (out-of-Atime completions).
 //   bumps host version, yoinks req.c.oncelers + sc keys, calls H.feebly_ponder().
-//   e_reqyscile is the standard caller.
+//   reqyscile(req) is the standard caller.
 rq.finish(req)
 ```
 
@@ -243,16 +245,18 @@ This replaces explicit `%waits` for strictly sequential chains, keeps the snap c
 
 ### %mutated and %initialdo lifecycle
 
-Both follow the same pattern: stamped at a meaningful first moment, cleaned at the
-top of the following `do()` pass.
+`%mutated` and `%initialdo` are transient markers with different timing.
 
 `%mutated` — `rq.oai(c, sc)` two-arg merges `sc` and stamps it when the req already
-existed. A `reprop_fn` on `req.c` may consume it first; otherwise reqys() deletes it
-directly. The response should be idempotent — `%mutated` is a hint, not a reliable event.
+existed. When present, `req.c.reprop_fn` (per-req) or `rq.mutated_fn` (rq-wide)
+fires instead of the normal `do_fn` — the handler reads `req.sc.mutated.fieldname`
+for the pre-merge values. Cleaned after the handler runs. The response should be
+idempotent — `%mutated` is a hint, not a reliable event.
 
 `%initialdo` — reqys() stamps it when `do_fn` is called the first time.
-The req can read it to know "this is my first run." The second `do()` pass drops it.
-Its window is exactly one run: from first invocation until the cycle that follows.
+The req can read it to know "this is my first run." Cleaned at the top of the
+following `do()` pass, and also immediately after the handler so a req that
+finishes on its first call never leaves it sitting on `%finished`.
 
 ### 🚧 Culling finished reqs
 
@@ -361,7 +365,7 @@ natural savepoints without any synthetic intervention. If:
 2. The op genuinely takes longer than poll_step's quiescence threshold (~75ms),
 
 then poll_step sees `leave_running_until = 0` and no pending work, snaps the step,
-and advances. The next step begins when the async op's `e_reqyscile` fires.
+and advances. The next step begins when the async op calls `H.reqyscile(req)`.
 
 This means a run with two real async boundaries (keygen, PeerServer open) will
 naturally produce three steps — without any `on_step` hold-backs or synthetic
@@ -515,20 +519,23 @@ w
       c.host = De               — reqyscile(req) climbs via this to the De
       c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
       c.oncelers                — reqonce stamps here + sc; rq.finish() yoinks all
-      c.reprop_fn               — optional; consumes %mutated before reqys() cleanup
+      c.reprop_fn               — per-req mutation handler; fires instead of do_fn when %mutated
   %log                          — longer-lived see; persists until explicitly cleared
 
 reqys(host, mainkey)            — same middleware, different host
   .submainkey                  — from subreqys(); enables subreqys_do
-  .subreqys_do                 — fallback handler fn; available after subreqys() call
+  .subreqys_do                 — fallback handler fn; reachable when submainkey set
+  .mutated_fn                  — rq-wide mutation handler; fires instead of do_fn when %mutated
+                                  and req.c.reprop_fn absent; reads req.sc.mutated.fieldname
   .check_all_finished()        — gates on De%finished; fires all_done_fn once; 🚧 ponder?
   .oai(c)                      — idempotent seed, no merge; sets c.host
   .oai(c, sc)                  — seed + merge sc; stamps %mutated if existed
   .doai(c, sc)?.(fn)           — oai + set do_fn in one gesture; null if already set
   .subreqys(name?)             — sets submainkey; allows subreqys_do; installs default
                                   all_done_fn (check_all_finished → %De,finished + ponder)
-  .do()                        — cleans %mutated/%initialdo, w_noproblemo, frontier;
-                                  handler = c.do_fn ?? H.De_foo ?? (submainkey && subreqys_do)
+  .do()                        — %initialdo cleanup, w_noproblemo, frontier;
+                                  handler = (%mutated? → c.reprop_fn ?? rq.mutated_fn) ?? c.do_fn ?? H.t_name ?? (submainkey && subreqys_do) ?? q.do_fn;
+                                  %mutated deleted after handler
   .do(fn)                      — same but fn(req,rq) instead of do_fn dispatch
   .finish(req)                 — %finished, yoink oncelers+sc keys, bump host, feebly_ponder
   .all_done()                  — true when all reqs finished
