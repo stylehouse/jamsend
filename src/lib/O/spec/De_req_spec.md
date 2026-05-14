@@ -80,7 +80,8 @@ await rq.doai({ req: 'keygen' })?.(async (req) => {
     if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
         const Id = await generateKeys()
-        H.i_elvisto(w, 'reqyscile', { req, Id })
+        req.sc.Id = Id                                        // set directly on req
+        H.i_elvisto(w, 'reqyscile', { req, see: 'keygen' })  // see: trace label
     })
     H.demand_time_to_think(3000)
 })
@@ -94,7 +95,7 @@ Each req has:
 
 - `c.do_fn` — its micro-main, set once at seeding. Called by `reqys().do()`.
 - `c.host` — the De holding this req, set by reqys() at seed time.
-  `e_reqyscile` and `reqyscile(req)` climb here to continue the chain.
+  `e_reqyscile` climbs here to call `reqyscile(host)`.
 - `c.oncelers` — one-shot flag registry. `reqonce(req, 'running')` stamps both
   `req.sc.running = 1` (visible in snap while the work is in flight) and
   `req.c.oncelers.running = 1` (re-fire guard). `rq.finish(req)` yoinks
@@ -165,12 +166,12 @@ rq.subreqys('subtask')   // explicit override
 
 // check_all_finished() — shared by subreqys_do and reqyscile.
 //   gates on De%finished so all_done_fn fires at most once.
-//   🚧 ponder() vs feebly_ponder() context-dependent — see reqyscile(req).
+//   🚧 ponder() vs feebly_ponder() from async context — not yet settled.
 rq.check_all_finished()
 // expands to:
 //   if (!rq.all_done() || De.sc.finished) return
 //   De.sc.finished = 1
-//   await De.c.all_done_fn?.()   // or default: feebly_ponder()
+//   await De.c.all_done_fn?.()   // or default: ponder()
 
 // seed a req — idempotent, single-arg form, no merge. req.c.host = De set here.
 const r = rq.oai({ req: 'keygen' })
@@ -182,9 +183,8 @@ r.c.do_fn ||= async (req, rq) => { ... }   // set once
 await rq.doai({ req: 'keygen' })?.(async (req, rq) => {
     if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
-        const Id = new Idento()
-        await Id.generateKeys(side)
-        H.i_elvisto(w, 'reqyscile', { req, Id })   // Id merges onto req.sc in e_reqyscile
+        req.sc.Id = await doTheWork()   // set directly on req before elvisting
+        H.i_elvisto(w, 'reqyscile', { req, see: 'keygen' })
     })
     H.demand_time_to_think(3000)   // inside reqonce — extend once, not every tick
 })
@@ -292,6 +292,11 @@ const dSync    = dq.oai({ De: 'sync' }, { maz: 3 })
 dSync.c.do_fn ||= async (De) => { ... }
 ```
 
+Handler precedence per De (highest first):
+1. `De.c.do_fn` — explicit, set by caller
+2. `H['De_' + De.sc.De]()` — name-convention discovery; makes every pair text-searchable
+3. `rq.subreqys_do` — default: run subreqs, finish when all done
+
 `dq.do()` drives De mini-mains in maz order. Each mini-main calls
 `reqys(De,'req').do()`. Two-level nested reqys — same middleware, different host particle.
 
@@ -396,43 +401,34 @@ snap or the receiver reads by name.
 
 ### e_reqyscile and reqyscile
 
-The two halves of the re-entry loop — elvis entry and the Atime loop — live next to
-each other in Hovercraft.
+The two halves of the re-entry loop live next to each other in Hovercraft.
 
-`e_reqyscile` is the standard path for any out-of-Atime completion. Any sc fields
-beyond `req` and `say` are merged onto `req.sc` before finishing. `req.c.host` gives
-the De; e_reqyscile never needs to know which De it's in.
-
-`reqyscile` accepts either a req or a De. Coming back from real async work, passing
-the req is the natural gesture — it climbs to the host De, runs the frontier, then
-calls `check_all_finished()`. Having just completed genuine async work, this context
-warrants `ponder()` rather than `feebly_ponder()`. 🚧 The mechanism for conveying
-that context to `check_all_finished()` is not yet settled ⛑️.
+Callers set whatever they need on `req.sc` directly before elvisting — no sc-merge
+happens inside e_reqyscile. The `see` field in the elvis is the trace label only;
+`reqyscile(De, sc)` takes sc as a "parcel of change" where `sc.see` is extracted
+for the trace and the rest is available for future extension.
 
 ```typescript
-// call site:
-H.i_elvisto(w, 'reqyscile', { req: rKeygen, Id, say: 'keygen done' })
-//   say: optional trace label, not merged onto req.sc
+// call site — caller sets req.sc directly, then elvists:
+H.post_do(async () => {
+    req.sc.Id = await doWork()
+    H.i_elvisto(w, 'reqyscile', { req, see: 'keygen' })
+})
 
 async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
-    const H   = this as House
     const req = e.sc.req as TheC
     if (!req || req.sc.finished) return
     const host = req.c.host as TheC
     const rq   = H.reqys(host, host.c.rq?.mainkey ?? 'req')
-    for (const [k, v] of Object.entries(e.sc)) {
-        if (k !== 'req' && k !== 'say') req.sc[k] = v    // e%Id → req%Id, etc.
-    }
-    H.trace('reqyscile', keyser(req.sc) + (e.sc.say ? '  ' + e.sc.say : ''))
-    rq.finish(req)              // yoinks oncelers+sc, bumps host, feebly_ponder
-    await H.reqyscile(req)      // climb to host, do() frontier, check_all_finished
+    rq.finish(req)                              // yoinks oncelers+sc, bumps host
+    await H.reqyscile(host, { see: e.sc.see })  // hand off with trace label
 }
 
-// reqyscile — accepts a req (climbs to host De) or a De directly.
-async reqyscile(De_or_req: TheC) {
-    const De = De_or_req.c.host ?? De_or_req
+// reqyscile(De, sc?) — sc.see for trace; rest of sc is parcel of change (future use).
+async reqyscile(De: TheC, sc: { see?: string, [k: string]: any } = {}) {
+    H.trace('reqyscile', keyser(De.sc) + (sc.see ? '  ' + sc.see : ''))
     await De.c.rq.do()
-    De.c.rq.check_all_finished()   // gates on De%finished, fires all_done_fn once
+    De.c.rq.check_all_finished()
 }
 ```
 
@@ -530,7 +526,7 @@ w
       %initialdo                — first do_fn call; cleared on second do() pass
       %running                  — reqonce example; yoinked by rq.finish()
       %finished                 — rq.finish(req), bumps De version
-      c.host = De               — reqyscile(req) and e_reqyscile climb via this
+      c.host = De               — e_reqyscile climbs via this to call reqyscile(host)
       c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
       c.oncelers                — reqonce stamps here + sc; rq.finish() yoinks all
       c.reprop_fn               — optional; consumes %mutated before reqys() cleanup
@@ -548,7 +544,7 @@ reqys(host, mainkey)            — same middleware, different host
   .do()                        — cleans %mutated/%initialdo, w_noproblemo, frontier;
                                   handler = c.do_fn ?? H.De_foo ?? (submainkey && subreqys_do)
   .do(fn)                      — same but fn(req,rq) instead of do_fn dispatch
-  .finish(req)                 — %finished, yoink oncelers+sc, bump host, feebly_ponder
+  .finish(req)                 — %finished, yoink oncelers+sc keys, bump host, feebly_ponder
   .all_done()                  — true when all reqs finished
   .pending()                   — unfinished reqs
 
@@ -557,9 +553,11 @@ w_noproblemo(p, opts?)         — drops %waits, %error, %see; opts.log drops %l
 want_savepoint()               — leave_running_until=0 if H.sc.run, then H.main()
 H.Runstepped()                 — promise resolved when Story next advances a step
 
-e_reqyscile()                  — merge e%* → req.sc, finish req, reqyscile(req)
-                                  i_elvisto(w,'reqyscile',{req,…,say?})
-reqyscile(De_or_req)           — climbs to host if req; De.c.rq.do(); check_all_finished
+e_reqyscile()                  — finish req, call reqyscile(host, {see})
+                                  i_elvisto(w,'reqyscile',{req,see?})
+                                  caller sets req.sc directly before elvisting
+reqyscile(De, sc?)             — trace sc.see; De.c.rq.do(); check_all_finished()
+                                  sc is parcel of change; see extracted for trace
                                   🚧 ponder() vs feebly_ponder() from async context
 e_De_Foo()                     — named De event; does named work, then reqyscile(De)
                                   i_elvisto(w,'De_Foo',…)
