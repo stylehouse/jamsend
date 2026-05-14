@@ -434,23 +434,6 @@ remaining sc into De.sc), then drives `De.c.rq.do()` and `De.c.rq.check_all_fini
 `H.reqysee(De, sc)` uses `H.mainkey(De)` to read the De's identity key — the first
 key of `De.sc` (always the De's own name, e.g. `De:listen`).
 
-### Specific wrappers
-
-Elvisors that arm a hook or set state without finishing a req via the chain:
-
-```typescript
-// corrupt_hello armed — no req to finish via chain, just seed and reqyscile the whole De
-async e_De_corrupt_hello(_A, w, _e) {
-    const De = w.oai({ De: 'corrupt_hello' })
-    const rq = H.reqys(De, 'req')
-    await rq.doai({ req: 'arm' })?.(async (req) => {
-        w.oai({ hook: 1, corrupt: 'hello' })
-        rq.finish(req)
-    })
-    await H.reqyscile(De)
-}
-```
-
 ---
 
 ## Snap appearance

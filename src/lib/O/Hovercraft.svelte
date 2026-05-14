@@ -232,10 +232,7 @@
                 )
 
                 for (const req of eligible) {
-                    // capture mutated before cleanup — mutated_fn reads req.sc.mutated during its call.
-                    //   both transients cleaned before AND after the handler (maximum correctness).
-                    const mutated = req.sc.mutated
-                    delete req.sc.mutated
+                    // %initialdo: clean stamp from previous pass before this one runs
                     delete req.sc.initialdo
 
                     // drop %waits, %error, %see before each handler
@@ -243,10 +240,10 @@
 
                     // handler precedence (highest to lowest):
                     //   fn → (%mutated? → req.c.mutated_fn ?? rq.mutated_fn) → c.do_fn → H.t_name → subreqys_do → q.do_fn
-                    // when %mutated, mutation handler fires instead of do_fn — upstream recipe changed.
+                    // mutated handler fires instead of do_fn; reads req.sc.mutated.fieldname for old values
                     const name = req.sc[t] as string | undefined
                     const handler = fn
-                        ?? (mutated && (req.c.mutated_fn || rq.mutated_fn))
+                        ?? (req.sc.mutated && (req.c.mutated_fn || rq.mutated_fn))
                         ?? req.c.do_fn
                         ?? (name && (H as any)[t + '_' + name]?.bind(H))
                         ?? (rq.submainkey && rq.subreqys_do)
@@ -258,11 +255,11 @@
                             req.c._had_initialdo = true
                             req.sc.initialdo = 1
                         }
-                        if (mutated) req.sc.mutated = mutated  // restore for handler — reads old values
                         await handler(req, rq)
-                        delete req.sc.mutated   // clean after
-                        delete req.sc.initialdo // clean after — don't leave on %finished
+                        delete req.sc.initialdo  // also after — don't leave on %finished
                     }
+
+                    delete req.sc.mutated  // after handler — mutated_fn reads old values there
                 }
             },
 
