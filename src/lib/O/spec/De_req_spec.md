@@ -80,10 +80,18 @@ await rq.doai({ req: 'keygen' })?.(async (req) => {
     if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
         const Id = await generateKeys()
-        req.sc.Id = Id                                        // set directly on req
-        H.i_elvisto(w, 'reqyscile', { req, see: 'keygen' })  // see: trace label
+        H.reqyscile(req, { Id, see: 'keygen done' })  // Id merges → req.sc; trace: "De:listen  keygen done"
     })
     H.demand_time_to_think(3000)
+})
+// a req with a more expressive see — trace reads "De:listen  incoming connection":
+await rq.doai({ req: 'listen' })?.(async (req) => {
+    if (!H.reqonce(req, 'running')) return
+    H.post_do(async () => {
+        const con = await eer.waitForIncoming()
+        H.reqyscile(req, { con, see: 'incoming connection' })
+    })
+    H.demand_time_to_think(10000)
 })
 await rq.do()
 ```
@@ -164,7 +172,7 @@ rq.subreqys()            // submainkey:'req' implied
 rq.subreqys('subtask')   // explicit override
 
 // handler precedence in do() — highest to lowest:
-//   (%mutated? → c.reprop_fn ?? rq.mutated_fn) ?? c.do_fn ?? H['De_' + De.sc.De]?.bind(H) ?? (rq.submainkey && rq.subreqys_do)
+//   (%mutated? → c.mutated_fn ?? rq.mutated_fn) ?? c.do_fn ?? H['De_' + De.sc.De]?.bind(H) ?? (rq.submainkey && rq.subreqys_do)
 
 // check_all_finished() — shared by subreqys_do and reqyscile.
 //   gates on De%finished so all_done_fn fires at most once.
@@ -186,7 +194,7 @@ await rq.doai({ req: 'keygen' })?.(async (req, rq) => {
     if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
         const Id = await doTheWork()
-        H.i_elvisto(w, 'reqyscile', { req, Id, see: 'keygen' })  // Id is parcel of change
+        H.reqyscile(req, { Id, see: 'keygen' })   // Id merges → req.sc; see: trace label
     })
     H.demand_time_to_think(3000)   // inside reqonce — extend once, not every tick
 })
@@ -248,7 +256,7 @@ This replaces explicit `%waits` for strictly sequential chains, keeps the snap c
 `%mutated` and `%initialdo` are transient markers with different timing.
 
 `%mutated` — `rq.oai(c, sc)` two-arg merges `sc` and stamps it when the req already
-existed. When present, `req.c.reprop_fn` (per-req) or `rq.mutated_fn` (rq-wide)
+existed. When present, `req.c.mutated_fn` (per-req) or `rq.mutated_fn` (rq-wide)
 fires instead of the normal `do_fn` — the handler reads `req.sc.mutated.fieldname`
 for the pre-merge values. Cleaned after the handler runs. The response should be
 idempotent — `%mutated` is a hint, not a reliable event.
@@ -519,7 +527,7 @@ w
       c.host = De               — reqyscile(req) climbs via this to the De
       c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
       c.oncelers                — reqonce stamps here + sc; rq.finish() yoinks all
-      c.reprop_fn               — per-req mutation handler; fires instead of do_fn when %mutated
+      c.mutated_fn              — per-req mutation handler; fires instead of do_fn when %mutated
   %log                          — longer-lived see; persists until explicitly cleared
 
 reqys(host, mainkey)            — same middleware, different host
@@ -534,7 +542,7 @@ reqys(host, mainkey)            — same middleware, different host
   .subreqys(name?)             — sets submainkey; allows subreqys_do; installs default
                                   all_done_fn (check_all_finished → %De,finished + ponder)
   .do()                        — %initialdo cleanup, w_noproblemo, frontier;
-                                  handler = (%mutated? → c.reprop_fn ?? rq.mutated_fn) ?? c.do_fn ?? H.t_name ?? (submainkey && subreqys_do) ?? q.do_fn;
+                                  handler = (%mutated? → c.mutated_fn ?? rq.mutated_fn) ?? c.do_fn ?? H.t_name ?? (submainkey && subreqys_do) ?? q.do_fn;
                                   %mutated deleted after handler
   .do(fn)                      — same but fn(req,rq) instead of do_fn dispatch
   .finish(req)                 — %finished, yoink oncelers+sc keys, bump host, feebly_ponder
@@ -546,9 +554,8 @@ w_noproblemo(p, opts?)         — drops %waits, %error, %see; opts.log drops %l
 want_savepoint()               — leave_running_until=0 if H.sc.run, then H.main()
 H.Runstepped()                 — promise resolved when Story next advances a step
 
-reqyscile(req, sc?)            — parcel (sc exc. see) → req.sc; finish req;
-                                  i_elvisto(w,'reqysciliation',{req,see?});
-                                  Atime or async — always through here.
+reqyscile(req, sc?)            — merges parcel (sc exc. see) → req.sc; i_elvisto(w,'reqysciliation',{req,see?});
+                                  Atime or async — always through here. finish() is caller's job.
 e_reqysciliation()             — climbs req→De; reqysee(De,{see}); De.c.rq.do(); check_all_finished()
                                   🚧 ponder() vs feebly_ponder() from async context
 H.reqysee(De, sc)              — extracts sc.see; trace = De identity + see + keyser(rest);

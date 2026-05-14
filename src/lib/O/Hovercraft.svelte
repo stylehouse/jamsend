@@ -232,19 +232,21 @@
                 )
 
                 for (const req of eligible) {
-                    // %initialdo: clean the previous-pass stamp before this pass runs
+                    // capture mutated before cleanup — mutated_fn reads req.sc.mutated during its call.
+                    //   both transients cleaned before AND after the handler (maximum correctness).
+                    const mutated = req.sc.mutated
+                    delete req.sc.mutated
                     delete req.sc.initialdo
 
                     // drop %waits, %error, %see before each handler
                     await H.w_noproblemo(req)
 
                     // handler precedence (highest to lowest):
-                    //   fn → (%mutated? → c.reprop_fn ?? rq.mutated_fn) → c.do_fn → H.t_name → subreqys_do → q.do_fn
+                    //   fn → (%mutated? → req.c.mutated_fn ?? rq.mutated_fn) → c.do_fn → H.t_name → subreqys_do → q.do_fn
                     // when %mutated, mutation handler fires instead of do_fn — upstream recipe changed.
-                    //   handler reads req.sc.mutated.fieldname for old values; deleted after.
                     const name = req.sc[t] as string | undefined
                     const handler = fn
-                        ?? (req.sc.mutated && (req.c.reprop_fn || rq.mutated_fn))
+                        ?? (mutated && (req.c.mutated_fn || rq.mutated_fn))
                         ?? req.c.do_fn
                         ?? (name && (H as any)[t + '_' + name]?.bind(H))
                         ?? (rq.submainkey && rq.subreqys_do)
@@ -256,13 +258,11 @@
                             req.c._had_initialdo = true
                             req.sc.initialdo = 1
                         }
+                        if (mutated) req.sc.mutated = mutated  // restore for handler — reads old values
                         await handler(req, rq)
-                        // also drop after — a req that finishes on its first call shouldn't carry it
-                        delete req.sc.initialdo
+                        delete req.sc.mutated   // clean after
+                        delete req.sc.initialdo // clean after — don't leave on %finished
                     }
-
-                    // %mutated deleted after handler — mutated_fn/reprop_fn read old values there
-                    delete req.sc.mutated
                 }
             },
 
@@ -294,11 +294,12 @@
         return rq
     },
 
-    // re-entry point for a completed req — Atime or async, always use this.
+    // re-entry point for a req — Atime or async, always use this.
     //   merges parcel (sc minus see) into req.sc here, synchronously.
-    //   finishes the req, then elvises to e_reqysciliation so the do() pass
-    //   arrives in its own Atime — other work chattering now gets to settle first.
+    //   elvises to e_reqysciliation so the do() pass arrives in its own Atime —
+    //   other work chattering now gets to settle first.
     //   parcel is from-within (the async work); distinct from %mutated (from-without).
+    //   finish() is the caller's job if the req is done — reqyscile doesn't assume.
     async reqyscile(req: TheC, sc: Record<string,any> = {}) {
         const H   = this
         const see = sc.see as string | undefined
@@ -306,7 +307,6 @@
             if (k !== 'see') req.sc[k] = v
         }
         const De = req.c.host as TheC
-        De.c.rq?.finish(req)
         const w  = De.c.host as TheC
         H.i_elvisto(w, 'reqysciliation', { req, see })
     },
