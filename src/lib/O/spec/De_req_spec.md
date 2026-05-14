@@ -95,7 +95,7 @@ Each req has:
 
 - `c.do_fn` — its micro-main, set once at seeding. Called by `reqys().do()`.
 - `c.host` — the De holding this req, set by reqys() at seed time.
-  `e_reqyscile` climbs here to call `reqyscile(host)`.
+  `reqyscile(req)` climbs here to reach the De, then elvises to `e_reqysciliation`.
 - `c.oncelers` — one-shot flag registry. `reqonce(req, 'running')` stamps both
   `req.sc.running = 1` (visible in snap while the work is in flight) and
   `req.c.oncelers.running = 1` (re-fire guard). `rq.finish(req)` yoinks
@@ -399,72 +399,28 @@ Everything the elvis carries belongs in `e%*` (sc fields on the event particle).
 `e.c` is for opaque machine objects with no snap value; prefer sc for anything the
 snap or the receiver reads by name.
 
-### e_reqyscile and reqyscile
+### reqyscile and e_reqysciliation
 
-The two halves of the re-entry loop live next to each other in Hovercraft.
+`H.reqyscile(req, sc?)` is the single re-entry point for a completing req —
+call it from Atime or async code, the path is always the same.
 
-Async completions always arrive via `i_elvisto → e_reqyscile`, never by calling
-`reqyscile` directly. This gives other work chattering in the current Atime a chance
-to settle — each req's continuation arrives in its own separate Atime pass.
-Whether in-Atime callers should also route via elvis for uniformity is an open
-question; for now, direct `H.reqyscile(De)` remains available in-Atime.
+The **parcel of change** — everything in `sc` except `see` — lands on `req.sc`
+synchronously inside `reqyscile`, before the async boundary. This is from-within
+(the async work reporting its result); distinct from `%mutated`, which is
+from-without (an upstream recipe change arriving via the two-arg `oai(c, sc)`).
 
-The **parcel of change** — everything in the elvis sc except `req` and `see` — lands
-on `req.sc` before the req is finished. This is distinct from `%mutated`, which
-signals an upstream recipe change from-without; the parcel is from-within, produced
-by the async work itself.
+After merging the parcel, `reqyscile` calls `De.c.rq.finish(req)` and then
+`i_elvisto`s to `e_reqysciliation`. Routing through the elvis — even from Atime —
+gives other work chattering in the current Atime a chance to settle, and ensures
+the `do()` pass arrives in its own separate Atime. Systems stay deterministic at
+arm's length regardless of which `topH%todo` is prioritised first.
 
-`reqyscile(De, sc)` uses `H.reqysee(De, sc)` to build its trace string and merge
-any remaining sc onto De.sc. See is extracted, identity comes from the first k:v
-of De.sc (bound to be the De's own name, e.g. `De:listen`), and any parcel left
-in sc after see is removed merges into De.sc.
+`e_reqysciliation` climbs `req.c.host` to the De, calls `H.reqysee` for the trace
+(which extracts `see`, builds "De:listen  see  extraKey:val", and merges any
+remaining sc into De.sc), then drives `De.c.rq.do()` and `De.c.rq.check_all_finished()`.
 
-```typescript
-// call site — parcel of change travels in the elvis sc:
-H.post_do(async () => {
-    const Id = await doWork()
-    H.i_elvisto(w, 'reqyscile', { req, Id, see: 'keygen' })
-    //                                    ^^  parcel → req.sc.Id
-})
-
-async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
-    const req = e.sc.req as TheC
-    if (!req || req.sc.finished) return
-    const host = req.c.host as TheC
-    const rq   = H.reqys(host, host.c.rq?.mainkey ?? 'req')
-    // parcel of change — everything except req and see lands on req.sc
-    for (const [k, v] of Object.entries(e.sc)) {
-        if (k !== 'req' && k !== 'see') req.sc[k] = v
-    }
-    rq.finish(req)                              // yoinks oncelers+sc, bumps host
-    await H.reqyscile(host, { see: e.sc.see })
-}
-
-async reqyscile(De: TheC, sc: Record<string,any> = {}) {
-    H.trace('reqyscile', H.reqysee(De, sc))     // extracts see, merges rest → De.sc
-    await De.c.rq.do()
-    De.c.rq.check_all_finished()
-}
-
-// H.reqysee(De, sc) — trace helper; mutates sc.
-//   1. extracts and removes sc.see
-//   2. builds trace: "De:listen  keygen  extraKey:val"
-//      — first k:v from De.sc (the De's identity), then see, then keyser(remaining sc)
-//   3. merges remaining sc into De.sc
-reqysee(De: TheC, sc: Record<string,any>): string {
-    const see = sc.see as string | undefined
-    delete sc.see
-    const [dk, dv] = Object.entries(De.sc)[0] ?? []
-    const deIdent  = dk ? `${dk}:${dv}` : ''
-    const scStr    = Object.keys(sc).length ? keyser(sc) : ''
-    Object.assign(De.sc, sc)
-    return [deIdent, see, scStr].filter(Boolean).join('  ')
-}
-```
-
-`all_done_fn` is set once on the De at seeding time. Default (installed by `subreqys()`):
-marks `%De,finished` and pondering. Explicit `all_done_fn` may add more reqs, mark
-`De.sc.finished`, or seed a new De at a higher maz level.
+`H.reqysee(De, sc)` uses `H.mainkey(De)` to read the De's identity key — the first
+key of `De.sc` (always the De's own name, e.g. `De:listen`).
 
 ### Specific wrappers
 
@@ -552,11 +508,11 @@ w
     c.all_done_fn               — called once by check_all_finished(); default: %finished+ponder
     %req:Bar(,maz:2)            — maz:1 implied, omitted
       %waits:$req               — dropped before do_fn, re-stamped if still blocked
-      %mutated                  — oai(c,sc) two-arg; cleared at top of next do()
+      %mutated.key = old        — oai(c,sc) two-arg; cleared at top of next do()
       %initialdo                — first do_fn call; cleared on second do() pass
       %running                  — reqonce example; yoinked by rq.finish()
       %finished                 — rq.finish(req), bumps De version
-      c.host = De               — e_reqyscile climbs via this to call reqyscile(host)
+      c.host = De               — reqyscile(req) climbs via this to the De
       c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
       c.oncelers                — reqonce stamps here + sc; rq.finish() yoinks all
       c.reprop_fn               — optional; consumes %mutated before reqys() cleanup
@@ -583,11 +539,10 @@ w_noproblemo(p, opts?)         — drops %waits, %error, %see; opts.log drops %l
 want_savepoint()               — leave_running_until=0 if H.sc.run, then H.main()
 H.Runstepped()                 — promise resolved when Story next advances a step
 
-e_reqyscile()                  — parcel e%* (exc. req,see) → req.sc; finish req;
-                                  reqyscile(host, {see})
-                                  i_elvisto(w,'reqyscile',{req,…parcel,see?})
-                                  async code always arrives here, never calls reqyscile direct
-reqyscile(De, sc?)             — reqysee(De,sc); De.c.rq.do(); check_all_finished()
+reqyscile(req, sc?)            — parcel (sc exc. see) → req.sc; finish req;
+                                  i_elvisto(w,'reqysciliation',{req,see?});
+                                  Atime or async — always through here.
+e_reqysciliation()             — climbs req→De; reqysee(De,{see}); De.c.rq.do(); check_all_finished()
                                   🚧 ponder() vs feebly_ponder() from async context
 H.reqysee(De, sc)              — extracts sc.see; trace = De identity + see + keyser(rest);
                                   merges rest into De.sc; returns trace string
@@ -608,4 +563,3 @@ e_De_Foo()                     — named De event; does named work, then reqysci
   reqys() is unaware of the De's lifecycle; it only manages the req set it holds.
 - Does not force a Story step to happen — only awaits the next one via `H.Runstepped()`
   when holding a finished req for snap visibility.
-- `finish()` does not call `do()` or `reqyscile` — that is `e_reqyscile`'s job.

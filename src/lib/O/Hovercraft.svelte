@@ -212,7 +212,7 @@
             _frontier(): number {
                 const all = rq.o()
                 if (!all.length) return 1
-                const level = [...new Set(all.map((r: TheC) => (r.sc.maz as number) || 1))].sort((a,b)=>a-b)
+                const levels = [...new Set(all.map((r: TheC) => (r.sc.maz as number) || 1))].sort((a,b)=>a-b)
                 for (const lv of levels) {
                     if (all.filter((r:TheC)=>((r.sc.maz as number)||1)===lv).some((r:TheC)=>!r.sc.finished))
                         return lv
@@ -291,28 +291,32 @@
         return rq
     },
 
-    // parcel of change — everything in e%* except req and see lands on req.sc,
-    //   then the req is finished and the De chain re-enters via reqyscile.
-    //   async completions always arrive here; direct reqyscile() is in-Atime only.
-    async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
+    // re-entry point for a completed req — Atime or async, always use this.
+    //   merges parcel (sc minus see) into req.sc here, synchronously.
+    //   finishes the req, then elvises to e_reqysciliation so the do() pass
+    //   arrives in its own Atime — other work chattering now gets to settle first.
+    //   parcel is from-within (the async work); distinct from %mutated (from-without).
+    async reqyscile(req: TheC, sc: Record<string,any> = {}) {
         const H   = this
-        const req = e.sc.req as TheC
-        if (!req || req.sc.finished) return
-        const host    = req.c.host as TheC
-        const mainkey = (host.c.rq as any)?.mainkey ?? 'req'
-        const rq      = H.reqys(host, mainkey)
-        for (const [k, v] of Object.entries(e.sc)) {
-            if (k !== 'req' && k !== 'see') req.sc[k] = v
+        const see = sc.see as string | undefined
+        for (const [k, v] of Object.entries(sc)) {
+            if (k !== 'see') req.sc[k] = v
         }
-        rq.finish(req)
-        await H.reqyscile(host, { see: e.sc.see as string | undefined })
+        const De = req.c.host as TheC
+        De.c.rq?.finish(req)
+        const w  = De.c.host as TheC
+        H.i_elvisto(w, 'reqysciliation', { req, see })
     },
 
-    // outer loop for a De — trace, drive rq.do(), check completion.
-    //   always call in Atime; out-of-Atime state changes reach this via e_reqyscile.
-    async reqyscile(De: TheC, sc: Record<string,any> = {}) {
-        const H = this
-        H.trace('reqyscile', H.reqysee(De, sc))
+    // drives the De chain after a req finishes — always arrives via reqyscile elvis.
+    //   climbs req → De, traces, do(), check_all_finished().
+    //   🚧 ponder() vs feebly_ponder() not yet settled.
+    async e_reqysciliation(_A: TheC, w: TheC, e: TheC) {
+        const H   = this
+        const req = e.sc.req as TheC
+        if (!req) return
+        const De  = req.c.host as TheC
+        H.trace('reqyscile', H.reqysee(De, { see: e.sc.see as string | undefined }))
         await De.c.rq?.do()
         De.c.rq?.check_all_finished()
     },
