@@ -183,8 +183,8 @@ r.c.do_fn ||= async (req, rq) => { ... }   // set once
 await rq.doai({ req: 'keygen' })?.(async (req, rq) => {
     if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
-        req.sc.Id = await doTheWork()   // set directly on req before elvisting
-        H.i_elvisto(w, 'reqyscile', { req, see: 'keygen' })
+        const Id = await doTheWork()
+        H.i_elvisto(w, 'reqyscile', { req, Id, see: 'keygen' })  // Id is parcel of change
     })
     H.demand_time_to_think(3000)   // inside reqonce — extend once, not every tick
 })
@@ -403,16 +403,28 @@ snap or the receiver reads by name.
 
 The two halves of the re-entry loop live next to each other in Hovercraft.
 
-Callers set whatever they need on `req.sc` directly before elvisting — no sc-merge
-happens inside e_reqyscile. The `see` field in the elvis is the trace label only;
-`reqyscile(De, sc)` takes sc as a "parcel of change" where `sc.see` is extracted
-for the trace and the rest is available for future extension.
+Async completions always arrive via `i_elvisto → e_reqyscile`, never by calling
+`reqyscile` directly. This gives other work chattering in the current Atime a chance
+to settle — each req's continuation arrives in its own separate Atime pass.
+Whether in-Atime callers should also route via elvis for uniformity is an open
+question; for now, direct `H.reqyscile(De)` remains available in-Atime.
+
+The **parcel of change** — everything in the elvis sc except `req` and `see` — lands
+on `req.sc` before the req is finished. This is distinct from `%mutated`, which
+signals an upstream recipe change from-without; the parcel is from-within, produced
+by the async work itself.
+
+`reqyscile(De, sc)` uses `H.reqysee(De, sc)` to build its trace string and merge
+any remaining sc onto De.sc. See is extracted, identity comes from the first k:v
+of De.sc (bound to be the De's own name, e.g. `De:listen`), and any parcel left
+in sc after see is removed merges into De.sc.
 
 ```typescript
-// call site — caller sets req.sc directly, then elvists:
+// call site — parcel of change travels in the elvis sc:
 H.post_do(async () => {
-    req.sc.Id = await doWork()
-    H.i_elvisto(w, 'reqyscile', { req, see: 'keygen' })
+    const Id = await doWork()
+    H.i_elvisto(w, 'reqyscile', { req, Id, see: 'keygen' })
+    //                                    ^^  parcel → req.sc.Id
 })
 
 async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
@@ -420,15 +432,33 @@ async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
     if (!req || req.sc.finished) return
     const host = req.c.host as TheC
     const rq   = H.reqys(host, host.c.rq?.mainkey ?? 'req')
+    // parcel of change — everything except req and see lands on req.sc
+    for (const [k, v] of Object.entries(e.sc)) {
+        if (k !== 'req' && k !== 'see') req.sc[k] = v
+    }
     rq.finish(req)                              // yoinks oncelers+sc, bumps host
-    await H.reqyscile(host, { see: e.sc.see })  // hand off with trace label
+    await H.reqyscile(host, { see: e.sc.see })
 }
 
-// reqyscile(De, sc?) — sc.see for trace; rest of sc is parcel of change (future use).
-async reqyscile(De: TheC, sc: { see?: string, [k: string]: any } = {}) {
-    H.trace('reqyscile', keyser(De.sc) + (sc.see ? '  ' + sc.see : ''))
+async reqyscile(De: TheC, sc: Record<string,any> = {}) {
+    H.trace('reqyscile', H.reqysee(De, sc))     // extracts see, merges rest → De.sc
     await De.c.rq.do()
     De.c.rq.check_all_finished()
+}
+
+// H.reqysee(De, sc) — trace helper; mutates sc.
+//   1. extracts and removes sc.see
+//   2. builds trace: "De:listen  keygen  extraKey:val"
+//      — first k:v from De.sc (the De's identity), then see, then keyser(remaining sc)
+//   3. merges remaining sc into De.sc
+reqysee(De: TheC, sc: Record<string,any>): string {
+    const see = sc.see as string | undefined
+    delete sc.see
+    const [dk, dv] = Object.entries(De.sc)[0] ?? []
+    const deIdent  = dk ? `${dk}:${dv}` : ''
+    const scStr    = Object.keys(sc).length ? keyser(sc) : ''
+    Object.assign(De.sc, sc)
+    return [deIdent, see, scStr].filter(Boolean).join('  ')
 }
 ```
 
@@ -553,12 +583,14 @@ w_noproblemo(p, opts?)         — drops %waits, %error, %see; opts.log drops %l
 want_savepoint()               — leave_running_until=0 if H.sc.run, then H.main()
 H.Runstepped()                 — promise resolved when Story next advances a step
 
-e_reqyscile()                  — finish req, call reqyscile(host, {see})
-                                  i_elvisto(w,'reqyscile',{req,see?})
-                                  caller sets req.sc directly before elvisting
-reqyscile(De, sc?)             — trace sc.see; De.c.rq.do(); check_all_finished()
-                                  sc is parcel of change; see extracted for trace
+e_reqyscile()                  — parcel e%* (exc. req,see) → req.sc; finish req;
+                                  reqyscile(host, {see})
+                                  i_elvisto(w,'reqyscile',{req,…parcel,see?})
+                                  async code always arrives here, never calls reqyscile direct
+reqyscile(De, sc?)             — reqysee(De,sc); De.c.rq.do(); check_all_finished()
                                   🚧 ponder() vs feebly_ponder() from async context
+H.reqysee(De, sc)              — extracts sc.see; trace = De identity + see + keyser(rest);
+                                  merges rest into De.sc; returns trace string
 e_De_Foo()                     — named De event; does named work, then reqyscile(De)
                                   i_elvisto(w,'De_Foo',…)
 ```
