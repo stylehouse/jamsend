@@ -150,7 +150,7 @@
 // Particle layout per side (Bearing shown):
 //   A:Bearing/w:Bearing
 //     %De:listen[,finished]                        De_listen drives this
-//       /req:keygen[,running][,finished]           c.Id holds the Idento
+//       /req:keygen[,running][,finished]           %Id holds the Idento
 //       /req:register[,finished]
 //       /req:listening[,finished]
 //     %De:connect,target:prepub[,finished]         De_connect drives this
@@ -388,7 +388,7 @@
                     const rConnected = H.reqys(dConnect, 'req').oai({ req: 'connected' })
                     if (!rConnected.sc.finished) {
                         dConnect.sc.finished = true
-                        H.i_elvisto(sw, 'reqy_done', { c: { De: dConnect, req: rConnected } })
+                        H.i_elvisto(sw, 'reqy_done', { De: dConnect, req: rConnected })
                         H.trace('De', `${side} De:connect→connected`)
                     }
                 }
@@ -550,7 +550,7 @@
                 const Id = new Idento()
                 await Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined)
                 // e_De_listen_keygen receives this; Id is an object so it travels via c
-                H.i_elvisto(w, 'De_listen_keygen', { c: { Id } })
+                H.i_elvisto(w, 'De_listen_keygen', { Id })
             })
             H.demand_time_to_think(3000)
         })
@@ -558,7 +558,7 @@
         // req:register — wires Peerily/Peering particles so concretion can run.
         //   Sync until the open event, which arrives via post_fn → ponder().
         await rq.doai({ req: 'register' })?.(async (req: TheC) => {
-            const Id = De.o({ req: 'keygen' })[0]?.c.Id as Idento | undefined
+            const Id = De.o({ req: 'keygen' })[0]?.sc.Id as Idento | undefined
             if (!Id) return   // keygen not done; frontier won't chain here
 
             if (!w.oa({ Peering: 1 })) {
@@ -607,22 +607,20 @@
         const rKeygen = De?.o({ req: 'keygen' })[0] as TheC | undefined
         if (!rKeygen || rKeygen.sc.finished) return
         // Id is a class instance — lives on c, not sc (which must be serialisable)
-        rKeygen.c.Id = (e as any)?.c?.Id
+        rKeygen.sc.Id = (e as any)?.sc?.Id
         De!.oai({ log: 1 }).i({ msg: 'keygen done', at: Date.now() })
         H.trace('De', `${w.sc.w} keygen done`)
         // delegate: finish the req and continue the chain
-        H.i_elvisto(w, 'reqy_done', { c: { De, req: rKeygen } })
+        H.i_elvisto(w, 'reqy_done', { De, req: rKeygen })
     },
 
     // General out-of-Atime req-completion handler.
     //   Any req that finishes outside Atime (async shim, post_do) can route here.
-    //   i_elvisto(w,'reqy_done',{c:{De,req}}) → this.
+    //   i_elvisto(w,'reqy_done',{De,req}) → this.
     //   Bumps the De version, then reqyscile continues the chain.
-    async e_reqy_done(_A: TheC, w: TheC, e?: TheC) {
+    async e_reqy_done(_A: TheC, w: TheC, e: TheC) {
         const H   = this as House
-        const De  = (e as any)?.c?.De  as TheC | undefined
-        const req = (e as any)?.c?.req as TheC | undefined
-        debugger
+        const {De,req}  = e.sc
         if (!De || !req || req.sc.finished) return
         H.reqys(De, 'req').finish(req)   // bumps De version, feebly_ponder
         await H.reqyscile(De)            // continue the chain from the new frontier
@@ -631,13 +629,13 @@
     // De:connect — drives outbound dialling for Bearing.
     //   Waits for De:listen to finish (Peering must be open) before dialling.
     //   req:connected is terminal — finished by Pier_init_completo in the shim
-    //   via i_elvisto(sw,'reqy_done',{c:{De,req}}).
+    //   via i_elvisto(sw,'reqy_done',{De,req}).
     async De_connect(w: TheC, De: TheC, side: string) {
         const H    = this as House
         const npub = De.sc.target as string
         const rq   = H.reqys(De, 'req')
 
-        if (!w.o({ De: 'listen' })[0]?.sc.finished) return
+        if (!w.oa({ De: 'listen',finished:1 })) return
 
         // req:dial — issues eer.connect() and plants a _pl_buf on the Pier particle.
         //   The buffer is drained by post_fn once concretion produces the ier.
