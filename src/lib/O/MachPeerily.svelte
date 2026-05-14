@@ -559,7 +559,7 @@
         //   Sync until the open event, which arrives via post_fn → ponder().
         await rq.doai({ req: 'register' })?.(async (req: TheC) => {
             const Id = De.o({ req: 'keygen' })[0]?.sc.Id as Idento | undefined
-            if (!Id) return   // keygen not done; frontier won't chain here
+            if (!Id) return req.i({waits:'keygen'})  // keygen not done; frontier won't chain here
 
             if (!w.oa({ Peering: 1 })) {
                 const P = new Peerily({

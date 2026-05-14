@@ -27,7 +27,6 @@ Returns a requlator wrapping a serial queue of `{requesty_foo:1}` particles in `
 The pattern for IO-gating — a single fn attends all live reqs each tick:
 
 ```ts
-// inside a w method:
 const rw = requesty_serial(w, 'rw_ops')
 await rw.oai({ rw_name: path, rw_op: 'read' })
 await rw.do(async (req) => {
@@ -80,13 +79,13 @@ Making a De and seeding its first req:
 ```ts
 const dq = H.reqys(w, 'De')          // De-level requlator; submainkey:'req' implied
 const dListen = dq.oai({ De: 'listen' })
-// De:listen has no explicit do_fn — dq auto-discovers H.De_listen() by name convention
-// and auto-wires subreq behaviour: run reqys(De,'req').do(), finish when all done
+// De:listen has no explicit do_fn — dq auto-discovers H.De_listen() by name convention,
+//   falling back to subreqys_do(): run reqys(De,'req').do(), finish when all done
 
 // inside H.De_listen (called as the De's do_fn):
 const rq = H.reqys(dListen, 'req')
 await rq.doai({ req: 'keygen' })?.(async (req) => {
-    if (!H.reqonce(req, 'launch')) return
+    if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
         const Id = await generateKeys()
         H.i_elvisto(w, 'reqyscile', { req, Id })
@@ -104,7 +103,10 @@ Each req has:
 - `c.do_fn` — its micro-main, set once at seeding. Called by `reqys().do()`.
 - `c.host` — the De holding this req, set by reqys() at seed time.
   `e_reqyscile` climbs here to continue the chain.
-- `c.oncelers` — one-shot flag storage (see reqonce). Dropped by `rq.finish()`.
+- `c.oncelers` — one-shot flag registry. `reqonce(req, 'running')` stamps both
+  `req.c.oncelers.running = 1` (guard against re-fire) and `req.sc.running = 1`
+  (visible in snap while the work is in flight). `rq.finish(req)` yoinks
+  `req.c.oncelers` and its corresponding `sc` keys — snap collapses to `%finished`.
 - `%waits:name` — failure-informational dependency on another req by name.
   Dropped by `w_noproblemo` before each `do_fn` call. The `do_fn` re-stamps it
   if the dependency is still unmet and returns. Presence in a frozen req reads:
@@ -150,8 +152,8 @@ Same machinery as `requesty_serial()`, different host. Key differences:
   (after any `reprop_fn` has had a chance to consume `%mutated`).
 - Stamps `%initialdo` on the first `do_fn` call for each req.
 - Sets `req.c.host` at seed time (via `oai`).
-- `rq.finish(req)` drops `req.c.oncelers`.
-- Culls finished reqs after a Story step boundary (see Culling).
+- `rq.finish(req)` yoinks `req.c.oncelers` and its corresponding `sc` keys.
+- 🚧 Culling finished reqs — see below.
 
 ### API
 
@@ -160,8 +162,7 @@ Same machinery as `requesty_serial()`, different host. Key differences:
 //   mainkey is the particle key name: 'req' inside a De, 'De' at the w layer.
 const rq = H.reqys(De, 'req')
 
-// seed a req — idempotent, single-arg form, no merge.
-//   req.c.host = De set here.
+// seed a req — idempotent, single-arg form, no merge. req.c.host = De set here.
 const r = rq.oai({ req: 'keygen' })
 r.c.do_fn ||= async (req, rq) => { ... }   // set once
 
@@ -169,13 +170,13 @@ r.c.do_fn ||= async (req, rq) => { ... }   // set once
 //   returns a setter fn if do_fn not yet set, null otherwise.
 //   ?.() makes repeat calls a no-op — safe to call every tick.
 await rq.doai({ req: 'keygen' })?.(async (req, rq) => {
-    if (!H.reqonce(req, 'launch')) return
+    if (!H.reqonce(req, 'running')) return
     H.post_do(async () => {
         const Id = new Idento()
         await Id.generateKeys(side)
         H.i_elvisto(w, 'reqyscile', { req, Id })   // Id merges onto req.sc in e_reqyscile
     })
-    H.demand_time_to_think(3000)
+    H.demand_time_to_think(3000)   // inside reqonce — extend once, not every tick
 })
 
 // seed or update a req — two-arg form merges sc, stamps %mutated if existed.
@@ -191,32 +192,38 @@ rq.all_done()       // true when every seeded req is finished
 rq.pending()        // array of unfinished reqs
 
 // mark a req finished from outside (out-of-Atime completions).
-//   bumps host version, drops req.c.oncelers, calls H.feebly_ponder().
+//   bumps host version, yoinks req.c.oncelers + sc keys, calls H.feebly_ponder().
 //   e_reqyscile is the standard caller.
 rq.finish(req)
 
-// wire sub-reqys: Des seeded without an explicit c.do_fn auto-get one that
-//   drives reqys(De, submainkey).do() and hoists %finished when all done.
-//   submainkey defaults to 'req' — explicit call only needed to change it.
-//   Des with an explicit do_fn or matching H.De_foo() are left alone.
+// wire sub-reqys: Des seeded without an explicit c.do_fn get subreqys_do() as
+//   their handler (least precedence — below explicit do_fn and H.De_foo() discovery).
+//   submainkey defaults to 'req'. Implicit for De-level reqys; explicit call only
+//   needed to change the submainkey.
 dq.subreqys()            // submainkey:'req' implied
 dq.subreqys('subtask')   // explicit override
+
+// subreqys_do() — the named default handler, available for explicit wiring:
+De.c.do_fn = rq.subreqys_do()
+// equivalent to the inline:
+//   async (req, dq) => {
+//       await req.c.rq.do()
+//       if (req.c.rq.all_done()) dq.finish(req)
+//   }
 ```
 
 ### reqonce — one-shot flag helper
 
-`%running` and its kin are signs that a do_fn wants to launch a side-effect once
-and then wait. These should not live on `req.sc` (snap pollution); they live in
-`req.c.oncelers`:
+`H.reqonce(req, 'running')` stamps both `req.sc.running = 1` (snap-visible, shows
+the work is in flight) and `req.c.oncelers.running = 1` (guard against re-fire).
+`rq.finish(req)` yoinks both, so the snap collapses to just `%finished`.
 
 ```typescript
-// returns true the first time for this name, false thereafter.
-//   rq.finish(req) drops req.c.oncelers entirely.
-if (H.reqonce(req, 'launch')) {
+if (H.reqonce(req, 'running')) {
     H.post_do(async () => { ... })
     H.demand_time_to_think(3000)
-    // demand_time_to_think belongs inside the reqonce block — extend once, not every tick
 }
+// subsequent ticks: reqonce false → do_fn returns immediately, waiting
 ```
 
 ### Mazlow within a De
@@ -252,9 +259,12 @@ directly. The response should be idempotent — `%mutated` is a hint, not a reli
 The req can read it to know "this is my first run." The second `do()` pass drops it.
 Its window is exactly one run: from first invocation until the cycle that follows.
 
-### Culling finished reqs
+### 🚧 Culling finished reqs
 
-reqys() culls finished reqs, but timing depends on context:
+Timing of finished-req culling is murky in practice — the options are real but the
+right policy depends on context. Keep your hardhat on ⛑️.
+
+Two documented options:
 
 - **No Story running**: cull on the next `do()` pass after finishing.
   The De has already factored in their `%finished` state; their disappearance
@@ -278,19 +288,19 @@ all `maz:1` Des are `%finished`. The De-level requlator lives on `w.c.rq`.
 w.c.rq = H.reqys(w, 'De')
 const dq = w.c.rq
 
-// seed Des — do_fn auto-discovered by name convention (H.De_listen, H.De_connect)
-//   and subreq behaviour (run req frontier, finish when all done) is the default.
+// seed Des — do_fn auto-discovered by name convention (H.De_listen, H.De_connect),
+//   falling back to subreqys_do() (run req frontier, finish when all done).
 const dListen  = dq.oai({ De: 'listen'  })
 const dConnect = dq.oai({ De: 'connect' })
-// dSync has an explicit do_fn — overrides both name discovery and subreq default
+// dSync has an explicit do_fn — overrides both name discovery and subreqys_do()
 const dSync    = dq.oai({ De: 'sync' }, { maz: 3 })
 dSync.c.do_fn ||= async (De) => { ... }
 ```
 
-Des without an explicit `c.do_fn` or matching `H.De_foo()` method get one automatically:
-drive `reqys(De,'req').do()`, mark `%finished` when all reqs complete. This is the
-default wiring — `dq.subreqys()` is implicit. `dq.do()` looks up `H['De_' + De.sc.De]`
-as the do_fn for Des that have one; the naming convention makes every pair text-searchable.
+Handler precedence per De (highest first):
+1. `De.c.do_fn` — explicit, set by caller
+2. `H['De_' + De.sc.De]()` — name-convention discovery; makes every pair text-searchable
+3. `rq.subreqys_do()` — default: run subreqs, finish when all done
 
 `dq.do()` drives De mini-mains in maz order. Each mini-main calls
 `reqys(De,'req').do()`. Two-level nested reqys — same middleware, different host particle.
@@ -298,6 +308,15 @@ as the do_fn for Des that have one; the naming convention makes every pair text-
 Higher-level Des (maz:3+, community-level "stay connected to known Piers") seed
 `maz:1` Des as their mechanism. The causal chain is: community intent seeds
 connection intent seeds keygen/register/dial. Each level is Story-capturable.
+
+### 🚧 De auto-finish via finishup
+
+A possible future default `on_all_done()` could be wired when `De.c.rq.finishup = 1`
+is set at seed time — it would mark `%De,finished` automatically when all reqs
+complete, without the caller having to set it in `req:listening`'s do_fn. ⛑️
+This would make the De lifecycle almost entirely declarative for the common case.
+Not yet standardised — the explicit `De.sc.finished = true` in the terminal req is
+still the current idiom.
 
 ---
 
@@ -390,12 +409,13 @@ snap or the receiver reads by name.
 ### e_reqyscile — general elvisy re-entry
 
 The standard path for any out-of-Atime completion to finish a req and continue the chain.
-Any sc fields beyond `req` are merged onto `req.sc` before finishing — this is how
-data produced out of Atime (e.g. `Id` from keygen) reaches the req without a named handler:
+Any sc fields beyond `req` and `say` are merged onto `req.sc` before finishing — this
+is how data produced out of Atime reaches the req without a named handler:
 
 ```typescript
-// call site (post_do, shim callback, etc):
-H.i_elvisto(w, 'reqyscile', { req: rKeygen, Id })
+// call site:
+H.i_elvisto(w, 'reqyscile', { req: rKeygen, Id, say: 'keygen done' })
+//   say: optional trace label for this particular hand-off, not persisted
 
 // implementation:
 async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
@@ -405,17 +425,21 @@ async e_reqyscile(_A: TheC, w: TheC, e: TheC) {
     const host = req.c.host as TheC
     const rq   = H.reqys(host, host.c.rq?.mainkey ?? 'req')
     for (const [k, v] of Object.entries(e.sc)) {
-        if (k !== 'req') req.sc[k] = v              // e%Id → req%Id, etc.
+        if (k !== 'req' && k !== 'say') req.sc[k] = v    // e%Id → req%Id, etc.
     }
-    H.trace('reqyscile', keyser(req.sc) + (rq.say ? '  ' + rq.say : ''))
-    rq.finish(req)                                   // drops oncelers, bumps host, feebly_ponder
-    await H.reqyscile(host)                          // do() the De's frontier, still in elvisy Atime
-    // if host is now all_done: the next feebly_ponder drives the De layer above
+    H.trace('reqyscile', keyser(req.sc) + (e.sc.say ? '  ' + e.sc.say : ''))
+    rq.finish(req)                 // yoinks oncelers+sc, bumps host, feebly_ponder
+    await H.reqyscile(host)        // do() the De's frontier, still in elvisy Atime
+    // if host finished: feebly_ponder → next think drives the De layer above via main()
 }
 ```
 
-`rq.say` is an optional label set when reqys() is created:
-`H.reqys(De, 'req', { say: 'listen chain' })` — appears in the trace alongside the req identity.
+reqyscile() itself may call `main()` when things progress far enough — if a De's
+frontier empties (`all_done`), `on_all_done` may in turn mark `De.sc.finished` and
+call `H.main()` or `H.feebly_ponder()`, which propagates up to the De layer on w.
+The junction of "finished hoisting" and "what fires next because of what" is a good
+candidate for its own helper once the pattern clarifies. For now it's handled by
+`on_all_done` and pondering rather than an explicit climb.
 
 ### Specific wrappers
 
@@ -454,126 +478,38 @@ For the De layer, callers drive `w.c.rq.do()` directly — that in turn calls
 `reqyscile(De)` for each De via the wired do_fn. The nesting is natural:
 
 ```
-w.c.rq.do()          → De.do_fn()   (discovered as H.De_X() or default subreq wiring)
+w.c.rq.do()          → De.do_fn()   (H.De_X() discovery or subreqys_do())
   H.De_listen(w, De) → De.c.rq.do() → req.do_fn()
 ```
 
 `e_reqyscile` calls `reqyscile(De)` from elvisy Atime — one level up from the req that
 just finished. It does not climb further to `w.c.rq.do()`; pondering handles that.
-This keeps e_reqyscile predictable: finish a req, advance its De, stop.
+
+reqyscile() does not itself force a Story step. It may trigger `main()` indirectly
+through `on_all_done` if a De's completion causes something that calls `H.main()` or
+`H.want_savepoint()`. reqys() is otherwise purely particle work — no main() calls
+inside the middleware itself.
 
 `on_all_done` is set once on the De particle at seeding time, same as `c.do_fn` on req.
 It may add more reqs, mark `De.sc.finished`, or seed a new De at a higher maz level.
 
----
+### subreqys_do()
 
-## LabScript
-
-Story dispatches `Plan/Prep:N` at step-start time. Each child is an
-`o_elvisto,e` particle that fires the matching method with `(A, w, e)`
-where `e` carries the `esc` fields as children.
-
-When A and w share the same name, the slash form is omitted:
-`o_elvisto:Lies,e:Lies_open_Waft` addresses `A:Lies/w:Lies`.
-
-`Prep` with step 1 prints as bare `Prep` in depeel (value 1 elided).
-Multiple `o_elvisto` children under one `Prep` fire left-to-right.
-Multiple `Prep:N` on the same step number stack — no dedup inside a Prep.
-
-In depeel notation: commas are co-properties of one particle; slash is depth.
-`o_elvisto` is the dispatch marker; `e` is the event name. `esc,v` children set
-named escape fields on the event particle.
-
-```
-Plan
-  Prep
-    o_elvisto:Lies,e:Lies_open_Waft
-      esc:path,v:Ghost/Tour
-  Prep:2
-    o_elvisto:PeeringLive/PeeringLive,e:hold_offline
-      esc:side,v:Nearing
-  Prep:3
-    o_elvisto:PeeringLive/Bearing,e:corrupt_hello
-```
-
-toc.snap block (literal tabs, copied verbatim into the Plan particle):
-
-```json
-{"Plan":1}
-    {"Prep":1}
-        {"o_elvisto":"Lies","e":"Lies_open_Waft"}
-            {"esc":"path","v":"Ghost/Tour"}
-    {"Prep":2}
-        {"o_elvisto":"PeeringLive/PeeringLive","e":"hold_offline"}
-            {"esc":"side","v":"Nearing"}
-    {"Prep":3}
-        {"o_elvisto":"PeeringLive/Bearing","e":"corrupt_hello"}
-```
-
-A single `Prep` can carry multiple `o_elvisto` children to stack hazards.
-No CRUD UI — edit the toc.snap file directly with literal tabs.
-
-### Baseline lifecycle steps
-
-The baseline run (no Plan) has hardwired `on_step` entries in PeeringLive's manager:
-
-```
-step:3  — send_test_binary, Bearing→Nearing, seq:1
-step:6  — teardown both Peerings (P.stop())
-```
-
-Step 6 teardown is essential: without it Peering objects linger after Runtime ends,
-then the PeerServer reconnects them and their `open` events fire into dead code.
+The named handler produced by `dq.subreqys()`. Least-precedence default for Des
+that have no explicit do_fn and no matching H.De_foo():
 
 ```typescript
-// in PeeringLive manager, always-present:
-await H.on_step({
-    3: async () => { H.i_elvisto(H.Awo('Bearing'), 'send_test_binary', { seq: 1 }) },
-    6: async () => {
-        for (const side of ['Bearing', 'Nearing'])
-            H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop()
-    },
-})
+rq.subreqys_do()
+// returns:
+async (req: TheC, dq: any) => {
+    req.c.rq ||= H.reqys(req, rq.submainkey)
+    await req.c.rq.do()
+    if (req.c.rq.all_done()) dq.finish(req)
+}
 ```
 
-LabScript `Plan/Prep:N` fires before this table — hazards are applied first.
-
-### Example scenarios
-
-Scenario A — Nearing not online (PeerServer tells us so):
-```
-Plan
-  Prep:2
-    o_elvisto:PeeringLive/PeeringLive,e:hold_offline
-      esc:side,v:Nearing
-```
-Snap shows `Bearing/De:connect/state:failed,reason:peer-unavailable` — no Pier.
-
-Scenario B — online but Bearing sends a corrupt hello:
-```
-Plan
-  Prep:2
-    o_elvisto:PeeringLive/Bearing,e:corrupt_hello
-```
-Snap shows `Bearing/more_visuals/Pier/protocol/hello/said` but no `heard`.
-
-Scenario C — connects, Bearing disconnects at step 4:
-```
-Plan
-  Prep:4
-    o_elvisto:PeeringLive/Bearing,e:force_disconnect
-      esc:seq,v:1
-```
-
-Scenario A then B in the same run:
-```
-Plan
-  Prep:2
-    o_elvisto:PeeringLive/PeeringLive,e:hold_offline
-      esc:side,v:Nearing
-  Prep:3
-    o_elvisto:PeeringLive/Bearing,e:corrupt_hello
-```
+Can be assigned explicitly when the caller wants the standard subreq behaviour
+but also needs to name it clearly: `De.c.do_fn = dq.subreqys_do()`.
 
 ---
 
@@ -583,7 +519,7 @@ Plan
 
 ```
 De:listen
-  req:keygen       ← no %running: oncelers live in c, not sc
+  req:keygen,running    ← onceler: visible while in flight, yoinked on finish
   log
     msg:keygen started,at:…
 ```
@@ -595,8 +531,8 @@ poll_step snaps the quiet gap between the two async boundaries.
 
 ```
 De:listen
-  req:keygen,finished
-  req:register     ← frontier advanced; waiting for PeerServer open event
+  req:keygen,finished   ← %running yoinked; log arc persists
+  req:register          ← frontier advanced; waiting for PeerServer open event
   log
     msg:keygen started,at:…
     msg:keygen done,at:…
@@ -612,18 +548,6 @@ De:listen,finished
 De:connect,who:8cbc667b…,finished
   req:dial,finished
   req:connected,finished
-```
-
-### Step 3 — after test binary
-
-```
-De:listen,finished
-  …
-De:connect,…,finished
-  …
-more_visuals
-  …
-  test:binary,seq:1,sent,len:256,dige:…
 ```
 
 ### Failed connection
@@ -651,42 +575,47 @@ w
   De:X[,maz:N]                  — maz omitted when 1
     waits:Y                     — failure-informational; do_fn guards the real condition
     c.host = w                  — set by reqys() at seed time
-    c.do_fn                     — mini-main; discovered as H.De_X() or subreq default
+    c.do_fn                     — mini-main; H.De_X() discovery; or subreqys_do()
     c.on_all_done               — called when all reqs finish
     req:Z[,maz:N]               — maz omitted when 1
       waits:W                   — dropped before do_fn, re-stamped if still blocked
       mutated                   — set by oai(c,sc) two-arg; cleared at top of next do()
       initialdo                 — stamped on first do_fn call; cleared on second do() pass
+      running                   — stamped by reqonce; yoinked by rq.finish()
       c.host = De               — set by reqys() at seed time; e_reqyscile climbs via this
       c.do_fn                   — micro-main, set once; or via rq.doai()?.(fn)
-      c.oncelers                — one-shot flags (reqonce); dropped entirely by rq.finish()
+      c.oncelers                — one-shot flag registry; reqonce stamps here + sc;
+                                  rq.finish() yoinks all of it
       c.reprop_fn               — optional; consumes %mutated before reqys() cleanup
       finished                  — set by rq.finish(req), bumps De version
   log                           — longer-lived see; persists until explicitly cleared
 
 reqys(host, mainkey, q?)        — same middleware, different host particle
-  q.say                        — optional label appended to reqyscile trace
+  .submainkey                  — stored from subreqys(); used by subreqys_do()
   .oai(c)                      — idempotent seed, no merge; sets c.host
   .oai(c, sc)                  — idempotent seed; merges sc, stamps %mutated if existed
   .doai(c, sc)?.(fn)           — oai + set do_fn in one gesture; null if already set
-  .subreqys(name?)             — wires default do_fn for Des; hoists %finished;
-                                  name defaults to 'req'; implicit for De-level reqys
+  .subreqys(name?)             — sets submainkey; implicit for De-level reqys
+  .subreqys_do()               — returns the default subreq handler fn (least precedence)
   .do()                        — cleans %mutated/%initialdo, calls w_noproblemo,
                                   runs frontier in maz order; skips finished reqs
   .do(fn)                      — same but calls fn(req,rq) instead of do_fn dispatch
-  .finish(req)                 — mark finished, drop c.oncelers, bump host, feebly_ponder
+  .finish(req)                 — mark finished, yoink oncelers+sc keys, bump host,
+                                  feebly_ponder
   .all_done()                  — true when all reqs finished
   .pending()                   — unfinished reqs
 
-H.reqonce(req, name)           — true first time per name; stored in req.c.oncelers
+H.reqonce(req, name)           — true first time; stamps req.sc.name + req.c.oncelers.name
 w_noproblemo(particle, opts?)  — drops %waits, %error, %see; opts.log drops %log too
 want_savepoint()               — zeros leave_running_until if H.sc.run, then H.main()
 H.Runstepped()                 — promise resolved when Story next advances a step
-reqyscile(De)                  — outer loop; runs De.c.rq.do(), then on_all_done
+reqyscile(De)                  — outer loop; runs De.c.rq.do(), then on_all_done;
+                                  may trigger main() indirectly via on_all_done
 
 e_reqyscile                    — general elvisy re-entry: merge extra e%* onto req.sc,
-                                  finish req, do() host De; trace with keyser(req.sc)
-                                  i_elvisto(w,'reqyscile',{req,…}) → e_reqyscile
+                                  finish req, do() host De
+                                  i_elvisto(w,'reqyscile',{req,…,say?}) → e_reqyscile
+                                  say: optional trace label for this hand-off, not persisted
 e_De_X                         — specific wrapper for a De event; does named work,
                                   then arms something and calls reqyscile(De)
                                   i_elvisto(w,'De_X',…) → e_De_X; text-searchable pair
