@@ -380,18 +380,9 @@
                 H.trace('shim', `Pier_init_completo  ${tag}`)
                 H.demand_time_to_think(1500)
 
-                // finish De:connect's terminal req — e_reqysciliation advances the
-                //   frontier and calls check_all_finished() which stamps %De,finished.
-                const sw   = H.Awo(side)
-                const Deco = sw.o({ De: 'connect' })[0] as TheC | undefined
-                if (Deco && !Deco.sc.finished) {
-                    const reco = H.reqys(Deco, 'req').oai({ req: 'connected' })
-                    if (!reco.sc.finished) {
-                        H.reqys(Deco, 'req').finish(reco)
-                        H.reqyscile(reco, { see: 'connected' })   // fire-and-forget elvis
-                        H.trace('De', `${side} De:connect→connected`)
-                    }
-                }
+                // poke De:connect — req:connected's do_fn will see c.inst and finish the chain.
+                const Deco = H.Awo(side).o({ De: 'connect' })[0] as TheC | undefined
+                if (Deco) void H.reqyscile(Deco, { see: 'connected' })
 
                 ier.handlers.test_binary ||= async (data: any) => {
                     const sw  = H.Awo(side)
@@ -460,25 +451,22 @@
     async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
         const H = this as House
 
-        // ── De:listen ─────────────────────────────────────────────────────────
-        // seed once; De_listen advances from wherever the req chain currently is
-        const dListen = w.oai({ De: 'listen' }) as TheC
-        dListen.c.host = w        // reqyscile climbs c.host chain to reach w
-        await H.De_listen(w, dListen, side)
+        // ── De level requlator — dq.do() dispatches to De_listen / De_connect methods.
+        //   reqys sets c.host = w on each De particle it seeds — reqyscile can climb without manual wiring.
+        const dq = H.reqys(w, 'De')
 
-        // ── De:connect (Bearing only) ─────────────────────────────────────────
-        // can't be seeded until Nearing's prepub is known (its keygen must complete).
-        //   once seeded the particle persists across steps — De_connect is idempotent.
-        if (side === 'Bearing' && !w.oa({ De: 'connect' })) {
+        await dq.doai({ De: 'listen' })?.(async (Deli: TheC) => {
+            await H.De_listen(Deli, dq)
+        })
+
+        if (side === 'Bearing') {
             const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-            if (npub) {
-                const Deco = w.i({ De: 'connect', target: npub }) as TheC
-                Deco.c.host = w   // reqyscile climbs c.host chain to reach w
-            }
+            if (npub) await dq.doai({ De: 'connect', target: npub })?.(async (Deco: TheC) => {
+                await H.De_connect(Deco, dq)
+            })
         }
-        for (const dConnect of w.o({ De: 'connect' }) as TheC[]) {
-            await H.De_connect(w, dConnect, side)
-        }
+
+        await dq.do()
 
         // ── Pier handle ───────────────────────────────────────────────────────
         // concretion populates c.inst via post_fn after draining _pl_buf.
@@ -535,19 +523,21 @@
 
 //#region De
 
-    // De_listen — seeds req:keygen → register → listening once; rq.do() advances
+    // De_listen — seeds req:keygen → register → listening once; drq.do() advances
     //   from the frontier on every subsequent call.
     //   Keygen result re-enters via reqyscile(req, {Id}) → e_reqysciliation.
-    async De_listen(w: TheC, De: TheC, side: string) {
-        const H  = this as House
-        const rq = H.reqys(De, 'req')
+    async De_listen(De: TheC, dq: any) {
+        const H    = this as House
+        const w    = De.c.host as TheC
+        const side = w.sc.w as string
+        const drq  = H.reqys(De, 'req')
 
         // req:keygen — generates keypair out of Atime.
         //   do_fn set once; subsequent calls are no-ops via doai's null return.
         //   Id lands on req.sc via reqyscile parcel; req:register reads it from there.
         //   post_do kicks off without awaiting — Atime mutex released immediately.
         //   .then() re-enters via reqyscile in its own Atime.
-        await rq.doai({ req: 'keygen' })?.(async (req: TheC, rq: any) => {
+        await drq.doai({ req: 'keygen' })?.(async (req: TheC) => {
             if (!H.reqonce(req, 'running')) return
             De.oai({ log: 1 }).i({ msg: 'keygen started', at: Date.now() })
             H.post_do(() => {
@@ -555,7 +545,7 @@
                 Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
                     De.oai({ log: 1 }).i({ msg: 'keygen done', at: Date.now() })
                     H.trace('De', `${w.sc.w} keygen done`)
-                    rq.finish(req)
+                    drq.finish(req)
                     H.reqyscile(req, { Id, see: 'keygen done' })
                 })
             })
@@ -564,9 +554,9 @@
 
         // req:register — wires Peerily/Peering particles so concretion can run.
         //   Sync until the open event, which arrives via post_fn → ponder().
-        await rq.doai({ req: 'register' })?.(async (req: TheC) => {
+        await drq.doai({ req: 'register' })?.(async (req: TheC) => {
             const Id = De.o({ req: 'keygen' })[0]?.sc.Id as Idento | undefined
-            if (!Id) return req.i({waits:'keygen'})  // keygen not done; frontier won't chain here
+            if (!Id) return req.i({waits:'keygen'})  // do_fn returns early; re-checked next tick
 
             if (!w.oa({ Peering: 1 })) {
                 const P = new Peerily({
@@ -587,8 +577,9 @@
             }
 
             if (w.o({ Peering: 1 })[0]?.oa({ open: 1 })) {
-                rq.finish(req)
-                // rq.do() loops to req:listening in the same pass (sync chain)
+                debugger
+                drq.finish(req)
+                // drq.do() loops to req:listening in the same pass (sync chain)
             } else {
                 H.demand_time_to_think(5000)   // waiting for PeerServer open event
             }
@@ -596,34 +587,36 @@
 
         // req:listening — terminal; De:listen concludes.
         //   want_savepoint: Story snaps the listen-done state before De:connect begins.
-        await rq.doai({ req: 'listening' })?.(async (req: TheC) => {
-            rq.finish(req)
-            rq.check_all_finished()   // stamps %De,finished; calls all_done_fn (feebly_ponder)
+        await drq.doai({ req: 'listening' })?.(async (req: TheC) => {
+            drq.finish(req)
+            drq.check_all_finished()   // stamps %De,finished
+            dq.check_all_finished()    // cascades finished stamp up to w level
             H.want_savepoint()
         })
 
-        await rq.do()
+        await drq.do()
     },
 
     // De:connect — drives outbound dialling for Bearing.
     //   Waits for De:listen to finish (Peering must be open) before dialling.
-    //   req:connected is terminal — finished by Pier_init_completo in the shim
-    //   via reqyscile(reco); e_reqysciliation advances the chain.
-    async De_connect(w: TheC, De: TheC, side: string) {
+    //   req:connected do_fn self-detects Pier init; Pier_init_completo just reqyscile(Deco).
+    async De_connect(De: TheC, dq: any) {
         const H    = this as House
+        const w    = De.c.host as TheC
+        const side = w.sc.w as string
         const npub = De.sc.target as string
-        const rq   = H.reqys(De, 'req')
+        const drq  = H.reqys(De, 'req')
 
-        if (!w.oa({ De: 'listen',finished:1 })) return
+        if (!w.oa({ De: 'listen', finished:1 })) return
 
         // req:dial — issues eer.connect() and plants a _pl_buf on the Pier particle.
         //   The buffer is drained by post_fn once concretion produces the ier.
-        //   After rq.finish(req), rq.do() reaches req:connected — but that's async
-        //   (Pier_init_completo), so do() exits and waits for the shim's ponder().
-        await rq.doai({ req: 'dial' })?.(async (req: TheC) => {
+        //   After drq.finish(req), drq.do() reaches req:connected and waits there for
+        //   Pier_init_completo to reqyscile(Deco) → e_reqysciliation → De_connect again.
+        await drq.doai({ req: 'dial' })?.(async (req: TheC) => {
             if (w.oa({ Pier: 1 })) {
                 // Pier already appeared (inbound beat us, or reconnect)
-                rq.finish(req)
+                drq.finish(req)
                 return
             }
             const eer   = w.o({ Peering: 1 })[0]?.c.inst as Peering | undefined
@@ -633,15 +626,21 @@
             const con  = eer.connect(npub)
             const Pier = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
             Pier.c._pl_buf = H._pl_buf_attach(con, eer, false)
-            rq.finish(req)
+            drq.finish(req)
             console.log(`🐻 ${side} → Nearing  ${npub}`)
         })
 
-        // req:connected — terminal stub; no do_fn — rq.do() skips when unfinished and handler-less.
-        //   Pier_init_completo in the shim finishes this via reqyscile(reco).
-        rq.oai({ req: 'connected' })
+        // req:connected — terminal; De:connect concludes.
+        //   Pier_init_completo fires reqyscile(Deco) which re-enters here via e_reqysciliation.
+        //   c.inst is set by concretion's post_fn before init_completo fires.
+        await drq.doai({ req: 'connected' })?.(async (req: TheC) => {
+            if (!w.o({ Pier: 1 })[0]?.c.inst) return   // < waiting for Pier concretion + init_completo
+            drq.finish(req)
+            drq.check_all_finished()   // stamps %De,finished
+            dq.check_all_finished()    // cascades finished stamp up to w level
+        })
 
-        await rq.do()
+        await drq.do()
     },
 
 //#endregion
