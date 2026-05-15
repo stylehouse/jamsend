@@ -132,13 +132,17 @@
     //   q.do_fn        — fallback do_fn for particles that carry none of their own
     //   q.tweak_process — caller annotation; stored on rq for external inspection
 
-    reqys(host: TheC, t: string, q: { do_fn?: Function, tweak_process?: 1 } = {}) {
+    reqys(host: TheC, t: string, q: { do_fn?: Function } = {}) {
         const H   = this
         const key = { [t]: 1 }
 
+        // idempotent — return existing requlator if already wired for this host+key.
+        //   preserves rq.mutated_fn, rq.submainkey and other externally-set state across ticks.
+        if ((host.c.rq as any)?.mainkey === t) return host.c.rq as any
+
         let rq: any; rq = {
 
-            // particle key name this requlator manages — used by e_reqyscile to recover rq
+            // particle key name this requlator manages — used by e_reqysciliation to recover rq
             mainkey: t,
 
             o(sc = {}): TheC[] {
@@ -148,7 +152,7 @@
             // maz:1 is implied — never stamped.
             // two-arg form merges sc; %mutated.key = old value of each changed key.
             //   single-arg: idempotent seed, no merge.
-            //   c.host set on new req so e_reqyscile can climb to the De.
+            //   c.host set on new req so reqyscile can climb to the De.
             oai(c: Record<string,any>, sc?: Record<string,any>): TheC {
                 const maz = c.maz ?? sc?.maz ?? 1
                 const req = rq.o(c)[0]
@@ -220,47 +224,44 @@
                 return (levels[levels.length-1] as number) + 1
             },
 
+            // run handler for one req — shared by do() and e_reqysciliation.
+            //   handler precedence (highest to lowest):
+            //   fn → (%mutated? → req.c.mutated_fn ?? rq.mutated_fn) → c.do_fn → H.t_name → subreqys_do → q.do_fn
+            //   mutated handler fires instead of do_fn; reads req.sc.mutated.fieldname for old values.
+            async do_one(req: TheC, fn?: Function) {
+                if (req.sc.finished || ((req.sc.maz as number) || 1) > rq._frontier()) return
+
+                delete req.sc.initialdo        // clean stamp from previous pass
+                await H.w_noproblemo(req)      // drop %waits, %error, %see
+
+                const name = req.sc[t] as string | undefined
+                const handler = fn
+                    ?? (req.sc.mutated && (req.c.mutated_fn || rq.mutated_fn))
+                    ?? req.c.do_fn
+                    ?? (name && (H as any)[t + '_' + name]?.bind(H))
+                    ?? (rq.submainkey && rq.subreqys_do)
+                    ?? q.do_fn
+
+                if (handler) {
+                    // %initialdo: first-call flag; window is from first call to following pass
+                    if (!req.c._had_initialdo) {
+                        req.c._had_initialdo = true
+                        req.sc.initialdo = 1
+                    }
+                    await handler(req, rq)
+                    delete req.sc.initialdo    // also after — don't leave on %finished
+                }
+                delete req.sc.mutated          // after handler — mutated_fn reads old values there
+            },
+
+            // finished reqs are NOT culled here — they are the state record.
+            //   the De's all_done_fn or caller decides when to drop them.
             async do(fn?: Function) {
-                const all = rq.o()
-
-                // finished reqs are NOT culled here — they are the state record.
-                //   the De's all_done_fn or caller decides when to drop them.
-
                 const frontier = rq._frontier()
-                const eligible = all.filter((r: TheC) =>
+                const eligible = rq.o().filter((r: TheC) =>
                     !r.sc.finished && ((r.sc.maz as number) || 1) <= frontier
                 )
-
-                for (const req of eligible) {
-                    // %initialdo: clean stamp from previous pass before this one runs
-                    delete req.sc.initialdo
-
-                    // drop %waits, %error, %see before each handler
-                    await H.w_noproblemo(req)
-
-                    // handler precedence (highest to lowest):
-                    //   fn → (%mutated? → req.c.mutated_fn ?? rq.mutated_fn) → c.do_fn → H.t_name → subreqys_do → q.do_fn
-                    // mutated handler fires instead of do_fn; reads req.sc.mutated.fieldname for old values
-                    const name = req.sc[t] as string | undefined
-                    const handler = fn
-                        ?? (req.sc.mutated && (req.c.mutated_fn || rq.mutated_fn))
-                        ?? req.c.do_fn
-                        ?? (name && (H as any)[t + '_' + name]?.bind(H))
-                        ?? (rq.submainkey && rq.subreqys_do)
-                        ?? q.do_fn
-
-                    if (handler) {
-                        // %initialdo: first-call flag; window is from first call to following pass
-                        if (!req.c._had_initialdo) {
-                            req.c._had_initialdo = true
-                            req.sc.initialdo = 1
-                        }
-                        await handler(req, rq)
-                        delete req.sc.initialdo  // also after — don't leave on %finished
-                    }
-
-                    delete req.sc.mutated  // after handler — mutated_fn reads old values there
-                }
+                for (const req of eligible) await rq.do_one(req, fn)
             },
 
             // mark finished; yoinks oncelers + their sc keys so snap collapses to %finished.
@@ -284,10 +285,8 @@
             },
         }
 
-        // stored so reqyscile and e_reqyscile can find this requlator without recalling reqys()
+        // stored so reqyscile and e_reqysciliation can find this requlator
         host.c.rq = rq
-
-        if (q.tweak_process) rq.tweak_process = 1
         return rq
     },
 
@@ -308,8 +307,9 @@
         H.i_elvisto(w, 'reqysciliation', { req, see })
     },
 
-    // drives the De chain after a req finishes — always arrives via reqyscile elvis.
-    //   climbs req → De, traces, do(), check_all_finished().
+    // drives the De chain after a req's Atime — always arrives via reqyscile elvis.
+    //   runs just the one req first; only if it finishes does the full De chain advance.
+    //   if req didn't finish, feebly_ponder will drive it again via the normal cycle.
     //   🚧 ponder() vs feebly_ponder() not yet settled.
     async e_reqysciliation(_A: TheC, w: TheC, e: TheC) {
         const H   = this
@@ -317,8 +317,12 @@
         if (!req) return
         const De  = req.c.host as TheC
         H.trace('reqyscile', H.reqysee(De, { see: e.sc.see as string | undefined }))
-        await De.c.rq?.do()
-        De.c.rq?.check_all_finished()
+        const rq = De.c.rq
+        await rq?.do_one(req)              // run just this req
+        if (req.sc.finished) {
+            await rq?.do()                 // advance chain from new frontier
+            rq?.check_all_finished()
+        }
     },
 
     // trace helper for reqyscile — mutates sc in place.

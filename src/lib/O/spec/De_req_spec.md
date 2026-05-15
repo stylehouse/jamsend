@@ -378,9 +378,11 @@ gives other work chattering in the current Atime a chance to settle, and ensures
 the `do()` pass arrives in its own separate Atime. Systems stay deterministic at
 arm's length regardless of which `topH%todo` is prioritised first.
 
-`e_reqysciliation` climbs `req.c.host` to the De, calls `H.reqysee` for the trace
-(which extracts `see`, builds "De:listen  see  extraKey:val", and merges any
-remaining sc into De.sc), then drives `De.c.rq.do()` and `De.c.rq.check_all_finished()`.
+`e_reqysciliation` climbs `req.c.host` to the De, calls `H.reqysee` for the trace,
+then runs `rq.do_one(req)` — driving just that req, not the whole De chain. Only if
+the req is `%finished` afterwards does it call `rq.do()` to advance the frontier and
+`check_all_finished()`. If the req didn't finish, the normal ponder cycle will drive
+it again; no extra callbacks per De.
 
 `H.reqysee(De, sc)` uses `H.mainkey(De)` to read the De's identity key — the first
 key of `De.sc` (always the De's own name, e.g. `De:listen`).
@@ -464,7 +466,10 @@ w
       c.mutated_fn              — per-req mutation handler; fires instead of do_fn when %mutated
   %log                          — longer-lived see; persists until explicitly cleared
 
-reqys(host, mainkey)            — same middleware, different host
+reqys(host, mainkey)            — idempotent; returns existing rq if already wired for host+key.
+                                  preserves rq.mutated_fn, rq.submainkey across ticks.
+  .do_one(req)                 — run handler for just this req; same logic as do() inner loop.
+                                  used by e_reqysciliation before deciding to advance the chain.
   .submainkey                  — from subreqys(); enables subreqys_do
   .subreqys_do                 — fallback handler fn; reachable when submainkey set
   .mutated_fn                  — rq-wide mutation handler; fires instead of do_fn when %mutated
