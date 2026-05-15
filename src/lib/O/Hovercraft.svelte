@@ -308,7 +308,11 @@
         //   < a place to focus think() attention on w**, for this req knows it wants attention
         let node = req.c.host as TheC
         while (node?.c?.host) node = node.c.host as TheC
-        H.i_elvisto(node, 'reqysciliation', { req, see })
+        if (!node.sc.w) throw "!%w"
+        console.log(`reqyscile ${node.c.rq.mainkey} to: ${see}    is: ${keyser(req.sc)}`)
+        let e = H.i_elvisto(node, 'reqysciliation', { req, see })
+        await e.c.targeting
+        this.ponder()
     },
 
     // drives the De chain after a req's Atime — always arrives via reqyscile elvis.
@@ -318,7 +322,7 @@
     async e_reqysciliation(_A: TheC, w: TheC, e: TheC) {
         const H   = this
         const req = e.sc.req as TheC
-        if (!req) return
+        if (!req) throw "!req"
         const De  = req.c.host as TheC
         H.trace('reqyscile', H.reqysee(De, { see: e.sc.see as string | undefined }))
         const rq = De.c.rq

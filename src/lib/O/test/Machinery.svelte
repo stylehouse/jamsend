@@ -112,6 +112,72 @@
 
 //#endregion
 
+
+//#region PotPlan
+
+    // w/plan                            — world
+    //
+    // De:sort
+    //   req:wait,time:5000              — stalls; do_fn arms a one-shot timer
+    //     setTimeout → reqyscile(req,{see:'sorted out',thing:3})
+    //       merges thing:3 into req.sc, elvisses to e_reqysciliation
+    //     do_fn re-entry: thing set → rq.finish(req)
+    //
+    // demand_time_to_think is manual here — may move into the wall
+
+    Run_A_PotPlan(this: House) {
+        const A = this.o({ A: 'PotPlan' })[0] || this.i({ A: 'PotPlan' })
+        if (!A.o({ w: 'PotPlan' }).length) {
+            A.i({ w: 'PotPlan' })
+        }
+        console.log(`🪴 ${this.name} PotPlan wired`)
+    },
+
+    async PotPlan(A, w) {
+        w.c.rq ||= this.reqys(w, 'De')
+        const dq = w.c.rq
+
+        // ── De:sort ───────────────────────────────────────────────────────────
+        dq.doai({ De: 'sort' })?.(async (De: TheC, dq) => {
+            this.trace("De:sort")
+            // reqyscile climbs req.c.host=De → De.c.host=w to reach %w
+            De.c.host = w
+            De.c.rq ||= this.reqys(De, 'req')
+            const rq = De.c.rq
+
+            // req:wait,time:5000
+            //   armed guard: one timer only; reqyscile brings re-entry
+            //   re-entry: thing set → finish; demand_time_to_think holds story open
+            rq.doai({ req: 'wait', time: 123 })?.(async (req: TheC, rq: any) => {
+                if (req.sc.thing) {
+                    this.trace("De:sort -> finito")
+                    this.want_savepoint()
+                    rq.finish(req); return
+                }
+                if (req.c.armed) return
+                req.c.armed = true
+                // this.demand_time_to_think(req.sc.time + 20)
+                setTimeout(() => {
+                    this.trace("De:sort -> reqyscile")
+                    this.reqyscile(req, { see: 'sorted out', thing: 3 })
+                }, req.sc.time)
+            })
+
+            await rq.do()
+            if (rq.all_done() && !De.sc.finished) dq.finish(De)
+        })
+        dq.doai({ De: 'yay', maz:2 })?.(async (De: TheC, dq) => {
+            this.trace("De:yay")
+            w.i({confetti:"!!!"})
+            dq.finish(De); return
+        })
+
+        await dq.do()
+    },
+
+//#endregion
+
+
 //#region PotPlanet
 
     // Fiction: a standing order desk receives two orders (rose:3, fern:7 doses).
