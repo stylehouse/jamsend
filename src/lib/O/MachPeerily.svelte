@@ -380,15 +380,15 @@
                 H.trace('shim', `Pier_init_completo  ${tag}`)
                 H.demand_time_to_think(1500)
 
-                // advance De:connect to its terminal req via e_reqy_done
-                //   so rq.finish() bumps the De version and reqyscile chains normally
-                const sw = H.Awo(side)
-                const dConnect = sw.o({ De: 'connect' })[0] as TheC | undefined
-                if (dConnect && !dConnect.sc.finished) {
-                    const rConnected = H.reqys(dConnect, 'req').oai({ req: 'connected' })
-                    if (!rConnected.sc.finished) {
-                        dConnect.sc.finished = true
-                        H.i_elvisto(sw, 'reqy_done', { De: dConnect, req: rConnected })
+                // finish De:connect's terminal req — e_reqysciliation advances the
+                //   frontier and calls check_all_finished() which stamps %De,finished.
+                const sw   = H.Awo(side)
+                const Deco = sw.o({ De: 'connect' })[0] as TheC | undefined
+                if (Deco && !Deco.sc.finished) {
+                    const reco = H.reqys(Deco, 'req').oai({ req: 'connected' })
+                    if (!reco.sc.finished) {
+                        H.reqys(Deco, 'req').finish(reco)
+                        H.reqyscile(reco, { see: 'connected' })   // fire-and-forget elvis
                         H.trace('De', `${side} De:connect→connected`)
                     }
                 }
@@ -463,6 +463,7 @@
         // ── De:listen ─────────────────────────────────────────────────────────
         // seed once; De_listen advances from wherever the req chain currently is
         const dListen = w.oai({ De: 'listen' }) as TheC
+        dListen.c.host = w        // reqyscile climbs c.host chain to reach w
         await H.De_listen(w, dListen, side)
 
         // ── De:connect (Bearing only) ─────────────────────────────────────────
@@ -470,7 +471,10 @@
         //   once seeded the particle persists across steps — De_connect is idempotent.
         if (side === 'Bearing' && !w.oa({ De: 'connect' })) {
             const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-            if (npub) w.i({ De: 'connect', target: npub })
+            if (npub) {
+                const Deco = w.i({ De: 'connect', target: npub }) as TheC
+                Deco.c.host = w   // reqyscile climbs c.host chain to reach w
+            }
         }
         for (const dConnect of w.o({ De: 'connect' }) as TheC[]) {
             await H.De_connect(w, dConnect, side)
@@ -533,24 +537,27 @@
 
     // De_listen — seeds req:keygen → register → listening once; rq.do() advances
     //   from the frontier on every subsequent call.
-    //   Out-of-Atime keygen result returns via e_De_listen_keygen → e_reqy_done.
+    //   Keygen result re-enters via reqyscile(req, {Id}) → e_reqysciliation.
     async De_listen(w: TheC, De: TheC, side: string) {
         const H  = this as House
         const rq = H.reqys(De, 'req')
 
         // req:keygen — generates keypair out of Atime.
-        //   do_fn set once (doai returns null thereafter — safe to call every tick).
-        //   Id stored on req.c, not req.sc, as a class instance.
-        await rq.doai({ req: 'keygen' })?.(async (req: TheC) => {
-            if (req.sc.running) return
-            req.sc.running = true
-            De.o({ log: 1 })[0]?.i({ msg: 'keygen started', at: Date.now() })
-                ?? De.oai({ log: 1 }).i({ msg: 'keygen started', at: Date.now() })
-            H.post_do(async () => {
+        //   do_fn set once; subsequent calls are no-ops via doai's null return.
+        //   Id lands on req.sc via reqyscile parcel; req:register reads it from there.
+        //   post_do kicks off without awaiting — Atime mutex released immediately.
+        //   .then() re-enters via reqyscile in its own Atime.
+        await rq.doai({ req: 'keygen' })?.(async (req: TheC, rq: any) => {
+            if (!H.reqonce(req, 'running')) return
+            De.oai({ log: 1 }).i({ msg: 'keygen started', at: Date.now() })
+            H.post_do(() => {
                 const Id = new Idento()
-                await Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined)
-                // e_De_listen_keygen receives this; Id is an object so it travels via c
-                H.i_elvisto(w, 'De_listen_keygen', { Id })
+                Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
+                    De.oai({ log: 1 }).i({ msg: 'keygen done', at: Date.now() })
+                    H.trace('De', `${w.sc.w} keygen done`)
+                    rq.finish(req)
+                    H.reqyscile(req, { Id, see: 'keygen done' })
+                })
             })
             H.demand_time_to_think(3000)
         })
@@ -591,45 +598,17 @@
         //   want_savepoint: Story snaps the listen-done state before De:connect begins.
         await rq.doai({ req: 'listening' })?.(async (req: TheC) => {
             rq.finish(req)
-            De.sc.finished = true
+            rq.check_all_finished()   // stamps %De,finished; calls all_done_fn (feebly_ponder)
             H.want_savepoint()
         })
 
         await rq.do()
     },
 
-    // keygen completed out of Atime.
-    //   i_elvisto(w,'De_listen_keygen',{c:{Id}}) dispatches here (e_ prefix convention).
-    //   Stores Id on the req particle then delegates to e_reqy_done to finish and chain.
-    async e_De_listen_keygen(_A: TheC, w: TheC, e?: TheC) {
-        const H       = this as House
-        const De      = w.o({ De: 'listen' })[0] as TheC | undefined
-        const rKeygen = De?.o({ req: 'keygen' })[0] as TheC | undefined
-        if (!rKeygen || rKeygen.sc.finished) return
-        // Id is a class instance — lives on c, not sc (which must be serialisable)
-        rKeygen.sc.Id = (e as any)?.sc?.Id
-        De!.oai({ log: 1 }).i({ msg: 'keygen done', at: Date.now() })
-        H.trace('De', `${w.sc.w} keygen done`)
-        // delegate: finish the req and continue the chain
-        H.i_elvisto(w, 'reqy_done', { De, req: rKeygen })
-    },
-
-    // General out-of-Atime req-completion handler.
-    //   Any req that finishes outside Atime (async shim, post_do) can route here.
-    //   i_elvisto(w,'reqy_done',{De,req}) → this.
-    //   Bumps the De version, then reqyscile continues the chain.
-    async e_reqy_done(_A: TheC, w: TheC, e: TheC) {
-        const H   = this as House
-        const {De,req}  = e.sc
-        if (!De || !req || req.sc.finished) return
-        H.reqys(De, 'req').finish(req)   // bumps De version, feebly_ponder
-        await H.reqyscile(De)            // continue the chain from the new frontier
-    },
-
     // De:connect — drives outbound dialling for Bearing.
     //   Waits for De:listen to finish (Peering must be open) before dialling.
     //   req:connected is terminal — finished by Pier_init_completo in the shim
-    //   via i_elvisto(sw,'reqy_done',{De,req}).
+    //   via reqyscile(reco); e_reqysciliation advances the chain.
     async De_connect(w: TheC, De: TheC, side: string) {
         const H    = this as House
         const npub = De.sc.target as string
@@ -658,9 +637,8 @@
             console.log(`🐻 ${side} → Nearing  ${npub}`)
         })
 
-        // req:connected — terminal stub.
-        //   Pier_init_completo in the shim finishes this via e_reqy_done.
-        //   No do_fn needed; rq.do() exits when it finds it unfinished and no do_fn.
+        // req:connected — terminal stub; no do_fn — rq.do() skips when unfinished and handler-less.
+        //   Pier_init_completo in the shim finishes this via reqyscile(reco).
         rq.oai({ req: 'connected' })
 
         await rq.do()

@@ -302,9 +302,13 @@
         for (const [k, v] of Object.entries(sc)) {
             if (k !== 'see') req.sc[k] = v
         }
-        const De = req.c.host as TheC
-        const w  = De.c.host as TheC
-        H.i_elvisto(w, 'reqysciliation', { req, see })
+        // climb host chain: req.c.host = De, De.c.host = w (or deeper nesting).
+        //   caller is responsible for setting c.host at each level (reqys.oai sets it for reqs;
+        //   De.c.host = w must be set explicitly until a De-layer reqys owns that seeding).
+        //   < a place to focus think() attention on w**, for this req knows it wants attention
+        let node = req.c.host as TheC
+        while (node?.c?.host) node = node.c.host as TheC
+        H.i_elvisto(node, 'reqysciliation', { req, see })
     },
 
     // drives the De chain after a req's Atime — always arrives via reqyscile elvis.
