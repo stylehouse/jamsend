@@ -312,7 +312,7 @@
         console.log(`reqyscile ${node.c.rq.mainkey} to: ${see}    is: ${keyser(req.sc)}`)
         let e = H.i_elvisto(node, 'reqysciliation', { req, see })
         await e.c.targeting
-        this.ponder()
+        this.feebly_ponder()
     },
 
     // drives the De chain after a req's Atime — always arrives via reqyscile elvis.

@@ -197,7 +197,9 @@
                 const sp = w.i({ scheme: 'Peering' })
                 sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering',
                     args_fn: (n: TheC) => [n.c.P, n.o({ Id: 1 })[0]?.sc.Id, {}],
-                    post_fn: (eer: Peering, n: TheC, H: House) => {
+                    // H shadowed intentionally: post_fn's _H is the concretion caller's house;
+                    //   we need H:PeeringLive for reqyscile, so use outer H from Run_A_PeeringLive.
+                    post_fn: (eer: Peering, n: TheC, _H: House) => {
                         const Id = n.o({ Id: 1 })[0]?.sc.Id as Idento
                         n.c.P.i_Peering(Id, eer)
                         n.sc.prepub = Id?.toString() ?? ''
@@ -208,13 +210,13 @@
                             const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
                             if (reg) H.Awo('PeeringLive').drop(reg)
                             console.log(`✅ ${Side} open  ${n.sc.prepub}`)
-                            // reqyscile directly to req:register — it sees open:1, finishes,
-                            //   advances the chain without riding out the 5s demand.
-                            //   w is the Bearing/Nearing worker captured from Run_A_PeeringLive.
-                            const De = w.o({ De: 'listen' })[0] as TheC | undefined
-                            const reqReg = De?.o({ req: 'register' })[0] as TheC | undefined
-                            if (reqReg && !reqReg.sc.finished) void H.reqyscile(reqReg, { see: 'peering open' })
-                            else H.ponder()
+                            // reqyscile req:register — do_one sees open:1 and finishes the chain.
+                            //   rere: re-entry point; do_one is a no-op if already finished.
+                            //   w captured from Run_A_PeeringLive's for-loop.
+                            const rere = (w.o({ De: 'listen' })[0] as TheC | undefined)
+                                          ?.o({ req: 'register' })[0] as TheC | undefined
+                            H.trace('De', `${Side} open → rere:${rere ? 'req:register' : 'w fallback'} finished:${rere?.sc.finished ?? '?'}`)
+                            void H.reqyscile(rere ?? w, { see: 'peering open' })
                         })
                         eer.Peer.on('disconnected', () => {
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
@@ -308,17 +310,19 @@
             }
         }
 
-        // ── LabScript: dispatch Plan/Prep:N at each step-start ────────────────
-        // Plan lives on w:PeeringLive as toc.snap-loaded child particles.
-        // on_step fires once per step (H.c.did_on_step_n guard).
-        // Multiple o_elvisto children under one Prep fire left-to-right.
-        // Multiple Prep:N on the same step number stack — no dedup inside a Prep.
+        // ── step dispatch: baseline + LabScript Plan/Prep:N ─────────────────────
+        // dispatch always built; on_step fires once per step (H.c.did_on_step_n guard).
+        //
+        // Step 2 baseline: Pier phase — demand time for hello + trust before snap.
+        //   LabScript Prep:2 overrides this if present (scenario logic takes precedence).
         //
         // o_elvisto target: "A/w" or bare "w" when A==w.
         //   esc children set named fields on the event particle (e.sc.*).
+        const dispatch: Record<number, () => Promise<void>> = {
+            2: async () => { H.demand_time_to_think(4000) },   // < hello + trust round-trip
+        }
         const plan = w.o({ Plan: 1 })[0] as TheC | undefined
         if (plan) {
-            const dispatch: Record<number, () => Promise<void>> = {}
             for (const prep of plan.o({ Prep: 1 }) as TheC[]) {
                 // Prep:1 prints as bare Prep in depeel (value 1 elided)
                 const step = (prep.sc.Prep as number) || 1
@@ -336,8 +340,8 @@
                     }
                 }
             }
-            await H.on_step(dispatch)
         }
+        await H.on_step(dispatch)
     },
 
 //#endregion
@@ -474,17 +478,6 @@
 
         await dq.do()
 
-        // ── step 2: Pier phase ────────────────────────────────────────────────
-        // After the listen snap (step 1), Bearing dials and Nearing gets an inbound Pier.
-        //   w-local did_on_step_n guard — H.on_step is H-global, unsuitable here since
-        //   _PeeringLive_main runs for both sides each tick.
-        //   Demand time for hello + trust to complete before the next snap.
-        const _step_n = (H.c.run as any)?.c?.step_n as number | undefined
-        if (_step_n === 2 && w.c.did_on_step_n !== 2) {
-            w.c.did_on_step_n = 2
-            H.demand_time_to_think(4000)   // < hello + trust round-trip
-        }
-
         // ── Pier handle ───────────────────────────────────────────────────────
         // concretion populates c.inst via post_fn after draining _pl_buf.
         // until concretion runs, Pier exists but ier is undefined — drive_expects
@@ -589,6 +582,7 @@
                 })
                 P.Otromode = true
                 P.Trusting = H._PeeringLive_shim(H, side)
+                w.oai({ Peerily: 1 }).c.P = P
                 // immutable identity on the Peering particle.
                 //   Id lives on sc as a ref; prepri is the short private key fragment.
                 //   prepub also stamped flat on pn.sc for fast neighbourhood access.
@@ -598,17 +592,22 @@
                 pn.i({ Id, prepri: enhex(Id.privateKey).slice(0, 8) })
             }
 
-            if (w.o({ Peering: 1 })[0]?.oa({ open: 1 })) {
+            const hasOpen = !!w.o({ Peering: 1 })[0]?.oa({ open: 1 })
+            H.trace('De', `${side} req:register — hasOpen:${hasOpen}`)
+            if (hasOpen) {
                 drq.finish(req)
-                // drq.do() loops to req:listening in the same pass (sync chain)
+                // drq.do() loops to req:listening (maz:2) once register finishes
             } else {
                 H.demand_time_to_think(5000)   // waiting for PeerServer open event
             }
         })
 
         // req:listening — terminal; De:listen concludes.
+        //   maz:2: only eligible after req:register (maz:1) finishes — prevents
+        //   drq.do() from running listening in the same pass as a still-waiting register.
         //   want_savepoint: Story snaps the listen-done state before De:connect begins.
-        await drq.doai({ req: 'listening',maz:2 })?.(async (req: TheC) => {
+        await drq.doai({ req: 'listening', maz: 2 })?.(async (req: TheC) => {
+            H.trace('De', `${side} req:listening fires`)
             drq.finish(req)
             drq.check_all_finished()   // stamps %De,finished
             dq.check_all_finished()    // cascades finished stamp up to w level
