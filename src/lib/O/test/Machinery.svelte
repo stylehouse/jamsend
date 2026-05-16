@@ -199,14 +199,14 @@
                 post_fn: (inst: MockSprout, n: TheC, _H: House) => {
                     // demand_time_to_think: holds Story open while we wait.
                     //   mirrors _PeeringLive_shim's Peering_i_Pier call.
-                    _H.demand_time_to_think(2000)
+                    // _H.demand_time_to_think(123)
                     setTimeout(() => {
                         // req:tend will exist by now — seeded in PotPlaner() before concretion
                         const De  = w.o({ De: 'tend' })[0] as TheC | undefined
                         const req = De?.o({ req: 'tend' })[0] as TheC | undefined
                         console.log(`🌱 MockSprout(${inst.name}) ready — reqyscile: ${req ? 'found' : 'MISSING'}`)
                         if (req) void _H.reqyscile(req, { see: 'sprouted', ready: 1 })
-                    }, 2000)
+                    }, 123)
                 },
             })
         }

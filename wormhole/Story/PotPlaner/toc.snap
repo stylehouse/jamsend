@@ -22,11 +22,13 @@ story:PotPlaner
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:0.029
+    TimeTotal:beliefs,avg:0.038
       sample:0.006,at:1778914664
       sample:0.007,at:1778914707
       sample:0.055,at:1778914715
       sample:0.046,at:1778914724
+      sample:0.062,at:1778915828
+      sample:0.053,at:1778915838
   step,dige:ffe628130d71e080
   step:2,dige:dffebec93a4fc47b
-  step:3,dige:a28b3dc1dc06ae44
+  step:3,dige:7eb0c53ae3246ce4
