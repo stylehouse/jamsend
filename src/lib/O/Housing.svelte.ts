@@ -7,7 +7,7 @@ import { tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
-V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
+V.organise =  1  // set >0 to enable answer_calls/beliefs/organise logs
 V.beliefs = 0
 
 export const ANSWER_CALLS_TICK_MS = 50
@@ -814,7 +814,7 @@ export class House extends StorableHousing {
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
         const done = await this.organise(e)
-        if (!done) return
+        if (!done) return this.trace(`concretion needed, waylaid e:${e.sc.elvis}`)
         await this.attend(e)
     }
 
@@ -895,7 +895,6 @@ export class House extends StorableHousing {
             const aNames = ATN.map(T => (T.sc.n as TheC)?.sc.A ?? '?').join(',')
             this.trace('attend', `e:${e.sc.elvis} AT:[${aNames}] targeted:${targetedATN.length}/${ATN.length}`)
         }
-
         // parallel arrays: Travel-level for internal use, n-level for officing
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
         for (let AT of ATN) {
