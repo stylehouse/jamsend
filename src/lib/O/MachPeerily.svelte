@@ -201,7 +201,7 @@
                     //   we need H:PeeringLive for reqyscile, so use outer H from Run_A_PeeringLive.
                     post_fn: (eer: Peering, n: TheC, _H: House) => {
                         const Id = n.o({ Id: 1 })[0]?.sc.Id as Idento
-                        n.c.P.i_Peering(Id, eer)
+                        // n.c.P.i_Peering(Id, eer)
                         n.sc.prepub = Id?.toString() ?? ''
                         const Side = (n.sc.name as string).replace(/^./, c => c.toUpperCase())
                         eer.Peer.on('open', () => {
@@ -318,30 +318,9 @@
         //
         // o_elvisto target: "A/w" or bare "w" when A==w.
         //   esc children set named fields on the event particle (e.sc.*).
-        const dispatch: Record<number, () => Promise<void>> = {
+        0 && await H.on_step({
             2: async () => { H.demand_time_to_think(4000) },   // < hello + trust round-trip
-        }
-        const plan = w.o({ Plan: 1 })[0] as TheC | undefined
-        if (plan) {
-            for (const prep of plan.o({ Prep: 1 }) as TheC[]) {
-                // Prep:1 prints as bare Prep in depeel (value 1 elided)
-                const step = (prep.sc.Prep as number) || 1
-                dispatch[step] = async () => {
-                    for (const disp of prep.o({ o_elvisto: 1 }) as TheC[]) {
-                        const target  = disp.sc.o_elvisto as string
-                        const evt     = disp.sc.e as string
-                        // "A/w" → take w part; bare "w" means A==w
-                        const wName   = target.includes('/') ? target.split('/')[1]! : target
-                        const esc_sc: Record<string, any> = {}
-                        for (const esc of disp.o({ esc: 1 }) as TheC[]) {
-                            esc_sc[esc.sc.esc as string] = esc.sc.v
-                        }
-                        H.i_elvisto(H.Awo(wName), evt, esc_sc)
-                    }
-                }
-            }
-        }
-        await H.on_step(dispatch)
+        })
     },
 
 //#endregion

@@ -16,7 +16,6 @@ story:PotPlan
     noCyto
   TimeSpool
     TimeTotal:beliefs,avg:1.682
-      sample:0.026,at:1778833720
       sample:0.017,at:1778833732
       sample:0.008,at:1778833816
       sample:16.681,at:1778833837
@@ -26,5 +25,6 @@ story:PotPlan
       sample:0.015,at:1778836714
       sample:0.016,at:1778837306
       sample:0.014,at:1778837347
+      sample:0.022,at:1778920190
   step,dige:bdcbbacea073e1e1
   step:2,dige:823d60e3fdf2ad54

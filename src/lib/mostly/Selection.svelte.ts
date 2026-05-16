@@ -319,6 +319,8 @@ class SelectionItself extends Travel {
                                 // can forget x to save memory
                                 z.c.T.sc.bD = null
                             }
+                            // < pointing forward isn't a memory leak?
+                            a.c.fD = b 
                         }
                     }
                 })

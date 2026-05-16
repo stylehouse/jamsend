@@ -7,7 +7,7 @@ import { tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
-V.organise =  1  // set >0 to enable answer_calls/beliefs/organise logs
+V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
 V.beliefs = 0
 
 export const ANSWER_CALLS_TICK_MS = 50
@@ -814,7 +814,7 @@ export class House extends StorableHousing {
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
         const done = await this.organise(e)
-        if (!done) return this.trace(`concretion needed, waylaid e:${e.sc.elvis}`)
+        if (!done) return this.trace(`concretion`,`waylaid e:${e.sc.elvis}`)
         await this.attend(e)
     }
 
@@ -893,7 +893,7 @@ export class House extends StorableHousing {
         // < attend trace only on non-think to avoid noise
         if (e?.sc.elvis && e.sc.elvis !== 'think') {
             const aNames = ATN.map(T => (T.sc.n as TheC)?.sc.A ?? '?').join(',')
-            this.trace('attend', `e:${e.sc.elvis} AT:[${aNames}] targeted:${targetedATN.length}/${ATN.length}`)
+            // this.trace('attend', `e:${e.sc.elvis} AT:[${aNames}] targeted:${targetedATN.length}/${ATN.length}`)
         }
         // parallel arrays: Travel-level for internal use, n-level for officing
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
@@ -911,7 +911,7 @@ export class House extends StorableHousing {
             if (!wTN.length) {
                 // procure_ways: give A a default w named after A, re-drive next cycle
                 // < having this complicated feature: in-cycle procure via T.sc.more injection
-                this.trace('attend', `procure_ways: A:${A.sc.A} had no wT — seeding default w`)
+                // this.trace('attend', `procure_ways: A:${A.sc.A} had no wT — seeding default w`)
                 A.oai({ w: A.sc.A })
                 this.main()
                 continue
@@ -922,7 +922,7 @@ export class House extends StorableHousing {
 
             if (e?.sc.elvis && e.sc.elvis !== 'think') {
                 const wNames = wTN.map(T => (T.sc.n as TheC)?.sc.w ?? '?').join(',')
-                this.trace('attend', `A:${A.sc.A} wT:[${wNames}] targeted:${targetedwTN.length}/${wTN.length}`)
+                // this.trace('attend', `A:${A.sc.A} wT:[${wNames}] targeted:${targetedwTN.length}/${wTN.length}`)
             }
 
             for (let wT of wTN) {
@@ -1042,7 +1042,7 @@ export class House extends StorableHousing {
     // < define as slope. interesting area. see also Text / enLine / rules
     // -------------------------------------------------------------------------
     apply_scheme(T: Travel, e?: TheC) {
-        const D = T.sc.D as TheD
+        let D = T.sc.D as TheD
         const n = T.sc.n as TheC
         const level = T.sc.level = T.sc.level || this.get_scheme_level(T)
         if (!level) return
@@ -1064,6 +1064,7 @@ export class House extends StorableHousing {
 
         // check for an already-spawned instance
         const existing = D.o({ inst: 1, concretion: ctag })[0]
+
         if (existing) {
             const inst = existing.sc.inst as Housing
             T.sc.inst = inst
@@ -1080,21 +1081,30 @@ export class House extends StorableHousing {
 
         // class specified but not yet spawned — need concretion
         T.c.top.sc.needed_concretion = true
+        this.trace(`concretion`,`needs ${ctag}: ${keyser(n.sc)}`)
         V.organise && console.log(`  apply_scheme: needs concretion ${ctag} (class:${class_key})`)
 
         const began = { began_wanting: 'concretion', concretion: ctag }
+        if (e) D.oai({ pending_elvises: 1 }).i(e)
         if (D.oa(began)) {
             // concretion in flight — park e under D/pending_elvises so post_do can drain it.
             //   D.c.* is ephemeral (D is recreated each beliefs pass); child particles persist
             //   across passes just as D/began does — that's where the state has to live.
-            if (e) D.oai({ pending_elvises: 1 }).i(e)
             return
         }
         D.i(began)
 
-        const original_e = e
         this.post_do(async () => {
             const inst = this.concretion(T)
+            // catch up to the latest D**, as more beliefs() may have happened by now
+            while (D.c.fD) D = D.c.fD
+
+            this.trace(`concretion`,`completed ${ctag}: ${keyser(n.sc)}`)
+            if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
+            D.i({ inst, concretion: ctag })
+            // stamp on n so callers reach inst via n.c.inst without D** walk
+            if (n) n.c.inst = inst
+
             T.sc.inst = inst
             if ('started' in inst && !(inst as any).started) {
                 await this.inst_started(inst)
@@ -1103,7 +1113,6 @@ export class House extends StorableHousing {
             //   before any await, so the inst can be wired before events fire.
             //   Declared on the %lematch particle alongside args_fn.
             if (level.post_fn) level.post_fn(inst, n, this)
-            if (original_e) this._push_todo(original_e)
             const pe = D.o({ pending_elvises: 1 })[0] as TheC | undefined
             if (pe) for (const we of pe.o({}) as TheC[]) this._push_todo(we)
         }, {
@@ -1175,7 +1184,7 @@ export class House extends StorableHousing {
     //   Inst also stamped on n.c.inst for direct access without D** walk.
     // -------------------------------------------------------------------------
     concretion(T: Travel) {
-        const { D } = T.sc
+        let { D } = T.sc
         const n = T.sc.n as any
         const level = T.sc.level as Record<string, any> | undefined
         const col = T.sc.path_bit_ark as string | undefined
@@ -1203,10 +1212,6 @@ export class House extends StorableHousing {
         }
 
         const inst = new _class(...ctor_args)
-        if (D.oa({ inst: 1, concretion: ctag })) throw `concretion repeat`
-        D.i({ inst, concretion: ctag })
-        // stamp on n so callers reach inst via n.c.inst without D** walk
-        if (n) n.c.inst = inst
         return inst
     }
 

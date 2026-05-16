@@ -215,6 +215,11 @@
 
 
 
+        // necessary to get it to notice needing concretion this step
+        //  someone has to go back into beliefs() from the top
+        if (w.oa({self:1,round:'1'})) this.feebly_ponder()
+
+
 
         // seed the Sprout particle — organise() picks it up, concretion fires next pass.
         //   oai: idempotent; safe to call every think tick.
