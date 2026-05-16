@@ -1,0 +1,18 @@
+Snap:H
+  H:PotPlaner,Run
+    A:PotPlaner
+      {"mung":["age"]}	self,round:7
+      w:PotPlaner
+        scheme:Sprout
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Sprout
+        Sprout,name:seedling
+        De:tend,finished
+          req:tend,ready,finished
+        {"mung":["age"]}	self,round:7
+        see:Sprout(seedling) concretised → MockSprout
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  {"upsert":1,"id":"cytoid_1_1_4","label":"De:tend\nfinished"}
+  {"upsert":1,"id":"cytoid_1_1_4_1","label":"req:tend\nready\nfinished"}
+  remove,id:cytoid_1_1_4_1_2
+  edge_remove,id:cytoid_1_1_4_1_2_1

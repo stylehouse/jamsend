@@ -113,6 +113,154 @@
 //#endregion
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region PotPlaner
+
+    // Exercises the %scheme/%lematch → concretion pipeline with a mock class.
+    //
+    // MockSprout stands in for Peering/Pier — no real async I/O, just a
+    //   setTimeout that fires like Pier_init_completo does in the PeeringLive shim.
+    //   started=true → inst_started() resolves immediately after constructor.
+    //
+    // w/Sprout,name:'seedling'           — particle; triggers concretion
+    //   .c.inst = MockSprout             — set by apply_scheme after post_do resolves
+    //
+    // post_fn closure (captured H, n):
+    //   setTimeout 2000 → reqyscile(req:tend, {see:'sprouted',ready:1})
+    //   demand_time_to_think(2000) holds Story open for the gap
+    //
+    // De:tend
+    //   req:tend                         — waits for c.inst, then for req%ready
+    //     re-entry via e_reqysciliation: ready set → finish
+
+
+    async PotPlaner(A: TheC, w: TheC) {
+        // %scheme:Sprout — one lematch pattern for {Sprout:1} particles.
+        //   args_fn: pulls name from n.sc; passes plain opt to constructor.
+        //   post_fn: shim-style — arms one setTimeout per inst, lazily finds req
+        //            inside the callback (req seeded before timeout fires).
+        if (!w.oa({ scheme: 'Sprout' })) {
+            // MockSprout — stable reference here so register_class always gets the same ctor.
+            //   started=true: inst_started() skips the microtask spin.
+            //   < wake() absent: apply_scheme's 'wake' in inst check is also skipped.
+            class MockSprout {
+                name: string
+                started = true
+                constructor(opt: { name: string }) { this.name = opt.name }
+            }
+            register_class('Sprout', MockSprout as any)
+            const sp = w.i({ scheme: 'Sprout' })
+            sp.i({
+                lematch: 1, sc_has: { Sprout: 1 }, class: 'Sprout',
+                args_fn: (n: TheC, opt: any) => [{ name: (n.sc.name ?? opt.name) as string }],
+                post_fn: (inst: MockSprout, n: TheC, _H: House) => {
+                    // demand_time_to_think: holds Story open while we wait.
+                    //   mirrors _PeeringLive_shim's Peering_i_Pier call.
+                    _H.demand_time_to_think(2000)
+                    setTimeout(() => {
+                        // req:tend will exist by now — seeded in PotPlaner() before concretion
+                        const De  = w.o({ De: 'tend' })[0] as TheC | undefined
+                        const req = De?.o({ req: 'tend' })[0] as TheC | undefined
+                        console.log(`🌱 MockSprout(${inst.name}) ready — reqyscile: ${req ? 'found' : 'MISSING'}`)
+                        if (req) void _H.reqyscile(req, { see: 'sprouted', ready: 1 })
+                    }, 2000)
+                },
+            })
+        }
+
+
+
+
+
+
+        // seed the Sprout particle — organise() picks it up, concretion fires next pass.
+        //   oai: idempotent; safe to call every think tick.
+        w.oai({ Sprout: 1, name: 'seedling' })
+
+        // show concretion status each tick
+        const sprout_n = w.o({ Sprout: 1 })[0] as TheC | undefined
+        if (sprout_n) {
+            const inst = sprout_n.c.inst as { name: string } | undefined
+            w.i({ see: inst
+                ? `Sprout(${inst.name}) concretised → ${inst.constructor.name}`
+                : `Sprout(${sprout_n.sc.name as string}) awaiting concretion…`
+            })
+        }
+
+        w.c.rq ||= this.reqys(w, 'De')
+        const dq = w.c.rq
+
+        // ── De:tend ───────────────────────────────────────────────────────────
+        dq.doai({ De: 'tend' })?.(async (De: TheC, dq) => {
+            // reqyscile climbs req.c.host=De → De.c.host=w to reach %w
+            De.c.host = w
+            De.c.rq ||= this.reqys(De, 'req')
+            const rq = De.c.rq
+
+            // req:tend
+            //   phase 1: stall until concretion lands c.inst on the Sprout particle
+            //   phase 2 (re-entry via reqyscile): ready is set → finish
+            rq.doai({ req: 'tend' })?.(async (req: TheC, rq: any) => {
+                const sn = w.o({ Sprout: 1 })[0] as TheC | undefined
+                if (!sn?.c.inst) { req.i({ waits: 'concretion' }); return }
+                if (!req.sc.ready) { req.i({ waits: 'sprouted' }); return }
+                const inst = sn.c.inst as { name: string }
+                w.i({ see: `🌱 ${inst.name} ready (ready:${req.sc.ready as number})` })
+                rq.finish(req)
+            })
+
+            await rq.do()
+            if (rq.all_done() && !De.sc.finished) dq.finish(De)
+        })
+
+        await dq.do()
+    },
+
+//#endregion
+
 //#region PotPlan
 
     // w/plan                            — world
@@ -125,13 +273,6 @@
     //
     // demand_time_to_think is manual here — may move into the wall
 
-    Run_A_PotPlan(this: House) {
-        const A = this.o({ A: 'PotPlan' })[0] || this.i({ A: 'PotPlan' })
-        if (!A.o({ w: 'PotPlan' }).length) {
-            A.i({ w: 'PotPlan' })
-        }
-        console.log(`🪴 ${this.name} PotPlan wired`)
-    },
 
     async PotPlan(A, w) {
         w.c.rq ||= this.reqys(w, 'De')
