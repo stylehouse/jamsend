@@ -215,8 +215,8 @@
                             //   w captured from Run_A_PeeringLive's for-loop.
                             const rere = (w.o({ De: 'listen' })[0] as TheC | undefined)
                                           ?.o({ req: 'register' })[0] as TheC | undefined
-                            H.trace('De', `${Side} open → rere:${rere ? 'req:register' : 'w fallback'} finished:${rere?.sc.finished ?? '?'}`)
-                            void H.reqyscile(rere ?? w, { see: 'peering open' })
+                            H.trace('De', `${Side} open → rere:${rere ? 'req:register' : '—'} finished:${rere?.sc.finished ?? '?'}`)
+                            if (rere) void H.reqyscile(rere, { see: 'peering open' })
                         })
                         eer.Peer.on('disconnected', () => {
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
@@ -464,6 +464,9 @@
         // ── De level requlator — dq.do() dispatches to De_listen / De_connect methods.
         //   reqys sets c.host = w on each De particle it seeds — reqyscile can climb without manual wiring.
         const dq = H.reqys(w, 'De')
+        const dq_frontier = () => (dq as any).frontier ?? '?'
+
+        H.trace('main', `${side} — De frontier:${dq_frontier()}`)
 
         await dq.doai({ De: 'listen' })?.(async (Deli: TheC) => {
             await H.De_listen(Deli, dq)
@@ -472,10 +475,12 @@
         if (side === 'Bearing') {
             const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
             if (npub) await dq.doai({ De: 'connect', target: npub })?.(async (Deco: TheC) => {
+                H.trace('main', `${side} — De:connect target:${npub.slice(0,8)}`)
                 await H.De_connect(Deco, dq)
             })
         }
 
+        H.trace('main', `${side} — dq.do() frontier:${dq_frontier()}`)
         await dq.do()
 
         // ── Pier handle ───────────────────────────────────────────────────────
@@ -541,6 +546,8 @@
         const w    = De.c.host as TheC
         const side = w.sc.w as string
         const drq  = H.reqys(De, 'req')
+        const drq_frontier = () => (drq as any).frontier ?? '?'
+        H.trace('De', `${side} De_listen — req frontier:${drq_frontier()}`)
 
         // req:keygen — generates keypair out of Atime.
         //   do_fn set once; subsequent calls are no-ops via doai's null return.
@@ -548,6 +555,7 @@
         //   post_do kicks off without awaiting — Atime mutex released immediately.
         //   .then() re-enters via reqyscile in its own Atime.
         await drq.doai({ req: 'keygen' })?.(async (req: TheC) => {
+            H.trace('De', `${side} req:keygen — hasId:${!!req.sc.Id} running:${!!req.sc.running}`)
             if (!H.reqonce(req, 'running')) return
             De.oai({ log: 1 }).i({ msg: 'keygen started', at: Date.now() })
             H.post_do(() => {
@@ -593,11 +601,13 @@
             }
 
             const hasOpen = !!w.o({ Peering: 1 })[0]?.oa({ open: 1 })
-            H.trace('De', `${side} req:register — hasOpen:${hasOpen}`)
+            const t_reg = H.trace('De', `${side} req:register — hasOpen:${hasOpen}`)
             if (hasOpen) {
                 drq.finish(req)
+                t_reg('→ finished')
                 // drq.do() loops to req:listening (maz:2) once register finishes
             } else {
+                t_reg('→ demand:5s')
                 H.demand_time_to_think(5000)   // waiting for PeerServer open event
             }
         })
@@ -607,13 +617,15 @@
         //   drq.do() from running listening in the same pass as a still-waiting register.
         //   want_savepoint: Story snaps the listen-done state before De:connect begins.
         await drq.doai({ req: 'listening', maz: 2 })?.(async (req: TheC) => {
-            H.trace('De', `${side} req:listening fires`)
+            H.trace('De', `${side} req:listening — fires → want_savepoint`)
             drq.finish(req)
             drq.check_all_finished()   // stamps %De,finished
             dq.check_all_finished()    // cascades finished stamp up to w level
+            H.trace('De', `${side} want_savepoint`)
             H.want_savepoint()
         })
 
+        H.trace('De', `${side} drq.do() frontier:${drq_frontier()}`)
         await drq.do()
     },
 
@@ -626,22 +638,26 @@
         const side = w.sc.w as string
         const npub = De.sc.target as string
         const drq  = H.reqys(De, 'req')
+        const drq_frontier = () => (drq as any).frontier ?? '?'
 
-        if (!w.oa({ De: 'listen', finished:1 })) return
+        const listen_done = !!w.oa({ De: 'listen', finished:1 })
+        H.trace('De', `${side} De_connect — listen_done:${listen_done} req frontier:${drq_frontier()}`)
+        if (!listen_done) return
 
         // req:dial — issues eer.connect() and plants a _pl_buf on the Pier particle.
         //   The buffer is drained by post_fn once concretion produces the ier.
         //   After drq.finish(req), drq.do() reaches req:connected and waits there for
         //   Pier_init_completo to reqyscile(Deco) → e_reqysciliation → De_connect again.
         await drq.doai({ req: 'dial' })?.(async (req: TheC) => {
-            if (w.oa({ Pier: 1 })) {
+            const hasPier = !!w.oa({ Pier: 1 })
+            const eer     = w.o({ Peering: 1 })[0]?.c.inst as Peering | undefined
+            const nOpen   = !!H.Awo('Nearing').o({ Peering: 1 })[0]?.oa({ open: 1 })
+            const t_dial  = H.trace('De', `${side} req:dial — hasPier:${hasPier} eer:${!!eer} nOpen:${nOpen}`)
+            if (hasPier) {
                 // Pier already appeared (inbound beat us, or reconnect)
-                drq.finish(req)
-                return
+                drq.finish(req); t_dial('→ inbound won'); return
             }
-            const eer   = w.o({ Peering: 1 })[0]?.c.inst as Peering | undefined
-            const nOpen = H.Awo('Nearing').o({ Peering: 1 })[0]?.oa({ open: 1 })
-            if (!eer || !nOpen) { H.demand_time_to_think(3000); return }
+            if (!eer || !nOpen) { t_dial('→ demand:3s'); H.demand_time_to_think(3000); return }
 
             const con  = eer.connect(npub)
             const Pier = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
@@ -654,8 +670,10 @@
         //   Pier_init_completo fires reqyscile(Deco) which re-enters here via e_reqysciliation.
         //   c.inst is set by concretion's post_fn before init_completo fires.
         await drq.doai({ req: 'connected' })?.(async (req: TheC) => {
-            if (!w.o({ Pier: 1 })[0]?.c.inst) return   // < waiting for Pier concretion + init_completo
-            drq.finish(req)
+            const inst   = w.o({ Pier: 1 })[0]?.c.inst
+            const t_con  = H.trace('De', `${side} req:connected — inst:${!!inst}`)
+            if (!inst) { t_con('→ waiting'); return }   // < waiting for Pier concretion + init_completo
+            drq.finish(req); t_con('→ finished')
             drq.check_all_finished()   // stamps %De,finished
             dq.check_all_finished()    // cascades finished stamp up to w level
         })

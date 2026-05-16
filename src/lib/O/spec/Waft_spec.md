@@ -7,75 +7,130 @@
 Gain decoration powers before gaining fuzzy-matching powers.
 
 The existing system can already route Points from Lies→Lang, resolve them against the
-compiled methods index, fold the doc to reveal them via Lang_apply_openness, and scroll
-the view.  What it cannot do yet is express *how* a Point should be presented —
-enlarged, annotated, surrounded by a glow, with non-ancestor regions folded down to
-representative leading lines rather than vanished.  And it has no time-domain concept:
-all Points on a Doc are equally present, equally now.
+compiled methods index, fold the doc to reveal them via `Lang_apply_openness`, and
+scroll the view.  What it cannot do is express *how* a Point should be presented —
+enlarged, glowing, surrounded by squished crumbs of non-ancestor regions.  And it has
+no time-domain concept: all Points on a Doc are equally present, equally now.
 
 This spec covers:
 
-- Point style schema (Matstyle defaults + fold/decoration behaviour)
-- The `...` leading-lines convention for "squished" regions
-- The **Flock** — the time-domain container that groups Points into one moment
-- `pause | rwnd | +time` transport and how Flocks cell-divide
-- Ghost-decay: old Flock Points that quietly shrink unless rescued
-- Waft hierarchy elaboration (`Waft/What/Doc/Flock/Point`)
-- Minimap engagement: which Points are concurrently focused
-- CM decoration infrastructure: what coordinates need tracking, what's already there
+- `What` — the universal container replacing both the old flat `What` heading and the
+  old `Flock` time-slice; the whole Waft tree is now `Waft/What**/Doc/What**/Point`
+- The `...` leading-lines squish convention for non-ancestor regions
+- `pause | rwnd | +time` transport navigating the What tree
+- Ghost-decay: prior-What Points that quietly shrink unless rescued
+- Active-What tracking (session state, not persisted) and breadcrumb navigation
+- Minimap engagement: concurrently focused Points
+- CM decoration infrastructure: what coordinates need updating, what's already there
+- Encoder / decoder generalised with Travel + mainkey(), throttled writes
 
-Fuzzy matching, multi-Lang-per-Lies, and Cyto-space animations remain out of scope.
-Everything here is achievable in a single-Doc codemirror show.
+Fuzzy matching, multi-Lang-per-Lies, Cyto animations, and Matstyle wiring onto Points
+remain out of scope.  Everything here is achievable in a single-Doc codemirror show.
 
 ---
 
-## Point style schema
+## What — the universal container
 
-A Point currently carries only `method` (or `Point:serial`, `label`).  It needs an
-optional style bag.  Style is opt-in — absent keys fall back to system defaults, which
-themselves fall back to the Matstyle for the Point particle type.
+`What` replaces both the old section-heading `What` and the old `Flock`.  It is a
+named attention-seeker that can contain other `What`s, `Doc`s, and `Point`s in any
+combination.  The tree grammar:
 
 ```
-Point:1, method:'Lang_apply_openness'
-  style                              — optional; absent = all defaults
-    fold_surround:squish             — 'squish' | 'hide' | 'open' (default: squish)
-    fold_leading_lines:2             — how many leading lines to show per squished region
-    enlarge:1                        — make the target line larger in CM (default: 1)
-    enlarge_factor:1.8               — line height multiplier (default: 1.8)
-    glow_color:#c8a0f0               — CSS color; default: lavender (#c4aaee)
-    glow_radius:12                   — px blur radius for the glow decoration
-    context_text:'applies openness'  — short annotation shown above/beside the line
-    context_pos:'above'              — 'above' | 'inline' | 'gutter' (default: above)
-    opacity:1.0                      — for ghost-Points from prior Flocks (0.0–1.0)
-    scale:1.0                        — for ghost shrinkage (0.0–1.0, applied to height)
+Waft → (What | Doc)*
+What → (What | Doc | Point)*
+Doc  → (What | Point)*
+Point → (nothing — leaf)
 ```
 
-These are persisted on the `%style` child particle, not on the Point's own sc, so the
-Point's sc stays clean for identity (`method`, `label`, serial).  The style child is
-omitted from the snap when it carries only defaults — encoder skips it if style equals
-the canonical default set.
+`What` cannot appear inside `Point`.  `Point` is always a leaf.
 
-### Matstyle integration
+Because `What` is polymorph it means different things at different depths:
 
-The `%Point` matstyle gives the gold dot its background-color, shape, and size in the
-minimap.  That's the *node* style — what Cyto and the minimap strip see.
+- At the top of a Waft it is a section heading (`setup`, `language`).
+- Nested inside a Doc it is a time-slice — the old `Flock` role.  Sibling `What`s
+  under one `Doc` are successive moments; `rwnd` and `+time` step between them.
+- Nested inside another `What` it is a subsection, possibly one that doesn't involve
+  any particular Doc (a global search site — deferred to a later phase).
 
-The new style bag above is the *decoration* style — what the CM editor sees.  The two
-are parallel, not merged.  `glow_color` in the style bag is independent of
-`background-color` in the matstyle, though an editor might default `glow_color` to
-the matstyle's background-color when absent.
+### Snap shape
 
-MatstyleEditor will grow engagement rows for: `fold_surround`, `enlarge`,
-`glow_color`, `context_text`.  For now, the values are edited directly on the Point's
-style child in the Waft UI (Waft.svelte grows a small style sub-form per Point).
+```
+Waft:Ghost/Tour
+  What:1,label:setup
+    What:1,label:housing init
+      Doc:1,path:Ghost/Housing.svelte.ts
+        Point:1,method:H_plan
+    Doc:1,path:Ghost/Lang.svelte
+      What:1,label:first look
+        Point:1,method:Lang_plan
+        Point:1,method:Lang_compile
+      What:1,label:routing
+        Point:1,method:e_Doc_open
+        Point:1,method:Lang_doc_from_event
+```
+
+No `Points` container — that was a reactivity workaround from an earlier iteration.
+Points sit directly under their parent.  The `Points:1` encoding is still read on
+load for backward compatibility but is not written.
+
+---
+
+## Active-What tracking
+
+`active` is **not stored on the particle** — it is session state, like `ave/%active_doc`.
+
+```
+ave/{active_what:1}
+  sc.path: 'Ghost/Tour'               — which Waft
+  sc.what_keys: ['setup', 'routing']  — breadcrumb of What labels to the active What
+  c.what: <TheC>                      — direct ref to the active What particle
+```
+
+`active_what` bumps whenever the user navigates.  Waft.svelte and DocMinimap read it
+via `H.ave.ob({active_what:1})`.
+
+The breadcrumb drives a row in the Waft header: each crumb is a button that jumps to
+that What level; each level shows its siblings as a submenu for sideways jumps.
+
+Push-up bookmarks (Ctrl+B exports from Lang → Lies) land in the active What's Doc for
+the current active path.  If no Doc with that path exists under the active What, one is
+autovivified.
+
+---
+
+## Point class
+
+A Point can carry `class` in its sc alongside `method` (or `label`):
+
+```
+Point:1, method:'e_Doc_open', class:'focus'
+Point:1, method:'Lang_plan', class:'ghost'
+Point:1, method:'Lang_compile'           — no class; defaults apply
+```
+
+A small fixed set of pre-defined classes, statically defined in component CSS — not
+runtime-configurable.  Avoiding the Matstyle path keeps the decoration system stable
+enough to actually use:
+
+| class     | CM decoration                                | minimap dot |
+| --------- | -------------------------------------------- | ----------- |
+| (default) | enlarge ×1.4, lavender glow                  | gold        |
+| `focus`   | enlarge ×2.0, brighter glow, context bar     | bright gold |
+| `caution` | amber glow                                   | amber       |
+| `dim`     | no enlarge, faint glow                       | grey        |
+| `ghost`   | 18% opacity, 40% height scale                | faint grey  |
+
+`ghost` is stamped automatically on Points that belong to prior-What siblings (the
+old-Flock role); it is not usually set by hand.  Clicking a ghost rescues it: `class`
+is cleared and it moves into the active What's Doc as a live Point.
 
 ---
 
 ## The squish convention: `...`
 
-When `fold_surround:squish`, non-ancestor regions are not fully hidden.  Instead each
-squished region is represented by `fold_leading_lines` (default: 2) visible lines,
-followed by the CM fold hiding the rest.  This is analogous to:
+Non-ancestor regions in CM are not fully hidden — they are **squished**: the region
+header and its first two lines stay visible, and the CM fold hides the rest.  The fold
+widget renders `·····` rather than the default `···`.
 
 ```
 //#region e
@@ -88,208 +143,170 @@ Lang_doc_from_event(w: TheC, e: TheC): TheC {
 async Lang(A: TheC, w: TheC) {
   .....
   if (thing) {
-     .....selected = line + what(was, on_it)   ← the target line, enlarged + glowing
+     .....selected = line + what(was, on_it)   ← target line, enlarged + glowing
 ```
 
-The `...` are not literal — they are CM's fold widget for the hidden span, styled as
-a muted ellipsis with the squish aesthetic.  The user sees structural breadcrumbs
-(region label + first 2 lines) rather than an opaque collapsed blob.
+`Lang_apply_openness` currently folds from `header_line.to` (hiding everything after
+the header).  The squish variant folds from `header_line.to + leading_char_count`,
+where `leading_char_count` is the character span of the first two lines after the
+header.  Two leading lines is a system constant — not configurable per-Point.
 
-Implementation: `Lang_apply_openness` already dispatches `foldEffect`; the squish
-variant keeps `fold_leading_lines` lines visible by folding from `header_line.to +
-leading_char_count` instead of from `header_line.to`.  The fold widget CSS needs a new
-`.cm-foldPlaceholder.squished` class that renders `·····` instead of `···`.
-
----
-
-## Flock — the time-domain container
-
-A **Flock** is a set of Points at one moment of the tour.  Currently Points live flat
-under `Doc`.  The new layout interposes `Flock`:
-
-```
-Waft:'Ghost/Tour'
-  Doc:1, path:'Ghost/test/Hello.g'
-    Flock:1, active:1              — current moment
-      Point:1, method:'Lang_compile'
-      Point:1, method:'e_Doc_open'
-        style
-          glow_color:#c0e0ff
-    Flock:0                        — prior moment (ghost)
-      Point:1, method:'Lang_plan'
-        style
-          opacity:0.18
-          scale:0.4
-      Point:1, method:'Lang_compile'   — also in Flock:1; still here (not forgotten)
-        style
-          opacity:0.18
-          scale:0.4
-```
-
-`Flock:N` — N is a monotonically increasing integer.  `active:1` on the highest N only.
-Prior Flocks are kept in the snap for the history they represent; their Points are
-rendered at reduced opacity and scale in both the minimap strip and the CM decoration
-layer.
-
-A Doc with no Flock children is treated as if it has one implicit active Flock
-containing all its Points — backward-compatible with the existing snap format.  The
-encoder only writes explicit `Flock` particles when more than one exists, or when the
-Point carries a non-default style.
-
-### Autovivification
-
-When Lies opens a Waft with the old flat layout (Doc → Points → Point), it leaves it
-flat.  The active Flock is autovivified in-memory (not written to snap) at first use —
-i.e. the first time the user clicks +time or the UI needs to engage a Point.
+The `·····` widget needs a CSS override.  `codeFolding()` in CM accepts a
+`placeholderDOM` factory; we supply one that returns
+`<span class="cm-squish">·····</span>`.  The host stylesheet gives `.cm-squish` a
+muted colour.  ⛑️ (Langui.svelte needs the extension wired in.)
 
 ---
 
 ## `pause | rwnd | +time` transport
 
-The Lies/Waft UI gains a small transport bar when a Doc is engaged:
+The Waft UI gains a transport bar that operates on the **sibling What list** of the
+active What.  It sits at the bottom of the minimap strip:
 
 ```
-  ◀◀ rwnd   ‖ pause   ＋time  →
+  ◀◀ rwnd   ‖ pause   ＋time
 ```
 
-These are per-Doc (or per-Waft if no Doc is selected), living in Waft.svelte's local
-state initially.  They do not need to be persisted — they are session UX.
-
-### pause
-
-Stops the automatic audience-paced advance (if any; see below).  No-op if not running.
+Session-only — not persisted.  The transport updates `ave/{active_what:1}`.
 
 ### rwnd
 
-Steps backward through the Flock list — moves `active:1` to the previous Flock,
-un-selecting all Points in the current one and re-engaging whichever were active in
-the prior one.  If on Flock:0 (the oldest), wraps to the newest or stops.
+Steps the active What backward among its siblings (same parent).  Un-engages Points in
+the current What, re-engages those in the prior sibling.  Stops at the first sibling.
 
-Useful for finding "the start of a trail of thing" — scan backward through Flocks
-looking for where a given method first appeared as a Point.
+Useful for finding "the start of a trail": scan backward through sibling What slices
+looking for where a given method first appeared.
 
-### +time
+### pause
 
-Cell-divides the current moment:
+Stops any automatic audience-paced advance.  Not implemented yet — button renders;
+advance is manual-only in this phase.
 
-1.  The existing active Flock's Points are **copied** into a new Flock (N+1) that
-    becomes the new active.  The copy carries only Points the system guesses should
-    persist (see below).
+### +time (cell-division)
 
-2.  The old Flock is de-activated (`active:1` cleared) and its Points receive ghost
-    style: `opacity:0.18, scale:0.4` stamped onto their `%style` children.
+Creates a new sibling `What` immediately after the current active one, which becomes
+the new active:
 
-3.  Points in the new Flock start *unselected*.  Normally unselected = invisible, but
-    since this is a Flock-replace transition, the ghost rendering of the old Flock acts
-    as the visual reminder — the user sees spectral echoes of where the tour was.
+1.  A new `What:1,label:''` (empty label; user names it) is inserted after the current
+    What in the parent's child list.
 
-4.  The new Flock's Points that were unselected for >10 s (wall clock, tracked in
-    Waft.svelte `$state` with `setInterval`) shrink further — `scale` animates from
-    0.4 → 0.0, then the ghost Point is dropped from the *prior* Flock's persistent
-    state (not written to snap next save).  The user can rescue a ghost by clicking it;
-    a rescued ghost moves into the active Flock as a selected Point with full opacity.
+2.  Points from the current What that are presumed to carry forward (see heuristic
+    below) are **copied** into the new What.  The current What is left intact.
+
+3.  Points in the prior What that were not copied receive `class:'ghost'` stamped on
+    their sc.  The minimap and CM decoration layer render them at 18% opacity.
+
+4.  Ghost Points not clicked within 10 s (wall-clock timer in Waft.svelte `$state`)
+    shrink further and are eventually dropped from the prior What's in-memory state
+    (omitted from next snap write).  A clicked ghost is rescued: `class` is cleared and
+    it moves into the active What's Doc as a live Point.
 
 ### Carry-over heuristic
 
-When +time fires, which Points does the new Flock inherit?
+When +time fires: Points that were **engaged** in the old What are copied into the new
+one.  Points added within the last ~30 s (`created_at` in Point sc) are treated as
+belonging to the new What — they move rather than copy and are not ghosted.  Everything
+else ghosts in the old What.
 
-- Any Point that was **selected** in the old Flock is tentatively copied.
-- A Point that was **just created** (within ~30 s, tracked by `created_at` on the
-  Point's style child) is presumed to belong to the new Flock, not the old one —
-  so it moves rather than copies, and is not ghosted.
-
-This is a heuristic, not a contract.  The user corrects it by clicking ghosts (rescue)
-or clicking active Points (unselect → they ghost on their own timer).
-
-### Audience pacing
-
-A future `audience_speediness` scalar (0–2, default 1) scales the inter-Flock dwell
-time.  `pause` freezes it; `rwnd` is manual.  Not implemented in this phase — the
-transport bar renders the buttons but advance is manual-only.
-
----
-
-## Waft / What / Doc / Flock / Point hierarchy
-
-The current hierarchy is `Waft / Doc / Points / Point`.
-
-`What` is a named section within a Waft — a heading that groups Docs thematically.
-It is purely organisational; it has no wormhole path of its own.
-
-```
-Waft:'Ghost/Tour'
-  What:1, label:'setup'
-    Doc:1, path:'Ghost/Housing.svelte.ts'
-      Flock:1, active:1
-        Point:1, method:'H_plan'
-  What:1, label:'language'
-    Doc:1, path:'Ghost/Lang.svelte'
-      Flock:1, active:1
-        Point:1, method:'Lang_compile'
-    Doc:1, path:'Ghost/LangCompiling.svelte'
-      Flock:1, active:1
-        Point:1, method:'_collect_line'
-```
-
-`What` nesting is unlimited — `Waft/What/What/What/What/Point` is legal for a deeply
-annotated side-note.
-
-A Point under a `What` with no `Doc` ancestor is a **global** Point — it references
-something not tied to a specific file.  This must be a global regex search, a method
-name across all loaded Docs, or a compiler-generated metadata key.  In this phase,
-global Points are rendered as unresolved (warning style in the minimap) and deferred.
-The infra accepts the schema; the resolution logic is not written yet.
-
-The snap format gains `What` particles:
-
-```
-Waft:Ghost/Tour
-  What:1,label:setup
-    Doc:1,path:Ghost/Housing.svelte.ts
-      Flock:1,active:1
-        Point:1,method:H_plan
-  What:1,label:language
-    Doc:1,path:Ghost/Lang.svelte
-      ...
-```
-
-Existing Wafts without `What` continue to work — all Docs are treated as top-level.
+`created_at` is a session-only sc field — stripped from snap writes (see encoder).
 
 ---
 
 ## Minimap engagement
 
-The minimap strip (DocMinimap.svelte) currently shows all Points for the active Doc
-as gold dots.  "Engagement" is the state where one or more Points are *focused* —
-driving the fold layout and decorations in CM.
+Engagement is which Points are currently driving the fold layout and CM decorations.
+Session state: `let engaged: Set<string> = $state(new Set())` in DocMinimap.
 
-### Mutex / multi-engagement
+Multiple Points can be concurrently engaged (soft cap 3; a constant, not a setting).
+A small lock glyph on an engaged minimap row prevents MRU eviction.
 
-Multiple Points can be concurrently engaged, subject to a soft cap (configurable,
-default 3).  The minimap renders engaged Points with a brighter dot and a wider label.
-A small lock icon on an engaged Point prevents it from being displaced when a new one
-is engaged; unlocked engaged Points follow a most-recently-used eviction.
+When engagement changes, DocMinimap fires `e:Lang_point_navigate` for newly engaged
+Points and `e:Lang_point_deactivate` for newly disengaged ones.
 
-The engagement set is local state in DocMinimap — `let engaged: Set<string> = $state(new Set())`.
-It is not persisted (it is a session view concern, not a Waft concern).
+`Lang_apply_openness` is extended to accept an array of `point_from` offsets.  The
+union of their ancestor chains determines which regions stay open; everything else
+squishes.  Where Points have conflicting fold preferences the more-open one wins.
 
-When engagement changes, `DocMinimap` calls `e:Lang_point_navigate` for each newly
-engaged Point, and calls `e:Lang_point_deactivate` for each newly disengaged one.
-The CM decoration layer then applies the union of all engaged Points' fold layouts,
-which may conflict — a Point in region A and a Point in region B will each want
-regions folded that the other needs open.  The resolution is: any region that *any*
-engaged Point needs open, is open.  All others are squished or hidden per the
-most-restrictive Point's `fold_surround` setting.
+---
 
-`Lang_apply_openness` is extended to accept an array of `point_from` offsets and
-produces the union of their ancestor chains.
+## Encoder / decoder
 
-### Minimap transport integration
+### Current state
 
-The transport bar (`pause | rwnd | +time`) is rendered at the bottom of the minimap
-strip rather than inline with Waft.svelte, so it is always adjacent to the visual
-representation of Points.  It dispatches to Lies via elvists; Lies mutates the Flock
-particles and bumps the Waft.
+The encoder in Lies walks `Waft → Doc → Points → Point` by explicit property names.
+That is too narrow for `What` nesting at arbitrary depth.
+
+### Generalised approach using Travel + mainkey()
+
+Travel is the existing TheC tree-walk primitive (as used in `encode_toc_snap` for
+Story/Styles).  Combined with `mainkey()` — the first sc key, giving a particle's type
+identity — it traverses the Waft tree generically.
+
+```typescript
+// Allowed mainkeys in the Waft tree.  Point is a leaf (no children encoded).
+const WAFT_TREE_KEYS = new Set(['What', 'Doc', 'Point'])
+
+// Session-only sc fields — stripped before writing to snap.
+const SESSION_KEYS = new Set(['active', 'created_at'])
+
+function encode_waft_C(C: TheC, depth = 0): SnapItem[] {
+    const mk = mainkey(C)
+    if (!mk || !WAFT_TREE_KEYS.has(mk)) return []
+
+    // Clean sc: omit session-only and non-scalar values.
+    const sc: Record<string, any> = {}
+    for (const [k, v] of Object.entries(C.sc)) {
+        if (SESSION_KEYS.has(k)) continue
+        if (v === null || typeof v === 'object') continue
+        sc[k] = v
+    }
+
+    const items: SnapItem[] = [{ depth, sc }]
+
+    if (mk !== 'Point') {
+        // Recurse into children whose mainkey is in WAFT_TREE_KEYS.
+        // Travel (or a direct loop over C.children) gives depth-first source order.
+        for (const child of C.children() as TheC[]) {
+            items.push(...encode_waft_C(child, depth + 1))
+        }
+    }
+    return items
+}
+
+// Entry point — called from LiesPersist when a waft_save_pending fires.
+function encode_waft(waft: TheC): SnapItem[] {
+    const root: SnapItem = { depth: 0, sc: { Waft: waft.sc.Waft } }
+    const children: SnapItem[] = []
+    for (const child of waft.children() as TheC[]) {
+        children.push(...encode_waft_C(child, 1))
+    }
+    return [root, ...children]
+}
+```
+
+The decoder is the reverse: read snap lines, reconstruct the tree by maintaining a
+depth stack, call `C.oai()` at each depth with the line's sc.  `Points:1` lines on old
+snaps are skipped — their Point children are hoisted directly under the Doc.
+
+### Throttled writes
+
+Waft mutations (Point add/remove, What add/rename/reorder, ghost stamp) do not write
+immediately — they schedule a write by stamping `w/{waft_save_pending:1, path}` on
+Lies's w.  LiesPersist drains these the same way it drains `open_waft_req`, but with
+a debounce: first pending fires after 2 s of quiescence (no further mutations to that
+Waft).
+
+```
+w/{waft_save_pending:1, path:'Ghost/Tour', due_at: Date.now() + 2000}
+```
+
+LiesPersist checks `due_at` each tick and writes when it has passed.  A mutation
+before the 2 s window simply bumps `due_at` forward — last-write-wins with a sliding
+delay.  This matches the `saveEffect` debounce in Langui for bookmark position sync.
+
+The ghost-decay timer in Waft.svelte fires `H.i_elvisto('Lies/Lies',
+'Lies_waft_mutated', { path })` when it drops a Point, which stamps the pending
+particle on Lies's w so the save gets scheduled.
 
 ---
 
@@ -297,230 +314,147 @@ particles and bumps the Waft.
 
 ### What already exists
 
-- `foldEffect` / `unfoldEffect` dispatch (LangRegions — `Lang_apply_openness`)
-- Bookmark decorations (`addBookmarkMark`, `clearAllBookmarks`, `StateField`)
-  — `from/to` are remapped automatically by CM's `RangeSet.map` on every doc change
-- `EditorView.scrollIntoView` for navigation (DocMinimap — `go_to`)
-- Line enlargement: not yet — `Decoration.line` with custom CSS class is the path
+- `foldEffect` / `unfoldEffect` dispatch (`Lang_apply_openness` in LangRegions)
+- Bookmark `StateField` — CM remaps `from/to` via `RangeSet.map` on every doc change
+- `EditorView.scrollIntoView` for navigation
 
 ### What needs adding
 
-**Line glow + enlarge**
+**Line enlarge + glow**
 
-CM supports `Decoration.line({ class: 'cm-point-glow' })` — a line-level decoration
-that adds a CSS class to the entire line's DOM element.  This is the right primitive:
-
-```typescript
-// in the CM extension set (alongside the bookmark StateField):
-const pointDecorationField = StateField.define<DecorationSet>({
-    create: () => Decoration.none,
-    update: (decos, tr) => {
-        // remap on doc change; replace when new point_ranges arrive via effect
-        decos = decos.map(tr.changes)
-        for (const e of tr.effects) {
-            if (e.is(setPointDecorationsEffect)) return e.value
-        }
-        return decos
-    },
-    provide: f => EditorView.decorations.from(f),
-})
-
-// Per engaged Point: one Decoration.line at the target line's from offset,
-// with class 'cm-point-engaged' (glow + enlarge via CSS on the host page).
-// The class carries a CSS custom property --cm-glow-color set inline on the element
-// via a ViewPlugin that reads the engaged Points' glow_color from Lies's state.
-```
-
-`--cm-glow-color` is set per-line via the `attributes` option on `Decoration.line`:
-
-```typescript
-Decoration.line({ attributes: { class: 'cm-point-engaged', style: `--cm-glow-color: ${glow_color}` } })
-```
-
-CSS:
+`Decoration.line({ attributes: { class: 'cm-point-engaged cm-point-focus' } })` adds
+a CSS class to the whole line's DOM element.  The class drives enlargement and glow via
+static stylesheet rules — no per-Point CSS variable needed since the classes are a
+fixed set.
 
 ```css
 .cm-point-engaged {
-    box-shadow: inset 0 0 var(--cm-point-glow-radius, 12px) var(--cm-glow-color, #c4aaee33);
-    font-size: calc(1em * var(--cm-point-enlarge, 1.8));
-    line-height: calc(1.4em * var(--cm-point-enlarge, 1.8));
+    box-shadow: inset 0 0 12px #c4aaee33;
+    font-size: 1.4em; line-height: 1.96em;
     transition: font-size 0.15s, line-height 0.15s;
+}
+.cm-point-focus {
+    box-shadow: inset 0 0 20px #c4aaee66;
+    font-size: 2em; line-height: 2.8em;
+}
+.cm-point-ghost {
+    opacity: 0.18;
+    transform: scaleY(0.4);
+    transition: opacity 1s, transform 1s;
 }
 ```
 
-**Context text (above-line widget)**
+A `StateField<DecorationSet>` (`pointDecorationField`) holds the current engaged-Point
+decorations; a `StateEffect` replaces them atomically on each engage/disengage cycle.
+Ghost decorations live in a second `StateField` at lower precedence so engaged Points
+always paint over ghosts.
 
-`Decoration.widget({ widget: new ContextWidget(text), side: -1 })` at the line's
-`from` offset produces a floating annotation above the line.  `side: -1` places it
-before the line's content in the document order.
+**Context bar**
 
-`ContextWidget` is a `WidgetType` subclass that renders a `<div class="cm-point-ctx">`.
-Width is kept narrow (max 40ch) and it overlays the gutter.
+A `Decoration.widget` with `side: -1` at the line's `from` offset renders a narrow
+`<div class="cm-point-ctx">` floating above the target line — the Point's `label` or
+`method` name as a dim annotation.  `WidgetType` subclass, rendered only when the
+`focus` class is in effect.
 
-**Ghost Point decorations (prior Flocks)**
+**Squish fold widget** — see squish section above.
 
-Prior Flock Points are rendered at their resolved `from` offset with
-`Decoration.line({ attributes: { class: 'cm-point-ghost', style: `opacity: ${opacity}; transform: scaleY(${scale})` } })`.
+### Coordinates
 
-Ghost decorations are lower priority than active decorations — the `DecorationSet` for
-ghosts is provided at a lower precedence than the one for engaged Points.
+- **Bookmark from/to**: tracked by CM's `RangeSet.map`; `e_Lang_update_bookmarks`
+  pushes positions back to `bm.sc` on each debounce.  Points backed by bookmarks
+  (`bm.sc.point_serial`) inherit this for free.
+- **Method-name Points**: no stored `from/to` — resolved fresh from the compile index
+  at navigation time.  Stale until recompile; flagged as unresolved in the minimap.
+- **Ghost decorations**: resolved at render time.  No persistent coordinates.
+- **Line glow**: `decos.map(tr.changes)` inside `pointDecorationField.update` remaps
+  line-from offsets automatically when lines are inserted or deleted above the target.
 
-**Squish fold widget**
-
-The default CM fold widget is overridden in the extension config:
-
-```typescript
-foldGutter({ openText: '▾', closedText: '·····' })
-// — or override placeholderDOM on codeFolding() extension
-```
-
-The `·····` widget gets class `cm-fold-squished` when the fold was applied by
-`Lang_apply_openness` in squish mode (tracked by a decoration on the fold's widget
-position).
-
-### Coordinates that need updating
-
-The main concern: do we hold any Point-level from/to offsets that need to be
-continuously synced as the doc changes?
-
-- **Bookmark from/to**: already tracked by CM's `RangeSet.map` via the bookmark
-  `StateField`.  `e_Lang_update_bookmarks` pushes them back to the `bm.sc` on every
-  debounce / `saveEffect`.  Points that are backed by bookmarks (`bm.sc.point_serial`
-  set) inherit this for free.
-- **Points by method name**: these are *resolved at navigation time* from the compiled
-  methods index — there are no stored from/to coordinates on the Point particle.
-  Resolution is always fresh.  No tracking needed; stale if the doc changes without
-  recompile, which the existing `⚠ unresolved` warning already covers.
-- **Ghost decorations**: ghost Points are likewise resolved at render time.  No
-  persistent coordinates.
-- **Line glow decorations**: the `setPointDecorationsEffect` is dispatched once per
-  engage/disengage cycle from `e_Lang_point_navigate`.  CM remaps the `DecorationSet`
-  internally on every doc change via `decos.map(tr.changes)`.  This is correct for
-  line decorations whose anchor is a line `from` offset — edits inside the line do not
-  move the line's `from`.  Edits that insert or remove whole lines above the target
-  *do* move it, and `RangeSet.map` handles that automatically.
-
-**Conclusion**: no new coordinate-update infrastructure is needed.  The existing
-bookmark-sync loop covers positional anchors; method-name resolution covers everything
-else.  Ghost state decays by wall-clock timer, not by doc change event.
+No new coordinate-sync infrastructure is needed.
 
 ### Selection.process() and Dip
 
-`Selection.process()` is referenced in the `regroup()` note in Lang.svelte as the
-planned Map-building pass: collecting function calls, IO expressions, and type names
-into a Dexie-backed index.  It is not yet written.
-
-"Dip" is mentioned in the `caving()` note alongside "Wip" — Dip is presumably an
-ordering/depth system analogous to the Wip (position-within-parent) scheme, providing
-stable addresses for dive targets so that "opening a hive of realities" doesn't lose
-track of where it is.  In the current codebase there is no `Dip` particle or method;
-the concept lives in the aspirational comments only.
-
-For the Waft decoration system, neither is needed.  The current `from/to` bookmark
-coordinates and method-name resolution are sufficient.  Dip and Selection.process()
-belong to the later "Map building" phase.
+`Selection.process()` (from the `regroup()` note in Lang.svelte) is the planned
+Map-building pass — collecting function calls, IO expressions, and type names into a
+Dexie-backed index.  `Dip` (from `caving()`) is a depth-and-position address scheme
+for dive targets.  Neither has been written.  Neither is needed for the decoration
+system: method-name resolution and bookmark coordinates are sufficient.  Both belong to
+the later Map-building phase.
 
 ---
 
 ## What we can show now
 
-With a single Doc, one working codemirror, and the above infra in place:
+With a single Doc and one working codemirror:
 
 - Open a Waft pointing at `Ghost/Lang.svelte`.
-- Add Points for `Lang_plan`, `Lang_compile`, `e_Doc_open`, `_collect_line`.
+- Add a `What:1,label:setup` with Points for `Lang_plan`, `Lang_compile`.
+- Add a sibling `What:1,label:routing` with Points for `e_Doc_open`,
+  `Lang_doc_from_event`.
 - Click `e_Doc_open` in the minimap → CM folds to show only the `e` region, squishing
-  everything above to 2-line crumbs, with `e_Doc_open` enlarged and lavender-glowing.
-- Press +time → the four Points ghost to 18% opacity.  Add two new Points for
-  `Lang_apply_openness` and `Lang_build_regions`.
-- Press rwnd → ghosts come back at full weight; new Points ghost.
-- Click a ghost → it rescues into the current Flock.
+  everything above to 2-line crumbs, with the target line enlarged and lavender-glowing.
+- Press +time → a new sibling What appears; `routing` Points ghost to 18% opacity.
+  Add `Lang_apply_openness` and `Lang_build_regions` to the new What.
+- Press rwnd → `routing` Points come back; new Points ghost.
+- Click a ghost → it rescues into the active What.
 - Multi-engage two Points → CM holds both their regions open simultaneously; the
   minimap shows both lit.
 
-This is enough for a compelling show: drifting through a single doc's architecture,
-with time-layered annotations and fold-based dramatic framing, without needing
-multi-Lang or fuzzy matching.
+Drifting through a doc's architecture with time-layered annotations and fold-based
+dramatic framing — no multi-Lang or fuzzy matching required.
 
 ---
 
 ## Particle layout summary
 
 ```
-w/{Waft:'Ghost/Tour'}                    — loaded Waft container (existing)
-  /{What:1, label}                       — optional section heading
-    /{Doc:1, path}                       — document entry (existing; What is new parent)
-      /{Flock:N, active:1?}             — time-domain container (NEW)
-        /{Point:1, method}               — individual point (moved from Points:1)
-          /{style}                       — optional decoration params (NEW)
-            sc: fold_surround, fold_leading_lines, enlarge, enlarge_factor,
-                glow_color, glow_radius, context_text, context_pos,
-                opacity, scale, created_at
-  /{Doc:1, path}                         — top-level Doc (no What parent; existing)
-    /{Flock:N, active:1?}
+// Persisted (snap) — encoder uses Travel + mainkey(), SESSION_KEYS stripped
+w/{Waft:'Ghost/Tour'}
+  /{What:1, label}                      — section / time-slice / subsection; unlimited nesting
+    /{What:1, label}
+      /{Doc:1, path}
+        /{Point:1, method, class?}      — leaf; class in static set above
+      /{Point:1, method, class?}        — Point in a What (global search site; deferred)
+    /{Doc:1, path}
+      /{What:1, label}                  — time-slice Whats under a Doc
+        /{Point:1, method, class?}
+      /{Point:1, method, class?}        — Points directly on Doc (compat; still read)
 
-// Backward compat: Doc without Flock children
-  /{Doc:1, path}
-    /{Points:1}                          — old layout; still read; autovivified to Flock on first +time
-      /{Point:1, method}
+// Not persisted — session state
+ave/{active_what:1}
+  sc.path: string                       — Waft sc.Waft
+  sc.what_keys: string[]                — breadcrumb of What labels
+  c.what: TheC                          — direct ref to the active What particle
 
-// CM extension additions (not particles — CM state)
-pointDecorationField                     — DecorationSet of line glows for engaged Points
-ghostDecorationField                     — DecorationSet for prior-Flock Points
-setPointDecorationsEffect                — StateEffect<DecorationSet>: full replace on engage/disengage
-setGhostDecorationsEffect                — StateEffect<DecorationSet>: full replace on Flock change
+// CM state (not particles)
+pointDecorationField                    — StateField<DecorationSet>: engaged Point glows
+ghostDecorationField                    — StateField<DecorationSet>: prior-What ghost decorations
+setPointDecorationsEffect               — StateEffect<DecorationSet>: full replace
+setGhostDecorationsEffect               — StateEffect<DecorationSet>: full replace
 
-// Minimap state (Svelte $state — session only, not persisted)
-engaged: Set<string>                     — set of engaged Point method specs
-locked:  Set<string>                     — Points locked against MRU eviction
-ghost_timers: Map<string, number>        — setInterval ids for shrink countdown per ghost spec
+// Minimap (Svelte $state — session only)
+engaged: Set<string>                    — engaged Point method specs
+locked:  Set<string>                    — Points locked against MRU eviction
+ghost_timers: Map<string, number>       — setInterval ids for 10 s shrink per ghost spec
 ```
-
-### What the snap format gains
-
-```
-Waft:Ghost/Tour
-  What:1,label:setup
-    Doc:1,path:Ghost/Lang.svelte
-      Flock:1,active:1
-        Point:1,method:Lang_compile
-          style
-            glow_color:#c0e0ff
-            context_text:translates stho to TS
-        Point:1,method:e_Doc_open
-      Flock:0
-        Point:1,method:Lang_plan
-          style
-            opacity:0.18
-            scale:0.4
-```
-
-The encoder omits `%style` when all its values are defaults.  The decoder autovivifies
-a default style in memory when `%style` is absent.  `active:1` on the highest Flock
-only.
 
 ---
 
 ## Open questions
 
-- **Fold widget CSS**: the `cm-fold-squished` class needs the host page's stylesheet.
-  Langui.svelte currently mounts CM without a custom theme for fold widgets — this
-  needs a `codeFolding({ placeholderText: '·····' })` override or a ViewPlugin that
-  patches fold placeholder DOM nodes after render.  ⛑️
+- **Squish fold widget DOM**: `codeFolding({ placeholderDOM })` needs wiring in
+  Langui.svelte's extension list.  ⛑️
 
-- **Flock snap position**: `Flock:N` children of `Doc` need to encode in `encode_wh_lines`.
-  Currently only `Points:1 → Point:1` is in the encode path.  The encoder walks
-  `Doc → Points → Point`; it needs extending for `Doc → Flock → Point → style`.  ⛑️
+- **`C.children()` order**: the encoder calls `C.children()`.  Confirm TheC exposes an
+  ordered child iterator that preserves insertion order (or use `o({})` with a mainkey
+  filter).  ⛑️
 
-- **Ghost cleanup policy**: Points that decay to `scale:0.0` and are dropped from the
-  prior Flock's in-memory state — do they get written out of the snap on next save, or
-  do they stay until the Waft is explicitly saved?  Last-write-wins on the snap means
-  "not written = not there next load" is safe, but only if we always write the full
-  Waft.  ⛑️
+- **Ghost cleanup on save**: ghost Points that have decayed (timer elapsed, dropped from
+  in-memory state) are omitted from the next snap write because `encode_waft` walks
+  live in-memory state.  If the user saves immediately after +time the ghosts are still
+  present; they'll decay next session.  Acceptable — but worth noting.  ⛑️
 
-- **Global Points (no Doc ancestor)**: schema accepted, resolution deferred.  The
-  minimap renders them as unresolved red dots.  No search infrastructure yet.
+- **Global Points (no Doc ancestor)**: schema accepted, resolution deferred.  Minimap
+  renders them as unresolved red dots.
 
-- **Multi-Lang per Lies**: not in scope.  All Points reference the one open Doc in
-  the one active Lang.  The path is clear (Waft/What/Doc maps to a Lang instance by
-  Doc path) but wiring is not done.
-```
+- **Multi-Lang per Lies**: not in scope.  Path is clear (each Doc maps to a Lang
+  instance by path) but wiring is not done.
