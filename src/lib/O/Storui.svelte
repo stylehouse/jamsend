@@ -715,6 +715,25 @@
             if (col !== src && col.scrollLeft !== x) col.scrollLeft = x
         }
     }
+
+    //#region trace colouring
+    //
+    //   FNV-1a hash of ev.kind → hue (0-359) + lightness (44-67).
+    //   S fixed at 68 for saturation that reads on a black background.
+    //   bg: same hue, low lightness — coloured gutter behind the label.
+    //   Deterministic per-kind: same word always maps to the same colour.
+    function _trace_hash(s: string): number {
+        let h = 0x811c9dc5
+        for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0
+        return h
+    }
+    function trace_fg(kind: string): string {
+        const h = _trace_hash(kind)
+        const hue = h % 360
+        const lit  = 44 + ((_trace_hash(kind + '~')) % 24)   // 44-67
+        return `hsl(${hue},68%,${lit}%)`
+    }
+    // trace_bg unused — labels are tinted text only, no background gutter
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -1028,23 +1047,26 @@
 {/snippet}
 
 {#snippet trace_panel(events: TraceEvent[])}
-    {@const t0    = events[0].t}
-    {@const span  = (events.at(-1)?.t ?? t0) - t0 || 1}
-    {@const COLS  = 56}
-    {@const scale = (t: number) => Math.round((t - t0) / span * COLS)}
+    {@const t0   = events[0].t}
+    {@const tN   = events.at(-1)!.t}
+    {@const span = (tN - t0) || 1}
+    {@const COLS = 60}
+    {@const scale = (t: number) => Math.round((t - t0) / span * (COLS - 1))}
     <div class="sr-trace">
         <div class="sr-trace-axis">
             <span class="sr-trace-axis-lbl">trace</span>
             <span>{span.toFixed(1)}ms</span>
         </div>
-        {#each events as ev}
-            {@const pos   = scale(ev.t)}
-            {@const cap   = Math.min(pos, COLS - 4)}
-            {@const over  = pos > COLS - 4}
-            {@const label = `${ev.kind}${ev.tag ? ':' + ev.tag : ''}`}
-            <div class="sr-trace-row" style="padding-left:{cap}ch"
-                 title="+{(ev.t - t0).toFixed(2)}ms">
-                {#if over}<span class="sr-trace-dot">·</span>{/if}<span class="sr-trace-lbl">{label}</span>
+        {#each events as ev, i}
+            {@const pos         = scale(ev.t)}
+            {@const ms_in_step  = (ev.t - t0).toFixed(1)}
+            {@const last_snap_t = (() => { for (let j = i-1; j >= 0; j--) { const k = events[j].kind; if (k === 'snap' || k === 'snapped' || k.startsWith('snap')) return events[j].t } return null })()}
+            {@const ms_later    = last_snap_t != null ? (ev.t - last_snap_t).toFixed(1) : null}
+            {@const tip         = ms_later != null ? `${ms_later}ms later at ${ms_in_step}ms` : `at ${ms_in_step}ms`}
+            {@const label       = `${ev.kind}${ev.tag ? ':' + ev.tag : ''}`}
+            {@const prefix      = ' '.repeat(pos)}
+            <div class="sr-trace-row" title={tip}>
+                {prefix}<span class="sr-trace-lbl" style="color:{trace_fg(ev.kind)}">{label}</span>
             </div>
         {/each}
     </div>
@@ -1356,9 +1378,9 @@
 }
 .sr-trace-axis-lbl { color:#254535; letter-spacing:0.08em; text-transform:uppercase; }
 .sr-trace-row { white-space:pre; }
-.sr-trace-dot { color:#555; margin-right:1px; }
-.sr-trace-lbl { color:#7ab0d4; }
-.sr-trace-row:hover .sr-trace-lbl { color:#aad; }
+/* sr-trace-lbl: colour inline via trace_fg(); no background — just tinted text trickling down */
+.sr-trace-lbl { }
+.sr-trace-row:hover .sr-trace-lbl { filter:brightness(1.4); }
 /* step wall-clock — right-aligned in the panel header, dimmer than the dige */
 .sr-ptime {
     margin-left: auto; color: #4a6a5a;
