@@ -7,6 +7,7 @@
 
     import { exactly, grop, hakd } from "$lib/Y.svelte";
     import { keyser, objectify } from "./Stuff.svelte";
+    import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
     let { M } = $props()
 
@@ -379,9 +380,18 @@
 
 
 
+    // an overall this-house-is-busy quality, see Story / poll_step
+    demand_time_to_think(ms = 2000) {
+        // push leave_running_until further out, never backwards
+        const until = now_in_seconds_with_ms() + ms / 1000
+        if (this.c.leave_running_until < until)
+            this.trace('demand time',ms)
+            this.c.leave_running_until = until
+    },
 
-    // request a Story breath before the chain continues.
-    //   no-op outside a Story run — safe to call unconditionally from a do_fn.
+    // cancel all demanded time to think
+    // < wants to be per-req expectations of slow times, when and how to restart if gone idle
+    // no-op outside a Story run — safe to call unconditionally from a do_fn.
     want_savepoint() {
         if (!this.c.runtime) return
         this.c.leave_running_until = 0

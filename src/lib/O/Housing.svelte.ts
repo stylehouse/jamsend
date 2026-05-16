@@ -788,14 +788,6 @@ export class House extends StorableHousing {
             await fn()
         })
     }
-    // an overall this-house-is-busy quality, see Story / poll_step
-    demand_time_to_think(ms = 2000) {
-        // push leave_running_until further out, never backwards
-        const until = now_in_seconds_with_ms() + ms / 1000
-        if (this.c.leave_running_until < until)
-            this.trace('demand time',ms)
-            this.c.leave_running_until = until
-    }
 
 
 //#endregion

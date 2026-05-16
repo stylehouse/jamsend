@@ -201,7 +201,7 @@
                     //   we need H:PeeringLive for reqyscile, so use outer H from Run_A_PeeringLive.
                     post_fn: (eer: Peering, n: TheC, _H: House) => {
                         const Id = n.o({ Id: 1 })[0]?.sc.Id as Idento
-                        // n.c.P.i_Peering(Id, eer)
+                        n.c.P.i_Peering(Id, eer)
                         n.sc.prepub = Id?.toString() ?? ''
                         const Side = (n.sc.name as string).replace(/^./, c => c.toUpperCase())
                         eer.Peer.on('open', () => {
@@ -309,17 +309,21 @@
                 }
             }
         }
-
-        // ── step dispatch: baseline + LabScript Plan/Prep:N ─────────────────────
-        // dispatch always built; on_step fires once per step (H.c.did_on_step_n guard).
-        //
-        // Step 2 baseline: Pier phase — demand time for hello + trust before snap.
-        //   LabScript Prep:2 overrides this if present (scenario logic takes precedence).
-        //
-        // o_elvisto target: "A/w" or bare "w" when A==w.
-        //   esc children set named fields on the event particle (e.sc.*).
-        0 && await H.on_step({
-            2: async () => { H.demand_time_to_think(4000) },   // < hello + trust round-trip
+        await H.on_step({
+            2: async () => {
+                // both Peerings open — now wire the connection.
+                //   De:connect do_fn set once here; dq.do() in Bearing's main advances it each tick.
+                //   nOpen is guaranteed true by step 1 snap, so req:dial completes immediately.
+                const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+                if (npub) {
+                    const bw  = H.Awo('Bearing')
+                    const bdq = H.reqys(bw, 'De')
+                    await bdq.doai({ De: 'connect', target: npub })?.(async (Deco: TheC) => {
+                        await H.De_connect(Deco, bdq)
+                    })
+                }
+                H.demand_time_to_think(2000)   // floor for Pier concretion + handshake; Pier_init_completo extends +1500
+            },
         })
     },
 
@@ -452,11 +456,8 @@
         })
 
         if (side === 'Bearing') {
-            const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-            if (npub) await dq.doai({ De: 'connect', target: npub })?.(async (Deco: TheC) => {
-                H.trace('main', `${side} — De:connect target:${npub.slice(0,8)}`)
-                await H.De_connect(Deco, dq)
-            })
+            const Deco = w.o({ De: 'connect' })[0] as TheC | undefined
+            if (Deco) H.trace('main', `${side} — De:connect target:${(Deco.sc.target as string)?.slice(0, 8)}`)
         }
 
         H.trace('main', `${side} — dq.do() frontier:${dq_frontier()}`)
@@ -546,7 +547,7 @@
                     H.reqyscile(req, { Id, see: 'keygen done' })
                 })
             })
-            H.demand_time_to_think(3000)
+            H.demand_time_to_think(1555)
         })
 
         // req:register — wires Peerily/Peering particles so concretion can run.
@@ -580,14 +581,13 @@
             }
 
             const hasOpen = !!w.o({ Peering: 1 })[0]?.oa({ open: 1 })
-            const t_reg = H.trace('De', `${side} req:register — hasOpen:${hasOpen}`)
+            const t_reg = H.trace('De', `${side} req:register`)
             if (hasOpen) {
                 drq.finish(req)
                 t_reg('→ finished')
                 // drq.do() loops to req:listening (maz:2) once register finishes
             } else {
-                t_reg('→ demand:5s')
-                H.demand_time_to_think(5000)   // waiting for PeerServer open event
+                H.demand_time_to_think(3333)   // waiting for PeerServer open event
             }
         })
 
@@ -671,7 +671,7 @@
         const H = this as House
         const ex = await H.requesty_serial(w, 'expects')
 
-        if (eer && !(eer as any).Peer?.open) await ex.oai({ name: 'open' }, { demand: 5000 })
+        if (eer && !(eer as any).Peer?.open) await ex.oai({ name: 'open' }, { demand: 3333 })
         if (ier)              await ex.oai({ name: 'said_hello' },  { demand:  800 })
         if (ier)              await ex.oai({ name: 'heard_hello' }, { demand:  800 })
         if (ier?.heard_hello) await ex.oai({ name: 'said_trust' },  { demand: 1500 })

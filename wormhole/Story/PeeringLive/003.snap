@@ -1,68 +1,77 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:17
+      {"mung":["age"]}	self,round:33
       w:PeeringLive
-        keygen_running
-        keygen_done
-        {"mung":["age"]}	self,round:17
+        {"mung":["age"]}	self,round:33
         {"see":"PeeringLive  open:2/2"}
     A:Bearing
-      {"mung":["age"]}	self,round:17
-      w:Bearing
+      {"mung":["age"]}	self,round:36
+      w:Bearing,finished
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
+        De:listen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          req:register,finished
+          req:listening,maz:2,finished
+          log
+            msg:keygen started,at:1778975081602
+            msg:keygen done,at:1778975081702
+        more_visuals
+          Peering
+          Pier
+            {"ref":{"v":"[]"}}	stashed,k:trust
+            protocol
+              hello
+                said
+                heard
+              trust
+                said
+                heard
         Peerily
         Peering,name:bearing,prepub:7acf614d876d69a4
           {"ref":{"Id":"Idento()"}}	prepri:923f9316
           open
-        Desire,to:listen
-          state:open
-        Desire,to:connect,target:8cbc667bb0c8e748
-          state:connected
         requesty_expects_serial,i:10
           {"had_aim":1,"category":"reqy:expects"}
-        more_visuals
-          Peering
-          Pier
-            {"ref":{"v":"[]"}}	stashed,k:trust
+        De:connect,target:8cbc667bb0c8e748,finished
+          req:dial,finished
+          req:connected,finished
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-          protocol
-            hello
-              said
-              heard
-            trust
-              said
-              heard
-        {"mung":["age"]}	self,round:17
+        {"mung":["age"]}	self,round:36
     A:Nearing
-      {"mung":["age"]}	self,round:17
-      w:Nearing
+      {"mung":["age"]}	self,round:38
+      w:Nearing,finished
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
-        Peerily
-        Peering,name:nearing,prepub:8cbc667bb0c8e748
-          {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
-          open
-        Desire,to:listen
-          state:open
-        requesty_expects_serial,i:10
-          {"had_aim":1,"category":"reqy:expects"}
+        De:listen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          req:register,finished
+          req:listening,maz:2,finished
+          log
+            msg:keygen started,at:1778975081612
+            msg:keygen done,at:1778975082013
         more_visuals
           Peering
           Pier
             {"ref":{"v":"[]"}}	stashed,k:trust
+            protocol
+              hello
+                said
+                heard
+              trust
+                said
+                heard
+        Peerily
+        Peering,name:nearing,prepub:8cbc667bb0c8e748
+          {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
+          open
+        requesty_expects_serial,i:10
+          {"had_aim":1,"category":"reqy:expects"}
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-          protocol
-            hello
-              said
-              heard
-            trust
-              said
-              heard
-        {"mung":["age"]}	self,round:17
+        {"mung":["age"]}	self,round:38
     {"mung":["id"]}	mo:main,interval:3.6
