@@ -413,9 +413,17 @@ export class House extends StorableHousing {
 
     trace_log: TraceEvent[] | null = null   // null = noop
 
-    trace(kind: string, tag?: string) {
-        if (!this.trace_log) return
-        this.trace_log.push({ t: performance.now(), kind, tag })
+    // trace: push a TraceEvent and return a setter for late-binding the tag.
+    //   The returned fn mutates ev.tag in place — valid until trace_drain(),
+    //   since the log array holds object refs.  Caller discards the setter
+    //   when the whole tag is known up-front; use it when async work resolves:
+    //     const t = H.trace('De', `req:register — hasOpen:${x}`)
+    //     if (x) { drq.finish(req); t('→ finished') }
+    trace(kind: string, tag?: string): (extra: string) => void {
+        if (!this.trace_log) return () => {}
+        const ev: TraceEvent = { t: performance.now(), kind, tag }
+        this.trace_log.push(ev)
+        return (extra: string) => { ev.tag = ev.tag ? ev.tag + ' ' + extra : extra }
     }
     trace_drain(): TraceEvent[] {
         const log = this.trace_log ?? []
@@ -713,15 +721,10 @@ export class House extends StorableHousing {
         this.answer_calls_throttle()
     }
     async _really_answer_calls() {
-        // don't process until stashed + ghosts are both ready
         if (!this.started) return
         let H = this.top_House()
-        // if beliefs() is mid-flight, bail — the H.todo $effect will re-fire
-        // when todo next changes (eg when concretion pushes original_e back).
-        // fn-carrying e can always run immediately since they don't enter beliefs().
         if (H.c._mutex_beliefs) {
             V.organise && console.log(`answer_calls: H:${this.name} beliefs mutex locked (by H:${H.name}), yielding`)
-            // if todo didn't change, $effect won't re-fire — self-schedule retry
             setTimeout(() => this.answer_calls(), ANSWER_CALLS_TICK_MS)
             return
         }
@@ -736,24 +739,37 @@ export class House extends StorableHousing {
 
         this.c.began_run = now_in_seconds_with_ms()
         this.c.finished_run = null
-        this.trace('beliefs','begin')
+        // include the incoming elvis so the trace row says which handler it's going for.
+        //   e is undefined only for ambient/manual beliefs() calls (rare).
+        {
+            const aw = e?.sc.Aw as string | undefined
+            this.trace('beliefs', `begin  ${e?.sc.elvis ?? '—'}${aw ? '  ' + aw : ''}`)
+        }
         
         V.beliefs && console.log(`H:${this.name}  -> ${H.name}`)
-        await H.mutex('beliefs', async () => {
-            // come back ambiently
-            if (!this.c.no_interval) await this.reset_interval?.()
+        let beliefs_threw = false
+        try {
+            await H.mutex('beliefs', async () => {
+                // come back ambiently
+                if (!this.c.no_interval) await this.reset_interval?.()
 
-            if (e.sc.fn) {
-                // post_do block (fn-carrying e) — run directly, never enters beliefs()
-                // $effect re-fires for any remaining todo after fn resolves
-                await e.sc.fn(e)
-            } else {
-                // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
-                await this.beliefs(e)
-            }
-        })
-        this.trace('beliefs','done')
-        this.c.finished_run = now_in_seconds_with_ms()
+                if (e.sc.fn) {
+                    // post_do block (fn-carrying e) — run directly, never enters beliefs()
+                    // $effect re-fires for any remaining todo after fn resolves
+                    await e.sc.fn(e)
+                } else {
+                    // plain elvis — beliefs() acquires mutex; $effect handles remaining todo
+                    await this.beliefs(e)
+                }
+            })
+        } catch (err) {
+            beliefs_threw = true
+            console.error(`_really_answer_calls: uncaught error in beliefs:`, err)
+            this.trace('beliefs', `Exception ❌ ${err}`)
+        } finally {
+            if (!beliefs_threw) this.trace('beliefs', 'done')
+            this.c.finished_run = now_in_seconds_with_ms()
+        }
     }
     
     // waits for the next moment outside Atime (aka UItime)
@@ -874,6 +890,11 @@ export class House extends StorableHousing {
         let targetedATN = e ? ATN.filter(T => this._e_targets_T(e, T) > 0) : ATN
         ATN = targetedATN.length ? targetedATN : ATN
         V.organise && console.log(`attend() e%${e ? keyser(e.sc) : 'none'} ATN:${ATN.length} targeted:${targetedATN.length}`)
+        // < attend trace only on non-think to avoid noise
+        if (e?.sc.elvis && e.sc.elvis !== 'think') {
+            const aNames = ATN.map(T => (T.sc.n as TheC)?.sc.A ?? '?').join(',')
+            this.trace('attend', `e:${e.sc.elvis} AT:[${aNames}] targeted:${targetedATN.length}/${ATN.length}`)
+        }
 
         // parallel arrays: Travel-level for internal use, n-level for officing
         let AwN: { AT: Travel; wT: Travel; A: TheC; w: TheC }[] = []
@@ -891,6 +912,7 @@ export class House extends StorableHousing {
             if (!wTN.length) {
                 // procure_ways: give A a default w named after A, re-drive next cycle
                 // < having this complicated feature: in-cycle procure via T.sc.more injection
+                this.trace('attend', `procure_ways: A:${A.sc.A} had no wT — seeding default w`)
                 A.oai({ w: A.sc.A })
                 this.main()
                 continue
@@ -898,6 +920,11 @@ export class House extends StorableHousing {
 
             let targetedwTN = e ? wTN.filter(T => this._e_targets_T(e, T) > 0) : wTN
             wTN = targetedwTN.length ? targetedwTN : wTN
+
+            if (e?.sc.elvis && e.sc.elvis !== 'think') {
+                const wNames = wTN.map(T => (T.sc.n as TheC)?.sc.w ?? '?').join(',')
+                this.trace('attend', `A:${A.sc.A} wT:[${wNames}] targeted:${targetedwTN.length}/${wTN.length}`)
+            }
 
             for (let wT of wTN) {
                 // < make this object Work, perhaps in .i() because sc?
@@ -963,7 +990,12 @@ export class House extends StorableHousing {
             w.c.e = e
             
             await this.w_forgets_problems(w)
-            this.trace('think', `${A.sc.A}/${w.sc.w}→${method}`)
+            // show incoming elvis when it differs from method (e.g. e:reqysciliation → e_reqysciliation)
+            const e_kind = e?.sc.elvis as string | undefined
+            const method_label = (e_kind && e_kind !== 'think' && 'e_'+e_kind !== method)
+                ? `${A.sc.A}/${w.sc.w}→${method}  [e:${e_kind}]`
+                : `${A.sc.A}/${w.sc.w}→${method}`
+            this.trace('think', method_label)
 
             try {
                 V.beliefs && console.log(`💭 A:${A.sc.A} / w:${w.sc.w}, method:${method}${w_inst ? '' : ' (H.*)'}  e%${e ? keyser(e.sc) : 'none'}`)
@@ -1052,7 +1084,13 @@ export class House extends StorableHousing {
         V.organise && console.log(`  apply_scheme: needs concretion ${ctag} (class:${class_key})`)
 
         const began = { began_wanting: 'concretion', concretion: ctag }
-        if (D.oa(began)) return
+        if (D.oa(began)) {
+            // concretion in flight — park e under D/pending_elvises so post_do can drain it.
+            //   D.c.* is ephemeral (D is recreated each beliefs pass); child particles persist
+            //   across passes just as D/began does — that's where the state has to live.
+            if (e) D.oai({ pending_elvises: 1 }).i(e)
+            return
+        }
         D.i(began)
 
         const original_e = e
@@ -1067,7 +1105,10 @@ export class House extends StorableHousing {
             //   Declared on the %lematch particle alongside args_fn.
             if (level.post_fn) level.post_fn(inst, n, this)
             if (original_e) this._push_todo(original_e)
+            const pe = D.o({ pending_elvises: 1 })[0] as TheC | undefined
+            if (pe) for (const we of pe.o({}) as TheC[]) this._push_todo(we)
         }, {
+            concretion: 1,
             see: `concretion ${ctag}:${n.sc.name ?? (col ? D.sc[col] : '')}`,
             for_n: n,
         })

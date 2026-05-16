@@ -463,10 +463,10 @@
         let begin_t: number | null = null
         for (const ev of trace ?? []) {
             if (ev.kind !== 'beliefs') continue
-            if (ev.tag === 'begin') {
+            if (ev.tag?.startsWith('begin')) {
                 if (begin_t !== null) throw `sum_beliefs_time: nested begin without done`
                 begin_t = ev.t
-            } else if (ev.tag === 'done') {
+            } else if (ev.tag === 'done' || ev.tag?.startsWith('Exception')) {
                 if (begin_t === null) throw `sum_beliefs_time: done without begin`
                 total_ms += ev.t - begin_t
                 begin_t = null
