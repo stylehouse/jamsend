@@ -14,10 +14,7 @@ story:PeeringLive
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.499
-      sample:0.654,at:1778975152
-      sample:0.341,at:1778975403
-      sample:0.348,at:1778975546
+    TimeTotal:beliefs,avg:0.551
       sample:0.311,at:1778977879
       sample:0.313,at:1778977905
       sample:0.576,at:1779002655
@@ -25,9 +22,12 @@ story:PeeringLive
       sample:0.584,at:1779003199
       sample:0.665,at:1779009897
       sample:0.625,at:1779013005
-  step,dige:139809edc55319cf
-  step:2,dige:7146320856719571
-  step:3,dige:5e3abac8cf5e4ca9
-  step:4,dige:fbf5a8f042b9d097
-  step:5,dige:1b1d466d84be833a
-  step:6,dige:5acb4fa9061ff917
+      sample:0.636,at:1779013121
+      sample:0.636,at:1779013124
+      sample:0.592,at:1779013137
+  step,dige:6d55d5ea39d2cc96
+  step:2,dige:135494a20852ee5f
+  step:3,dige:52137d02d5f434d9
+  step:4,dige:c9344b7dae48e7db
+  step:5,dige:7b9b3d89262258a2
+  step:6,dige:5e3abac8cf5e4ca9
