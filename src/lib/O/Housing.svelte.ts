@@ -7,8 +7,8 @@ import { tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
-V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
-V.beliefs = 0
+V.organise =  1  // set >0 to enable answer_calls/beliefs/organise logs
+V.beliefs = 1
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
@@ -76,6 +76,7 @@ abstract class Housing extends TheC {
     // event stream — host $effect watches this
     // items are raw elvis TheC particles (not %elvis:do wrappers)
     todo: TheC[] = $state([])
+    todo_version: number = $state(1)
 
     // Housing may involve startup methods and stuff
     started = $state(false)
@@ -398,7 +399,7 @@ export class House extends StorableHousing {
         super.start()
         // $effect.root from Housing
         $effect(() => {
-            if (this.todo.length) this.answer_calls()
+            if (this.todo_version) this.answer_calls()
         })
         $effect(() => {
             if (!this.started && this._all_checks_pass()) this.started = true
@@ -573,24 +574,6 @@ export class House extends StorableHousing {
         return [e]
     }
 
-    // -------------------------------------------------------------------------
-    // _push_todo: push an elvis particle onto this Housing's own root House.
-    // When called via i_elvisto(), `this` is already the correct target House.
-    // When called from Agency/Work internals (post_do, main, concretion),
-    // `this` is a House too — so the .up walk is just a safety net.
-    // -------------------------------------------------------------------------
-    _push_todo(e: TheC) {
-        let h: Housing = this
-        while (h.up && !(h instanceof House)) h = h.up
-        const H = h as House
-        V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
-        const tag = e.sc.fn
-            ? `fn:${e.sc.see ?? '?'}`
-            : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
-        H.trace('todo', tag)
-        H.todo.push(e)
-    }
-
     // a higher level, client call returns true when req%reply
 
     i_elvis_req(source:TheC|Housing, target: string | TheC | Housing, type: string, extra: Partial<TheUniversal> = {}) {
@@ -621,12 +604,29 @@ export class House extends StorableHousing {
 //#region i todo
 
     // -------------------------------------------------------------------------
+    // _push_todo: push an elvis particle onto this Housing's own root House.
+    // When called via i_elvisto(), `this` is already the correct target House.
+    // When called from Agency/Work internals (post_do, main, concretion),
+    // `this` is a House too — so the .up walk is just a safety net.
+    // -------------------------------------------------------------------------
+    _push_todo(e: TheC, high_priority=false) {
+        const H = this
+        V.organise && console.log(`_push_todo e%${keyser(e.sc)} onto H:${H.name} (todo was ${H.todo.length})`)
+        const tag = e.sc.fn
+            ? `fn:${e.sc.see ?? '?'}`
+            : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
+        H.trace('todo', tag)
+        high_priority ? H.todo.unshift(e) : H.todo.push(e)
+        H.todo_version++
+    }
+
+    // -------------------------------------------------------------------------
     // post_do: push a fn-carrying elvis onto H.todo.
-    // Does NOT call beliefs() — answer_calls() runs the fn when it drains.
+    // Does NOT call beliefs()
     // -------------------------------------------------------------------------
     post_do(fn: () => Promise<void>, extra: Partial<TheUniversal> = {}) {
         const e = new TheC({ c: {}, sc: { fn, ...extra } })
-        this._push_todo(e)
+        this._push_todo(e,extra.concretion)
     }
 
     // -------------------------------------------------------------------------
@@ -717,7 +717,14 @@ export class House extends StorableHousing {
     answer_calls() {
         this.answer_calls_throttle ||= throttle(() => {
             this._really_answer_calls()
-        }, ANSWER_CALLS_TICK_MS)
+        }, ANSWER_CALLS_TICK_MS, {
+            // have to go through that $effect()
+            later_fn: () => {
+                setTimeout(() => {
+                    this.todo_version++ 
+                }, 2)
+            },
+        })
         this.answer_calls_throttle()
     }
     async _really_answer_calls() {
@@ -728,9 +735,9 @@ export class House extends StorableHousing {
             setTimeout(() => this.answer_calls(), ANSWER_CALLS_TICK_MS)
             return
         }
-
         let e = this.todo.shift()
         if (!e) return
+        this.todo_version++
         V.organise && console.log(`answer_calls: e%${keyser(e.sc)}\t\ttodo:${this.todo.length}`)
 
         if (this.c.began_run && !this.c.finished_run) {
@@ -739,12 +746,7 @@ export class House extends StorableHousing {
 
         this.c.began_run = now_in_seconds_with_ms()
         this.c.finished_run = null
-        // include the incoming elvis so the trace row says which handler it's going for.
-        //   e is undefined only for ambient/manual beliefs() calls (rare).
-        {
-            const aw = e?.sc.Aw as string | undefined
-            this.trace('beliefs', `begin  ${e?.sc.elvis ?? '—'}${aw ? '  ' + aw : ''}`)
-        }
+        this.trace('beliefs', `begin ${e.sc.elvis??(e.sc.fn&&'fn()')??'—'} ${e.sc.Aw??''}`)
         
         V.beliefs && console.log(`H:${this.name}  -> ${H.name}`)
         let beliefs_threw = false
@@ -953,7 +955,6 @@ export class House extends StorableHousing {
         let method: string
         if (targeting === 2) {
             const elvis_type = e!.sc.elvis as string
-            // if (elvis_type == 'receive_harvest') debugger
             let handled_by_w_method = 
                 elvis_type == 'think' // asking for the main method
                     // e type is one it opens inside the main method
@@ -1126,7 +1127,6 @@ export class House extends StorableHousing {
         const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
         const cur_n     = T.sc.n as TheC | undefined
         let pan = parent_T?.sc?.n
-        // if (pan?.sc.w == 'Peeringinst') debugger
         if (cur_n && parent_lv) {
             if (parent_lv.next_lematches?.length) {
                 const lv = this.find_lematch(cur_n, parent_lv.next_lematches)

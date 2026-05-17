@@ -194,6 +194,41 @@ export function throttle(func, interval_ms = 200, q:{notnow?:Boolean}={}) {
 }
 
 
+// < this doesn't seem to work? could be nice.
+// slow down calls to a function
+export function BROKEN_throttle(func, interval_ms = 200, q:{notnow?:Boolean,later_fn?:Function}={}) {
+    let isWaiting = false;
+    let nextArgs:null|Array<any> = null;
+    let wasLater = false
+    function handle(...args) {
+        if (isWaiting) {
+            nextArgs = args;
+            return;
+        }
+        isWaiting = true;
+
+        if (q.later_fn && wasLater) q.later_fn(...args) // different call if later
+        else if (!q.notnow || wasLater) func(...args)
+        else if (q.notnow) nextArgs = args
+        wasLater = false
+
+
+        setTimeout(() => {
+            isWaiting = false;
+            
+            // If there's a queued call, execute it
+            if (nextArgs !== null) {
+                wasLater = true
+                handle(...nextArgs);
+                nextArgs = null
+            }
+            else {
+            }
+        }, interval_ms);
+    };
+    return handle
+}
+
 // add an enclosing context onto an error
 //  used by catch(err) {...} everywhere
 // you should throw them as it doesn't collect them.

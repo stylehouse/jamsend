@@ -542,7 +542,6 @@
         }
 
         H._PeeringLive_drive_heartbeat(w, side)
-        H._PeeringLive_dump(w)
     },
 
 
@@ -601,7 +600,6 @@
         if (opts.Id) {
             // req:at — pre-supplied identity, skip async keygen
             drq.doai({ req: 'at' })?.(async (req: TheC) => {
-                if (!H.reqonce(req, 'ran')) return
                 req.sc.Id = opts.Id
                 drq.finish(req)
             })
@@ -611,18 +609,22 @@
             //   .then() re-enters via reqyscile in its own Atime.
             drq.doai({ req: 'keygen' })?.(async (req: TheC) => {
                 H.trace('De', `${side} req:keygen`)
-                if (!H.reqonce(req, 'running')) return
-                De.oai({ log: 1 }).i({ msg: 'keygen started' })
-                H.post_do(() => {
-                    const Id = new Idento()
-                    Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
-                        De.oai({ log: 1 }).i({ msg: 'keygen done' })
-                        H.trace('De', `${side} keygen done`)
-                        drq.finish(req)
-                        H.reqyscile(req, { Id, see: 'keygen done' })
+                if (H.reqonce(req, 'running')) {
+                    De.oai({ log: 1 }).i({ msg: 'keygen started' })
+                    H.post_do(() => {
+                        // < concretion this one day
+                        //    same day we make H/A/w/r real and **-ey everywhere.
+                        //    a vert of meaning. doai() could set do_fn more often.
+                        const Id = new Idento()
+                        Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
+                            De.oai({ log: 1 }).i({ msg: 'keygen done' })
+                            H.trace('De', `${side} keygen done`)
+                            drq.finish(req)
+                            H.reqyscile(req, { Id, see: 'keygen done' })
+                        })
                     })
-                })
-                H.demand_time_to_think(1555)
+                    H.demand_time_to_think(1555)
+                }
             })
         }
 
@@ -672,7 +674,6 @@
             H.trace('De', `${side} req:listening → want_savepoint`)
             drq.finish(req)
             drq.check_all_finished()   // stamps %De:listen,finished
-            dq.check_all_finished()    // cascades finished stamp up to w level
             H.want_savepoint()
         })
 
@@ -987,68 +988,6 @@
     async _PeeringLive_dige(buffer: ArrayBuffer | undefined): Promise<string> {
         if (!buffer) return ''
         return enhex(new Uint8Array(await crypto.subtle.digest('SHA-256', buffer)))
-    },
-
-//#endregion
-//#region Dump
-
-    // Re-poured each cycle into w/%more_visuals/…
-    //   Protocol state lives here (more_visuals/Pier/protocol) rather than
-    //   on the primary Pier particle — rebuilt from ier truth each tick.
-    //   A clean run shows no /expects:1 block at all.
-    _PeeringLive_dump(w: TheC) {
-        const H  = this as House
-        const mv = w.oai({ more_visuals: 1 }) as TheC
-        mv.empty()
-
-        const Peering = w.o({ Peering: 1 })[0] as TheC | undefined
-        if (Peering) {
-            const eer  = Peering.c.inst as Peering | undefined
-            const mv_p = mv.oai({ Peering: 1 }) as TheC
-            // prepub and prepri live on the {Id:…} particle on Peering itself —
-            //   no private key material here
-            for (const [k, v] of Object.entries(eer?.stashed ?? {})) {
-                mv_p.oai({ stashed: 1, k }).sc.v = v
-            }
-        }
-
-        const Pier = w.o({ Pier: 1 })[0] as TheC | undefined
-        const ier  = Pier?.c.inst as Pier | undefined
-        if (ier) {
-            const mv_pi = mv.oai({ Pier: 1 }) as TheC
-            for (const [k, v] of Object.entries(ier.stashed ?? {})) {
-                mv_pi.oai({ stashed: 1, k }).sc.v = v
-            }
-            // protocol state — rebuilt from ier truth each tick.
-            //   said/heard present only when true; their absence is meaningful.
-            const proto = mv_pi.oai({ protocol: 1 }) as TheC
-            proto.empty()
-            const hello = proto.oai({ hello: 1 }) as TheC
-            if (ier.said_hello)  hello.i({ said:  1 })
-            if (ier.heard_hello) hello.i({ heard: 1 })
-            const trust = proto.oai({ trust: 1 }) as TheC
-            if (ier.said_trust)  trust.i({ said:  1 })
-            if (ier.heard_trust) trust.i({ heard: 1 })
-        }
-
-        // pending De sub-work — flattened from unfinished De particles.
-        //   Absent in a clean run; a diagnostic view while things are in progress.
-        const pending_work: { De: string; req: string; demand?: number }[] = []
-        for (const De_n of w.o({ De: 1 }) as TheC[]) {
-            if (De_n.sc.finished) continue
-            const drq = H.reqys(De_n, 'req')
-            for (const req of drq.pending()) {
-                pending_work.push({
-                    De: De_n.sc.De as string,
-                    req: req.sc.req as string,
-                    demand: req.sc.demand as number | undefined,
-                })
-            }
-        }
-        if (pending_work.length) {
-            const mv_e = mv.oai({ expects: 1 }) as TheC
-            for (const p of pending_work) mv_e.i(p)
-        }
     },
 
 //#endregion

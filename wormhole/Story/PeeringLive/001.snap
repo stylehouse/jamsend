@@ -1,14 +1,14 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:23
+      {"mung":["age"]}	self,round:10
       w:PeeringLive
-        {"mung":["age"]}	self,round:23
-        {"see":"PeeringLive  open:2/2"}
-        timeSatisfied
+        {"mung":["age"]}	self,round:10
+        {"see":"PeeringLive  open:1/2"}
+        timeDoubt
     A:Bearing
-      {"mung":["age"]}	self,round:25
-      w:Bearing,finished
+      {"mung":["age"]}	self,round:12
+      w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
@@ -20,32 +20,27 @@ Snap:H
           log
             msg:keygen started
             msg:keygen done
-        more_visuals
-          Peering
         Peerily
         Peering,name:bearing,prepub:7acf614d876d69a4
           {"ref":{"Id":"Idento()"}}	prepri:923f9316
           open
-        {"mung":["age"]}	self,round:25
+        {"mung":["age"]}	self,round:12
     A:Nearing
-      {"mung":["age"]}	self,round:28
-      w:Nearing,finished
+      {"mung":["age"]}	self,round:12
+      w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
-        De:listen,finished
+        De:listen
           {"ref":{"Id":"Idento()"}}	req:keygen,finished
-          req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:register,maz:2
+          req:listening,maz:3
           log
             msg:keygen started
             msg:keygen done
-        more_visuals
-          Peering
         Peerily
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
-          open
-        {"mung":["age"]}	self,round:28
+        {"mung":["age"]}	self,round:12
     {"mung":["id"]}	mo:main,interval:3.6
