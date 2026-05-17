@@ -68,7 +68,7 @@
     De:listen,finished
       req:keygen,finished
       req:register,finished
-      req:listening,finished
+      req:listening,maz:2,finished
     De:connect,target:8cbc667b…,finished
       req:dial,finished
       req:connected,finished
@@ -77,6 +77,10 @@
       open
       prepri:923f9316
     Pier,pub:8cbc667b…
+    expects:said_hello,demand:800,finished
+    expects:heard_hello,demand:800,finished
+    expects:said_trust,demand:1500,finished
+    expects:heard_trust,demand:1500,finished
     more_visuals
       Peering
       Pier
@@ -165,8 +169,10 @@
 //     %hook:corrupt,hello                          armed by corrupt_hello Prep step
 //     %test:binary,seq:S,…                         step 5+ markers
 //     %test:disconnect,seq:S,…                     step 6+ markers
-//     %requesty_expects_serial,i:N
-//     %requesty_expects,name:…,demand:N[,finished]
+//     %expects:said_hello,demand:800[,finished]      reqys(w,'expects')
+//     %expects:heard_hello,demand:800[,finished]
+//     %expects:said_trust,demand:1500[,finished]
+//     %expects:heard_trust,demand:1500[,finished]
 //     %more_visuals                                ── rebuilt each cycle ──
 //       /Peering/stashed
 //       /Pier/stashed
@@ -537,11 +543,11 @@
         await drq.doai({ req: 'keygen' })?.(async (req: TheC) => {
             H.trace('De', `${side} req:keygen — hasId:${!!req.sc.Id} running:${!!req.sc.running}`)
             if (!H.reqonce(req, 'running')) return
-            De.oai({ log: 1 }).i({ msg: 'keygen started', at: Date.now() })
+            De.oai({ log: 1 }).i({ msg: 'keygen started' })
             H.post_do(() => {
                 const Id = new Idento()
                 Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
-                    De.oai({ log: 1 }).i({ msg: 'keygen done', at: Date.now() })
+                    De.oai({ log: 1 }).i({ msg: 'keygen done' })
                     H.trace('De', `${w.sc.w} keygen done`)
                     drq.finish(req)
                     H.reqyscile(req, { Id, see: 'keygen done' })
@@ -587,6 +593,7 @@
                 t_reg('→ finished')
                 // drq.do() loops to req:listening (maz:2) once register finishes
             } else {
+                t_reg('→ waiting')
                 H.demand_time_to_think(3333)   // waiting for PeerServer open event
             }
         })
@@ -669,26 +676,27 @@
     //   per-req recheck timer and shared heartbeat surface those transitions.
     async _PeeringLive_drive_expects(w: TheC, side: string, eer?: Peering, ier?: Pier) {
         const H = this as House
-        const ex = await H.requesty_serial(w, 'expects')
+        const exq = H.reqys(w, 'expects')
 
-        if (eer && !(eer as any).Peer?.open) await ex.oai({ name: 'open' }, { demand: 3333 })
-        if (ier)              await ex.oai({ name: 'said_hello' },  { demand:  800 })
-        if (ier)              await ex.oai({ name: 'heard_hello' }, { demand:  800 })
-        if (ier?.heard_hello) await ex.oai({ name: 'said_trust' },  { demand: 1500 })
-        if (ier?.heard_hello) await ex.oai({ name: 'heard_trust' }, { demand: 1500 })
+        // seed expects for current state — reqys.oai is idempotent and sync
+        if (eer && !(eer as any).Peer?.open) exq.oai({ expects: 'open'        }, { demand: 3333 })
+        if (ier)                             exq.oai({ expects: 'said_hello'  }, { demand:  800 })
+        if (ier)                             exq.oai({ expects: 'heard_hello' }, { demand:  800 })
+        if (ier?.heard_hello)                exq.oai({ expects: 'said_trust'  }, { demand: 1500 })
+        if (ier?.heard_hello)                exq.oai({ expects: 'heard_trust' }, { demand: 1500 })
 
         for (const t of w.o({ test: 'binary' }) as TheC[]) {
             const seq = t.sc.seq as number
-            if (t.sc.sent)      await ex.oai({ name: 'said_test_binary',  seq }, { demand:  500 })
-            if (t.sc.expecting) await ex.oai({ name: 'heard_test_binary', seq }, { demand: 1500 })
+            if (t.sc.sent)      exq.oai({ expects: 'said_test_binary',  seq }, { demand:  500 })
+            if (t.sc.expecting) exq.oai({ expects: 'heard_test_binary', seq }, { demand: 1500 })
         }
 
         for (const t of w.o({ test: 'disconnect' }) as TheC[]) {
             const seq = t.sc.seq as number
-                                  await ex.oai({ name: 're_disc',  seq }, { demand: 1000 })
-            if (t.sc.phase_disc)  await ex.oai({ name: 're_open',  seq }, { demand: 4000 })
-            if (t.sc.phase_open)  await ex.oai({ name: 're_hello', seq }, { demand: 1500 })
-            if (t.sc.phase_hello) await ex.oai({ name: 're_trust', seq }, { demand: 2000 })
+                                  exq.oai({ expects: 're_disc',  seq }, { demand: 1000 })
+            if (t.sc.phase_disc)  exq.oai({ expects: 're_open',  seq }, { demand: 4000 })
+            if (t.sc.phase_open)  exq.oai({ expects: 're_hello', seq }, { demand: 1500 })
+            if (t.sc.phase_hello) exq.oai({ expects: 're_trust', seq }, { demand: 2000 })
         }
 
         // once the other side has seeded and finished everything, stop demanding —
@@ -696,10 +704,9 @@
         const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
         const other_settled = H._PeeringLive_settled(H.Awo(other))
 
-        await ex.do(async (req: TheC) => {
-            if (req.sc.finished) return
+        await exq.do(async (req: TheC) => {
             const ok = H._PeeringLive_predicate(req, w, eer, ier)
-            if (ok) { req.sc.finished = true; H.feebly_ponder(); return }
+            if (ok) { exq.finish(req); return }
             if (other_settled) return
             H.demand_time_to_think(req.sc.demand as number)
             // one pending recheck per req so we don't accumulate timers across ticks
@@ -715,7 +722,7 @@
         // shared heartbeat while any expects are live on this side —
         //   supplements per-req timers. keyed on H.c so Bearing and Nearing share one.
         //   on_step_ending always clears it; feebly_ponder no-ops outside Runtime.
-        const any_pending = (w.o({ requesty_expects: 1 }) as TheC[]).some(r => !r.sc.finished)
+        const any_pending = exq.pending().length > 0
         if (any_pending && !H.c._pl_heartbeat) {
             H.c._pl_heartbeat = setInterval(() => {
                 H.trace('pl_heartbeat')
@@ -730,29 +737,29 @@
         }
     },
 
-    // has the other side seeded its expects and finished all of them?
-    //   absence of %requesty_expects_serial means it hasn't started yet —
-    //   without that guard an empty o() would false-positive as settled.
+    // has this side seeded its expects and finished all of them?
+    //   exq.all_done() requires length > 0, so a side with no ier (no Pier yet)
+    //   returns false rather than false-positive as settled.
     _PeeringLive_settled(side_w: TheC): boolean {
-        if (!side_w.oa({ requesty_expects_serial: 1 })) return false
-        return !(side_w.o({ requesty_expects: 1 }) as TheC[]).some(r => !r.sc.finished)
+        const H = this as House
+        return H.reqys(side_w, 'expects').all_done()
     },
 
-    // single truth for what each %requesty_expects,name:… asks of the world
+    // single truth for what each %expects:… asks of the world
     _PeeringLive_predicate(req: TheC, w: TheC, eer?: Peering, ier?: Pier): boolean {
         const seq = req.sc.seq as number | undefined
-        switch (req.sc.name) {
-            case 'open':             return !!(eer as any)?.Peer?.open
-            case 'said_hello':       return !!ier?.said_hello
-            case 'heard_hello':      return !!ier?.heard_hello
-            case 'said_trust':       return !!ier?.said_trust
-            case 'heard_trust':      return !!ier?.heard_trust
-            case 'said_test_binary': return !!(w.o({ test: 'binary', seq, sent:     1 }) as TheC[])[0]
-            case 'heard_test_binary':return !!(w.o({ test: 'binary', seq, received: 1 }) as TheC[])[0]
-            case 're_disc':          return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_disc
-            case 're_open':          return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_open
-            case 're_hello':         return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_hello
-            case 're_trust':         return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_trust
+        switch (req.sc.expects) {
+            case 'open':              return !!(eer as any)?.Peer?.open
+            case 'said_hello':        return !!ier?.said_hello
+            case 'heard_hello':       return !!ier?.heard_hello
+            case 'said_trust':        return !!ier?.said_trust
+            case 'heard_trust':       return !!ier?.heard_trust
+            case 'said_test_binary':  return !!(w.o({ test: 'binary', seq, sent:     1 }) as TheC[])[0]
+            case 'heard_test_binary': return !!(w.o({ test: 'binary', seq, received: 1 }) as TheC[])[0]
+            case 're_disc':           return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_disc
+            case 're_open':           return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_open
+            case 're_hello':          return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_hello
+            case 're_trust':          return !!(w.o({ test: 'disconnect', seq }) as TheC[])[0]?.sc.phase_trust
         }
         return false
     },
@@ -864,6 +871,7 @@
     //   on the primary Pier particle — rebuilt from ier truth each tick.
     //   A clean run shows no /expects:1 block at all.
     _PeeringLive_dump(w: TheC) {
+        const H = this as House
         const mv = w.oai({ more_visuals: 1 }) as TheC
         mv.empty()
 
@@ -901,11 +909,12 @@
             mv.i({ ...t.sc })
         }
 
-        const unfinished = (w.o({ requesty_expects: 1 }) as TheC[]).filter(r => !r.sc.finished)
-        if (unfinished.length) {
+        const exq = H.reqys(w, 'expects')
+        const pending = exq.pending()
+        if (pending.length) {
             const mv_e = mv.oai({ expects: 1 }) as TheC
-            for (const r of unfinished) {
-                mv_e.i({ expect: r.sc.name, seq: r.sc.seq, demand: r.sc.demand })
+            for (const r of pending) {
+                mv_e.i({ expect: r.sc.expects, seq: r.sc.seq, demand: r.sc.demand })
             }
         }
     },
