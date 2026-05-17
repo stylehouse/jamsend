@@ -253,23 +253,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         // Re-encode from in-memory waft (authoritative after any CRUD).
-        const SESSION_KEYS = new Set(['not_found', 'new', 'active'])
-        const scalar = (sc: Record<string, any>) => Object.fromEntries(
-            Object.entries(sc).filter(([k, v]) =>
-                !SESSION_KEYS.has(k) &&
-                (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
-            )
-        )
-        const items = waft.o({ Doc: 1 }).map(raw => {
-            const doc     = raw as TheC
-            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
-            const children = pointsC ? [{
-                sc: { Points: 1 },
-                children: pointsC.o({ Point: 1 }).map(pt => ({ sc: scalar((pt as TheC).sc) }))
-            }] : []
-            return { sc: scalar(doc.sc), children }
-        })
-        const { snap, errors } = await H.encode_wh_lines({ Waft: new_path }, items)
+        // Temporarily set sc.Waft to the new path so encode_waft uses it as the root line.
+        const prev_waft_key = waft.sc.Waft
+        waft.sc.Waft = new_path
+        const { snap, errors, muted_log: _ml } = await H.encode_waft(waft)
+        waft.sc.Waft = prev_waft_key
         if (errors.length) {
             console.error(`Waft rename encode errors:`, errors)
             w.drop(job)
@@ -428,15 +416,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     console.log(`🗂 Waft:${path} not found — starting empty`)
                     return _C({ Waft: path })
                 }
-                const { C, errors } = H.decode_wh_lines(req.sc.reply?.content ?? '')
+                const { waft_C: C, errors } = H.decode_waft(req.sc.reply?.content ?? '', path)
                 if (errors.length || !C) {
                     console.error(`Waft:${path} decode errors:`, errors)
                     const empty = _C({ Waft: path })
                     for (const msg of errors) empty.i({ mung_error: 1, msg })
                     return empty
                 }
-                // Ensure the root sc has the canonical Waft key.
-                C.sc.Waft = path
                 return C
             })()
 
@@ -799,29 +785,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!w.c[throttle_key]) {
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
-                    // Filter to scalar values only, and exclude session-only flags that
-                    // must not be persisted: not_found and new are set/cleared by Lies
-                    // at load time; active is waft-level and already excluded at the
-                    // root (encode root is {Waft:path} only), but guard here too.
-                    const SESSION_KEYS = new Set(['not_found', 'new', 'active'])
-                    const scalar = (sc: Record<string, any>) => Object.fromEntries(
-                        Object.entries(sc).filter(([k, v]) =>
-                            !SESSION_KEYS.has(k) &&
-                            (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
-                        )
-                    )
-                    // Build items: one per Doc, with Points children if present.
-                    const items = waft.o({ Doc: 1 }).map(raw => {
-                        const doc     = raw as TheC
-                        const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
-                        const children = pointsC ? [{
-                            sc: { Points: 1 },
-                            children: pointsC.o({ Point: 1 }).map(pt => ({ sc: scalar((pt as TheC).sc) }))
-                        }] : []
-                        return { sc: scalar(doc.sc), children }
-                    })
-
-                    const { snap, errors } = await H.encode_wh_lines({ Waft: path }, items)
+                    const { snap, errors, muted_log } = await H.encode_waft(waft)
+                    if (muted_log.length) {
+                        // < surface muted_log in the UI once a per-mainkey review panel exists
+                        console.debug(`💾 Waft:${path} muted ${muted_log.length} session key(s)`, muted_log)
+                    }
                     if (errors.length) {
                         console.error(`Waft:${path} encode errors (save aborted):`, errors)
                         return
@@ -830,7 +798,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     const rw  = await H.requesty_serial(w, 'rw_queue')
                     const req = await rw.i({ rw_name: snap_path, rw_op: 'write', rw_data: snap })
                     H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-                    console.log(`💾 Waft:${path} saved (${items.length} docs)`)
+                    console.log(`💾 Waft:${path} saved`)
                 }, { see: `waft_save_${path}` })
             }, 800)
         }
