@@ -111,6 +111,201 @@
     onMount(async () => {
     await M.eatfunc({
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+//#region waft codec
+//
+// Waft-tree encode / decode, sitting on top of enLine / encode_wh_lines / decode_wh_lines.
+//
+// ── schema ───────────────────────────────────────────────────────────────────
+//
+//   WAFT_TREE_KEYS: the only mainkeys this encoder knows about.
+//     What — section / time-slice / subsection; unlimited nesting.
+//     Doc  — document entry; may contain What and Point children.
+//     Point — leaf; children are never traversed.
+//
+//   SESSION_KEYS: sc fields stripped silently before encoding.
+//     These are expected absences — worth reviewing if new ones emerge.
+//     active      — session-only waft / what flag; never stored
+//     created_at  — Point timestamp used for carry-over heuristic
+//     new         — Lies sets this on a Doc before first disk load
+//     not_found   — Lies sets this when the wormhole says the file is absent
+//
+//   Object/function values in sc (refs): enLine already handles these by
+//   moving them into objecties.ref; encode_wh_lines then surfaces them as
+//   errors.  Refs in .sc are bugs — they belong in .c.  The error path is
+//   the right treatment: loud, fatal, refuse to save.
+//
+// ── muted_log ────────────────────────────────────────────────────────────────
+//
+//   encode_waft returns muted_log alongside snap and errors.
+//   Each entry: { path: string[], reason: string, keys: string[] }
+//     path   — mainkey breadcrumb to the particle, e.g. ['Waft', 'Doc', 'What']
+//     reason — 'session' | future: 'unknown_mainkey'
+//     keys   — the sc field names that were stripped
+//
+//   muted_log is informational — it does not block saving.  It is the data
+//   that a future per-mainkey muting-review UI will consume.  Every instance
+//   of silent data loss passes through here so there is a place to bolt the
+//   UI in later, without having to hunt for call sites.
+//
+// ── backward compat ──────────────────────────────────────────────────────────
+//
+//   Old snap format had Doc → Points:1 → Point:1.
+//   decode_waft detects Points:1 particles (mainkey 'Points') after parsing
+//   and hoists their Point children directly onto the parent Doc, then drops
+//   the container.  The rest of the system never sees the old layout.
+
+// ── encode_waft ───────────────────────────────────────────────────────────────
+//
+//   Walk a live waft TheC tree and produce snap-line text.
+//   Returns { snap, errors, muted_log }.
+//
+//   errors are FATAL — any ref-in-sc or dupe particle.
+//   Caller should refuse to save when errors.length > 0.
+//
+//   The root line is always Waft:<path> only — no other waft.sc fields
+//   are encoded (the waft particle itself is session state).
+
+async encode_waft(waft: TheC): Promise<{
+    snap:      string
+    errors:    string[]
+    muted_log: Array<{ path: string[], reason: string, keys: string[] }>
+}> {
+    const WAFT_TREE_KEYS = new Set(['What', 'Doc', 'Point'])
+    const SESSION_KEYS   = new Set(['active', 'created_at', 'new', 'not_found'])
+
+    // First sc key = type identity of a particle.
+    const mainkey = (C: TheC): string | undefined =>
+        Object.keys(C.sc ?? {})[0]
+
+    const muted_log: Array<{ path: string[], reason: string, keys: string[] }> = []
+
+    // Build a filtered {sc, children} item for one particle.
+    // Returns null for particles whose mainkey is not in WAFT_TREE_KEYS —
+    // they are silently skipped (Opt, mung_error, compile_pending, etc.).
+    // Point is a leaf: children array is always empty.
+    const build_item = (
+        C:    TheC,
+        path: string[],
+    ): { sc: Record<string, any>, children: any[] } | null => {
+        const mk = mainkey(C)
+        if (!mk || !WAFT_TREE_KEYS.has(mk)) return null
+
+        const sc_out:         Record<string, any> = {}
+        const muted_session:  string[]            = []
+
+        for (const [k, v] of Object.entries(C.sc as Record<string, any>)) {
+            if (SESSION_KEYS.has(k)) { muted_session.push(k); continue }
+            // Object/function values pass through — enLine (via encode_wh_lines)
+            // moves them to objecties.ref and records them as errors.
+            // This is intentionally loud: refs in sc are always bugs.
+            sc_out[k] = v
+        }
+
+        if (muted_session.length) {
+            muted_log.push({ path: [...path, mk], reason: 'session', keys: muted_session })
+        }
+
+        const children: any[] = []
+        if (mk !== 'Point') {
+            for (const child of (C.X?.z ?? []) as TheC[]) {
+                const item = build_item(child, [...path, mk])
+                if (item) children.push(item)
+            }
+        }
+
+        return { sc: sc_out, children }
+    }
+
+    // Walk each direct child of waft.
+    const items: Array<{ sc: Record<string, any>, children: any[] }> = []
+    for (const child of (waft.X?.z ?? []) as TheC[]) {
+        const item = build_item(child, ['Waft'])
+        if (item) items.push(item)
+    }
+
+    const { snap, errors } = await (this as any).encode_wh_lines(
+        { Waft: waft.sc.Waft },
+        items,
+    )
+    return { snap, errors, muted_log }
+},
+
+// ── decode_waft ───────────────────────────────────────────────────────────────
+//
+//   Decode snap-line text back to a live TheC tree.
+//   Wraps decode_wh_lines, sets the canonical Waft key, and applies the
+//   backward-compat Points:1 hoist.
+//
+//   Returns { waft_C, errors }.  waft_C is null on fatal parse error.
+
+decode_waft(snap: string, path: string): { waft_C: TheC | null, errors: string[] } {
+    const { C, errors } = (this as any).decode_wh_lines(snap)
+    if (!C) return { waft_C: null, errors }
+
+    // Caller's path is authoritative over whatever the snap encoded.
+    C.sc.Waft = path
+
+    const mainkey = (n: TheC): string | undefined =>
+        Object.keys(n.sc ?? {})[0]
+
+    // Points:1 hoist: walk the decoded tree; for any 'Points' container,
+    // re-i() its children directly onto the parent, then drop the container.
+    //
+    // Snapshot the child list before mutating — drop() changes C.X.z in place.
+    const hoist_points = (parent: TheC) => {
+        for (const child of [...((parent.X?.z ?? []) as TheC[])]) {
+            if (mainkey(child) === 'Points') {
+                for (const pt of (child.X?.z ?? []) as TheC[]) parent.i(pt)
+                parent.drop(child)
+            } else {
+                hoist_points(child)
+            }
+        }
+    }
+    hoist_points(C)
+
+    return { waft_C: C, errors }
+},
+
+//#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //#region wormhole Lines
 // ── encode_wh_lines ────────────────────────────────────────────────────
 // Encode a tree of {sc, children?} items to snap-line text via Travel.
@@ -435,10 +630,12 @@
         const tab     = line.indexOf('\t')
         const obj_raw = tab >= 0 ? line.slice(spaces, tab) : ''
         const str_raw = tab >= 0 ? line.slice(tab + 1) : line.slice(spaces)
+        const stringies = str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw)
+        if (stringies.dige) stringies.dige = String(stringies.dige)
         return {
             d,
             objecties: obj_raw ? JSON.parse(obj_raw) : {},
-            stringies: str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw),
+            stringies,
         }
     },
 
