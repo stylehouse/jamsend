@@ -1,13 +1,13 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:22
+      {"mung":["age"]}	self,round:25
       w:PeeringLive
-        {"mung":["age"]}	self,round:22
+        {"mung":["age"]}	self,round:25
         {"see":"PeeringLive  open:2/2"}
-        timeSatisfied
+        timeDoubt
     A:Bearing
-      {"mung":["age"]}	self,round:24
+      {"mung":["age"]}	self,round:27
       w:Bearing,finished
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -15,22 +15,20 @@ Snap:H
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         De:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,finished
-          req:register,finished
-          req:listening,maz:2,finished
+          req:register,maz:2,finished
+          req:listening,maz:3,finished
           log
-            msg:keygen started,at:1778975081602
-            msg:keygen done,at:1778975081702
+            msg:keygen started
+            msg:keygen done
         more_visuals
           Peering
         Peerily
         Peering,name:bearing,prepub:7acf614d876d69a4
           {"ref":{"Id":"Idento()"}}	prepri:923f9316
           open
-        requesty_expects_serial,i:2
-          {"had_aim":1,"category":"reqy:expects"}
-        {"mung":["age"]}	self,round:24
+        {"mung":["age"]}	self,round:27
     A:Nearing
-      {"mung":["age"]}	self,round:27
+      {"mung":["age"]}	self,round:30
       w:Nearing,finished
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -38,18 +36,16 @@ Snap:H
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         De:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,finished
-          req:register,finished
-          req:listening,maz:2,finished
+          req:register,maz:2,finished
+          req:listening,maz:3,finished
           log
-            msg:keygen started,at:1778975081612
-            msg:keygen done,at:1778975082013
+            msg:keygen started
+            msg:keygen done
         more_visuals
           Peering
         Peerily
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
           open
-        requesty_expects_serial,i:2
-          {"had_aim":1,"category":"reqy:expects"}
-        {"mung":["age"]}	self,round:27
+        {"mung":["age"]}	self,round:30
     {"mung":["id"]}	mo:main,interval:3.6
