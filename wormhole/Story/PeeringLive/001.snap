@@ -26,7 +26,7 @@ Snap:H
           open
         {"mung":["age"]}	self,round:12
     A:Nearing
-      {"mung":["age"]}	self,round:12
+      {"mung":["age"]}	self,round:11
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -42,5 +42,5 @@ Snap:H
         Peerily
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
-        {"mung":["age"]}	self,round:12
+        {"mung":["age"]}	self,round:11
     {"mung":["id"]}	mo:main,interval:3.6

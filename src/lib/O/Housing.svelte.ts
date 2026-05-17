@@ -713,20 +713,27 @@ export class House extends StorableHousing {
     // Otherwise — pass the elvis particle straight to beliefs().
     // Throttled so rapid-fire todo pushes don't pile up.
     // -------------------------------------------------------------------------
-    answer_calls_throttle?: Function
+    answer_calls_waiting = false;
+    answer_calls_pending = false;
+
     answer_calls() {
-        this.answer_calls_throttle ||= throttle(() => {
-            this._really_answer_calls()
-        }, ANSWER_CALLS_TICK_MS, {
-            // have to go through that $effect()
-            later_fn: () => {
-                setTimeout(() => {
-                    this.todo_version++ 
-                }, 2)
-            },
-        })
-        this.answer_calls_throttle()
+        if (this.answer_calls_waiting) {
+            this.answer_calls_pending = true;
+            return;
+        }
+        this.answer_calls_waiting = true;
+        this._really_answer_calls();
+        setTimeout(() => {
+            this.answer_calls_waiting = false;
+            if (this.answer_calls_pending) {
+                this.answer_calls_pending = false;
+                // < have to go through that $effect() again if
+                this.todo_version++
+            }
+        }, ANSWER_CALLS_TICK_MS);
     }
+
+
     async _really_answer_calls() {
         if (!this.started) return
         let H = this.top_House()
