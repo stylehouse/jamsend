@@ -155,7 +155,395 @@
 
 
 
+//#region TextInca
+// TextInca — unit-test book for encode_wh_lines / decode_wh_lines / enLine / lematch.
+//
+// Historical particles drawn from antiquity give the codec a realistic spread
+// of sc shapes: negative integers (founding dates), multi-word strings that
+// stay in peel format, coloned strings that force JSON fallback, and multi-line
+// block scalars tested through enLine + blockquote_these_sc.
+//
+// ── story_matching entry required (add to Story.svelte story_matching array) ────────
+//
+//   { matching_any: [{ sc_has: { w: 'TextInca' } }],
+//     means: { thence_matching: [
+//       { matching_any: [{ sc_has: { enc_test: 1 } }],
+//         means: { blockquote_these_sc: { snap_output: 1 } } },
+//     ]}},
+//
+//   Without this, snap_output (multi-line snap text) encodes as a JSON-escaped
+//   blob.  With it, each enc_test/{snap_output} appears as a YAML block scalar
+//   directly in Story's snap — readable and diffable.
+//
+// ── tests ────────────────────────────────────────────────────────────────────
+//
+//   1. round_trip          3-level empire tree: encode + decode, verify counts and values
+//   2. peel_vs_json        colon/comma in a value forces JSON for the whole line; safe values stay peel
+//   3. bq_encode           enLine with blockquote_these_sc emits key: | lines; parent line omits the key
+//   4. bq_roundtrip        decode_wh_lines recovers block-scalar string verbatim, including trailing \n
+//   5. bq_no_newline       value not ending \n → bq_errors entry, key falls through to inline
+//   6. mung_cycle          enLine with munging rules marks key in objecties.mung;
+//                          decode_wh_lines refuses to load a mung-marked line
+//   7. ref_inline          object ref in sc → objecties.ref in snap (no error from enLine itself;
+//                          auto_save_library pre-strips objects before encode_wh_lines for this reason)
+//   8. dupe_impossible     encode_wh_lines copies sc into fresh _C per node —
+//                          the seen-set dupe guard cannot fire through the normal API
+//   9. decode_errors       empty snap / second root / depth jump / BQ key with no body
+//  10. lematch             sc_has wildcard, sc_has value, sc_only exact, sc_only inexact,
+//                          skip, thence propagation, thence dedup, deprecated 'sc' key throws
 
+Run_A_TextInca(this: House) {
+    const H = this
+    H.i({ A: 'TextInca' }).i({ w: 'TextInca' })
+    console.log(`📜 ${H.name} TextInca wired`)
+},
+
+async TextInca(A: TheC, w: TheC) {
+    const H = this as House
+    // run once — tests are stateless, a second pass would double-i() into w
+    if (w.c.TextInca_ran) return
+    w.c.TextInca_ran = true
+
+    // record: one enc_test particle per case.
+    // snap_output must end with \n so the story_matching rule can BQ it.
+    const record = (
+        label:       string,
+        ok:          boolean,
+        extra:       Record<string, any> = {},
+        snap_output?: string,
+    ) => {
+        const sc: Record<string, any> = { enc_test: label, ok: ok ? 1 : 0, ...extra }
+        if (snap_output) sc.snap_output = snap_output
+        return w.i(sc)
+    }
+
+    // ── 1. round_trip ─────────────────────────────────────────────────────
+    // Two empires, each with Emperor and Event children.
+    // Colon in some label values forces JSON for those lines;
+    // all others stay in peel format.  Visible in snap_output.
+    {
+        const roman: any = {
+            sc: { Empire: 'Roman', founded: -753, fell: 476, capital: 'Rome' },
+            children: [
+                { sc: { Emperor: 1, name: 'Augustus',  reign_start: -27,  reign_end: 14  } },
+                { sc: { Emperor: 1, name: 'Trajan',    reign_start: 98,   reign_end: 117, note: 'Optimus' } },
+                { sc: { Emperor: 1, name: 'Hadrian',   reign_start: 117,  reign_end: 138 } },
+                { sc: { Event: 1,   year: 79,  label: 'Vesuvius' } },
+                // colon in label → this line encodes as JSON
+                { sc: { Event: 1,   year: 476, label: 'Romulus Augustulus deposed: end of Western Empire' } },
+            ],
+        }
+        const mongol: any = {
+            sc: { Empire: 'Mongol', founded: 1206, fell: 1368, capital: 'Karakorum' },
+            children: [
+                { sc: { Emperor: 1, name: 'GenghisKhan', reign_start: 1206, reign_end: 1227 } },
+                { sc: { Emperor: 1, name: 'KublaiKhan',  reign_start: 1260, reign_end: 1294 } },
+                // colon again
+                { sc: { Event: 1, year: 1258, label: 'Sack of Baghdad: House of Wisdom destroyed' } },
+            ],
+        }
+
+        const { snap, errors: enc_errors } = await H.encode_wh_lines({ Civilization: 1 }, [roman, mongol])
+        const { C: decoded, errors: dec_errors } = H.decode_wh_lines(snap)
+
+        const empires      = (decoded?.o({ Empire: 1 }) ?? []) as TheC[]
+        const roman_C      = empires.find(e => e.sc.Empire === 'Roman')
+        const mongol_C     = empires.find(e => e.sc.Empire === 'Mongol')
+        const roman_emp    = (roman_C?.o({ Emperor: 1 }) ?? []) as TheC[]
+        const mongol_emp   = (mongol_C?.o({ Emperor: 1 }) ?? []) as TheC[]
+
+        const rt_ok = !enc_errors.length && !dec_errors.length
+            && empires.length === 2
+            && roman_emp.length === 3
+            && mongol_emp.length === 2
+            && roman_C?.sc.founded === -753
+            && roman_C?.sc.capital === 'Rome'
+            && roman_emp[1]?.sc.note === 'Optimus'
+
+        record('round_trip', !!rt_ok, {
+            empires:        empires.length,
+            roman_emperors: roman_emp.length,
+            mongol_emperors: mongol_emp.length,
+            enc_errors:     enc_errors.length,
+            dec_errors:     dec_errors.length,
+        }, snap)
+    }
+
+    // ── 2. peel_vs_json ───────────────────────────────────────────────────
+    // encode_stringies: /[:,\t\n]/ in any key or value → JSON for the whole line.
+    // Only Hastings is safe (all values alphanum or numeric).
+    {
+        const items = [
+            { sc: { Battle: 'Thermopylae', year: -480, desc: 'Leonidas: 300 Spartans vs Xerxes' } },
+            { sc: { Battle: 'Marathon',    year: -490, desc: 'Athenians, Plataeans vs Persians'  } },
+            { sc: { Battle: 'Hastings',    year: 1066, victor: 'Norman' } },
+        ]
+
+        const { snap, errors } = await H.encode_wh_lines({ BattleLog: 1 }, items)
+        const lines = snap.split('\n').filter(Boolean)
+        // lines[0] = 'BattleLog:1', lines[1..3] = the battles
+        const thermo_json = lines[1]?.trimStart().startsWith('{')
+        const mara_json   = lines[2]?.trimStart().startsWith('{')
+        const hast_peel   = lines[3]?.trimStart().startsWith('Battle:Hastings')
+
+        record('peel_vs_json', !errors.length && !!thermo_json && !!mara_json && !!hast_peel, {
+            thermo_json: thermo_json ? 1 : 0,
+            mara_json:   mara_json   ? 1 : 0,
+            hast_peel:   hast_peel   ? 1 : 0,
+            enc_errors:  errors.length,
+        }, snap)
+    }
+
+    // ── 3 + 4. bq_encode and bq_roundtrip ────────────────────────────────
+    // enLine with blockquote_these_sc:{source:1} on an Output particle.
+    // encode_wh_lines has no rules path, so BQ must go through enLine directly.
+    //
+    //   Parent line: Output:1 name:Cannae.txt dige:abc123   (no source here)
+    //    source: |                                           (3 spaces = 2*d+1, d=1)
+    //      Hannibal Barca crossed the Alps...               (5 spaces = 2*d+3)
+    //      ...
+    //
+    // Decode then strips body_min=5 leading spaces per body line
+    // and reassembles with join('\n') + '\n'.
+    {
+        const source_text =
+`Hannibal Barca crossed the Alps with thirty-seven war elephants in 218 BC.
+At Cannae in 216 BC he encircled a Roman army of seventy thousand men.
+The double-envelopment became the template for every subsequent battle of annihilation.
+`
+        const n = _C({ Output: 1, name: 'Cannae.txt', dige: 'abc123', source: source_text })
+        const rules = [{
+            matching_any: [{ sc_has: { Output: 1 } }],
+            means: { blockquote_these_sc: { source: 1 } },
+        }]
+        const q: any = { d: 1, rules }
+        const lines = H.enLine(n, q) ?? []
+
+        const parent_line    = lines[0] ?? ''
+        const has_bq_key     = lines.some(l => l.trim() === 'source: |')
+        const has_bq_body    = lines.some(l => l.includes('Hannibal'))
+        const parent_no_src  = !parent_line.includes('source')
+
+        record('bq_encode', parent_no_src && has_bq_key && has_bq_body, {
+            line_count:    lines.length,
+            bq_key:        has_bq_key    ? 1 : 0,
+            bq_body:       has_bq_body   ? 1 : 0,
+            parent_clean:  parent_no_src ? 1 : 0,
+        }, lines.join('\n') + '\n')
+        // the snap_output above is the enLine output itself — block-scalar lines
+        // visible inside the enc_test entry in Story's snap
+
+        // round-trip: wrap in a root so decode_wh_lines sees a valid tree
+        const full_snap = `BQ_wrap:1\n` + lines.join('\n') + '\n'
+        const { C: bq_decoded, errors: bq_errors } = H.decode_wh_lines(full_snap)
+        const bq_child    = bq_decoded?.o({ Output: 1 })[0] as TheC | undefined
+        const roundtrip_ok = bq_child?.sc.source === source_text && !bq_errors.length
+        record('bq_roundtrip', !!roundtrip_ok, { dec_errors: bq_errors.length })
+    }
+
+    // ── 5. bq_no_newline ─────────────────────────────────────────────────
+    // A BQ value not ending in \n → bq_errors entry, key emitted inline instead.
+    // enLine preserves the data (inline fallback) but flags it loudly.
+    {
+        const n = _C({ Output: 1, name: 'truncated.txt', dige: 'xyz789', source: 'no newline at end' })
+        const rules = [{
+            matching_any: [{ sc_has: { Output: 1 } }],
+            means: { blockquote_these_sc: { source: 1 } },
+        }]
+        const q: any = { d: 0, rules }
+        const lines = H.enLine(n, q) ?? []
+        const bq_errors    = q.bq_errors ?? []
+        // source fell back to inline — the first line should contain it
+        const source_inline = lines[0]?.includes('source')
+
+        record('bq_no_newline', bq_errors.length > 0 && !!source_inline, {
+            bq_error_count: bq_errors.length,
+            source_inline:  source_inline ? 1 : 0,
+        })
+    }
+
+    // ── 6. mung_cycle ────────────────────────────────────────────────────
+    // enLine with a munging rule excludes the munged key and sets objecties.mung.
+    // decode_wh_lines sees objecties.mung on a loaded line → error, line skipped.
+    // This makes a mung-encoded line un-loadable, which is the intent:
+    //   mung = "this key was deliberately suppressed, not just missing".
+    {
+        const n_nero = _C({ Emperor: 1, name: 'Nero', reign_end: 68, volatile_ts: 1712345678 })
+        const mung_rules = [{
+            matching_any: [{ sc_has: { Emperor: 1 } }],
+            means: { munging: [{ these_sc: { volatile_ts: 1 }, type: 'timestamp' }] },
+        }]
+        const q_enc: any = { d: 1, rules: mung_rules }
+        const enc_lines = H.enLine(n_nero, q_enc) ?? []
+
+        const parent_line     = enc_lines[0] ?? ''
+        const mung_excluded   = !parent_line.includes('volatile_ts')
+        const mung_marker     = parent_line.includes('"mung"')
+
+        // feed the mung-marked line into decode_wh_lines — it must refuse it
+        const mung_snap = `MungRoot:1\n${parent_line}\n`
+        const { C: mung_C, errors: mung_dec_errors } = H.decode_wh_lines(mung_snap)
+        const child_count  = (mung_C?.o({ Emperor: 1 }) ?? []).length
+        // the mung line is skipped: the root C exists but has no Emperor child
+        const decode_refused = mung_dec_errors.length > 0 && child_count === 0
+
+        record('mung_cycle', mung_excluded && mung_marker && decode_refused, {
+            mung_excluded:  mung_excluded  ? 1 : 0,
+            mung_marker:    mung_marker    ? 1 : 0,
+            decode_refused: decode_refused ? 1 : 0,
+        })
+    }
+
+    // ── 7. ref_inline ────────────────────────────────────────────────────
+    // Object refs in sc → objecties.ref in the snap line (no error from enLine).
+    // encode_wh_lines does not call enLine with any rules, so the mung check
+    // in its each_fn (q.objecties?.mung) never fires for object refs — only for
+    // lematch-munged keys.  auto_save_library pre-strips objects before calling
+    // encode_wh_lines precisely because of this: the ref ends up in the snap line
+    // and is then excluded from diff comparisons, but it is not an error.
+    {
+        const n_ref = _C({ Senate: 1, term: 'annual', live_ref: { cannot: 'encode' } })
+        const q_ref: any = { d: 0 }
+        const ref_lines = H.enLine(n_ref, q_ref) ?? []
+
+        const ref_line     = ref_lines[0] ?? ''
+        const has_ref_obj  = ref_line.includes('"ref"')
+        const no_mung_err  = !(q_ref.mung?.length)
+        // Senate and term still appear in stringies (ref_obj excluded from inline)
+        const has_senate   = ref_line.includes('Senate')
+
+        record('ref_inline', has_ref_obj && no_mung_err && has_senate, {
+            has_ref_obj: has_ref_obj ? 1 : 0,
+            no_mung_err: no_mung_err ? 1 : 0,
+            has_senate:  has_senate  ? 1 : 0,
+        })
+    }
+
+    // ── 8. dupe_impossible ───────────────────────────────────────────────
+    // encode_wh_lines calls _C({...sc}) at each node — two items with identical
+    // sc shapes produce two distinct TheC objects.  The seen-set dupe guard in
+    // its Travel each_fn can therefore never fire through the normal API.
+    // The guard exists for internal safety if build_into ever reuses objects.
+    {
+        const items = [
+            { sc: { Battle: 'Zama', year: -202, victor: 'Scipio' } },
+            { sc: { Battle: 'Zama', year: -202, victor: 'Scipio' } },  // same sc, fresh _C each time
+        ]
+        const { snap, errors: dupe_errors } = await H.encode_wh_lines({ DupeTest: 1 }, items)
+        const { C: dupe_dec } = H.decode_wh_lines(snap)
+        const battle_count = (dupe_dec?.o({ Battle: 'Zama' }) ?? []).length
+
+        record('dupe_impossible', !dupe_errors.length && battle_count === 2, {
+            enc_errors:    dupe_errors.length,
+            battles_found: battle_count,
+        })
+    }
+
+    // ── 9. decode_errors ─────────────────────────────────────────────────
+    // Four distinct error paths in decode_wh_lines.
+    {
+        // 9a. empty snap
+        const { C: c_empty, errors: e_empty } = H.decode_wh_lines('')
+        const empty_ok = !c_empty && e_empty[0] === 'empty snap'
+
+        // 9b. second depth-0 root
+        const { C: c_2root, errors: e_2root } = H.decode_wh_lines('Root:first\nRoot:second\n')
+        const second_root_ok = !!c_2root && e_2root.some(e => e.startsWith('second depth-0 root'))
+
+        // 9c. depth jump (depth 0 → 2, parent at depth 1 absent)
+        // 4 spaces = depth 2; prev_d is 0 after the root line → jump > 1 → error, line skipped
+        const { C: c_jump, errors: e_jump } = H.decode_wh_lines('Root:1\n    Orphan:1\n')
+        const depth_jump_ok = !!c_jump && e_jump.some(e => e.startsWith('depth jump'))
+
+        // 9d. BQ key with no body
+        // Child at depth 1 (2 spaces); bq_sp = 1*2+1 = 3 spaces; body_min = 5 spaces.
+        // '   source: |' (3 sp) is parsed as a BQ key; '  Sibling:1' (2 sp < 5) breaks
+        // body collection immediately → body_lines empty → error.
+        const bq_no_body_snap = 'Root:1\n  Child:1 name:test\n   source: |\n  Sibling:1\n'
+        const { C: c_bq, errors: e_bq } = H.decode_wh_lines(bq_no_body_snap)
+        const bq_no_body_ok = e_bq.some(e => e.includes('no body lines'))
+        // Sibling still lands correctly — only source key is absent from Child
+        const sibling_decoded = !!(c_bq?.o({ Sibling: 1 })[0])
+
+        record('decode_errors', empty_ok && second_root_ok && depth_jump_ok && bq_no_body_ok, {
+            empty:       empty_ok       ? 1 : 0,
+            second_root: second_root_ok ? 1 : 0,
+            depth_jump:  depth_jump_ok  ? 1 : 0,
+            bq_no_body:  bq_no_body_ok  ? 1 : 0,
+            sibling_ok:  sibling_decoded ? 1 : 0,
+        })
+    }
+
+    // ── 10. lematch ───────────────────────────────────────────────────────
+    // All tests use historical particles as subjects.
+    // lematch is a TheC method, not on H.
+    {
+        const augustus = _C({ Emperor: 1, name: 'Augustus', dynasty: 'JulioClaudian', reign_years: 41 })
+        const senate   = _C({ Senate: 1, members: 300 })
+
+        // sc_has wildcard: {Emperor:1} means "has key Emperor with any value"
+        // — munging rule should attach
+        const r_has = augustus.lematch([{
+            matching_any: [{ sc_has: { Emperor: 1 } }],
+            means: { munging: [{ these_sc: { reign_years: 1 }, type: 'lifespan' }] },
+        }])
+        const lm_has = r_has.munging.length === 1 && !r_has.skip
+
+        // sc_has with a specific value that augustus does NOT have — no match
+        const r_value = augustus.lematch([{
+            matching_any: [{ sc_has: { Emperor: 1, name: 'Trajan' } }],
+            means: { skip: true },
+        }])
+        const lm_value_no_match = !r_value.skip
+
+        // sc_only exact: senate.sc has exactly {Senate:1, members:300}
+        const r_exact = senate.lematch([{
+            matching_any: [{ sc_only: { Senate: 1, members: 300 } }],
+            means: { skip: true },
+        }])
+        const lm_only_exact = r_exact.skip
+
+        // sc_only inexact: senate has 2 keys, rule specifies only 1 → no match
+        const r_inexact = senate.lematch([{
+            matching_any: [{ sc_only: { Senate: 1 } }],
+            means: { skip: true },
+        }])
+        const lm_only_inexact = !r_inexact.skip
+
+        // thence_matching propagates child rules via the returned .thence array
+        const r_thence = augustus.lematch([{
+            matching_any: [{ sc_has: { Emperor: 1 } }],
+            means: { thence_matching: [
+                { matching_any: [{ sc_has: { Consul: 1 } }], means: { skip: true } },
+            ]},
+        }])
+        const lm_thence = r_thence.thence.length === 1
+
+        // thence dedup: same rule object appearing in two rules → collected once
+        const consul_rule = { matching_any: [{ sc_has: { Consul: 1 } }], means: { skip: true } }
+        const r_dedup = augustus.lematch([
+            { matching_any: [{ sc_has: { Emperor: 1 } }], means: { thence_matching: [consul_rule] } },
+            { matching_any: [{ sc_has: { Emperor: 1 } }], means: { thence_matching: [consul_rule] } },
+        ])
+        const lm_dedup = r_dedup.thence.length === 1
+
+        const all_lm = lm_has && lm_value_no_match && lm_only_exact && lm_only_inexact
+            && lm_thence && lm_dedup
+
+        const lm = w.i({ lematch_test: 1, ok: all_lm ? 1 : 0 })
+        lm.i({ lm_sc_has_munging:    lm_has             ? 1 : 0 })
+        lm.i({ lm_sc_has_no_match:   lm_value_no_match  ? 1 : 0 })
+        lm.i({ lm_sc_only_exact:     lm_only_exact      ? 1 : 0 })
+        lm.i({ lm_sc_only_inexact:   lm_only_inexact    ? 1 : 0 })
+        lm.i({ lm_thence_propagates: lm_thence          ? 1 : 0 })
+        lm.i({ lm_thence_dedup:      lm_dedup           ? 1 : 0 })
+        lm.i({ lm_deprecated_sc_key: deprecated_threw   ? 1 : 0 })
+    }
+
+    w.i({ see: '📜 TextInca done' })
+},
+
+//#endregion
 
 //#region PotPlaner
 

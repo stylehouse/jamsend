@@ -782,6 +782,13 @@
                 ]
             }
         },
+        {
+            matching_any: [{ sc_has: { w: 'TextInca' } }],
+            means: { thence_matching: [
+                { matching_any: [{ sc_has: { enc_test: 1 } }],
+                means: { blockquote_these_sc: { snap_output: 1 } } },
+            ]},
+        },
     ] as Array<any>,
 
     // classify one particle during the snap walk.

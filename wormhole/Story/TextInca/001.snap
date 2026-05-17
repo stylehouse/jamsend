@@ -1,0 +1,175 @@
+Snap:H
+  H:TextInca,Run
+    A:TextInca
+      {"mung":["age"]}	self,round
+      w:TextInca
+        {"mung":["age"]}	self,round
+        enc_test:round_trip,ok,empires:2,roman_emperors:3,mongol_emperors:2,enc_errors:0,dec_errors:0
+         snap_output: |
+           Civilization
+             Empire:Roman,founded:-753,fell:476,capital:Rome
+               Emperor,name:Augustus,reign_start:-27,reign_end:14
+               Emperor,name:Trajan,reign_start:98,reign_end:117,note:Optimus
+               Emperor,name:Hadrian,reign_start:117,reign_end:138
+               Event,year:79,label:Vesuvius
+               {"Event":1,"year":476,"label":"Romulus Augustulus deposed: end of Western Empire"}
+             Empire:Mongol,founded:1206,fell:1368,capital:Karakorum
+               Emperor,name:GenghisKhan,reign_start:1206,reign_end:1227
+               Emperor,name:KublaiKhan,reign_start:1260,reign_end:1294
+               {"Event":1,"year":1258,"label":"Sack of Baghdad: House of Wisdom destroyed"}
+        enc_test:peel_vs_json,ok,thermo_json,mara_json,hast_peel,enc_errors:0
+         snap_output: |
+           BattleLog
+             {"Battle":"Thermopylae","year":-480,"desc":"Leonidas: 300 Spartans vs Xerxes"}
+             {"Battle":"Marathon","year":-490,"desc":"Athenians, Plataeans vs Persians"}
+             Battle:Hastings,year:1066,victor:Norman
+        enc_test:bq_encode,ok,line_count:5,bq_key,bq_body,parent_clean
+         snap_output: |
+             Output,name:Cannae.txt,dige:abc123
+              source: |
+                Hannibal Barca crossed the Alps with thirty-seven war elephants in 218 BC.
+                At Cannae in 216 BC he encircled a Roman army of seventy thousand men.
+                The double-envelopment became the template for every subsequent battle of annihilation.
+        enc_test:bq_roundtrip,ok,dec_errors:0
+        enc_test:bq_no_newline,ok,bq_error_count,source_inline
+        enc_test:mung_cycle,ok:0,mung_excluded:0,mung_marker,decode_refused
+        enc_test:ref_inline,ok,has_ref_obj,no_mung_err,has_senate
+        enc_test:dupe_impossible,ok,enc_errors:0,battles_found:2
+        enc_test:decode_errors,ok,empty,second_root,depth_jump,bq_no_body,sibling_ok
+        lematch_test,ok
+          lm_sc_has_munging
+          lm_sc_has_no_match
+          lm_sc_only_exact
+          lm_sc_only_inexact
+          lm_thence_propagates
+          lm_thence_dedup
+          lm_deprecated_sc_key
+        see:📜 TextInca done
+    {"mung":["id"]}	mo:main,interval:3.6
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:TextInca,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity:0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height:20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_1","label":"enc_test:round_trip\nok\nempires:2\nroman_emperors:3\nmongol_emperors:2\nenc_errors:0\ndec_errors:0\nsnap_output:Civilizat…","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_10","label":"lematch_test\nok","parent":"cytoid_1_1"}
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_1,label:lm_sc_has_munging,parent:cytoid_1_1
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_2,label:lm_sc_has_no_match,parent:cytoid_1_1
+    style,background-color:#298699
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_3,label:lm_sc_only_exact,parent:cytoid_1_1
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_4,label:lm_sc_only_inexact,parent:cytoid_1_1
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_5,label:lm_thence_propagates,parent:cytoid_1_1
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_6,label:lm_thence_dedup,parent:cytoid_1_1
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  upsert,id:cytoid_1_1_10_7,label:lm_deprecated_sc_key,parent:cytoid_1_1
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_11","label":"see:📜 TextIn…","parent":"cytoid_1_1"}
+    style,background-color:#bd36c9
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_2","label":"enc_test:peel_vs_j…\nok\nthermo_json\nmara_json\nhast_peel\nenc_errors:0\nsnap_output:BattleLog…","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_3","label":"enc_test:bq_encode\nok\nline_count:5\nbq_key\nbq_body\nparent_clean\nsnap_output:  Output,…","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_4","label":"enc_test:bq_roundt…\nok\ndec_errors:0","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_5","label":"enc_test:bq_no_new…\nok\nbq_error_count\nsource_inline","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_6","label":"enc_test:mung_cycle\nok:0\nmung_excluded:0\nmung_marker\ndecode_refused","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_7","label":"enc_test:ref_inline\nok\nhas_ref_obj\nno_mung_err\nhas_senate","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_8","label":"enc_test:dupe_impo…\nok\nenc_errors:0\nbattles_found:2","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  {"upsert":1,"id":"cytoid_1_1_9","label":"enc_test:decode_er…\nok\nempty\nsecond_root\ndepth_jump\nbq_no_body\nsibling_ok","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height:20
+    style,shape:ellipse
+    style,width:20
+  edge_upsert,id:cytoid_1_1_10_1_1,source:cytoid_1_1_10,target:cytoid_1_1_10_1
+  edge_upsert,id:cytoid_1_1_10_2_1,source:cytoid_1_1_10,target:cytoid_1_1_10_2
+  edge_upsert,id:cytoid_1_1_10_3_1,source:cytoid_1_1_10,target:cytoid_1_1_10_3
+  edge_upsert,id:cytoid_1_1_10_4_1,source:cytoid_1_1_10,target:cytoid_1_1_10_4
+  edge_upsert,id:cytoid_1_1_10_5_1,source:cytoid_1_1_10,target:cytoid_1_1_10_5
+  edge_upsert,id:cytoid_1_1_10_6_1,source:cytoid_1_1_10,target:cytoid_1_1_10_6
+  edge_upsert,id:cytoid_1_1_10_7_1,source:cytoid_1_1_10,target:cytoid_1_1_10_7
