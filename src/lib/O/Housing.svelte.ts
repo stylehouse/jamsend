@@ -3,7 +3,7 @@ import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svel
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
-import { tex, throttle } from "$lib/Y.svelte"
+import { grap, grep, tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
@@ -744,7 +744,13 @@ export class House extends StorableHousing {
         }
         let e = this.todo.shift()
         if (!e) return
+        // we should come back to the rest of them
         this.todo_version++
+        if (e.sc.elvis == 'think') {
+            // skip to the final thought! everything more specific will be done first
+            let finalthought = grep(e=>e.sc.elvis == 'think', this.todo).pop()
+            grap(e=>e.sc.elvis == 'think' && !e == finalthought, this.todo)
+        }
         V.organise && console.log(`answer_calls: e%${keyser(e.sc)}\t\ttodo:${this.todo.length}`)
 
         if (this.c.began_run && !this.c.finished_run) {

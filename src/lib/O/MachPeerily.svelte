@@ -674,7 +674,7 @@
             H.trace('De', `${side} req:listening → want_savepoint`)
             drq.finish(req)
             drq.check_all_finished()   // stamps %De:listen,finished
-            H.want_savepoint()
+            // H.want_savepoint()
         })
 
         await drq.do()
