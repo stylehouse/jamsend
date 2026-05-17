@@ -5,7 +5,7 @@ Library
   Book:LangTiles,ok_pct:0.75,last_pct_change:1778416268.489,done:4,last_run_ms:1778417947.669
   Book:LakeSurfer,ok_pct:0,last_pct_change:1777427938.462,done,last_run_ms:1779002647.732
   Book:Peeringinst,ok_pct,last_pct_change:1777865143.246,done:2,last_run_ms:1778412450.623
-  Book:PeeringLive,ok_pct:0.33,last_pct_change:1779003199.966,done:6,last_run_ms:1779003199.966,active
+  Book:PeeringLive,ok_pct:0,last_pct_change:1779013005.549,done:6,last_run_ms:1779013005.549,active
   Book:PotPlant,ok_pct,last_pct_change:1778762980.371,done:9,last_run_ms:1778828616.496
   Book:PotPlanet,ok_pct,last_pct_change:1778769740.657,done:6,last_run_ms:1778832845.94
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778804562.08
@@ -13,3 +13,4 @@ Library
   Book:ReactiveVers,ok_pct,last_pct_change:1778667402.26,done:7,last_run_ms:1778667410.306
   Book:PotPlan,ok_pct,last_pct_change:1778833841.066,done:2,last_run_ms:1778920193.76
   Book:PotPlaner,ok_pct,last_pct_change:1778920150.558,done:3,last_run_ms:1778920186.916
+  Book:TextInca,ok_pct,last_pct_change:1779009880.007,done,last_run_ms:1779009887.908

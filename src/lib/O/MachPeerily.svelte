@@ -276,69 +276,6 @@
     },
 
 //#endregion
-//#region Manager
-
-    // wire on_step_ending; keygen is now done inside De_listen/req:keygen.
-
-    async PeeringLive(A: TheC, w: TheC) {
-        const H = this as House
-
-        // release PeerJS IDs on hangup — deterministic prepubs reclaimed by next run
-        if (!w.c._hangup_registered) {
-            w.c._hangup_registered = true
-            H.on_hangup(() => {
-                for (const side of ['Bearing', 'Nearing']) {
-                    try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
-                }
-            })
-        }
-
-        const open_count = ['Bearing', 'Nearing']
-            .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
-        w.i({ see: `PeeringLive  open:${open_count}/2` })
-
-        if (!H.c.on_step_ending) {
-            H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
-                if (H.c._pl_heartbeat) {
-                    clearInterval(H.c._pl_heartbeat)
-                    H.c._pl_heartbeat = null
-                }
-                const unsettled = ['Bearing', 'Nearing']
-                    .filter(s => !H._PeeringLive_settled(H.Awo(s)))
-                const mgr = H.Awo('PeeringLive')
-                const td = mgr.o({ timeDoubt:    1 })[0] as TheC | undefined
-                const ts = mgr.o({ timeSatisfied: 1 })[0] as TheC | undefined
-                if (mode === 'timeout' && unsettled.length) {
-                    if (ts) mgr.drop(ts)
-                    mgr.oai({ timeDoubt: 1 })
-                    H.trace('timeDoubt', `demand elapsed, unsettled: ${unsettled.join(', ')}`)
-                } else if (mode === 'timeout') {
-                    if (td) mgr.drop(td)
-                    mgr.oai({ timeSatisfied: 1 })
-                    H.trace('timeSatisfied', 'all expects resolved before demand elapsed')
-                } else {
-                    if (td) mgr.drop(td)
-                    if (ts) mgr.drop(ts)
-                }
-            }
-        }
-        await H.on_step({
-            2: async () => {
-                // both Peerings open — Bearing dials Nearing and wires handshake.
-                //   Nearing wires its own handshake once its Pier appears in _PeeringLive_main.
-                //   nOpen guaranteed true by step 1 snap, so req:dial completes immediately.
-                const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-                if (npub) {
-                    const bw  = H.Awo('Bearing')
-                    const bdq = H.reqys(bw, 'De')
-                    H.PL_i_Pier(bw, bdq, { target: npub, hello: true, trust: true })
-                }
-                H.demand_time_to_think(2000)
-            },
-        })
-    },
-
-//#endregion
 //#region Shim
 
     // P.Trusting interface — set on P before i_Peering so create_Peering's
@@ -445,6 +382,108 @@
     },
 
 //#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region Manager
+
+    // wire on_step_ending; keygen is now done inside De_listen/req:keygen.
+
+    async PeeringLive(A: TheC, w: TheC) {
+        const H = this as House
+
+        // release PeerJS IDs on hangup — deterministic prepubs reclaimed by next run
+        if (!w.c._hangup_registered) {
+            w.c._hangup_registered = true
+            H.on_hangup(() => {
+                for (const side of ['Bearing', 'Nearing']) {
+                    try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
+                }
+            })
+        }
+
+        const open_count = ['Bearing', 'Nearing']
+            .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
+        w.i({ see: `PeeringLive  open:${open_count}/2` })
+
+        if (!H.c.on_step_ending) {
+            H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
+                if (H.c._pl_heartbeat) {
+                    clearInterval(H.c._pl_heartbeat)
+                    H.c._pl_heartbeat = null
+                }
+                const unsettled = ['Bearing', 'Nearing']
+                    .filter(s => !H._PeeringLive_settled(H.Awo(s)))
+                const mgr = H.Awo('PeeringLive')
+                const td = mgr.o({ timeDoubt:    1 })[0] as TheC | undefined
+                const ts = mgr.o({ timeSatisfied: 1 })[0] as TheC | undefined
+                if (mode === 'timeout' && unsettled.length) {
+                    if (ts) mgr.drop(ts)
+                    mgr.oai({ timeDoubt: 1 })
+                    H.trace('timeDoubt', `demand elapsed, unsettled: ${unsettled.join(', ')}`)
+                } else if (mode === 'timeout') {
+                    if (td) mgr.drop(td)
+                    mgr.oai({ timeSatisfied: 1 })
+                    H.trace('timeSatisfied', 'all expects resolved before demand elapsed')
+                } else {
+                    if (td) mgr.drop(td)
+                    if (ts) mgr.drop(ts)
+                }
+            }
+        }
+        await H.on_step({
+            2: async () => {
+                // both Peerings open — Bearing dials Nearing and wires handshake.
+                //   Nearing wires its own handshake once its Pier appears in _PeeringLive_main.
+                //   nOpen guaranteed true by step 1 snap, so req:dial completes immediately.
+                const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+                if (npub) {
+                    const bw  = H.Awo('Bearing')
+                    const bdq = H.reqys(bw, 'De')
+                    H.PL_i_Pier(bw, bdq, { target: npub, hello: true, trust: true })
+                }
+                H.demand_time_to_think(2000)
+            },
+        })
+    },
+
+    // shared heartbeat while any De particles are still working on either side.
+    //   keyed on H.c so Bearing and Nearing share one interval.
+    //   on_step_ending always clears it; feebly_ponder no-ops outside Runtime.
+    _PeeringLive_drive_heartbeat(w: TheC, _side: string) {
+        const H = this as House
+        if (!H.c._pl_heartbeat) {
+            H.c._pl_heartbeat = setInterval(() => {
+                H.trace('pl_heartbeat')
+                const both_settled = ['Bearing', 'Nearing'].every(s => H._PeeringLive_settled(H.Awo(s)))
+                if (both_settled && H.c.leave_running_until > 0) {
+                    H.trace('leave running alleviated')
+                    H.c.leave_running_until = 0
+                }
+                H.feebly_ponder()
+            }, 250)
+        }
+    },
+    // settled: De:handshake done, plus all Lab De:binary_test and De:disconnect_test done.
+    //   De:handshake must exist — if Pier hasn't arrived yet, we are not settled.
+    _PeeringLive_settled(side_w: TheC): boolean {
+        return !side_w.o({ De: 1 }).some(n => !n.sc.finished)
+    },
+
+
+
+//#endregion
 //#region Sides
 
     async Bearing(A: TheC, w: TheC) {
@@ -506,6 +545,7 @@
         H._PeeringLive_dump(w)
     },
 
+
 //#endregion
 
 
@@ -547,6 +587,9 @@
 
     // De_listen — seeds req:keygen (or req:at with supplied Id) → register → listening.
     //   Keygen result re-enters via reqyscile(req, {Id}) → e_reqysciliation.
+    //   Waiting reqs (register, and phase/handshake reqs below) use req.sc.initialdo
+    //   to demand time only on their first run — subsequent heartbeat ticks must not
+    //   extend the deadline, or the step never elapses on failure.
     async De_listen(De: TheC, dq: any, opts: { side: string; Id?: any } = { side: '' }) {
         const H    = this as House
         const w    = De.c.host as TheC
@@ -618,7 +661,8 @@
                 t_reg('→ finished')
             } else {
                 t_reg('→ waiting')
-                H.demand_time_to_think(3333)
+                // demand time only on first encounter — PeerServer open arrives via reqyscile
+                if (req.sc.initialdo) H.demand_time_to_think(3333)
             }
         })
 
@@ -664,7 +708,7 @@
                 // Pier already appeared (inbound beat us, or reconnect)
                 drq.finish(req); t_dial('→ inbound won'); return
             }
-            if (!eer || !nOpen) { t_dial('→ demand:3s'); H.demand_time_to_think(3000); return }
+            if (!eer || !nOpen) { t_dial('→ demand:3s'); if (req.sc.initialdo) H.demand_time_to_think(3000); return }
 
             const con  = eer.connect(npub)
             const Pier = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
@@ -694,8 +738,10 @@
     // De_handshake — tracks the hello+trust protocol round-trip.
     //   Seeded by PL_i_Pier when a Pier particle appears on either side.
     //   ier is read fresh each tick — concretion may still be in flight.
-    //   recheck: demand + per-req timer so heartbeat isn't the only driver.
-    //   Cross-side short-circuit: once the other side is settled, stop demanding —
+    //   recheck: on first run, demand time for this phase; poll via timer thereafter.
+    //   initialdo (from reqys) marks the first do_fn call — don't keep extending
+    //     the deadline on every subsequent heartbeat tick.
+    //   Cross-side short-circuit: once the other side is settled, stop —
     //     the gap is the result (e.g. heard_hello never arriving after corrupt hello).
     async De_handshake(De: TheC, dq: any, opts: { trust?: boolean } = {}) {
         const H    = this as House
@@ -707,7 +753,8 @@
         const ier     = () => (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
         const recheck = (req: TheC, demand: number) => {
             if (H._PeeringLive_settled(H.Awo(other))) return
-            H.demand_time_to_think(demand)
+            // demand time only once — subsequent heartbeat ticks must not extend the deadline
+            if (req.sc.initialdo) H.demand_time_to_think(demand)
             if (!req.c.recheck_pending) {
                 req.c.recheck_pending = true
                 setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, demand * 0.7)
@@ -761,13 +808,13 @@
         const seq  = De.sc.seq as number
 
         const recheck = (req: TheC, demand: number) => {
-            H.demand_time_to_think(demand)
+            if (req.sc.initialdo) H.demand_time_to_think(demand)
             if (!req.c.recheck_pending) {
                 req.c.recheck_pending = true
                 setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, demand * 0.7)
             }
         }
-
+ 
         if (opts.sent) {
             // sender: emit was awaited — req:sent is immediately satisfied
             drq.doai({ req: 'sent' })?.(async (req: TheC) => {
@@ -818,7 +865,7 @@
         const ier     = () => (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
         const recheck = (req: TheC, demand: number) => {
             if (H._PeeringLive_settled(H.Awo(other))) return
-            H.demand_time_to_think(demand)
+            if (req.sc.initialdo) H.demand_time_to_think(demand)
             if (!req.c.recheck_pending) {
                 req.c.recheck_pending = true
                 setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, demand * 0.7)
@@ -851,36 +898,7 @@
     },
 
 //#endregion
-//#region Heartbeat + Settled
 
-    // shared heartbeat while any De particles are still working on either side.
-    //   keyed on H.c so Bearing and Nearing share one interval.
-    //   on_step_ending always clears it; feebly_ponder no-ops outside Runtime.
-    _PeeringLive_drive_heartbeat(w: TheC, _side: string) {
-        const H = this as House
-        const any_pending = (w.o({ De: 1 }) as TheC[]).some(d => !d.sc.finished)
-        if (any_pending && !H.c._pl_heartbeat) {
-            H.c._pl_heartbeat = setInterval(() => {
-                H.trace('pl_heartbeat')
-                const both_settled = ['Bearing', 'Nearing'].every(s => H._PeeringLive_settled(H.Awo(s)))
-                if (both_settled && H.c.leave_running_until > 0) {
-                    H.trace('leave running alleviated')
-                    H.c.leave_running_until = 0
-                }
-                H.feebly_ponder()
-            }, 250)
-        }
-    },
-
-    // settled: De:handshake done, plus all Lab De:binary_test and De:disconnect_test done.
-    //   De:handshake must exist — if Pier hasn't arrived yet, we are not settled.
-    _PeeringLive_settled(side_w: TheC): boolean {
-        const hs = side_w.o({ De: 'handshake' })[0] as TheC | undefined
-        if (!hs?.sc.finished) return false
-        return (side_w.o({ De: 1 }) as TheC[])
-            .filter(d => d.sc.De === 'binary_test' || d.sc.De === 'disconnect_test')
-            .every(d => d.sc.finished)
-    },
 
 
 //#region Steps

@@ -537,7 +537,6 @@ The double-envelopment became the template for every subsequent battle of annihi
         lm.i({ lm_sc_only_inexact:   lm_only_inexact    ? 1 : 0 })
         lm.i({ lm_thence_propagates: lm_thence          ? 1 : 0 })
         lm.i({ lm_thence_dedup:      lm_dedup           ? 1 : 0 })
-        lm.i({ lm_deprecated_sc_key: deprecated_threw   ? 1 : 0 })
     }
 
     w.i({ see: '📜 TextInca done' })
