@@ -204,7 +204,7 @@
                         n.c.P.i_Peering(Id, eer)
                         n.sc.prepub = Id?.toString() ?? ''
                         const Side = (n.sc.name as string).replace(/^./, c => c.toUpperCase())
-                        eer.Peer.on('open', () => {
+                        eer.on('open', () => {
                             if (n.sc.open_suppressed) return   // held offline by a LabScript hook
                             n.oai({ open: 1 })
                             const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
@@ -218,7 +218,7 @@
                             H.trace('De', `${Side} open → rere:${rere ? 'req:register' : '—'} finished:${rere?.sc.finished ?? '?'}`)
                             if (rere) void H.reqyscile(rere, { see: 'peering open' })
                         })
-                        eer.Peer.on('disconnected', () => {
+                        eer.on('disconnected', () => {
                             const open_n = n.o({ open: 1 })[0] as TheC | undefined
                             if (open_n) n.drop(open_n)
                             console.log(`🔌 ${Side} disconnected`)
