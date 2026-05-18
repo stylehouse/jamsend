@@ -661,16 +661,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
-    // ── o_Opt_k ──────────────────────────────────────────────────────────────
-    //
-    //   Read a named opt from w/{Opt:1}/{k:1}.
-    //   Returns false when the Opt container or key particle is absent.
-    //
-    //   Other H%Run clients (Lies, Pantheate, …) call this directly
-    //   instead of Story's The_Opt_val(), which has the full The/* hierarchy.
-    o_Opt_k(w: TheC, k: string): boolean {
-        return !!w.o({ Opt: 1 })[0]?.oa({ [k]: 1 })
-    },
 
     // ── Lies_gen_path ─────────────────────────────────────────────────────────
     //

@@ -58,6 +58,8 @@ story:LakeSurfer
       style:background-color,v:#d62970
     matstyle:compile_error
       style:background-color,v:#66c559
+    matstyle:nogen
+      style:background-color,v:#3c2999
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
@@ -65,21 +67,21 @@ story:LakeSurfer
   Opt
     For
       w:Lies
-        yesgen
+        nogen
     trickle
-    noCyto
     quiesce_snap_time:0.4
+    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.661
-      sample:0.226,at:1779068253
-      sample:0.376,at:1779069285
-      sample:0.274,at:1779070709
-      sample:0.448,at:1779071075
-      sample:0.231,at:1779071095
-      sample:3.851,at:1779071330
+    TimeTotal:beliefs,avg:0.267
       sample:0.32,at:1779071377
       sample:0.405,at:1779071536
       sample:0.246,at:1779072331
       sample:0.231,at:1779073259
-  step,dige:5c76a6d4bc33ee58
-  step:2,dige:f59cf9d2ddf9f983
+      sample:0.24,at:1779075149
+      sample:0.24,at:1779075183
+      sample:0.287,at:1779075211
+      sample:0.219,at:1779075227
+      sample:0.219,at:1779075322
+      sample:0.265,at:1779075328
+  step,dige:b53cbc92ba850ad8
+  step:2,dige:38f3d241bf0e3057

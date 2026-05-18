@@ -1060,6 +1060,21 @@
             }
         }
     },
+    // The_Opt_val: find the first {key:*} child of The/Opt and return its value.
+    //   Returns the stored value itself (number, string, truthy/falsy) — not just bool.
+    The_Opt_val(w: TheC, key: string): boolean {
+        return this.The_Opt(w).o({ [key]: 1 })[0]?.sc[key]
+    },
+    // ── o_Opt_k ──────────────────────────────────────────────────────────────
+    //
+    //   Read a named opt from w/{Opt:1}/{k:1}.
+    //   Returns false when the Opt container or key particle is absent.
+    //
+    //   Other H%Run clients (Lies, Pantheate, …) call this directly
+    //   instead of Story's The_Opt_val(), which has the full The/* hierarchy.
+    o_Opt_k(w: TheC, k: string): boolean {
+        return !!w.o({ Opt: 1 })[0]?.oa({ [k]: 1 })
+    },
 
 //#region w:Story
 
@@ -1736,11 +1751,6 @@
                 this.post_do(resume, { see: 'Resnap button' })
             },
         })
-    },
-    // The_Opt_val: find the first {key:*} child of The/Opt and return its value.
-    //   Returns the stored value itself (number, string, truthy/falsy) — not just bool.
-    The_Opt_val(w: TheC, key: string): boolean {
-        return this.The_Opt(w).o({ [key]: 1 })[0]?.sc[key]
     },
 
 
