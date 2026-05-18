@@ -253,10 +253,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         // Re-encode from in-memory waft (authoritative after any CRUD).
-        // Temporarily set sc.Waft to the new path so encode_waft uses it as the root line.
+        // Temporarily set sc.Waft to the new path so enWaft uses it as the root line.
         const prev_waft_key = waft.sc.Waft
         waft.sc.Waft = new_path
-        const { snap, errors, muted_log: _ml } = await H.encode_waft(waft)
+        const { snap, errors, muted_log: _ml } = await H.enWaft(waft)
         waft.sc.Waft = prev_waft_key
         if (errors.length) {
             console.error(`Waft rename encode errors:`, errors)
@@ -416,7 +416,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     console.log(`🗂 Waft:${path} not found — starting empty`)
                     return _C({ Waft: path })
                 }
-                const { waft_C: C, errors } = H.decode_waft(req.sc.reply?.content ?? '', path)
+                const { waft_C: C, errors } = H.deWaft(req.sc.reply?.content ?? '', path)
                 if (errors.length || !C) {
                     console.error(`Waft:${path} decode errors:`, errors)
                     const empty = _C({ Waft: path })
@@ -785,7 +785,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!w.c[throttle_key]) {
             w.c[throttle_key] = throttle(() => {
                 H.post_do(async () => {
-                    const { snap, errors, muted_log } = await H.encode_waft(waft)
+                    const { snap, errors, muted_log } = await H.enWaft(waft)
                     if (muted_log.length) {
                         // < surface muted_log in the UI once a per-mainkey review panel exists
                         console.debug(`💾 Waft:${path} muted ${muted_log.length} session key(s)`, muted_log)

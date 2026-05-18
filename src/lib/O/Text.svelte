@@ -111,243 +111,54 @@
     onMount(async () => {
     await M.eatfunc({
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-//#region waft codec (the one?)
-//
-// Waft-tree encode / decode, sitting on top of enLine / encode_wh_lines / decode_wh_lines.
-//
-// ── schema ───────────────────────────────────────────────────────────────────
-//
-//   WAFT_TREE_KEYS: the only mainkeys this encoder knows about.
-//     What — section / time-slice / subsection; unlimited nesting.
-//     Doc  — document entry; may contain What and Point children.
-//     Point — leaf; children are never traversed.
-//
-//   SESSION_KEYS: sc fields stripped silently before encoding.
-//     These are expected absences — worth reviewing if new ones emerge.
-//     active      — session-only waft / what flag; never stored
-//     created_at  — Point timestamp used for carry-over heuristic
-//     new         — Lies sets this on a Doc before first disk load
-//     not_found   — Lies sets this when the wormhole says the file is absent
-//
-//   Object/function values in sc (refs): enLine already handles these by
-//   moving them into objecties.ref; encode_wh_lines then surfaces them as
-//   errors.  Refs in .sc are bugs — they belong in .c.  The error path is
-//   the right treatment: loud, fatal, refuse to save.
-//
-// ── muted_log ────────────────────────────────────────────────────────────────
-//
-//   encode_waft returns muted_log alongside snap and errors.
-//   Each entry: { path: string[], reason: string, keys: string[] }
-//     path   — mainkey breadcrumb to the particle, e.g. ['Waft', 'Doc', 'What']
-//     reason — 'session' | future: 'unknown_mainkey'
-//     keys   — the sc field names that were stripped
-//
-//   muted_log is informational — it does not block saving.  It is the data
-//   that a future per-mainkey muting-review UI will consume.  Every instance
-//   of silent data loss passes through here so there is a place to bolt the
-//   UI in later, without having to hunt for call sites.
-//
-// ── backward compat ──────────────────────────────────────────────────────────
-//
-//   Old snap format had Doc → Points:1 → Point:1.
-//   decode_waft detects Points:1 particles (mainkey 'Points') after parsing
-//   and hoists their Point children directly onto the parent Doc, then drops
-//   the container.  The rest of the system never sees the old layout.
-
-// ── encode_waft ───────────────────────────────────────────────────────────────
-//
-//   Walk a live waft TheC tree and produce snap-line text.
-//   Returns { snap, errors, muted_log }.
-//
-//   errors are FATAL — any ref-in-sc or dupe particle.
-//   Caller should refuse to save when errors.length > 0.
-//
-//   The root line is always Waft:<path> only — no other waft.sc fields
-//   are encoded (the waft particle itself is session state).
-
-async encode_waft(waft: TheC): Promise<{
-    snap:      string
-    errors:    string[]
-    muted_log: Array<{ path: string[], reason: string, keys: string[] }>
-}> {
-    const WAFT_TREE_KEYS = new Set(['What', 'Doc', 'Point'])
-    const SESSION_KEYS   = new Set(['active', 'created_at', 'new', 'not_found'])
-
-    // First sc key = type identity of a particle.
-    const mainkey = (C: TheC): string | undefined =>
-        Object.keys(C.sc ?? {})[0]
-
-    const muted_log: Array<{ path: string[], reason: string, keys: string[] }> = []
-
-    // Build a filtered {sc, children} item for one particle.
-    // Returns null for particles whose mainkey is not in WAFT_TREE_KEYS —
-    // they are silently skipped (Opt, mung_error, compile_pending, etc.).
-    // Point is a leaf: children array is always empty.
-    const build_item = (
-        C:    TheC,
-        path: string[],
-    ): { sc: Record<string, any>, children: any[] } | null => {
-        const mk = mainkey(C)
-        if (!mk || !WAFT_TREE_KEYS.has(mk)) return null
-
-        const sc_out:         Record<string, any> = {}
-        const muted_session:  string[]            = []
-
-        for (const [k, v] of Object.entries(C.sc as Record<string, any>)) {
-            if (SESSION_KEYS.has(k)) { muted_session.push(k); continue }
-            // Object/function values pass through — enLine (via encode_wh_lines)
-            // moves them to objecties.ref and records them as errors.
-            // This is intentionally loud: refs in sc are always bugs.
-            sc_out[k] = v
-        }
-
-        if (muted_session.length) {
-            muted_log.push({ path: [...path, mk], reason: 'session', keys: muted_session })
-        }
-
-        const children: any[] = []
-        if (mk !== 'Point') {
-            for (const child of (C.X?.z ?? []) as TheC[]) {
-                const item = build_item(child, [...path, mk])
-                if (item) children.push(item)
-            }
-        }
-
-        return { sc: sc_out, children }
-    }
-
-    // Walk each direct child of waft.
-    const items: Array<{ sc: Record<string, any>, children: any[] }> = []
-    for (const child of (waft.X?.z ?? []) as TheC[]) {
-        const item = build_item(child, ['Waft'])
-        if (item) items.push(item)
-    }
-
-    const { snap, errors } = await (this as any).encode_wh_lines(
-        { Waft: waft.sc.Waft },
-        items,
-    )
-    return { snap, errors, muted_log }
-},
-
-// ── decode_waft ───────────────────────────────────────────────────────────────
-//
-//   Decode snap-line text back to a live TheC tree.
-//   Wraps decode_wh_lines, sets the canonical Waft key, and applies the
-//   backward-compat Points:1 hoist.
-//
-//   Returns { waft_C, errors }.  waft_C is null on fatal parse error.
-
-decode_waft(snap: string, path: string): { waft_C: TheC | null, errors: string[] } {
-    const { C, errors } = (this as any).decode_wh_lines(snap)
-    if (!C) return { waft_C: null, errors }
-
-    // Caller's path is authoritative over whatever the snap encoded.
-    C.sc.Waft = path
-
-    const mainkey = (n: TheC): string | undefined =>
-        Object.keys(n.sc ?? {})[0]
-
-    // Points:1 hoist: walk the decoded tree; for any 'Points' container,
-    // re-i() its children directly onto the parent, then drop the container.
-    //
-    // Snapshot the child list before mutating — drop() changes C.X.z in place.
-    const hoist_points = (parent: TheC) => {
-        for (const child of [...((parent.X?.z ?? []) as TheC[])]) {
-            if (mainkey(child) === 'Points') {
-                for (const pt of (child.X?.z ?? []) as TheC[]) parent.i(pt)
-                parent.drop(child)
-            } else {
-                hoist_points(child)
-            }
-        }
-    }
-    hoist_points(C)
-
-    return { waft_C: C, errors }
-},
-
-//#endregion
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //#region wormhole Lines
 // ── encode_wh_lines ────────────────────────────────────────────────────
-// Encode a tree of {sc, children?} items to snap-line text via Travel.
+// Encode a live TheC tree to snap-line text via Travel + enLine.
 //
-// root_sc  — the depth-0 header line, e.g. {Library:1}
-// items    — depth-1 entries; each may carry .children for depth 2+
+// Takes a TheC directly — no intermediate {sc, children?} item list.
+// Travel walks the live tree; enLine encodes each particle.
 //
-// Returns { snap, errors }.
+// opt.matching — lematch rules passed to enLine as q.rules.  Rules may
+//   carry means.omit_sc (silent drop), means.blockquote_these_sc (BQ),
+//   means.munging (mung → fatal error), and entry.mk for mainkey matching.
+// opt.all_knowing — if true, derive known mainkeys from opt.matching
+//   entries that carry entry.mk; any particle whose mainkey is not in
+//   that set is a fatal error (subtree skipped).
+// opt.muted_log — if provided, omit_sc omissions are appended here.
+//   Informational: does not block saving.
 //
-// Errors are FATAL — any mung (object/function value on any sc) or dupe
-// node causes the offending line to be skipped and the error to record
-// the full T.c.path of ancestor snap lines so you can see exactly where
-// the problem is.  The caller should refuse to save if errors.length > 0.
+// Errors are FATAL — mung keys, unknown types (all_knowing), dupe nodes.
+// Caller should refuse to save when errors.length > 0.
     async encode_wh_lines(
-        root_sc: Record<string, any>,
-        items: Array<{ sc: Record<string, any>, children?: any[] }>
+        C:   TheC,
+        opt?: {
+            matching?:    Array<any>
+            all_knowing?: boolean
+            muted_log?:   Array<{ depth: number, mainkey: string, omitted: string[] }>
+        }
     ): Promise<{ snap: string, errors: string[] }> {
         const H = this as any
         const errors: string[] = []
         const snap_lines: string[] = []
         const seen = new Set<TheC>()
 
-        // Build a TheC tree for Travel to walk.
-        // Each item's sc becomes a TheC; children are i()'d into the parent
-        // so Travel's n.o({}) call finds them as direct children.
-        const build_into = (parent: TheC, sc: Record<string,any>, children?: any[]) => {
-            const c = _C({ ...sc })
-            parent.i(c)
-            for (const child of children ?? []) build_into(c, child.sc, child.children)
-        }
-        const rootC = _C({ ...root_sc })
-        for (const item of items ?? []) build_into(rootC, item.sc, item.children)
+        // Derive the set of accepted mainkeys from rules that carry entry.mk.
+        // Only active when all_knowing is set — otherwise any particle encodes.
+        const known_mainkeys: Set<string> | null = opt?.all_knowing
+            ? new Set(
+                (opt.matching ?? [])
+                    .flatMap((r: any) => (r.matching_any ?? []).map((e: any) => e.mk).filter(Boolean))
+              )
+            : null
 
         // Walk with Travel — match_sc:{} visits every child at every depth.
         const Tr = new Travel()
         await Tr.dive({
-            n: rootC,
+            n: C,
             match_sc: {},
             each_fn: async (n: TheC, T: Travel) => {
-                const d = T.c.path.length - 1  // 0 for root, 1 for items, etc.
+                const d = T.c.path.length - 1  // 0 for root, 1 for depth-1 children, etc.
 
-                // Dupe detection: same C object in two places in the tree.
                 if (seen.has(n)) {
                     const path_str = T.c.path
                         .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
@@ -358,33 +169,125 @@ decode_waft(snap: string, path: string): { waft_C: TheC | null, errors: string[]
                 }
                 seen.add(n)
 
-                // Encode via enLine with q.check so mung is flagged.
-                const q: any = { d }
-                const lines = H.enLine(n, q)
-
-                if (q.objecties?.mung) {
-                    // Build path from ancestor snap_Lines stored in prior each_fn calls.
+                // all_knowing: mainkey not in protocol = fatal, skip subtree.
+                const mk = Object.keys(n.sc ?? {})[0]
+                if (known_mainkeys && mk && !known_mainkeys.has(mk)) {
                     const path_str = T.c.path
                         .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
                         .join(' → ')
-                    errors.push(`mung keys [${q.mung?.join(', ')}] at depth ${d} — path: ${path_str}`)
-                    T.sc.not = 1   // skip this node and all its children
+                    errors.push(`unknown particle "${mk}" at depth ${d} — not in protocol — path: ${path_str}`)
+                    T.sc.not = 1
                     return
                 }
 
-                // Collect BQ errors
+                const q: any = { d, rules: opt?.matching ?? [] }
+                const lines = H.enLine(n, q)
+
+                if (q.objecties?.mung?.length) {
+                    const path_str = T.c.path
+                        .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
+                        .join(' → ')
+                    errors.push(`mung keys [${(q.mung ?? []).join(', ')}] at depth ${d} — path: ${path_str}`)
+                    T.sc.not = 1
+                    return
+                }
+
                 for (const bqe of q.bq_errors ?? []) {
                     errors.push(`blockquote error at depth ${d}: ${bqe}`)
                 }
 
-                // Store first snap line on c.c (not c.sc) so it's available for child
-                // path debug without polluting the snap output.
+                // Collect omit_sc omissions into muted_log for later review.
+                // < surface muted_log in a per-mainkey review UI (see Waft_spec)
+                if (q.omitted?.length && opt?.muted_log) {
+                    opt.muted_log.push({ depth: d, mainkey: mk ?? '?', omitted: q.omitted })
+                }
+
                 n.c.snap_Line = lines?.[0] ?? ''
                 for (const line of lines ?? []) snap_lines.push(line)
             },
         })
 
         return { snap: snap_lines.join('\n') + '\n', errors }
+    },
+
+    // ── enWaft ─────────────────────────────────────────────────────────────────
+    // Protocol front-end for encode_wh_lines: sets up the Waft matching rules
+    // and calls encode_wh_lines(C, opt).
+    //
+    // opt.all_knowing defaults to true — particles whose mainkey is not in
+    //   (Waft | What | Doc | Point) are fatal encoding errors.
+    // opt.matching defaults to WAFT_PROTOCOL — the inline rules that attach
+    //   omit_sc:{session keys} to every known mainkey via entry.mk matching.
+    //
+    // The SESSION_KEYS stripped silently are: active, created_at, new, not_found.
+    // All other scalar keys on known particles encode normally.
+    // Object/function values in .sc are still fatal (refs belong in .c).
+    //
+    // Returns { snap, errors, muted_log }.
+    // muted_log entries: { depth, mainkey, omitted: string[] }
+    // Errors are fatal — caller should refuse to save.
+    async enWaft(
+        C:   TheC,
+        opt: {
+            all_knowing?: boolean
+            matching?:    Array<any>
+            muted_log?:   Array<{ depth: number, mainkey: string, omitted: string[] }>
+        } = {}
+    ): Promise<{ snap: string, errors: string[], muted_log: Array<{ depth: number, mainkey: string, omitted: string[] }> }> {
+        // Session-only sc fields: expected absences from every snap.
+        // Review this list when new session-only patterns are introduced.
+        const SESSION_KEYS: Record<string, 1> = { active: 1, created_at: 1, new: 1, not_found: 1 }
+
+        // Matching rules for the Waft particle vocabulary.
+        // Each rule matches by mainkey (entry.mk) and silently omits session keys.
+        // Hierarchy is unstrict — (Waft|What|Doc|Point)** in any nesting order.
+        const WAFT_PROTOCOL = ['Waft', 'What', 'Doc', 'Point'].map(mk => ({
+            matching_any: [{ mk }],
+            means: { omit_sc: SESSION_KEYS },
+        }))
+
+        opt.all_knowing ??= true
+        opt.muted_log   ??= []
+        opt.matching    ??= WAFT_PROTOCOL
+
+        const { snap, errors } = await (this as any).encode_wh_lines(C, opt)
+        return { snap, errors, muted_log: opt.muted_log }
+    },
+
+    // ── deWaft ─────────────────────────────────────────────────────────────────
+    // Decode snap-line text to a live Waft TheC tree.
+    // Wraps decode_wh_lines and applies backward-compat fixups:
+    //
+    //   path — canonical Waft path; stamped onto C.sc.Waft regardless of
+    //     what the snap root line encoded (snap root is informational only).
+    //
+    //   Points:1 hoist — old format had Doc → Points:1 → Point:1.
+    //     Any 'Points' container is detected by mainkey; its children are
+    //     moved onto the parent and the container is dropped.
+    //     Snapshot the child list before mutating (drop() changes X.z in place).
+    //
+    // Returns { waft_C, errors }.  waft_C is null on fatal parse error.
+    deWaft(snap: string, path: string): { waft_C: TheC | null, errors: string[] } {
+        const { C, errors } = (this as any).decode_wh_lines(snap)
+        if (!C) return { waft_C: null, errors }
+
+        C.sc.Waft = path  // caller's path is authoritative
+
+        const mainkey = (n: TheC) => Object.keys(n.sc ?? {})[0]
+
+        const hoist_points = (parent: TheC) => {
+            for (const child of [...((parent.X?.z ?? []) as TheC[])]) {
+                if (mainkey(child) === 'Points') {
+                    for (const pt of [...((child.X?.z ?? []) as TheC[])]) parent.i(pt)
+                    parent.drop(child)
+                } else {
+                    hoist_points(child)
+                }
+            }
+        }
+        hoist_points(C)
+
+        return { waft_C: C, errors }
     },
 
     // ── decode_wh_lines ────────────────────────────────────────────────────
@@ -630,12 +533,10 @@ decode_waft(snap: string, path: string): { waft_C: TheC | null, errors: string[]
         const tab     = line.indexOf('\t')
         const obj_raw = tab >= 0 ? line.slice(spaces, tab) : ''
         const str_raw = tab >= 0 ? line.slice(tab + 1) : line.slice(spaces)
-        const stringies = str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw)
-        if (stringies.dige) stringies.dige = String(stringies.dige)
         return {
             d,
             objecties: obj_raw ? JSON.parse(obj_raw) : {},
-            stringies,
+            stringies: str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw),
         }
     },
 
@@ -681,6 +582,7 @@ decode_waft(snap: string, path: string): { waft_C: TheC | null, errors: string[]
         skip?: boolean
         thence?: Array<any>
         mung?: string[]
+        omitted?: string[]          // keys silently dropped by omit_sc means
         bq_errors?: string[]
     }): string[] | null {
         const mr = n.lematch(q.rules ?? [])
@@ -688,24 +590,26 @@ decode_waft(snap: string, path: string): { waft_C: TheC | null, errors: string[]
         q.thence = mr.thence
         if (q.skip) return null
 
-        // Collect blockquote_these_sc from all matched rules (union of all means)
-        const bq_keys: Record<string, 1> = {}
+        // Collect means from all matched rules.
+        // entry.mk: match any particle whose first sc key equals that string.
+        // entry.sc_only / entry.sc: existing value-exact matching.
+        // lematch doesn't expose which rules fired so we re-check here,
+        // same pattern as before but now also collects omit_sc.
+        const bq_keys:   Record<string, 1> = {}
+        const omit_keys: Record<string, 1> = {}
         for (const rule of q.rules ?? []) {
-            // lematch already checked matching — we need to re-check here or just
-            // collect from mr.munging's companion.  Simpler: walk rules directly.
-            // (lematch doesn't expose which rules matched, only their combined effects,
-            //  so we re-examine means.blockquote_these_sc from any rule that fired.)
             const matched = (rule.matching_any as any[] ?? []).some((entry: any) => {
+                if (entry.mk) return Object.keys(n.sc ?? {})[0] === entry.mk
                 if (entry.sc_only) {
                     const want = Object.keys(entry.sc_only)
                     if (Object.keys(n.sc).length !== want.length) return false
                     return n.matches(entry.sc_only)
                 }
-                return n.matches(entry.sc)
+                return n.matches(entry.sc ?? {})
             })
-            if (matched && rule.means?.blockquote_these_sc) {
-                Object.assign(bq_keys, rule.means.blockquote_these_sc)
-            }
+            if (!matched) continue
+            if (rule.means?.blockquote_these_sc) Object.assign(bq_keys,   rule.means.blockquote_these_sc)
+            if (rule.means?.omit_sc)             Object.assign(omit_keys, rule.means.omit_sc)
         }
 
         const stringies: Record<string, any> = {}
