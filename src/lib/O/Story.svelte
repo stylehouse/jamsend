@@ -979,7 +979,6 @@
 
         // i The/Opt
         H.watch_c(this.The_Opt(w), () => H.story_save())
-        H.push_opt_to_run(w)
 
         // ── commission Cyto ───────────────────────────────────────────
         // Cyto reads Scannable/Styles/client_w/capability flags from this
@@ -1009,6 +1008,12 @@
         return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
     },
 
+    Story_settingoff(w: TheC, Run: House, run: TheC) {
+        // Called once, just before step 1 — toc decoded, Run wired.
+        // The doorstep moment: gifts of Opt delivered for the journey.
+        this.push_opt_to_run(w)
+    },
+
     push_opt_to_run(w: TheC) {
         // Walk The/Opt/For/* and for each {w:Name} bucket, find the matching
         // worker particle in Run (%A/%w:Name) and w.i() each option child into it.
@@ -1020,8 +1025,7 @@
         // The option particles are the actual TheC objects from The**, so they
         // round-trip through toc.snap as part of The and don't need separate saving.
         const H    = this as any
-        const optC = w.c.Opt as TheC | undefined
-        if (!optC) return
+        const optC = this.The_Opt(w)   // w.c.Opt is never assigned — go via The_Opt
  
         const forC = optC.o({ For: 1 })[0] as TheC | undefined
         if (!forC) return
@@ -1239,6 +1243,7 @@
         //   Set via The/Opt/{quiesce_snap_time:N} in toc.snap for picky tests.
         //   Falls back to the default 1.5×TICK threshold when absent.
         const quiesce_snap_time = H.The_Opt_val(w, 'quiesce_snap_time') ?? (TICK_MS / 1000) * 1.5
+
         const update_status = async (label: string, cls = 'default') => {
             const wa = () => H.o({ watched: 'actions' })[0]
             await wa()?.r({ action: 1, role: 'status' }, { label, cls, disabled: true })
@@ -1299,6 +1304,11 @@
 
             run.c.step_n     = n
             run.c.began_step = now_in_seconds_with_ms()
+            // settingoff: once before the first step — toc decoded, Run wired, Opt gifts given.
+            if (n === 1 && !run.c.settled_off) {
+                run.c.settled_off = true
+                H.Story_settingoff(w, Run, run)
+            }
             // reset so ===0 detection below only fires for THIS step's alleviation
             Run.c.leave_running_until = null
             Run.c.runtime = true          // feebly_ponder and ponder are now live
@@ -1727,7 +1737,8 @@
             },
         })
     },
-    // The_Opt_val
+    // The_Opt_val: find the first {key:*} child of The/Opt and return its value.
+    //   Returns the stored value itself (number, string, truthy/falsy) — not just bool.
     The_Opt_val(w: TheC, key: string): boolean {
         return this.The_Opt(w).o({ [key]: 1 })[0]?.sc[key]
     },

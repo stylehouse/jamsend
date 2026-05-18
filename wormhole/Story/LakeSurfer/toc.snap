@@ -65,21 +65,21 @@ story:LakeSurfer
   Opt
     For
       w:Lies
-        nogen
+        yesgen
     trickle
     noCyto
     quiesce_snap_time:0.4
   TimeSpool
-    TimeTotal:beliefs,avg:0.281
-      sample:0.261,at:1779063488
-      sample:0.255,at:1779064183
-      sample:0.325,at:1779066393
-      sample:0.24,at:1779067704
-      sample:0.178,at:1779067735
+    TimeTotal:beliefs,avg:0.661
       sample:0.226,at:1779068253
       sample:0.376,at:1779069285
       sample:0.274,at:1779070709
       sample:0.448,at:1779071075
       sample:0.231,at:1779071095
+      sample:3.851,at:1779071330
+      sample:0.32,at:1779071377
+      sample:0.405,at:1779071536
+      sample:0.246,at:1779072331
+      sample:0.231,at:1779073259
   step,dige:5c76a6d4bc33ee58
   step:2,dige:f59cf9d2ddf9f983
