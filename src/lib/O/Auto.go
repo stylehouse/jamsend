@@ -178,19 +178,7 @@
     auto_save_library(w: TheC, Li: TheC) {
         const H = this as House
         H.post_do(async () => {
-            const books = Li.o({ Book: 1 }) as TheC[]
-            const items = books.map(b => {
-                // Strip object/function values before encoding — they'd cause
-                // encode_wh_lines to error and abort the save.
-                const sc: Record<string, any> = {}
-                for (const [k, v] of Object.entries(b.sc)) {
-                    if (v === null || typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
-                        sc[k] = v
-                }
-                return { sc }
-            })
-
-            const { snap, errors } = await H.encode_wh_lines({ Library: 1 }, items)
+            const { snap, errors } = await H.encode_wh_lines(Li)
             if (errors.length) {
                 console.error('Library encode errors (save aborted):', errors)
                 for (const msg of errors) {
@@ -199,11 +187,11 @@
                 Li.bump_version()
                 return
             }
-
+ 
             const rw  = await H.requesty_serial(w, 'rw_queue')
             const req = await rw.i({ rw_name: H.get_Library_path(), rw_op: 'write', rw_data: snap })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-            console.log(`💾 Library saved (${books.length} books)`)
+            console.log(`💾 Library saved (${(Li.o({ Book: 1 }) as TheC[]).length} books)`)
         }, { see: 'save_library' })
     },
 

@@ -32,7 +32,7 @@ Snap:H
                 The double-envelopment became the template for every subsequent battle of annihilation.
         enc_test:bq_roundtrip,ok,dec_errors:0
         enc_test:bq_no_newline,ok,bq_error_count,source_inline
-        enc_test:mung_cycle,ok:0,mung_excluded:0,mung_marker,decode_refused
+        enc_test:mung_cycle,ok,mung_excluded,mung_marker,decode_refused
         enc_test:ref_inline,ok,has_ref_obj,no_mung_err,has_senate
         enc_test:dupe_impossible,ok,enc_errors:0,battles_found:2
         enc_test:decode_errors,ok,empty,second_root,depth_jump,bq_no_body,sibling_ok

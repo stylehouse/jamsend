@@ -599,13 +599,14 @@
         const omit_keys: Record<string, 1> = {}
         for (const rule of q.rules ?? []) {
             const matched = (rule.matching_any as any[] ?? []).some((entry: any) => {
-                if (entry.mk) return Object.keys(n.sc ?? {})[0] === entry.mk
+                if (entry.mk)      return Object.keys(n.sc ?? {})[0] === entry.mk
                 if (entry.sc_only) {
                     const want = Object.keys(entry.sc_only)
                     if (Object.keys(n.sc).length !== want.length) return false
                     return n.matches(entry.sc_only)
                 }
-                return n.matches(entry.sc ?? {})
+                if (!entry.sc_has) throw `enLine rule uses neither mk, sc_only, nor sc_has`
+                return n.matches(entry.sc_has)
             })
             if (!matched) continue
             if (rule.means?.blockquote_these_sc) Object.assign(bq_keys,   rule.means.blockquote_these_sc)
