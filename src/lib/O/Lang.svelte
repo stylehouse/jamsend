@@ -259,14 +259,25 @@
         // ── Auto-compile on first editorBegins per doc ────────────────────────
         //
         // One-shot per doc.c (not per tick) gated by ever_began_compile.
-        // 200ms deferred so the EditorView fully settles first.
+        // Only arms when the EditorState has real content — the first
+        // editorBegins often arrives before Langui's $effect has dispatched
+        // the file text into the CM view (state.doc.length === 0 at that
+        // point).  A second editorBegins follows once the text lands, and
+        // that one is where we compile.
         // Guards against firing while another compile is already pending.
         if (!doc.c.ever_began_compile) {
-            doc.c.ever_began_compile = true
-            const job = doc.o({ Compile: 1 })[0] as TheC | undefined
-            if (!job?.oa({ Pending: 1 })) {
-                setTimeout(() => this.i_elvisto(w, 'Lang_compile', {}), 200)
+            const st = e.sc.state as EditorState | undefined
+            if (st && st.doc.length > 0) {
+                doc.c.ever_began_compile = true
+                const job = doc.o({ Compile: 1 })[0] as TheC | undefined
+                if (!job?.oa({ Pending: 1 })) {
+                    setTimeout(() => {
+                        if (st.doc.length == 0) debugger
+                        this.i_elvisto(w, 'Lang_compile', {})
+                    }, 200)
+                }
             }
+            // else: stub state — wait for next editorBegins with real content
         }
     },
 

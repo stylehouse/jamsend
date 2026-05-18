@@ -32,6 +32,12 @@
 
     // some rows here, have yay many rows in them
     let inner_sizing = (stuffusion||stuffziado).inner_sizing
+    let inner_count = $derived(
+        innered.reduce((sum: number, inner: any) => {
+            void inner.version   // subscribe — inner.X.serial_i is $state
+            return sum + (inner.X?.z?.filter((n: any) => !n.c?.drop)?.length ?? 0)
+        }, 0)
+    )
     // we are the more-rows handle for
     if (stuffusion) {
         // a whole Stuffusion
@@ -55,7 +61,7 @@
 
 {#if anything}
 <button class="btn" onclick={toggle}>
-    <span class="count {openness && 'open'}"> {inner_sizing} </span>
+    <span class="count {openness && 'open'}"> /*{inner_count} </span>
 </button>
 <span class="inner">
     {#if openness}

@@ -128,7 +128,10 @@
 
     // Beliefs-time entry for the compile action button.
     // Fired via i_elvisto so Story can detect Lang settling after a compile.
-    async e_Lang_compile(A: TheC, w: TheC, _e: TheC) {
+    async e_Lang_compile(A: TheC, w: TheC, e: TheC) {
+        if (!e.sc.misdirectioner) {
+            return this.i_elvisto(w,'Lang_compile',{misdirectioner:1})
+        }
         await this.Lang_compile(A, w)
     },
 
@@ -281,6 +284,7 @@
         // < future: continue past first error once there's a UI path for line-level
         //   diagnostics (akin to Point_issue); for now we stop at the first and rethrow.
         const line_errors: Array<{ n: number, text: string, msg: string }> = []
+        if (doc.lines == 1) this.trace(`Lang`,`Only one line? ${doc.text[0]}`)
 
         let n = 1
         while (n <= doc.lines) {
@@ -305,6 +309,8 @@
         for (const word of words) {
             methods.i(word)
         }
+        let was = methods.o().length
+        this.trace(`Lang`,`There were methods x${was}`)
 
         // Record per-line errors on the Compile particle so future UI can surface them.
         // < like Point_issue, these want a line number and text snippet for navigation.
@@ -355,6 +361,7 @@
             out.push({ kind: 'raw', text: line.text })
             return n + 1
         }
+
 
         // ── TypeScript import/export guard ────────────────────────────────────
         //

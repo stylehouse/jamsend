@@ -22,14 +22,24 @@
 
     let new_stuffing: Stuffing | null = $state(null)
     let spinner = $state(false)
+    // Recursively sum all .version ($state) values in the tree so any insertion
+    // or change anywhere below stuff — not just at the top level — retriggers
+    // the Stuffing rebuild.  Each .version read subscribes to that TheC's
+    // X.serial_i; new children are picked up when their parent's version bumps
+    // and the derived re-runs, discovering and subscribing to the new kids.
+    function deep_version(C: TheC): number {
+        const v = C.version || 0
+        return (C.X?.z ?? []).reduce(
+            (sum: number, kid: TheC) => kid.c?.drop ? sum : sum + deep_version(kid),
+            v
+        )
+    }
+    let deep_v = $derived(stuff ? deep_version(stuff) : 0)
+
     $effect(() => {
-        // we have to wait for the new version
-        //  if in transaction that went async
-        //   after starting to change stuff
-        if (stuff?.version) {
-            new_stuffing = new Stuffing(stuff,matchy)
+        if (deep_v) {
+            new_stuffing = new Stuffing(stuff, matchy)
             spinner = true
-            // console.log(`Stuffing new...`)
         }
         stufflen()
     })
