@@ -188,16 +188,20 @@
         }
 
         // gen_path comes from docC (set by e_Lang_open_doc via Lies).
-        // Absent gen_path means soft-compile only — abstractions are extracted
-        // (methods/calls index in job/{methods:1}) but nothing is written to disk.
+        // Absent gen_path means soft-compile only — methods/calls are indexed
+        // but the eatfunc-wrapped source is meaningless for a non-stho file,
+        // so Output is suppressed.  Only gen_path docs get an Output particle.
+        // < softgen: a future Opt flag to show Output without writing to gen/
+        //   would set gen_path on the doc but let do_write=false pass through.
         const gen_path = docC.sc.gen_path as string | undefined
-        const dige = await dig(source)
-        job.oai({Output:1, gen_path, source, dige})
         if (!gen_path) {
             await job.r({Pending:1},{})   // no write step — soft compile done
             w.i({ see: `🔍 soft-compiled ${docC.sc.doc}` })
             return
         }
+
+        const dige = await dig(source)
+        job.oai({Output:1, gen_path, source, dige})
 
         // Hand off to Lies as the compile airlock.
         // Lies checks opt_write and opt_run, does the Wormhole write

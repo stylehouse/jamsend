@@ -501,8 +501,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const gen_path = pending.sc.gen_path  as string
             const source   = pending.sc.source    as string
 
-            const do_write = !H.o_Opt_k(w, 'nogen')
-            const do_run   = !H.o_Opt_k(w, 'nogen')
+            const do_write = !H.o_Opt_val(w, 'nogen')
+            const do_run   = !H.o_Opt_val(w, 'nogen')
 
             if (do_write) {
                 // requesty_serial keyed on Lies's w — no need to touch
@@ -563,18 +563,19 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!doc_path || !spec) return
 
         // Find the Point particle across all Wafts that own this doc.
-        // Points live directly on the Doc particle — no Points:1 container.
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
             if (!doc) continue
-            const point = doc.o({ Point: 1, method: spec })[0] as TheC | undefined
+            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
+            if (!pointsC) continue
+            const point = pointsC.o({ Point: 1, method: spec })[0] as TheC | undefined
             if (!point) continue
 
             // Clear stale resolve metadata and issue children from prior navigate.
             delete point.sc.diag_kind
             delete point.sc.diag_from
             delete point.sc.diag_to
-            await doc.r({ Point_issue: 1, method: spec }, {})
+            await pointsC.r({ Point_issue: 1, method: spec }, {})
 
             // Stamp fresh resolve metadata.
             if (e.sc.kind  != null) point.sc.diag_kind = e.sc.kind
@@ -584,12 +585,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // Create a child for each imperfection so Liesui can list them.
             if (issues?.length) {
                 for (const msg of issues) {
-                    doc.i({ Point_issue: 1, method: spec, msg })
+                    pointsC.i({ Point_issue: 1, method: spec, msg })
                 }
                 console.warn(`📍 Point '${spec}' issues:`, issues)
             }
 
-            doc.bump_version()
+            pointsC.bump_version()
             return
         }
 
@@ -640,13 +641,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         // Find or create the Doc row for this path in the target Waft.
-        // Points live directly on doc — no Points:1 container.
-        const doc = target_waft.oai({ Doc: 1, path })
+        const doc     = target_waft.oai({ Doc: 1, path })
+        const pointsC = doc.oai({ Points: 1 })
 
         // Skip if a Point with the same method already exists (same logical pointer).
-        const already = doc.o({ Point: 1, method })[0] as TheC | undefined
+        const already = pointsC.o({ Point: 1, method })[0] as TheC | undefined
         if (!already) {
-            doc.i({ Point: serial, method, label, from, to })
+            pointsC.i({ Point: serial, method, label, from, to })
             target_waft.bump_version()
             H.Lies_waft_save(w, target_waft)
             console.log(`📌 exported Point ${serial} method='${method}' to Waft:${target_waft.sc.Waft}`)
@@ -661,6 +662,18 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
+    // ── o_Opt_val ─────────────────────────────────────────────────────────────
+    //
+    //   Read a named opt from w/{Opt:1}/{k:1} and return its stored value —
+    //   number, string, truthy/falsy — mirroring The_Opt_val's .sc[key] pattern.
+    //   Returns undefined when the Opt container or key particle is absent.
+    //
+    //   Callers that only need a boolean can still use !! or a falsy check.
+    //   Other H%Run clients (Lies, Pantheate, …) call this instead of
+    //   Story's The_Opt_val(), which has the full The/* hierarchy.
+    o_Opt_val(w: TheC, k: string) {
+        return w.o({ Opt: 1 })[0]?.o({ [k]: 1 })[0]?.sc[k]
+    },
 
     // ── Lies_gen_path ─────────────────────────────────────────────────────────
     //
@@ -780,18 +793,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                         console.debug(`💾 Waft:${path} muted ${muted_log.length} session key(s)`, muted_log)
                     }
                     if (errors.length) {
-                        // Surface encode errors on the waft particle so EncodingSplatter can show them.
-                        // Clear stale encode_error children first; mung_error (decode) children survive.
-                        await waft.r({ encode_error: 1 }, {})
-                        for (const msg of errors) waft.i({ encode_error: 1, msg })
-                        waft.bump_version()
                         console.error(`Waft:${path} encode errors (save aborted):`, errors)
                         return
-                    }
-                    // Clear any stale encode errors from a prior failed save.
-                    if (waft.oa({ encode_error: 1 })) {
-                        await waft.r({ encode_error: 1 }, {})
-                        waft.bump_version()
                     }
                     const snap_path = H.Lies_waft_snap_path(path)
                     const rw  = await H.requesty_serial(w, 'rw_queue')
