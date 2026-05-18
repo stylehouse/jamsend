@@ -1,13 +1,13 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:21
+      {"mung":["age"]}	self,round:26
       w:PeeringLive
-        {"mung":["age"]}	self,round:21
-        {"see":"PeeringLive  open:2/2"}
+        {"mung":["age"]}	self,round:26
+        {"see":"PeeringLive  open:3/3"}
     A:Bearing
-      {"mung":["age"]}	self,round:24
-      w:Bearing
+      {"mung":["age"]}	self,round:30
+      w:Bearing,finished
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
         scheme:Pier
@@ -32,9 +32,13 @@ Snap:H
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-        {"mung":["age"]}	self,round:24
+        Pier,pub:962af4326c28f29b,name:962af4326c28f29b
+          protocol_faulty
+            Unemit_Error
+              error:not them
+        {"mung":["age"]}	self,round:30
     A:Nearing
-      {"mung":["age"]}	self,round:23
+      {"mung":["age"]}	self,round:28
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -57,5 +61,33 @@ Snap:H
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
-        {"mung":["age"]}	self,round:23
+        {"mung":["age"]}	self,round:28
+    A:Tearing
+      {"mung":["age"]}	self,round:29
+      w:Tearing
+        scheme:Peering
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
+        scheme:Pier
+          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
+        De:listen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          req:register,maz:2,finished
+          req:listening,maz:3,finished
+          log
+            msg:keygen started
+            msg:keygen done
+        Peerily
+        Peering,name:tearing,prepub:962af4326c28f29b
+          {"ref":{"Id":"Idento()"}}	prepri:386df6d9
+          open
+        De:connect,target:7acf614d876d69a4,finished
+          req:dial,finished
+          req:connected,finished
+        De:handshake
+          req:said_hello,demand:800,finished
+          req:heard_hello,maz:2,demand:800
+          req:said_trust,maz:3,demand:1500
+          req:heard_trust,maz:4,demand:1500
+        Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
+        {"mung":["age"]}	self,round:29
     {"mung":["id"]}	mo:main,interval:3.6

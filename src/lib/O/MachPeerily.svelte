@@ -121,6 +121,23 @@
 			{"i_elvisto":"PeeringLive/Bearing","e":"force_disconnect"}
 				{"esc":"seq","v":1}
 
+── scenario D: Tearing cheats hello — caught at step 4 ────────────────────────
+  (default run: no Prep needed, step 4 fires from on_step automatically)
+
+  step 4 snap (Tearing dials Bearing, sends corrupt hello):
+  w:Tearing
+    De:listen,finished
+    De:connect,target:8cbc667b…,finished
+    De:handshake          ← req:said_hello finished; heard_hello never arrives
+      req:said_hello,finished
+      req:heard_hello,maz:2
+
+  w:Bearing
+    Pier,pub:tearing_prepub
+      protocol_faulty
+        Unemit_Error
+          error: not them
+
 ── A then B ────────────────────────────────────────────────────────────────────
 
   toc.snap:
@@ -140,9 +157,11 @@
 
 //#region PeeringLive
 // Two real Peerily/Peering/Pier objects connecting inside one House.
+//   At step 4 a third side, Tearing, activates and cheats hello|trust crypto.
 //
 // A:PeeringLive/w:PeeringLive — manager: on_step_ending wiring, hangup cleanup.
 // A:Bearing/w:Bearing, A:Nearing/w:Nearing — each side's worker.
+// A:Tearing/w:Tearing — dormant until step 4; arms corrupt_hello before its first emit.
 //
 // De particles are the causal record of what each side is trying to do.
 //   Both sides have De:listen; Bearing also gets De:connect.
@@ -167,6 +186,9 @@
 //       /open                                      present while PeerServer connected
 //       /Id:Idento,prepri:…                        immutable identity, set by req:register
 //     %Pier,pub:…                                  .c.inst = Pier
+//       %protocol_faulty                           set by shim on_error wrap (unemit throws)
+//         %Unemit_Error
+//           %error:…                               thrown string from process_single_unemit
 //     %hook:corrupt,hello                          armed by corrupt_hello Prep step
 //     %De:handshake[,finished]                     PL_i_Pier — protocol round-trip
 //       /req:said_hello[,finished]
@@ -199,8 +221,9 @@
         register_class('Pier', Pier)
 
         H.i({ A: 'PeeringLive' }).i({ w: 'PeeringLive' })
-
-        for (const side of ['Bearing', 'Nearing']) {
+        // Tearing: a third side activated lazily at step 4 to cheat hello|trust crypto.
+        //   Scheme wiring is identical to Bearing/Nearing; De:listen only starts on w.c._start.
+        for (const side of ['Bearing', 'Nearing', 'Tearing']) {
             const w = H.i({ A: side }).i({ w: side })
 
             // %scheme:Peering — args_fn finds P and the Idento from sibling particles.
@@ -325,6 +348,22 @@
                 const Deco = H.Awo(side).o({ De: 'connect' })[0] as TheC | undefined
                 if (Deco) void H.reqyscile(Deco, { see: 'connected' })
 
+                // protocol faults surface here via unemit()'s catch → on_error.
+                //   elevate them onto the Pier particle so the snap records the failure.
+                //   %Pier/%protocol_faulty/%Unemit_Error/%error:…
+                const orig_on_error = ier.on_error.bind(ier)
+                ier.on_error = (err: any) => {
+                    const sw     = H.Awo(side)
+                    const Pier_n = (sw.o({ Pier: 1 }) as TheC[]).find(n => n.sc.pub === ier.pub)
+                    if (Pier_n) {
+                        Pier_n.oai({ protocol_faulty: 1 })
+                               .oai({ Unemit_Error: 1 })
+                               .i({ error: String(err) })
+                    }
+                    H.feebly_ponder()
+                    orig_on_error(err)
+                }
+
                 ier.handlers.test_binary ||= async (data: any) => {
                     const sw  = H.Awo(side)
                     const seq = data.seq as number
@@ -407,15 +446,18 @@
         if (!w.c._hangup_registered) {
             w.c._hangup_registered = true
             H.on_hangup(() => {
-                for (const side of ['Bearing', 'Nearing']) {
+                for (const side of ['Bearing', 'Nearing', 'Tearing']) {
                     try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
                 }
             })
         }
 
-        const open_count = ['Bearing', 'Nearing']
+        // count only sides that have registered a Peering particle yet
+        const _pl_sides_up = ['Bearing', 'Nearing', 'Tearing']
+            .filter(s => H.Awo(s).o({ Peering: 1 }).length > 0)
+        const open_count = _pl_sides_up
             .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
-        w.i({ see: `PeeringLive  open:${open_count}/2` })
+        w.i({ see: `PeeringLive  open:${open_count}/${_pl_sides_up.length}` })
 
         if (!H.c.on_step_ending) {
             H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
@@ -423,7 +465,10 @@
                     clearInterval(H.c._pl_heartbeat)
                     H.c._pl_heartbeat = null
                 }
-                const unsettled = ['Bearing', 'Nearing']
+                // include Tearing once it's been started (has De particles)
+                const active_sides = ['Bearing', 'Nearing', 'Tearing']
+                    .filter(s => H.Awo(s).o({ De: 1 }).length > 0)
+                const unsettled = active_sides
                     .filter(s => !H._PeeringLive_settled(H.Awo(s)))
                 const mgr = H.Awo('PeeringLive')
                 const td = mgr.o({ timeDoubt:    1 })[0] as TheC | undefined
@@ -455,6 +500,21 @@
                 }
                 H.demand_time_to_think(2000)
             },
+            4: async () => {
+                // Tearing activates and dials Bearing with a pre-armed corrupt hello.
+                //   De:connect and De:handshake seeded here; Tearing worker drives the rest.
+                //   corrupt hello → unemit:not_them on Bearing → protocol_faulty on Pier particle.
+                //   De:handshake on Tearing settles via cross-side short-circuit once Bearing is settled.
+                const bpub = H.Awo('Bearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+                if (!bpub) return
+                const tw  = H.Awo('Tearing')
+                const tdq = H.reqys(tw, 'De')
+                
+                tw.oai({ hook: 1, corrupt: 'hello' })
+                H.PL_i_Pier(tw, tdq, { target: bpub, hello: true, trust: true })
+                H.demand_time_to_think(3000)
+                H.feebly_ponder()
+            },
         })
     },
 
@@ -477,7 +537,9 @@
     },
     // settled: De:handshake done, plus all Lab De:binary_test and De:disconnect_test done.
     //   De:handshake must exist — if Pier hasn't arrived yet, we are not settled.
+    //   protocol_faulty on any Pier ends the exchange definitively — De won't complete.
     _PeeringLive_settled(side_w: TheC): boolean {
+        if ((side_w.o({ Pier: 1 }) as TheC[]).some(n => n.oa({ protocol_faulty: 1 }))) return true
         return !side_w.o({ De: 1 }).some(n => !n.sc.finished)
     },
 
@@ -492,6 +554,12 @@
 
     async Nearing(A: TheC, w: TheC) {
         await (this as House)._PeeringLive_main(A, w, 'Nearing')
+    },
+
+    // Tearing only activates at step 4 — a bad actor that dials Bearing with corrupt hello.
+    //   Until w.c._start is set, _PeeringLive_main returns immediately.
+    async Tearing(A: TheC, w: TheC) {
+        await (this as House)._PeeringLive_main(A, w, 'Tearing')
     },
 
     async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
