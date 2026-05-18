@@ -1,7 +1,7 @@
 Snap:H
   H:Peeringinst,Run
     A:Peeringinst
-      {"mung":["age"]}	self,round:7
+      {"mung":["age"]}	self,round:2
       w:Peeringinst
         scheme:Peering
           {"ref":{"sc_has":"Object()"}}	lematch,class:Peering
@@ -10,7 +10,7 @@ Snap:H
         Peering,name:testPeering
         Pier,name:alice,pantsathonia:4
         Pier,name:bob
-        {"mung":["age"]}	self,round:7
+        {"mung":["age"]}	self,round:2
         {"see":"Peering: testPeering -> WormholeNav"}
         {"see":"Pier: alice -> Pier (4:4)"}
         {"see":"Pier: bob -> Pier (4:undefined)"}

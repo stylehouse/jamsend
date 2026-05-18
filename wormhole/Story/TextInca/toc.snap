@@ -29,10 +29,11 @@ story:TextInca
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:14.583
+    TimeTotal:beliefs,avg:12.154
       sample:49.836,at:1779004278
       sample:23.054,at:1779009863
       sample:0.008,at:1779009869
       sample:0.008,at:1779009875
       sample:0.007,at:1779009879
+      sample:0.009,at:1779063333
   step,dige:d0954c2cc9a1b71c

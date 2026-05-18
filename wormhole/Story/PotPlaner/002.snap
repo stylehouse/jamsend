@@ -1,15 +1,14 @@
 Snap:H
   H:PotPlaner,Run
     A:PotPlaner
-      {"mung":["age"]}	self,round:7
+      {"mung":["age"]}	self,round:6
       w:PotPlaner
         scheme:Sprout
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Sprout
-        o_elvis:bloop
         Sprout,name:seedling
         De:tend,finished
           req:tend,ready,finished
-        {"mung":["age"]}	self,round:7
+        {"mung":["age"]}	self,round:6
         see:Sprout(seedling) concretised → MockSprout
     {"mung":["id"]}	mo:main,interval:3.6
 Snap:cytowave

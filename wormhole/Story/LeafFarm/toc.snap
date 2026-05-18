@@ -62,9 +62,9 @@ story:LeafFarm
   Plan
   Opt
     For
+    waitCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.247
-      sample:0.251,at:1778377982
+    TimeTotal:beliefs,avg:0.244
       sample:0.251,at:1778378015
       sample:0.251,at:1778378035
       sample:0.251,at:1778378052
@@ -74,6 +74,7 @@ story:LeafFarm
       sample:0.277,at:1778378154
       sample:0.231,at:1778378447
       sample:0.253,at:1778413662
+      sample:0.221,at:1779063019
   step,dige:16af8162fcae6222
   step:2,dige:de8ea36813915842
   step:3,dige:09f230e0ef6e7be9

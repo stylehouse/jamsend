@@ -1,16 +1,16 @@
 Library
-  Book:LeafJuggle,ok_pct,last_run_ms:1778414022.281,done:4,last_pct_change:1776741166.033
-  Book:LeafFarm,ok_pct,last_run_ms:1778413662.75,done:6,last_pct_change:1778378075.558
-  Book:StuffFlipping,ok_pct,last_run_ms:1778378566.947,done,last_pct_change:1776929364.203
-  Book:LangTiles,ok_pct,last_pct_change:1779062906.998,done:4,last_run_ms:1779062906.998,active
-  Book:LakeSurfer,ok_pct:0,last_pct_change:1777427938.462,done,last_run_ms:1779002647.732
-  Book:Peeringinst,ok_pct,last_pct_change:1779022291.633,done:2,last_run_ms:1779022295.908
+  Book:LeafJuggle,ok_pct,last_run_ms:1779063055.144,done:4,last_pct_change:1776741166.033
+  Book:LeafFarm,ok_pct,last_run_ms:1779063023.522,done:6,last_pct_change:1778378075.558
+  Book:StuffFlipping,ok_pct,last_run_ms:1779062991.785,done,last_pct_change:1776929364.203
+  Book:LangTiles,ok_pct:0.5,last_pct_change:1779063719.791,done:4,last_run_ms:1779063719.85,active
+  Book:LakeSurfer,ok_pct:0,last_pct_change:1777427938.462,done,last_run_ms:1779063492.756
+  Book:Peeringinst,ok_pct:0.5,last_pct_change:1779063073.279,done:2,last_run_ms:1779063093.816
   Book:PeeringLive,ok_pct:0.33,last_pct_change:1779022238.557,done:6,last_run_ms:1779022238.557
   Book:PotPlant,ok_pct,last_pct_change:1778762980.371,done:9,last_run_ms:1778828616.496
   Book:PotPlanet,ok_pct,last_pct_change:1778769740.657,done:6,last_run_ms:1778832845.94
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778804562.08
-  Book:ReactiveWaft,ok_pct,last_pct_change:1778674756.934,done:6,last_run_ms:1778676115.684
-  Book:ReactiveVers,ok_pct,last_pct_change:1778667402.26,done:7,last_run_ms:1778667410.306
-  Book:PotPlan,ok_pct,last_pct_change:1778833841.066,done:2,last_run_ms:1778920193.76
-  Book:PotPlaner,ok_pct,last_pct_change:1778920150.558,done:3,last_run_ms:1778920186.916
-  Book:TextInca,ok_pct,last_pct_change:1779009880.007,done,last_run_ms:1779009887.908
+  Book:ReactiveWaft,ok_pct,last_pct_change:1778674756.934,done:6,last_run_ms:1779063101.212
+  Book:ReactiveVers,ok_pct:0,last_pct_change:1779063108.089,done:8,last_run_ms:1779063283.368
+  Book:PotPlan,ok_pct,last_pct_change:1778833841.066,done:2,last_run_ms:1779063310.649
+  Book:PotPlaner,ok_pct,last_pct_change:1779063324.719,done:2,last_run_ms:1779063328.951
+  Book:TextInca,ok_pct,last_pct_change:1779009880.007,done,last_run_ms:1779063348.343

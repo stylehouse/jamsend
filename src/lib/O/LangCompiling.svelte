@@ -95,6 +95,36 @@
     await M.eatfunc({
 
 //#region entry
+    // compiled code receiver
+    async Pantheate(A: TheC, w: TheC) {
+        w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop(n))
+
+        for (let me of this.o_elvis(w,'Ghost_update_notify')) {
+            if (!me.sc.include) throw "!Gun"
+            // once required, it will HMR from here on
+            // < check the in-compiled-code-meta-data dige we expect comes on
+            //   or there could be a vite compile problem
+            if (!w.oa({include:me.sc.include})) {
+                const module = await import(`../../lib/${me.sc.include}`)
+                // Extract the component from the .default property
+                const component = module.default;
+                const uis = this.oai_enroll(this, { watched: 'UIs' })
+                uis.oai({ UI: 'Pantheate-include' }, { component })
+                w.i({include:me.sc.include})
+            }
+        }
+        
+        if (w.oa({include:1})) {
+            if (!this.theCompiledStuff) {
+                this.i_elvisto(w,'think')
+            }
+            else {
+                await this.theCompiledStuff(A,w)
+            }
+        }
+    },
+//#endregion
+//#region entry
 
     // Beliefs-time entry for the compile action button.
     // Fired via i_elvisto so Story can detect Lang settling after a compile.
