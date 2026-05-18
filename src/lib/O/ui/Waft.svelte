@@ -14,6 +14,7 @@
     import type { House }   from "$lib/O/Housing.svelte"
     import { peel, depeel } from "$lib/Y.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
+    import EncodingSplatter from "$lib/O/ui/EncodingSplatter.svelte"
 
     let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
         H:         House
@@ -110,16 +111,16 @@
         const sc_str = (point_form_sc[dpath]  ?? '').trim()
         if (!val && !sc_str) return
         const sc = { Point: val === '' ? 1 : val, ...(sc_str ? peel(sc_str) : {}) }
-        const pointsC = (doc.o({ Points: 1 })[0] as TheC | undefined) ?? doc.i({ Points: 1 })
+        // Points live directly on doc — no Points:1 container
         const edit_idx = point_edit_idx[dpath] ?? null
-        const all_pts  = pointsC.o({ Point: 1 }) as TheC[]
+        const all_pts  = doc.o({ Point: 1 }) as TheC[]
         if (edit_idx !== null && all_pts[edit_idx]) {
             Object.keys(all_pts[edit_idx].sc).forEach(k => delete all_pts[edit_idx].sc[k])
             Object.assign(all_pts[edit_idx].sc, sc)
         } else {
-            pointsC.oai(sc)
+            doc.oai(sc)
         }
-        pointsC.bump_version()
+        doc.bump_version()
         waft.bump_version()
         point_form_open[dpath] = false
         point_edit_idx[dpath]  = null
@@ -127,9 +128,9 @@
         point_form_sc[dpath]   = ''
     }
 
-    function delete_point(pt: TheC, pointsC: TheC) {
-        pointsC.drop(pt)
-        pointsC.bump_version()
+    function delete_point(pt: TheC, doc: TheC) {
+        doc.drop(pt)
+        doc.bump_version()
         waft.bump_version()
     }
 
@@ -204,10 +205,8 @@
         {/if}
     </div>
 
-    {#if waft_mungs.length}
-        <div class="ls-mung-errors">
-            {#each waft_mungs as m}<div class="ls-error-msg">⛔ {m.sc.msg}</div>{/each}
-        </div>
+    {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
+        <EncodingSplatter {waft} />
     {/if}
 
     <!-- +Doc form -->
@@ -241,8 +240,7 @@
          DocRow is mounted for the new path (old one commits rename first). -->
     {#each waft_docs as doc (doc.sc.path)}
         {@const dpath = doc.sc.path as string}
-        {@const ptC   = doc.o({ Points: 1 })[0] as TheC | undefined}
-        {@const pts   = (() => { void ptC?.version; return ptC ? ptC.o({ Point: 1 }) as TheC[] : [] })()}
+        {@const pts   = (() => { void doc.version; return doc.o({ Point: 1 }) as TheC[] })()}
         {@const pform = !!point_form_open[dpath]}
 
         <div class="ls-doc"
@@ -254,7 +252,7 @@
                 on_del={delete_doc}
                 on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
 
-            <!-- Points -->
+            <!-- Point -->
             {#if pts.length}
                 <div class="ls-points">
                     {#each pts as pt, idx (idx)}
@@ -262,16 +260,16 @@
                             {#if pform && point_edit_idx[dpath] === idx}
                                 {@render point_input(dpath, doc, '✓')}
                             {:else}
-                                <!-- clicking a Point label opens that doc and hints at the point to navigate to -->
+                                <!-- method is set by fuzzify/export; Point value is the fallback for hand-entered Points -->
                                 <button class="ls-point-peel ls-point-open-btn"
                                         title="open {dpath} at this point"
-                                        onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path: dpath, point: pt.sc.Point })}>
+                                        onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}>
                                     {point_to_peel(pt)}
                                 </button>
                                 <button class="ls-icon-btn" title="edit"
                                         onclick={() => start_edit_point(dpath, idx, pt)}>✎</button>
                                 <button class="ls-icon-btn ls-del-btn"
-                                        onclick={() => delete_point(pt, ptC!)}>×</button>
+                                        onclick={() => delete_point(pt, doc)}>×</button>
                             {/if}
                         </div>
                     {/each}

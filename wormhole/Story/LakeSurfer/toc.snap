@@ -67,17 +67,18 @@ story:LakeSurfer
       w:Lies
         nogen
     trickle
+    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.308
-      sample:0.294,at:1778672267
-      sample:0.307,at:1778672527
-      sample:0.287,at:1778753276
-      sample:0.428,at:1778825162
+    TimeTotal:beliefs,avg:0.278
       sample:0.409,at:1779001746
       sample:0.252,at:1779063354
       sample:0.261,at:1779063396
       sample:0.261,at:1779063488
       sample:0.255,at:1779064183
       sample:0.325,at:1779066393
+      sample:0.24,at:1779067704
+      sample:0.178,at:1779067735
+      sample:0.226,at:1779068253
+      sample:0.376,at:1779069285
   step,dige:5c76a6d4bc33ee58
   step:2,dige:f59cf9d2ddf9f983
