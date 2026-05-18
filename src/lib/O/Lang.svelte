@@ -255,30 +255,6 @@
                 }
             }
         }
-
-        // ── Auto-compile on first editorBegins per doc ────────────────────────
-        //
-        // One-shot per doc.c (not per tick) gated by ever_began_compile.
-        // Only arms when the EditorState has real content — the first
-        // editorBegins often arrives before Langui's $effect has dispatched
-        // the file text into the CM view (state.doc.length === 0 at that
-        // point).  A second editorBegins follows once the text lands, and
-        // that one is where we compile.
-        // Guards against firing while another compile is already pending.
-        if (!doc.c.ever_began_compile) {
-            const st = e.sc.state as EditorState | undefined
-            if (st && st.doc.length > 0) {
-                doc.c.ever_began_compile = true
-                const job = doc.o({ Compile: 1 })[0] as TheC | undefined
-                if (!job?.oa({ Pending: 1 })) {
-                    setTimeout(() => {
-                        if (st.doc.length == 0) debugger
-                        this.i_elvisto(w, 'Lang_compile', {})
-                    }, 200)
-                }
-            }
-            // else: stub state — wait for next editorBegins with real content
-        }
     },
 
     // ── e_Doc_open ───────────────────────────────────────────────────────────
@@ -407,11 +383,24 @@
                 docC.c.last_whatsthis_doc = state.doc
                 docC.c.last_docC_version  = docC.version
             }
+            H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
         }
         if (!bookmarks.length) model.empty()
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
-        !H.sc.Run && 0 || H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+
+        // ── initial compile per doc ──────────────────────────────────────────
+        // Fires once, on the first tick where the EditorState carries real
+        // content.  No timer — the tick loop provides the polling for free.
+        // doc.c.ever_compiled lives on .c (transient) so it resets if the
+        // ghost reloads, which is the right behaviour.
+        if (docC && state && state.doc.length > 0 && !docC.c.ever_compiled) {
+            const job = docC.o({ Compile: 1 })[0] as TheC | undefined
+            if (!job?.oa({ Pending: 1 })) {
+                docC.c.ever_compiled = true
+                await this.Lang_compile(A, w)
+            }
+        }
     },
 
     // Helper function to check if r2 is contained by r1

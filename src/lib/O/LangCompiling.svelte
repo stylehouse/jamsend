@@ -154,14 +154,15 @@
         const docC = this.Lang_active_docC(w)
         if (!docC) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
 
+        const state = docC.c.state as EditorState | undefined
+        if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
+        if (state.doc.length === 0) return
+
         // Park the job as a particle so Lang_compile_step (and Story) can
         // observe it properly.  Large source stays in .c to keep sc clean.
         const job = docC.oai({ Compile: 1 })
         job.empty()
         job.oai({Pending: 1})
-
-        const state = docC.c.state as EditorState | undefined
-        if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
 
         // clear previous outputs / errors so a fresh compile is visible
         await docC.r({ compile_error: 1 }, {})
