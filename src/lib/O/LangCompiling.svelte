@@ -94,7 +94,7 @@
     onMount(async () => {
     await M.eatfunc({
 
-//#region entry
+//#region include + execute
     // compiled code receiver
     async Pantheate(A: TheC, w: TheC) {
         w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop(n))
