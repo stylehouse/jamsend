@@ -7,8 +7,8 @@ import { grap, grep, tex, throttle } from "$lib/Y.svelte"
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
-V.organise =  1  // set >0 to enable answer_calls/beliefs/organise logs
-V.beliefs = 1
+V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
+V.beliefs = 0
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
@@ -747,9 +747,14 @@ export class House extends StorableHousing {
         // we should come back to the rest of them
         this.todo_version++
         if (e.sc.elvis == 'think') {
-            // skip to the final thought! everything more specific will be done first
-            let finalthought = grep(e=>e.sc.elvis == 'think', this.todo).pop()
-            grap(e=>e.sc.elvis == 'think' && !e == finalthought, this.todo)
+            // merge duplicate e:think at the start of the todo
+            //  so we don't remove any think from between non-think
+            while (this.todo[0]?.sc.elvis == 'think') this.todo.shift()
+            if (0) {
+                // skip to the final thought! everything more specific will be done first
+                let finalthought = grep(e=>e.sc.elvis == 'think', this.todo).pop()
+                grap(e=>e.sc.elvis == 'think' && !e == finalthought, this.todo)
+            }
         }
         V.organise && console.log(`answer_calls: e%${keyser(e.sc)}\t\ttodo:${this.todo.length}`)
 

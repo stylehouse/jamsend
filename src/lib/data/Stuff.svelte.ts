@@ -204,22 +204,14 @@ class StuffIO {
     i(n: TheC|TheUniversal):TheC {
         n = _C(n)
         this.Xify()
-        // failed ideas here include:
-        //   peeling a json-ish string n, chaining from s=TheC, environmental awareness
-        // new, able to fail ideas:
-        //  everything can C.i(D), see TheC extends Stuff
-        //   < but what if D.sc.in!=C?
-        //      a third party, ancestor, knowing about the relation?
-        //   lets not have a D.sc.in, uplinks are harder to garbage collect?
-        
 
-        // do your basic index-everything - copy info from these $n to X/$k/$v
-        // everything we have
+        // list of everything in order
         //  the below i_k and i_v also do i_z where they end up
         this.X.i_z(n);
 
         let keys = Object.entries(n.sc || {})
         if (!keys.length) throw "i nothing"
+        // copy info from these n.$k.$v to X/$k/$v
         keys.forEach(([k, v]) => {
             // the keys
             const kx = this.X.i_k(k, n);
@@ -229,9 +221,6 @@ class StuffIO {
                 kx.i_v(v, n);
             // so you have to look up all keys if you want all values
         });
-
-        // < is a convenient time to return an up-to-date picture of what's at all those locations
-        //    a /$k /$v
         return n
     }
 
