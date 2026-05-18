@@ -28,7 +28,13 @@
     AsyncKeyword { "async " }
     LParen { "(" }
 
-    @precedence {AsyncKeyword, ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, Number, Comma, Colon, Title, Name}
+    // TypeScript import/export: match the whole line as one token so the GLR
+    // parser never explores IOing via error-recovery insertion on these lines.
+    // Longest-match wins over IOness/Name at the same position.
+    ImportLine { "import" ![\n]* }
+    ExportLine { "export" ![\n]* }
+
+    @precedence {ImportLine, ExportLine, AsyncKeyword, ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, Number, Comma, Colon, Title, Name}
     @precedence {nl, space}
 }
 
@@ -39,7 +45,14 @@ inline { Comment | expression }
 
 Comment { "#" nonnl+ }
 
-expression { Name | Number | IOing | Sunpit | ControlFlow | MethodLike | Flug }
+//#region TypeScript pass-through constructs
+// Consumed as single tokens above so the GLR never sees them as IOing.
+// < extend this region if other TS constructs cause IOing mis-parses.
+Import { ImportLine }
+Export { ExportLine }
+//#endregion
+
+expression { Import | Export | Name | Number | IOing | Sunpit | ControlFlow | MethodLike | Flug }
 
 // Method declaration or call: [async] name( ...
 // Grammar marks the opening paren only; the collector inspects raw line text

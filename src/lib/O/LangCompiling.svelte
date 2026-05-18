@@ -277,9 +277,21 @@
         // Shared via ctx reference so nested recursive calls in _collect_line see the same stack.
         const region_stack: string[] = []
 
+        // Per-line compile errors — collected here so each carries line/text context.
+        // < future: continue past first error once there's a UI path for line-level
+        //   diagnostics (akin to Point_issue); for now we stop at the first and rethrow.
+        const line_errors: Array<{ n: number, text: string, msg: string }> = []
+
         let n = 1
         while (n <= doc.lines) {
-            n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, region_stack })
+            try {
+                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, region_stack })
+            } catch (err: any) {
+                const text = n <= doc.lines ? doc.line(n).text : ''
+                line_errors.push({ n, text, msg: String(err?.message ?? err) })
+                // Stop — output beyond a mis-parsed line is unreliable.
+                break
+            }
         }
 
         // flush word index into Stuff:
@@ -294,6 +306,16 @@
             methods.i(word)
         }
 
+        // Record per-line errors on the Compile particle so future UI can surface them.
+        // < like Point_issue, these want a line number and text snippet for navigation.
+        if (line_errors.length) {
+            for (const e of line_errors) {
+                job.i({ compile_error: 1, line: e.n, msg: e.msg,
+                        text: e.text.trim().slice(0, 80) })
+            }
+            const { n: en, msg } = line_errors[0]
+            throw new Error(`line ${en}: ${msg}`)
+        }
 
         return out
     },
@@ -334,6 +356,19 @@
             return n + 1
         }
 
+        // ── TypeScript import/export guard ────────────────────────────────────
+        //
+        // The stho grammar's GLR can explore the IOing path on these lines via
+        // error-recovery token insertion, producing an IOing node whose IOness
+        // child is absent.  Match them here before the tree walk so they always
+        // pass through verbatim.  The grammar also emits Import/Export nodes for
+        // these (see stho.grammar //#region TypeScript pass-through constructs)
+        // which the tree-walk handler below catches as a secondary layer.
+        if (/^[\t ]*(import|export)\b/.test(line.text)) {
+            out.push({ kind: 'raw', text: line.text })
+            return n + 1
+        }
+
         // first recognisable node whose span lies within this doc line
         let hit: { name: string, node: SyntaxNode } | null = null
         tree.iterate({
@@ -342,13 +377,21 @@
             enter: (ref) => {
                 if (hit) return false
                 if ((ref.name === 'IOing' || ref.name === 'Sunpit'
-                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike')
+                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike'
+                        || ref.name === 'Import'      || ref.name === 'Export')
                         && ref.from >= line.from && ref.to <= line.to) {
                     hit = { name: ref.name, node: ref.node }
                     return false
                 }
             },
         })
+
+        // Grammar-level Import/Export nodes — pass through verbatim.
+        // Belt-and-suspenders alongside the regex guard above.
+        if (hit?.name === 'Import' || hit?.name === 'Export') {
+            out.push({ kind: 'raw', text: line.text })
+            return n + 1
+        }
 
         if (hit?.name === 'Sunpit') {
             // emit the for-header (open brace only; _collect_line closes it below)

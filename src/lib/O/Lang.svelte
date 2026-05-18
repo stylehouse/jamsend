@@ -388,8 +388,8 @@
         const doc_unchanged  = state && state.doc === docC?.c.last_whatsthis_doc
         const docC_unchanged = docC?.version === docC?.c.last_docC_version
 
-        model.empty()
         if (state && bookmarks.length && !(doc_unchanged && docC_unchanged)) {
+            model.empty()
             this.whatsthis(state, model, bookmarks, opt)
             this.wherewhatis(model, opt)
             if (docC) {
@@ -397,6 +397,7 @@
                 docC.c.last_docC_version  = docC.version
             }
         }
+        if (!bookmarks.length) model.empty()
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
         !H.sc.Run && 0 || H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
