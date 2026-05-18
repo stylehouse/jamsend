@@ -1235,6 +1235,10 @@
         const H    = this as House
         const TICK_MS = ANSWER_CALLS_TICK_MS
 
+        // quiesce_snap_time: optional seconds to wait after Atime before snapping.
+        //   Set via The/Opt/{quiesce_snap_time:N} in toc.snap for picky tests.
+        //   Falls back to the default 1.5×TICK threshold when absent.
+        const quiesce_snap_time = H.The_Opt_val(w, 'quiesce_snap_time') ?? (TICK_MS / 1000) * 1.5
         const update_status = async (label: string, cls = 'default') => {
             const wa = () => H.o({ watched: 'actions' })[0]
             await wa()?.r({ action: 1, role: 'status' }, { label, cls, disabled: true })
@@ -1314,7 +1318,7 @@
             let not_in_Atime = f != null
                 && f > (run.c.began_step as number)
             let long_after_Atime = not_in_Atime
-                && (now_in_seconds_with_ms() - f) > ((TICK_MS/1000) * 1.5)
+                && (now_in_seconds_with_ms() - f) > quiesce_snap_time
             let dont_want_Atime = !Run.todo.length
 
             let dont_leave_running = () => {
@@ -1723,9 +1727,9 @@
             },
         })
     },
-    // The_Opt_val: read a simple bool from The/Opt — true if {<key>:1} present.
+    // The_Opt_val
     The_Opt_val(w: TheC, key: string): boolean {
-        return !!this.The_Opt(w).oa({ [key]: 1 })
+        return this.The_Opt(w).o({ [key]: 1 })[0]?.sc[key]
     },
 
 

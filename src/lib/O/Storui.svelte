@@ -49,14 +49,15 @@
     //   Auto logic: ok steps default to naive (raw snapshot view); mismatch steps
     //   prefer exp when exp_snap is loaded, then prev, then naive.
     //
-    //   vs exp and vs prev buttons are larger — the common comparison modes.
+    //   exp and prev buttons are larger — the common comparison modes.
     //   Clicking an already-active button resets diff_mode and sticky_mode to null.
     //
-    // ── diff[] — range collection ─────────────────────────────────────────────
+    // ── copy — range collection ───────────────────────────────────────────────
     //
-    //   A two-click gesture available in vs-prev mode.  First click sets an
-    //   anchor; second click triggers collect_range(anchor, n), which produces
-    //   enL-compatible text and copies it to clipboard.
+    //   A two-click gesture available in any non-hollow step.  First click sets an
+    //   anchor; second click (different step) triggers collect_range(anchor, n),
+    //   which produces enL-compatible text and copies it to clipboard.
+    //   Second click on the same step copies that single step.
     //
     //   Pure text functions (compute_diff, squish_context, positional_diff,
     //   enDif, deDif, depth_of, char_diff_ops) live in Textures.svelte and
@@ -489,7 +490,9 @@
     //   deDif is the inverse — T.deDif(lines, 2) decodes back to DiffRow[].
     //
     //   from_n and to_n can be in either order; always walks min → max.
-    async function collect_range(from_n: number, to_n: number) {
+    // mode is passed explicitly from pick() so the $derived value is captured
+    //   in the synchronous onclick context, not read lazily inside the async fn.
+    async function collect_range(from_n: number, to_n: number, mode: DiffMode) {
         const min = Math.min(from_n, to_n)
         const max = Math.max(from_n, to_n)
         const all_lines: string[] = []
@@ -514,7 +517,7 @@
             const prev_snap = (prev?.sc.got_snap as string) ?? ''
 
             // ── raw mode: always emit full snap, no diff markers 
-            if (eff_mode === 'naive' || !prev_snap) {
+            if (mode === 'naive' || !prev_snap) {
                 const header = !prev_snap ? `  Snap,first` : `  Snap,raw`
                 all_lines.push(header)
                 for (const line of got_snap.split('\n').filter(Boolean)) {
@@ -524,7 +527,7 @@
             }
 
             // ── diff mode: emit Dif markers 
-            const ref_snap = eff_mode === 'exp' || eff_mode === 'exp_naive'
+            const ref_snap = mode === 'exp' || mode === 'exp_naive'
                 ? (Step.sc.exp_snap as string) ?? ''
                 : prev_snap
 
@@ -536,11 +539,11 @@
                 continue
             }
 
-            const diff_label = eff_mode === 'exp'       ? 'exp'
-                            : eff_mode === 'exp_naive' ? 'exp_naive'
+            const diff_label = mode === 'exp'       ? 'exp'
+                            : mode === 'exp_naive' ? 'exp_naive'
                             : 'prev'
             all_lines.push(`  Snap,diff:${diff_label}`)
-            const raw_rows = eff_mode === 'exp_naive'
+            const raw_rows = mode === 'exp_naive'
                 ? H.positional_diff(ref_snap, got_snap)
                 : H.compute_diff(ref_snap, got_snap)
             const rows = H.squish_context(raw_rows)
@@ -582,7 +585,9 @@
     //#region pick + nav
     // pick: open/close a step panel.
     // When collecting and a different step is clicked: collect [anchor, n], done.
-    // When collecting and the same step is clicked: cancel.
+    // When collecting and the same step is clicked: collect that single step.
+    // eff_mode is passed explicitly so collect_range captures it at call time,
+    //   not lazily inside the async fn where $derived re-evaluation could differ.
     // diff_mode reset on every pick so eff_mode re-evaluates for the new step.
     // last_user_pick: plain variable, intentionally NOT $state.
     // The re-assert effect reads it for comparison — plain reads are untracked,
@@ -592,11 +597,11 @@
 
     function pick(n: number) {
         if (diff_collecting && diff_anchor != null && n !== diff_anchor) {
-            collect_range(diff_anchor, n)
+            collect_range(diff_anchor, n, eff_mode)
             diff_collecting = false
             diff_anchor     = null
         } else if (diff_collecting && n === diff_anchor) {
-            collect_range(diff_anchor, n)  // same n = single step copy
+            collect_range(diff_anchor, n, eff_mode)  // single step, same pip
             diff_collecting = false
             diff_anchor     = null
         }
@@ -860,13 +865,13 @@
                         <span class="sr-diff-modes">
                             {#if has_exp_snap}
                                 <button class="primary" class:active={eff_mode==='exp'}
-                                        onclick={() => toggle_mode('exp')}>vs exp</button>
+                                        onclick={() => toggle_mode('exp')}>exp</button>
                                 <button class:active={eff_mode==='exp_naive'}
                                         onclick={() => toggle_mode('exp_naive')}>&amp; exp</button>
                             {/if}
                             {#if has_prev_snap}
                                 <button class="primary" class:active={eff_mode==='prev'}
-                                        onclick={() => toggle_mode('prev')}>vs prev</button>
+                                        onclick={() => toggle_mode('prev')}>prev</button>
                             {/if}
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
@@ -874,11 +879,11 @@
                         </span>
                     {/if}
 
-                    <!-- diff[]: two-click range collector ──────────────── -->
-                    <!-- Visible in vs-prev mode and while collecting.      -->
+                    <!-- copy: two-click range collector ──────────────── -->
+                    <!-- Visible in any non-hollow step; also while collecting. -->
                     <!-- First click: arm this step as anchor.              -->
                     <!-- Second click (different step): collect, copy.      -->
-                    <!-- Second click (same step): cancel.                  -->
+                    <!-- Second click (same step): collect single step.     -->
                     <!-- Output: Step/Snap/Dif:* block, enL-compatible.     -->
                     <!-- T.deDif(lines, 2) decodes it back to DiffRow[].    -->
                     {#if !hollow}
@@ -887,7 +892,7 @@
                                 from {String(diff_anchor).padStart(3,'0')} — pick end ×
                             </button>
                         {:else}
-                            <button class="sr-diffrange" onclick={start_diff_collect}>diff[]</button>
+                            <button class="sr-diffrange" onclick={start_diff_collect}>copy</button>
                         {/if}
                     {/if}
 
@@ -929,7 +934,7 @@
 
                 {:else}
                     <!-- two-column proper diff with squished boring context -->
-                    <div class="sr-diff2">
+                    <div class="sr-diff2" class:prev-bg={eff_mode === 'prev'}>
                         <div class="sr-diff2-hdr">
                             <div class="sr-dlabel ref">{col_labels.left}</div>
                             <div class="sr-dlabel got">{col_labels.right}</div>
@@ -1178,12 +1183,12 @@
 .sr.expanded .sr-strip      { max-height: 140px; }
 .sr-pip-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
 /* flags row: always rendered as spacer so pips stay bottom-aligned */
-.sr-flags    { display: flex; flex-direction: row; gap: 1px; min-height: 6px; align-items: flex-end; }
-.sr-flag     { display: inline-block; width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; }
+.sr-flags    { display: flex; flex-direction: row; gap: 1px; min-height: 8px; align-items: flex-end; }
+.sr-flag     { display: inline-block; width: 7px; height: 7px; border-radius: 1px; flex-shrink: 0; }
 
 .sr-pip {
-    position: relative; width: 14px; height: 14px; border: none; border-radius: 2px;
-    font-size: 9px; line-height: 14px; text-align: center; cursor: pointer;
+    position: relative; width: 28px; height: 28px; border: none; border-radius: 3px;
+    font-size: 13px; line-height: 28px; text-align: center; cursor: pointer;
     background: #222; color: #555; padding: 0; transition: background 0.1s;
 }
 .sr-pip.ok       { background: #1a3a25; color: #4a9; }
@@ -1199,10 +1204,10 @@
 .sr-pip.is-anchor { outline: 2px solid #4a9; outline-offset: 2px; }
 /* playhead: red downward triangle marking frontier or first hollow pip */
 .sr-pip.playhead::before {
-    content: ''; position: absolute; top: -9px; left: 50%;
+    content: ''; position: absolute; top: -11px; left: 50%;
     transform: translateX(-50%); width: 0; height: 0;
-    border-left: 4px solid transparent; border-right: 4px solid transparent;
-    border-top: 6px solid #c55; pointer-events: none;
+    border-left: 6px solid transparent; border-right: 6px solid transparent;
+    border-top: 9px solid #c55; pointer-events: none;
 }
 
 /* ── snap panel shell ───────────────────────────────────────────────────── */
@@ -1344,6 +1349,12 @@
     border-top: 1px solid #161616; border-bottom: 1px solid #161616;
     white-space: pre;
 }
+
+/* prev-bg: dark navy for the whole diff area in prev mode — visually distinct from exp */
+.sr-diff2.prev-bg,
+.sr-diff2.prev-bg .sr-diff2-hdr  { background: #020d1a; }
+.sr-diff2.prev-bg .sr-diff2-col:last-child { border-left-color: #0d1a2a; }
+.sr-diff2.prev-bg .sr-squish { background: #030e1a; border-top-color: #0a1520; border-bottom-color: #0a1520; }
 
 .sr-dlabel {
     font-size: 9px; font-weight: 700; letter-spacing: 0.1em;

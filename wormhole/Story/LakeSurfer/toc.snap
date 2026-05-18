@@ -68,11 +68,9 @@ story:LakeSurfer
         nogen
     trickle
     noCyto
+    quiesce_snap_time:0.4
   TimeSpool
-    TimeTotal:beliefs,avg:0.278
-      sample:0.409,at:1779001746
-      sample:0.252,at:1779063354
-      sample:0.261,at:1779063396
+    TimeTotal:beliefs,avg:0.281
       sample:0.261,at:1779063488
       sample:0.255,at:1779064183
       sample:0.325,at:1779066393
@@ -80,5 +78,8 @@ story:LakeSurfer
       sample:0.178,at:1779067735
       sample:0.226,at:1779068253
       sample:0.376,at:1779069285
+      sample:0.274,at:1779070709
+      sample:0.448,at:1779071075
+      sample:0.231,at:1779071095
   step,dige:5c76a6d4bc33ee58
   step:2,dige:f59cf9d2ddf9f983
