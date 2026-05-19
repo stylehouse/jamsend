@@ -655,9 +655,9 @@ export class Pier {
         options: {
             priority?: 'high' | 'normal' | 'low',
             quiet: boolean,
-            meddle_fn: Function,
+            meddle_fn?: Function,
         }={}) {
-        const { priority = 'high',meddle_fn } = options;
+        const { priority = 'high', meddle_fn } = options;
 
         try {
             // put in type
@@ -680,6 +680,7 @@ export class Pier {
             
             // json is already string, crypto isn't
             let stuff = {crypto,data:json,buffer}
+            // meddle_fn is injected by De:corrupt_emissions wrap; mutates stuff post-sign
             meddle_fn?.(stuff)
 
             // Queue handling

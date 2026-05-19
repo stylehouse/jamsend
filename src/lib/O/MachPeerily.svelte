@@ -136,7 +136,7 @@
     Pier,pub:tearing_prepub
       protocol_faulty
         Unemit_Error
-          error: not them
+          unemit|error: not them
 
 ── A then B ────────────────────────────────────────────────────────────────────
 
@@ -160,8 +160,10 @@
 //   At step 4 a third side, Tearing, activates and cheats hello|trust crypto.
 //
 // A:PeeringLive/w:PeeringLive — manager: on_step_ending wiring, hangup cleanup.
+//   H.c.sides — single source of truth for all side names.
+//   H.o_sides(filter?) — returns side worker particles.
 // A:Bearing/w:Bearing, A:Nearing/w:Nearing — each side's worker.
-// A:Tearing/w:Tearing — dormant until step 4; arms corrupt_hello before its first emit.
+// A:Tearing/w:Tearing — listens from step 1; dials Bearing at step 4 with meddle armed.
 //
 // De particles are the causal record of what each side is trying to do.
 //   Both sides have De:listen; Bearing also gets De:connect.
@@ -189,7 +191,6 @@
 //       %protocol_faulty                           set by shim on_error wrap (unemit throws)
 //         %Unemit_Error
 //           %error:…                               thrown string from process_single_unemit
-//     %hook:corrupt,hello                          armed by corrupt_hello Prep step
 //     %De:handshake[,finished]                     PL_i_Pier — protocol round-trip
 //       /req:said_hello[,finished]
 //       /req:heard_hello,maz:2[,finished]
@@ -209,6 +210,11 @@
 //       /Pier/protocol/hello/said,heard
 //                      trust/said,heard
 //       /expects:1                                 absent in a clean run
+//
+// Meddle particle layout on w:PeeringLive:
+//   De:corrupt_emissions,target:Tearing            PL_i_corrupt_emissions
+//     req:wrap_unemit,done                         wraps ier.emit; live until hangup
+//     req:who_lies,corrupt:publicKey,done          sets De.sc.meddle_fn
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -360,7 +366,7 @@
                                .oai({ Unemit_Error: 1 })
                                .i({ error: String(err) })
                     }
-                    H.feebly_ponder()
+                    H.ponder()
                     orig_on_error(err)
                 }
 
@@ -443,21 +449,22 @@
         const H = this as House
 
         // release PeerJS IDs on hangup — deterministic prepubs reclaimed by next run
-        if (!w.c._hangup_registered) {
+        if (!H.c._hangup_registered) {
             w.c._hangup_registered = true
+            // sides: canonical list of all Peering workers in this lab.
+            //   o_sides() and o_sides(name) read from here — add new sides here only.
+            H.c.sides = ['Bearing', 'Nearing', 'Tearing']
             H.on_hangup(() => {
-                for (const side of ['Bearing', 'Nearing', 'Tearing']) {
-                    try { H.Awo(side).o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
+                for (const sw of H.o_sides()) {
+                    try { sw.o({ Peerily: 1 })[0]?.c.P?.stop() } catch {}
                 }
             })
         }
 
         // count only sides that have registered a Peering particle yet
-        const _pl_sides_up = ['Bearing', 'Nearing', 'Tearing']
-            .filter(s => H.Awo(s).o({ Peering: 1 }).length > 0)
-        const open_count = _pl_sides_up
-            .filter(s => H.Awo(s).o({ Peering: 1 })[0]?.oa({ open: 1 })).length
-        w.i({ see: `PeeringLive  open:${open_count}/${_pl_sides_up.length}` })
+        const sides_up = H.o_sides().filter(sw => sw.o({ Peering: 1 }).length > 0)
+        const open_count = sides_up.filter(sw => sw.o({ Peering: 1 })[0]?.oa({ open: 1 })).length
+        w.i({ see: `PeeringLive  open:${open_count}/${sides_up.length}` })
 
         if (!H.c.on_step_ending) {
             H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
@@ -466,17 +473,15 @@
                     H.c._pl_heartbeat = null
                 }
                 // include Tearing once it's been started (has De particles)
-                const active_sides = ['Bearing', 'Nearing', 'Tearing']
-                    .filter(s => H.Awo(s).o({ De: 1 }).length > 0)
-                const unsettled = active_sides
-                    .filter(s => !H._PeeringLive_settled(H.Awo(s)))
+                const active_sides = H.o_sides().filter(sw => sw.o({ De: 1 }).length > 0)
+                const unsettled = active_sides.filter(sw => !H._PeeringLive_settled(sw))
                 const mgr = H.Awo('PeeringLive')
                 const td = mgr.o({ timeDoubt:    1 })[0] as TheC | undefined
                 const ts = mgr.o({ timeSatisfied: 1 })[0] as TheC | undefined
                 if (mode === 'timeout' && unsettled.length) {
                     if (ts) mgr.drop(ts)
                     mgr.oai({ timeDoubt: 1 })
-                    H.trace('timeDoubt', `demand elapsed, unsettled: ${unsettled.join(', ')}`)
+                    H.trace('timeDoubt', `demand elapsed, unsettled: ${unsettled.map(sw => sw.sc.w).join(', ')}`)
                 } else if (mode === 'timeout') {
                     if (td) mgr.drop(td)
                     mgr.oai({ timeSatisfied: 1 })
@@ -501,33 +506,32 @@
                 H.demand_time_to_think(2000)
             },
             4: async () => {
-                // Tearing activates and dials Bearing with a pre-armed corrupt hello.
+                // Tearing activates and dials Bearing with corrupt_emissions armed.
                 //   De:connect and De:handshake seeded here; Tearing worker drives the rest.
-                //   corrupt hello → unemit:not_them on Bearing → protocol_faulty on Pier particle.
-                //   De:handshake on Tearing settles via cross-side short-circuit once Bearing is settled.
+                //   De:corrupt_emissions on w:PeeringLive wraps Tearing's ier.emit;
+                //   req:who_lies,corrupt:publicKey makes the hello unverifiable.
                 const bpub = H.Awo('Bearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
                 if (!bpub) return
                 const tw  = H.Awo('Tearing')
                 const tdq = H.reqys(tw, 'De')
-                
-                tw.oai({ hook: 1, corrupt: 'hello' })
                 H.PL_i_Pier(tw, tdq, { target: bpub, hello: true, trust: true })
+                H.PL_i_corrupt_emissions('Tearing', { corrupt: 'publicKey' })
                 H.demand_time_to_think(3000)
                 H.feebly_ponder()
             },
         })
     },
 
-    // shared heartbeat while any De particles are still working on either side.
-    //   keyed on H.c so Bearing and Nearing share one interval.
+    // shared heartbeat while any De particles are still working on any side.
+    //   keyed on H.c so all sides share one interval.
     //   on_step_ending always clears it; feebly_ponder no-ops outside Runtime.
     _PeeringLive_drive_heartbeat(w: TheC, _side: string) {
         const H = this as House
         if (!H.c._pl_heartbeat) {
             H.c._pl_heartbeat = setInterval(() => {
                 H.trace('pl_heartbeat')
-                const both_settled = ['Bearing', 'Nearing'].every(s => H._PeeringLive_settled(H.Awo(s)))
-                if (both_settled && H.c.leave_running_until > 0) {
+                const all_settled = H.o_sides().every(sw => H._PeeringLive_settled(sw))
+                if (all_settled && H.c.leave_running_until > 0) {
                     H.trace('leave running alleviated')
                     H.c.leave_running_until = 0
                 }
@@ -590,23 +594,6 @@
             // wire handshake once Pier appears — idempotent via doai
             H.PL_i_Pier(w, dq, { hello: true, trust: true })
             await dq.do()
-
-            // corrupt_hello hook — one-shot wrap of ier.emit
-            if (ier && !ier.said_hello) {
-                const hookN = w.o({ hook: 1, corrupt: 'hello' })[0] as TheC | undefined
-                if (hookN) {
-                    const real_emit = ier.emit.bind(ier)
-                    ier.emit = async (type: string, data: any, opts?: any) => {
-                        if (type === 'hello') {
-                            data = { ...data, publicKey: 'deadbeef' + (data.publicKey as string).slice(8) }
-                            ier!.emit = real_emit
-                            w.drop(hookN)
-                            H.trace('hook', `${side} corrupt_hello fired`)
-                        }
-                        return real_emit(type, data, opts)
-                    }
-                }
-            }
         }
 
         H._PeeringLive_drive_heartbeat(w, side)
@@ -617,6 +604,14 @@
 
 
 //#region PL helpers
+
+    // o_sides(filter?) — returns worker particles for all sides (or just one).
+    //   H.c.sides is the single source of truth; set at PeeringLive manager init.
+    o_sides(filter?: string): TheC[] {
+        const H     = this as House
+        const sides = (H.c.sides ?? []) as string[]
+        return (filter ? sides.filter(s => s === filter) : sides).map(s => H.Awo(s))
+    },
 
     // PL_i_Peering: wire De:listen for a side — idempotent via doai.
     //   opts.side — used for deterministic keygen and trace labels
@@ -644,6 +639,101 @@
                 await H.De_handshake(Dehs, dq, opts)
             })
         }
+    },
+
+    // PL_i_corrupt_emissions — arms De:corrupt_emissions on w:PeeringLive for a target side.
+    //   req:wrap_unemit wraps target's ier.emit to inject meddle_fn each call.
+    //   req:who_lies,corrupt:X sets what the lie actually does (publicKey, sign, …).
+    //   De persists while the meddle is live — no finished stamp, the fraud is ongoing.
+    PL_i_corrupt_emissions(target: string, opts: { corrupt: string }) {
+        const H  = this as House
+        const mw = H.Awo('PeeringLive')
+        const dq = H.reqys(mw, 'De')
+        dq.doai({ De: 'corrupt_emissions', target })?.(async (De: TheC) => {
+            await H.De_corrupt_emissions(De, dq, { target, ...opts })
+        })
+    },
+
+    // De_corrupt_emissions — the meddle particle pair that sits on w:PeeringLive.
+    //
+    //   req:wrap_unemit — wrap target's ier.emit once, injecting De.sc.meddle_fn.
+    //     Immediately done, De stays un-finished — the wrap is persistent.
+    //     Re-enters each tick until Pier concretion has run; wraps only once via done guard.
+    //
+    //   req:who_lies,corrupt:X — adjusts De.sc.meddle_fn to the named corruption.
+    //     Can be re-seeded with a different corrupt value to change the lie mid-flight.
+    //     < future: multiple simultaneous lies stacked as separate req:who_lies children
+    //
+    // Particle layout on w:PeeringLive:
+    //   De:corrupt_emissions,target:Tearing
+    //     req:wrap_unemit,done          ← not finished; wrap is live
+    //     req:who_lies,corrupt:publicKey,done
+    async De_corrupt_emissions(De: TheC, _dq: any, opts: { target: string; corrupt: string }) {
+        const H   = this as House
+        const drq = H.reqys(De, 'req')
+        const tw  = H.Awo(opts.target)
+
+        // req:wrap_unemit — find the target Pier and wrap its emit.
+        //   Waits for Pier concretion (ier) to exist; idempotent via doai + done guard.
+        drq.doai({ req: 'wrap_unemit' })?.(async (req: TheC) => {
+            if (req.sc.done) return
+            const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+            if (!ier) return   // wait for Pier concretion
+            const real_emit = ier.emit.bind(ier)
+            // meddle_fn is read live each call — who_lies can update it at any time
+            ier.emit = (type: string, data: any, emit_opts: any = {}) =>
+                real_emit(type, data, { ...emit_opts, meddle_fn: De.sc.meddle_fn })
+            req.sc.done = true
+            H.trace('meddle', `${opts.target} emit wrapped (corrupt:${opts.corrupt})`)
+            // no drq.finish — De persists; the lie is ongoing
+        })
+
+        // req:who_lies — sets the active meddle_fn on the De particle.
+        //   Immediately effective once done; meddle_fn is a live reference in the wrap closure.
+        drq.doai({ req: 'who_lies', corrupt: opts.corrupt })?.(async (req: TheC) => {
+            if (req.sc.done) return
+            De.sc.meddle_fn = H._meddle_fn_for(opts.corrupt)
+            req.sc.done = true
+            H.trace('meddle', `who_lies: corrupt:${opts.corrupt} armed`)
+        })
+
+        await drq.do()
+    },
+
+    // _meddle_fn_for — returns a post-sign stuff mutator for the named corruption.
+    //   stuff = { crypto:{sign,buffer_sign?}, data:string(json), buffer?:Uint8Array }
+    //   Mutating stuff.data invalidates crypto.sign → unemit throws 'invalid signature'
+    //     → on_error → %Pier/%protocol_faulty on the receiving side.
+    //
+    // corrupt:publicKey — corrupt the publicKey field in a hello message.
+    //   The signature no longer matches the corrupted JSON; receiver throws on verify.
+    //
+    // corrupt:sign — replace sign with garbage.
+    //   Any message type; receiver throws 'invalid signature' immediately.
+    //
+    // < corrupt:time — shift hello.time past the ±5s window → 'wonky UTC'
+    // < corrupt:buffer_sign — corrupt binary frame authentication
+    _meddle_fn_for(corrupt: string): ((stuff: any) => void) | undefined {
+        if (corrupt === 'publicKey') {
+            return (stuff: any) => {
+                try {
+                    const d = JSON.parse(stuff.data)
+                    if (d.type === 'hello') {
+                        d.publicKey = 'deadbeef' + (d.publicKey as string).slice(8)
+                        stuff.data  = JSON.stringify(d)
+                        // crypto.sign now covers the original json — mismatch → 'invalid signature'
+                    }
+                } catch {}
+            }
+        }
+        if (corrupt === 'sign') {
+            return (stuff: any) => {
+                if (stuff.crypto?.sign)
+                    stuff.crypto = { ...stuff.crypto, sign: 'deadbeef' + stuff.crypto.sign.slice(8) }
+            }
+        }
+        // < extend here: 'time', 'buffer_sign', 'trust_payload', …
+        console.warn(`_meddle_fn_for: unknown corrupt type '${corrupt}'`)
     },
 
 //#endregion
@@ -749,7 +839,7 @@
     },
 
 
-    // De:connect — drives outbound dialling for Bearing.
+    // De:connect — drives outbound dialling for any side.
     //   Waits for De:listen to finish (Peering must be open) before dialling.
     //   req:connected do_fn self-detects Pier init; Pier_init_completo just reqyscile(Deco).
     async De_connect(De: TheC, dq: any) {
@@ -764,26 +854,32 @@
         H.trace('De', `${side} De_connect — listen_done:${listen_done} req frontier:${drq_frontier()}`)
         if (!listen_done) return
 
+        // target_w: the side whose Peering holds npub as prepub
+        //   used only to check open; falls back to any side with npub if not found
+        const target_w = H.o_sides().find(sw =>
+            sw.o({ Peering: 1 })[0]?.sc.prepub === npub
+        )
+
         // req:dial — issues eer.connect() and plants a _pl_buf on the Pier particle.
         //   The buffer is drained by post_fn once concretion produces the ier.
         //   After drq.finish(req), drq.do() reaches req:connected and waits there for
         //   Pier_init_completo to reqyscile(Deco) → e_reqysciliation → De_connect again.
         await drq.doai({ req: 'dial' })?.(async (req: TheC) => {
-            const hasPier = !!w.oa({ Pier: 1 })
-            const eer     = w.o({ Peering: 1 })[0]?.c.inst as Peering | undefined
-            const nOpen   = !!H.Awo('Nearing').o({ Peering: 1 })[0]?.oa({ open: 1 })
-            const t_dial  = H.trace('De', `${side} req:dial — hasPier:${hasPier} eer:${!!eer} nOpen:${nOpen}`)
+            const hasPier  = !!w.oa({ Pier: 1 })
+            const eer      = w.o({ Peering: 1 })[0]?.c.inst as Peering | undefined
+            const targetOpen = !!target_w?.o({ Peering: 1 })[0]?.oa({ open: 1 })
+            const t_dial   = H.trace('De', `${side} req:dial — hasPier:${hasPier} eer:${!!eer} targetOpen:${targetOpen}`)
             if (hasPier) {
                 // Pier already appeared (inbound beat us, or reconnect)
                 drq.finish(req); t_dial('→ inbound won'); return
             }
-            if (!eer || !nOpen) { t_dial('→ demand:3s'); if (req.sc.initialdo) H.demand_time_to_think(3000); return }
+            if (!eer || !targetOpen) { t_dial('→ demand:3s'); if (req.sc.initialdo) H.demand_time_to_think(3000); return }
 
             const con  = eer.connect(npub)
             const Pier = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
             Pier.c._pl_buf = H._pl_buf_attach(con, eer, false)
             drq.finish(req)
-            console.log(`🐻 ${side} → Nearing  ${npub}`)
+            console.log(`🐻 ${side} → ${target_w?.sc.w ?? npub.slice(0,8)}  ${npub}`)
         })
 
         // req:connected — terminal; De:connect concludes.
@@ -817,7 +913,11 @@
         const w    = De.c.host as TheC
         const side = w.sc.w as string
         const drq  = H.reqys(De, 'req')
-        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        // other: the counterpart we're trying to talk to.
+        //   for Bearing↔Nearing, first non-self suffices.
+        //   for Tearing→Bearing, Bearing is first after Tearing in H.c.sides.
+        //   < for richer topologies, carry target in De.sc and look up by pub
+        const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
 
         const ier     = () => (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
         const recheck = (req: TheC, demand: number) => {
@@ -929,7 +1029,7 @@
         const w    = De.c.host as TheC
         const side = w.sc.w as string
         const drq  = H.reqys(De, 'req')
-        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
 
         const ier     = () => (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
         const recheck = (req: TheC, demand: number) => {
@@ -990,7 +1090,7 @@
         for (let i = 0; i < 256; i++) buf[i] = (i * 31 + seq * 7) & 0xff
         const dige = await H._PeeringLive_dige(buf.buffer)
 
-        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
         const ow  = H.Awo(other)
         const dq  = H.reqys(w,  'De')
         const odq = H.reqys(ow, 'De')
@@ -1013,7 +1113,7 @@
         const ier  = (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
         if (!ier) { console.warn(`force_disconnect: no Pier on ${side}`); return }
 
-        const other = side === 'Bearing' ? 'Nearing' : 'Bearing'
+        const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
         const ow  = H.Awo(other)
         const dq  = H.reqys(w,  'De')
         const odq = H.reqys(ow, 'De')
@@ -1026,13 +1126,9 @@
         H.feebly_ponder()
     },
 
-    // Arm a one-shot corruption of the next 'hello' emit on this side.
-    //   The actual wrap is applied in _PeeringLive_main each tick while
-    //   ier exists and hasn't said hello — hook particle consumed on fire.
-    async corrupt_hello(_A: TheC, w: TheC, _e?: TheC) {
-        w.oai({ hook: 1, corrupt: 'hello' })
-        ;(this as House).feebly_ponder()
-    },
+    // < corrupt_hello (hook particle) is superseded by De:corrupt_emissions
+    //   Prep i_elvisto:'PeeringLive/PeeringLive', e:'corrupt_emissions',
+    //   esc:{target, corrupt} now routes through on_step:4 / PL_i_corrupt_emissions.
 
     // Suppress {open:1} on the target side so the dialling side gets peer-unavailable.
     //   Drops any existing {open:1} and arms open_suppressed so the PeerJS open
