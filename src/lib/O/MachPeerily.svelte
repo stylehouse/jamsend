@@ -447,6 +447,9 @@
 
     async PeeringLive(A: TheC, w: TheC) {
         const H = this as House
+        const dq = H.reqys(w, 'De')
+        await dq.do()
+        
 
         // release PeerJS IDs on hangup — deterministic prepubs reclaimed by next run
         if (!H.c._hangup_registered) {
@@ -465,6 +468,7 @@
         const sides_up = H.o_sides().filter(sw => sw.o({ Peering: 1 }).length > 0)
         const open_count = sides_up.filter(sw => sw.o({ Peering: 1 })[0]?.oa({ open: 1 })).length
         w.i({ see: `PeeringLive  open:${open_count}/${sides_up.length}` })
+
 
         if (!H.c.on_step_ending) {
             H.c.on_step_ending = (mode: 'causal' | 'timeout') => {
@@ -514,8 +518,8 @@
                 if (!bpub) return
                 const tw  = H.Awo('Tearing')
                 const tdq = H.reqys(tw, 'De')
-                H.PL_i_Pier(tw, tdq, { target: bpub, hello: true, trust: true })
                 H.PL_i_corrupt_emissions('Tearing', { corrupt: 'publicKey' })
+                H.PL_i_Pier(tw, tdq, { target: bpub, hello: true, trust: true })
                 H.demand_time_to_think(3000)
                 H.feebly_ponder()
             },
@@ -678,11 +682,15 @@
         drq.doai({ req: 'wrap_unemit' })?.(async (req: TheC) => {
             if (req.sc.done) return
             const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
-            if (!ier) return   // wait for Pier concretion
+            if (!ier) return req.i({ waits: 'Pier inst' })
             const real_emit = ier.emit.bind(ier)
+            debugger
             // meddle_fn is read live each call — who_lies can update it at any time
-            ier.emit = (type: string, data: any, emit_opts: any = {}) =>
-                real_emit(type, data, { ...emit_opts, meddle_fn: De.sc.meddle_fn })
+            ier.emit = (type: string, data: any, emit_opts: any = {}) => {
+                if (!De.sc.meddle_fn) debugger
+                debugger
+                return real_emit(type, data, { ...emit_opts, meddle_fn: De.sc.meddle_fn })
+            }
             req.sc.done = true
             H.trace('meddle', `${opts.target} emit wrapped (corrupt:${opts.corrupt})`)
             // no drq.finish — De persists; the lie is ongoing
@@ -716,6 +724,7 @@
     _meddle_fn_for(corrupt: string): ((stuff: any) => void) | undefined {
         if (corrupt === 'publicKey') {
             return (stuff: any) => {
+                debugger
                 try {
                     const d = JSON.parse(stuff.data)
                     if (d.type === 'hello') {

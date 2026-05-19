@@ -208,6 +208,7 @@
             //   🚧 ponder() vs feebly_ponder() from async context not yet settled.
             check_all_finished() {
                 if (!rq.all_done() || host.sc.finished) return
+                if (host.sc.w || host.sc.eternal) return
                 host.sc.finished = 1
                 host.c.all_done_fn ? host.c.all_done_fn() : H.feebly_ponder()
             },
