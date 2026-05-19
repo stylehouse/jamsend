@@ -231,62 +231,7 @@ squishes.  Where Points have conflicting fold preferences the more-open one wins
 
 ## Encoder / decoder
 
-### Current state
-
-The encoder in Lies walks `Waft → Doc → Points → Point` by explicit property names.
-That is too narrow for `What` nesting at arbitrary depth.
-
-### Generalised approach using Travel + mainkey()
-
-Travel is the existing TheC tree-walk primitive (as used in `encode_toc_snap` for
-Story/Styles).  Combined with `mainkey()` — the first sc key, giving a particle's type
-identity — it traverses the Waft tree generically.
-
-```typescript
-// Allowed mainkeys in the Waft tree.  Point is a leaf (no children encoded).
-const WAFT_TREE_KEYS = new Set(['What', 'Doc', 'Point'])
-
-// Session-only sc fields — stripped before writing to snap.
-const SESSION_KEYS = new Set(['active', 'created_at'])
-
-function encode_waft_C(C: TheC, depth = 0): SnapItem[] {
-    const mk = mainkey(C)
-    if (!mk || !WAFT_TREE_KEYS.has(mk)) return []
-
-    // Clean sc: omit session-only and non-scalar values.
-    const sc: Record<string, any> = {}
-    for (const [k, v] of Object.entries(C.sc)) {
-        if (SESSION_KEYS.has(k)) continue
-        if (v === null || typeof v === 'object') continue
-        sc[k] = v
-    }
-
-    const items: SnapItem[] = [{ depth, sc }]
-
-    if (mk !== 'Point') {
-        // Recurse into children whose mainkey is in WAFT_TREE_KEYS.
-        // Travel (or a direct loop over C.children) gives depth-first source order.
-        for (const child of C.children() as TheC[]) {
-            items.push(...encode_waft_C(child, depth + 1))
-        }
-    }
-    return items
-}
-
-// Entry point — called from LiesPersist when a waft_save_pending fires.
-function encode_waft(waft: TheC): SnapItem[] {
-    const root: SnapItem = { depth: 0, sc: { Waft: waft.sc.Waft } }
-    const children: SnapItem[] = []
-    for (const child of waft.children() as TheC[]) {
-        children.push(...encode_waft_C(child, 1))
-    }
-    return [root, ...children]
-}
-```
-
-The decoder is the reverse: read snap lines, reconstruct the tree by maintaining a
-depth stack, call `C.oai()` at each depth with the line's sc.  `Points:1` lines on old
-snaps are skipped — their Point children are hoisted directly under the Doc.
+is enWaft() etc.
 
 ### Throttled writes
 
