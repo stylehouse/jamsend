@@ -1,13 +1,15 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:14
+      {"mung":["age"]}	self,round:16
       w:PeeringLive
-        {"mung":["age"]}	self,round:14
-        {"see":"PeeringLive  open:3/3"}
+        De:p2pman,finished
+          req:init,finished
         timeSatisfied
+        {"mung":["age"]}	self,round:16
+        {"see":"PeeringLive  open:3/3"}
     A:Bearing
-      {"mung":["age"]}	self,round:17
+      {"mung":["age"]}	self,round:19
       w:Bearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -27,15 +29,15 @@ Snap:H
         De:connect,target:8cbc667bb0c8e748,finished
           req:dial,finished
           req:connected,finished
-        De:handshake,finished
+        De:handshake,target:8cbc667bb0c8e748,finished
           req:said_hello,demand:800,finished
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-        {"mung":["age"]}	self,round:17
+        {"mung":["age"]}	self,round:19
     A:Nearing
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round:19
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -53,14 +55,14 @@ Snap:H
           {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
           open
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        De:handshake,finished
+        De:handshake,target:7acf614d876d69a4,finished
           req:said_hello,demand:800,finished
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
-        {"mung":["age"]}	self,round:16
+        {"mung":["age"]}	self,round:19
     A:Tearing
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round:21
       w:Tearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -77,5 +79,5 @@ Snap:H
         Peering,name:tearing,prepub:962af4326c28f29b
           {"ref":{"Id":"Idento()"}}	prepri:386df6d9
           open
-        {"mung":["age"]}	self,round:16
+        {"mung":["age"]}	self,round:21
     {"mung":["id"]}	mo:main,interval:3.6
