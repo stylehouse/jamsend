@@ -595,11 +595,12 @@
         await dq.do()
 
         // ── Pier handle ───────────────────────────────────────────────────────
-        // Pier appears from: req:dial (outbound/Bearing) or Peering_i_Pier (inbound/Nearing).
+        // Pier appears from: req:dial (outbound) or Peering_i_Pier (inbound).
         // Concretion populates c.inst via post_fn + _pl_buf drain.
         // Reconnect path: concretion already ran — drain _pl_buf here when ier is in hand.
-        const Pier_n = w.o({ Pier: 1 })[0] as TheC | undefined
-        if (Pier_n) {
+        // Iterate all Piers — a side can receive multiple inbound connections (e.g. Bearing
+        //   gets both Nearing and Tearing); each needs its own De:handshake,target:pub.
+        for (const Pier_n of (w.o({ Pier: 1 }) as TheC[])) {
             const ier = Pier_n.c.inst as Pier | undefined
             if (ier && Pier_n.c._pl_buf) {
                 const buf = Pier_n.c._pl_buf as _PierConBuf
@@ -611,10 +612,10 @@
                 }
             }
 
-            // wire handshake once Pier appears — idempotent via doai
-            H.PL_i_Pier(w, dq, { hello: true, trust: true })
-            await dq.do()
+            // wire handshake per-Pier pub — idempotent via doai keyed on target
+            H.PL_i_Pier(w, dq, { hello: true, trust: true, target: Pier_n.sc.pub as string })
         }
+        if (w.o({ Pier: 1 }).length) await dq.do()
 
         H._PeeringLive_drive_heartbeat(w, side)
     },
@@ -644,11 +645,10 @@
     },
 
     // PL_i_Pier: wire De:connect (outbound) and/or De:handshake (protocol).
-    //   opts.target — npub to dial outbound; absent for inbound side (Nearing)
+    //   opts.target — npub; for outbound this is what we dial, for inbound it's the Pier pub.
+    //     Always passed explicitly — De:handshake is keyed on target so each Pier gets its own.
     //   opts.hello  — track said_hello + heard_hello
     //   opts.trust  — track said_trust + heard_trust (gates on heard_hello via maz)
-    //   De:handshake carries target:npub so the snap shows which handshake is which;
-    //     for inbound sides the Pier particle already exists, so we read its pub directly.
     PL_i_Pier(w: TheC, dq: any, opts: { target?: string; hello?: boolean; trust?: boolean } = {}) {
         const H = this as House
         if (opts.target) {
@@ -656,10 +656,8 @@
                 await H.De_connect(Deco, dq)
             })
         }
-        if (opts.hello) {
-            // target for handshake: from opts (outbound) or from the already-present Pier (inbound)
-            const hs_target = opts.target ?? (w.o({ Pier: 1 })[0] as TheC | undefined)?.sc.pub as string | undefined
-            dq.doai({ De: 'handshake', target: hs_target })?.(async (Dehs: TheC) => {
+        if (opts.hello && opts.target) {
+            dq.doai({ De: 'handshake', target: opts.target })?.(async (Dehs: TheC) => {
                 await H.De_handshake(Dehs, dq, opts)
             })
         }
@@ -701,13 +699,12 @@
         const tw  = H.Awo(opts.target)
 
         // req:wrap_unemit — install emit wrapper on target Pier; waits for concretion.
-        //   After installation, finished — subsequent ticks are no-ops.
+        //   After installation, finished — subsequent ticks are no-ops via doai.
         drq.doai({ req: 'wrap_unemit' })?.(async (req: TheC) => {
-            if (req.sc.finished) return
             const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
             if (!ier) return   // wait for Pier concretion
             const real_emit = ier.emit.bind(ier)
-            // read De/meddle_fn live — req:N can update it at any time between calls
+            // read De/meddle_fn live — req:1 can update it at any time between calls
             ier.emit = (type: string, data: any, emit_opts: any = {}) => {
                 const mfn = (De.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
                 return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
@@ -717,18 +714,16 @@
             // no check_all_finished — De:corrupt_emissions is eternal
         })
 
-        // req:1,corruption:X — first (and for now only) corruption instruction.
-        //   Drops any previous meddle_fn particle and installs the new one.
-        //   < add req:2, req:3 … to stack or sequence multiple lies
-        const seq = De.o({ req: 1 }).length + 1   // next unused seq number
-        drq.doai({ req: seq, corruption: opts.corrupt })?.(async (req: TheC) => {
-            if (req.sc.finished) return
+        // req:1,corruption:X — first corruption instruction.
+        //   doai is idempotent — runs once, finishes, re-entry is a no-op.
+        //   < add req:2,corruption:… to sequence a different lie after this one
+        drq.doai({ req: 1, corruption: opts.corrupt })?.(async (req: TheC) => {
             const mfn = H._meddle_fn_for(opts.corrupt)
             const old = De.o({ meddle_fn: 1 })[0] as TheC | undefined
             if (old) De.drop(old)
             De.i({ meddle_fn: mfn })
             drq.finish(req)
-            H.trace('meddle', `req:${seq} corruption:${opts.corrupt} armed`)
+            H.trace('meddle', `req:1 corruption:${opts.corrupt} armed`)
             // no check_all_finished — De:corrupt_emissions is eternal
         })
 
