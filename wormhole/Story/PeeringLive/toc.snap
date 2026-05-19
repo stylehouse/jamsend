@@ -14,8 +14,7 @@ story:PeeringLive
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:3.659
-      sample:2.671,at:1779151380
+    TimeTotal:beliefs,avg:3.766
       sample:3.451,at:1779151432
       sample:3.577,at:1779151756
       sample:4.931,at:1779151991
@@ -25,6 +24,7 @@ story:PeeringLive
       sample:2.348,at:1779152617
       sample:5.518,at:1779155094
       sample:5.518,at:1779158173
+      sample:3.747,at:1779158814
   step,dige:0e58286bdb04c0ef
   step:2,dige:966fe626595cdbc6
   step:3,dige:82b888cb76849b58

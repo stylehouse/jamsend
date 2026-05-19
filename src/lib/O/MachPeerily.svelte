@@ -369,7 +369,7 @@
                                .oai({ Unemit_Error: 1 })
                                .i({ error: String(err) })
                     }
-                    H.ponder()
+                    H.feebly_ponder()
                     orig_on_error(err)
                 }
 
