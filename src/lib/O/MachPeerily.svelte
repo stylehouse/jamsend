@@ -212,12 +212,12 @@
 //       /expects:1                                 absent in a clean run
 //
 // Manager layout on w:PeeringLive:
-//   De:p2pman,finished                            req:init sets sides/on_hangup/on_step_ending
+//   De:p2pman,finished                                     req:init sets sides/on_hangup/on_step_ending
 //     req:init,finished
-//   De:corrupt_emissions,target:Tearing,eternal   eternal — never finishes; meddle stays live
-//     meddle_fn:Function                          replaced by each req:N
-//     req:wrap_unemit,finished                    wraps ier.emit; live until hangup
-//     req:1,corruption:publicKey,finished         < add req:2… to sequence lies
+//   De:corrupt_emissions,target:Tearing,eternal,corrupt:X  eternal — never finishes; meddle stays live
+//     meddle_fn:Function                                   replaced by each req:N; read live by wrap
+//     req:wrap_unemit,finished                             wrap installed in Pier_init_completo (pre-hello)
+//     req:1,corruption:publicKey,finished                  < add req:2… to sequence lies
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -357,6 +357,22 @@
                 const Deco = H.Awo(side).o({ De: 'connect' })[0] as TheC | undefined
                 if (Deco) void H.reqyscile(Deco, { see: 'connected' })
 
+                // meddle wrap — installed synchronously before hello fires.
+                //   De:corrupt_emissions on the manager targets this side; if present, wrap now.
+                //   req:wrap_unemit checks De.c.wrap_installed so it doesn't double-wrap.
+                //   meddle_fn particle may not exist yet — wrap reads it live each call.
+                const ce = H.Awo('PeeringLive')
+                    .o({ De: 'corrupt_emissions', target: side })[0] as TheC | undefined
+                if (ce && !ce.c.wrap_installed) {
+                    const real_emit = ier.emit.bind(ier)
+                    ier.emit = (type: string, data: any, emit_opts: any = {}) => {
+                        const mfn = (ce.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
+                        return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
+                    }
+                    ce.c.wrap_installed = true
+                    H.trace('meddle', `${side} emit wrapped via Pier_init_completo (pre-hello)`)
+                }
+
                 // protocol faults surface here via unemit()'s catch → on_error.
                 //   elevate them onto the Pier particle so the snap records the failure.
                 //   %Pier/%protocol_faulty/%Unemit_Error/%error:…
@@ -369,7 +385,7 @@
                                .oai({ Unemit_Error: 1 })
                                .i({ error: String(err) })
                     }
-                    H.feebly_ponder()
+                    H.ponder()
                     orig_on_error(err)
                 }
 
@@ -598,8 +614,10 @@
         // Pier appears from: req:dial (outbound) or Peering_i_Pier (inbound).
         // Concretion populates c.inst via post_fn + _pl_buf drain.
         // Reconnect path: concretion already ran — drain _pl_buf here when ier is in hand.
-        // Iterate all Piers — a side can receive multiple inbound connections (e.g. Bearing
-        //   gets both Nearing and Tearing); each needs its own De:handshake,target:pub.
+        // Iterate all Piers — a side may receive multiple inbound connections
+        //   (e.g. Bearing gets both Nearing and Tearing).
+        // De:connect is seeded only from on_step, never here — outbound sides already
+        //   have it; inbound Piers don't initiate a connection from their side.
         for (const Pier_n of (w.o({ Pier: 1 }) as TheC[])) {
             const ier = Pier_n.c.inst as Pier | undefined
             if (ier && Pier_n.c._pl_buf) {
@@ -612,8 +630,10 @@
                 }
             }
 
-            // wire handshake per-Pier pub — idempotent via doai keyed on target
-            H.PL_i_Pier(w, dq, { hello: true, trust: true, target: Pier_n.sc.pub as string })
+            // handshake per-Pier pub — idempotent via doai keyed on target
+            dq.doai({ De: 'handshake', target: Pier_n.sc.pub as string })?.(async (Dehs: TheC) => {
+                await H.De_handshake(Dehs, dq, { hello: true, trust: true, target: Pier_n.sc.pub as string })
+            })
         }
         if (w.o({ Pier: 1 }).length) await dq.do()
 
@@ -669,8 +689,8 @@
     //   De is eternal — it never finishes; the meddle stays live until hangup.
     PL_i_corrupt_emissions(dq: any, target: string, opts: { corrupt: string }) {
         const H = this as House
-        // eternal:1 stamped at seed time — visible in snap; signals check_all_finished is never called
-        dq.doai({ De: 'corrupt_emissions', target, eternal: 1 })?.(async (De: TheC) => {
+        // eternal:1 and corrupt stamped at seed time — visible in snap from birth
+        dq.doai({ De: 'corrupt_emissions', target, eternal: 1, corrupt: opts.corrupt })?.(async (De: TheC) => {
             await H.De_corrupt_emissions(De, { target, ...opts })
         })
     },
@@ -699,25 +719,29 @@
         const tw  = H.Awo(opts.target)
 
         // req:wrap_unemit — install emit wrapper on target Pier; waits for concretion.
-        //   After installation, finished — subsequent ticks are no-ops via doai.
+        //   Pier_init_completo installs the wrap synchronously (pre-hello) and sets
+        //   De.c.wrap_installed; if that already happened we just finish here.
+        //   Fallback path handles future cases where the shim isn't in the picture.
         drq.doai({ req: 'wrap_unemit' })?.(async (req: TheC) => {
+            if (De.c.wrap_installed) { drq.finish(req); return }
             const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
             if (!ier) return   // wait for Pier concretion
             const real_emit = ier.emit.bind(ier)
-            // read De/meddle_fn live — req:1 can update it at any time between calls
             ier.emit = (type: string, data: any, emit_opts: any = {}) => {
                 const mfn = (De.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
                 return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
             }
+            De.c.wrap_installed = true
             drq.finish(req)
-            H.trace('meddle', `${opts.target} emit wrapped (corruption:${opts.corrupt})`)
+            H.trace('meddle', `${opts.target} emit wrapped via fallback (corruption:${opts.corrupt})`)
             // no check_all_finished — De:corrupt_emissions is eternal
         })
 
-        // req:1,corruption:X — first corruption instruction.
+        // req:'1',corruption:X — first corruption instruction.
+        //   String key so snap renders req:1,corruption:X not req,corruption:X.
         //   doai is idempotent — runs once, finishes, re-entry is a no-op.
-        //   < add req:2,corruption:… to sequence a different lie after this one
-        drq.doai({ req: 1, corruption: opts.corrupt })?.(async (req: TheC) => {
+        //   < add req:'2',corruption:… to sequence a different lie after this one
+        drq.doai({ req: '1', corruption: opts.corrupt })?.(async (req: TheC) => {
             const mfn = H._meddle_fn_for(opts.corrupt)
             const old = De.o({ meddle_fn: 1 })[0] as TheC | undefined
             if (old) De.drop(old)
