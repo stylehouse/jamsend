@@ -687,7 +687,7 @@ export class Pier {
             if (this.send_buffered > MAX_BUFFER) {
                 this.send_paused = true;
                 return new Promise((resolve, reject) => {
-                    this.send_queue.push({ crypto,data:json,buffer, resolve, reject });
+                    this.send_queue.push({ ...stuff, resolve, reject });
                     
                     // Sort queue by priority if needed
                     if (priority === 'high') {

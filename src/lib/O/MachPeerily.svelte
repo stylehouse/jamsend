@@ -212,12 +212,20 @@
 //       /expects:1                                 absent in a clean run
 //
 // Manager layout on w:PeeringLive:
-//   De:p2pman,finished                                     req:init sets sides/on_hangup/on_step_ending
-//     req:init,finished
+//   De:p2pman                                              finished only after the full chain below
+//     req:init,finished                                    sides/on_hangup/on_step_ending wired
+//     req:saw_error,maz:2[,finished]                       polls Bearing/Pier for 1st protocol_faulty
+//     req:next_meddle,maz:3[,finished]                     drops meddle_fn; De.r({meddle_fn:1},{})
+//     req:retry_hello,maz:4[,finished]                     Tearing.said_hello=false → say_hello()
+//     req:clean_done,maz:5[,finished]                      heard_trust back → step 4 chain done
+//     req:saw_error_2,maz:6[,finished]                     polls for 2nd protocol_faulty (step 5 sign)
+//     req:clear_meddle_2,maz:7[,finished]                  drops meddle_fn again
+//     req:retry_hello_2,maz:8[,finished]                   say_hello() cleanly one more time
+//     req:clean_done_2,maz:9[,finished]                    heard_trust → De:p2pman,finished
 //   De:corrupt_emissions,target:Tearing,eternal,corrupt:X  eternal — never finishes; meddle stays live
-//     meddle_fn:Function                                   replaced by each req:N; read live by wrap
+//     req:1,corruption:publicKey,meddle_fn:Function,finished  req IS the mf; De.r latest-onlys it
+//     req:2,corruption:sign,meddle_fn:Function,finished       De.r replaces req:1 with req:2
 //     req:wrap_unemit,finished                             wrap installed in Pier_init_completo (pre-hello)
-//     req:1,corruption:publicKey,finished                  < add req:2… to sequence lies
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -359,23 +367,25 @@
 
                 // meddle wrap — installed synchronously before hello fires.
                 //   De:corrupt_emissions on the manager targets this side; if present, wrap now.
-                //   req:wrap_unemit checks De.c.wrap_installed so it doesn't double-wrap.
+                //   Stamps req:wrap_unemit finished (creating the particle if not yet seeded)
+                //   so De_emit_meddling/drq.do() skips the do_fn — no double-wrap, no flag.
                 //   meddle_fn particle may not exist yet — wrap reads it live each call.
                 const ce = H.Awo('PeeringLive')
                     .o({ De: 'corrupt_emissions', target: side })[0] as TheC | undefined
-                if (ce && !ce.c.wrap_installed) {
+                if (ce) {
                     const real_emit = ier.emit.bind(ier)
                     ier.emit = (type: string, data: any, emit_opts: any = {}) => {
                         const mfn = (ce.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
                         return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
                     }
-                    ce.c.wrap_installed = true
+                    ;(ce.oai({ req: 'wrap_unemit' }) as TheC).sc.finished = true
                     H.trace('meddle', `${side} emit wrapped via Pier_init_completo (pre-hello)`)
                 }
 
                 // protocol faults surface here via unemit()'s catch → on_error.
                 //   elevate them onto the Pier particle so the snap records the failure.
                 //   %Pier/%protocol_faulty/%Unemit_Error/%error:…
+                //   feebly_ponder — on_error may arrive after step ends (stale protocol retry)
                 const orig_on_error = ier.on_error.bind(ier)
                 ier.on_error = (err: any) => {
                     const sw     = H.Awo(side)
@@ -385,7 +395,7 @@
                                .oai({ Unemit_Error: 1 })
                                .i({ error: String(err) })
                     }
-                    H.ponder()
+                    H.feebly_ponder()
                     orig_on_error(err)
                 }
 
@@ -494,24 +504,63 @@
                 H.demand_time_to_think(2000)
             },
             4: async () => {
-                // Tearing activates and dials Bearing with corrupt_emissions armed.
-                //   De:connect and De:handshake seeded here; Tearing worker drives the rest.
-                //   De:corrupt_emissions on w:PeeringLive wraps Tearing's ier.emit;
-                //   req:1,corruption:publicKey makes the hello unverifiable.
+                // Tearing activates — dials Bearing with the first lie already armed.
+                //   say_hello() fires automatically from Pier_init_completo (outbound, non-inbound).
+                //   De:p2pman then chains saw_error → next_meddle → retry_hello → clean_done.
                 const bpub = H.Awo('Bearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
                 if (!bpub) return
                 const tw  = H.Awo('Tearing')
                 const tdq = H.reqys(tw, 'De')
                 H.PL_i_Pier(tw, tdq, { target: bpub, hello: true, trust: true })
-                H.PL_i_corrupt_emissions(dq, 'Tearing', { corrupt: 'publicKey' })
+
+                // corrupt the publicKey field in hello — signature still covers original json
+                //   → Bearing throws 'not them' in receive_publicKey before Ud is set
+                H.PL_i_emit_corruption(dq, 'Tearing', { corruption: 'publicKey' }, {
+                    meddle_fn: (stuff: any) => {
+                        try {
+                            const d = JSON.parse(stuff.data)
+                            if (d.type === 'hello') {
+                                d.publicKey = 'deadbeef' + (d.publicKey as string).slice(8)
+                                stuff.data  = JSON.stringify(d)
+                            }
+                        } catch {}
+                    },
+                })
                 H.demand_time_to_think(3000)
+                H.feebly_ponder()
+            },
+            5: async () => {
+                // Bearing now knows Tearing's real Ud from the clean retry — all frames are verified.
+                //   Arm req:2 with a sign corruption, then explicitly say_hello() to trigger the error.
+                //   (No free init_completo this time — Pier already exists from step 4.)
+                const tw  = H.Awo('Tearing')
+                const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+                if (!ier) return
+
+                // replace the live meddle_fn: corrupt the crypto sign on any outgoing frame
+                //   → Bearing's Ud.verify() throws 'invalid signature' regardless of message type
+                H.PL_i_emit_corruption(dq, 'Tearing', { corruption: 'sign' }, {
+                    meddle_fn: (stuff: any) => {
+                        if (stuff.crypto?.sign)
+                            stuff.crypto = { ...stuff.crypto, sign: 'deadbeef' + (stuff.crypto.sign as string).slice(8) }
+                    },
+                })
+
+                // arm first (De.r replaces De/meddle_fn), then poke — wrap reads live on every emit
+                ier.said_hello = false
+                ier.say_hello()
+                H.demand_time_to_think(2000)
                 H.feebly_ponder()
             },
         })
         await dq.do()
     },
 
-    // De_p2pman — one-time manager init tucked into a De so it's visible and deferrable.
+    // De_p2pman — manager init + full corruption-test chain, the causal spine of the test.
+    //   req:init — one-time setup: sides, on_hangup, on_step_ending.
+    //   Step 4 chain (reqs maz:2–5): detect first error, clear meddle, retry clean, confirm.
+    //   Step 5 chain (reqs maz:6–9): detect second error, clear meddle, retry clean, confirm.
+    //   De:p2pman,finished stamps only after req:clean_done_2 (the full story is told).
     async De_p2pman(De: TheC, dq: any) {
         const H   = this as House
         const drq = H.reqys(De, 'req')
@@ -552,7 +601,109 @@
             }
 
             drq.finish(req)
-            drq.check_all_finished()   // stamps De:p2pman,finished
+            // no check_all_finished — chain continues through maz:9
+        })
+
+        // helper: find Bearing's Unemit_Error particle for Tearing's Pier
+        const _bearing_unemit_errs = () => {
+            const tearingPub = H.Awo('Tearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+            if (!tearingPub) return null
+            const pier_n = (H.Awo('Bearing').o({ Pier: 1 }) as TheC[]).find(n => n.sc.pub === tearingPub)
+            return pier_n?.oa({ protocol_faulty: 1 })?.[0]?.o({ Unemit_Error: 1 })[0] as TheC | undefined ?? null
+        }
+        const _recheck = (req: TheC, ms: number) => {
+            if (req.sc.initialdo) H.demand_time_to_think(ms)
+            if (!req.c.recheck_pending) {
+                req.c.recheck_pending = true
+                setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, 700)
+            }
+        }
+
+        // ── step 4 chain ──────────────────────────────────────────────────────
+
+        // req:saw_error — wait for Bearing to record the first protocol_faulty for Tearing's Pier
+        drq.doai({ req: 'saw_error', maz: 2 })?.(async (req: TheC) => {
+            const ue = _bearing_unemit_errs()
+            if (ue && ue.o({ error: 1 }).length >= 1) {
+                drq.finish(req)
+                H.trace('De', 'p2pman: saw_error — Bearing caught first corruption')
+            } else {
+                _recheck(req, 2000)
+            }
+        })
+
+        // req:next_meddle — drop the active meddle_fn so the retry goes out clean
+        drq.doai({ req: 'next_meddle', maz: 3 })?.(async (req: TheC) => {
+            const ce = H.Awo('PeeringLive').o({ De: 'corrupt_emissions', target: 'Tearing' })[0] as TheC | undefined
+            if (ce) await ce.r({ meddle_fn: 1 }, {})
+            drq.finish(req)
+            H.trace('meddle', 'p2pman: next_meddle — meddle cleared for clean retry')
+        })
+
+        // req:retry_hello — Tearing says hello cleanly; Bearing's Ud=null still (first hello threw
+        //   before receive_publicKey could set it), so the clean hello establishes the connection
+        drq.doai({ req: 'retry_hello', maz: 4 })?.(async (req: TheC) => {
+            const ier = (H.Awo('Tearing').o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+            if (!ier) { _recheck(req, 1000); return }
+            ier.said_hello = false
+            ier.say_hello()
+            drq.finish(req)
+            H.trace('meddle', 'p2pman: retry_hello — Tearing says hello cleanly')
+        })
+
+        // req:clean_done — heard_trust confirms the clean handshake completed
+        drq.doai({ req: 'clean_done', maz: 5 })?.(async (req: TheC) => {
+            const ier = (H.Awo('Tearing').o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+            if (ier?.heard_trust) {
+                drq.finish(req)
+                H.trace('De', 'p2pman: clean_done — step 4 chain complete')
+            } else {
+                _recheck(req, 2000)
+            }
+        })
+
+        // ── step 5 chain ──────────────────────────────────────────────────────
+
+        // req:saw_error_2 — Bearing now has Tearing's Ud; the sign corruption causes
+        //   'invalid signature' → a second error child under Unemit_Error
+        drq.doai({ req: 'saw_error_2', maz: 6 })?.(async (req: TheC) => {
+            const ue = _bearing_unemit_errs()
+            if (ue && ue.o({ error: 1 }).length >= 2) {
+                drq.finish(req)
+                H.trace('De', 'p2pman: saw_error_2 — Bearing caught second corruption')
+            } else {
+                _recheck(req, 2000)
+            }
+        })
+
+        // req:clear_meddle_2 — drop the sign meddle before the final clean hello
+        drq.doai({ req: 'clear_meddle_2', maz: 7 })?.(async (req: TheC) => {
+            const ce = H.Awo('PeeringLive').o({ De: 'corrupt_emissions', target: 'Tearing' })[0] as TheC | undefined
+            if (ce) await ce.r({ meddle_fn: 1 }, {})
+            drq.finish(req)
+            H.trace('meddle', 'p2pman: clear_meddle_2 — sign meddle cleared')
+        })
+
+        // req:retry_hello_2 — one more clean hello; Bearing's Ud is set now so verify runs
+        drq.doai({ req: 'retry_hello_2', maz: 8 })?.(async (req: TheC) => {
+            const ier = (H.Awo('Tearing').o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+            if (!ier) { _recheck(req, 1000); return }
+            ier.said_hello = false
+            ier.say_hello()
+            drq.finish(req)
+            H.trace('meddle', 'p2pman: retry_hello_2 — Tearing says hello cleanly again')
+        })
+
+        // req:clean_done_2 — final confirmed handshake; De:p2pman,finished stamps here
+        drq.doai({ req: 'clean_done_2', maz: 9 })?.(async (req: TheC) => {
+            const ier = (H.Awo('Tearing').o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
+            if (ier?.heard_trust) {
+                drq.finish(req)
+                drq.check_all_finished()   // stamps De:p2pman,finished
+                H.trace('De', 'p2pman: clean_done_2 — full test sequence complete')
+            } else {
+                _recheck(req, 2000)
+            }
         })
 
         await drq.do()
@@ -683,47 +834,47 @@
         }
     },
 
-    // PL_i_corrupt_emissions — arms De:corrupt_emissions,eternal on w:PeeringLive.
-    //   Takes the manager dq so seeding integrates with the manager's dq.do() pass.
-    //   req:wrap_unemit installs the emit wrapper once; req:N,corruption:X sets the lie.
-    //   De is eternal — it never finishes; the meddle stays live until hangup.
-    PL_i_corrupt_emissions(dq: any, target: string, opts: { corrupt: string }) {
+    // PL_i_emit_corruption — arms De:corrupt_emissions,eternal on w:PeeringLive.
+    //   id_sc:      {corruption:'publicKey'} — keys the req particle; also stamped on De at birth.
+    //   payload_sc: {meddle_fn:Function}    — merged into req.sc via two-arg doai.
+    //   req IS the mf: De.r({meddle_fn:1}, req) in the do_fn latest-onlys the active lie.
+    //   De is eternal — check_all_finished is never called; meddle stays live until hangup.
+    PL_i_emit_corruption(dq: any, target: string, id_sc: { corruption: string }, payload_sc: { meddle_fn: Function }) {
         const H = this as House
-        // eternal:1 and corrupt stamped at seed time — visible in snap from birth
-        dq.doai({ De: 'corrupt_emissions', target, eternal: 1, corrupt: opts.corrupt })?.(async (De: TheC) => {
-            await H.De_corrupt_emissions(De, { target, ...opts })
+        dq.doai({ De: 'corrupt_emissions', target, eternal: 1, corrupt: id_sc.corruption })?.(async (De: TheC) => {
+            await H.De_emit_meddling(De, { target, id_sc, payload_sc })
         })
     },
 
-    // De_corrupt_emissions — meddle state living on w:PeeringLive.
+    // De_emit_meddling — meddle state living on w:PeeringLive.
     //
     //   req:wrap_unemit — wraps target's ier.emit once Pier is concretized.
     //     Reads De/meddle_fn live on each emit call so corruption can change mid-flight.
     //     Finished once the wrap is installed — the wrap itself stays indefinitely.
     //
-    //   req:N,corruption:X — numbered corruption req; sets the De/meddle_fn child particle.
-    //     Finished immediately; multiple can stack in sequence with incrementing N.
-    //     Each replaces the meddle_fn particle, so only the latest lie is active.
+    //   req:N,corruption:X,meddle_fn:Function — the req IS the mf.
+    //     Two-arg doai merges {meddle_fn} into req.sc alongside {req,corruption}.
+    //     De.r({meddle_fn:1}, req) latest-onlys: removes the previous req (which also
+    //     carried meddle_fn in sc) and places this one as the live De/meddle_fn particle.
+    //     Only the current lie is readable by the wrap; past reqs are gone from the snap.
     //
     //   De:corrupt_emissions is eternal — check_all_finished is never called here.
     //     _PeeringLive_settled ignores eternal De particles on the manager side.
     //
     // Particle layout on w:PeeringLive:
-    //   De:corrupt_emissions,target:Tearing,eternal
-    //     meddle_fn:Function              ← set/replaced by each req:N
-    //     req:wrap_unemit,finished        ← wraps ier.emit; live until hangup
-    //     req:1,corruption:publicKey,finished
-    async De_corrupt_emissions(De: TheC, opts: { target: string; corrupt: string }) {
+    //   De:corrupt_emissions,target:Tearing,eternal,corrupt:X
+    //     req:N,corruption:X,meddle_fn:Function,finished   ← the live req/mf; replaced by De.r
+    //     req:wrap_unemit,finished                         ← wraps ier.emit; live until hangup
+    async De_emit_meddling(De: TheC, opts: { target: string; id_sc: { corruption: string }; payload_sc: { meddle_fn: Function } }) {
         const H   = this as House
         const drq = H.reqys(De, 'req')
         const tw  = H.Awo(opts.target)
 
         // req:wrap_unemit — install emit wrapper on target Pier; waits for concretion.
-        //   Pier_init_completo installs the wrap synchronously (pre-hello) and sets
-        //   De.c.wrap_installed; if that already happened we just finish here.
-        //   Fallback path handles future cases where the shim isn't in the picture.
+        //   Pier_init_completo stamps this req finished (via ce.oai) before hello fires;
+        //   doai then sees it's already finished and skips the do_fn entirely.
+        //   Fallback path: if shim isn't in play, installs wrap here instead.
         drq.doai({ req: 'wrap_unemit' })?.(async (req: TheC) => {
-            if (De.c.wrap_installed) { drq.finish(req); return }
             const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
             if (!ier) return   // wait for Pier concretion
             const real_emit = ier.emit.bind(ier)
@@ -731,63 +882,24 @@
                 const mfn = (De.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
                 return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
             }
-            De.c.wrap_installed = true
             drq.finish(req)
-            H.trace('meddle', `${opts.target} emit wrapped via fallback (corruption:${opts.corrupt})`)
+            H.trace('meddle', `${opts.target} emit wrapped via fallback`)
             // no check_all_finished — De:corrupt_emissions is eternal
         })
 
-        // req:'1',corruption:X — first corruption instruction.
-        //   String key so snap renders req:1,corruption:X not req,corruption:X.
-        //   doai is idempotent — runs once, finishes, re-entry is a no-op.
-        //   < add req:'2',corruption:… to sequence a different lie after this one
-        drq.doai({ req: '1', corruption: opts.corrupt })?.(async (req: TheC) => {
-            const mfn = H._meddle_fn_for(opts.corrupt)
-            const old = De.o({ meddle_fn: 1 })[0] as TheC | undefined
-            if (old) De.drop(old)
-            De.i({ meddle_fn: mfn })
+        // req:N,corruption:X — seed via two-arg doai so meddle_fn lands on req.sc.
+        //   String key '1','2',… so snap renders req:1,corruption:X not req,corruption:X.
+        //   req itself is the mf: De.r({meddle_fn:1}, req) replaces any previous req that
+        //   carried meddle_fn, making this one the live lie read by the wrap.
+        const n = (De.o({ req: 1, corruption: 1 }).length + 1).toString()
+        drq.doai({ req: n, corruption: opts.id_sc.corruption }, opts.payload_sc)?.(async (req: TheC) => {
+            await De.r({ meddle_fn: 1 }, req)   // req IS the mf — De.r latest-onlys it
             drq.finish(req)
-            H.trace('meddle', `req:1 corruption:${opts.corrupt} armed`)
+            H.trace('meddle', `req:${n} corruption:${opts.id_sc.corruption} armed`)
             // no check_all_finished — De:corrupt_emissions is eternal
         })
 
         await drq.do()
-    },
-
-    // _meddle_fn_for — returns a post-sign stuff mutator for the named corruption.
-    //   stuff = { crypto:{sign,buffer_sign?}, data:string(json), buffer?:Uint8Array }
-    //   Mutating stuff.data invalidates crypto.sign → unemit throws 'invalid signature'
-    //     → on_error → %Pier/%protocol_faulty on the receiving side.
-    //
-    // corrupt:publicKey — corrupt the publicKey field in a hello message.
-    //   The signature no longer matches the corrupted JSON; receiver throws on verify.
-    //
-    // corrupt:sign — replace sign with garbage.
-    //   Any message type; receiver throws 'invalid signature' immediately.
-    //
-    // < corrupt:time — shift hello.time past the ±5s window → 'wonky UTC'
-    // < corrupt:buffer_sign — corrupt binary frame authentication
-    _meddle_fn_for(corrupt: string): ((stuff: any) => void) | undefined {
-        if (corrupt === 'publicKey') {
-            return (stuff: any) => {
-                try {
-                    const d = JSON.parse(stuff.data)
-                    if (d.type === 'hello') {
-                        d.publicKey = 'deadbeef' + (d.publicKey as string).slice(8)
-                        stuff.data  = JSON.stringify(d)
-                        // crypto.sign now covers the original json — mismatch → 'invalid signature'
-                    }
-                } catch {}
-            }
-        }
-        if (corrupt === 'sign') {
-            return (stuff: any) => {
-                if (stuff.crypto?.sign)
-                    stuff.crypto = { ...stuff.crypto, sign: 'deadbeef' + stuff.crypto.sign.slice(8) }
-            }
-        }
-        // < extend here: 'time', 'buffer_sign', 'trust_payload', …
-        console.warn(`_meddle_fn_for: unknown corrupt type '${corrupt}'`)
     },
 
 //#endregion
@@ -1182,7 +1294,7 @@
 
     // < corrupt_hello (hook particle) is superseded by De:corrupt_emissions
     //   Prep i_elvisto:'PeeringLive/PeeringLive', e:'corrupt_emissions',
-    //   esc:{target, corrupt} now routes through on_step:4 / PL_i_corrupt_emissions.
+    //   esc:{target, corrupt} now routes through on_step:4 / PL_i_emit_corruption.
 
     // Suppress {open:1} on the target side so the dialling side gets peer-unavailable.
     //   Drops any existing {open:1} and arms open_suppressed so the PeerJS open
