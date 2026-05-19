@@ -1,7 +1,7 @@
 Snap:H
   H:LakeSurfer,Run
     A:Lies
-      {"mung":["age"]}	self,round:8
+      {"mung":["age"]}	self,round:9
       w:Lies
         examining,active_path:src/lib/p2p/Peerily.svelte.ts
         Opt
@@ -26,10 +26,10 @@ Snap:H
         {"loaded_doc":1,"path":"src/lib/p2p/Peerily.svelte.ts"}
         {"requesty_rw_queue":"1","rw_name":"wormhole/Ghost/Tour/toc.snap","rw_op":"write","rw_data":"Waft:Ghost/Tour\n  Doc,path:Ghost/test/Hello.g\n    Point,method:Idzeugnosis\n    Point:1778825248867,method:Idzeuganise,label:Idzeuganise,from:14518,to:14529\n  Doc,path:src/lib/p2p/Peerily.svelte.ts\n    Point:Pier\n","req_i":5}
           req_sent
-        {"mung":["age"]}	self,round:8
+        {"mung":["age"]}	self,round:9
         see:🗂 2 docs · 1 Waft
     A:Lang
-      {"mung":["age"]}	self,round:12
+      {"mung":["age"]}	self,round:13
       w:Lang
         model,cyto_dir
         docs
@@ -57,22 +57,18 @@ Snap:H
                 {"ref":{"region_path":"[PeerJS etc]"}}	call,method:state_becomes,from:3214,to:3228,line:102,via:Promise
                 {"ref":{"region_path":"[PeerJS etc]"}}	call,method:RTCPeerConnection,from:3263,to:3281,line:1312,via:Promise
         cyto_root,cyto_id:cytoid_1
-        received,doc_opened,doc:Ghost/test/Hello.g
-        received,editorBegins
-        received,doc_opened,doc:src/lib/p2p/Peerily.svelte.ts
-        received,editorBegins
-        {"mung":["age"]}	self,round:12
+        {"mung":["age"]}	self,round:13
         see:🟦 tiles 0 bookmarks
     A:Cyto
-      {"mung":["age"]}	self,round:5
+      {"mung":["age"]}	self,round:6
       w:Cyto,grawave_duration:0.4
         {"ref":{"C":"cyto_root:1, cyto_id:cytoid_1"}}	{"CytoStep":1}
-        {"mung":["age"]}	self,round:5
+        {"mung":["age"]}	self,round:6
         {"see":"📊 tick:0"}
     A:Pantheate
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round:4
       w:Pantheate
-        {"mung":["age"]}	self,round:3
+        {"mung":["age"]}	self,round:4
         o_elvis:Ghost_update_notify
     watched:ave
       Styles

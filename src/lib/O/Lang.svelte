@@ -222,7 +222,7 @@
         const sig = ave.o({ active_doc: 1 })[0] as TheC | undefined
         if (sig && !sig.c.doc) sig.c.doc = doc
 
-        w.i({received:1,editorBegins:1})
+        w.i({log:1,received:1,editorBegins:1,doc:doc.sc.doc})
 
         // ── Bookmark position sync ────────────────────────────────────────────
         //
@@ -320,7 +320,7 @@
         // always activate — Lies owns doc order, last open wins for now
         this.Lang_set_active_doc(w, path)
 
-        w.i({ received: 1, doc_opened: 1, doc: path })
+        w.i({log:1,received:1, doc_opened: 1, doc: path })
         console.log(`📄 Lang opened doc: ${path}`)
         // Compile fires from e_Lang_editorBegins once docC.c.state is populated
         // — this handler lands before the EditorView exists, so calling

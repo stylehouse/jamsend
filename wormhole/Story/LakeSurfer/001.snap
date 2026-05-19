@@ -57,10 +57,10 @@ Snap:H
                 {"ref":{"region_path":"[PeerJS etc]"}}	call,method:state_becomes,from:3214,to:3228,line:102,via:Promise
                 {"ref":{"region_path":"[PeerJS etc]"}}	call,method:RTCPeerConnection,from:3263,to:3281,line:1312,via:Promise
         cyto_root,cyto_id:cytoid_1
-        received,doc_opened,doc:Ghost/test/Hello.g
-        received,editorBegins
-        received,doc_opened,doc:src/lib/p2p/Peerily.svelte.ts
-        received,editorBegins
+        log,received,doc_opened,doc:Ghost/test/Hello.g
+        log,received,doc_opened,doc:src/lib/p2p/Peerily.svelte.ts
+        log,received,editorBegins,doc:Ghost/test/Hello.g
+        log,received,editorBegins,doc:src/lib/p2p/Peerily.svelte.ts
         {"mung":["age"]}	self,round:11
         see:🟦 tiles 0 bookmarks
         see:🔍 soft-compiled src/lib/p2p/Peerily.svelte.ts

@@ -363,20 +363,6 @@
             return n + 1
         }
 
-
-        // ── TypeScript import/export guard ────────────────────────────────────
-        //
-        // The stho grammar's GLR can explore the IOing path on these lines via
-        // error-recovery token insertion, producing an IOing node whose IOness
-        // child is absent.  Match them here before the tree walk so they always
-        // pass through verbatim.  The grammar also emits Import/Export nodes for
-        // these (see stho.grammar //#region TypeScript pass-through constructs)
-        // which the tree-walk handler below catches as a secondary layer.
-        if (/^[\t ]*(import|export)\b/.test(line.text)) {
-            out.push({ kind: 'raw', text: line.text })
-            return n + 1
-        }
-
         // first recognisable node whose span lies within this doc line
         let hit: { name: string, node: SyntaxNode } | null = null
         tree.iterate({
@@ -385,21 +371,13 @@
             enter: (ref) => {
                 if (hit) return false
                 if ((ref.name === 'IOing' || ref.name === 'Sunpit'
-                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike'
-                        || ref.name === 'Import'      || ref.name === 'Export')
+                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike')
                         && ref.from >= line.from && ref.to <= line.to) {
                     hit = { name: ref.name, node: ref.node }
                     return false
                 }
             },
         })
-
-        // Grammar-level Import/Export nodes — pass through verbatim.
-        // Belt-and-suspenders alongside the regex guard above.
-        if (hit?.name === 'Import' || hit?.name === 'Export') {
-            out.push({ kind: 'raw', text: line.text })
-            return n + 1
-        }
 
         if (hit?.name === 'Sunpit') {
             // emit the for-header (open brace only; _collect_line closes it below)
