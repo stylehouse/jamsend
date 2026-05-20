@@ -5,10 +5,15 @@ Snap:H
       w:PeeringLive
         De:p2pman,finished
           req:init,finished
-        De:corrupt_emissions,target:Tearing,eternal,corrupt:publicKey
-          req:wrap_unemit,finished
-          req,corruption:publicKey,finished
-          {"ref":{"meddle_fn":"Function()"}}	
+        De:emit_corruption,target:Tearing,eternal
+          req:wrap_emit,finished:true
+          {"ref":{"meddle_fn":"Function()"}}	req,corruption:publicKey,finished
+        De:step_4,Destep,finished
+          req:watch_error,finished
+        timeSatisfied
+        De:step_5,Destep,finished
+          req:send_hello,finished
+          req:watch_error,maz:2,finished
         {"mung":["age"]}	self,round:30
         {"see":"PeeringLive  open:3/3"}
     A:Bearing
@@ -42,6 +47,7 @@ Snap:H
           protocol_faulty
             Unemit_Error
               error:not them
+              error:invalid signature
         De:handshake,target:962af4326c28f29b,finished
           req:said_hello,demand:800,finished
           req:heard_hello,maz:2,demand:800,finished
@@ -94,11 +100,11 @@ Snap:H
         De:connect,target:7acf614d876d69a4,finished
           req:dial,finished
           req:connected,finished
-        De:handshake,target:7acf614d876d69a4
+        De:handshake,target:7acf614d876d69a4,finished
           req:said_hello,demand:800,finished
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
-          req:heard_trust,maz:4,demand:1500
+          req:heard_trust,maz:4,demand:1500,finished
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
         {"mung":["age"]}	self,round:35
     {"mung":["id"]}	mo:main,interval:3.6

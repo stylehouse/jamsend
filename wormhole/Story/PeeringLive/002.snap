@@ -5,7 +5,7 @@ Snap:H
       w:PeeringLive
         De:p2pman,finished
           req:init,finished
-        timeSatisfied
+        timeDoubt
         {"mung":["age"]}	self,round:17
         {"see":"PeeringLive  open:3/3"}
     A:Bearing

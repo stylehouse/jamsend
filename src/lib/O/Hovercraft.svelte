@@ -2,10 +2,10 @@
     // Hovercraft.svelte — C activities
     //  duplicate copy of requesty_serial(), where it can be shown to AI
 
-    import { _C, TheC } from "$lib/data/Stuff.svelte"
+    import { _C, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
     import { onMount, tick } from "svelte"
 
-    import { exactly, grop, hakd } from "$lib/Y.svelte";
+    import { exactly, grop, hakd, sex } from "$lib/Y.svelte";
     import { keyser, objectify } from "./Stuff.svelte";
     import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
@@ -26,7 +26,6 @@
             console.log(`requesty_serial(w,${t})`)
             req_serial = w.o({...reqserialc})[0]
             req_serial ||= await w.r({...reqserialc,i:1})
-            req_serial.sc.i ||= 7
             ison = async () => {}
         }
         let M = this
@@ -110,6 +109,197 @@
         }
         return requlator
     },
+//#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+//#region r
+
+    reqy_spec: `
+        fork of requesty_serial()
+         helps you write good looking C** that statemachines a bunch of work
+          let Dq = H.reqy(w,{k:'De'}) // different mainkey, for %De,...c,reqi++,,,...sc
+          let rq = H.reqy(w)
+         define protocols, then you put particles in:
+          await reqy.roai({enid,path},{urgency})
+         you then do stuff:
+          reqy.do(async(req) => { ... })
+
+         {enid,path} will locate a req,
+          {urgency} will mutate req%urgency if ~, and set %req%mutate.urgency=oldvalue
+           a req use case:
+            for a client session state for an RPC call that takes a while
+             and we can bump urgency after starting it
+         
+         req.c.up = w
+          or possibly another req, they can be infinitely nested ie w/req**
+         w/reqcons/reqcon:req
+          gets reqcon%i++ to give some req...
+           when they q.i(%req:1,...)
+            ie when they didn't set req (the mainkey) to something else
+            we should assume they want serial numbering
+             handy to have string id for the unique group of c.* identity a req is
+          
+          req.c.on = reqcon
+           the protocol of req is findable from a req
+
+          can have reqcon%do_fn = Function
+           allowing reqyoncile(req) out of time to come through:
+          e:reqyonciliation
+           can sort of process out of time
+           primarily advancing one e%req given above
+           but if that goes well it might percolate to the req.c.up
+            < protocols about when that's doable
+          so,
+           reqy() calls full of protocol specs live in w:TheClientCode
+            reqy() calls identifying only the q.k can occur from elsewhere...
+             to use the rq.do() API in 
+            so protocol specs have to live on reqcon
+             so all rq are made equal whether in time or kinda out.
+            
+
+        
+    `,
+    // w|De|req, the host
+    reqy(w: TheC, q: { k?:string } & any = {}) {
+        q.k ||= 'req'
+        const keying = { [q.k]: 1 } // matches %req, roai(c) may redefine it
+        let reqcons:TheC
+        let reqcon:TheC
+        let init = async () => {
+            // once the first roai() comes in
+            reqcons = w.oai({reqcons:1}) // group reqy protocols living here
+            // these are creation-time-only set properties, due to 2 arg oai
+            let opt = sex({},q,'noserial,mutated_fn,do_fn')
+            opt = {serial_i:2,...opt}
+            reqcon = q.con = reqcons.oai({reqcon:q.k},opt)
+            init = async () => {} // oncer
+        }
+        q = {...q,
+            o(c:TheUniversal = {}): TheC[] {
+                return w.o({ ...keying, ...c })
+            },
+            // acts like StuffIO.roai() with:
+            //  - sets %mutated which lasts one do()
+            //  - pointless async for consistency
+            async roai(c:TheUniversal, sc?:TheUniversal): TheC {
+                await init()
+                let req = q.o(exactly(c))[0]
+                if (req) {
+                    // existed
+                    if (req.c.up != w) throw "req~up"
+                    q.maybe_mutate_sc(req,sc)
+                    return req
+                }
+                // create
+                let mix = { ...keying, ...c, ...sc }
+                if (mix.sc[q.k] === 1 && !reqcon.sc.noserial) {
+                    reqcon.sc.is_serial = 1
+                    mix.sc[q.k] = reqcon.sc.serial_i++
+                }
+                req = w.oai(mix)
+                req.c.up = w
+                req.c.on = reqcon
+                if (req.sc.maz == 1) delete req.sc.maz // is implied
+                return req
+            },
+            // %mutated detection
+            maybe_mutate_sc(req,sc) {
+                if (sc && Object.keys(sc).length) {
+                    const merged = { ...req.sc, ...sc }
+                    const diffs  = hakd(req.sc, merged)
+                    if (diffs.length) {
+                        // changed the non-identifying properties
+                        const mutated: Record<string,any> = {}
+                        for (const k of diffs) mutated[k] = req.sc[k]
+                        Object.assign(req.sc, sc)
+                        req.sc.mutated = mutated
+                        req.bump_version()
+                    }
+                }
+            },
+            // do them all
+            async do(fn?: Function) {
+                let N = q.o().filter(req => !req.sc.finished)
+                if (!N.length) return
+
+                let maz_low = Math.min(N.map(req => req.sc.maz || 1))
+                N = N.filter(req => (req.sc.maz || 1) == maz_low)
+
+                for (const req of N) {
+                    await q.do_one(req, fn)
+                }
+            },
+
+            // run handler for one req — shared by do() and e_reqysciliation.
+            //  mutated_fn handler fires instead of do_fn, which could be in several places...
+            async do_one(req: TheC, fn?: Function) {
+                if (req.sc.finished) throw "do_one req%finished"
+                delete req.sc.initialdo
+                await this.w_noproblemo(req)      // drop %waits, %error, %see
+
+                // if eg req:Foo, you might want this.req_Foo(req)
+                let name = req.sc[q.k] as string | undefined
+                name = typeof name == 'number' ? undefined : name
+                const handler = fn
+                    // this illustrates how req is closer to the audience than reqcon is
+                    //  and so .c and .sc for this
+                    || req.sc.mutated && (req.c.mutated_fn || reqcon.sc.mutated_fn)
+                    || req.c.do_fn || reqcon.sc.do_fn
+                    // a this.req_Foo for %req:Foo ?
+                    || name && (this as any)[q.k + '_' + name]?.bind(this)
+                    || q.handler_of_last_resort(req,q)
+
+                if (handler) {
+                    // %initialdo: first-call flag; window is from first call to following pass
+                    if (!req.c._had_initialdo) {
+                        req.c._had_initialdo = true
+                        req.sc.initialdo = 1
+                    }
+                    await handler(req, q)
+                }
+                delete req.sc.initialdo
+                delete req.sc.mutated
+            },
+            handler_of_last_resort(req: TheC) {
+
+            },
+        }
+    },
+
+    // < have Story scan w for Runstepped activities
+    //  < there could be a sense of the
+    // upon new Story step, forget things we wanted to snap now
+    async Runstepped_reqy_pageturning(w:TheC) {
+        await this.reqy_recurse(w,{each_fn:async (req:TheC) => {
+            await this.w_noproblemo(req,{log:1})      // drop %log now it's in the snap
+        }})
+    },
+    // < Travel through a w/** of reqy stuff by looking at /%reqcons for leads
+    //    an each_fn is supplied to do whatever the caller is hooking up here...
+    // < post-snap moments will do more w_noproblemo(req)
+    //    and maybe clear %finished... yes, probably...
+    async reqy_recurse() {
+
+    },
+
+    // < also keep|adapt
+    //    reqonce
+    //    reqysee (should use maybe_mutate_sc)
+    // 
+    
+
+
 //#endregion
 
 
@@ -379,7 +569,9 @@
 
 //#region Story utils
 
-
+    // < rereq: these want to be per-req.
+    //    something it hoists out of them...
+    //     similar to %aims I guess
 
     // an overall this-house-is-busy quality, see Story / poll_step
     demand_time_to_think(ms = 2000) {
@@ -389,7 +581,6 @@
             this.trace('demand time',ms)
             this.c.leave_running_until = until
     },
-
     // cancel all demanded time to think
     // < wants to be per-req expectations of slow times, when and how to restart if gone idle
     // no-op outside a Story run — safe to call unconditionally from a do_fn.
@@ -397,27 +588,6 @@
         if (!this.c.runtime) return
         this.c.leave_running_until = 0
         this.main()
-    },
-
-    // queue a callback for when the Story step_n next changes.
-    //   cb fires an elvis inline — no async, no setTimeout needed.
-    //   couldbe_nexttime(w) must run at the top of the relevant w method each tick.
-    coulddo_nexttime(w: TheC, cb: Function) {
-        w.c._nexttime_q    ||= []
-        w.c._nexttime_step ||= this.sc.run?.sc?.step_n
-        ;(w.c._nexttime_q as Function[]).push(cb)
-    },
-
-    // call at the top of a w method each tick.
-    //   fires all queued cbs when step_n has advanced since they were registered.
-    couldbe_nexttime(w: TheC) {
-        const step = this.sc.run?.sc?.step_n
-        if (!w.c._nexttime_q?.length) { w.c._nexttime_step = step; return }
-        if (step === w.c._nexttime_step) return
-        const q = w.c._nexttime_q as Function[]
-        w.c._nexttime_q    = []
-        w.c._nexttime_step = step
-        for (const cb of q) cb()
     },
 
     // push to Run's queue — Run found via o({Run:1}), or self if we are Run.
@@ -443,21 +613,6 @@
                 await this.w_noproblemo(w, { log: 1 })
             }
         }
-    },
-
-    // let at most one req be the active worker per step.
-    //   claims w/active_worker on first call; others stamp %waits and return false.
-    //   Runstepped clears the slot so the next step a different req can claim it.
-    be_active_worker_per_step(w: TheC, req: TheC): boolean {
-        const slot = w.oai({ active_worker: 1 })
-        if (slot.c.req === req) return true
-        if (!slot.c.req) {
-            slot.c.req = req
-            this.Runstepped(async () => { delete slot.c.req })
-            return true
-        }
-        req.i({ waits: (slot.c.req as TheC).sc.req ?? 'worker' })
-        return false
     },
 
     // extends w_forgets_problems with optional %log clearing
