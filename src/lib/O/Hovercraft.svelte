@@ -123,17 +123,20 @@
 
 
 
-//#region r
+//#region reqy
 
     reqy_spec: `
+        
+
+        
         fork of requesty_serial()
          helps you write good looking C** that statemachines a bunch of work
           let Dq = H.reqy(w,{k:'De'}) // different mainkey, for %De,...c,reqi++,,,...sc
           let rq = H.reqy(w)
          define protocols, then you put particles in:
-          await reqy.roai({enid,path},{urgency})
+          await rq.roai({enid,path},{urgency})
          you then do stuff:
-          reqy.do(async(req) => { ... })
+          rq.do(async(req) => { ... })
 
          {enid,path} will locate a req,
           {urgency} will mutate req%urgency if ~, and set %req%mutate.urgency=oldvalue
@@ -153,25 +156,37 @@
           req.c.on = reqcon
            the protocol of req is findable from a req
 
-          can have reqcon%do_fn = Function
+          can have reqcon.c.do_fn = Function
            allowing reqyoncile(req) out of time to come through:
           e:reqyonciliation
            can sort of process out of time
-           primarily advancing one e%req given above
-           but if that goes well it might percolate to the req.c.up
-            < protocols about when that's doable
+           sends e%req=req, finds protocol to do()
+
+           if we get req%finished, we can by default:
+            reqyoncile(req.c.up)
+            
           so,
-           reqy() calls full of protocol specs live in w:TheClientCode
+           reqy() calls full of protocol specs live in w:ClientCode
             reqy() calls identifying only the q.k can occur from elsewhere...
              to use the rq.do() API in 
             so protocol specs have to live on reqcon
              so all rq are made equal whether in time or kinda out.
-            
+          
+          req** do() recursion
+           is likely to be the handler_of_last_resort()
+           where we just do req/*req
+            and get %finished when they are
+            we usually do req/*req if req !do_fn
+           do all of them in req/reqcons/*
+            so De doing so finds De/*req
+            makes an out of time rq to use
+          
 
         
     `,
     // w|De|req, the host
     reqy(w: TheC, q: { k?:string } & any = {}) {
+        const H = this
         q.k ||= 'req'
         const keying = { [q.k]: 1 } // matches %req, roai(c) may redefine it
         let reqcons:TheC
@@ -180,9 +195,9 @@
             // once the first roai() comes in
             reqcons = w.oai({reqcons:1}) // group reqy protocols living here
             // these are creation-time-only set properties, due to 2 arg oai
-            let opt = sex({},q,'noserial,mutated_fn,do_fn')
-            opt = {serial_i:2,...opt}
-            reqcon = q.con = reqcons.oai({reqcon:q.k},opt)
+            let opt = sex({},q,'noserial')
+            reqcon = q.con = reqcons.oai({reqcon:q.k},{serial_i:2,...opt})
+            sex(reqcon.c,q,'mutated_fn,do_fn')
             init = async () => {} // oncer
         }
         q = {...q,
@@ -192,7 +207,7 @@
             // acts like StuffIO.roai() with:
             //  - sets %mutated which lasts one do()
             //  - pointless async for consistency
-            async roai(c:TheUniversal, sc?:TheUniversal): TheC {
+            async roai(c:TheUniversal, sc?:TheUniversal): Promise<TheC> {
                 await init()
                 let req = q.o(exactly(c))[0]
                 if (req) {
@@ -203,9 +218,9 @@
                 }
                 // create
                 let mix = { ...keying, ...c, ...sc }
-                if (mix.sc[q.k] === 1 && !reqcon.sc.noserial) {
+                if (mix[q.k] === 1 && !reqcon.sc.noserial) {
                     reqcon.sc.is_serial = 1
-                    mix.sc[q.k] = reqcon.sc.serial_i++
+                    mix[q.k] = reqcon.sc.serial_i++
                 }
                 req = w.oai(mix)
                 req.c.up = w
@@ -213,7 +228,7 @@
                 if (req.sc.maz == 1) delete req.sc.maz // is implied
                 return req
             },
-            // %mutated detection
+            // update req%* and do req%mutated detection
             maybe_mutate_sc(req,sc) {
                 if (sc && Object.keys(sc).length) {
                     const merged = { ...req.sc, ...sc }
@@ -233,31 +248,28 @@
                 let N = q.o().filter(req => !req.sc.finished)
                 if (!N.length) return
 
-                let maz_low = Math.min(N.map(req => req.sc.maz || 1))
+                let maz_low = Math.min(...N.map(req => req.sc.maz || 1))
                 N = N.filter(req => (req.sc.maz || 1) == maz_low)
 
                 for (const req of N) {
                     await q.do_one(req, fn)
                 }
             },
-
             // run handler for one req — shared by do() and e_reqysciliation.
             //  mutated_fn handler fires instead of do_fn, which could be in several places...
             async do_one(req: TheC, fn?: Function) {
                 if (req.sc.finished) throw "do_one req%finished"
                 delete req.sc.initialdo
-                await this.w_noproblemo(req)      // drop %waits, %error, %see
+                await H.w_noproblemo(req)      // drop %waits, %error, %see
 
-                // if eg req:Foo, you might want this.req_Foo(req)
+                // if eg req:Foo, you might want H.req_Foo(req)
                 let name = req.sc[q.k] as string | undefined
                 name = typeof name == 'number' ? undefined : name
                 const handler = fn
-                    // this illustrates how req is closer to the audience than reqcon is
-                    //  and so .c and .sc for this
-                    || req.sc.mutated && (req.c.mutated_fn || reqcon.sc.mutated_fn)
-                    || req.c.do_fn || reqcon.sc.do_fn
-                    // a this.req_Foo for %req:Foo ?
-                    || name && (this as any)[q.k + '_' + name]?.bind(this)
+                    || req.sc.mutated && (req.c.mutated_fn || reqcon.c.mutated_fn)
+                    || req.c.do_fn || reqcon.c.do_fn
+                    // a H.req_Foo for %req:Foo ?
+                    || name && (H as any)[q.k + '_' + name]?.bind(H)
                     || q.handler_of_last_resort(req,q)
 
                 if (handler) {
@@ -272,7 +284,7 @@
                 delete req.sc.mutated
             },
             handler_of_last_resort(req: TheC) {
-
+                // < do() req/*req we know about? or with !reqcon%noabove
             },
         }
     },
@@ -295,7 +307,7 @@
 
     // < also keep|adapt
     //    reqonce
-    //    reqysee (should use maybe_mutate_sc)
+    //    reqysee becomes reqy_mutate, and should use maybe_mutate_sc
     // 
     
 
