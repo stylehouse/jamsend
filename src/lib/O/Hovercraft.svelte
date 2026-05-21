@@ -217,6 +217,7 @@
             //  - serial numbering when %req:1 and !noserial
             //  - %mutated detection on sc for existing reqs
             async roai(c: TheUniversal, sc?: TheUniversal): Promise<TheC> {
+                if (c.maz == 1) delete c.maz
                 let req = q.o(exactly(c))[0]
                 if (req) {
                     // existed
@@ -233,7 +234,7 @@
                 req = w.oai(mix)
                 req.c.up = w
                 req.c.on = reqcon
-                if (req.sc.maz == 1) delete req.sc.maz  // maz:1 is implied, never stamped
+                if (req.sc.maz == 1) delete req.sc.maz  // maz:1 is implied
                 return req
             },
  
@@ -728,9 +729,10 @@
     demand_time_to_think(ms = 2000) {
         // push leave_running_until further out, never backwards
         const until = now_in_seconds_with_ms() + ms / 1000
-        if (this.c.leave_running_until < until)
+        if (this.c.leave_running_until < until) {
             this.trace('demand time',ms)
             this.c.leave_running_until = until
+        }
     },
     // cancel all demanded time to think
     // < wants to be per-req expectations of slow times, when and how to restart if gone idle
