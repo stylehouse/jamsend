@@ -32,7 +32,7 @@
         const dq = this.reqy(w, {k:'De'})
 
         const dSort = await dq.roai({De:'sort'})
-        dSort.c.do_fn ||= async (De: TheC, dq: any) => {
+        dSort.c.do_fn ||= async (De: TheC) => {
             this.trace("De:sort")
             const rq = this.reqy(De, {k:'req'})
 
@@ -60,7 +60,7 @@
         }
 
         const dYay = await dq.roai({De:'yay', maz:2})
-        dYay.c.do_fn ||= async (De: TheC, dq: any) => {
+        dYay.c.do_fn ||= async (De: TheC) => {
             this.trace("De:yay")
             w.i({confetti:"!!!"})
             dq.finish(De); return
@@ -83,14 +83,14 @@
     // w/world/order:*,dose:N             — committed record; written by confirm
     //
     // De:receive
-    //   req:order:rose,dose               — permanent-state reqs (no do_fn); transparent
-    //   req:order:fern,dose                 to do(). roai(c,sc) propagates source changes →
-    //                                       maybe_mutate_sc → %mutated → rq.con.c.mutated_fn
-    //   req:order:rose_extra,dose:2       — rogue; seeded inside mutated_fn; has do_fn
-    //   req:confirm                       — staged by driver; De:receive completion signal
+    //   req:2,order:rose,dose          — serial reqs (no do_fn); transparent
+    //   req:3,order:fern,dose            to do(). roai(c,sc) prefixes mainkey → serial stamp;
+    //                                         maybe_mutate_sc → %mutated → mutated_fn (in reqy call)
+    //   req:order:4,order:rose_extra,dose:2  — rogue; seeded inside mutated_fn; has do_fn
+    //   req:confirm                          — staged by driver; De:receive completion signal
     //
-    // De:report,maz:2                    — De-level %waits; do_fn fallback via reqcon.c.do_fn
-    //   req:summarise                       all_finished() → inline finish
+    // De:reportPortPlaneting,maz:2           — named handler; De-level %waits; do_fn fallback via reqcon.c.do_fn
+    //   req:summarise                          all_finished() → inline finish
 
     Run_A_PortPlanet(this: House) {
         const A = this.o({ A: 'PortPlanet' })[0] || this.i({ A: 'PortPlanet' })
@@ -132,20 +132,17 @@
         // ── De:receive ────────────────────────────────────────────────────────
         // req.c.up = De set by roai; reqyoncile climbs De.c.up = w to reach %w
         const dReceive = await dq.roai({De:'receive'})
-        dReceive.c.do_fn ||= async (De: TheC, dq: any) => {
-            De.c.rq ||= this.reqy(De, {k:'req'})
-            const rq = De.c.rq
-
-            // order_update — rq.con.c.mutated_fn; fires for any req carrying %mutated
+        dReceive.c.do_fn ||= async (De: TheC) => {
+            // order_update — mutated_fn; fires for any req carrying %mutated
             //   req.sc.mutated.dose is the pre-merge value; gap = delta only
             //   rogue seeded directly into rq — not from w/orders pipeline
-            rq.con.c.mutated_fn ||= async (req: TheC, rq: any) => {
+            const rq = this.reqy(De, {k:'req', mutated_fn: async (req: TheC, rq: any) => {
                 const old_dose = req.sc.mutated?.dose as number || 0
                 const new_dose = req.sc.dose as number || 0
                 const gap      = new_dose - old_dose
                 if (gap <= 0) return
                 const rogue = await rq.roai(
-                    { req: 'order', order: `${req.sc.order as string}_extra` },
+                    { order: `${req.sc.order as string}_extra` },
                     { dose: gap }
                 )
                 rogue.c.do_fn ||= async (req: TheC, rq: any) => {
@@ -153,14 +150,15 @@
                     rq.finish(req)
                 }
                 li('extra_order', { order: req.sc.order as string, gap })
-            }
+            }})
 
-            // flow w/orders into permanent-state reqs via roai(c,sc):
-            //   c = identity (order name only); sc = data (dose)
-            //   same particle found each tick; maybe_mutate_sc detects source changes → %mutated
+            // flow w/orders into serial reqs via roai(c,sc):
+            //   c = identity (order name); sc = data (dose)
+            //  - mainkey prefixing, ie %req,...c,...sc (c can set again)
+            //   same particle found each tick by order; maybe_mutate_sc detects changes → %mutated
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {
                 await rq.roai(
-                    { req: 'order', order: order.sc.order },
+                    { order: order.sc.order },
                     { dose: order.sc.dose as number || 0 }
                 )
             }
@@ -171,7 +169,7 @@
             rConf.c.do_fn ||= async (req: TheC, rq: any) => {
                 if (!req.sc.staged) { req.i({ waits: 'staged' }); return }
                 const world = w.oai({ world: 1 })
-                for (const or of rq.o({ req: 'order' }) as TheC[]) {
+                for (const or of rq.o({ order: 1 }) as TheC[]) {
                     world.oai({ order: or.sc.order }).sc.dose = or.sc.dose as number || 0
                 }
                 li('confirmed')
@@ -183,32 +181,37 @@
             if (conf?.sc.finished && !De.sc.finished) dq.finish(De)
         }
 
-        // ── De:report,maz:2 ──────────────────────────────────────────────────
-        const dReport = await dq.roai({De:'report', maz:2})
-        dReport.c.do_fn ||= async (De: TheC, dq: any) => {
-            const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
-            if (!dReceive?.sc.finished) {
-                De.i({ waits: 'receive' })
-                return
-            }
-
-            // do_fn on reqcon.c: fallback for any req with no c.do_fn — carries req:summarise
-            De.c.rq ||= this.reqy(De, {k:'req', do_fn: async (req: TheC, rq: any) => {
-                const world = w.oai({ world: 1 })
-                const total = (world.o({ order: 1 }) as TheC[])
-                    .reduce((s, o) => s + (o.sc.dose as number || 0), 0)
-                li('report_final', { total })
-                w.i({ see: `📋 world total: ${total} doses` })
-                rq.finish(req)
-            }})
-            const rq = De.c.rq
-
-            await rq.roai({req:'summarise'})
-            await rq.do()
-            if (rq.all_finished() && !De.sc.finished) dq.finish(De)
-        }
+        // ── De:reportPortPlaneting — named handler on H ───────────────────────
+        await dq.roai({De:'reportPortPlaneting', maz:2})
 
         await dq.do()
+    },
+
+    // named handler: H.De_reportPortPlaneting(De, dq)
+    //   w reached via De.c.up (set by dq.roai); li via this.c.loggeri
+    async De_reportPortPlaneting(De: TheC, dq: any) {
+        const w  = De.c.up as TheC
+        const li = this.c.loggeri
+
+        const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
+        if (!dReceive?.sc.finished) {
+            De.i({ waits: 'receive' })
+            return
+        }
+
+        // do_fn on reqcon.c: fallback for any req with no c.do_fn — carries req:summarise
+        const rq = this.reqy(De, {k:'req', do_fn: async (req: TheC, rq: any) => {
+            const world = w.oai({ world: 1 })
+            const total = (world.o({ order: 1 }) as TheC[])
+                .reduce((s, o) => s + (o.sc.dose as number || 0), 0)
+            li('report_final', { total })
+            w.i({ see: `📋 world total: ${total} doses` })
+            rq.finish(req)
+        }})
+
+        await rq.roai({req:'summarise'})
+        await rq.do()
+        if (rq.all_finished() && !De.sc.finished) dq.finish(De)
     },
 
 //#endregion
@@ -261,9 +264,8 @@
 
         // ── De:repot ──────────────────────────────────────────────────────────
         const dRepot = await dq.roai({De:'repot'})
-        dRepot.c.do_fn ||= async (De: TheC, dq: any) => {
-            De.c.rq ||= this.reqy(De, {k:'req'})
-            const rq = De.c.rq
+        dRepot.c.do_fn ||= async (De: TheC) => {
+            const rq = this.reqy(De, {k:'req'})
 
             // req:move_outside
             //   body pots on entry = loaded last step and snapped → safe to unload now
@@ -356,9 +358,8 @@
 
         // ── De:celebrate,maz:2 ────────────────────────────────────────────────
         const dCelebrate = await dq.roai({De:'celebrate'}, {maz:2})
-        dCelebrate.c.do_fn ||= async (De: TheC, dq: any) => {
-            De.c.rq ||= this.reqy(De, {k:'req'})
-            const rq = De.c.rq
+        dCelebrate.c.do_fn ||= async (De: TheC) => {
+            const rq = this.reqy(De, {k:'req'})
 
             const rConfetti = await rq.roai({req:'confetti'})
             rConfetti.c.do_fn ||= async (req: TheC, rq: any) => {
