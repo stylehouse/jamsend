@@ -7,6 +7,7 @@
     import { onMount } from "svelte";
     import MachPeerily from "../MachPeerily.svelte";
     import MachReactivity from "./MachReactivity.svelte";
+    import MachReqy from "./MachReqy.svelte";
 
     let {M} = $props()
 
@@ -590,6 +591,36 @@ The double-envelopment became the template for every subsequent battle of annihi
     },
 
 //#endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //#region PotPlan
 
@@ -1867,3 +1898,4 @@ The double-envelopment became the template for every subsequent battle of annihi
 </script>
 <MachPeerily {M} />
 <MachReactivity {M} />
+<MachReqy {M} />

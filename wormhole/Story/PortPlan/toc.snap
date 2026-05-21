@@ -1,4 +1,4 @@
-story:PotPlan
+story:PortPlan
   Styles
     matstyle:w
       style:background-color,v:#8f3232
@@ -15,16 +15,16 @@ story:PotPlan
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:1.686
-      sample:16.681,at:1778833837
-      sample:0.015,at:1778833840
-      sample:0.019,at:1778833958
-      sample:0.013,at:1778833965
+    TimeTotal:beliefs,avg:0.033
       sample:0.015,at:1778836714
       sample:0.016,at:1778837306
       sample:0.014,at:1778837347
       sample:0.022,at:1778920190
       sample:0.017,at:1779063288
       sample:0.045,at:1779324943
-  step,dige:bdcbbacea073e1e1
-  step:2,dige:823d60e3fdf2ad54
+      sample:0.06,at:1779325006
+      sample:0.044,at:1779325018
+      sample:0.044,at:1779325028
+      sample:0.05,at:1779325608
+  step,dige:fc6c6f3faf7f1bbd
+  step:2,dige:c7c9c69eafe3676d
