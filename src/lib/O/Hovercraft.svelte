@@ -122,8 +122,17 @@
 
 
 
-//#region reqy
 
+
+
+
+
+
+
+
+
+//#region reqy
+ 
     reqy_spec: `
         fork of requesty_serial()
          helps you write good looking C** that statemachines a bunch of work
@@ -133,7 +142,7 @@
           await rq.roai({enid,path},{urgency})
          you then do stuff:
           rq.do(async(req) => { ... })
-
+ 
          {enid,path} will locate a req,
           {urgency} will mutate req%urgency if ~, and set req%mutated.urgency=oldvalue
            a req use case:
@@ -151,13 +160,13 @@
           
           req.c.on = reqcon
            the protocol of req is findable from a req
-
+ 
           reqcon.c.do_fn = Function
            allowing reqyoncile(req) out of time to come through:
           e:reqyonciliation
            can sort of process out of time
            sends e%req=req, finds reqcon to do()
-
+ 
            if req gets %finished, by default:
             reqyoncile(req.c.up)
             
@@ -177,7 +186,7 @@
             so De doing so finds De/*req
             makes an out-of-time rq to use
     `,
-
+ 
     // w|De|req, the host
     reqy(w: TheC, q: { k?:string } & any = {}) {
         const H = this
@@ -194,16 +203,15 @@
                 reqcon = q.con = reqcons.oai({ reqcon: q.k }, { serial_i: 2, ...opt })
                 // *_fn in reqcon.c so they never appear in snaps
                 sex(reqcon.c, q, 'mutated_fn,do_fn,all_done_fn')
-                // so you can req.c.on.c.rq.finish(req) properly
-                //   < that's an odd example... examine that...
+                // so e_reqyonciliation can climb req.c.on.c.rq back to us
                 reqcon.c.rq = q
                 q.init = async () => {}  // oncer
             },
-
+ 
             o(c: TheUniversal = {}): TheC[] {
                 return w.o({ ...keying, ...c })
             },
-
+ 
             // acts like StuffIO.roai() (eg bump_version, is async) with:
             //  - serial numbering when %req:1 and !noserial
             //  - %mutated detection on sc for existing reqs
@@ -228,7 +236,7 @@
                 if (req.sc.maz == 1) delete req.sc.maz  // maz:1 is implied, never stamped
                 return req
             },
-
+ 
             // update req%* and do %mutated detection
             maybe_mutate_sc(req: TheC, sc?: TheUniversal) {
                 if (sc && Object.keys(sc).length) {
@@ -244,25 +252,27 @@
                     }
                 }
             },
+
             // do them all
             async do(fn?: Function) {
-                let N = q.o().filter(req => !req.sc.finished)
+                let N = q.o().filter((req: TheC) => !req.sc.finished)
                 if (!N.length) return
-
-                let maz_low = Math.min(...N.map(req => req.sc.maz || 1))
-                N = N.filter(req => (req.sc.maz || 1) == maz_low)
-
+ 
+                let maz_low = Math.min(...N.map((req: TheC) => req.sc.maz || 1))
+                N = N.filter((req: TheC) => (req.sc.maz || 1) == maz_low)
+ 
                 for (const req of N) {
                     await q.do_one(req, fn)
                 }
             },
-            // run handler for one req — shared by do() and e_reqysciliation.
+
+            // run handler for one req — shared by do() and e_reqyonciliation.
             //  mutated_fn handler fires instead of do_fn, which could be in several places...
             async do_one(req: TheC, fn?: Function) {
                 if (req.sc.finished) throw "do_one req%finished"
                 delete req.sc.initialdo
                 await H.w_noproblemo(req)      // drop %waits, %error, %see
-
+ 
                 // if eg req:Foo, you might want H.req_Foo(req)
                 let name = req.sc[q.k] as string | undefined
                 name = typeof name == 'number' ? undefined : name
@@ -272,7 +282,7 @@
                     // H.req_Foo for %req:Foo
                     || name && (H as any)[q.k + '_' + name]?.bind(H)
                     || q.handler_of_last_resort(req, q)
-
+ 
                 if (handler) {
                     // %initialdo until the next (second) do_one()
                     if (!req.c._had_initialdo) {
@@ -284,48 +294,46 @@
                 }
                 delete req.sc.mutated          // after handler — mutated_fn reads old values there
             },
-
+ 
             // mark finished; yoinks oncelers + their sc keys so snap collapses to %finished.
-            //   bumps w version, feebly_ponder.
+            //   bumps req version, feebly_ponder.
             finish(req: TheC) {
                 if (req.sc.finished) return
                 for (const k of Object.keys(req.c.oncelers ?? {})) delete req.sc[k]
                 delete req.c.oncelers
                 req.sc.finished = 1
-
+ 
                 req.bump_version() // %finished should be reactive, not all req%* change is
                 H.feebly_ponder() // finish() vaguely scoped, vague top-down re-attend want
             },
-
-            // over-thing becomes finished
-            //   w%w and w%eternal are never finished
-            //    we use w as a name for the req host because w/req is a popular pattern
-            //    but it can also be another req/req, which this is for (or a req-like host)
-            unify_finished(over_rq) {
+ 
+            // over_rq.finish(w) when all our reqs are done.
+            //   w%w and w%eternal are never finished (open-ended workers).
+            //   over_rq is the requlator that owns w as a req.
+            unify_finished(over_rq?) {
                 if (!q.all_finished() || w.sc.finished) return
                 if (w.sc.w || w.sc.eternal) return
-                // the rq that controls w, use it to:
-                over_rq ||= w.c.on
-                if (w.c.on != over_rq) throw "over!=c.on"
+                over_rq ||= w.c.on?.c?.rq
+                if (w.c.on?.c?.rq != over_rq) throw "over!=c.on"
                 over_rq.finish(w)
             },
-
+ 
             all_finished(): boolean {
                 const all = q.o()
                 return all.length > 0 && all.every((r: TheC) => r.sc.finished)
             },
-
+ 
             // do req/*req recursively — the handler_of_last_resort for nested req**.
             //   if req has sub-reqs it manages them; gets %finished when they all do.
             //   < could use reqy_recurse for the full Travel
             handler_of_last_resort(req: TheC) {
-                let reqcons = req.oa({ reqcons: 1 })[0]
+                let reqcons = req.o({ reqcons: 1 })[0]
                 if (!reqcons) return null
                 return async (req: TheC) => {
                     // everything in the language besides req is about req/* context|space
-                    let reqcons = req.oa({ reqcons: 1 })[0]
+                    let reqcons = req.o({ reqcons: 1 })[0]
                     if (!reqcons) return null
-                    for (const reqcon of reqcons?.o({ reqcon: 1 })) {
+                    for (const reqcon of reqcons.o({ reqcon: 1 })) {
                         const k  = reqcon.sc.reqcon as string
                         // have its protocol
                         const rq = H.reqy(req, {k})
@@ -337,74 +345,76 @@
                 }
             },
         }
-
+ 
         return q
     },
-
-
+ 
+ 
     // re-entry point for a req — Atime or async, always use this.
-    //   merges parcel (sc minus see) into req.sc synchronously.
-    //   elvises to e_reqyonciliation so the do() pass arrives in its own Atime —
-    //   other work chattering now gets to settle first.
-    //   parcel is from-within (the async work); distinct from %mutated (from-without).
-    //   finish() is the caller's job if the req is done — reqyoncile doesn't assume.
-    async reqyoncile(req: TheC, mix_sc: Record<string, any> = {}) {
-        const H   = this
+    //   sc is queued to apply at e_reqyonciliation (Atime), not now —
+    //    so state change (action) and work (reaction) arrive together.
+    //   see is for trace only; finish() is the caller's job.
+    async reqyoncile(req: TheC, see?: string, sc?: Record<string, any>) {
+        const H = this
         // climb up: req.c.up = w (or another req), find the %w node
         let node = req as TheC
         while (node.c.up && !node.sc.w) node = node.c.up as TheC
         if (!node.sc.w) throw "reqyoncile: !%w"
-
-        const see = mix_sc.see
-        delete mix_sc.see
-        let sc = {req}
-        if (see) sc.see = see
-        if (Object.keys(mix_sc).length) sc.mix_sc = mix_sc
-        return H.i_elvisto(node, 'reqyonciliation', sc)
+        const elv: Record<string, any> = { req }
+        if (see) elv.see = see
+        if (sc && Object.keys(sc).length) elv.mix_sc = sc
+        return H.i_elvisto(node, 'reqyonciliation', elv)
     },
-
+ 
     // drives the reqy chain after a req's async Atime — always arrives via reqyoncile.
     //   runs just the one req first; only if it finishes does the full chain advance.
     //   if req didn't finish, feebly_ponder will drive it again via the normal cycle.
     async e_reqyonciliation(_A: TheC, w: TheC, e: TheC) {
-        const H   = this
-        const {req,see,mix_sc} = e.sc
+        const H = this
+        const { req, see, mix_sc } = e.sc
         if (!req) throw "!req"
         const reqcon = req.c.on as TheC
         if (!reqcon) throw "!reqcon"
-
-        H.trace('reqyoncile', H.reqy_mutate(req, { see: e.sc.see as string | undefined }))
         const rq = reqcon.c.rq
         if (!rq) throw "!rq"
         if (req.sc.finished) throw "callback rattle"
-
-        // someone called reqyoncile(req), so we have scope to:
-        await rq.do_one(req)        // run the targeted e%req
-        
+ 
+        // apply queued state change now, with %mutated detection, at the top of Atime
+        if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
+        H.trace('reqyoncile', H.req_diag(req, { see, mix_sc }))
+ 
+        await rq.do_one(req)        // run the targeted req
         if (req.sc.finished) {
-            // it went well
-            if (!rq.all_finished()) {
-                // try colleagues?
-                await rq.do()
-                // becomes req%finished when they are
-                rq.unify_finished()
-            }
-            // we feebly_ponder() anyway if this is via q.finish()
+            await rq.do()           // advance any colleagues now unblocked
+            rq.unify_finished()     // propagate up if all done
         }
     },
-
-    // trace helper — extracts %see, builds "req:N  see  key:val"; merges rest into req.sc.
-    //   mirrors reqysee() but for req rather than De.
-    reqy_mutate(req: TheC, sc: Record<string, any>): string {
-        const see = sc.see as string | undefined
-        delete sc.see
-        const k     = this.mainkey(req)
-        const ident = k ? `${k}:${req.sc[k]}` : ''
-        const scStr = Object.keys(sc).length ? keyser(sc) : ''
-        Object.assign(req.sc, sc)
-        return [ident, see, scStr].filter(Boolean).join('  ')
+ 
+    // uniform req diagnostic string: "req:N   see   (~urgency:old→new)   finished:1,path:foo"
+    //   mix_sc shows which keys changed, with old→new when old value is known from %mutated.
+    req_diag(req: TheC, sc: { see?: string, mix_sc?: Record<string,any> } = {}): string {
+        const rq    = req.c.on?.c?.rq
+        const mk    = rq?.k ?? this.mainkey(req)
+        const ident = mk ? `${mk}:${req.sc[mk]}` : keyser(req.sc)
+        let parts   = [ident]
+        if (sc.see) parts.push(sc.see)
+        if (sc.mix_sc && Object.keys(sc.mix_sc).length) {
+            // show old→new for keys that were mutated
+            const mutated = req.sc.mutated as Record<string,any> ?? {}
+            const changes = Object.entries(sc.mix_sc)
+                .map(([k, v]) => k in mutated ? `${k}:${mutated[k]}→${v}` : `${k}:${v}`)
+                .join(',')
+            parts.push(`(~${changes})`)
+        }
+        // remaining req.sc keys beyond the mainkey
+        const rest = Object.entries(req.sc)
+            .filter(([k]) => k !== mk && k !== 'mutated')
+            .map(([k, v]) => `${k}:${objectify(v,-1)}`)
+            .join(',')
+        if (rest) parts.push(rest)
+        return parts.join('   ')
     },
-
+ 
     // one-shot flag helper — stamps %name on req.sc and req.c.oncelers.
     //   rq.finish() yoinks both; snap shows only %finished after completion.
     reqonce(req: TheC, name: string): boolean {
@@ -414,21 +424,21 @@
         req.sc[name] = 1
         return true
     },
-
+ 
     // upon new Story step, forget per-step noise on all req** under w
     async Runstepped_reqy_pageturning(w: TheC) {
         await this.reqy_recurse(w, { each_fn: async (req: TheC) => {
             await this.w_noproblemo(req, { log: 1 })  // drop %log now it's in the snap
         }})
     },
-
+ 
     // Travel through w/** of reqy stuff by following /%reqcons leads.
     //   each_fn(req) is called for every req found at any depth.
     async reqy_recurse(w: TheC, q: { each_fn?: (req: TheC) => Promise<void> } = {}) {
         const visit = async (host: TheC) => {
             for (const reqcons of host.o({ reqcons: 1 }) as TheC[]) {
                 for (const reqcon of reqcons.o({ reqcon: 1 }) as TheC[]) {
-                    const k   = reqcon.sc.reqcon as string
+                    const k = reqcon.sc.reqcon as string
                     if (!k) continue
                     for (const req of host.o({ [k]: 1 }) as TheC[]) {
                         await q.each_fn?.(req)
@@ -440,9 +450,18 @@
         }
         await visit(w)
     },
-
-
+ 
+ 
 //#endregion
+
+
+
+
+
+
+
+
+
 
 
 
