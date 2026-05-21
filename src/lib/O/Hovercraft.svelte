@@ -188,25 +188,27 @@
     `,
  
     // w|De|req, the host
-    reqy(w: TheC, q: { k?:string } & any = {}) {
+    reqy(w: TheC, q: { k?:string,
+        mutated_fn?:Function,
+        do_fn?:Function,
+     } & any = {}) {
         const H = this
         q.k ||= 'req'
         const keying = { [q.k]: 1 } // matches %req, roai(c) may redefine it
         let reqcons: TheC
         let reqcon:  TheC
+
+        reqcons = w.oai({ reqcons: 1 })  // group reqy protocols living here
+        // creation-time-only set properties, due to 2-arg oai
+        let opt = sex({}, q, 'noserial')
+        reqcon = q.con = reqcons.oai({ reqcon: q.k }, { serial_i: 2, ...opt })
+        // *_fn in reqcon.c so they never appear in snaps
+        sex(reqcon.c, q, 'mutated_fn,do_fn')
+        // so e_reqyonciliation can climb req.c.on.c.rq back to us
+        reqcon.c.rq = q
+
+
         q = { ...q,
-            async init() {
-                // once the first roai() comes in
-                reqcons = w.oai({ reqcons: 1 })  // group reqy protocols living here
-                // creation-time-only set properties, due to 2-arg oai
-                let opt = sex({}, q, 'noserial')
-                reqcon = q.con = reqcons.oai({ reqcon: q.k }, { serial_i: 2, ...opt })
-                // *_fn in reqcon.c so they never appear in snaps
-                sex(reqcon.c, q, 'mutated_fn,do_fn,all_done_fn')
-                // so e_reqyonciliation can climb req.c.on.c.rq back to us
-                reqcon.c.rq = q
-                q.init = async () => {}  // oncer
-            },
  
             o(c: TheUniversal = {}): TheC[] {
                 return w.o({ ...keying, ...c })
@@ -216,7 +218,6 @@
             //  - serial numbering when %req:1 and !noserial
             //  - %mutated detection on sc for existing reqs
             async roai(c: TheUniversal, sc?: TheUniversal): Promise<TheC> {
-                await q.init()
                 let req = q.o(exactly(c))[0]
                 if (req) {
                     // existed

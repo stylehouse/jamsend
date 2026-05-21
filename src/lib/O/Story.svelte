@@ -789,6 +789,11 @@
                 means: { blockquote_these_sc: { snap_output: 1 } } },
             ]},
         },
+        {
+            // reqy bookkeeping container — never interesting in a snap
+            matching_any: [{ sc_only: { reqcons: 1 } }],
+            means: { skip: true }
+        },
     ] as Array<any>,
 
     // classify one particle during the snap walk.
