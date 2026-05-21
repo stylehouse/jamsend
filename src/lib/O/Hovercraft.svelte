@@ -378,8 +378,8 @@
         if (!reqcon) throw "!reqcon"
         let rq = reqcon.c.rq
         if (!rq) throw "!rq"
-        if (req.sc.finished) throw "callback rattle"
-        
+        if (req.sc.finished) return console.warn(`callback rattle: ${keyser(req.sc)}`)
+
         // apply queued state change now, with %mutated detection, at the top of Atime
         if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
         H.trace('reqyoncile', H.req_diag(req, { see, mix_sc }))
