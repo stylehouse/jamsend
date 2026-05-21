@@ -1,21 +1,25 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      {"mung":["age"]}	self,round:7
+      {"mung":["age"]}	self,round:8
       w:PortPlanet
         orders
           order:rose,dose:5
           order:fern,dose:7
-        De:receive,finished
-          req:order,order:rose,dose:5
-          req:order,order:fern,dose:7
-          req:confirm,staged:true,finished
-          req:order,order:rose_extra,dose:2,finished
-        De:report,maz:2
-          req:summarise
+        De:receive
+          req:2,order:rose,dose:5,out
+            already_sent,dose:3
+          req:3,order:fern,dose:7,out
+          req:4,order:rose_extra,dose:2,out
+        De:transport
         world
-          order:rose,dose:5
+          order:rose,dose:3
           order:fern,dose:7
           order:rose_extra,dose:2
-        {"mung":["age"]}	self,round:7
+        logger,n
+          driver[4],report,inA
+        De:reportPortPlaneting
+          req:gatherself,finished
+          req:summarise,maz:2
+        {"mung":["age"]}	self,round:8
     {"mung":["id"]}	mo:main,interval:3.6

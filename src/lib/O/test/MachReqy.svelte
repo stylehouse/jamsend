@@ -56,7 +56,7 @@
             }
 
             await rq.do()
-            rq.unify_finished(dq)
+            rq.unify_finished()
         }
 
         const dYay = await dq.roai({De:'yay', maz:2})
@@ -80,16 +80,20 @@
     //
     // w/orders/order:rose,dose:3         — source; driver mutates dose here
     //          order:fern,dose:7           orders loop flows changes → reqs via roai(c,sc)
-    // w/world/order:*,dose:N             — committed record; written by confirm
+    // w/world/order:*,dose:N             — committed record; written by van on delivery
     //
-    // De:receive
-    //   req:2,order:rose,dose,out      — serial reqs (no do_fn); transparent to do();
-    //   req:3,order:fern,dose,out        roai(c,sc); maybe_mutate_sc → %mutated → mutated_fn
-    //                                         %out once committed; immutable but live for mutated_fn
-    //   req:order:4,order:rose_extra,dose:2  — rogue; seeded inside mutated_fn; has do_fn
-    //   req:confirm                          — staged by driver; continuous dispatch; stays open
+    // De:receive                              — never finishes; permanent order ledger
+    //   req:2,order:rose,dose,out          serial reqs (no do_fn); transparent to do()
+    //   req:3,order:fern,dose,out            roai(c,sc); maybe_mutate_sc → %mutated → mutated_fn
+    //                                           %out once van delivers; immutable but live for mutated_fn
+    //   req:4,order:rose_extra,dose:2      rogue; seeded by mutated_fn; no do_fn; never finishes
     //
-    // De:reportPortPlaneting,maz:2           — named handler; De-level %waits; do_fn fallback via reqcon.c.do_fn
+    // De:transport                           — created by driver dispatch (on_step:2)
+    //   van:rose,dose:N                    one van per undelivered (%out-less) order in De:receive
+    //   van:fern,dose:N                      initialdo → waits:'in transit'; then world write, %out on src, finish
+    //                                           finished vans dropped at next De:transport entry
+    //
+    // De:reportPortPlaneting                 — created by driver (on_step:4); named handler
     //   req:gatherself                         own do_fn; initialdo: one snap waits:'finding a pen'
     //   req:summarise                          all_finished() → inline finish
 
@@ -108,27 +112,28 @@
         this.logger(w)
         const li = this.c.loggeri
 
+        const dq = this.reqy(w, {k:'De'})
+
         // ── test driver ───────────────────────────────────────────────────────
-        // step 3: mutate source order in w/orders — orders loop propagates to req
-        //           via roai(c,sc); maybe_mutate_sc sees dose 3→5 → %mutated → mutated_fn
-        // step 4: arm confirm → De:receive closes; De:report opens
+        // step 2: dispatch → creates De:transport
+        // step 3: mutate rose dose → propagates via roai → mutated_fn → rogue
+        // step 4: creates De:reportPortPlaneting (can't wait on Dere%finished)
         await this.on_step({
             2: async () => {
-                li('driver[4]', { staged: 1 })
-                // find req:confirm particle directly — requlator not needed just to locate it
-                const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
-                if (!dReceive) return
-                const rConf = dReceive.o({ req: 'confirm' })[0] as TheC | undefined
-                if (rConf) rConf.sc.staged = true
+                li('driver[2]', { dispatch: 1 })
+                await dq.roai({De:'transport'})
             },
-            3: async () => {
+            4: async () => {
                 li('driver[3]', { order: 'rose', dose: 5 })
                 w.oai({ orders: 1 }).oai({ order: 'rose' }).sc.dose = 5
+            },
+            5: async () => {
+                li('driver[4]', { report: 1 })
+                await dq.roai({De:'reportPortPlaneting'})
             },
         })
 
         // ── business logic ────────────────────────────────────────────────────
-        const dq = this.reqy(w, {k:'De'})
 
         // ── De:receive ────────────────────────────────────────────────────────
         // req.c.up = De set by roai; reqyoncile climbs De.c.up = w to reach %w
@@ -142,7 +147,8 @@
                 const new_dose = req.sc.dose as number || 0
                 const gap      = new_dose - old_dose
                 if (gap <= 0) return
-                const rogue = await rq.roai(
+                req.i({already_sent:1,dose:old_dose})
+                await rq.roai(
                     { order: `${req.sc.order as string}_extra` },
                     { dose: gap }
                 )
@@ -151,7 +157,6 @@
 
             // flow w/orders into serial reqs via roai(c,sc):
             //   c = identity (order name); sc = data (dose)
-            //  - mainkey prefixing, ie %req,...c,...sc (c can set again)
             //   same particle found each tick by order; maybe_mutate_sc detects changes → %mutated
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {
                 await rq.roai(
@@ -160,39 +165,56 @@
                 )
             }
 
-            // req:confirm — staged by driver at step 2; continuous dispatch; stays open
-            //   %out guards world immutability: skip already-committed orders each re-run
-            //   orders stay live (not finished) so mutated_fn still fires on post-commit bumps
-            const rConf = await rq.roai({req:'confirm'})
-            rConf.c.do_fn ||= async (req: TheC) => {
-                if (!req.sc.staged) { req.i({ waits: 'staged' }); return }
-                const world = w.oai({ world: 1 })
-                for (const or of rq.o({ order: 1 }) as TheC[]) {
-                    if (or.sc.out) continue   // already in world; immutable
-                    world.oai({ order: or.sc.order }).sc.dose = or.sc.dose as number || 0
-                    or.sc.out = 1
-                }
-                li('confirmed')
-            }
-
             await rq.do()
         }
 
-        // ── De:reportPortPlaneting — named handler on H ───────────────────────
-        await dq.roai({De:'reportPortPlaneting', maz:2})
+        // ── De:transport ──────────────────────────────────────────────────────
+        // created by driver dispatch (on_step:2); not present before then
+        const dTransport = w.o({ De: 'transport' })[0] as TheC | undefined
+        if (dTransport) {
+            dTransport.c.do_fn ||= async (De: TheC) => {
+                const rq = this.reqy(De, {k:'van'})
+
+                // drop finished vans — visible in the last do() of steptime, then gone
+                for (const van of rq.o({}) as TheC[]) {
+                    if (van.sc.finished) De.drop(van)
+                }
+
+                // van each undelivered order (and rogue) in De:receive
+                for (const or of dReceive.o({ req: 1, order: 1 }) as TheC[]) {
+                    if (or.sc.out) continue
+                    const van = await rq.roai(
+                        { van: or.sc.order as string,
+                          dose: or.sc.dose as number || 0 }
+                    )
+                    van.c.do_fn ||= async (req: TheC, rq: any) => {
+                        // initialdo: one snap in transit before delivery
+                        if (req.sc.initialdo) { req.i({ waits: 'in transit' }); return }
+                        w.oai({ world: 1 }).oai({ order: req.sc.van as string }).sc.dose = req.sc.dose as number || 0
+                        or.sc.out = 1
+                        rq.finish(req)
+                    }
+                }
+
+                await rq.do()
+            }
+        }
 
         await dq.do()
     },
 
     // named handler: H.De_reportPortPlaneting(De, dq)
     //   w reached via De.c.up (set by dq.roai); li via this.c.loggeri
+    //   created from on_step:4 — waits for all De:receive orders to have %out
     async De_reportPortPlaneting(De: TheC, dq: any) {
         const w  = De.c.up as TheC
         const li = this.c.loggeri
 
+        // wait for all orders (including rogues) in De:receive to be delivered
         const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
-        if (!dReceive?.sc.finished) {
-            De.i({ waits: 'receive' })
+        const orders = (dReceive?.o({ req: 1, order: 1 }) ?? []) as TheC[]
+        if (!orders.length || !orders.every((or: TheC) => or.sc.out)) {
+            De.i({ waits: 'delivery' })
             return
         }
 

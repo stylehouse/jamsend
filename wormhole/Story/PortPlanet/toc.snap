@@ -27,20 +27,20 @@ story:PortPlanet
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.116
-      sample:0.048,at:1778765159
-      sample:0.042,at:1778765691
-      sample:0.04,at:1778769740
-      sample:0.045,at:1778779580
-      sample:0.059,at:1778804520
-      sample:0.055,at:1778828622
-      sample:0.27,at:1779324809
-      sample:0.27,at:1779324831
-      sample:0.148,at:1779324837
-      sample:0.18,at:1779325572
-  step,dige:4f575cbb0c160d01
-  step:2,dige:60100bbc6568b256
-  step:3,dige:131e7201c8df9b4b
-  step:4,dige:071b860f9994e2b0
-  step:5,dige:e80d2da3fa346580
-  step:6,dige:ea93b7c3cfd2ede2
+    TimeTotal:beliefs,avg:0.425
+      sample:0.306,at:1779343549
+      sample:0.348,at:1779343565
+      sample:0.348,at:1779343582
+      sample:1.094,at:1779343589
+      sample:0.371,at:1779343596
+      sample:0.561,at:1779344802
+      sample:0.284,at:1779344830
+      sample:0.311,at:1779344839
+      sample:0.311,at:1779344866
+      sample:0.312,at:1779344989
+  step,dige:118104d2755b6247
+  step:2,dige:85ca157209d4330d
+  step:3,dige:48261da9b1012476
+  step:4,dige:ef0a2d63385b7d39
+  step:5,dige:65ff471c63d2855c
+  step:6,dige:414abe9e66de28f7

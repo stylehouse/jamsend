@@ -204,8 +204,6 @@
         reqcon = q.con = reqcons.oai({ reqcon: q.k }, { serial_i: 2, ...opt })
         // *_fn in reqcon.c so they never appear in snaps
         sex(reqcon.c, q, 'mutated_fn,do_fn')
-        // so e_reqyonciliation can climb req.c.on.c.rq back to us
-        reqcon.c.rq = q
 
 
         q = { ...q,
@@ -215,6 +213,7 @@
             },
  
             // acts like StuffIO.roai() (eg bump_version, is async) with:
+            //  - mainkey prefixing, ie %req,...c,...sc (c can set again)
             //  - serial numbering when %req:1 and !noserial
             //  - %mutated detection on sc for existing reqs
             async roai(c: TheUniversal, sc?: TheUniversal): Promise<TheC> {
@@ -346,7 +345,8 @@
                 }
             },
         }
- 
+        // so e_reqyonciliation can climb req.c.on.c.rq back to us
+        reqcon.c.rq = q
         return q
     },
  
@@ -376,10 +376,10 @@
         if (!req) throw "!req"
         const reqcon = req.c.on as TheC
         if (!reqcon) throw "!reqcon"
-        const rq = reqcon.c.rq
+        let rq = reqcon.c.rq
         if (!rq) throw "!rq"
         if (req.sc.finished) throw "callback rattle"
- 
+        
         // apply queued state change now, with %mutated detection, at the top of Atime
         if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
         H.trace('reqyoncile', H.req_diag(req, { see, mix_sc }))
