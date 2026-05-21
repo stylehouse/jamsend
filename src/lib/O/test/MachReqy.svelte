@@ -83,13 +83,14 @@
     // w/world/order:*,dose:N             — committed record; written by confirm
     //
     // De:receive
-    //   req:2,order:rose,dose          — serial reqs (no do_fn); transparent
-    //   req:3,order:fern,dose            to do(). roai(c,sc) prefixes mainkey → serial stamp;
-    //                                         maybe_mutate_sc → %mutated → mutated_fn (in reqy call)
+    //   req:2,order:rose,dose,out      — serial reqs (no do_fn); transparent to do();
+    //   req:3,order:fern,dose,out        roai(c,sc); maybe_mutate_sc → %mutated → mutated_fn
+    //                                         %out once committed; immutable but live for mutated_fn
     //   req:order:4,order:rose_extra,dose:2  — rogue; seeded inside mutated_fn; has do_fn
-    //   req:confirm                          — staged by driver; De:receive completion signal
+    //   req:confirm                          — staged by driver; continuous dispatch; stays open
     //
     // De:reportPortPlaneting,maz:2           — named handler; De-level %waits; do_fn fallback via reqcon.c.do_fn
+    //   req:gatherself                         own do_fn; initialdo: one snap waits:'finding a pen'
     //   req:summarise                          all_finished() → inline finish
 
     Run_A_PortPlanet(this: House) {
@@ -112,17 +113,17 @@
         //           via roai(c,sc); maybe_mutate_sc sees dose 3→5 → %mutated → mutated_fn
         // step 4: arm confirm → De:receive closes; De:report opens
         await this.on_step({
-            3: async () => {
-                li('driver[3]', { order: 'rose', dose: 5 })
-                w.oai({ orders: 1 }).oai({ order: 'rose' }).sc.dose = 5
-            },
-            4: async () => {
+            2: async () => {
                 li('driver[4]', { staged: 1 })
                 // find req:confirm particle directly — requlator not needed just to locate it
                 const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
                 if (!dReceive) return
                 const rConf = dReceive.o({ req: 'confirm' })[0] as TheC | undefined
                 if (rConf) rConf.sc.staged = true
+            },
+            3: async () => {
+                li('driver[3]', { order: 'rose', dose: 5 })
+                w.oai({ orders: 1 }).oai({ order: 'rose' }).sc.dose = 5
             },
         })
 
@@ -145,10 +146,6 @@
                     { order: `${req.sc.order as string}_extra` },
                     { dose: gap }
                 )
-                rogue.c.do_fn ||= async (req: TheC, rq: any) => {
-                    li('rogue_done', { order: req.sc.order as string, dose: req.sc.dose as number || 0 })
-                    rq.finish(req)
-                }
                 li('extra_order', { order: req.sc.order as string, gap })
             }})
 
@@ -163,22 +160,22 @@
                 )
             }
 
-            // req:confirm — staged by driver at step 4; commits all orders to world
-            //   De:receive completion signal (order reqs are permanent state, never finish)
+            // req:confirm — staged by driver at step 2; continuous dispatch; stays open
+            //   %out guards world immutability: skip already-committed orders each re-run
+            //   orders stay live (not finished) so mutated_fn still fires on post-commit bumps
             const rConf = await rq.roai({req:'confirm'})
-            rConf.c.do_fn ||= async (req: TheC, rq: any) => {
+            rConf.c.do_fn ||= async (req: TheC) => {
                 if (!req.sc.staged) { req.i({ waits: 'staged' }); return }
                 const world = w.oai({ world: 1 })
                 for (const or of rq.o({ order: 1 }) as TheC[]) {
+                    if (or.sc.out) continue   // already in world; immutable
                     world.oai({ order: or.sc.order }).sc.dose = or.sc.dose as number || 0
+                    or.sc.out = 1
                 }
                 li('confirmed')
-                rq.finish(req)
             }
 
             await rq.do()
-            const conf = rq.o({ req: 'confirm' })[0] as TheC | undefined
-            if (conf?.sc.finished && !De.sc.finished) dq.finish(De)
         }
 
         // ── De:reportPortPlaneting — named handler on H ───────────────────────
@@ -209,7 +206,16 @@
             rq.finish(req)
         }})
 
-        await rq.roai({req:'summarise'})
+        // req:gatherself — initialdo: one snap waits:'finding a pen' before any real work
+        //   req%initialdo is transient sc; visible for exactly the one snap it stalls
+        //   own do_fn so it doesn't fall through to reqcon.c.do_fn (req:summarise's path)
+        const rGather = await rq.roai({req:'gatherself'})
+        rGather.c.do_fn ||= async (req: TheC, rq: any) => {
+            if (req.sc.initialdo) { req.i({ waits: 'finding a pen' }); return }
+            rq.finish(req)
+        }
+
+        await rq.roai({req:'summarise', maz:2})
         await rq.do()
         if (rq.all_finished() && !De.sc.finished) dq.finish(De)
     },
