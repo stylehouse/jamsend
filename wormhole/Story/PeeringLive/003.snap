@@ -36,7 +36,7 @@ Snap:H
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
         {"mung":["age"]}	self,round:23
     A:Nearing
-      {"mung":["age"]}	self,round:22
+      {"mung":["age"]}	self,round:24
       w:Nearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -59,9 +59,9 @@ Snap:H
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
-        {"mung":["age"]}	self,round:22
+        {"mung":["age"]}	self,round:24
     A:Tearing
-      {"mung":["age"]}	self,round:24
+      {"mung":["age"]}	self,round:22
       w:Tearing
         scheme:Peering
           {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
@@ -78,5 +78,5 @@ Snap:H
         Peering,name:tearing,prepub:962af4326c28f29b
           {"ref":{"Id":"Idento()"}}	prepri:386df6d9
           open
-        {"mung":["age"]}	self,round:24
+        {"mung":["age"]}	self,round:22
     {"mung":["id"]}	mo:main,interval:3.6
