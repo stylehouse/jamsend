@@ -1,30 +1,28 @@
 <script lang="ts">
     // LangGen.svelte — language picker + parser-generation sub-ghost.
     //
-    // Two Lang-header-adjacent concerns:
+    // Lang-header-adjacent concerns split out from Lang.svelte:
     //
-    //   1. Language picker
-    //      A dropdown listing names from $lib/O/lang/registry. Default per
-    //      doc comes from file extension (lang_for_path). Override persists
-    //      at docC.sc.lang_override and survives reload. Langui watches the
-    //      override and reconfigures the editor's language Compartment on
-    //      change — no remount.
+    //   1. Language picker dropdown
+    //      Options drawn from $lib/O/lang/registry. Default value tracks the
+    //      active doc: lang_override if set, otherwise lang_for_path on the
+    //      doc path. Langui watches the override and reconfigures its
+    //      language Compartment on change — no editor remount.
     //
     //   2. Parser generation
     //      When the active doc's path matches a registered language's
-    //      grammar_path, a "gen" action appears. It runs @lezer/generator's
-    //      buildParserFile on the editor's current text, stamps a sha-256
-    //      hash header, and writes the generated module to the language
-    //      entry's generated_path via Wormhole. Next mount the resolver
-    //      compares hashes and uses the artifact via fast path when matched.
-    //
-    //      Generation is one-off — the rw_op pattern follows Lies's writes:
-    //      requesty_serial → oai with rw_op:'write' → i_elvis_req. If the
-    //      Wormhole hasn't settled by the time we return, the eatfunc tick
-    //      polling re-runs us; once req is fulfilled we don't refire.
+    //      grammar_path, the gen action is enabled and labelled with the
+    //      target language name. Pressing it runs buildParserFile on the
+    //      editor's current text, stamps a sha-256 hash header, and writes
+    //      the generated module to the language entry's generated_path via
+    //      Wormhole. Re-mount picks up the artifact and the resolver's hash
+    //      check then takes the fast path.
     //
     // Deposits onto H:
-    //   LangGen_tick(A, w)            — called by Lang(A,w) every tick
+    //   LangGen_plan(A, w)            — called once by Lang_plan
+    //   LangGen_tick(A, w)            — called by Lang(A,w) every tick;
+    //                                   sync; updates dropdown value and
+    //                                   gen button disabled/label
     //   e_Lang_set_lang(A, w, e)      — dropdown on_pick handler
     //   e_Lang_generate_parser(...)   — gen button handler
 
@@ -37,9 +35,9 @@
 
     let { M } = $props()
 
-    // Build the .grammar.ts module the resolver expects: a header comment
-    // for humans, the buildParserFile output, plus a grammar_hash export
-    // the resolver checks (avoids comment-parsing).
+    // Build the .grammar.ts module the resolver expects: header comment for
+    // humans, the buildParserFile output, plus a grammar_hash export the
+    // resolver checks (avoids comment-parsing on the fast path).
     function build_generated_module(parser_src: string, hash: string, name: string): string {
         return `// auto-generated from ${name}.grammar — do not edit by hand
 // hash: ${hash}
@@ -52,46 +50,79 @@ export const grammar_hash = ${JSON.stringify(hash)}
     onMount(async () => {
     await M.eatfunc({
 
-    // Refresh actions for the current active doc. Called from Lang(A,w).
-    async LangGen_tick(A: House, w: TheC) {
-        const H    = this as House
-        const wa   = H.oai_enroll(H, { watched: 'actions' })
-        const docC = H.Lang_active_docC(w) as TheC | undefined
-        const path = docC?.sc.doc as string | undefined
+    // Register the two header actions once. Same shape as Lang_plan's other
+    // actions — wa.oai with role in the keying universal so re-runs are
+    // find-or-create (no wildcard wipe possible).
+    async LangGen_plan(A: House, w: TheC) {
+        const H  = this as House
+        const wa = H.oai_enroll(H, { watched: 'actions' })
 
-        const current_lang = (docC?.sc.lang_override as string)
-            ?? (path ? lang_for_path(path) : 'stho')
-
-        await wa.r({ action: 1, role: 'lang_pick' }, {
+        wa.oai({ action: 1, role: 'lang_pick' }, {
             kind:    'dropdown',
             label:   'language',
             icon:    '✎',
-            value:   current_lang,
             options: LANG_OPTIONS,
+            value:   'stho',
             on_pick: (next: string) =>
                 H.i_elvisto('Lang/Lang', 'Lang_set_lang', { lang: next }),
         })
 
-        // Gen action: only when the active doc IS a registered grammar source.
+        // gen_parser starts disabled. LangGen_tick flips it on when the
+        // active doc is a registered .grammar source. The fn re-derives the
+        // target language name from the active docC at fire time, so the
+        // closure doesn't need updating per tick.
+        wa.oai({ action: 1, role: 'gen_parser' }, {
+            label:    'gen',
+            icon:     '⚙',
+            disabled: true,
+            fn: () => H.i_elvisto(w, 'Lang_generate_parser', {}),
+        })
+    },
+
+    // Sync per-tick updates. Each particle is mutated in place and
+    // bump_version'd only when a watched field actually changed.
+    LangGen_tick(A: House, w: TheC) {
+        const H   = this as House
+        const wa  = H.o({ watched: 'actions' })[0] as TheC | undefined
+        if (!wa) return
+        const docC = H.Lang_active_docC(w) as TheC | undefined
+        const path = docC?.sc.doc as string | undefined
+
+        // ── lang_pick.value tracks the active doc ────────────────────────
+        const pickC = wa.o({ action: 1, role: 'lang_pick' })[0] as TheC | undefined
+        if (pickC) {
+            const want = (docC?.sc.lang_override as string)
+                ?? (path ? lang_for_path(path) : 'stho')
+            if (pickC.sc.value !== want) {
+                pickC.sc.value = want
+                pickC.bump_version()
+            }
+        }
+
+        // ── gen_parser.disabled/label track whether docC is a .grammar ──
         const matched = path
             ? Object.entries(REGISTRY).find(([, e]) => e.grammar_path === path)
             : null
-
-        if (matched) {
-            const [matched_name] = matched
-            await wa.roai({ action: 1, role: 'gen_parser' }, {
-                label: `gen ${matched_name}`,
-                icon:  '⚙',
-                fn: () => H.i_elvisto(w, 'Lang_generate_parser', { name: matched_name }),
-            })
-        } else {
-            // particle absent = not rendered by Actions
-            await wa.r({ action: 1, role: 'gen_parser' }, {})
+        const genC = wa.o({ action: 1, role: 'gen_parser' })[0] as TheC | undefined
+        if (genC) {
+            const want_label    = matched ? `gen ${matched[0]}` : 'gen'
+            const want_disabled = !matched
+            let changed = false
+            if (genC.sc.label !== want_label) {
+                genC.sc.label = want_label
+                changed = true
+            }
+            if (!!genC.sc.disabled !== want_disabled) {
+                genC.sc.disabled = want_disabled
+                changed = true
+            }
+            if (changed) genC.bump_version()
         }
     },
 
     // Update the per-doc language override. Langui's $effect notices the
-    // change via docC.version and reconfigures the language Compartment.
+    // change via active_doc.version and reconfigures the language
+    // Compartment.
     async e_Lang_set_lang(A: TheC, w: TheC, e: TheC) {
         const H = this as House
         const docC = H.Lang_active_docC(w) as TheC | undefined
@@ -104,25 +135,35 @@ export const grammar_hash = ${JSON.stringify(hash)}
         H.i_elvisto(w, 'think')
     },
 
-    // Read the active grammar doc's current text, run buildParserFile, stamp
-    // a hash header, write to the registry entry's generated_path via the
-    // same Wormhole rw_op pathway Lies uses for Waft snaps and compile output.
+    // Read the active grammar doc's current text, run buildParserFile,
+    // stamp a hash header, write to the registry entry's generated_path
+    // via the same Wormhole rw_op pathway Lies uses.
+    //
+    // Target language name re-derived from active docC when e.sc.name is
+    // absent — lets the plan-time button closure stay constant.
     async e_Lang_generate_parser(A: TheC, w: TheC, e: TheC) {
         const H = this as House
-        const name = e.sc.name as string
+        let name = e.sc.name as string | undefined
+        const docC = H.Lang_active_docC(w) as TheC | undefined
+        const path = docC?.sc.doc as string | undefined
+        if (!name && path) {
+            const matched = Object.entries(REGISTRY).find(([, en]) => en.grammar_path === path)
+            if (matched) name = matched[0]
+        }
+        if (!name) { w.i({ see: '⚠ gen: no active grammar' }); return }
+
         const entry = REGISTRY[name]
         if (!entry?.generated_path) {
             w.i({ see: `⚠ gen: ${name} has no generated_path` })
             return
         }
 
-        const docC  = H.Lang_active_docC(w) as TheC | undefined
         const state = docC?.c.state as { doc: { toString(): string } } | undefined
         if (!state) { w.i({ see: '⚠ gen: no active editor state' }); return }
         const source = state.doc.toString()
 
-        // Re-entrancy guard: if we have a Pending gen for this path on w,
-        // a previous tick already issued the rw_op and we're just polling.
+        // Re-entrancy guard: if a Pending Gen job exists for this path,
+        // a previous tick already issued the rw_op and we're polling.
         const existing = w.o({ Gen: 1, path: entry.generated_path })[0] as TheC | undefined
         if (!existing) {
             let built: { parser: string, terms: string }
@@ -146,10 +187,9 @@ export const grammar_hash = ${JSON.stringify(hash)}
         )
         if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
             w.i({ see: `⏳ gen: writing ${entry.generated_path}…` })
-            return   // resumes on the next tick once Wormhole settles
+            return
         }
 
-        // Settled — clean up the job and notify.
         await w.r({ Gen: 1, path: entry.generated_path }, {})
         w.i({ see: `✅ gen: wrote ${entry.generated_path}` })
         H.i_elvisto(w, 'think')
