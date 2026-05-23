@@ -27,9 +27,7 @@ story:PortPlanet
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.431
-      sample:0.348,at:1779343582
-      sample:1.094,at:1779343589
+    TimeTotal:beliefs,avg:0.304
       sample:0.371,at:1779343596
       sample:0.561,at:1779344802
       sample:0.284,at:1779344830
@@ -38,9 +36,11 @@ story:PortPlanet
       sample:0.312,at:1779344989
       sample:0.3,at:1779345084
       sample:0.413,at:1779345189
+      sample:0.088,at:1779532681
+      sample:0.088,at:1779532690
   step,dige:118104d2755b6247
   step:2,dige:85ca157209d4330d
   step:3,dige:48261da9b1012476
   step:4,dige:ef0a2d63385b7d39
-  step:5,dige:65ff471c63d2855c
-  step:6,dige:414abe9e66de28f7
+  step:5,dige:8824d83303fb8346
+  step:6,dige:058fbd56cc60f61f

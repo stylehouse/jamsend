@@ -17,8 +17,8 @@ Snap:H
           order:fern,dose:7
           order:rose_extra,dose:2
         De:reportPortPlaneting,finished
-          req:gatherself,finished
-          req:summarise,maz:2,finished
+          req:gatherself,maz:2,finished
+          req:summarise,finished
         logger,n
           report_final,total:12,inA
         {"mung":["age"]}	self,round:10

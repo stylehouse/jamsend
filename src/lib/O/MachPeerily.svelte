@@ -57,17 +57,17 @@
   step 2 snap (connected and trusted):
   w:Bearing
     De:listen,finished
-      req:keygen,finished
-      req:register,finished
-      req:listening,maz:3,finished
+      req:keygen,maz:3,finished
+      req:register,maz:2,finished
+      req:listening,finished
     De:connect,target:8cbc667b…,finished
       req:dial,finished
       req:connected,finished
     De:handshake,finished
-      req:said_hello,finished
-      req:heard_hello,maz:2,finished
-      req:said_trust,maz:3,finished
-      req:heard_trust,maz:4,finished
+      req:said_hello,maz:4,finished
+      req:heard_hello,maz:3,finished
+      req:said_trust,maz:2,finished
+      req:heard_trust,finished
     Peerily
     Peering,name:bearing,prepub:7acf614d…
       open
@@ -120,8 +120,8 @@
     De:listen,finished
     De:connect,target:8cbc667b…,finished
     De:handshake          ← req:said_hello finished; heard_hello never arrives
-      req:said_hello,finished
-      req:heard_hello,maz:2
+      req:said_hello,maz:4,finished
+      req:heard_hello,maz:3
 
   w:Bearing
     Pier,pub:tearing_prepub
@@ -183,18 +183,18 @@
 //         %Unemit_Error
 //           %error:…                               thrown string from process_single_unemit
 //     %De:handshake,target:prepub[,finished]       PL_i_Pier — protocol round-trip
-//       /req:said_hello,demand:800[,finished]
-//       /req:heard_hello,maz:2,demand:800[,finished]
-//       /req:said_trust,maz:3,demand:1500[,finished]
-//       /req:heard_trust,maz:4,demand:1500[,finished]
+//       /req:said_hello,maz:4,demand:800[,finished]
+//       /req:heard_hello,maz:3,demand:800[,finished]
+//       /req:said_trust,maz:2,demand:1500[,finished]
+//       /req:heard_trust,demand:1500[,finished]
 //     %De:binary_test,seq:S[,finished]             Lab — seeded by send_test_binary
 //       /req:sent[,finished]
 //       /req:received[,finished]
 //     %De:disconnect_test,seq:S,role:…[,finished]  Lab — seeded by force_disconnect
-//       /req:phase_disc[,finished]
-//       /req:phase_open,maz:2[,finished]
-//       /req:phase_hello,maz:3[,finished]
-//       /req:phase_trust,maz:4[,finished]
+//       /req:phase_disc,maz:4[,finished]
+//       /req:phase_open,maz:3[,finished]
+//       /req:phase_hello,maz:2[,finished]
+//       /req:phase_trust[,finished]
 //     %more_visuals                                ── rebuilt each cycle ──
 //       /Peering/stashed
 //       /Pier/stashed
@@ -209,8 +209,8 @@
 //     req:wrap_emit,finished                               pre-hello wrap installed by Pier_init_completo
 //     req:N,corruption:X,meddle_fn:Function,finished       req IS the mf; De.r swaps on re-arm
 //   De:step_N,Destep[,finished]                            per-step; PL_i_step force-closes the prior one
-//     req:send_hello[,finished]                            optional; fires say_hello() (no free init_completo)
-//     req:watch_error[,maz:2][,finished]                   polls error above baseline; zeroes demand on finish
+//     req:send_hello,maz:2[,finished]                      optional; fires say_hello() (no free init_completo)
+//     req:watch_error[,finished]                           polls error above baseline; zeroes demand on finish
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
@@ -560,8 +560,8 @@
     async De_step(De: TheC, _dq: any, opts: { send_hello?: boolean; err_baseline?: number }) {
         const H   = this as House
         const drq = H.reqy(De, {k:'req'})
-        let maz = 1
-        if (opts.send_hello) await H.PL_step_i_send_hello(De, drq, maz++)
+        let maz = opts.send_hello ? 2 : 1
+        if (opts.send_hello) await H.PL_step_i_send_hello(De, drq, maz--)
         await H.PL_step_i_watch_error(De, drq, maz, opts.err_baseline ?? 0)
         await drq.do()
     },
@@ -840,7 +840,7 @@
 
         if (opts.Id) {
             // req:at — pre-supplied identity, skip async keygen
-            const at_req = await drq.roai({ req: 'at' })
+            const at_req = await drq.roai({ req: 'at', maz: 3 })
             at_req.c.do_fn ||= async (req: TheC) => {
                 req.sc.Id = opts.Id
                 drq.finish(req)
@@ -849,7 +849,7 @@
             // req:keygen — generates keypair out of Atime.
             //   post_do kicks off without awaiting — Atime mutex released immediately.
             //   .then() re-enters via reqyoncile in its own Atime.
-            const kg_req = await drq.roai({ req: 'keygen' })
+            const kg_req = await drq.roai({ req: 'keygen', maz: 3 })
             kg_req.c.do_fn ||= async (req: TheC) => {
                 H.trace('De', `${side} req:keygen`)
                 if (H.reqonce(req, 'running')) {
@@ -870,7 +870,7 @@
             }
         }
 
-        // req:register — maz:2, eligible once keygen/at (maz:1) finishes.
+        // req:register — maz:2, eligible once keygen/at (maz:3) finishes.
         //   Constructs Peerily + Peering inline (no scheme/concretion path).
         //   on('open') fires reqyoncile(req:register) so this do_fn re-runs once
         //   PeerServer connects; on('disconnected') drops the %open particle.
@@ -930,9 +930,9 @@
             }
         }
 
-        // req:listening — maz:3, terminal; De:listen concludes.
+        // req:listening — terminal; De:listen concludes.
         //   want_savepoint: Story snaps the listen-done state before De:connect begins.
-        ;(await drq.roai({ req: 'listening', maz: 3 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'listening' })).c.do_fn ||= async (req: TheC) => {
             H.trace('De', `${side} req:listening → want_savepoint`)
             drq.finish(req)
             drq.unify_finished()   // stamps %De:listen,finished
@@ -1038,19 +1038,19 @@
             }
         }
 
-        ;(await drq.roai({ req: 'said_hello',  demand:  800 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'said_hello',  maz: 4, demand:  800 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.said_hello)  drq.finish(req)
             else recheck(req, 800)
         }
-        ;(await drq.roai({ req: 'heard_hello', maz: 2, demand:  800 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'heard_hello', maz: 3, demand:  800 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.heard_hello) drq.finish(req)
             else recheck(req, 800)
         }
-        ;(await drq.roai({ req: 'said_trust',  maz: 3, demand: 1500 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'said_trust',  maz: 2, demand: 1500 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.said_trust)  drq.finish(req)
             else recheck(req, 1500)
         }
-        ;(await drq.roai({ req: 'heard_trust', maz: 4, demand: 1500 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'heard_trust', demand: 1500 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.heard_trust) {
                 drq.finish(req)
                 drq.unify_finished()   // stamps %De:handshake,finished
@@ -1151,20 +1151,20 @@
             }
         }
 
-        ;(await drq.roai({ req: 'phase_disc',  demand: 1000 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'phase_disc',  maz: 4, demand: 1000 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.disconnected) drq.finish(req)
             else recheck(req, 1000)
         }
-        ;(await drq.roai({ req: 'phase_open',  maz: 2, demand: 4000 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'phase_open',  maz: 3, demand: 4000 })).c.do_fn ||= async (req: TheC) => {
             const i = ier()
             if (i && !i.disconnected) drq.finish(req)
             else recheck(req, 4000)
         }
-        ;(await drq.roai({ req: 'phase_hello', maz: 3, demand: 1500 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'phase_hello', maz: 2, demand: 1500 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.said_hello)  drq.finish(req)
             else recheck(req, 1500)
         }
-        ;(await drq.roai({ req: 'phase_trust', maz: 4, demand: 2000 })).c.do_fn ||= async (req: TheC) => {
+        ;(await drq.roai({ req: 'phase_trust', demand: 2000 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.heard_trust) {
                 drq.finish(req)
                 drq.unify_finished()

@@ -19,7 +19,7 @@ Snap:H
         logger,n
           driver[4],report,inA
         De:reportPortPlaneting
-          req:gatherself,finished
-          req:summarise,maz:2
+          req:gatherself,maz:2,finished
+          req:summarise
         {"mung":["age"]}	self,round:8
     {"mung":["id"]}	mo:main,interval:3.6

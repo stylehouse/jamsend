@@ -1,6 +1,5 @@
 <script lang="ts">
     // Hovercraft.svelte — C activities
-    //  duplicate copy of requesty_serial(), where it can be shown to AI
 
     import { _C, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
     import { onMount, tick } from "svelte"
@@ -15,6 +14,7 @@
     await M.eatfunc({
 
 //#region requesty_serial
+    //  duplicate copy of requesty_serial(), where it can be shown to AI
     // have a queue of things to work on (and get finished)
     async requesty_serial(w,t) {
         let reqserialc = {}
@@ -259,8 +259,8 @@
                 let N = q.o().filter((req: TheC) => !req.sc.finished)
                 if (!N.length) return
  
-                let maz_low = Math.min(...N.map((req: TheC) => req.sc.maz || 1))
-                N = N.filter((req: TheC) => (req.sc.maz || 1) == maz_low)
+                let maz_high = Math.max(...N.map((req: TheC) => req.sc.maz || 1))
+                N = N.filter((req: TheC) => (req.sc.maz || 1) == maz_high)
  
                 for (const req of N) {
                     await q.do_one(req, fn)

@@ -31,7 +31,7 @@
     async PortPlan(A, w) {
         const dq = this.reqy(w, {k:'De'})
 
-        const dSort = await dq.roai({De:'sort'})
+        const dSort = await dq.roai({De:'sort', maz:2})
         dSort.c.do_fn ||= async (De: TheC) => {
             this.trace("De:sort")
             const rq = this.reqy(De, {k:'req'})
@@ -59,7 +59,7 @@
             rq.unify_finished()
         }
 
-        const dYay = await dq.roai({De:'yay', maz:2})
+        const dYay = await dq.roai({De:'yay'})
         dYay.c.do_fn ||= async (De: TheC) => {
             this.trace("De:yay")
             w.i({confetti:"!!!"})
@@ -231,13 +231,13 @@
         // req:gatherself — initialdo: one snap waits:'finding a pen' before any real work
         //   req%initialdo is transient sc; visible for exactly the one snap it stalls
         //   own do_fn so it doesn't fall through to reqcon.c.do_fn (req:summarise's path)
-        const rGather = await rq.roai({req:'gatherself'})
+        const rGather = await rq.roai({req:'gatherself', maz:2})
         rGather.c.do_fn ||= async (req: TheC, rq: any) => {
             if (req.sc.initialdo) { req.i({ waits: 'finding a pen' }); return }
             rq.finish(req)
         }
 
-        await rq.roai({req:'summarise', maz:2})
+        await rq.roai({req:'summarise'})
         await rq.do()
         if (rq.all_finished() && !De.sc.finished) dq.finish(De)
     },
@@ -255,11 +255,11 @@
     // w/yard/soil,dose:12               — bulk supply; 2 doses per pot (3→5)
     // w/arrival                         — blocks move_outside until step:1 snap
     //
-    // De:repot
-    //   req:move_outside       — shelf→body→yard; body pots on entry = last step's load
-    //   req:repot,maz:2        — draw 2 from yard/soil per pot, dose:3→5
-    //   req:move_inside,maz:3  — yard→body→shelf; same transit pattern
-    // De:celebrate,maz:2
+    // De:repot,maz:2
+    //   req:move_outside,maz:3  — shelf→body→yard; body pots on entry = last step's load
+    //   req:repot,maz:2         — draw 2 from yard/soil per pot, dose:3→5
+    //   req:move_inside         — yard→body→shelf; same transit pattern
+    // De:celebrate
 
     Run_A_PortPlant(this: House) {
         const A = this.o({ A: 'PortPlant' })[0] || this.i({ A: 'PortPlant' })
@@ -291,14 +291,14 @@
         const dq = this.reqy(w, {k:'De'})
 
         // ── De:repot ──────────────────────────────────────────────────────────
-        const dRepot = await dq.roai({De:'repot'})
+        const dRepot = await dq.roai({De:'repot', maz:2})
         dRepot.c.do_fn ||= async (De: TheC) => {
             const rq = this.reqy(De, {k:'req'})
 
-            // req:move_outside
+            // req:move_outside,maz:3
             //   body pots on entry = loaded last step and snapped → safe to unload now
             //   is_there_yet: set by Runstepped callback (runtime=false, so no spurious wake)
-            const rMoveOut = await rq.roai({req:'move_outside'})
+            const rMoveOut = await rq.roai({req:'move_outside', maz:3})
             rMoveOut.c.do_fn ||= async (req: TheC, rq: any) => {
                 if (w.o({ arrival: 1 }).length) { req.i({ waits: 'arrival' }); return }
 
@@ -348,8 +348,8 @@
                 rq.finish(req)
             }
 
-            // req:move_inside,maz:3 — mirror of move_outside
-            const rMoveIn = await rq.roai({req:'move_inside', maz:3})
+            // req:move_inside — mirror of move_outside
+            const rMoveIn = await rq.roai({req:'move_inside'})
             rMoveIn.c.do_fn ||= async (req: TheC, rq: any) => {
                 if (body.c.is_there_yet) {
                     body.c.is_there_yet = false
@@ -384,8 +384,8 @@
             if (rq.all_finished() && !De.sc.finished) dq.finish(De)
         }
 
-        // ── De:celebrate,maz:2 ────────────────────────────────────────────────
-        const dCelebrate = await dq.roai({De:'celebrate'}, {maz:2})
+        // ── De:celebrate ─────────────────────────────────────────────────────
+        const dCelebrate = await dq.roai({De:'celebrate'})
         dCelebrate.c.do_fn ||= async (De: TheC) => {
             const rq = this.reqy(De, {k:'req'})
 

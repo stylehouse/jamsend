@@ -12,9 +12,9 @@ Snap:H
       {"mung":["age"]}	self,round:16
       w:Bearing
         De:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:listening,finished
           log
             msg:keygen started
             msg:keygen done
@@ -27,9 +27,9 @@ Snap:H
       {"mung":["age"]}	self,round:16
       w:Nearing
         De:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:listening,finished
           log
             msg:keygen started
             msg:keygen done
@@ -42,9 +42,9 @@ Snap:H
       {"mung":["age"]}	self,round:16
       w:Tearing
         De:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:listening,finished
           log
             msg:keygen started
             msg:keygen done

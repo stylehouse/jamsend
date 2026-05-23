@@ -16,11 +16,11 @@ Snap:H
             soil,dose:5
         yard
           soil,dose:6
-        De:repot
-          req:move_outside,finished
+        De:repot,maz:2
+          req:move_outside,maz:3,finished
           req:repot,maz:2,finished
-          req:move_inside,maz:3
-        De:celebrate,maz:2
+          req:move_inside
+        De:celebrate
         {"mung":["age"]}	self,round:8
         log
           msg:rose back on shelf

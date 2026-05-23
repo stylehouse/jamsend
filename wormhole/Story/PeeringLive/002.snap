@@ -12,9 +12,9 @@ Snap:H
       {"mung":["age"]}	self,round:26
       w:Bearing
         De:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:listening,finished
           log
             msg:keygen started
             msg:keygen done
@@ -26,19 +26,19 @@ Snap:H
           req:dial,finished
           req:connected,finished
         De:handshake,target:8cbc667bb0c8e748,finished
-          req:said_hello,demand:800,finished
-          req:heard_hello,maz:2,demand:800,finished
-          req:said_trust,maz:3,demand:1500,finished
-          req:heard_trust,maz:4,demand:1500,finished
+          req:said_hello,maz:4,demand:800,finished
+          req:heard_hello,maz:3,demand:800,finished
+          req:said_trust,maz:2,demand:1500,finished
+          req:heard_trust,demand:1500,finished
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
         {"mung":["age"]}	self,round:26
     A:Nearing
       {"mung":["age"]}	self,round:25
       w:Nearing
         De:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:listening,finished
           log
             msg:keygen started
             msg:keygen done
@@ -48,18 +48,18 @@ Snap:H
           open
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
         De:handshake,target:7acf614d876d69a4,finished
-          req:said_hello,demand:800,finished
-          req:heard_hello,maz:2,demand:800,finished
-          req:said_trust,maz:3,demand:1500,finished
-          req:heard_trust,maz:4,demand:1500,finished
+          req:said_hello,maz:4,demand:800,finished
+          req:heard_hello,maz:3,demand:800,finished
+          req:said_trust,maz:2,demand:1500,finished
+          req:heard_trust,demand:1500,finished
         {"mung":["age"]}	self,round:25
     A:Tearing
       {"mung":["age"]}	self,round:25
       w:Tearing
         De:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
-          req:listening,maz:3,finished
+          req:listening,finished
           log
             msg:keygen started
             msg:keygen done
