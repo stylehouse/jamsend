@@ -92,12 +92,12 @@
 
     import { onDestroy, untrack } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
-    import { EditorState, StateField, StateEffect, type Extension } from "@codemirror/state"
+    import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 
-    import { stho, simpleLezerLinter } from "$lib/O/stho"
+    import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
@@ -113,6 +113,15 @@
     // EditorView reference once construction has completed (otherwise the
     // prop captures undefined at mount and never updates).
     let view: EditorView | undefined = $state()
+
+    // ── per-instance language Compartment ────────────────────────────────────
+    //   Wraps the lang(name) extensions so the lang dropdown can swap
+    //   languages at runtime via view.dispatch({effects: reconfigure}). One
+    //   Compartment per Langui instance so multi-editor setups don't collide.
+    //   last_applied_lang tracks the latest applied name; the reconfigure
+    //   $effect skips no-op reapplications.
+    const langCompartment = new Compartment()
+    let last_applied_lang: string | undefined
 
     const UPDATE_DELAY_MS = 800
     let update_timer: ReturnType<typeof setTimeout> | null = null
@@ -352,6 +361,33 @@
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: incoming } })
     })
 
+    // ── language reconfigure $effect ─────────────────────────────────────────
+    //   Tracks active_doc.sc.lang_override (and falls back to lang_for_path on
+    //   the active_path). When it differs from the last applied language,
+    //   resolves the new lang() extensions and dispatches a Compartment
+    //   reconfigure on the view — no remount, undo history and selection
+    //   survive. last_applied_lang is set optimistically; if the async
+    //   lang() resolve rejects we revert it so a retry can fire.
+    $effect(() => {
+        void active_doc?.version
+        if (!view || !active_path) return
+        const want = (active_doc?.sc.lang_override as string)
+            ?? lang_for_path(active_path)
+        if (want === last_applied_lang) return
+        const prev = last_applied_lang
+        last_applied_lang = want
+        lang(want).then(exts => {
+            if (!view) return
+            if (exts.warnings?.length) {
+                console.warn(`lang(${want}) warnings:`, exts.warnings)
+            }
+            view.dispatch({ effects: langCompartment.reconfigure(exts) })
+        }).catch(err => {
+            last_applied_lang = prev
+            console.warn(`Langui: lang(${want}) failed:`, err)
+        })
+    })
+
     // ── Lang_i_elvis ─────────────────────────────────────────────────────────
     //
     //   Central CM→backend bridge.  Stamps { doc, view, state } on every event
@@ -533,7 +569,7 @@
         // zero clientHeight, so CM measures 0 and stops painting.
         // HMR works because Svelte remounts into a settled layout; cold load
         // now behaves the same way.
-        setTimeout(() => {
+        setTimeout(async () => {
         console.log(`🏗 setTimeout fired: isConnected=${captured_container.isConnected} clientHeight=${captured_container.clientHeight}`)
         if (!captured_container.isConnected) return   // destroyed while we waited
 
@@ -541,12 +577,20 @@
         const fresh_docC = H.ave.ob({ langtiles_doc: captured_path })[0] as TheC | undefined
         const initial    = (fresh_docC?.sc.text as string) ?? (captured_docC?.sc.text as string) ?? ''
 
+        // Pick the initial language by extension. The per-doc override (if
+        // any) is applied a moment later by the reconfigure $effect once it
+        // sees active_doc.sc.lang_override.
+        const initial_lang_name = lang_for_path(captured_path)
+        const initial_lang_exts = await lang(initial_lang_name)
+        if (initial_lang_exts.warnings?.length) {
+            console.warn(`lang(${initial_lang_name}) warnings:`, initial_lang_exts.warnings)
+        }
+
         // Build extensions once; reused by all EditorStates on this view.
         editorExtensions = [
             basicSetup,
             simpleLezerLinter(),
-            // < switchable lang via Compartment
-            stho(),
+            langCompartment.of(initial_lang_exts),
             bookmarkField,
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
@@ -576,6 +620,7 @@
             parent: captured_container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
+        last_applied_lang = initial_lang_name
         console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 
         // Seed the spool with the initial text so the very first echo

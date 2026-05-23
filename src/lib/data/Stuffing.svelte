@@ -1,7 +1,7 @@
 <script lang="ts">
     import Strata from '$lib/data/Strata.svelte';
     import type { Matchy } from '$lib/mostly/Structure.svelte.ts';
-    import { hak } from '$lib/Y.svelte.ts';
+    import { hak, throttle } from '$lib/Y.svelte.ts';
     import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
     import { Stuff,Stuffing, type TheUniversal } from './Stuff.svelte.ts';
     import Stuffusion from './Stuffusion.svelte'
@@ -30,12 +30,22 @@
     function deep_version(C: TheC): number {
         const v = C.version || 0
         return (C.X?.z ?? []).reduce(
-            (sum: number, kid: TheC) => kid.c?.drop ? sum : sum + deep_version(kid),
+            (sum: number, kid: TheC) => kid.c?.drop ? sum : sum + 0,
+            // deep_version(kid),
             v
         )
     }
-    let deep_v = $derived(stuff ? deep_version(stuff) : 0)
-
+    
+    // < hmm, this is overreactive. we should probably beliefs()-centralise this...?
+    //   run around with the Stuffing that's open, Selection.process()?
+    //   from above... slowly dispatching a .version++ above where another one couldn't be seen.
+    let deep_v = $state()
+    let setversion = throttle((vers:number) => {
+        deep_v = vers
+    },200)
+    $effect(() => {
+        setversion(stuff ? deep_version(stuff) : 0)
+    })
     $effect(() => {
         if (deep_v) {
             new_stuffing = new Stuffing(stuff, matchy)

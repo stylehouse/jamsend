@@ -4,8 +4,8 @@
     // ── Mount ────────────────────────────────────────────────────────────────
     //
     //   Mounted by Langui as a sibling of .lte-cm.  Receives:
-    //     H          — the House
-    //     view       — the live EditorView (for scroll dispatch and viewport reads)
+    //     H           — the House
+    //     view        — the live EditorView (for scroll dispatch and viewport reads)
     //     active_path — current doc path ($state from Langui)
     //
     //   Floats with position:absolute, top:0, right:0, height:100% over the
@@ -15,28 +15,34 @@
     // ── Data ─────────────────────────────────────────────────────────────────
     //
     //   Reads the compiled methods index that LangCompiling deposits at
-    //     ave/{langtiles_doc:path}/{job}/{Compile:1}/{Output:1}/{methods:1}
+    //     ave/{langtiles_doc:path}/{Compile:1}/{Output:1}/{methods:1}
     //   Pulls all {region:1}, {def:1}, {controlflow:1} children.
     //
-    //   Falls back to live region scan via Lang_build_regions when no compiled
-    //   index is present yet, so the user sees structure before the first compile.
+    //   Falls back to live region scan when no compiled index is present yet,
+    //   so the user sees structure before the first compile.
+    //
+    //   Points come from graft_* fields stamped on each Point particle by
+    //   Lang_graft_points (LangGraft.svelte) after each compile.  The minimap
+    //   does not re-resolve method strings — it reads pre-resolved positions.
     //
     // ── Layout model ─────────────────────────────────────────────────────────
     //
     //   The strip is a single vertical bar of height 100%.  Each region is
     //   a band whose top/height are computed from its line range relative to
-    //   total doc lines.  Defs are short ticks inside the band (from MethodLike
-    //   def entries).  Region nesting is shown as left-edge inset (depth * 4px).
+    //   total doc lines.  Defs are short ticks inside the band.  Region nesting
+    //   is shown as left-edge inset (depth * 5px).
     //
-    // ── Future ───────────────────────────────────────────────────────────────
+    // ── Rebuild throttle ─────────────────────────────────────────────────────
     //
-    //   Painting gestures (wax-on / wax-off) for applying line styles and
-    //   selecting sub-Points come later; this is the read-only first pass.
+    //   _structure is $state, not $derived.by.  A single $effect registers
+    //   reactive deps cheaply (void reads) then calls schedule_rebuild().
+    //   requestAnimationFrame collapses any burst of version-bumps within one
+    //   frame into exactly one rebuild() call — silencing the 0→1→0 point-
+    //   resolution oscillation that was flooding the console.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { EditorView } from "@codemirror/view"
-    import type { EditorState } from "@codemirror/state"
     import { foldEffect, unfoldEffect, foldedRanges } from "@codemirror/language"
 
     type Region = {
@@ -46,18 +52,17 @@
         to_line:   number
         from_char: number
         to_char:   number
-        defs:      Def[]    // method defs that fall inside this region's range
-        points:    PointMark[]    // resolved Points that fall inside this region's range
+        defs:      Def[]
+        points:    PointMark[]
     }
     type Def = { method: string, line: number, from: number, to: number }
 
-    // A Point becomes a PointMark once resolved against the methods index.
-    // `spec` is the original method-spec string (may be fuzzy / stack-path);
-    // `unresolved` flags Points we couldn't locate so the strip can show
-    // them as warnings rather than dropping them silently.
+    // A Point becomes a PointMark once its graft fields have been stamped by
+    // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
+    // method in the compile index yet (pre-compile, or name changed).
     type PointMark = {
-        spec:       string
-        method:     string   // the resolved def method name (or spec if unresolved)
+        spec:       string    // original Point method/label spec
+        method:     string    // same as spec (resolved name lives here too, future)
         line:       number
         from:       number
         to:         number
@@ -70,16 +75,11 @@
         active_path: string
     } = $props()
 
-    // Diagnostic — should fire once view prop is set (after Langui constructs).
-    // If this never fires after CM appears, the prop isn't reactive and clicks
-    // will silently no-op.
     $effect(() => {
         console.log(`🗺 minimap view prop = ${view ? 'EditorView OK' : 'undefined'}, active_path = ${active_path}`)
     })
 
-    // Dedupe the rebuild logs — _structure recomputes on every H.ave bump,
-    // which can be 30+ times per page action.  Only log when the structural
-    // summary (region/def/point counts) actually changes.
+    // Only log when the structural summary actually changes.
     let last_log_summary = ''
 
     // Per-region collapsed state for the strip's own UI (independent of CM folds).
@@ -87,72 +87,90 @@
     let collapsed = $state(new Map<string, boolean>())
 
     // ── navigation history ───────────────────────────────────────────────────
-    //   A simple stack of {path, from, to, label} entries: every region/def
-    //   click pushes one.  back()/forward() step through.  history is reset on
-    //   doc switch — cross-doc nav goes through Lang_point_navigate instead.
     type NavEntry = { path: string, from: number, to: number, label: string }
     let nav_hist: NavEntry[] = $state([])
-    let nav_pos               = $state(-1)   // index of current entry, -1 = none
-    let can_back     = $derived(nav_pos > 0)
-    let can_forward  = $derived(nav_pos < nav_hist.length - 1)
+    let nav_pos               = $state(-1)
+    let can_back    = $derived(nav_pos > 0)
+    let can_forward = $derived(nav_pos < nav_hist.length - 1)
 
-    // Reset history when the active doc changes — the entries reference char
-    // offsets that only make sense in their original doc.
+    // Reset history on doc switch — offsets only make sense in their original doc.
     let _last_path = ''
     $effect(() => {
         if (active_path !== _last_path) {
             nav_hist = []
-            nav_pos = -1
+            nav_pos  = -1
             _last_path = active_path
         }
     })
 
     // ── data sources ─────────────────────────────────────────────────────────
-    //   docC drives total_lines (for proportional layout) and the methods
-    //   index.  H.ave.ob() makes ave-version-bumps wake this $effect.
+    //   docC: the ave/{langtiles_doc:path} particle.
+    //   H.ave.ob() makes ave-version-bumps wake the $effect below.
     let docC: TheC | undefined = $state()
     $effect(() => {
-        docC = active_path ? H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined : undefined
+        docC = active_path
+            ? H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined
+            : undefined
     })
 
     let total_lines = $derived.by(() => {
         void docC?.version
         const text = (docC?.sc.text as string) ?? ''
         if (!text) return 1
-        // count newlines + 1, matching CM's 1-based line count
         let n = 1
         for (const ch of text) if (ch === '\n') n++
         return n
     })
 
-    // Pull regions, defs, and Points for the active doc.
+    // ── throttled rebuild ─────────────────────────────────────────────────────
     //
-    //   regions, defs come from the compiled methods index at
-    //     ave/{langtiles_doc:path}/{Compile:1}/{Output:1}/{methods:1}
+    //   _structure is $state so Svelte never auto-tracks its internal reads.
+    //   The $effect below registers reactive deps with cheap void-reads, then
+    //   delegates to schedule_rebuild().  Any number of version-bumps that land
+    //   within one animation frame collapse to a single rebuild() call.
     //
-    //   Points live elsewhere — under Lies's Wafts at
-    //     w/{Waft:p}/{Doc:1,path}/{Points:1}/{Point:1, method:'spec'}
-    //   so we walk all Wafts to find any Doc whose `path` matches.  Each
-    //   Point's `method` spec is resolved against the methods index here
-    //   (a simplified version of Lang_resolve_point — exact def then fuzzy).
-    //
-    // Both `regions` and `top_level_defs` and `top_level_points` are produced
-    // by one $derived so the bucket logic can mutate region children without
-    // crossing into a separate $effect.
-    let _structure = $derived.by((): {
-        regions: Region[], top_level_defs: Def[], top_level_points: PointMark[],
-    } => {
+    //   This eliminates the console spam from the points=0 / points=1 oscillation
+    //   that occurred when docC.version bounced twice during Point resolution.
+
+    let _raf = 0
+
+    let _structure: {
+        regions:          Region[]
+        top_level_defs:   Def[]
+        top_level_points: PointMark[]
+    } = $state({ regions: [], top_level_defs: [], top_level_points: [] })
+
+    let regions          = $derived(_structure.regions)
+    let top_level_defs   = $derived(_structure.top_level_defs)
+    let top_level_points = $derived(_structure.top_level_points)
+
+    function schedule_rebuild() {
+        cancelAnimationFrame(_raf)
+        _raf = requestAnimationFrame(() => { _raf = 0; rebuild() })
+    }
+
+    // Subscribe to the deps that should trigger a rebuild.
+    // void-reads register the dependency without doing any work here.
+    $effect(() => {
         void docC?.version
-        if (!docC) return { regions: [], top_level_defs: [], top_level_points: [] }
+        void active_path
+        schedule_rebuild()
+    })
+
+    function rebuild() {
+        if (!docC) {
+            _structure = { regions: [], top_level_defs: [], top_level_points: [] }
+            return
+        }
 
         const job     = docC.o({ Compile: 1 })[0]    as TheC | undefined
         const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
         const methods = output?.o({ methods: 1 })[0] as TheC | undefined
 
-        // Collect Point specs for this doc — independent of whether the
-        // methods index exists, because Points are user-promoted and we
-        // want to surface them even before first compile (as unresolved).
-        const point_specs = collect_point_specs_for_path(active_path)
+        // Collect Point marks from graft fields stamped by LangGraft.
+        // This replaces the old collect_point_specs_for_path + resolve_point_to_mark
+        // pair — no resolution work happens here, just reading pre-baked positions.
+        const point_marks = collect_graft_marks_for_path(active_path)
 
         if (methods) {
             const region_entries = methods.o({ region: 1 }) as TheC[]
@@ -162,20 +180,16 @@
                 label:     r.sc.label as string,
                 depth:     r.sc.depth as number,
                 from_line: r.sc.line  as number,
-                to_line:   total_lines,                  // patched below
+                to_line:   total_lines,
                 from_char: r.sc.from  as number,
-                to_char:   r.sc.to    as number,         // patched below from text scan
+                to_char:   r.sc.to    as number,
                 defs:      [],
                 points:    [],
             }))
 
-            // Patch to_line / to_char by scanning forward in the doc for
-            // //#endregion or the next region at <= depth.  The compiler
-            // doesn't currently emit close offsets per-region, so we do it here.
             const text = (docC.sc.text as string) ?? ''
             patch_region_extents(list, text, total_lines)
 
-            // Bucket defs into their containing region (innermost wins).
             const top_defs: Def[] = []
             for (const d of def_entries) {
                 const def: Def = {
@@ -189,113 +203,98 @@
                 else top_defs.push(def)
             }
 
-            // Resolve each Point spec against the def index.
             const top_points: PointMark[] = []
-            for (const spec of point_specs) {
-                const mark = resolve_point_to_mark(spec, def_entries)
-                if (!mark) continue
+            for (const mark of point_marks) {
                 const owner = innermost_region_for_line(list, mark.line)
                 if (owner) owner.points.push(mark)
                 else top_points.push(mark)
             }
 
-            const summary = `${list.length}r ${def_entries.length}d ${point_specs.length}p`
+            const unres  = point_marks.filter(p => p.unresolved).length
+            const summary = `${list.length}r ${def_entries.length}d ${point_marks.length}p`
             if (summary !== last_log_summary) {
-                console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_specs.length} unresolved=${top_points.reduce((n,p) => n + (p.unresolved ? 1 : 0), 0)}`)
+                console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_marks.length} unresolved=${unres}`)
                 last_log_summary = summary
             }
-            return { regions: list, top_level_defs: top_defs, top_level_points: top_points }
+            _structure = { regions: list, top_level_defs: top_defs, top_level_points: top_points }
+            return
         }
 
-        // Fallback path: no compiled methods index yet.  Scan regions
-        // directly from doc text and surface any Points as unresolved
-        // (they'll cluster at line 1 in red, indicating the user should
-        // run compile to land them properly).
-        const fallback_regions = scan_regions_from_text((docC.sc.text as string) ?? '')
-        const fallback_top_points: PointMark[] = point_specs.map(spec => ({
-            spec, method: spec, line: 1, from: 0, to: 0, unresolved: true,
-        }))
+        // Fallback: no compile index yet.  Scan regions directly from text;
+        // surface any Points as unresolved (they'll cluster at line 1 in red).
+        const fallback_regions    = scan_regions_from_text((docC.sc.text as string) ?? '')
+        const fallback_top_points: PointMark[] = point_marks.map(p =>
+            p.unresolved ? p : { ...p, line: 1, from: 0, to: 0, unresolved: true }
+        )
 
-        const summary = `${fallback_regions.length}r 0d ${point_specs.length}p (no compile)`
+        const summary = `${fallback_regions.length}r 0d ${point_marks.length}p (no compile)`
         if (summary !== last_log_summary) {
-            console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_specs.length} (all unresolved)`)
+            console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_marks.length} (all unresolved)`)
             last_log_summary = summary
         }
-        return {
+        _structure = {
             regions:          fallback_regions,
             top_level_defs:   [],
             top_level_points: fallback_top_points,
         }
-    })
-
-    let regions          = $derived(_structure.regions)
-    let top_level_defs   = $derived(_structure.top_level_defs)
-    let top_level_points = $derived(_structure.top_level_points)
-
-    // Collect Point specs for `path` by walking H.ave.examining/c/w/Waft*/Doc.
-    // Reactive on H.ave (ob) so when Wafts/Points change the strip refreshes.
-    function collect_point_specs_for_path(path: string): string[] {
-        const out: string[] = []
-        if (!path) return out
-        const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
-        const lies_w = ex?.c?.w as TheC | undefined
-        if (!lies_w) {
-            console.log(`🗺 minimap: no examining.c.w found — Lies not booted yet?`)
-            return out
-        }
-
-        const wafts = lies_w.o({ Waft: 1 }) as TheC[]
-        let docs_matched = 0
-        for (const waft of wafts) {
-            const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
-            if (!doc) continue
-            docs_matched++
-            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
-            if (!pointsC) continue
-            for (const p of pointsC.o({ Point: 1 }) as TheC[]) {
-                const spec = p.sc.method as string | undefined
-                if (spec) out.push(spec)
-            }
-        }
-        if (wafts.length && !out.length) {
-            console.log(`🗺 minimap: ${wafts.length} Wafts, ${docs_matched} matched Doc:${path}, 0 Points`)
-        }
-        return out
     }
 
-    // Resolve a Point's method-spec against the def list.  Mirrors the simpler
-    // half of Lang_resolve_point: exact match → fuzzy substring → unresolved.
-    // (Stack-path resolution is left to Lang_resolve_point in the backend.)
-    function resolve_point_to_mark(spec: string, defs: TheC[]): PointMark | null {
-        const exact = defs.find(d => d.sc.method === spec)
-        if (exact) return {
-            spec,
-            method: exact.sc.method as string,
-            line:   exact.sc.line   as number,
-            from:   exact.sc.from   as number,
-            to:     exact.sc.to     as number,
-            unresolved: false,
+    // ── collect_graft_marks_for_path ──────────────────────────────────────────
+    //
+    //   Walk all Wafts in Lies's w, collect every Point whose parent Doc has a
+    //   matching path, and read the graft_* fields that LangGraft stamped.
+    //
+    //   Both direct-child Points (new layout) and Points:1-container children
+    //   (old compat layout) are collected.
+    //
+    //   Reactive on H.ave via the ob({ examining:1 }) call, so Waft CRUD wakes
+    //   the next rebuild.  This replaces collect_point_specs_for_path() and
+    //   resolve_point_to_mark() — no resolution work happens here.
+    function collect_graft_marks_for_path(path: string): PointMark[] {
+        const out: PointMark[] = []
+        if (!path) return out
+
+        const ex     = H.ave.ob({ examining: 1 })[0] as TheC | undefined
+        const lies_w = ex?.c?.w as TheC | undefined
+        if (!lies_w) return out
+
+        for (const waft of lies_w.o({ Waft: 1 }) as TheC[]) {
+            for (const doc of waft.o({ Doc: 1, path }) as TheC[]) {
+                // new layout: Point:1 directly on doc
+                const direct = doc.o({ Point: 1 }) as TheC[]
+                // compat: old Points:1 container
+                const via_container = (doc.o({ Points: 1 })[0]?.o({ Point: 1 }) ?? []) as TheC[]
+
+                for (const pt of [...direct, ...via_container]) {
+                    const spec = (pt.sc.method ?? pt.sc.label ?? pt.sc.Point) as string | undefined
+                    if (!spec || spec === 1 as any) continue
+                    const s = String(spec)
+
+                    if (pt.sc.graft_stale || pt.sc.graft_from == null) {
+                        // LangGraft hasn't resolved this yet (pre-compile, or name changed)
+                        out.push({ spec: s, method: s, line: 1, from: 0, to: 0, unresolved: true })
+                        continue
+                    }
+
+                    out.push({
+                        spec:       s,
+                        method:     s,
+                        line:       pt.sc.graft_line as number,
+                        from:       pt.sc.graft_from as number,
+                        to:         pt.sc.graft_to   as number,
+                        unresolved: false,
+                    })
+                }
+            }
         }
-        const lc = spec.toLowerCase()
-        const fuzzy = defs.find(d => (d.sc.method as string)?.toLowerCase().includes(lc))
-        if (fuzzy) return {
-            spec,
-            method: fuzzy.sc.method as string,
-            line:   fuzzy.sc.line   as number,
-            from:   fuzzy.sc.from   as number,
-            to:     fuzzy.sc.to     as number,
-            unresolved: false,
-        }
-        // Unresolved Points are still returned with line 0 so the strip can
-        // surface them — they'll cluster at the top with a warning style.
-        return { spec, method: spec, line: 1, from: 0, to: 0, unresolved: true }
+        return out
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
     // Scan doc text directly for //#region / //#endregion when no compiled
     // index is available yet.  Mirrors LangRegions/Lang_build_regions but
-    // doesn't need an EditorState (cheaper for the strip's first paint).
+    // doesn't need an EditorState.
     function scan_regions_from_text(text: string): Region[] {
         const REGION_RE    = /^[\t ]*\/\/#region\s+(.+)$/
         const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
@@ -306,19 +305,18 @@
         let char_offset = 0
 
         for (let i = 0; i < lines.length; i++) {
-            const line_text  = lines[i]
-            const line_num   = i + 1
-            const line_from  = char_offset
-            const line_to    = char_offset + line_text.length
+            const line_text = lines[i]
+            const line_num  = i + 1
+            const line_from = char_offset
+            const line_to   = char_offset + line_text.length
 
             const m = line_text.match(REGION_RE)
             if (m) {
-                // Implicit close at same-or-shallower depth.
                 const depth = stack.length
                 while (stack.length > depth) {
-                    const closing      = stack.pop()!
-                    closing.to_line    = line_num - 1
-                    closing.to_char    = line_from
+                    const closing   = stack.pop()!
+                    closing.to_line = line_num - 1
+                    closing.to_char = line_from
                 }
                 const region: Region = {
                     label:     m[1].trim(),
@@ -350,8 +348,6 @@
         const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
         const lines = text.split('\n')
 
-        // Build a stack-position-by-line map.
-        // Sort regions by from_line so we can walk forward and maintain a stack.
         const sorted = [...list].sort((a, b) => a.from_line - b.from_line)
         const stack: Region[] = []
         let next = 0
@@ -361,12 +357,10 @@
             const line_num = i + 1
             const line_to  = char_offset + lines[i].length
 
-            // Open any regions starting on this line.
             while (next < sorted.length && sorted[next].from_line === line_num) {
-                // Close any open regions at >= this region's depth first.
                 while (stack.length && stack[stack.length - 1].depth >= sorted[next].depth) {
-                    const closing      = stack.pop()!
-                    if (closing.to_line === total) {  // not yet patched
+                    const closing = stack.pop()!
+                    if (closing.to_line === total) {
                         closing.to_line = line_num - 1
                         closing.to_char = char_offset > 0 ? char_offset - 1 : 0
                     }
@@ -386,8 +380,6 @@
     }
 
     function innermost_region_for_line(list: Region[], line: number): Region | undefined {
-        // Linear scan; doc sizes are small enough that this isn't worth optimising.
-        // Innermost wins because we keep overwriting on every match.
         let winner: Region | undefined
         for (const r of list) {
             if (line >= r.from_line && line <= r.to_line) {
@@ -399,15 +391,10 @@
 
     // ── interactions ─────────────────────────────────────────────────────────
 
-    // Scroll CM to a doc-char offset and place the cursor there.  Pushes a
-    // history entry unless we're navigating via back()/forward() (in which
-    // case nav_pos is being moved without recording a new step).
-    //
+    // Scroll CM to a doc-char offset and place the cursor there.
     // Uses EditorView.scrollIntoView as a StateEffect (more reliable than the
-    // boolean `scrollIntoView: true` on TransactionSpec — that one only scrolls
-    // the cm-scroller, but our outer .lte-cm wraps it and may be the actual
-    // overflow surface).  The effect tells CM exactly where to scroll and
-    // CM walks up the DOM to find scrollable ancestors.
+    // boolean scrollIntoView:true on TransactionSpec, which only scrolls the
+    // cm-scroller and not outer overflow ancestors).
     function go_to(from: number, to: number, label: string) {
         console.log(`🗺 minimap go_to('${label}' [${from}..${to}]): view=${view ? 'OK' : 'UNDEFINED'} active_path=${active_path}`)
         if (!view) return
@@ -417,15 +404,13 @@
         })
         view.focus()
 
-        // Truncate any forward history (classic browser-style behaviour: a new
-        // navigation drops everything past the current position) then append.
+        // Truncate any forward history then append (classic browser-style).
         const truncated = nav_hist.slice(0, nav_pos + 1)
         truncated.push({ path: active_path, from, to, label })
         nav_hist = truncated
         nav_pos  = truncated.length - 1
     }
 
-    // Move backward / forward through nav_hist without recording a new entry.
     function go_back() {
         if (!can_back || !view) return
         nav_pos = nav_pos - 1
@@ -450,7 +435,7 @@
     // Toggle the strip's own collapsed state for this region.  Independent of
     // CM folding — just hides def ticks below the heading on the strip.
     function toggle_collapse(region: Region) {
-        const key = `${region.from_line}:${region.label}`
+        const key  = `${region.from_line}:${region.label}`
         const next = new Map(collapsed)
         next.set(key, !next.get(key))
         collapsed = next
@@ -463,7 +448,7 @@
     // stays visible (matches Lang_apply_openness semantics).
     function toggle_fold(region: Region) {
         if (!view) return
-        const state = view.state
+        const state       = view.state
         const header_line = state.doc.line(region.from_line)
         const fold_from   = header_line.to
         const fold_to     = Math.min(region.to_char, state.doc.length)
@@ -471,12 +456,9 @@
 
         // foldedRanges() returns the RangeSet CM maintains internally.
         // Walk it to check if any fold already covers our range.
-        // Checking block geometry (lineBlockAt) was unreliable — CM still
-        // returns a block for folded ranges, just with zero height, which
-        // varied with CM version and zoom level.
-        const folds  = foldedRanges(state)
+        const folds = foldedRanges(state)
         let is_folded = false
-        const cursor = folds.iter()
+        const cursor  = folds.iter()
         while (cursor.value !== null) {
             if (cursor.from <= fold_from && cursor.to >= fold_to) {
                 is_folded = true
@@ -493,9 +475,8 @@
     }
 
     // ── layout maths ─────────────────────────────────────────────────────────
-    //   y-coords are percentages of the strip's height.  The strip is the same
-    //   height as the editor, so a region spanning lines [a..b] of total N
-    //   takes y = ((a-1)/N * 100)% to (b/N * 100)%.
+    //   y-coords are percentages of the strip height.  A region spanning lines
+    //   [a..b] of total N takes y = ((a-1)/N * 100)% to (b/N * 100)%.
 
     function band_top(line: number): string {
         return `${((line - 1) / total_lines) * 100}%`
@@ -541,10 +522,7 @@
 
         <!-- Labels: rendered separately so band height doesn't squash them.
              Each is an absolutely-positioned row at the region's top line.
-             Overflow allowed — long labels extend left over the strip.
-             Depth shrinks font-size and dims color so nesting reads visually
-             rather than just from indent: top-level labels are bold and bright,
-             children are smaller and dimmer. -->
+             Depth shrinks font-size and dims color so nesting reads visually. -->
         {#each regions as r (r.from_line + ':' + r.label)}
             <div class="lmm-row" style="
                     top: {band_top(r.from_line)};
@@ -564,13 +542,13 @@
             </div>
 
             {#if !is_collapsed(r)}
-                <!-- Points: promoted methods, shown as full-width rows with
-                     method name always visible.  Higher z-index so they sit
-                     on top of stripes; warning style when unresolved. -->
+                <!-- Points: graft-resolved markers, always-visible label.
+                     Higher z-index so they sit above stripes and region rows.
+                     Warning style when graft_stale (pre-compile or name not found). -->
                 {#each r.points as p (p.spec)}
                     <button class="lmm-point" class:lmm-point-bad={p.unresolved}
                             style="top: {band_top(p.line)}; left: {r.depth * 5 + 4}px;"
-                            title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → {p.method} line {p.line}"
+                            title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
                             onclick={() => go_to(p.from, p.to, p.method)}>
                         <span class="lmm-point-dot"></span>
                         <span class="lmm-point-label">{p.method}</span>
@@ -589,19 +567,18 @@
             {/if}
         {/each}
 
-        <!-- Top-level Points — promoted methods that aren't inside any region. -->
+        <!-- Top-level Points — graft-resolved markers not inside any region. -->
         {#each top_level_points as p (p.spec)}
             <button class="lmm-point" class:lmm-point-bad={p.unresolved}
                     style="top: {band_top(p.line)}; left: 4px;"
-                    title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → {p.method} line {p.line}"
+                    title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
                     onclick={() => go_to(p.from, p.to, p.method)}>
                 <span class="lmm-point-dot"></span>
                 <span class="lmm-point-label">{p.method}</span>
             </button>
         {/each}
 
-        <!-- Top-level defs (defs not inside any region) — same tick style,
-             rendered last so they paint over any stripe edges. -->
+        <!-- Top-level defs (not inside any region) — warmer tick color. -->
         {#each top_level_defs as d (d.from)}
             <button class="lmm-def lmm-def-top"
                     style="top: {band_top(d.line)}; left: 4px;"
@@ -651,8 +628,7 @@
          .lmm-stripe — colored bands sized by region line span (z-index 0)
          .lmm-row    — region label rows at each region's top line (z-index 2)
          .lmm-def    — method ticks at each def's line (z-index 1)
-       overflow:hidden on the strip itself; rows are allowed to extend
-       leftward over their parent stripes via negative margin if needed. */
+       overflow:hidden on the strip itself. */
     .lmm-strip {
         position: relative;
         flex: 1;
@@ -666,10 +642,7 @@
         min-height: 2px;
     }
 
-    /* Region label row — fixed height, positioned at the region's top line.
-       Sits above stripes, allowed to overflow horizontally if label is long.
-       The row height adds some pixels which can extend slightly beyond the
-       stripe in tiny regions, but that's better than clipped text. */
+    /* Region label row — fixed height, positioned at the region's top line. */
     .lmm-row {
         position: absolute; right: 0; left: 0;
         z-index: 2;
@@ -700,8 +673,8 @@
     }
     .lmm-label:hover { color: #fff; }
 
-    /* Method def — tick + hover label.  No background, no clipping; the
-       label fades in on hover and is allowed to extend beyond the strip. */
+    /* Method def — tick + hover label.  Label fades in on hover and is
+       allowed to extend beyond the strip edge. */
     .lmm-def {
         position: absolute; right: 4px;
         z-index: 1;
@@ -726,12 +699,11 @@
     }
     .lmm-def:hover .lmm-def-label { opacity: 1; color: #c0d0e0; }
 
-    /* Top-level defs (no enclosing region) get a warmer tick color so they
-       stand out from in-region defs at a glance. */
+    /* Top-level defs (no enclosing region) get a warmer tick color. */
     .lmm-def-top .lmm-def-tick { background: rgba(220, 200, 140, 0.45); }
     .lmm-def-top:hover .lmm-def-tick { background: rgba(220, 200, 140, 0.95); }
 
-    /* Points — user-promoted methods, always-visible label, sit above defs.
+    /* Points — graft-resolved markers, always-visible label, sit above defs.
        The dot anchors the position; label extends to the right.  z-index 3
        so they're above both stripes (0) and rows (2). */
     .lmm-point {
@@ -762,7 +734,7 @@
     }
     .lmm-point:hover .lmm-point-label { color: #fff; }
 
-    /* Unresolved Point — strikethrough + warning red. */
+    /* Unresolved Point (graft_stale) — warning red, strikethrough. */
     .lmm-point-bad .lmm-point-dot { background: #e06c75; }
     .lmm-point-bad .lmm-point-label {
         color: #e06c75; text-decoration: line-through;

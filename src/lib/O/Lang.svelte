@@ -66,6 +66,7 @@
     import LangCompiling from "./LangCompiling.svelte";
     import LangSion from "./LangSion.svelte";
     import LangRegions from "./LangRegions.svelte";
+    import LangGen from "./LangGen.svelte";
 
     let { M } = $props()
 
@@ -361,6 +362,10 @@
         if (docC?.oa({ Compile: 1 })) {
             await this.Lang_compile_step(A, w)
         }
+
+        // language picker + gen button — registered fresh each tick so the
+        // dropdown reflects the active doc's current language override.
+        await this.LangGen_tick(A, w)
 
         const model     = w.c.model as TheC
         const state     = docC?.c.state
@@ -889,3 +894,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangCompiling {M} />
 <LangSion {M} />
 <LangRegions {M} />
+<LangGen {M} />

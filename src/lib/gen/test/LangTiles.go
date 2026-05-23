@@ -47,7 +47,7 @@ severally(A,w,thing) {
 
 },
 laterally(A,w,thing) {
-    this._i_drill(w, [{sc: {thingure: thing, of: 1, word: thing}}, {sc: {really: 1}}])
+    i thingure:$thing,of,word:$thing/really
 
 },
 
