@@ -531,6 +531,7 @@ export class Pier {
         else {
             // haphazardry.
             // < may not be necessary. if both sides think they're inbound?
+            this.P.Otromode || // disabled for refactor|testing
             setTimeout(() => {
                 if (!this.said_hello) {
                     console.warn("saying hello late, to "+this.pub)
@@ -739,6 +740,7 @@ export class Pier {
             return
         }
         else if (this.next_unemission == 'data') {
+            if (typeof data != 'string') console.error(`next_unemission == data, but not string`,data)
             if (typeof data != 'string') throw "not string"
             let crypto = this.next_unemit.crypto
             // check it's them
@@ -879,11 +881,11 @@ export class Pier {
         let delta = data.time - now_in_seconds()
         if (Math.abs(delta) > 5) throw `wonky UTC: now-${delta}`
         console.log(`hello says ${this.pub}`)
-        this.heard_hello = true
         
 
         // they provide their full publicKey
         this.receive_publicKey(data)
+        this.heard_hello = true
         
         // reciprocate or continue
         if (!this.said_hello) {
@@ -905,7 +907,7 @@ export class Pier {
         }
         else {
             // we're looking for the full pubkey from an address
-            if (!publicKey.startsWith(this.pub)) throw `not them`
+            if (!publicKey.startsWith(this.pub)) throw `not them!`
             this.Ud = new Idento()
             this.Ud.publicKey = dehex(publicKey)
             if (this.P.Trusting) {
