@@ -1,7 +1,7 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:25
+      {"mung":["age"]}	self,round:30
       w:PeeringLive
         De:p2pman,finished
           req:init,finished
@@ -10,16 +10,12 @@ Snap:H
           {"ref":{"meddle_fn":"Function()"}}	req,corruption:publicKey,finished
         De:step_4,Destep,finished
           req:watch_error,finished
-        {"mung":["age"]}	self,round:25
+        {"mung":["age"]}	self,round:30
         {"see":"PeeringLive  open:3/3"}
         timeSatisfied
     A:Bearing
-      {"mung":["age"]}	self,round:29
+      {"mung":["age"]}	self,round:34
       w:Bearing
-        scheme:Peering
-          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
-        scheme:Pier
-          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         De:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,finished
           req:register,maz:2,finished
@@ -43,20 +39,16 @@ Snap:H
         Pier,pub:962af4326c28f29b,name:962af4326c28f29b
           protocol_faulty
             Unemit_Error
-              error:not them
+              error:not them!
         De:handshake,target:962af4326c28f29b,finished
           req:said_hello,demand:800,finished
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
-        {"mung":["age"]}	self,round:29
+        {"mung":["age"]}	self,round:34
     A:Nearing
-      {"mung":["age"]}	self,round:29
+      {"mung":["age"]}	self,round:32
       w:Nearing
-        scheme:Peering
-          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
-        scheme:Pier
-          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         De:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,finished
           req:register,maz:2,finished
@@ -74,14 +66,10 @@ Snap:H
           req:heard_hello,maz:2,demand:800,finished
           req:said_trust,maz:3,demand:1500,finished
           req:heard_trust,maz:4,demand:1500,finished
-        {"mung":["age"]}	self,round:29
+        {"mung":["age"]}	self,round:32
     A:Tearing
-      {"mung":["age"]}	self,round:28
+      {"mung":["age"]}	self,round:33
       w:Tearing
-        scheme:Peering
-          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Peering
-        scheme:Pier
-          {"ref":{"sc_has":"Object()","args_fn":"Function()","post_fn":"Function()"}}	lematch,class:Pier
         De:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,finished
           req:register,maz:2,finished
@@ -102,5 +90,5 @@ Snap:H
           req:said_trust,maz:3,demand:1500
           req:heard_trust,maz:4,demand:1500
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        {"mung":["age"]}	self,round:28
+        {"mung":["age"]}	self,round:33
     {"mung":["id"]}	mo:main,interval:3.6

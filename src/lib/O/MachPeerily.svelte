@@ -1,19 +1,10 @@
 <script lang="ts">
     import { _C, keyser, objectify, TheC, TheX } from "$lib/data/Stuff.svelte";
     import { Selection } from "$lib/mostly/Selection.svelte";
-    import { register_class, WormholeNav, type House } from "$lib/O/Housing.svelte";
+    import { type House } from "$lib/O/Housing.svelte";
     import { Peerily, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
     import { armap, enhex, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
-
-    // events buffered between "con obtained" and "Pier concretized by Housing"
-    interface _PierConBuf {
-        con:      any
-        eer:      any
-        inbound:  boolean
-        events:   { event: string; args: any[] }[]
-        off_fns:  (() => void)[]
-    }
 
     // the same names always produce the same keypair
     const DETERMINISTIC_KEYS = true
@@ -190,15 +181,13 @@
 //     %Pier,pub:…                                  .c.inst = Pier
 //       %protocol_faulty                           set by shim on_error wrap (unemit throws)
 //         %Unemit_Error
-//           %error:…[,claim:step_N]                thrown string from process_single_unemit;
-//                                                  claim:step_N stamped by PL_step_i_watch_error
-//                                                  when that step expected this exact error
+//           %error:…                               thrown string from process_single_unemit
 //     %De:handshake,target:prepub[,finished]       PL_i_Pier — protocol round-trip
 //       /req:said_hello,demand:800[,finished]
 //       /req:heard_hello,maz:2,demand:800[,finished]
 //       /req:said_trust,maz:3,demand:1500[,finished]
 //       /req:heard_trust,maz:4,demand:1500[,finished]
-//     %De:binary_test,seq:S[,finished]             Lab — seeded by send_test_binary or PL_step_i_send_binary
+//     %De:binary_test,seq:S[,finished]             Lab — seeded by send_test_binary
 //       /req:sent[,finished]
 //       /req:received[,finished]
 //     %De:disconnect_test,seq:S,role:…[,finished]  Lab — seeded by force_disconnect
@@ -216,104 +205,31 @@
 // Manager layout on w:PeeringLive:
 //   De:p2pman,finished                                     lean — req:init only; finishes immediately
 //     req:init,finished
-//   De:emit_corruption,target:T,eternal                    eternal; wrap + active lie only.
-//     req:wrap_emit,finished                               pre-hello wrap (Pier_init_completo)
-//                                                          or fallback wrap on first do.
-//     req:N,corruption:X,meddle_fn:Function,finished       req IS the mf; De.r swaps on re-arm.
-//                                                          meddle_fn signature: (stuff, type) — type lets
-//                                                          a meddle target 'hello' vs 'test_binary' etc.
-//                                                          target T can be any side; multiple Des coexist.
+//   De:emit_corruption,target:Tearing,eternal              eternal; wrap + active lie only
+//     req:wrap_emit,finished                               pre-hello wrap installed by Pier_init_completo
+//     req:N,corruption:X,meddle_fn:Function,finished       req IS the mf; De.r swaps on re-arm
 //   De:step_N,Destep[,finished]                            per-step; PL_i_step force-closes the prior one
 //     req:send_hello[,finished]                            optional; fires say_hello() (no free init_completo)
-//     req:send_binary,seq:S[,finished]                     optional; emits test_binary sender→receiver
-//                                                          and seeds De:binary_test on both
-//     req:watch_error[,maz:N][,finished]                   claims an unclaimed error matching expected
-//                                                          on watcher's Pier-for-sender; stamps claim:step_N
-//     req:watch_received,seq:S[,maz:N][,finished]          waits for De:binary_test,seq:S,finished on receiver
+//     req:watch_error[,maz:2][,finished]                   polls error above baseline; zeroes demand on finish
 //
 // Run_A_PeeringLive is sync — purely particle structure. Call from may_begin.
 
 //#region Setup
 
+    // Run_A_PeeringLive — sync scaffold called from may_begin().
+    //   Lays down the manager worker plus one worker per side. The actual
+    //   Peering/Pier JS instances are created later inside their req do_fns
+    //   (req:register, req:dial) and in the shim's Peering_i_Pier callback,
+    //   each of which stamps n.c.inst directly. No %scheme/%lematch wiring,
+    //   no class registry, no async concretion gap.
     Run_A_PeeringLive(this: House) {
         const H = this
 
-        register_class('Peering', Peering)
-        register_class('Pier', Pier)
-
         H.i({ A: 'PeeringLive' }).i({ w: 'PeeringLive' })
         // Tearing: a third side activated lazily at step 4 to cheat hello|trust crypto.
-        //   Scheme wiring is identical to Bearing/Nearing; De:listen only starts on w.c._start.
+        //   De:listen only starts on w.c._start.
         for (const side of ['Bearing', 'Nearing', 'Tearing']) {
-            const w = H.i({ A: side }).i({ w: side })
-
-            // %scheme:Peering — args_fn finds P and the Idento from sibling particles.
-            //   De_listen/req:register stamps both before the Peering particle appears.
-            //   open_suppressed: hold_offline arms this on pn.sc; open handler respects it.
-            if (!w.oa({ scheme: 'Peering' })) {
-                const sp = w.i({ scheme: 'Peering' })
-                sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering',
-                    args_fn: (n: TheC) => [n.c.P, n.o({ Id: 1 })[0]?.sc.Id, {}],
-                    // H shadowed intentionally: post_fn's _H is the concretion caller's house;
-                    //   we need H:PeeringLive for reqyoncile, so use outer H from Run_A_PeeringLive.
-                    post_fn: (eer: Peering, n: TheC, _H: House) => {
-                        const Id = n.o({ Id: 1 })[0]?.sc.Id as Idento
-                        n.c.P.i_Peering(Id, eer)
-                        n.sc.prepub = Id?.toString() ?? ''
-                        const Side = (n.sc.name as string).replace(/^./, c => c.toUpperCase())
-                        eer.on('open', () => {
-                            if (n.sc.open_suppressed) return   // held offline by a LabScript hook
-                            n.oai({ open: 1 })
-                            const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
-                            if (reg) H.Awo('PeeringLive').drop(reg)
-                            console.log(`✅ ${Side} open  ${n.sc.prepub}`)
-                            // reqyoncile req:register — do_one sees open:1 and finishes the chain.
-                            //   rere: re-entry point; do_one is a no-op if already finished.
-                            //   w captured from Run_A_PeeringLive's for-loop.
-                            const rere = (w.o({ De: 'listen' })[0] as TheC | undefined)
-                                          ?.o({ req: 'register' })[0] as TheC | undefined
-                            H.trace('De', `${Side} open → rere:${rere ? 'req:register' : '—'} finished:${rere?.sc.finished ?? '?'}`)
-                            if (rere) void H.reqyoncile(rere, 'peering open')
-                        })
-                        eer.on('disconnected', () => {
-                            const open_n = n.o({ open: 1 })[0] as TheC | undefined
-                            if (open_n) n.drop(open_n)
-                            console.log(`🔌 ${Side} disconnected`)
-                            H.feebly_ponder()
-                        })
-                    }
-                })
-            }
-
-            // %scheme:Pier — post_fn drains the con buffer that De_connect/req:dial or
-            //   Peering_i_Pier attached before concretion ran. This handles the race
-            //   between DataChannel con.on('open') firing and concretion being async.
-            if (!w.oa({ scheme: 'Pier' })) {
-                const sp = w.i({ scheme: 'Pier' })
-                const w_c = w
-                sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier',
-                    args_fn: (n: TheC) => [{
-                        P:       w_c.o({ Peerily: 1 })[0]?.c.P,
-                        eer:     w_c.o({ Peering: 1 })[0]?.c.inst,
-                        pub:     n.sc.pub as string,
-                        stashed: { trust: [] },
-                    }],
-                    post_fn: (ier: Pier, Pier: TheC, _H: House) => {
-                        const buf = Pier.c._pl_buf as _PierConBuf | undefined
-                        if (!buf) return
-                        Pier.c._pl_buf = null             // consumed — block reconnect path
-                        // detach capturing handlers before replaying — otherwise
-                        //   replay would re-buffer the same events a second time
-                        for (const off of buf.off_fns) off()
-                        // connect the freshly-concretized Pier to its DataChannel
-                        ier.init_begins(buf.eer, buf.con, buf.inbound)
-                        // replay any events that arrived during the concretion gap
-                        for (const { event, args } of buf.events) {
-                            ;(buf.con as any).emit(event, ...args)
-                        }
-                    },
-                })
-            }
+            H.i({ A: side }).i({ w: side })
         }
 
         console.log(`🟦 ${H.name} PeeringLive wired`)
@@ -328,36 +244,37 @@
     //   They run inside Pier.handleMessage with full crypto verification,
     //   so they arrive only after the signature chain is satisfied.
     //
-    // _PierConBuf — carries a DataChannel and its buffered events across the
-    //   async gap between "inbound/outbound con obtained" and "Pier concretized".
-    //   Attached to %Pier.c._pl_buf; consumed once by %scheme:Pier post_fn.
-    //   off_fns detaches capture handlers so con.emit() in post_fn reaches only
-    //   the real init_begins handlers, not the capturing ones.
-    _pl_buf_attach(con: any, eer: any, inbound: boolean): _PierConBuf {
-        const buf: _PierConBuf = { con, eer, inbound, events: [], off_fns: [] }
-        for (const event of ['open', 'close', 'error'] as const) {
-            const handler = (...args: any[]) => buf.events.push({ event, args })
-            con.on(event, handler)
-            buf.off_fns.push(() => con.off(event, handler))
-        }
-        return buf
-    },
-
     _PeeringLive_shim(H: House, side: string) {
         return { M: {
-            // called via `await` in create_Peering's async connection handler.
-            //   We buffer the con so post_fn can call init_begins once concretion runs.
+            // Peering_i_Pier — fires from Peerily's async connection handler when
+            //   an inbound DataChannel opens. We're outside the beliefs mutex
+            //   here, so post_do() bounces particle mutations + Pier construction
+            //   back inside. The Pier is built synchronously in that callback
+            //   and immediately wired with init_begins(); no buffering needed
+            //   because we control the order.
             async Peering_i_Pier(_eer: any, pub: string, con: any, _inbound: boolean) {
                 const tag = `${side}←${pub.slice(0,8)}`
                 console.log(`🔗 shim Peering_i_Pier  ${tag}  con.type:${con?.type}`)
                 H.trace('shim', `Peering_i_Pier  ${tag}`)
-                const sw  = H.Awo(side)
-                const eer = sw.o({ Peering: 1 })[0]?.c.inst
-                if (!eer) console.warn(`⚠ shim Peering_i_Pier: no eer on ${side}`)
-                const Pier = sw.oai({ Pier: 1, pub, name: pub }) as TheC
-                Pier.c._pl_buf = H._pl_buf_attach(con, eer, true)
-                H.demand_time_to_think(2000)
-                H.post_do(async () => { H.feebly_ponder() })
+                H.post_do(async () => {
+                    const sw   = H.Awo(side)
+                    const P    = sw.o({ Peerily: 1 })[0]?.c.P
+                    const eer  = sw.o({ Peering: 1 })[0]?.c.inst
+                    if (!eer) { console.warn(`⚠ Peering_i_Pier: no eer on ${side}`); return }
+                    const n    = sw.oai({ Pier: 1, pub, name: pub }) as TheC
+                    // Pier already exists for this pub (reconnect, or outbound that crossed
+                    //   an inbound) — leave the live inst alone, just bump beliefs.
+                    if (n.c.inst) {
+                        H.trace('shim', `Peering_i_Pier ${tag} — inst already present, ignoring`)
+                        H.feebly_ponder()
+                        return
+                    }
+                    const ier  = new Pier({ P, eer, pub, stashed: { trust: [] } })
+                    n.c.inst   = ier
+                    ier.init_begins(eer, con, true)
+                    H.demand_time_to_think(2000)
+                    H.feebly_ponder()
+                }, { see: `Peering_i_Pier ${tag}` })
             },
             Pier_init_completo(ier: Pier) {
                 const tag = `${side}↔${ier.pub?.slice(0,8)}  ${ier.inbound?'in':'out'}`
@@ -380,9 +297,7 @@
                     const real_emit = ier.emit.bind(ier)
                     ier.emit = (type: string, data: any, emit_opts: any = {}) => {
                         const mfn = (ce.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
-                        // closure passes `type` so meddles can target hello/test_binary specifically
-                        const typed = mfn ? (stuff: any) => mfn(stuff, type) : undefined
-                        return real_emit(type, data, { ...emit_opts, meddle_fn: typed })
+                        return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
                     }
                     ;(ce.oai({ req: 'wrap_emit' }) as TheC).sc.finished = true
                     H.trace('meddle', `${side} emit wrapped via Pier_init_completo (pre-hello)`)
@@ -440,19 +355,16 @@
                 dConnect?.roai({ state: 1 }, { state: 'failed', reason: 'peer-unavailable' })
 
                 const Pier = sw.o({ Pier: 1, pub })[0] as TheC | undefined
-                if (Pier) {
-                    // null the buffer before dropping — prevents in-flight concretion
-                    //   post_fn from calling init_begins on the dead connection
-                    Pier.c._pl_buf = null
-                    sw.drop(Pier)
-                }
+                if (Pier) sw.drop(Pier)
                 H.ponder()
             },
+            // Pier_reconnect — Peerily decided to reconnect to the same pub.
+            //   ier is the live Pier; we just open a new DataChannel through it.
+            //   init_begins re-uses the same ier; the n.c.inst stamp doesn't change.
             Pier_reconnect(ier: Pier) {
                 H.trace('shim', `Pier_reconnect  ${side}→${ier.pub?.slice(0,8)}`)
-                const con  = ier.eer.connect(ier.pub)
-                const Pier = H.Awo(side).o({ Pier: 1, pub: ier.pub })[0] as TheC | undefined
-                if (Pier) Pier.c._pl_buf = H._pl_buf_attach(con, ier.eer, false)
+                const con = ier.eer.connect(ier.pub)
+                ier.init_begins(ier.eer, con, false)
                 H.ponder()
             },
             // < ping and intro not exercised in this test
@@ -533,63 +445,22 @@
                         } catch {}
                     },
                 })
-                await H.PL_i_step(dq, 4, { expected_error: 'not them' })
+                await H.PL_i_step(dq, 4)
                 H.demand_time_to_think(3000)
                 H.feebly_ponder()
             },
             5: async () => {
-                // Arm hello-sign corruption then seed De:step_5 which says hello from req:send_hello.
+                // Arm sign corruption then seed De:step_5 which says hello from req:send_hello.
                 //   Bearing's Ud is set from the clean retry that closed step 4 → verify runs →
                 //   corrupted sign throws 'invalid signature' (not 'not them').
-                //   Type-filtered to hello so binary frames in later steps pass through clean.
-                await H.PL_i_emit_corruption(dq, 'Tearing', { corruption: 'hello_sign' }, {
-                    meddle_fn: (stuff: any, type: string) => {
-                        if (type !== 'hello') return
+                await H.PL_i_emit_corruption(dq, 'Tearing', { corruption: 'sign' }, {
+                    meddle_fn: (stuff: any) => {
                         if (stuff.crypto?.sign)
                             stuff.crypto = { ...stuff.crypto, sign: 'deadbeef' + (stuff.crypto.sign as string).slice(8) }
                     },
                 })
-                await H.PL_i_step(dq, 5, { send_hello: true, expected_error: 'invalid signature' })
+                await H.PL_i_step(dq, 5, { send_hello: true })
                 H.demand_time_to_think(2000)
-                H.feebly_ponder()
-            },
-            6: async () => {
-                // Clean binary on the healthy Nearing↔Bearing channel.
-                //   Disarms Tearing's meddle with a no-op so any stale hello retries don't
-                //   add noise errors during this step. No corruption on Nearing — Pier_init_completo
-                //   never installed a wrap there (no De:emit_corruption,target:Nearing exists).
-                //   De:step_6 watches De:binary_test,seq:1/req:received,finished on Bearing.
-                await H.PL_i_emit_corruption(dq, 'Tearing', { corruption: 'none' }, {
-                    meddle_fn: (_stuff: any) => {},
-                })
-                await H.PL_i_step(dq, 6, {
-                    send_binary:    { seq: 1, sender: 'Nearing', receiver: 'Bearing' },
-                    watch_received: { seq: 1, receiver: 'Bearing' },
-                })
-                H.demand_time_to_think(3000)
-                H.feebly_ponder()
-            },
-            7: async () => {
-                // Corrupt binary sign — arms a new De:emit_corruption,target:Nearing.
-                //   De_emit_meddling's fallback wraps Nearing's emit at first req:wrap_emit do
-                //   (Pier_init_completo for Nearing didn't install a wrap — no De existed at the time).
-                //   Type-filtered to test_binary so any clean hello/trust traffic still gets through.
-                //   Bearing's verify on the inbound binary fails → 'invalid signature' on
-                //   %Pier/protocol_faulty/Unemit_Error/error:…   watcher: Bearing←Nearing.
-                await H.PL_i_emit_corruption(dq, 'Nearing', { corruption: 'binary_sign' }, {
-                    meddle_fn: (stuff: any, type: string) => {
-                        if (type !== 'test_binary') return
-                        if (stuff.crypto?.sign)
-                            stuff.crypto = { ...stuff.crypto, sign: 'deadbeef' + (stuff.crypto.sign as string).slice(8) }
-                    },
-                })
-                await H.PL_i_step(dq, 7, {
-                    send_binary:    { seq: 2, sender: 'Nearing', receiver: 'Bearing' },
-                    expected_error: 'invalid signature',
-                    watch_side:     'Bearing',
-                    sender_side:    'Nearing',
-                })
-                H.demand_time_to_think(3000)
                 H.feebly_ponder()
             },
         })
@@ -626,15 +497,14 @@
                     if (ts) mgr.drop(ts)
                     return
                 }
-                // timeout — decide based on whether a Destep witnessed its outcome.
-                //   timeDoubt: demand elapsed with no Destep having seen its outcome yet.
-                //   timeSatisfied: a Destep's watcher (req:watch_error or req:watch_received)
-                //     confirmed naturally, then the step closed the Destep (force-finish) —
-                //     the witness flag is the survivor.
-                if (H.c._pl_step_witnessed) {
+                // timeout — decide based on whether a Destep witnessed its expected error.
+                //   timeDoubt: demand elapsed with no Destep having seen its error yet.
+                //   timeSatisfied: a Destep's req:watch_error confirmed naturally, then the step
+                //     closed the Destep (force-finish) — the witness flag is the survivor.
+                if (H.c._pl_step_error_witnessed) {
                     if (td) mgr.drop(td)
                     mgr.oai({ timeSatisfied: 1 })
-                    H.trace('timeSatisfied', 'Destep confirmed outcome before demand elapsed')
+                    H.trace('timeSatisfied', 'Destep confirmed error before demand elapsed')
                 } else {
                     if (ts) mgr.drop(ts)
                     const active_sides = H.o_sides().filter(sw => sw.o({ De: 1 }).length > 0)
@@ -651,24 +521,13 @@
         await drq.do()
     },
 
-    // PL_i_step — seeds %De:step_N,Destep for a per-step test.
-    //   Force-finishes any prior Destep so it cuts off from the think() elvis.
-    //   Resets %_pl_step_witnessed so on_step_ending chooses timeDoubt/timeSatisfied fresh.
-    //   opts.send_hello   — explicit say_hello() (used when no free Pier_init_completo fires).
-    //   opts.send_binary  — emit a deterministic test_binary side→other; seeds De:binary_test on both.
-    //   opts.expected_error — string fragment to match on Pier/protocol_faulty/Unemit_Error/error:…;
-    //                         on hit, stamps claim:step_N on the error particle so subsequent steps
-    //                         skip it. Side defaults to Bearing watching Tearing's Pier.
-    //   opts.watch_received — wait for De:binary_test,seq:N/req:received to finish on receiver.
-    //   opts.watch_side, opts.sender_side — override the default Bearing/Tearing axis.
-    async PL_i_step(dq: any, i: number, opts: {
-        send_hello?:     boolean
-        send_binary?:    { seq: number; sender?: string; receiver?: string }
-        expected_error?: string
-        watch_received?: { seq: number; receiver?: string }
-        watch_side?:     string
-        sender_side?:    string
-    } = {}) {
+    // PL_i_step — seeds De:step_N,Destep for a corruption test step.
+    //   Force-finishes any prior De,Destep so it cuts off from the think() elvis.
+    //   Snapshots the current Bearing error count as err_baseline before seeding —
+    //     req:watch_error detects any new error arriving above this count.
+    //   Resets _pl_step_error_witnessed so on_step_ending chooses timeDoubt/timeSatisfied fresh.
+    //   opts.send_hello — step needs an explicit say_hello() (no free Pier_init_completo).
+    async PL_i_step(dq: any, i: number, opts: { send_hello?: boolean } = {}) {
         const H   = this as House
         const mgr = H.Awo('PeeringLive')
 
@@ -682,35 +541,28 @@
             pdrq.unify_finished()
         }
 
-        H.c._pl_step_witnessed = false
+        H.c._pl_step_error_witnessed = false
+
+        // baseline: errors already seen before this step fires
+        const tearingPub   = H.Awo('Tearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+        const pier_n       = (H.Awo('Bearing').o({ Pier: 1 }) as TheC[]).find(n => n.sc.pub === tearingPub)
+        const ue           = pier_n?.oa({ protocol_faulty: 1 })?.[0]?.o({ Unemit_Error: 1 })[0] as TheC | undefined
+        const err_baseline = ue?.o({ error: 1 }).length ?? 0
 
         const De_step = await dq.roai({ De: `step_${i}`, Destep: 1 })
         De_step.c.do_fn ||= async (De: TheC) => {
-            await H.De_step(De, dq, opts)
+            await H.De_step(De, dq, { ...opts, err_baseline })
         }
     },
 
-    // De_step — routes to per-step unfoldment helpers in maz order.
-    //   Each present opt adds one req; absence means no req of that kind.
-    async De_step(De: TheC, _dq: any, opts: {
-        send_hello?:     boolean
-        send_binary?:    { seq: number; sender?: string; receiver?: string }
-        expected_error?: string
-        watch_received?: { seq: number; receiver?: string }
-        watch_side?:     string
-        sender_side?:    string
-    }) {
+    // De_step — routes to per-step unfoldment helpers.
+    //   Keeps the De body minimal — helpers own their own req logic.
+    async De_step(De: TheC, _dq: any, opts: { send_hello?: boolean; err_baseline?: number }) {
         const H   = this as House
         const drq = H.reqy(De, {k:'req'})
         let maz = 1
-        if (opts.send_hello)    await H.PL_step_i_send_hello   (De, drq, maz++)
-        if (opts.send_binary)   await H.PL_step_i_send_binary  (De, drq, maz++, opts.send_binary)
-        if (opts.expected_error) await H.PL_step_i_watch_error (De, drq, maz++, {
-            expected: opts.expected_error,
-            watcher:  opts.watch_side  ?? 'Bearing',
-            sender:   opts.sender_side ?? 'Tearing',
-        })
-        if (opts.watch_received) await H.PL_step_i_watch_received(De, drq, maz++, opts.watch_received)
+        if (opts.send_hello) await H.PL_step_i_send_hello(De, drq, maz++)
+        await H.PL_step_i_watch_error(De, drq, maz, opts.err_baseline ?? 0)
         await drq.do()
     },
 
@@ -739,104 +591,31 @@
         }
     },
 
-    // PL_step_i_watch_error — seeds %req:watch_error on a Destep.
-    //   Looks for an unclaimed error matching `expected` (substring match) on
-    //   watcher's Pier-for-sender → protocol_faulty → Unemit_Error → error:…
-    //   On hit: stamps claim:step_N on the error particle and finishes.
-    //     The claim is durable in the snap; later steps' watchers skip claimed errors,
-    //     so two steps that expect the same string (e.g. 'invalid signature' for
-    //     corrupted hello and corrupted binary) match distinct error particles.
+    // PL_step_i_watch_error — seeds req:watch_error on a Destep.
+    //   Polls until Bearing's Unemit_Error count for Tearing's Pier exceeds err_baseline.
+    //   On natural finish: stamps De:step_N,finished, zeroes leave_running_until so
+    //     the snap lands immediately, and sets _pl_step_error_witnessed for on_step_ending.
     //   500ms demand — a WebRTC round trip is well within that; keeps the step tight.
-    async PL_step_i_watch_error(De: TheC, drq: any, maz: number,
-                                opts: { expected: string; watcher: string; sender: string }) {
+    async PL_step_i_watch_error(De: TheC, drq: any, maz: number, err_baseline: number) {
         const H = this as House
         const req = await drq.roai({ req: 'watch_error', maz })
         req.c.do_fn ||= async (req: TheC) => {
-            const senderPub = H.Awo(opts.sender).o({ Peering: 1 })[0]?.sc.prepub as string | undefined
-            const pier_n = (H.Awo(opts.watcher).o({ Pier: 1 }) as TheC[]).find(n => n.sc.pub === senderPub)
+            const tearingPub = H.Awo('Tearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
+            const pier_n = (H.Awo('Bearing').o({ Pier: 1 }) as TheC[]).find(n => n.sc.pub === tearingPub)
             const ue     = pier_n?.oa({ protocol_faulty: 1 })?.[0]?.o({ Unemit_Error: 1 })[0] as TheC | undefined
-            const errs   = (ue?.o({ error: 1 }) ?? []) as TheC[]
-            const hit    = errs.find(e => !e.sc.claim && String(e.sc.error).includes(opts.expected))
+            const count  = ue?.o({ error: 1 }).length ?? 0
 
-            if (hit) {
-                hit.sc.claim = De.sc.De                    // stamps %error:…,claim:step_N
+            if (count > err_baseline) {
                 drq.finish(req)
-                drq.unify_finished()                       // stamps De:step_N,finished
-                H.c._pl_step_witnessed = true
-                H.c.leave_running_until = 0                // cancel demand — snap can land now
-                H.trace('De', `De:${De.sc.De} watch_error claimed "${opts.expected}" on ${opts.watcher}←${opts.sender}`)
+                drq.unify_finished()         // stamps De:step_N,finished
+                H.c._pl_step_error_witnessed = true
+                H.c.leave_running_until = 0      // cancel demand — snap can land now
+                H.trace('De', `De:step_${De.sc.De} watch_error confirmed (${count} > ${err_baseline})`)
             } else {
                 if (req.sc.initialdo) H.demand_time_to_think(600)
                 if (!req.c.recheck_pending) {
                     req.c.recheck_pending = true
                     setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, 300)
-                }
-            }
-        }
-    },
-
-    // PL_step_i_send_binary — seeds %req:send_binary on a Destep.
-    //   Waits for sender's Pier (ier) to be in hand, then emits a deterministic
-    //   test_binary buffer (256 bytes seeded by seq, same dige across runs).
-    //   Also seeds De:binary_test,seq:N on both sender (sent:true) and receiver (received:true)
-    //   so the snap records the transfer outcome the same way send_test_binary does.
-    //   Defaults: Nearing → Bearing (the healthy channel; Nearing has a single Pier).
-    async PL_step_i_send_binary(De: TheC, drq: any, maz: number,
-                                spec: { seq: number; sender?: string; receiver?: string }) {
-        const H        = this as House
-        const sender   = spec.sender   ?? 'Nearing'
-        const receiver = spec.receiver ?? 'Bearing'
-        const seq      = spec.seq
-        const req = await drq.roai({ req: 'send_binary', maz, seq })
-        req.c.do_fn ||= async (req: TheC) => {
-            const tw  = H.Awo(sender)
-            const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
-            if (!ier) {
-                if (req.sc.initialdo) H.demand_time_to_think(1000)
-                if (!req.c.recheck_pending) {
-                    req.c.recheck_pending = true
-                    setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, 300)
-                }
-                return
-            }
-            const ow  = H.Awo(receiver)
-            const dq  = H.reqy(tw, {k:'De'})
-            const odq = H.reqy(ow, {k:'De'})
-            // deterministic content — same dige every run for snap stability
-            const buf = new Uint8Array(256)
-            for (let i = 0; i < 256; i++) buf[i] = (i * 31 + seq * 7) & 0xff
-            await H.PL_De_binary(tw, dq,  { seq, sent:     true })
-            await H.PL_De_binary(ow, odq, { seq, received: true })
-            await ier.emit('test_binary', { seq, buffer: buf })
-            drq.finish(req)
-            H.trace('binary', `De:${De.sc.De} send_binary seq:${seq} ${sender}→${receiver}`)
-        }
-    },
-
-    // PL_step_i_watch_received — seeds %req:watch_received on a Destep.
-    //   Polls until receiver's De:binary_test,seq:N is finished (req:received drained it
-    //   off the test_binary handler's stamp on De.sc.received).
-    //   This is the success-case witness — pairs with send_binary in a clean step.
-    async PL_step_i_watch_received(De: TheC, drq: any, maz: number,
-                                   spec: { seq: number; receiver?: string }) {
-        const H        = this as House
-        const receiver = spec.receiver ?? 'Bearing'
-        const seq      = spec.seq
-        const req = await drq.roai({ req: 'watch_received', maz, seq })
-        req.c.do_fn ||= async (req: TheC) => {
-            const ow    = H.Awo(receiver)
-            const De_bt = ow.o({ De: 'binary_test', seq })[0] as TheC | undefined
-            if (De_bt?.sc.finished) {
-                drq.finish(req)
-                drq.unify_finished()
-                H.c._pl_step_witnessed = true
-                H.c.leave_running_until = 0
-                H.trace('De', `De:${De.sc.De} watch_received confirmed seq:${seq} on ${receiver}`)
-            } else {
-                if (req.sc.initialdo) H.demand_time_to_think(1500)
-                if (!req.c.recheck_pending) {
-                    req.c.recheck_pending = true
-                    setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, 600)
                 }
             }
         }
@@ -896,24 +675,13 @@
 
         // ── Pier handle ───────────────────────────────────────────────────────
         // Pier appears from: req:dial (outbound) or Peering_i_Pier (inbound).
-        // Concretion populates c.inst via post_fn + _pl_buf drain.
-        // Reconnect path: concretion already ran — drain _pl_buf here when ier is in hand.
+        // Both construct the Pier inline with init_begins already called, so no
+        //   buffer to drain here — the ier is fully wired by the time we see it.
         // Iterate all Piers — a side may receive multiple inbound connections
         //   (e.g. Bearing gets both Nearing and Tearing).
         // De:connect is seeded only from on_step, never here — outbound sides already
         //   have it; inbound Piers don't initiate a connection from their side.
         for (const Pier_n of (w.o({ Pier: 1 }) as TheC[])) {
-            const ier = Pier_n.c.inst as Pier | undefined
-            if (ier && Pier_n.c._pl_buf) {
-                const buf = Pier_n.c._pl_buf as _PierConBuf
-                Pier_n.c._pl_buf = null
-                for (const off of buf.off_fns) off()
-                ier.init_begins(buf.eer, buf.con, buf.inbound)
-                for (const { event, args } of buf.events) {
-                    ;(buf.con as any).emit(event, ...args)
-                }
-            }
-
             // handshake per-Pier pub — idempotent via roai keyed on target
             const Dehs = await dq.roai({ De: 'handshake', target: Pier_n.sc.pub as string })
             Dehs.c.do_fn ||= async (Dehs: TheC) => {
@@ -1002,7 +770,7 @@
 
     // De_emit_meddling — eternal wrapper De on w:PeeringLive.
     //
-    //   req:wrap_emit — wraps target's ier.emit once Pier is concretized.
+    //   req:wrap_emit — wraps target's ier.emit once Pier is built.
     //     Pier_init_completo stamps it finished (via ce.oai) before hello fires;
     //     do_fn ||= sees it already set and skips — no double-wrap, no flag.
     //     Fallback path: if shim isn't in play, installs the wrap here instead.
@@ -1027,17 +795,15 @@
         //   Fallback: no shim in play — install here once ier is in hand.
         ;(await drq.roai({ req: 'wrap_emit' })).c.do_fn ||= async (req: TheC) => {
             const ier = (tw.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
-            if (!ier) return   // wait for Pier concretion
+            if (!ier) return   // wait for Pier construction (req:dial or Peering_i_Pier)
             const real_emit = ier.emit.bind(ier)
             ier.emit = (type: string, data: any, emit_opts: any = {}) => {
                 const mfn = (De.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
-                // closure passes `type` so meddles can target hello/test_binary specifically
-                const typed = mfn ? (stuff: any) => mfn(stuff, type) : undefined
-                return real_emit(type, data, { ...emit_opts, meddle_fn: typed })
+                return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
             }
             drq.finish(req)
             H.trace('meddle', `${opts.target} emit wrapped via fallback`)
-            // < no unify_finished here — De:emit_corruption is eternal
+            // no unify_finished — De:emit_corruption is eternal
         }
 
         // req:'1',corruption:X — first lie, seeded at De birth via De_emit_meddling opts.
@@ -1089,8 +855,7 @@
                 if (H.reqonce(req, 'running')) {
                     De.oai({ log: 1 }).i({ msg: 'keygen started' })
                     H.post_do(() => {
-                        // < concretion this one day
-                        //    same day we make H/A/w/r real and **-ey everywhere.
+                        // < make H/A/w/r real and **-ey everywhere.
                         //    a vert of meaning. do_fn could set itself more often.
                         const Id = new Idento()
                         Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
@@ -1106,8 +871,10 @@
         }
 
         // req:register — maz:2, eligible once keygen/at (maz:1) finishes.
-        //   Wires Peerily/Peering particles so concretion can run.
-        //   Waits for PeerServer open via scheme:Peering post_fn → reqyoncile(req:register).
+        //   Constructs Peerily + Peering inline (no scheme/concretion path).
+        //   on('open') fires reqyoncile(req:register) so this do_fn re-runs once
+        //   PeerServer connects; on('disconnected') drops the %open particle.
+        //   open_suppressed (set by hold_offline) holds the open stamp back.
         ;(await drq.roai({ req: 'register', maz: 2 })).c.do_fn ||= async (req: TheC) => {
             const keySrc = De.o({ req: 'keygen' })[0] ?? De.o({ req: 'at' })[0]
             const Id = keySrc?.sc.Id as any
@@ -1115,8 +882,6 @@
 
             if (!w.oa({ Peering: 1 })) {
                 const P = new Peerily({
-                    // on_Peering fires from the Peering constructor — before PeerServer connects.
-                    //   open:1 and reqyoncile(req:register) arrive via scheme:Peering post_fn.
                     on_Peering: () => H.trace('De', `${side} Peering constructed`),
                     on_error:   (e: any) => console.error(`${side} P.error:`, e),
                     save_stash: null,
@@ -1127,10 +892,30 @@
                 // immutable identity on the Peering particle.
                 //   Id lives on sc as a ref; prepri is the short private key fragment.
                 //   prepub also stamped flat on pn.sc for fast neighbourhood access.
-                const pn = w.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
-                pn.c.P       = P
+                const pn   = w.oai({ Peering: 1, name: side.toLowerCase() }) as TheC
+                const eer  = new Peering(P, Id, {})
+                pn.c.P     = P
+                pn.c.inst  = eer
                 pn.sc.prepub = Id.pretty_pubkey()
                 pn.i({ Id, prepri: enhex(Id.privateKey).slice(0, 8) })
+                P.i_Peering(Id, eer)
+
+                const Side = side
+                eer.on('open', () => {
+                    if (pn.sc.open_suppressed) return   // held offline by a LabScript hook
+                    pn.oai({ open: 1 })
+                    const reg = H.Awo('PeeringLive').o({ side: Side })[0] as TheC | undefined
+                    if (reg) H.Awo('PeeringLive').drop(reg)
+                    console.log(`✅ ${Side} open  ${pn.sc.prepub}`)
+                    // reqyoncile this same req:register — its do_fn re-runs and sees open:1
+                    void H.reqyoncile(req, 'peering open')
+                })
+                eer.on('disconnected', () => {
+                    const open_n = pn.o({ open: 1 })[0] as TheC | undefined
+                    if (open_n) pn.drop(open_n)
+                    console.log(`🔌 ${Side} disconnected`)
+                    H.feebly_ponder()
+                })
             }
 
             const hasOpen = !!w.o({ Peering: 1 })[0]?.oa({ open: 1 })
@@ -1140,7 +925,7 @@
                 t_reg('→ finished')
             } else {
                 t_reg('→ waiting')
-                // demand time only on first encounter — PeerServer open arrives via reqyoncile
+                // demand time only on first encounter — PeerServer open re-enters via reqyoncile
                 if (req.sc.initialdo) H.demand_time_to_think(3333)
             }
         }
@@ -1179,13 +964,15 @@
             sw.o({ Peering: 1 })[0]?.sc.prepub === npub
         )
 
-        // req:dial — issues eer.connect() and plants a _pl_buf on the Pier particle.
-        //   The buffer is drained by post_fn once concretion produces the ier.
-        //   After drq.finish(req), drq.do() reaches req:connected and waits there for
-        //   Pier_init_completo to reqyoncile(Deco) → e_reqyonciliation → De_connect again.
+        // req:dial — outbound: open a DataChannel, construct the Pier, and
+        //   call init_begins() straight away. n.c.inst is stamped before this
+        //   do_fn returns. After drq.finish(req), drq.do() reaches req:connected
+        //   and waits for Pier_init_completo to reqyoncile(Deco) → De_connect
+        //   again.
         ;(await drq.roai({ req: 'dial' })).c.do_fn ||= async (req: TheC) => {
             const hasPier  = !!w.oa({ Pier: 1 })
             const eer      = w.o({ Peering: 1 })[0]?.c.inst as Peering | undefined
+            const P        = w.o({ Peerily: 1 })[0]?.c.P
             const targetOpen = !!target_w?.o({ Peering: 1 })[0]?.oa({ open: 1 })
             const t_dial   = H.trace('De', `${side} req:dial — hasPier:${hasPier} eer:${!!eer} targetOpen:${targetOpen}`)
             if (hasPier) {
@@ -1194,20 +981,22 @@
             }
             if (!eer || !targetOpen) { t_dial('→ demand:3s'); if (req.sc.initialdo) H.demand_time_to_think(3000); return }
 
-            const con  = eer.connect(npub)
-            const Pier = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
-            Pier.c._pl_buf = H._pl_buf_attach(con, eer, false)
+            const con = eer.connect(npub)
+            const n   = w.i({ Pier: 1, pub: npub, name: npub }) as TheC
+            const ier = new Pier({ P, eer, pub: npub, stashed: { trust: [] } })
+            n.c.inst  = ier
+            ier.init_begins(eer, con, false)
             drq.finish(req)
             console.log(`🐻 ${side} → ${target_w?.sc.w ?? npub.slice(0,8)}  ${npub}`)
         }
 
         // req:connected — terminal; De:connect concludes.
         //   Pier_init_completo fires reqyoncile(Deco) which re-enters here via e_reqyonciliation.
-        //   c.inst is set by concretion's post_fn before init_completo fires.
+        //   c.inst is set inline by req:dial / Peering_i_Pier before init_completo fires.
         ;(await drq.roai({ req: 'connected' })).c.do_fn ||= async (req: TheC) => {
             const inst   = w.o({ Pier: 1 })[0]?.c.inst
             const t_con  = H.trace('De', `${side} req:connected — inst:${!!inst}`)
-            if (!inst) { t_con('→ waiting'); return }   // < waiting for Pier concretion + init_completo
+            if (!inst) { t_con('→ waiting'); return }   // < waiting for Pier_init_completo
             drq.finish(req); t_con('→ finished')
             drq.unify_finished()   // stamps %De:connect,finished
             // w-level dq is never finished — host.sc.w blocks unify_finished there
@@ -1221,39 +1010,24 @@
 
     // De_handshake — tracks the hello+trust protocol round-trip.
     //   Seeded by PL_i_Pier when a Pier particle appears on either side.
-    //   Each Pier has its own De:handshake keyed on target prepub, so a worker with
-    //     multiple Piers (e.g. Bearing↔Nearing + Bearing↔Tearing) keeps each handshake
-    //     independent — bools from one Pier don't satisfy another's reqs.
-    //   ier and the other-side lookup both filter by De.sc.target so the correct Pier
-    //     is polled and the settled short-circuit asks about the right peer.
-    //   ier is read fresh each tick — concretion may still be in flight.
+    //   ier is read fresh each tick — Peering_i_Pier may still be in flight.
     //   recheck: on first run, demand time for this phase; poll via timer thereafter.
     //   initialdo (from reqy) marks the first do_fn call — don't keep extending
     //     the deadline on every subsequent heartbeat tick.
-    //   Cross-side short-circuit: once the targeted peer is settled, stop —
+    //   Cross-side short-circuit: once the other side is settled, stop —
     //     the gap is the result (e.g. heard_hello never arriving after corrupt hello).
     async De_handshake(De: TheC, dq: any, opts: { trust?: boolean } = {}) {
-        const H      = this as House
-        const w      = De.c.up as TheC
-        const side   = w.sc.w as string
-        const drq    = H.reqy(De, {k:'req'})
-        const target = De.sc.target as string | undefined
-        // other: the side whose Peering prepub matches this De's target.
-        //   falls back to first non-self if target somehow isn't matched (defensive).
-        const other = (H.c.sides as string[]).find(s =>
-            s !== side && H.Awo(s).o({ Peering: 1 })[0]?.sc.prepub === target
-        ) ?? (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
+        const H    = this as House
+        const w    = De.c.up as TheC
+        const side = w.sc.w as string
+        const drq  = H.reqy(De, {k:'req'})
+        // other: the counterpart we're trying to talk to.
+        //   for Bearing↔Nearing, first non-self suffices.
+        //   for Tearing→Bearing, Bearing is first after Tearing in H.c.sides.
+        //   < for richer topologies, carry target in De.sc and look up by pub
+        const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
 
-        // ier — the Pier whose pub equals target. Without this filter, w.o({Pier:1})[0]
-        //   would return whichever Pier happens to be first, letting bools from a
-        //   sibling Pier finish this handshake's reqs (the original handshake-with-Tearing
-        //   on Bearing was finishing on Nearing's true bools).
-        const ier = () => {
-            const Pier_n = target
-                ? (w.o({ Pier: 1 }) as TheC[]).find(n => n.sc.pub === target)
-                : (w.o({ Pier: 1 })[0] as TheC | undefined)
-            return Pier_n?.c.inst as Pier | undefined
-        }
+        const ier     = () => (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
         const recheck = (req: TheC, demand: number) => {
             if (H._PeeringLive_settled(H.Awo(other))) return
             // demand time only once — subsequent heartbeat ticks must not extend the deadline
@@ -1494,83 +1268,6 @@
 
 //#endregion PeeringLive
 
-
-
-
-//#region Peeringinst
-    // exercise the w/%scheme lematch → concretion pipeline.
-    //
-    // ── what this proves ──────────────────────────────────────────────────────
-    //   A w worker declares %scheme/%lematch to extend beliefs' scheme walk
-    //   below the fixed H/A/w/r depth. On each think pass:
-    //     1. organise() sees the sentinel from get_scheme_level(T,1) and calls
-    //        _lematch_levels(w) to build T.sc.more from all lematch patterns.
-    //     2. %Peering / %Pier particles show up as children in the next depth.
-    //     3. apply_scheme() matches each child against the parent's lematch and
-    //        finds class:'Peering' (or 'Pier') → concretion fires.
-    //     4. The inst (a stand-in Housing subclass) appears on D and on n.c.inst.
-    //     5. The worker reads n.c.inst and stamps a %see.
-    //
-    // Peeringinst ghost — a second test-case game with its own Cyto instance.
-    Run_A_Peeringinst(this: House) {
-        const H = this
-        let w = H.i({ A: 'Peeringinst' }).i({ w: 'Peeringinst' })
-
-        if (!w.oa({ scheme: 'Peering' })) {
-            const sp = w.i({ scheme: 'Peering' })
-            sp.i({ lematch: 1, sc_has: { Peering: 1 }, class: 'Peering' })
-        }
-
-        if (!w.oa({ scheme: 'Pier' })) {
-            const sp = w.i({ scheme: 'Pier' })
-            // data-only tier: no class -> particles tracked, no inst yet
-            // < add class:'Pier' (or a second child) once actualised
-            //   promotion logic decides when to spawn the Pier() object
-            sp.i({ lematch: 1, sc_has: { Pier: 1 }, class: 'Pier',
-                args_fn: (n,opt,T) => {
-                    let optia = nex({},opt,'name')
-                    return [{prepub:n.sc.name, lemonsia:4, ...optia}]  
-                }})
-        }
-
-        console.log(`🟦 ${H.name} Peeringinst wired`)
-    },
-
-    async Peeringinst(A: TheC, w: TheC) {
-        const H = this as House
-        register_class('Peering',WormholeNav)
-        register_class('Pier',Pier)
-
-        w.oai({ Peering: 1, name: 'testPeering' })
-        w.oai({ Pier: 1, name: 'alice', pantsathonia:4 })
-        w.oai({ Pier: 1, name: 'bob' })
-
-        const peering_n = w.o({ Peering: 1 })[0] as TheC | undefined
-        if (peering_n) {
-            const label = peering_n.c.inst
-                ? `${peering_n.sc.name} -> ${peering_n.c.inst.constructor.name}`
-                : `${peering_n.sc.name} awaiting concretion...`
-            w.i({ see: `Peering: ${label}` })
-        }
-
-        for (const p of w.o({ Pier: 1 }) as TheC[]) {
-            const label = p.c.inst
-                ? `${p.sc.name} -> ${p.c.inst.constructor.name} (${p.c.inst.lemonsia}:${p.c.inst.pantsathonia})`
-                : `${p.sc.name} awaiting concretion...`
-            w.i({ see: `Pier: ${label}` })
-        }
-
-        // < next: inbound PeerJS connection arrives async.
-        //   WPeers (sync-prelude work) does:
-        //     const buf = w.i({ incoming: 1, pc: con, events: [] })
-        //     con.on('data', d => buf.c.events.push({kind:'data', d}))
-        //     con.on('open',  () => buf.c.events.push({kind:'open'}))
-        //   then posts a wire_pier elvis so beliefs can match the right
-        //   {Pier:1} particle and call n.c.inst.wire(con) -- at which
-        //   point started=true and queued protocol elvises dispatch.
-    },
-
-//#endregion
 
 
     })

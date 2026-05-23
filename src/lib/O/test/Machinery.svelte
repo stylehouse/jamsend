@@ -1,7 +1,7 @@
 <script lang="ts">
     import { _C, keyser, objectify, TheC, TheX } from "$lib/data/Stuff.svelte";
     import { Selection } from "$lib/mostly/Selection.svelte";
-    import { register_class, WormholeNav, type House } from "$lib/O/Housing.svelte";
+    import { WormholeNav, type House } from "$lib/O/Housing.svelte";
     import { Peerily, Peering, Pier } from "$lib/p2p/Peerily.svelte.ts";
     import { armap, depeel, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
@@ -483,7 +483,7 @@ The double-envelopment became the template for every subsequent battle of annihi
 
 //#endregion
 
-//#region PotPlaner < remake
+//#region PotPlaner < remake without concretion
 
     // Exercises the %scheme/%lematch → concretion pipeline with a mock class.
     //
@@ -517,7 +517,7 @@ The double-envelopment became the template for every subsequent battle of annihi
                 started = true
                 constructor(opt: { name: string }) { this.name = opt.name }
             }
-            register_class('Sprout', MockSprout as any)
+            // register_class('Sprout', MockSprout as any)
             const sp = w.i({ scheme: 'Sprout' })
             sp.i({
                 lematch: 1, sc_has: { Sprout: 1 }, class: 'Sprout',
