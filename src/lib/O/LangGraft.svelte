@@ -4,83 +4,66 @@
     // ── What this is ─────────────────────────────────────────────────────────
     //
     //   A Point in a Waft Doc is a *name* (method, label, stack-path…) that
-    //   should be rendered in CM with a glow and fold treatment.  Before any of
-    //   that can happen the Point needs a CM char offset — a `from`.
+    //   should be rendered in CM with a glow and fold treatment.  Before any
+    //   of that can happen the Point needs a CM char offset — a from/to.
     //
-    //   This subsystem ("grafting") bridges the gap:
+    //   This subsystem ("grafting") bridges the gap.  Each Lang tick, for
+    //   every Point attached to a currently-loaded doc:
     //
-    //     1.  After compile (or on each Lang tick), for every Point attached to
-    //         the currently-loaded docs, resolve the Point's spec against the
-    //         compile index (exact method match, then fuzzy, then give up).
+    //     1. resolve the Point's spec against the compile index (exact method
+    //        match, then case-insensitive substring, then graft_stale:1)
+    //     2. ensure a *graft bookmark* exists on docC (same StateEffect path
+    //        as Ctrl+B marks — CM's RangeSet then auto-remaps from/to on
+    //        every edit, for free)
+    //     3. stamp the live position back onto the Point particle:
+    //          pt.sc.graft_bm    bookmark id (stable across edits)
+    //          pt.sc.graft_from  live char offset
+    //          pt.sc.graft_to    live char offset
+    //          pt.sc.graft_line  1-based line at last graft
+    //          pt.sc.graft_stale 1|undef
     //
-    //     2.  For each resolved Point, ensure a bookmark exists on the docC
-    //         particle.  If a graft-bookmark already covers the right range it
-    //         is reused; if not, a new one is created (invisible to the user but
-    //         tracked by CM's RangeSet so its from/to stays live through edits).
-    //
-    //     3.  Stamp the graft result back onto the Point particle itself:
-    //           pt.sc.graft_from  = bookmark.sc.from   (char offset, live)
-    //           pt.sc.graft_to    = bookmark.sc.to
-    //           pt.sc.graft_bm    = bookmark.sc.bookmark  (id — stable across edits)
-    //           pt.sc.graft_line  = resolved def line number
-    //           pt.sc.graft_stale = 1   (set when Point exists but doc hasn't been
-    //                                   compiled yet — minimap shows it unresolved)
-    //
-    //     4.  DocMinimap reads pt.sc.graft_from / pt.sc.graft_line directly
-    //         instead of resolving from scratch.  No more collect_point_specs_for_path().
+    //   DocMinimap reads pt.sc.graft_from / graft_line directly — no
+    //   resolution work in the minimap.
     //
     // ── Graft bookmarks ───────────────────────────────────────────────────────
     //
-    //   Graft bookmarks are stamped with graft:1 on their sc so they can be
-    //   distinguished from user Ctrl+B bookmarks:
-    //     docC/{bookmark:'bm_…', from, to, label, graft:1, point_serial}
+    //   Stamped with sc.graft:1 to distinguish them from user Ctrl+B bookmarks.
+    //   Langui filters them out of the user-visible bookmark panel.
+    //   Otherwise identical: same Decoration.mark in bookmarkField, same
+    //   RangeSet, same e_Lang_update_bookmarks position flush path.
     //
-    //   They are created via the same addBookmarkMark StateEffect path as
-    //   ordinary bookmarks so CM's RangeSet tracks them identically.  They do
-    //   NOT appear in the DocPoint UI (DocPoint filters graft:1 out).
+    //   id shape: bm_graft_<from>_<to>   — the offset at graft time, used only
+    //   for de-duplication.  The Point holds the id as its handle; the bookmark
+    //   particle's live from/to is what matters after edits remap things.
     //
-    // ── Identity across moves ─────────────────────────────────────────────────
+    // ── Identity across edits ─────────────────────────────────────────────────
     //
-    //   Because graft bookmarks live in CM's RangeSet, they automatically
-    //   remap their from/to on every edit (RangeSet.map is called by bookmarkField
-    //   on every transaction).  The periodic e_Lang_update_bookmarks push writes
-    //   those live positions back to docC.sc.from/to — so pt.sc.graft_from
-    //   is always fresh within the 800 ms debounce window.
-    //
-    //   Graft bookmarks survive doc-switch: they're part of the saved EditorState
-    //   in stateCache and come back when the doc is revisited.
+    //   Because graft bookmarks live in CM's RangeSet, RangeSet.map updates
+    //   their from/to on every transaction.  The periodic Lang_update_bookmarks
+    //   push writes those live positions back to the bookmark particle — so
+    //   docC's bookmark is always fresh within the 800 ms debounce window,
+    //   and pt.sc.graft_from is refreshed on the next graft pass after that.
     //
     // ── Re-grafting ───────────────────────────────────────────────────────────
     //
-    //   Lang_graft_points() is called from w:Lang each tick, guarded by a
-    //   cache key so it only re-runs when docC.version or compile output changes.
-    //   When the compile index is updated the guard is cleared and a full
-    //   re-graft runs — existing graft bookmarks are reused when the resolved
-    //   from matches, deleted and recreated when it shifts (method moved in doc).
+    //   Lang_graft_points() is called from w:Lang each tick.  Guarded by
+    //   w.c.graft_serial_map[path] keyed on `${docC.version}:${output.version}`,
+    //   so it only does real work when docC or the compile index has changed.
+    //   When the compile index changes (method moved in the doc), existing graft
+    //   bookmarks covering the right range are reused; mismatched ones are
+    //   dropped and recreated.
     //
     // ── Cross-doc ─────────────────────────────────────────────────────────────
     //
-    //   A Point whose Doc path differs from the active doc is grafted the same
-    //   way, but the resolved from/to may be stale if that doc's CM state hasn't
-    //   been seen yet.  graft_stale:1 is set in that case.  Once the user opens
-    //   that doc and the EditorState is alive, the next tick grafts it properly.
+    //   A Point whose Doc path doesn't match any currently-loaded docC stays
+    //   graft_stale:1 until that doc is opened and compiled — then the next
+    //   tick grafts it.
     //
-    // ── Particle layout (additions) ───────────────────────────────────────────
-    //
-    //   On each Point particle (in Waft Doc):
-    //     sc.graft_bm    string    bookmark id anchoring this Point in CM
-    //     sc.graft_from  number    live char offset (remapped by CM on every edit)
-    //     sc.graft_to    number    live char offset (end of def signature line)
-    //     sc.graft_line  number    1-based line number at last graft
-    //     sc.graft_stale 1|undef   set when Point exists but resolve failed
-    //
-    //   On each graft bookmark particle (under docC):
-    //     sc.bookmark     string   bm_… id
-    //     sc.from         number
-    //     sc.to           number
-    //     sc.label        string   same as Point method/label for tooltip display
-    //     sc.graft        1        distinguishes from user Ctrl+B bookmarks
-    //     sc.point_serial number   Point's Waft-serial for stable round-trip
+    //   < positional Points (Point identified by sc.from/sc.to rather than by
+    //     name) are not yet supported; they would short-circuit resolution and
+    //     directly create a graft bookmark at those offsets.
+    //   < stack-path resolution ("story_save / if runH") deferred — currently
+    //     handled by Lang_resolve_point but not yet used here.
 
     import { onMount } from "svelte"
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -95,65 +78,63 @@
 
     // ── Lang_graft_points ─────────────────────────────────────────────────────
     //
-    //   Called from w:Lang each tick (after compile check).
-    //   Iterates every Waft/Doc/Point for the docs we have loaded in Lang,
-    //   resolves each Point to a char offset, and ensures a graft bookmark exists.
-    //
-    //   Guard: skips when neither docC.version nor compile output serial changed
-    //   since last run.  The serial is stored on w.c.graft_serial_map[path].
+    //   Called from w:Lang each tick (synchronous; cheap when guard matches).
+    //   Iterates every loaded docC, looks up every Point in every Waft that
+    //   targets that doc, and ensures each Point has a graft bookmark.
     Lang_graft_points(w: TheC) {
         const H = this as House
         const docs_c = w.o({ docs: 1 })[0] as TheC | undefined
         if (!docs_c) return
 
-        // reach Lies's w to walk Wafts
-        const ave     = H.oai_enroll(H, { watched: 'ave' })
-        const ex      = ave.o({ examining: 1 })[0] as TheC | undefined
-        const lies_w  = ex?.c?.w as TheC | undefined
+        // reach Lies's w via ave/{examining:1}/c.w (set up by Lies one-time wiring)
+        const ave    = H.oai_enroll(H, { watched: 'ave' })
+        const ex     = ave.o({ examining: 1 })[0] as TheC | undefined
+        const lies_w = ex?.c?.w as TheC | undefined
         if (!lies_w) return
 
-        w.c.graft_serial_map ||= {} as Record<string, number>
-        const serial_map = w.c.graft_serial_map as Record<string, number>
+        w.c.graft_serial_map ||= {} as Record<string, string>
+        const serial_map = w.c.graft_serial_map as Record<string, string>
 
-        // for each loaded docC, find the methods index and graft any Points
         for (const docC of docs_c.o({ doc: 1 }) as TheC[]) {
             const path = docC.sc.doc as string
 
-            // compile output — from the ave particle that LangCompiling writes to
+            // compile output lives on the ave particle that LangCompiling writes to
             const ave_doc = ave.o({ langtiles_doc: path })[0] as TheC | undefined
             const job     = ave_doc?.o({ Compile: 1 })[0] as TheC | undefined
             const output  = job?.o({ Output: 1 })[0]      as TheC | undefined
             const methods = output?.o({ methods: 1 })[0]  as TheC | undefined
 
-            // Guard: skip if nothing changed since last graft for this doc
-            // version covers docC bookmark adds/removes; output serial covers compiles
+            // Guard: skip if neither docC nor compile output has changed.
+            // docC.version covers bookmark CRUD + Point CRUD on Wafts (via the
+            // watch_c wiring); output.version covers fresh compiles.
             const cache_key = `${docC.version}:${output?.version ?? 0}`
-            if (serial_map[path] === cache_key as any) continue
-            serial_map[path] = cache_key as any
+            if (serial_map[path] === cache_key) continue
+            serial_map[path] = cache_key
 
             const defs = (methods?.o({ def: 1 }) ?? []) as TheC[]
+            const points = this.Lang_collect_points_for_path(lies_w, path)
 
-            // collect all Points across all Wafts that reference this doc
-            const all_points = this.Lang_collect_points_for_path(lies_w, path)
-
-            for (const pt of all_points) {
+            for (const pt of points) {
                 this.Lang_graft_one_point(docC, pt, defs)
             }
+
+            // Reap orphans: graft bookmarks whose Point no longer references
+            // them (e.g. Point deleted in Waftui, or its method renamed and the
+            // resolve landed on a different def).
+            this.Lang_reap_orphan_grafts(docC, points)
         }
     },
 
     // ── Lang_collect_points_for_path ─────────────────────────────────────────
     //
-    //   Walk all Wafts in lies_w, return every Point:1 particle whose parent
-    //   Doc has a matching path.  Supports both old Points:1 container and the
-    //   new direct-child layout (both read, only new written — compat).
+    //   Walk all Wafts in lies_w; return every Point particle whose parent Doc
+    //   has a matching path.  Supports both new direct-child Point:1 layout and
+    //   the legacy Points:1 container layout.
     Lang_collect_points_for_path(lies_w: TheC, path: string): TheC[] {
         const out: TheC[] = []
         for (const waft of lies_w.o({ Waft: 1 }) as TheC[]) {
             for (const doc of waft.o({ Doc: 1, path }) as TheC[]) {
-                // new layout: Point:1 directly on doc
                 for (const pt of doc.o({ Point: 1 }) as TheC[]) out.push(pt)
-                // compat: old Points:1 container
                 const pts_c = doc.o({ Points: 1 })[0] as TheC | undefined
                 if (pts_c) for (const pt of pts_c.o({ Point: 1 }) as TheC[]) out.push(pt)
             }
@@ -163,37 +144,38 @@
 
     // ── Lang_graft_one_point ──────────────────────────────────────────────────
     //
-    //   Resolve a single Point against the def list and ensure its graft bookmark
-    //   exists on docC.  Stamps graft_* fields on pt.sc.
+    //   Resolve a single Point against the def list and ensure its graft
+    //   bookmark exists on docC.
     //
-    //   Resolution order (mirrors DocMinimap's old resolve_point_to_mark):
-    //     1. pt.sc.method exact match against def.sc.method
-    //     2. case-insensitive substring
-    //     3. pt.sc.label exact match (for label-keyed Points)
-    //     4. graft_stale:1 — no match yet
+    //   Resolution order:
+    //     1. exact pt.sc.method against def.sc.method
+    //     2. case-insensitive substring against def.sc.method
+    //     3. exact pt.sc.label against def.sc.method
+    //     4. graft_stale:1 — no match this pass
     //
-    //   < fuzzy stack-path resolution (e.g. "story_save / if runH") is future work.
-    //   < Points keyed by `from`/`to` directly (positional Points) are also future.
+    //   < stack-path resolution is future work
+    //   < positional Points (sc.from/to) bypass resolution entirely (also future)
     Lang_graft_one_point(docC: TheC, pt: TheC, defs: TheC[]) {
-        const spec   = (pt.sc.method ?? pt.sc.label ?? pt.sc.Point) as string | undefined
+        const spec = (pt.sc.method ?? pt.sc.label ?? pt.sc.Point) as string | undefined
         if (!spec || spec === 1 as any) {
-            // no resolvable name — mark stale and skip
             pt.sc.graft_stale = 1
             return
         }
 
         // resolve
-        let matched: TheC | undefined
-        matched ??= defs.find(d => d.sc.method === spec)
+        let matched: TheC | undefined = defs.find(d => d.sc.method === spec)
         if (!matched) {
             const lc = spec.toLowerCase()
             matched = defs.find(d => (d.sc.method as string)?.toLowerCase().includes(lc))
         }
+        if (!matched && pt.sc.label) {
+            matched = defs.find(d => d.sc.method === pt.sc.label)
+        }
 
         if (!matched) {
             pt.sc.graft_stale = 1
-            // leave any existing graft_bm in place — the def may have been removed
-            // temporarily (edit in progress); it'll re-resolve next compile
+            // leave any existing graft_bm in place — the def may have been
+            // removed temporarily mid-edit; next compile re-resolves.
             return
         }
 
@@ -201,15 +183,16 @@
 
         const def_from = matched.sc.from as number
         const def_to   = matched.sc.to   as number
-        const def_line = matched.sc.line  as number
+        const def_line = matched.sc.line as number
 
-        // find existing graft bookmark covering the same range
-        const existing_bm = docC.o({ bookmark: 1, graft: 1 }).find((bm: TheC) =>
-            bm.sc.from === def_from && bm.sc.to === def_to
-        ) as TheC | undefined
+        // reuse: an existing graft bookmark covering exactly this range
+        const existing_bm = (docC.o({ bookmark: 1 }) as TheC[]).find(
+            bm => bm.sc.graft && bm.sc.from === def_from && bm.sc.to === def_to
+        )
 
         if (existing_bm) {
-            // reuse — stamp graft fields from live bookmark positions
+            // stamp live positions from the bookmark — RangeSet has been
+            // remapping it since last graft.
             pt.sc.graft_bm   = existing_bm.sc.bookmark as string
             pt.sc.graft_from = existing_bm.sc.from     as number
             pt.sc.graft_to   = existing_bm.sc.to       as number
@@ -217,18 +200,21 @@
             return
         }
 
-        // create a new graft bookmark
-        const serial = pt.sc.Point as number | string
+        // mint a new graft bookmark
         const id = `bm_graft_${def_from}_${def_to}`
 
-        // remove any stale graft bookmark for this Point (offset shifted after edit)
-        if (pt.sc.graft_bm && pt.sc.graft_bm !== id) {
-            const old_bm = docC.o({ bookmark: pt.sc.graft_bm })[0] as TheC | undefined
-            if (old_bm) {
-                docC.c.removeBookmarkMark && docC.c.view?.dispatch({
-                    effects: docC.c.removeBookmarkMark.of({ id: pt.sc.graft_bm as string })
-                })
-                docC.drop(old_bm)
+        // drop any previous graft bookmark for this Point (offset shifted, or
+        // the resolve landed on a different def than last pass)
+        const prev_bm_id = pt.sc.graft_bm as string | undefined
+        if (prev_bm_id && prev_bm_id !== id) {
+            const prev_bm = (docC.o({ bookmark: prev_bm_id })[0]) as TheC | undefined
+            if (prev_bm) {
+                if (docC.c.removeBookmarkMark && docC.c.view) {
+                    docC.c.view.dispatch({
+                        effects: docC.c.removeBookmarkMark.of({ id: prev_bm_id })
+                    })
+                }
+                docC.drop(prev_bm)
             }
         }
 
@@ -239,14 +225,13 @@
             })
         }
 
-        // create the particle under docC
-        const bm_particle = docC.oai({ bookmark: id })
-        bm_particle.sc.from         = def_from
-        bm_particle.sc.to           = def_to
-        bm_particle.sc.label        = String(spec)
-        bm_particle.sc.graft        = 1
-        bm_particle.sc.point_serial = typeof serial === 'number' ? serial : 0
-        bm_particle.bump_version()
+        // create the bookmark particle under docC
+        const bm = docC.oai({ bookmark: id })
+        bm.sc.from  = def_from
+        bm.sc.to    = def_to
+        bm.sc.label = String(spec)
+        bm.sc.graft = 1
+        bm.bump_version()
 
         // stamp graft fields on the Point
         pt.sc.graft_bm   = id
@@ -255,19 +240,45 @@
         pt.sc.graft_line = def_line
         pt.bump_version()
 
-        console.log(`🔩 graft: Point '${spec}' → bm ${id} [${def_from}..${def_to}] line ${def_line}`)
+        console.log(`🔩 graft ${String(spec)} → ${id} [${def_from}..${def_to}] line ${def_line}`)
+    },
+
+    // ── Lang_reap_orphan_grafts ───────────────────────────────────────────────
+    //
+    //   Remove graft bookmarks no longer referenced by any Point in `points`.
+    //   Called at the end of each per-doc graft pass so deleted Points don't
+    //   leave dangling marks in the editor.
+    Lang_reap_orphan_grafts(docC: TheC, points: TheC[]) {
+        const alive = new Set<string>()
+        for (const pt of points) {
+            const id = pt.sc.graft_bm as string | undefined
+            if (id) alive.add(id)
+        }
+        for (const bm of docC.o({ bookmark: 1 }) as TheC[]) {
+            if (!bm.sc.graft) continue
+            const id = bm.sc.bookmark as string
+            if (alive.has(id)) continue
+            if (docC.c.removeBookmarkMark && docC.c.view) {
+                docC.c.view.dispatch({
+                    effects: docC.c.removeBookmarkMark.of({ id })
+                })
+            }
+            docC.drop(bm)
+            console.log(`🔩 reap orphan graft ${id}`)
+        }
     },
 
     // ── Lang_ungraft_points_for_doc ───────────────────────────────────────────
     //
-    //   Remove all graft bookmarks from a docC (called when doc is unloaded or
-    //   its Points list is cleared).  Clears graft_* fields on attached Points.
+    //   Remove all graft bookmarks from a docC.
     //   < called by future Lang_close_doc
     Lang_ungraft_points_for_doc(docC: TheC) {
-        for (const bm of docC.o({ bookmark: 1, graft: 1 }) as TheC[]) {
+        for (const bm of docC.o({ bookmark: 1 }) as TheC[]) {
+            if (!bm.sc.graft) continue
+            const id = bm.sc.bookmark as string
             if (docC.c.removeBookmarkMark && docC.c.view) {
                 docC.c.view.dispatch({
-                    effects: docC.c.removeBookmarkMark.of({ id: bm.sc.bookmark as string })
+                    effects: docC.c.removeBookmarkMark.of({ id })
                 })
             }
             docC.drop(bm)

@@ -67,6 +67,7 @@
     import LangSion from "./LangSion.svelte";
     import LangRegions from "./LangRegions.svelte";
     import LangGen from "./LangGen.svelte";
+    import LangGraft from "./LangGraft.svelte";
 
     let { M } = $props()
 
@@ -370,6 +371,13 @@
         // language picker + gen button — registered fresh each tick so the
         // dropdown reflects the active doc's current language override.
         await this.LangGen_tick(A, w)
+
+        // graft Waft Points onto CM bookmarks — synchronous, cheap when the
+        // per-doc cache key (docC.version + compile output version) matches.
+        // After this runs, every Point with a resolvable method has fresh
+        // graft_from / graft_line stamped on its sc, ready for DocMinimap to
+        // read directly without re-resolving.
+        this.Lang_graft_points(w)
 
         const model     = w.c.model as TheC
         const state     = docC?.c.state
@@ -899,3 +907,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangSion {M} />
 <LangRegions {M} />
 <LangGen {M} />
+<LangGraft {M} />

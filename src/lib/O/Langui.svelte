@@ -240,9 +240,10 @@
     // Short filename for the bar header.
     let active_name = $derived(active_path ? (active_path.split('/').pop() ?? active_path) : 'no doc')
 
-    // Reactive bookmark list — tracks active_doc.version via ob() so the panel
-    // updates live whenever bookmarks are added, removed, or fuzzified.
-    let bookmarks: TheC[] = $derived(active_doc ? active_doc.ob({ bookmark: 1 }) as TheC[] : [])
+    let bookmarks: TheC[] = $derived(
+        !active_doc ? []
+            : (active_doc.ob({ bookmark: 1 }) as TheC[]).filter(bm => !bm.sc.graft)
+    )
 
     // minimap_open: toggled by the "map" button in the bar.
     // Toggle lives here so the button position doesn't move when the map opens.
