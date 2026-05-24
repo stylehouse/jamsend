@@ -16,11 +16,10 @@
     //
     // ── The cursor ───────────────────────────────────────────────────────────
     //
-    //   ave/%examining,$src_Point_root carries the C to look at — a Waft,
-    //   a What, a Doc, whatever.  The cursor lands at a Something where
-    //   Something/%Point,N may exist or not.  Lang does not dive — it
-    //   reads %Point,N off the cursor's particle directly.  The cursor is
-    //   always within one Doc.
+    //   ave/%examining,$src_Point_root,$src_Waft carries the C to look at —
+    //   a What or a Doc within the Waft identified by %src_Waft.  Lang does
+    //   not dive — it reads %Point,N off the cursor's particle directly.
+    //   The cursor is always within one Doc.
     //
     //   < if Something itself contains nested Whats with their own Points,
     //     the cursor is responsible for landing at the right level.
@@ -101,7 +100,7 @@
         const docC = sig?.c.doc as TheC | undefined
         if (!docC) return
 
-        // cursor: ave/%examining,$src_Point_root
+        // cursor: ave/%examining,$src_Point_root,$src_Waft
         const ex = ave.o({ examining: 1 })[0] as TheC | undefined
         const src_Point_root = ex?.sc.src_Point_root as TheC | undefined
         if (!src_Point_root) {
@@ -111,9 +110,11 @@
         }
 
         // Points are read directly off the cursor.  No dive — the cursor's
-        // job is to land at the right Something.
+        // job is to land at the right Something within a Waft.
         const points: TheC[] = src_Point_root.o({ Point: 1 }) as TheC[]
-        const waft_key = this.Lang_cursor_waft_key(src_Point_root)
+        // Lies stamps %src_Waft on %examining alongside %src_Point_root, so
+        // we get the containing Waft key without walking up from the cursored C.
+        const waft_key = (ex?.sc.src_Waft as string | undefined) ?? '?'
 
         // compile output for resolution
         const ave_doc = ave.o({ langtiles_doc: docC.sc.doc })[0] as TheC | undefined
@@ -180,25 +181,6 @@
 
             this.Lang_ensure_graft(pmirror, def, docC)
         }
-    },
-
-    // ── Lang_cursor_waft_key ─────────────────────────────────────────────
-    //
-    //   The cursor's particle may be a Waft, a What, or a Doc.  If it's
-    //   itself a Waft, %sc,Waft has the key.  Otherwise we look for a
-    //   %sc,src_Waft scalar that the cursor mechanism should be carrying
-    //   (Lies stamps it when the cursor lands inside a Waft).
-    //
-    //   < this is conservative for now; with What containers, the cursor
-    //     should stamp %src_Waft on %examining,1 to identify which Waft
-    //     owns the current Something.  For the initial wiring where the
-    //     cursor lands on the Waft itself, sc.Waft is sufficient.
-    Lang_cursor_waft_key(C: TheC): string {
-        const wk = C.sc.Waft
-        if (wk != null && wk !== 1) return String(wk)
-        const sw = C.sc.src_Waft as string | undefined
-        if (sw) return sw
-        return '?'
     },
 
     // ── Lang_point_spec ──────────────────────────────────────────────────

@@ -107,7 +107,9 @@
     // ── data sources ─────────────────────────────────────────────────────────
     //   docC:      the ave/{langtiles_doc:path} particle (compile output, text).
     //   lang_docC: the w:Lang side {doc:path} particle (holds %Pmirrors,1).
-    //   H.ave.ob() makes ave-version-bumps wake the $effect below.
+    //   H.ave.ob() makes ave-version-bumps wake the $effect below.  The %active_doc,1
+    //   particle is shared across paths and bump_version()s on doc switches, so
+    //   we void-read sig.version to register that as a dep too.
     let docC: TheC | undefined = $state()
     let lang_docC: TheC | undefined = $state()
     $effect(() => {
@@ -115,7 +117,7 @@
             ? H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined
             : undefined
         const sig = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
-        // sig is shared across paths; only treat it as ours when its sc.path matches.
+        void sig?.version
         lang_docC = (sig?.sc.path === active_path)
             ? sig?.c.doc as TheC | undefined
             : undefined

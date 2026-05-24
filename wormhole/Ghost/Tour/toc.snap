@@ -1,7 +1,6 @@
 Waft:Ghost/Tour
   Doc,path:Ghost/test/Hello.g
     Point,method:Idzeugnosis
-    Point,method:Idzeuganise,from:14518,to:14529
+    Point,method:Idzeuganise
   Doc,path:src/lib/p2p/Peerily.svelte.ts
     Point:Pier
-  Doc,path:Ghost/test/LangTiles.g

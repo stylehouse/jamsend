@@ -3,7 +3,7 @@ Library
   Book:LeafFarm,ok_pct,last_run_ms:1779063023.522,done:6,last_pct_change:1778378075.558
   Book:StuffFlipping,ok_pct,last_run_ms:1779062991.785,done,last_pct_change:1776929364.203
   Book:LangTiles,ok_pct:0,last_pct_change:1779603546.62,done:3,last_run_ms:1779603624.478
-  Book:LakeSurfer,ok_pct:0,last_pct_change:1779605631.696,done:2,last_run_ms:1779605631.696,active
+  Book:LakeSurfer,ok_pct,last_pct_change:1779606571.131,done:2,last_run_ms:1779606571.131,active
   Book:Peeringinst,ok_pct:0.5,last_pct_change:1779063073.279,done:2,last_run_ms:1779063093.816
   Book:PeeringLive,ok_pct:0,last_pct_change:1779475874.724,done,last_run_ms:1779532642.862
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778804562.08
