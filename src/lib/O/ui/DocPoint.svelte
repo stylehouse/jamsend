@@ -24,10 +24,11 @@
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
-    let { H, bm, doc_path }: {
-        H:        House
-        bm:       TheC
-        doc_path: string
+    let { H, bm, doc_path, lang_model }: {
+        H:          House
+        bm:         TheC
+        doc_path:   string
+        lang_model?: TheC
     } = $props()
 
     let editing     = $state(false)
@@ -93,8 +94,103 @@
     let exported  = $derived(((void bm.version), bm.sc.point_serial != null))
     let is_fuzzy  = $derived(((void bm.version), !!bm.sc.method))
     let vanished  = $derived(((void bm.version), !!bm.sc.vanished))
+
+    // ── inline syntax tree ───────────────────────────────────────────────────
+    //
+    // When txt mode is active, model/Line:N holds the Lezer hierarchy for the
+    // line this bookmark sits on.  The eye button toggles it open.
+    //
+    // Reaching model: H:Lang's w is found via top_House().Awo('Lang','Lang').
+    // That w is stable — only the model contents change (model.bump_version()
+    // after each whatsthis_txt rebuild signals ob() watchers to re-derive).
+
+    let show_tree = $state(false)
+
+    // sc keys that are positional / bookmarking noise — hidden in the render
+    const HIDDEN = new Set(['from','to','line_from','line_to'])
+    const is_bm_tag = (k: string) => k.startsWith('the_bm_')
+
+    // Line:N particle whose range contains this bookmark's `from`.
+    // lang_model is derived in Langui (where H is reliably H:Lang) and passed
+    // down — no House navigation needed here.
+    // ob() subscribes to lang_model.version so line_c re-derives after each
+    // whatsthis_txt rebuild (which calls model.bump_version()).
+    let line_c = $derived.by((): TheC | undefined => {
+        if (!show_tree || !lang_model) return undefined
+        const from  = bm.sc.from as number
+        const lines = lang_model.ob({ Line: 1 }) as TheC[]
+        return lines.find(l =>
+            (l.sc.line_from as number) <= from && from < (l.sc.line_to as number)
+        )
+    })
+
+    // ── node display helpers ─────────────────────────────────────────────────
+
+    // FNV-1a hash → hue/lightness — same idiom as Storui's trace colouring.
+    // Deterministic: same node type name always maps to the same colour.
+    function _nhash(s: string): number {
+        let h = 0x811c9dc5
+        for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0
+        return h
+    }
+    function _hsl(name: string): string {
+        const hue = _nhash(name) % 360
+        const lit = 44 + (_nhash(name + '~') % 24)   // 44–67
+        return `hsl(${hue},68%,${lit}%)`
+    }
+
+    // First non-positional, non-bm-tag, non-str sc key — the node's type name.
+    // Line:N has value 1144 (not 1), MemberExpression has value 1; we take any.
+    function type_key(node: TheC): string {
+        return Object.keys(node.sc)
+            .find(k => !HIDDEN.has(k) && !is_bm_tag(k) && k !== 'str') ?? '?'
+    }
+
+    // One-line label: type key (with value if not 1) + str folded in.
+    // from/to coords are in HIDDEN and never shown.
+    function node_label(node: TheC): string {
+        const tk  = type_key(node)
+        const val = node.sc[tk]
+        const base = val === 1 ? tk : `${tk}:${val}`
+        const str  = node.sc.str as string | undefined
+        return str !== undefined ? `${base},str:${String(str).slice(0, 60)}` : base
+    }
+
+    // Flatten the TheC subtree into {indent, label, color} lines for <pre> rendering.
+    // Actual space characters so copy-paste preserves the tree shape.
+    type FlatLine = { indent: string, label: string, color: string }
+    function flatten_tree(node: TheC, depth = 0): FlatLine[] {
+        const tk    = type_key(node)
+        const lines: FlatLine[] = [{
+            indent: '  '.repeat(depth),
+            label:  node_label(node),
+            color:  _hsl(tk),
+        }]
+        for (const kid of node.o() as TheC[]) {
+            for (const l of flatten_tree(kid, depth + 1)) lines.push(l)
+        }
+        return lines
+    }
+
+    // Plain text version for clipboard — same indentation, labels stripped of colour.
+    function tree_to_text(node: TheC, depth = 0): string {
+        const prefix = '  '.repeat(depth)
+        const kids   = node.o() as TheC[]
+        const self   = prefix + node_label(node)
+        if (!kids.length) return self
+        return self + '\n' + kids.map(c => tree_to_text(c, depth + 1)).join('\n')
+    }
+
+    async function copy_tree() {
+        if (!line_c) return
+        try { await navigator.clipboard.writeText(tree_to_text(line_c)) }
+        catch { /* clipboard blocked */ }
+    }
 </script>
 
+<div class="dp-wrap">
+
+<!-- ── main bookmark row ───────────────────────────────────────────────── -->
 <div class="dp"
      class:dp-vanished={vanished}
      class:dp-exported={exported}
@@ -123,6 +219,11 @@
     {/if}
 
     <div class="dp-btns">
+        <!-- 👁 tree toggle — shows the syntax hierarchy for this line -->
+        <button class="dp-btn dp-btn-eye" class:dp-btn-eye-on={show_tree}
+                onclick={() => show_tree = !show_tree}
+                title={show_tree ? 'hide syntax tree' : 'show syntax tree'}>👁</button>
+
         <!-- ~ fuzzify: only shown when no method name yet -->
         {#if !is_fuzzy}
             <button class="dp-btn dp-btn-fuzzy" onclick={fuzzify}
@@ -146,7 +247,34 @@
     </div>
 </div>
 
+<!-- ── inline syntax tree ───────────────────────────────────────────────── -->
+{#if show_tree}
+<div class="dp-tree">
+    {#if line_c}
+        {@const flat = flatten_tree(line_c)}
+        <div class="dp-tree-actions">
+            <button class="dp-tree-copy" onclick={copy_tree} title="copy tree as text">⎘ copy</button>
+        </div>
+        <!-- pre preserves the leading spaces that carry the indentation.
+             Each span is one line; the newlines between them come from the
+             block display so copy-paste gets one line per node. -->
+        <pre class="dp-tree-pre">{#each flat as fl}<span class="dp-tn" style="color:{fl.color}">{fl.indent}{fl.label}</span>
+{/each}</pre>
+    {:else}
+        <span class="dp-tree-empty">no tree — add Opt/txtsyntaxdump:1 to w:Lang</span>
+    {/if}
+</div>
+{/if}
+
+</div>
+
 <style>
+    /* ── wrapper ────────────────────────────────────────────────────────── */
+    .dp-wrap {
+        display: flex; flex-direction: column;
+    }
+
+    /* ── bookmark row (unchanged layout) ───────────────────────────────── */
     .dp {
         display: flex; align-items: center; gap: 4px;
         padding: 2px 6px; border-radius: 3px;
@@ -192,4 +320,45 @@
     .dp-btn-export:hover  { color: #50a070 }
     .dp-btn-del:hover     { color: #a05050 }
     .dp-btn-fuzzy:hover   { color: #8070b0 }
+
+    .dp-btn-eye         { font-size: 0.75rem; opacity: 0.3 }
+    .dp-btn-eye:hover   { opacity: 0.7 }
+    .dp-btn-eye-on      { opacity: 1; background: #0d1020 }
+
+    /* ── tree panel ─────────────────────────────────────────────────────── */
+    .dp-tree {
+        padding: 4px 6px 5px 8px;
+        background: #080810;
+        border-top: 1px solid #111120;
+        font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
+        font-size: 0.68rem;
+        overflow-x: auto;
+    }
+
+    .dp-tree-actions {
+        display: flex; justify-content: flex-end;
+        margin-bottom: 2px;
+    }
+    .dp-tree-copy {
+        background: none; border: 1px solid #1a2030;
+        border-radius: 2px; color: #334455; cursor: pointer;
+        font-size: 0.64rem; padding: 0 5px;
+    }
+    .dp-tree-copy:hover { color: #5080a0; border-color: #2a4060 }
+
+    .dp-tree-empty { color: #2a3040; font-style: italic; }
+
+    /* pre: preserves the leading spaces that carry indentation.
+       Inline spans + surrounding newlines give one line per node
+       so browser copy includes the spaces correctly. */
+    .dp-tree-pre {
+        margin: 0; padding: 0;
+        background: transparent;
+        font: inherit;
+        white-space: pre;
+        user-select: text;
+    }
+    /* each span is display:block so it sits on its own line and
+       the leading spaces in its text content are the indentation */
+    .dp-tn { display: block; line-height: 1.5; }
 </style>

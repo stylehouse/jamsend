@@ -400,14 +400,29 @@
         const docC_unchanged = docC?.version === docC?.c.last_docC_version
 
         if (state && bookmarks.length && !(doc_unchanged && docC_unchanged)) {
-            model.empty()
-            this.whatsthis(state, model, bookmarks, opt)
-            this.wherewhatis(model, opt)
-            if (docC) {
-                docC.c.last_whatsthis_doc = state.doc
-                docC.c.last_docC_version  = docC.version
+            if (0) {
+                // Cyto path — flat Line/{node,text} model + cyto_fold constraints
+                model.empty()
+                this.whatsthis(state, model, bookmarks, opt)
+                this.wherewhatis(model, opt)
+                if (docC) {
+                    docC.c.last_whatsthis_doc = state.doc
+                    docC.c.last_docC_version  = docC.version
+                }
+                H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
             }
-            H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+            else if (H.o_Opt_val(w, 'txtsyntaxdump')) {
+                // txt path — nested Lezer hierarchy under model/Line:N/<NodeName>/...
+                // built for the Story snap to render as plain text.  No Cyto ping.
+                model.empty()
+                this.whatsthis_txt(state, model, bookmarks)
+                // bump so DocPoint's $derived(model.ob()) re-fires
+                model.bump_version()
+                if (docC) {
+                    docC.c.last_whatsthis_doc = state.doc
+                    docC.c.last_docC_version  = docC.version
+                }
+            }
         }
         if (!bookmarks.length) model.empty()
 

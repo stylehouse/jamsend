@@ -93,21 +93,23 @@ story:LangTiles
   Opt
     noCyto
     For
+      w:Lang
+        txtsyntaxdump
   TimeSpool
-    TimeTotal:beliefs,avg:1.307
-      sample:2.814,at:1779603589
-      sample:1.355,at:1779603606
-      sample:1.175,at:1779620412
-      sample:1.175,at:1779620427
-      sample:0.558,at:1779620453
-      sample:0.658,at:1779622463
-      sample:0.73,at:1779622573
-      sample:1.603,at:1779622650
-      sample:1.603,at:1779622694
+    TimeTotal:beliefs,avg:0.421
       sample:1.398,at:1779622790
-  step,dige:d7cbc36505e7a9a4
-  step:2,dige:b292a24a550deb43
-  step:3,dige:ec4672fae2bc1eeb
-  step:4,dige:9481abcd140cd9b8
+      sample:0.578,at:1779629475
+      sample:0.329,at:1779631415
+      sample:0.275,at:1779631632
+      sample:0.325,at:1779631691
+      sample:0.229,at:1779631718
+      sample:0.256,at:1779631789
+      sample:0.256,at:1779631838
+      sample:0.314,at:1779631849
+      sample:0.25,at:1779631865
+  step,dige:e5c902401879bbad
+  step:2,dige:197e60e3694eeeb5
+  step:3,dige:effd0caadbf49e4f
+  step:4,dige:7f929e2acba75138
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step:5,dige:4bd382741806c277
+  step:5,dige:d2c2968b25868cc7

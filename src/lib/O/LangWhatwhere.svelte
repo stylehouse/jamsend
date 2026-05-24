@@ -212,6 +212,121 @@
     },
 
 
+//#region whatsthis_txt
+    // whatsthis_txt(state, model, bookmarks) — build a hierarchical, snap-friendly
+    // mirror of the syntax tree inside `model`, mirroring the Lezer node hierarchy
+    // directly:  model/IOing/Path/Leg/Name/%text:1,str:foo
+    //
+    // No constraints, no edges, no folds.  Story's snap will render this as a
+    // plain indented text tree — visually intelligible, copy-pasteable.
+    //
+    // Differences from whatsthis_into:
+    //  - nesting follows the Lezer parent chain via a TheC stack maintained
+    //    parallel to tree.iterate's enter|leave callbacks
+    //  - leaves are %text:1 particles holding `str` (the actual chars)
+    //  - we skip nodes that span beyond the current Line (eg Script[0..43522]
+    //    which Lezer enters as an ancestor of any in-line node) — they swamp
+    //    the snap with the whole file's content
+    //  - we don't measure text, don't emit `order`, don't tag bm_keys —
+    //    none of that is useful for plain-text reading
+    whatsthis_txt(state:EditorState, model:TheC, bookmarks:TheC[]) {
+        const tree = syntaxTree(state)
+        if (!tree || tree.length === 0) return
+        const doc = state.doc
+
+        // collect lines from all bookmarks (same intersection logic as whatsthis_into)
+        const line_set = new Map<number, { line_from: number, line_to: number, bm_ids: string[] }>()
+        for (const bm of bookmarks) {
+            const bm_id = bm.sc.bookmark as string
+            const from  = bm.sc.from as number
+            const to    = bm.sc.to   as number
+            const entries: Array<{ line_from: number, line_to: number }> = []
+            tree.iterate({
+                from, to,
+                enter: (ref) => {
+                    if (ref.name === 'Line' && ref.from < to && ref.to > from) {
+                        entries.push({ line_from: ref.from, line_to: ref.to })
+                    }
+                },
+            })
+            if (!entries.length) {
+                const l = doc.lineAt(from)
+                entries.push({ line_from: l.from, line_to: l.to })
+            }
+            for (const e of entries) {
+                const docLine = doc.lineAt(e.line_from)
+                const ln = docLine.number
+                let slot = line_set.get(ln)
+                if (!slot) {
+                    slot = { line_from: docLine.from, line_to: docLine.to, bm_ids: [] }
+                    line_set.set(ln, slot)
+                }
+                if (!slot.bm_ids.includes(bm_id)) slot.bm_ids.push(bm_id)
+            }
+        }
+
+        // sort lines by line_number so the model reads top-down
+        const sorted_lines = [...line_set.entries()].sort(([a],[b]) => a - b)
+
+        for (const [ln, { line_from, line_to, bm_ids }] of sorted_lines) {
+            // one LineC per doc line — keyed by line number so repeat ticks converge
+            const LineC = model.oai({ Line: ln }, { line_from, line_to })
+            for (const id of bm_ids) LineC.sc[`the_bm_${id}`] = 1
+            LineC.bump_version()
+
+            // Two stacks, both indexed per-enter across the whole iterate:
+            //
+            //   was_skipped[] — boolean per enter: true = this node was excluded
+            //     from the model (out-of-line ancestor, Line wrapper, etc).
+            //     Each leave pops its own flag, so skip/keep decisions never
+            //     bleed across sibling or cousin nodes.
+            //
+            //   The old skip_depth counter broke here: a non-skipped enter
+            //   firing while depth > 0 pushed to stack, but its leave was
+            //   consumed by depth-- and never popped — leaking the stack and
+            //   causing all subsequent nodes to nest under the wrong parent.
+            //
+            //   stack / child_counts only grow on non-skipped enters.
+            const stack:        TheC[]   = [LineC]
+            const child_counts: number[] = [0]
+            const was_skipped:  boolean[] = []
+
+            tree.iterate({
+                from: line_from,
+                to:   line_to,
+                enter: (ref) => {
+                    const { name, from: f, to: t } = ref
+                    // out-of-line ancestors, Line wrapper, grammar roots
+                    const skip = f < line_from || t > line_to
+                               || name === 'Line'
+                               || name === 'Program' || name === 'Script'
+                    was_skipped.push(skip)
+                    if (skip) return
+
+                    const parent = stack[stack.length - 1]
+                    const nodeC  = parent.oai({ [name]: 1, from: f, to: t })
+                    child_counts[child_counts.length - 1]++
+                    stack.push(nodeC)
+                    child_counts.push(0)
+                },
+                leave: (ref) => {
+                    if (was_skipped.pop()) return
+                    const closing     = stack.pop()!
+                    const had_children = child_counts.pop()! > 0
+                    // str lives on the node itself — no %text child needed.
+                    // Every named token is a syntax node; a separate child
+                    // just duplicates it.  Short containers also get str so
+                    // intermediate nodes are self-describing in the snap.
+                    if (!had_children || ref.to - ref.from <= 40) {
+                        const str = doc.sliceString(ref.from, ref.to)
+                        if (str.length <= 120) closing.sc.str = str
+                    }
+                },
+            })
+        }
+    },
+
+
 //#region constraints
     // wherewhatis(model: TheC): void
     //

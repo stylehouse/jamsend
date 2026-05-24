@@ -68,20 +68,22 @@ story:LakeSurfer
     For
       w:Lies
         nogen
+      w:Lang
+        txtsyntaxdump
     trickle
     quiesce_snap_time:0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.336
-      sample:0.294,at:1779614730
-      sample:0.448,at:1779614808
-      sample:0.244,at:1779615580
-      sample:0.307,at:1779617100
-      sample:0.362,at:1779617373
-      sample:0.286,at:1779617558
-      sample:0.153,at:1779620444
-      sample:0.29,at:1779622826
-      sample:0.486,at:1779622916
-      sample:0.486,at:1779622970
+    TimeTotal:beliefs,avg:0.361
+      sample:0.232,at:1779624036
+      sample:0.326,at:1779624067
+      sample:0.265,at:1779626733
+      sample:0.344,at:1779626895
+      sample:0.341,at:1779626958
+      sample:0.354,at:1779627045
+      sample:0.431,at:1779627104
+      sample:0.246,at:1779627241
+      sample:0.355,at:1779628363
+      sample:0.717,at:1779629329
   step,dige:a5ca9a636330e27a
   step:2,dige:8cc3805fe60dcc5a

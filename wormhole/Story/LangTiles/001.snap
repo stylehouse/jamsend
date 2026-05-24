@@ -22,106 +22,25 @@ Snap:H
     A:Lang
       {"mung":["age"]}	self,round:3
       w:Lang
+        Opt
+          txtsyntaxdump
         model,cyto_dir
         docs
           doc:Ghost/test/LangTiles.g,gen_path:gen/test/LangTiles.go,active
-        cyto_root,cyto_id:cytoid_1
         received,doc_opened,doc:Ghost/test/LangTiles.g
         {"mung":["age"]}	self,round:3
         received,editorBegins,doc:Ghost/test/LangTiles.g
-    A:Cyto
-      {"mung":["age"]}	self,round:3
-      w:Cyto,grawave_duration:0.4
-        {"mung":["age"]}	self,round:3
-        {"ref":{"C":"%cyto_root:1, cyto_id:cytoid_1"}}	{"CytoStep":1}
     A:Pantheate
       {"mung":["age"]}	self,round
       w:Pantheate
         {"mung":["age"]}	self,round
         o_elvis:Ghost_update_notify
     watched:ave
-      Styles
-        matstyle:w
-          style:background-color,v:#8f3232
-          meta:is_compound,v
-          meta:label,fmt:%s,keys:w
-        matstyle:model
-          style:background-color,v:#8f8f32
-        matstyle:Bit
-          style:background-color,v:#8e29d6
-        matstyle:see
-          style:background-color,v:#c5b759
-        matstyle:error
-          style:background-color,v:#298699
-        matstyle:bookmark_view
-          style:background-color,v:#bc2476
-        matstyle:Line
-          style:background-color,v:#61bd42
-          style:width,v:46
-          style:height,v:46
-          style:color,v:#000
-        matstyle:node
-          style:background-color,v:#534ed0
-        matstyle:texts
-          style:background-color,v:#a34b1f
-        matstyle:text
-          style:background-color,v:#3aa67e
-        matstyle:bookmark_node
-          style:background-color,v:#bd36c9
-        matstyle:cyto_edge
-          style:background-color,v:#bbdb43
-        matstyle:bookmark_edge
-          style:background-color,v:#32618f
-        matstyle:constraint
-          style:background-color,v:#b12f4a
-        matstyle:edge
-          style:background-color,v:#29d638
-        matstyle:cyto_constraint
-          style:background-color,v:#8259c5
-        matstyle:cyto_cons
-          style:background-color,v:#997429
-        matstyle:cyto_fold
-          style:background-color,v:#24bcb6
-        matstyle:bookmark
-          style:background-color,v:#bd429e
-        matstyle:result
-          style:background-color,v:#89d04e
-        matstyle:include
-          style:background-color,v:#1f35a3
-        matstyle:hut
-          style:background-color,v:#a6483a
-        matstyle:toot
-          style:background-color,v:#36c974
-        matstyle:something
-          style:background-color,v:#af43db
-        matstyle:thung
-          style:background-color,v:#8f8f32
-        matstyle:with
-          style:background-color,v:#2f8bb1
-        matstyle:etc
-          style:background-color,v:#d62970
-        matstyle:yeses
-          style:background-color,v:#66c559
-        matstyle:because
-          style:background-color,v:#3c2999
-        matstyle:Compile
-          style:background-color,v:#bc6a24
-        matstyle:Output
-          style:background-color,v:#42bd9f
-        matstyle:received
-          style:background-color,v:#d04eca
-        matstyle:Pending
-          style:background-color,v:#76a31f
-        matstyle:compile_write
-          style:background-color,v:#3a62a6
-        matstyle:req_sent
-          style:background-color,v:#c93641
       {"lang_doc":"Ghost/test/LangTiles.g","text":"// yeti etc\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1,they,can,be,mixed\n    i $la/something\n    i thung/with/etc\n    i yeses/because,it:2\n    i yeses/because,it:5\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    H.severally(A,w,555)\n},\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n"}
       active_doc,path:Ghost/test/LangTiles.g
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:Lies
       {"ref":{"component":"Function()"}}	UI:Langui
-      {"ref":{"component":"Function()"}}	UI:Cyto
     watched:actions
       {"ref":{"fn":"Function()"}}	action,role:debookmark,label:-marks
       {"ref":{"fn":"Function()"}}	action,role:enbookmark,label:+marks
@@ -129,9 +48,5 @@ Snap:H
       {"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}	action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho
       {"ref":{"fn":"Function()"}}	action,role:gen_parser,label:gen,icon:⚙,disabled:true
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo ✓,cls:toggle-on
-      {"ref":{"fn":"Function()"}}	action,role:cyto_wipe,label:wipe,icon:⌀,cls:remove
-      {"ref":{"options":"[Object(),Object(),Object(),Object()]","on_pick":"Function()"}}	action,role:layout_picker,kind:dropdown,label:layout engine,icon:,cls:default,value:fcose
       {"ref":{"fn":"Function()"}}	action,role:nogen,label:nogen,icon:nogen,cls:toggle-off
-    watched:graph
-      cyto_graph,layout_name:fcose
     {"mung":["id"]}	mo:main,interval:3.6

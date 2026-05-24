@@ -245,6 +245,22 @@
             : (active_doc.ob({ bookmark: 1 }) as TheC[]).filter(bm => !bm.sc.graft)
     )
 
+    // lang_model: the w:Lang model particle passed to each DocPoint for the eye tree.
+    //
+    // Must be read inside H.clear — reading H** (H.Awo traverses H's particle
+    // tree) outside the mutex can catch H mid-mutation and return unstable state.
+    // The model TheC itself is stable (created once in Lang_plan, never recreated);
+    // we just need the reference. DocPoint subscribes to model.version via ob().
+    let lang_model: TheC | undefined = $state()
+    $effect(() => {
+        void active_doc   // re-run once active_doc arrives (Lang_plan has run by then)
+        H.clear(async () => {
+            try {
+                lang_model = H.Awo('Lang', 'Lang')?.c?.model as TheC | undefined
+            } catch { lang_model = undefined }
+        })
+    })
+
     // minimap_open: toggled by the "map" button in the bar.
     // Toggle lives here so the button position doesn't move when the map opens.
     let minimap_open = $state(true)
@@ -791,7 +807,7 @@
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">
         {#each bookmarks as bm (bm.sc.bookmark)}
-            <DocPoint {H} {bm} doc_path={active_path} />
+            <DocPoint {H} {bm} doc_path={active_path} {lang_model} />
         {/each}
     </div>
     {/if}
