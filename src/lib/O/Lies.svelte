@@ -68,9 +68,12 @@
     // ── Particle layout ───────────────────────────────────────────────────────
     //
     //   w/{examining:1,active_path?}            — reactive signal in watched:ave;
-    //                                            bumps when w changes or active_doc changes.
+    //                                            bumps when w changes or active_doc changes,
+    //                                            and when Lies_set_examining is called.
     //                                            examining.c.w = w (back-ref for Liesui).
     //                                            examining.sc.active_path mirrors ave/{active_doc:1}.
+    //                                            examining.sc.src_Point_root : $C  the %Doc,path whose %Point,N are grafted
+    //                                            examining.sc.src_Waft       : str  its containing Waft key
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
@@ -349,6 +352,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //     → DocRow's $derived on examining.version re-runs (pure Svelte 5)
         //     → is_examining glow toggles live, no Liesui re-render needed.
         //
+        //   The same watch also advances the graft cursor when the newly-active
+        //   path belongs to a loaded Waft Doc, so LangGraft grafts its Points.
+        //   Lies_find_doc_in_wafts does the lookup and Lies_set_examining stamps
+        //   the three fields atomically.
+        //
         //   active_doc is created lazily by Lang on first Doc_open, so retry each tick.
         const active_doc = ave?.o({ active_doc: 1 })[0] as TheC | undefined
         if (active_doc && !w.c.examining_sig_watch) {
@@ -357,6 +365,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 console.log(`Lies saw ave/%active_doc=${active_doc.sc.path}  ~`)
                 examining.sc.active_path = active_doc.sc.path as string | undefined
                 examining.bump_version()
+                // Advance graft cursor to match the newly-active doc.
+                const path = active_doc.sc.path as string | undefined
+                if (path) {
+                    const found = H.Lies_find_doc_in_wafts(w, path)
+                    if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
+                }
             })
         }
         // Initial sync on this tick in case active_doc existed before the watch was wired.
@@ -364,6 +378,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (active_path !== examining.sc.active_path) {
             examining.sc.active_path = active_path
             examining.bump_version()
+        }
+
+        // ── cold-start cursor placement ───────────────────────────────────────
+        //
+        //   On the first tick where Wafts are loaded and the cursor is still
+        //   empty, land on the active doc's Doc particle if it's in a Waft.
+        //   This covers the case where the user had a doc open before Wafts loaded,
+        //   so the watch above never fired.
+        if (!examining.sc.src_Point_root && active_path) {
+            const found = H.Lies_find_doc_in_wafts(w, active_path)
+            if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
         }
 
         // ── opts — every tick, like story_ui ─────────────────────────────────
@@ -378,6 +403,34 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesRealised — compile airlock and future thinking ────────────────
         await this.LiesRealised(A, w)
+
+        // ── one-time migration: strip obsolete graft_* fields from %Point particles ─
+        //
+        //   Old code stored graft_from, graft_to, graft_line, graft_stale, graft_bm
+        //   directly on %Point.sc.  That bookkeeping lives in %Pmirror/%graft,1 now.
+        //   Runs once per session after Wafts are settled so all %Doc,path children
+        //   are present.  Dirty Points get their Waft saved on the next throttle.
+        if (!w.c.graft_fields_migrated) {
+            w.c.graft_fields_migrated = true
+            const OBSOLETE_GRAFT_KEYS = ['graft_from','graft_to','graft_line','graft_stale','graft_bm']
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+                let waft_dirty = false
+                for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
+                    for (const pt of doc.o({ Point: 1 }) as TheC[]) {
+                        let dirty = false
+                        for (const k of OBSOLETE_GRAFT_KEYS) {
+                            if (k in pt.sc) { delete (pt.sc as any)[k]; dirty = true }
+                        }
+                        if (dirty) { pt.bump_version(); waft_dirty = true }
+                    }
+                }
+                if (waft_dirty) {
+                    console.log(`🔧 migrated graft_* fields off %Point particles in Waft:${waft.sc.Waft}`)
+                    H.Lies_waft_save(w, waft)
+                }
+            }
+            // < also migrate %Points,1/%Point,N containers once those are in snap
+        }
 
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
         const wafts  = w.o({ Waft: 1 }).length
@@ -660,6 +713,53 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             bookmark_id, serial,
         })
         this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
+    //
+    //   Fired by Liesui / Waft when the user focuses a Doc.  Stamps
+    //   %src_Point_root (the %Doc,path TheC whose %Point,N children are grafted)
+    //   and %src_Waft (the containing Waft key) on %examining, then bumps its
+    //   version so Lang_graft_points sees a new cache key and re-grafts.
+    //
+    //   The two sc fields and the bump must all happen together — use this
+    //   handler rather than setting them individually, so the three-step is
+    //   never half-done.
+    //
+    //   e.sc: { doc_C: TheC, waft_key: string }
+    //   (doc_C is the %Doc,path particle inside the Waft — direct TheC ref,
+    //    not a path string — because %Point,N children live on it.)
+    async e_Lies_set_cursor(A: TheC, w: TheC, e: TheC) {
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const doc_C    = e.sc.doc_C    as TheC | undefined
+        const waft_key = e.sc.waft_key as string | undefined
+        if (!doc_C || !waft_key) return
+        this.Lies_set_examining(examining, doc_C, waft_key)
+    },
+
+    // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
+    //
+    //   Walk all loaded Wafts looking for a %Doc,path particle matching `path`.
+    //   Returns { doc, waft_key } on the first hit, undefined if not found.
+    //   Used to land the graft cursor when active_doc changes.
+    Lies_find_doc_in_wafts(w: TheC, path: string): { doc: TheC, waft_key: string } | undefined {
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
+            if (doc) return { doc, waft_key: waft.sc.Waft as string }
+        }
+        return undefined
+    },
+
+    // ── Lies_set_examining ────────────────────────────────────────────────────
+    //
+    //   Set %src_Point_root and %src_Waft on %examining and bump its version
+    //   so LangGraft sees a new cursor.  Three steps, one place.
+    Lies_set_examining(examining: TheC, src_Point_root: TheC, waft_key: string) {
+        examining.sc.src_Point_root = src_Point_root
+        examining.sc.src_Waft       = waft_key
+        examining.bump_version()
+        console.log(`👁 cursor → Waft:${waft_key} doc:${(src_Point_root.sc as any).path ?? '?'}`)
     },
 
     // ── o_Opt_val ─────────────────────────────────────────────────────────────

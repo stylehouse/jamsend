@@ -26,17 +26,20 @@
     //               without a Liesui re-render (pure Svelte 5 $derived reactivity).
     //   on_del    — deletion callback; omit in flat list (no × button)
     //   on_rename — (old_path, new_path) → void; omit in flat list (no ✎ button)
+    //   on_focus  — called when the user opens the doc row; Waft supplies this
+    //               to fire Lies_set_cursor and advance the graft cursor.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, w, doc, waft = null, on_del, on_rename, examining }: {
+    let { H, w, doc, waft = null, on_del, on_rename, on_focus, examining }: {
         H:          House
         w:          TheC
         doc:        TheC
         waft?:      TheC | null
         on_del?:    (doc: TheC) => void
         on_rename?: (old_path: string, new_path: string) => void
+        on_focus?:  (doc: TheC) => void   // called when the user opens this doc row
         examining?: TheC | null
     } = $props()
 
@@ -106,10 +109,11 @@
                 disabled={!renaming?.trim() || renaming.trim() === path}>rename</button>
         <button class="ls-cancel-btn" onclick={cancel_rename}>cancel</button>
     {:else}
-        <!-- clicking the path label switches the active doc in Lang -->
+        <!-- clicking the path label switches the active doc in Lang
+             and notifies Lies (via on_focus) to move the graft cursor -->
         <button class="ls-doc-path ls-doc-open-btn" title="open in editor"
                 class:ls-doc-examining={is_examining}
-                onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path })}>
+                onclick={() => { H.i_elvisto('Lang/Lang', 'Doc_open', { path }); on_focus?.(doc) }}>
             {path}
         </button>
         {#if codetype}<span class="ls-badge">{codetype}</span>{/if}

@@ -174,6 +174,15 @@
         waft.drop(doc)
         waft.bump_version()
     }
+
+    // ── Set graft cursor ─────────────────────────────────────────────
+    //
+    //   Called by DocRow's on_focus when the user opens a doc row.
+    //   Fires Lies_set_cursor so LangGraft grafts this Doc's %Point,N
+    //   children onto CM marks.
+    function focus_doc(doc: TheC) {
+        H.i_elvisto('Lies/Lies', 'Lies_set_cursor', { doc_C: doc, waft_key: wkey })
+    }
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px" class:ls-waft-active={is_active}>
@@ -250,6 +259,7 @@
             <!-- DocRow reads doc.version + w.version directly — stays live. -->
             <DocRow {H} {w} {doc} {waft} {examining}
                 on_del={delete_doc}
+                on_focus={focus_doc}
                 on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
 
             <!-- Point -->
