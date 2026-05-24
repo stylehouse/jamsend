@@ -1181,7 +1181,8 @@ export function keyser(n:TheC|Object,loop=0) {
             la.push(k+":"+objectify(v,loop+1))
         }
     })
-    return la.join(", ")
+    let Cprefix = n instanceof TheC ? "%" : ""
+    return Cprefix+la.join(", ")
 }
 // > when q.one_value_mode, we may want a [] value
 function nonemptyArray_or_null(N:any) {

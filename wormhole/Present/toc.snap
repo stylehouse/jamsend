@@ -1,16 +1,16 @@
 Library
-  Book:LeafJuggle,ok_pct,last_run_ms:1779063055.144,done:4,last_pct_change:1776741166.033
-  Book:LeafFarm,ok_pct,last_run_ms:1779063023.522,done:6,last_pct_change:1778378075.558
-  Book:StuffFlipping,ok_pct,last_run_ms:1779062991.785,done,last_pct_change:1776929364.203
-  Book:LangTiles,ok_pct:0,last_pct_change:1779603546.62,done:3,last_run_ms:1779603624.478,active
-  Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1779620404.625
+  Book:LeafJuggle,ok_pct,last_run_ms:1779622781.774,done:4,last_pct_change:1776741166.033
+  Book:LeafFarm,ok_pct,last_run_ms:1779622753.198,done:6,last_pct_change:1778378075.558
+  Book:StuffFlipping,ok_pct:0,last_run_ms:1779622717.748,done,last_pct_change:1779622702.753
+  Book:LangTiles,ok_pct,last_pct_change:1779622790.225,done:5,last_run_ms:1779622819.746
+  Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1779622876.991,active
   Book:Peeringinst,ok_pct:0.5,last_pct_change:1779063073.279,done:2,last_run_ms:1779063093.816
   Book:PeeringLive,ok_pct:0,last_pct_change:1779475874.724,done,last_run_ms:1779532642.862
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778804562.08
   Book:ReactiveWaft,ok_pct,last_pct_change:1778674756.934,done:6,last_run_ms:1779063101.212
   Book:ReactiveVers,ok_pct:0,last_pct_change:1779063108.089,done:8,last_run_ms:1779063283.368
   Book:PotPlaner,ok_pct,last_pct_change:1779063324.719,done:2,last_run_ms:1779063328.951
-  Book:TextInca,ok_pct,last_pct_change:1779067355.632,done,last_run_ms:1779067360.09
-  Book:PortPlan,ok_pct:0,last_pct_change:1779532646.729,done:2,last_run_ms:1779532674.553
-  Book:PortPlanet,ok_pct:0.67,last_pct_change:1779532681.766,done:6,last_run_ms:1779532691.145
-  Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779534699.893
+  Book:TextInca,ok_pct,last_pct_change:1779067355.632,done,last_run_ms:1779622879.832
+  Book:PortPlan,ok_pct,last_pct_change:1779622885.154,done:2,last_run_ms:1779622889.47
+  Book:PortPlanet,ok_pct,last_pct_change:1779622894.947,done:6,last_run_ms:1779622895.668
+  Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403

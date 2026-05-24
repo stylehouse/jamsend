@@ -33,7 +33,7 @@ Snap:H
       {"mung":["age"]}	self,round:3
       w:Cyto,grawave_duration:0.4
         {"mung":["age"]}	self,round:3
-        {"ref":{"C":"cyto_root:1, cyto_id:cytoid_1"}}	{"CytoStep":1}
+        {"ref":{"C":"%cyto_root:1, cyto_id:cytoid_1"}}	{"CytoStep":1}
     A:Pantheate
       {"mung":["age"]}	self,round
       w:Pantheate

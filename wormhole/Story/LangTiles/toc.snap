@@ -94,20 +94,20 @@ story:LangTiles
     noCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg:1.569
-      sample:1.313,at:1779549293
-      sample:1.313,at:1779549296
-      sample:1.327,at:1779549299
-      sample:1.201,at:1779549327
-      sample:1.201,at:1779552770
-      sample:2.814,at:1779603549
+    TimeTotal:beliefs,avg:1.307
       sample:2.814,at:1779603589
       sample:1.355,at:1779603606
       sample:1.175,at:1779620412
       sample:1.175,at:1779620427
-  step,dige:6b5795e7eb3ee734
-  step:2,dige:1c2ee65f4c72db7d
-  step:3,dige:ec3b66472acd5743
-  step:4,dige:fc8510feb93f682c
+      sample:0.558,at:1779620453
+      sample:0.658,at:1779622463
+      sample:0.73,at:1779622573
+      sample:1.603,at:1779622650
+      sample:1.603,at:1779622694
+      sample:1.398,at:1779622790
+  step,dige:d7cbc36505e7a9a4
+  step:2,dige:b292a24a550deb43
+  step:3,dige:ec4672fae2bc1eeb
+  step:4,dige:9481abcd140cd9b8
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step:5,dige:87eb57688f21ea66
+  step:5,dige:4bd382741806c277

@@ -35,18 +35,18 @@ Snap:H
               {"before":"tracing:1, leaf:1"}
               after:-
             resolve_coms
-              {"claiming":"tracing:1, hand:left","oldn":"tracing:1, hand:left","score":"1"}
-              {"claiming":"tracing:1, hand:right","oldn":"tracing:1, hand:right","score":"1"}
-              {"claiming":"tracing:1, whatsit:1","oldn":"tracing:1, whatsit:1","score":"1"}
-              {"claiming":"tracing:1, other:3","oldn":"tracing:1, other:3","score":"1"}
-              {"claiming":"tracing:1, self:1, round:6, age:5","oldn":"tracing:1, self:1, round:5, age:5","score":"1"}
-              {"old":"tracing:1, hand:left","neu":"tracing:1, hand:left"}
-              {"old":"tracing:1, hand:right","neu":"tracing:1, hand:right"}
-              {"old":"tracing:1, whatsit:1","neu":"tracing:1, whatsit:1"}
-              {"old":"tracing:1, other:3","neu":"tracing:1, other:3"}
-              {"old":"tracing:1, self:1, round:5, age:5","neu":"tracing:1, self:1, round:6, age:5"}
-              {"spawn":"tracing:1, self:1, est:1775527585"}
-              {"gone":"tracing:1, leaf:1"}
+              {"claiming":"%tracing:1, hand:left","oldn":"%tracing:1, hand:left","score":"1"}
+              {"claiming":"%tracing:1, hand:right","oldn":"%tracing:1, hand:right","score":"1"}
+              {"claiming":"%tracing:1, whatsit:1","oldn":"%tracing:1, whatsit:1","score":"1"}
+              {"claiming":"%tracing:1, other:3","oldn":"%tracing:1, other:3","score":"1"}
+              {"claiming":"%tracing:1, self:1, round:6, age:5","oldn":"%tracing:1, self:1, round:5, age:5","score":"1"}
+              {"old":"%tracing:1, hand:left","neu":"%tracing:1, hand:left"}
+              {"old":"%tracing:1, hand:right","neu":"%tracing:1, hand:right"}
+              {"old":"%tracing:1, whatsit:1","neu":"%tracing:1, whatsit:1"}
+              {"old":"%tracing:1, other:3","neu":"%tracing:1, other:3"}
+              {"old":"%tracing:1, self:1, round:5, age:5","neu":"%tracing:1, self:1, round:6, age:5"}
+              {"spawn":"%tracing:1, self:1, est:1775527585"}
+              {"gone":"%tracing:1, leaf:1"}
           {"resolve_test":"leaf vanishes, self,est arrives - no tracing noise"}
             C
               self,est:1775527585
@@ -360,73 +360,73 @@ Snap:cytowave
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_10","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_10","label":"old:%tracing:…\nneu:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#32618f
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_11","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_11","label":"old:%tracing:…\nneu:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#32618f
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_12","label":"spawn:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_12","label":"spawn:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#b12f4a
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_13","label":"gone:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_13","label":"gone:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_2","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_2","label":"claiming:%tracing:…\noldn:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#bbdb43
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_3","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_3","label":"claiming:%tracing:…\noldn:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#bbdb43
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_4","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_4","label":"claiming:%tracing:…\noldn:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#bbdb43
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_5","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_5","label":"claiming:%tracing:…\noldn:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#bbdb43
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_6","label":"claiming:tracing:1…\noldn:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_6","label":"claiming:%tracing:…\noldn:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#bbdb43
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_7","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_7","label":"old:%tracing:…\nneu:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#32618f
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_8","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_8","label":"old:%tracing:…\nneu:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#32618f
     style,color:#ccc
     style,height:20
     style,shape:ellipse
     style,width:20
-  {"upsert":1,"id":"cytoid_1_1_2_1_4_9","label":"old:tracing:1…\nneu:tracing:1…","parent":"cytoid_1_1"}
+  {"upsert":1,"id":"cytoid_1_1_2_1_4_9","label":"old:%tracing:…\nneu:%tracing:…","parent":"cytoid_1_1"}
     style,background-color:#32618f
     style,color:#ccc
     style,height:20
