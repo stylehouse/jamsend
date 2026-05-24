@@ -16,7 +16,7 @@
     //
     // ── The cursor ───────────────────────────────────────────────────────────
     //
-    //   ave/%examining,1,$src_Point_root carries the C to look at — a Waft,
+    //   ave/%examining,$src_Point_root carries the C to look at — a Waft,
     //   a What, a Doc, whatever.  The cursor lands at a Something where
     //   Something/%Point,N may exist or not.  Lang does not dive — it
     //   reads %Point,N off the cursor's particle directly.  The cursor is
@@ -101,7 +101,7 @@
         const docC = sig?.c.doc as TheC | undefined
         if (!docC) return
 
-        // cursor: ave/%examining,1,$src_Point_root
+        // cursor: ave/%examining,$src_Point_root
         const ex = ave.o({ examining: 1 })[0] as TheC | undefined
         const src_Point_root = ex?.sc.src_Point_root as TheC | undefined
         if (!src_Point_root) {

@@ -21,9 +21,10 @@
     //   Falls back to live region scan when no compiled index is present yet,
     //   so the user sees structure before the first compile.
     //
-    //   Points come from graft_* fields stamped on each Point particle by
-    //   Lang_graft_points (LangGraft.svelte) after each compile.  The minimap
-    //   does not re-resolve method strings — it reads pre-resolved positions.
+    //   Points come from %Pmirror,N particles that LangGraft maintains under
+    //   the lang-side docC's %Pmirrors,1.  Each Pmirror with a %graft,1 child
+    //   has resolved to a live position; one without is unresolved and renders
+    //   in the warning style.  The minimap does no resolution work itself.
     //
     // ── Layout model ─────────────────────────────────────────────────────────
     //
@@ -104,12 +105,19 @@
     })
 
     // ── data sources ─────────────────────────────────────────────────────────
-    //   docC: the ave/{langtiles_doc:path} particle.
+    //   docC:      the ave/{langtiles_doc:path} particle (compile output, text).
+    //   lang_docC: the w:Lang side {doc:path} particle (holds %Pmirrors,1).
     //   H.ave.ob() makes ave-version-bumps wake the $effect below.
     let docC: TheC | undefined = $state()
+    let lang_docC: TheC | undefined = $state()
     $effect(() => {
         docC = active_path
             ? H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined
+            : undefined
+        const sig = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
+        // sig is shared across paths; only treat it as ours when its sc.path matches.
+        lang_docC = (sig?.sc.path === active_path)
+            ? sig?.c.doc as TheC | undefined
             : undefined
     })
 
@@ -153,6 +161,7 @@
     // void-reads register the dependency without doing any work here.
     $effect(() => {
         void docC?.version
+        void lang_docC?.version
         void active_path
         schedule_rebuild()
     })
@@ -167,10 +176,9 @@
         const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
         const methods = output?.o({ methods: 1 })[0] as TheC | undefined
 
-        // Collect Point marks from graft fields stamped by LangGraft.
-        // This replaces the old collect_point_specs_for_path + resolve_point_to_mark
-        // pair — no resolution work happens here, just reading pre-baked positions.
-        const point_marks = collect_graft_marks_for_path(active_path)
+        // Collect Point marks from Pmirrors maintained by LangGraft.
+        // No resolution work happens here — just reading pre-baked positions.
+        const point_marks = collect_graft_marks()
 
         if (methods) {
             const region_entries = methods.o({ region: 1 }) as TheC[]
@@ -239,53 +247,40 @@
         }
     }
 
-    // ── collect_graft_marks_for_path ──────────────────────────────────────────
+    // ── collect_graft_marks ──────────────────────────────────────────────────
     //
-    //   Walk all Wafts in Lies's w, collect every Point whose parent Doc has a
-    //   matching path, and read the graft_* fields that LangGraft stamped.
+    //   Walk the active doc's %Pmirrors,1 / %Pmirror,N — each one mirrors a
+    //   Point in the cursored Something.  A Pmirror with %graft,1 has been
+    //   resolved (live position cached in graft sc); one without is
+    //   unresolved (spec didn't match any def in current compile output, or
+    //   has no resolvable spec field at all).
     //
-    //   Both direct-child Points (new layout) and Points:1-container children
-    //   (old compat layout) are collected.
-    //
-    //   Reactive on H.ave via the ob({ examining:1 }) call, so Waft CRUD wakes
-    //   the next rebuild.  This replaces collect_point_specs_for_path() and
-    //   resolve_point_to_mark() — no resolution work happens here.
-    function collect_graft_marks_for_path(path: string): PointMark[] {
+    //   This replaces the old walk through lies_w.o({Waft:1}) — Pmirrors are
+    //   the single source of truth for "Points belonging to this doc right
+    //   now", maintained by LangGraft.
+    function collect_graft_marks(): PointMark[] {
         const out: PointMark[] = []
-        if (!path) return out
+        if (!lang_docC) return out
 
-        const ex     = H.ave.ob({ examining: 1 })[0] as TheC | undefined
-        const lies_w = ex?.c?.w as TheC | undefined
-        if (!lies_w) return out
+        const Pmirrors = lang_docC.o({ Pmirrors: 1 })[0] as TheC | undefined
+        if (!Pmirrors) return out
 
-        for (const waft of lies_w.o({ Waft: 1 }) as TheC[]) {
-            for (const doc of waft.o({ Doc: 1, path }) as TheC[]) {
-                // new layout: Point:1 directly on doc
-                const direct = doc.o({ Point: 1 }) as TheC[]
-                // compat: old Points:1 container
-                const via_container = (doc.o({ Points: 1 })[0]?.o({ Point: 1 }) ?? []) as TheC[]
-
-                for (const pt of [...direct, ...via_container]) {
-                    const spec = (pt.sc.method ?? pt.sc.label ?? pt.sc.Point) as string | undefined
-                    if (!spec || spec === 1 as any) continue
-                    const s = String(spec)
-
-                    if (pt.sc.graft_stale || pt.sc.graft_from == null) {
-                        // LangGraft hasn't resolved this yet (pre-compile, or name changed)
-                        out.push({ spec: s, method: s, line: 1, from: 0, to: 0, unresolved: true })
-                        continue
-                    }
-
-                    out.push({
-                        spec:       s,
-                        method:     s,
-                        line:       pt.sc.graft_line as number,
-                        from:       pt.sc.graft_from as number,
-                        to:         pt.sc.graft_to   as number,
-                        unresolved: false,
-                    })
-                }
+        for (const pm of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
+            const spec = (pm.sc.spec as string) || ''
+            if (!spec) continue
+            const graft = pm.o({ graft: 1 })[0] as TheC | undefined
+            if (!graft) {
+                out.push({ spec, method: spec, line: 1, from: 0, to: 0, unresolved: true })
+                continue
             }
+            out.push({
+                spec,
+                method:     spec,
+                line:       graft.sc.line as number,
+                from:       graft.sc.from as number,
+                to:         graft.sc.to   as number,
+                unresolved: false,
+            })
         }
         return out
     }
@@ -542,9 +537,9 @@
             </div>
 
             {#if !is_collapsed(r)}
-                <!-- Points: graft-resolved markers, always-visible label.
+                <!-- Points: Pmirror-resolved markers, always-visible label.
                      Higher z-index so they sit above stripes and region rows.
-                     Warning style when graft_stale (pre-compile or name not found). -->
+                     Warning style when unresolved (Pmirror has no %graft,1 — pre-compile, or spec didn't match a def). -->
                 {#each r.points as p (p.spec)}
                     <button class="lmm-point" class:lmm-point-bad={p.unresolved}
                             style="top: {band_top(p.line)}; left: {r.depth * 5 + 4}px;"
@@ -734,7 +729,7 @@
     }
     .lmm-point:hover .lmm-point-label { color: #fff; }
 
-    /* Unresolved Point (graft_stale) — warning red, strikethrough. */
+    /* Unresolved Point (Pmirror with no %graft,1) — warning red, strikethrough. */
     .lmm-point-bad .lmm-point-dot { background: #e06c75; }
     .lmm-point-bad .lmm-point-label {
         color: #e06c75; text-decoration: line-through;

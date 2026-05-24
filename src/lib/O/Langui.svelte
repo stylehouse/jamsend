@@ -958,6 +958,14 @@
         border-radius: 1px;
     }
 
+    /* Graft marks — Pmirror-owned, session-only.  Gold accent to distinguish
+       from user bookmarks (blue) at a glance. */
+    .lte-cm :global(.cm-graft) {
+        background: rgba(229, 192, 123, 0.12);
+        border-bottom: 1px solid rgba(229, 192, 123, 0.6);
+        border-radius: 1px;
+    }
+
     /* Point panel — compact list of bookmarks below the editor */
     .lte-points {
         border-top: 1px solid #141420;
