@@ -215,6 +215,12 @@
         doc.c.removeBookmarkMark = e.sc.removeBookmarkMark
         doc.c.clearAllBookmarks  = e.sc.clearAllBookmarks
         doc.c.saveEffect         = e.sc.saveEffect
+        // Pmirror graft marks live in their own StateField with parallel
+        // effects.  LangGraft dispatches these to install/remove graft
+        // marks as Pmirrors are minted and reaped.
+        doc.c.addGraftMark       = e.sc.addGraftMark
+        doc.c.removeGraftMark    = e.sc.removeGraftMark
+        doc.c.clearAllGrafts     = e.sc.clearAllGrafts
 
         // Only activate if we have a real path — empty string means the doc
         // isn't known yet and Lies hasn't fired e_Lang_open_doc yet.
@@ -372,12 +378,13 @@
         // dropdown reflects the active doc's current language override.
         await this.LangGen_tick(A, w)
 
-        // graft Waft Points onto CM bookmarks — synchronous, cheap when the
-        // per-doc cache key (docC.version + compile output version) matches.
-        // After this runs, every Point with a resolvable method has fresh
-        // graft_from / graft_line stamped on its sc, ready for DocMinimap to
+        // graft Pmirrors for the cursored What|Doc onto CM marks — async
+        // because it runs %Pmirrors,1 .replace() inside.  Cheap when the
+        // per-doc cache key (docC + compile + cursor + point-fingerprint)
+        // matches.  After this runs, every Pmirror under docC/%Pmirrors,1
+        // has graft_from / graft_line on its sc, ready for DocMinimap to
         // read directly without re-resolving.
-        this.Lang_graft_points(w)
+        await this.Lang_graft_points(w)
 
         const model     = w.c.model as TheC
         const state     = docC?.c.state
@@ -769,6 +776,25 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
             }
         }
         // state already updated by Lang_doc_from_event above
+        this.i_elvisto(w, 'think', {})
+    },
+
+    // ── e_Lang_update_grafts ─────────────────────────────────────────────────
+    //
+    //   Counterpart to e_Lang_update_bookmarks for Pmirror grafts.  Carries
+    //   the live from/to for every graft mark in CM's graftMarkField.  The
+    //   actual update logic lives in %LangGraft.Lang_update_grafts — this
+    //   is just the elvis entry point.
+    //
+    //   < graft vanishing (mark wiped by full-span edit) is not yet
+    //     handled.  The next graft pass will see the spec doesn't resolve
+    //     anymore (or resolves to a different place) and the Pmirror's
+    //     identity machinery will sort it out — possibly with a momentary
+    //     unresolved state visible in the minimap.
+    async e_Lang_update_grafts(A: TheC, w: TheC, e: TheC) {
+        if (!A.sc.A) throw "!A"
+        const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
+        if (updates) this.Lang_update_grafts(w, updates)
         this.i_elvisto(w, 'think', {})
     },
 

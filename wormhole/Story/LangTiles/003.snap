@@ -277,6 +277,8 @@ Snap:H
                      })
                  </script>
             {"bookmark":"bm_98_132","from":98,"to":132,"label":"o hut/although:1,they,ca"}
+        received,doc_opened,doc:Ghost/test/LangTiles.g
+        received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
         {"mung":["age"]}	self,round:11
         see:🟦 tiles 1 bookmarks
@@ -663,11 +665,12 @@ Snap:H
       {"ref":{"fn":"Function()"}}	action,role:debookmark,label:-marks
       {"ref":{"fn":"Function()"}}	action,role:enbookmark,label:+marks
       {"ref":{"fn":"Function()"}}	action,role:compile,label:compile
+      {"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}	action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho
+      {"ref":{"fn":"Function()"}}	action,role:gen_parser,label:gen,icon:⚙,disabled:true
       {"ref":{"fn":"Function()"}}	action,role:cyto_wipe,label:wipe,icon:⌀,cls:remove
       {"ref":{"options":"[Object(),Object(),Object(),Object()]","on_pick":"Function()"}}	action,role:layout_picker,kind:dropdown,label:layout engine,icon:,cls:default,value:fcose
       {"ref":{"fn":"Function()"}}	action,role:nogen,label:nogen,icon:nogen,cls:toggle-off
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo ✓,cls:toggle-on
-      {"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}	action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho
     watched:graph
       {"ref":{"wave":"CytoWave:1, duration:0.4, constraints:Object(), step_n:null","waves":"[]"}}	cyto_graph,layout_name:fcose,tick
     {"mung":["id"]}	mo:main,interval:3.6

@@ -460,6 +460,90 @@
         }
         return out
     }
+
+    //#region grafts
+    // ── graft StateField ─────────────────────────────────────────────────
+    //
+    //   Parallel to bookmarkField, but owned by Lang's Pmirror layer.  A
+    //   graft mark exists for the lifetime of its Pmirror — born when
+    //   LangGraft resolves a Point's spec to a def, dies when the Pmirror
+    //   goes (cursor moved, Point deleted, spec renamed to no-match).
+    //
+    //   Why a separate field, not %sc,graft,1 on user-bookmark particles:
+    //   the lifecycles are different (user bookmarks persist via Lies,
+    //   grafts are session-only), the rendering is different (Pmirror set
+    //   balloon vs user-bookmark capsule), and Langui's bookmark panel
+    //   should never need to filter by a discriminator flag.
+
+    const addGraftMark    = StateEffect.define<{ id: string, from: number, to: number }>()
+    const removeGraftMark = StateEffect.define<{ id: string }>()
+    const clearAllGrafts  = StateEffect.define<null>()
+
+    const graftMarkField = StateField.define<DecorationSet>({
+        create: () => Decoration.none,
+        update(marks, tr) {
+            marks = marks.map(tr.changes)
+            for (const e of tr.effects) {
+                if (e.is(clearAllGrafts)) {
+                    marks = Decoration.none
+                    continue
+                }
+                if (e.is(addGraftMark)) {
+                    // idempotent on id — if a mark with this id already
+                    // exists (paired-through Pmirror dispatching at its
+                    // initial anchor), drop the old one first; the
+                    // RangeSet has been remapping it to its current live
+                    // position, but the new effect carries the def's
+                    // resolved position, which is what we want as canon.
+                    //
+                    // < the more correct thing is to leave the existing
+                    //   mark alone (it has the live position) and only
+                    //   add if absent.  But idempotent-replace is
+                    //   simpler and the dispatched position only differs
+                    //   from the live one when CM has been doing edits
+                    //   between graft passes — in which case the live
+                    //   position is already stale relative to the def
+                    //   anyway (the next compile picks it up).
+                    const target = e.value.id
+                    marks = marks.update({
+                        filter: (_f, _t, value) => (value.spec as any).graft_id !== target,
+                    })
+                    const deco = Decoration.mark({
+                        class: 'cm-graft',
+                        attributes: { 'data-graft-id': e.value.id },
+                        graft_id: e.value.id,
+                    } as any).range(e.value.from, e.value.to)
+                    marks = marks.update({ add: [deco] })
+                }
+                if (e.is(removeGraftMark)) {
+                    const target = e.value.id
+                    marks = marks.update({
+                        filter: (_f, _t, value) => (value.spec as any).graft_id !== target,
+                    })
+                }
+            }
+            return marks
+        },
+        provide: f => EditorView.decorations.from(f),
+    })
+
+    function readGrafts(v: EditorView): Array<{ id: string, from: number, to: number }> {
+        const out: Array<{ id: string, from: number, to: number }> = []
+        const set = v.state.field(graftMarkField)
+        const iter = set.iter()
+        while (iter.value) {
+            const id = (iter.value.spec as any).graft_id as string | undefined
+            if (id) out.push({ id, from: iter.from, to: iter.to })
+            iter.next()
+        }
+        return out
+    }
+
+    function fire_update_grafts(v: EditorView) {
+        const updates = readGrafts(v)
+        if (updates.length) Lang_i_elvis(v, 'Lang_update_grafts', { updates })
+    }
+    //#endregion
     
     // ── fire_update_bookmarks ────────────────────────────────────────────────
     // Core send: read live bookmark positions from CM and elvis them to the backend.
@@ -479,6 +563,7 @@
             update_timer = null
             if (!view) return
             fire_update_bookmarks(view)
+            fire_update_grafts(view)
         }, UPDATE_DELAY_MS)
     }
 
@@ -593,6 +678,7 @@
             simpleLezerLinter(),
             langCompartment.of(initial_lang_exts),
             bookmarkField,
+            graftMarkField,
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
                 const sel = v.state.selection.main
@@ -602,6 +688,7 @@
                 if (v.transactions.some(tr => tr.effects.some(e => e.is(saveEffect)))) {
                     if (update_timer) { clearTimeout(update_timer); update_timer = null }
                     fire_update_bookmarks(v.view)
+                    fire_update_grafts(v.view)
                     return
                 }
                 if (!v.docChanged) return
@@ -645,12 +732,13 @@
         prev_path = captured_path
 
         // Register view+state with backend.
-        // Pass current bookmark positions for initial sync (normally empty on
-        // first construction, but included for consistency).
+        // Pass current bookmark + graft positions for initial sync (normally
+        // empty on first construction, but included for consistency).
         console.log(`🏗 firing Lang_editorBegins for path=${captured_path}`)
         Lang_i_elvis(view, 'Lang_editorBegins',
             { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
-              updates: readBookmarks(view) })
+              addGraftMark, removeGraftMark, clearAllGrafts,
+              updates: readBookmarks(view), graft_updates: readGrafts(view) })
         }, 0)
     })
 
