@@ -116,12 +116,13 @@
         // we get the containing Waft key without walking up from the cursored C.
         const waft_key = (ex?.sc.src_Waft as string | undefined) ?? '?'
 
-        // compile output for resolution
-        const ave_doc = ave.o({ langtiles_doc: docC.sc.doc })[0] as TheC | undefined
-        const job     = ave_doc?.o({ Compile: 1 })[0] as TheC | undefined
-        const output  = job?.o({ Output: 1 })[0]      as TheC | undefined
-        const methods = output?.o({ methods: 1 })[0]  as TheC | undefined
-        const defs    = (methods?.o({ def: 1 }) ?? []) as TheC[]
+        // compile output for resolution — lives directly on docC, not on ave
+        const job     = docC.o({ Compile: 1 })[0]    as TheC | undefined
+        const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
+        const methods = output?.o({ methods: 1 })[0] as TheC | undefined
+        // defs: method functions; regions: named code sections — both are valid targets
+        const defs    = (methods?.o({ def: 1 })    ?? []) as TheC[]
+        const regions = (methods?.o({ region: 1 }) ?? []) as TheC[]
 
         // cache guard: same fingerprint → identical work, nothing to do.
         // Different point set or different compile → re-graft.  Cursor
@@ -173,13 +174,21 @@
         // (resolving fresh ones now that replace is done).  Continuous
         // Pmirrors with their graft already present get their
         // sc.from/sc.to/sc.line refreshed to the def's latest position.
+        let unresolved = []
         for (const pmirror of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
             const spec = pmirror.sc.spec as string
             if (!spec) continue
-            const def = this.Lang_resolve_spec(spec, defs)
-            if (!def) continue
+            // pass both defs and regions so region-named Points can resolve
+            const def = this.Lang_resolve_spec(spec, defs, regions)
+            if (!def) {
+                unresolved.push(spec)
+                continue
+            }
 
             this.Lang_ensure_graft(pmirror, def, docC)
+        }
+        if (unresolved.length) {
+            console.warn(`Pmirrors that don't Lang_resolve_spec: ${unresolved.join(', ')}`)
         }
     },
 
@@ -204,16 +213,30 @@
     //
     //   Resolution order:
     //     1. exact match on %def,$method
-    //     2. case-insensitive substring on %def,$method
+    //     2. exact match on %region,$label
+    //     3. case-insensitive substring on %def,$method
+    //     4. case-insensitive substring on %region,$label
+    //
+    //   Both defs (function bodies) and regions (//#region blocks) are
+    //   valid graft targets.  A Point named "Pier" grafts to the region
+    //   %region,label:Pier just as naturally as a def.
     //
     //   < stack-path resolution ("story_save / if runH") future work
     //   < positional Points (sc from/to) bypass resolution entirely, also
     //     future — they'd mint a graft at those offsets directly
-    Lang_resolve_spec(spec: string, defs: TheC[]): TheC | undefined {
+    Lang_resolve_spec(spec: string, defs: TheC[], regions: TheC[] = []): TheC | undefined {
+        // exact def match
         let m = defs.find(d => d.sc.method === spec)
         if (m) return m
+        // exact region match
+        m = regions.find(r => r.sc.label === spec)
+        if (m) return m
         const lc = spec.toLowerCase()
+        // fuzzy def
         m = defs.find(d => (d.sc.method as string)?.toLowerCase().includes(lc))
+        if (m) return m
+        // fuzzy region
+        m = regions.find(r => (r.sc.label as string)?.toLowerCase().includes(lc))
         return m
     },
 
@@ -266,7 +289,8 @@
         }) as TheC
         graft.bump_version()
 
-        console.log(`🔩 graft ${pmirror.sc.spec} → ${bm_id} [${def_from}..${def_to}] line ${def_line}`)
+        const def_name = (def.sc.method ?? def.sc.label) as string
+        console.log(`🔩 graft ${pmirror.sc.spec} → ${bm_id} [${def_from}..${def_to}] line ${def_line} (${def.sc.def ? 'def' : 'region'}:${def_name})`)
     },
 
     // ── Lang_remove_graft_mark ───────────────────────────────────────────

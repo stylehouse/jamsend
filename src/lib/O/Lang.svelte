@@ -21,7 +21,7 @@
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
-    //   ave/{langtiles_doc:path} — one per doc, holds sc.text.
+    //   ave/{lang_doc:path} — one per doc, holds sc.text.
     //   Lang_plan seeds it with default text on first run.
     //   Langui (keyed by `doc` prop) watches its own particle.
     //
@@ -193,7 +193,7 @@
             }
         }
         // ave/{active_doc:1} is the reactive signal Langui watches to know
-        // which ave/{langtiles_doc:path} particle to pull text from.
+        // which ave/{lang_doc:path} particle to pull text from.
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
         const sig = ave.oai({ active_doc: 1 })
         sig.sc.path = path
@@ -323,7 +323,7 @@
 
         // populate the ave text-sync particle so Langui pulls it
         const ave = H.oai_enroll(H, { watched: 'ave' })
-        const docTextC = ave.oai({ langtiles_doc: path })
+        const docTextC = ave.oai({ lang_doc: path })
         if (docTextC.sc.text !== text) {
             docTextC.sc.text = text
             docTextC.bump_version()
@@ -345,7 +345,7 @@
         if (!path) return
         // update the ave text-sync particle for this doc path
         const ave = this.oai_enroll(this as House, { watched: 'ave' })
-        const docTextC = ave.oai({ langtiles_doc: path })
+        const docTextC = ave.oai({ lang_doc: path })
         const text = e?.sc.text as string | undefined
         if (text == null) return
         if (docTextC.sc.text === text) return

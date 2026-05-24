@@ -1,6 +1,7 @@
 Waft:Ghost/Tour
   Doc,path:Ghost/test/Hello.g
     Point,method:Idzeugnosis
-    Point,method:Idzeuganise
+    Point:Idzeuganise
   Doc,path:src/lib/p2p/Peerily.svelte.ts
     Point:Pier
+    Point:emit

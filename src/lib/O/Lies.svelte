@@ -386,7 +386,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   empty, land on the active doc's Doc particle if it's in a Waft.
         //   This covers the case where the user had a doc open before Wafts loaded,
         //   so the watch above never fired.
-        if (!examining.sc.src_Point_root && active_path) {
+        //   Guard: skip if examining already points at active_path (the watch
+        //   may have just set it on this same tick — no double jump).
+        const examining_path = (examining.sc.src_Point_root as TheC | undefined)?.sc.path as string | undefined
+        if (active_path && examining_path !== active_path) {
             const found = H.Lies_find_doc_in_wafts(w, active_path)
             if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
         }

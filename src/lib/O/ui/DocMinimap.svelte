@@ -15,7 +15,7 @@
     // ── Data ─────────────────────────────────────────────────────────────────
     //
     //   Reads the compiled methods index that LangCompiling deposits at
-    //     ave/{langtiles_doc:path}/{Compile:1}/{Output:1}/{methods:1}
+    //     w:Lang/{docs}/{doc:path}/{Compile:1}/{Output:1}/{methods:1}  (via lang_docC)
     //   Pulls all {region:1}, {def:1}, {controlflow:1} children.
     //
     //   Falls back to live region scan when no compiled index is present yet,
@@ -105,7 +105,7 @@
     })
 
     // ── data sources ─────────────────────────────────────────────────────────
-    //   docC:      the ave/{langtiles_doc:path} particle (compile output, text).
+    //   docC:      the ave/{lang_doc:path} particle (text only; Compile lives on lang_docC).
     //   lang_docC: the w:Lang side {doc:path} particle (holds %Pmirrors,1).
     //   H.ave.ob() makes ave-version-bumps wake the $effect below.  The %active_doc,1
     //   particle is shared across paths and bump_version()s on doc switches, so
@@ -114,7 +114,7 @@
     let lang_docC: TheC | undefined = $state()
     $effect(() => {
         docC = active_path
-            ? H.ave.ob({ langtiles_doc: active_path })[0] as TheC | undefined
+            ? H.ave.ob({ lang_doc: active_path })[0] as TheC | undefined
             : undefined
         const sig = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
         void sig?.version
@@ -174,9 +174,10 @@
             return
         }
 
-        const job     = docC.o({ Compile: 1 })[0]    as TheC | undefined
-        const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
-        const methods = output?.o({ methods: 1 })[0] as TheC | undefined
+        // Compile output lives on the Lang-side lang_docC, not the ave text particle
+        const job     = lang_docC?.o({ Compile: 1 })[0]    as TheC | undefined
+        const output  = job?.o({ Output: 1 })[0]           as TheC | undefined
+        const methods = output?.o({ methods: 1 })[0]       as TheC | undefined
 
         // Collect Point marks from Pmirrors maintained by LangGraft.
         // No resolution work happens here — just reading pre-baked positions.

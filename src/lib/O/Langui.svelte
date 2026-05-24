@@ -65,7 +65,7 @@
     //
     // ── Echo guard / text spool (the high-frequency-git seed) ────────────────
     //
-    //   The same ave/%langtiles_doc particle is used for two flows that look
+    //   The same ave/%lang_doc particle is used for two flows that look
     //   identical from the particle's POV but are not at all the same:
     //     (a) disk/remote pulls — Lies has loaded a new file, or in future a
     //         peer has merged something in.  These should be applied to the view.
@@ -228,7 +228,7 @@
     // ── reactive signals from ave ─────────────────────────────────────────────
     //   lang_actions: action buttons registered by Lang ghost
     //   active_path:  path of the currently-shown doc ($state so template reacts)
-    //   docC:         the ave/{langtiles_doc:path} particle (text length display,
+    //   docC:         the ave/{lang_doc:path} particle (text length display,
     //                 disk-reload detection)
     //   active_doc:   the actual {doc:path} particle from w:Lang
     //                 (holds bookmarks; sig.c.doc set by Lang_set_active_doc)
@@ -254,7 +254,7 @@
     let expanded = $state(false)
 
     // ── signal $effect ────────────────────────────────────────────────────────
-    //   Reads H.ave for lang_actions, active_doc, and langtiles_doc.
+    //   Reads H.ave for lang_actions, active_doc, and lang_doc.
     //   sig?.ob() subscribes to sig.version so path changes inside the same
     //   sig particle (bump_version only, no re-i()) still wake this effect.
     //
@@ -269,7 +269,7 @@
         sig?.ob()  // track sig.version — path changes bump it without re-enrolling
         const path = (sig?.sc.path as string | undefined) ?? ''
         if (path) active_path = path
-        docC       = path ? H.ave.ob({ langtiles_doc: path })[0] as TheC | undefined : undefined
+        docC       = path ? H.ave.ob({ lang_doc: path })[0] as TheC | undefined : undefined
         active_doc = sig?.c.doc as TheC | undefined
         console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_doc=${!!active_doc}`)
     })
@@ -620,7 +620,7 @@
     // ── EditorView construction ──────────────────────────────────────────────
     //
     //   Deferred until container is bound, which only happens after {#if docC}
-    //   becomes true (first ave/%langtiles_doc particle arrived).
+    //   becomes true (first ave/%lang_doc particle arrived).
     //
     //   editorExtensions is extracted and stored so every subsequent EditorState
     //   created by the switch $effect shares the identical extension set — CM
@@ -660,7 +660,7 @@
         if (!captured_container.isConnected) return   // destroyed while we waited
 
         // Read docC fresh — text may have arrived during the delay.
-        const fresh_docC = H.ave.ob({ langtiles_doc: captured_path })[0] as TheC | undefined
+        const fresh_docC = H.ave.ob({ lang_doc: captured_path })[0] as TheC | undefined
         const initial    = (fresh_docC?.sc.text as string) ?? (captured_docC?.sc.text as string) ?? ''
 
         // Pick the initial language by extension. The per-doc override (if
