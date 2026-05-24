@@ -72,8 +72,10 @@
     //                                            and when Lies_set_examining is called.
     //                                            examining.c.w = w (back-ref for Liesui).
     //                                            examining.sc.active_path mirrors ave/{active_doc:1}.
-    //                                            examining.sc.src_Point_root : $C  the %Doc,path whose %Point,N are grafted
-    //                                            examining.sc.src_Waft       : str  its containing Waft key
+    //     /{What_Points:1}                       — child of examining; Lies_set_examining
+    //                                              installs/updates it via examining.oai() (sync).
+    //                                              sc.src     : $C  the %Doc,path whose %Point,N are grafted
+    //                                              sc.src_Waft: str  its containing Waft key
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
@@ -368,8 +370,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // Advance graft cursor to match the newly-active doc.
                 const path = active_doc.sc.path as string | undefined
                 if (path) {
-                    const found = H.Lies_find_doc_in_wafts(w, path)
-                    if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
+                    // Only advance cursor if the new active path differs from what's cursored
+                    const cur_wpt  = examining.o({ What_Points: 1 })[0] as TheC | undefined
+                    const cur_path = (cur_wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
+                    if (cur_path !== path) {
+                        const found = H.Lies_find_doc_in_wafts(w, path)
+                        if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
+                    }
                 }
             })
         }
@@ -388,7 +395,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   so the watch above never fired.
         //   Guard: skip if examining already points at active_path (the watch
         //   may have just set it on this same tick — no double jump).
-        const examining_path = (examining.sc.src_Point_root as TheC | undefined)?.sc.path as string | undefined
+        const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
+        const examining_path = (wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
         if (active_path && examining_path !== active_path) {
             const found = H.Lies_find_doc_in_wafts(w, active_path)
             if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
@@ -735,10 +743,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async e_Lies_set_cursor(A: TheC, w: TheC, e: TheC) {
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const doc_C    = e.sc.doc_C    as TheC | undefined
+        const src      = e.sc.doc_C    as TheC | undefined
         const waft_key = e.sc.waft_key as string | undefined
-        if (!doc_C || !waft_key) return
-        this.Lies_set_examining(examining, doc_C, waft_key)
+        if (!src || !waft_key) return
+        this.Lies_set_examining(examining, src, waft_key)
     },
 
     // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
@@ -756,13 +764,21 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── Lies_set_examining ────────────────────────────────────────────────────
     //
-    //   Set %src_Point_root and %src_Waft on %examining and bump its version
-    //   so LangGraft sees a new cursor.  Three steps, one place.
-    Lies_set_examining(examining: TheC, src_Point_root: TheC, waft_key: string) {
-        examining.sc.src_Point_root = src_Point_root
-        examining.sc.src_Waft       = waft_key
-        examining.bump_version()
-        console.log(`👁 cursor → Waft:${waft_key} doc:${(src_Point_root.sc as any).path ?? '?'}`)
+    //   Install or update the %What_Points,1 child on %examining.
+    //   Carries src (the %Doc,path TheC whose %Point,N are grafted) and src_Waft
+    //   (the containing Waft key).  Using a child particle means:
+    //   - visible in the snap as a proper particle, not a buried ref in sc
+    //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
+    //   - three-step is one call — src, src_Waft, and bump never go half-done
+    //
+    //   oai() is sync (unlike roai) — safe to call from watch_c callbacks.
+    //   The child is stable across calls; only its sc fields change each time.
+    Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
+        const wpt = examining.oai({ What_Points: 1 })
+        wpt.sc.src      = src
+        wpt.sc.src_Waft = waft_key
+        wpt.bump_version()
+        console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? '?'}`)
     },
 
     // ── o_Opt_val ─────────────────────────────────────────────────────────────

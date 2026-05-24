@@ -73,7 +73,6 @@
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
-        H.i({ A: 'Cyto'       }).i({ w: 'Cyto'      })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
         console.log(`🟦 ${H.name} LakeSurfer wired`)
     },

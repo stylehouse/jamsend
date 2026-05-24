@@ -16,9 +16,10 @@
     //
     // ── The cursor ───────────────────────────────────────────────────────────
     //
-    //   ave/%examining,$src_Point_root,$src_Waft carries the C to look at —
-    //   a What or a Doc within the Waft identified by %src_Waft.  Lang does
-    //   not dive — it reads %Point,N off the cursor's particle directly.
+    //   ave/%examining / %What_Points,1 carries the C to look at — a What
+    //   or a Doc within the Waft identified by sc.src_Waft.  Lang reads
+    //   %Point,N off that C directly.  %What_Points is a child (not sc field)
+    //   so it shows up in the snap and bumps %examining on change.
     //   The cursor is always within one Doc.
     //
     //   < if Something itself contains nested Whats with their own Points,
@@ -100,10 +101,10 @@
         const docC = sig?.c.doc as TheC | undefined
         if (!docC) return
 
-        // cursor: ave/%examining,$src_Point_root,$src_Waft
-        const ex = ave.o({ examining: 1 })[0] as TheC | undefined
-        const src_Point_root = ex?.sc.src_Point_root as TheC | undefined
-        if (!src_Point_root) {
+        // cursor: ave/%examining/%What_Points,1 carries the C whose %Point,N we graft
+        const ex           = ave.o({ examining: 1 })[0] as TheC | undefined
+        const what_pts_C   = ex?.o({ What_Points: 1 })[0] as TheC | undefined
+        if (!what_pts_C) {
             // nothing cursored — wipe Pmirrors for this doc
             await this.Lang_wipe_pmirrors(docC)
             return
@@ -111,18 +112,25 @@
 
         // Points are read directly off the cursor.  No dive — the cursor's
         // job is to land at the right Something within a Waft.
-        const points: TheC[] = src_Point_root.o({ Point: 1 }) as TheC[]
-        // Lies stamps %src_Waft on %examining alongside %src_Point_root, so
-        // we get the containing Waft key without walking up from the cursored C.
-        const waft_key = (ex?.sc.src_Waft as string | undefined) ?? '?'
+        const src_C     = what_pts_C.sc.src as TheC | undefined
+        if (!src_C) {
+            console.warn(`🔩 Lang_graft_points: What_Points has no src — cursor half-set?`)
+            await this.Lang_wipe_pmirrors(docC)
+            return
+        }
+        const points: TheC[] = src_C.o({ Point: 1 }) as TheC[]
+        // src_Waft is stored on the %What_Points child alongside src
+        const waft_key = (what_pts_C.sc.src_Waft as string | undefined) ?? '?'
 
-        // compile output for resolution — lives directly on docC, not on ave
-        const job     = docC.o({ Compile: 1 })[0]    as TheC | undefined
-        const output  = job?.o({ Output: 1 })[0]     as TheC | undefined
-        const methods = output?.o({ methods: 1 })[0] as TheC | undefined
-        // defs: method functions; regions: named code sections — both are valid targets
+        // compile output for resolution — %methods lives directly on %Compile,
+        // whether or not an %Output child exists (soft-compiled docs never get Output).
+        const job     = docC.o({ Compile: 1 })[0]       as TheC | undefined
+        const methods = job?.o({ methods: 1 })[0]       as TheC | undefined
+        // defs: method functions; regions: //#region blocks — both are valid targets
         const defs    = (methods?.o({ def: 1 })    ?? []) as TheC[]
         const regions = (methods?.o({ region: 1 }) ?? []) as TheC[]
+        // calls are for navigation, not for graft anchoring
+        // < could graft to first call-site if no def|region matches in future
 
         // cache guard: same fingerprint → identical work, nothing to do.
         // Different point set or different compile → re-graft.  Cursor
@@ -132,7 +140,8 @@
         const fingerprint = points
             .map(pt => this.Lang_point_spec(pt) ?? '')
             .join(';')
-        const cache_key = `${docC.version}:${output?.version ?? 0}:${ex?.version ?? 0}:${waft_key}|${fingerprint}`
+        // what_pts_C.version bumps when Lies_set_examining installs a new cursor
+        const cache_key = `${docC.version}:${job?.version ?? 0}:${what_pts_C?.version ?? 0}:${waft_key}|${fingerprint}`
         if (docC.c.graft_cache_key === cache_key) return
         docC.c.graft_cache_key = cache_key
 
@@ -174,21 +183,29 @@
         // (resolving fresh ones now that replace is done).  Continuous
         // Pmirrors with their graft already present get their
         // sc.from/sc.to/sc.line refreshed to the def's latest position.
-        let unresolved = []
+        const unresolved_specs: string[] = []
         for (const pmirror of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
             const spec = pmirror.sc.spec as string
             if (!spec) continue
             // pass both defs and regions so region-named Points can resolve
             const def = this.Lang_resolve_spec(spec, defs, regions)
             if (!def) {
-                unresolved.push(spec)
+                unresolved_specs.push(spec)
                 continue
             }
-
             this.Lang_ensure_graft(pmirror, def, docC)
         }
-        if (unresolved.length) {
-            console.warn(`Pmirrors that don't Lang_resolve_spec: ${unresolved.join(', ')}`)
+
+        // Diagnostic: log what the resolver had available when something failed
+        if (unresolved_specs.length) {
+            const region_labels = regions.map(r => r.sc.label as string)
+            const def_names     = defs.map(d => d.sc.method as string)
+            console.warn(
+                `🔩 unresolved Pmirrors: [${unresolved_specs.join(', ')}]`,
+                `\n  job=${!!job} methods=${!!methods}`,
+                `\n  defs(${defs.length}): ${def_names.slice(0,5).join(', ')}`,
+                `\n  regions(${regions.length}): ${region_labels.slice(0,8).join(', ')}`,
+            )
         }
     },
 
@@ -290,7 +307,7 @@
         graft.bump_version()
 
         const def_name = (def.sc.method ?? def.sc.label) as string
-        console.log(`🔩 graft ${pmirror.sc.spec} → ${bm_id} [${def_from}..${def_to}] line ${def_line} (${def.sc.def ? 'def' : 'region'}:${def_name})`)
+        console.log(`🔩 graft ${pmirror.sc.spec} → ${bm_id} [${def_from}..${def_to}] line ${def_line} (${def.sc.def ? 'def' : 'region'}:${def_name}) doc=${docC.sc.doc}`)
     },
 
     // ── Lang_remove_graft_mark ───────────────────────────────────────────

@@ -326,11 +326,12 @@
             if (snap) view!.dispatch({ effects: snap })
 
             // Re-register view+state with backend so CM events carry the right doc.
-            // Pass current bookmark positions so the backend can reconcile docC
-            // against the restored CM state (re-anchoring any that drifted).
+            // Pass current bookmark + graft positions so the backend can reconcile docC
+            // and the Pmirror %graft children against the restored CM state.
             Lang_i_elvis(view!, 'Lang_editorBegins',
                 { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
-                  updates: readBookmarks(view!) })
+                  addGraftMark, removeGraftMark, clearAllGrafts,
+                  updates: readBookmarks(view!), graft_updates: readGrafts(view!) })
         })
     })
 
