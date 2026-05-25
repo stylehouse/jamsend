@@ -24,14 +24,11 @@
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
-    let { H, bm, doc_path, lang_model, w }: {
+    let { H, bm, doc_path, lang_model }: {
         H:          House
         bm:         TheC
         doc_path:   string
         lang_model?: TheC
-        // w is H:Lang's context TheC — show_tree is persisted on w.c.show_tree
-        // so all bookmarks share the toggle and it survives add/remove
-        w?:         TheC
     } = $props()
 
     let editing     = $state(false)
@@ -103,21 +100,15 @@
     // When txt mode is active, model/Line:N holds the Lezer hierarchy for the
     // line this bookmark sits on.  The eye button toggles it open.
     //
-    // show_tree lives on w.c.show_tree so the toggle is shared across all
-    // DocPoint instances and persists when bookmarks are added or removed.
-    // Falls back to local state when w is absent (e.g. in isolation tests).
+    // show_tree initialises from H.c.dp_show_tree (true when unset) so new
+    // bookmarks open at whatever state the last toggle left things.
+    // toggle_tree writes back to H.c.dp_show_tree so the next new instance
+    // picks up the current preference on its own init.
 
-    let _show_tree_local = $state(false)
-    let show_tree = $derived(w
-        ? ((void w.version), (w.c as Record<string,unknown>).show_tree !== false)
-        : _show_tree_local)
+    let show_tree = $state((H.c as Record<string,unknown>).dp_show_tree !== false)
     function toggle_tree() {
-        if (w) {
-            ;(w.c as Record<string,unknown>).show_tree = !show_tree
-            w.bump_version()
-        } else {
-            _show_tree_local = !_show_tree_local
-        }
+        show_tree = !show_tree
+        ;(H.c as Record<string,unknown>).dp_show_tree = show_tree
     }
 
     // sc keys that are positional / bookmarking noise — hidden in the render
