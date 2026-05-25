@@ -187,11 +187,13 @@
     // Flatten the TheC subtree into {indent, type_part, str_part, color} lines.
     // type_part and str_part are rendered in separate spans with separate colours.
     // Actual space characters so copy-paste preserves the tree shape.
+    // depth 0 is always the Line node — its str is the complete source line and
+    // always shown, even when the same text reaches a leaf below.
     type FlatLine = { indent: string, type_part: string, str_part: string | undefined, color: string }
     function flatten_tree(node: TheC, depth = 0, parent_str: string | undefined = undefined): FlatLine[] {
         const tk   = type_key(node)
-        const show = should_show_str(node, parent_str)
         const str  = node.sc.str as string | undefined
+        const show = depth === 0 ? str !== undefined : should_show_str(node, parent_str)
         const lines: FlatLine[] = [{
             indent:    '  '.repeat(depth),
             type_part: type_part(node),

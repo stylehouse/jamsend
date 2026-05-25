@@ -270,7 +270,8 @@
 
         for (const [ln, { line_from, line_to, bm_ids }] of sorted_lines) {
             // one LineC per doc line — keyed by line number so repeat ticks converge
-            const LineC = model.oai({ Line: ln }, { line_from, line_to })
+            const str = doc.lineAt(line_from).text
+            const LineC = model.oai({ Line: ln }, { line_from, line_to, str })
             for (const id of bm_ids) LineC.sc[`the_bm_${id}`] = 1
             LineC.bump_version()
 

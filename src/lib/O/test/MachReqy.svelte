@@ -36,7 +36,7 @@
             this.trace("De:sort")
             const rq = this.reqy(De, {k:'req'})
 
-            // req:wait,time:5000
+            // req:wait,time:123
             //   armed guard: one timer only; reqyoncile brings re-entry
             //   re-entry: thing set → finish; want_savepoint holds story open
             const rWait = await rq.roai({req:'wait', time:123})
