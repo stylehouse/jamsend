@@ -40,6 +40,11 @@
     //               labelled "& exp" in the UI — useful when you want to see
     //               exactly which numbered lines shifted without any realignment.
     //   prev      — prev step got vs this step got, proper DMP diff
+    //   first     — first_snap vs got_snap, DMP diff across a Resnapture session.
+    //               first_snap is set by e_story_resnap just before the new snap
+    //               is taken; it holds "what the snap looked like before Resnap".
+    //               A popup at the top of Storui shows this diff automatically
+    //               when a Resnapture fires.
     //   naive     — raw got_snap text, no diff highlighting
     //
     //   diff_mode: what this step is showing.  null = auto.
@@ -99,13 +104,14 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { peel }       from "$lib/Y.svelte"
+    import Vexpandy       from "$lib/O/ui/Vexpandy.svelte"
 
     let { H }: { H: House } = $props()
 
 
     //#region types
 
-    type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'naive'
+    type DiffMode = 'exp' | 'exp_naive' | 'prev' | 'first' | 'naive'
 
     type CharOps = Array<[number, string]>
 
@@ -156,6 +162,27 @@
             }
         }
         swatch_map = m
+
+        // detect resnap_count bumping — open fixed popup for the resnapped step.
+        // Read from an.sc directly, not display.run_sc — display is $state that
+        // Object.assign just wrote above, so reading it here would subscribe the
+        // effect to its own output and cause an infinite update loop.
+        // an.sc is a plain TheC sc object; reading it creates no Svelte subscription.
+        // _prev_resnap is plain (untracked) so writing it here doesn't re-trigger.
+        const count = an?.sc.run_sc?.resnap_count as number | undefined
+        if (count != null && count > 0 && count !== _prev_resnap) {
+            _prev_resnap = count
+            const n = (an.sc.run_sc?.resnap_n as number | undefined) ?? null
+            popup_step = n
+            if (H.top_House().is_house_visible?.(H)) {
+                // Storui is already in the viewport — no popup needed.
+                // Just open the resnapped step and focus the strip for keyboard nav.
+                if (n != null) setTimeout(() => { pick(n!); strip_el?.focus() }, 0)
+            } else {
+                popup_expanded = true
+                popup_open     = true
+            }
+        }
     })
 
     function live_step(n: number): TheC | null {
@@ -289,6 +316,14 @@
         return !!(prev && prev.sc.got_snap)
     })
 
+    let has_first_snap = $derived.by(() => {
+        const n = displayed_at
+        if (n == null) return false
+        const Step = live_step(n)
+        void Step?.version
+        return !!(Step && Step.sc.first_snap)
+    })
+
     // panel_ready: false while waiting for exp_snap on a mismatch step
     // that has a known dige (meaning there IS an expected snap to fetch).
     // Shows a simple "loading" placeholder instead of briefly flashing naive/prev.
@@ -329,10 +364,11 @@
     let eff_mode = $derived.by((): DiffMode => {
         if (diff_mode) return diff_mode
         // sticky_mode carries across pip nav, but only when its required snap is present.
-        // Without this guard, navigating to a step whose prev/exp snap is absent would
-        // return e.g. 'prev' while showing naive content — mode button hidden, no feedback.
+        // Without this guard, navigating to a step whose prev/exp/first snap is absent
+        // would return e.g. 'prev' while showing naive content — mode button hidden, no feedback.
         if (sticky_mode === 'naive') return sticky_mode
-        if (sticky_mode === 'prev' && has_prev_snap) return sticky_mode
+        if (sticky_mode === 'prev'  && has_prev_snap)  return sticky_mode
+        if (sticky_mode === 'first' && has_first_snap) return sticky_mode
         if ((sticky_mode === 'exp' || sticky_mode === 'exp_naive') && has_exp_snap) return sticky_mode
         const n    = display.open_at
         const Step = n != null ? live_step(n) : null
@@ -352,6 +388,18 @@
         sticky_mode = next
     }
 
+    // rows_for: pure function — compute DiffRow[] given a mode, reference, and got snap.
+    // Reused by both the main diff panel (diff_rows) and the popup (popup_rows).
+    function rows_for(mode: DiffMode, ref: string, got: string): DiffRow[] {
+        const as_naive = (snap: string): DiffRow[] =>
+            snap.split('\n').filter(Boolean)
+                .map(line => ({ kind: 'pair' as const, left: line, right: line, tag: 'same' as const }))
+        if (mode === 'naive') return as_naive(got)
+        if (!ref) return as_naive(got)   // ref absent (fetch in flight) — stay on raw
+        if (mode === 'exp_naive') return H.squish_context(H.positional_diff(ref, got))
+        return H.squish_context(H.compute_diff(ref, got))
+    }
+
     // diff_rows: final aligned diff for rendering.
     // Subscribes to Step.version and prev.version so it re-derives when
     // snaps arrive asynchronously (e.g. after story_sel triggers a fetch).
@@ -364,32 +412,39 @@
         void Step?.version
         void prev?.version
 
-        const got_snap  = (Step && Step.sc.got_snap  as string) ?? ''
-        const exp_snap  = (Step && Step.sc.exp_snap  as string) ?? ''
-        const prev_snap = (prev && prev.sc.got_snap  as string) ?? ''
-        const mode      = eff_mode
+        const got_snap   = (Step?.sc.got_snap   as string) ?? ''
+        const exp_snap   = (Step?.sc.exp_snap   as string) ?? ''
+        const first_snap = (Step?.sc.first_snap as string) ?? ''
+        const prev_snap  = (prev?.sc.got_snap   as string) ?? ''
+        const mode       = eff_mode
 
-        // naive: no diff — pass through as same/same pairs for single-col pre
-        const as_naive = (snap: string): DiffRow[] =>
-            snap.split('\n').filter(Boolean)
-                .map(line => ({ kind: 'pair' as const, left: line, right: line, tag: 'same' as const }))
+        const ref = mode === 'exp' || mode === 'exp_naive' ? exp_snap
+                  : mode === 'prev'                        ? prev_snap
+                  : mode === 'first'                       ? first_snap
+                                                           : ''
+        return rows_for(mode, ref, got_snap)
+    })
 
-        if (mode === 'naive')     return as_naive(got_snap)
-        if (mode === 'exp_naive') return H.squish_context(H.positional_diff(exp_snap, got_snap))
-
-        const ref = mode === 'exp' ? exp_snap : prev_snap
-        // ref may be empty while the async fetch is in flight — show naive until it lands
-        if (!ref) return as_naive(got_snap)
-
-        return H.squish_context(H.compute_diff(ref, got_snap))
+    // popup_rows: first<=>got diff for the Resnapture popup.
+    // Only populated while popup_step is set.  Subscribes to step version so it
+    // re-derives once snap_step_after_wave overwrites %got_snap.
+    let popup_rows = $derived.by((): DiffRow[] => {
+        if (popup_step == null) return []
+        const Step = live_step(popup_step)
+        void Step?.version
+        const first = (Step?.sc.first_snap as string) ?? ''
+        const got   = (Step?.sc.got_snap   as string) ?? ''
+        if (!first || !got) return []
+        return H.squish_context(H.compute_diff(first, got))
     })
 
     // col_labels: column headings — left = reference, right = current got
     let col_labels = $derived(
-        eff_mode === 'exp'       ? { left: 'exp',  right: 'got' } :
-        eff_mode === 'exp_naive' ? { left: 'exp',  right: 'got' } :
-        eff_mode === 'prev'      ? { left: 'prev', right: 'got' } :
-                                   { left: 'got',  right: ''     }
+        eff_mode === 'exp'       ? { left: 'exp',   right: 'got' } :
+        eff_mode === 'exp_naive' ? { left: 'exp',   right: 'got' } :
+        eff_mode === 'prev'      ? { left: 'prev',  right: 'got' } :
+        eff_mode === 'first'     ? { left: 'first', right: 'got' } :
+                                   { left: 'got',   right: ''    }
     )
 
     //#region run bar deriveds 
@@ -483,6 +538,46 @@
     let diff_collecting = $state(false)
     let diff_status     = $state('')
 
+    // ── Resnapture popup ──────────────────────────────────────────────────────
+    //
+    //   Triggered by run.sc.resnap_count incrementing (set in e_story_resnap,
+    //   spread into an.sc.run_sc by story_analysis, detected here in the ave $effect).
+    //   The popup is a position:fixed Vexpandy at the top of the viewport —
+    //   the user can keep interacting with the tested UI while the diff is visible.
+    //
+    //   popup_step: the step whose first_snap<=>got_snap is shown.
+    //   popup_expanded: controls Vexpandy's V toggle inside the popup.
+    //
+    //   go_to_diff() closes the popup, asks Mundo to scroll to H:Story, and picks
+    //   the resnapped step in the main diff panel.
+
+    let popup_open     = $state(false)
+    let popup_expanded = $state(true)
+    let popup_step     = $state<number | null>(null)
+    let _prev_resnap   = -1   // plain — intentionally untracked
+
+    function go_to_diff() {
+        const n = popup_step
+        popup_open = false
+        // short delay so the popup's layout space collapses before NaviScroll
+        // measures the scroll target — avoids the viewport jumping twice
+        setTimeout(() => {
+            H.top_House().scroll_to_house?.(H)
+            if (n != null) pick(n)
+            strip_el?.focus()
+        }, 50)
+    }
+
+    // Enter when the popup is expanded: same as clicking "go to diff"
+    $effect(() => {
+        if (!popup_open || !popup_expanded) return
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Enter') { e.preventDefault(); go_to_diff() }
+        }
+        window.addEventListener('keydown', handler)
+        return () => window.removeEventListener('keydown', handler)
+    })
+
     // collect_range: build the multi-step Dif block and copy to clipboard.
     //
     //   All pure diff work delegated to T (Textures methods on H):
@@ -528,7 +623,9 @@
 
             // ── diff mode: emit Dif markers 
             const ref_snap = mode === 'exp' || mode === 'exp_naive'
-                ? (Step.sc.exp_snap as string) ?? ''
+                ? (Step.sc.exp_snap   as string) ?? ''
+                : mode === 'first'
+                ? (Step.sc.first_snap as string) ?? ''
                 : prev_snap
 
             if (!ref_snap) {
@@ -541,6 +638,7 @@
 
             const diff_label = mode === 'exp'       ? 'exp'
                             : mode === 'exp_naive' ? 'exp_naive'
+                            : mode === 'first'     ? 'first'
                             : 'prev'
             all_lines.push(`  Snap,diff:${diff_label}`)
             const raw_rows = mode === 'exp_naive'
@@ -679,6 +777,11 @@
             e.preventDefault()
             diff_mode   = 'naive'
             sticky_mode = 'naive'
+        } else if (e.key === 'f') {
+            // f: toggle first mode (first_snap <=> got_snap Resnapture diff)
+            if (displayed_at == null || !live_step(displayed_at)) return
+            e.preventDefault()
+            if (has_first_snap) toggle_mode('first')
         } else if (e.key === 't') {
             // t: toggle trace panel (persists across pip nav)
             if (displayed_at == null || !live_step(displayed_at)) return
@@ -688,6 +791,8 @@
             // a: toggle expand (V button — upside-down A shape when closed)
             e.preventDefault()
             expanded = !expanded
+        } else if (e.key === 'Escape') {
+            if (popup_open) { e.preventDefault(); popup_open = false }
         }
     }
 
@@ -709,14 +814,15 @@
     //   The expand button lives beside the pip strip.
     let expanded = $state(false)
 
-    // diff2_body: the two-column grid; .sr-diff2-col children sync their scrollLeft
-    let diff2_body = $state<HTMLElement | null>(null)
-
+    // sync_col_scroll: keep left and right diff columns locked to the same scrollLeft.
+    // Uses closest() so it works in any instance of the diff2 snippet — the popup
+    // and the main panel each have their own sr-diff2-body without any explicit binding.
     function sync_col_scroll(e: Event) {
-        if (!diff2_body) return
-        const src = e.currentTarget as HTMLElement
-        const x   = src.scrollLeft
-        for (const col of diff2_body.querySelectorAll<HTMLElement>('.sr-diff2-col')) {
+        const src  = e.currentTarget as HTMLElement
+        const body = src.closest('.sr-diff2-body') as HTMLElement | null
+        if (!body) return
+        const x = src.scrollLeft
+        for (const col of body.querySelectorAll<HTMLElement>('.sr-diff2-col')) {
             if (col !== src && col.scrollLeft !== x) col.scrollLeft = x
         }
     }
@@ -772,6 +878,38 @@
             {/if}
         </div>
 
+        <!-- ── Resnapture popup (fixed modal) ──────────────────────────────── -->
+        <!-- Appears at top of viewport when 📸 is clicked in the actions bar.  -->
+        <!-- Stays visible while poking at the tested UI — position:fixed so     -->
+        <!-- no scrolling needed.  V collapses to a slim bar; × closes entirely. -->
+        {#if popup_open}
+            {@const popup_s    = popup_step != null ? live_step(popup_step) : null}
+            {@const _pv        = popup_s?.version}
+            <Vexpandy bind:expanded={popup_expanded} popup={true}>
+                {#snippet header()}
+                    <span class="sr-resnap-title">
+                        📸 step {popup_step != null ? String(popup_step).padStart(3,'0') : '—'} — first ↔ got
+                        {#if popup_rows.length === 0}
+                            <span class="sr-resnap-dim">(no change yet)</span>
+                        {/if}
+                    </span>
+                    <button class="sr-resnap-goto" onclick={go_to_diff}
+                            title="close popup, scroll to diff, open step (Enter)">go to diff ↓</button>
+                    <button class="sr-resnap-close" onclick={() => popup_open = false}
+                            title="close popup">×</button>
+                {/snippet}
+                {#snippet children()}
+                    {#if popup_rows.length > 0}
+                        {@render diff2_view(popup_rows, {left:'first', right:'got'}, 'first')}
+                    {:else}
+                        <div class="sr-hollow-body sr-resnap-empty">
+                            {popup_s?.sc.first_snap ? 'no change between snaps' : 'snap in progress…'}
+                        </div>
+                    {/if}
+                {/snippet}
+            </Vexpandy>
+        {/if}
+
         <!-- ── pip strip ────────────────────────────────────────────────── -->
         <!-- One cell per step from The (skeleton); live Step data overlaid.   -->
         <!-- hollow: step in The but not yet reached this session.             -->
@@ -812,8 +950,7 @@
                 </div>
             {/each}
         </div>
-        <button class="sr-expand" class:open={expanded} onclick={() => expanded = !expanded}
-                title="{expanded ? 'collapse' : 'expand'}">V</button>
+        <Vexpandy bind:expanded={expanded} />
         </div>
 
         <!-- ── snap panel ───────────────────────────────────────────────── -->
@@ -873,9 +1010,13 @@
                                 <button class="primary" class:active={eff_mode==='prev'}
                                         onclick={() => toggle_mode('prev')}>prev</button>
                             {/if}
+                            {#if has_first_snap}
+                                <button class="primary sr-first-btn" class:active={eff_mode==='first'}
+                                        onclick={() => toggle_mode('first')}>first</button>
+                            {/if}
                             <button class:active={eff_mode==='naive'}
                                     onclick={() => toggle_mode('naive')}>raw</button>
-                            <span class="sr-ekey">[e r t a]</span>
+                            <span class="sr-ekey">[e r t a f]</span>
                         </span>
                     {/if}
 
@@ -933,52 +1074,9 @@
                     <pre class="sr-pre sr-tree-pre">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>
 
                 {:else}
-                    <!-- two-column proper diff with squished boring context -->
-                    <div class="sr-diff2" class:prev-bg={eff_mode === 'prev'}>
-                        <div class="sr-diff2-hdr">
-                            <div class="sr-dlabel ref">{col_labels.left}</div>
-                            <div class="sr-dlabel got">{col_labels.right}</div>
-                        </div>
-                        <div class="sr-diff2-body" bind:this={diff2_body}>
-                        <div class="sr-diff2-grid">
-
-                            <!-- left column: clips and scrolls horizontally -->
-                            <div class="sr-diff2-col" onscroll={sync_col_scroll}>
-                                {#each diff_rows as row, i (i)}
-                                    {#if row.kind === 'squish'}
-                                        <div class="sr-squish">… {row.count} unchanged</div>
-                                    {:else if row.kind === 'pair' && row.tag === 'same'}
-                                        <div class="sr-diff2-cell">{@render line_content(row.left)}</div>
-                                    {:else if row.kind === 'pair' && row.tag === 'changed'}
-                                        <div class="sr-diff2-cell changed">{@render intra_line(row.left, row.ops, 'left')}</div>
-                                    {:else if row.kind === 'left_only'}
-                                        <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
-                                    {:else if row.kind === 'right_only'}
-                                        <div class="sr-diff2-cell neu sr-empty-cell"></div>
-                                    {/if}
-                                {/each}
-                            </div>
-
-                            <!-- right column: identical squish markup keeps row heights in sync -->
-                            <div class="sr-diff2-col" onscroll={sync_col_scroll}>
-                                {#each diff_rows as row, i (i)}
-                                    {#if row.kind === 'squish'}
-                                        <div class="sr-squish">… {row.count} unchanged</div>
-                                    {:else if row.kind === 'pair' && row.tag === 'same'}
-                                        <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
-                                    {:else if row.kind === 'pair' && row.tag === 'changed'}
-                                        <div class="sr-diff2-cell changed">{@render intra_line(row.right, row.ops, 'right')}</div>
-                                    {:else if row.kind === 'left_only'}
-                                        <div class="sr-diff2-cell gone sr-empty-cell"></div>
-                                    {:else if row.kind === 'right_only'}
-                                        <div class="sr-diff2-cell neu">{@render line_content(row.line)}</div>
-                                    {/if}
-                                {/each}
-                            </div>
-
-                        </div>
-                        </div>
-                    </div>
+                    <!-- two-column proper diff — rendered via the diff2_view snippet -->
+                    <!-- so the same markup can be reused in the Resnapture popup     -->
+                    {@render diff2_view(diff_rows, col_labels, eff_mode)}
                 {/if}
                 </div>
                 {#if show_trace && Step?.sc.Run_trace?.length}
@@ -1019,6 +1117,55 @@
 </div>
 
 <!-- ── snippets ─────────────────────────────────────────────────────────── -->
+
+<!-- diff2_view: reusable two-column DMP diff renderer.
+     Used by the main snap panel and the Resnapture popup alike.
+     rows:   DiffRow[] precomputed by diff_rows or popup_rows.
+     labels: {left, right} column headings.
+     accent: 'prev' | 'first' | other — drives background tint class.
+     sync_col_scroll uses closest() so no binding is needed here. -->
+{#snippet diff2_view(rows: DiffRow[], labels: {left: string, right: string}, accent: string)}
+    <div class="sr-diff2" class:prev-bg={accent === 'prev'} class:first-bg={accent === 'first'}>
+        <div class="sr-diff2-hdr">
+            <div class="sr-dlabel ref">{labels.left}</div>
+            <div class="sr-dlabel got">{labels.right}</div>
+        </div>
+        <div class="sr-diff2-body">
+        <div class="sr-diff2-grid">
+            <div class="sr-diff2-col" onscroll={sync_col_scroll}>
+                {#each rows as row, i (i)}
+                    {#if row.kind === 'squish'}
+                        <div class="sr-squish">… {row.count} unchanged</div>
+                    {:else if row.kind === 'pair' && row.tag === 'same'}
+                        <div class="sr-diff2-cell">{@render line_content(row.left)}</div>
+                    {:else if row.kind === 'pair' && row.tag === 'changed'}
+                        <div class="sr-diff2-cell changed">{@render intra_line(row.left, row.ops, 'left')}</div>
+                    {:else if row.kind === 'left_only'}
+                        <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
+                    {:else if row.kind === 'right_only'}
+                        <div class="sr-diff2-cell neu sr-empty-cell"></div>
+                    {/if}
+                {/each}
+            </div>
+            <div class="sr-diff2-col" onscroll={sync_col_scroll}>
+                {#each rows as row, i (i)}
+                    {#if row.kind === 'squish'}
+                        <div class="sr-squish">… {row.count} unchanged</div>
+                    {:else if row.kind === 'pair' && row.tag === 'same'}
+                        <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
+                    {:else if row.kind === 'pair' && row.tag === 'changed'}
+                        <div class="sr-diff2-cell changed">{@render intra_line(row.right, row.ops, 'right')}</div>
+                    {:else if row.kind === 'left_only'}
+                        <div class="sr-diff2-cell gone sr-empty-cell"></div>
+                    {:else if row.kind === 'right_only'}
+                        <div class="sr-diff2-cell neu">{@render line_content(row.line)}</div>
+                    {/if}
+                {/each}
+            </div>
+        </div>
+        </div>
+    </div>
+{/snippet}
 
 <!-- snap_line: full line block used in naive/tree single-column pre.
      Snap line format: "${indent}${obj_part}\t${stringies}" when objecties present,
@@ -1125,23 +1272,10 @@
 /* .sr itself suppresses outline too; focus is tracked via activeElement */
 .sr:focus { outline: none; }
 
-.sr-expand {
+/* Vexpandy V button positioned in the strip-wrap corner — same slot as the old .sr-expand */
+.sr-strip-wrap :global(.vx-btn) {
     position: absolute; top: 4px; right: 6px;
-    background: none; border: none;
-    color: #484848; cursor: pointer;
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 16px; font-weight: 400; line-height: 1;
-    /* fixed footprint so it never collapses smaller */
-    width: 20px; height: 20px; padding: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: color 0.15s, transform 0.2s;
-    transform-origin: center;
-    /* default: Λ — upside-down V, mnemonically the A key that toggles this */
-    transform: rotate(180deg);
 }
-.sr-expand:hover { color: #79b; }
-/* open: right-side-up V — pointing down like an open drawer */
-.sr-expand.open { transform: rotate(0deg); }
 
 /* ── expanded layout ────────────────────────────────────────────────────── */
 /* .sr.expanded grows to 70vh with a flex column so the diff body fills     */
@@ -1355,6 +1489,36 @@
 .sr-diff2.prev-bg .sr-diff2-hdr  { background: #020d1a; }
 .sr-diff2.prev-bg .sr-diff2-col:last-child { border-left-color: #0d1a2a; }
 .sr-diff2.prev-bg .sr-squish { background: #030e1a; border-top-color: #0a1520; border-bottom-color: #0a1520; }
+
+/* first-bg: warm amber tint — Resnapture diff, distinct from exp (blue) and prev (navy) */
+.sr-diff2.first-bg,
+.sr-diff2.first-bg .sr-diff2-hdr  { background: #141008; }
+.sr-diff2.first-bg .sr-diff2-col:last-child { border-left-color: #261e08; }
+.sr-diff2.first-bg .sr-squish { background: #100c04; border-top-color: #1e1604; border-bottom-color: #1e1604; }
+
+/* first mode button — amber accent to match first-bg tint */
+.sr-diff-modes button.sr-first-btn         { border-color: #3a3020; color: #a87; }
+.sr-diff-modes button.sr-first-btn.active  { background: #1a1208; border-color: #4a3818; color: #cb9; }
+
+/* ── Resnapture popup content (inside Vexpandy fixed modal) ─────────────── */
+/* Buttons and labels that live in the Vexpandy header snippet.              */
+.sr-resnap-title {
+    color: #b97; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; flex: 1;
+}
+.sr-resnap-dim   { color: #664; font-style: italic; font-weight: 400; }
+.sr-resnap-goto {
+    background: #1a1208; border: 1px solid #3a2808; border-radius: 2px;
+    color: #b97; cursor: pointer; font-size: 9px; font-family: inherit;
+    padding: 0 8px; line-height: 15px;
+}
+.sr-resnap-goto:hover { background: #2a1e0c; color: #cb9; }
+.sr-resnap-close {
+    background: none; border: none;
+    color: #664; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+}
+.sr-resnap-close:hover { color: #cb9; }
+/* empty state inside the popup body */
+.sr-resnap-empty { color: #554; font-style: italic; }
 
 .sr-dlabel {
     font-size: 9px; font-weight: 700; letter-spacing: 0.1em;

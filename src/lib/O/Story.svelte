@@ -7,7 +7,7 @@
     //   This  — what is spontaneously happening right now, this session.
     //           Particles live as direct children of w, the Story work particle.
     //           Uppercase key: {Step:N}
-    //           Carries: got_snap, exp_snap, dige, ok, hollow, accepted, saved.
+    //           Carries: got_snap, exp_snap, first_snap, dige, ok, hollow, accepted, saved.
     //           Has {watched:'ave'} in sc so enroll_watched() picks it up and
     //           any version bump on a Step is visible to Storui as a reactive
     //           change, even though the Step is not inside the ave container.
@@ -714,6 +714,40 @@
 
         const sub = H.Story_subHouse(A, w)
         if (sub) H.story_drive(sub.Run, w, run)
+    },
+
+    async e_story_resnap(A: TheC, w: TheC) {
+        // Resnapture: anchor %first_snap (once) then re-fire snap_step_after_wave
+        // to produce a fresh %got_snap.  The diff between the two is shown in
+        // Storui's popup so you can see what changed while poking at the UI.
+        //
+        // first_snap is only captured if absent — subsequent Resnaps accumulate
+        // got_snap drift away from the original anchor, not from each other.
+        //
+        // resnap_count increments each time; story_analysis spreads run.sc into
+        // an.sc.run_sc so Storui's $effect detects the bump without a dedicated
+        // channel.  resnap_n is the step being resnapped (always run.c.step_n).
+        const H   = this
+        const run = w.o({ run: 1 })[0]
+        if (!run) return
+        const n = run.c.step_n as number | undefined
+        if (n == null) return
+
+        const step = H.i_step(w, n)
+        if (step.sc.got_snap && !step.sc.first_snap) step.sc.first_snap = step.sc.got_snap
+
+        run.sc.resnap_n     = n
+        run.sc.resnap_count = ((run.sc.resnap_count as number) ?? 0) + 1
+
+        const resume = run.c.snap_step_after_wave as (() => Promise<void>) | undefined
+        if (!resume) {
+            console.warn('Resnap: no snap_step_after_wave on run.c (no step driven yet?)')
+            return
+        }
+        if (run.sc.paused && run.sc.paused !== 2) run.sc.paused = 0
+        run.c.driving = true
+        H.story_analysis(w)   // pump resnap_count to Storui before snap arrives
+        H.post_do(resume, { see: 'Resnapture' })
     },
 
 
@@ -1440,6 +1474,8 @@
                 const old = H.i_step(w, trim_n)
                 if (old.sc.ok && !old.sc.accepted)   delete old.sc.got_snap
                 if (old.sc.accepted && old.sc.saved)  delete old.sc.got_snap
+                // first_snap is a session diff anchor paired with got_snap
+                if (!old.sc.got_snap)                 delete old.sc.first_snap
                 delete old.sc.exp_snap
             }
 
@@ -1730,31 +1766,18 @@
             disabled: true,
         })
 
-        // ── Resnap button ─────────────────────────────────────────
-        // Debug tool: re-fires the current step's snap_step_after_wave,
-        // capturing Snap:H as it looks RIGHT NOW. Useful when the model
-        // has filled out asynchronously (bookmark walks, Cyto scans) after
-        // the original snap went out with a stale / empty model.
-        //
-        // Doesn't try to reconstruct TheWave properly — the point is to
-        // re-read the H tree into a fresh snap you can open in the diff
-        // panel. The CytoWave portion will be whatever Cyto has cached.
+        // ── Resnap button ─────────────────────────────────────────────────
+        // Re-snaps the current step from where the model stands right now.
+        // Useful when async work (bookmark walks, Cyto scans, UI interaction)
+        // has changed observable state after the original snap.
+        // e_story_resnap anchors %first_snap (once per step) then re-fires
+        // snap_step_after_wave.  Storui detects resnap_count changing and
+        // opens its fixed popup showing first<=>got.
         await wa.roai({ action: 1, role: 'resnap' }, {
             label: 'Resnap',
             icon:  '📸',
             cls:   'save',
-            fn: () => {
-                const resume = run.c.snap_step_after_wave as (() => Promise<void>) | undefined
-                if (!resume) {
-                    console.warn('Resnap: no snap_step_after_wave on run.c (no step driven yet?)')
-                    return
-                }
-                // driving=true is what snap_step_after_wave expects; it'll reset
-                // itself as it walks through. paused guard just in case.
-                if (run.sc.paused && run.sc.paused !== 2) run.sc.paused = 0
-                run.c.driving = true
-                this.post_do(resume, { see: 'Resnap button' })
-            },
+            fn: () => { this.i_elvisto('Story/Story', 'story_resnap', {}) },
         })
     },
 

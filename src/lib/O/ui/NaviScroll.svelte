@@ -84,6 +84,44 @@
         scrollToHouseIdx(houses.findIndex(h => h.c?.ip === ip))
     }
 
+    // ── scroll_to_house / is_house_visible: callbacks registered on H:Mundo ──
+    // Lets non-child components (e.g. Storui) query and drive scroll without
+    // needing access to NaviScroll's render-prop API.
+    //
+    // is_house_visible: synchronous viewport check — any part of the house
+    //   content area intersecting the viewport counts as visible.  Uses the
+    //   same house-${ip} element that scrollToHouseIdx targets.
+    $effect(() => {
+        if (!H) return
+
+        H.scroll_to_house = (target: any) => {
+            let ip: string | undefined
+            if (typeof target === 'string') {
+                const found = H.all_House.find(h => h.name === target)
+                ip = found?.c?.ip
+            } else {
+                ip = target?.c?.ip
+            }
+            if (ip) scrollToHouseIpStable(ip)
+        }
+
+        H.is_house_visible = (target: any): boolean => {
+            let ip: string | undefined
+            if (typeof target === 'string') {
+                const found = H.all_House.find(h => h.name === target)
+                ip = found?.c?.ip
+            } else {
+                ip = target?.c?.ip
+            }
+            if (!ip) return false
+            const header  = document.getElementById(`house-${ip}`)
+            if (!header) return false
+            const content = header.nextElementSibling as HTMLElement | null
+            const rect    = (content ?? header).getBoundingClientRect()
+            return rect.bottom > 0 && rect.top < window.innerHeight
+        }
+    })
+
     //#region gaze restoration
     // Track which House ips have appeared so we can detect newcomers.
     // Within RESTORE_WINDOW_MS of Mundo starting (or a resetStory elvis), if

@@ -75,6 +75,30 @@ story:LangTiles
       style:background-color,v:#3a62a6
     matstyle:req_sent
       style:background-color,v:#c93641
+    matstyle:IOing
+      style:background-color,v:#43db63
+    matstyle:IOness
+      style:background-color,v:#61328f
+    matstyle:IOpath
+      style:background-color,v:#b1972f
+    matstyle:Leg
+      style:background-color,v:#29c7d6
+    matstyle:PeelGroup
+      style:background-color,v:#c5599c
+    matstyle:PeelItem
+      style:background-color,v:#c5599c
+    matstyle:PeelKey
+      style:background-color,v:#c5599c
+    matstyle:Name
+      style:background-color,v:#c5599c
+    matstyle:Colon
+      style:background-color,v:#c5599c
+    matstyle:PeelVal
+      style:background-color,v:#c5599c
+    matstyle:Number
+      style:background-color,v:#c5599c
+    matstyle:Comma
+      style:background-color,v:#c5599c
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
@@ -96,17 +120,17 @@ story:LangTiles
       w:Lang
         txtsyntaxdump
   TimeSpool
-    TimeTotal:beliefs,avg:0.421
-      sample:1.398,at:1779622790
-      sample:0.578,at:1779629475
-      sample:0.329,at:1779631415
-      sample:0.275,at:1779631632
-      sample:0.325,at:1779631691
-      sample:0.229,at:1779631718
-      sample:0.256,at:1779631789
-      sample:0.256,at:1779631838
-      sample:0.314,at:1779631849
+    TimeTotal:beliefs,avg:0.338
       sample:0.25,at:1779631865
+      sample:0.28,at:1779671792
+      sample:0.24,at:1779672154
+      sample:0.374,at:1779672167
+      sample:0.467,at:1779672222
+      sample:0.36,at:1779672235
+      sample:0.303,at:1779672864
+      sample:0.286,at:1779673203
+      sample:0.496,at:1779674249
+      sample:0.325,at:1779682121
   step,dige:e5c902401879bbad
   step:2,dige:197e60e3694eeeb5
   step:3,dige:effd0caadbf49e4f
