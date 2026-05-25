@@ -57,7 +57,7 @@
         defs:      Def[]
         points:    PointMark[]
     }
-    type Def = { method: string, class?: string, line: number, from: number, to: number }
+    type Def = { method: string, class?: string, kind?: string, line: number, from: number, to: number }
 
     // A Point becomes a PointMark once its graft fields have been stamped by
     // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
@@ -209,6 +209,7 @@
                 const def: Def = {
                     method:   d.sc.method as string,
                     class:    d.sc.class  as string | undefined,
+                    kind:     d.sc.kind   as string | undefined,
                     line:     d.sc.line   as number,
                     from:     d.sc.from   as number,
                     to:       d.sc.to     as number,
@@ -548,12 +549,13 @@
                 </div>
 
                 {#if !is_collapsed(r) && r.defs.length}
-                    <!-- Def pile: method names flow in wrapping chips, no line alignment.
-                         Two or three chips fit per row depending on name length.
+                    <!-- Def pile: method names flow in a two-column grid.
+                         Class names (kind='class') are bold; method names are dim until hover.
                          Class prefix omitted — region provides the scope context. -->
                     <div class="lmm-def-pile">
                         {#each r.defs as d (d.from)}
                             <button class="lmm-def-chip"
+                                    class:lmm-def-chip-class={d.kind === 'class'}
                                     title="{d.method} (line {d.line})"
                                     onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                         {/each}
@@ -593,6 +595,7 @@
             <div class="lmm-def-pile lmm-def-pile-top">
                 {#each top_level_defs as d (d.from)}
                     <button class="lmm-def-chip lmm-def-chip-top"
+                            class:lmm-def-chip-class={d.kind === 'class'}
                             title="{d.method} (line {d.line})"
                             onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                 {/each}
@@ -691,13 +694,12 @@
         z-index: 2;
     }
 
-    /* Def pile: names flow left-to-right, wrapping into as many rows
-       as needed.  Two to three names typically fit per row at 8px.
+    /* Def pile: two-column grid so long regions don't become a single tall column.
        No line-position alignment — the pile lives just below the header. */
     .lmm-def-pile {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1px 6px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0px 4px;
         padding: 1px 4px 2px;
         background: rgba(0, 0, 0, 0.22);
     }
@@ -712,12 +714,21 @@
         background: none; border: none; cursor: pointer;
         font-size: 8px; color: rgba(180, 200, 220, 0.45);
         padding: 0;
-        white-space: nowrap;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         font-family: inherit;
         line-height: 1.4;
+        text-align: left;
         transition: color 0.1s;
     }
     .lmm-def-chip:hover { color: #c0d0e0; }
+
+    /* Class name def — heavier, slightly brighter at rest. */
+    .lmm-def-chip-class {
+        color: rgba(220, 200, 255, 0.7);
+        font-weight: bold;
+        grid-column: 1 / -1;   /* spans both columns so it gets its own row */
+    }
+    .lmm-def-chip-class:hover { color: #e0d0ff; }
 
     /* Top-level chips — warmer tint to distinguish from region-owned ones. */
     .lmm-def-chip-top { color: rgba(220, 200, 140, 0.45); }

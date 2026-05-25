@@ -276,7 +276,7 @@
         // `region_path` = snapshot of region_stack at the time each entry is recorded
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
-                             via?: string, class?: string, magic?: 1,
+                             via?: string, class?: string, kind?: string, magic?: 1,
                              from?: number, to?: number, line?: number,
                              region_path?: string[] }> = []
 
@@ -570,26 +570,22 @@
         //
         // For tsstho files the relevant Lezer-JS node names are:
         //
-        //   VariableDefinition (parent=ClassDeclaration) → class name
-        //     e.g. "export class Pier {" → def:Pier, class:'Pier'
-        //   PropertyDefinition (parent=ClassBody/MethodDeclaration) → class method
-        //     e.g. "async emit(type, data={}) {" → def:emit, class:'Pier'
-        //   PropertyDefinition (parent=Property in ObjectExpression) → eatfunc method
-        //     e.g. eatfunc pattern: "async on_code_change() {" → def:on_code_change
-        //   PropertyName (in Object shorthand methods some grammars emit this)
-        //     same eatfunc case, backup detection
+        //   VariableDefinition (parent=ClassDeclaration) → class name, kind:'class'
+        //     e.g. "export class Pier {" → def:Pier kind:class
+        //   PropertyDefinition (parent=MethodDeclaration) → class method, kind:'method'
+        //     e.g. "async emit(type, data={}) {" → def:emit class:'Pier' kind:method
+        //   PropertyDefinition (parent=Property with ParamList) → eatfunc method, kind:'method'
+        //     e.g. eatfunc pattern: "async on_code_change() {" → def:on_code_change kind:method
+        //   PropertyName (in Object shorthand methods some grammars emit this) → eatfunc fallback
         //
-        // Class name is retrieved by walking up from PropertyDefinition:
-        //   PropertyDefinition → MethodDeclaration → ClassBody → ClassDeclaration
-        //                                                       → VariableDefinition (class name)
-        // This is four pointer-chases on an already-built tree — essentially free.
+        // PropertyDefinition also appears in many non-callable contexts:
+        //   PropertyDeclaration (class field), PropertyType (type alias body),
+        //   PatternProperty (destructuring), ObjectType, etc.
+        // Rather than blocklisting each new case, we allowlist: only the two
+        // parent types above produce method defs.
         //
-        // IMPORT and RENDER are magic method names reserved for compiler output:
-        //   IMPORT — body lines lifted into the generated module header (imports, consts)
-        //   RENDER — body lines appended to the generated module tail (component mount)
-        //   Both suppressed from the eatfunc body in the generated output.
-        //   recorded here with magic:true so Lang_compile can spot and extract them.
-        // < IMPORT/RENDER extraction in Lang_compile_collect is future work.
+        // IMPORT and RENDER are reserved method names for compiler header/tail extraction.
+        // < IMPORT/RENDER body extraction in Lang_compile_collect is future work.
         tree.iterate({
             from: line.from,
             to:   line.to,
@@ -600,30 +596,27 @@
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
 
-                    const parent = ref.node.parent  // MethodDeclaration, Property, or PropertyDeclaration
+                    const parent = ref.node.parent
 
-                    // Class field declaration: `foo = $state()` or `addresses: Map = $state(…)`.
-                    // PropertyDefinition sits inside PropertyDeclaration, not MethodDeclaration.
-                    // These are not callable — skip so fields don't pollute the def list.
-                    // < index as {field:1} someday when type-aware nav wants them.
-                    if (parent?.type.name === 'PropertyDeclaration') return false
+                    const is_class_method = parent?.type.name === 'MethodDeclaration'
+                    // object method shorthand: Property node carries both PropertyDefinition and ParamList
+                    const is_object_method = parent?.type.name === 'Property'
+                        && !!parent.getChild('ParamList')
 
-                    // In a plain object literal shorthand ({ resolve, reject }),
-                    // PropertyDefinition has parent=Property but no ParamList —
-                    // that's just a value name, not a callable method.
-                    if (parent?.type.name === 'Property' && !parent.getChild('ParamList')) return false
+                    if (!is_class_method && !is_object_method) return false
 
                     // walk up to find class name: MethodDeclaration → ClassBody → ClassDeclaration
-                    const grandparent = parent?.parent    // ClassBody or ObjectExpression
-                    const great       = grandparent?.parent  // ClassDeclaration or …
                     let class_name: string | undefined
-                    if (grandparent?.type.name === 'ClassBody' && great?.type.name === 'ClassDeclaration') {
-                        const cn = great.getChild('VariableDefinition')
+                    if (is_class_method) {
+                        const class_body = parent.parent   // ClassBody
+                        const class_decl = class_body?.type.name === 'ClassBody' ? class_body.parent : null
+                        const cn = class_decl?.type.name === 'ClassDeclaration'
+                            ? class_decl.getChild('VariableDefinition') : null
                         if (cn) class_name = state.doc.sliceString(cn.from, cn.to)
                     }
 
                     const word: any = {
-                        def: 1, method: name,
+                        def: 1, kind: 'method', method: name,
                         from: ref.from, to: ref.to, line: n,
                         region_path: [...ctx.region_stack],
                     }
@@ -642,7 +635,7 @@
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
                     const word: any = {
-                        def: 1, method: name,
+                        def: 1, kind: 'method', method: name,
                         from: ref.from, to: ref.to, line: n,
                         region_path: [...ctx.region_stack],
                     }
@@ -655,7 +648,7 @@
                         && ref.node.parent?.type.name === 'ClassDeclaration') {
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (name && /^\w/.test(name))
-                        ctx.words.push({ def: 1, method: name,
+                        ctx.words.push({ def: 1, kind: 'class', method: name,
                             from: ref.from, to: ref.to, line: n,
                             region_path: [...ctx.region_stack] })
                     return false
