@@ -988,7 +988,7 @@
         border-top: 1px solid #141420;
         padding: 3px 4px;
         display: flex; flex-direction: column; gap: 1px;
-        max-height: 160px; overflow-y: auto;
+        max-height: 19em; overflow-y: auto;
         background: #080810;
     }
 </style>

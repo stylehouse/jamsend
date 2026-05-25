@@ -146,28 +146,60 @@
             .find(k => !HIDDEN.has(k) && !is_bm_tag(k) && k !== 'str') ?? '?'
     }
 
-    // One-line label: type key (with value if not 1) + str folded in.
-    // from/to coords are in HIDDEN and never shown.
-    function node_label(node: TheC): string {
+    // Type+value portion only — no str.  Used for the coloured half of each line.
+    function type_part(node: TheC): string {
         const tk  = type_key(node)
         const val = node.sc[tk]
-        const base = val === 1 ? tk : `${tk}:${val}`
-        const str  = node.sc.str as string | undefined
-        return str !== undefined ? `${base},str:${String(str).slice(0, 60)}` : base
+        return val === 1 ? tk : `${tk}:${val}`
     }
 
-    // Flatten the TheC subtree into {indent, label, color} lines for <pre> rendering.
+    // One-line label: type key (with value if not 1), then str after a tab.
+    // Used for clipboard text; from/to coords are in HIDDEN and never shown.
+    function node_label(node: TheC): string {
+        const str = node.sc.str as string | undefined
+        return str !== undefined
+            ? `${type_part(node)}\t${String(str).slice(0, 60)}`
+            : type_part(node)
+    }
+
+    // True when %str === target exists on any leaf in node's subtree.
+    // Drives the topmost-vs-leaf str trimming logic below.
+    function str_reaches_leaf(node: TheC, target: string): boolean {
+        const kids = node.o() as TheC[]
+        if (kids.length === 0) return (node.sc.str as string | undefined) === target
+        return kids.some(kid => str_reaches_leaf(kid, target))
+    }
+
+    // Whether this node should display its %str in the rendered tree.
+    //   leaf                → always show (deepest natural anchor)
+    //   same str as parent  → hide (parent is already the topmost)
+    //   topmost, non-leaf   → show only when str does NOT reach any leaf below;
+    //                         if it does, the leaf will carry it instead
+    function should_show_str(node: TheC, parent_str: string | undefined): boolean {
+        const str  = node.sc.str as string | undefined
+        if (str === undefined) return false
+        const kids = node.o() as TheC[]
+        if (kids.length === 0) return true
+        if (str === parent_str)  return false
+        return !str_reaches_leaf(node, str)
+    }
+
+    // Flatten the TheC subtree into {indent, type_part, str_part, color} lines.
+    // type_part and str_part are rendered in separate spans with separate colours.
     // Actual space characters so copy-paste preserves the tree shape.
-    type FlatLine = { indent: string, label: string, color: string }
-    function flatten_tree(node: TheC, depth = 0): FlatLine[] {
-        const tk    = type_key(node)
+    type FlatLine = { indent: string, type_part: string, str_part: string | undefined, color: string }
+    function flatten_tree(node: TheC, depth = 0, parent_str: string | undefined = undefined): FlatLine[] {
+        const tk   = type_key(node)
+        const show = should_show_str(node, parent_str)
+        const str  = node.sc.str as string | undefined
         const lines: FlatLine[] = [{
-            indent: '  '.repeat(depth),
-            label:  node_label(node),
-            color:  _hsl(tk),
+            indent:    '  '.repeat(depth),
+            type_part: type_part(node),
+            str_part:  show && str !== undefined ? String(str).slice(0, 60) : undefined,
+            color:     _hsl(tk),
         }]
         for (const kid of node.o() as TheC[]) {
-            for (const l of flatten_tree(kid, depth + 1)) lines.push(l)
+            for (const l of flatten_tree(kid, depth + 1, str)) lines.push(l)
         }
         return lines
     }
@@ -255,11 +287,12 @@
         <div class="dp-tree-actions">
             <button class="dp-tree-copy" onclick={copy_tree} title="copy tree as text">⎘ copy</button>
         </div>
-        <!-- pre preserves the leading spaces that carry the indentation.
-             Each span is one line; the newlines between them come from the
-             block display so copy-paste gets one line per node. -->
-        <pre class="dp-tree-pre">{#each flat as fl}<span class="dp-tn" style="color:{fl.color}">{fl.indent}{fl.label}</span>
-{/each}</pre>
+        <!-- Each .dp-tn is a flex row: left cell holds indent + type (min-width
+             so str values form their own right-hand column), right cell holds
+             the raw str value with no prefix label.  Indent in the left span
+             pushes deeper nodes' str values rightward — indentation is visible
+             in the str column for free. -->
+        <div class="dp-tree-pre">{#each flat as fl}<div class="dp-tn"><span class="dp-tn-left" style="color:{fl.color}">{fl.indent}{fl.type_part}</span>{#if fl.str_part !== undefined}<span class="dp-str">{fl.str_part}</span>{/if}</div>{/each}</div>
     {:else}
         <span class="dp-tree-empty">no tree — add Opt/txtsyntaxdump:1 to w:Lang</span>
     {/if}
@@ -348,17 +381,17 @@
 
     .dp-tree-empty { color: #2a3040; font-style: italic; }
 
-    /* pre: preserves the leading spaces that carry indentation.
-       Inline spans + surrounding newlines give one line per node
-       so browser copy includes the spaces correctly. */
+    /* font and selection only — whitespace preservation lives on .dp-tn-left */
     .dp-tree-pre {
         margin: 0; padding: 0;
         background: transparent;
         font: inherit;
-        white-space: pre;
         user-select: text;
     }
-    /* each span is display:block so it sits on its own line and
-       the leading spaces in its text content are the indentation */
-    .dp-tn { display: block; line-height: 1.5; }
+    /* flex row: left cell (type + indent) sets the column boundary */
+    .dp-tn      { display: flex; align-items: baseline; line-height: 1.15; }
+    /* white-space:pre lives here so indent spaces in the left cell are rendered */
+    .dp-tn-left { min-width: 6em; white-space: pre; flex-shrink: 0; }
+    /* str value — no label prefix, just the raw string in its own column */
+    .dp-str     { color: #a08040; white-space: pre; padding-left: 0.75em; }
 </style>
