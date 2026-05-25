@@ -600,10 +600,16 @@
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
 
-                    // walk up to find class name; three levels: MethodDeclaration → ClassBody → ClassDeclaration
-                    const parent      = ref.node.parent  // MethodDeclaration or Property
+                    const parent = ref.node.parent  // MethodDeclaration or Property
+
+                    // In a plain object literal shorthand ({ resolve, reject }),
+                    // PropertyDefinition has parent=Property but no ParamList —
+                    // that's just a value name, not a callable method.  Skip those.
+                    if (parent?.type.name === 'Property' && !parent.getChild('ParamList')) return false
+
+                    // walk up to find class name: MethodDeclaration → ClassBody → ClassDeclaration
                     const grandparent = parent?.parent    // ClassBody or ObjectExpression
-                    const great       = grandparent?.parent  // ClassDeclaration or CallExpression/…
+                    const great       = grandparent?.parent  // ClassDeclaration or …
                     let class_name: string | undefined
                     if (grandparent?.type.name === 'ClassBody' && great?.type.name === 'ClassDeclaration') {
                         const cn = great.getChild('VariableDefinition')
