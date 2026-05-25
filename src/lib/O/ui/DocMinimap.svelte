@@ -524,31 +524,47 @@
                  aria-hidden="true"></div>
         {/each}
 
-        <!-- Labels: rendered separately so band height doesn't squash them.
-             Each is an absolutely-positioned row at the region's top line.
-             Depth shrinks font-size and dims color so nesting reads visually. -->
+        <!-- Labels + def pile: one block per region, positioned at the region's top line.
+             Points remain separately line-positioned (they carry meaningful positions).
+             Depth shrinks font-size and dims color so nesting reads visually.
+             The def pile flows below the header row as wrapped chips — no line alignment. -->
         {#each regions as r (r.from_line + ':' + r.label)}
-            <div class="lmm-row" style="
+            <div class="lmm-region-block" style="
                     top: {band_top(r.from_line)};
                     padding-left: {r.depth * 5 + 4}px;
                     font-size: {Math.max(11 - r.depth, 8)}px;
                     opacity: {Math.max(1 - r.depth * 0.12, 0.6)};
                 ">
-                <button class="lmm-chev"
-                        onclick={() => toggle_collapse(r)}
-                        aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
-                <button class="lmm-label"
-                        onclick={() => go_to(r.from_char, r.from_char, r.label)}
-                        title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
-                <button class="lmm-fold"
-                        onclick={() => toggle_fold(r)}
-                        title="Fold/unfold in editor">f</button>
+                <div class="lmm-row">
+                    <button class="lmm-chev"
+                            onclick={() => toggle_collapse(r)}
+                            aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
+                    <button class="lmm-label"
+                            onclick={() => go_to(r.from_char, r.from_char, r.label)}
+                            title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
+                    <button class="lmm-fold"
+                            onclick={() => toggle_fold(r)}
+                            title="Fold/unfold in editor">f</button>
+                </div>
+
+                {#if !is_collapsed(r) && r.defs.length}
+                    <!-- Def pile: method names flow in wrapping chips, no line alignment.
+                         Two or three chips fit per row depending on name length.
+                         Class prefix omitted — region provides the scope context. -->
+                    <div class="lmm-def-pile">
+                        {#each r.defs as d (d.from)}
+                            <button class="lmm-def-chip"
+                                    title="{d.method} (line {d.line})"
+                                    onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                        {/each}
+                    </div>
+                {/if}
             </div>
 
             {#if !is_collapsed(r)}
-                <!-- Points: Pmirror-resolved markers, always-visible label.
-                     Higher z-index so they sit above stripes and region rows.
-                     Warning style when unresolved (Pmirror has no %graft,1 — pre-compile, or spec didn't match a def). -->
+                <!-- Points: Pmirror-resolved markers, line-positioned by graft offset.
+                     Higher z-index so they sit above stripes and region blocks.
+                     Warning style when unresolved (Pmirror has no %graft,1). -->
                 {#each r.points as p (p.spec)}
                     <button class="lmm-point" class:lmm-point-bad={p.unresolved}
                             style="top: {band_top(p.line)}; left: {r.depth * 5 + 4}px;"
@@ -556,16 +572,6 @@
                             onclick={() => go_to(p.from, p.to, p.method)}>
                         <span class="lmm-point-dot"></span>
                         <span class="lmm-point-label">{p.method}</span>
-                    </button>
-                {/each}
-
-                {#each r.defs as d (d.from)}
-                    <button class="lmm-def"
-                            style="top: {band_top(d.line)}; left: {r.depth * 5 + 4}px;"
-                            title="{d.class ? d.class + '.' : ''}{d.method} (line {d.line})"
-                            onclick={() => go_to(d.from, d.to, d.method)}>
-                        <span class="lmm-def-tick"></span>
-                        <span class="lmm-def-label">{d.class ? `${d.class}.` : ''}{d.method}</span>
                     </button>
                 {/each}
             {/if}
@@ -582,16 +588,16 @@
             </button>
         {/each}
 
-        <!-- Top-level defs (not inside any region) — warmer tick color. -->
-        {#each top_level_defs as d (d.from)}
-            <button class="lmm-def lmm-def-top"
-                    style="top: {band_top(d.line)}; left: 4px;"
-                    title="{d.class ? d.class + '.' : ''}{d.method} (line {d.line})"
-                    onclick={() => go_to(d.from, d.to, d.method)}>
-                <span class="lmm-def-tick"></span>
-                <span class="lmm-def-label">{d.class ? `${d.class}.` : ''}{d.method}</span>
-            </button>
-        {/each}
+        <!-- Top-level defs (not inside any region) — a single pile at the strip top. -->
+        {#if top_level_defs.length}
+            <div class="lmm-def-pile lmm-def-pile-top">
+                {#each top_level_defs as d (d.from)}
+                    <button class="lmm-def-chip lmm-def-chip-top"
+                            title="{d.method} (line {d.line})"
+                            onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                {/each}
+            </div>
+        {/if}
     </div>
 </div>
 
@@ -628,10 +634,10 @@
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
-    /* Strip surface holds three layers, all absolute-positioned within it:
-         .lmm-stripe — colored bands sized by region line span (z-index 0)
-         .lmm-row    — region label rows at each region's top line (z-index 2)
-         .lmm-def    — method ticks at each def's line (z-index 1)
+    /* Strip surface layers, all absolute-positioned within it:
+         .lmm-stripe        — colored bands sized by region line span (z-index 0)
+         .lmm-region-block  — per-region header + def pile, positioned at top line (z-index 2)
+         .lmm-point         — graft-resolved Point markers, line-positioned (z-index 3)
        overflow:hidden on the strip itself. */
     .lmm-strip {
         position: relative;
@@ -646,10 +652,8 @@
         min-height: 2px;
     }
 
-    /* Region label row — fixed height, positioned at the region's top line. */
+    /* Region label row — fixed height, child of lmm-region-block. */
     .lmm-row {
-        position: absolute; right: 0; left: 0;
-        z-index: 2;
         display: flex; align-items: center; gap: 2px;
         height: 16px; margin-top: -1px;
         background: rgba(0, 0, 0, 0.55);
@@ -677,37 +681,47 @@
     }
     .lmm-label:hover { color: #fff; }
 
-    /* Method def — tick + label.  Label is always faintly visible so the
-       region reads as a pile of names; brightens to full on hover.
-       Label is allowed to extend beyond the strip edge (overflow:hidden
-       on the strip clips it, but the name is still partially readable). */
-    .lmm-def {
-        position: absolute; right: 4px;
-        z-index: 1;
-        background: none; border: none; padding: 0; cursor: pointer;
-        height: 8px; margin-top: -4px;
-        display: flex; align-items: center; gap: 4px;
+    /* Block that wraps a region's header row + def pile.
+       Positioned absolutely at the region's top line; the pile
+       flows below the header so it naturally overlaps with the next
+       region's stripe.  Intentional — this is a content layer, not
+       a line-accurate map. */
+    .lmm-region-block {
+        position: absolute; left: 0; right: 0;
+        z-index: 2;
     }
-    .lmm-def-tick {
-        display: block;
-        width: 14px; height: 2px;
-        background: rgba(180, 200, 220, 0.45);
-        flex-shrink: 0;
-    }
-    .lmm-def:hover .lmm-def-tick { background: rgba(180, 200, 220, 0.95); height: 3px; }
 
-    .lmm-def-label {
-        font-size: 9px; color: #889;
-        opacity: 0.45;
-        transition: opacity 0.1s;
-        pointer-events: none;
+    /* Def pile: names flow left-to-right, wrapping into as many rows
+       as needed.  Two to three names typically fit per row at 8px.
+       No line-position alignment — the pile lives just below the header. */
+    .lmm-def-pile {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1px 6px;
+        padding: 1px 4px 2px;
+        background: rgba(0, 0, 0, 0.22);
+    }
+
+    /* Top-level pile sits at the very top of the strip (no region block). */
+    .lmm-def-pile-top {
+        position: absolute; top: 0; left: 0; right: 0;
+        z-index: 2;
+    }
+
+    .lmm-def-chip {
+        background: none; border: none; cursor: pointer;
+        font-size: 8px; color: rgba(180, 200, 220, 0.45);
+        padding: 0;
         white-space: nowrap;
+        font-family: inherit;
+        line-height: 1.4;
+        transition: color 0.1s;
     }
-    .lmm-def:hover .lmm-def-label { opacity: 1; color: #c0d0e0; }
+    .lmm-def-chip:hover { color: #c0d0e0; }
 
-    /* Top-level defs (no enclosing region) get a warmer tick color. */
-    .lmm-def-top .lmm-def-tick { background: rgba(220, 200, 140, 0.45); }
-    .lmm-def-top:hover .lmm-def-tick { background: rgba(220, 200, 140, 0.95); }
+    /* Top-level chips — warmer tint to distinguish from region-owned ones. */
+    .lmm-def-chip-top { color: rgba(220, 200, 140, 0.45); }
+    .lmm-def-chip-top:hover { color: #e5c07b; }
 
     /* Points — graft-resolved markers, always-visible label, sit above defs.
        The dot anchors the position; label extends to the right.  z-index 3

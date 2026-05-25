@@ -600,11 +600,17 @@
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
 
-                    const parent = ref.node.parent  // MethodDeclaration or Property
+                    const parent = ref.node.parent  // MethodDeclaration, Property, or PropertyDeclaration
+
+                    // Class field declaration: `foo = $state()` or `addresses: Map = $state(…)`.
+                    // PropertyDefinition sits inside PropertyDeclaration, not MethodDeclaration.
+                    // These are not callable — skip so fields don't pollute the def list.
+                    // < index as {field:1} someday when type-aware nav wants them.
+                    if (parent?.type.name === 'PropertyDeclaration') return false
 
                     // In a plain object literal shorthand ({ resolve, reject }),
                     // PropertyDefinition has parent=Property but no ParamList —
-                    // that's just a value name, not a callable method.  Skip those.
+                    // that's just a value name, not a callable method.
                     if (parent?.type.name === 'Property' && !parent.getChild('ParamList')) return false
 
                     // walk up to find class name: MethodDeclaration → ClassBody → ClassDeclaration
