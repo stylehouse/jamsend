@@ -3,6 +3,8 @@ Waft:Ghost/Tour
     Point,method:Idzeugnosis
     Point:Idzeuganise
     Point:Idvoyage_verify
+  Doc,path:src/lib/ghost/Radios.svelte
+  Doc,path:Ghost/test/LangTiles.g
   Doc,path:src/lib/p2p/Peerily.svelte.ts
     Point:Pier
     Point:emit

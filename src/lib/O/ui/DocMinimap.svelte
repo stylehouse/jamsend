@@ -57,7 +57,7 @@
         defs:      Def[]
         points:    PointMark[]
     }
-    type Def = { method: string, line: number, from: number, to: number }
+    type Def = { method: string, class?: string, line: number, from: number, to: number }
 
     // A Point becomes a PointMark once its graft fields have been stamped by
     // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
@@ -207,10 +207,11 @@
             const top_defs: Def[] = []
             for (const d of def_entries) {
                 const def: Def = {
-                    method: d.sc.method as string,
-                    line:   d.sc.line   as number,
-                    from:   d.sc.from   as number,
-                    to:     d.sc.to     as number,
+                    method:   d.sc.method as string,
+                    class:    d.sc.class  as string | undefined,
+                    line:     d.sc.line   as number,
+                    from:     d.sc.from   as number,
+                    to:       d.sc.to     as number,
                 }
                 const owner = innermost_region_for_line(list, def.line)
                 if (owner) owner.defs.push(def)
@@ -561,10 +562,10 @@
                 {#each r.defs as d (d.from)}
                     <button class="lmm-def"
                             style="top: {band_top(d.line)}; left: {r.depth * 5 + 4}px;"
-                            title="{d.method} (line {d.line})"
+                            title="{d.class ? d.class + '.' : ''}{d.method} (line {d.line})"
                             onclick={() => go_to(d.from, d.to, d.method)}>
                         <span class="lmm-def-tick"></span>
-                        <span class="lmm-def-label">{d.method}</span>
+                        <span class="lmm-def-label">{d.class ? `${d.class}.` : ''}{d.method}</span>
                     </button>
                 {/each}
             {/if}
@@ -585,10 +586,10 @@
         {#each top_level_defs as d (d.from)}
             <button class="lmm-def lmm-def-top"
                     style="top: {band_top(d.line)}; left: 4px;"
-                    title="{d.method} (line {d.line})"
+                    title="{d.class ? d.class + '.' : ''}{d.method} (line {d.line})"
                     onclick={() => go_to(d.from, d.to, d.method)}>
                 <span class="lmm-def-tick"></span>
-                <span class="lmm-def-label">{d.method}</span>
+                <span class="lmm-def-label">{d.class ? `${d.class}.` : ''}{d.method}</span>
             </button>
         {/each}
     </div>

@@ -270,11 +270,14 @@
         const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
         // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below
         // `via` = enclosing method name for calls (renamed from `from` to avoid collision)
+        // `class` = enclosing class name for PropertyDefinition defs (tsstho only)
+        // `magic` = set on IMPORT and RENDER defs (reserved for compiler header/tail extraction)
         // `from`, `to`, `line` = character offsets and 1-based line number in the document
         // `region_path` = snapshot of region_stack at the time each entry is recorded
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
-                             via?: string, from?: number, to?: number, line?: number,
+                             via?: string, class?: string, magic?: 1,
+                             from?: number, to?: number, line?: number,
                              region_path?: string[] }> = []
 
         // region_stack persists across all lines — it is the "Indian stack" of open regions.
@@ -300,10 +303,10 @@
         }
 
         // flush word index into Stuff:
-        //   job%Compile / Output / methods / {def:1,  method:'name', from, to, line, region_path}
-        //   job%Compile / Output / methods / {call:1, method:'name', via:'caller', from, to, line, region_path}
-        //   job%Compile / Output / methods / {region:1, label:'name', from, to, line, depth}
-        //   job%Compile / Output / methods / {controlflow:1, keyword, title, from, to, line, via?, region_path}
+        //   job%Compile / methods / {def:1,  method:'name', class?:'ClassName', magic?:1, from, to, line, region_path}
+        //   job%Compile / methods / {call:1, method:'name', via:'caller', from, to, line, region_path}
+        //   job%Compile / methods / {region:1, label:'name', from, to, line, depth}
+        //   job%Compile / methods / {controlflow:1, keyword, title, from, to, line, via?, region_path}
         const methods = job.oai({ methods: 1 })
         // clear stale entries from a previous compile
         methods.empty()
@@ -563,33 +566,79 @@
             return n
         }
 
-        // ── TypeScript class and method defs ──────────────────────────────────
+        // ── TypeScript class and eatfunc method defs ─────────────────────────
         //
-        // For tsstho files, class names and class method names are Lezer-JS
-        // nodes, not stho MethodLike.  A second narrow pass over this line
-        // indexes them as %defs without affecting translation output.
+        // For tsstho files the relevant Lezer-JS node names are:
         //
         //   VariableDefinition (parent=ClassDeclaration) → class name
-        //     e.g. "export class Pier {" → def:Pier
-        //   PropertyDefinition                           → class method name
-        //     e.g. "async emit(type, data={}, ..." → def:emit
+        //     e.g. "export class Pier {" → def:Pier, class:'Pier'
+        //   PropertyDefinition (parent=ClassBody/MethodDeclaration) → class method
+        //     e.g. "async emit(type, data={}) {" → def:emit, class:'Pier'
+        //   PropertyDefinition (parent=Property in ObjectExpression) → eatfunc method
+        //     e.g. eatfunc pattern: "async on_code_change() {" → def:on_code_change
+        //   PropertyName (in Object shorthand methods some grammars emit this)
+        //     same eatfunc case, backup detection
         //
-        // Both are recorded flat — no class membership tracked yet.
-        // < class scoping: record which class each PropertyDefinition belongs
-        //   to so Points can narrow "emit in Pier" vs "emit in Boat" someday.
+        // Class name is retrieved by walking up from PropertyDefinition:
+        //   PropertyDefinition → MethodDeclaration → ClassBody → ClassDeclaration
+        //                                                       → VariableDefinition (class name)
+        // This is four pointer-chases on an already-built tree — essentially free.
+        //
+        // IMPORT and RENDER are magic method names reserved for compiler output:
+        //   IMPORT — body lines lifted into the generated module header (imports, consts)
+        //   RENDER — body lines appended to the generated module tail (component mount)
+        //   Both suppressed from the eatfunc body in the generated output.
+        //   recorded here with magic:true so Lang_compile can spot and extract them.
+        // < IMPORT/RENDER extraction in Lang_compile_collect is future work.
         tree.iterate({
             from: line.from,
             to:   line.to,
             enter: (ref) => {
                 if (ref.from < line.from || ref.to > line.to) return
+
                 if (ref.name === 'PropertyDefinition') {
                     const name = state.doc.sliceString(ref.from, ref.to)
-                    if (name && /^\w/.test(name))
-                        ctx.words.push({ def: 1, method: name,
-                            from: ref.from, to: ref.to, line: n,
-                            region_path: [...ctx.region_stack] })
+                    if (!name || !/^\w/.test(name)) return false
+
+                    // walk up to find class name; three levels: MethodDeclaration → ClassBody → ClassDeclaration
+                    const parent      = ref.node.parent  // MethodDeclaration or Property
+                    const grandparent = parent?.parent    // ClassBody or ObjectExpression
+                    const great       = grandparent?.parent  // ClassDeclaration or CallExpression/…
+                    let class_name: string | undefined
+                    if (grandparent?.type.name === 'ClassBody' && great?.type.name === 'ClassDeclaration') {
+                        const cn = great.getChild('VariableDefinition')
+                        if (cn) class_name = state.doc.sliceString(cn.from, cn.to)
+                    }
+
+                    const word: any = {
+                        def: 1, method: name,
+                        from: ref.from, to: ref.to, line: n,
+                        region_path: [...ctx.region_stack],
+                    }
+                    if (class_name) word.class = class_name
+                    if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
+                    ctx.words.push(word)
                     return false
                 }
+
+                // Backup for grammars that emit PropertyName instead of PropertyDefinition
+                // in method-shorthand positions inside object literals (eatfunc context).
+                // Only record if the node looks like a method (sibling ParamList present).
+                if (ref.name === 'PropertyName') {
+                    const prop = ref.node.parent  // Property
+                    if (!prop?.getChild('ParamList')) return false
+                    const name = state.doc.sliceString(ref.from, ref.to)
+                    if (!name || !/^\w/.test(name)) return false
+                    const word: any = {
+                        def: 1, method: name,
+                        from: ref.from, to: ref.to, line: n,
+                        region_path: [...ctx.region_stack],
+                    }
+                    if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
+                    ctx.words.push(word)
+                    return false
+                }
+
                 if (ref.name === 'VariableDefinition'
                         && ref.node.parent?.type.name === 'ClassDeclaration') {
                     const name = state.doc.sliceString(ref.from, ref.to)
