@@ -15,8 +15,9 @@
     // ── Data ─────────────────────────────────────────────────────────────────
     //
     //   Reads the compiled methods index that LangCompiling deposits at
-    //     w:Lang/{docs}/{doc:path}/{Compile:1}/{Output:1}/{methods:1}  (via lang_docC)
-    //   Pulls all {region:1}, {def:1}, {controlflow:1} children.
+    //     w:Lang/{docs}/{doc:path}/{Compile:1}/{methods:1}  (via lang_docC).
+    //   %Output only exists for hard-compiled gen_path docs; soft compiles
+    //   have %methods directly on %Compile with no %Output child.
     //
     //   Falls back to live region scan when no compiled index is present yet,
     //   so the user sees structure before the first compile.
@@ -174,10 +175,12 @@
             return
         }
 
-        // Compile output lives on the Lang-side lang_docC, not the ave text particle
+        // Compile output lives on the Lang-side lang_docC, not the ave text particle.
+        // %methods is a direct child of %Compile regardless of whether %Output
+        // exists.  %Output is only present for hard-compiled gen_path docs; soft
+        // compiles (Peerily, etc.) skip it entirely.
         const job     = lang_docC?.o({ Compile: 1 })[0]    as TheC | undefined
-        const output  = job?.o({ Output: 1 })[0]           as TheC | undefined
-        const methods = output?.o({ methods: 1 })[0]       as TheC | undefined
+        const methods = job?.o({ methods: 1 })[0]          as TheC | undefined
 
         // Collect Point marks from Pmirrors maintained by LangGraft.
         // No resolution work happens here — just reading pre-baked positions.
@@ -453,12 +456,14 @@
         if (fold_from >= fold_to) return
 
         // foldedRanges() returns the RangeSet CM maintains internally.
-        // Walk it to check if any fold already covers our range.
+        // Check for a fold that starts exactly at our header line's end —
+        // a parent region's fold starting earlier must not be treated as
+        // "this region is folded", which would unfold the wrong region.
         const folds = foldedRanges(state)
         let is_folded = false
         const cursor  = folds.iter()
         while (cursor.value !== null) {
-            if (cursor.from <= fold_from && cursor.to >= fold_to) {
+            if (cursor.from === fold_from) {
                 is_folded = true
                 break
             }
@@ -671,8 +676,10 @@
     }
     .lmm-label:hover { color: #fff; }
 
-    /* Method def — tick + hover label.  Label fades in on hover and is
-       allowed to extend beyond the strip edge. */
+    /* Method def — tick + label.  Label is always faintly visible so the
+       region reads as a pile of names; brightens to full on hover.
+       Label is allowed to extend beyond the strip edge (overflow:hidden
+       on the strip clips it, but the name is still partially readable). */
     .lmm-def {
         position: absolute; right: 4px;
         z-index: 1;
@@ -690,7 +697,7 @@
 
     .lmm-def-label {
         font-size: 9px; color: #889;
-        opacity: 0;
+        opacity: 0.45;
         transition: opacity 0.1s;
         pointer-events: none;
         white-space: nowrap;

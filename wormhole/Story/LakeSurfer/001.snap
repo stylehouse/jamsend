@@ -32,7 +32,7 @@ Snap:H
         {"requesty_rw_queue":"1","rw_name":"wormhole/Ghost/Tour/toc.snap","rw_op":"write","rw_data":"Waft:Ghost/Tour\n  Doc,path:Ghost/test/Hello.g\n    Point,method:Idzeugnosis\n    Point:Idzeuganise\n    Point:Idvoyage_verify\n  Doc,path:src/lib/p2p/Peerily.svelte.ts\n    Point:Pier\n    Point:emit\n","req_i":5}
           req_sent
     A:Lang
-      {"mung":["age"]}	self,round:10
+      {"mung":["age"]}	self,round:12
       w:Lang
         model,cyto_dir
         docs
@@ -41,11 +41,313 @@ Snap:H
             Pmirrors
               {"ref":{"src_Point":"%Point:Pier"}}	Pmirror,src_Waft:Ghost/Tour,spec:Pier
               {"ref":{"src_Point":"%Point:emit"}}	Pmirror,src_Waft:Ghost/Tour,spec:emit
+            Compile
+              methods
+                {"ref":{"region_path":"[PeerJS etc]"}}	region,label:PeerJS etc,depth:0,from:797,to:817,line:25
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:username,from:1056,to:1064,line:33
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:credential,from:1085,to:1095,line:34
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1184,to:1188,line:39
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1247,to:1251,line:41
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1344,to:1348,line:45
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1453,to:1457,line:50
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1503,to:1507,line:51
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1554,to:1558,line:52
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:1605,to:1609,line:53
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:host,from:1667,to:1671,line:57
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:port,from:1672,to:1676,line:57
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:path,from:1677,to:1681,line:57
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:config,from:1707,to:1713,line:58
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:iceServers,from:1729,to:1739,line:59
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:iceTransportPolicy,from:2019,to:2037,line:64
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:iceCandidatePoolSize,from:2058,to:2078,line:65
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:urls,from:2126,to:2130,line:69
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:username,from:2138,to:2146,line:69
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:credential,from:2155,to:2165,line:69
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:VerilyPeerily,from:2248,to:2261,line:72
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:iceStatus,from:2268,to:2277,line:73
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:runConnectivityCheck,from:2307,to:2327,line:75
+                {"ref":{"region_path":"[PeerJS etc]"}}	call,method:testIceServer,from:2512,to:2531,line:80
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:results,from:2712,to:2719,line:86
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:testIceServer,from:2753,to:2766,line:90
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:iceServers,from:3299,to:3309,line:105
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:PEERS_onopen,from:4886,to:4898,line:153
+                {"ref":{"region_path":"[PeerJS etc]"}}	def,method:PEERS_onerror,from:5037,to:5050,line:158
+                {"ref":{"region_path":"[f, types]"}}	{"region":1,"label":"f, types","depth":0,"from":5432,"to":5450,"line":174}
+                {"ref":{"region_path":"[f, types]"}}	def,method:qua,from:5712,to:5715,line:184
+                {"ref":{"region_path":"[f, types]"}}	def,method:pub,from:5871,to:5874,line:187
+                {"ref":{"region_path":"[f, types]"}}	def,method:to,from:5982,to:5984,line:191
+                {"ref":{"region_path":"[f, types]"}}	def,method:time,from:6001,to:6005,line:192
+                {"ref":{"region_path":"[f, types]"}}	def,method:sign,from:6019,to:6023,line:193
+                {"ref":{"region_path":"[f, types]"}}	def,method:not,from:6097,to:6100,line:197
+                {"ref":{"region_path":"[f, types]"}}	def,method:uninitiated,from:6140,to:6151,line:200
+                {"ref":{"region_path":"[f, types]"}}	def,method:pubkey,from:6167,to:6173,line:201
+                {"ref":{"region_path":"[f, types]"}}	def,method:trust,from:6187,to:6192,line:202
+                {"ref":{"region_path":"[f, types]"}}	def,method:keys,from:6251,to:6255,line:205
+                {"ref":{"region_path":"[f, types]"}}	def,method:Piers,from:6277,to:6282,line:206
+                {"ref":{"region_path":"[f, types]"}}	def,method:Id,from:6323,to:6325,line:209
+                {"ref":{"region_path":"[f, types]"}}	def,method:trust,from:6347,to:6352,line:210
+                {"ref":{"region_path":"[f, types]"}}	def,method:Peerings,from:6362,to:6370,line:211
+                {"ref":{"region_path":"[Peering (eer)]"}}	region,label:Peering (eer),depth:0,from:6759,to:6782,line:233
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:Peering,from:7004,to:7011,line:238
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:P,from:7018,to:7019,line:239
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:Id,from:7032,to:7034,line:240
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:stashed,from:7057,to:7064,line:241
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:Thing,from:7144,to:7149,line:243
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:promise_connection,from:7166,to:7184,line:245
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:Peer,from:7227,to:7231,line:246
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:constructor,from:7243,to:7254,line:247
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:features,from:7560,to:7568,line:259
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:feature,from:7625,to:7632,line:260
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:Piers,from:7831,to:7836,line:268
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:on,from:7921,to:7923,line:274
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:connect,from:7982,to:7989,line:277
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:reconnect,from:8329,to:8338,line:286
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:destroy,from:8404,to:8411,line:289
+                {"ref":{"region_path":"[Peering (eer)]"}}	def,method:disconnected,from:8562,to:8574,line:293
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	region,label:Peerily (P),depth,from:8593,to:8614,line:296
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:Peerily,from:8693,to:8700,line:298
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:stash,from:8729,to:8734,line:299
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:Trusting,from:8761,to:8769,line:300
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:Otromode,from:8950,to:8958,line:303
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:fade_splash,from:9002,to:9013,line:305
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:Welcome,from:9078,to:9085,line:307
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:dodgy_user,from:9136,to:9146,line:309
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:some_feature_is_nearly_ready,from:9184,to:9212,line:311
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:some_feature_is_ready,from:9233,to:9254,line:312
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:needs_share_open_action,from:9275,to:9298,line:313
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:Nobody_Is_Online,from:9318,to:9334,line:314
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:directory_compat_mode,from:9448,to:9469,line:317
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:switchup_Engagements,from:9555,to:9575,line:319
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:Boblessless,from:9623,to:9634,line:321
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:NoHeavyComputing,from:9782,to:9798,line:324
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:NoPreviewing,from:9819,to:9831,line:325
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:PROD,from:9882,to:9886,line:326
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:ConsoleLogs,from:9906,to:9917,line:327
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:on_error,from:9935,to:9943,line:329
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:on_Peering,from:10031,to:10041,line:331
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:save_stash,from:10060,to:10070,line:332
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:constructor,from:10090,to:10101,line:334
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	call,method:runConnectivityCheck,from:10169,to:10195,line:337
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:destroyed,from:10207,to:10216,line:339
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:stop,from:10229,to:10233,line:340
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:share_url,from:10481,to:10490,line:349
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:addresses,from:10585,to:10594,line:354
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:address_to_connect_from,from:10787,to:10810,line:357
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:i_Peering,from:10876,to:10885,line:359
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	call,method:create_Peering,from:11055,to:11075,line:363
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	def,method:create_Peering,from:11192,to:11206,line:369
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	call,method:PEERS_onopen,from:11984,to:12002,line:389
+                {"ref":{"region_path":"[Peering (eer),Peerily (P)]"}}	call,method:PEERS_onerror,from:12626,to:12645,line:404
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	region,label:Pier,depth,from:12798,to:12812,line:417
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:Pier,from:12872,to:12876,line:422
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:P,from:12883,to:12884,line:423
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:stashed,from:12897,to:12904,line:424
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:Thing,from:12981,to:12986,line:426
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:pub,from:13036,to:13039,line:429
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:Ud,from:13056,to:13058,line:430
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:name,from:13075,to:13079,line:431
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:eer,from:13129,to:13132,line:435
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:con,from:13145,to:13148,line:436
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:inhibited_features,from:13265,to:13283,line:440
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:latency,from:13351,to:13358,line:442
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:constructor,from:13382,to:13393,line:444
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:on_error,from:13444,to:13452,line:447
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:lets_disconnect,from:13559,to:13574,line:451
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:disconnected,from:13937,to:13949,line:462
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:was_disconnected,from:13969,to:13985,line:463
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:worth_reconnecting,from:13998,to:14016,line:464
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:inbound,from:14081,to:14088,line:466
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:init_begins,from:14101,to:14112,line:467
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:emit,from:14924,to:14934,line:487
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:init_completo,from:15077,to:15096,line:491
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:reset_protocol_state,from:15475,to:15501,line:499
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:auto_reconnect,from:16082,to:16102,line:509
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:done_init,from:16224,to:16233,line:518
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:init_completo,from:16254,to:16267,line:519
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:handle_data_etc,from:16401,to:16422,line:521
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:reset_protocol_state,from:16462,to:16488,line:523
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:say_hello,from:16726,to:16741,line:529
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:say_hello,from:17095,to:17110,line:538
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:nothing,from:17350,to:17357,line:546
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	call,method:emit,from:17332,to:17342,line:546
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:auto_reconnect_time,from:17544,to:17563,line:557
+                {"ref":{"region_path":"[Peering (eer),Pier]"}}	def,method:auto_reconnect,from:17587,to:17601,line:558
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	region,label:Pier emit,depth,from:18913,to:18932,line:596
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:handle_data_etc,from:19010,to:19025,line:599
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:unemit,from:19109,to:19121,line:602
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:process_emit_queue,from:19352,to:19376,line:608
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:send_buffered,from:19404,to:19417,line:611
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:send_ready,from:19488,to:19498,line:614
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:send_paused,from:19608,to:19619,line:619
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:send_queue,from:19632,to:19642,line:620
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:process_emit_queue,from:19652,to:19670,line:621
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:crypto,from:19947,to:19953,line:628
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:data,from:19954,to:19958,line:628
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:buffer,from:19959,to:19965,line:628
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:send_stuff,from:19930,to:19946,line:628
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:send_stuff,from:20275,to:20285,line:641
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:data,from:20580,to:20584,line:651
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:emit,from:20677,to:20681,line:655
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:priority,from:20727,to:20735,line:657
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:quiet,from:20777,to:20782,line:658
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:meddle_fn,from:20805,to:20814,line:659
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:type,from:20963,to:20967,line:665
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:crypto,from:21684,to:21690,line:683
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:data,from:21691,to:21695,line:683
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:buffer,from:21701,to:21707,line:683
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:resolve,from:22065,to:22072,line:691
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:reject,from:22074,to:22080,line:691
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:send_stuff,from:22405,to:22421,line:701
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:next_unemission,from:22628,to:22643,line:709
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:next_unemit,from:22659,to:22670,line:710
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:crypto,from:22672,to:22678,line:710
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:data,from:22680,to:22684,line:710
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:reset_unemit_state,from:22696,to:22714,line:711
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:unemit_queue,from:22945,to:22957,line:717
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:unemit_processing,from:22967,to:22984,line:718
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:unemit,from:23003,to:23009,line:719
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:process_single_unemit,from:23286,to:23313,line:726
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:reset_unemit_state,from:23441,to:23465,line:729
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:process_single_unemit,from:23583,to:23604,line:735
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:reset_unemit_state,from:25309,to:25333,line:775
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:handleMessage,from:25349,to:25368,line:776
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:retry_untrusted_messages_until_ts,from:25448,to:25481,line:779
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:retriable_handleMessage,from:25494,to:25517,line:780
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:handleMessage,from:25987,to:26006,line:788
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:handleMessage,from:26044,to:26057,line:791
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:P,from:26213,to:26214,line:794
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	def,method:Pier,from:26222,to:26226,line:794
+                {"ref":{"region_path":"[Peering (eer),Pier emit]"}}	call,method:retriable_handleMessage,from:26487,to:26516,line:802
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	region,label:Pier protocols,depth,from:27213,to:27237,line:823
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:reset_protocol_state,from:27242,to:27262,line:824
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:they_say,from:27518,to:27526,line:833
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:handlers,from:27612,to:27620,line:836
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:noop,from:27633,to:27637,line:837
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:27672,to:27686,line:838
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:hello,from:27720,to:27725,line:840
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:27757,to:27771,line:841
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:hear_hello,from:27799,to:27815,line:842
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:ping,from:27841,to:27845,line:844
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:27880,to:27894,line:845
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:intro,from:27988,to:27993,line:848
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:28025,to:28039,line:849
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:trust,from:28135,to:28140,line:852
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:is_vaguely_trusted,from:28177,to:28201,line:853
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:28222,to:28236,line:854
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:28315,to:28329,line:857
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:hear_trust,from:28357,to:28373,line:858
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	def,method:trusted,from:28399,to:28406,line:860
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:is_vaguely_trusted,from:28443,to:28467,line:861
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:28488,to:28502,line:862
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:they_say,from:28583,to:28597,line:865
+                {"ref":{"region_path":"[Peering (eer),Pier protocols]"}}	call,method:hear_trusted,from:28627,to:28645,line:866
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	region,label:hello,depth:2,from:28670,to:28689,line:870
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:said_hello,from:28738,to:28748,line:872
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:heard_hello,from:28761,to:28772,line:873
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:say_hello,from:28785,to:28794,line:874
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:time,from:28893,to:28897,line:876
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:publicKey,from:28915,to:28924,line:876
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	call,method:emit,from:28874,to:28884,line:876
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:hear_hello,from:29048,to:29058,line:880
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	call,method:receive_publicKey,from:29290,to:29313,line:887
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	call,method:say_hello,from:29439,to:29454,line:892
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	call,method:say_trust,from:29613,to:29628,line:898
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello]"}}	def,method:receive_publicKey,from:29645,to:29662,line:901
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	region,label:trust,depth:3,from:30497,to:30516,line:927
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:said_trust,from:30872,to:30882,line:935
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:heard_trust,from:30895,to:30906,line:936
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:stated_trust,from:30971,to:30983,line:938
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:trust,from:31107,to:31112,line:940
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:update_trust,from:31177,to:31189,line:941
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:refresh_features,from:31547,to:31569,line:953
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:is_vaguely_trusted,from:31605,to:31623,line:957
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:say_trust,from:31862,to:31871,line:964
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:is_vaguely_trusted,from:31906,to:31930,line:965
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:verify_trust,from:32168,to:32186,line:973
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:trust,from:32287,to:32292,line:976
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:emit,from:32268,to:32278,line:976
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:update_trust,from:32520,to:32538,line:984
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:hear_trust,from:32605,to:32615,line:987
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:say_trust,from:32681,to:32696,line:989
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:verify_trust,from:32920,to:32938,line:994
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:update_trust,from:33160,to:33178,line:1002
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:ourId,from:33195,to:33200,line:1005
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:theirId,from:33246,to:33253,line:1008
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:verify_trust,from:33348,to:33360,line:1014
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:trusted,from:33949,to:33956,line:1031
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:hear_trusted,from:34027,to:34039,line:1032
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:trust,from:34043,to:34048,line:1032
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:verify_trust,from:34544,to:34562,line:1044
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:refresh_features,from:35139,to:35161,line:1058
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:grant_trust,from:35205,to:35216,line:1062
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:to,from:35294,to:35296,line:1064
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:time,from:35297,to:35301,line:1064
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:pub,from:35326,to:35329,line:1064
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:update_trust,from:35858,to:35876,line:1077
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:trust,from:35970,to:35975,line:1081
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:emit,from:35949,to:35959,line:1081
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:revoke_trust,from:36060,to:36072,line:1085
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:trust,from:36144,to:36149,line:1087
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:not,from:36152,to:36155,line:1087
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:emit,from:36123,to:36133,line:1087
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	def,method:not,from:36331,to:36334,line:1091
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust]"}}	call,method:update_trust,from:36474,to:36492,line:1095
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,Pier features]"}}	region,label:Pier features,depth:4,from:36549,to:36576,line:1099
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,Pier features]"}}	def,method:features,from:36581,to:36589,line:1100
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,Pier features]"}}	def,method:refresh_features,from:36653,to:36669,line:1101
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,Pier features]"}}	def,method:Pier,from:37429,to:37433,line:1120
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	region,label:*Feature,depth:4,from:38998,to:39016,line:1167
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:ActionsAndModus,from:39091,to:39106,line:1171
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:modus,from:39113,to:39118,line:1172
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:every_Modus,from:39204,to:39215,line:1174
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:actions,from:39316,to:39323,line:1178
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:i_action,from:39355,to:39363,line:1179
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:i_actions,from:39550,to:39559,line:1184
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:handler,from:39670,to:39677,line:1186
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	call,method:i_action,from:39697,to:39711,line:1187
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:label,from:39729,to:39734,line:1188
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:PeeringFeature,from:39941,to:39955,line:1197
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:P,from:39986,to:39987,line:1198
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:eer,from:40042,to:40045,line:1200
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:constructor,from:40058,to:40069,line:1201
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:spawn_KVStore,from:40243,to:40256,line:1207
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:IDB_DB_name,from:40481,to:40492,line:1213
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:IDB_version,from:40607,to:40618,line:1218
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:IDB_tables,from:40630,to:40640,line:1219
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:IDB_Schema,from:40732,to:40742,line:1221
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:gizmos,from:40923,to:40929,line:1227
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:gizmo_mem,from:40960,to:40969,line:1228
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:stashed_mem_key,from:40992,to:41007,line:1229
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:stashed_mem,from:41060,to:41071,line:1232
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	call,method:stashed_mem_key,from:41123,to:41144,line:1233
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	call,method:spawn_KVStore,from:41297,to:41316,line:1237
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:trust_name,from:41751,to:41761,line:1256
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:spawn_PF,from:41785,to:41793,line:1257
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:UI_component,from:41817,to:41829,line:1259
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:local,from:42133,to:42138,line:1266
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:remote,from:42152,to:42158,line:1266
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:PierFeature,from:42195,to:42206,line:1267
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:P,from:42237,to:42238,line:1268
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:F,from:42251,to:42252,line:1269
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:eer,from:42295,to:42298,line:1271
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:Pier,from:42311,to:42315,line:1272
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:perm,from:42397,to:42401,line:1274
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:spawned_at,from:42436,to:42446,line:1275
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:constructor,from:42458,to:42469,line:1276
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:stashed_mem,from:42679,to:42690,line:1284
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:UI_component,from:42831,to:42843,line:1289
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:diag_perm,from:42859,to:42868,line:1291
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:unemits,from:43170,to:43177,line:1301
+                {"ref":{"region_path":"[Peering (eer),Pier protocols,hello,trust,*Feature]"}}	def,method:emit,from:43195,to:43199,line:1302
+        Opt
+          txtsyntaxdump
         received,doc_opened,doc:Ghost/test/Hello.g
         received,editorBegins,doc:Ghost/test/Hello.g
         received,doc_opened,doc:src/lib/p2p/Peerily.svelte.ts
         received,editorBegins,doc:src/lib/p2p/Peerily.svelte.ts
-        {"mung":["age"]}	self,round:10
+        {"mung":["age"]}	self,round:12
+        see:🟦 tiles 0 bookmarks
+        see:🔍 soft-compiled src/lib/p2p/Peerily.svelte.ts
     A:Pantheate
       {"mung":["age"]}	self,round:3
       w:Pantheate

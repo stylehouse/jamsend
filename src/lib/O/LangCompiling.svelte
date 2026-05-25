@@ -563,6 +563,45 @@
             return n
         }
 
+        // ── TypeScript class and method defs ──────────────────────────────────
+        //
+        // For tsstho files, class names and class method names are Lezer-JS
+        // nodes, not stho MethodLike.  A second narrow pass over this line
+        // indexes them as %defs without affecting translation output.
+        //
+        //   VariableDefinition (parent=ClassDeclaration) → class name
+        //     e.g. "export class Pier {" → def:Pier
+        //   PropertyDefinition                           → class method name
+        //     e.g. "async emit(type, data={}, ..." → def:emit
+        //
+        // Both are recorded flat — no class membership tracked yet.
+        // < class scoping: record which class each PropertyDefinition belongs
+        //   to so Points can narrow "emit in Pier" vs "emit in Boat" someday.
+        tree.iterate({
+            from: line.from,
+            to:   line.to,
+            enter: (ref) => {
+                if (ref.from < line.from || ref.to > line.to) return
+                if (ref.name === 'PropertyDefinition') {
+                    const name = state.doc.sliceString(ref.from, ref.to)
+                    if (name && /^\w/.test(name))
+                        ctx.words.push({ def: 1, method: name,
+                            from: ref.from, to: ref.to, line: n,
+                            region_path: [...ctx.region_stack] })
+                    return false
+                }
+                if (ref.name === 'VariableDefinition'
+                        && ref.node.parent?.type.name === 'ClassDeclaration') {
+                    const name = state.doc.sliceString(ref.from, ref.to)
+                    if (name && /^\w/.test(name))
+                        ctx.words.push({ def: 1, method: name,
+                            from: ref.from, to: ref.to, line: n,
+                            region_path: [...ctx.region_stack] })
+                    return false
+                }
+            },
+        })
+
         // scan every line for this./H. calls not caught by MethodLike
         // (inline calls, chained calls, calls inside raw JS expressions)
         const CALL_RE = /(?:this|H)\.(\w+)\s*\(/g
