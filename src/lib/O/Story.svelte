@@ -1385,6 +1385,7 @@
                 && (now_in_seconds_with_ms() - f) > quiesce_snap_time
             let dont_want_Atime = !Run.todo.length
 
+            // < GONER prototype of ttlilt
             let dont_leave_running = () => {
                 let leave_running = Run.c.leave_running_until > now_in_seconds_with_ms()
                 if (!wants_left_running && leave_running) {
@@ -1402,17 +1403,21 @@
                 return !leave_running
             }
             // some H...req wants time to think
-            const ttlilt_held = H.o_Story_req_ttlilt(Run)
-            if (ttlilt_held && !wants_left_running) {
-                wants_left_running = true
-                was_left_running = true
+            const ttlilt_held = () => {
+                const held = H.o_Story_req_ttlilt(Run)
+                if (held && !wants_left_running) {
+                    wants_left_running = true
+                    was_left_running = true
+                }
+                return held
             }
+
             
             // the crux:
             let quiescent = long_after_Atime
                 && dont_want_Atime
-                && dont_leave_running() // < GONER prototype of ttlilt
-                && !ttlilt_held
+                && dont_leave_running()
+                && !ttlilt_held()
             
             if (!quiescent) {
                 setTimeout(poll_step, TICK_MS)

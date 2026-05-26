@@ -155,18 +155,25 @@ await M.eatfunc({
     //   that's i_Story_o_req_ttlilt's job. Expired particles from prior cycles
     //   linger until the next i_Story_o_req_ttlilt replaces them out; the
     //   > now filter makes them harmless.
+    //   req.finished guard: finish() may beat the next i_Story_o_req_ttlilt cleanup,
+    //   so we skip any ttlilt whose req is already done.
     o_Story_req_ttlilt(Run: House): boolean {
+        Run.trace('ttlilt', 'Story poll')
+
         const now = now_in_seconds_with_ms()
         for (const t of Run.o({ ttlilt: 1 }) as TheC[]) {
+            const req = t.sc.req as TheC | undefined
+            if (req?.sc.finished) continue  // stale: finish() beat i_Story_o_req_ttlilt cleanup
+
             const until_ts = t.sc.until_ts as number
             if (until_ts > now) {
                 const ms_left = Math.round((until_ts - now) * 1000)
-                const label = keyser({ ...t.sc, ttlilt: undefined, until_ts: undefined, w: undefined })
-                Run.trace('ttlilt', `Story poll: held by w:${t.sc.w}${label ? ' '+label : ''} +${ms_left}ms`)
+                Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} +${ms_left}ms`)
+                Run.trace('leave running...')
                 return true
             }
         }
-        Run.trace('ttlilt', `Story poll ok!`)
+        Run.trace('ttlilt', 'Story poll ok!')
         return false
     },
 
@@ -229,7 +236,7 @@ await M.eatfunc({
         await H.on_step({
             1: async () => {
                 H.trace('ttlilt', 'step 1: starting')
-                await rq.roai({ req: 'one_shot', ttl: 2600, timer: 1400 })
+                await rq.roai({ req: 'one_shot', ttl: 600, timer: 400 })
                 await rq.do()
                 await H.i_Story_o_req_ttlilt([{ A, w }])
             },
