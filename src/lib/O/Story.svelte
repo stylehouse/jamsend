@@ -1376,6 +1376,8 @@
         // Phase 2: poll_step — wait for Run to go quiescent
         let wants_left_running = false
         let was_left_running = false
+        let was_ttlilt_held = false       // ttlilt held us at some point this step
+        let was_ttlilt_timed_out = false  // cleared by time-expiry, not req completion
         const poll_step = () => {
             if (!run.c.driving) return
             const f = Run.c.finished_run as number | null
@@ -1407,8 +1409,13 @@
                 const held = H.o_Story_req_ttlilt(Run)
                 if (held && !wants_left_running) {
                     wants_left_running = true
-                    was_left_running = true
+                    was_ttlilt_held = true
                 }
+                if (!held && was_ttlilt_held) {
+                    was_ttlilt_timed_out = !!Run.c.poll_ttlilt_expired
+                    was_ttlilt_held = false
+                }
+                if (!held) wants_left_running = false
                 return held
             }
 
@@ -1423,13 +1430,15 @@
                 setTimeout(poll_step, TICK_MS)
                 return
             }
-            let timed_out = was_left_running
+            let timed_out = was_left_running || was_ttlilt_timed_out
             was_left_running = false
             wants_left_running = false
+            was_ttlilt_timed_out = false
+            was_ttlilt_held = false   // defensive; should already be false at quiescence
 
 
             let ago = (now_in_seconds_with_ms() - f)
-            Run.trace('quiescent', ago.toFixed(3))
+            Run.trace('quiescent', timed_out ? `${ago.toFixed(3)} timeout` : ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
             Run.c.on_step_ending?.(timed_out ? 'timeout' : 'causal')

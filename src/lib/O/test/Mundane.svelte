@@ -8,6 +8,7 @@
 // Tests:
 //   MundaneStaying  — %ttlilt: declarative req-level Story waits
 //   MundaneStation  — %export: C** diff feed, in-House and remotable
+//      < unlooked at
 
 import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
 import { Selection, type TheD } from "$lib/mostly/Selection.svelte"
@@ -69,11 +70,14 @@ await M.eatfunc({
         // identity = {ttlilt:1, ...sc}; until_ts not in identity — it's what updates
         let t = req.o({ ttlilt: 1, ...sc })[0] as TheC | undefined
         if (t) {
-            // forward-only: never let a fast sibling pull the rug on a slow one
-            if ((t.sc.until_ts as number) < until_ts) {
+            const was_timed_out = !!t.sc.timed_out
+            // forward-only on until_ts (don't let a fast sibling clobber a slow one);
+            // a re-arm after timeout takes whatever new until_ts is offered.
+            if (was_timed_out || (t.sc.until_ts as number) < until_ts) {
                 t.sc.until_ts = until_ts
+                if (was_timed_out) delete t.sc.timed_out
                 t.bump_version()
-                H.trace('ttlilt', `i_req_ttlilt: extended to +${Math.round(secs*1000)}ms`, { ...sc })
+                H.trace('ttlilt', `i_req_ttlilt: ${was_timed_out ? 're-armed' : 'extended'} to +${Math.round(secs*1000)}ms`, { ...sc })
             }
         } else {
             t = req.i({ ttlilt: 1, until_ts, ...sc })
@@ -119,6 +123,7 @@ await M.eatfunc({
                                 continue
                             }
                             for (const t of req.o({ ttlilt: 1 }) as TheC[]) {
+                                if (t.sc.timed_out) continue   // already marked; nothing to gather
                                 const until_ts = t.sc.until_ts as number
                                 const ms_left = Math.round((until_ts - now) * 1000)
                                 if (until_ts > now) {
@@ -126,6 +131,9 @@ await M.eatfunc({
                                     gathered.push({ until_ts, t, req })
                                 } else {
                                     H.trace('ttlilt', `  expired: ${keyser(req.sc)} ${ms_left}ms ago`)
+                                    delete t.sc.until_ts
+                                    t.sc.timed_out = 1
+                                    t.bump_version()
                                 }
                             }
                             visit(req)
@@ -154,13 +162,16 @@ await M.eatfunc({
     // Story-side reader. Flat Run.o({ttlilt:1}) scan — no req** dive here,
     //   that's i_Story_o_req_ttlilt's job. Expired particles from prior cycles
     //   linger until the next i_Story_o_req_ttlilt replaces them out; the
-    //   > now filter makes them harmless.
+    //   > now filter makes them harmless, and seeing one tells us the
+    //   clearance is a timeout (the ttlilt outlived its req's chance to finish).
     //   req.finished guard: finish() may beat the next i_Story_o_req_ttlilt cleanup,
     //   so we skip any ttlilt whose req is already done.
     o_Story_req_ttlilt(Run: House): boolean {
         Run.trace('ttlilt', 'Story poll')
 
         const now = now_in_seconds_with_ms()
+        let any_expired = false  // saw /%ttlilt,until_ts:T with T<=now and req not finished
+
         for (const t of Run.o({ ttlilt: 1 }) as TheC[]) {
             const req = t.sc.req as TheC | undefined
             if (req?.sc.finished) continue  // stale: finish() beat i_Story_o_req_ttlilt cleanup
@@ -174,8 +185,10 @@ await M.eatfunc({
                 Run.trace('leave running...')
                 return true
             }
+            any_expired = true
         }
-        Run.trace('ttlilt', 'Story poll ok!')
+        Run.trace('ttlilt', any_expired ? 'Story poll ok! timeout' : 'Story poll ok!')
+        Run.c.poll_ttlilt_expired = any_expired
         return false
     },
 
@@ -199,7 +212,6 @@ await M.eatfunc({
         const H = this as House
 
         H.c.on_step_ending = (reason) => {
-            reason == 'timeout' && H.trace("GotTimedout")
             reason == 'timeout' && w.i({see:'Step ending with a timeout'})
         }
 

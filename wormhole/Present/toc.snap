@@ -15,4 +15,4 @@ Library
   Book:PortPlanet,ok_pct,last_pct_change:1779622894.947,done:6,last_run_ms:1779622895.668
   Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403
   Book:MundaneStation,ok_pct,last_pct_change:1779759619.693,done:3,last_run_ms:1779767941.228
-  Book:MundaneStaying,active,ok_pct:0,last_pct_change:1779768175.379,done:7,last_run_ms:1779768175.379
+  Book:MundaneStaying,active,ok_pct:0.33,last_pct_change:1779787470.094,done:3,last_run_ms:1779787470.094

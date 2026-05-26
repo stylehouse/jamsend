@@ -5,7 +5,7 @@ Snap:H
       w:MundaneStaying
         req:one_shot,ttl:600,timer:400,done,finished
         req:slow,ttl:1200,armed
-          ttlilt,until_ts:1779785461.688
+          ttlilt,timed_out
         req:fast,ttl:600,timer:400,done,finished
         {"mung":["age"]}	self,round:7
     {"mung":["id"]}	mo:main,interval:3.6
