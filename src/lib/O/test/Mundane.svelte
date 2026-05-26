@@ -168,7 +168,9 @@ await M.eatfunc({
             const until_ts = t.sc.until_ts as number
             if (until_ts > now) {
                 const ms_left = Math.round((until_ts - now) * 1000)
-                Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} +${ms_left}ms`)
+                const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
+                const rv = req?.sc[rk] ?? '?'
+                Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} ${rk}:${rv} +${ms_left}ms`)
                 Run.trace('leave running...')
                 return true
             }
@@ -195,6 +197,11 @@ await M.eatfunc({
 
     async MundaneStaying(A: TheC, w: TheC) {
         const H = this as House
+
+        H.c.on_step_ending = (reason) => {
+            reason == 'timeout' && H.trace("GotTimedout")
+            reason == 'timeout' && w.i({see:'Step ending with a timeout'})
+        }
 
         // req do_fn — shared by both steps, reused for all req** in this test.
         // Defines the core protocol: one-shot arm (via reqonce), then wait for
@@ -238,7 +245,6 @@ await M.eatfunc({
                 H.trace('ttlilt', 'step 1: starting')
                 await rq.roai({ req: 'one_shot', ttl: 600, timer: 400 })
                 await rq.do()
-                await H.i_Story_o_req_ttlilt([{ A, w }])
             },
 
             2: async () => {
@@ -249,9 +255,9 @@ await M.eatfunc({
                 await rq.roai({ req: 'slow', ttl: 1200 })
                 await rq.roai({ req: 'fast', ttl: 600, timer: 400 })
                 await rq.do()
-                await H.i_Story_o_req_ttlilt([{ A, w }])
             }
         })
+
     },
 
 //#endregion

@@ -1,18 +1,12 @@
 Snap:H
   H:MundaneStaying,Run
     A:MundaneStaying
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round:6
       w:MundaneStaying
-        De:bake
-        De:phases,maz:2
-          req:phases_run
-            req:phase_a,time:400
-            req:phase_b,time:500,maz:2
-              ttlilt,until_ts:1779768097.575,phase:b
-        De:parallel,maz:3,finished
-          req:two_waits,done,finished
-            ttlilt,until_ts:1779768089.653,wait:short
-            ttlilt,until_ts:1779768090.053,wait:long
-        {"mung":["age"]}	self,round:3
-        {"see":"ttlilting x1, soonest in 499ms"}
+        req:one_shot,ttl:600,timer:400,done,finished
+        req:slow,ttl:1200,armed
+          ttlilt,until_ts:1779785461.688
+        req:fast,ttl:600,timer:400,done,finished
+        {"mung":["age"]}	self,round:6
     {"mung":["id"]}	mo:main,interval:3.6
+    {"ref":{"req":"%req:slow, ttl:1200, armed:1"}}	ttlilt,w:MundaneStaying,until_ts:1779785461.688

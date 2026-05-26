@@ -358,6 +358,8 @@
     async agency_officing(AwN,AN) {
         // percolate w/ai/%path -> j/%path from this A
         await this.i_journeys_o_aims(AwN)
+        // publish w/req**%ttlilt -> H/%ttlilt,w/req
+        await this.i_Story_o_req_ttlilt(AwN)
         for (let {A,w} of AwN) {
             // percolate w%unemits -> PF.unemit.*
             await this.i_unemits_o_Aw(A,w)

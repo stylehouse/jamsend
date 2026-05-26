@@ -21,17 +21,17 @@ story:MundaneStaying
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.038
-      sample:0.034,at:1779779389
-      sample:0.03,at:1779779457
-      sample:0.043,at:1779779470
-      sample:0.034,at:1779779592
+    TimeTotal:beliefs,avg:0.044
       sample:0.036,at:1779779678
       sample:0.037,at:1779779742
       sample:0.034,at:1779780692
       sample:0.056,at:1779780792
       sample:0.041,at:1779780881
       sample:0.031,at:1779780895
-  step,dige:77cf2316e7d0e3d9
-  step:2,dige:43e2576b1debedf4
-  step:3,dige:1d25ad3cf2b55557
+      sample:0.07,at:1779785462
+      sample:0.07,at:1779785678
+      sample:0.033,at:1779785836
+      sample:0.032,at:1779786037
+  step,dige:ef8614d2458a0863
+  step:2,dige:0ca3c4f4ad9fe5cc
+  step:3,dige:4c1f8839ba96e088
