@@ -1405,7 +1405,8 @@
             // the crux:
             const quiescent = long_after_Atime
                 && dont_want_Atime
-                && dont_leave_running()
+                && dont_leave_running() // < GONER prototype of ttlilt
+                && !H.o_Story_req_ttlilt(Run)
             
             if (!quiescent) {
                 setTimeout(poll_step, TICK_MS)

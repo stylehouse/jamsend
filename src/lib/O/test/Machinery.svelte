@@ -8,6 +8,7 @@
     import MachPeerily from "../MachPeerily.svelte";
     import MachReactivity from "./MachReactivity.svelte";
     import MachReqy from "./MachReqy.svelte";
+    import Mundane from "./Mundane.svelte";
 
     let {M} = $props()
 
@@ -1533,3 +1534,4 @@ The double-envelopment became the template for every subsequent battle of annihi
 <MachPeerily {M} />
 <MachReactivity {M} />
 <MachReqy {M} />
+<Mundane {M} />
