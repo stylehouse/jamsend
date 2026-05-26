@@ -57,7 +57,7 @@
         defs:      Def[]
         points:    PointMark[]
     }
-    type Def = { method: string, class?: string, kind?: string, line: number, from: number, to: number }
+    type Def = { method: string, class?: string, line: number, from: number, to: number }
 
     // A Point becomes a PointMark once its graft fields have been stamped by
     // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
@@ -103,6 +103,54 @@
             nav_pos  = -1
             _last_path = active_path
         }
+    })
+
+    // ── scroll sync ───────────────────────────────────────────────────────────
+    //
+    // The strip is a tall flexbox that may exceed the viewport.  We want the
+    // visible window into it to track CodeMirror's scroll position so that:
+    //   - scrolled to top of doc → top of map visible
+    //   - scrolled to bottom of doc → bottom of map visible
+    //   - the crossover happens linearly, with the map bottom reaching the
+    //     viewport bottom at half-viewport before the doc's last line.
+    //
+    // We drive this by setting `scrollTop` on the strip's scroll container
+    // (lmm-scroll) whenever CM fires a scroll event.  No scroll event is
+    // surfaced by the user on the minimap itself — the bar is invisible.
+    let strip_el: HTMLDivElement | undefined = $state()
+    let scroll_container_el: HTMLDivElement | undefined = $state()
+
+    function sync_scroll() {
+        if (!view || !strip_el || !scroll_container_el) return
+        const cm_scroll   = view.scrollDOM
+        const doc_h       = cm_scroll.scrollHeight
+        const vp_h        = cm_scroll.clientHeight
+        const scrollable  = doc_h - vp_h
+        if (scrollable <= 0) { scroll_container_el.scrollTop = 0; return }
+
+        const cm_top     = cm_scroll.scrollTop
+        // fraction through the scrollable doc range, clamped
+        const frac       = Math.min(cm_top / scrollable, 1)
+
+        const map_h      = strip_el.scrollHeight
+        const map_vp     = scroll_container_el.clientHeight
+        const map_scroll = map_h - map_vp
+        if (map_scroll <= 0) { scroll_container_el.scrollTop = 0; return }
+
+        scroll_container_el.scrollTop = frac * map_scroll
+    }
+
+    $effect(() => {
+        if (!view) return
+        const cm_scroll = view.scrollDOM
+        cm_scroll.addEventListener('scroll', sync_scroll, { passive: true })
+        return () => cm_scroll.removeEventListener('scroll', sync_scroll)
+    })
+
+    // Also re-sync whenever the strip content changes height (new regions, defs).
+    $effect(() => {
+        void _structure
+        requestAnimationFrame(sync_scroll)
     })
 
     // ── data sources ─────────────────────────────────────────────────────────
@@ -209,7 +257,6 @@
                 const def: Def = {
                     method:   d.sc.method as string,
                     class:    d.sc.class  as string | undefined,
-                    kind:     d.sc.kind   as string | undefined,
                     line:     d.sc.line   as number,
                     from:     d.sc.from   as number,
                     to:       d.sc.to     as number,
@@ -480,14 +527,15 @@
     }
 
     // ── layout maths ─────────────────────────────────────────────────────────
-    //   y-coords are percentages of the strip height.  A region spanning lines
-    //   [a..b] of total N takes y = ((a-1)/N * 100)% to (b/N * 100)%.
+    //   Flow layout: each region block gets a min-height proportional to its
+    //   line span.  Budget is 2/3 of the viewport so the map fits without scroll
+    //   for typical files; def-pile overflow pushes it further when needed.
+    //   Nested regions' min-heights don't compound — only siblings sum.
 
-    function band_top(line: number): string {
-        return `${((line - 1) / total_lines) * 100}%`
-    }
-    function band_height(from_line: number, to_line: number): string {
-        return `${((to_line - from_line + 1) / total_lines) * 100}%`
+    function region_min_h(r: Region, total: number): number {
+        const budget      = window.innerHeight * (2 / 3)
+        const px_per_line = total > 0 ? budget / total : 2
+        return Math.max((r.to_line - r.from_line + 1) * px_per_line, 12)
     }
 
     // Hue per depth so nested bands are visually distinct.
@@ -512,95 +560,104 @@
         </span>
     </div>
 
-    <div class="lmm-strip">
-        <!-- Colored stripes: one per region, just a tinted vertical block.
-             Width-shrunk by depth so nesting reads as a stack of stripes. -->
-        {#each regions as r (r.from_line + ':' + r.label)}
-            <div class="lmm-stripe"
-                 style="top: {band_top(r.from_line)};
-                        height: {band_height(r.from_line, r.to_line)};
-                        left: {r.depth * 5}px;
-                        background: {band_color(r.depth)};
-                        border-left: 2px solid {band_border(r.depth)};"
-                 aria-hidden="true"></div>
-        {/each}
-
-        <!-- Labels + def pile: one block per region, positioned at the region's top line.
-             Points remain separately line-positioned (they carry meaningful positions).
-             Depth shrinks font-size and dims color so nesting reads visually.
-             The def pile flows below the header row as wrapped chips — no line alignment. -->
-        {#each regions as r (r.from_line + ':' + r.label)}
-            <div class="lmm-region-block" style="
-                    top: {band_top(r.from_line)};
-                    padding-left: {r.depth * 5 + 4}px;
-                    font-size: {Math.max(11 - r.depth, 8)}px;
-                    opacity: {Math.max(1 - r.depth * 0.12, 0.6)};
-                ">
-                <div class="lmm-row">
-                    <button class="lmm-chev"
-                            onclick={() => toggle_collapse(r)}
-                            aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
-                    <button class="lmm-label"
-                            onclick={() => go_to(r.from_char, r.from_char, r.label)}
-                            title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
-                    <button class="lmm-fold"
-                            onclick={() => toggle_fold(r)}
-                            title="Fold/unfold in editor">f</button>
-                </div>
-
-                {#if !is_collapsed(r) && r.defs.length}
-                    <!-- Def pile: method names flow in a two-column grid.
-                         Class names (kind='class') are bold; method names are dim until hover.
-                         Class prefix omitted — region provides the scope context. -->
+    <div class="lmm-scroll" bind:this={scroll_container_el}>
+        <div class="lmm-strip" bind:this={strip_el}>
+            <!-- Top-level defs (not inside any region) first. -->
+            {#if top_level_defs.length}
+                <div class="lmm-region-block">
                     <div class="lmm-def-pile">
-                        {#each r.defs as d (d.from)}
-                            <button class="lmm-def-chip"
-                                    class:lmm-def-chip-class={d.kind === 'class'}
+                        {#each top_level_defs as d (d.from)}
+                            <button class="lmm-def-chip lmm-def-chip-top"
+                                    class:lmm-def-chip-class={!d.class}
                                     title="{d.method} (line {d.line})"
                                     onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                         {/each}
                     </div>
-                {/if}
-            </div>
+                </div>
+            {/if}
 
-            {#if !is_collapsed(r)}
-                <!-- Points: Pmirror-resolved markers, line-positioned by graft offset.
-                     Higher z-index so they sit above stripes and region blocks.
-                     Warning style when unresolved (Pmirror has no %graft,1). -->
-                {#each r.points as p (p.spec)}
+            <!-- Top-level Points — not inside any region. -->
+            {#each top_level_points as p (p.spec)}
+                <div class="lmm-region-block">
                     <button class="lmm-point" class:lmm-point-bad={p.unresolved}
-                            style="top: {band_top(p.line)}; left: {r.depth * 5 + 4}px;"
                             title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
                             onclick={() => go_to(p.from, p.to, p.method)}>
                         <span class="lmm-point-dot"></span>
                         <span class="lmm-point-label">{p.method}</span>
                     </button>
-                {/each}
-            {/if}
-        {/each}
+                </div>
+            {/each}
 
-        <!-- Top-level Points — graft-resolved markers not inside any region. -->
-        {#each top_level_points as p (p.spec)}
-            <button class="lmm-point" class:lmm-point-bad={p.unresolved}
-                    style="top: {band_top(p.line)}; left: 4px;"
-                    title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
-                    onclick={() => go_to(p.from, p.to, p.method)}>
-                <span class="lmm-point-dot"></span>
-                <span class="lmm-point-label">{p.method}</span>
-            </button>
-        {/each}
+            <!-- One block per region, flowing in document order.
+                 Min-height is proportional to line span so the map preserves
+                 a rough sense of doc length; overflow from def piles makes
+                 blocks taller without compressing siblings.
+                 Stripes are background-color on the block itself. -->
+            {#each regions as r (r.from_line + ':' + r.label)}
+                {@const min_h = region_min_h(r, total_lines)}
+                <div class="lmm-region-block"
+                     style="
+                         min-height: {min_h}px;
+                         padding-left: {r.depth * 5 + 4}px;
+                         font-size: {Math.max(11 - r.depth, 8)}px;
+                         opacity: {Math.max(1 - r.depth * 0.12, 0.6)};
+                         background: {band_color(r.depth)};
+                         border-left: 2px solid {band_border(r.depth)};
+                     ">
+                    <div class="lmm-row">
+                        <button class="lmm-chev"
+                                onclick={() => toggle_collapse(r)}
+                                aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
+                        <button class="lmm-label"
+                                onclick={() => go_to(r.from_char, r.from_char, r.label)}
+                                title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
+                        <button class="lmm-fold"
+                                onclick={() => toggle_fold(r)}
+                                title="Fold/unfold in editor">f</button>
+                    </div>
 
-        <!-- Top-level defs (not inside any region) — a single pile at the strip top. -->
-        {#if top_level_defs.length}
-            <div class="lmm-def-pile lmm-def-pile-top">
-                {#each top_level_defs as d (d.from)}
-                    <button class="lmm-def-chip lmm-def-chip-top"
-                            class:lmm-def-chip-class={d.kind === 'class'}
-                            title="{d.method} (line {d.line})"
-                            onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
-                {/each}
-            </div>
-        {/if}
+                    {#if !is_collapsed(r) && r.defs.length}
+                        {@const half = Math.ceil(r.defs.length / 2)}
+                        <!-- Def pile: column-major two-column layout so reading order is
+                             top→bottom then left→right.  First half fills left column,
+                             second half fills right.  Class names (no %class sc field —
+                             they ARE the class) span full width and appear bold. -->
+                        <div class="lmm-def-pile">
+                            <div class="lmm-def-col">
+                                {#each r.defs.slice(0, half) as d (d.from)}
+                                    <button class="lmm-def-chip"
+                                            class:lmm-def-chip-class={!d.class}
+                                            title="{d.method} (line {d.line})"
+                                            onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                                {/each}
+                            </div>
+                            {#if r.defs.length > 1}
+                                <div class="lmm-def-col">
+                                    {#each r.defs.slice(half) as d (d.from)}
+                                        <button class="lmm-def-chip"
+                                                class:lmm-def-chip-class={!d.class}
+                                                title="{d.method} (line {d.line})"
+                                                onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                                    {/each}
+                                </div>
+                            {/if}
+                        </div>
+                    {/if}
+
+                    {#if !is_collapsed(r)}
+                        <!-- Points: always-visible gold markers.  Flow below the def pile. -->
+                        {#each r.points as p (p.spec)}
+                            <button class="lmm-point" class:lmm-point-bad={p.unresolved}
+                                    title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
+                                    onclick={() => go_to(p.from, p.to, p.method)}>
+                                <span class="lmm-point-dot"></span>
+                                <span class="lmm-point-label">{p.method}</span>
+                            </button>
+                        {/each}
+                    {/if}
+                </div>
+            {/each}
+        </div>
     </div>
 </div>
 
@@ -637,32 +694,33 @@
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
-    /* Strip surface layers, all absolute-positioned within it:
-         .lmm-stripe        — colored bands sized by region line span (z-index 0)
-         .lmm-region-block  — per-region header + def pile, positioned at top line (z-index 2)
-         .lmm-point         — graft-resolved Point markers, line-positioned (z-index 3)
-       overflow:hidden on the strip itself. */
-    .lmm-strip {
-        position: relative;
+    /* Strip surface layers comment updated:
+         .lmm-scroll        — overflow:hidden scroll container (invisible bar)
+         .lmm-strip         — flex-col inner; grows taller than viewport when needed
+         .lmm-region-block  — one per region, min-height proportional to line span
+         .lmm-point         — gold markers that flow below defs inside their region block */
+    .lmm-scroll {
         flex: 1;
-        overflow: hidden;
+        overflow: hidden;        /* bar invisible; JS drives scrollTop */
+        position: relative;
+    }
+    .lmm-strip {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
     }
 
-    .lmm-stripe {
-        position: absolute; right: 0;
-        z-index: 0;
-        pointer-events: none;
-        min-height: 2px;
-    }
+    .lmm-stripe { display: none; }   /* stripe layer retired — background is on lmm-region-block */
 
-    /* Region label row — fixed height, child of lmm-region-block. */
+    /* Region label row — fixed height within the region block. */
     .lmm-row {
         display: flex; align-items: center; gap: 2px;
-        height: 16px; margin-top: -1px;
+        height: 16px;
         background: rgba(0, 0, 0, 0.55);
         border-top: 1px solid rgba(120, 140, 170, 0.25);
         padding-right: 4px;
         white-space: nowrap;
+        flex-shrink: 0;
     }
 
     .lmm-chev, .lmm-fold {
@@ -684,30 +742,30 @@
     }
     .lmm-label:hover { color: #fff; }
 
-    /* Block that wraps a region's header row + def pile.
-       Positioned absolutely at the region's top line; the pile
-       flows below the header so it naturally overlaps with the next
-       region's stripe.  Intentional — this is a content layer, not
-       a line-accurate map. */
+    /* Each region block: flows in document order, min-height proportional to
+       line span (see region_min_h).  Background tint and left border carry
+       depth color.  Overflow from def piles makes it taller without compressing
+       siblings.  Nested blocks appear inside their parent block's padding-left. */
     .lmm-region-block {
-        position: absolute; left: 0; right: 0;
-        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
     }
 
-    /* Def pile: two-column grid so long regions don't become a single tall column.
-       No line-position alignment — the pile lives just below the header. */
+    /* Def pile: two explicit columns so reading order is top→bottom, left→right.
+       First half in left column, second half in right (split in template). */
     .lmm-def-pile {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0px 4px;
-        padding: 1px 4px 2px;
+        display: flex;
+        gap: 0 2px;
+        padding: 1px 2px 2px;
         background: rgba(0, 0, 0, 0.22);
+        flex-shrink: 0;
     }
-
-    /* Top-level pile sits at the very top of the strip (no region block). */
-    .lmm-def-pile-top {
-        position: absolute; top: 0; left: 0; right: 0;
-        z-index: 2;
+    .lmm-def-col {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
     }
 
     .lmm-def-chip {
@@ -722,11 +780,10 @@
     }
     .lmm-def-chip:hover { color: #c0d0e0; }
 
-    /* Class name def — heavier, slightly brighter at rest. */
+    /* Class name def (no %class on its sc — it IS the class): full width, bold. */
     .lmm-def-chip-class {
         color: rgba(220, 200, 255, 0.7);
         font-weight: bold;
-        grid-column: 1 / -1;   /* spans both columns so it gets its own row */
     }
     .lmm-def-chip-class:hover { color: #e0d0ff; }
 
@@ -734,19 +791,19 @@
     .lmm-def-chip-top { color: rgba(220, 200, 140, 0.45); }
     .lmm-def-chip-top:hover { color: #e5c07b; }
 
-    /* Points — graft-resolved markers, always-visible label, sit above defs.
-       The dot anchors the position; label extends to the right.  z-index 3
-       so they're above both stripes (0) and rows (2). */
+    /* Points — graft-resolved markers, flow below the def pile in their region block.
+       The dot anchors the spec; label extends right and truncates.  Gold for resolved,
+       red with strikethrough for unresolved (Pmirror with no %graft,1). */
     .lmm-point {
-        position: absolute; right: 4px;
-        z-index: 3;
+        display: flex; align-items: center; gap: 4px;
         background: rgba(0, 0, 0, 0.4);
         border: none; border-radius: 2px;
-        padding: 1px 4px 1px 2px;
+        padding: 2px 4px 2px 2px;
         cursor: pointer;
-        margin-top: -7px;
-        display: flex; align-items: center; gap: 4px;
         font-family: inherit;
+        flex-shrink: 0;
+        margin: 1px 0;
+        align-self: flex-start;
     }
     .lmm-point:hover { background: rgba(0, 0, 0, 0.7); }
     .lmm-point-dot {

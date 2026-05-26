@@ -276,7 +276,7 @@
         // `region_path` = snapshot of region_stack at the time each entry is recorded
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
-                             via?: string, class?: string, kind?: string, magic?: 1,
+                             via?: string, class?: string, magic?: 1,
                              from?: number, to?: number, line?: number,
                              region_path?: string[] }> = []
 
@@ -304,6 +304,7 @@
 
         // flush word index into Stuff:
         //   job%Compile / methods / {def:1,  method:'name', class?:'ClassName', magic?:1, from, to, line, region_path}
+        //     class absent → class-name def or eatfunc method; class present → class method inside that class
         //   job%Compile / methods / {call:1, method:'name', via:'caller', from, to, line, region_path}
         //   job%Compile / methods / {region:1, label:'name', from, to, line, depth}
         //   job%Compile / methods / {controlflow:1, keyword, title, from, to, line, via?, region_path}
@@ -570,19 +571,16 @@
         //
         // For tsstho files the relevant Lezer-JS node names are:
         //
-        //   VariableDefinition (parent=ClassDeclaration) → class name, kind:'class'
-        //     e.g. "export class Pier {" → def:Pier kind:class
-        //   PropertyDefinition (parent=MethodDeclaration) → class method, kind:'method'
-        //     e.g. "async emit(type, data={}) {" → def:emit class:'Pier' kind:method
-        //   PropertyDefinition (parent=Property with ParamList) → eatfunc method, kind:'method'
-        //     e.g. eatfunc pattern: "async on_code_change() {" → def:on_code_change kind:method
+        //   VariableDefinition (parent=ClassDeclaration) → class name
+        //     e.g. "export class Pier {" → def:Pier  (no %class — it IS the class)
+        //   PropertyDefinition (parent=MethodDeclaration) → class method
+        //     e.g. "async emit(type, data={}) {" → def:emit class:'Pier'
+        //   PropertyDefinition (parent=Property with ParamList) → eatfunc method
+        //     e.g. eatfunc pattern: "async on_code_change() {" → def:on_code_change
         //   PropertyName (in Object shorthand methods some grammars emit this) → eatfunc fallback
         //
-        // PropertyDefinition also appears in many non-callable contexts:
-        //   PropertyDeclaration (class field), PropertyType (type alias body),
-        //   PatternProperty (destructuring), ObjectType, etc.
-        // Rather than blocklisting each new case, we allowlist: only the two
-        // parent types above produce method defs.
+        // Discriminator: %class present → method inside a class; absent → class name or eatfunc top.
+        // No %kind field — the %class field carries that distinction.
         //
         // IMPORT and RENDER are reserved method names for compiler header/tail extraction.
         // < IMPORT/RENDER body extraction in Lang_compile_collect is future work.
@@ -616,7 +614,7 @@
                     }
 
                     const word: any = {
-                        def: 1, kind: 'method', method: name,
+                        def: 1, method: name,
                         from: ref.from, to: ref.to, line: n,
                         region_path: [...ctx.region_stack],
                     }
@@ -635,7 +633,7 @@
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
                     const word: any = {
-                        def: 1, kind: 'method', method: name,
+                        def: 1, method: name,
                         from: ref.from, to: ref.to, line: n,
                         region_path: [...ctx.region_stack],
                     }
@@ -648,7 +646,7 @@
                         && ref.node.parent?.type.name === 'ClassDeclaration') {
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (name && /^\w/.test(name))
-                        ctx.words.push({ def: 1, kind: 'class', method: name,
+                        ctx.words.push({ def: 1, method: name,
                             from: ref.from, to: ref.to, line: n,
                             region_path: [...ctx.region_stack] })
                     return false
