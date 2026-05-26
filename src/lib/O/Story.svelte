@@ -1401,12 +1401,18 @@
                 if (!leave_running) wants_left_running = false
                 return !leave_running
             }
+            // some H...req wants time to think
+            const ttlilt_held = H.o_Story_req_ttlilt(Run)
+            if (ttlilt_held && !wants_left_running) {
+                wants_left_running = true
+                was_left_running = true
+            }
             
             // the crux:
-            const quiescent = long_after_Atime
+            let quiescent = long_after_Atime
                 && dont_want_Atime
                 && dont_leave_running() // < GONER prototype of ttlilt
-                && !H.o_Story_req_ttlilt(Run)
+                && !ttlilt_held
             
             if (!quiescent) {
                 setTimeout(poll_step, TICK_MS)

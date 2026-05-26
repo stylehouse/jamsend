@@ -8,8 +8,6 @@
 // Tests:
 //   MundaneStaying  — %ttlilt: declarative req-level Story waits
 //   MundaneStation  — %export: C** diff feed, in-House and remotable
-//
-// Wire selectively from may_begin via the Run_A_* functions below.
 
 import { _C, keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
 import { Selection, type TheD } from "$lib/mostly/Selection.svelte"
@@ -22,20 +20,27 @@ let { M } = $props()
 onMount(async () => {
 await M.eatfunc({
 
+//#region Setup
 
+    Run_A_MundaneStaying(this: House) {
+        const H = this
+        H.i({ A: 'MundaneStaying' }).i({ w: 'MundaneStaying' })
+        console.log(`🟦 ${H.name} MundaneStaying wired`)
+    },
 
+    Run_A_MundaneStation(this: House) {
+        const H = this
+        H.i({ A: 'MundaneStation' }).i({ w: 'MundaneStation' })
+        H.i({ A: 'MundaneOuter'   }).i({ w: 'MundaneOuter'   })
+        console.log(`🟦 ${H.name} MundaneStation wired`)
+    },
 
-
-
-
-
-
-
-
+//#endregion
 //#region ttlilt
+
 // %ttlilt is the declarative replacement for demand_time_to_think.
 //   A /req that needs more wall-clock time before Story snaps declares
-//   /req/%ttlilt,until_ts:N. Many ttlilts may sit on one req (concurrent
+//   /req/%ttlilt,until_ts:N. Many ttilts may sit on one req (concurrent
 //   labelled waits); nested reqs (req/reqcons/$reqcon/$req**) carry their own.
 //
 //   It does NOT cause think() or reqyoncile() to re-fire at until_ts.
@@ -48,17 +53,10 @@ await M.eatfunc({
 //                  && dont_leave_running()
 //                  && !H.o_Story_req_ttlilt(Run)
 //
-// demand_time_to_think | leave_running_until | want_savepoint retire once all
-//   callers have moved to i_req_ttlilt.
-//
 // Cleanup:
 //   < reqy().finish(req) should drop req/%ttlilt particles beside the existing
 //      oncelers cleanup, so snaps never show stale %ttlilt alongside {finished:1}.
 //      Walk-side hygiene in i_Story_o_req_ttlilt is the prototype stand-in.
-//
-// Future home for i_Story_o_req_ttlilt:
-//   < agency_officing, beside i_journeys_o_aims and i_unemits_o_Aw, so workers
-//      only call i_req_ttlilt and never think about the publish step.
 
     // Public ttlilt API. Creates or forward-updates /req/%ttlilt,until_ts:N,...sc.
     //   sc is both label and identity — two calls with distinct sc coexist.
@@ -90,15 +88,13 @@ await M.eatfunc({
         return t
     },
 
-    // Worker-side publisher. Call at end of think (eventually inside agency_officing).
+    // Worker-side publisher. Call at end of think to gather and publish ttilts.
     //   For each w with has_req_ttlilt set, walks all req** via their reqcons,
-    //   recursing into nested req/reqcons/req**. Gathers active ttlilts and
+    //   recursing into nested req/reqcons/req**. Gathers active ttilts and
     //   hygiene-drops stale ones from finished reqs. Publishes per-w-scoped to
-    //   /Run via replace() so each w only churns its own slice — other w's ttlilts
-    //   from the same cycle sit undisturbed.
+    //   /Run via replace() so each w only churns its own slice.
     async i_Story_o_req_ttlilt(AwN: Array<{ A: TheC, w: TheC }>) {
         const H = this as House
-        // < wire to H.top_House() when called from a subHouse worker
         const Run = H
 
         const now = now_in_seconds_with_ms()
@@ -109,7 +105,7 @@ await M.eatfunc({
             const wname = w.sc.w as string
             H.trace('ttlilt', `i_Story_o_req_ttlilt: walking w:${wname}`)
 
-            const gathered: Array<{ until_ts: number, t: TheC }> = []
+            const gathered: Array<{ until_ts: number, t: TheC, req: TheC }> = []
 
             const visit = (host: TheC) => {
                 for (const reqcons of host.o({ reqcons: 1 }) as TheC[]) {
@@ -118,7 +114,7 @@ await M.eatfunc({
                         if (!k) continue
                         for (const req of host.o({ [k]: 1 }) as TheC[]) {
                             if (req.sc.finished) {
-                                // stand-in for reqy finish() drop
+                                // cleanup: drop ttilts from finished reqs
                                 for (const t of req.o({ ttlilt: 1 }) as TheC[]) req.drop(t)
                                 continue
                             }
@@ -127,7 +123,7 @@ await M.eatfunc({
                                 const ms_left = Math.round((until_ts - now) * 1000)
                                 if (until_ts > now) {
                                     H.trace('ttlilt', `  found: ${keyser(req.sc)} +${ms_left}ms`, { ...t.sc })
-                                    gathered.push({ until_ts, t })
+                                    gathered.push({ until_ts, t, req })
                                 } else {
                                     H.trace('ttlilt', `  expired: ${keyser(req.sc)} ${ms_left}ms ago`)
                                 }
@@ -143,9 +139,9 @@ await M.eatfunc({
             gathered.sort((a, b) => a.until_ts - b.until_ts)
 
             await Run.replace({ ttlilt: 1, w: wname }, async () => {
-                for (const { until_ts, t } of gathered) {
+                for (const { until_ts, t, req } of gathered) {
                     const { ttlilt: _ti, until_ts: _u, ...rest } = t.sc
-                    Run.i({ ttlilt: 1, w: wname, until_ts, ...rest })
+                    Run.i({ ttlilt: 1, w: wname, until_ts, req, ...rest })
                 }
             })
 
@@ -160,17 +156,17 @@ await M.eatfunc({
     //   linger until the next i_Story_o_req_ttlilt replaces them out; the
     //   > now filter makes them harmless.
     o_Story_req_ttlilt(Run: House): boolean {
-        const H = this as House
         const now = now_in_seconds_with_ms()
         for (const t of Run.o({ ttlilt: 1 }) as TheC[]) {
             const until_ts = t.sc.until_ts as number
             if (until_ts > now) {
                 const ms_left = Math.round((until_ts - now) * 1000)
                 const label = keyser({ ...t.sc, ttlilt: undefined, until_ts: undefined, w: undefined })
-                H.trace('ttlilt', `poll: held by w:${t.sc.w}${label ? ' '+label : ''} +${ms_left}ms`)
+                Run.trace('ttlilt', `Story poll: held by w:${t.sc.w}${label ? ' '+label : ''} +${ms_left}ms`)
                 return true
             }
         }
+        Run.trace('ttlilt', `Story poll ok!`)
         return false
     },
 
@@ -178,143 +174,80 @@ await M.eatfunc({
 //#region MundaneStaying
 // Two-step test of the %ttlilt protocol.
 //
-// Step 1: /De:one_shot — one req, 200ms ttlilt, setTimeout fires at 150ms.
+// Step 1: /req:one_shot — one req, 200ms ttlilt, setTimeout fires at 150ms.
 //   Story should see the ttlilt active on every poll tick, then snap after the
 //   ttlilt's until_ts expires (~200ms from step start), NOT at 150ms when the
 //   reqyoncile lands. The extra 50ms is the whole point of the mechanism.
 //
-// Step 2 (after step 1 snaps, via on_step_ending): two concurrent De's —
-//   /De:slow — 400ms ttlilt, no reqyoncile. Expires naturally at ~400ms.
-//   /De:fast  — 200ms ttlilt, setTimeout 150ms. Req finishes at ~150ms.
+// Step 2 (after step 1 snaps, via Story's natural step advance): two concurrent reqs —
+//   /req:slow  — 400ms ttlilt, no timer. Expires naturally at ~400ms.
+//   /req:fast  — 200ms ttlilt, setTimeout 150ms. Req finishes at ~150ms.
 //   Story should be held open by slow's ttlilt until ~400ms, even though
 //   fast's req is done and its ttlilt is cleaned up long before that.
-//   /De:slow's req is deliberately orphaned — never finished. In production
-//   every pending req eventually reqyoncile's or is explicitly cleaned up.
+//   /req:slow is deliberately never finished — req stays open with active ttlilt.
 
     async MundaneStaying(A: TheC, w: TheC) {
         const H = this as House
 
-        // first-run setup: step counter and on_step_ending hook
-        if (!w.c.step_init) {
-            w.c.step_init = true
-            w.i({ step: 1 })
-            H.c.on_step_ending = (reason: string) => {
-                const step = w.sc.step as number
-                H.trace('ttlilt', `on_step_ending step=${step} reason=${reason}`)
-                if (step === 1) {
-                    w.i({ step: 2 })
-                    H.feebly_ponder()
-                }
+        // req do_fn — shared by both steps, reused for all req** in this test.
+        // Defines the core protocol: one-shot arm (via reqonce), then wait for
+        // timeout or other completion signal via out-of-time reqyoncile.
+        const req_do_fn = async (req: TheC) => {
+            // second call: seen %done via reqyoncile — finish and return
+            if (req.sc.done) {
+                const rq = req.c.on?.c?.rq
+                rq?.finish(req)
+                H.trace('ttlilt', `req ${keyser(req.sc)}: done → finished`)
+                return
+            }
+
+            // first call: arm via reqonce, set ttlilt, schedule timer if present
+            if (!H.reqonce(req, 'armed')) return
+            
+            const ttl_ms = req.sc.ttl as number
+            const timer_ms = req.sc.timer as number | undefined
+            const label = req.sc.req as string
+
+            H.i_req_ttlilt(req, ttl_ms / 1000)
+            if (timer_ms) {
+                setTimeout(() => {
+                    H.trace('ttlilt', `req ${label}: timer ${timer_ms}ms fired → reqyoncile`)
+                    H.reqyoncile(req, `timer ${timer_ms}ms`, { done: 1 })
+                }, timer_ms)
+                H.trace('ttlilt', `req ${label}: armed ttl=${ttl_ms}ms timer=${timer_ms}ms`)
+            } else {
+                H.trace('ttlilt', `req ${label}: armed ttl=${ttl_ms}ms (orphaned, no timer)`)
             }
         }
 
-        const step = w.sc.step as number
-        H.trace('ttlilt', `MundaneStaying think step=${step}`)
+        // Set up the reqy protocol once. All reqs in this test use this do_fn.
+        const rq = H.reqy(w, { k: 'req' })
+        rq.con.c.do_fn = req_do_fn
 
-        const steps: Record<number, () => Promise<void>> = {
-
+        // Dispatch to step via Story's run.c.step_n. Story auto-advances the step
+        // number after each snap completes. No manual step management needed.
+        await H.on_step({
             1: async () => {
-                const dq = H.reqy(w, { k: 'De' })
-                const d = await dq.roai({ De: 'one_shot' })
-                d.c.do_fn ||= async (De: TheC) => {
-                    const rq = H.reqy(De, { k: 'req' })
-                    const r = await rq.roai({ req: 'the_wait' })
-                    r.c.do_fn ||= async (req: TheC, rq: any) => {
-                        if (req.sc.done) {
-                            H.trace('ttlilt', 'step1 the_wait: done → finish')
-                            rq.finish(req); return
-                        }
-                        if (req.c.armed) return
-                        req.c.armed = true
-                        H.trace('ttlilt', 'step1 the_wait: arming 200ms ttlilt, 150ms timer')
-                        H.i_req_ttlilt(req, 0.2)
-                        setTimeout(() => {
-                            H.trace('ttlilt', 'step1 timer fired → reqyoncile')
-                            H.reqyoncile(req, 'step1 done', { done: 1 })
-                        }, 150)
-                    }
-                    await rq.do()
-                    rq.unify_finished()
-                }
-                await dq.do()
+                H.trace('ttlilt', 'step 1: starting')
+                await rq.roai({ req: 'one_shot', ttl: 2600, timer: 1400 })
+                await rq.do()
+                await H.i_Story_o_req_ttlilt([{ A, w }])
             },
 
             2: async () => {
-                const dq = H.reqy(w, { k: 'De' })
-
-                const dSlow = await dq.roai({ De: 'slow', maz: 1 })
-                dSlow.c.do_fn ||= async (De: TheC) => {
-                    const rq = H.reqy(De, { k: 'req' })
-                    const r = await rq.roai({ req: 'the_slow' })
-                    r.c.do_fn ||= async (req: TheC) => {
-                        if (req.c.armed) return
-                        req.c.armed = true
-                        H.trace('ttlilt', 'step2 slow: arming 400ms ttlilt, no timer')
-                        H.i_req_ttlilt(req, 0.4, { what: 'slow' })
-                        // never calls reqyoncile — ttlilt expires at ~400ms and
-                        // poll_step naturally becomes quiescent. req stays orphaned.
-                    }
-                    await rq.do()
-                    // deliberately no rq.unify_finished — De:slow never finishes
-                }
-
-                const dFast = await dq.roai({ De: 'fast', maz: 2 })
-                dFast.c.do_fn ||= async (De: TheC) => {
-                    const rq = H.reqy(De, { k: 'req' })
-                    const r = await rq.roai({ req: 'the_fast' })
-                    r.c.do_fn ||= async (req: TheC, rq: any) => {
-                        if (req.sc.done) {
-                            H.trace('ttlilt', 'step2 fast: done → finish')
-                            rq.finish(req); return
-                        }
-                        if (req.c.armed) return
-                        req.c.armed = true
-                        H.trace('ttlilt', 'step2 fast: arming 200ms ttlilt, 150ms timer')
-                        H.i_req_ttlilt(req, 0.2, { what: 'fast' })
-                        setTimeout(() => {
-                            H.trace('ttlilt', 'step2 fast timer fired → reqyoncile')
-                            H.reqyoncile(req, 'fast done', { done: 1 })
-                        }, 150)
-                    }
-                    await rq.do()
-                    rq.unify_finished()
-                }
-
-                await dq.do()
-            },
-        }
-
-        await steps[step]?.()
-        await H.i_Story_o_req_ttlilt([{ A, w }])
+                H.trace('ttlilt', 'step 2: starting')
+                // Both reqs created and armed in the same cycle.
+                // slow: no timer, ttlilt holds until ~1200ms.
+                // fast: timer at 400ms, finishes before slow's ttlilt expires.
+                await rq.roai({ req: 'slow', ttl: 1200 })
+                await rq.roai({ req: 'fast', ttl: 600, timer: 400 })
+                await rq.do()
+                await H.i_Story_o_req_ttlilt([{ A, w }])
+            }
+        })
     },
 
 //#endregion
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //#region export
 // %export declares a named channel on /w, defined by what to select from w's C**
 //   and how to encode and push changes. The Selection's pair-tracking machinery
@@ -454,40 +387,35 @@ await M.eatfunc({
             w.i({ Folder: 'videos' })
         }
 
-        const dq = H.reqy(w, { k: 'De' })
+        const items = [
+            { in: 'music',  name: 'song_1', mins: 3 },
+            { in: 'music',  name: 'song_2', mins: 4 },
+            { in: 'videos', name: 'clip_1', mins: 2 },
+            { in: 'videos', name: 'clip_2', mins: 5 },
+        ]
 
-        const dPop = await dq.roai({ De: 'populate' })
-        dPop.c.do_fn ||= async (De: TheC) => {
-            const rq = H.reqy(De, { k: 'req' })
-
-            const items = [
-                { in: 'music',  name: 'song_1', mins: 3 },
-                { in: 'music',  name: 'song_2', mins: 4 },
-                { in: 'videos', name: 'clip_1', mins: 2 },
-                { in: 'videos', name: 'clip_2', mins: 5 },
-            ]
-            for (let i = 0; i < items.length; i++) {
-                const spec = items[i]
-                const req = await rq.roai({ req: 'make_item', n: i + 1, maz: i + 1 })
-                req.c.do_fn ||= async (req: TheC, rq: any) => {
-                    if (req.sc.done) { rq.finish(req); return }
-                    if (req.c.armed) return
-                    req.c.armed = true
-                    H.i_req_ttlilt(req, 0.2, { item: spec.name })
-                    setTimeout(() => {
-                        const folder = w.o({ Folder: spec.in })[0] as TheC | undefined
-                        if (folder) folder.i({ Item: spec.name, mins: spec.mins })
-                        H.reqyoncile(req, `made ${spec.name}`, { done: 1 })
-                    }, 200)
-                }
+        const rq = H.reqy(w, { k: 'req' })
+        rq.con.c.do_fn = async (req: TheC) => {
+            if (req.sc.done) {
+                rq.finish(req)
+                return
             }
 
-            await rq.do()
-            rq.unify_finished()
+            if (!H.reqonce(req, 'armed')) return
+
+            const spec = items[req.sc.item_i as number]
+            H.i_req_ttlilt(req, 0.2, { item: spec.name })
+            setTimeout(() => {
+                const folder = w.o({ Folder: spec.in })[0] as TheC | undefined
+                if (folder) folder.i({ Item: spec.name, mins: spec.mins })
+                H.reqyoncile(req, `made ${spec.name}`, { done: 1 })
+            }, 200)
         }
 
-        await dq.do()
-
+        for (let i = 0; i < items.length; i++) {
+            await rq.roai({ req: 'make_item', item_i: i })
+        }
+        await rq.do()
         await H.i_Story_o_req_ttlilt([{ A, w }])
 
         const K = await H.process_export(w, 'Items')
@@ -517,7 +445,6 @@ await M.eatfunc({
     },
 
 //#endregion
-
 
 })
 })
