@@ -208,16 +208,28 @@
     //   restore → pick → e_story_sel → story_analysis → display.run_sc → loop.
     let stash_loaded = $state(false)
 
+    // open_at_ts: wall-clock ms when the panel last opened; null when closed.
+    // Stashed alongside open_at so restores can enforce the 5-minute recency gate.
+    let open_at_ts = $state<number | null>(null)
+    $effect(() => {
+        const n = display.open_at
+        open_at_ts = n != null ? Date.now() : null
+    })
+
     $effect(() => {
         if (stash_loaded) return
         const book = display.run_sc?.run as string | undefined
         if (!book) return
         stash_loaded = true   // arm the guard before any mutations below
-        const saved = H.stashed?.['Storui:' + book] as { open_at?: number, sticky_mode?: DiffMode, expanded?: boolean } | undefined
+        const saved = H.stashed?.['Storui:' + book] as { open_at?: number, open_at_ts?: number, sticky_mode?: DiffMode, expanded?: boolean } | undefined
         if (!saved) return
         if (saved.expanded    != null) expanded     = saved.expanded
         if (saved.sticky_mode != null) sticky_mode  = saved.sticky_mode
-        if (saved.open_at     != null) restore_pip  = saved.open_at
+        if (saved.open_at     != null) {
+            // only jump back if the pip was opened within the last 5 minutes
+            const age = saved.open_at_ts != null ? Date.now() - saved.open_at_ts : Infinity
+            if (age <= 5 * 60 * 1000) restore_pip = saved.open_at
+        }
     })
 
     // once the stashed step has content, open it.
@@ -241,10 +253,11 @@
         const book = display.run_sc?.run as string | undefined
         if (!book) return
         const open_at = display.open_at
-        const _sm     = sticky_mode   // subscribe
-        const _exp    = expanded      // subscribe
+        const _ts     = open_at_ts   // subscribe
+        const _sm     = sticky_mode  // subscribe
+        const _exp    = expanded     // subscribe
         H.stashed ??= {}
-        H.stashed['Storui:' + book] = { open_at, sticky_mode, expanded }
+        H.stashed['Storui:' + book] = { open_at, open_at_ts, sticky_mode, expanded }
     })
 
     //#region ops_for_display 
