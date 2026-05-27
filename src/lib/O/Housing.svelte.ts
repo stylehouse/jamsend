@@ -14,6 +14,14 @@ export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
+type CMatrix = Array<{ C: TheC, version: number }>
+interface StuffingEntry {
+    path: string
+    C: TheC
+    handler: () => void
+    last_matrix: CMatrix  // empty [] on registration forces first check to fire
+}
+
 //#region Dexie
 
 interface HouseRow {
@@ -1301,28 +1309,41 @@ export class House extends StorableHousing {
 
 //#endregion
 //#region Stuffing
+
+    // top-level C + immediate C/* — one layer of version tracking.
+    // catches: child sc changes (child.replace(), child.i()) that don't bubble to parent.
+    stuff_matrix(C: TheC): CMatrix {
+        const kids: TheC[] = C.X?.z?.filter((k: TheC) => !k.c?.drop) ?? []
+        return [
+            { C, version: C.version },
+            ...kids.map((k: TheC) => ({ C: k, version: k.version }))
+        ]
+    }
+
+    // any C ref change OR any version divergence at any position triggers an update.
+    // length change catches insertions/deletions even before version comparison.
+    matrix_changed(prev: CMatrix, curr: CMatrix): boolean {
+        if (prev.length !== curr.length) return true
+        return prev.some((p, i) => p.C !== curr[i].C || p.version !== curr[i].version)
+    }
+
     // open Stuffing components registered for unreactive version-based updates.
     // each entry: %C watched, handler to call, last-seen C.version.
     // checked inside H.clear() after each beliefs cycle and on the 3s heartbeat.
-    stuffing_registry: Map<string, { path: string, C: TheC, handler: () => void, last_v: number, last_C: TheC }> = new Map()
+    stuffing_registry: Map<string, StuffingEntry> = new Map()
     _stuffing_pending = false
-
     register_stuffing(path: string, C: TheC, handler: () => void): () => void {
-        // last_v: -1 forces the first check to fire — gives the new Stuffing its initial commit
-        const entry = { path, C, handler, last_v: -1, last_C: null as TheC | null }
+        const entry: StuffingEntry = { path, C, handler, last_matrix: [] }
         this.stuffing_registry.set(path, entry)
         if (!this._stuffing_pending) {
             this._stuffing_pending = true
-            queueMicrotask(() => {
-                this._stuffing_pending = false
-                this.check_stuffings()
-            })
+            queueMicrotask(() => { this._stuffing_pending = false; this.check_stuffings() })
         }
         return () => {
-            // only delete if we are still the entry at that path (no clobber after a remount)
             if (this.stuffing_registry.get(path) === entry) this.stuffing_registry.delete(path)
         }
     }
+
 
     _check_stuffings_throttled?: Function
     schedule_stuffing_check() {
@@ -1330,14 +1351,19 @@ export class House extends StorableHousing {
         this._check_stuffings_throttled()
     }
     async check_stuffings() {
-        const changed = [...this.stuffing_registry.values()]
-            .filter(e => e.C !== e.last_C || e.C.version !== e.last_v)
+        const changed: StuffingEntry[] = []
+        for (const e of this.stuffing_registry.values()) {
+            const curr = this.stuff_matrix(e.C)
+            if (this.matrix_changed(e.last_matrix, curr)) {
+                changed.push(e)
+            }
+        }
         if (!changed.length) return
         await this.clear(async () => {
             for (const e of changed) {
-                e.last_C = e.C
-                e.last_v = e.C.version
-                e.handler()  // does compute_groups + commit; all $state writes coalesce into one flush
+                // snapshot matrix at commit time — catches any further bumps mid-clear
+                e.last_matrix = this.stuff_matrix(e.C)
+                e.handler()
             }
         })
     }
