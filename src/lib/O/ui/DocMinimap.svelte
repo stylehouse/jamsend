@@ -16,31 +16,49 @@
     //
     //   Reads the compiled methods index that LangCompiling deposits at
     //     w:Lang/{docs}/{doc:path}/{Compile:1}/{methods:1}  (via lang_docC).
-    //   %Output only exists for hard-compiled gen_path docs; soft compiles
-    //   have %methods directly on %Compile with no %Output child.
+    //   %methods is a direct child of %Compile; %Output only appears for
+    //   hard-compiled (gen_path) docs.  Soft compiles have no %Output.
     //
-    //   Falls back to live region scan when no compiled index is present yet,
-    //   so the user sees structure before the first compile.
+    //   Falls back to live region scan when no compiled index is present yet.
     //
     //   Points come from %Pmirror,N particles that LangGraft maintains under
     //   the lang-side docC's %Pmirrors,1.  Each Pmirror with a %graft,1 child
-    //   has resolved to a live position; one without is unresolved and renders
-    //   in the warning style.  The minimap does no resolution work itself.
+    //   has resolved to a live position; one without is unresolved.
+    //   The minimap does no resolution work itself.
     //
-    // ── Layout model ─────────────────────────────────────────────────────────
+    // ── In-group / showing ───────────────────────────────────────────────────
     //
-    //   The strip is a single vertical bar of height 100%.  Each region is
-    //   a band whose top/height are computed from its line range relative to
-    //   total doc lines.  Defs are short ticks inside the band.  Region nesting
-    //   is shown as left-edge inset (depth * 5px).
+    //   in_group — specs the user has promoted to the capsule strip (session).
+    //   showing  — subset of in_group driving fold/glow in CM (session).
+    //
+    //   Each point mark in the strip has an orb button:
+    //     - not in_group  → orb promotes to in_group + showing
+    //     - in_group      → orb toggles showing; × button demotes
+    //
+    //   "Not showing" excludes a spec from carry-forward when +time creates a new
+    //   time-slice (deferred to transport impl, but the showing set is the signal).
+    //
+    //   Local state is dirty when it differs from the last push to Lies.
+    //   A "push" button fires when dirty; "reset" reverts with confirm.
+    //   Both clear on doc switch.
+    //
+    //   < Lies_accept_What_Point and Lies_cursor_next backend not yet written.
+    //   < receive_what_point_from_lies should be called when the Pmirror identity
+    //     changes substantially (new What_Point from Lies replacing current).
+    //
+    // ── Scroll sync ──────────────────────────────────────────────────────────
+    //
+    //   _hovering: true while mouse is over the strip — user is reading it.
+    //   _navigating: true for 200ms after go_to() — suppresses the scroll event
+    //     fired by our own CM dispatch before it can fight the new position.
+    //   Both suppress sync_scroll.
     //
     // ── Rebuild throttle ─────────────────────────────────────────────────────
     //
     //   _structure is $state, not $derived.by.  A single $effect registers
     //   reactive deps cheaply (void reads) then calls schedule_rebuild().
     //   requestAnimationFrame collapses any burst of version-bumps within one
-    //   frame into exactly one rebuild() call — silencing the 0→1→0 point-
-    //   resolution oscillation that was flooding the console.
+    //   frame into exactly one rebuild() call.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -63,8 +81,8 @@
     // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
     // method in the compile index yet (pre-compile, or name changed).
     type PointMark = {
-        spec:       string    // original Point method/label spec
-        method:     string    // same as spec (resolved name lives here too, future)
+        spec:       string
+        method:     string
         line:       number
         from:       number
         to:         number
@@ -88,50 +106,135 @@
     // Keyed by `${from_line}:${label}` so re-orderings don't bleed state.
     let collapsed = $state(new Map<string, boolean>())
 
-    // ── navigation history ───────────────────────────────────────────────────
+    // ── navigation history ────────────────────────────────────────────────────
     type NavEntry = { path: string, from: number, to: number, label: string }
     let nav_hist: NavEntry[] = $state([])
     let nav_pos               = $state(-1)
     let can_back    = $derived(nav_pos > 0)
     let can_forward = $derived(nav_pos < nav_hist.length - 1)
 
-    // Reset history on doc switch — offsets only make sense in their original doc.
+    // ── in-group + showing ────────────────────────────────────────────────────
+    let in_group:        Set<string> = $state(new Set())
+    let showing:         Set<string> = $state(new Set())
+    let pushed_snapshot: string      = $state('')    // JSON of last in_group+showing pushed to Lies
+    let reset_confirm:   boolean     = $state(false)
+
+    function current_what_point_json(): string {
+        const entries = [...in_group].map(spec => ({ spec, showing: showing.has(spec) }))
+        return JSON.stringify(entries)
+    }
+
+    let is_dirty = $derived(current_what_point_json() !== pushed_snapshot)
+
+    // Promote a spec to in_group, starting as showing.
+    function promote(spec: string) {
+        in_group      = new Set([...in_group, spec])
+        showing       = new Set([...showing,  spec])
+        reset_confirm = false
+    }
+
+    // Demote: remove from in_group and showing entirely.
+    function demote(spec: string) {
+        const ig = new Set(in_group); ig.delete(spec)
+        const sh = new Set(showing);  sh.delete(spec)
+        in_group      = ig
+        showing       = sh
+        reset_confirm = false
+    }
+
+    // Toggle showing for an in-group spec (active <-> dormant).
+    // < should also fire i_elvisto to update fold/glow in CM for this spec.
+    function toggle_showing(spec: string) {
+        const sh = new Set(showing)
+        if (sh.has(spec)) sh.delete(spec)
+        else              sh.add(spec)
+        showing       = sh
+        reset_confirm = false
+    }
+
+    // Push current in_group+showing to Lies.
+    // < Lies_accept_What_Point not yet written.
+    function push_what_point() {
+        const snap = current_what_point_json()
+        H.i_elvisto('Lies/Lies', 'Lies_accept_What_Point', {
+            doc_path:   active_path,
+            what_point: JSON.parse(snap),
+        })
+        pushed_snapshot = snap
+        reset_confirm   = false
+    }
+
+    // Revert local in_group+showing to the last pushed state.
+    // Two-tap: first tap arms confirm; second tap executes.
+    function reset_what_point() {
+        if (!reset_confirm) { reset_confirm = true; return }
+        if (pushed_snapshot) {
+            const entries: { spec: string, showing: boolean }[] = JSON.parse(pushed_snapshot)
+            in_group = new Set(entries.map(e => e.spec))
+            showing  = new Set(entries.filter(e => e.showing).map(e => e.spec))
+        } else {
+            in_group = new Set()
+            showing  = new Set()
+        }
+        reset_confirm = false
+    }
+
+    // Called when Lies sends a new What_Point replacing what Lang is working from.
+    // Drops any unpushed local state and installs the Lies-side view.
+    // < call site: when lang_docC Pmirror identity changes substantially.
+    function receive_what_point_from_lies(entries: { spec: string, showing: boolean }[]) {
+        in_group        = new Set(entries.map(e => e.spec))
+        showing         = new Set(entries.filter(e => e.showing).map(e => e.spec))
+        pushed_snapshot = JSON.stringify(entries)
+        reset_confirm   = false
+    }
+
+    // Advance the Lies cursor to the next What_Point.
+    // < Lies_cursor_next not yet written.
+    function cursor_next() {
+        H.i_elvisto('Lies/Lies', 'Lies_cursor_next', { doc_path: active_path })
+    }
+
+    // ── doc switch ────────────────────────────────────────────────────────────
+    // Reset nav history and all local in-group state on doc switch.
+    // < ideally restore from last pushed What_Point for this path.
     let _last_path = ''
     $effect(() => {
         if (active_path !== _last_path) {
-            nav_hist = []
-            nav_pos  = -1
-            _last_path = active_path
+            nav_hist        = []
+            nav_pos         = -1
+            in_group        = new Set()
+            showing         = new Set()
+            pushed_snapshot = ''
+            reset_confirm   = false
+            _last_path      = active_path
         }
     })
 
+    // ── scroll guards ─────────────────────────────────────────────────────────
+    let _hovering   = false    // mouse is over the strip
+    let _navigating = false    // go_to() fired recently; our own CM scroll is in flight
+    let _nav_timer  = 0
+
     // ── scroll sync ───────────────────────────────────────────────────────────
     //
-    // The strip is a tall flexbox that may exceed the viewport.  We want the
-    // visible window into it to track CodeMirror's scroll position so that:
-    //   - scrolled to top of doc → top of map visible
-    //   - scrolled to bottom of doc → bottom of map visible
-    //   - the crossover happens linearly, with the map bottom reaching the
-    //     viewport bottom at half-viewport before the doc's last line.
-    //
-    // We drive this by setting `scrollTop` on the strip's scroll container
-    // (lmm-scroll) whenever CM fires a scroll event.  No scroll event is
-    // surfaced by the user on the minimap itself — the bar is invisible.
+    //   Drives scrollTop on the strip's scroll container to track CM scroll.
+    //   Suppressed while _hovering (user reading the strip) or _navigating
+    //   (our own dispatch just moved CM; the scroll event would fight us back).
     let strip_el: HTMLDivElement | undefined = $state()
     let scroll_container_el: HTMLDivElement | undefined = $state()
 
     function sync_scroll() {
+        if (_hovering || _navigating) return
         if (!view || !strip_el || !scroll_container_el) return
-        const cm_scroll   = view.scrollDOM
-        const doc_h       = cm_scroll.scrollHeight
-        const vp_h        = cm_scroll.clientHeight
-        const scrollable  = doc_h - vp_h
+        const cm_scroll  = view.scrollDOM
+        const doc_h      = cm_scroll.scrollHeight
+        const vp_h       = cm_scroll.clientHeight
+        const scrollable = doc_h - vp_h
         if (scrollable <= 0) { scroll_container_el.scrollTop = 0; return }
 
         const cm_top     = cm_scroll.scrollTop
-        // fraction through the scrollable doc range, clamped
         const frac       = Math.min(cm_top / scrollable, 1)
-
         const map_h      = strip_el.scrollHeight
         const map_vp     = scroll_container_el.clientHeight
         const map_scroll = map_h - map_vp
@@ -147,18 +250,15 @@
         return () => cm_scroll.removeEventListener('scroll', sync_scroll)
     })
 
-    // Also re-sync whenever the strip content changes height (new regions, defs).
+    // Re-sync whenever strip content changes height (new regions, defs, points).
     $effect(() => {
         void _structure
         requestAnimationFrame(sync_scroll)
     })
 
-    // ── data sources ─────────────────────────────────────────────────────────
-    //   docC:      the ave/{lang_doc:path} particle (text only; Compile lives on lang_docC).
-    //   lang_docC: the w:Lang side {doc:path} particle (holds %Pmirrors,1).
-    //   H.ave.ob() makes ave-version-bumps wake the $effect below.  The %active_doc,1
-    //   particle is shared across paths and bump_version()s on doc switches, so
-    //   we void-read sig.version to register that as a dep too.
+    // ── data sources ──────────────────────────────────────────────────────────
+    //   docC:      the ave/{lang_doc:path} particle (text only).
+    //   lang_docC: the w:Lang side {doc:path} particle (holds %Pmirrors,1 and %Compile).
     let docC: TheC | undefined = $state()
     let lang_docC: TheC | undefined = $state()
     $effect(() => {
@@ -182,15 +282,6 @@
     })
 
     // ── throttled rebuild ─────────────────────────────────────────────────────
-    //
-    //   _structure is $state so Svelte never auto-tracks its internal reads.
-    //   The $effect below registers reactive deps with cheap void-reads, then
-    //   delegates to schedule_rebuild().  Any number of version-bumps that land
-    //   within one animation frame collapse to a single rebuild() call.
-    //
-    //   This eliminates the console spam from the points=0 / points=1 oscillation
-    //   that occurred when docC.version bounced twice during Point resolution.
-
     let _raf = 0
 
     let _structure: {
@@ -208,8 +299,6 @@
         _raf = requestAnimationFrame(() => { _raf = 0; rebuild() })
     }
 
-    // Subscribe to the deps that should trigger a rebuild.
-    // void-reads register the dependency without doing any work here.
     $effect(() => {
         void docC?.version
         void lang_docC?.version
@@ -224,14 +313,11 @@
         }
 
         // Compile output lives on the Lang-side lang_docC, not the ave text particle.
-        // %methods is a direct child of %Compile regardless of whether %Output
-        // exists.  %Output is only present for hard-compiled gen_path docs; soft
-        // compiles (Peerily, etc.) skip it entirely.
-        const job     = lang_docC?.o({ Compile: 1 })[0]    as TheC | undefined
-        const methods = job?.o({ methods: 1 })[0]          as TheC | undefined
+        // %methods is a direct child of %Compile regardless of whether %Output exists.
+        // %Output is only present for hard-compiled gen_path docs.
+        const job     = lang_docC?.o({ Compile: 1 })[0]  as TheC | undefined
+        const methods = job?.o({ methods: 1 })[0]        as TheC | undefined
 
-        // Collect Point marks from Pmirrors maintained by LangGraft.
-        // No resolution work happens here — just reading pre-baked positions.
         const point_marks = collect_graft_marks()
 
         if (methods) {
@@ -255,11 +341,11 @@
             const top_defs: Def[] = []
             for (const d of def_entries) {
                 const def: Def = {
-                    method:   d.sc.method as string,
-                    class:    d.sc.class  as string | undefined,
-                    line:     d.sc.line   as number,
-                    from:     d.sc.from   as number,
-                    to:       d.sc.to     as number,
+                    method: d.sc.method as string,
+                    class:  d.sc.class  as string | undefined,
+                    line:   d.sc.line   as number,
+                    from:   d.sc.from   as number,
+                    to:     d.sc.to     as number,
                 }
                 const owner = innermost_region_for_line(list, def.line)
                 if (owner) owner.defs.push(def)
@@ -273,7 +359,7 @@
                 else top_points.push(mark)
             }
 
-            const unres  = point_marks.filter(p => p.unresolved).length
+            const unres   = point_marks.filter(p => p.unresolved).length
             const summary = `${list.length}r ${def_entries.length}d ${point_marks.length}p`
             if (summary !== last_log_summary) {
                 console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_marks.length} unresolved=${unres}`)
@@ -302,17 +388,11 @@
         }
     }
 
-    // ── collect_graft_marks ──────────────────────────────────────────────────
+    // ── collect_graft_marks ───────────────────────────────────────────────────
     //
     //   Walk the active doc's %Pmirrors,1 / %Pmirror,N — each one mirrors a
     //   Point in the cursored Something.  A Pmirror with %graft,1 has been
-    //   resolved (live position cached in graft sc); one without is
-    //   unresolved (spec didn't match any def in current compile output, or
-    //   has no resolvable spec field at all).
-    //
-    //   This replaces the old walk through lies_w.o({Waft:1}) — Pmirrors are
-    //   the single source of truth for "Points belonging to this doc right
-    //   now", maintained by LangGraft.
+    //   resolved (live position cached in graft sc); one without is unresolved.
     function collect_graft_marks(): PointMark[] {
         const out: PointMark[] = []
         if (!lang_docC) return out
@@ -340,7 +420,7 @@
         return out
     }
 
-    // ── helpers ──────────────────────────────────────────────────────────────
+    // ── helpers ───────────────────────────────────────────────────────────────
 
     // Scan doc text directly for //#region / //#endregion when no compiled
     // index is available yet.  Mirrors LangRegions/Lang_build_regions but
@@ -349,7 +429,6 @@
         const REGION_RE    = /^[\t ]*\/\/#region\s+(.+)$/
         const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
         const lines = text.split('\n')
-
         const all:   Region[] = []
         const stack: Region[] = []
         let char_offset = 0
@@ -396,8 +475,7 @@
     function patch_region_extents(list: Region[], text: string, total: number) {
         if (!list.length) return
         const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
-        const lines = text.split('\n')
-
+        const lines  = text.split('\n')
         const sorted = [...list].sort((a, b) => a.from_line - b.from_line)
         const stack: Region[] = []
         let next = 0
@@ -439,18 +517,20 @@
         return winner
     }
 
-    // ── interactions ─────────────────────────────────────────────────────────
+    // ── interactions ──────────────────────────────────────────────────────────
 
     // Scroll CM to a doc-char offset and place the cursor there.
-    // Uses EditorView.scrollIntoView as a StateEffect (more reliable than the
-    // boolean scrollIntoView:true on TransactionSpec, which only scrolls the
-    // cm-scroller and not outer overflow ancestors).
+    // Sets _navigating for 200ms so sync_scroll ignores the resulting CM scroll event.
     function go_to(from: number, to: number, label: string) {
+        _navigating = true
+        clearTimeout(_nav_timer)
+        _nav_timer = setTimeout(() => { _navigating = false }, 200) as any
+
         console.log(`🗺 minimap go_to('${label}' [${from}..${to}]): view=${view ? 'OK' : 'UNDEFINED'} active_path=${active_path}`)
         if (!view) return
         view.dispatch({
             selection: { anchor: from, head: to },
-            effects: EditorView.scrollIntoView(from, { y: 'center' }),
+            effects:   EditorView.scrollIntoView(from, { y: 'center' }),
         })
         view.focus()
 
@@ -467,7 +547,7 @@
         const e = nav_hist[nav_pos]
         view.dispatch({
             selection: { anchor: e.from, head: e.to },
-            effects: EditorView.scrollIntoView(e.from, { y: 'center' }),
+            effects:   EditorView.scrollIntoView(e.from, { y: 'center' }),
         })
         view.focus()
     }
@@ -477,7 +557,7 @@
         const e = nav_hist[nav_pos]
         view.dispatch({
             selection: { anchor: e.from, head: e.to },
-            effects: EditorView.scrollIntoView(e.from, { y: 'center' }),
+            effects:   EditorView.scrollIntoView(e.from, { y: 'center' }),
         })
         view.focus()
     }
@@ -494,8 +574,8 @@
         return collapsed.get(`${region.from_line}:${region.label}`) ?? false
     }
 
-    // Fold / unfold this region in CM itself.  Body-only fold: header line
-    // stays visible (matches Lang_apply_openness semantics).
+    // Fold / unfold this region in CM.  Body-only fold: header line stays
+    // visible (matches Lang_apply_openness semantics).
     function toggle_fold(region: Region) {
         if (!view) return
         const state       = view.state
@@ -512,10 +592,7 @@
         let is_folded = false
         const cursor  = folds.iter()
         while (cursor.value !== null) {
-            if (cursor.from === fold_from) {
-                is_folded = true
-                break
-            }
+            if (cursor.from === fold_from) { is_folded = true; break }
             cursor.next()
         }
 
@@ -527,10 +604,6 @@
     }
 
     // ── layout maths ─────────────────────────────────────────────────────────
-    //   Flat two-column grid — no per-region sizing needed.
-    //   Depth and color carry the nesting signal; scroll sync handles position.
-
-    // Hue per depth so nested bands are visually distinct.
     function band_color(depth: number): string {
         const hue = (210 + depth * 40) % 360
         return `hsla(${hue}, 50%, 50%, 0.18)`
@@ -541,10 +614,16 @@
     }
 </script>
 
-<div class="lmm">
+<!-- _hovering suppresses scroll sync while user reads the strip.
+     onmouseleave clears even if cursor teleports (blur, window switch).
+     Also clears reset_confirm so it doesn't linger after the user moves away. -->
+<div class="lmm"
+     onmouseenter={() => _hovering = true}
+     onmouseleave={() => { _hovering = false; reset_confirm = false }}>
+
     <div class="lmm-head">
-        <button class="lmm-nav" onclick={go_back} disabled={!can_back}
-                title="Back" aria-label="Back">◂</button>
+        <button class="lmm-nav" onclick={go_back}    disabled={!can_back}
+                title="Back"    aria-label="Back">◂</button>
         <button class="lmm-nav" onclick={go_forward} disabled={!can_forward}
                 title="Forward" aria-label="Forward">▸</button>
         <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
@@ -552,22 +631,80 @@
         </span>
     </div>
 
+    <!-- Unsent bar — only when local in_group/showing differs from last push. -->
+    {#if is_dirty}
+        <div class="lmm-wp-bar">
+            <span class="lmm-wp-unsent">unsent</span>
+            <button class="lmm-wp-btn lmm-wp-push" onclick={push_what_point}>push</button>
+            <button class="lmm-wp-btn lmm-wp-reset"
+                    class:lmm-wp-confirm={reset_confirm}
+                    onclick={reset_what_point}>
+                {reset_confirm ? 'sure?' : 'reset'}
+            </button>
+        </div>
+    {/if}
+
+    <!-- In-group capsule strip — one capsule per promoted spec.
+         The → button fires Lies_cursor_next to step to the next What_Point. -->
+    {#if in_group.size > 0}
+        {@const all_marks = [...top_level_points, ...regions.flatMap(r => r.points)]}
+        <div class="lmm-inbox">
+            {#each [...in_group] as spec (spec)}
+                {@const mark = all_marks.find(p => p.spec === spec)}
+                {@const is_sh = showing.has(spec)}
+                <div class="lmm-capsule"
+                     class:lmm-capsule-bad={mark?.unresolved}
+                     class:lmm-capsule-dormant={!is_sh}>
+                    <span class="lmm-capsule-dot"></span>
+                    <button class="lmm-capsule-label"
+                            title="{spec}{mark?.unresolved ? ' (unresolved)' : mark ? ` → line ${mark.line}` : ''}"
+                            onclick={() => mark && go_to(mark.from, mark.to, spec)}>
+                        {spec}
+                    </button>
+                    <button class="lmm-capsule-demote"
+                            title="Demote from in-group"
+                            onclick={() => demote(spec)}>×</button>
+                </div>
+            {/each}
+            <!-- < Lies_cursor_next backend not yet wired. -->
+            <button class="lmm-cursor-next"
+                    title="Next What_Point in Lies"
+                    onclick={cursor_next}>→</button>
+        </div>
+    {/if}
+
     <div class="lmm-scroll" bind:this={scroll_container_el}>
         <div class="lmm-strip" bind:this={strip_el}>
             <!-- Flat two-column flow: region headers span both columns, method chips
                  pile between them in column-major order (top→bottom then left→right).
                  Nesting depth is shown by indent + color only, not by containing boxes. -->
 
-            <!-- Top-level defs and points before any region. -->
+            <!-- Top-level points and defs before any region. -->
             {#if top_level_defs.length || top_level_points.length}
                 <div class="lmm-col-span">
                     {#each top_level_points as p (p.spec)}
-                        <button class="lmm-point" class:lmm-point-bad={p.unresolved}
-                                title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
-                                onclick={() => go_to(p.from, p.to, p.method)}>
-                            <span class="lmm-point-dot"></span>
-                            <span class="lmm-point-label">{p.method}</span>
-                        </button>
+                        {@const is_in = in_group.has(p.spec)}
+                        {@const is_sh = showing.has(p.spec)}
+                        <div class="lmm-point" class:lmm-point-bad={p.unresolved}>
+                            <button class="lmm-orb"
+                                    class:lmm-orb-show={is_in && is_sh}
+                                    class:lmm-orb-in={is_in && !is_sh}
+                                    title={is_in
+                                        ? (is_sh ? 'Dormant (keep in group)' : 'Show')
+                                        : 'Add to in-group'}
+                                    onclick={() => is_in ? toggle_showing(p.spec) : promote(p.spec)}>
+                            </button>
+                            <button class="lmm-point-label"
+                                    title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
+                                    onclick={() => go_to(p.from, p.to, p.method)}>
+                                {p.method}
+                            </button>
+                            {#if is_in}
+                                <button class="lmm-point-demote"
+                                        title="Remove from in-group"
+                                        onclick={() => demote(p.spec)}>×</button>
+                            {/if}
+                        </div>
                     {/each}
                 </div>
                 {#if top_level_defs.length}
@@ -615,12 +752,28 @@
                         <div class="lmm-col-span lmm-point-row"
                              style="padding-left: {r.depth * 5 + 4}px;">
                             {#each r.points as p (p.spec)}
-                                <button class="lmm-point" class:lmm-point-bad={p.unresolved}
-                                        title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
-                                        onclick={() => go_to(p.from, p.to, p.method)}>
-                                    <span class="lmm-point-dot"></span>
-                                    <span class="lmm-point-label">{p.method}</span>
-                                </button>
+                                {@const is_in = in_group.has(p.spec)}
+                                {@const is_sh = showing.has(p.spec)}
+                                <div class="lmm-point" class:lmm-point-bad={p.unresolved}>
+                                    <button class="lmm-orb"
+                                            class:lmm-orb-show={is_in && is_sh}
+                                            class:lmm-orb-in={is_in && !is_sh}
+                                            title={is_in
+                                                ? (is_sh ? 'Dormant (keep in group)' : 'Show')
+                                                : 'Add to in-group'}
+                                            onclick={() => is_in ? toggle_showing(p.spec) : promote(p.spec)}>
+                                    </button>
+                                    <button class="lmm-point-label"
+                                            title="{p.spec}{p.unresolved ? ' (unresolved)' : ''} → line {p.line}"
+                                            onclick={() => go_to(p.from, p.to, p.method)}>
+                                        {p.method}
+                                    </button>
+                                    {#if is_in}
+                                        <button class="lmm-point-demote"
+                                                title="Remove from in-group"
+                                                onclick={() => demote(p.spec)}>×</button>
+                                    {/if}
+                                </div>
                             {/each}
                         </div>
                     {/if}
@@ -685,6 +838,86 @@
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
+    /* Unsent What_Point bar — appears when local state differs from last push. */
+    .lmm-wp-bar {
+        display: flex; align-items: center; gap: 5px;
+        padding: 2px 6px;
+        background: rgba(229, 192, 123, 0.05);
+        border-bottom: 1px solid rgba(229, 192, 123, 0.1);
+        flex-shrink: 0;
+    }
+    .lmm-wp-unsent {
+        font-size: 9px; color: rgba(229, 192, 123, 0.4);
+        font-style: italic; flex: 1;
+    }
+    .lmm-wp-btn {
+        background: none; border: 1px solid; border-radius: 2px;
+        cursor: pointer; font-family: inherit; font-size: 9px;
+        padding: 1px 5px; line-height: 1.4;
+    }
+    .lmm-wp-push         { color: #e5c07b; border-color: rgba(229, 192, 123, 0.35); }
+    .lmm-wp-push:hover   { color: #fff; border-color: #e5c07b; }
+    .lmm-wp-reset        { color: #4a6070; border-color: rgba(74, 96, 112, 0.35); }
+    .lmm-wp-reset:hover  { color: #aab; border-color: #4a6070; }
+    .lmm-wp-confirm      { color: #e06c75; border-color: rgba(224, 108, 117, 0.45); }
+    .lmm-wp-confirm:hover { color: #fff; border-color: #e06c75; }
+
+    /* In-group capsule strip — above the scrolling region area. */
+    .lmm-inbox {
+        display: flex; flex-wrap: wrap; gap: 3px; align-items: center;
+        padding: 3px 6px;
+        background: rgba(0, 0, 0, 0.35);
+        border-bottom: 1px solid rgba(229, 192, 123, 0.12);
+        flex-shrink: 0;
+    }
+
+    /* One capsule per in-group spec. */
+    .lmm-capsule {
+        display: flex; align-items: center; gap: 2px;
+        background: rgba(229, 192, 123, 0.08);
+        border: 1px solid rgba(229, 192, 123, 0.28);
+        border-radius: 3px;
+        padding: 1px 3px 1px 3px;
+        font-family: inherit;
+    }
+    /* Dormant: in-group but showing is off. */
+    .lmm-capsule-dormant {
+        background: rgba(80, 90, 100, 0.12);
+        border-color: rgba(80, 100, 120, 0.25);
+    }
+    .lmm-capsule-bad { border-color: rgba(224, 108, 117, 0.35); }
+
+    .lmm-capsule-dot {
+        display: block; width: 5px; height: 5px;
+        background: #e5c07b; border-radius: 50%; flex-shrink: 0;
+    }
+    .lmm-capsule-dormant .lmm-capsule-dot { background: #445060; }
+    .lmm-capsule-bad     .lmm-capsule-dot { background: #e06c75; }
+
+    .lmm-capsule-label {
+        background: none; border: none; cursor: pointer;
+        color: #e5c07b; font-family: inherit; font-size: 10px;
+        padding: 0; max-width: 90px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .lmm-capsule-label:hover              { color: #fff; }
+    .lmm-capsule-dormant .lmm-capsule-label { color: #4a6070; }
+    .lmm-capsule-bad     .lmm-capsule-label { color: #e06c75; text-decoration: line-through; }
+
+    .lmm-capsule-demote {
+        background: none; border: none; cursor: pointer;
+        color: #2a3a4a; font-family: inherit; font-size: 9px; padding: 0 1px;
+    }
+    .lmm-capsule-demote:hover { color: #aab; }
+
+    /* Cursor advance button — steps Lies to next What_Point. */
+    .lmm-cursor-next {
+        background: none; border: none; cursor: pointer;
+        color: #2a4a5a; font-size: 11px; padding: 0 3px;
+        font-family: inherit; margin-left: auto;
+    }
+    .lmm-cursor-next:hover { color: #c0d0e0; }
+
     /* Strip surface comment:
          .lmm-scroll     — overflow:hidden scroll container (invisible bar)
          .lmm-strip      — two-column grid; all children are direct grid items
@@ -704,12 +937,10 @@
     }
 
     /* Full-width items — region headers, point rows, top-level blocks. */
-    .lmm-col-span {
-        grid-column: 1 / -1;
-    }
+    .lmm-col-span { grid-column: 1 / -1; }
 
-    .lmm-stripe { display: none; }   /* retired */
-    .lmm-region-block { display: contents; }   /* retired wrapper, kept for safety */
+    .lmm-stripe { display: none; }            /* retired */
+    .lmm-region-block { display: contents; }  /* retired wrapper, kept for safety */
 
     /* Region header row — spans both columns. */
     .lmm-row {
@@ -724,9 +955,7 @@
     .lmm-chev, .lmm-fold {
         background: none; border: none; color: #6a8a9a;
         cursor: pointer; padding: 0 3px; line-height: 1;
-        font-size: 10px;
-        font-family: inherit;
-        flex-shrink: 0;
+        font-size: 10px; font-family: inherit; flex-shrink: 0;
     }
     .lmm-chev:hover, .lmm-fold:hover { color: #c0d0e0; }
     .lmm-fold { color: #4a5a6a; font-style: italic; }
@@ -735,8 +964,7 @@
         background: none; border: none; cursor: pointer;
         color: #c0d0e0; padding: 0; flex: 1; text-align: left;
         overflow: hidden; text-overflow: ellipsis;
-        font-family: inherit; font-size: inherit;
-        line-height: 1.2;
+        font-family: inherit; font-size: inherit; line-height: 1.2;
     }
     .lmm-label:hover { color: #fff; }
 
@@ -749,8 +977,7 @@
 
     /* Each def column is one grid cell; two consecutive ones share one row. */
     .lmm-def-col {
-        display: flex;
-        flex-direction: column;
+        display: flex; flex-direction: column;
         min-width: 0;
         background: rgba(0, 0, 0, 0.18);
         padding: 1px 2px 2px;
@@ -761,60 +988,78 @@
     .lmm-def-chip {
         background: none; border: none; cursor: pointer;
         font-size: 8px; color: rgba(180, 200, 220, 0.45);
-        padding: 0;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        font-family: inherit;
-        line-height: 1.4;
-        text-align: left;
+        padding: 0; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+        font-family: inherit; line-height: 1.4; text-align: left;
         transition: color 0.1s;
     }
     .lmm-def-chip:hover { color: #c0d0e0; }
 
     /* Class name def (no %class on sc — it IS the class): bold, brighter. */
-    .lmm-def-chip-class {
-        color: rgba(220, 200, 255, 0.7);
-        font-weight: bold;
-    }
+    .lmm-def-chip-class       { color: rgba(220, 200, 255, 0.7); font-weight: bold; }
     .lmm-def-chip-class:hover { color: #e0d0ff; }
 
     /* Top-level chips — warmer tint. */
-    .lmm-def-chip-top { color: rgba(220, 200, 140, 0.45); }
+    .lmm-def-chip-top       { color: rgba(220, 200, 140, 0.45); }
     .lmm-def-chip-top:hover { color: #e5c07b; }
 
-    /* Points — graft-resolved markers, flow below the def pile in their region block.
-       The dot anchors the spec; label extends right and truncates.  Gold for resolved,
-       red with strikethrough for unresolved (Pmirror with no %graft,1). */
+    /* Point mark — a div containing orb + label + optional demote button.
+       Not a button itself; navigation is on .lmm-point-label. */
     .lmm-point {
-        display: flex; align-items: center; gap: 4px;
-        background: rgba(0, 0, 0, 0.4);
-        border: none; border-radius: 2px;
-        padding: 2px 4px 2px 2px;
-        cursor: pointer;
+        display: flex; align-items: center; gap: 3px;
+        border-radius: 2px;
+        padding: 2px 3px 2px 2px;
         font-family: inherit;
         flex-shrink: 0;
         margin: 1px 0;
         align-self: flex-start;
     }
-    .lmm-point:hover { background: rgba(0, 0, 0, 0.7); }
-    .lmm-point-dot {
-        display: block;
-        width: 6px; height: 6px;
-        background: #e5c07b;            /* gold — matches stho title tag */
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-    .lmm-point-label {
-        font-size: 10px;
-        color: #e5c07b;
-        white-space: nowrap;
-        max-width: 140px;
-        overflow: hidden; text-overflow: ellipsis;
-    }
-    .lmm-point:hover .lmm-point-label { color: #fff; }
+    .lmm-point:hover { background: rgba(0, 0, 0, 0.4); }
 
-    /* Unresolved Point (Pmirror with no %graft,1) — warning red, strikethrough. */
-    .lmm-point-bad .lmm-point-dot { background: #e06c75; }
+    /* Orb — the showing/promote toggle.  An empty button sized as a circle. */
+    .lmm-orb {
+        display: block; width: 8px; height: 8px;
+        border-radius: 50%; flex-shrink: 0;
+        background: rgba(80, 100, 120, 0.25);
+        border: 1px solid rgba(80, 100, 120, 0.35);
+        cursor: pointer; padding: 0;
+        transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+    }
+    /* Showing (in-group + active): gold glow. */
+    .lmm-orb.lmm-orb-show {
+        background: #e5c07b;
+        border-color: #e5c07b;
+        box-shadow: 0 0 5px #e5c07b88;
+    }
+    /* In-group but dormant: ring only, no fill. */
+    .lmm-orb.lmm-orb-in {
+        background: transparent;
+        border-color: rgba(229, 192, 123, 0.4);
+    }
+    /* Not in-group: neutral; hover hints at promotion. */
+    .lmm-orb:hover { border-color: rgba(229, 192, 123, 0.65); }
+
+    .lmm-point-label {
+        background: none; border: none; cursor: pointer;
+        font-size: 10px; color: #e5c07b;
+        padding: 0; white-space: nowrap;
+        max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+        font-family: inherit; line-height: 1.4; text-align: left;
+    }
+    .lmm-point-label:hover        { color: #fff; }
+    .lmm-point:hover .lmm-point-label { color: #fff; }
     .lmm-point-bad .lmm-point-label {
         color: #e06c75; text-decoration: line-through;
     }
+
+    /* Demote button — hidden until the .lmm-point is hovered.
+       Only rendered when spec is in in_group. */
+    .lmm-point-demote {
+        background: none; border: none; cursor: pointer;
+        color: #2a3a4a; font-family: inherit; font-size: 8px;
+        padding: 0 1px; line-height: 1; flex-shrink: 0;
+        opacity: 0; transition: opacity 0.1s;
+    }
+    .lmm-point:hover .lmm-point-demote  { opacity: 1; }
+    .lmm-point-demote:hover { color: #e06c75; opacity: 1 !important; }
 </style>
