@@ -580,13 +580,15 @@
     <!-- Unsent bar — only when user has changed something since last push. -->
     {#if is_dirty}
         <div class="lmm-wp-bar">
-            <span class="lmm-wp-unsent">unsent</span>
-            <button class="lmm-wp-btn lmm-wp-push" onclick={push_what_point}>push</button>
-            <button class="lmm-wp-btn lmm-wp-reset"
-                    class:lmm-wp-confirm={reset_confirm}
-                    onclick={reset_what_point}>
-                {reset_confirm ? 'sure?' : 'reset'}
-            </button>
+            <span class="lmm-wp-tilde">~</span>
+            {#if !reset_confirm}
+                <div class="lmm-wp-arrows">
+                    <button class="lmm-wp-arrow" onclick={push_what_point} title="Push to Lies">↑</button>
+                    <button class="lmm-wp-arrow" onclick={reset_what_point} title="Reset">↩</button>
+                </div>
+            {:else}
+                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset_what_point}>sure?</button>
+            {/if}
         </div>
     {/if}
 
@@ -611,7 +613,9 @@
                             onclick={() => mark && go_to(mark.from, mark.to, spec)}>
                         {spec}
                     </button>
-                    <button class="lmm-capsule-demote" title="Remove Point" onclick={() => demote(spec)}>×</button>
+                    {#if !is_sh}
+                        <button class="lmm-capsule-demote" title="Remove Point" onclick={() => demote(spec)}>×</button>
+                    {/if}
                 </div>
             {/each}
             <!-- < Lies_cursor_next backend not yet wired. -->
@@ -722,27 +726,25 @@
 
     /* Unsent bar — only when user changed something since last push. */
     .lmm-wp-bar {
-        display: flex; align-items: center; gap: 5px;
-        padding: 2px 6px;
+        display: flex; flex-direction: column; align-items: center;
+        padding: 3px 0 4px;
         background: rgba(229, 192, 123, 0.05);
         border-bottom: 1px solid rgba(229, 192, 123, 0.1);
-        flex-shrink: 0;
+        flex-shrink: 0; gap: 2px;
     }
-    .lmm-wp-unsent {
-        font-size: 9px; color: rgba(229, 192, 123, 0.4);
-        font-style: italic; flex: 1;
+    .lmm-wp-tilde {
+        font-size: 17px; line-height: 1;
+        color: rgba(229, 192, 123, 0.5);
     }
-    .lmm-wp-btn {
-        background: none; border: 1px solid; border-radius: 2px;
-        cursor: pointer; font-family: inherit; font-size: 9px;
-        padding: 1px 5px; line-height: 1.4;
+    .lmm-wp-arrows { display: flex; gap: 8px; }
+    .lmm-wp-arrow {
+        background: none; border: none; cursor: pointer;
+        font-family: inherit; font-size: 13px; line-height: 1;
+        color: rgba(229, 192, 123, 0.45); padding: 0 3px;
     }
-    .lmm-wp-push         { color: #e5c07b; border-color: rgba(229, 192, 123, 0.35); }
-    .lmm-wp-push:hover   { color: #fff; border-color: #e5c07b; }
-    .lmm-wp-reset        { color: #4a6070; border-color: rgba(74, 96, 112, 0.35); }
-    .lmm-wp-reset:hover  { color: #aab; border-color: #4a6070; }
-    .lmm-wp-confirm      { color: #e06c75; border-color: rgba(224, 108, 117, 0.45); }
-    .lmm-wp-confirm:hover { color: #fff; border-color: #e06c75; }
+    .lmm-wp-arrow:hover   { color: #e5c07b; }
+    .lmm-wp-confirm       { color: rgba(224, 108, 117, 0.7) !important; font-size: 10px !important; }
+    .lmm-wp-confirm:hover { color: #e06c75 !important; }
 
     /* In-group capsule strip — all Pmirrors live here, none in the region body. */
     .lmm-inbox {
