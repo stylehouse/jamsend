@@ -332,6 +332,7 @@ export class Housemem {
     keys: string[]
     constructor(H: StorableHousing, keys: string[]) { this.H = H; this.keys = keys }
     further(key: string) { return new Housemem(this.H, [...this.keys, key]) }
+    get path(): string { return this.keys.join('/') }
     get(key: string) {
         let here: any = this.H.stashed
         if (!here) return undefined
@@ -788,7 +789,7 @@ export class House extends StorableHousing {
         }
         // beliefs mutex released — safe to enter UItime now.
         // drive any Stuffing that was watching a %C mutated during that cycle.
-        if (this.stuffing_watchers.length) await this.check_stuffings()
+        if (this.stuffing_registry.size) this.schedule_stuffing_check()
     }
     
     // waits for the next moment outside Atime (aka UItime)
@@ -1150,36 +1151,6 @@ export class House extends StorableHousing {
     watched:   Array<{ C: TheC, handler: Function }> = $state([])
     watched_v: number[] = []
 
-    // open Stuffing components registered for unreactive version-based updates.
-    // each entry: %C watched, handler to call, last-seen C.version.
-    // checked inside H.clear() after each beliefs cycle and on the 3s heartbeat.
-    stuffing_watchers: Array<{ C: TheC, handler: () => void, last_v: number }> = []
-
-    // called by Stuffing on mount; returns a deregister function for $effect cleanup.
-    // multiple Stuffing instances may watch the same %C independently.
-    register_stuffing(C: TheC, handler: () => void): () => void {
-        const entry = { C, handler, last_v: C.version ?? 0 }
-        this.stuffing_watchers.push(entry)
-        return () => {
-            const i = this.stuffing_watchers.indexOf(entry)
-            if (i >= 0) this.stuffing_watchers.splice(i, 1)
-        }
-    }
-
-    // unreactive scan: compare exact %C ref + version, fire changed handlers in UItime.
-    // safe to call from _really_answer_calls after the beliefs mutex releases;
-    //  NOT safe to call from inside attend() or beliefs() (beliefs mutex deadlock).
-    async check_stuffings() {
-        const changed = this.stuffing_watchers.filter(e => e.C.version !== e.last_v)
-        if (!changed.length) return
-        await this.clear(async () => {
-            for (const e of changed) {
-                e.last_v = e.C.version
-                e.handler()
-            }
-        })
-    }
-
     // high level: create|return eg H/%watched:ave to .i(C_to_give_UI)
     watch(channel_name:'UIs'|'ave'|'actions'|'graph') {
         return this.oai_enroll(this, { watched: channel_name }) 
@@ -1327,6 +1298,49 @@ export class House extends StorableHousing {
 
 
 
+
+//#endregion
+//#region Stuffing
+    // open Stuffing components registered for unreactive version-based updates.
+    // each entry: %C watched, handler to call, last-seen C.version.
+    // checked inside H.clear() after each beliefs cycle and on the 3s heartbeat.
+    stuffing_registry: Map<string, { path: string, C: TheC, handler: () => void, last_v: number, last_C: TheC }> = new Map()
+    _stuffing_pending = false
+
+    register_stuffing(path: string, C: TheC, handler: () => void): () => void {
+        // last_v: -1 forces the first check to fire — gives the new Stuffing its initial commit
+        const entry = { path, C, handler, last_v: -1, last_C: null as TheC | null }
+        this.stuffing_registry.set(path, entry)
+        if (!this._stuffing_pending) {
+            this._stuffing_pending = true
+            queueMicrotask(() => {
+                this._stuffing_pending = false
+                this.check_stuffings()
+            })
+        }
+        return () => {
+            // only delete if we are still the entry at that path (no clobber after a remount)
+            if (this.stuffing_registry.get(path) === entry) this.stuffing_registry.delete(path)
+        }
+    }
+
+    _check_stuffings_throttled?: Function
+    schedule_stuffing_check() {
+        this._check_stuffings_throttled ||= throttle(() => this.check_stuffings(), 200)
+        this._check_stuffings_throttled()
+    }
+    async check_stuffings() {
+        const changed = [...this.stuffing_registry.values()]
+            .filter(e => e.C !== e.last_C || e.C.version !== e.last_v)
+        if (!changed.length) return
+        await this.clear(async () => {
+            for (const e of changed) {
+                e.last_C = e.C
+                e.last_v = e.C.version
+                e.handler()  // does compute_groups + commit; all $state writes coalesce into one flush
+            }
+        })
+    }
 
 
 //#endregion

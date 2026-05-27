@@ -110,7 +110,7 @@
                 <svelte:component this={uiC.sc.component} H={house} />
             {/each}
             {#if house.stashed}
-                <Stuffing mem={house.imem('current')} stuff={house} M={house} />
+                <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
             {/if}
         {/each}
     {/snippet}

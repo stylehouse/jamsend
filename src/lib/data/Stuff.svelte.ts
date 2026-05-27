@@ -912,68 +912,65 @@ export class Stuff extends TimeOffice {
 //  / Stuffziad - the k:v presentation, may be a compressed identity
 //  / Stuffziado - one value
 
-// whole island of Stuff
+// whole island of Stuff — a look at some Stuff, springing out of Modus.
+//  one $state write per update (this.groups = next), nothing else reactive.
+//  H drives commits inside H.clear() so siblings batch into one Svelte flush.
 export class Stuffing {
-    Stuff:Stuff
+    Stuff: Stuff
+    // the one and only reactive surface. one write per commit, never mutated piecemeal.
     groups: Map<string, Stuffusion> = $state(new Map())
     started = $state(false)
+    matchy?: Matchy
 
-    matchy?:Matchy
-    constructor(Stuff:Stuff,matchy:Matchy) {
+    constructor(Stuff: Stuff, matchy?: Matchy) {
         this.Stuff = Stuff
         this.matchy = matchy
-        //  svelte docs: You can use $effect anywhere,
-        //   not just at the top level of a component, 
-        //   as long as it is called while a parent effect is running.
-        // H polls this unreactively via H.check_stuffings() after think()
-        //  and on its 3s heartbeat — no $effect subscription here
-        this.slowly_brackology = throttle(() => this.brackology(),200)
+        // < no $effect, no internal subscription. H is the only driver.
     }
-    get_matching_rows() {
+
+    // matchy-aware row selection from %Stuff
+    get_matching_rows(): TheN {
         let matches = this.matchy?.see || []
         if (!matches.length) matches = [{}]
-        let N = []
+        let N: TheN = []
         for (let sc of matches) {
             for (let n of this.Stuff.o(sc)) {
                 if (N.includes(n)) continue
                 N.push(n)
             }
         }
-            
         let unmatches = this.matchy?.hide || []
-        let from = N.length
         for (let sc of unmatches) {
-            N = N.filter((n:TheC) => !n.matches(sc))
+            N = N.filter((n: TheC) => !n.matches(sc))
         }
-        let to = N.length
-        // if (unmatches.length) console.log(`Stuffing unmatches ${from}->${to}: `,unmatches)
-
         return N
     }
-    // group like stuff
-    brackology() {
-        let groups = _C()
-        this.get_matching_rows().forEach((n:TheC) => {
-            let ks = Object.keys(n.sc);
-            let matchness = 0;
-            let match = null;
-            groups.o().forEach((c:TheC) => {
-                // leave apart if:
-                // more than one key is different
-                let different_keys = ks.filter(k => !Object.hasOwn(c.sc,k)).length
+
+    // pure: reads %Stuff and %matchy, builds a complete tree of Stuffusion/Stuffziad/Stuffziado,
+    //  returns the new groups Map. Writes nothing reactive.
+    //  Safe to call from anywhere; the caller commits when sibling Stuffings have also computed.
+    compute_groups(): Map<string, Stuffusion> {
+        // phase 1: group like /things into a tmp /Stuff so columns line up nicely
+        const grouped = _C()
+        this.get_matching_rows().forEach((n: TheC) => {
+            const ks = Object.keys(n.sc)
+            let matchness = 0
+            let match: TheC | null = null
+            grouped.o().forEach((c: TheC) => {
+                // leave apart if more than one key is different
+                const different_keys = ks.filter(k => !Object.hasOwn(c.sc, k)).length
                 if (different_keys > 1) return
-                // certain keys' values are different
+                // or if certain keys' values are different
                 if (n.sc.dome != c.sc.dome) return
-                
                 // prefer 0 different keys to 1
                 // < fuzzier matching, lots complicated. graph partitioning with cytoscape?
-                let same_keys = ks.filter(k => Object.hasOwn(c.sc,k)).length
-                let matched = same_keys - different_keys
+                const same_keys = ks.filter(k => Object.hasOwn(c.sc, k)).length
+                const matched = same_keys - different_keys
                 if (matched <= matchness) return
                 match = c
                 matchness = matched
             })
-            if (match && matchness >= ks.length-1) {
+            if (match && matchness >= ks.length - 1) {
                 // groups members with <= 1 odd key
                 // < this could use Stuff.i_z() for speed, only needs X.z
                 match.i(n)
@@ -982,55 +979,46 @@ export class Stuffing {
                 // group labeled, copies k:v
                 // < more clean and proper to look at match/$n[0]
                 //    instead of copying the first datum to match itself?
-                match = _C({name:ks.join(','),sc:{...n.sc}})
-                // match|group knows the source $n
+                match = _C({ name: ks.join(','), sc: { ...n.sc } })
                 match.i(n)
-                groups.i(match)
+                grouped.i(match)
             }
         })
-        this.regroup(groups)
-        this.started = true
-    }
-    // grouped stuff -> tree of objects with quantity descriptions
-    regroup(groups:TheC) {
+
+        // phase 2: turn each group into a Stuffusion/Stuffziad/Stuffziado tree
         const next = new Map<string, Stuffusion>()
-        groups.o().forEach((n:TheC) => {
+        grouped.o().forEach((n: TheC) => {
             // uniquely identify them
             let name = n.name || 'unnamed'
-            name = name_numbered_for_uniqueness_in_Set(name, this.groups)
-            let rows = n.o()
+            name = name_numbered_for_uniqueness_in_Set(name, next)
+            const rows = n.o()
             const stuffusion = new Stuffusion(this, name, rows)
             // do any rows have n.X, nest Stuffing
             stuffusion.detect_nX(rows)
 
-            // add columns
-            // there may be odd ones out (many of them) from c.sc
-            let column_names = Object.keys(n.X.k || {})
+            // add columns — there may be odd ones out (many of them) from c.sc
+            const column_names = Object.keys(n.X.k || {})
             column_names.forEach((key) => {
                 const kx = n.X?.o_kv(key, 1)
                 if (!kx) throw "!kx"
-                let rows = kx.z
-                const stuffziad = new Stuffziad(stuffusion, key, rows)
+                const stuffziad = new Stuffziad(stuffusion, key, kx.z)
 
                 // vs contains the unique values, v contains the TheX for each
                 const values = kx.vs || []
                 const valueXs = kx.v || []
                 values.forEach((val, idx) => {
                     const vx = valueXs[idx]
-                    // Count how many $n have this value (from vx.z)
-                    let rows = vx?.z || []
-                    
-                    // Create a Stuffziado for each distinct value
-                    let display_name = objectify(val,-1)
-                    let val_name = name_numbered_for_uniqueness_in_Set(display_name, stuffziad.values)
-                    const stuffziado = new Stuffziado(stuffziad, val_name, rows)
+                    // count how many $n have this value (from vx.z)
+                    const vx_rows = vx?.z || []
+                    const display_name = objectify(val, -1)
+                    const val_name = name_numbered_for_uniqueness_in_Set(display_name, stuffziad.values)
+                    const stuffziado = new Stuffziado(stuffziad, val_name, vx_rows)
                     stuffziado.value = val
                     stuffziado.display_name = display_name
-                    if (display_name == '1') {
-                        stuffziado.is_one = true
-                    }
+                    if (display_name == '1') stuffziado.is_one = true
+
                     // note some interesting features
-                    let innerables = [...rows]
+                    const innerables = [...vx_rows]
                     if (typeof val == 'object') {
                         if (val instanceof TheC) {
                             stuffziado.is_C = true
@@ -1043,19 +1031,29 @@ export class Stuffing {
                         stuffziado.is_string = true
                     }
                     stuffziado.detect_nX(innerables)
-                    
-                    
                     stuffziad.values.set(stuffziado.name, stuffziado)
                 })
-                if (Array.from(stuffziad.values.values()).every(stuffziado => stuffziado.is_one)) {
-                    stuffziad.is_one = true;
+                if (Array.from(stuffziad.values.values()).every(s => s.is_one)) {
+                    stuffziad.is_one = true
                 }
-
-                stuffusion.columns.set(stuffziad.name,stuffziad)
+                stuffusion.columns.set(stuffziad.name, stuffziad)
             })
-            next.set(stuffusion.name,stuffusion)
+            next.set(stuffusion.name, stuffusion)
         })
+
+        return next
+    }
+
+    // one $state write — Svelte sees the whole new tree at once.
+    //  call inside H.clear() so all sibling Stuffings commit in the same flush.
+    commit(next: Map<string, Stuffusion>) {
         this.groups = next
+        this.started = true
+    }
+
+    // backward-compat wrapper for callers outside H.clear() (eg tests, debugging)
+    brackology() {
+        this.commit(this.compute_groups())
     }
 }
 
