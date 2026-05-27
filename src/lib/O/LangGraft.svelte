@@ -118,6 +118,18 @@
             await this.Lang_wipe_pmirrors(docC)
             return
         }
+
+        // The cursor's doc must match the active CM doc.  If they differ (e.g.
+        // the user clicked around while docs were still loading), don't graft
+        // Peerily's Points onto LangTiles.g's editor view.  Wipe and wait for
+        // the next tick where both converge.
+        const src_path    = (src_C.sc as any).path as string | undefined
+        const active_path = (docC.sc as any).doc   as string | undefined
+        if (src_path && active_path && src_path !== active_path) {
+            await this.Lang_wipe_pmirrors(docC)
+            return
+        }
+
         const points: TheC[] = src_C.o({ Point: 1 }) as TheC[]
         // src_Waft is stored on the %What_Points child alongside src
         const waft_key = (what_pts_C.sc.src_Waft as string | undefined) ?? '?'
@@ -207,6 +219,11 @@
                 `\n  regions(${regions.length}): ${region_labels.slice(0,8).join(', ')}`,
             )
         }
+
+        // DocMinimap watches lang_docC.version via its rebuild $effect.
+        // Child mutations (Pmirrors, graft children) don't propagate up
+        // automatically, so we bump docC explicitly here to wake it.
+        docC.bump_version()
     },
 
     // ── Lang_point_spec ──────────────────────────────────────────────────

@@ -1,14 +1,14 @@
 Snap:H
   H:LakeSurfer,Run
     A:Lies
-      {"mung":["age"]}	self,round:10
+      {"mung":["age"]}	self,round:9
       w:Lies
         examining,active_path:src/lib/p2p/Peerily.svelte.ts
           {"ref":{"src":"%Doc:1, path:src/lib/p2p/Peerily.svelte.ts"}}	What_Points,src_Waft:Ghost/Tour
         Opt
           nogen
         open_waft_req,path:Ghost/Tour,done
-        requesty_rw_queue_serial,i:9
+        requesty_rw_queue_serial,i:10
         {"ref":{"reply":"Object()"}}	requesty_rw_queue,rw_name:wormhole/Ghost/Tour/toc.snap,rw_op:read,req_i,finished:true
           req_sent
         Waft:Ghost/Tour
@@ -37,9 +37,9 @@ Snap:H
         {"ref":{"reply":"Object()"}}	requesty_rw_queue,rw_name:src/lib/p2p/Peerily.svelte.ts,rw_op:read,req_i:6,finished:true
           req_sent
         {"loaded_doc":1,"path":"src/lib/p2p/Peerily.svelte.ts"}
-        {"requesty_rw_queue":"1","rw_name":"wormhole/Ghost/Tour/toc.snap","rw_op":"write","rw_data":"Waft:Ghost/Tour\n  Doc,path:Ghost/test/Hello.g\n    Point,method:Idzeugnosis\n    Point:Idzeuganise\n    Point:Idvoyage_verify\n  Doc,path:src/lib/ghost/Radios.svelte\n  Doc,path:Ghost/test/LangTiles.g\n  Doc,path:src/lib/p2p/Peerily.svelte.ts\n    Point:Pier\n    Point:emit\n","req_i":8}
+        {"requesty_rw_queue":"1","rw_name":"wormhole/Ghost/Tour/toc.snap","rw_op":"write","rw_data":"Waft:Ghost/Tour\n  Doc,path:Ghost/test/Hello.g\n    Point,method:Idzeugnosis\n    Point:Idzeuganise\n    Point:Idvoyage_verify\n  Doc,path:src/lib/ghost/Radios.svelte\n  Doc,path:Ghost/test/LangTiles.g\n  Doc,path:src/lib/p2p/Peerily.svelte.ts\n    Point:Pier\n    Point:emit\n","req_i":9}
           req_sent
-        {"mung":["age"]}	self,round:10
+        {"mung":["age"]}	self,round:9
         see:🗂 4 docs · 1 Waft
     A:Lang
       {"mung":["age"]}	self,round:21
@@ -55,7 +55,7 @@ Snap:H
                 graft,bookmark_id:g_1,from:12872,to:12876,line:422
               {"ref":{"src_Point":"%Point:emit"}}	Pmirror,src_Waft:Ghost/Tour,spec:emit
                 graft,bookmark_id:g_2,from:20677,to:20681,line:655
-            Compile
+            Compile,compile_secs:0.025
               methods
                 {"ref":{"region_path":"[PeerJS etc]"}}	region,label:PeerJS etc,depth:0,from:797,to:817,line:25
                 {"ref":{"region_path":"[PeerJS etc]"}}	def,method:VerilyPeerily,from:2248,to:2261,line:72
@@ -200,13 +200,11 @@ Snap:H
         received,doc_opened,doc:Ghost/test/Hello.g
         received,editorBegins,doc:Ghost/test/Hello.g
         received,doc_opened,doc:src/lib/ghost/Radios.svelte
-        received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:src/lib/ghost/Radios.svelte
-        received,doc_opened,doc:src/lib/p2p/Peerily.svelte.ts
+        received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
+        received,doc_opened,doc:src/lib/p2p/Peerily.svelte.ts
         received,editorBegins,doc:src/lib/p2p/Peerily.svelte.ts
-        compile_q:src/lib/p2p/Peerily.svelte.ts
-          ttlilt,until_ts:1779884101.02,doc:src/lib/p2p/Peerily.svelte.ts,grace
         {"mung":["age"]}	self,round:21
         see:🟦 tiles 0 bookmarks
     A:Pantheate
@@ -232,4 +230,3 @@ Snap:H
       {"ref":{"fn":"Function()"}}	action,role:nogen,label:nogen,icon:nogen ✓,cls:toggle-on
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo ✓,cls:toggle-on
     {"mung":["id"]}	mo:main,interval:3.6
-    {"ref":{"req":"%compile_q:src/lib/p2p/Peerily.svelte.ts"}}	ttlilt,w:Lang,until_ts:1779884101.02,doc:src/lib/p2p/Peerily.svelte.ts,grace
