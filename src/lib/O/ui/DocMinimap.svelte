@@ -38,9 +38,7 @@
     //
     //   The unsent bar appears only once the user has changed something since
     //   the last push (or since auto-promote synced the snapshot).
-    //   < Lies_accept_What_Point and Lies_cursor_next backend not yet written.
-    //   < receive_what_point_from_lies needs a call site when Pmirror identity
-    //     changes substantially (new What_Point replacing current from Lies).
+    //   < What-level transport (rwnd / +time / pause) not yet implemented.
     //
     // ── Scroll sync ──────────────────────────────────────────────────────────
     //
@@ -140,9 +138,9 @@
     }
 
     // Push current in_group+showing to Lies.
-    // < Lies_accept_What_Point not yet written.
     function push_what_point() {
         const snap = current_what_point_json()
+        _our_last_push_id = Date.now()
         H.i_elvisto('Lies/Lies', 'Lies_accept_What_Point', {
             doc_path:   active_path,
             what_point: JSON.parse(snap),
@@ -178,8 +176,25 @@
         reset_confirm   = false
     }
 
-    // Advance the Lies cursor to the next What_Point.
-    // < Lies_cursor_next not yet written.
+    // Watch ave/%examining/%What_Points,1.sc.accepted_push_id.
+    // When Lies echoes an accepted_push_id that we didn't generate ourselves
+    // (push_what_point stamps _our_last_push_id), adopt the incoming entries.
+    // This fires on both e_Lies_accept_What_Point round-trips and on
+    // e_Lies_cursor_next (the restored What_Point from the next Doc's stored set).
+    let _our_last_push_id = 0
+    $effect(() => {
+        const ex       = H.ave.ob({ examining: 1 })[0] as any
+        const wpt      = ex?.o?.({ What_Points: 1 })?.[0]
+        const push_id  = wpt?.sc.accepted_push_id as number | undefined
+        const entries  = wpt?.sc.accepted_entries as { spec: string, showing: boolean }[] | undefined
+        if (!push_id || !entries) return
+        if (push_id === _our_last_push_id) return   // our own push echoed back — ignore
+        // Lies sent something new; drop local state and install it.
+        receive_what_point_from_lies(entries)
+    })
+
+    // Advance the Lies cursor to the next Doc across all loaded Wafts.
+    // < What-level navigation (sibling time-slices) is a future arc.
     function cursor_next() {
         H.i_elvisto('Lies/Lies', 'Lies_cursor_next', { doc_path: active_path })
     }
@@ -618,8 +633,8 @@
                     {/if}
                 </div>
             {/each}
-            <!-- < Lies_cursor_next backend not yet wired. -->
-            <button class="lmm-cursor-next" title="Next What_Point in Lies" onclick={cursor_next}>→</button>
+            <!-- Step Lies cursor to the next Doc in the Waft order. -->
+            <button class="lmm-cursor-next" title="Next Doc in Waft" onclick={cursor_next}>→</button>
         </div>
     {/if}
 

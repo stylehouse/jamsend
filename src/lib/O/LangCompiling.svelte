@@ -25,6 +25,25 @@
     //   multiple open docs don't share compile state.
     //   compile_write has moved to Lies's w (keyed by path).
     //
+    // ── Holding Story open for the first graft (reqy/ttlilt) ────────────────
+    //
+    //   Without help, Story snaps as soon as Lang_compile returns — even
+    //   though Lang_graft_points runs BEFORE Lang_compile within the same
+    //   Lang(A,w) tick, so on the very first tick the graft sees no compile
+    //   output and every Pmirror is unresolved.  The user has to edit the
+    //   doc (causing a recompile) to get Points to land.
+    //
+    //   /w/reqcons/reqcon:compile_q owns a %compile_q,$path req per doc.
+    //   Lang_compile_arm_ttlilt sets a ttlilt on it covering the expected
+    //   compile window (longer for hard compiles, since Lies has to write
+    //   to disk and notify Pantheate).  Story.poll_step sees the ttlilt
+    //   and stays open, so the next think tick runs Lang_graft_points
+    //   against the now-populated /%Compile/%methods.
+    //
+    //   Lang_compile_release_ttlilt fires on settle (hard) or implicitly
+    //   on ttl expiry (soft): drops the long-window ttlilt and installs
+    //   a short grace so graft has time for one more pass before snap.
+    //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
     //     Lang_compile_IOing(node,…)     → one TS expression
@@ -164,6 +183,16 @@
         job.empty()
         job.oai({Pending: 1})
 
+        // Hold Story open across this compile so Lang_graft_points (which
+        // runs BEFORE Lang_compile within Lang(A,w)) gets a follow-up think
+        // tick against the fresh /%Compile/%methods.  The hard-compile
+        // window covers Lies' disk write + Pantheate notify; soft is just
+        // a short grace.  Lang_compile_release_ttlilt cuts hard short on
+        // e:Lies_compile_settled in Lang_compile_step.
+        const gen_path_for_ttl = docC.sc.gen_path as string | undefined
+        H.Lang_compile_arm_ttlilt(w, docC.sc.doc as string,
+            gen_path_for_ttl ? 3.0 : 0.5)
+
         // clear previous outputs / errors so a fresh compile is visible
         await docC.r({ compile_error: 1 }, {})
 
@@ -200,6 +229,9 @@
         const gen_path = docC.sc.gen_path as string | undefined
         if (!gen_path) {
             await job.r({Pending:1},{})   // no write step — soft compile done
+            // Drop the compile-window ttlilt; install a short grace so graft
+            // runs once more against the fresh %methods before Story snaps.
+            H.Lang_compile_release_ttlilt(w, docC.sc.doc as string)
             w.i({ see: `🔍 soft-compiled ${docC.sc.doc}` })
             return
         }
@@ -240,12 +272,50 @@
             const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
             // Compile particle stays; only clear the Pending flag
             if (targetJob) await targetJob.r({ Pending: 1 }, {})
+            // Hard compile window done — drop its long ttlilt, install short grace.
+            this.Lang_compile_release_ttlilt(w, settled_path)
             w.i({ see: `✅ compiled ${settled_path}` })
         }
     },
 
 //#endregion
-//#region collect
+//#region compile_q ttlilt helpers
+
+    // Arm (or forward) the per-doc compile-window ttlilt.
+    //   secs covers the expected wait from now until the first good graft
+    //   opportunity after compile finishes.  One %compile_q,$path req lives
+    //   under /w/reqcons/reqcon:compile_q so i_Story_o_req_ttlilt can walk it.
+    //   reqonce('armed') prevents the do_fn from running more than once — the
+    //   req is just a ttlilt carrier, not a work queue.
+    Lang_compile_arm_ttlilt(w: TheC, doc_path: string, secs: number) {
+        const H = this as House
+        const rq  = H.reqy(w, { k: 'compile_q' })
+        // noserial so the key is exactly {compile_q: path}
+        rq.con.sc.noserial = 1
+        rq.con.c.do_fn = async (req: TheC) => {
+            // ttlilt carrier only — one-shot arm so it doesn't re-run
+            H.reqonce(req, 'armed')
+        }
+        const req = w.oai({ compile_q: doc_path })
+        req.c.up  = w
+        req.c.on  = rq.con
+        H.i_req_ttlilt(req, secs, { doc: doc_path })
+        H.trace('ttlilt', `Lang: compile_q armed ${doc_path} ttl=${secs}s`)
+    },
+
+    // Called on soft-compile finish or on e:Lies_compile_settled (hard).
+    //   Drops any live compile-window ttlilt and installs a short grace period
+    //   so Lang_graft_points gets one clean think tick against fresh %methods.
+    Lang_compile_release_ttlilt(w: TheC, doc_path: string) {
+        const H = this as House
+        const req = w.o({ compile_q: doc_path })[0] as TheC | undefined
+        if (!req) return
+        // Drop the long compile-window ttlilt
+        for (const t of req.o({ ttlilt: 1, doc: doc_path }) as TheC[]) req.drop(t)
+        // Short grace: one graft pass comfortably fits in 300ms
+        H.i_req_ttlilt(req, 0.3, { doc: doc_path, grace: 1 })
+        H.trace('ttlilt', `Lang: compile_q released ${doc_path}, grace 300ms`)
+    },
 
     // Walk the document line-by-line (via doc.line(n), independent of the
     // syntax tree's own Line recovery).  For each doc-line we look into the

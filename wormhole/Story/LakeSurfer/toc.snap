@@ -74,16 +74,16 @@ story:LakeSurfer
     quiesce_snap_time:0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.455
-      sample:0.424,at:1779878991
-      sample:0.58,at:1779879720
-      sample:0.414,at:1779879770
-      sample:0.504,at:1779879872
-      sample:0.454,at:1779880181
-      sample:0.322,at:1779880195
-      sample:0.387,at:1779880770
-      sample:0.304,at:1779880781
-      sample:0.637,at:1779881695
-      sample:0.527,at:1779882437
-  step,dige:da7aa031c0f14c8c
-  step:2,dige:be8fac1e6678d81c
+    TimeTotal:beliefs,avg:0.467
+      sample:0.358,at:1779884069
+      sample:0.415,at:1779884084
+      sample:0.416,at:1779884102
+      sample:0.416,at:1779884114
+      sample:0.416,at:1779884132
+      sample:0.425,at:1779884143
+      sample:0.425,at:1779884189
+      sample:0.572,at:1779884507
+      sample:0.557,at:1779884577
+      sample:0.669,at:1779885245
+  step,dige:b6ff137aae1fd25e
+  step:2,dige:40dbd6169d2b92c3

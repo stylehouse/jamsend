@@ -79,6 +79,8 @@
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
+    //       /{What_Point:1}                    — last accepted in_group+showing set
+    //         /{spec,showing}                  — one entry per Point in the set
     //       /{Points:1}                        — optional metadata
     //         /{Point:1,method}                — individual point
     //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
@@ -724,6 +726,119 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             bookmark_id, serial,
         })
         this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_accept_What_Point ──────────────────────────────────────────────
+    //
+    //   Receives the minimap's current in_group+showing set for a Doc.
+    //   Writes the entries onto the Waft's Doc particle so the state survives
+    //   cursor navigation and can be restored when the user returns.
+    //   Also stamps a session echo on ave/%examining/%What_Points,1 so
+    //   DocMinimap can detect a Lies-side push and adopt it via
+    //   receive_what_point_from_lies() (dedup: push_id field guards re-entry).
+    //
+    //   e.sc: { doc_path, what_point: [{spec, showing}] }
+    async e_Lies_accept_What_Point(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const doc_path  = e.sc.doc_path  as string | undefined
+        const entries   = e.sc.what_point as Array<{ spec: string, showing: boolean }> | undefined
+        if (!doc_path || !entries) return
+
+        // Find the %Doc,path in any loaded Waft and write entries as
+        // /%What_Point,1 children so they survive snap and restore on revisit.
+        let stored = false
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
+            if (!doc) continue
+            const container = doc.oai({ What_Point: 1 })
+            container.empty()
+            for (const e of entries) {
+                container.i({ spec: e.spec, showing: e.showing ? 1 : 0 })
+            }
+            waft.bump_version()
+            H.Lies_waft_save(w, waft)
+            stored = true
+            break  // < only first matching Waft; multi-Waft dedup is future
+        }
+        if (!stored) console.warn(`e_Lies_accept_What_Point: no Waft Doc for ${doc_path}`)
+
+        // Echo onto examining so DocMinimap can observe the arrival.
+        // push_id is Date.now() — DocMinimap skips if it matches its own last push.
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        const wpt       = examining?.o({ What_Points: 1 })[0] as TheC | undefined
+        if (wpt) {
+            const cur_path = (wpt.sc.src as TheC | undefined)?.sc.path as string | undefined
+            if (cur_path === doc_path) {
+                wpt.sc.accepted_entries = entries
+                wpt.sc.accepted_push_id = Date.now()
+                wpt.bump_version()
+            }
+        }
+
+        console.log(`📌 accept_What_Point: ${doc_path} ${entries.length} entries`)
+        H.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_cursor_next ────────────────────────────────────────────────────
+    //
+    //   Step the graft cursor to the next %Doc across all loaded Wafts
+    //   (round-robin among %Waft children, then %Doc children within each).
+    //   Fires e:Doc_open so Lang activates the target doc.  If the target
+    //   Doc already has a stored /%What_Point,1, DocMinimap receives it via
+    //   the examining echo (see e_Lies_accept_What_Point), which triggers
+    //   receive_what_point_from_lies().
+    //
+    //   "Next" is relative to the doc currently cursored in %examining.
+    //   If examining has no cursor, start from the first Doc in any Waft.
+    //
+    //   e.sc: { doc_path }  — the current doc (used to find next)
+    //   < What-level navigation (stepping between sibling What time-slices)
+    //     is a future arc — cursor_next today cycles Docs, not Whats.
+    async e_Lies_cursor_next(A: TheC, w: TheC, e: TheC) {
+        const H          = this as House
+        const cur_path   = e.sc.doc_path as string | undefined
+
+        // Collect all (Waft, Doc) pairs in stable order.
+        const all: Array<{ waft: TheC, doc: TheC }> = []
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
+                all.push({ waft, doc })
+            }
+        }
+        if (!all.length) return
+
+        // Find current position and advance by one.
+        let idx = all.findIndex(p => p.doc.sc.path === cur_path)
+        const next = all[(idx + 1) % all.length]
+        if (!next) return
+
+        const next_path  = next.doc.sc.path as string
+        const waft_key   = next.waft.sc.Waft as string
+
+        // Advance the examining cursor first (same as DocRow click).
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (examining) H.Lies_set_examining(examining, next.doc, waft_key)
+
+        // If this Doc has a stored What_Point, echo it onto the examining
+        // particle so DocMinimap's $effect picks it up.
+        const stored_wpt = next.doc.o({ What_Point: 1 })[0] as TheC | undefined
+        if (stored_wpt) {
+            const entries = (stored_wpt.o({}) as TheC[]).map(e => ({
+                spec:    e.sc.spec    as string,
+                showing: !!e.sc.showing,
+            }))
+            const wpt = examining?.o({ What_Points: 1 })[0] as TheC | undefined
+            if (wpt) {
+                wpt.sc.accepted_entries = entries
+                wpt.sc.accepted_push_id = Date.now()
+                wpt.bump_version()
+            }
+        }
+
+        // Switch the active doc in Lang.
+        H.i_elvisto('Lang/Lang', 'Doc_open', { path: next_path })
+        console.log(`→ cursor_next: ${cur_path ?? '(none)'} → ${next_path}`)
+        H.i_elvisto(w, 'think')
     },
 
     // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
