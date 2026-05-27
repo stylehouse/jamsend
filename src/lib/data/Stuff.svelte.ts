@@ -915,7 +915,7 @@ export class Stuff extends TimeOffice {
 // whole island of Stuff
 export class Stuffing {
     Stuff:Stuff
-    groups = new SvelteMap()
+    groups: Map<string, Stuffusion> = $state(new Map())
     started = $state(false)
 
     matchy?:Matchy
@@ -925,17 +925,9 @@ export class Stuffing {
         //  svelte docs: You can use $effect anywhere,
         //   not just at the top level of a component, 
         //   as long as it is called while a parent effect is running.
+        // H polls this unreactively via H.check_stuffings() after think()
+        //  and on its 3s heartbeat — no $effect subscription here
         this.slowly_brackology = throttle(() => this.brackology(),200)
-
-        $effect(() => {
-            if (this.Stuff.version) {
-                // may drop out here, UI:Stuffing reacts to .started
-                if (this.Stuff.X_before) return //console.warn("Stuffing waits for X_before")
-                // console.log("reacting to Stuff++")
-                setTimeout(() => this.slowly_brackology(), 1)
-
-            }
-        })
     }
     get_matching_rows() {
         let matches = this.matchy?.see || []
@@ -1001,7 +993,7 @@ export class Stuffing {
     }
     // grouped stuff -> tree of objects with quantity descriptions
     regroup(groups:TheC) {
-        this.groups.clear()
+        const next = new Map<string, Stuffusion>()
         groups.o().forEach((n:TheC) => {
             // uniquely identify them
             let name = n.name || 'unnamed'
@@ -1061,8 +1053,9 @@ export class Stuffing {
 
                 stuffusion.columns.set(stuffziad.name,stuffziad)
             })
-            this.groups.set(stuffusion.name,stuffusion)
+            next.set(stuffusion.name,stuffusion)
         })
+        this.groups = next
     }
 }
 

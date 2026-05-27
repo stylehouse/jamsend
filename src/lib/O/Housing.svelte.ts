@@ -397,6 +397,10 @@ export class House extends StorableHousing {
             if (!this.started && this._all_checks_pass()) this.started = true
         })
         this.start_watched_C_effect()
+        // 3s heartbeat: scan Stuffings even when no think() fired recently.
+        // catches the startup case and any missed-bump edge cases.
+        const stuffing_heartbeat = setInterval(() => { this.check_stuffings() }, 3000)
+        this.on_hangup(() => clearInterval(stuffing_heartbeat))
     }
     override stop() {
         super.stop()
@@ -782,6 +786,9 @@ export class House extends StorableHousing {
             if (!beliefs_threw) this.trace('beliefs', 'done')
             this.c.finished_run = now_in_seconds_with_ms()
         }
+        // beliefs mutex released — safe to enter UItime now.
+        // drive any Stuffing that was watching a %C mutated during that cycle.
+        if (this.stuffing_watchers.length) await this.check_stuffings()
     }
     
     // waits for the next moment outside Atime (aka UItime)
@@ -1142,6 +1149,36 @@ export class House extends StorableHousing {
 
     watched:   Array<{ C: TheC, handler: Function }> = $state([])
     watched_v: number[] = []
+
+    // open Stuffing components registered for unreactive version-based updates.
+    // each entry: %C watched, handler to call, last-seen C.version.
+    // checked inside H.clear() after each beliefs cycle and on the 3s heartbeat.
+    stuffing_watchers: Array<{ C: TheC, handler: () => void, last_v: number }> = []
+
+    // called by Stuffing on mount; returns a deregister function for $effect cleanup.
+    // multiple Stuffing instances may watch the same %C independently.
+    register_stuffing(C: TheC, handler: () => void): () => void {
+        const entry = { C, handler, last_v: C.version ?? 0 }
+        this.stuffing_watchers.push(entry)
+        return () => {
+            const i = this.stuffing_watchers.indexOf(entry)
+            if (i >= 0) this.stuffing_watchers.splice(i, 1)
+        }
+    }
+
+    // unreactive scan: compare exact %C ref + version, fire changed handlers in UItime.
+    // safe to call from _really_answer_calls after the beliefs mutex releases;
+    //  NOT safe to call from inside attend() or beliefs() (beliefs mutex deadlock).
+    async check_stuffings() {
+        const changed = this.stuffing_watchers.filter(e => e.C.version !== e.last_v)
+        if (!changed.length) return
+        await this.clear(async () => {
+            for (const e of changed) {
+                e.last_v = e.C.version
+                e.handler()
+            }
+        })
+    }
 
     // high level: create|return eg H/%watched:ave to .i(C_to_give_UI)
     watch(channel_name:'UIs'|'ave'|'actions'|'graph') {

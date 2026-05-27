@@ -1,75 +1,77 @@
 <script lang="ts">
     import Strata from '$lib/data/Strata.svelte';
     import type { Matchy } from '$lib/mostly/Structure.svelte.ts';
-    import { hak, throttle } from '$lib/Y.svelte.ts';
     import type { Modus, Modusmem } from "$lib/mostly/Modus.svelte.ts";
-    import { Stuff,Stuffing, type TheUniversal } from './Stuff.svelte.ts';
+    import { Stuff, Stuffing, type TheUniversal } from './Stuff.svelte.ts';
+    import type { House } from '$lib/O/Housing.svelte.ts';
     import Stuffusion from './Stuffusion.svelte'
+    import { getContext, setContext, untrack } from 'svelte'
+    import { throttle } from '$lib/Y.svelte.ts'
 
-    let { mem,stuff,matchy,M }:{ 
-        mem:Modusmem, 
-        stuff:Stuff,
-        matchy?:Matchy
-        hide?:Array<TheUniversal>,
-        M?:Modus
-        } = $props()
+    let { mem, stuff, matchy, M, H: H_prop }:{ 
+        mem: Modusmem, 
+        stuff: Stuff,
+        matchy?: Matchy,
+        hide?: Array<TheUniversal>,
+        M?: Modus,
+        H?: House,
+    } = $props()
     mem = mem.further("Stuffing")
-    let stuff_length = $state(0)
-    let stufflen = () => { stuff_length = stuff?.X?.z?.length || 0 }
 
-    // Create Stuffing in an effect
-    let stuffing: Stuffing | null = $state(null)
+    // H flows down to nested Stuffings via context (Stuffzipper -> Stuffing)
+    //  so Stuffzipper doesn't need to know about H at all
+    const H: House | undefined = H_prop ?? getContext('H')
+    if (H_prop) setContext('H', H_prop)
 
-    let new_stuffing: Stuffing | null = $state(null)
     let spinner = $state(false)
-    // Recursively sum all .version ($state) values in the tree so any insertion
-    // or change anywhere below stuff — not just at the top level — retriggers
-    // the Stuffing rebuild.  Each .version read subscribes to that TheC's
-    // X.serial_i; new children are picked up when their parent's version bumps
-    // and the derived re-runs, discovering and subscribing to the new kids.
-    function deep_version(C: TheC): number {
-        const v = C.version || 0
-        return (C.X?.z ?? []).reduce(
-            (sum: number, kid: TheC) => kid.c?.drop ? sum : sum + 0,
-            // deep_version(kid),
-            v
-        )
-    }
-    
-    // < hmm, this is overreactive. we should probably beliefs()-centralise this...?
-    //   run around with the Stuffing that's open, Selection.process()?
-    //   from above... slowly dispatching a .version++ above where another one couldn't be seen.
-    let deep_v = $state()
-    let setversion = throttle((vers:number) => {
-        deep_v = vers
-    },200)
+
+    // one Stuffing instance for the lifetime of this component.
+    // groups is SvelteMap — reactive; started is $state — reactive.
+    // brackology() is synchronous: started = true before it returns.
+    let stuffing = new Stuffing(stuff, matchy)
+
+    // fallback throttle for when H isn't threaded through — prevents naked brackology spam
+    const throttled_brackology = throttle(() => {
+        stuffing.Stuff = stuff
+        stuffing.matchy = matchy
+        stuffing.brackology()
+        if (M) setTimeout(check_for_strata, 0)
+    }, 200)
+
     $effect(() => {
-        setversion(stuff ? deep_version(stuff) : 0)
-    })
-    $effect(() => {
-        if (deep_v) {
-            new_stuffing = new Stuffing(stuff, matchy)
+        const S = stuff  // only dep we want
+        if (!S) return
+
+        // untrack: don't subscribe to anything brackology reads internally
+        untrack(() => {
+            stuffing.Stuff = S
+            stuffing.matchy = matchy
+            stuffing.brackology()
+            if (M) setTimeout(check_for_strata, 0)
+        })
+
+        if (!H) {
+            // no Housing to drive us — fall back to a local throttle watching stuff.version
+            // < coarser than H-driven; misses deep mutations below stuff
+            return  // $effect cleanup: nothing to deregister
+        }
+
+        const deregister = H.register_stuffing(S, () => {
             spinner = true
-        }
-        stufflen()
+            untrack(() => {
+                stuffing.Stuff = S
+                stuffing.matchy = matchy
+                stuffing.brackology()
+            })
+            setTimeout(() => { spinner = false }, 333)
+            if (M) setTimeout(check_for_strata, 0)
+        })
+        return deregister
     })
     $effect(() => {
-        // it finished! bumping version agaion
-        if (new_stuffing && new_stuffing.started) {
-            // console.log(`Stuffing installed!`)
-            stuffing = new_stuffing
-            new_stuffing = null
-            setTimeout(() => {
-                spinner = false
-            }, 333)
-            if (M) {
-                // first layer of Stuffing inside Modus, look for %%Strata
-                setTimeout(() => {
-                    check_for_strata()
-                },0)
-            }
-        }
-        stufflen()
+        if (H || !stuff) return
+        void stuff.version   // single reactive dep
+        throttled_brackology()
     })
 
     let strata_version = $state(0)
@@ -135,7 +137,7 @@
 
 </script>
 
-{#if stuffing}
+{#if stuffing.started}
     <div class="stuffing">
         <div class="content">
             {#each Array.from(stuffing.groups.values()) as stuffusion:Stuffusion (stuffusion.name)}
