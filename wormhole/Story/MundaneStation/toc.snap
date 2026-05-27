@@ -30,7 +30,6 @@ story:MundaneStation
     noCyto
   TimeSpool
     TimeTotal:beliefs,avg:0.107
-      sample:0.077,at:1779759589
       sample:0.072,at:1779759597
       sample:0.072,at:1779759614
       sample:0.098,at:1779759619
@@ -40,6 +39,7 @@ story:MundaneStation
       sample:0.147,at:1779759687
       sample:0.131,at:1779759693
       sample:0.145,at:1779767342
+      sample:0.073,at:1779845683
   step,dige:9c399f2fbc16f9e0
   step:2,dige:9aa25e6c204f897b
   step:3,dige:07855446d9df2665

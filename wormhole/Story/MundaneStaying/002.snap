@@ -1,13 +1,13 @@
 Snap:H
   H:MundaneStaying,Run
     A:MundaneStaying
-      {"mung":["age"]}	self,round:6
+      {"mung":["age"]}	self,round:8
       w:MundaneStaying
-        req:one_shot,ttl:600,timer:400,done,finished
+        req:one_shot,ttl:600,timer:400,finished
         req:slow,ttl:1200,armed
-          ttlilt,until_ts:1779791060.233
-        req:fast,ttl:600,timer:400,done,finished
-        {"mung":["age"]}	self,round:6
+          ttlilt,until_ts:1779845690.301
+        req:fast,ttl:600,timer:400,finished
+        {"mung":["age"]}	self,round:8
         see:Step ending with a timeout
     {"mung":["id"]}	mo:main,interval:3.6
-    {"ref":{"req":"%req:slow, ttl:1200, armed:1"}}	ttlilt,w:MundaneStaying,until_ts:1779791060.233
+    {"ref":{"req":"%req:slow, ttl:1200, armed:1"}}	ttlilt,w:MundaneStaying,until_ts:1779845690.301

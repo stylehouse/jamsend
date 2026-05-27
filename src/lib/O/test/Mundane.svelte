@@ -215,40 +215,26 @@ await M.eatfunc({
             reason == 'timeout' && w.i({see:'Step ending with a timeout'})
         }
 
-        // req do_fn — shared by both steps, reused for all req** in this test.
-        // Defines the core protocol: one-shot arm (via reqonce), then wait for
-        // timeout or other completion signal via out-of-time reqyoncile.
-        const req_do_fn = async (req: TheC) => {
-            // second call: seen %done via reqyoncile — finish and return
-            if (req.sc.done) {
-                const rq = req.c.on?.c?.rq
-                rq?.finish(req)
-                H.trace('ttlilt', `req ${keyser(req.sc)}: done → finished`)
-                return
-            }
-
-            // first call: arm via reqonce, set ttlilt, schedule timer if present
+        const rq = H.reqy(w, { k: 'req' })
+        // Set up the reqy protocol once. All reqs in this test use this do_fn.
+        rq.con.c.do_fn = async (req: TheC) => {
             if (!H.reqonce(req, 'armed')) return
-            
-            const ttl_ms = req.sc.ttl as number
+
+            const ttl_ms   = req.sc.ttl   as number
             const timer_ms = req.sc.timer as number | undefined
-            const label = req.sc.req as string
+            const label    = req.sc.req   as string
 
             H.i_req_ttlilt(req, ttl_ms / 1000)
             if (timer_ms) {
                 setTimeout(() => {
                     H.trace('ttlilt', `req ${label}: timer ${timer_ms}ms fired → reqyoncile`)
-                    H.reqyoncile(req, `timer ${timer_ms}ms`, { done: 1 })
+                    H.reqyoncile(req, { see: `timer ${timer_ms}ms`, finished: 1 })
                 }, timer_ms)
                 H.trace('ttlilt', `req ${label}: armed ttl=${ttl_ms}ms timer=${timer_ms}ms`)
             } else {
                 H.trace('ttlilt', `req ${label}: armed ttl=${ttl_ms}ms (orphaned, no timer)`)
             }
         }
-
-        // Set up the reqy protocol once. All reqs in this test use this do_fn.
-        const rq = H.reqy(w, { k: 'req' })
-        rq.con.c.do_fn = req_do_fn
 
         // Dispatch to step via Story's run.c.step_n. Story auto-advances the step
         // number after each snap completes. No manual step management needed.
@@ -433,7 +419,7 @@ await M.eatfunc({
             setTimeout(() => {
                 const folder = w.o({ Folder: spec.in })[0] as TheC | undefined
                 if (folder) folder.i({ Item: spec.name, mins: spec.mins })
-                H.reqyoncile(req, `made ${spec.name}`, { done: 1 })
+                H.reqyoncile(req, { see: `made ${spec.name}`, finished: 1 })
             }, 200)
         }
 

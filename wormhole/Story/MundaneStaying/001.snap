@@ -3,6 +3,6 @@ Snap:H
     A:MundaneStaying
       {"mung":["age"]}	self,round:3
       w:MundaneStaying
-        req:one_shot,ttl:600,timer:400,done,finished
+        req:one_shot,ttl:600,timer:400,finished
         {"mung":["age"]}	self,round:3
     {"mung":["id"]}	mo:main,interval:3.6

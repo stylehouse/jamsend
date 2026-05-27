@@ -13,9 +13,7 @@ story:PeeringLive
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:3.129
-      sample:4.523,at:1779502836
-      sample:5.757,at:1779503110
+    TimeTotal:beliefs,avg:2.2
       sample:3.125,at:1779503467
       sample:3.781,at:1779503510
       sample:5.451,at:1779504610
@@ -24,6 +22,8 @@ story:PeeringLive
       sample:0.882,at:1779530141
       sample:0.809,at:1779532592
       sample:0.809,at:1779532633
+      sample:0.517,at:1779845622
+      sample:0.474,at:1779845668
   step,dige:7dc2e62b6689c85c
   step:2,dige:dde4ba6a5da57b34
   step:3,dige:eebc8ad89fcf6e0d

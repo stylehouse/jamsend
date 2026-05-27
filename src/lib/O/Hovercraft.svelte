@@ -356,24 +356,27 @@
     //   sc is queued to apply at e_reqyonciliation (Atime), not now —
     //    so state change (action) and work (reaction) arrive together.
     //   see is for trace only; finish() is the caller's job.
-    async reqyoncile(req: TheC, see?: string, sc?: Record<string, any>) {
+    async reqyoncile(req: TheC, sc: Record<string, any> = {}) {
         const H = this
-        // climb up: req.c.up = w (or another req), find the %w node
         let node = req as TheC
         while (node.c.up && !node.sc.w) node = node.c.up as TheC
         if (!node.sc.w) throw "reqyoncile: !%w"
+        const { see, finished, ...mix_sc } = sc
         const elv: Record<string, any> = { req }
-        if (see) elv.see = see
-        if (sc && Object.keys(sc).length) elv.mix_sc = sc
+        if (see)                        elv.see      = see
+        if (finished)                   elv.finished = 1
+        if (Object.keys(mix_sc).length) elv.mix_sc   = mix_sc
         return H.i_elvisto(node, 'reqyonciliation', elv)
     },
  
     // drives the reqy chain after a req's async Atime — always arrives via reqyoncile.
-    //   runs just the one req first; only if it finishes does the full chain advance.
-    //   if req didn't finish, feebly_ponder will drive it again via the normal cycle.
+    //   e.sc.finished (like e.sc.see) is a lifecycle signal, not a state mutation —
+    //   kept off mix_sc so maybe_mutate_sc never touches req.sc.finished
+    //   before rq.finish() has a chance to run its own guards.
+    //   feebly_ponder wakes downstream as a normal visible think.
     async e_reqyonciliation(_A: TheC, w: TheC, e: TheC) {
         const H = this
-        const { req, see, mix_sc } = e.sc
+        const { req, see, mix_sc, finished } = e.sc
         if (!req) throw "!req"
         const reqcon = req.c.on as TheC
         if (!reqcon) throw "!reqcon"
@@ -381,14 +384,20 @@
         if (!rq) throw "!rq"
         if (req.sc.finished) return console.warn(`callback rattle: ${keyser(req.sc)}`)
 
-        // apply queued state change now, with %mutated detection, at the top of Atime
         if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
         H.trace('reqyoncile', H.req_diag(req, { see, mix_sc }))
- 
-        await rq.do_one(req)        // run the targeted req
+
+        if (finished) {
+            rq.finish(req)
+            rq.unify_finished()
+            H.feebly_ponder()
+            return
+        }
+
+        await rq.do_one(req)
         if (req.sc.finished) {
-            await rq.do()           // advance any colleagues now unblocked
-            rq.unify_finished()     // propagate up if all done
+            await rq.do()
+            rq.unify_finished()
         }
     },
  

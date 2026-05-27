@@ -861,7 +861,7 @@
                         Id.generateKeys(DETERMINISTIC_KEYS ? side : undefined).then(() => {
                             De.oai({ log: 1 }).i({ msg: 'keygen done' })
                             H.trace('De', `${side} keygen done`)
-                            H.reqyoncile(req, 'keygen done', { Id })
+                            H.reqyoncile(req, { see: 'keygen done', Id })
                         })
                     })
                     H.demand_time_to_think(1555)
@@ -908,7 +908,7 @@
                     if (reg) H.Awo('PeeringLive').drop(reg)
                     console.log(`✅ ${Side} open  ${pn.sc.prepub}`)
                     // reqyoncile this same req:register — its do_fn re-runs and sees open:1
-                    void H.reqyoncile(req, 'peering open')
+                    void H.reqyoncile(req, { see: 'peering open' })
                 })
                 eer.on('disconnected', () => {
                     const open_n = pn.o({ open: 1 })[0] as TheC | undefined
