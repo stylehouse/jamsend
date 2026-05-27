@@ -29,6 +29,7 @@
     //   as sibling Stuffings mounting in this tick.
     let stuffing = new Stuffing(stuff, matchy)
 
+    let spinner = $state(false)
     // re-register when %stuff prop changes (different C handed in by parent).
     //  the prior registration's cleanup deregisters us automatically.
     $effect(() => {
@@ -40,6 +41,8 @@
             stuffing.Stuff = S
             stuffing.matchy = matchy
             stuffing.commit(stuffing.compute_groups())
+            spinner = true
+            setTimeout(() => { spinner = false }, 333)
             if (M) setTimeout(check_for_strata, 0)
         })
         return deregister
@@ -114,6 +117,9 @@
                 <Stuffusion {mem} {stuffusion} />
             {/each}
         </div>
+        {#if spinner}
+            <div class="spinner"></div>
+        {/if}
     </div>
     {#if stratum}
         <div class="strata">
@@ -142,5 +148,31 @@
     display: inline-block;
     min-height: 1em;
     min-width: 1em;
+}
+
+.spinner {
+    position: absolute;
+    top: 0%;
+    left: -1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3em 0.6em;
+    color: rgb(38, 110, 217);
+    font-size: 1.6em;
+    animation: pulse 1s ease-in-out infinite;
+    text-shadow: 2px 2px 2px rgb(12, 28, 51);
+}
+.spinner::before {
+    content: "⟳";
+    display: inline-block;
+    animation: spin 0.3s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
 }
 </style>
