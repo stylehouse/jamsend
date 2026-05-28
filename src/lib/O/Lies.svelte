@@ -466,6 +466,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // < also migrate %Points,1/%Point,N containers once those are in snap
         }
 
+        // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
+        await this.LiesCurse(A, w)
+
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
         const wafts  = w.o({ Waft: 1 }).length
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
@@ -815,10 +818,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             waft.o({ Doc: 1 }).map(d => (d as TheC).sc.path as string)
         )
 
-        // < lazy loading: open_reqs are now queued on-demand by Lies_ensure_doc_loaded
-        //   when the cursor lands on a Doc (via LiesCurse).  Only the cursor's target
-        //   loads, not the whole Waft.  Set w.c.eager_waft_load to restore the old
-        //   eager-open-all behaviour for debugging or migration.
+        // Ensure an open_req exists for each live Doc.
+        // < lazy loading: once Chunk 2 (cursor autostart) is reliable, gate this loop
+        //   behind w.c.eager_waft_load and let Lies_ensure_doc_loaded (in LiesCurse)
+        //   be the only path that queues open_reqs — cursor jumps trigger loads.
+        //   Until then, cold-start has no cursor to bootstrap from, so eager is required.
         if (w.c.eager_waft_load) {
             for (const p of live_paths) {
                 w.oai({ open_req: 1, path: p }, { from_waft: wpath })

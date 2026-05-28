@@ -93,19 +93,30 @@
 
         // ── cold-start cursor placement ───────────────────────────────────────
         //
-        //   On the first tick where Wafts are loaded and the cursor is still
-        //   empty, land on the active doc's Doc particle if it's in a Waft.
-        //   This covers the case where the user had a doc open before Wafts loaded,
-        //   so the watch above never fired.
-        //   Guard: skip if examining already points at active_path (the watch
-        //   may have just set it on this same tick — no double jump).
+        //   Two cases, tried in preference order:
+        //   1. An active doc is already known — land on its Waft Doc particle.
+        //      Covers reloading a session where a doc was already open when
+        //      the Waft finishes loading.
+        //   2. No active doc yet — pick the first Point-bearing Doc across all
+        //      loaded Wafts.  Queues its open_req via Lies_ensure_doc_loaded;
+        //      the doc loads, Lang opens it, active_doc follows naturally.
+        //   Both skip when the cursor already points at the right place.
         const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
         const examining_path = (wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
+
         if (active_path && examining_path !== active_path) {
+            // case 1: known active doc, cursor hasn't caught up yet
             const found = H.Lies_find_doc_in_wafts(w, active_path)
             if (found) {
                 H.Lies_ensure_doc_loaded(w, active_path, found.waft_key)
                 H.Lies_set_examining(examining, found.doc, found.waft_key)
+            }
+        } else if (!examining_path) {
+            // case 2: no active doc, no cursor — pick first Point-bearing Doc
+            const first = H.Lies_first_point_doc(w)
+            if (first) {
+                H.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
+                H.Lies_set_examining(examining, first.doc, first.waft_key)
             }
         }
     },
@@ -143,6 +154,21 @@
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
             if (doc) return { doc, waft_key: waft.sc.Waft as string }
+        }
+        return undefined
+    },
+
+    // ── Lies_first_point_doc ──────────────────────────────────────────────────
+    //
+    //   Walk all loaded Wafts and return the first %Doc that carries at least
+    //   one %Point,N child.  Used by cold-start case 2 when there is no
+    //   active_doc yet to anchor on.
+    Lies_first_point_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
+                if ((doc.o({ Point: 1 }) as TheC[]).length)
+                    return { doc, waft_key: waft.sc.Waft as string }
+            }
         }
         return undefined
     },
