@@ -177,120 +177,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     },
 
     // ── e_Lies_rename_doc ──────────────────────────────────────────────
-    //
-    //   Fired by Waft.svelte's do_rename_doc after doc.sc.path has already
-    //   been mutated and waft.bump_version() called (which triggers watch_c
-    //   → Lies_sync_waft_docs → fresh open_req for the new path).
-    //
-    //   Doc rename is path-only — no wormhole file is moved.  The Waft snap
-    //   will be saved by the watch_c-triggered Lies_waft_save that already
-    //   fired.  This handler only needs to clean up w-level particles for the
-    //   old path so the flat loaded-docs list and open_reqs stay tidy.
-    //
-    //   A doc_rename_job is persisted on the Waft before any w mutation so
-    //   that a crash between the two steps leaves an auditable record.
-    //   The job is cleared once cleanup is done.
-    //
-    //   e.sc: { old_path, new_path, waft_path }
     async e_Lies_rename_doc(A: TheC, w: TheC, e: TheC) {
-        const old_path  = e.sc.old_path  as string | undefined
-        const new_path  = e.sc.new_path  as string | undefined
-        const waft_path = e.sc.waft_path as string | undefined
-        if (!old_path || !new_path || old_path === new_path) return
-
-        // Persist a rename job on the Waft particle before touching w.
-        // This survives a crash between mutation and cleanup.
-        const waft = waft_path ? w.o({ Waft: waft_path })[0] as TheC | undefined : undefined
-        const job  = waft?.oai({ doc_rename_job: 1, old_path, new_path })
-
-        // Drop old open_req regardless of done state — the new path has
-        // its own fresh open_req from Lies_sync_waft_docs.
-        for (const req of w.o({ open_req: 1, path: old_path }) as TheC[]) {
-            w.drop(req)
-        }
-        // Drop old loaded_doc so the stale entry leaves the flat list in Liesui.
-        for (const ld of w.o({ loaded_doc: 1, path: old_path }) as TheC[]) {
-            w.drop(ld)
-        }
-        // < future: H.i_elvisto('Lang/Lang', 'Lang_close_doc', { path: old_path })
-
-        // Job complete — clear the marker.
-        if (job) waft!.drop(job)
-
-        console.log(`🔪 Lies doc renamed: ${old_path} → ${new_path}`)
-        this.i_elvisto(w, 'think')
+        console.warn(`🔪 Lies_rename_doc: stubbed — ${e.sc.old_path} → ${e.sc.new_path}`)
     },
 
     // ── e_Lies_rename_waft ────────────────────────────────────────────
-    //
-    //   Fired by Waft.svelte's commit_rename_waft.  The Waft sc.Waft key
-    //   has NOT been mutated yet — this handler owns that mutation so it
-    //   can bracket it with a persisted waft_rename_job.
-    //
-    //   A Waft rename is a snap move: the new snap path is written first,
-    //   then sc.Waft is updated in-memory, then the open_waft_req path is
-    //   updated so future saves go to the new location.  The old snap is
-    //   left in place (no delete — other references may exist).
-    //
-    //   e.sc: { old_path, new_path }
     async e_Lies_rename_waft(A: TheC, w: TheC, e: TheC) {
-        const H        = this as House
-        const old_path = e.sc.old_path as string | undefined
-        const new_path = e.sc.new_path as string | undefined
-        if (!old_path || !new_path || old_path === new_path) return
-
-        const waft = w.o({ Waft: old_path })[0] as TheC | undefined
-        if (!waft) {
-            console.warn(`Lies_rename_waft: Waft:${old_path} not found in w`)
-            return
-        }
-
-        // Persist the rename job on w before any IO.
-        const job = w.oai({ waft_rename_job: 1, old_path, new_path })
-
-        // Read the old snap to re-encode under the new path.
-        // (We could re-encode from in-memory waft, but reading first confirms
-        // the old snap exists and gives us a canonical round-trip.)
-        const old_snap_path = H.Lies_waft_snap_path(old_path)
-        const req = await H.LiesStore_read(w, old_snap_path, { label: 'waft_rename' })
-        if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
-            w.i({ see: `⏳ rename: reading Waft:${old_path}…` })
-            return   // will re-run on next tick with req settled
-        }
-
-        // Re-encode from in-memory waft (authoritative after any CRUD).
-        // Temporarily set sc.Waft to the new path so enWaft uses it as the root line.
-        const prev_waft_key = waft.sc.Waft
-        waft.sc.Waft = new_path
-        const { snap, errors, muted_log: _ml } = await H.enWaft(waft)
-        waft.sc.Waft = prev_waft_key
-        if (errors.length) {
-            console.error(`Waft rename encode errors:`, errors)
-            w.drop(job)
-            return
-        }
-
-        // Write the new snap path.
-        const new_snap_path = H.Lies_waft_snap_path(new_path)
-        const req2 = await H.LiesStore_write(w, new_snap_path, snap)
-        if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req: req2 })) {
-            w.i({ see: `⏳ rename: writing Waft:${new_path}…` })
-            return
-        }
-
-        // Snap written — now mutate the in-memory waft and its req.
-        waft.sc.Waft = new_path
-        const waft_req = w.o({ open_waft_req: 1, path: old_path })[0] as TheC | undefined
-        if (waft_req) waft_req.sc.path = new_path
-        // Throttle key on w.c is path-scoped — create fresh one for new path,
-        // let the old key lapse (no harm, it's just a cached fn).
-        w.bump_version()
-
-        // Job complete — clear the marker.
-        w.drop(job)
-
-        console.log(`🗂 Waft renamed: ${old_path} → ${new_path} (old snap left in place)`)
-        this.i_elvisto(w, 'think')
+        console.warn(`🗂 Lies_rename_waft: stubbed — ${e.sc.old_path} → ${e.sc.new_path}`)
     },
 
     // ── e_Lies_source_write ────────────────────────────────────────────
@@ -333,15 +226,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
         console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
 
-        const rw = await H.requesty_serial(w, 'rw_queue')
-
-        // Pull-before-push: read current disk state via the rw_queue so
-        // this check is serialised with any in-flight compile writes.
-        const read_req = await rw.oai(
-            { source_write_check: 1, path },
-            { rw_op: 'read', rw_name: path },
-        )
-        if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req: read_req })) return
+        // Pull-before-push: read current disk state to detect external changes.
+        const read_req = await H.LiesStore_read(w, path, { label: 'source_check' })
+        if (!read_req.sc.finished) return
 
         const disk_text  = read_req.sc.reply?.content as string | undefined
         const disk_dige  = disk_text ? await dig(disk_text) : ''
@@ -479,7 +366,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             const snap_path = H.Lies_waft_snap_path(path)
             const req = await H.LiesStore_read(w, snap_path)
-            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+            if (!req.sc.finished) {
                 w.i({ see: `⏳ loading Waft:${path}…` })
                 return false
             }
@@ -529,7 +416,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const gen_path = H.Lies_gen_path(path)
 
             const req = await H.LiesStore_read(w, path)
-            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
+            if (!req.sc.finished) {
                 w.i({ see: `⏳ loading ${path}…` })
                 return false
             }
