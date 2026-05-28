@@ -30,7 +30,7 @@ doesn't exist; the Pmirror is a declaration of intent.  Graft is Pmirror's
 reality, not a control layer above it.
 
 ```
-docC (w:Lang/docs/doc:path)
+docC (w:Lang/docs/doc:$path)
   Pmirrors:1
     Pmirror:1,src_Waft:Ghost/Tour,spec:Idzeugnosis
       graft:1,bookmark_id:bm_…,from:14,to:60,line:4   ← resolved; CM mark placed
@@ -43,7 +43,7 @@ docC (w:Lang/docs/doc:path)
       region,label:Pier,…
 ```
 
-DocMinimap reads `lang_docC/%Pmirrors,1/%Pmirror,N` and their `%graft,1`
+DocMinimap reads `lang_docC/%Pmirrors/%Pmirror` and their `/%graft`
 children to build the capsule strip and gold dot overlay.
 
 ### The timing bug
@@ -54,11 +54,11 @@ resolves nothing, Pmirrors land without `%graft` children.  Story snaps.
 The user sees unresolved capsules until the next keystroke triggers a recompile.
 
 Fix: arm `i_req_ttlilt` on a graft req while `%Pending` is set, so Story holds
-the snap open until compile settles.
+the snap open until compile settles. 
 
 ### Graft req
 
-Lives on `docC` (found by `i_Story_o_req_ttlilt` via the `scheme:req` /
+Lives on `docC` (found by `i_Story_o_req_ttlilt` via the `w/scheme:req` /
 lematch chain declared on `w:Lang` — see `scheme-req-spec.md`).
 
 ```
@@ -83,8 +83,13 @@ if (pending && points.length) {
 await docC.r({ req: 'graft', path: active_path }, {})
 ```
 
-`i_req_ttlilt` climbs `req → docC → docs → w:Lang` and sets
-`w.c.has_req_ttlilt`.  No separate `demand_time_to_think` needed.
+`i_req_ttlilt` would usually climb `req → docC → docs → w:Lang` and set
+`w.c.has_req_ttlilt`, but there aren't .c.up wirings through the non-req
+`w/%docs/%doc`, so we must make setting `w.c.has_req_ttlilt` separately
+a feature of what sets up `w/%scheme`, lets do it with a helper called
+`i_scheme_req()`
+
+No separate `demand_time_to_think` needed.
 
 Prerequisite: `scheme:req` declared on `w:Lang` so the walker finds `docC`-hosted
 reqs — see `scheme-req-spec.md`.
