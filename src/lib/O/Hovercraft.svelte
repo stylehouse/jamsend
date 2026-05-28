@@ -134,14 +134,23 @@
 //#region reqy
  
     reqy_spec: `
-        fork of requesty_serial()
+        any req%talk is a req object from this function
+          identified or qualified by having %talk
+          so a multitude can exist with slightly different %talk, etc
+          and they're kind of a proto w, lighter and curlier...
+         this is the only place to spawn a %req, don't use that property elsewhere.
+
          helps you write good looking C** that statemachines a bunch of work
-          let Dq = H.reqy(w,{k:'De'}) // different mainkey, for %De,...
-          let rq = H.reqy(w)
+          let Dq = H.reqy(w,{k:'De'})
+           different mainkey, for complexity of eg De/De/req/req/req
+          let rq = H.reqy(w) // most cases
          define protocols, then you put particles in:
           await rq.roai({enid,path},{urgency})
+           these will become %req:$i++,enid,path,urgency
+            you can also put %req:doc_load,path
          you then do stuff:
           rq.do(async(req) => { ... })
+          rq.do_fn = async(req) => { ... }
  
          {enid,path} will locate a req,
           {urgency} will mutate req%urgency if ~, and set req%mutated.urgency=oldvalue
@@ -154,9 +163,9 @@
          w/reqcons/reqcon:req
           gets reqcon%serial_i++ to give some req...
            when they roai(%req:1,...)
-            ie when they didn't set req (the mainkey) to something else
-            we should assume they want serial numbering
-             handy to have string id for the unique group of c.* identity a req is
+            if their mainkey is 1 like that,
+             we should assume they want serial numbering
+              producing a %req:$i++ for the unique group of c.* identity a req is
           
           req.c.on = reqcon
            the protocol of req is findable from a req
@@ -177,6 +186,8 @@
             so protocol specs have to live on reqcon
              so all rq are made equal whether in time or kinda out
           
+          they can declare expected timeframes at req/%ttlilt
+          
           req** do() recursion
            is likely to be the handler_of_last_resort()
             ie we usually do req/*req if req has no do_fn
@@ -185,6 +196,8 @@
            do all of them in req/reqcons/*
             so De doing so finds De/*req
             makes an out-of-time rq to use
+          
+            
     `,
  
     // w|De|req, the host
@@ -218,7 +231,8 @@
             //  - %mutated detection on sc for existing reqs
             async roai(c: TheUniversal, sc?: TheUniversal): Promise<TheC> {
                 if (c.maz == 1) delete c.maz
-                let req = q.o(exactly(c))[0]
+                let premix = { ...keying, ...exactly(c) }
+                let req = q.o(premix)[0]
                 if (req) {
                     // existed
                     if (req.c.up != w) throw "req~up"
@@ -428,6 +442,9 @@
  
     // one-shot flag helper — stamps %name on req.sc and req.c.oncelers.
     //   rq.finish() yoinks both; snap shows only %finished after completion.
+    // doesn't create another req, a sub-req or so,
+    //  it just sets eg req%grafted and returns true if it wasn't already there
+    //   so you can gate a one-time block.
     reqonce(req: TheC, name: string): boolean {
         req.c.oncelers ||= {}
         if (req.c.oncelers[name]) return false

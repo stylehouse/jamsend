@@ -50,8 +50,8 @@ children to build the capsule strip and gold dot overlay.
 
 `Lang_graft_points` runs every tick.  On first open, compile hasn't finished
 yet — `%Compile/%Pending` is set, `%methods` is absent.  The graft runs,
-resolves nothing, Pmirrors land without `%graft` children.  Story snaps.
-The user sees unresolved capsules until the next keystroke triggers a recompile.
+resolves nothing, Pmirrors land without `%graft` children when Story snaps.
+It's working fine to the user, however, we just want to neatly align timings.
 
 Fix: arm `i_req_ttlilt` on a graft req while `%Pending` is set, so Story holds
 the snap open until compile settles. 
@@ -67,29 +67,25 @@ docC
     ttlilt:1,until_ts:T,waiting_for_compile:1
 ```
 
-### `Lang_graft_points` patch
+### `Lang_graft_points` and everything
 
 After the cache-key early-return, before the Pmirrors replace:
 
 ```js
-const pending = job?.o({ Pending: 1 })[0]
-if (pending && points.length) {
-    // Compile hasn't settled — hold Story open and retry next tick.
-    const graft_req = docC.oai({ req: 'graft', path: active_path })
-    H.i_req_ttlilt(graft_req, 0.5, { waiting_for_compile: 1 })
-    return
-}
-// Compile ready — drop stale graft req so its ttlilt evaporates.
-await docC.r({ req: 'graft', path: active_path }, {})
+some req wanting Compile/Pending to be gone, then lets other stuff happen.
 ```
+
+Anyway, how is that surrounding process being defined? Elvises bouncing around?
+They should be moving reqyoncile() state... There's a bunch of interlacing
+agency organelles to thatch up, then write code...
+
+These first two chunks are really one and the same huge pile of rearchitecting.
+
+I want sketches first, and a note that you found this apex of instruction here.
 
 `i_req_ttlilt` would usually climb `req → docC → docs → w:Lang` and set
 `w.c.has_req_ttlilt`, but there aren't .c.up wirings through the non-req
-`w/%docs/%doc`, so we must make setting `w.c.has_req_ttlilt` separately
-a feature of what sets up `w/%scheme`, lets do it with a helper called
-`i_scheme_req()`
-
-No separate `demand_time_to_think` needed.
+`w/%docs/%doc`, see `i_scheme_req()`, there may be elsewheres.
 
 Prerequisite: `scheme:req` declared on `w:Lang` so the walker finds `docC`-hosted
 reqs — see `scheme-req-spec.md`.
