@@ -8,7 +8,7 @@ import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
-V.beliefs = 1
+V.beliefs = 0
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
