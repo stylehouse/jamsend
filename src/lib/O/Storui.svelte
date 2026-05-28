@@ -1612,22 +1612,24 @@
 .sr-plain { }
 
 /* ── scrollbars ─────────────────────────────────────────────────────────── */
-.sr-strip::-webkit-scrollbar,
-.sr-trace::-webkit-scrollbar              { width: 4px; height: 4px; }
-.sr-strip::-webkit-scrollbar-track,
-.sr-trace::-webkit-scrollbar-track       { background: #0e0e0e; }
-.sr-strip::-webkit-scrollbar-thumb,
-.sr-trace::-webkit-scrollbar-thumb       { background: #2a2a2a; border-radius: 2px; }
-/* pre and diff scrollbars: fatter so they're grabbable */
+.sr-strip::-webkit-scrollbar              { width: 4px; height: 4px; }
+.sr-strip::-webkit-scrollbar-track       { background: #0e0e0e; }
+.sr-strip::-webkit-scrollbar-thumb       { background: #2a2a2a; border-radius: 2px; }
+/* pre, diff, and trace scrollbars: fatter so they're grabbable */
 .sr-pre::-webkit-scrollbar,
-.sr-diff2-body::-webkit-scrollbar        { width: 12px; height: 12px; }
+.sr-diff2-body::-webkit-scrollbar,
+.sr-trace::-webkit-scrollbar             { width: 12px; height: 12px; }
 .sr-pre::-webkit-scrollbar-track,
-.sr-diff2-body::-webkit-scrollbar-track  { background: #0e0e0e; }
+.sr-diff2-body::-webkit-scrollbar-track,
+.sr-trace::-webkit-scrollbar-track      { background: #0e0e0e; }
 .sr-pre::-webkit-scrollbar-thumb,
-.sr-diff2-body::-webkit-scrollbar-thumb  { background: #3a3a3a; border-radius: 3px; border: 2px solid #0e0e0e; }
+.sr-diff2-body::-webkit-scrollbar-thumb,
+.sr-trace::-webkit-scrollbar-thumb      { background: #3a3a3a; border-radius: 3px; border: 2px solid #0e0e0e; }
 .sr-pre::-webkit-scrollbar-thumb:hover,
-.sr-diff2-body::-webkit-scrollbar-thumb:hover { background: #555; }
+.sr-diff2-body::-webkit-scrollbar-thumb:hover,
+.sr-trace::-webkit-scrollbar-thumb:hover { background: #555; }
 /* firefox */
 .sr-pre,
-.sr-diff2-body { scrollbar-width: auto; scrollbar-color: #3a3a3a #0e0e0e; }
+.sr-diff2-body,
+.sr-trace { scrollbar-width: auto; scrollbar-color: #3a3a3a #0e0e0e; }
 </style>
