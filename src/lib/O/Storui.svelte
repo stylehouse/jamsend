@@ -550,6 +550,8 @@
     let diff_anchor     = $state<number | null>(null)
     let diff_collecting = $state(false)
     let diff_status     = $state('')
+    // diff_menu: "copy" was clicked — show the just/pick-end choices
+    let diff_menu       = $state(false)
 
     // ── Resnapture popup ──────────────────────────────────────────────────────
     //
@@ -683,13 +685,24 @@
         try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
         diff_anchor     = n
         diff_collecting = true
+        diff_menu       = false
         diff_status     = ''
+    }
+
+    // copy_single: immediately copies the open step without entering collect mode.
+    async function copy_single() {
+        const n = display.open_at
+        if (n == null) return
+        try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
+        diff_menu = false
+        await collect_range(n, n, eff_mode)
     }
 
     // cancel_collect: click the pulsing button again to abort without collecting.
     function cancel_collect() {
         diff_anchor     = null
         diff_collecting = false
+        diff_menu       = false
         diff_status     = ''
     }
 
@@ -716,12 +729,14 @@
             diff_collecting = false
             diff_anchor     = null
         }
+        diff_menu      = false
         last_user_pick = n
         H.i_elvisto('Story/Story', 'story_sel', { open_at: n })
     }
 
     function close_panel() {
         diff_mode      = null
+        diff_menu      = false
         last_user_pick = null
         H.i_elvisto('Story/Story', 'story_sel', { open_at: null })
     }
@@ -1033,20 +1048,26 @@
                         </span>
                     {/if}
 
-                    <!-- copy: two-click range collector ──────────────── -->
-                    <!-- Visible in any non-hollow step; also while collecting. -->
-                    <!-- First click: arm this step as anchor.              -->
-                    <!-- Second click (different step): collect, copy.      -->
-                    <!-- Second click (same step): collect single step.     -->
-                    <!-- Output: Step/Snap/Dif:* block, enL-compatible.     -->
-                    <!-- T.deDif(lines, 2) decodes it back to DiffRow[].    -->
+                    <!-- copy: single-step and range collector ─────────── -->
+                    <!-- idle: "copy" opens the choice menu.               -->
+                    <!-- menu: "just NNN" copies immediately; "pick end"   -->
+                    <!--   arms this step as anchor for a range, then click -->
+                    <!--   any other pip to collect [anchor, n].            -->
+                    <!-- Collecting state: shows anchor + cancel (×).      -->
+                    <!-- Output: Step/Snap/Dif:* block, enL-compatible.    -->
+                    <!-- T.deDif(lines, 2) decodes it back to DiffRow[].   -->
                     {#if !hollow}
                         {#if diff_collecting}
                             <button class="sr-diffrange collecting" onclick={cancel_collect}>
                                 from {String(diff_anchor).padStart(3,'0')} — pick end ×
                             </button>
+                        {:else if diff_menu}
+                            <button class="sr-diffrange" onclick={copy_single}>
+                                just {String(n).padStart(3,'0')}
+                            </button>
+                            <button class="sr-diffrange" onclick={start_diff_collect}>pick end</button>
                         {:else}
-                            <button class="sr-diffrange" onclick={start_diff_collect}>copy</button>
+                            <button class="sr-diffrange" onclick={() => diff_menu = true}>copy</button>
                         {/if}
                     {/if}
 
