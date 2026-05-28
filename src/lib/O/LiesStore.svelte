@@ -28,16 +28,17 @@
     // ── read behaviour ────────────────────────────────────────────────────────
     //
     //   Read reqs are path+label keyed.  Callers hold the req across ticks and
-    //   check req.sc.reply after i_elvis_req() returns true.  LiesStore_run
-    //   drops finished read reqs in the same scan so they don't accumulate, BUT
-    //   only after one tick of grace — the caller's i_elvis_req(true) and reply
-    //   read both happen in the same tick that Wormhole fires think(), which runs
-    //   before LiesStore_run's cleanup pass.
+    //   check req.sc.reply after i_elvis_req() returns true.
     //
-    //   < read cleanup "one tick of grace" is not yet implemented — finished reads
-    //     are dropped eagerly.  Callers that span ticks should hold the ref and
-    //     check req.sc.reply before it's gone.  Works for all current call sites
-    //     (LiesPersist holds ref in the for-loop body across ticks via return false).
+    //   Critical ordering: LiesStore_read must NOT drop finished reqs before roai.
+    //   Wormhole fires think() when it completes, Lies ticks, LiesPersist calls
+    //   LiesStore_read again for the same path.  If the finished req were dropped
+    //   here, roai would create a fresh unfired req, i_elvis_req would re-dispatch,
+    //   Wormhole would reply again → infinite loop.
+    //
+    //   LiesStore_run (which runs after LiesPersist in the Lies tick) drops
+    //   finished reads in its Phase 2 scan — after callers have had their chance
+    //   to read reply in the same tick.
     //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
@@ -144,9 +145,12 @@
     //   label disambiguates two concurrent reads of the same path from different
     //   callers (e.g. source_write_check vs open_req for the same file).
     //
-    //   Finished read reqs are dropped before roai so re-reads always dispatch fresh.
-    //   Callers that check req.sc.reply in the same tick that think() fires are
-    //   safe — LiesStore_run's cleanup pass runs after do_fn, so reply is readable.
+    //   Does NOT drop finished reqs before roai — that would cause an infinite
+    //   re-dispatch loop: finished req dropped → roai creates fresh unfired req →
+    //   i_elvis_req fires again → Wormhole replies → think → loop.
+    //   roai returning a finished req is intentional: i_elvis_req(finished=true)
+    //   returns true immediately → caller reads reply → marks its own done flag.
+    //   LiesStore_run Phase 2 drops finished reads after LiesPersist completes.
     async LiesStore_read(
         w:       TheC,
         rw_name: string,
@@ -160,11 +164,6 @@
         const c = opts.label
             ? { wread: 1, rw_name, label: opts.label }
             : { wread: 1, rw_name }
-
-        // Drop stale finished reads so the next call always dispatches fresh.
-        for (const old of rq.o(c) as TheC[]) {
-            if (old.sc.finished) w.drop(old)
-        }
 
         const req = await rq.roai(c, { rw_op: 'read' })
         return req
