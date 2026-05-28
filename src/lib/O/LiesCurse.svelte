@@ -112,8 +112,9 @@
                 H.Lies_set_examining(examining, found.doc, found.waft_key)
             }
         } else if (!examining_path) {
-            // case 2: no active doc, no cursor — pick first Point-bearing Doc
-            const first = H.Lies_first_point_doc(w)
+            // case 2: no active doc, no cursor — pick first Point-bearing Doc,
+            // or just the first Doc if the Waft is fresh and has no Points yet.
+            const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
             if (first) {
                 H.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
                 H.Lies_set_examining(examining, first.doc, first.waft_key)
@@ -157,7 +158,7 @@
         if (!examining) return
         const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
         if (wpt?.sc.src) return   // cursor already set — load already queued or done
-        const first = this.Lies_first_point_doc(w)
+        const first = this.Lies_first_point_doc(w) ?? this.Lies_first_doc(w)
         if (first) {
             this.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
         }
@@ -179,14 +180,28 @@
     // ── Lies_first_point_doc ──────────────────────────────────────────────────
     //
     //   Walk all loaded Wafts and return the first %Doc that carries at least
-    //   one %Point,N child.  Used by cold-start case 2 when there is no
-    //   active_doc yet to anchor on.
+    //   one %Point,N child.  Prefer over Lies_first_doc when the intent is to
+    //   land the cursor on something that already has graft work to do.
     Lies_first_point_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
                 if ((doc.o({ Point: 1 }) as TheC[]).length)
                     return { doc, waft_key: waft.sc.Waft as string }
             }
+        }
+        return undefined
+    },
+
+    // ── Lies_first_doc ────────────────────────────────────────────────────────
+    //
+    //   Walk all loaded Wafts and return the very first %Doc regardless of
+    //   whether it carries any %Point,N children.  Fallback for Wafts that
+    //   are freshly created and have no Points yet — we still want the cursor
+    //   to land somewhere so Liesui renders the Waft rather than "no docs open".
+    Lies_first_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const doc = waft.o({ Doc: 1 })[0] as TheC | undefined
+            if (doc) return { doc, waft_key: waft.sc.Waft as string }
         }
         return undefined
     },
