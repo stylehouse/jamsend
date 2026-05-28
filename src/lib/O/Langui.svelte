@@ -126,6 +126,47 @@
     const UPDATE_DELAY_MS = 800
     let update_timer: ReturnType<typeof setTimeout> | null = null
 
+    // ── auto-save timing ─────────────────────────────────────────────────────
+    //   Two triggers — whichever fires first:
+    //     quiet:   3 s of no keystrokes
+    //     active: 10 s of continuous typing (prevents losing a long session)
+    //   Compares CM Text objects by identity; no hashing in the hot path.
+    //   Writes source to disk via e:Lies_source_write; does NOT compile.
+    const AUTOSAVE_QUIET_MS  = 3_000
+    const AUTOSAVE_ACTIVE_MS = 10_000
+    let _autosave_last_input_ts  = 0
+    let _autosave_last_save_ts   = 0
+    let _autosave_last_saved_doc: import('@codemirror/state').Text | undefined
+    let _autosave_interval: ReturnType<typeof setInterval> | null = null
+
+    function fire_autosave(path: string, doc: import('@codemirror/state').Text) {
+        _autosave_last_saved_doc = doc
+        _autosave_last_save_ts   = Date.now()
+        H.i_elvisto('Lies/Lies', 'Lies_source_write', { path, text: doc.toString() })
+    }
+
+    function check_autosave() {
+        if (!view || !active_path) return
+        const doc = view.state.doc
+        if (doc === _autosave_last_saved_doc) return   // no change since last save
+        const now    = Date.now()
+        const quiet  = now - _autosave_last_input_ts > AUTOSAVE_QUIET_MS
+        const overdue = _autosave_last_input_ts > _autosave_last_save_ts
+                     && now - _autosave_last_save_ts > AUTOSAVE_ACTIVE_MS
+        if (quiet || overdue) fire_autosave(active_path, doc)
+    }
+
+    // Called on doc switch — flush any unsaved edits for the departing doc
+    // before its CM state is archived to stateCache.
+    function flush_autosave_now() {
+        if (!view || !active_path) return
+        const doc = view.state.doc
+        if (doc !== _autosave_last_saved_doc) fire_autosave(active_path, doc)
+        _autosave_last_input_ts  = 0
+        _autosave_last_save_ts   = 0
+        _autosave_last_saved_doc = undefined
+    }
+
     // Live primary-selection range, updated from the updateListener on every
     // transaction (selection-only transactions included, so cursor moves
     // update the header readout immediately).
@@ -308,6 +349,11 @@
             flush_push_text_now()
 
             if (prev_path) {
+                // Flush any unsaved edits for the departing doc before
+                // archiving its state — avoids losing a burst of typing
+                // that hasn't hit the 3s quiet window yet.
+                flush_autosave_now()
+
                 // Flush departing bookmark positions immediately — bypass the
                 // 800ms debounce so docC always holds current positions.
                 // A stale timer firing later would otherwise send the arriving
@@ -709,6 +755,7 @@
                     return
                 }
                 if (!v.docChanged) return
+                _autosave_last_input_ts = Date.now()
                 const text = v.state.doc.toString()
                 // Spool first, then schedule the throttled push.  Spooling
                 // synchronously means even if the elvis queue gets way behind,
@@ -748,6 +795,11 @@
         if (captured_path) stateCache.set(captured_path, view.state)
         prev_path = captured_path
 
+        // Arm the auto-save interval — checks every 500ms, fires when
+        // quiet or overdue.  Cleared in onDestroy.
+        if (!_autosave_interval)
+            _autosave_interval = setInterval(check_autosave, 500)
+
         // Register view+state with backend.
         // Pass current bookmark + graft positions for initial sync (normally
         // empty on first construction, but included for consistency).
@@ -760,8 +812,9 @@
     })
 
     onDestroy(() => {
-        if (update_timer) clearTimeout(update_timer)
-        if (push_timer)   clearTimeout(push_timer)
+        if (update_timer)       clearTimeout(update_timer)
+        if (push_timer)         clearTimeout(push_timer)
+        if (_autosave_interval) clearInterval(_autosave_interval)
         container_ro?.disconnect()
         view?.destroy()
     })

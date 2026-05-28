@@ -19,9 +19,6 @@ import { SvelteMap } from 'svelte/reactivity';
 const MAX_BUFFER = 64 * 1024; // 64KB
 const LOW_BUFFER = MAX_BUFFER * 0.8; // Start sending again at 80%
 
-//#endregion
-
-
 //#region PeerJS etc
 function Peer_OPTIONS() {
     // to not run your own server:
