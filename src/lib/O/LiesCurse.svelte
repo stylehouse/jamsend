@@ -145,6 +145,24 @@
         this.Lies_set_examining(examining, src, waft_key)
     },
 
+    // ── Lies_seed_cursor_target ───────────────────────────────────────────────
+    //
+    //   Called from LiesPersist between the Waft-loading and doc-loading phases.
+    //   If no cursor is set yet, pre-queues an open_req for the first Point-bearing
+    //   Doc so LiesPersist can load it in the same tick it loaded the Waft.
+    //   Does not set the cursor — LiesCurse does that at the end of the Lies tick,
+    //   by which point the doc is already in %loaded_doc.
+    Lies_seed_cursor_target(w: TheC) {
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
+        if (wpt?.sc.src) return   // cursor already set — load already queued or done
+        const first = this.Lies_first_point_doc(w)
+        if (first) {
+            this.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
+        }
+    },
+
     // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
     //
     //   Walk all loaded Wafts looking for a %Doc,path particle matching `path`.

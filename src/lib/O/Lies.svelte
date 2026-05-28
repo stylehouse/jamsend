@@ -530,6 +530,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }
 
+        // Seed: before the open_req loop, ensure the cursor's target doc has an
+        // open_req queued so LiesPersist can load it in this same tick.
+        // LiesCurse (at the bottom of the Lies tick) sets the cursor proper;
+        // this just pre-queues the load so the doc arrives one step earlier.
+        this.Lies_seed_cursor_target(w)
+
         // ── load open_reqs from disk ──────────────────────────────────────────
         for (const req_p of w.o({ open_req: 1 }) as TheC[]) {
             const path = req_p.sc.path as string
