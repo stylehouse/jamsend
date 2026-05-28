@@ -147,6 +147,7 @@
 
     function check_autosave() {
         if (!view || !active_path) return
+        if (_autosave_last_input_ts === 0) return   // no edits for this doc yet
         const doc = view.state.doc
         if (doc === _autosave_last_saved_doc) return   // no change since last save
         const now    = Date.now()
@@ -158,10 +159,18 @@
 
     // Called on doc switch — flush any unsaved edits for the departing doc
     // before its CM state is archived to stateCache.
+    // Guard: if no keystrokes have landed for this doc, seed last_saved_doc
+    // from the live view so the next doc's check_autosave starts clean.
     function flush_autosave_now() {
         if (!view || !active_path) return
-        const doc = view.state.doc
-        if (doc !== _autosave_last_saved_doc) fire_autosave(active_path, doc)
+        if (_autosave_last_input_ts === 0) {
+            // no edits — just mark the current text as "already saved" so the
+            // arriving doc's first check_autosave doesn't see a stale undefined
+            _autosave_last_saved_doc = view.state.doc
+        } else {
+            const doc = view.state.doc
+            if (doc !== _autosave_last_saved_doc) fire_autosave(active_path, doc)
+        }
         _autosave_last_input_ts  = 0
         _autosave_last_save_ts   = 0
         _autosave_last_saved_doc = undefined

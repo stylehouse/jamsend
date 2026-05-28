@@ -159,6 +159,74 @@
         console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? '?'}`)
     },
 
+    // ── e_Lies_cursor_next ────────────────────────────────────────────────────
+    //
+    //   Fired by the → button in DocMinimap.  Advances the graft cursor to
+    //   the next Doc-with-Points across all loaded Wafts (wraps around).
+    //   The order is Waft-insertion order, then Doc-insertion order within
+    //   each Waft — stable across ticks since particles are ordered by i().
+    //
+    //   e.sc: { doc_path: string }  — current active doc path (for finding position)
+    //
+    //   < What-level navigation (sibling time-slices) is a future arc —
+    //     for now this only steps across Docs, not Whats.
+    async e_Lies_cursor_next(A: TheC, w: TheC, e: TheC) {
+        const H          = this as House
+        const examining  = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const current_path = e.sc.doc_path as string | undefined
+
+        // Collect all Docs that carry at least one Point, in order.
+        const candidates: Array<{ doc: TheC, waft_key: string }> = []
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
+                if ((doc.o({ Point: 1 }) as TheC[]).length)
+                    candidates.push({ doc, waft_key: waft.sc.Waft as string })
+            }
+        }
+        if (!candidates.length) return
+
+        // Find where we are and step forward (wrap).
+        const cur_idx  = candidates.findIndex(c => (c.doc.sc as any).path === current_path)
+        const next_idx = (cur_idx + 1) % candidates.length
+        const { doc, waft_key } = candidates[next_idx]
+        H.Lies_set_examining(examining, doc, waft_key)
+    },
+
+    // ── e_Lies_accept_What_Point ──────────────────────────────────────────────
+    //
+    //   Fired by DocMinimap's "push" button.  The minimap sends its current
+    //   in_group + showing state for a doc; we acknowledge it by echoing
+    //   accepted_push_id and accepted_entries back onto %What_Points so the
+    //   minimap's $effect sees the round-trip and clears the unsent bar.
+    //
+    //   The entries are also stored on the %Doc particle inside the Waft snap
+    //   so they survive Waft saves and are available to Lies_cursor_next
+    //   (future: use them to seed the next What on +time).
+    //
+    //   e.sc: { doc_path: string, what_point: { spec, showing }[] }
+    //
+    //   < store entries on %Doc particle for What-level carry-forward (+time)
+    //   < validate specs exist in current compile before accepting
+    async e_Lies_accept_What_Point(A: TheC, w: TheC, e: TheC) {
+        const H          = this as House
+        const examining  = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const doc_path   = e.sc.doc_path   as string | undefined
+        const what_point = e.sc.what_point as { spec: string, showing: boolean }[] | undefined
+        if (!doc_path || !what_point) return
+
+        // Echo back on %What_Points so DocMinimap's $effect fires.
+        // push_id uniqueness: Date.now() is sufficient — the minimap guards
+        // against its own pushes via _our_last_push_id.
+        const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
+        if (!wpt) return
+        wpt.sc.accepted_push_id  = Date.now()
+        wpt.sc.accepted_entries  = what_point
+        wpt.bump_version()
+        console.log(`👁 accept_What_Point: ${doc_path} (${what_point.length} specs)`)
+    },
+
 //#endregion
 
     })

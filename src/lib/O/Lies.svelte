@@ -319,6 +319,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const path = e.sc.path as string
         const text = e.sc.text as string
         if (!path || text === undefined) throw 'e_Lies_source_write: needs path + text'
+        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
 
         const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
         if (!ld) {
@@ -365,7 +366,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // resolved by letting the auto-save proceed.
         ld.sc.base_dige = await dig(text)
         for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
-        console.log(`💾 Lies_source_write: ${path}`)
+        console.log(`💾 Lies_source_write: wrote ${path} (${text.length}c)`)
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
