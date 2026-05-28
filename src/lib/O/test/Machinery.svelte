@@ -67,6 +67,7 @@
 
 //#endregion
 //#region LakeSurfer
+    // growing the Lies-Lang system
 
 
     Run_A_LakeSurfer(this: House) {
@@ -83,7 +84,24 @@
 
 
 //#endregion
+//#region LakeNets
+    // growing Peeroleum, the Peerily reboot
 
+
+    Run_A_LakeNets(this: House) {
+        const H = this
+        H.i({ A: 'Lies' }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeNets wired`)
+    },
+
+
+
+
+
+
+//#endregion
 
 
 
