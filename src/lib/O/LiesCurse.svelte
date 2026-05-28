@@ -76,7 +76,10 @@
                     const cur_path = (cur_wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
                     if (cur_path !== path) {
                         const found = H.Lies_find_doc_in_wafts(w, path)
-                        if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
+                        if (found) {
+                            H.Lies_ensure_doc_loaded(w, path, found.waft_key)
+                            H.Lies_set_examining(examining, found.doc, found.waft_key)
+                        }
                     }
                 }
             })
@@ -100,7 +103,10 @@
         const examining_path = (wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
         if (active_path && examining_path !== active_path) {
             const found = H.Lies_find_doc_in_wafts(w, active_path)
-            if (found) H.Lies_set_examining(examining, found.doc, found.waft_key)
+            if (found) {
+                H.Lies_ensure_doc_loaded(w, active_path, found.waft_key)
+                H.Lies_set_examining(examining, found.doc, found.waft_key)
+            }
         }
     },
 
@@ -124,6 +130,7 @@
         const src      = e.sc.doc_C    as TheC | undefined
         const waft_key = e.sc.waft_key as string | undefined
         if (!src || !waft_key) return
+        H.Lies_ensure_doc_loaded(w, (src.sc as any).path as string | undefined, waft_key)
         this.Lies_set_examining(examining, src, waft_key)
     },
 
@@ -138,6 +145,22 @@
             if (doc) return { doc, waft_key: waft.sc.Waft as string }
         }
         return undefined
+    },
+
+    // ── Lies_ensure_doc_loaded ────────────────────────────────────────────────
+    //
+    //   Queue an %open_req for the given path if no %loaded_doc exists yet.
+    //   LiesPersist picks it up next tick; idempotent via oai().
+    //   Called alongside every Lies_set_examining so cursor jumps trigger lazy
+    //   loads — the only path that queues open_reqs now that Lies_sync_waft_docs
+    //   no longer does so eagerly.
+    //
+    //   oai() is sync — safe to call from watch_c callbacks.
+    Lies_ensure_doc_loaded(w: TheC, path: string | undefined, waft_key: string) {
+        if (!path) return
+        if (w.o({ loaded_doc: 1, path })[0]) return   // already loaded
+        w.oai({ open_req: 1, path }, { from_waft: waft_key })
+        console.log(`📂 Lies_ensure_doc_loaded: queued ${path}`)
     },
 
     // ── Lies_set_examining ────────────────────────────────────────────────────
@@ -190,6 +213,7 @@
         const cur_idx  = candidates.findIndex(c => (c.doc.sc as any).path === current_path)
         const next_idx = (cur_idx + 1) % candidates.length
         const { doc, waft_key } = candidates[next_idx]
+        H.Lies_ensure_doc_loaded(w, (doc.sc as any).path as string | undefined, waft_key)
         H.Lies_set_examining(examining, doc, waft_key)
     },
 

@@ -319,7 +319,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const path = e.sc.path as string
         const text = e.sc.text as string
         if (!path || text === undefined) throw 'e_Lies_source_write: needs path + text'
-        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
 
         const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
         if (!ld) {
@@ -328,6 +327,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         const base_dige = ld.sc.base_dige as string | undefined
+        // Content-equality gate: skip entirely when text matches what we loaded.
+        // Covers autosave firing during a doc switch with no user edits, and any
+        // path where the CM state was set programmatically (Lang_open_doc, echo)
+        // without a real keystroke.  Exits before touching rw_queue, so no
+        // spurious source_write_check read fires and Vite HMR is never triggered.
+        if (base_dige) {
+            if (await dig(text) === base_dige) return
+        }
+        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
+
         const rw = await H.requesty_serial(w, 'rw_queue')
 
         // Pull-before-push: read current disk state via the rw_queue so
@@ -806,9 +815,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             waft.o({ Doc: 1 }).map(d => (d as TheC).sc.path as string)
         )
 
-        // Ensure an open_req exists for each live Doc.
-        for (const p of live_paths) {
-            w.oai({ open_req: 1, path: p }, { from_waft: wpath })
+        // < lazy loading: open_reqs are now queued on-demand by Lies_ensure_doc_loaded
+        //   when the cursor lands on a Doc (via LiesCurse).  Only the cursor's target
+        //   loads, not the whole Waft.  Set w.c.eager_waft_load to restore the old
+        //   eager-open-all behaviour for debugging or migration.
+        if (w.c.eager_waft_load) {
+            for (const p of live_paths) {
+                w.oai({ open_req: 1, path: p }, { from_waft: wpath })
+            }
         }
 
         // Drop open_reqs from this waft that no longer have a matching Doc.
