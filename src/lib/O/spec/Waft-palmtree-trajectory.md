@@ -1,34 +1,69 @@
 # Waft palmtree trajectory — reqy migration + What transport
 
 Carry-forward for post-🌴 work.  `Waft_spec.md` owns the *design* of the What
-tree and transport; this doc owns the *implementation slice* — what's done, what
-the reqy migration looks like in concrete particles, and what the remaining two
-chunks need.
+tree and its transport semantics; this doc owns the *implementation slice*.
 
 ---
 
-## State of play
+## What has landed
 
-Chunks 1–3 are effectively done:
-
-- Write-on-init noise is gone (dige gate in `LiesStore_write`).
-- Lazy doc loading: `eager_waft_load` gate in `Lies_sync_waft_docs` (w.c flag).
-- Cursor autostart lands cleanly; DocRow glow is live.
-- Class-method defs compile; Points resolve on open.
-- `LiesStore` owns all IO with noserial reqy channels, `req.sc.finished` API,
-  Phase 1/2/3 scan in `LiesStore_run`.
-- `requesty_serial` is fully retired from Lies.
+- Write-on-init noise: dige gate in `LiesStore_write`.
+- Lazy doc loading: `eager_waft_load` flag in `Lies_sync_waft_docs`.
+- Cursor autostart; DocRow glow live.
+- Class-method defs compile; Points resolve on open (most of the time — see Chunk 1).
+- `LiesStore` owns all Lies IO: noserial reqy channels, `req.sc.finished` API,
+  Phase 1/2/3 scan.  `requesty_serial` retired from Lies.
+- Both rename handlers stubbed.
 
 ---
 
-## Chunk 4 — reqy migration: `open_waft_req` / `open_req` / `compile_pending`
+## Chunk 1 — LangGraft ttlilt  *(load-bearing — do first)*
 
-The remaining ad-hoc "not-a-real-reqy" particles in w:Lies.  Each follows the
-same pattern as LiesStore: `noserial:1` req keyed by its natural identity,
-`req.sc.done` as the settled marker, driven by `LiesPersist_run` (renamed from
-the current procedural `LiesPersist` loop).
+Points still occasionally arrive unresolved on first open (compile beats the
+graft tick to the snap, but the graft ran before `%methods` existed).  The fix:
+arm `i_req_ttlilt` on a graft req while `%Compile/%Pending` is set, so Story
+holds the snap open until compile settles.
 
-### 4a — Waft load reqy
+Graft req lives on `docC`:
+
+```
+docC
+  reqcons:1
+    reqcon:req:graft
+  req:graft,path:Ghost/test/Hello.g
+    ttlilt:1,until_ts:T,waiting_for_compile:1
+```
+
+In `Lang_graft_points`, after the cache-key early-return and before the
+Pmirror replace:
+
+```js
+const pending = job?.o({ Pending: 1 })[0]
+if (pending && points.length) {
+    // Compile hasn't settled yet — hold Story open and retry next tick.
+    const graft_req = H.reqy(docC, { k: 'req:graft', noserial: 1 })
+        .oai({ 'req:graft': 1, path: active_path })
+    H.i_req_ttlilt(graft_req, 0.5, { waiting_for_compile: 1 })
+    return
+}
+// Compile ready — clear any stale graft req so the ttlilt evaporates.
+await docC.r({ 'req:graft': 1, path: active_path }, {})
+```
+
+`i_req_ttlilt` sets `w.c.has_req_ttlilt`; Story's quiescence check reads that
+and refuses to snap.  No `demand_time_to_think` needed — `i_req_ttlilt` is the
+whole ask.
+
+---
+
+## Chunk 2 — reqy migration: `open_waft_req` / `open_req` / `compile_pending`
+
+Internal tidiness that makes the snap legible and sets the pattern for Chunk 3's
+desire machinery.  The key naming choice: use the framework's default mainkey
+`req` with a subtype field, so particles read naturally as `req:waft_load`,
+`req:doc_load`, `req:compile_write`.  reqcons channel names match: `reqcon:req:waft_load`.
+
+### 2a — Waft load
 
 **Now:**
 ```
@@ -40,22 +75,40 @@ w:Lies
 ```
 w:Lies
   reqcons:1
-    reqcon:waft_load    noserial:1
-  waft_load:1,path:Ghost/Tour
+    reqcon:req:waft_load
+  req:waft_load,path:Ghost/Tour
     req_sent
+    started:1       ← reqonce stamp: watch_c registered, waft installed
     done:1
 ```
 
-`LiesPersist` becomes `LiesPersist_run(A,w)` that calls `reqy(w, {k:'waft_load',
-noserial:1, do_fn: LiesStore_waft_load_do_fn})`.  `do_fn` does the current
-`open_waft_req` body: reads snap via `LiesStore_read`, decodes, installs waft,
-registers `watch_c` → `Lies_waft_save`, stamps `done:1`.
+`reqonce(req, 'started')` gates the one-shot setup inside `do_fn`: decode snap,
+install waft via `w.i(waft)`, register `watch_c → Lies_waft_save`.  Returns true
+only once per req lifetime; subsequent ticks skip straight to `done` check.
+`Lies_sync_waft_docs(w, waft)` is called unconditionally (outside the reqonce
+block) so CRUD changes always re-sync.
 
-The `done` check / re-sync path (`waft_req.sc.done → Lies_sync_waft_docs`) stays
-the same logic; `do_fn` handles `!done` and early-exits on `!req.sc.finished`.
-`LiesPersist_run` returns false until all `waft_load` + `doc_load` reqs are done.
+`do_fn` shape:
+```js
+async LiesPersist_waft_load_do_fn(req, q) {
+    if (req.sc.done) return
+    const snap_req = await H.LiesStore_read(w, snap_path)
+    if (!snap_req.sc.finished) { H.i_req_ttlilt(req, 0.5, {waiting:'snap'}); return }
 
-### 4b — Doc load reqy
+    if (H.reqonce(req, 'started')) {
+        const waft = H.deWaft(snap_req.sc.reply?.content ?? '', path)
+        await w.i(waft)
+        H.watch_c(waft, () => {
+            H.Lies_sync_waft_docs(w, waft)
+            H.Lies_waft_save(w, waft)
+        })
+    }
+    H.Lies_sync_waft_docs(w, waft)
+    req.sc.done = 1
+},
+```
+
+### 2b — Doc load
 
 **Now:**
 ```
@@ -67,20 +120,18 @@ w:Lies
 ```
 w:Lies
   reqcons:1
-    reqcon:doc_load    noserial:1
-  doc_load:1,path:Ghost/test/Hello.g,from_waft:Ghost/Tour
+    reqcon:req:doc_load
+  req:doc_load,path:Ghost/test/Hello.g,from_waft:Ghost/Tour
     req_sent
     done:1
 ```
 
-`Lies_sync_waft_docs` calls `reqy(w,{k:'doc_load',noserial:1}).oai({doc_load:1,
-path,from_waft})` instead of `w.oai({open_req:1,…})`.  `do_fn` does the current
-`open_req` body: reads source via `LiesStore_read`, fires `Lang_open_doc`, stamps
-`done:1` and `base_dige`.
+`do_fn` reads source via `LiesStore_read`, fires `Lang_open_doc`, stamps `done:1`
+and `base_dige` on the new `%loaded_doc`.  `Lies_sync_waft_docs` calls
+`reqy(w, {k:'req:doc_load'}).oai({…path, from_waft})` instead of
+`w.oai({open_req:1,…})`.
 
-`LiesPersist_run` settled = all `waft_load:…,done:1` AND all `doc_load:…,done:1`.
-
-### 4c — Compile write reqy
+### 2c — Compile write
 
 **Now:**
 ```
@@ -92,87 +143,45 @@ w:Lies
 ```
 w:Lies
   reqcons:1
-    reqcon:compile_write    noserial:1
-  compile_write:1,path:Ghost/test/Hello.g,gen_path:gen/test/Hello.go
+    reqcon:req:compile_write
+  req:compile_write,path:Ghost/test/Hello.g,gen_path:gen/test/Hello.go
     source: …
     dige: 87678b3…
     req_sent
     done:1
 ```
 
-`e_Lies_compiled` calls `reqy(w,{k:'compile_write',noserial:1}).oai({compile_write:1,
-path,gen_path}, {source,dige})`.  `e_Lies_compiled`'s current `delete pending.sc.done`
-maps to the reqy pattern: `roai` finds the existing req and `.i()` updates `source`
-and `dige` in place (fresher compile overwrites staler one).
+`e_Lies_compiled` calls `reqy(w, {k:'req:compile_write'}).roai({…path,gen_path},
+{source,dige})` — `roai` updates `source` and `dige` in-place on an existing req
+(fresher compile overtakes staler one automatically).  `LiesRealised_run` becomes
+`reqy.do()` + `do_fn` that calls `LiesStore_write`, fires `Ghost_update_notify`
+and `Lies_compile_settled`, stamps `done:1`.
 
-`LiesRealised` becomes `LiesRealised_run`, driven by `reqy.do()`.  `do_fn`:
-- calls `LiesStore_write` for the gen path if `!nogen`
-- fires `Ghost_update_notify`
-- fires `Lies_compile_settled`
-- stamps `done:1`
-
-### 4d — LangGraft ttlilt
-
-This is where `reqy` + `ttlilt` pays off most visibly: Points resolve on first
-open instead of after the next keystroke.
-
-**Graft req on docC:**
-```
-docC
-  reqcons:1
-    reqcon:graft    noserial:1
-  graft:1,path:Ghost/test/Hello.g
-    ttlilt:1,until_ts:T    ← armed while %Compile/%Pending:1 set
-```
-
-In `Lang_graft_points`, after the cache-key early-return:
-
-```js
-// If compile is still pending, arm a ttlilt so Story holds open until
-// it settles.  The next tick after Lies_compile_settled clears %Pending
-// will have defs populated — graft will resolve then.
-const pending = job?.o({ Pending: 1 })[0]
-if (pending && points.length) {
-    const graft_req = H.reqy(docC, {k:'graft', noserial:1})
-        .oai({graft:1, path: active_path})
-    H.i_req_ttlilt(graft_req, 0.5, { waiting_for_compile: 1 })
-    H.demand_time_to_think(550)
-    return
-}
-// No pending: clear any stale graft ttlilt so it doesn't hold Story
-docC.r({graft:1}, {})
-```
-
-This is the one place `reqy` + `ttlilt` makes a user-visible difference in
-the base case.  The rest of 4a–4c is internal tidiness.
-
-### Full w:Lies snap after chunk 4
+### Full w:Lies snap after chunk 2
 
 ```
 w:Lies
   reqcons:1
-    reqcon:waft_load     noserial:1
-    reqcon:doc_load      noserial:1
-    reqcon:compile_write noserial:1
-    reqcon:wwrite        noserial:1
-    reqcon:wread         noserial:1
-  waft_load:1,path:Ghost/Tour
+    reqcon:req:waft_load
+    reqcon:req:doc_load
+    reqcon:req:compile_write
+    reqcon:wwrite
+    reqcon:wread
+  req:waft_load,path:Ghost/Tour
+    started:1
     done:1
-  doc_load:1,path:Ghost/test/Hello.g,from_waft:Ghost/Tour
+  req:doc_load,path:Ghost/test/Hello.g,from_waft:Ghost/Tour
     done:1
-  doc_load:1,path:src/lib/p2p/Peerily.svelte.ts,from_waft:Ghost/Tour
+  req:doc_load,path:src/lib/p2p/Peerily.svelte.ts,from_waft:Ghost/Tour
     done:1
   Store:1
     wrote_at:wormhole/Ghost/Tour/toc.snap: 1748391234.567
   examining,active_path:Ghost/test/Hello.g
     What_Points,src_Waft:Ghost/Tour
-      ← src: %Doc:1 ref
-  Opt
-    nogen
   Waft:Ghost/Tour
     Doc,path:Ghost/test/Hello.g
       Points:1
-        Point,method:Idzeugnosis
+        Point,method:Idzeugnosis,accepted:1
         Point:Idzeuganise
     Doc,path:src/lib/p2p/Peerily.svelte.ts
       Points:1
@@ -181,26 +190,21 @@ w:Lies
   loaded_doc,path:Ghost/test/Hello.g,gen_path:gen/test/Hello.go,base_dige:50d102…
 ```
 
-Gone from the snap: `requesty_rw_queue*`, `open_waft_req`, `open_req`,
-`compile_pending`.  Everything that was ad-hoc string-keyed is now in a reqcons
-channel.
+Gone: `requesty_rw_queue*`, `open_waft_req`, `open_req`, `compile_pending`.
 
 ---
 
-## Chunk 5 — `accepted_entries` persistence (unblocks chunk 6)
+## Chunk 3 — `accepted_entries` persistence
 
-Two `// <` markers in `e_Lies_accept_What_Point` (`%LiesCurse` ~L209).
+Two `// <` markers in `e_Lies_accept_What_Point` (`%LiesCurse`).
 
-When a user accepts a Point into the active What, it lands in `%What_Points,1`
-in-memory but is never written to the Waft snap.  So a reload loses the accepted
-set — the `/%Doc/%Point` particles survive (they're in the snap already), but
-which ones were *promoted* to the active What is gone.
+Accepted Points survive only in memory.  A reload re-opens the What but the
+promoted set is blank — user has to re-accept each one.
 
-**Plan:** stamp `accepted:1` on the `%Point` particle itself (it's already in
-the Waft snap tree).  `Lies_set_examining` reads it back at cursor-placement time
-and re-populates `%What_Points,1` from the `accepted:1` set.
+Fix: stamp `accepted:1` on the `%Point` particle itself (already in the Waft
+snap tree; `enWaft` passes sc scalars through).  `Lies_set_examining` reads it
+back at cursor-placement time and re-populates the in-group.
 
-Particle layout:
 ```
 Waft:Ghost/Tour
   Doc,path:Ghost/test/Hello.g
@@ -209,70 +213,121 @@ Waft:Ghost/Tour
       Point:Idzeuganise
 ```
 
-`Lies_waft_save`'s `enWaft` already walks `Doc/%Point` children — `accepted:1` is
-an sc scalar so it round-trips through the snap format with no encoder changes.
-
 `e_Lies_accept_What_Point` additions:
 ```js
 point.sc.accepted = 1
-waft.bump_version()   // triggers Lies_waft_save throttle
+waft.bump_version()   // → Lies_waft_save throttle
 ```
 
-`Lies_set_examining` / cold-start guard: after installing `%What_Points,1`, walk
-`src_C.o({Point:1})` and re-add any with `sc.accepted` to the What's in-group,
-calling the same accept helper.
+`Lies_set_examining` / cold-start: after installing `%What_Points,1`, walk
+`src_C.o({Point:1, accepted:1})` and re-add each to the in-group.
 
-`e_Lies_cursor_next` (the `→` button): promoted to stepping sibling `%What`
-time-slices in Chunk 6; for now it just steps `/%Doc` as-is.
+This is the data dependency for Chunk 4.  Small — two `// <` markers.
 
 ---
 
-## Chunk 6 — What-level transport (its own sub-project)
+## Chunk 4 — What-level transport and navigation
 
-Lives in `Waft_spec.md` ~L161–228.  Depends on Chunk 5 (`accepted_entries`
-readable on reload) being done.
+*Depends on Chunk 3.  Its own multi-reset sub-project; design here.*
 
-Key mechanics recap:
+### The overall desire
 
-**The in-group and `→`.**  Navigating A,B / A,C / A,D is done by promoting A
-back to the in-group, which causes `→` (`e_Lies_cursor_next`) to step through
-sibling time-slices (`%What` particles) rather than sibling `%Doc` particles.
-`→` currently steps `%Doc`; it needs to be promoted to step `%What` when the
-active examining particle has a `%What` parent.
+The system has an intention — an `I` particle — that it carries forward toward
+consciousness.  Right now it sits dormant once the Waft is open.  It should want:
 
-**`+time` — create a new time-slice.**  The `◀◀ rwnd  ‖ pause  ＋time` bar.
-`+time` runs the carry-over heuristic:
-- Points with `accepted:1` that are `showing` → copy forward into the new What.
-- Points created `< 30s` ago → move forward (they're probably part of this thought).
-- Everything else → ghost at 18% opacity for 10s (rescue window) then fade.
-The new `%What` is written to the Waft snap as a new time-slice sibling.
-
-**`◀◀ rwnd`.**  Steps back through `%What` time-slices in the same `%Doc`
-group; the showing set for that slice is re-loaded into `%What_Points,1`.
-
-**Ghost display.**  DocMinimap shows ghosted capsules from the prior slice's
-`%Pmirror` set at reduced opacity.  Clicking a ghost → rescue it into the
-current slice (un-ghost, `accepted:1`).
-
-**The showing gate for `+time`.**
 ```
-// only propagate if showing in the current What
-const to_carry = current_what_points.filter(p => p.sc.showing)
+A:Lies
+  w:Lies
+    req:desire,Waft:Ghost/Tour
+      req_sent
+      started:1
+      req:open_What        ← reqonce: opened the first What, waiting
+        ttlilt:1,until_ts:T,playing:1   ← if playing, advances on expiry
+      req:next_What        ← when advancing: step to sibling, or end-of-Waft handling
 ```
-`showing` tracks whether the Point's capsule is currently visible in the minimap
-balloon — see DocMinimap `orb=showing` toggle.  Not-showing = dormant = stays in
-the old slice.
+
+`reqonce(desire_req, 'open_What')` fires once: opens the first `%What` in the
+Waft, sets the cursor to it, arms a ttlilt if "playing" (auto-advance mode).
+When the ttlilt expires, Story wakes, `do_fn` sees it timed out and steps
+`req:next_What`.  In "pause" mode the ttlilt is never armed — the user advances
+manually via `→`.
+
+End-of-Waft: when `cursor_next` finds no further `%What`, the desire req
+transitions to a `req:waft_exhausted` child and emits an `o_elvis` for the UI
+to handle (loop, stop, prompt for `+time`).
+
+### Navigation arrows and their meanings
+
+Three gestures, three different moves through the What tree:
+
+```
+→   continue          step to next sibling %What at the same depth.
+                      "keep going the way we were going."
+
+↘   sibling +time     branch: create a new %What sibling beside the current one
+                      and step into it.  The current What's accepted/showing set
+                      is the branch-point; both threads are now live.
+                      "let's explore a parallel line from here."
+
+↓   child +time       dive: create a new %What *inside* the current one,
+                      between two chosen Points.
+                      "let's go deeper into this pocket."
+```
+
+`e_Lies_cursor_next` currently steps `%Doc` within a Waft.  Promoting it to step
+sibling `%What` particles is the first gesture.  The `↘` and `↓` gestures need
+a new `e_Lies_branch_What` and `e_Lies_dive_What` respectively.
+
+### The caving metaphor
+
+A Waft is a cave system.  Each `%What` is a chamber — a moment of focused
+attention with a particular set of Points illuminated.  The `→` arrow walks the
+main passage.  `↘` carves a side-tunnel from the current chamber.  `↓` drops
+into a pit discovered between two Points in the chamber floor.
+
+The audience follows the spelunker.  The strong frame of reference is the chamber
+they're currently in — its Points are its walls.  Moving to the next chamber
+(→) is legible because the audience knows where they came from.  Branching (↘)
+is "we'll come back to this junction".  Diving (↓) is "look what's down here" —
+a sub-thread that resurfaces to the parent chamber when it ends.
+
+This is why `accepted:1` Points carry forward (Chunk 3): the spelunker marks
+the wall ("this passage is interesting") and that mark is still there when the
+audience returns to the junction.
+
+### `+time` carry-over heuristic
+
+When a new `%What` is created (→ or ↘ or ↓), the heuristic seeds its in-group:
+
+- Points with `accepted:1` AND `showing` → copied forward.
+- Points created `< 30s` ago → moved forward (part of this thought).
+- Everything else → ghost at 18% opacity (10s rescue window, then fade).
+
+`showing` is the DocMinimap capsule visibility — dormant Points (orb toggled off)
+stay in the old chamber.  The rescue window is a `reqonce` timeout on the new
+`%What` req: `reqonce(what_req, 'ghost_rescue_window')` arms a ttlilt for 10s;
+after expiry, ghosted Points that weren't rescued are dropped.
+
+### `◀◀ rwnd`
+
+Steps back through `%What` siblings in reverse, re-loading the showing set for
+that chamber into `%What_Points,1`.  Read-only — no mutations to accepted state.
+The "you were here" marker.
 
 ---
 
 ## Sequencing
 
-- **4a–4c** are internal tidiness; do together, small PRs.
-- **4d** (LangGraft ttlilt) is load-bearing — do first within chunk 4.
-- **5** is small (two `// <` markers) and a prerequisite for 6.
-- **6** is its own multi-reset sub-project; don't start until 5 is stable.
+- **1** (graft ttlilt) — do now, ten lines, visible immediately.
+- **2** (reqy migration) — internal, do together in one PR.
+- **3** (accepted persistence) — small, prerequisite for 4.
+- **4** (What transport + navigation) — multi-reset, design first, build in slices:
+  - 4a: `e_Lies_cursor_next` steps sibling `%What` (not just `%Doc`)
+  - 4b: desire req + playing/pause loop
+  - 4c: `↘` / `↓` branch and dive
+  - 4d: ghost + rescue window + `◀◀ rwnd`
 
-If a single convo must carry the most value: **4d then 5** —
+If a single convo must carry the most value: **Chunk 1 + Chunk 3** —
 "Points resolve on open" + "accepted set survives reload".
 
 ---
@@ -281,9 +336,14 @@ If a single convo must carry the most value: **4d then 5** —
 
 - Keep comments that stay true on rewrite; drop dev-mumbling.
 - `// < …` marks a *lack* of development.
-- `%like,this` for a lone C object; `/%like,this/written:is` for structures.
+- `%like,this` naming a lone C object; `/%like,this/written:is` for structures.
   `$values` for sc scalars, `$C` for TheC refs in sc.
 - `oai` sync, `roai` async.  `roai` from sync context returns Promise silently —
   verify call-site async-ness when touching particle-creation code.
-- `noserial:1` on reqy channels where identity is the natural key (path, dige).
-  Omit (default serial) only for genuinely unbounded fan-out that needs counting.
+- `i_req_ttlilt(req, secs, sc)` sets `w.c.has_req_ttlilt` which is Story's
+  quiescence gate.  No separate `demand_time_to_think` needed.
+- `reqonce(req, name)` stamps `req.sc[name]=1` once per req lifetime (keyed on
+  `req.c.oncelers`).  Returns true only on the first call — gate one-shot setup
+  (watch_c, installs) inside `do_fn` with it.
+- `noserial:1` on reqy channels where the req is keyed by its natural identity.
+  Default (serial) only for genuinely unbounded fan-out.
