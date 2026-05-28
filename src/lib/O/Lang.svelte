@@ -110,6 +110,9 @@
         // e_Lang_open_doc when Lies hands us a loaded file.
         w.oai({ docs: 1 })
 
+        // Declare req spaces so i_Story_o_req_ttlilt finds reqs on %docC particles.
+        H.i_scheme_req(w, [{ docs: 1 }, { doc: 1 }])
+
         // ── reach across to Story's Styles ──────────────────────────
         // Story persists Styles under its w.c.The/{Styles:1}.
         // We call The_Styles(storyw) so we get the same TheC.

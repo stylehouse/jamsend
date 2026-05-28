@@ -521,6 +521,23 @@
         return t
     },
 
+    // i_scheme_req — declare a /%scheme:req lematch chain on w so that
+    //   i_Story_o_req_ttlilt's walker finds reqs hosted on sub-particles
+    //   whose c.up chain doesn't pass through reqcons (e.g. w/%docs/%doc).
+    //   path is an array of sc matchers describing each descent step:
+    //     H.i_scheme_req(w, [{docs:1},{doc:1}])
+    //   Idempotent — noop if the chain is already declared.
+    i_scheme_req(w: TheC, path: Record<string, any>[]): void {
+        const scheme = w.oai({ scheme: 'req' })
+        if (scheme.oa({ lematch: 1 })) return
+        let host: TheC = scheme
+        for (const sc_has of path) {
+            const lm = host.i({ lematch: 1 })
+            lm.sc.sc_has = sc_has
+            host = lm
+        }
+    },
+
     // Worker-side publisher. Call at end of think to gather and publish ttilts.
     //   For each w with has_req_ttlilt set, walks all req** via their reqcons,
     //   recursing into nested req/reqcons/req**. Gathers active ttilts and
@@ -571,6 +588,30 @@
                 }
             }
             visit(w)
+
+            // scheme:req extension — visit extra req-hosting subtrees declared on w.
+            //   w/%scheme:req/%lematch,sc_has:{…} chains declare which sub-particles
+            //   to descend into; terminals (no child lematches) get a full visit().
+            //   Up to 5 levels deep to avoid runaway on malformed trees.
+            const req_scheme = w.o({ scheme: 'req' })[0] as TheC | undefined
+            if (req_scheme) {
+                const follow = (host: TheC, lm: TheC, depth: number) => {
+                    if (depth > 5) return
+                    const sc_has = lm.sc.sc_has as Record<string, any> | undefined
+                    if (!sc_has) return
+                    const sub_lms = lm.o({ lematch: 1 }) as TheC[]
+                    for (const found of host.o(sc_has) as TheC[]) {
+                        if (sub_lms.length) {
+                            for (const sub of sub_lms) follow(found, sub, depth + 1)
+                        } else {
+                            visit(found)
+                        }
+                    }
+                }
+                for (const root_lm of req_scheme.o({ lematch: 1 }) as TheC[]) {
+                    follow(w, root_lm, 0)
+                }
+            }
 
             // soonest first — diagnostic legibility; poll_step only needs any-true
             gathered.sort((a, b) => a.until_ts - b.until_ts)

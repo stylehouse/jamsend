@@ -7,7 +7,7 @@ Snap:H
           {"ref":{"src":"%Doc:1, path:Ghost/test/Hello.g"}}	What_Points,src_Waft:Ghost/Tour
         Opt
           nogen
-        {"Store":1,"wrote_at:wormhole/Ghost/Tour/toc.snap":1779952773.941}
+        {"Store":1,"wrote_at:wormhole/Ghost/Tour/toc.snap":1779979658.931}
         open_waft_req,path:Ghost/Tour,done
         Waft:Ghost/Tour
           Doc,path:Ghost/test/Hello.g
@@ -29,6 +29,9 @@ Snap:H
         model,cyto_dir
         docs
           doc:Ghost/test/Hello.g,gen_path:gen/test/Hello.go,active
+        scheme:req
+          {"ref":{"sc_has":"Object()"}}	lematch
+            {"ref":{"sc_has":"Object()"}}	lematch
         Opt
           txtsyntaxdump
         received,doc_opened,doc:Ghost/test/Hello.g
