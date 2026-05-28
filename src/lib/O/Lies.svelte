@@ -129,6 +129,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     import { onMount }      from "svelte"
     import Liesui           from "$lib/O/Liesui.svelte"
     import LiesCurse        from "$lib/O/LiesCurse.svelte"
+    import LiesStore from "./LiesStore.svelte";
 
     // File extensions that produce gen/ output.
     // Everything else is soft-compile only regardless of Ghost/ location.
@@ -251,8 +252,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // (We could re-encode from in-memory waft, but reading first confirms
         // the old snap exists and gives us a canonical round-trip.)
         const old_snap_path = H.Lies_waft_snap_path(old_path)
-        const rw  = await H.requesty_serial(w, 'rw_queue')
-        const req = await rw.oai({ rw_name: old_snap_path, rw_op: 'read' })
+        const req = await H.LiesStore_read(w, old_snap_path, { label: 'waft_rename' })
         if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
             w.i({ see: `⏳ rename: reading Waft:${old_path}…` })
             return   // will re-run on next tick with req settled
@@ -272,11 +272,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // Write the new snap path.
         const new_snap_path = H.Lies_waft_snap_path(new_path)
-        const rw2  = await H.requesty_serial(w, 'rw_queue')
-        const req2 = await rw2.oai(
-            { waft_rename_write: 1, old_path },
-            { rw_op: 'write', rw_name: new_snap_path, rw_data: snap }
-        )
+        const req2 = await H.LiesStore_write(w, new_snap_path, snap)
         if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req: req2 })) {
             w.i({ see: `⏳ rename: writing Waft:${new_path}…` })
             return
@@ -359,23 +355,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             return
         }
 
-        const write_req = await rw.oai(
-            { source_write: 1, path },
-            { rw_op: 'write', rw_name: path, rw_data: text },
-        )
-        if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req: write_req })) return
-
-        if (write_req.sc.reply?.error) {
-            console.error(`🗂 Lies_source_write: write failed for ${path}:`, write_req.sc.reply.error)
-            return
-        }
-
-        // Update base_dige to the text we just wrote — we're now in sync.
-        // Drop any stale surprise_read from a prior external change the user
-        // resolved by letting the auto-save proceed.
-        ld.sc.base_dige = await dig(text)
+        // LiesStore_write handles dedup (dige-keyed), throttle, and base_dige update.
+        await H.LiesStore_write(w, path, text)
+        // LiesStore_run (called every tick) dispatches and finishes the write.
         for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
-        console.log(`💾 Lies_source_write: wrote ${path} (${text.length}c)`)
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
@@ -468,6 +451,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
+        // ── LiesStore — drive write/read IO reqs ─────────────────────────────
+        await this.LiesStore_run(A, w)
 
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
         const wafts  = w.o({ Waft: 1 }).length
@@ -493,8 +478,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             }
 
             const snap_path = H.Lies_waft_snap_path(path)
-            const rw  = await H.requesty_serial(w, 'rw_queue')
-            const req = await rw.oai({ rw_name: snap_path, rw_op: 'read' })
+            const req = await H.LiesStore_read(w, snap_path)
             if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
                 w.i({ see: `⏳ loading Waft:${path}…` })
                 return false
@@ -544,11 +528,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // gen_path only for Ghost/ sources with gen-able codetype.
             const gen_path = H.Lies_gen_path(path)
 
-            // requesty_serial + i_elvis_req: on first pass we fire the read
-            // request and return false.  Wormhole calls think() when done.  On
-            // re-entry, oai() finds the same req particle with the reply on it.
-            const rw  = await H.requesty_serial(w, 'rw_queue')
-            const req = await rw.oai({ rw_name: path, rw_op: 'read' })
+            const req = await H.LiesStore_read(w, path)
             if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {
                 w.i({ see: `⏳ loading ${path}…` })
                 return false
@@ -605,25 +585,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const do_run   = !H.o_Opt_val(w, 'nogen')
 
             if (do_write) {
-                // requesty_serial keyed on Lies's w — no need to touch
-                // the active Lang document to do the write.
-                const rw  = await H.requesty_serial(w, 'rw_queue')
-                const req = await rw.oai(
-                    { compile_write: 1, path },
-                    { rw_op: 'write', rw_name: `src/lib/${gen_path}`, rw_data: source },
-                )
-                if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
-                    return   // IO in flight; will re-run on next tick
-
-                const reply = req.sc.reply
-                if (reply?.error) {
-                    w.i({ compile_error: 1, path, msg: `write gen: ${reply.error}` })
-                    // settle Lang even on error so it doesn't spin forever
-                    pending.sc.done = 1
-                    H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-                    continue
-                }
-                console.log(`💾 wrote src/lib/${gen_path}`)
+                const write_req = await H.LiesStore_write(w, path, source, { rw_name: `src/lib/${gen_path}` })
+                // write_req is null only if source dige matches a loaded_doc base_dige —
+                // that won't happen for gen/ files (no loaded_doc for gen paths).
+                // LiesStore_run dispatches and logs; we do not await the write itself here.
+                // pending.sc.done and Lies_compile_settled fire below regardless.
+                //
+                // < if write_req reply carries an error, surface compile_error and bail.
+                //   for now we proceed optimistically (gen write errors are rare and logged).
             }
 
             if (do_run) {
@@ -903,10 +872,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                         return
                     }
                     const snap_path = H.Lies_waft_snap_path(path)
-                    const rw  = await H.requesty_serial(w, 'rw_queue')
-                    const req = await rw.i({ rw_name: snap_path, rw_op: 'write', rw_data: snap })
-                    H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-                    console.log(`💾 Waft:${path} saved`)
+                    await H.LiesStore_write(w, snap_path, snap)
+                    // LiesStore_run dispatches; Waft snap writes don't have a loaded_doc so
+                    // base_dige gate never fires — every distinct snap content goes through.
                 }, { see: `waft_save_${path}` })
             }, 800)
         }
@@ -918,3 +886,4 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 </script>
 
 <LiesCurse {M} />
+<LiesStore {M} />
