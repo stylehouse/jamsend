@@ -23,7 +23,7 @@
         reqc['requesty_'+t] = 1
         let req_serial:TheC
         let ison = async () => {
-            console.log(`requesty_serial(w,${t})`)
+            // console.log(`requesty_serial(w,${t})`)
             req_serial = w.o({...reqserialc})[0]
             req_serial ||= await w.r({...reqserialc,i:1})
             ison = async () => {}
