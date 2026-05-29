@@ -1,17 +1,53 @@
 // yeti etc
+nothinging():
+    return true
 theCompiledStuff(A,w) {
     i hut/toot:3
     o hut/toot$
     let la = i hut/$toot
     o hut/although:1,they,can,be,mixed
     i $la/something
-    i thung/with/etc
+    i thung/wither/etc
     i yeses/because,it:2
-    i yeses/because,it:5
+    i yeses/because:five,it:5
     A i %prefixy:'stuffule sivi'
-    A i %prefixy:`three = ${1 + 2}`
-    A i %prefixy:stuff,with:angles
-    A i %prefixy:stuff/with:levels
+    A i %prefixy:`i th/re/e = ${1 + 2}`
+    A i %prefixy:stuff,wither:angles
+
+    A o %wither$
+    A o yeses$
+    // should be wither:1, and let vish = it (the C%prefixy,wither)
+    A o wither$:vish
+
+    // since . binds|associates tighly, it grabs the %wither value
+    //  and wants to assign|tuple it  amongst other stuff
+    A o prefixy,wither.$:ang
+    // uses that assigned ang variable,
+    //  assigns so, grabs the %so value
+    //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
+    w i angles/are:$ang,etc:3/so:ont.$
+    // this is what we're avoiding wither doing .$:othername above
+    
+    // you can declare let variables like this:
+    $its = 'ferv'
+    // should be strings 'stuff', 'levels', 'its', but then sits='ferv'
+    A i %prefixy:stuff/wither:levels,its:its,sits:$its
+    
+
+    &nothinging,A,w,555
+    &nothinging,A,w,{figuira:'out', all_these:3}
+    if (&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4
+    if &nothinging,A,w,{figuira:'out', all_these:3}:
+        && 6
+    // we should prefer no semicolon on the end of control structures
+    //  just continuating expr and indent indicate:
+    if &nothinging,A,w,{figuira:'out', all_these:3}
+        && 6
+        3+2+4
+        3 + 2
+
+    // loosely binding if block maker. right of and is a block so can contain ;
+    !0 and w i wibble_andily
 
     [3]
     S o yeses/because
@@ -28,7 +64,7 @@ theCompiledStuff(A,w) {
             && 3 > 2
         i helped
     i yep
-    H.severally(A,w,555)
+    &severally,A,w,555
 },
 severally(A,w,thing):
     i miles,of,words

@@ -455,6 +455,32 @@
             return n + 1
         }
 
+        // ── Plain // line comments ────────────────────────────────────────────
+        //
+        // The compiled host is TS, so whole-line // comments are common in
+        // source.  stho's own comment token is "#", so the parser happily finds
+        // stho keywords inside a // comment ("…if we grabbed…" → a ControlFlow
+        // node) and the collector would otherwise translate the comment into a
+        // bogus block.  Pass any indent-then-// line through verbatim.  Runs
+        // after the //#region checks so those keep their stack handling.
+        if (/^\s*\/\//.test(line.text)) {
+            out.push({ kind: 'raw', text: line.text })
+            return n + 1
+        }
+
+        // ── $name = expr  →  let name = expr ─────────────────────────────────
+        //
+        // Declaration sugar.  A leading $name followed by a single "=" (not
+        // "==", and not a compound like "+=") declares a local.  Detected
+        // before the tree walk because "$its = 'ferv'" otherwise parses as
+        // Sigil + Name + error nodes for the "=" and the string.
+        const DECL_RE = /^(\s*)\$(\w+)\s*=(?!=)\s*(.+)$/
+        const declM = line.text.match(DECL_RE)
+        if (declM) {
+            out.push({ kind: 'translated', text: `${declM[1]}let ${declM[2]} = ${declM[3]}` })
+            return n + 1
+        }
+
         // first recognisable node whose span lies within this doc line
         let hit: { name: string, node: SyntaxNode } | null = null
         tree.iterate({
@@ -463,7 +489,8 @@
             enter: (ref) => {
                 if (hit) return false
                 if ((ref.name === 'IOing' || ref.name === 'Sunpit'
-                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike')
+                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike'
+                        || ref.name === 'AmpCall')
                         && ref.from >= line.from && ref.to <= line.to) {
                     hit = { name: ref.name, node: ref.node }
                     return false
@@ -473,23 +500,13 @@
 
         if (hit?.name === 'AmpCall') {
             // &method,arg,arg,… → this.method(arg,arg,…)
-            // The Name child gives the method; everything after the first comma
-            // is the raw arg list (read from line text, not the parse tree).
+            // Lang_amp_calls_in_text does the bracket/string-aware conversion;
+            // it leaves any non-& text on the line untouched.
             const nameNode = hit.node.getChild('Name')
             const method   = nameNode
                 ? state.doc.sliceString(nameNode.from, nameNode.to)
                 : '__unknown'
-            const before   = line.text.slice(0, hit.node.from - line.from)
-            // raw args: text after "&name" up to end-of-line, starting at ","
-            const rawAfter = line.text.slice(hit.node.from - line.from + 1 + method.length)
-            // strip leading comma; keep the rest as the arg list
-            const argStr   = rawAfter.startsWith(',')
-                ? rawAfter.slice(1).trimEnd()
-                : rawAfter.trimEnd()
-            const call = argStr
-                ? `this.${method}(${argStr})`
-                : `this.${method}()`
-            out.push({ kind: 'translated', text: before + call })
+            out.push({ kind: 'translated', text: this.Lang_amp_calls_in_text(line.text) })
             // record as a call in the word index
             const entry: any = { call: 1, method, from: hit.node.from, to: hit.node.to, line: n,
                                  region_path: [...ctx.region_stack] }
@@ -500,9 +517,11 @@
 
         if (hit?.name === 'Sunpit') {
             // emit the for-header (open brace only; _collect_line closes it below)
-            const header  = this.Lang_compile_Sunpit(hit.node, state, {})
-            const before  = line.text.slice(0, hit.node.from - line.from)
-            out.push({ kind: 'translated', text: before + header })
+            const raw_before = line.text.slice(0, hit.node.from - line.from)
+            const split   = this.Lang_io_before_split(raw_before)
+            const header  = this.Lang_compile_Sunpit(hit.node, state,
+                split.receiver ? { receiver: split.receiver } : {})
+            out.push({ kind: 'translated', text: split.keep_before + header })
             n++
 
             // indentation of the `S` line — body must be strictly deeper
@@ -553,11 +572,18 @@
             })
 
             // bail to verbatim — user wrote their own brackets, or condition
-            // contains a // comment (which would eat our closing ") {")
+            // contains a // comment (which would eat our closing ") {").
+            // We still convert any &method,args calls inside, but inject no
+            // braces of our own (the user manages those, plus any inline body).
             if (condition.startsWith('(') || condition.includes('//')) {
-                out.push({ kind: 'raw', text: line.text })
+                out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(line.text) })
                 return n + 1
             }
+
+            // Drop a pythonic trailing ":" before collecting continuations —
+            // indent already marks the block, so we prefer no colon and the
+            // colon would otherwise land mid-condition once && lines append.
+            condition = condition.replace(/\s*:\s*$/, '')
 
             n++
 
@@ -570,6 +596,9 @@
                 condition += ' ' + peek.text.trim()
                 n++
             }
+
+            // &method,args inside the condition → this.method(args)
+            condition = this.Lang_amp_calls_in_text(condition)
 
             // emit header — ") {" lands on this line, after the full condition
             let header: string
@@ -640,8 +669,12 @@
             const isDecl = nextIndent > decl_indent
 
             if (isDecl) {
-                // record definition with position info
+                // record definition with position info.  async:1 records whether
+                // the decl was written `async name(…)` — a future pass can use
+                // this to decide whether a matching &call / bare call needs await.
+                const isAsync = !!hit.node.getChild('AsyncKeyword')
                 ctx.words.push({ def: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1,
+                                 ...(isAsync ? { async: 1 } : {}),
                                  region_path: [...ctx.region_stack] })
 
                 if (hasBrace) {
@@ -785,10 +818,20 @@
         }
 
         if (hit?.name === 'IOing') {
-            const translated = this.Lang_compile_IOing(hit.node, state, {})
-            const before = line.text.slice(0, hit.node.from - line.from)
-            const after  = line.text.slice(hit.node.to   - line.from)
-            out.push({ kind: 'translated', text: before + translated + after })
+            const raw_before = line.text.slice(0, hit.node.from - line.from)
+            const after       = line.text.slice(hit.node.to - line.from)
+            const split       = this.Lang_io_before_split(raw_before)
+            const translated  = this.Lang_compile_IOing(hit.node, state,
+                split.receiver ? { receiver: split.receiver } : {})
+
+            if (split.and_lhs != null) {
+                // "<LHS> and <io>" — loosely-binding inline if.  LHS is the
+                // condition; the IO expression is its single-statement body.
+                out.push({ kind: 'translated',
+                    text: `${split.indent}if (${split.and_lhs}) { ${translated}${after.trimEnd()} }` })
+            } else {
+                out.push({ kind: 'translated', text: split.keep_before + translated + after })
+            }
         } else {
             out.push({ kind: 'raw', text: line.text })
         }
@@ -797,6 +840,96 @@
 
 //#endregion
 //#region IOing
+
+    // ── Lang_amp_calls_in_text ───────────────────────────────────────────────
+    //
+    //   Convert every &method,arg,arg… span in a line of text into
+    //   this.method(arg,arg,…), leaving the rest of the line untouched.
+    //   Bracket- and string-aware: the arg list runs until a top-level
+    //   (depth-0, outside any string) && / || operator or a closing bracket
+    //   that isn't ours, or end of text.  So it handles object-literal args
+    //   with their own commas (&m,A,{x:1, y:2}) and conditions that continue
+    //   with && (&m,A && more).
+    //
+    //   &method with no following comma → this.method().
+    //   "&&" is never treated as an &-call opener.
+    Lang_amp_calls_in_text(text: string): string {
+        let out = ''
+        let i = 0
+        const isWord  = (c: string) => !!c && /\w/.test(c)
+        const isStart = (c: string) => !!c && /[A-Za-z_]/.test(c)
+        while (i < text.length) {
+            if (text[i] === '&' && text[i + 1] !== '&' && isStart(text[i + 1])) {
+                let j = i + 1
+                while (j < text.length && isWord(text[j])) j++
+                const name = text.slice(i + 1, j)
+                if (text[j] === ',') {
+                    let k = j + 1, depth = 0
+                    let str: string | null = null
+                    while (k < text.length) {
+                        const c = text[k]
+                        if (str) { if (c === str && text[k - 1] !== '\\') str = null; k++; continue }
+                        if (c === '"' || c === "'" || c === '`') { str = c; k++; continue }
+                        if (c === '(' || c === '{' || c === '[') depth++
+                        else if (c === ')' || c === '}' || c === ']') { if (depth === 0) break; depth-- }
+                        else if (depth === 0 && (text.startsWith('&&', k) || text.startsWith('||', k))) break
+                        k++
+                    }
+                    out += `this.${name}(${text.slice(j + 1, k).trimEnd()})`
+                    // keep a separating space before a following && / || operator
+                    if (text.startsWith('&&', k) || text.startsWith('||', k)) out += ' '
+                    i = k
+                    continue
+                }
+                out += `this.${name}()`
+                i = j
+                continue
+            }
+            out += text[i++]
+        }
+        return out
+    },
+
+    // ── Lang_io_before_split ─────────────────────────────────────────────────
+    //
+    //   Split the text that sits on a line before an i/o verb into:
+    //     receiver  — a leading bareword acting as the call receiver
+    //                 ("A i foo" → receiver A; "w i foo" → receiver w).
+    //     and_lhs   — the condition of a loosely-binding "<LHS> and <io>" form
+    //                 ("!0 and w i x" → and_lhs "!0", receiver "w").
+    //     keep_before — what should still be emitted before the translation
+    //                 (the indent for receiver/and forms; the whole prefix
+    //                  verbatim for assignments like "let la = i …").
+    //
+    //   JS keywords are never mistaken for receivers, so "return i x" keeps
+    //   "return " verbatim rather than treating it as a receiver.
+    // < no receiver is captured for the "$name" leg-0 hint form — that path
+    //   stays inside Lang_compile_IOing via receiver_hint.
+    Lang_io_before_split(raw_before: string): {
+        indent: string, keep_before: string, receiver?: string, and_lhs?: string,
+    } {
+        const indent = (raw_before.match(/^(\s*)/) ?? ['', ''])[1]
+        const core   = raw_before.slice(indent.length)
+        const KEYWORDS = new Set(['return', 'let', 'const', 'var', 'await', 'yield',
+            'new', 'throw', 'typeof', 'void', 'delete', 'do', 'else',
+            'if', 'for', 'while', 'until'])
+
+        // "<LHS> and <receiver?> "
+        let m = core.match(/^(.+?)\s+and\s+(\w*)\s*$/)
+        if (m) {
+            const recv = m[2] && !KEYWORDS.has(m[2]) ? m[2] : undefined
+            return { indent, keep_before: indent, receiver: recv, and_lhs: m[1] }
+        }
+
+        // bare receiver: the prefix is exactly one identifier
+        m = core.match(/^(\w+)\s+$/)
+        if (m && !KEYWORDS.has(m[1])) {
+            return { indent, keep_before: indent, receiver: m[1] }
+        }
+
+        // assignment / anything else — keep the whole prefix verbatim
+        return { indent, keep_before: raw_before }
+    },
 
     // IOing → one TS expression.  The optional capture ("name$" on the last
     // leg) turns the whole expression into `let name = …` with a trailing
@@ -810,8 +943,9 @@
 
         const legs = legNodes.map((l: SyntaxNode) => this.Lang_compile_Leg(l, state, ctx))
 
-        // receiver detection on leg 0 — a single bare "$name" hints the JS var
-        let receiver = 'w'
+        // receiver detection — ctx.receiver (a bareword "X i …" before the
+        // verb) sets the base; a single bare "$name" leg-0 hint overrides it.
+        let receiver = ctx.receiver ?? 'w'
         let startIdx = 0
         if (legs[0].receiver_hint) {
             receiver = legs[0].receiver_hint
@@ -884,7 +1018,7 @@
         if (!legNodes.length) throw new Error('Sunpit IOing: empty IOpath')
         const legs = legNodes.map((l: SyntaxNode) => this.Lang_compile_Leg(l, state, ctx))
 
-        let receiver = 'w'
+        let receiver = ctx.receiver ?? 'w'
         let startIdx = 0
         if (legs[0].receiver_hint) {
             receiver = legs[0].receiver_hint
@@ -991,9 +1125,13 @@
         const before = sigils.find((s: SyntaxNode) => s.to <= keyNameNode.from)
         const after  = sigils.find((s: SyntaxNode) => s.from >= keyNameNode.to)
 
-        // capture:  name$  with no value
-        if (after && !valNode) {
-            return { sc_part: `${name}: 1`, capture_var: name }
+        // capture:  name$  (no value)         → capture row into `name`
+        //           name$:var (named target)  → capture row into `var`
+        // The trailing $ marks a capture; a colon-value, when present, names
+        // the target variable rather than filtering.
+        if (after) {
+            const cap = valNode ? this.Lang_compile_PeelVal(valNode, state) : name
+            return { sc_part: `${name}: 1`, capture_var: cap }
         }
 
         // receiver hint / shorthand:  $name  with no value

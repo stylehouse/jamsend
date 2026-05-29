@@ -8,6 +8,25 @@
     //
     // ── Language goals ───────────────────────────────────────────────────────
     //
+    //   Receivers (X i …, X o …)
+    //     A bareword before the verb is the call receiver:
+    //       A i %prefixy:'sivi'   →  A.i({prefixy: 'sivi'})
+    //       w i a/b               →  this._i_drill(w, …)   (w made explicit)
+    //     JS keywords (return, let, …) are never treated as receivers, so
+    //     "let la = i a/b" keeps its "let la = " prefix verbatim.  The older
+    //     "$name" leg-0 hint (o $la/x → la.o(…)) still works too.
+    //
+    //   Captures (name$, name$:var)
+    //     A trailing $ on the last leg captures the matched row:
+    //       o with$        →  let with = w.o({with:1})[0]
+    //       o with$:vish   →  let vish = w.o({with:1})[0]   (named target)
+    //     A colon-value after the $ names the target variable rather than
+    //     filtering.  Multi-leg captures route through _o_drill1.
+    //
+    //   let-declaration sugar ($name = expr)
+    //       $its = 'ferv'   →  let its = 'ferv'
+    //     A single "=" (not ==, not +=) after a leading $name declares a local.
+    //
     //   Puddle values (%key:'string literal')
     //     % before a PeelKey means the colon-value is a raw TS expression.
     //     Currently StringVal handles 'single', "double", `backtick` strings.
@@ -15,22 +34,58 @@
     //     Next: multi-token puddle blocks for arithmetic / function calls.
     //
     //   Ampersand calls (&method,arg,arg,…)
-    //     Compiles to this.method(arg,arg,…).
-    //     Works standalone or as a condition in if/elsif:
-    //       if &method,A,w,etc:    →  if (this.method(A,w,etc)) {
-    //     The arg list is raw text after the first comma — no inner stho parsing.
-    //     Next: &method,arg if we want to parse individual args as PeelItems.
+    //     Compiles to this.method(arg,arg,…), bracket/string-aware so object
+    //     literal args keep their own commas:
+    //       &nothinging,A,w,{x:3}   →  this.nothinging(A,w,{x:3})
+    //     Works standalone and inside if/elsif conditions, including the
+    //     pythonic colon form (the trailing ":" is dropped — indent marks the
+    //     block) and the &&-continuation form:
+    //       if &m,A,w:               if &m,A,w
+    //           && 6          and        && 6      →  if (this.m(A,w) && 6) {
+    //     The arg list is raw text — no inner stho parsing of each arg.
     //
-    //   TypeScript puddle blocks
-    //     Longer raw TS (multi-line strings, arrow functions, object literals)
-    //     need a quoting form the line-oriented grammar can delimit cleanly.
-    //     Candidate: indented block after a special sigil or keyword.
-    //     < not yet designed.
+    //   Loosely-binding "and" block (LHS and <io>)
+    //       !0 and w i wibble   →  if (!0) { w.i({wibble: 1}) }
+    //     LHS becomes the condition; the IO expression is the single-statement
+    //     body.  The body side is a block, so it can hold a ";".
     //
-    //   Peeroleum(A,w) — pure C** p2p state ghost
-    //     w.i({see:'y Peeroleum'}) ↔ w i %see:'y Peeroleum'
-    //     Method calls as: &method,A,w,etc
-    //     Condition form: if &method,A,w,etc:
+    //   async on method defs
+    //     "async name(…)" stamps async:1 on the def's word-index entry.  A
+    //     future pass can read that index to decide whether a matching &call /
+    //     bare call needs an `await` in front.
+    //     < the await-injection itself is not wired up yet.
+    //
+    // ── Deferred / infirm syntax (parses, but not yet compiled) ───────────────
+    //
+    //   .$ tight value-capture (key.$ , key.$:var , key:val.$)
+    //     Intent: "." binds tightly to its key and grabs that key's VALUE
+    //     (rather than the whole row), assigning it inline among other peel
+    //     items — destructure/tuple style:
+    //       o prefixy,with.$:ang   "grab with's value into ang, keep querying"
+    //       w i …/so:ont.$         "so is auto-named from the key"
+    //     The "." currently produces an error node, so the .$ tail is dropped
+    //     and the leg compiles as if it weren't there (valid but incomplete).
+    //     Needs a grammar "." token + a PeelItem tail rule before it's safe to
+    //     emit — a wrong guess here is worse than none.
+    //     < not implemented; emits the leg without the capture.
+    //
+    //   Block verbs (r / roai / oai / replace with a trailing {} block)
+    //     Intent: expose what is normally
+    //       await w.r({key:'ing',field:'s'}, {})
+    //     as a squishy verb line, e.g.  w r key:ing,field:s {}  and the
+    //     multi-leg capture form  w oai docs/doc,$path$docC  (where $path is a
+    //     {variable}-style shorthand keyed by its own name, and the trailing
+    //     $docC assigns the result to docC).
+    //     Open questions before this can land:
+    //       · these verbs are async — we'd want the def/method async index
+    //         (groundwork above) to know when to inject `await`.
+    //       · bareword values: "key:ing" wants 'ing' as a STRING here, which
+    //         diverges from the i/o convention where a bareword is an
+    //         identifier.  That value-semantics fork is unresolved.
+    //       · the $path$docC jammed double-sigil form needs grammar support;
+    //         the clean capture today is name$ / name$:var.
+    //     < not implemented; the verb set would extend IOness (or a sibling
+    //       IOverb token) and reuse the Leg machinery once semantics are fixed.
     //
     // ── Document registry ────────────────────────────────────────────────────
     //
