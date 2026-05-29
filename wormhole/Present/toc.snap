@@ -3,9 +3,9 @@ Library
   Book:LeafFarm,ok_pct,last_run_ms:1779622753.198,done:6,last_pct_change:1778378075.558
   Book:StuffFlipping,ok_pct:0,last_run_ms:1779622717.748,done,last_pct_change:1779622702.753
   Book:LangTiles,ok_pct,last_pct_change:1779682121.535,done:5,last_run_ms:1779700830.895
-  Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1779979694.249
+  Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1779979694.249,active
   Book:Peeringinst,ok_pct:0.5,last_pct_change:1779063073.279,done:2,last_run_ms:1779063093.816
-  Book:PeeringLive,ok_pct:0,last_pct_change:1779845664.667,done,last_run_ms:1779845679.885
+  Book:PeeringLive,ok_pct:0.17,last_pct_change:1780023433.073,done:6,last_run_ms:1780023480.372
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778804562.08
   Book:ReactiveWaft,ok_pct,last_pct_change:1778674756.934,done:6,last_run_ms:1779063101.212
   Book:ReactiveVers,ok_pct:0,last_pct_change:1779063108.089,done:8,last_run_ms:1779063283.368
@@ -15,5 +15,5 @@ Library
   Book:PortPlanet,ok_pct,last_pct_change:1779622894.947,done:6,last_run_ms:1779622895.668
   Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403
   Book:MundaneStation,ok_pct:0,last_pct_change:1779845683.836,done:5,last_run_ms:1779949732.752
-  Book:MundaneStaying,ok_pct:0.67,last_pct_change:1779949738.82,done:3,last_run_ms:1779949743.581
-  Book:LakeNets,active,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1779979876.845
+  Book:MundaneStaying,ok_pct:0.67,last_pct_change:1779949738.82,done:3,last_run_ms:1780021880.037
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780021904.728

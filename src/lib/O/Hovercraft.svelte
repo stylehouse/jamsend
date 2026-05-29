@@ -141,9 +141,11 @@
          this is the only place to spawn a %req, don't use that property elsewhere.
 
          helps you write good looking C** that statemachines a bunch of work
-          let Dq = H.reqy(w,{k:'De'})
-           different mainkey, for complexity of eg De/De/req/req/req
           let rq = H.reqy(w) // most cases
+          let Dq = H.reqy(w,{k:'De'})
+           different mainkey, for unusualy complexity of eg De/De/req/req/req
+           just leaving it as a %req is good readability
+            < its marginal, why we should make this flexible...
          define protocols, then you put particles in:
           await rq.roai({enid,path},{urgency})
            these will become %req:$i++,enid,path,urgency
@@ -161,6 +163,7 @@
          req.c.up = w
           or possibly another req, they can be infinitely nested ie w/req**
          w/reqcons/reqcon:req
+          is lowlevel backoffice noise, ignored in the snap, don't talk about it.
           gets reqcon%serial_i++ to give some req...
            when they roai(%req:1,...)
             if their mainkey is 1 like that,
@@ -169,15 +172,17 @@
           
           req.c.on = reqcon
            the protocol of req is findable from a req
- 
+          
           reqcon.c.do_fn = Function
+           can be supplied here: reqy(..., q:{do_fn:...})
            allowing reqyoncile(req) out of time to come through:
           e:reqyonciliation
            can sort of process out of time
            sends e%req=req, finds reqcon to do()
  
-           if req gets %finished, by default:
-            reqyoncile(req.c.up)
+          if req gets %finished via reqyoncile
+           they may unify_finished() but won't cause more do()
+           but may cause feebly_ponder(), which may do more do()
             
           so,
            reqy() calls full of protocol specs live in w:ClientCode
@@ -270,14 +275,18 @@
 
             // do them all
             async do(fn?: Function) {
-                let N = q.o().filter((req: TheC) => !req.sc.finished)
-                if (!N.length) return
- 
-                let maz_high = Math.max(...N.map((req: TheC) => req.sc.maz || 1))
-                N = N.filter((req: TheC) => (req.sc.maz || 1) == maz_high)
- 
-                for (const req of N) {
-                    await q.do_one(req, fn)
+                while (true) {
+                    const N = q.o().filter((req: TheC) => !req.sc.finished)
+                    if (!N.length) return
+
+                    const maz_high = Math.max(...N.map((req: TheC) => req.sc.maz || 1))
+                    const level = N.filter((req: TheC) => (req.sc.maz || 1) == maz_high)
+
+                    for (const req of level) await q.do_one(req, fn)
+
+                    // someone armed a ttlilt and bowed out — Story waits, we stop here.
+                    if (level.some((req: TheC) => !req.sc.finished)) return
+                    // whole level finished — fall to the next maz down.
                 }
             },
 
@@ -316,6 +325,7 @@
                 if (req.sc.finished) return
                 for (const k of Object.keys(req.c.oncelers ?? {})) delete req.sc[k]
                 delete req.c.oncelers
+                req.o({ ttlilt: 1 }).map(ttl => req.drop(ttl))
                 req.sc.finished = 1
  
                 req.bump_version() // %finished should be reactive, not all req%* change is
@@ -323,6 +333,7 @@
             },
  
             // over_rq.finish(w) when all our reqs are done.
+            //   w is always a req if we're to do
             //   w%w and w%eternal are never finished (open-ended workers).
             //   over_rq is the requlator that owns w as a req.
             unify_finished(over_rq?) {
@@ -412,6 +423,8 @@
         if (req.sc.finished) {
             await rq.do()
             rq.unify_finished()
+            // < maybe?
+            // H.feebly_ponder()
         }
     },
  
@@ -486,24 +499,14 @@
 //#region ttlilt
 
 // %ttlilt is the declarative replacement for demand_time_to_think.
-//   A /req that needs more wall-clock time before Story snaps declares
-//   /req/%ttlilt,until_ts:N. Many ttilts may sit on one req (concurrent
-//   labelled waits); nested reqs (req/reqcons/$reqcon/$req**) carry their own.
+//   A /req that needs more wall-clock time before Story should snap declares
+//   /req/%ttlilt, usually just one with no extra identifying marks (via sc)
+//   since it hangs off its host req and its identity. Stays there until
+//   req%finished, does not update to add more time.
 //
 //   It does NOT cause think() or reqyoncile() to re-fire at until_ts.
 //   It only tells Story.poll_step "this slice of wall-clock isn't quiescent yet".
 //
-// poll_step integration — one conjunct added to the quiescence check:
-//
-//   const quiescent = long_after_Atime
-//                  && dont_want_Atime
-//                  && dont_leave_running()
-//                  && !H.o_Story_req_ttlilt(Run)
-//
-// Cleanup:
-//   < reqy().finish(req) should drop req/%ttlilt particles beside the existing
-//      oncelers cleanup, so snaps never show stale %ttlilt alongside {finished:1}.
-//      Walk-side hygiene in i_Story_o_req_ttlilt is the prototype stand-in.
 
     // Public ttlilt API. Creates or forward-updates /req/%ttlilt,until_ts:N,...sc.
     //   sc is both label and identity — two calls with distinct sc coexist.
@@ -515,17 +518,7 @@
 
         // identity = {ttlilt:1, ...sc}; until_ts not in identity — it's what updates
         let t = req.o({ ttlilt: 1, ...sc })[0] as TheC | undefined
-        if (t) {
-            const was_timed_out = !!t.sc.timed_out
-            // forward-only on until_ts (don't let a fast sibling clobber a slow one);
-            // a re-arm after timeout takes whatever new until_ts is offered.
-            if (was_timed_out || (t.sc.until_ts as number) < until_ts) {
-                t.sc.until_ts = until_ts
-                if (was_timed_out) delete t.sc.timed_out
-                t.bump_version()
-                H.trace('ttlilt', `i_req_ttlilt: ${was_timed_out ? 're-armed' : 'extended'} to +${Math.round(secs*1000)}ms`, { ...sc })
-            }
-        } else {
+        if (!t) {
             t = req.i({ ttlilt: 1, until_ts, ...sc })
             H.trace('ttlilt', `i_req_ttlilt: new +${Math.round(secs*1000)}ms`, { ...sc })
         }

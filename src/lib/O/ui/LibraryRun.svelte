@@ -4,12 +4,9 @@
     // Mounted by Otro via H/{watched:UIs}/{UI:'Library'}.
     // Receives H (the root Mundo house).
     //
-    // Shows each Book particle from Li = H.ave.ob({Library:1}):
-    //   • name (read-only label)
-    //   • ok_pct % and last_run_ms (formatted)
-    //   • editable peel textfield for extra sc (everything except Book/ok_pct/last_run_ms/active)
-    //   • Activate button (sends activateBook elvis to A:Auto/w:Auto)
-    //   • Reset button (sends resetStory elvis to A:Auto/w:Auto)
+    // Shows each Book particle from Li = H.ave.ob({Library:1}) as a bubble
+    // sized by recency: recently activated = large, days ago = medium,
+    // never run or ancient = small.
     //
     // Mung errors are shown as red banners at the top — fatal, user must fix code.
     // < more reactive UI - last run etc values don't update
@@ -31,7 +28,7 @@
     // not inside Li — so query H.ave directly.
     let activeBook  = $derived(H.ave.ob({activeBook:1})[0]?.sc.Book ?? null)
     let isActive = (book) => book.sc.Book == activeBook
-    
+
     // ── add book ──────────────────────────────────────────────────────────
     let add_book_text = $state('')
     let adding_book   = $state(false)
@@ -58,7 +55,7 @@
     let editing: Record<string, string | null> = $state({})
 
     function extra_sc(book: TheC): Record<string, any> {
-        const skip = new Set(['Book', 'ok_pct', 'last_run_ms', 'active', 'done'])
+        const skip = new Set(['Book', 'ok_pct', 'last_run_ms', 'active', 'done', 'last_pct_change'])
         const out: Record<string, any> = {}
         for (const [k, v] of Object.entries(book.sc)) {
             if (!skip.has(k)) out[k] = v
@@ -95,15 +92,40 @@
         H.i_elvisto('Auto/Auto', 'resetStory', {})
     }
 
-    function fmt_ms(ms: number | null | undefined): string {
-        if (ms == null) return '—'
-        const d = new Date(ms * 1000)
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-            + '.' + String(d.getMilliseconds()).padStart(3, '0')
+    // ── recency sizing ────────────────────────────────────────────────────
+    // last_run_ms is seconds (now_in_seconds_with_ms). Tiers by age:
+    //   < 2 hours  → 'xl'  (you were just here)
+    //   < 24 hours → 'lg'
+    //   < 7 days   → 'md'
+    //   older/null → 'sm'
+    const NOW_S = Date.now() / 1000
+    const HR    = 3600
+    const DAY   = HR * 24
+
+    function recency_tier(book: TheC): 'xl' | 'lg' | 'md' | 'sm' {
+        const t = book.sc.last_run_ms as number | null | undefined
+        if (!t) return 'sm'
+        const age = NOW_S - t
+        if (age < 2  * HR)  return 'xl'
+        if (age < 1  * DAY) return 'lg'
+        if (age < 7  * DAY) return 'md'
+        return 'sm'
+    }
+
+    // ── human-readable age ────────────────────────────────────────────────
+    function fmt_age(book: TheC): string {
+        const t = book.sc.last_run_ms as number | null | undefined
+        if (!t) return 'never'
+        const age = NOW_S - t
+        if (age < 60)         return 'just now'
+        if (age < HR)         return `${Math.floor(age / 60)}m ago`
+        if (age < DAY)        return `${Math.floor(age / HR)}h ago`
+        if (age < 7 * DAY)   return `${Math.floor(age / DAY)}d ago`
+        return `${Math.floor(age / DAY)}d ago`
     }
 
     function fmt_pct(p: number | null | undefined): string {
-        if (p == null) return '—'
+        if (p == null) return ''
         return Math.round(p * 100) + '%'
     }
 </script>
@@ -124,7 +146,7 @@
         {:else}
             <button class="lr-btn save" onclick={() => { adding_book = true; setTimeout(() => document.querySelector('.lr-add-input')?.focus(), 0) }}>+ book</button>
         {/if}
-        <button class="lr-btn reset" onclick={reset_story}>↺ reset Story</button>
+        <button class="lr-btn reset" onclick={reset_story}>↺ reset</button>
     </div>
 
     {#if mung_errors.length}
@@ -139,24 +161,36 @@
     {#if !Li}
         <div class="lr-empty">loading…</div>
     {:else}
-        <table class="lr-table">
-            <thead>
-                <tr>
-                    <th>Book</th>
-                    <th>ok%</th>
-                    <th>last run</th>
-                    <th>extra sc</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each books as book (book.sc.Book)}
-                    <tr class:lr-active={isActive(book)}>
-                        <td class="lr-name">{book.sc.Book}</td>
-                        <td class="lr-stat">{fmt_pct(book.sc.ok_pct)}</td>
-                        <td class="lr-stat lr-ms">{fmt_ms(book.sc.last_run_ms)}</td>
-                        <td class="lr-extra">
+        <!-- flex-wrap pile: books size themselves by recency tier -->
+        <div class="lr-pile">
+            {#each books as book (book.sc.Book)}
+                {@const tier = recency_tier(book)}
+                {@const active = isActive(book)}
+                <div
+                    class="lr-book tier-{tier}"
+                    class:lr-active={active}
+                    title={book.sc.Book}
+                >
+                    <!-- name + remove in one line -->
+                    <div class="lr-book-top">
+                        <span class="lr-name">{book.sc.Book}</span>
+                        <button
+                            class="lr-remove"
+                            onclick={() => do_remove_book(book)}
+                            title="remove">×</button>
+                    </div>
+
+                    <!-- stats row — age and ok% -->
+                    <div class="lr-stats">
+                        <span class="lr-age">{fmt_age(book)}</span>
+                        {#if book.sc.ok_pct != null}
+                            <span class="lr-pct">{fmt_pct(book.sc.ok_pct)}</span>
+                        {/if}
+                    </div>
+
+                    <!-- extra sc — click to edit -->
+                    {#if Object.keys(extra_sc(book)).length || editing[book.sc.Book] != null}
+                        <div class="lr-extra">
                             {#if editing[book.sc.Book] != null}
                                 <input
                                     class="lr-peel-input"
@@ -166,48 +200,44 @@
                                     onkeydown={e => { if (e.key === 'Enter') commit_edit(book) }}
                                 />
                             {:else}
-                                <span
-                                    class="lr-peel-view"
-                                    onclick={() => start_edit(book)}
-                                    title="click to edit"
-                                >{depeel(extra_sc(book)) || '—'}</span>
+                                <span class="lr-peel-view" onclick={() => start_edit(book)}>
+                                    {depeel(extra_sc(book))}
+                                </span>
                             {/if}
-                        </td>
-                        <td class="lr-actions">
-                            <button
-                                class="lr-btn {isActive(book) ? 'active' : 'idle'}"
-                                onclick={() => activate(book)}
-                            >{isActive(book) ? '▶ active' : 'activate'}</button>
-                        </td>
-                        <td>
-                            <button class="lr-btn remove"
-                                onclick={() => do_remove_book(book)}
-                                title="remove {book.sc.Book}">×</button>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
+                        </div>
+                    {/if}
+
+                    <!-- activate button always visible -->
+                    <button
+                        class="lr-activate {active ? 'is-active' : 'is-idle'}"
+                        onclick={() => activate(book)}
+                    >{active ? '▶ active' : 'activate'}</button>
+                </div>
+            {/each}
+        </div>
     {/if}
 </div>
 
 <style>
     .library-run {
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         padding: 0.5rem;
         border: 1px solid #444;
         border-radius: 4px;
         background: #111;
         color: #ccc;
-        min-width: 420px;
+        min-width: 300px;
     }
+
+    /* ── header ─────────────────────────────────────────────────────────── */
     .lr-header {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.4rem;
+        gap: 0.4rem;
+        margin-bottom: 0.5rem;
     }
     .lr-title { font-weight: bold; flex: 1 }
+
     .lr-mung-banner {
         background: #400;
         border: 1px solid #c44;
@@ -216,51 +246,133 @@
         margin-bottom: 0.4rem;
         color: #f88;
     }
-    .lr-mung-msg { font-size: 0.78rem; margin-top: 0.15rem; }
-    .lr-table { width: 100%; border-collapse: collapse; }
-    .lr-table th { text-align: left; color: #888; font-weight: normal; padding: 0.1rem 0.3rem; border-bottom: 1px solid #333; }
-    .lr-table td { padding: 0.2rem 0.3rem; border-bottom: 1px solid #222; vertical-align: middle; }
-    .lr-active td { background: #1a2a1a; }
-    .lr-name { font-weight: 600; color: #ddd; }
-    .lr-stat { color: #aaa; white-space: nowrap; }
-    .lr-ms { font-family: monospace; font-size: 0.78rem; }
-    .lr-extra { min-width: 120px; }
+    .lr-mung-msg { font-size: 0.75rem; margin-top: 0.15rem; }
+
+    /* ── bubble pile ─────────────────────────────────────────────────────── */
+    /* flex-wrap lets recently-run big cards naturally push small ones aside */
+    .lr-pile {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: flex-start;
+    }
+
+    .lr-book {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 5px;
+        padding: 0.35rem 0.45rem;
+        cursor: default;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .lr-book:hover { border-color: #555; background: #1f1f1f; }
+    .lr-book.lr-active {
+        border-color: #3a7a3a;
+        background: #111e11;
+    }
+
+    /* ── recency tiers: font-size carries the weight ─────────────────────── */
+    .tier-xl { font-size: 1rem;   min-width: 140px; }
+    .tier-lg { font-size: 0.88rem; min-width: 110px; }
+    .tier-md { font-size: 0.78rem; min-width: 90px;  }
+    .tier-sm { font-size: 0.70rem; min-width: 72px;  }
+
+    /* ── internals ───────────────────────────────────────────────────────── */
+    .lr-book-top {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+    .lr-name {
+        font-weight: 600;
+        color: #ddd;
+        flex: 1;
+        word-break: break-word;
+        line-height: 1.2;
+    }
+    .lr-remove {
+        background: none;
+        border: none;
+        color: #555;
+        cursor: pointer;
+        font-size: 0.9em;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    .lr-remove:hover { color: #c88; }
+
+    .lr-stats {
+        display: flex;
+        gap: 0.35rem;
+        align-items: baseline;
+    }
+    .lr-age  { color: #666; font-size: 0.85em; }
+    .lr-pct  { color: #8a8; font-size: 0.85em; }
+
+    .lr-extra { margin-top: 0.1rem; }
     .lr-peel-view {
         cursor: pointer;
         color: #9ab;
         font-family: monospace;
-        font-size: 0.78rem;
+        font-size: 0.78em;
+        word-break: break-all;
     }
     .lr-peel-view:hover { color: #cdf; text-decoration: underline; }
     .lr-peel-input {
         font-family: monospace;
-        font-size: 0.78rem;
+        font-size: 0.78em;
         background: #222;
         color: #cdf;
         border: 1px solid #556;
         border-radius: 2px;
-        padding: 0.1rem 0.25rem;
+        padding: 0.1rem 0.2rem;
         width: 100%;
+        box-sizing: border-box;
     }
+
+    .lr-activate {
+        margin-top: 0.2rem;
+        font-size: 0.78em;
+        padding: 0.12rem 0.35rem;
+        border-radius: 3px;
+        cursor: pointer;
+        border: 1px solid #555;
+        background: #222;
+        color: #aaa;
+        align-self: flex-start;
+    }
+    .lr-activate.is-active { background: #1a3a1a; border-color: #4a8; color: #8d8; }
+    .lr-activate.is-idle   { background: #222;    border-color: #555; color: #aaa; }
+    .lr-activate:hover     { filter: brightness(1.3); }
+
+    /* ── small shared buttons (header) ───────────────────────────────────── */
     .lr-btn {
-        font-size: 0.78rem;
-        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        padding: 0.12rem 0.35rem;
         border-radius: 3px;
         cursor: pointer;
         border: 1px solid #555;
         background: #222;
         color: #aaa;
     }
-    .lr-btn.active { background: #1a3a1a; border-color: #4a8; color: #8d8; }
-    .lr-btn.idle   { background: #222;    border-color: #555; color: #aaa; }
-    .lr-btn.reset  { background: #2a1a1a; border-color: #844; color: #c88; }
-    .lr-btn:hover  { filter: brightness(1.2); }
-    .lr-btn.remove { background: #2a1a1a; border-color: #844; color: #c88; }
-    .lr-btn.remove:hover { background: #3a1a1a; }
+    .lr-btn.save  { border-color: #4a8; color: #8d8; }
+    .lr-btn.reset { background: #2a1a1a; border-color: #844; color: #c88; }
+    .lr-btn:hover { filter: brightness(1.2); }
+
     .lr-add-input {
-        font-family: monospace; font-size: 0.78rem;
-        background: #222; color: #cdf;
-        border: 1px solid #556; border-radius: 2px;
-        padding: 0.1rem 0.35rem; width: 120px;
+        font-family: monospace;
+        font-size: 0.78rem;
+        background: #222;
+        color: #cdf;
+        border: 1px solid #556;
+        border-radius: 2px;
+        padding: 0.1rem 0.3rem;
+        width: 110px;
     }
+
+    .lr-empty { color: #555; font-style: italic; }
 </style>
