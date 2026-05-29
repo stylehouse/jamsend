@@ -520,7 +520,7 @@
         let t = req.o({ ttlilt: 1, ...sc })[0] as TheC | undefined
         if (!t) {
             t = req.i({ ttlilt: 1, until_ts, ...sc })
-            H.trace('ttlilt', `i_req_ttlilt: new +${Math.round(secs*1000)}ms`, { ...sc })
+            // H.trace('ttlilt', `i_req_ttlilt: new +${Math.round(secs*1000)}ms`, { ...sc })
         }
 
         // climb to /w
@@ -563,7 +563,7 @@
             if (!w.c.has_req_ttlilt) continue
 
             const wname = w.sc.w as string
-            H.trace('ttlilt', `i_Story_o_req_ttlilt: walking w:${wname}`)
+            // H.trace('ttlilt', `i_Story_o_req_ttlilt: walking w:${wname}`)
 
             const gathered: Array<{ until_ts: number, t: TheC, req: TheC }> = []
 
@@ -583,10 +583,10 @@
                                 const until_ts = t.sc.until_ts as number
                                 const ms_left = Math.round((until_ts - now) * 1000)
                                 if (until_ts > now) {
-                                    H.trace('ttlilt', `  found: ${keyser(req.sc)} +${ms_left}ms`, { ...t.sc })
+                                    // H.trace('ttlilt', `  found: ${keyser(req.sc)} +${ms_left}ms`, { ...t.sc })
                                     gathered.push({ until_ts, t, req })
                                 } else {
-                                    H.trace('ttlilt', `  expired: ${keyser(req.sc)} ${ms_left}ms ago`)
+                                    // H.trace('ttlilt', `  expired: ${keyser(req.sc)} ${ms_left}ms ago`)
                                     delete t.sc.until_ts
                                     t.sc.timed_out = 1
                                     t.bump_version()
@@ -633,7 +633,7 @@
                 }
             })
 
-            H.trace('ttlilt', `i_Story_o_req_ttlilt: published ${gathered.length} for w:${wname}`)
+            // H.trace('ttlilt', `i_Story_o_req_ttlilt: published ${gathered.length} for w:${wname}`)
 
             if (!gathered.length) delete w.c.has_req_ttlilt
         }
@@ -647,7 +647,7 @@
     //   req.finished guard: finish() may beat the next i_Story_o_req_ttlilt cleanup,
     //   so we skip any ttlilt whose req is already done.
     o_Story_req_ttlilt(Run: House): boolean {
-        Run.trace('ttlilt', 'Story poll')
+        // H.trace('ttlilt', 'Story poll')
 
         const now = now_in_seconds_with_ms()
         let any_expired = false  // saw /%ttlilt,until_ts:T with T<=now and req not finished
@@ -662,12 +662,12 @@
                 const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
                 const rv = req?.sc[rk] ?? '?'
                 Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} ${rk}:${rv} +${ms_left}ms`)
-                Run.trace('leave running...')
+                // Run.trace('leave running...')
                 return true
             }
             any_expired = true
         }
-        Run.trace('ttlilt', any_expired ? 'Story poll ok! timeout' : 'Story poll ok!')
+        if (any_expired) Run.trace('ttlilt', 'Story timeout')
         Run.c.poll_ttlilt_expired = any_expired
         return false
     },
