@@ -4,60 +4,6 @@ Carry-forward for post-🌴 work.  `Waft_spec.md` owns the *design* of the What
 tree and its transport semantics; this doc owns the *implementation slice*.
 
 
----
-
-## What has landed
-
-- Write-on-init noise: dige gate in `LiesStore_write`.
-- Lazy doc loading: `eager_waft_load` flag in `Lies_sync_waft_docs`.
-- Cursor autostart; DocRow glow live.
-- Class-method defs compile; Points resolve on open (most of the time — see Chunk 1).
-- `LiesStore` owns all Lies IO: noserial reqy channels, `req.sc.finished` API,
-  Phase 1/2/3 scan.  `requesty_serial` retired from Lies.
-- Both rename handlers stubbed (they need git-level reference tracking across
-  Points, Pmirrors, and every path reference — a separate project).
-- Languish / snap-race fix
-- Ghostmeta / Pantheate include monitor
-
-##  Known bugs to chase before Chunk 3
-
-Ghost write not firing — compile_pending → LiesRealised → LiesStore_write path seems not to complete. The snap showed compile_pending present with done:1 eventually, but you're saying Ghost writes don't land. Worth checking: do_write = !H.o_Opt_val(w, 'nogen') — if nogen opt is set, write is skipped silently. Also check whether LiesStore_write is getting its rw_name in the right format.
-
-Every-keystroke elvis — likely the saveEffect debounce in Langui firing e_Lang_update_bookmarks or similar on each CM transaction. Worth adding a console filter to identify the type before the next session.
-
----
-
-## Chunk 3 — `accepted_entries` persistence
-
-Two `// <` markers in `e_Lies_accept_What_Point` (`%LiesCurse`).
-
-Accepted Points survive in memory only.  A reload re-opens the What but the
-promoted set is blank — user re-accepts from scratch each time.
-
-Fix: stamp `accepted:1` directly on the `%Point` particle (already in the Waft
-snap tree; `enWaft` passes sc scalars through without encoder changes).
-`Lies_set_examining` reads it back at cursor-placement time.
-
-```
-Waft:Ghost/Tour
-  Doc,path:Ghost/test/Hello.g
-    Points:1
-      Point,method:Idzeugnosis,accepted:1
-      Point:Idzeuganise
-```
-
-`e_Lies_accept_What_Point` additions:
-```js
-point.sc.accepted = 1
-waft.bump_version()   // → Lies_waft_save throttle
-```
-
-`Lies_set_examining` / cold-start: after installing `%What_Points,1`, walk
-`src_C.o({Point:1, accepted:1})` and re-add each to the in-group.
-
-Small — two `// <` markers and a cold-start guard.  Prerequisite for Chunk 4.
-
----
 
 ## Chunk 4 — What-level transport and navigation
 

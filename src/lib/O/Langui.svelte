@@ -686,6 +686,9 @@
                 // compiler always sees the editor's current text, not a
                 // stale snapshot from 2s ago.
                 flush_push_text_now()
+                // Esc is "push everything" — save immediately, don't wait for
+                // the autosave quiet/active thresholds.
+                flush_autosave_now()
                 Lang_i_elvis(view,'Lang_compile', {})
                 return true;
             },

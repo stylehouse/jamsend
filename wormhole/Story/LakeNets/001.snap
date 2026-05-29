@@ -6,7 +6,7 @@ Snap:H
         examining,active_path:Ghost/Story/Peeroleum.g
           {"ref":{"src":"%Doc:1, path:Ghost/Story/Peeroleum.g"}}	What_Points,src_Waft:Ghost/LakeNets
         Opt
-        {"Store":1,"wrote_at:wormhole/Ghost/LakeNets/toc.snap":1780040180.507}
+        {"Store":1,"wrote_at:wormhole/Ghost/LakeNets/toc.snap":1780072688.107}
         open_waft_req,path:Ghost/LakeNets,done
         Waft:Ghost/LakeNets
           Doc,path:Ghost/Story/Peeroleum.g
@@ -55,12 +55,16 @@ Snap:H
             {"ref":{"sc_has":"Object()"}}	lematch
         Languinio
           spinner:compile
+          Change
+            backend,dige:ca570
+            storage,dige:ca570,dim:false
+            compile,dige:ca570,dim:true,secs:0
         Opt
           txtsyntaxdump
         {"ref":{"docC":"%doc:Ghost/Story/Peeroleum.g, gen_path:gen/Story/Peeroleum.go, active:1"}}	req:Languish,path:Ghost/Story/Peeroleum.g,gen_path:gen/Story/Peeroleum.go
           req:text_loaded,maz:3,finished
           req:compile,maz:2,firing
-            ttlilt,until_ts:1780040181.013,waiting:gen_write
+            ttlilt,until_ts:1780072688.611,waiting:gen_write
           req:grafted
         received,doc_opened,doc:Ghost/Story/Peeroleum.g
         received,editorBegins,doc:Ghost/Story/Peeroleum.g
@@ -73,7 +77,7 @@ Snap:H
         {"mung":["age"]}	self,round:4
         o_elvis:Ghost_update_notify
     watched:ave
-      {"lang_doc":"Ghost/Story/Peeroleum.g","text":"\nLakeNetherland(A,w):\n    w.i({see:'y LakeNetherland'})\n    // < the orchestration of Peeroleum-involved C**"}
+      {"lang_doc":"Ghost/Story/Peeroleum.g","disk_dige":"ca5700af97f92919","text_dige":"ca5700af97f92919","text":"\nLakeNetherland(A,w):\n    w.i({see:'y LakeNetherland'})\n    // < the orchestration of Peeroleum-involved C**","disk_rev":1}
       active_doc,path:Ghost/Story/Peeroleum.g
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:Lies
@@ -87,4 +91,4 @@ Snap:H
       {"ref":{"fn":"Function()"}}	action,role:nogen,label:nogen,icon:nogen,cls:toggle-off
       {"ref":{"fn":"Function()"}}	action,role:compo,label:compo,icon:compo,cls:toggle-off
     {"mung":["id"]}	mo:main,interval:3.6
-    {"ref":{"req":"%req:compile, maz:2, firing:1"}}	ttlilt,w:Lang,until_ts:1780040181.013,waiting:gen_write
+    {"ref":{"req":"%req:compile, maz:2, firing:1"}}	ttlilt,w:Lang,until_ts:1780072688.611,waiting:gen_write

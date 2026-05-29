@@ -190,6 +190,11 @@
     // to one compile cycle rather than N sequential ones.
     async e_Lang_compile(A: TheC, w: TheC, e: TheC) {
         if (!e.sc.misdirectioner) {
+            // Stamp the live CM state onto docC before bouncing — the second pass
+            // has no e.sc.state (misdirectioner carries none), so Lang_compile_docC
+            // would otherwise compile from the last bookmark-debounce state (~800ms
+            // stale), making every Esc compile one push behind the current text.
+            this.Lang_doc_from_event(w, e)
             return this.i_elvisto(w,'Lang_compile',{misdirectioner:1})
         }
         const docC = this.Lang_active_docC(w)
