@@ -29,7 +29,10 @@ export const sthoTags = {
     iterMarker:  Tag.define(),   // Sunpitness: "S "
     name:        Tag.define(),   // variable / key identifiers
     number:      Tag.define(),   // number literals
+    string:      Tag.define(),   // StringVal puddle literals
     sigil:       Tag.define(),   // "$", "@", "#" prefix/suffix
+    puddleSigil: Tag.define(),   // "%" — marks verbatim-TS value
+    ampSigil:    Tag.define(),   // "&" — this.method() call head
     comment:     Tag.define(),   // "#..." line comments
     controlHead: Tag.define(),   // "if ", "for ", "while ", "else"
     title:       Tag.define(),   // condition text after a control keyword
@@ -43,7 +46,10 @@ export const highlightStyle = HighlightStyle.define([
     { tag: sthoTags.iterMarker,  color: '#c678dd', fontWeight: 'bold' },   // purple — S
     { tag: sthoTags.name,        color: '#abb2bf' },                       // soft white — keys
     { tag: sthoTags.number,      color: '#d19a66' },                       // amber — numbers
+    { tag: sthoTags.string,      color: '#98c379' },                       // green — string puddles
     { tag: sthoTags.sigil,       color: '#e06c75' },                       // red — $ @ #
+    { tag: sthoTags.puddleSigil, color: '#56b6c2', fontWeight: 'bold' },  // cyan — %
+    { tag: sthoTags.ampSigil,    color: '#c678dd', fontWeight: 'bold' },  // purple — &
     { tag: sthoTags.comment,     color: '#5c6370', fontStyle: 'italic' },  // grey — comments
     { tag: sthoTags.controlHead, color: '#c678dd' },                       // purple — if/for/else
     { tag: sthoTags.title,       color: '#e5c07b' },                       // gold — conditions
@@ -73,13 +79,17 @@ function configure(parser: any) {
                 Sunpitness:            sthoTags.iterMarker,
                 Name:                  sthoTags.name,
                 Number:                sthoTags.number,
+                StringVal:             sthoTags.string,
                 Sigil:                 sthoTags.sigil,
+                PuddleSigil:           sthoTags.puddleSigil,
+                AmpSigil:              sthoTags.ampSigil,
                 Comment:               sthoTags.comment,
                 ControlKeyword:        sthoTags.controlHead,
                 ElseKeyword:           sthoTags.controlHead,
                 ElseIfKeyword:         sthoTags.controlHead,
                 Title:                 sthoTags.title,
                 "MethodLike/Name":     sthoTags.methodName,
+                "AmpCall/Name":        sthoTags.methodName,
                 "Flugenzoid/( )":      sthoTags.flugBracket,
                 "Flugamata/( )":       sthoTags.flugBracket,
             }),

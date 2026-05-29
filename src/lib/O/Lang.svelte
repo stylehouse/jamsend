@@ -6,6 +6,32 @@
     // keeps the per-doc lifecycle (plan / whatsthis / bookmark actions) and
     // threads the compile trigger + reply-polling into that lifecycle.
     //
+    // ── Language goals ───────────────────────────────────────────────────────
+    //
+    //   Puddle values (%key:'string literal')
+    //     % before a PeelKey means the colon-value is a raw TS expression.
+    //     Currently StringVal handles 'single', "double", `backtick` strings.
+    //     The compiler emits the value verbatim; no exactly filter is applied.
+    //     Next: multi-token puddle blocks for arithmetic / function calls.
+    //
+    //   Ampersand calls (&method,arg,arg,…)
+    //     Compiles to this.method(arg,arg,…).
+    //     Works standalone or as a condition in if/elsif:
+    //       if &method,A,w,etc:    →  if (this.method(A,w,etc)) {
+    //     The arg list is raw text after the first comma — no inner stho parsing.
+    //     Next: &method,arg if we want to parse individual args as PeelItems.
+    //
+    //   TypeScript puddle blocks
+    //     Longer raw TS (multi-line strings, arrow functions, object literals)
+    //     need a quoting form the line-oriented grammar can delimit cleanly.
+    //     Candidate: indented block after a special sigil or keyword.
+    //     < not yet designed.
+    //
+    //   Peeroleum(A,w) — pure C** p2p state ghost
+    //     w.i({see:'y Peeroleum'}) ↔ w i %see:'y Peeroleum'
+    //     Method calls as: &method,A,w,etc
+    //     Condition form: if &method,A,w,etc:
+    //
     // ── Document registry ────────────────────────────────────────────────────
     //
     //   w/{docs:1}/{doc:path} — one particle per open document.

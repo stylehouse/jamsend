@@ -18,6 +18,10 @@ theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {with: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 5}}])
+    A w.i({prefixy: 'stuffule sivi'})
+    A w.i({prefixy: `three = ${1 + 2}`})
+    A w.i({prefixy: stuff, with: angles})
+    A this._i_drill(w, [{sc: {prefixy: stuff}}, {sc: {with: levels}}])
 
     [3]
     for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) {

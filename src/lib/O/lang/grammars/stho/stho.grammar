@@ -7,9 +7,24 @@
     nonnl { ![\n] }
     nl { "\n" }
     Sigil { "@" | "#" | "$" }
+    // Puddle sigil: % before a PeelKey means the colon-value is a raw TS
+    // expression (string literal, template, etc.) rather than a bareword or
+    // number.  The compiler emits it verbatim into the sc object.
+    PuddleSigil { "%" }
+    // Ampersand-call sigil: & before a Name turns the line into
+    // this.Name(args…).  Parsed as AmpCall so the collector can emit
+    // the right JS without the MethodLike open-paren heuristic.
+    AmpSigil { "&" }
     Comma { "," }
     Colon { ":" }
     space  { @whitespace }
+
+    // StringVal: single-quoted, double-quoted, or backtick string.
+    // Backtick strings may span lines; single/double are kept line-local here
+    // (nonnl) — for multi-line strings fall through to a TS puddle block.
+    // < backtick template strings with embedded ${…} are not yet decomposed;
+    //   the whole span is emitted verbatim by the compiler.
+    StringVal { "'" !['\n]* "'" | '"' !["\n]* '"' | "`" ![\`]* "`" }
 
     // Pythonic control-flow keywords.  Trailing space is part of the token so
     // bare words ("iffy", "foreach") still fall through to Name.
@@ -34,7 +49,7 @@
     ImportLine { "import" ![\n]* }
     ExportLine { "export" ![\n]* }
 
-    @precedence {ImportLine, ExportLine, AsyncKeyword, ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, Number, Comma, Colon, Title, Name}
+    @precedence {ImportLine, ExportLine, AsyncKeyword, ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, StringVal, Number, Comma, Colon, Title, Name}
     @precedence {nl, space}
 }
 
@@ -52,12 +67,19 @@ Import { ImportLine }
 Export { ExportLine }
 //#endregion
 
-expression { Import | Export | Name | Number | IOing | Sunpit | ControlFlow | MethodLike | Flug }
+expression { Import | Export | Name | Number | IOing | Sunpit | ControlFlow | MethodLike | Flug | AmpCall }
 
 // Method declaration or call: [async] name( ...
 // Grammar marks the opening paren only; the collector inspects raw line text
 // for the closing ")", optional "{", and multi-line args (by indentation).
 MethodLike { AsyncKeyword? Name LParen }
+
+// Ampersand-call: &method,arg,arg,…  on one line.
+// Compiles to this.method(arg,arg,…).  The arg list is raw text after the
+// comma following the name; the compiler reads it from the raw line.
+// Works bare (&method,A,w) or as a condition head (if &method,A,w:).
+AmpCall { AmpSigil Name AmpArgs? }
+AmpArgs { Comma nonnl* }
 
 // Pythonic if/else/for/while/until block header.
 // Body is indented lines consumed by the collector (_collect_line), same as Sunpit.
@@ -78,9 +100,12 @@ Sunpit { Sunpitness (IOing) }
     IOpath { Leg ("/" Leg)* }
     Leg { PeelGroup }
     PeelGroup { PeelItem (Comma PeelItem)* }
-    PeelItem { PeelKey (Colon PeelVal)? }
+    PeelItem { PuddleSigil? PeelKey (Colon PeelVal)? }
     PeelKey { Sigil? Name Sigil? }
-    PeelVal { Sigil? Name Sigil? | Number }
+    // PeelVal: bareword/sigiled name, number, or a quoted TS string puddle.
+    // % on the enclosing PeelItem signals the compiler to emit PeelVal verbatim.
+    // < arithmetic expressions and unquoted TS blobs need a puddle block form.
+    PeelVal { Sigil? Name Sigil? | Number | StringVal }
     // < could be Sunpitness (IOing | SunpitHead) much later...
     //SunpitHead { Number | Number Heading | Heading }
     Heading { Title  }

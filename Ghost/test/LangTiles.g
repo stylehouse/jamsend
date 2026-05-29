@@ -8,6 +8,10 @@ theCompiledStuff(A,w) {
     i thung/with/etc
     i yeses/because,it:2
     i yeses/because,it:5
+    A i %prefixy:'stuffule sivi'
+    A i %prefixy:`three = ${1 + 2}`
+    A i %prefixy:stuff,with:angles
+    A i %prefixy:stuff/with:levels
 
     [3]
     S o yeses/because

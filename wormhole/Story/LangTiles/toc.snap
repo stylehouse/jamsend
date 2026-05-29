@@ -120,9 +120,7 @@ story:LangTiles
       w:Lang
         txtsyntaxdump
   TimeSpool
-    TimeTotal:beliefs,avg:0.338
-      sample:0.25,at:1779631865
-      sample:0.28,at:1779671792
+    TimeTotal:beliefs,avg:0.372
       sample:0.24,at:1779672154
       sample:0.374,at:1779672167
       sample:0.467,at:1779672222
@@ -131,6 +129,8 @@ story:LangTiles
       sample:0.286,at:1779673203
       sample:0.496,at:1779674249
       sample:0.325,at:1779682121
+      sample:0.458,at:1780029934
+      sample:0.413,at:1780030667
   step,dige:e5c902401879bbad
   step:2,dige:197e60e3694eeeb5
   step:3,dige:effd0caadbf49e4f

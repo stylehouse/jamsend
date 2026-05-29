@@ -393,6 +393,33 @@
             },
         })
 
+        if (hit?.name === 'AmpCall') {
+            // &method,arg,arg,… → this.method(arg,arg,…)
+            // The Name child gives the method; everything after the first comma
+            // is the raw arg list (read from line text, not the parse tree).
+            const nameNode = hit.node.getChild('Name')
+            const method   = nameNode
+                ? state.doc.sliceString(nameNode.from, nameNode.to)
+                : '__unknown'
+            const before   = line.text.slice(0, hit.node.from - line.from)
+            // raw args: text after "&name" up to end-of-line, starting at ","
+            const rawAfter = line.text.slice(hit.node.from - line.from + 1 + method.length)
+            // strip leading comma; keep the rest as the arg list
+            const argStr   = rawAfter.startsWith(',')
+                ? rawAfter.slice(1).trimEnd()
+                : rawAfter.trimEnd()
+            const call = argStr
+                ? `this.${method}(${argStr})`
+                : `this.${method}()`
+            out.push({ kind: 'translated', text: before + call })
+            // record as a call in the word index
+            const entry: any = { call: 1, method, from: hit.node.from, to: hit.node.to, line: n,
+                                 region_path: [...ctx.region_stack] }
+            if (ctx.current_method) entry.via = ctx.current_method
+            ctx.words.push(entry)
+            return n + 1
+        }
+
         if (hit?.name === 'Sunpit') {
             // emit the for-header (open brace only; _collect_line closes it below)
             const header  = this.Lang_compile_Sunpit(hit.node, state, {})
@@ -861,6 +888,8 @@
     //   name:3         →  name: 3              (+ exactly_for:'name')
     //   name:$v        →  name: v              (+ exactly_for:'name')
     //   name:other     →  name: other          (+ exactly_for:'name')
+    //   %name:'str'    →  name: 'str'          (puddle — value is verbatim TS;
+    //                                           no exactly_for since it's an expression)
     Lang_compile_PeelItem(item: SyntaxNode, state: EditorState, ctx: any): {
         sc_part: string,
         exactly_for?: string,
@@ -868,6 +897,9 @@
         capture_var?: string,
     } {
         const doc = state.doc
+        // PuddleSigil (%) marks a verbatim-TS value — value emitted as-is,
+        // exactly filter suppressed (expressions aren't filter-safe).
+        const isPuddle = !!item.getChild('PuddleSigil')
         const keyNode = item.getChild('PeelKey')
         const valNode = item.getChild('PeelVal')
         if (!keyNode) throw new Error('PeelItem: no PeelKey')
@@ -898,8 +930,12 @@
             return { sc_part: `${name}: 1` }
         }
 
-        // has a colon-value → exactly, value comes from PeelVal
+        // has a colon-value → value comes from PeelVal
         const val_src = this.Lang_compile_PeelVal(valNode, state)
+        if (isPuddle) {
+            // puddle: emit verbatim, no exactly filter
+            return { sc_part: `${name}: ${val_src}` }
+        }
         return { sc_part: `${name}: ${val_src}`, exactly_for: name }
     },
 
@@ -907,8 +943,12 @@
         const doc = state.doc
         const numNode = val.getChild('Number')
         if (numNode) return doc.sliceString(numNode.from, numNode.to)
+        // StringVal: a quoted TS string puddle — emit verbatim, quotes and all.
+        // The grammar accepts 'single', "double", and `backtick` forms.
+        const strNode = val.getChild('StringVal')
+        if (strNode) return doc.sliceString(strNode.from, strNode.to)
         const nameNode = val.getChild('Name')
-        if (!nameNode) throw new Error('PeelVal: no Number or Name')
+        if (!nameNode) throw new Error('PeelVal: no Number, StringVal, or Name')
         // Name in PeelVal is always an identifier — whether the user wrote
         // `$val` or just `val`, they mean the variable `val` in scope.
         return doc.sliceString(nameNode.from, nameNode.to)
