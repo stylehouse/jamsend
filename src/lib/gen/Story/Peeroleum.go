@@ -8,14 +8,14 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peeroleum(): string { return 'bc4f1d2635ad9382' },
+    Ghostmeta_Ghost_Story_Peeroleum(): string { return '7d3e82eb6647c9d1' },
 
 
 LakeNetherland(A,w) {
     w.i({see:'y LakeNetherland'})
+    // yea!!!fa33333
     // < the orchestration of Peeroleum-involved C**
-    // cheering, finally it's not spewing events while typing
-    w.i({things: 1})
+    
 },
 
     })

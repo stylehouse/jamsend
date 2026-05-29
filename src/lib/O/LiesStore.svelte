@@ -249,10 +249,15 @@
                 const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
                 if (ld) {
                     ld.sc.base_dige = req.sc.dige as string
-                    console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
-                } else {
-                    console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
+                    // Mirror the new disk dige into ave/lang_doc so the DocRow
+                    // change strip sees it without an extra cross-world round-trip.
+                    // Only source files have a loaded_doc; gen/ writes skip this.
+                    const ave = H.oai_enroll(H, { watched: 'ave' })
+                    const docTextC = ave.oai({ lang_doc: path })
+                    docTextC.sc.disk_dige = req.sc.dige as string
+                    docTextC.bump_version()
                 }
+                console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
             }
             w.drop(req)
         }

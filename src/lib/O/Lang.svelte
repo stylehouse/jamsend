@@ -136,6 +136,7 @@
     // into a per-bookmark subcontainer under model/**.
 
     import { _C, TheC } from "$lib/data/Stuff.svelte"
+    import { dig }       from "$lib/Y.svelte"
     import { syntaxTree } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import { onMount, tick } from "svelte"
@@ -502,12 +503,14 @@
 
             const ave = H.oai_enroll(H, { watched: 'ave' })
             const docTextC = ave.oai({ lang_doc: path })
+            // disk_dige: dige of the source as it came off disk on this open.
+            // text_dige starts equal — they diverge once the user edits.
+            // disk_rev marks this as a disk-origin write (see Langui disk-reload $effect).
+            const initial_dige = text ? await dig(text) : ''
+            docTextC.sc.disk_dige = initial_dige
+            docTextC.sc.text_dige = initial_dige
             if (docTextC.sc.text !== text) {
                 docTextC.sc.text = text
-                // disk_rev marks this text as disk-origin (an open/reload), distinct
-                // from e_Lang_set_doc's editor-origin pushes which bump version but
-                // never disk_rev.  Langui's disk-reload $effect gates on disk_rev so
-                // editor echoes can't re-enter it and feed back into the elvis queue.
                 docTextC.sc.disk_rev = ((docTextC.sc.disk_rev as number) ?? 0) + 1
                 docTextC.bump_version()
             }
@@ -614,8 +617,53 @@
         if (text == null) return
         if (docTextC.sc.text === text) return
         docTextC.sc.text = text
+        docTextC.sc.text_dige = await dig(text)
         docTextC.bump_version()
         // no main() — UI initiated this, no one else needs waking
+    },
+
+// ── Lang_update_change ───────────────────────────────────────────────────────
+    //
+    //   Writes the three-leg dige strip into ave/%lang_change,path so DocRow
+    //   can render it without cross-world plumbing.  Called from the Lang tick
+    //   whenever the active doc changes.
+    //
+    //   ave/{lang_change:1,path}
+    //     sc.text_dige      — 5-char prefix of editor-text dige (from ave/lang_doc)
+    //     sc.disk_dige      — 5-char prefix of last disk-written source dige
+    //     sc.compiled_dige  — 5-char prefix of source_dige that was last compiled
+    //     sc.compile_secs   — wall time of last compile cycle (includes disk write)
+    //     sc.disk_stale     — text_dige ≠ disk_dige (unsaved edits in flight)
+    //     sc.compile_stale  — compile_pending or compiled_dige ≠ disk_dige
+    //     sc.has_output     — whether a Compile/Output exists (gen-able doc)
+    Lang_update_change(w: TheC, docC: TheC) {
+        const H   = this as House
+        const ave = H.oai_enroll(H, { watched: 'ave' })
+        const path = docC.sc.doc as string
+
+        const lang_doc       = ave.o({ lang_doc: path })[0] as TheC | undefined
+        const text_dige      = (lang_doc?.sc.text_dige as string ?? '').slice(0, 5)
+        const disk_dige      = (lang_doc?.sc.disk_dige as string ?? '').slice(0, 5)
+
+        const job            = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const output         = job?.o({ Output: 1 })[0]  as TheC | undefined
+        const compiled_dige  = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
+        const compile_secs   = (job?.sc.compile_secs as number) ?? 0
+        const compile_pending = !!job?.oa({ Pending: 1 })
+
+        const disk_stale    = !!text_dige && !!disk_dige && text_dige !== disk_dige
+        const compile_stale = compile_pending
+            || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
+
+        const changeC = ave.oai({ lang_change: 1, path })
+        changeC.sc.text_dige      = text_dige
+        changeC.sc.disk_dige      = disk_dige
+        changeC.sc.compiled_dige  = compiled_dige
+        changeC.sc.compile_secs   = compile_secs
+        changeC.sc.disk_stale     = disk_stale
+        changeC.sc.compile_stale  = compile_stale
+        changeC.sc.has_output     = !!output
+        changeC.bump_version()
     },
 
 //#region w:Lang
@@ -702,6 +750,9 @@
         if (!bookmarks.length) model.empty()
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
+
+        // Push the three-leg dige strip into ave so DocRow can display it.
+        if (docC) this.Lang_update_change(w, docC)
 
         // < first compile per doc is now Languish's req:compile phase, not a
         //   tick-time ever_compiled guard.  Re-compile on edit / manual compile
