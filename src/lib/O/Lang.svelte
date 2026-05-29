@@ -635,8 +635,10 @@
     //                   sc.dim  — compile is pending or disk is ahead of it
     //                   sc.secs — compile_secs (wall time)
     //
-    //   After writing, bumps ave/lang_doc so Langui's $derived on docC.version
-    //   re-fires and .ob()s the fresh values.
+    //   Each leg uses roai with the sc payload as second arg.  roai replaces the
+    //   particle when its sc doesn't match, producing a fresh C reference.
+    //   Langui holds _backend/_storage/_compile as $state() C refs — only a new
+    //   reference triggers a Svelte re-render, so oai+bump_version isn't enough.
     //
     //   Called from the Lang tick each time the active docC is known.
     async Lang_update_change(w: TheC, docC: TheC) {
@@ -658,29 +660,19 @@
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
         const change = languinio.oai({ Change: 1 })
-        change.bump_version()
 
-        await change.roai({ backend: 1 }, {dige: text_dige})
+        // roai replaces the particle when sc doesn't match → new C ref → Svelte re-renders.
+        await change.roai({ backend: 1 }, { dige: text_dige })
 
-
-        const storage = change.oai({ storage: 1 })
-        storage.sc.dige = disk_dige
-        storage.sc.dim  = !!text_dige && !!disk_dige && text_dige !== disk_dige
-        storage.bump_version()
+        const disk_dim = !!text_dige && !!disk_dige && text_dige !== disk_dige
+        await change.roai({ storage: 1 }, { dige: disk_dige, dim: disk_dim })
 
         if (output) {
-            const compile = change.oai({ compile: 1 })
-            compile.sc.dige = compiled_dige
-            compile.sc.dim  = pending || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
-            compile.sc.secs = compile_secs
-            compile.bump_version()
+            const compile_dim = pending || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
+            await change.roai({ compile: 1 }, { dige: compiled_dige, dim: compile_dim, secs: compile_secs })
         } else {
-            // no gen output for this doc — drop any stale compile leg
             for (const old_c of change.o({ compile: 1 }) as TheC[]) change.drop(old_c)
         }
-
-        // Bump ave/lang_doc so Langui's $derived(docC.version) track re-fires.
-        if (lang_doc) lang_doc.bump_version()
     },
 
 //#region w:Lang
