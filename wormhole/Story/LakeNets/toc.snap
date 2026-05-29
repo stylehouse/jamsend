@@ -66,17 +66,13 @@ story:LakeNets
         esc:path,v:Ghost/LakeNets
   Opt
     For
-      w:Lies
-        nogen
       w:Lang
         txtsyntaxdump
     trickle
     quiesce_snap_time:0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.11
-      sample:0.136,at:1779952803
-      sample:0.158,at:1779952811
+    TimeTotal:beliefs,avg:0.099
       sample:0.098,at:1779959944
       sample:0.095,at:1779963645
       sample:0.116,at:1779963678
@@ -85,5 +81,7 @@ story:LakeNets
       sample:0.051,at:1779980248
       sample:0.114,at:1780021463
       sample:0.101,at:1780021890
+      sample:0.09,at:1780023668
+      sample:0.095,at:1780023782
   step,dige:703d334bead9fc50
   step:2,dige:7cd0a6644c7dd713
