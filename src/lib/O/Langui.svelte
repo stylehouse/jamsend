@@ -340,7 +340,23 @@
         console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_doc=${!!active_doc}`)
     })
 
-    // ── switch $effect ────────────────────────────────────────────────────────
+    // ── change strip ─────────────────────────────────────────────────────────────
+    //   Reads w:Lang/{Languinio:1}/{Change:1}/{backend|storage|compile:1} written
+    //   by Lang_update_change each Lang tick.  Languinio is enrolled in ave at
+    //   Lang setup time, so H.ave.ob({Languinio:1})[0] is reactive.
+    let _backend: TheC | undefined = $state()
+    let _storage: TheC | undefined = $state()
+    let _compile: TheC | undefined = $state()
+    $effect(() => {
+        void docC?.version   // re-fires when Lang_update_change bumps ave/lang_doc
+        const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+        const change    = languinio?.ob({ Change: 1 })[0] as TheC | undefined
+        _backend = change?.ob({ backend: 1 })[0] as TheC | undefined
+        _storage = change?.ob({ storage: 1 })[0] as TheC | undefined
+        _compile = change?.ob({ compile: 1 })[0] as TheC | undefined
+    })
+
+        // ── switch $effect ────────────────────────────────────────────────────────
     //   Runs whenever active_path changes.  Saves the departing EditorState
     //   (after flushing bookmarks and scroll position), then calls
     //   view.setState() with the arriving one.
@@ -843,6 +859,24 @@
         <!-- doc-picker dropdown + any other Lang actions (compo/compi toggles etc) -->
         <Actions N={lang_actions} />
         <span class="lte-doc" title={active_path}>{active_name}</span>
+        {#if _backend?.sc.dige}
+        <span class="lte-change">
+            <span class="lte-ch-leg" title="editor text">{_backend.sc.dige}</span>
+            {#if _storage?.sc.dige}
+                <span class="lte-ch-arrow" class:lte-ch-dim={_storage.sc.dim}>→</span>
+                <span class="lte-ch-leg"   class:lte-ch-dim={_storage.sc.dim}
+                      title="on disk">{_storage.sc.dige}</span>
+            {/if}
+            {#if _compile?.sc.dige}
+                <span class="lte-ch-arrow" class:lte-ch-dim={_compile.sc.dim}>→</span>
+                <span class="lte-ch-leg"   class:lte-ch-dim={_compile.sc.dim}
+                      title="compiled">{_compile.sc.dige}</span>
+                {#if _compile.sc.secs}
+                    <span class="lte-ch-secs">({_compile.sc.secs}s)</span>
+                {/if}
+            {/if}
+        </span>
+        {/if}
         <span class="lte-hint">Ctrl+B</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
         <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
@@ -905,6 +939,16 @@
     .lte-hint  { color: #3a3a3a; font-style: italic; }
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
+
+    /* ── change strip — inline in .lte-bar next to the filename ── */
+    .lte-change {
+        display: inline-flex; align-items: center; gap: 0.18rem;
+        font-family: monospace; font-size: 0.67rem;
+    }
+    .lte-ch-leg   { color: #4a6a4a; letter-spacing: 0.03em }
+    .lte-ch-arrow { color: #2a2a3a }
+    .lte-ch-dim   { opacity: 0.35 }
+    .lte-ch-secs  { color: #333a55; margin-left: 0.15rem }
 
     /* ── "map" button — minimap toggle ─────────────────────────────────── */
     /* Plain word button; active state is colour, not rotation.             */

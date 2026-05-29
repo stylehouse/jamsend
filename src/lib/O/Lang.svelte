@@ -503,9 +503,10 @@
 
             const ave = H.oai_enroll(H, { watched: 'ave' })
             const docTextC = ave.oai({ lang_doc: path })
-            // disk_dige: dige of the source as it came off disk on this open.
-            // text_dige starts equal — they diverge once the user edits.
-            // disk_rev marks this as a disk-origin write (see Langui disk-reload $effect).
+            // disk_dige / text_dige: both start equal to the on-disk content.
+            // They diverge once the user edits (text_dige moves, disk_dige stays
+            // until LiesStore confirms the write).  disk_rev marks disk-origin
+            // installs so Langui's disk-reload $effect can gate on them.
             const initial_dige = text ? await dig(text) : ''
             docTextC.sc.disk_dige = initial_dige
             docTextC.sc.text_dige = initial_dige
@@ -624,46 +625,62 @@
 
 // ── Lang_update_change ───────────────────────────────────────────────────────
     //
-    //   Writes the three-leg dige strip into ave/%lang_change,path so DocRow
-    //   can render it without cross-world plumbing.  Called from the Lang tick
-    //   whenever the active doc changes.
+    //   Writes the three-leg change strip into w/{Languinio:1}/{Change:1}.
+    //   Three child particles, one per leg:
     //
-    //   ave/{lang_change:1,path}
-    //     sc.text_dige      — 5-char prefix of editor-text dige (from ave/lang_doc)
-    //     sc.disk_dige      — 5-char prefix of last disk-written source dige
-    //     sc.compiled_dige  — 5-char prefix of source_dige that was last compiled
-    //     sc.compile_secs   — wall time of last compile cycle (includes disk write)
-    //     sc.disk_stale     — text_dige ≠ disk_dige (unsaved edits in flight)
-    //     sc.compile_stale  — compile_pending or compiled_dige ≠ disk_dige
-    //     sc.has_output     — whether a Compile/Output exists (gen-able doc)
-    Lang_update_change(w: TheC, docC: TheC) {
+    //     /{backend:1}  sc.dige — current editor-text dige (from ave/lang_doc)
+    //     /{storage:1}  sc.dige — last dige confirmed written to disk
+    //                   sc.dim  — text has moved ahead (unsaved edits exist)
+    //     /{compile:1}  sc.dige — source_dige of last Compile/Output
+    //                   sc.dim  — compile is pending or disk is ahead of it
+    //                   sc.secs — compile_secs (wall time)
+    //
+    //   After writing, bumps ave/lang_doc so Langui's $derived on docC.version
+    //   re-fires and .ob()s the fresh values.
+    //
+    //   Called from the Lang tick each time the active docC is known.
+    async Lang_update_change(w: TheC, docC: TheC) {
         const H   = this as House
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const path = docC.sc.doc as string
 
-        const lang_doc       = ave.o({ lang_doc: path })[0] as TheC | undefined
-        const text_dige      = (lang_doc?.sc.text_dige as string ?? '').slice(0, 5)
-        const disk_dige      = (lang_doc?.sc.disk_dige as string ?? '').slice(0, 5)
+        // Read current dige values.
+        const lang_doc      = ave.o({ lang_doc: path })[0] as TheC | undefined
+        const text_dige     = (lang_doc?.sc.text_dige as string ?? '').slice(0, 5)
+        const disk_dige     = (lang_doc?.sc.disk_dige as string ?? '').slice(0, 5)
 
-        const job            = docC.o({ Compile: 1 })[0] as TheC | undefined
-        const output         = job?.o({ Output: 1 })[0]  as TheC | undefined
-        const compiled_dige  = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
-        const compile_secs   = (job?.sc.compile_secs as number) ?? 0
-        const compile_pending = !!job?.oa({ Pending: 1 })
+        const job           = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const output        = job?.o({ Output: 1 })[0]  as TheC | undefined
+        const compiled_dige = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
+        const compile_secs  = (job?.sc.compile_secs as number) ?? 0
+        const pending       = !!job?.oa({ Pending: 1 })
 
-        const disk_stale    = !!text_dige && !!disk_dige && text_dige !== disk_dige
-        const compile_stale = compile_pending
-            || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (!languinio) return
+        const change = languinio.oai({ Change: 1 })
+        change.bump_version()
 
-        const changeC = ave.oai({ lang_change: 1, path })
-        changeC.sc.text_dige      = text_dige
-        changeC.sc.disk_dige      = disk_dige
-        changeC.sc.compiled_dige  = compiled_dige
-        changeC.sc.compile_secs   = compile_secs
-        changeC.sc.disk_stale     = disk_stale
-        changeC.sc.compile_stale  = compile_stale
-        changeC.sc.has_output     = !!output
-        changeC.bump_version()
+        await change.roai({ backend: 1 }, {dige: text_dige})
+
+
+        const storage = change.oai({ storage: 1 })
+        storage.sc.dige = disk_dige
+        storage.sc.dim  = !!text_dige && !!disk_dige && text_dige !== disk_dige
+        storage.bump_version()
+
+        if (output) {
+            const compile = change.oai({ compile: 1 })
+            compile.sc.dige = compiled_dige
+            compile.sc.dim  = pending || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
+            compile.sc.secs = compile_secs
+            compile.bump_version()
+        } else {
+            // no gen output for this doc — drop any stale compile leg
+            for (const old_c of change.o({ compile: 1 }) as TheC[]) change.drop(old_c)
+        }
+
+        // Bump ave/lang_doc so Langui's $derived(docC.version) track re-fires.
+        if (lang_doc) lang_doc.bump_version()
     },
 
 //#region w:Lang
@@ -751,8 +768,8 @@
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
 
-        // Push the three-leg dige strip into ave so DocRow can display it.
-        if (docC) this.Lang_update_change(w, docC)
+        // Push the three-leg change strip into Languinio/Change for Langui.
+        if (docC) await this.Lang_update_change(w, docC)
 
         // < first compile per doc is now Languish's req:compile phase, not a
         //   tick-time ever_compiled guard.  Re-compile on edit / manual compile
