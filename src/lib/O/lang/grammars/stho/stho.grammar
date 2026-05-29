@@ -108,4 +108,4 @@ Sunpit { Sunpitness (IOing) }
     PeelVal { Sigil? Name Sigil? | Number | StringVal }
     // < could be Sunpitness (IOing | SunpitHead) much later...
     //SunpitHead { Number | Number Heading | Heading }
-    Heading { Title  }
+    //Heading { Title  }

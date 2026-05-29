@@ -432,29 +432,32 @@
     })
 
     // ── disk-reload $effect ───────────────────────────────────────────────────
-    //   When the active doc is reloaded from disk (docC.text changes externally),
-    //   push the new content into the editor — replacing history is acceptable
-    //   here because the file changed on disk, not in the editor.
+    //   When the active doc is reloaded from disk (docC text installed by a
+    //   disk-origin write — open or external reload), push the new content into
+    //   the editor — replacing history is acceptable here because the file
+    //   changed on disk, not in the editor.
     //   Guards with active_path === prev_path to avoid firing mid-switch.
     //
-    //   Echo guard: this effect also fires when docC.sc.text changes because
-    //   *we* just pushed it via Lang_set_doc.  Without the spool check below,
-    //   any stale push arriving from the elvis queue (the user typed faster
-    //   than the queue drained) would land here as "incoming != live" and we'd
-    //   dispatch a full-doc replace at offset 0 — which the updateListener
-    //   then echoes back into the queue, looping.  Recognising the incoming
-    //   text as one we've recently been at breaks the loop.
+    //   disk_rev gate: docC.version bumps on every text write, including the
+    //   echoes of our own keystrokes (e_Lang_set_doc).  Only disk-origin writes
+    //   (req_text_loaded) advance docC.sc.disk_rev, so gating on a per-path
+    //   disk_rev key means editor echoes hit `key === _applied` and return
+    //   without ever dispatching back into the view.  The spool below is a
+    //   second line of defence for any text that does reach the dispatch.
+    let _applied_disk_key: string | null = null   // `${path}#${disk_rev}` last applied
     $effect(() => {
-        void docC?.version
+        void docC?.version   // wake on any text-particle change
+        const disk_rev = (docC?.sc.disk_rev as number | undefined) ?? 0
         const incoming = (docC?.sc.text as string | undefined) ?? ''
         if (!view || !incoming) return
         if (active_path !== prev_path) return   // switch in progress
+        const key = `${active_path}#${disk_rev}`
+        if (key === _applied_disk_key) return   // editor echo, or already applied
+        _applied_disk_key = key
         const live = view.state.doc.toString()
-        if (incoming === live) return
-        if (spool_has(active_path, incoming)) return   // echo of our own push
-        // Genuine remote / disk change.  Apply it, and remember it so the
-        // resulting updateListener push doesn't immediately come back through
-        // here as "new" again.
+        if (incoming === live) return           // switch effect already set this text
+        // Genuine disk change.  Apply it, and remember it so the resulting
+        // updateListener push doesn't immediately come back through here as new.
         spool_remember(active_path, incoming)
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: incoming } })
     })
@@ -971,37 +974,6 @@
     /* wrapper: position:relative makes it the containing block for lte-mm-host */
     .lte-cm    { position: relative; }
     .lte-cm :global(.cm-editor)  { /* auto height — driven by cm-scroller */ }
-
-    /* ── Languish phase spinners ───────────────────────────────────────
-       text_load (blue) → compile (amber).  Floats top-left over the editor
-       canvas; the ::before glyph spins, the box pulses.  333ms floor lives in
-       the driving $effect so a fast compile doesn't strobe one frame. */
-    .spinner {
-        position: absolute;
-        top: 0.2em;
-        left: 0.4em;
-        z-index: 4;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.3em 0.6em;
-        color: rgb(38, 110, 217);
-        font-size: 1.6em;
-        animation: lte-pulse 1s ease-in-out infinite;
-        text-shadow: 2px 2px 2px rgb(12, 28, 51);
-        pointer-events: none;
-    }
-    .spinner::before {
-        content: "⟳";
-        display: inline-block;
-        animation: lte-spin 0.3s linear infinite;
-    }
-    @keyframes lte-spin  { to { transform: rotate(360deg); } }
-    @keyframes lte-pulse {
-        0%, 100% { opacity: 0.6; }
-        50%       { opacity: 1;   }
-    }
-    .cm-compile { color: rgb(180, 130, 40); }   /* amber */
     .lte-cm :global(.cm-content) { font-size: 12px; }
 
     /* cm-scroller is CM's actual scroll container and the source of truth   */

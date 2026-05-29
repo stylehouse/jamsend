@@ -504,6 +504,11 @@
             const docTextC = ave.oai({ lang_doc: path })
             if (docTextC.sc.text !== text) {
                 docTextC.sc.text = text
+                // disk_rev marks this text as disk-origin (an open/reload), distinct
+                // from e_Lang_set_doc's editor-origin pushes which bump version but
+                // never disk_rev.  Langui's disk-reload $effect gates on disk_rev so
+                // editor echoes can't re-enter it and feed back into the elvis queue.
+                docTextC.sc.disk_rev = ((docTextC.sc.disk_rev as number) ?? 0) + 1
                 docTextC.bump_version()
             }
 

@@ -142,7 +142,7 @@
         const src      = e.sc.doc_C    as TheC | undefined
         const waft_key = e.sc.waft_key as string | undefined
         if (!src || !waft_key) return
-        H.Lies_ensure_doc_loaded(w, (src.sc as any).path as string | undefined, waft_key)
+        this.Lies_ensure_doc_loaded(w, (src.sc as any).path as string | undefined, waft_key)
         this.Lies_set_examining(examining, src, waft_key)
     },
 
@@ -231,12 +231,41 @@
     //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
     //   - three-step is one call — src, src_Waft, and bump never go half-done
     //
+    //   Cold-start rehydration: reads sc.accepted + sc.showing from %Point
+    //   particles and injects them as accepted_entries on %What_Points.
+    //   DocMinimap's accepted_push_id $effect fires on the bump and installs
+    //   the in-group from the snap without a push/echo round-trip.
+    //   accepted_push_id = 0 on a fresh load — DocMinimap's _our_last_push_id
+    //   is also 0, but the guard is `push_id === _our_last_push_id`, so it
+    //   would match and skip.  Use 1 as the seed so the first real push at
+    //   Date.now() (always > 1) is always distinguishable.
+    //
     //   oai() is sync (unlike roai) — safe to call from watch_c callbacks.
     //   The child is stable across calls; only its sc fields change each time.
     Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
         const wpt = examining.oai({ What_Points: 1 })
         wpt.sc.src      = src
         wpt.sc.src_Waft = waft_key
+
+        // Rehydrate accepted set from persisted sc.accepted on %Point particles.
+        // Only inject when there are accepted Points — avoids overwriting a live
+        // accepted_entries that arrived from a prior push in this session.
+        const pointsC = src.o({ Points: 1 })[0] as TheC | undefined
+        if (pointsC) {
+            const pts = pointsC.o({ Point: 1 }) as TheC[]
+            const accepted = pts.filter(pt => pt.sc.accepted)
+            if (accepted.length) {
+                const entries = accepted.map(pt => ({
+                    spec:    pt.sc.method as string,
+                    showing: !!pt.sc.showing,
+                }))
+                // Use push_id = 1 as a cold-start sentinel (always < any real Date.now()).
+                // DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
+                wpt.sc.accepted_push_id = 1
+                wpt.sc.accepted_entries = entries
+            }
+        }
+
         wpt.bump_version()
         console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? '?'}`)
     },
@@ -283,14 +312,17 @@
     //   accepted_push_id and accepted_entries back onto %What_Points so the
     //   minimap's $effect sees the round-trip and clears the unsent bar.
     //
-    //   The entries are also stored on the %Doc particle inside the Waft snap
-    //   so they survive Waft saves and are available to Lies_cursor_next
-    //   (future: use them to seed the next What on +time).
+    //   Persistence: stamps sc.accepted on %Point particles so their status
+    //   survives Waft saves and cold-start rehydration.  sc.accepted = 1 means
+    //   the Point was in in_group at last push; absence (or 0) means dormant.
+    //   sc.showing mirrors the minimap's orb toggle so carry-forward (+time)
+    //   knows which accepted Points were actively illuminated.
     //
     //   e.sc: { doc_path: string, what_point: { spec, showing }[] }
     //
-    //   < store entries on %Doc particle for What-level carry-forward (+time)
-    //   < validate specs exist in current compile before accepting
+    //   < carry-forward: seed the next %What's in-group from accepted+showing
+    //     entries when +time branches (Chunk 4 ↘ / ↓ gestures).
+    //   < validate specs exist in current compile before accepting.
     async e_Lies_accept_What_Point(A: TheC, w: TheC, e: TheC) {
         const H          = this as House
         const examining  = w.o({ examining: 1 })[0] as TheC | undefined
@@ -298,6 +330,32 @@
         const doc_path   = e.sc.doc_path   as string | undefined
         const what_point = e.sc.what_point as { spec: string, showing: boolean }[] | undefined
         if (!doc_path || !what_point) return
+
+        // Stamp accepted/showing on the %Point particles so the Waft snap persists them.
+        const accepted_specs = new Set(what_point.map(e => e.spec))
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
+            if (!doc) continue
+            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
+            if (!pointsC) continue
+            let dirty = false
+            for (const pt of pointsC.o({ Point: 1 }) as TheC[]) {
+                const spec    = pt.sc.method as string
+                const was_acc = !!pt.sc.accepted
+                const now_acc = accepted_specs.has(spec)
+                const entry   = what_point.find(e => e.spec === spec)
+                if (now_acc) {
+                    pt.sc.accepted = 1
+                    pt.sc.showing  = entry?.showing ? 1 : 0
+                } else {
+                    delete pt.sc.accepted
+                    delete pt.sc.showing
+                }
+                if (!!now_acc !== was_acc) dirty = true
+            }
+            if (dirty) H.Lies_waft_save(w, waft)
+            break
+        }
 
         // Echo back on %What_Points so DocMinimap's $effect fires.
         // push_id uniqueness: Date.now() is sufficient — the minimap guards
@@ -307,7 +365,7 @@
         wpt.sc.accepted_push_id  = Date.now()
         wpt.sc.accepted_entries  = what_point
         wpt.bump_version()
-        console.log(`👁 accept_What_Point: ${doc_path} (${what_point.length} specs)`)
+        console.log(`👁 accept_What_Point: ${doc_path} (${what_point.length} specs, ${accepted_specs.size} accepted)`)
     },
 
 //#endregion

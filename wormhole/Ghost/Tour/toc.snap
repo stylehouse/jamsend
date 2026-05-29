@@ -4,6 +4,7 @@ Waft:Ghost/Tour
     Point:Idzeuganise
     Point:Idvoyage_verify
   Doc,path:src/lib/ghost/Radios.svelte
+    Point:reset
   Doc,path:Ghost/test/LangTiles.g
   Doc,path:src/lib/p2p/Peerily.svelte.ts
     Point:Pier
