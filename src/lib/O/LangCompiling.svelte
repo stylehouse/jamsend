@@ -98,35 +98,88 @@
     await M.eatfunc({
 
 //#region include + execute
-    // compiled code receiver
+
+    // ── Lang_ghostmeta_name ──────────────────────────────────────────────────
+    //
+    //   Derives the stable Ghostmeta method name from a source path.
+    //   Ghost/Story/Peeroleum.g → Ghostmeta_Ghost_Story_Peeroleum
+    //   The method is injected at the top of every compiled eatfunc and returns
+    //   the source_dige, giving Pantheate a reliable "this version landed" signal
+    //   that works for any method-name the user chooses.
+    Lang_ghostmeta_name(path: string): string {
+        const noext = path.replace(/\.[^/.]+$/, '')
+        return 'Ghostmeta_' + noext.replace(/[^a-zA-Z0-9]/g, '_')
+    },
+
+    // ── Pantheate — compiled code receiver ───────────────────────────────────
+    //
+    //   On Ghost_update_notify: dynamically imports the fresh module, registers
+    //   its component, and mints a req:include to monitor that the module actually
+    //   mounted and deposited its Ghostmeta method.  Old finished req:include for
+    //   the same gen_path is dropped so the fresh one takes over (covers HMR and
+    //   re-compile).
+    //
+    //   req:include (driven below via rq.do()) polls this[ghostmeta_name]() each
+    //   think.  It finishes when the live dige matches the expected source_dige,
+    //   so the snap records exactly when each include became live.
     async Pantheate(A: TheC, w: TheC) {
+        const H = this
         w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop(n))
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"
-            // once required, it will HMR from here on
-            // < check the in-compiled-code-meta-data dige we expect comes on
-            //   or there could be a vite compile problem
-            if (!w.oa({include:me.sc.include})) {
+            // once required, Vite's HMR re-runs eatfunc on every hot update
+            if (!w.oa({include: me.sc.include})) {
                 const module = await import(`../../lib/${me.sc.include}`)
-                // Extract the component from the .default property
-                const component = module.default;
+                const component = module.default
                 const uis = this.oai_enroll(this, { watched: 'UIs' })
                 uis.oai({ UI: 'Pantheate-include' }, { component })
-                w.i({include:me.sc.include})
+                w.i({ include: me.sc.include })
             }
+            // mint a req:include to confirm the Ghostmeta method lands.
+            // drop any previously-finished req for this gen_path (re-compile or HMR).
+            const gen_path       = me.sc.include     as string
+            const path           = me.sc.path        as string
+            const source_dige    = me.sc.source_dige as string
+            const ghostmeta_name = H.Lang_ghostmeta_name(path)
+            const rq = H.reqy(w)
+            const old = rq.o({ req: 'include', gen_path })[0] as TheC | undefined
+            if (old?.sc.finished) w.drop(old)
+            await rq.roai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name })
         }
-        
-        if (w.oa({include:1})) {
-            // < this is naive, we require this method starts existing or tailspin here
-            if (!this.theCompiledStuff) {
-                this.i_elvisto(w,'think')
-            }
-            else {
-                await this.theCompiledStuff(A,w)
-            }
-        }
+
+        // drive req:include monitors — each checks its Ghostmeta this tick
+        const rq = H.reqy(w)
+        await rq.do()
     },
+
+    // ── req:include — monitor a compiled module's Ghostmeta ──────────────────
+    //
+    //   Polls this[ghostmeta_name]() — the method injected at the top of every
+    //   compiled eatfunc — against the expected source_dige.  When they match
+    //   the module has mounted and deposited its methods; finish.
+    //
+    //   A 2s ttlilt (one-only) gives the initial mount window.  After it expires
+    //   the ambient heartbeat re-checks periodically; HMR re-runs eatfunc and a
+    //   new req:include (minted on the next Ghost_update_notify) catches the next
+    //   version.  Finishes as soon as the live dige matches — no spin.
+    async req_include(req: TheC, q: any) {
+        const H            = this as House
+        const ghostmeta_name = req.sc.ghostmeta_name as string
+        const source_dige    = req.sc.source_dige    as string
+
+        const live = (H as any)[ghostmeta_name]?.() as string | undefined
+        if (live !== source_dige) {
+            // module not mounted yet or wrong version — hold briefly for first mount
+            H.i_req_ttlilt(req, 2, { waiting: 'ghostmeta' })
+            return
+        }
+        // Ghostmeta confirmed: the right version of this compiled module is live
+        req.sc.live_dige = live
+        q.finish(req)
+        console.log(`👻 include live: ${ghostmeta_name} = ${live}`)
+    },
+
 //#endregion
 //#region entry
 
@@ -186,7 +239,16 @@
         // clear previous outputs / errors so a fresh compile is visible
         await docC.r({ compile_error: 1 }, {})
 
+        // gen_path comes from docC (set by e_Lang_open_doc via Lies).
+        // Absent gen_path means soft-compile only — methods/calls are indexed
+        // but the eatfunc-wrapped source is meaningless for a non-stho file,
+        // so Output is suppressed.  Only gen_path docs get an Output particle.
+        // < softgen: a future Opt flag to show Output without writing to gen/
+        //   would set gen_path on the doc but let do_write=false pass through.
+        const gen_path = docC.sc.gen_path as string | undefined
+
         let source: string
+        let source_dige = ''   // dige of the raw source text; populated for hard-compiles
         try {
             const lines = this.Lang_compile_collect(state, job)
 
@@ -204,19 +266,22 @@
             }
 
             const body = lines.map(l => l.text).join('\n')
-            source = this.Lang_compile_render_module(body)
+
+            let ghost: { ghostmeta_name: string, source_dige: string } | undefined
+            if (gen_path) {
+                // source_dige: dige of the raw source text this module was compiled from.
+                // Injected into the Ghostmeta method so Pantheate can confirm the right
+                // version is live after mount.  Computed before render so it's independent
+                // of the generated wrapper boilerplate.
+                source_dige = await dig(state.doc.sliceString(0))
+                ghost = { ghostmeta_name: this.Lang_ghostmeta_name(docC.sc.doc as string), source_dige }
+            }
+            source = this.Lang_compile_render_module(body, ghost)
         } catch (err: any) {
             docC.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
             return
         }
 
-        // gen_path comes from docC (set by e_Lang_open_doc via Lies).
-        // Absent gen_path means soft-compile only — methods/calls are indexed
-        // but the eatfunc-wrapped source is meaningless for a non-stho file,
-        // so Output is suppressed.  Only gen_path docs get an Output particle.
-        // < softgen: a future Opt flag to show Output without writing to gen/
-        //   would set gen_path on the doc but let do_write=false pass through.
-        const gen_path = docC.sc.gen_path as string | undefined
         if (!gen_path) {
             await job.r({Pending:1},{})   // no write step — soft compile done
             job.sc.compile_secs = +((Date.now() - (job.c.compile_t0 ?? Date.now())) / 1000).toFixed(3)
@@ -225,14 +290,14 @@
         }
 
         const dige = await dig(source)
-        job.oai({Output:1, gen_path, source, dige})
+        job.oai({Output:1, gen_path, source, dige, source_dige})
 
         // Hand off to Lies as the compile airlock.
         // Lies checks opt_write and opt_run, does the Wormhole write
         // and/or notifies Pantheate, then fires e:Lies_compile_settled
         // back to w so Lang_compile_step can clear Pending.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: docC.sc.doc, gen_path, source, dige,
+            path: docC.sc.doc, gen_path, source, dige, source_dige,
         })
         H.i_elvisto(w, 'think')
     },
@@ -999,11 +1064,17 @@
     // tag Svelte needs, plus `await H.eatfunc({ … })` around the user's
     // source.  Function names, braces, commas between methods etc. all come
     // from the user — we don't inject theCompiledStuff or any other wrapper.
-    Lang_compile_render_module(body: string): string {
+    Lang_compile_render_module(body: string, ghost?: { ghostmeta_name: string, source_dige: string }): string {
         // dodge Svelte's script-tag tokenizer, which will get confused even
         // by closing script tags in comments
         const OPEN  = '<' + 'script lang="ts">'
         const CLOSE = '<' + '/script>'
+        // Ghostmeta sits first in the eatfunc so it's always reachable even if
+        // the user's methods below fail to parse.  Returns the source_dige so
+        // Pantheate can confirm "the right compiled version is live."
+        const meta = ghost
+            ? `    ${ghost.ghostmeta_name}(): string { return '${ghost.source_dige}' },\n\n`
+            : ''
         return (
 `${OPEN}
     // GENERATED by Lang compile — do not edit by hand.
@@ -1015,7 +1086,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-${body}
+${meta}${body}
 
     })
     })

@@ -254,7 +254,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Parks a compile_pending particle for LiesRealised to process.
     //
     //   Soft-compile (no gen_path) goes nowhere — Lang settles it immediately.
-    //   e.sc: { path, gen_path, source, dige }
+    //   e.sc: { path, gen_path, source, dige, source_dige }
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
         const path     = e.sc.path     as string
         const gen_path = e.sc.gen_path as string
@@ -265,9 +265,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // oai: idempotent — if a previous compile for the same path is still pending
         // (write I/O stalled), overwrite its payload with the freshest source.
         const pending = w.oai({ compile_pending: 1, path })
-        pending.sc.gen_path = gen_path
-        pending.sc.source   = source
-        pending.sc.dige     = dige
+        pending.sc.gen_path    = gen_path
+        pending.sc.source      = source
+        pending.sc.dige        = dige
+        pending.sc.source_dige = e.sc.source_dige   // threads through to Ghost_update_notify
         delete pending.sc.done   // reset in case a prior compile_pending had settled
         this.i_elvisto(w, 'think')
     },
@@ -483,8 +484,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             }
 
             if (do_run) {
-                // notify Pantheate so it dynamic-imports the fresh module
-                H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', { include: gen_path })
+                // notify Pantheate so it dynamic-imports the fresh module and
+                // mints a req:include to confirm the Ghostmeta method lands.
+                // path (source path) + source_dige let Pantheate derive the
+                // Ghostmeta name and know which dige to expect.
+                H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
+                    include:     gen_path,
+                    path:        path,
+                    source_dige: pending.sc.source_dige,
+                })
             }
 
             pending.sc.done = 1
