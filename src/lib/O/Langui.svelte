@@ -226,12 +226,12 @@
     }
 
     // ── push-text throttle ───────────────────────────────────────────────────
-    //   Coalesce keystrokes into one Lang_set_doc per ~60ms window.  The flush
+    //   Coalesce keystrokes into one Lang_set_doc per 2s window.  The flush
     //   reads the LIVE view text rather than a captured snapshot, so the
     //   backend always lands on the freshest text the editor has.
     //   push_pending_path tracks which doc the pending push belongs to — doc
     //   switch flushes it for the departing path before swapping.
-    const PUSH_TEXT_THROTTLE_MS = 60
+    const PUSH_TEXT_THROTTLE_MS = 2000   // flush before Esc/switch ensures compile always sees current text
     let push_timer: ReturnType<typeof setTimeout> | null = null
     let push_pending_path: string | null = null
     function flush_push_text() {
@@ -340,31 +340,6 @@
         console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_doc=${!!active_doc}`)
     })
 
-    // ── Languinio spinner $effect ─────────────────────────────────────────────
-    //   %Languinio is Lang's reactive signal particle (parallel to %examining).
-    //   Languish phase handlers oai a %spinner,text_load|compile child while a
-    //   phase is unfinished and drop it on finish.  We mirror those into two
-    //   booleans the markup renders.  The 333ms floor keeps a fast (soft)
-    //   compile from strobing a single-frame spinner.
-    let languinio: TheC | undefined = $state()
-    $effect(() => {
-        languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
-    })
-
-    let _load_spin    = $state(false)
-    let _compile_spin = $state(false)
-    $effect(() => {
-        void languinio?.vers
-        const loading   = !!languinio?.ob({ spinner: 'text_load' }).length
-        const compiling = !!languinio?.ob({ spinner: 'compile'   }).length
-        if (loading || compiling) {
-            _load_spin    = loading || compiling
-            _compile_spin = compiling
-        } else {
-            setTimeout(() => { _load_spin = false; _compile_spin = false }, 333)
-        }
-    })
-
     // ── switch $effect ────────────────────────────────────────────────────────
     //   Runs whenever active_path changes.  Saves the departing EditorState
     //   (after flushing bookmarks and scroll position), then calls
@@ -434,7 +409,7 @@
     // ── disk-reload $effect ───────────────────────────────────────────────────
     //   When the active doc is reloaded from disk (docC text installed by a
     //   disk-origin write — open or external reload), push the new content into
-    //   the editor — replacing history is acceptable here because the file
+    //   the editor.  Replacing history is acceptable here because the file
     //   changed on disk, not in the editor.
     //   Guards with active_path === prev_path to avoid firing mid-switch.
     //
@@ -442,8 +417,8 @@
     //   echoes of our own keystrokes (e_Lang_set_doc).  Only disk-origin writes
     //   (req_text_loaded) advance docC.sc.disk_rev, so gating on a per-path
     //   disk_rev key means editor echoes hit `key === _applied` and return
-    //   without ever dispatching back into the view.  The spool below is a
-    //   second line of defence for any text that does reach the dispatch.
+    //   without dispatching back into the view.  The spool below is a second
+    //   line of defence for any text that does reach the dispatch.
     let _applied_disk_key: string | null = null   // `${path}#${disk_rev}` last applied
     $effect(() => {
         void docC?.version   // wake on any text-particle change
@@ -456,8 +431,8 @@
         _applied_disk_key = key
         const live = view.state.doc.toString()
         if (incoming === live) return           // switch effect already set this text
-        // Genuine disk change.  Apply it, and remember it so the resulting
-        // updateListener push doesn't immediately come back through here as new.
+        // Genuine disk change.  Apply and remember so the resulting updateListener
+        // push doesn't immediately come back through here as new.
         spool_remember(active_path, incoming)
         view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: incoming } })
     })
@@ -691,6 +666,10 @@
         {
             key: "Escape",
             run: () => {
+                // Flush any pending keystroke push before compiling so the
+                // compiler always sees the editor's current text, not a
+                // stale snapshot from 2s ago.
+                flush_push_text_now()
                 Lang_i_elvis(view,'Lang_compile', {})
                 return true;
             },
@@ -880,10 +859,6 @@
     {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}>
-        <!-- Languish phase spinners — text_load (loading) then compile.
-             Driven by %Languinio/%spinner children; 333ms floor in the effect. -->
-        {#if _load_spin}    <div class="spinner cm-loading"></div>  {/if}
-        {#if _compile_spin} <div class="spinner cm-compile"></div>  {/if}
         <!-- Horizontal V chevron — always at the minimap/scrollbar junction.
              Stays in place whether or not minimap is open.
              Points left (<) when closed, right (>) when open — same V char, ±90°. -->

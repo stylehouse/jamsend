@@ -474,22 +474,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             if (do_write) {
                 // Key the write on gen_path, not the source path.  The source has a
-                // loaded_doc whose base_dige tracks the source-on-disk for
-                // Lies_source_write's surprise_read check; routing the gen write
-                // through the source path made LiesStore_run Phase 1 stamp that
-                // base_dige with the *gen* output dige, which then read as an
-                // external change and falsely blocked the next source write.
-                // gen_path has no loaded_doc, so the {wwrite,path} namespace and
-                // base_dige stay the gen target's own.  rw_name is the on-disk
-                // location ($lib so Pantheate's include resolves it).
+                // loaded_doc whose base_dige tracks source-on-disk for
+                // Lies_source_write's surprise_read check; keying by path made
+                // LiesStore_run Phase 1 stamp that base_dige with the gen output
+                // dige, which then read as an external change and blocked the next
+                // source write.  gen_path has no loaded_doc so its namespace and
+                // base_dige stay the gen target's own.
                 const write_req = await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
                 // LiesStore_run dispatches and logs; we do not await the write itself here.
                 // pending.sc.done and Lies_compile_settled fire below regardless.
                 //
-                // < identical-output dedup now leans on the in-flight reqy dedup only
-                //   (finished gen wwrite reqs are dropped each call), so an unchanged
-                //   recompile rewrites the same bytes.  If Vite HMR churn from that
-                //   bites, cache the last-written dige per gen_path in %Store and gate.
                 // < if write_req reply carries an error, surface compile_error and bail.
                 //   for now we proceed optimistically (gen write errors are rare and logged).
             }

@@ -185,9 +185,18 @@
 
     // Beliefs-time entry for the compile action button.
     // Fired via i_elvisto so Story can detect Lang settling after a compile.
+    // misdirectioner: bounce once so Story wraps the compile in a proper tick;
+    // on the second pass, gate on %Pending so N queued Esc presses collapse
+    // to one compile cycle rather than N sequential ones.
     async e_Lang_compile(A: TheC, w: TheC, e: TheC) {
         if (!e.sc.misdirectioner) {
             return this.i_elvisto(w,'Lang_compile',{misdirectioner:1})
+        }
+        const docC = this.Lang_active_docC(w)
+        // Drop the compile when one is already in-flight for this doc.
+        if (docC?.o({ Compile: 1 })[0]?.oa({ Pending: 1 })) {
+            console.log(`⏭ Lang_compile: skipped — in-flight for ${docC.sc.doc}`)
+            return
         }
         await this.Lang_compile(A, w)
     },
