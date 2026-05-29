@@ -219,6 +219,9 @@
     //     reqy.do() sees it; do() skips finished reqs, so we scan here.
     //     Stamps wrote_at, updates base_dige, drops the req.
     //
+    //   Phase 1.5 — parked source writes.  Drives /%pending_write via do_fn,
+    //     before Phase 2 so the do_fn's /%source_check read survives to be read.
+    //
     //   Phase 2 — finished read reqs.  LiesPersist (earlier in the same tick)
     //     has already consumed reply; safe to drop.
     //
@@ -261,6 +264,14 @@
             }
             w.drop(req)
         }
+
+        // ── Phase 1.5 ─────────────────────────────────────────────────────────
+        //   Drive parked source writes (Lies_pending_write_do_fn).  Must run
+        //   before Phase 2: the do_fn polls a /%source_check read and needs it
+        //   still alive to read the reply — Phase 2 drops finished reads.
+        const pwq = H.Lies_pending_write_reqy(w)
+        await pwq.do()
+        for (const req of pwq.o() as TheC[]) if (req.sc.finished) w.drop(req)
 
         // ── Phase 2 ───────────────────────────────────────────────────────────
         for (const req of rq.o() as TheC[]) {

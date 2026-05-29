@@ -189,20 +189,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── e_Lies_source_write ────────────────────────────────────────────
     //
     //   Fired by Langui's auto-save timer (quiet 3s / active 10s).
-    //   Writes the current CM text back to its source path on disk.
+    //   Parks the current CM text as a /%pending_write req and wakes the tick;
+    //   Lies_pending_write_do_fn does the actual pull-before-push + disk write.
     //
-    //   Pull-before-push: reads disk content first and compares its dige
-    //   to loaded_doc.sc.base_dige.  A mismatch means someone else changed
-    //   the file externally — stamps /%surprise_read and logs a warning;
-    //   write is blocked until the user resolves (future Liesui surface).
-    //   On a clean write, base_dige is updated to the new content's dige.
-    //
-    //   Uses the same rw_queue as open_req/compile writes — no concurrent
-    //   writes to the same path from different requests.
+    //   The work can't happen inline here: the pull-before-push read settles on
+    //   a later think() (Wormhole done → finish → think back to w:Lies), so a
+    //   one-shot elvis can't see /%finished.  A req carries the text across that
+    //   gap and gets re-driven each tick until the write fires.
     //
     //   e.sc: { path: string, text: string }
-    //
-    //   < surface %surprise_read in Liesui with a diff view + "push anyway" button
     async e_Lies_source_write(A: TheC, w: TheC, e: TheC) {
         const H    = this as House
         const path = e.sc.path as string
@@ -215,37 +210,86 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             return
         }
 
-        const base_dige = ld.sc.base_dige as string | undefined
-        // Content-equality gate: skip entirely when text matches what we loaded.
-        // Covers autosave firing during a doc switch with no user edits, and any
-        // path where the CM state was set programmatically (Lang_open_doc, echo)
-        // without a real keystroke.  Exits before touching rw_queue, so no
-        // spurious source_write_check read fires and Vite HMR is never triggered.
-        if (base_dige) {
-            if (await dig(text) === base_dige) return
+        // Park the save.  Keyed by path: a re-save while one is still in flight
+        // mutates the in-flight req's text rather than racing a second write.
+        // Drop a finished sibling first so roai builds a fresh req, not a
+        // mutate-on-a-dead-one that do() would skip.
+        const pwq = H.Lies_pending_write_reqy(w)
+        for (const old of pwq.o({ path }) as TheC[]) if (old.sc.finished) w.drop(old)
+        await pwq.roai({ pending_write: 1, path }, { text, dige: await dig(text) })
+        H.i_elvisto(w, 'think')
+    },
+
+    // ── %pending_write channel ──────────────────────────────────────────────
+    //
+    //   One reqy handle, shared by the parker (e_Lies_source_write) and the
+    //   driver (LiesStore_run Phase 1.5) so both attach the same do_fn to the
+    //   one reqcon — whoever opens the channel first wins, the other reuses it.
+    Lies_pending_write_reqy(w: TheC) {
+        const H = this as House
+        return H.reqy(w, {
+            k:        'pending_write',
+            noserial: 1,
+            do_fn:    (req: TheC, q: any) => H.Lies_pending_write_do_fn(req, q),
+        })
+    },
+
+    // ── Lies_pending_write_do_fn ──────────────────────────────────────────────
+    //
+    //   Drives one parked save across ticks:
+    //     1. content gate — text already on disk (echo, or a sibling write
+    //        landed and Phase 1 advanced base_dige to match) → finish.
+    //     2. pull-before-push read of the source path.  Not finished yet →
+    //        arm a ttlilt and stay unfinished; the read's reply re-fires think
+    //        → tick → here again, this time with the reply in hand.
+    //     3. disk dige diverged from base_dige → external edit: stamp
+    //        /%surprise_read (stashing the pending text for a future push) and
+    //        finish without clobbering.
+    //     4. clean → LiesStore_write (Phase 1 stamps base_dige on completion),
+    //        clear any /%surprise_read, finish.
+    //
+    //   < the surprise path blocks the write but doesn't yet resume it; the
+    //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
+    async Lies_pending_write_do_fn(req: TheC, q: any) {
+        const H    = this as House
+        const w    = req.c.up as TheC
+        const path = req.sc.path as string
+        const text = req.sc.text as string
+        const dige = req.sc.dige as string
+
+        const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
+        if (!ld) {
+            console.warn(`🗂 pending_write: no loaded_doc for ${path} — dropping`)
+            return q.finish(req)
         }
-        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
 
-        // Pull-before-push: read current disk state to detect external changes.
-        const read_req = await H.LiesStore_read(w, path, { label: 'source_check' })
-        if (!read_req.sc.finished) return
+        const base_dige = ld.sc.base_dige as string | undefined
+        if (base_dige && dige === base_dige) return q.finish(req)
 
-        const disk_text  = read_req.sc.reply?.content as string | undefined
-        const disk_dige  = disk_text ? await dig(disk_text) : ''
+        // Pull-before-push: read disk, compare to what we loaded.
+        const read = await H.LiesStore_read(w, path, { label: 'source_check' })
+        if (!read.sc.finished) {
+            H.i_req_ttlilt(req, 0.5, { waiting: 'source_check' })
+            return   // stay unfinished — the read's reply re-fires think
+        }
+
+        const disk_text = read.sc.reply?.content as string | undefined
+        const disk_dige = disk_text ? await dig(disk_text) : ''
 
         if (base_dige && disk_dige && disk_dige !== base_dige) {
-            // External change detected — block and surface.
             const sr = ld.oai({ surprise_read: 1 })
             sr.sc.disk_dige = disk_dige
+            sr.sc.text      = text   // stash so a future "push anyway" can re-issue
+            sr.sc.dige      = dige
             ld.bump_version()
-            console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige} ≠ base ${base_dige}`)
-            return
+            console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
+            return q.finish(req)
         }
 
-        // LiesStore_write handles dedup (dige-keyed), throttle, and base_dige update.
+        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
         await H.LiesStore_write(w, path, text)
-        // LiesStore_run (called every tick) dispatches and finishes the write.
         for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
+        q.finish(req)
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
