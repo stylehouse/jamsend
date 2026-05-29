@@ -340,6 +340,31 @@
         console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_doc=${!!active_doc}`)
     })
 
+    // ── Languinio spinner $effect ─────────────────────────────────────────────
+    //   %Languinio is Lang's reactive signal particle (parallel to %examining).
+    //   Languish phase handlers oai a %spinner,text_load|compile child while a
+    //   phase is unfinished and drop it on finish.  We mirror those into two
+    //   booleans the markup renders.  The 333ms floor keeps a fast (soft)
+    //   compile from strobing a single-frame spinner.
+    let languinio: TheC | undefined = $state()
+    $effect(() => {
+        languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+    })
+
+    let _load_spin    = $state(false)
+    let _compile_spin = $state(false)
+    $effect(() => {
+        void languinio?.vers
+        const loading   = !!languinio?.ob({ spinner: 'text_load' }).length
+        const compiling = !!languinio?.ob({ spinner: 'compile'   }).length
+        if (loading || compiling) {
+            _load_spin    = loading || compiling
+            _compile_spin = compiling
+        } else {
+            setTimeout(() => { _load_spin = false; _compile_spin = false }, 333)
+        }
+    })
+
     // ── switch $effect ────────────────────────────────────────────────────────
     //   Runs whenever active_path changes.  Saves the departing EditorState
     //   (after flushing bookmarks and scroll position), then calls
@@ -852,6 +877,10 @@
     {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
     <div class="lte-cm" bind:this={container}>
+        <!-- Languish phase spinners — text_load (loading) then compile.
+             Driven by %Languinio/%spinner children; 333ms floor in the effect. -->
+        {#if _load_spin}    <div class="spinner cm-loading"></div>  {/if}
+        {#if _compile_spin} <div class="spinner cm-compile"></div>  {/if}
         <!-- Horizontal V chevron — always at the minimap/scrollbar junction.
              Stays in place whether or not minimap is open.
              Points left (<) when closed, right (>) when open — same V char, ±90°. -->
@@ -942,6 +971,37 @@
     /* wrapper: position:relative makes it the containing block for lte-mm-host */
     .lte-cm    { position: relative; }
     .lte-cm :global(.cm-editor)  { /* auto height — driven by cm-scroller */ }
+
+    /* ── Languish phase spinners ───────────────────────────────────────
+       text_load (blue) → compile (amber).  Floats top-left over the editor
+       canvas; the ::before glyph spins, the box pulses.  333ms floor lives in
+       the driving $effect so a fast compile doesn't strobe one frame. */
+    .spinner {
+        position: absolute;
+        top: 0.2em;
+        left: 0.4em;
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3em 0.6em;
+        color: rgb(38, 110, 217);
+        font-size: 1.6em;
+        animation: lte-pulse 1s ease-in-out infinite;
+        text-shadow: 2px 2px 2px rgb(12, 28, 51);
+        pointer-events: none;
+    }
+    .spinner::before {
+        content: "⟳";
+        display: inline-block;
+        animation: lte-spin 0.3s linear infinite;
+    }
+    @keyframes lte-spin  { to { transform: rotate(360deg); } }
+    @keyframes lte-pulse {
+        0%, 100% { opacity: 0.6; }
+        50%       { opacity: 1;   }
+    }
+    .cm-compile { color: rgb(180, 130, 40); }   /* amber */
     .lte-cm :global(.cm-content) { font-size: 12px; }
 
     /* cm-scroller is CM's actual scroll container and the source of truth   */

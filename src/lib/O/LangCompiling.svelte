@@ -118,6 +118,7 @@
         }
         
         if (w.oa({include:1})) {
+            // < this is naive, we require this method starts existing or tailspin here
             if (!this.theCompiledStuff) {
                 this.i_elvisto(w,'think')
             }
@@ -138,9 +139,18 @@
         await this.Lang_compile(A, w)
     },
 
-    // Fired by the "compile" action button in Lang_plan.  Synchronously
-    // builds the module source (so the user gets immediate {result:1} chunks
-    // to inspect even if the disk write is slow).
+    // Fired by the "compile" action button in Lang_plan.  Resolves the active
+    // doc and hands off to Lang_compile_docC.  The split lets a req:compile
+    // phase (Languish) drive the compile for a specific docC rather than
+    // "whatever happens to be active".
+    async Lang_compile(A: TheC, w: TheC) {
+        const docC = this.Lang_active_docC(w)
+        if (!docC) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
+        await this.Lang_compile_docC(w, docC)
+    },
+
+    // Synchronously builds the module source (so the user gets immediate
+    // {result:1} chunks to inspect even if the disk write is slow).
     //
     // For hard-compiles (gen_path present): fires e:Lies_compiled and
     // leaves Compile/Pending set.  Lies is the airlock: it decides
@@ -150,12 +160,15 @@
     // For soft-compiles (no gen_path): clears Pending immediately — nothing
     // to write or run.  Lies is not involved.
     //
+    // %Compile/%methods is fully populated by the time this returns, in both
+    // cases — %Pending tracks only the hard-compile disk write, never the
+    // index build.  A resolver that needs %methods can rely on it the instant
+    // this resolves; only the gen-file write outlives it.
+    //
     // All compile state lives on docC (not w) so multiple open docs don't
     // share compile state and each can be r()'d independently.
-    async Lang_compile(A: TheC, w: TheC) {
+    async Lang_compile_docC(w: TheC, docC: TheC) {
         const H = this
-        const docC = this.Lang_active_docC(w)
-        if (!docC) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
 
         const state = docC.c.state as EditorState | undefined
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }

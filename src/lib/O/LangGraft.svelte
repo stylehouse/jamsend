@@ -86,19 +86,20 @@
 
 //#region Lang_graft_points
 
-    // ── Lang_graft_points ────────────────────────────────────────────────
+    // ── Lang_graft_points_once ───────────────────────────────────────────
     //
-    //   Called from w:Lang each tick.  Reads the active doc and the cursor,
-    //   runs one %Pmirrors,1 .replace() to mirror the cursor's Points, then
-    //   walks the result to mint graft children and dispatch CM effects for
-    //   the new (un-paired) Pmirrors.  Goners are caught in pairs_fn.
-    async Lang_graft_points(w: TheC) {
+    //   A plain pass (no longer a free-running every-tick function): reads the
+    //   cursor, runs one %Pmirrors,1 .replace() to mirror the cursor's Points
+    //   onto the given docC, then walks the result to mint graft children and
+    //   dispatch CM effects for the new (un-paired) Pmirrors.  Goners are caught
+    //   in pairs_fn.
+    //
+    //   docC is passed in — by req:grafted (Languish's final phase, the
+    //   open-time graft that beats the snap) and by the cursor-move re-graft in
+    //   Lang().  The per-doc cache key still makes a no-op call cheap.
+    async Lang_graft_points_once(w: TheC, docC: TheC) {
         const H = this as House
         const ave = H.oai_enroll(H, { watched: 'ave' })
-
-        // active doc
-        const sig = ave.o({ active_doc: 1 })[0] as TheC | undefined
-        const docC = sig?.c.doc as TheC | undefined
         if (!docC) return
 
         // cursor: ave/%examining/%What_Points,1 carries the C whose %Point,N we graft
@@ -114,7 +115,7 @@
         // job is to land at the right Something within a Waft.
         const src_C     = what_pts_C.sc.src as TheC | undefined
         if (!src_C) {
-            console.warn(`🔩 Lang_graft_points: What_Points has no src — cursor half-set?`)
+            console.warn(`🔩 Lang_graft_points_once: What_Points has no src — cursor half-set?`)
             await this.Lang_wipe_pmirrors(docC)
             return
         }

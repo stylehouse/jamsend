@@ -167,6 +167,16 @@
         // target our local A:Cyto/w:Cyto, not H:Story's
         H.i_elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
 
+        // ── %Languinio — Lang's reactive signal particle ────────────
+        // Parallel to %examining on w:Lies.  Enrolled in ave so UItime
+        // (Langui, DocMinimap) can read it without a new prop.  Languish
+        // phase handlers oai/drop %spinner children on it; at rest it is
+        // empty.  c.w is a back-ref so a reader can climb to w:Lang.
+        const ave = H.oai_enroll(H, { watched: 'ave' })
+        const languinio = w.oai({ Languinio: 1 })
+        ave.i(languinio)
+        languinio.c.w = w
+
         w.c.plan_done = true
     },
 
@@ -296,6 +306,11 @@
                 }
             }
         }
+
+        // docC.c.state has just been stamped (by Lang_doc_from_event above).
+        // A req:text_loaded phase may be holding Story open waiting for exactly
+        // this — wake a think so its monitor re-checks and descends to compile.
+        ;(this as House).feebly_ponder()
     },
 
     // ── e_Doc_open ───────────────────────────────────────────────────────────
@@ -329,13 +344,21 @@
 
     // ── e_Lang_open_doc ──────────────────────────────────────────────────────
     //
-    //   Called by Lies after it loads a Ghost source file.
-    //   Creates the docC particle under w/{docs:1}, populates the ave
-    //   text-sync particle so Langui pulls the content, and sets this doc
-    //   as the active one.
+    //   Called by Lies after it loads a Ghost source file.  Mints (or refreshes)
+    //   the per-doc req:Languish on w:Lang and drives it.  Languish is Lang's
+    //   mind for one doc: it stages three maz-ordered phases — text_loaded
+    //   (mint docC + install text, wait for CM mount), compile (build the
+    //   methods index), grafted (resolve Pmirrors) — so the first graft is
+    //   guaranteed to run before Story snaps, killing the open-time race where
+    //   a snap captured unresolved Pmirrors.
     //
-    //   gen_path is optional — if absent the doc can be soft-compiled
-    //   (abstractions extracted) but the result is not written to disk.
+    //   The doc payload (text, gen_path) rides on the Languish req so the
+    //   text_loaded phase can install it: gen_path on sc (small, snap-visible),
+    //   text on .c (large, kept out of the snap).  A fresher open of the same
+    //   path overwrites the payload — newest source wins.
+    //
+    //   gen_path is optional — absent means soft-compile only (indexed but not
+    //   written to disk).
     //
     //   e.sc: { path, text, gen_path? }
     async e_Lang_open_doc(A: TheC, w: TheC, e: TheC) {
@@ -345,28 +368,180 @@
         const text     = (e.sc.text as string) ?? ''
         if (!path) throw 'e_Lang_open_doc: needs path'
 
-        // create the docC particle; stamp gen_path only when present
-        const docs = w.oai({ docs: 1 })
-        const docC = docs.oai({ doc: path })
-        if (gen_path) docC.sc.gen_path = gen_path
+        const rq = H.reqy(w)
+        let languish = await rq.roai({ req: 'Languish', path })
+        // a re-open of an already-finished Languish: drop it and its phase
+        // subtree, then remint fresh so every phase re-runs against the newer
+        // source.  newest source wins.
+        if (languish.sc.finished) {
+            w.drop(languish)
+            languish = await rq.roai({ req: 'Languish', path })
+        }
+        // payload for the text_loaded phase to install
+        if (gen_path) languish.sc.gen_path = gen_path
+        languish.c.open_text = text
 
-        // populate the ave text-sync particle so Langui pulls it
-        const ave = H.oai_enroll(H, { watched: 'ave' })
-        const docTextC = ave.oai({ lang_doc: path })
-        if (docTextC.sc.text !== text) {
-            docTextC.sc.text = text
-            docTextC.bump_version()
+        console.log(`📄 Lang open_doc → req:Languish ${path}`)
+        await rq.do()
+    },
+
+//#region Languish
+
+    // ── req:Languish — Lang's mind for one doc ────────────────────────────────
+    //
+    //   The do_fn for a /req:Languish.  Stages three maz-ordered phase reqs on
+    //   the Languish particle and runs them; unify_finished finishes Languish
+    //   when all three are done.  Multi-maz do() descends through the levels in
+    //   one pass when each fully finishes, so on a fast (soft) compile all three
+    //   phases can complete in a single tick.
+    //
+    //     req:text_loaded, maz:3   mint docC + install text; wait for CM mount
+    //     req:compile,     maz:2   build the methods index; hold for hard-write
+    //     req:grafted,     maz:1   resolve Pmirrors against the index
+    //
+    //   Phases hang off the Languish req (c.up = languish), so a ttlilt on a
+    //   phase climbs languish → w:Lang and sets w:Lang.c.has_req_ttlilt — no
+    //   scheme:req extension needed for the phase subtree.
+    async req_Languish(req: TheC, q: any) {
+        const H = this as House
+
+        const sub = H.reqy(req)
+        await sub.roai({ req: 'text_loaded', maz: 3 })
+        await sub.roai({ req: 'compile',     maz: 2 })
+        await sub.roai({ req: 'grafted',     maz: 1 })
+
+        await sub.do()
+        sub.unify_finished(q)
+    },
+
+    // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
+    //
+    //   reqonce: mint the docC particle, stamp gen_path, install the source into
+    //   the ave/{lang_doc:path} text particle, set the doc active.  Records
+    //   languish.sc.docC so the later phases find it without re-deriving.
+    //
+    //   The genuinely-async wait is the CodeMirror round-trip: Lang writes the
+    //   ave text → Langui renders → CM mounts → e_Lang_editorBegins stamps
+    //   docC.c.state and feebly_ponders.  We hold Story open with a ttlilt until
+    //   docC.c.state appears; the feebly_ponder wakes this monitor precisely
+    //   when it lands.
+    async req_text_loaded(req: TheC, q: any) {
+        const H = this as House
+        const languish = req.c.up as TheC
+        const w        = languish.c.up as TheC
+        const path     = languish.sc.path as string
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+
+        if (H.reqonce(req, 'opening')) {
+            // one chance: mint docC + install text.  Replaces the old inline
+            // e_Lang_open_doc body.
+            languinio?.oai({ spinner: 'text_load' })
+
+            const gen_path = languish.sc.gen_path as string | undefined
+            const text     = (languish.c.open_text as string) ?? ''
+
+            const docs = w.oai({ docs: 1 })
+            const docC = docs.oai({ doc: path })
+            if (gen_path) docC.sc.gen_path = gen_path
+            languish.sc.docC = docC
+
+            const ave = H.oai_enroll(H, { watched: 'ave' })
+            const docTextC = ave.oai({ lang_doc: path })
+            if (docTextC.sc.text !== text) {
+                docTextC.sc.text = text
+                docTextC.bump_version()
+            }
+
+            // always activate — Lies owns doc order, last open wins for now
+            this.Lang_set_active_doc(w, path)
+            w.i({ received: 1, doc_opened: 1, doc: path })
         }
 
-        // always activate — Lies owns doc order, last open wins for now
-        this.Lang_set_active_doc(w, path)
-
-        w.i({ received: 1, doc_opened: 1, doc: path })
-        console.log(`📄 Lang opened doc: ${path}`)
-        // Compile fires from e_Lang_editorBegins once docC.c.state is populated
-        // — this handler lands before the EditorView exists, so calling
-        // Lang_compile here would bail with `no editorState yet`.
+        // monitor: CM has mounted and handed us its EditorState.  Until then
+        // there is nothing to compile.  e_Lang_editorBegins feebly_ponders when
+        // it stamps docC.c.state, which re-enters here.
+        const docC = languish.sc.docC as TheC | undefined
+        if (!docC?.c.state) {
+            H.i_req_ttlilt(req, 0.5, { waiting: 'cm_mount' })
+            return
+        }
+        languinio?.o({ spinner: 'text_load' }).map(s => languinio.drop(s))
+        q.finish(req)
     },
+
+    // ── req:compile, maz:2 ────────────────────────────────────────────────────
+    //
+    //   reqonce: run the synchronous index build (Lang_compile_docC) once.  With
+    //   multi-maz do(), this fires in the same tick text_loaded finishes.
+    //
+    //   %Compile/%methods is populated synchronously by Lang_compile_docC, so a
+    //   soft-compile finishes this phase immediately.  For a hard-compile the
+    //   %Pending flag stays set while Lies writes the gen file; we hold Story
+    //   open with a ttlilt until %Pending clears, so the gen file exists before
+    //   the snap.  Either way %methods — the only thing grafting needs — is
+    //   present the instant Lang_compile_docC returns.
+    async req_compile(req: TheC, q: any) {
+        const H = this as House
+        const languish = req.c.up as TheC
+        const w        = languish.c.up as TheC
+        const docC     = languish.sc.docC as TheC
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+
+        if (H.reqonce(req, 'firing')) {
+            // one chance: state is in — build the index.
+            languinio?.oai({ spinner: 'compile' })
+            await this.Lang_compile_docC(w, docC)
+        }
+
+        const job = docC.o({ Compile: 1 })[0] as TheC | undefined
+
+        // compile error is a terminal: methods will never appear and Pending
+        // never clears, so don't ttlilt forever — finish and let grafting find
+        // nothing (the minimap surfaces unresolved Pmirrors).
+        if (docC.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
+            languinio?.o({ spinner: 'compile' }).map(s => languinio.drop(s))
+            q.finish(req)
+            return
+        }
+
+        // index missing → compile hasn't run yet; methods present is the graft
+        // gate.  hold until it appears.
+        if (!job || !job.oa({ methods: 1 })) {
+            H.i_req_ttlilt(req, 0.5, { waiting: 'methods' })
+            return
+        }
+        if (job.oa({ Pending: 1 })) {
+            // methods are ready (grafting could proceed) but the hard-compile
+            // gen-file write is still in flight — hold Story so the file lands
+            // before the snap, then re-check next think.
+            H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
+            return
+        }
+        languinio?.o({ spinner: 'compile' }).map(s => languinio.drop(s))
+        q.finish(req)
+    },
+
+    // ── req:grafted, maz:1 ────────────────────────────────────────────────────
+    //
+    //   reqonce: run the graft pass once against the now-ready index.  Always
+    //   finishes — unresolved Pmirrors are a valid terminal state (DocMinimap
+    //   surfaces them), not a reason to hold Story open.
+    async req_grafted(req: TheC, q: any) {
+        const H = this as House
+        const languish = req.c.up as TheC
+        const w        = languish.c.up as TheC
+        const docC     = languish.sc.docC as TheC
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+
+        if (H.reqonce(req, 'ran')) {
+            languinio?.oai({ spinner: 'grafted' })
+            await this.Lang_graft_points_once(w, docC)
+        }
+        languinio?.o({ spinner: 'grafted' }).map(s => languinio.drop(s))
+        q.finish(req)
+    },
+
+//#endregion
 
     async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
@@ -407,13 +582,24 @@
         // dropdown reflects the active doc's current language override.
         await this.LangGen_tick(A, w)
 
-        // graft Pmirrors for the cursored What|Doc onto CM marks — async
-        // because it runs %Pmirrors,1 .replace() inside.  Cheap when the
-        // per-doc cache key (docC + compile + cursor + point-fingerprint)
-        // matches.  After this runs, every Pmirror under docC/%Pmirrors,1
-        // has graft_from / graft_line on its sc, ready for DocMinimap to
-        // read directly without re-resolving.
-        await this.Lang_graft_points(w)
+        // ── drive Languish ───────────────────────────────────────────
+        // Each open doc has a /req:Languish staging text_loaded → compile →
+        // grafted.  do() runs the unfinished ones and is cheap (a no-op skip)
+        // once they finish.  This is what guarantees the first graft runs
+        // before Story snaps — the compile phase's ttlilt holds the snap open
+        // through the CM-mount and gen-write waits.
+        const rq = H.reqy(w)
+        await rq.do()
+
+        // ── cursor-move re-graft ─────────────────────────────────────
+        // Languish grafts once on open.  Subsequent cursor jumps (a new
+        // %What_Points on %examining) need a re-graft but not a recompile, so
+        // run the graft directly here once the index exists.  The per-doc cache
+        // key inside Lang_graft_points_once makes this a cheap skip when neither
+        // the cursor nor the compile has changed.
+        if (docC?.o({ Compile: 1 })[0]?.oa({ methods: 1 })) {
+            await this.Lang_graft_points_once(w, docC)
+        }
 
         const model     = w.c.model as TheC
         const state     = docC?.c.state
@@ -457,18 +643,9 @@
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
 
-        // ── initial compile per doc ──────────────────────────────────────────
-        // Fires once, on the first tick where the EditorState carries real
-        // content.  No timer — the tick loop provides the polling for free.
-        // doc.c.ever_compiled lives on .c (transient) so it resets if the
-        // ghost reloads, which is the right behaviour.
-        if (docC && state && state.doc.length > 0 && !docC.c.ever_compiled) {
-            const job = docC.o({ Compile: 1 })[0] as TheC | undefined
-            if (!job?.oa({ Pending: 1 })) {
-                docC.c.ever_compiled = true
-                await this.Lang_compile(A, w)
-            }
-        }
+        // < first compile per doc is now Languish's req:compile phase, not a
+        //   tick-time ever_compiled guard.  Re-compile on edit / manual compile
+        //   still flows through the Lang_compile action.
     },
 
     // Helper function to check if r2 is contained by r1

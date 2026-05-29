@@ -271,6 +271,22 @@
             : undefined
     })
 
+    // ── grafted spinner ───────────────────────────────────────────────────────
+    //   %Languinio is the same ave signal Langui reads; DocMinimap only cares
+    //   about the grafted phase (gold).  333ms floor so a fast graft doesn't
+    //   strobe a single frame.
+    let languinio: TheC | undefined = $state()
+    $effect(() => {
+        languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+    })
+    let _graft_spin = $state(false)
+    $effect(() => {
+        void languinio?.vers
+        const grafting = !!languinio?.ob({ spinner: 'grafted' }).length
+        if (grafting) { _graft_spin = true }
+        else          { setTimeout(() => { _graft_spin = false }, 333) }
+    })
+
     let total_lines = $derived.by(() => {
         void docC?.version
         const text = (docC?.sc.text as string) ?? ''
@@ -590,6 +606,7 @@
         <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
             {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
         </span>
+        {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
     </div>
 
     <!-- Unsent bar — only when user has changed something since last push. -->
@@ -738,6 +755,15 @@
         flex: 1; min-width: 0;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* grafted-phase spinner — gold, parallel to Langui's blue/amber spinners */
+    .lmm-graft-spin {
+        color: rgb(180, 160, 40);
+        font-size: 12px; line-height: 1;
+        flex-shrink: 0;
+        display: inline-block;
+        animation: lmm-graft-spin 0.3s linear infinite;
+    }
+    @keyframes lmm-graft-spin { to { transform: rotate(360deg); } }
 
     /* Unsent bar — only when user changed something since last push. */
     .lmm-wp-bar {
