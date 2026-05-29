@@ -8,10 +8,11 @@
     onMount(async () => {
     await H.eatfunc({
 
+    Ghostmeta_Ghost_Peeroleum(): string { return '82993849b050b564' },
 
+// the library of 
 Peeroleum(A,w) {
     w.i({see:'y Peeroleum'})
-    dangly!!!!!!
 },
 
     })
