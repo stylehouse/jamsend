@@ -210,53 +210,49 @@ so it's a C we can replace.
 ```
 
 ---
+# fab U** — fabricate-U-on-demand
 
-## Lematch state that tumbles from above
+## What changed (LiesEnd.svelte)
 
-Waft particles can be relied upon to carry `n.c.T` — the Travel ropeway node —
-for the duration of a walk.  That gives a place to share **lematch state** that
-descends from above: the Lies Waft protocol/advice (the matching rules that say
-what a `%What`'s children mean, how Points resolve) is imposed on `Seem:origin`
-by hanging it off the walk's `T`, where every visited node can read it via
-`n.c.T` without it being baked into each `n.sc`.
+U is no longer collapsed onto the D node.
+
+- `traced_fn` sets `n.c.D = D` — the clone learns its D node (re-set each walk).
+- `U_of(C)` springs a genuine `%Understandable` node *under* C's D node
+  (/%Demonstrations/%Understandable) the first time it's called, caching it on
+  `C.c.U`.  A clone that never gets a meaning never grows a U.
+- `LE_mean(C, sc)` writes a meaning (springs U); `LE_reads(C, sc)` reads without
+  springing; `LE_topU(LE)` is `U_of(topn)` = `topD/%Understandable`.
+- `U_of` is idempotent on a U node (a U's own D is itself), giving the no-seam
+  stitch `D/U/U ≡ D/D/U`.
+
+`Understandium.svelte` migrated to `H.LE_mean` / `H.LE_reads`.
+
+## Why it holds together (the mechanism)
+
+A U node hung under a D node survives every working re-walk: the D node object
+is fresh per walk, but `resolve()`/`resume_X` carry its X across, and the U node
+(mainkey `%Understandable`, not the `Seem` trace tag) is out-of-partial in the
+D.replace, so it rides along as the *same object*.  `C.c.U` therefore stays
+valid across pulls without re-springing.
+
+Because U lives in the D sphere — identity-related to the clone tree C, not in it — push
+(`target.i(C.sc)`) and enWaft (`Seem_toString`) of C never see
+meanings.  The clone `C.sc` stays a clean pushable mirror. `U.sc` hovers above.
+
+## Not done (still // <)
+
+- push_dirty → reqy fault particle.
+- the encode-compare steps (11–13) need enWaft (Text.svelte) to run; the U-side
+  guarantee they rely on (meanings never reach the snap) is proved structurally
+  in fab_U claim G without needing enWaft.
+
+## todo or done
 
 ```
-// Waft protocol/advice = lematch rules, imposed on Seem:origin from above.
-// they ride T (n.c.T), not n.sc — so the origin C** stays clean for push,
-// and the rules don't have to be re-stated per particle.
-// each_fn can read T.c.lematch (set on the top T before dive) and apply
-// n.lematch(rules) to decide skip / munging / thence — privately encoding
-// bits of the match-state as we go, without polluting n.sc.
-```
-
-This is the mechanism by which "private encoding of bits" works: the lematch
-result (`skip`, `munging`, `thence`) is computed against rules carried on `T`,
-and any derived tags we want are written on the **D/U** node (or on `T.sc`),
-never on the origin `n`.  The origin stays a faithful, pushable mirror; the
-understanding of it accumulates in the U sphere and on the ropeway.
-
----
-
-## beware
-
-What seemed jarring to you:
-Seem.oai(Seem.sc.trace_sc) — that would create e.g. LE/%Seem:origin/%Demonstrations:origin as topD.
-Seem%opt.*_fn — the spec notes // < wanting to Seem%opt.each|trace|etc_fn here. The cleanest approach is probably Seem.sc.opt = { trace_fn, each_fn, ... } so LE_pull does Se.process({ ...Seem.sc.opt, n: Seem.sc.topn, process_D: topD }). No need to particle-ify the functions — they're already on .sc.
-The U_clone strip in LE_push — this is what the two-Seem model retires. In the two-Seem world Seem:working fabricates a clean C** with no D-sphere tags in n.sc, so push just does target.i(n.sc) directly off the working clone tree. The strip is an honest interim hack and the comment says so clearly.
-One thing the spec doesn't yet say: how does Seem:working actually get its fabricated n tree populated on the first arm? It says "fabricate by cloning from OC** at pull time" but doesn't pin down the mechanics. I'd expect LE_pull to: walk Seem:origin first, then if Seem:working has no topn yet, walk the origin's D nodes and i clean copies into a fresh C** which becomes Seem:working's topn. That "clone from D nodes, strip D-sphere tags" is the same strip we're currently doing at push time — just moved earlier and made durable.
-
-## todo
-
-```
-// < i_Seem + two-Seem LE_pull: Seem:origin for awareness, Seem:working for the
+// i_Seem + two-Seem LE_pull: Seem:origin for awareness, Seem:working for the
 //   editable C** and its U**.  fabricate working n (C) by cloning OC** at pull;
 //   feed thereafter. make the C//U navigable via C.c.U = U.
-// < enWaft-of-a-Seem: encode origin slice and working state; compare for push.
+// enWaft-of-a-Seem: encode origin slice and working state; compare for push.
 //   retire resolve_strict from the diff path once this lands.
-// < fabricate-U-on-demand in Seem:working — U** made when a meaning is first
-//   written or a UPoint first edited, not eagerly at pull.
-// < lematch rules carried on T (n.c.T) so Waft protocol tumbles down without
-//   touching origin n.sc.  needs a place to stash T.c.lematch before dive.
-// < better diagnostics for the structural-vs-encode diff distinction — the
-//   strict-fork confusion shows we can't currently see which diff we're reading.
+// < fab U** asap
 ```

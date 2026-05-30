@@ -12,13 +12,18 @@
 //   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
 //   so LE/* is stable across pulls.
 //
-//   The two spheres collapse for a bounded one-What checkout: a working D node
-//   IS its U node (the stitch D/U/U ≡ D/D/U), so C.c.U points at the D node and
-//   meanings are written there.  A separately-springing topU (U under C**
-//   independently) is the deferred fabricate-U-on-demand todo, not this one.
+//   U** is its own sphere, never collapsed onto D.  Each working clone C learns
+//   its D node (C.c.D) at trace time; its single %Understandable node is reached
+//   through the C//D//U join — U_of(C) goes C → C.c.D → oai({Understandable:1}),
+//   springing the U the first time and finding it thereafter.  No cache, no flag:
+//   finding it through the join is also why it survives a re-walk (it rides the D
+//   node's resumed X, and oai re-finds it).  U_of is fatal on a %Understandable
+//   node — you reach U through C, never by U_of-ing a U.
 //
-//   %showing goes on the U node (clone.c.U.i({ showing:1 })), not on the clone
-//   .sc — the clone .sc is the pushable mirror and must stay clean.
+//   %showing goes on the U node (H.U_of(clone).i({ showing:1 })), not on the clone
+//   .sc — the clone .sc is the pushable mirror and must stay clean.  Because U
+//   lives in the D sphere beside the clone tree, push (target.i(C.sc)) and enWaft
+//   (which walk the clone tree) never see it.
 //
 //   Encode compare: Seem_toString(Seem) encodes the topn tree's children via
 //   the real enWaft (Text.svelte); origin's topn is the source %What, working's
@@ -26,7 +31,7 @@
 //   all_knowing protocol accepts them.  Encoding children-only drops the root
 //   line so two Whats with different labels compare equal on contents.
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, keyser, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
@@ -86,8 +91,11 @@ await M.eatfunc({
         H.i_Seem(LE, { Seem: 'origin', topn: what_C })
         const working = H.i_Seem(LE, {
             Seem: 'working',
-            // C//U navigable: each working clone learns its U (= its D node).
-            traced_fn: async (D: TheC, _bD: TheC, n: TheC, _T: any) => { n.c.U = D },
+            // C//D navigable: each working clone learns its D node, re-set every
+            // walk (the D object is fresh per walk; its /** resumes via resume_X).
+            // The U node springs from C.c.D on demand — see U_of — so nothing is
+            // built here, and a clone that never gets a meaning never grows a U.
+            traced_fn: async (D: TheC, _bD: TheC, n: TheC, _T: any) => { n.c.D = D },
         })
         working.sc.topn = undefined   // < fabricated lazily on first pull
     },
@@ -176,13 +184,38 @@ await M.eatfunc({
         }
 
         const wd = await H.o_Seem(working, strict)
+        // the root's D is topD, so U_of(topn) springs topU = topD/%Understandable,
+        // the U-sphere root — every C's U hangs under that C's D, root included.
+        working.sc.topn.c.D = wd.topD
 
         return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },
 
+    // ── U_of ──────────────────────────────────────────────────────────────────
+    // The U node for a working C, reached through the C//D//U join: from C to its
+    // D node (C.c.D), then the single %Understandable hung under it
+    // (/%Demonstrations/%Understandable).  oai springs it the first time and finds
+    // it thereafter, so it survives every re-walk — the U node rides the D node's
+    // resumed X — with no separate cache.  It lives in the D sphere beside the
+    // clone tree, so push and enWaft (which walk the clone tree) never see it.
+    //
+    //   write a meaning:  H.U_of(C).i({ showing: 1 })
+    //   read a meaning:   H.U_of(C).o({ showing: 1 })
+    //   read no-spring:   C.c.D.o({ Understandable: 1 })[0]
+    //
+    // Fatal on a %Understandable node — you reach U through C, never by U_of-ing a
+    // U.  The stitch D/U/U ≡ D/D/U makes a U-through-a-U the same node, so there is
+    // never a reason to; passing one is a bug.
+    U_of(LE_C: TheC): TheC {
+        if (LE_C.sc.Understandable) throw `U_of: ${keyser(LE_C)} is already a U — reach U through C`
+        const D = LE_C.c.D
+        if (!D) throw `U_of: ${keyser(LE_C)} has no c.D — walk working first`
+        return D.oai({ Understandable: 1 })
+    },
+
     // ── LE_clones ─────────────────────────────────────────────────────────────
-    // The editable working clones (clean C**).  Meanings live on each one's
-    // C.c.U, never in C.sc — so the .sc stays pushable as-is.
+    // The editable working clones (clean C**).  Meanings live on each one's U node
+    // (reached by U_of), never in C.sc — so the .sc stays pushable as-is.
     LE_clones(LE: TheC): TheC[] {
         const working = LE.oai({ Seem: 'working' })
         return working.sc.topn ? working.sc.topn.o({}) : []
