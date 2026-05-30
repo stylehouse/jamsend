@@ -3,27 +3,78 @@ Snap:H
     A:Understandity
       {"mung":["age"]}	self,round
       w:Understandity
+        {"mung":["age"]}	self,round
         source
-          What, label:routing
-            Point, method:e_Doc_open_RENAMED
-            Point, method:Lang_doc_from_event
-            What, label:deeper
-              Point, method:inner_secret
+          What,label:routing
+            Point,method:e_Doc_open_RENAMED
+            Point,method:Lang_doc_from_event
+            What,label:deeper
+              Point,method:inner_secret
         understanding
-          Point, method:e_Doc_open_RENAMED
-            showing                              ← local meaning, on the clone only
-          Point, method:Lang_doc_from_event
-          What, label:deeper                     ← shallow: no inner_secret here
+          Point,method:e_Doc_open_RENAMED
+            showing
+          Point,method:Lang_doc_from_event
+          What,label:deeper
         A_pull_diff
-          first_pull        goners:0, neus:3   neu:e_Doc_open / Lang_doc_from_event / What:deeper   PASS ×2
-          repull_unchanged  goners:0, neus:0   PASS
-          after_add         goners:0, neus:1   neu:fresh_point   PASS
-          after_drop        goners:1, neus:0   goner:fresh_point   PASS
-        B_shallow_replace_back   deep_point:inner_secret   PASS ×3
-        C_post_push_nodiff       goners:0, neus:0   PASS
-        D_local_meanings         goners:0, neus:0   PASS ×3
+          first_pull
+            goners:0,neus:3
+            neu:e_Doc_open
+            neu:Lang_doc_from_event
+            {"neu":"What:deeper"}
+            {"PASS":1,"t":"first pull: 3 neus, 0 goners"}
+            {"PASS":1,"t":"deeper cloned, inner_secret not"}
+          repull_unchanged
+            goners:0,neus:0
+            {"PASS":1,"t":"unchanged source: no-diff"}
+          after_add
+            goners:0,neus
+            neu:fresh_point
+            {"PASS":1,"t":"added Point: 1 neu, 0 goners"}
+          after_drop
+            goners,neus:0
+            goner:fresh_point
+            {"PASS":1,"t":"dropped Point: 1 goner, 0 neus"}
+        B_shallow_replace_back
+          deep_point:inner_secret
+          PASS,t:nested %What survived the replace-back
+          PASS,t:deep /%What/%What/%Point resumed
+          PASS,t:edit landed on the source
+        C_post_push_nodiff
+          goners:0,neus:0
+          {"PASS":1,"t":"clean push then pull: empty diff"}
+        D_local_meanings
+          goners:0,neus:0
+          PASS,t:re-pull stays no-diff with %showing present
+          PASS,t:%showing rode across the re-pull on the clone
+          PASS,t:%showing never reached the source %Point
         E_diff_fork
-          default_rename    goners:0, neus:0   PASS
-          strict_rename     goners:1, neus:1   goner:e_Doc_open / neu:e_Doc_open_v2   PASS
-        VERDICT:ALL_GREEN, passed:14
+          default_rename
+            src
+              What,label:routing
+                Point,method:e_Doc_open_v2
+                Point,method:Lang_doc_from_event
+                What,label:deeper
+                  Point,method:inner_secret
+            U
+              Point,method:e_Doc_open_v2
+              Point,method:Lang_doc_from_event
+              What,label:deeper
+            goners:0,neus:0
+            {"PASS":1,"t":"default: a rename is a survivor (no diff)"}
+          strict_rename
+            src
+              What,label:routing
+                Point,method:e_Doc_open_v2
+                Point,method:Lang_doc_from_event
+                What,label:deeper
+                  Point,method:inner_secret
+            U
+              Point,method:e_Doc_open_v2
+              Point,method:Lang_doc_from_event
+              What,label:deeper
+            goners,neus
+            goner:e_Doc_open
+            neu:e_Doc_open_v2
+            {"PASS":1,"t":"resolve_strict: the same rename is goner + neu"}
+        VERDICT:ALL_GREEN,passed:14
     {"mung":["id"]}	mo:main,interval:3.6
