@@ -1,16 +1,24 @@
 <script lang="ts">
 //#region LiesEnd
-// LiesEnd.svelte — the Understanding housing.
-//   Lies commissions Lang to look at an area of the Waft/%What** graph.
-//   An Understanding (U) is a bounded checkout of one %What's /%Point extent.
-//   LiesEnd is the reusable machinery Lang instantiates for its %What_Points flow.
+// LiesEnd.svelte — the Understanding housing (two-Seem model).
 //
-//   No JS classes.  Everything is methods on `this` (House mixin), operating on C**.
-//   %LE = %LiesEnd particle passed into every function; state on LE.c.* / LE.sc.* / LE/*.
-//   LE is not inside a replace(), so LE.c.* and LE/* are stable across pulls.
+//   Lies commissions Lang to look at an area of the Waft/%What** graph; an
+//   Understanding (U) is a bounded checkout of one %What's /%Point extent.
+//   Two Seems hang off one %LiesEnd:
+//     origin  — reads the remote %What for awareness (when to pull)
+//     working — holds the editable clone tree (clean C**) and its U sphere
+//
+//   No JS classes; methods on `this` (House mixin) over C** particles.  %LE is
+//   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
+//   so LE/* is stable across pulls.
+//
+//   The two spheres collapse for a bounded one-What checkout: a working D node
+//   IS its U node (the stitch D/U/U ≡ D/D/U), so C.c.U points at the D node and
+//   meanings are written there.  A separately-springing topU (U under C**
+//   independently) is the deferred fabricate-U-on-demand todo, not this one.
 
-import { _C, type TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
-import { Selection, type TheD } from "$lib/mostly/Selection.svelte"
+import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { Selection } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 
@@ -21,130 +29,160 @@ await M.eatfunc({
 
 //#region LiesEnd
 
-    // ── LE_arm ────────────────────────────────────────────────────────────────
-    // Initialise or re-aim a %LiesEnd particle at a new source %What.
-    //   LE.sc.Se     — Selection object; created once, reused across pulls
-    //   LE.sc.target — the source %What being checked out
-    //   topD         — root of the D sphere; lives on LE/* via LE.i({ topD:1 })
+    // ── i_Seem ──────────────────────────────────────────────────────────────
+    // Embed a Seem under LE: its own Selection, its match/trace shape, and the
+    // walk hooks — all held on Seem.sc.opt so LE_pull_seem can spread them into
+    // Se.process().  The functions ride .sc directly; no need to particle-ify.
     //
-    //   Call again with a new what_C to switch checkout targets.
-    //   Se and topD persist — local meanings survive the re-arm — but the next
-    //   pull diffs against the new target so goners/neus will reflect the switch.
-    LE_arm(LE: TheC, what_C: TheC) {
-        const H = this as House
-        LE.sc.Se   ??= new Selection({})
-        LE.sc.target = what_C
-        // topD lives on LE/* so it survives replace() on the parent w.
-        // first arm creates it; subsequent calls leave it alone.
-        LE.oai({ topD: 1 })
+    //   opt: { Seem, match_sc?, trace_sc?, topn?, each_fn?, trace_fn?, traced_fn? }
+    //
+    // The D-sphere root (topD) is NOT created here — it is r()'d fresh each pull
+    // (fresh .c.T while D/** resumes via resume_X), so i_Seem only records intent.
+    i_Seem(LE: TheC, opt: any): TheC {
+        const Seem = LE.oai({ Seem: opt.Seem })
+        Seem.sc.Se ??= new Selection({})
+        const trace_sc = opt.trace_sc ?? { Seem: opt.Seem }
+        Seem.sc.opt = {
+            match_sc: opt.match_sc ?? {},
+            trace_sc,
+            // shallow: clone the immediate child layer only.  A nested %What gets
+            // a D node but is never entered — its deep Points resume on push.
+            each_fn: opt.each_fn ?? (async (_D: TheC, _n: TheC, T: any) => {
+                if (T.c.d > 1) T.sc.no_further = 'shallow'
+            }),
+            // mirror the source child's clean sc into a D node, tagged trace_sc.
+            // est_D_T sets D.c.T after trace_fn returns, so no T access in here.
+            trace_fn: opt.trace_fn ?? (async (uD: TheC, n: TheC) =>
+                uD.i({ ...trace_sc, ...n.sc })),
+            traced_fn: opt.traced_fn,
+        }
+        if (opt.topn !== undefined) Seem.sc.topn = opt.topn
+        return Seem
     },
 
-    // ── LE_pull ───────────────────────────────────────────────────────────────
-    // Se_i — pull the source %What's immediate child layer into the U sphere.
-    //
-    //   topD is 1:1 with the checked-out %What — there is no resolve at that
-    //   layer.  The diff (goners/neus) happens inside topD, between old and new
-    //   U_clone children.  LE.r({ topD:1 }) re-inserts topD in-place: same sc,
-    //   D/** carries across via resume_X, fresh .c.T for the next walk.
-    //
-    //   strict=1 makes an in-place sc change register as goner + neu rather than
-    //   a survivor.  For push-state diffing; leave unset for structural tracking.
-    //
-    //   Shallow rule: only the immediate child layer is cloned.  A child %What
-    //   gets a D node but its contents are never entered — they resume on push.
-    //
-    //   LE/* receives stringified { goners, neus } counts after each pull.
-    //   Bare 1 would read as the has-key wildcard, hence the string coercion.
-    async LE_pull(LE: TheC, strict = 0) {
+    // ── LE_arm ──────────────────────────────────────────────────────────────
+    // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
+    // the remote for awareness; working holds the editable clones (topn
+    // fabricated lazily on first pull).
+    LE_arm(LE: TheC, what_C: TheC) {
         const H = this as House
-        const Se: Selection = LE.sc.Se
+        LE.sc.target = what_C
+        // A re-arm is a new Understanding: drop any prior Seems so their D/U
+        // spheres start empty.  Otherwise resolve() on the next walk pairs a
+        // fresh clone against a stale D node of a similar shape (Point↔Point)
+        // and resume_X carries the old U node — and its meanings — across to an
+        // unrelated target.  Fresh topn alone is not enough; the sphere leaks.
+        for (const s of LE.o({ Seem: 1 })) LE.drop(s)
 
-        // re-insert topD in-place: same sc, D/** resumes, fresh .c.T
-        const topD = await LE.r({ topD: 1 })
+        H.i_Seem(LE, { Seem: 'origin', topn: what_C })
+        const working = H.i_Seem(LE, {
+            Seem: 'working',
+            // C//U navigable: each working clone learns its U (= its D node).
+            traced_fn: async (D: TheC, _bD: TheC, n: TheC, _T: any) => { n.c.U = D },
+        })
+        working.sc.topn = undefined   // < fabricated lazily on first pull
+    },
+
+    // ── LE_pull_seem ──────────────────────────────────────────────────────────
+    // One Seem's walk.  Re-creates the Seem's topD root in place (fresh .c.T;
+    // D/** carries across via resume_X), then Se.process() against Seem.sc.topn.
+    // Returns the structural diff (whole-C in/out) plus the live topD.
+    async LE_pull_seem(LE: TheC, Seem: TheC, strict = 0) {
+        const Se: Selection = Seem.sc.Se
+        const seemName = Seem.sc.Seem
+        const topD = await Seem.r({ topD: seemName })
 
         const goners: TheC[] = []
-        const neus:   TheC[] = []
+        const neus: TheC[] = []
 
         await Se.process({
-            n:              LE.sc.target,
-            process_D:      topD,
-            match_sc:       {},
-            trace_sc:       { U_clone: 1 },        // D children tagged U_clone:1
+            n: Seem.sc.topn,
+            process_D: topD,
+            ...Seem.sc.opt,
             resolve_strict: strict || undefined,
-
-            each_fn: async (_D: TheC, _n: TheC, T: any) => {
-                // depth 1 = the target itself; depth 2 = its immediate children.
-                // past depth 2 we stop — nested %What cloned but not entered.
-                if (T.c.d > 1) T.sc.no_further = 'shallow'
-            },
-
-            trace_fn: async (uD: TheD, n: TheC): Promise<TheC> => {
-                // est_D_T(oD, oT) fires after trace_fn returns — D.c.T not set here.
-                // n is already oT.sc.n from dive_start.
-                // local meanings (showing, accepted) are written on D later, not here.
-                return uD.i({ U_clone: 1, ...n.sc })
-            },
-
             resolved_fn: async (_T: any, _N: any, g: TheC[], ne: TheC[]) => {
-                for (const a of g)  goners.push(a)
+                for (const a of g) goners.push(a)
                 for (const b of ne) neus.push(b)
             },
         })
 
-        // stamp diff counts on LE/* for the picture (stringified; see above)
-        LE.i({ goners: '' + goners.length, neus: '' + neus.length })
+        // counts stamped on the Seem for the picture; stringified, as bare 1
+        // reads as the has-key wildcard.
+        Seem.i({ goners: '' + goners.length, neus: '' + neus.length })
+        return { goners, neus, topD }
+    },
 
-        return { goners, neus }
+    // ── LE_fabricate ────────────────────────────────────────────────────────
+    // Build working's clean clone tree from origin's current D nodes.  Strips the
+    // D-sphere tag so each clone's .sc is a faithful, pushable mirror of the
+    // origin child — the strip the old single-Se model did at push time, moved
+    // earlier and made durable.  This is what retires the U_clone push-strip.
+    LE_fabricate(origin: TheC, topD: TheC): TheC {
+        const root = _C({ working_topn: 1 })
+        const tagKeys = Object.keys(origin.sc.opt.trace_sc)
+        for (const D of topD.o({})) {
+            const clean: any = { ...D.sc }
+            for (const k of tagKeys) delete clean[k]
+            root.i(clean)
+        }
+        return root
+    },
+
+    // ── LE_pull ─────────────────────────────────────────────────────────────
+    // The orchestration i_Seem sublates LE_pull into:
+    //   1. walk the remote into origin's D sphere   — awareness diff
+    //   2. fabricate working's clean clone tree once per arm
+    //   3. walk our editable clone tree into working's D/U sphere — edit diff
+    //
+    // Top-level { goners, neus } is the awareness (source-change) diff; the
+    // working diff is exposed under .working.  Refresh-on-remote-change (re-pull
+    // working when origin moved) is a deferred watch — see spec, When to encode.
+    async LE_pull(LE: TheC, strict = 0) {
+        const H = this as House
+        const origin = LE.oai({ Seem: 'origin' })
+        const working = LE.oai({ Seem: 'working' })
+
+        const od = await H.LE_pull_seem(LE, origin, strict)
+
+        if (working.sc.topn === undefined) {
+            working.sc.topn = H.LE_fabricate(origin, od.topD)
+        }
+
+        const wd = await H.LE_pull_seem(LE, working, strict)
+
+        return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },
 
     // ── LE_clones ─────────────────────────────────────────────────────────────
-    // The live U clones — walk through topD to its U_clone:1 children.
-    // Each D node IS the U clone (D/U sphere); local meanings live on it.
+    // The editable working clones (clean C**).  Meanings live on each one's
+    // C.c.U, never in C.sc — so the .sc stays pushable as-is.
     LE_clones(LE: TheC): TheC[] {
-        return LE.o({ topD: 1 })[0].o({ U_clone: 1 })
+        const working = LE.oai({ Seem: 'working' })
+        return working.sc.topn ? working.sc.topn.o({}) : []
     },
 
-    // ── LE_source_C ───────────────────────────────────────────────────────────
-    // Navigate from a D node back to its source C.
-    // T.sc.n is set by Travel.dive_start() — valid after process() completes.
-    LE_source_C(D: TheC): TheC {
-        return D.c.T.sc.n as TheC
-    },
-
-    // ── LE_push ───────────────────────────────────────────────────────────────
-    // Replace-back: put our (possibly-edited) U clones back as the source
-    // %What's children.  We only ever owned the immediate child layer.
+    // ── LE_push ─────────────────────────────────────────────────────────────
+    // Replace-back: put the working clones back as target's children.  C.sc is
+    // already clean (fabricated stripped), so push is a straight copy — no strip.
+    // A nested %What clone is shallow; resolve pairs it with the live source and
+    // resume_X hands its deep /%What/%Point back, untouched.
     //
-    //   A nested %What we cloned shallowly is empty in our D node; resolve()
-    //   pairs it with the live source by sc identity and resume_X hands back
-    //   its deep /%What/%Point — they never moved.
-    //
-    //   The push encoding is the identity sc with D-sphere bookkeeping stripped.
-    //   trace_fn tags each D with U_clone:1 so LE_clones can find it, but that
-    //   tag is ours, not the source's — pushing it would leak it onto the Waft.
-    //   Local meanings (showing, accepted) live on D/*, not in D.sc.
-    //   (The two-Seem model retires this strip: the working n tree is fabricated
-    //    clean, separate from the D nodes — see spec, Workflows and Awarenesses.)
-    //
-    //   After the replace-back we re-pull; a non-empty diff means the push
-    //   didn't land cleanly, stamped as push_dirty on LE/*.
+    // (You replace target's children here, not target's own sc; to rename the
+    //  %What itself you'd replace from the What above it — see spec, Push.)
     async LE_push(LE: TheC) {
         const H = this as House
         const target = LE.sc.target as TheC
-        const Ds = H.LE_clones(LE)
+        const clones = H.LE_clones(LE)
 
         await target.replace({}, async () => {
-            for (const D of Ds) {
-                const { U_clone, ...clean } = D.sc   // strip D-sphere tag from the push
-                target.i(clean)
-                // nested %What resumes its deep Points via resume_X.
-            }
+            for (const C of clones) target.i(C.sc)
         })
 
-        // post-push pull must be a no-diff
+        // post-push awareness pull must be a no-diff
         const { goners, neus } = await H.LE_pull(LE)
-        if (goners.length > 0 || neus.length > 0) {
-            // < push_dirty not yet wired to a req fault particle in the reqy system.
+        if (goners.length || neus.length) {
+            // < structural awareness only catches whole-C drift; value-edit drift
+            //   needs the enWaft compare (deferred).  < not yet a reqy fault C.
             LE.i({ push_dirty: 1, stale_goners: '' + goners.length, stale_neus: '' + neus.length })
         }
     },

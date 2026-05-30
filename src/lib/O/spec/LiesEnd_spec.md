@@ -60,52 +60,18 @@ return-pull after we navigate or push.  After a push we should pull a no-diff.
 
 ---
 
-
-## Push — replace-back
-
-After modifying our clones and deciding they're modified via encoding, we mutate
-`%What` and replace everything within it with everything in our clone right now
-— such that if there was a `%What/%What/%Point`, it would resume on our newly
-replaced `%What/%What`.
-
-```
-LE_push(LE):
-  target = LE.sc.target
-  Ds     = LE_clones(LE)             // topD/*%U_clone — these are the D nodes
-
-  await target.replace({}, async () =>
-    for D of Ds:
-      C = LE_source_C(D)             // navigate from D to its source C
-      target.i(C.sc)                 // C.sc is clean — no filter needed
-      // local meanings on D (showing, accepted) stay in the U sphere.
-      // nested %What resumes its deep Points via resume_X.
-  )
-
-  await LE_pull(LE)                  // post-push pull must be a no-diff
-  if LE.o({ neus:1 })[0]?.sc.neus > 0 || LE.o({ goners:1 })[0]?.sc.goners > 0:
-    LE.i({ push_dirty:1 })          // < fault C: push didn't land clean
-```
-
-you can't modify target.sc with this, you'd have to seek to the What above it
-so it's a C we can replace.
-
----
-
-## Open / deferred
-
-```
-// < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
-// < push_dirty not yet wired to a req fault particle in the reqy system.
-// < integration to Lang/Lies (Languinio/LE switching, wpt.sc.src = LE,
-//   path-match guards) excluded — LE must be a being-for-itself first.
-// < accepted|showing carry-forward into a new %What (+time / ↘ / ↓)
-//   reads clone.oa({ accepted:1 }) at branch time — Chunk 4, not here.
-// < e_Lies_export_point still writes deprecated /%Doc/%Points,1/%Point,N.
-```
-
----
-
 ## Workflows and Awarenesses — the two-Seem model
+
+`i_Seem` central — it does the two things LE needs (read the remote,
+hold our editable working set), and pull / clones / push below are a breakdown of
+what it sets up.
+
+The single-`Se` `LE_pull` we began with conflates two jobs that want separating:
+reading the remote, and holding our editable working set.  The push bug that
+motivated this makes it concrete — when the working clone's `.sc` carries the
+D-sphere tagging (`U_clone:1`), pushing `D.sc` back leaks that tagging onto the
+source.  The clone's identity sc and its D-sphere bookkeeping must not be the
+same thing.
 
 So: **two Seems**, each its own `Selection`, both hung off one `%LiesEnd`.
 
@@ -192,6 +158,59 @@ without re-deriving it from the live ropeways (the resumability note, applied).
 
 ---
 
+## then: pull · clones · push
+
+`i_Seem` sublates `LE_pull`.  We can still call `LE_pull()`, but it is now thin —
+per Seem it is just `Se.process({ ...Seem.sc.opt, n: Seem.sc.topn, process_D:
+Seem.sc.topD })`.  `Seem:origin` pulls for awareness; `Seem:working` walks the
+fabricated clone.  Clones are read off `Seem:working`'s `topn` tree; push replaces
+the target's children with them.
+
+## Push — replace-back
+
+After modifying our clones and deciding they're modified via encoding, we mutate
+`%What` and replace everything within it with everything in our clone right now
+— such that if there was a `%What/%What/%Point`, it would resume on our newly
+replaced `%What/%What`.
+
+```
+LE_push(LE):
+  working = LE.oai({ Seem:'working' })   // the editable Seem
+  target  = LE.sc.target
+
+  // Seem:working.topn is the fabricated clean C** — no D-sphere tags in n.sc —
+  // so push is a straight copy and the U_clone strip is retired.
+  await target.replace({}, async () =>
+    for n of working.sc.topn.o({}):    // the working clones
+      target.i(n.sc)                   // n.sc is clean — no filter, no strip
+      // local meanings on U** (showing, accepted) stay in the U sphere.
+      // nested %What resumes its deep Points via resume_X.
+  )
+
+  await LE_pull(LE)                  // post-push pull must be a no-diff
+  if LE.o({ neus:1 })[0]?.sc.neus > 0 || LE.o({ goners:1 })[0]?.sc.goners > 0:
+    LE.i({ push_dirty:1 })          // < fault C: push didn't land clean
+```
+
+you can't modify target.sc with this, you'd have to seek to the What above it
+so it's a C we can replace.
+
+---
+
+## Open / deferred
+
+```
+// < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
+// < push_dirty not yet wired to a req fault particle in the reqy system.
+// < integration to Lang/Lies (Languinio/LE switching, wpt.sc.src = LE,
+//   path-match guards) excluded — LE must be a being-for-itself first.
+// < accepted|showing carry-forward into a new %What (+time / ↘ / ↓)
+//   reads clone.oa({ accepted:1 }) at branch time — Chunk 4, not here.
+// < e_Lies_export_point still writes deprecated /%Doc/%Points,1/%Point,N.
+```
+
+---
+
 ## Lematch state that tumbles from above
 
 Waft particles can be relied upon to carry `n.c.T` — the Travel ropeway node —
@@ -219,13 +238,6 @@ understanding of it accumulates in the U sphere and on the ropeway.
 ---
 
 ## beware
-
-
-The single-`Se` `LE_pull` above conflates two jobs that want separating: reading
-the remote, and holding our editable working set.  The push bug that motivated
-this makes it concrete — when the working clone's `.sc` carries the D-sphere
-tagging (`U_clone:1`), pushing `D.sc` back leaks that tagging onto the source.
-The clone's identity sc and its D-sphere bookkeeping must not be the same thing.
 
 What seemed jarring to you:
 Seem.oai(Seem.sc.trace_sc) — that would create e.g. LE/%Seem:origin/%Demonstrations:origin as topD.
