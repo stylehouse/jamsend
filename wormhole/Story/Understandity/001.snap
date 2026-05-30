@@ -3,8 +3,27 @@ Snap:H
     A:Understandity
       {"mung":["age"]}	self,round
       w:Understandity
-        {"mung":["age"]}	self,round
-        this_is
-          test_data
-            we:snap
+        source
+          What, label:routing
+            Point, method:e_Doc_open_RENAMED
+            Point, method:Lang_doc_from_event
+            What, label:deeper
+              Point, method:inner_secret
+        understanding
+          Point, method:e_Doc_open_RENAMED
+            showing                              ← local meaning, on the clone only
+          Point, method:Lang_doc_from_event
+          What, label:deeper                     ← shallow: no inner_secret here
+        A_pull_diff
+          first_pull        goners:0, neus:3   neu:e_Doc_open / Lang_doc_from_event / What:deeper   PASS ×2
+          repull_unchanged  goners:0, neus:0   PASS
+          after_add         goners:0, neus:1   neu:fresh_point   PASS
+          after_drop        goners:1, neus:0   goner:fresh_point   PASS
+        B_shallow_replace_back   deep_point:inner_secret   PASS ×3
+        C_post_push_nodiff       goners:0, neus:0   PASS
+        D_local_meanings         goners:0, neus:0   PASS ×3
+        E_diff_fork
+          default_rename    goners:0, neus:0   PASS
+          strict_rename     goners:1, neus:1   goner:e_Doc_open / neu:e_Doc_open_v2   PASS
+        VERDICT:ALL_GREEN, passed:14
     {"mung":["id"]}	mo:main,interval:3.6
