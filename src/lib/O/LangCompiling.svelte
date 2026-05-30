@@ -87,7 +87,7 @@
 
     import { TheC } from "$lib/data/Stuff.svelte"
     import { dig } from "$lib/Y.svelte";
-    import { syntaxTree } from "@codemirror/language"
+    import { syntaxTree, language } from "@codemirror/language"
     import type { EditorState } from "@codemirror/state"
     import type { SyntaxNode } from "@lezer/common"
     import { onMount } from "svelte"
@@ -264,7 +264,7 @@
         let source: string
         let source_dige = ''   // dige of the raw source text; populated for hard-compiles
         try {
-            const lines = this.Lang_compile_collect(state, job)
+            const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
             // < maybe pile up interesting objects...
             let translated_i = 0
@@ -349,6 +349,25 @@
 //#endregion
 //#region collect
 
+    // The bare stho LRParser for the editor's active language, or undefined.
+    //
+    //   Lang_compile_collect uses this to parse candidate lines one at a time
+    //   instead of GLR-parsing the whole document.  We only return it when the
+    //   active language really is the stho grammar — detected by the presence of
+    //   an `IOing` node type, which no other grammar (e.g. the tsstho TS grammar)
+    //   has.  For anything else this returns undefined and the collector falls
+    //   back to a single whole-document tree walk.  Defensive throughout: any
+    //   unexpected CodeMirror shape yields undefined rather than throwing.
+    Lang_stho_parser(state: EditorState): { parse(input: string): any } | undefined {
+        try {
+            const lang: any = state.facet(language as any)
+            const parser: any = lang?.parser
+            const types: any[] = parser?.nodeSet?.types ?? []
+            if (types.some(t => t?.name === 'IOing')) return parser
+        } catch { /* fall back to whole-doc walk */ }
+        return undefined
+    },
+
     // Walk the document line-by-line (via doc.line(n), independent of the
     // syntax tree's own Line recovery).  For each doc-line we look into the
     // syntax tree for the first IOing or Sunpit node strictly within the
@@ -363,11 +382,24 @@
     // `theCompiledStuff(A,w) {` header, `[3]`, bare JS like
     // `let val = because.sc.it`, the closing `}`, blank lines, comments
     // all pass through unchanged.
-    Lang_compile_collect(state: EditorState, job: TheC): Array<{
+    //
+    //   sthoParser — optional bare Lezer LRParser for the stho grammar.  When
+    //   supplied (stho files), the line index is built by parsing only the
+    //   lines that *could* be stho, one at a time, instead of running the GLR
+    //   parser over the whole document.  This skips the costly error-recovery
+    //   the stho grammar does on every raw-TS line, so compile cost scales with
+    //   the number of stho lines rather than total file size.  When absent
+    //   (tsstho, whose TS grammar parses TS natively without a recovery storm,
+    //   or any caller that hasn't wired the parser) it falls back to one
+    //   whole-document tree walk.
+    Lang_compile_collect(state: EditorState, job: TheC, sthoParser?: { parse(input: string): any }): Array<{
         kind: 'translated' | 'raw',
         text: string,
     }> {
-        const tree  = syntaxTree(state)
+        // Fetched lazily in the fallback branch only.  On the fast path we never
+        // touch syntaxTree(state), so CodeMirror is never asked to fully parse
+        // (and error-recover over) the whole document.
+        let tree: any = null
         const doc   = state.doc
         const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
         // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below
@@ -393,9 +425,163 @@
         if (doc.lines == 1) this.trace(`Lang`,`Only one line? ${doc.text[0]}`)
 
         let n = 1
+
+        // ── single-pass tree index ────────────────────────────────────────────
+        //
+        // Build a line-number → hit map by iterating the tree exactly once.
+        // _collect_line then does a cheap Map lookup instead of its own
+        // tree.iterate, making the collector O(n) rather than O(n²).
+        //
+        // For each doc line we record the first stho node whose span sits
+        // strictly inside that line (same rule the old per-line iterate used).
+        // TS-grammar nodes (PropertyDefinition, PropertyName, VariableDefinition)
+        // are folded into the same pass; they land in `words` here so the
+        // second tree.iterate inside _collect_line can be removed entirely.
+        // Line index: line number → first stho hit on that line.  Whole-doc
+        // hits carry no localBase/sliceState (offsets are document-absolute);
+        // per-line fast hits carry localBase:0 and a per-line slice shim.
+        const lineHits = new Map<number, {
+            name: string, node: SyntaxNode,
+            localBase?: number, sliceState?: EditorState,
+        }>()
+
+        // 1-based line number for a doc offset — binary search.
+        // Called once per relevant tree node, not once per character.
+        const lineOf = (pos: number) => {
+            let lo = 1, hi = doc.lines
+            while (lo < hi) {
+                const mid = (lo + hi + 1) >> 1
+                if (doc.line(mid).from <= pos) lo = mid; else hi = mid - 1
+            }
+            return lo
+        }
+
+        const STHO_HITS = new Set(['IOing','Sunpit','ControlFlow','MethodLike','AmpCall'])
+
+        // ── fast path: per-line filtered parse (stho files) ───────────────────
+        //
+        // A cheap regex pre-filter rejects lines that cannot be stho (the bulk
+        // of a ghost file — raw TS).  Only survivors are handed to the parser,
+        // one line at a time, so we never pay for whole-document error recovery.
+        // Offsets from a single-line parse are line-local, so each hit carries
+        // localBase:0 and a slice shim over the line text; _collect_line maps
+        // those back to document offsets for the navigation word-index.
+        //
+        // The pre-filter is deliberately generous: a false positive only wastes
+        // one short parse, while a false negative would drop a real stho line.
+        // < TS method/class indexing (PropertyDefinition etc.) is not done on
+        //   this path; those nodes only exist in the tsstho TS tree, which takes
+        //   the fallback below.
+        if (sthoParser) {
+            const CAND = [
+                /(?:^|[^\w.])[ioS]\s+[%$A-Za-z_]/,          // IOing / Sunpit verb, anywhere on the line
+                /^\s*(?:if|for|while|until|elsif|else)\b/,  // ControlFlow head
+                /^\s*(?:async\s+)?[A-Za-z_]\w*\s*\(/,       // MethodLike decl/call
+                /&[A-Za-z_]/,                               // AmpCall
+            ]
+            for (let ln = 1; ln <= doc.lines; ln++) {
+                const line = doc.line(ln)
+                if (!CAND.some(re => re.test(line.text))) continue
+                const ltree = sthoParser.parse(line.text + '\n')
+                const lcur = ltree.cursor()
+                do {
+                    if (STHO_HITS.has(lcur.name)) {
+                        const lineText = line.text
+                        // minimal EditorState shim — translation helpers only read .doc.sliceString
+                        const sliceState = { doc: { sliceString: (a: number, b: number) => lineText.slice(a, b) } } as unknown as EditorState
+                        lineHits.set(ln, { name: lcur.name, node: lcur.node, localBase: 0, sliceState })
+                        break
+                    }
+                } while (lcur.next())
+            }
+        } else {
+
+        tree = syntaxTree(state)
+        tree.iterate({
+            enter: (ref) => {
+                // ── stho expression hits ──────────────────────────────────────
+                if (STHO_HITS.has(ref.name)) {
+                    const lineNum = lineOf(ref.from)
+                    const line = doc.line(lineNum)
+                    if (ref.from >= line.from && ref.to <= line.to && !lineHits.has(lineNum)) {
+                        lineHits.set(lineNum, { name: ref.name, node: ref.node })
+                    }
+                    return false  // no need to descend into stho expression internals
+                }
+
+                // ── TS-grammar method/class defs (tsstho files) ───────────────
+                //
+                //   VariableDefinition (parent=ClassDeclaration) → class name
+                //     e.g. "export class Pier {" → def:Pier
+                //   PropertyDefinition (parent=MethodDeclaration) → class method
+                //     e.g. "async emit(type, data={}) {" → def:emit class:'Pier'
+                //   PropertyDefinition (parent=Property with ParamList) → eatfunc method
+                //   PropertyName (object shorthand fallback) → eatfunc method
+                //
+                // Discriminator: %class present → method inside a class.
+                // IMPORT and RENDER are reserved for compiler header/tail extraction.
+                // < IMPORT/RENDER body extraction in Lang_compile_collect is future work.
+                if (ref.name === 'PropertyDefinition') {
+                    const name = state.doc.sliceString(ref.from, ref.to)
+                    if (!name || !/^\w/.test(name)) return false
+                    const parent = ref.node.parent
+                    const is_class_method  = parent?.type.name === 'MethodDeclaration'
+                    // object method shorthand: Property carries both PropertyDefinition and ParamList
+                    const is_object_method = parent?.type.name === 'Property'
+                        && !!parent.getChild('ParamList')
+                    if (!is_class_method && !is_object_method) return false
+                    let class_name: string | undefined
+                    if (is_class_method) {
+                        // walk up: MethodDeclaration → ClassBody → ClassDeclaration
+                        const class_body = parent.parent
+                        const class_decl = class_body?.type.name === 'ClassBody' ? class_body.parent : null
+                        const cn = class_decl?.type.name === 'ClassDeclaration'
+                            ? class_decl.getChild('VariableDefinition') : null
+                        if (cn) class_name = state.doc.sliceString(cn.from, cn.to)
+                    }
+                    const n_line = lineOf(ref.from)
+                    const word: any = { def: 1, method: name, from: ref.from, to: ref.to,
+                                        line: n_line, region_path: [...region_stack] }
+                    if (class_name) word.class = class_name
+                    if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
+                    words.push(word)
+                    return false
+                }
+
+                // Backup for grammars that emit PropertyName instead of PropertyDefinition
+                // in method-shorthand positions inside object literals (eatfunc context).
+                // Only record if the node looks like a method (sibling ParamList present).
+                if (ref.name === 'PropertyName') {
+                    const prop = ref.node.parent
+                    if (!prop?.getChild('ParamList')) return false
+                    const name = state.doc.sliceString(ref.from, ref.to)
+                    if (!name || !/^\w/.test(name)) return false
+                    const n_line = lineOf(ref.from)
+                    const word: any = { def: 1, method: name, from: ref.from, to: ref.to,
+                                        line: n_line, region_path: [...region_stack] }
+                    if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
+                    words.push(word)
+                    return false
+                }
+
+                if (ref.name === 'VariableDefinition'
+                        && ref.node.parent?.type.name === 'ClassDeclaration') {
+                    const name = state.doc.sliceString(ref.from, ref.to)
+                    if (name && /^\w/.test(name)) {
+                        const n_line = lineOf(ref.from)
+                        words.push({ def: 1, method: name, from: ref.from, to: ref.to,
+                                     line: n_line, region_path: [...region_stack] })
+                    }
+                    return false
+                }
+            },
+        })
+
+        }  // end fallback (whole-doc tree walk)
+
         while (n <= doc.lines) {
             try {
-                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, region_stack })
+                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, region_stack, lineHits })
             } catch (err: any) {
                 const text = n <= doc.lines ? doc.line(n).text : ''
                 line_errors.push({ n, text, msg: String(err?.message ?? err) })
@@ -439,8 +625,11 @@
     //   current_method — name of the enclosing MethodLike decl, or null at top level
     //   region_stack   — stack of region labels currently open (push on //#region,
     //                    pop on //#endregion); persists across all doc lines
+    //   lineHits       — pre-built line-number→hit map from Lang_compile_collect;
+    //                    avoids a tree.iterate call per line (O(n²) → O(n))
     _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
-        words: any[], current_method: string | null, region_stack: string[]
+        words: any[], current_method: string | null, region_stack: string[],
+        lineHits: Map<number, { name: string, node: SyntaxNode }>,
     }): number {
         const line = doc.line(n)
 
@@ -496,21 +685,17 @@
         }
 
         // first recognisable node whose span lies within this doc line
-        let hit: { name: string, node: SyntaxNode } | null = null
-        tree.iterate({
-            from: line.from,
-            to:   line.to,
-            enter: (ref) => {
-                if (hit) return false
-                if ((ref.name === 'IOing' || ref.name === 'Sunpit'
-                        || ref.name === 'ControlFlow' || ref.name === 'MethodLike'
-                        || ref.name === 'AmpCall')
-                        && ref.from >= line.from && ref.to <= line.to) {
-                    hit = { name: ref.name, node: ref.node }
-                    return false
-                }
-            },
-        })
+        const hit = ctx.lineHits.get(n) ?? null
+
+        // Hit offsets can be either document-absolute (whole-doc tree, used for
+        // tsstho / fallback) or line-local (per-line fast parse for stho).  These
+        // locals normalise both: localBase is what to subtract from a node offset
+        // to get a line-local index; sliceState is the EditorState (or per-line
+        // shim) the translation helpers slice their text from; docOff maps a node
+        // offset back to a document offset for the navigation word-index.
+        const localBase  = hit?.localBase  ?? line.from
+        const sliceState = hit?.sliceState ?? state
+        const docOff = (o: number) => line.from + (o - localBase)
 
         if (hit?.name === 'AmpCall') {
             // &method,arg,arg,… → this.method(arg,arg,…)
@@ -518,11 +703,11 @@
             // it leaves any non-& text on the line untouched.
             const nameNode = hit.node.getChild('Name')
             const method   = nameNode
-                ? state.doc.sliceString(nameNode.from, nameNode.to)
+                ? sliceState.doc.sliceString(nameNode.from, nameNode.to)
                 : '__unknown'
             out.push({ kind: 'translated', text: this.Lang_amp_calls_in_text(line.text) })
             // record as a call in the word index
-            const entry: any = { call: 1, method, from: hit.node.from, to: hit.node.to, line: n,
+            const entry: any = { call: 1, method, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
                                  region_path: [...ctx.region_stack] }
             if (ctx.current_method) entry.via = ctx.current_method
             ctx.words.push(entry)
@@ -531,9 +716,9 @@
 
         if (hit?.name === 'Sunpit') {
             // emit the for-header (open brace only; _collect_line closes it below)
-            const raw_before = line.text.slice(0, hit.node.from - line.from)
+            const raw_before = line.text.slice(0, hit.node.from - localBase)
             const split   = this.Lang_io_before_split(raw_before)
-            const header  = this.Lang_compile_Sunpit(hit.node, state,
+            const header  = this.Lang_compile_Sunpit(hit.node, sliceState,
                 split.receiver ? { receiver: split.receiver } : {})
             out.push({ kind: 'translated', text: split.keep_before + header })
             n++
@@ -565,11 +750,11 @@
             const headNode  = hit.node.getChild('ControlFlowHead')
             const titleNode = hit.node.getChild('Title')
             // keyword is "if", "for", "while", "until", "else if", "elsif", or "else"
-            const keyword   = state.doc.sliceString(headNode.from, headNode.to).trim()
+            const keyword   = sliceState.doc.sliceString(headNode.from, headNode.to).trim()
             let condition   = titleNode
-                ? state.doc.sliceString(titleNode.from, titleNode.to).trim()
+                ? sliceState.doc.sliceString(titleNode.from, titleNode.to).trim()
                 : ''
-            const before     = line.text.slice(0, hit.node.from - line.from)
+            const before     = line.text.slice(0, hit.node.from - localBase)
             const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
 
             // Record control-flow header in the words index so Point resolution
@@ -578,8 +763,8 @@
                 controlflow: 1,
                 keyword: keyword.trim(),
                 title: condition,
-                from: hit.node.from,
-                to: hit.node.to,
+                from: docOff(hit.node.from),
+                to: docOff(hit.node.to),
                 line: n,
                 ...(ctx.current_method ? { via: ctx.current_method } : {}),
                 region_path: [...ctx.region_stack],
@@ -655,9 +840,9 @@
 
         if (hit?.name === 'MethodLike') {
             const nameNode  = hit.node.getChild('Name')
-            const funcName  = state.doc.sliceString(nameNode.from, nameNode.to)
+            const funcName  = sliceState.doc.sliceString(nameNode.from, nameNode.to)
             // read closing paren and brace from raw text — grammar stops at "("
-            const afterParen = line.text.slice(hit.node.to - line.from)
+            const afterParen = line.text.slice(hit.node.to - localBase)
             const hasRParen  = afterParen.includes(')')
             const hasBrace   = afterParen.includes('{')
             const decl_indent = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
@@ -687,7 +872,7 @@
                 // the decl was written `async name(…)` — a future pass can use
                 // this to decide whether a matching &call / bare call needs await.
                 const isAsync = !!hit.node.getChild('AsyncKeyword')
-                ctx.words.push({ def: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1,
+                ctx.words.push({ def: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
                                  ...(isAsync ? { async: 1 } : {}),
                                  region_path: [...ctx.region_stack] })
 
@@ -701,7 +886,8 @@
 
                 // recurse into body with current_method set, for both brace and pythonic styles,
                 // so that via tracking works for H./this. calls inside the body
-                const inner_ctx = { words: ctx.words, current_method: funcName, region_stack: ctx.region_stack }
+                const inner_ctx = { words: ctx.words, current_method: funcName,
+                                    region_stack: ctx.region_stack, lineHits: ctx.lineHits }
                 while (n <= doc.lines) {
                     const peek = doc.line(n)
                     if (peek.text.trim() === '') {
@@ -720,7 +906,7 @@
                 }
             } else {
                 // it's a call — record with enclosing method as `via`, plus position
-                const entry: any = { call: 1, method: funcName, from: hit.node.from, to: hit.node.to, line: n - 1,
+                const entry: any = { call: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
                                      region_path: [...ctx.region_stack] }
                 if (ctx.current_method) entry.via = ctx.current_method
                 ctx.words.push(entry)
@@ -728,93 +914,6 @@
             }
             return n
         }
-
-        // ── TypeScript class and eatfunc method defs ─────────────────────────
-        //
-        // For tsstho files the relevant Lezer-JS node names are:
-        //
-        //   VariableDefinition (parent=ClassDeclaration) → class name
-        //     e.g. "export class Pier {" → def:Pier  (no %class — it IS the class)
-        //   PropertyDefinition (parent=MethodDeclaration) → class method
-        //     e.g. "async emit(type, data={}) {" → def:emit class:'Pier'
-        //   PropertyDefinition (parent=Property with ParamList) → eatfunc method
-        //     e.g. eatfunc pattern: "async on_code_change() {" → def:on_code_change
-        //   PropertyName (in Object shorthand methods some grammars emit this) → eatfunc fallback
-        //
-        // Discriminator: %class present → method inside a class; absent → class name or eatfunc top.
-        // No %kind field — the %class field carries that distinction.
-        //
-        // IMPORT and RENDER are reserved method names for compiler header/tail extraction.
-        // < IMPORT/RENDER body extraction in Lang_compile_collect is future work.
-        tree.iterate({
-            from: line.from,
-            to:   line.to,
-            enter: (ref) => {
-                if (ref.from < line.from || ref.to > line.to) return
-
-                if (ref.name === 'PropertyDefinition') {
-                    const name = state.doc.sliceString(ref.from, ref.to)
-                    if (!name || !/^\w/.test(name)) return false
-
-                    const parent = ref.node.parent
-
-                    const is_class_method = parent?.type.name === 'MethodDeclaration'
-                    // object method shorthand: Property node carries both PropertyDefinition and ParamList
-                    const is_object_method = parent?.type.name === 'Property'
-                        && !!parent.getChild('ParamList')
-
-                    if (!is_class_method && !is_object_method) return false
-
-                    // walk up to find class name: MethodDeclaration → ClassBody → ClassDeclaration
-                    let class_name: string | undefined
-                    if (is_class_method) {
-                        const class_body = parent.parent   // ClassBody
-                        const class_decl = class_body?.type.name === 'ClassBody' ? class_body.parent : null
-                        const cn = class_decl?.type.name === 'ClassDeclaration'
-                            ? class_decl.getChild('VariableDefinition') : null
-                        if (cn) class_name = state.doc.sliceString(cn.from, cn.to)
-                    }
-
-                    const word: any = {
-                        def: 1, method: name,
-                        from: ref.from, to: ref.to, line: n,
-                        region_path: [...ctx.region_stack],
-                    }
-                    if (class_name) word.class = class_name
-                    if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
-                    ctx.words.push(word)
-                    return false
-                }
-
-                // Backup for grammars that emit PropertyName instead of PropertyDefinition
-                // in method-shorthand positions inside object literals (eatfunc context).
-                // Only record if the node looks like a method (sibling ParamList present).
-                if (ref.name === 'PropertyName') {
-                    const prop = ref.node.parent  // Property
-                    if (!prop?.getChild('ParamList')) return false
-                    const name = state.doc.sliceString(ref.from, ref.to)
-                    if (!name || !/^\w/.test(name)) return false
-                    const word: any = {
-                        def: 1, method: name,
-                        from: ref.from, to: ref.to, line: n,
-                        region_path: [...ctx.region_stack],
-                    }
-                    if (name === 'IMPORT' || name === 'RENDER') word.magic = 1
-                    ctx.words.push(word)
-                    return false
-                }
-
-                if (ref.name === 'VariableDefinition'
-                        && ref.node.parent?.type.name === 'ClassDeclaration') {
-                    const name = state.doc.sliceString(ref.from, ref.to)
-                    if (name && /^\w/.test(name))
-                        ctx.words.push({ def: 1, method: name,
-                            from: ref.from, to: ref.to, line: n,
-                            region_path: [...ctx.region_stack] })
-                    return false
-                }
-            },
-        })
 
         // scan every line for this./H. calls not caught by MethodLike
         // (inline calls, chained calls, calls inside raw JS expressions)
@@ -832,10 +931,10 @@
         }
 
         if (hit?.name === 'IOing') {
-            const raw_before = line.text.slice(0, hit.node.from - line.from)
-            const after       = line.text.slice(hit.node.to - line.from)
+            const raw_before = line.text.slice(0, hit.node.from - localBase)
+            const after       = line.text.slice(hit.node.to - localBase)
             const split       = this.Lang_io_before_split(raw_before)
-            const translated  = this.Lang_compile_IOing(hit.node, state,
+            const translated  = this.Lang_compile_IOing(hit.node, sliceState,
                 split.receiver ? { receiver: split.receiver } : {})
 
             if (split.and_lhs != null) {
