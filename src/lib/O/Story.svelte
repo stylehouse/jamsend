@@ -476,22 +476,38 @@
         return total_ms / 1000
     },
 
+    // ── spool_time_sample ─────────────────────────────────────────────────────
+    // Append one seconds value to a {TimeTotal} particle, trim to 10 oldest-first,
+    // recompute avg.  The particle is the caller's responsibility to find or create
+    // (Auto uses a per-book one; Story uses The/TimeSpool/{TimeTotal:'beliefs'}).
+    //
+    // .at is wall-clock seconds — when this measurement was taken,
+    // not the duration itself (which is in .sample).
+    spool_time_sample(tt: TheC, seconds: number) {
+        const H = this as House
+        tt.i({ sample: Math.round(seconds * 1000) / 1000, at: now_in_seconds() })
+
+        // sort oldest-first so whittle_N evicts from the front
+        const samples = (tt.o({ sample: 1 }) as TheC[])
+            .sort((a, b) => (a.sc.at as number) - (b.sc.at as number))
+        H.whittle_N(samples, 10)
+
+        // recompute avg from survivors
+        const survivors = tt.o({ sample: 1 }) as TheC[]
+        const avg = survivors.reduce((s, n) => s + (n.sc.sample as number), 0) / survivors.length
+        tt.sc.avg = Math.round(avg * 1000) / 1000
+    },
+
     // ── collect_time_sample ───────────────────────────────────────────────────
     // Called once on test completion (both new and check end-branches in
     // story_drive). Sums the beliefs-mutex time across every step that actually
-    // ran this session (anything in This with a Run_trace), then appends one
-    // sample to The/TimeSpool/{TimeTotal:'beliefs'}.
+    // ran this session (anything in This with a Run_trace), then spools one
+    // sample into The/TimeSpool/{TimeTotal:'beliefs'} via spool_time_sample.
     //
     // Lives in The (not This) so it round-trips through toc.snap and accumulates
     // history across sessions — the whole point is being able to look back over
     // recent runs and see "is this test getting slower" / "roughly how long does
-    // this test take to run". This is session-only and would die on reload.
-    //
-    // Trim: keep only the most recent 10 samples per TimeTotal. Sort ascending
-    // by .at so the oldest sit at the front of the array, then whittle_N drops
-    // from the front (and calls .drop() so they vanish from o() results).
-    // avg is recomputed from the survivors so a future chart can read it
-    // without re-summing.
+    // this test take to run".
     collect_time_sample(w: TheC) {
         const H    = this as House
         const This = w.c.This as TheC
@@ -512,21 +528,8 @@
         const tt    = (spool.o({ TimeTotal: 'beliefs' })[0] as TheC)
                    ?? spool.i({ TimeTotal: 'beliefs', avg: 0 })
 
-        // append. .at is wall-clock seconds — when this measurement was taken,
-        // not the test duration itself (which is in .sample).
-        tt.i({ sample: Math.round(run_total_seconds * 1000) / 1000, at: now_in_seconds() })
-
-        // sort oldest-first so whittle_N evicts from the front
-        const samples = (tt.o({ sample: 1 }) as TheC[])
-            .sort((a, b) => (a.sc.at as number) - (b.sc.at as number))
-        H.whittle_N(samples, 10)
-
-        // recompute avg from survivors
-        const survivors = tt.o({ sample: 1 }) as TheC[]
-        const avg = survivors.reduce((s, n) => s + (n.sc.sample as number), 0) / survivors.length
-        tt.sc.avg = Math.round(avg * 1000) / 1000
-
-        ;V.Story && console.log(`⏱ TimeSpool/beliefs +sample=${run_total_seconds.toFixed(3)}s avg=${tt.sc.avg}s n=${survivors.length}`)
+        H.spool_time_sample(tt, run_total_seconds)
+        ;V.Story && console.log(`⏱ TimeSpool/beliefs +sample=${run_total_seconds.toFixed(3)}s avg=${tt.sc.avg}s n=${tt.o({ sample: 1 }).length}`)
     },
 
     parse_snap(s: string) {

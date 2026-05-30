@@ -6,7 +6,9 @@
     // ── Library ──────────────────────────────────────────────────────────────
     //
     //   w/{Library:1}  — container for all known Book particles.
-    //     /{Book:'LeafJuggle', ok_pct:0.9, last_run_ms:1712345678, active:true, ...}
+    //     /{Book:'LeafJuggle', ok_pct:0.9, last_run_ms:1712345678, active:true}
+    //       /{TimeSpool:1}/{TimeTotal:'beliefs', avg:0.42}
+    //           /{sample:0.38, at:1712340000}  — last 10, oldest evicted
     //
     //   Persisted at wormhole/Present/toc.snap via rw_op.
     //   Loaded once (w.c.Li_loaded guard).  Seeded with defaults if absent.
@@ -31,6 +33,13 @@
     //   encode_library / decode_library use encode_wh_lines / decode_wh_lines
     //   (from Text ghost).  Any mung errors are i()d into Li as {mung_error:1}
     //   particles and surfaced in LibraryRun.
+    //
+    // ── Timing history ────────────────────────────────────────────────────────
+    //
+    //   auto_sync_story_stats() reads TimeSpool/beliefs avg from The (Story ghost)
+    //   and writes it back into book.sc.time_avg + book.sc.time_samples (capped 10).
+    //   This makes per-book timing history persist across sessions via toc.snap,
+    //   which LibraryRun uses to size bubbles by relative rank.
 
     import { _C, type TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -84,8 +93,6 @@
             if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
                 return w.i({ see: '⏳ Library...' })
 
-            
-            
             const { C: Li_new, errors } = 
                 req.sc.reply.not_found
                     ? {C: this.autovivify_Library(),errors:[]}
@@ -230,8 +237,8 @@
 //#region Story stats sync
 
     auto_sync_story_stats(Li: TheC) {
-        // Read ok_pct and last_run_ms from the live Story house (if any)
-        // and write them back into the matching Book particle.
+        // Read ok_pct, last_run_ms, and beliefs time from the live Story house
+        // (if any) and write them back into the matching Book particle.
         // Fires every Auto tick — cheap, no I/O.
         const H     = this as House
         const story = H.o({ H: 'Story' })[0] as House | undefined
@@ -244,30 +251,52 @@
         const book_name = stW.sc.Book as string | undefined
         if (!book_name) return
 
-        const run    = stW.o({ run: 1 })[0] as TheC | undefined
-        const thisC  = stW.c.This as TheC | undefined
-
+        const run   = stW.o({ run: 1 })[0] as TheC | undefined
+        const thisC = stW.c.This as TheC | undefined
         if (!run || !thisC) return
 
         const all_steps = thisC.o({ Step: 1 }) as TheC[]
         const done      = all_steps.length
         if (!done) return
 
-        const ok  = all_steps.filter(s => s.sc.ok).length
-        const ok_pct = Math.round((ok / done) * 100) / 100
+        const ok      = all_steps.filter(s => s.sc.ok).length
+        const ok_pct  = Math.round((ok / done) * 100) / 100
         const last_run_ms = now_in_seconds_with_ms()
 
         const book = Li.o({ Book: book_name })[0] as TheC | undefined
         if (!book) return
 
-        const changed = book.sc.ok_pct !== ok_pct
-        if (changed) {
-            book.sc.ok_pct       = ok_pct
-            book.sc.last_pct_change  = last_run_ms
-            book.sc.done         = done
+        // ── ok_pct ───────────────────────────────────────────────────────────
+        const pct_changed = book.sc.ok_pct !== ok_pct
+        if (pct_changed) {
+            book.sc.ok_pct = ok_pct
+            book.sc.done   = done
             Li.bump_version()
         }
-        book.sc.last_run_ms  = last_run_ms
+        book.sc.last_run_ms = last_run_ms
+
+        // ── timing history ────────────────────────────────────────────────────
+        // Same gather as collect_time_sample: sum beliefs-mutex time across
+        // every step in This that has a Run_trace.  Then spool one sample into
+        // a per-book {TimeTotal:'beliefs'} particle that persists in toc.snap,
+        // giving LibraryRun 10 sessions of history to rank bubbles by.
+        const ranSteps = all_steps
+            .filter(s => Array.isArray(s.sc.Run_trace) && s.sc.Run_trace.length)
+        if (!ranSteps.length) return
+
+        let run_total_seconds = 0
+        for (const step of ranSteps)
+            run_total_seconds += H.sum_beliefs_time(step.sc.Run_trace as any[])
+
+        // find-or-create the per-book spool particle (not under The — lives
+        // directly on the Book so it round-trips through toc.snap / toc.wh)
+        const book_spool = (book.o({ TimeSpool: 1 })[0] as TheC) ?? book.i({ TimeSpool: 1 })
+        const book_tt    = (book_spool.o({ TimeTotal: 'beliefs' })[0] as TheC)
+                        ?? book_spool.i({ TimeTotal: 'beliefs', avg: 0 })
+
+        const old_avg = book_tt.sc.avg as number | undefined
+        H.spool_time_sample(book_tt, run_total_seconds)
+        if (book_tt.sc.avg !== old_avg) Li.bump_version()
     },
 
     })

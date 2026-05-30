@@ -4,9 +4,10 @@
     // Mounted by Otro via H/{watched:UIs}/{UI:'Library'}.
     // Receives H (the root Mundo house).
     //
-    // Shows each Book particle from Li = H.ave.ob({Library:1}) as a bubble
-    // sized by recency: recently activated = large, days ago = medium,
-    // never run or ancient = small.
+    // Shows each Book particle from Li = H.ave.ob({Library:1}) as a bubble.
+    // Bubble size = relative rank by average beliefs-mutex time across the
+    // last-10 samples stored in book.sc.time_samples[].  All sizes are
+    // relative to each other so the pile stays meaningful across sessions.
     //
     // Mung errors are shown as red banners at the top — fatal, user must fix code.
     // < more reactive UI - last run etc values don't update
@@ -55,7 +56,8 @@
     let editing: Record<string, string | null> = $state({})
 
     function extra_sc(book: TheC): Record<string, any> {
-        const skip = new Set(['Book', 'ok_pct', 'last_run_ms', 'active', 'done', 'last_pct_change'])
+        const skip = new Set(['Book', 'ok_pct', 'last_run_ms', 'active', 'done',
+                              'last_pct_change', 'time_avg', 'time_samples'])
         const out: Record<string, any> = {}
         for (const [k, v] of Object.entries(book.sc)) {
             if (!skip.has(k)) out[k] = v
@@ -92,41 +94,63 @@
         H.i_elvisto('Auto/Auto', 'resetStory', {})
     }
 
-    // ── recency sizing ────────────────────────────────────────────────────
-    // last_run_ms is seconds (now_in_seconds_with_ms). Tiers by age:
-    //   < 2 hours  → 'xl'  (you were just here)
-    //   < 24 hours → 'lg'
-    //   < 7 days   → 'md'
-    //   older/null → 'sm'
+    // ── relative rank sizing ──────────────────────────────────────────────
+    // Read time_avg from book/{TimeSpool:1}/{TimeTotal:'beliefs'}.avg —
+    // the per-book spool particle written by auto_sync_story_stats via
+    // spool_time_sample.  Sort descending, map rank to tier so the pile
+    // always fills all four sizes regardless of absolute values.
+    // Books with no samples sit at the end and share 'sm'.
+    const TIERS = ['xl', 'lg', 'md', 'sm'] as const
+    type Tier = typeof TIERS[number]
+
+    function book_time_avg(book: TheC): number {
+        const spool = book.o({ TimeSpool: 1 })[0] as TheC | undefined
+        const tt    = spool?.o({ TimeTotal: 'beliefs' })[0] as TheC | undefined
+        return (tt?.sc.avg as number) ?? -1
+    }
+
+    function book_sample_count(book: TheC): number {
+        const spool = book.o({ TimeSpool: 1 })[0] as TheC | undefined
+        const tt    = spool?.o({ TimeTotal: 'beliefs' })[0] as TheC | undefined
+        return tt ? (tt.o({ sample: 1 }) as TheC[]).length : 0
+    }
+
+    let ranked_books = $derived.by(() => {
+        const bs = [...books] as TheC[]
+        bs.sort((a, b) => book_time_avg(b) - book_time_avg(a))
+        const n = bs.length
+        return bs.map((book, i) => {
+            // quarter-based: top 25% → xl, next → lg, next → md, rest → sm
+            const tier_i = n <= 1 ? 0 : Math.min(3, Math.floor((i / n) * 4))
+            return { book, tier: TIERS[tier_i] as Tier }
+        })
+    })
+
+    // ── human-readable age ────────────────────────────────────────────────
     const NOW_S = Date.now() / 1000
     const HR    = 3600
     const DAY   = HR * 24
 
-    function recency_tier(book: TheC): 'xl' | 'lg' | 'md' | 'sm' {
-        const t = book.sc.last_run_ms as number | null | undefined
-        if (!t) return 'sm'
-        const age = NOW_S - t
-        if (age < 2  * HR)  return 'xl'
-        if (age < 1  * DAY) return 'lg'
-        if (age < 7  * DAY) return 'md'
-        return 'sm'
-    }
-
-    // ── human-readable age ────────────────────────────────────────────────
     function fmt_age(book: TheC): string {
         const t = book.sc.last_run_ms as number | null | undefined
         if (!t) return 'never'
         const age = NOW_S - t
-        if (age < 60)         return 'just now'
-        if (age < HR)         return `${Math.floor(age / 60)}m ago`
-        if (age < DAY)        return `${Math.floor(age / HR)}h ago`
-        if (age < 7 * DAY)   return `${Math.floor(age / DAY)}d ago`
+        if (age < 60)       return 'just now'
+        if (age < HR)       return `${Math.floor(age / 60)}m ago`
+        if (age < DAY)      return `${Math.floor(age / HR)}h ago`
         return `${Math.floor(age / DAY)}d ago`
     }
 
     function fmt_pct(p: number | null | undefined): string {
         if (p == null) return ''
         return Math.round(p * 100) + '%'
+    }
+
+    // time_avg is in seconds (sum_beliefs_time units)
+    function fmt_avg(book: TheC): string {
+        const a = book_time_avg(book)
+        if (a < 0) return ''
+        return a >= 1 ? `${a.toFixed(1)}s` : `${Math.round(a * 1000)}ms`
     }
 </script>
 
@@ -161,17 +185,15 @@
     {#if !Li}
         <div class="lr-empty">loading…</div>
     {:else}
-        <!-- flex-wrap pile: books size themselves by recency tier -->
+        <!-- flex-wrap pile: books size themselves by relative rank -->
         <div class="lr-pile">
-            {#each books as book (book.sc.Book)}
-                {@const tier = recency_tier(book)}
+            {#each ranked_books as { book, tier } (book.sc.Book)}
                 {@const active = isActive(book)}
                 <div
                     class="lr-book tier-{tier}"
                     class:lr-active={active}
                     title={book.sc.Book}
                 >
-                    <!-- name + remove in one line -->
                     <div class="lr-book-top">
                         <span class="lr-name">{book.sc.Book}</span>
                         <button
@@ -180,15 +202,20 @@
                             title="remove">×</button>
                     </div>
 
-                    <!-- stats row — age and ok% -->
+                    <!-- age + ok% always shown; timing only if we have samples -->
                     <div class="lr-stats">
                         <span class="lr-age">{fmt_age(book)}</span>
                         {#if book.sc.ok_pct != null}
                             <span class="lr-pct">{fmt_pct(book.sc.ok_pct)}</span>
                         {/if}
+                        {#if book_sample_count(book)}
+                            <span class="lr-timing" title="{book_sample_count(book)} samples">
+                                ⏱{fmt_avg(book)}
+                            </span>
+                        {/if}
                     </div>
 
-                    <!-- extra sc — click to edit -->
+                    <!-- extra sc — click to edit, hidden when empty -->
                     {#if Object.keys(extra_sc(book)).length || editing[book.sc.Book] != null}
                         <div class="lr-extra">
                             {#if editing[book.sc.Book] != null}
@@ -207,7 +234,6 @@
                         </div>
                     {/if}
 
-                    <!-- activate button always visible -->
                     <button
                         class="lr-activate {active ? 'is-active' : 'is-idle'}"
                         onclick={() => activate(book)}
@@ -249,7 +275,7 @@
     .lr-mung-msg { font-size: 0.75rem; margin-top: 0.15rem; }
 
     /* ── bubble pile ─────────────────────────────────────────────────────── */
-    /* flex-wrap lets recently-run big cards naturally push small ones aside */
+    /* flex-wrap lets the bigger cards naturally crowd out smaller ones */
     .lr-pile {
         display: flex;
         flex-wrap: wrap;
@@ -265,7 +291,6 @@
         border: 1px solid #333;
         border-radius: 5px;
         padding: 0.35rem 0.45rem;
-        cursor: default;
         transition: border-color 0.15s, background 0.15s;
     }
     .lr-book:hover { border-color: #555; background: #1f1f1f; }
@@ -274,17 +299,18 @@
         background: #111e11;
     }
 
-    /* ── recency tiers: font-size carries the weight ─────────────────────── */
-    .tier-xl { font-size: 1rem;   min-width: 140px; }
-    .tier-lg { font-size: 0.88rem; min-width: 110px; }
-    .tier-md { font-size: 0.78rem; min-width: 90px;  }
-    .tier-sm { font-size: 0.70rem; min-width: 72px;  }
+    /* ── relative rank tiers ─────────────────────────────────────────────── */
+    /* font-size carries the size; min-width keeps the card readable at each tier */
+    .tier-xl { font-size: 1.35rem; min-width: 170px; }
+    .tier-lg { font-size: 1.00rem; min-width: 130px; }
+    .tier-md { font-size: 0.78rem; min-width: 96px;  }
+    .tier-sm { font-size: 0.65rem; min-width: 72px;  }
 
     /* ── internals ───────────────────────────────────────────────────────── */
     .lr-book-top {
         display: flex;
         align-items: flex-start;
-        gap: 0.2rem;
+        gap: 0.25rem;
     }
     .lr-name {
         font-weight: 600;
@@ -298,7 +324,7 @@
         border: none;
         color: #555;
         cursor: pointer;
-        font-size: 0.9em;
+        font-size: 0.85em;
         padding: 0;
         line-height: 1;
         flex-shrink: 0;
@@ -307,11 +333,13 @@
 
     .lr-stats {
         display: flex;
-        gap: 0.35rem;
+        flex-wrap: wrap;
+        gap: 0.3rem;
         align-items: baseline;
     }
-    .lr-age  { color: #666; font-size: 0.85em; }
-    .lr-pct  { color: #8a8; font-size: 0.85em; }
+    .lr-age    { color: #666; font-size: 0.80em; }
+    .lr-pct    { color: #8a8; font-size: 0.80em; }
+    .lr-timing { color: #78a; font-size: 0.80em; }
 
     .lr-extra { margin-top: 0.1rem; }
     .lr-peel-view {
@@ -335,8 +363,8 @@
     }
 
     .lr-activate {
-        margin-top: 0.2rem;
-        font-size: 0.78em;
+        margin-top: 0.25rem;
+        font-size: 0.72em;
         padding: 0.12rem 0.35rem;
         border-radius: 3px;
         cursor: pointer;
