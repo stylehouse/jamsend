@@ -3,30 +3,21 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:2
       w:Understandium
-        {"ref":{"Se":"Selection()","target":"%What:1, label:routing","topD":"%topD:1"}}	LE
+        {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
+          goners:0,neus:3
           topD
-          goners:0,neus:3
+            U_clone,Point,method:e_Doc_open
+            U_clone,Point,method:Lang_doc_from_event
+            U_clone,What,label:deeper
+          goners:0,neus:0
         src
           What,label:routing
             Point,method:e_Doc_open
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        step1_arm_pull
-          goners:0,neus:3
-          neu:e_Doc_open
-          neu:Lang_doc_from_event
-          {"neu":"What:deeper"}
-          {"PASS":1,"t":"arm+pull: 3 neus, 0 goners"}
-          {"PASS":1,"t":"deeper cloned, inner_secret not in U"}
         {"mung":["age"]}	self,round:2
-        LE
-        src
-          What,label:routing
-            Point,method:e_Doc_open
-            Point,method:Lang_doc_from_event
-            What,label:deeper
-              Point,method:inner_secret
-        step2_repull_unchanged
-        {"error":"TypeError: Cannot read properties of undefined (reading 'sc')"}
+        see:step 2 repull unchanged
+          goners:0,neus:0
+          {"PASS":1,"t":"unchanged source: no-diff"}
     {"mung":["id"]}	mo:main,interval:3.6

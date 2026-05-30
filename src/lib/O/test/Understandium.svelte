@@ -55,44 +55,39 @@ await M.eatfunc({
             return routing
         }
 
-        // LE lives on w; arm it once then each step mutates through the same particle
-        const LE = w.i({ LE: 1 })
-        const src = w.i({ src: 1 })
-        const target = build_fixture(src)
-
-        // step-local scratch: re-used across on_step calls via w.c.*
-        w.c.target  = target
-        w.c.LE      = LE
+        // LE and src live on w/* — survive across steps via resume_X.
+        // src is oai'd; the fixture is built only if src has no %What child yet.
+        const LE  = w.oai({ LE:  1 })
+        const src = w.oai({ src: 1 })
+        if (!src.o({ What: 1 }).length) build_fixture(src)
+        const target = src.o({ What: 1 })[0]
 
         await H.on_step({
 
             // ── Step 1: arm + first pull ──────────────────────────────────────
-            //   LE is uninitialised; LE_arm creates the Se and topD.
-            //   First pull: 3 neus (2 Points + nested %What), 0 goners.
-            //   The nested %What:deeper is cloned but %Point:inner_secret is not.
+            //   LE_arm initialises Se and topD on LE.  First pull walks the
+            //   target's immediate children: 3 neus (2 Points + nested %What).
+            //   %Point:inner_secret under the nested %What is not cloned.
             1: async () => {
-                const LE = w.c.LE as TheC, target = w.c.target as TheC
                 H.LE_arm(LE, target)
-                const r = w.i({ step1_arm_pull: 1 })
+                const r = w.i({ see: 'step 1 arm pull' })
 
                 const { goners, neus } = await H.LE_pull(LE)
                 n_of(r, goners, neus)
                 neus.forEach(n => r.i({ neu: lm(n) }))
 
-                const clones = H.LE_clones(LE)
                 check(r, 'arm+pull: 3 neus, 0 goners',
                     neus.length === 3 && goners.length === 0)
                 check(r, 'deeper cloned, inner_secret not in U',
-                    clones.some(c => c.sc.label === 'deeper') &&
-                    !clones.some(c => c.sc.method === 'inner_secret'))
+                    H.LE_clones(LE).some(c => c.sc.label === 'deeper') &&
+                    !H.LE_clones(LE).some(c => c.sc.method === 'inner_secret'))
             },
 
             // ── Step 2: re-pull unchanged ─────────────────────────────────────
-            //   Source has not changed.  D/** persists via resume_X across the
-            //   topD replace.  Result: empty diff.
+            //   Source unchanged.  LE.r({ topD:1 }) re-inserts topD in-place;
+            //   D/** carries across via resume_X.  Empty diff.
             2: async () => {
-                const LE = w.c.LE as TheC
-                const r = w.i({ step2_repull_unchanged: 1 })
+                const r = w.i({ see: 'step 2 repull unchanged' })
 
                 const { goners, neus } = await H.LE_pull(LE)
                 n_of(r, goners, neus)
@@ -101,11 +96,10 @@ await M.eatfunc({
             },
 
             // ── Step 3: source gains a Point ──────────────────────────────────
-            //   Add %Point:fresh_point to the live source; pull detects it.
+            //   Add %Point:fresh_point to the live source; pull detects 1 neu.
             3: async () => {
-                const LE = w.c.LE as TheC, target = w.c.target as TheC
                 target.i({ Point: 1, method: 'fresh_point' })
-                const r = w.i({ step3_source_add: 1 })
+                const r = w.i({ see: 'step 3 source add' })
 
                 const { goners, neus } = await H.LE_pull(LE)
                 n_of(r, goners, neus)
@@ -115,11 +109,10 @@ await M.eatfunc({
             },
 
             // ── Step 4: source drops that Point ───────────────────────────────
-            //   Drop the Point added in step 3; pull detects the goner.
+            //   Drop the Point added in step 3; pull detects 1 goner.
             4: async () => {
-                const LE = w.c.LE as TheC, target = w.c.target as TheC
                 target.drop(target.o({ Point: 1, method: 'fresh_point' })[0])
-                const r = w.i({ step4_source_drop: 1 })
+                const r = w.i({ see: 'step 4 source drop' })
 
                 const { goners, neus } = await H.LE_pull(LE)
                 n_of(r, goners, neus)
@@ -129,14 +122,11 @@ await M.eatfunc({
             },
 
             // ── Step 5: write a local meaning on the clone ────────────────────
-            //   %showing is written on the U clone (the D node), not the source C.
-            //   The source %Point must stay clean.
+            //   %showing written on the U clone (D node), not the source C.
             5: async () => {
-                const LE = w.c.LE as TheC, target = w.c.target as TheC
-                const r = w.i({ step5_local_meaning: 1 })
+                const r = w.i({ see: 'step 5 local meaning' })
 
-                const clones = H.LE_clones(LE)
-                const chosen = clones.find(c => c.sc.method === 'e_Doc_open')!
+                const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
                 chosen.i({ showing: 1 })
                 r.i({ wrote_showing_onto: lm(chosen) })
 
@@ -145,41 +135,35 @@ await M.eatfunc({
             },
 
             // ── Step 6: re-pull with local meaning present ────────────────────
-            //   %showing is on the D clone — invisible to resolve(), which only
-            //   sees source sc.  Pull must still be a no-diff, and %showing must
-            //   have survived the topD replace via resume_X on the clone.
+            //   %showing lives on the D clone, invisible to resolve().
+            //   Pull stays a no-diff; %showing survives the topD re-insert.
             6: async () => {
-                const LE = w.c.LE as TheC
-                const r = w.i({ step6_repull_with_showing: 1 })
+                const r = w.i({ see: 'step 6 repull with showing' })
 
                 const { goners, neus } = await H.LE_pull(LE)
                 n_of(r, goners, neus)
                 check(r, 're-pull no-diff with %showing present',
                     goners.length === 0 && neus.length === 0)
 
-                const clones = H.LE_clones(LE)
-                const onClone  = clones.find(c => c.sc.method === 'e_Doc_open')!.oa({ showing: 1 })
-                const onSource = LE.sc.target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
-                check(r, '%showing survived topD replace on the clone', !!onClone)
-                check(r, '%showing never reached the source %Point',  !onSource)
+                const onClone  = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!.oa({ showing: 1 })
+                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
+                check(r, '%showing survived topD re-insert on the clone', !!onClone)
+                check(r, '%showing never reached the source %Point', !onSource)
             },
 
             // ── Step 7: edit a clone's sc; push ───────────────────────────────
             //   Rename e_Doc_open → e_Doc_open_RENAMED on the clone.
-            //   LE_push replaces the source %What's children; the edit lands.
-            //   Post-push pull must be a no-diff (checked inside LE_push).
+            //   LE_push replaces the source %What's children; edit lands.
+            //   Post-push re-pull (inside LE_push) must be a no-diff.
             7: async () => {
-                const LE = w.c.LE as TheC
-                const r = w.i({ step7_edit_push: 1 })
+                const r = w.i({ see: 'step 7 edit push' })
 
-                const clones  = H.LE_clones(LE)
-                const edited  = clones.find(c => c.sc.method === 'e_Doc_open')!
+                const edited = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
                 edited.sc.method = 'e_Doc_open_RENAMED'
 
                 await H.LE_push(LE)
 
-                const target   = LE.sc.target as TheC
-                const renamed  = target.o({ Point: 1, method: 'e_Doc_open_RENAMED' })
+                const renamed    = (LE.sc.target as TheC).o({ Point: 1, method: 'e_Doc_open_RENAMED' })
                 const push_dirty = LE.oa({ push_dirty: 1 })
                 r.i({ renamed_in_source: renamed.length })
                 check(r, 'edit landed on the source', renamed.length === 1)
@@ -187,15 +171,13 @@ await M.eatfunc({
             },
 
             // ── Step 8: deep %What resumes on push ────────────────────────────
-            //   After the push in step 7, the nested %What:deeper must still
-            //   carry %Point:inner_secret.  We never cloned that layer — resume_X
-            //   handed it back when the empty deeper clone was paired and re-inserted.
+            //   The nested %What:deeper was never descended into — its deep
+            //   %Point:inner_secret resumes via resume_X after the replace-back.
             8: async () => {
-                const LE = w.c.LE as TheC, target = w.c.target as TheC
-                const r = w.i({ step8_deep_resume: 1 })
+                const r = w.i({ see: 'step 8 deep resume' })
 
-                const nested  = target.o({ What: 1 })[0]
-                const deep    = nested ? nested.o({ Point: 1 }).map((p: TheC) => p.sc.method) : []
+                const nested = (LE.sc.target as TheC).o({ What: 1 })[0]
+                const deep   = nested ? nested.o({ Point: 1 }).map((p: TheC) => p.sc.method) : []
                 deep.forEach(m => r.i({ deep_point: m }))
                 check(r, 'nested %What survived the push', !!nested)
                 check(r, 'deep /%What/%Point resumed (never moved)',
@@ -203,49 +185,41 @@ await M.eatfunc({
             },
 
             // ── Step 9: re-arm on a new target ────────────────────────────────
-            //   Build a fresh %What:second and re-arm LE at it.
-            //   The pull now diffs against the new target — the old clones are
-            //   all goners and the new Points are all neus.
-            //   Local meanings from the prior Understanding are left behind in
-            //   topD; they don't infect the new checkout.
+            //   Re-arm LE at a fresh %What:second.  The old clones (3 after the
+            //   step-7 rename) become goners; the new Points are neus.
+            //   %showing from the prior Understanding must not appear on new clones.
             9: async () => {
-                const LE = w.c.LE as TheC
-                const r = w.i({ step9_rearm: 1 })
+                const r = w.i({ see: 'step 9 rearm' })
 
-                const second_src = w.i({ second_src: 1 })
-                const second = second_src.i({ What: 1, label: 'second' })
-                second.i({ Point: 1, method: 'alpha' })
-                second.i({ Point: 1, method: 'beta' })
+                const second_src = w.oai({ second_src: 1 })
+                const second     = second_src.oai({ What: 1, label: 'second' })
+                second.oai({ Point: 1, method: 'alpha' })
+                second.oai({ Point: 1, method: 'beta' })
 
                 H.LE_arm(LE, second)
-                w.c.target = second   // subsequent steps see the new target
 
                 const { goners, neus } = await H.LE_pull(LE)
                 n_of(r, goners, neus)
-                neus.forEach(n => r.i({ neu: lm(n) }))
+                neus.forEach(n   => r.i({ neu:   lm(n) }))
                 goners.forEach(n => r.i({ goner: lm(n) }))
 
-                // old target had 3 clones (after the step-7 rename); new has 2
-                check(r, 're-arm: old clones all goners',  goners.length === 3)
-                check(r, 're-arm: new Points all neus',    neus.length   === 2)
+                // old target had 3 clones (after step-7 rename); new has 2
+                check(r, 're-arm: old clones all goners', goners.length === 3)
+                check(r, 're-arm: new Points all neus',   neus.length   === 2)
 
-                const clones = H.LE_clones(LE)
-                const showingLeak = clones.some(c => c.oa({ showing: 1 }))
+                const showingLeak = H.LE_clones(LE).some(c => c.oa({ showing: 1 }))
                 check(r, 'prior %showing did not carry to new Understanding', !showingLeak)
             },
 
             // ── Step 10: resolve_strict fork ──────────────────────────────────
             //   By default a method rename is continuity (no diff).
-            //   With strict=1 the same rename is goner + neu.
-            //   This is the knob Se_o chooses by when tracking push-state edits.
+            //   With strict=1 the same rename surfaces as goner + neu.
+            //   Se_o uses this knob when tracking push-state value changes.
             10: async () => {
-                const LE = w.c.LE as TheC
-                const r = w.i({ step10_strict_fork: 1 })
+                const r = w.i({ see: 'step 10 strict fork' })
 
-                // default: rename alpha → alpha2 reads as survivor
-                const clones = H.LE_clones(LE)
-                clones.find(c => c.sc.method === 'alpha')!.sc.method = 'alpha2'
-                // also rename in source so the next pull matches
+                // default: rename alpha → alpha2 in both clone and source; still a survivor
+                H.LE_clones(LE).find(c => c.sc.method === 'alpha')!.sc.method = 'alpha2'
                 ;(LE.sc.target as TheC).o({ Point: 1, method: 'alpha' })[0].sc.method = 'alpha2'
 
                 const loose = await H.LE_pull(LE)
@@ -253,11 +227,9 @@ await M.eatfunc({
                 check(r, 'default: rename is a survivor (no diff)',
                     loose.goners.length === 0 && loose.neus.length === 0)
 
-                // strict: rename beta → beta2 reads as goner + neu
-                // build a fresh LE for the strict branch so it doesn't share state
-                const LE2 = w.i({ LE2: 1 })
-                const src2 = w.i({ src2: 1 })
-                const t2 = build_fixture(src2)
+                // strict: use a fresh LE2 so the two branches don't share D state
+                const LE2 = w.oai({ LE2: 1 })
+                const t2  = build_fixture(w.oai({ src2: 1 }))
                 H.LE_arm(LE2, t2)
                 await H.LE_pull(LE2, 1)
                 t2.o({ Point: 1, method: 'e_Doc_open' })[0].sc.method = 'e_Doc_open_v2'
@@ -276,10 +248,9 @@ await M.eatfunc({
         })
 
         // ── verdict ───────────────────────────────────────────────────────────
-        // stamped after the final step; earlier steps show their own PASSes
-        const last_step = 10
+        // stamped on the final step; earlier steps carry their own PASS records
         const run_step = H.c.run?.c.step_n as number | undefined
-        if (run_step === last_step) {
+        if (run_step === 10) {
             w.i(failed === 0
                 ? { VERDICT: 'ALL_GREEN', passed: '' + passed }
                 : { VERDICT: 'RED', passed: '' + passed, failed: '' + failed })

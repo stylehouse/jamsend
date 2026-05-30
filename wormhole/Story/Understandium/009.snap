@@ -1,0 +1,35 @@
+Snap:H
+  H:Understandium,Run
+    A:Understandium
+      {"mung":["age"]}	self,round:9
+      w:Understandium
+        {"ref":{"Se":"Selection()","target":"%What:1, label:second"}}	LE
+          goners:0,neus:3
+          goners:0,neus:0
+          goners:0,neus
+          goners,neus:0
+          goners:0,neus:0
+          goners:0,neus:0
+          topD
+            U_clone,Point,method:alpha
+              showing
+            U_clone,Point,method:beta
+          goners,neus:0
+        src
+          What,label:routing
+            Point,method:e_Doc_open
+            Point,method:Lang_doc_from_event
+            What,label:deeper
+              Point,method:inner_secret
+        {"mung":["age"]}	self,round:9
+        see:step 9 rearm
+          goners,neus:0
+          {"goner":"What:deeper"}
+          {"FAIL":1,"t":"re-arm: old clones all goners"}
+          {"FAIL":1,"t":"re-arm: new Points all neus"}
+          FAIL,t:prior %showing did not carry to new Understanding
+        second_src
+          What,label:second
+            Point,method:alpha
+            Point,method:beta
+    {"mung":["id"]}	mo:main,interval:3.6

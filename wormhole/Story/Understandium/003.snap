@@ -1,26 +1,27 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round
+      {"mung":["age"]}	self,round:3
       w:Understandium
-        {"mung":["age"]}	self,round
         {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
+          goners:0,neus:3
+          goners:0,neus:0
           topD
             U_clone,Point,method:e_Doc_open
             U_clone,Point,method:Lang_doc_from_event
             U_clone,What,label:deeper
-          goners:0,neus:3
+            U_clone,Point,method:fresh_point
+          goners:0,neus
         src
           What,label:routing
             Point,method:e_Doc_open
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        see:step 1 arm pull
-          goners:0,neus:3
-          neu:e_Doc_open
-          neu:Lang_doc_from_event
-          {"neu":"What:deeper"}
-          {"PASS":1,"t":"arm+pull: 3 neus, 0 goners"}
-          {"PASS":1,"t":"deeper cloned, inner_secret not in U"}
+            Point,method:fresh_point
+        {"mung":["age"]}	self,round:3
+        see:step 3 source add
+          goners:0,neus
+          neu:fresh_point
+          PASS,t:1 neu on source add
     {"mung":["id"]}	mo:main,interval:3.6
