@@ -188,9 +188,12 @@ await M.eatfunc({
             },
 
             // ── Step 9: re-arm on a new target ────────────────────────────────
-            //   Re-arm LE at a fresh %What:second.  The old clones (3 after the
-            //   step-7 rename) become goners; the new Points are neus.
-            //   %showing from the prior Understanding must not appear on new clones.
+            //   Re-arm LE at a fresh %What:second and pull.  The working set now
+            //   mirrors the new target's Points.  The structural goners/neus are
+            //   NOT a clean swap — resolve() pairs greedily by sc similarity, so
+            //   old clones may pair with new Points as survivors.  What we assert
+            //   is the end state: the U holds exactly the new target's children,
+            //   and no %showing leaked across from the prior Understanding.
             9: async () => {
                 const r = w.i({ see: 'step 9 rearm' })
 
@@ -206,18 +209,23 @@ await M.eatfunc({
                 neus.forEach(n   => r.i({ neu:   lm(n) }))
                 goners.forEach(n => r.i({ goner: lm(n) }))
 
-                // old target had 3 clones (after step-7 rename); new has 2
-                check(r, 're-arm: old clones all goners', goners.length === 3)
-                check(r, 're-arm: new Points all neus',   neus.length   === 2)
+                // assert the end state, not the (greedy, paired) structural diff
+                const methods = H.LE_clones(LE).map((c: TheC) => c.sc.method).filter(Boolean).sort()
+                methods.forEach((m: string) => r.i({ now_holding: m }))
+                check(r, 're-arm: U holds the new target Points',
+                    methods.length === 2 && methods[0] === 'alpha' && methods[1] === 'beta')
 
                 const showingLeak = H.LE_clones(LE).some(c => c.oa({ showing: 1 }))
                 check(r, 'prior %showing did not carry to new Understanding', !showingLeak)
             },
 
-            // ── Step 10: resolve_strict fork ──────────────────────────────────
-            //   By default a method rename is continuity (no diff).
-            //   With strict=1 the same rename surfaces as goner + neu.
-            //   Se_o uses this knob when tracking push-state value changes.
+            // ── Step 10: resolve_strict — characterising the primitive ────────
+            //   This is NOT how LE should detect edits.  Value-edits belong to
+            //   the Waft-encode compare (enWaft origin-slice vs working), not to
+            //   the structural resolved_fn diff — see spec, Workflows and
+            //   Awarenesses.  Kept here only to pin resolve()'s behaviour:
+            //   by default a rename is continuity (survivor); strict=1 forces
+            //   drop-and-recreate.  Retire once enWaft-of-a-Seem lands.
             10: async () => {
                 const r = w.i({ see: 'step 10 strict fork' })
 

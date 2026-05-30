@@ -119,8 +119,12 @@ await M.eatfunc({
     //   pairs it with the live source by sc identity and resume_X hands back
     //   its deep /%What/%Point — they never moved.
     //
-    //   D.sc is the push encoding — it carries any edits made to the clone.
-    //   Local meanings (showing, accepted) are on D/*, not in D.sc, so D.sc is clean.
+    //   The push encoding is the identity sc with D-sphere bookkeeping stripped.
+    //   trace_fn tags each D with U_clone:1 so LE_clones can find it, but that
+    //   tag is ours, not the source's — pushing it would leak it onto the Waft.
+    //   Local meanings (showing, accepted) live on D/*, not in D.sc.
+    //   (The two-Seem model retires this strip: the working n tree is fabricated
+    //    clean, separate from the D nodes — see spec, Workflows and Awarenesses.)
     //
     //   After the replace-back we re-pull; a non-empty diff means the push
     //   didn't land cleanly, stamped as push_dirty on LE/*.
@@ -131,8 +135,8 @@ await M.eatfunc({
 
         await target.replace({}, async () => {
             for (const D of Ds) {
-                target.i(D.sc)
-                // local meanings on D (showing, accepted) are not in D.sc — stay in U.
+                const { U_clone, ...clean } = D.sc   // strip D-sphere tag from the push
+                target.i(clean)
                 // nested %What resumes its deep Points via resume_X.
             }
         })
