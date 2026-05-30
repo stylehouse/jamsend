@@ -261,6 +261,22 @@
                     docTextC.bump_version()
                 }
                 console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
+
+                // Deferred settle for gen/ writes: LiesRealised parked write_t0 on
+                // the matching %compile_pending and skipped firing Lies_compile_settled.
+                // Now that the wwrite is done we have the full round-trip time.
+                const rw_name = req.sc.rw_name as string | undefined
+                const pending = rw_name
+                    ? (w.o({ compile_pending: 1 }) as TheC[]).find(p => p.sc.gen_path === path && p.c.write_t0)
+                    : undefined
+                if (pending) {
+                    const write_ms = pending.c.write_t0 ? Date.now() - (pending.c.write_t0 as number) : undefined
+                    H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
+                        path:     pending.sc.path as string,
+                        write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
+                    })
+                    console.log(`🔪 Lies compile settled: ${pending.sc.path} [write+run] write=${write_ms}ms`)
+                }
             }
             w.drop(req)
         }

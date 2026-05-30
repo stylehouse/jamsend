@@ -79,8 +79,7 @@
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
-    //       /{Points:1}                        — optional metadata
-    //         /{Point:1,method}                — individual point
+    //       /{Point:1,method}                  — individual point
     //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
     //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
     //     sc.active = 1                        — session-only; never written to snap
@@ -267,6 +266,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (base_dige && dige === base_dige) return q.finish(req)
 
         // Pull-before-push: read disk, compare to what we loaded.
+        // roai on the wread channel finds an existing req with matching {wread:1,rw_name,label}
+        // identity, so a read from a prior tick that hasn't been Phase-2-dropped yet is
+        // returned directly — no duplicate Wormhole dispatch.  The 0.5s ttlilt only fires
+        // on a genuinely fresh req whose reply hasn't landed yet.
         const read = await H.LiesStore_read(w, path, { label: 'source_check' })
         if (!read.sc.finished) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'source_check' })
@@ -352,34 +355,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesRealised — compile airlock and future thinking ────────────────
         await this.LiesRealised(A, w)
-
-        // ── one-time migration: strip obsolete graft_* fields from %Point particles ─
-        //
-        //   Old code stored graft_from, graft_to, graft_line, graft_stale, graft_bm
-        //   directly on %Point.sc.  That bookkeeping lives in %Pmirror/%graft,1 now.
-        //   Runs once per session after Wafts are settled so all %Doc,path children
-        //   are present.  Dirty Points get their Waft saved on the next throttle.
-        if (!w.c.graft_fields_migrated) {
-            w.c.graft_fields_migrated = true
-            const OBSOLETE_GRAFT_KEYS = ['graft_from','graft_to','graft_line','graft_stale','graft_bm']
-            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-                let waft_dirty = false
-                for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
-                    for (const pt of doc.o({ Point: 1 }) as TheC[]) {
-                        let dirty = false
-                        for (const k of OBSOLETE_GRAFT_KEYS) {
-                            if (k in pt.sc) { delete (pt.sc as any)[k]; dirty = true }
-                        }
-                        if (dirty) { pt.bump_version(); waft_dirty = true }
-                    }
-                }
-                if (waft_dirty) {
-                    console.log(`🔧 migrated graft_* fields off %Point particles in Waft:${waft.sc.Waft}`)
-                    H.Lies_waft_save(w, waft)
-                }
-            }
-            // < also migrate %Points,1/%Point,N containers once those are in snap
-        }
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
@@ -524,12 +499,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // dige, which then read as an external change and blocked the next
                 // source write.  gen_path has no loaded_doc so its namespace and
                 // base_dige stay the gen target's own.
-                const write_req = await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
-                // LiesStore_run dispatches and logs; we do not await the write itself here.
-                // pending.sc.done and Lies_compile_settled fire below regardless.
-                //
+                await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
+                // Arm write_t0 so Phase 1 can close write_ms when the wwrite finishes.
+                // The settle elvis fires from Phase 1 (not here) so write_ms travels
+                // on the settle elvis rather than being lost in the dispatch gap.
+                pending.c.write_t0 = Date.now()
                 // < if write_req reply carries an error, surface compile_error and bail.
-                //   for now we proceed optimistically (gen write errors are rare and logged).
+                //   for now Phase 1 proceeds optimistically (gen write errors are rare and logged).
             }
 
             if (do_run) {
@@ -545,11 +521,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             }
 
             pending.sc.done = 1
-            // signal Lang to clear docC/{Compile/Pending} for this path
-            H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-
-            const flags = do_write ? 'write+run' : 'nogen'
-            console.log(`🔪 Lies compile settled: ${path} [${flags}]`)
+            if (!do_write) {
+                // No write: settle immediately — nothing for Phase 1 to close.
+                H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
+                console.log(`🔪 Lies compile settled: ${path} [nogen]`)
+            }
+            // do_write: settle deferred to LiesStore_run Phase 1 after the wwrite finishes.
         }
     },
 

@@ -25,8 +25,8 @@
     //   multiple open docs don't share compile state.
     //   compile_write has moved to Lies's w (keyed by path).
     //
-    //   Compile timing: job.c.compile_t0 is set at start (transient, not in snap).
-    //   job.sc.compile_secs is the finished delta, visible in the snap.
+    //   Compile timing: job.c.compile_t0 is set at job-park (transient, not in snap).
+    //   job/%time.sc.{compile,write,all} are the finished deltas, visible in the snap.
     //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
@@ -222,18 +222,20 @@
     // For hard-compiles (gen_path present): fires e:Lies_compiled and
     // leaves Compile/Pending set.  Lies is the airlock: it decides
     // whether to write to disk (opt_write) and/or notify Pantheate (opt_run),
-    // then fires back e:Lies_compile_settled to clear Pending.
+    // then fires back e:Lies_compile_settled {path, write_ms} to clear Pending.
     //
     // For soft-compiles (no gen_path): clears Pending immediately — nothing
     // to write or run.  Lies is not involved.
+    //
+    // %Compile/%time is populated in stages:
+    //   compile — synchronous cost (collect + render + dig), stamped here.
+    //   write   — gen/ Wormhole round-trip, carried on the settle elvis.
+    //   all     — wall time from job-park to Pending clear, stamped in step.
     //
     // %Compile/%methods is fully populated by the time this returns, in both
     // cases — %Pending tracks only the hard-compile disk write, never the
     // index build.  A resolver that needs %methods can rely on it the instant
     // this resolves; only the gen-file write outlives it.
-    //
-    // All compile state lives on docC (not w) so multiple open docs don't
-    // share compile state and each can be r()'d independently.
     async Lang_compile_docC(w: TheC, docC: TheC) {
         const H = this
 
@@ -246,8 +248,7 @@
         const job = docC.oai({ Compile: 1 })
         job.empty()
         job.oai({Pending: 1})
-        // start time on .c so it doesn't appear in snap; only the finished
-        // delta (compile_secs) lands in sc.
+        // compile_t0 on .c: transient, not in snap.  %time child closes the legs.
         job.c.compile_t0 = Date.now()
 
         // clear previous outputs / errors so a fresh compile is visible
@@ -298,12 +299,18 @@
 
         if (!gen_path) {
             await job.r({Pending:1},{})   // no write step — soft compile done
-            job.sc.compile_secs = +((Date.now() - (job.c.compile_t0 ?? Date.now())) / 1000).toFixed(3)
+            // %time/compile: synchronous cost (collect + render).  No write leg.
+            const compile_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
+            job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
             w.i({ see: `🔍 soft-compiled ${docC.sc.doc}` })
             return
         }
 
         const dige = await dig(source)
+        // %time/compile: synchronous work done — collect + render + dig(source).
+        // write and all legs land later in Lang_compile_step when Pending clears.
+        const compile_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
+        job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
         job.oai({Output:1, gen_path, source, dige, source_dige})
 
         // Hand off to Lies as the compile airlock.
@@ -317,9 +324,8 @@
     },
 
     // Called from Lang(A,w) while docC/Compile/Pending is set.
-    // Waits for e:Lies_compile_settled {path} fired back by Lies,
-    // then clears docC/Compile/Pending so Story sees Lang settle.
-    // (The actual write and Pantheate notify have moved to Lies.)
+    // Waits for e:Lies_compile_settled {path, write_ms} fired back by Lies,
+    // then clears docC/Compile/Pending and closes %time with all + write legs.
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
         const docC = this.Lang_active_docC(w)
@@ -337,10 +343,16 @@
             const targetDocC = docs?.o({ doc: settled_path })[0] as TheC | undefined
             if (!targetDocC) continue
             const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
-            // Compile particle stays; only clear the Pending flag
             if (targetJob) {
                 await targetJob.r({ Pending: 1 }, {})
-                targetJob.sc.compile_secs = +((Date.now() - (targetJob.c.compile_t0 ?? Date.now())) / 1000).toFixed(3)
+                // Close %time: all = wall time from job-park to Pending clear.
+                // write = Wormhole round-trip for the gen/ file (from e_Lies_compiled
+                // dispatching the wwrite to LiesStore_run Phase 1 completing it).
+                const all_ms   = Date.now() - (targetJob.c.compile_t0 ?? Date.now())
+                const write_ms = ev.sc.write_ms as number | undefined
+                const time = targetJob.oai({ time: 1 })
+                time.sc.all   = +(all_ms   / 1000).toFixed(3)
+                if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
             }
             w.i({ see: `✅ compiled ${settled_path}` })
         }

@@ -633,7 +633,7 @@
     //                   sc.dim  — text has moved ahead (unsaved edits exist)
     //     /{compile:1}  sc.dige — source_dige of last Compile/Output
     //                   sc.dim  — compile is pending or disk is ahead of it
-    //                   sc.secs — compile_secs (wall time)
+    //                   sc.secs — %Compile/%time.sc.compile (synchronous cost)
     //
     //   Each leg uses roai with the sc payload as second arg.  roai replaces the
     //   particle when its sc doesn't match, producing a fresh C reference.
@@ -654,7 +654,8 @@
         const job           = docC.o({ Compile: 1 })[0] as TheC | undefined
         const output        = job?.o({ Output: 1 })[0]  as TheC | undefined
         const compiled_dige = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
-        const compile_secs  = (job?.sc.compile_secs as number) ?? 0
+        // sc.compile from %time is the synchronous cost — what the compiler actually spent.
+        const compile_cost  = (job?.o({ time: 1 })[0] as TheC | undefined)?.sc.compile as number ?? 0
         const pending       = !!job?.oa({ Pending: 1 })
 
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
@@ -669,7 +670,7 @@
 
         if (output) {
             const compile_dim = pending || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
-            await change.roai({ compile: 1 }, { dige: compiled_dige, dim: compile_dim, secs: compile_secs })
+            await change.roai({ compile: 1 }, { dige: compiled_dige, dim: compile_dim, secs: compile_cost })
         } else {
             for (const old_c of change.o({ compile: 1 }) as TheC[]) change.drop(old_c)
         }
