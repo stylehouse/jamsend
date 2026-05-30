@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:3
       w:Understandium
+        tally,passed:4,failed:0
         {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
           goners:0,neus:3
           goners:0,neus:0

@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:8
       w:Understandium
+        tally,passed:13,failed:0
         {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
           goners:0,neus:3
           goners:0,neus:0
@@ -10,14 +11,14 @@ Snap:H
           goners,neus:0
           goners:0,neus:0
           topD
-            U_clone,Point,method:e_Doc_open
+            U_clone,Point,method:e_Doc_open_RENAMED
               showing
             U_clone,Point,method:Lang_doc_from_event
             U_clone,What,label:deeper
           goners:0,neus:0
         src
           What,label:routing
-            Point,method:e_Doc_open
+            Point,method:e_Doc_open_RENAMED
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret

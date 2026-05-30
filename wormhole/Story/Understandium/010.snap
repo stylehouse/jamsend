@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:10
       w:Understandium
+        tally,passed:17,failed:0
         {"ref":{"Se":"Selection()","target":"%What:1, label:second"}}	LE
           goners:0,neus:3
           goners:0,neus:0
@@ -18,7 +19,7 @@ Snap:H
           goners:0,neus:0
         src
           What,label:routing
-            Point,method:e_Doc_open
+            Point,method:e_Doc_open_RENAMED
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
@@ -49,5 +50,5 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        VERDICT:ALL_GREEN,passed:2
+        VERDICT:ALL_GREEN,passed:17
     {"mung":["id"]}	mo:main,interval:3.6

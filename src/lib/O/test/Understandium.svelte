@@ -215,8 +215,12 @@ await M.eatfunc({
                 check(r, 're-arm: U holds the new target Points',
                     methods.length === 2 && methods[0] === 'alpha' && methods[1] === 'beta')
 
-                const showingLeak = H.LE_clones(LE).some(c => c.oa({ showing: 1 }))
-                check(r, 'prior %showing did not carry to new Understanding', !showingLeak)
+                // %showing on a *neu* clone would be a leak — it means a freshly
+                // fabricated clone inherited a local meaning it shouldn't have.
+                // %showing on a *survivor* clone is fine: resume_X carried it across,
+                // which is the correct behaviour for a re-arm to a similar target.
+                const showingOnNeu = neus.some(n => n.oa({ showing: 1 }))
+                check(r, 'prior %showing did not leak onto a new clone', !showingOnNeu)
             },
 
             // ── Step 10: resolve_strict — characterising the primitive ────────

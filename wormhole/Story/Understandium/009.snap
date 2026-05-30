@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:9
       w:Understandium
+        tally,passed:15,failed:0
         {"ref":{"Se":"Selection()","target":"%What:1, label:second"}}	LE
           goners:0,neus:3
           goners:0,neus:0
@@ -17,7 +18,7 @@ Snap:H
           goners,neus:0
         src
           What,label:routing
-            Point,method:e_Doc_open
+            Point,method:e_Doc_open_RENAMED
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
@@ -25,9 +26,10 @@ Snap:H
         see:step 9 rearm
           goners,neus:0
           {"goner":"What:deeper"}
-          {"FAIL":1,"t":"re-arm: old clones all goners"}
-          {"FAIL":1,"t":"re-arm: new Points all neus"}
-          FAIL,t:prior %showing did not carry to new Understanding
+          now_holding:alpha
+          now_holding:beta
+          {"PASS":1,"t":"re-arm: U holds the new target Points"}
+          PASS,t:prior %showing did not leak onto a new clone
         second_src
           What,label:second
             Point,method:alpha

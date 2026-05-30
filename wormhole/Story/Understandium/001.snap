@@ -4,6 +4,7 @@ Snap:H
       {"mung":["age"]}	self,round
       w:Understandium
         {"mung":["age"]}	self,round
+        tally,passed:2,failed:0
         {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
           topD
             U_clone,Point,method:e_Doc_open
