@@ -3,18 +3,18 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:9
       w:Understandium
-        tally,passed:17,failed:0
+        tally,passed:21,failed:0
         {"ref":{"target":"%What:1, label:second"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:origin"}}	Seem:origin
             topD:origin
               Seem:origin,Point,method:alpha
               Seem:origin,Point,method:beta
-            goners:0,neus:2
+            News:origin,goners:0,neus:2
           {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
             topD:working
               Seem:working,Point,method:alpha
               Seem:working,Point,method:beta
-            goners:0,neus:2
+            News:working,goners:0,neus:2
         src
           What,label:routing
             Point,method:e_Doc_open_RENAMED

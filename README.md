@@ -6,11 +6,7 @@ modern music piracy in the browser
 
 [Demo serves an album of mine](https://jamsend.duckdns.org:9999/#############7950f300faa8a4f9-ope.n~0-729547c09f15f29f) in ogg or flac. That invite gets you the ability to invite other peers. Ideally you and your peer are present somewhere you have wifi, with your phones, to begin with...
 
-# the big picture
-
-We are an ongoing project to capture the core of the universe with language, and fix the computer once and for all!
-
-Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier.
+# the particle graph
 
 **🔥safety🏠** Could be better but is fantastic. No strangers exist, only your contacts.
 
@@ -24,6 +20,10 @@ Currently appearing in the guise of modern music piracy, built on a secure and o
 
 Get this to your programmers! Make noise as Issues on github, especially grandiose new feature requests that introduce your creative mind.
 
+We are an ongoing project to capture the core of the universe with language, and fix the computer once and for all!
+
+Currently appearing in the guise of modern music piracy, built on a secure and open social medium, soon becoming a hive of diverse developments, attracting low-stakes creativity to the digital frontier.
+
 ## news 
 
 A new top-level at lib/O/Otro.svelte is in development, with a bunch of fancy simplicities... It's a much more elegant integration with svelte, etc.
@@ -34,17 +34,12 @@ Involving a compiler of a nice new language and CodeMirror integration, figuring
 
 It has a nice style+house pattern emerging: Stuff and Housing are very central to everything yet opposite in nature... universal and empirical. the players and the canopy lighting timeclock.
 
-## so
-
-It now appears in the guise of a music piracy app, to communicate.
-
-Plans later are that this general technology should grow into the best place for any information, and be standard.
 
 # hiring
 
-Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may volunteer! Go for it. All development, commissioning and correspondence is on github under the eyes of the law. There are vaguely a dozen separate 40hr developments I expect 70% success with the first week! Happy to manage 10 hour weeks.
+Proudly supporting the $3/hr programmer, which means under 16 in NZ. You may volunteer! Go for it. All development, commissioning and correspondence is on github under the eyes of the law.
 
-Open an issue if anything isn't easy. If you can change code with reliable results, yay.
+Open an issue if anything isn't easy.
 
 There are many non-frontend things to do. See Issues on github, or comments starting with < in the code, which means less-than-existing, ie TODO.
 
@@ -64,7 +59,7 @@ To use *prod.sh*, see *Peer_OPTIONS*. I would ./install.sh then scp (clone) the 
 
 ## objects, data layer
 
-Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts) and [Housing etc in O](src/lib/O), which has begun to obsolete *Modus* etc.
+Here is a tour of the p2p layer, then some primitive almost-data-layer objects like *Thing* that are quite pragmatic and irrelevant, then, really,  *TheC*. To start reading the code, try [data/Stuff](src/lib/data/Stuff.svelte.ts) and [Housing etc in O](src/lib/O), which has obsoleted (reinvented) *Modus*, *Things* etc... So from here til the Stuff section is likely obsolete as well..
 
 To write code, the src/lib/ghost/\*.svelte is the best place to build things because it'll update the Modus live without restarting anything, but they need to be included by a Modus, which are included by some kind of *\*Feature*, so do a whole lot of searches and readings, you probably want to add another %w=yourmethod to some M.do_A().
 

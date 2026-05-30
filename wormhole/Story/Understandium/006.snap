@@ -3,29 +3,21 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:6
       w:Understandium
-        tally,passed:11,failed:0
+        tally,passed:15,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:origin"}}	Seem:origin
-            goners:0,neus:3
-            goners:0,neus:0
-            goners:0,neus
-            goners,neus:0
             topD:origin
               Seem:origin,Point,method:e_Doc_open
               Seem:origin,Point,method:Lang_doc_from_event
               Seem:origin,What,label:deeper
-            goners:0,neus:0
+            News:origin,goners:0,neus:0
           {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
-            goners:0,neus:3
-            goners:0,neus:0
-            goners:0,neus:0
-            goners:0,neus:0
             topD:working
               Seem:working,Point,method:e_Doc_open
                 showing
               Seem:working,Point,method:Lang_doc_from_event
               Seem:working,What,label:deeper
-            goners:0,neus:0
+            News:working,goners:0,neus:0
         src
           What,label:routing
             Point,method:e_Doc_open

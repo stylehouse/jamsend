@@ -13,7 +13,10 @@
 //     7  edit a clone; push           (replace-back; post-push no-diff)
 //     8  deep %What resumes on push   (resume_X; /%What/%Point never moved)
 //     9  re-arm on a new target       (checkout switches; next pull diffs fresh)
-//    10  resolve_strict fork          (rename = goner+neu under strict)
+//    10  resolve_strict fork          (rename = goner+neu under strict; characterises the primitive)
+//    11  encode-compare clean         (enWaft_seem on both Seems; equal after a no-edit pull)
+//    12  encode-compare dirty         (after a clone sc edit, snap_working diverges)
+//    13  encode-compare after push    (push lands; compare is clean again)
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { type House } from "$lib/O/Housing.svelte"
@@ -39,10 +42,17 @@ await M.eatfunc({
             into.i(ok ? { PASS: 1, t: name } : { FAIL: 1, t: name })
             ok ? tally.sc.passed++ : tally.sc.failed++
         }
-        // stringified counts; bare 1 reads as has-key wildcard
-        const n_of = (into: TheC, goners: TheC[], neus: TheC[]) =>
-            into.i({ goners: '' + goners.length, neus: '' + neus.length })
         const lm = (n: TheC) => n.sc.method ?? `What:${n.sc.label}`
+
+        // helper: read the latest goners/neus counts off a Seem/%News particle.
+        // o_Seem r()'s News each pull so there is always at most one.
+        const news_of = (Seem: TheC) => {
+            const nw = Seem.o({ News: Seem.sc.Seem })[0]
+            return {
+                goners: Number(nw?.sc.goners ?? 0),
+                neus:   Number(nw?.sc.neus   ?? 0),
+            }
+        }
 
         // /%What:routing
         //   /%Point:e_Doc_open
@@ -76,7 +86,7 @@ await M.eatfunc({
                 const r = w.i({ see: 'step 1 arm pull' })
 
                 const { goners, neus } = await H.LE_pull(LE)
-                n_of(r, goners, neus)
+                r.i({ goners: '' + goners.length, neus: '' + neus.length })
                 neus.forEach(n => r.i({ neu: lm(n) }))
 
                 check(r, 'arm+pull: 3 neus, 0 goners',
@@ -84,53 +94,65 @@ await M.eatfunc({
                 check(r, 'deeper cloned, inner_secret not in U',
                     H.LE_clones(LE).some(c => c.sc.label === 'deeper') &&
                     !H.LE_clones(LE).some(c => c.sc.method === 'inner_secret'))
+
+                // Seem/%News carries the latest counts; no piling.
+                const origin_news  = news_of(LE.oai({ Seem: 'origin'  }))
+                const working_news = news_of(LE.oai({ Seem: 'working' }))
+                check(r, 'Seem/%News not piling — exactly one per Seem',
+                    LE.oai({ Seem: 'origin'  }).o({ News: 'origin'  }).length === 1 &&
+                    LE.oai({ Seem: 'working' }).o({ News: 'working' }).length === 1)
+                check(r, 'origin News: 3 neus',  origin_news.neus  === 3)
+                check(r, 'working News: 3 neus', working_news.neus === 3)
             },
 
             // ── Step 2: re-pull unchanged ─────────────────────────────────────
-            //   Source unchanged.  LE.r({ topD:1 }) re-inserts topD in-place;
-            //   D/** carries across via resume_X.  Empty diff.
             2: async () => {
                 const r = w.i({ see: 'step 2 repull unchanged' })
 
                 const { goners, neus } = await H.LE_pull(LE)
-                n_of(r, goners, neus)
+                r.i({ goners: '' + goners.length, neus: '' + neus.length })
                 check(r, 'unchanged source: no-diff',
                     goners.length === 0 && neus.length === 0)
+
+                // News still exactly one each — not a second child from this pull
+                check(r, 'Seem/%News still singular after re-pull',
+                    LE.oai({ Seem: 'origin'  }).o({ News: 'origin'  }).length === 1 &&
+                    LE.oai({ Seem: 'working' }).o({ News: 'working' }).length === 1)
             },
 
             // ── Step 3: source gains a Point ──────────────────────────────────
-            //   Add %Point:fresh_point to the live source; pull detects 1 neu.
             3: async () => {
                 target.i({ Point: 1, method: 'fresh_point' })
                 const r = w.i({ see: 'step 3 source add' })
 
                 const { goners, neus } = await H.LE_pull(LE)
-                n_of(r, goners, neus)
+                r.i({ goners: '' + goners.length, neus: '' + neus.length })
                 neus.forEach(n => r.i({ neu: lm(n) }))
                 check(r, '1 neu on source add',
                     neus.length === 1 && neus[0].sc.method === 'fresh_point' && goners.length === 0)
             },
 
             // ── Step 4: source drops that Point ───────────────────────────────
-            //   Drop the Point added in step 3; pull detects 1 goner.
             4: async () => {
                 target.drop(target.o({ Point: 1, method: 'fresh_point' })[0])
                 const r = w.i({ see: 'step 4 source drop' })
 
                 const { goners, neus } = await H.LE_pull(LE)
-                n_of(r, goners, neus)
+                r.i({ goners: '' + goners.length, neus: '' + neus.length })
                 goners.forEach(n => r.i({ goner: lm(n) }))
                 check(r, '1 goner on source drop',
                     goners.length === 1 && goners[0].sc.method === 'fresh_point' && neus.length === 0)
             },
 
             // ── Step 5: write a local meaning on the clone ────────────────────
-            //   %showing written on the U clone (D node), not the source C.
+            //   %showing written on the U clone (C.c.U node), not the clone .sc.
+            //   clone.c.U IS the D node (the collapsed sphere); i({ showing:1 })
+            //   hangs under it.  The clone's .sc stays clean for push.
             5: async () => {
                 const r = w.i({ see: 'step 5 local meaning' })
 
                 const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
-                chosen.c.U.i({ showing: 1 })   // the U node carries the meaning; clone .sc stays clean
+                chosen.c.U.i({ showing: 1 })   // meaning on the U node; clone .sc stays clean
                 r.i({ wrote_showing_onto: lm(chosen) })
 
                 const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
@@ -140,13 +162,11 @@ await M.eatfunc({
             },
 
             // ── Step 6: re-pull with local meaning present ────────────────────
-            //   %showing lives on the D clone, invisible to resolve().
-            //   Pull stays a no-diff; %showing survives the topD re-insert.
             6: async () => {
                 const r = w.i({ see: 'step 6 repull with showing' })
 
                 const { goners, neus } = await H.LE_pull(LE)
-                n_of(r, goners, neus)
+                r.i({ goners: '' + goners.length, neus: '' + neus.length })
                 check(r, 're-pull no-diff with %showing present',
                     goners.length === 0 && neus.length === 0)
 
@@ -157,9 +177,6 @@ await M.eatfunc({
             },
 
             // ── Step 7: edit a clone's sc; push ───────────────────────────────
-            //   Rename e_Doc_open → e_Doc_open_RENAMED on the clone.
-            //   LE_push replaces the source %What's children; edit lands.
-            //   Post-push re-pull (inside LE_push) must be a no-diff.
             7: async () => {
                 const r = w.i({ see: 'step 7 edit push' })
 
@@ -176,8 +193,6 @@ await M.eatfunc({
             },
 
             // ── Step 8: deep %What resumes on push ────────────────────────────
-            //   The nested %What:deeper was never descended into — its deep
-            //   %Point:inner_secret resumes via resume_X after the replace-back.
             8: async () => {
                 const r = w.i({ see: 'step 8 deep resume' })
 
@@ -207,7 +222,7 @@ await M.eatfunc({
                 H.LE_arm(LE, second)
 
                 const { goners, neus } = await H.LE_pull(LE)
-                n_of(r, goners, neus)
+                r.i({ goners: '' + goners.length, neus: '' + neus.length })
                 neus.forEach(n   => r.i({ neu:   lm(n) }))
                 goners.forEach(n => r.i({ goner: lm(n) }))
 
@@ -242,7 +257,7 @@ await M.eatfunc({
                 ;(LE.sc.target as TheC).o({ Point: 1, method: 'alpha' })[0].sc.method = 'alpha2'
 
                 const loose = await H.LE_pull(LE)
-                n_of(r.i({ default_rename: 1 }), loose.goners, loose.neus)
+                r.i({ default_rename: 1, goners: '' + loose.goners.length, neus: '' + loose.neus.length })
                 check(r, 'default: rename is a survivor (no diff)',
                     loose.goners.length === 0 && loose.neus.length === 0)
 
@@ -255,7 +270,7 @@ await M.eatfunc({
                 const strict = await H.LE_pull(LE2, 1)
 
                 const rs = r.i({ strict_rename: 1 })
-                n_of(rs, strict.goners, strict.neus)
+                rs.i({ goners: '' + strict.goners.length, neus: '' + strict.neus.length })
                 strict.goners.forEach(n => rs.i({ goner: lm(n) }))
                 strict.neus.forEach(n   => rs.i({ neu:   lm(n) }))
                 check(r, 'resolve_strict: rename is goner + neu',
@@ -264,12 +279,84 @@ await M.eatfunc({
                     strict.neus[0].sc.method   === 'e_Doc_open_v2')
             },
 
+            // ── Step 11: encode-compare clean ─────────────────────────────────
+            //   After a no-edit pull the two snaps are identical: working mirrors
+            //   origin exactly.  LE_encode_compare returns dirty:false.
+            //   Also proves %showing never bleeds into the snap (it lives on C.c.U,
+            //   never in C.sc, so enWaft_seem never sees it).
+            11: async () => {
+                const r = w.i({ see: 'step 11 encode-compare clean' })
+
+                // re-arm at a fresh target so the state is predictable
+                const enc_src = w.oai({ enc_src: 1 })
+                const enc_target = enc_src.oai({ What: 1, label: 'enc' })
+                enc_target.oai({ Point: 1, method: 'one' })
+                enc_target.oai({ Point: 1, method: 'two' })
+
+                const LE3 = w.oai({ LE3: 1 })
+                H.LE_arm(LE3, enc_target)
+                await H.LE_pull(LE3)
+
+                // write a local meaning — must not appear in the snap
+                const clone_one = H.LE_clones(LE3).find(c => c.sc.method === 'one')!
+                clone_one.c.U.i({ showing: 1 })
+
+                const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE3)
+                r.i({ snap_origin, snap_working, dirty: dirty ? '1' : '0' })
+
+                check(r, 'clean compare: not dirty', !dirty)
+                check(r, 'snaps are equal', snap_origin === snap_working)
+                check(r, '%showing absent from working snap',
+                    !snap_working.includes('showing'))
+                check(r, 'encode record on LE — replaced not piled',
+                    LE3.o({ encode: 1 }).length === 1)
+            },
+
+            // ── Step 12: encode-compare dirty ─────────────────────────────────
+            //   Edit a clone's sc (rename a method).  The working snap now
+            //   diverges from origin: dirty:true, snaps differ.
+            //   This is the intended path for edit-detection — not resolve_strict.
+            12: async () => {
+                const r = w.i({ see: 'step 12 encode-compare dirty' })
+
+                const LE3 = w.oai({ LE3: 1 })
+                const clone_two = H.LE_clones(LE3).find(c => c.sc.method === 'two')!
+                clone_two.sc.method = 'two_EDITED'
+
+                // re-walk working so its D nodes mirror the edited clone
+                await H.LE_pull(LE3)
+
+                const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE3)
+                r.i({ snap_origin, snap_working, dirty: dirty ? '1' : '0' })
+
+                check(r, 'dirty after clone edit', dirty)
+                check(r, 'snaps differ', snap_origin !== snap_working)
+                check(r, 'encode record replaced (still one)', LE3.o({ encode: 1 }).length === 1)
+            },
+
+            // ── Step 13: encode-compare after push ────────────────────────────
+            //   Push the working clones back to the source and re-compare.
+            //   Origin re-pull sees the edit; compare is clean again.
+            13: async () => {
+                const r = w.i({ see: 'step 13 encode-compare after push' })
+
+                const LE3 = w.oai({ LE3: 1 })
+                await H.LE_push(LE3)
+
+                // LE_push does a re-pull internally; compare should now be clean
+                const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE3)
+                r.i({ snap_origin, snap_working, dirty: dirty ? '1' : '0' })
+
+                check(r, 'clean after push', !dirty)
+                check(r, 'snaps equal after push', snap_origin === snap_working)
+                check(r, 'no push_dirty on LE3', !LE3.oa({ push_dirty: 1 }))
+            },
+
         })
 
         // ── verdict ───────────────────────────────────────────────────────────
-        // stamped on the final step; earlier steps carry their own PASS records
         const run_step = H.c.run?.c.step_n as number | undefined
-        if (run_step === 10) {
+        if (run_step === 13) {
             w.i(tally.sc.failed === 0
                 ? { VERDICT: 'ALL_GREEN', passed: '' + tally.sc.passed }
                 : { VERDICT: 'RED', passed: '' + tally.sc.passed, failed: '' + tally.sc.failed })

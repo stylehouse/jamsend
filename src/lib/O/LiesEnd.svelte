@@ -16,6 +16,9 @@
 //   IS its U node (the stitch D/U/U ≡ D/D/U), so C.c.U points at the D node and
 //   meanings are written there.  A separately-springing topU (U under C**
 //   independently) is the deferred fabricate-U-on-demand todo, not this one.
+//
+//   %showing goes on the U node (clone.c.U.i({ showing:1 })), not on the clone
+//   .sc — the clone .sc is the pushable mirror and must stay clean.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
@@ -31,7 +34,7 @@ await M.eatfunc({
 
     // ── i_Seem ──────────────────────────────────────────────────────────────
     // Embed a Seem under LE: its own Selection, its match/trace shape, and the
-    // walk hooks — all held on Seem.sc.opt so LE_pull_seem can spread them into
+    // walk hooks — all held on Seem.sc.opt so o_Seem can spread them into
     // Se.process().  The functions ride .sc directly; no need to particle-ify.
     //
     //   opt: { Seem, match_sc?, trace_sc?, topn?, each_fn?, trace_fn?, traced_fn? }
@@ -83,18 +86,21 @@ await M.eatfunc({
         working.sc.topn = undefined   // < fabricated lazily on first pull
     },
 
-    // ── LE_pull_seem ──────────────────────────────────────────────────────────
-    // One Seem's walk.  Re-creates the Seem's topD root in place (fresh .c.T;
-    // D/** carries across via resume_X), then Se.process() against Seem.sc.topn.
-    // Returns the structural diff (whole-C in/out) plus the live topD.
-    async LE_pull_seem(LE: TheC, Seem: TheC, strict = 0) {
+    // ── o_Seem ──────────────────────────────────────────────────────────────
+    // Low-level: walk one Seem — re-create its topD (fresh .c.T; D/** resumes
+    // via resume_X), run Se.process, stamp Seem/%News with the result.
+    // Returns { goners, neus, topD }.
+    //
+    // Seem/%News is r()'d each call so the count particle never piles up.
+    // Callers read Seem.o({ News: seemName })[0] for the latest counts.
+    async o_Seem(Seem: TheC, strict = 0) {
         const Se: Selection = Seem.sc.Se
         const seemName = Seem.sc.Seem
         const topD = await Seem.r({ topD: seemName })
 
-        // this "structural diff" is not as good as Waft encoding
-        //  resolve_strict means a value-changed particle to show up as goner+neu
-        //   rather than a survivor.
+        // structural diff — whole-C in/out; resolve_strict makes value-edits
+        // show up as goner+neu rather than a survivor.  The intended edit-diff
+        // path is enWaft-compare (LE_encode_compare), not this.
         const goners: TheC[] = []
         const neus: TheC[] = []
 
@@ -109,10 +115,14 @@ await M.eatfunc({
             },
         })
 
-        // counts stamped on the Seem for the picture; stringified, as bare 1
-        // reads as the has-key wildcard.
+        // replace-not-pile: Seem/%News carries the latest counts only.
+        // stringified so bare 1 never reads as the has-key wildcard.
+        await Seem.r({ News: seemName }, {
+            goners: '' + goners.length,
+            neus:   '' + neus.length,
+        })
+
         Seem.sc.topD = topD   // mirrors the spec diagram: Seem,topD alongside topn
-        Seem.i({ goners: '' + goners.length, neus: '' + neus.length })
         return { goners, neus, topD }
     },
 
@@ -133,26 +143,26 @@ await M.eatfunc({
     },
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
-    // The orchestration i_Seem sublates LE_pull into:
+    // Orchestration:
     //   1. walk the remote into origin's D sphere   — awareness diff
     //   2. fabricate working's clean clone tree once per arm
     //   3. walk our editable clone tree into working's D/U sphere — edit diff
     //
     // Top-level { goners, neus } is the awareness (source-change) diff; the
-    // working diff is exposed under .working.  Refresh-on-remote-change (re-pull
-    // working when origin moved) is a deferred watch — see spec, When to encode.
+    // working diff is on .working.  Both Seems record their latest counts in
+    // Seem/%News (replaced, not piled).
     async LE_pull(LE: TheC, strict = 0) {
         const H = this as House
-        const origin = LE.oai({ Seem: 'origin' })
+        const origin  = LE.oai({ Seem: 'origin' })
         const working = LE.oai({ Seem: 'working' })
 
-        const od = await H.LE_pull_seem(LE, origin, strict)
+        const od = await H.o_Seem(origin, strict)
 
         if (working.sc.topn === undefined) {
             working.sc.topn = H.LE_fabricate(origin, od.topD)
         }
 
-        const wd = await H.LE_pull_seem(LE, working, strict)
+        const wd = await H.o_Seem(working, strict)
 
         return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },
@@ -186,9 +196,81 @@ await M.eatfunc({
         const { goners, neus } = await H.LE_pull(LE)
         if (goners.length || neus.length) {
             // < structural awareness only catches whole-C drift; value-edit drift
-            //   needs the enWaft compare (deferred).  < not yet a reqy fault C.
+            //   needs the enWaft compare (LE_encode_compare).  < not yet a reqy fault C.
             LE.i({ push_dirty: 1, stale_goners: '' + goners.length, stale_neus: '' + neus.length })
         }
+    },
+
+    // ── enWaft_seem ─────────────────────────────────────────────────────────
+    // Encode a Seem's particle tree into the same indented snap format enWaft
+    // uses — one line per particle, depth-indented by two spaces, keys joined by
+    // comma.  SESSION_KEYS (active, showing, accepted, created_at) are stripped;
+    // anything in a C.c.* meaning-slot (like %showing on the U node) never
+    // reaches the sc and so never appears here.
+    //
+    // This is the comparable slice enWaft-of-a-Seem needs.  origin produces the
+    // remote's current shape; working produces our edited clone shape.  A
+    // string-equal pair means the push would carry nothing.
+    //
+    // The D-sphere tag (Seem:'origin' / Seem:'working') is stripped from the
+    // output so origin and working are directly comparable without false diffs
+    // from the tag alone.
+    enWaft_seem(Seem: TheC): string {
+        const SESSION_KEYS = new Set(['active', 'showing', 'accepted', 'created_at'])
+        const seemTag = Seem.sc.Seem as string
+        const topD = Seem.sc.topD
+        if (!topD) return ''
+
+        const encode_C = (C: TheC, depth: number): string => {
+            const indent = '  '.repeat(depth)
+            // filter: no SESSION_KEYS, no the D-sphere tag for this Seem
+            const kvs = Object.entries(C.sc)
+                .filter(([k]) => !SESSION_KEYS.has(k) && k !== 'Seem')
+                .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
+                .join(',')
+            if (!kvs) return ''
+            let out = indent + kvs + '\n'
+            // recurse into C/** (sorted by mainkey for stable output)
+            const children = C.o({}) as TheC[]
+            for (const child of children) {
+                out += encode_C(child, depth + 1)
+            }
+            return out
+        }
+
+        // walk topD/* (the D nodes, each mirroring one source child)
+        let out = ''
+        for (const D of topD.o({}) as TheC[]) {
+            out += encode_C(D, 0)
+        }
+        return out
+    },
+
+    // ── LE_encode_compare ───────────────────────────────────────────────────
+    // Encode origin and working Seems and compare.  The two snaps string-equal
+    // when the working state matches what origin last saw — the push would carry
+    // nothing.  A non-equal pair means there are edits to push.
+    //
+    // Dumps each encode on LE/* (replaced, not piled) so a reload or
+    // "push anyway" can resume the push-state without re-deriving it from the
+    // live ropeways.
+    async LE_encode_compare(LE: TheC) {
+        const H = this as House
+        const origin  = LE.oai({ Seem: 'origin' })
+        const working = LE.oai({ Seem: 'working' })
+
+        const snap_origin  = H.enWaft_seem(origin)
+        const snap_working = H.enWaft_seem(working)
+        const dirty = snap_origin !== snap_working
+
+        // replace-not-pile: one encode record per call
+        await LE.r({ encode: 1 }, {
+            snap_origin,
+            snap_working,
+            dirty: dirty ? '1' : '0',
+        })
+
+        return { snap_origin, snap_working, dirty }
     },
 
 //#endregion

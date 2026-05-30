@@ -1,9 +1,9 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round:10
+      {"mung":["age"]}	self,round:11
       w:Understandium
-        tally,passed:23,failed:0
+        tally,passed:27,failed:0
         {"ref":{"target":"%What:1, label:second"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:origin"}}	Seem:origin
             topD:origin
@@ -25,15 +25,6 @@ Snap:H
           What,label:second
             Point,method:alpha2
             Point,method:beta
-        {"mung":["age"]}	self,round:10
-        see:step 10 strict fork
-          default_rename,goners:0,neus:0
-          {"PASS":1,"t":"default: rename is a survivor (no diff)"}
-          strict_rename
-            goners,neus
-            goner:e_Doc_open
-            neu:e_Doc_open_v2
-          {"PASS":1,"t":"resolve_strict: rename is goner + neu"}
         {"ref":{"target":"%What:1, label:routing"}}	LE2
           {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:origin"}}	Seem:origin
             topD:origin
@@ -53,4 +44,28 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
+        {"mung":["age"]}	self,round:11
+        see:step 11 encode-compare clean
+          {"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two\n","dirty":"0"}
+          {"PASS":1,"t":"clean compare: not dirty"}
+          PASS,t:snaps are equal
+          PASS,t:%showing absent from working snap
+          PASS,t:encode record on LE — replaced not piled
+        enc_src
+          What,label:enc
+            Point,method:one
+            Point,method:two
+        {"ref":{"target":"%What:1, label:enc"}}	LE3
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:enc","topD":"%topD:origin"}}	Seem:origin
+            topD:origin
+              Seem:origin,Point,method:one
+              Seem:origin,Point,method:two
+            News:origin,goners:0,neus:2
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+            topD:working
+              Seem:working,Point,method:one
+                showing
+              Seem:working,Point,method:two
+            News:working,goners:0,neus:2
+          {"encode":1,"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two\n","dirty":"0"}
     {"mung":["id"]}	mo:main,interval:3.6
