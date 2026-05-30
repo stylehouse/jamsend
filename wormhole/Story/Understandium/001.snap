@@ -12,7 +12,7 @@ Snap:H
               Seem:origin,Point,method:Lang_doc_from_event
               Seem:origin,What,label:deeper
             News:origin,goners:0,neus:3
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:working"}}	Seem:working
             topD:working
               Seem:working,Point,method:e_Doc_open
               Seem:working,Point,method:Lang_doc_from_event

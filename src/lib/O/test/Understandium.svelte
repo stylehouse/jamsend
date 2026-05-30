@@ -13,10 +13,10 @@
 //     7  edit a clone; push           (replace-back; post-push no-diff)
 //     8  deep %What resumes on push   (resume_X; /%What/%Point never moved)
 //     9  re-arm on a new target       (checkout switches; next pull diffs fresh)
-//    10  resolve_strict fork          (rename = goner+neu under strict; characterises the primitive)
-//    11  encode-compare clean         (enWaft_seem on both Seems; equal after a no-edit pull)
-//    12  encode-compare dirty         (after a clone sc edit, snap_working diverges)
-//    13  encode-compare after push    (push lands; compare is clean again)
+//    10  resolve_strict fork          (characterises resolve() primitive; < retire)
+//    11  encode-compare clean         (Seem_toString on both topns; equal after no-edit pull)
+//    12  encode-compare dirty         (clone sc edit makes snap_working diverge)
+//    13  encode-compare after push    (push lands; compare clean; enc_src/LE3 dropped)
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { type House } from "$lib/O/Housing.svelte"
@@ -243,12 +243,10 @@ await M.eatfunc({
             },
 
             // ── Step 10: resolve_strict — characterising the primitive ────────
-            //   This is NOT how LE should detect edits.  Value-edits belong to
-            //   the Waft-encode compare (enWaft origin-slice vs working), not to
-            //   the structural resolved_fn diff — see spec, Workflows and
-            //   Awarenesses.  Kept here only to pin resolve()'s behaviour:
-            //   by default a rename is continuity (survivor); strict=1 forces
-            //   drop-and-recreate.  Retire once enWaft-of-a-Seem lands.
+            //   This is NOT how LE detects edits — that's LE_encode_compare.
+            //   Kept only to pin resolve()'s behaviour: by default a rename is
+            //   continuity (survivor); strict=1 forces drop-and-recreate.
+            //   < retire: encode-compare is now live and doing its job.
             10: async () => {
                 const r = w.i({ see: 'step 10 strict fork' })
 
@@ -280,15 +278,21 @@ await M.eatfunc({
             },
 
             // ── Step 11: encode-compare clean ─────────────────────────────────
-            //   After a no-edit pull the two snaps are identical: working mirrors
-            //   origin exactly.  LE_encode_compare returns dirty:false.
-            //   Also proves %showing never bleeds into the snap (it lives on C.c.U,
-            //   never in C.sc, so enWaft_seem never sees it).
+            //   After a no-edit pull the two snaps are identical: working's clone
+            //   tree mirrors origin's source %What.  Seem_toString walks topn
+            //   directly — no D-sphere tags, no strip needed.  %showing lives on
+            //   C.c.U, never in C.sc, so it never reaches the snap.
             11: async () => {
+                // drop step 10's LE2/src2 now they've been snapped — particles
+                // are dropped the step AFTER they're captured, not the step that
+                // creates them (an end-of-step drop fires after that step's snap,
+                // so the particle would never appear in its own step).
+                w.drop(w.o({ LE2:  1 })[0])
+                w.drop(w.o({ src2: 1 })[0])
+
                 const r = w.i({ see: 'step 11 encode-compare clean' })
 
-                // re-arm at a fresh target so the state is predictable
-                const enc_src = w.oai({ enc_src: 1 })
+                const enc_src    = w.oai({ enc_src: 1 })
                 const enc_target = enc_src.oai({ What: 1, label: 'enc' })
                 enc_target.oai({ Point: 1, method: 'one' })
                 enc_target.oai({ Point: 1, method: 'two' })
@@ -297,19 +301,16 @@ await M.eatfunc({
                 H.LE_arm(LE3, enc_target)
                 await H.LE_pull(LE3)
 
-                // write a local meaning — must not appear in the snap
-                const clone_one = H.LE_clones(LE3).find(c => c.sc.method === 'one')!
-                clone_one.c.U.i({ showing: 1 })
+                // local meaning — must not appear in the snap
+                H.LE_clones(LE3).find(c => c.sc.method === 'one')!.c.U.i({ showing: 1 })
 
                 const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE3)
                 r.i({ snap_origin, snap_working, dirty: dirty ? '1' : '0' })
 
                 check(r, 'clean compare: not dirty', !dirty)
                 check(r, 'snaps are equal', snap_origin === snap_working)
-                check(r, '%showing absent from working snap',
-                    !snap_working.includes('showing'))
-                check(r, 'encode record on LE — replaced not piled',
-                    LE3.o({ encode: 1 }).length === 1)
+                check(r, '%showing absent from working snap', !snap_working.includes('showing'))
+                check(r, 'encode record on LE3 — replaced not piled', LE3.o({ encode: 1 }).length === 1)
             },
 
             // ── Step 12: encode-compare dirty ─────────────────────────────────
@@ -335,15 +336,17 @@ await M.eatfunc({
             },
 
             // ── Step 13: encode-compare after push ────────────────────────────
-            //   Push the working clones back to the source and re-compare.
-            //   Origin re-pull sees the edit; compare is clean again.
+            //   Push working clones back; LE_push re-pulls internally so origin
+            //   sees the edit.  Compare is clean again.  enc_src/LE3 are NOT
+            //   dropped — 13 is the last step, nothing snaps after, so there's no
+            //   next step to do the drop in and no bloat to avoid.
             13: async () => {
                 const r = w.i({ see: 'step 13 encode-compare after push' })
 
                 const LE3 = w.oai({ LE3: 1 })
                 await H.LE_push(LE3)
 
-                // LE_push does a re-pull internally; compare should now be clean
+                // LE_push re-pulls; compare should be clean
                 const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE3)
                 r.i({ snap_origin, snap_working, dirty: dirty ? '1' : '0' })
 

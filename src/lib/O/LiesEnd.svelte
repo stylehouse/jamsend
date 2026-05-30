@@ -19,6 +19,12 @@
 //
 //   %showing goes on the U node (clone.c.U.i({ showing:1 })), not on the clone
 //   .sc — the clone .sc is the pushable mirror and must stay clean.
+//
+//   Encode compare: Seem_toString(Seem) encodes the topn tree's children via
+//   the real enWaft (Text.svelte); origin's topn is the source %What, working's
+//   is the fabricated %What clone.  Both are clean Waft vocabulary, so enWaft's
+//   all_knowing protocol accepts them.  Encoding children-only drops the root
+//   line so two Whats with different labels compare equal on contents.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
@@ -131,14 +137,21 @@ await M.eatfunc({
     // D-sphere tag so each clone's .sc is a faithful, pushable mirror of the
     // origin child — the strip the old single-Se model did at push time, moved
     // earlier and made durable.  This is what retires the U_clone push-strip.
+    //
+    // The root mirrors the source %What (same mainkey + label) because it IS the
+    // What we push back — the data flows origin → working and shouldn't be aware
+    // of which Seem holds it.  Being a %What also keeps it inside enWaft's
+    // all_knowing protocol, so it encodes without a fatal unknown-mainkey error.
     LE_fabricate(origin: TheC, topD: TheC): TheC {
-        const root = _C({ working_topn: 1 })
+        const src_What = origin.sc.topn as TheC
         const tagKeys = Object.keys(origin.sc.opt.trace_sc)
-        for (const D of topD.o({})) {
-            const clean: any = { ...D.sc }
+        const strip = (sc: any) => {
+            const clean = { ...sc }
             for (const k of tagKeys) delete clean[k]
-            root.i(clean)
+            return clean
         }
+        const root = _C(strip(src_What.sc))   // a %What:label, the pushable mirror
+        for (const D of topD.o({})) root.i(strip(D.sc))
         return root
     },
 
@@ -201,76 +214,62 @@ await M.eatfunc({
         }
     },
 
-    // ── enWaft_seem ─────────────────────────────────────────────────────────
-    // Encode a Seem's particle tree into the same indented snap format enWaft
-    // uses — one line per particle, depth-indented by two spaces, keys joined by
-    // comma.  SESSION_KEYS (active, showing, accepted, created_at) are stripped;
-    // anything in a C.c.* meaning-slot (like %showing on the U node) never
-    // reaches the sc and so never appears here.
+    // ── Seem_toString ───────────────────────────────────────────────────────
+    // Encode a Seem's topn tree to snap text via the real enWaft (Text.svelte).
+    //   origin's topn  = the live source %What   (what the remote looks like)
+    //   working's topn = the fabricated %What clone (what we'd push)
     //
-    // This is the comparable slice enWaft-of-a-Seem needs.  origin produces the
-    // remote's current shape; working produces our edited clone shape.  A
-    // string-equal pair means the push would carry nothing.
+    // Both topns are now %What roots (LE_fabricate mirrors the source), so either
+    // could be encoded whole.  We encode each *child* and join instead — this
+    // drops the root %What line so two Whats with different labels still compare
+    // equal on contents alone, which is what the push-state diff cares about.
     //
-    // The D-sphere tag (Seem:'origin' / Seem:'working') is stripped from the
-    // output so origin and working are directly comparable without false diffs
-    // from the tag alone.
-    enWaft_seem(Seem: TheC): string {
-        const SESSION_KEYS = new Set(['active', 'showing', 'accepted', 'created_at'])
-        const seemTag = Seem.sc.Seem as string
-        const topD = Seem.sc.topD
-        if (!topD) return ''
+    // %showing/%accepted live on C.c.U, never in C.sc, so enWaft never sees them
+    // regardless of its SESSION_KEYS — the snap stays a pure push encoding.
+    //
+    // Returns { snap, errors }; errors non-empty means a child failed protocol
+    // (a real fault — the clone tree should only ever hold Waft vocabulary).
+    async Seem_toString(Seem: TheC): Promise<{ snap: string, errors: string[] }> {
+        const H = this as House
+        const topn = Seem.sc.topn as TheC | undefined
+        if (!topn) return { snap: '', errors: [] }
 
-        const encode_C = (C: TheC, depth: number): string => {
-            const indent = '  '.repeat(depth)
-            // filter: no SESSION_KEYS, no the D-sphere tag for this Seem
-            const kvs = Object.entries(C.sc)
-                .filter(([k]) => !SESSION_KEYS.has(k) && k !== 'Seem')
-                .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
-                .join(',')
-            if (!kvs) return ''
-            let out = indent + kvs + '\n'
-            // recurse into C/** (sorted by mainkey for stable output)
-            const children = C.o({}) as TheC[]
-            for (const child of children) {
-                out += encode_C(child, depth + 1)
-            }
-            return out
+        let snap = ''
+        const errors: string[] = []
+        for (const child of topn.o({}) as TheC[]) {
+            const r = await H.enWaft(child)
+            snap += r.snap
+            if (r.errors.length) errors.push(...r.errors)
         }
-
-        // walk topD/* (the D nodes, each mirroring one source child)
-        let out = ''
-        for (const D of topD.o({}) as TheC[]) {
-            out += encode_C(D, 0)
-        }
-        return out
+        return { snap, errors }
     },
 
     // ── LE_encode_compare ───────────────────────────────────────────────────
-    // Encode origin and working Seems and compare.  The two snaps string-equal
-    // when the working state matches what origin last saw — the push would carry
-    // nothing.  A non-equal pair means there are edits to push.
+    // Encode origin and working Seems via Seem_toString and compare.  Equal snaps
+    // mean the push would carry nothing.  Stores the result on LE/%encode
+    // (replaced, not piled) so a reload or "push anyway" resumes push-state
+    // without re-deriving it from the live ropeways.
     //
-    // Dumps each encode on LE/* (replaced, not piled) so a reload or
-    // "push anyway" can resume the push-state without re-deriving it from the
-    // live ropeways.
+    // encode_errors flags a malformed clone tree (a non-Waft mainkey slipped into
+    // working) — surfaced on the encode record, not swallowed.
     async LE_encode_compare(LE: TheC) {
         const H = this as House
         const origin  = LE.oai({ Seem: 'origin' })
         const working = LE.oai({ Seem: 'working' })
 
-        const snap_origin  = H.enWaft_seem(origin)
-        const snap_working = H.enWaft_seem(working)
-        const dirty = snap_origin !== snap_working
+        const o = await H.Seem_toString(origin)
+        const wk = await H.Seem_toString(working)
+        const dirty = o.snap !== wk.snap
+        const encode_errors = [...o.errors, ...wk.errors]
 
-        // replace-not-pile: one encode record per call
         await LE.r({ encode: 1 }, {
-            snap_origin,
-            snap_working,
-            dirty: dirty ? '1' : '0',
+            snap_origin:  o.snap,
+            snap_working: wk.snap,
+            dirty:        dirty ? '1' : '0',
+            ...(encode_errors.length ? { encode_errors: encode_errors.join('; ') } : {}),
         })
 
-        return { snap_origin, snap_working, dirty }
+        return { snap_origin: o.snap, snap_working: wk.snap, dirty, encode_errors }
     },
 
 //#endregion

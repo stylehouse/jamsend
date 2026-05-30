@@ -19,27 +19,27 @@ story:Understandium
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.08
-      sample:0.075,at:1780154074
-      sample:0.069,at:1780154081
-      sample:0.069,at:1780154082
-      sample:0.069,at:1780154084
-      sample:0.069,at:1780154086
-      sample:0.069,at:1780154087
-      sample:0.069,at:1780154088
-      sample:0.11,at:1780154205
+    TimeTotal:beliefs,avg:8.6
       sample:0.11,at:1780155446
       sample:0.091,at:1780155513
-  step,dige:39543c8e8fd47006
-  step:2,dige:5c7d4ae59736bc6a
-  step:3,dige:2f90ad2a641c809a
-  step:4,dige:ddf4888adca31c13
-  step:5,dige:6a3aabd4dec2febc
-  step:6,dige:08cb09139a82f639
-  step:7,dige:b7490c6b874a267b
-  step:8,dige:89b81eb7672e4fd0
-  step:9,dige:48dcb131a70360d9
-  step:10,dige:e3a26c7dd800defd
-  step:11,dige:b176d82c3f07de95
-  step:12,dige:58df2cf6fdd8c500
-  step:13,dige:176daedf124f28bc
+      sample:0.087,at:1780167960
+      sample:85.107,at:1780168601
+      sample:0.087,at:1780168609
+      sample:0.087,at:1780168618
+      sample:0.126,at:1780168634
+      sample:0.107,at:1780169435
+      sample:0.098,at:1780169478
+      sample:0.098,at:1780169521
+  step,dige:930d2c5a69ac0017
+  step:2,dige:1ece47f648228d7d
+  step:3,dige:7f0ed1c9b226d389
+  step:4,dige:f2f2e7a8f19a0b8b
+  step:5,dige:6cf4199c2a48e6c1
+  step:6,dige:b19d7cb07373c7af
+  step:7,dige:709da1a9edc4843d
+  step:8,dige:2e11346dfe584722
+  step:9,dige:fc54769a05f26944
+  step:10,dige:158796fd0d2dab5f
+  step:11,dige:5c4247eafe18d4f4
+  step:12,dige:621dbab35f1f99bb
+  step:13,dige:ff6b2ec74fc62a98

@@ -10,7 +10,7 @@ Snap:H
               Seem:origin,Point,method:alpha2
               Seem:origin,Point,method:beta
             News:origin,goners:0,neus:0
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:working"}}	Seem:working
             topD:working
               Seem:working,Point,method:alpha2
               Seem:working,Point,method:beta
@@ -25,32 +25,13 @@ Snap:H
           What,label:second
             Point,method:alpha2
             Point,method:beta
-        {"ref":{"target":"%What:1, label:routing"}}	LE2
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:origin"}}	Seem:origin
-            topD:origin
-              Seem:origin,Point,method:e_Doc_open_v2
-              Seem:origin,Point,method:Lang_doc_from_event
-              Seem:origin,What,label:deeper
-            News:origin,goners,neus
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
-            topD:working
-              Seem:working,Point,method:e_Doc_open
-              Seem:working,Point,method:Lang_doc_from_event
-              Seem:working,What,label:deeper
-            News:working,goners:0,neus:0
-        src2
-          What,label:routing
-            Point,method:e_Doc_open_v2
-            Point,method:Lang_doc_from_event
-            What,label:deeper
-              Point,method:inner_secret
         {"mung":["age"]}	self,round:11
         see:step 11 encode-compare clean
           {"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two\n","dirty":"0"}
           {"PASS":1,"t":"clean compare: not dirty"}
           PASS,t:snaps are equal
           PASS,t:%showing absent from working snap
-          PASS,t:encode record on LE — replaced not piled
+          PASS,t:encode record on LE3 — replaced not piled
         enc_src
           What,label:enc
             Point,method:one
@@ -61,7 +42,7 @@ Snap:H
               Seem:origin,Point,method:one
               Seem:origin,Point,method:two
             News:origin,goners:0,neus:2
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:enc","topD":"%topD:working"}}	Seem:working
             topD:working
               Seem:working,Point,method:one
                 showing
