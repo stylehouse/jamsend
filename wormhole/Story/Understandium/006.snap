@@ -3,18 +3,29 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:6
       w:Understandium
-        tally,passed:9,failed:0
-        {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
-          goners:0,neus:3
-          goners:0,neus:0
-          goners:0,neus
-          goners,neus:0
-          topD
-            U_clone,Point,method:e_Doc_open
-              showing
-            U_clone,Point,method:Lang_doc_from_event
-            U_clone,What,label:deeper
-          goners:0,neus:0
+        tally,passed:11,failed:0
+        {"ref":{"target":"%What:1, label:routing"}}	LE
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:origin"}}	Seem:origin
+            goners:0,neus:3
+            goners:0,neus:0
+            goners:0,neus
+            goners,neus:0
+            topD:origin
+              Seem:origin,Point,method:e_Doc_open
+              Seem:origin,Point,method:Lang_doc_from_event
+              Seem:origin,What,label:deeper
+            goners:0,neus:0
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+            goners:0,neus:3
+            goners:0,neus:0
+            goners:0,neus:0
+            goners:0,neus:0
+            topD:working
+              Seem:working,Point,method:e_Doc_open
+                showing
+              Seem:working,Point,method:Lang_doc_from_event
+              Seem:working,What,label:deeper
+            goners:0,neus:0
         src
           What,label:routing
             Point,method:e_Doc_open
@@ -25,6 +36,6 @@ Snap:H
         see:step 6 repull with showing
           goners:0,neus:0
           PASS,t:re-pull no-diff with %showing present
-          PASS,t:%showing survived topD re-insert on the clone
+          PASS,t:%showing survived re-pull on C.c.U
           PASS,t:%showing never reached the source %Point
     {"mung":["id"]}	mo:main,interval:3.6

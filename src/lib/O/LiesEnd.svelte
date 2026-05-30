@@ -92,6 +92,9 @@ await M.eatfunc({
         const seemName = Seem.sc.Seem
         const topD = await Seem.r({ topD: seemName })
 
+        // this "structural diff" is not as good as Waft encoding
+        //  resolve_strict means a value-changed particle to show up as goner+neu
+        //   rather than a survivor.
         const goners: TheC[] = []
         const neus: TheC[] = []
 
@@ -108,6 +111,7 @@ await M.eatfunc({
 
         // counts stamped on the Seem for the picture; stringified, as bare 1
         // reads as the has-key wildcard.
+        Seem.sc.topD = topD   // mirrors the spec diagram: Seem,topD alongside topn
         Seem.i({ goners: '' + goners.length, neus: '' + neus.length })
         return { goners, neus, topD }
     },

@@ -3,20 +3,20 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:10
       w:Understandium
-        tally,passed:17,failed:0
-        {"ref":{"Se":"Selection()","target":"%What:1, label:second"}}	LE
-          goners:0,neus:3
-          goners:0,neus:0
-          goners:0,neus
-          goners,neus:0
-          goners:0,neus:0
-          goners:0,neus:0
-          goners,neus:0
-          topD
-            U_clone,Point,method:alpha2
-              showing
-            U_clone,Point,method:beta
-          goners:0,neus:0
+        tally,passed:19,failed:0
+        {"ref":{"target":"%What:1, label:second"}}	LE
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:origin"}}	Seem:origin
+            goners:0,neus:2
+            topD:origin
+              Seem:origin,Point,method:alpha2
+              Seem:origin,Point,method:beta
+            goners:0,neus:0
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+            goners:0,neus:2
+            topD:working
+              Seem:working,Point,method:alpha2
+              Seem:working,Point,method:beta
+            goners:0,neus:0
         src
           What,label:routing
             Point,method:e_Doc_open_RENAMED
@@ -37,18 +37,26 @@ Snap:H
             goner:e_Doc_open
             neu:e_Doc_open_v2
           {"PASS":1,"t":"resolve_strict: rename is goner + neu"}
-        {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE2
-          goners:0,neus:3
-          topD
-            U_clone,Point,method:e_Doc_open_v2
-            U_clone,Point,method:Lang_doc_from_event
-            U_clone,What,label:deeper
-          goners,neus
+        {"ref":{"target":"%What:1, label:routing"}}	LE2
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:origin"}}	Seem:origin
+            goners:0,neus:3
+            topD:origin
+              Seem:origin,Point,method:e_Doc_open_v2
+              Seem:origin,Point,method:Lang_doc_from_event
+              Seem:origin,What,label:deeper
+            goners,neus
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+            goners:0,neus:3
+            topD:working
+              Seem:working,Point,method:e_Doc_open
+              Seem:working,Point,method:Lang_doc_from_event
+              Seem:working,What,label:deeper
+            goners:0,neus:0
         src2
           What,label:routing
             Point,method:e_Doc_open_v2
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        VERDICT:ALL_GREEN,passed:17
+        VERDICT:ALL_GREEN,passed:19
     {"mung":["id"]}	mo:main,interval:3.6

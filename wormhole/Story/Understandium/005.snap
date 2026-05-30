@@ -3,17 +3,27 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:5
       w:Understandium
-        tally,passed:6,failed:0
-        {"ref":{"Se":"Selection()","target":"%What:1, label:routing"}}	LE
-          goners:0,neus:3
-          goners:0,neus:0
-          goners:0,neus
-          topD
-            U_clone,Point,method:e_Doc_open
-              showing
-            U_clone,Point,method:Lang_doc_from_event
-            U_clone,What,label:deeper
-          goners,neus:0
+        tally,passed:8,failed:0
+        {"ref":{"target":"%What:1, label:routing"}}	LE
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%topD:origin"}}	Seem:origin
+            goners:0,neus:3
+            goners:0,neus:0
+            goners:0,neus
+            topD:origin
+              Seem:origin,Point,method:e_Doc_open
+              Seem:origin,Point,method:Lang_doc_from_event
+              Seem:origin,What,label:deeper
+            goners,neus:0
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+            goners:0,neus:3
+            goners:0,neus:0
+            goners:0,neus:0
+            topD:working
+              Seem:working,Point,method:e_Doc_open
+                showing
+              Seem:working,Point,method:Lang_doc_from_event
+              Seem:working,What,label:deeper
+            goners:0,neus:0
         src
           What,label:routing
             Point,method:e_Doc_open
@@ -23,5 +33,7 @@ Snap:H
         {"mung":["age"]}	self,round:5
         see:step 5 local meaning
           wrote_showing_onto:e_Doc_open
-          {"PASS":1,"t":"%showing written on clone, not on source"}
+          PASS,t:clone sc stays clean (no showing in .sc)
+          PASS,t:%showing written on C.c.U
+          PASS,t:%showing not on source %Point
     {"mung":["id"]}	mo:main,interval:3.6

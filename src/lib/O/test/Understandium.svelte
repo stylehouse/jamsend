@@ -8,8 +8,8 @@
 //     2  re-pull unchanged            (no-diff; D/** persists)
 //     3  source gains a Point         (1 neu)
 //     4  source drops that Point      (1 goner)
-//     5  write a local meaning        (%showing on the clone)
-//     6  re-pull with local meaning   (no-diff; %showing survives; never on source)
+//     5  write a local meaning        (%showing on C.c.U; clone .sc stays clean)
+//     6  re-pull with local meaning   (no-diff; %showing survives on C.c.U; never on source)
 //     7  edit a clone; push           (replace-back; post-push no-diff)
 //     8  deep %What resumes on push   (resume_X; /%What/%Point never moved)
 //     9  re-arm on a new target       (checkout switches; next pull diffs fresh)
@@ -130,11 +130,13 @@ await M.eatfunc({
                 const r = w.i({ see: 'step 5 local meaning' })
 
                 const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
-                chosen.i({ showing: 1 })
+                chosen.c.U.i({ showing: 1 })   // the U node carries the meaning; clone .sc stays clean
                 r.i({ wrote_showing_onto: lm(chosen) })
 
                 const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
-                check(r, '%showing written on clone, not on source', !onSource)
+                check(r, 'clone sc stays clean (no showing in .sc)', !chosen.oa({ showing: 1 }))
+                check(r, '%showing written on C.c.U', !!chosen.c.U.oa({ showing: 1 }))
+                check(r, '%showing not on source %Point', !onSource)
             },
 
             // ── Step 6: re-pull with local meaning present ────────────────────
@@ -148,9 +150,9 @@ await M.eatfunc({
                 check(r, 're-pull no-diff with %showing present',
                     goners.length === 0 && neus.length === 0)
 
-                const onClone  = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!.oa({ showing: 1 })
+                const onClone  = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!.c.U.oa({ showing: 1 })
                 const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
-                check(r, '%showing survived topD re-insert on the clone', !!onClone)
+                check(r, '%showing survived re-pull on C.c.U', !!onClone)
                 check(r, '%showing never reached the source %Point', !onSource)
             },
 
@@ -215,12 +217,14 @@ await M.eatfunc({
                 check(r, 're-arm: U holds the new target Points',
                     methods.length === 2 && methods[0] === 'alpha' && methods[1] === 'beta')
 
-                // %showing on a *neu* clone would be a leak — it means a freshly
-                // fabricated clone inherited a local meaning it shouldn't have.
-                // %showing on a *survivor* clone is fine: resume_X carried it across,
-                // which is the correct behaviour for a re-arm to a similar target.
-                const showingOnNeu = neus.some(n => n.oa({ showing: 1 }))
-                check(r, 'prior %showing did not leak onto a new clone', !showingOnNeu)
+                // neus are origin D nodes — checking them for showing is vacuous (they
+                // never carry it).  The real hazard is a new working clone's c.U
+                // inheriting a meaning from a prior Understanding via sphere-resume:
+                // resolve() pairs a fresh clone against a stale D node of similar shape
+                // and resume_X hands back the old U node with its showing.  A fresh arm
+                // drops both Seems so the spheres reset; this check catches any regression.
+                const showingOnCloneU = H.LE_clones(LE).some(c => c.c.U?.oa({ showing: 1 }))
+                check(r, 'prior %showing did not leak onto new clone c.U', !showingOnCloneU)
             },
 
             // ── Step 10: resolve_strict — characterising the primitive ────────

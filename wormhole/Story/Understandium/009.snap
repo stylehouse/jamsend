@@ -3,19 +3,18 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:9
       w:Understandium
-        tally,passed:15,failed:0
-        {"ref":{"Se":"Selection()","target":"%What:1, label:second"}}	LE
-          goners:0,neus:3
-          goners:0,neus:0
-          goners:0,neus
-          goners,neus:0
-          goners:0,neus:0
-          goners:0,neus:0
-          topD
-            U_clone,Point,method:alpha
-              showing
-            U_clone,Point,method:beta
-          goners,neus:0
+        tally,passed:17,failed:0
+        {"ref":{"target":"%What:1, label:second"}}	LE
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:origin"}}	Seem:origin
+            topD:origin
+              Seem:origin,Point,method:alpha
+              Seem:origin,Point,method:beta
+            goners:0,neus:2
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%working_topn:1","topD":"%topD:working"}}	Seem:working
+            topD:working
+              Seem:working,Point,method:alpha
+              Seem:working,Point,method:beta
+            goners:0,neus:2
         src
           What,label:routing
             Point,method:e_Doc_open_RENAMED
@@ -24,12 +23,13 @@ Snap:H
               Point,method:inner_secret
         {"mung":["age"]}	self,round:9
         see:step 9 rearm
-          goners,neus:0
-          {"goner":"What:deeper"}
+          goners:0,neus:2
+          neu:alpha
+          neu:beta
           now_holding:alpha
           now_holding:beta
           {"PASS":1,"t":"re-arm: U holds the new target Points"}
-          PASS,t:prior %showing did not leak onto a new clone
+          PASS,t:prior %showing did not leak onto new clone c.U
         second_src
           What,label:second
             Point,method:alpha
