@@ -8,21 +8,13 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peeroleum(): string { return '61e49073a962dc8b' },
+    Ghostmeta_Ghost_Story_Peeroleum(): string { return '5243d16758eb710b' },
 
 
 LakeNetherland(A,w) {
     w.i({see:'y LakeNetherland'})
     // < the orchestration of Peeroleum-involved C**
-    // itfereqrafafafraqade!!!
-},
-PeerJS(A,w) {
-    let y = {
-        figaro: async (lattice) => {
-            w.i({see: lattice})
-        },
-    }
-    w.i({handlers: y})
+
 },
 
     })
