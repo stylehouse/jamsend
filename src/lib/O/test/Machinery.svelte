@@ -10,6 +10,7 @@
     import MachReqy from "./MachReqy.svelte";
     import Mundane from "./Mundane.svelte";
     import Understandity from "./Understandity.svelte";
+    import Understandium from "./Understandium.svelte";
 
     let {M} = $props()
 
@@ -1555,3 +1556,4 @@ The double-envelopment became the template for every subsequent battle of annihi
 <MachReqy {M} />
 <Mundane {M} />
 <Understandity {M} />
+<Understandium {M} />

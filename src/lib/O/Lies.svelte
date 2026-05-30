@@ -129,6 +129,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     import Liesui           from "$lib/O/Liesui.svelte"
     import LiesCurse        from "$lib/O/LiesCurse.svelte"
     import LiesStore from "./LiesStore.svelte";
+    import LiesEnd from "./LiesEnd.svelte";
 
     // File extensions that produce gen/ output.
     // Everything else is soft-compile only regardless of Ghost/ location.
@@ -808,3 +809,4 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
 <LiesCurse {M} />
 <LiesStore {M} />
+<LiesEnd {M} />

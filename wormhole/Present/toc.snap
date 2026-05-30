@@ -29,16 +29,29 @@ Library
         sample:0.218,at:1780130034
         sample:0.218,at:1780130038
         sample:0.218,at:1780130041
-  Book:Understandity,active,ok_pct,done,last_run_ms:1780132203.016
+  Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
-      TimeTotal:beliefs,avg:0.014
-        sample:0.015,at:1780132183
-        sample:0.015,at:1780132186
-        sample:0.015,at:1780132190
-        sample:0.015,at:1780132194
-        sample:0.015,at:1780132197
-        sample:0.015,at:1780132199
-        sample:0.015,at:1780132199
-        sample:0.013,at:1780132202
-        sample:0.013,at:1780132202
-        sample:0.013,at:1780132203
+      TimeTotal:beliefs,avg:0.013
+        sample:0.013,at:1780138336
+        sample:0.013,at:1780138339
+        sample:0.013,at:1780138343
+        sample:0.013,at:1780138347
+        sample:0.013,at:1780138350
+        sample:0.013,at:1780138354
+        sample:0.013,at:1780138357
+        sample:0.013,at:1780138361
+        sample:0.013,at:1780138365
+        sample:0.013,at:1780138366
+  Book:Understandium,active,ok_pct:0,done,last_run_ms:1780140341.401
+    TimeSpool
+      TimeTotal:beliefs,avg:117.52
+        sample:117.52,at:1780140338
+        sample:117.52,at:1780140338
+        sample:117.52,at:1780140338
+        sample:117.52,at:1780140339
+        sample:117.52,at:1780140339
+        sample:117.52,at:1780140339
+        sample:117.52,at:1780140340
+        sample:117.52,at:1780140340
+        sample:117.52,at:1780140341
+        sample:117.52,at:1780140341
