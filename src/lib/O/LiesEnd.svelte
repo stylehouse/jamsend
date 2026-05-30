@@ -119,8 +119,8 @@ await M.eatfunc({
     //   pairs it with the live source by sc identity and resume_X hands back
     //   its deep /%What/%Point — they never moved.
     //
-    //   C.sc is clean — local meanings (showing, accepted) live on D, never on
-    //   C.sc — so the entire .sc can be taken as-is.
+    //   D.sc is the push encoding — it carries any edits made to the clone.
+    //   Local meanings (showing, accepted) are on D/*, not in D.sc, so D.sc is clean.
     //
     //   After the replace-back we re-pull; a non-empty diff means the push
     //   didn't land cleanly, stamped as push_dirty on LE/*.
@@ -131,9 +131,8 @@ await M.eatfunc({
 
         await target.replace({}, async () => {
             for (const D of Ds) {
-                const C = H.LE_source_C(D)
-                target.i(C.sc)
-                // local meanings on D stay in the U sphere.
+                target.i(D.sc)
+                // local meanings on D (showing, accepted) are not in D.sc — stay in U.
                 // nested %What resumes its deep Points via resume_X.
             }
         })

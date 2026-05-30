@@ -31,10 +31,13 @@ await M.eatfunc({
     async Understandium(A: TheC, w: TheC) {
         const H = this as House
 
-        let passed = 0, failed = 0
+        // tally lives on w/* so it accumulates across steps (locals reset each tick)
+        const tally = w.oai({ tally: 1 })
+        tally.sc.passed ??= 0
+        tally.sc.failed ??= 0
         const check = (into: TheC, name: string, ok: boolean) => {
             into.i(ok ? { PASS: 1, t: name } : { FAIL: 1, t: name })
-            ok ? passed++ : failed++
+            ok ? tally.sc.passed++ : tally.sc.failed++
         }
         // stringified counts; bare 1 reads as has-key wildcard
         const n_of = (into: TheC, goners: TheC[], neus: TheC[]) =>
@@ -251,10 +254,10 @@ await M.eatfunc({
         // stamped on the final step; earlier steps carry their own PASS records
         const run_step = H.c.run?.c.step_n as number | undefined
         if (run_step === 10) {
-            w.i(failed === 0
-                ? { VERDICT: 'ALL_GREEN', passed: '' + passed }
-                : { VERDICT: 'RED', passed: '' + passed, failed: '' + failed })
-            if (throwOnFail && failed) throw `Understandium: ${failed} failed`
+            w.i(tally.sc.failed === 0
+                ? { VERDICT: 'ALL_GREEN', passed: '' + tally.sc.passed }
+                : { VERDICT: 'RED', passed: '' + tally.sc.passed, failed: '' + tally.sc.failed })
+            if (throwOnFail && tally.sc.failed) throw `Understandium: ${tally.sc.failed} failed`
         }
     },
 
