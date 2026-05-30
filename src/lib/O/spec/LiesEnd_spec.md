@@ -28,14 +28,14 @@ mainkey|match|trace-based.  U is `%Understandable`, hanging under D:
 a U reached through a U is the same node as one reached directly, no seam where
 Understandings nest.
 
-The `//` in `C:Point//U/%showing` means: go through the D-sphere to the
-U-sphere.  Every particle the checkout walk sees gets a D node (the D sphere),
+The `//` in `C:Point//U%showing` means: go through the D-sphere to the
+U-sphere, and %showing.  Every particle the checkout walk sees gets a D node (the D sphere),
 and the D node carries `T.sc.n` = the source C and `T.sc.U` = the U clone.
 Local meanings are written on the U clone, never on the source `C:Point`:
 
 ```
-C:Point//U/%showing     ← orb visible in this Understanding  (on the U clone)
-C:Point//U/%accepted    ← curated into this What's set        (on the U clone)
+C:Point//U%showing     ← orb visible in this Understanding  (on the U clone)
+C:Point//U%accepted    ← curated into this What's set        (on the U clone)
 
 // these meanings are OF the Point within this Understanding, not IN the Point.
 // they imply positivity (inclusion, showing) and are kept out of the push
@@ -49,86 +49,17 @@ C:Point//U/%accepted    ← curated into this What's set        (on the U clone)
 
 No JS classes.  Everything is methods on `this` (House mixin), operating on
 `C**` particles.  `LE` is a `%LiesEnd` particle made for us — passed in to
-every function.  State lives on `LE.c.*` and `LE.sc.*` rather than on `w/`
-directly, so the Understanding doesn't interfere with `replace()` operations on
-`w`.  `LE` is not itself inside a `replace()` so its `C.c.*` and `C/*` are
-stable across pulls.
+every function.  LE` is not itself inside a `replace()` so its `C.c.*` and `C/*` are
+stable across pulls. Tend not to use C.c.* though?
 
-```
-// LE.sc.Se carries the Selection object — on .sc so it can be initialised
-// with parameters already set (remote target, match_sc, etc).
-// LE.sc.topD is the D-sphere root; replaced each pull via Se.r() to get
-// a fresh .c.T binding while D/** (U clones, their meanings) persist via resume_X.
 
-LE_arm(LE, what_C):
-  LE.sc.Se     ??= new Selection()
-  LE.sc.target = what_C            // the source %What being checked out
-  LE.sc.topD   ??= LE.i({ topD:1 }) // D-sphere root, lives on LE/*
-```
+## ignore the context, but...
+
+`%What_Points` impulsing defines where we checkout. A req should check the
+return-pull after we navigate or push.  After a push we should pull a no-diff.
 
 ---
 
-## Se_i — pull
-
-There must be a Se_i layer for reading the remote (Lies).  `%What_Points`
-defines where we checkout — I'd like to sanity-check each round with a req that
-waits for the return-pull after we navigate or push.  After a push we should
-pull a no-diff.
-
-```
-LE_pull(LE, strict=0):
-  Se = LE.sc.Se
-  // replace topD each pull: fresh .c.T; D/** persists via resume_X.
-  // pattern: Cyto does Se.r({...}) each tick for the same reason.
-  Se.sc.topD = LE.sc.topD = await Se.r({ topD:1 }, {})
-
-  await Se.process({
-    n:          LE.sc.target,
-    process_D:  Se.sc.topD,
-    match_sc:   {},
-    trace_sc:   { U_clone:1 },           // D children are tagged U_clone:1
-    resolve_strict: strict || undefined,
-
-    each_fn: (D, n, T) =>
-      // top is depth 1; past its immediate children we stop.
-      // a nested %What gets a D node (and a U clone) but is never entered.
-      if T.c.d > 1: T.sc.no_further = 'shallow'
-
-    trace_fn: (uD, n_child) =>
-      // uD is the parent D node.  we make a child D, tagged with trace_sc.
-      // the child D carries the source C and a U clone of it.
-      D = uD.i({ U_clone:1, ...n_child.sc })  // trace_sc included in the D
-      D.c.T.sc.n = n_child                    // D knows its source C
-      D.c.T.sc.U = D                          // D is the U clone (D/U sphere)
-      return D
-
-    resolved_fn: (T, N, goners, neus) =>
-      // goners/neus = entire C coming and going, not value diffs.
-      // value changes (method rename etc) read as survivors unless resolve_strict.
-      // push-state diff lives in the Waft encoding, not here.
-      LE.i({ goners: goners.length, neus: neus.length })  // Se_o: snapshot on LE/*
-  })
-```
-
----
-
-## Reading the working set (Se_o)
-
-```
-// the live U clones are topD/* filtered by U_clone:1.
-// to get the source C from a D node: D.c.T.sc.n
-// to write a local meaning onto a clone: D.i({ showing:1 })  (D is the U clone)
-// to read back for push: D.c.T.sc.n.sc — the source C's .sc is clean,
-//   entire .sc can be taken as-is to replace the target/*.
-
-LE_clones(LE)  => LE.sc.topD.o({ U_clone:1 })   // the D nodes = U clones
-LE_source_C(D) => D.c.T.sc.n                     // source C for a given D
-
-// diff (structural — whole C in/out) is a snapshot on LE/*, stamped each pull.
-// push-state diff (value changes) lives in the Waft encoding — not here.
-```
-
----
 
 ## Push — replace-back
 
@@ -155,6 +86,9 @@ LE_push(LE):
     LE.i({ push_dirty:1 })          // < fault C: push didn't land clean
 ```
 
+you can't modify target.sc with this, you'd have to seek to the What above it
+so it's a C we can replace.
+
 ---
 
 ## Open / deferred
@@ -173,18 +107,18 @@ LE_push(LE):
 
 ## Workflows and Awarenesses — the two-Seem model
 
-The single-`Se` `LE_pull` above conflates two jobs that want separating: reading
-the remote, and holding our editable working set.  The push bug that motivated
-this makes it concrete — when the working clone's `.sc` carries the D-sphere
-tagging (`U_clone:1`), pushing `D.sc` back leaks that tagging onto the source.
-The clone's identity sc and its D-sphere bookkeeping must not be the same thing.
-
 So: **two Seems**, each its own `Selection`, both hung off one `%LiesEnd`.
 
 ```
-LE/%Seem:origin   /Se:Selection()  /topU  /topn        ← reads the remote OC**
-LE/%Seem:working  /Se:Selection()  /topU  /topn        ← holds the editable U**
+LE/%Seem:origin,Se:Selection(),topn:$OC,topD        ← reads the remote OC**
+  /D%Demonstrations        ← is topD
+  
+LE/%Seem:working,Se:Selection(),topn:$C,topD,topU   ← holds the editable C**
+  /D%Demonstrations        ← is topD
+  /U%Understandable        ← is topU
 ```
+
+Both given `%Seem,(topn)` to hold (how?) but hosting their own `%Seem,(topD)` at `%Seem/D`, and maybe `%Seem/U`! That's a parameter on i_Seem, somehow.
 
 `H.i_Seem(LE, { Seem:'origin', ... })` embeds a Seem under LE:
 
@@ -193,18 +127,20 @@ i_Seem(LE, opt):
   // opt: { Seem, match_sc?, trace_sc?, topn? }
   Seem = LE.oai({ Seem: opt.Seem })
   Seem.sc.Se      ??= new Selection()
+  // < this needs to go in a Seem.sc.opt.*, to be mixed into Se.process({...})
   Seem.sc.match_sc  = opt.match_sc ?? {}              // wide open by default
-  Seem.sc.trace_sc  = opt.trace_sc ?? { Seem:'origin' }
-  Seem.oai({ topU: 1 })            // the D-sphere root for this Seem
+  Seem.sc.trace_sc  = opt.trace_sc ?? { Demonstrations:Seem.sc.Seem }
+  Seem.oai(Seem.sc.trace_sc)            // the D-sphere root for this Seem
   if opt.topn: Seem.sc.topn = opt.topn               // the first n — the target
+  // < wanting to Seem%opt.each|trace|etc_fn here
+  //    adding a bunch of Seem%opt.*_fn of our own?
   return Seem
 ```
 
 - **`topn`** — the first `n`, i.e. the target.  For `Seem:origin` this is the
   remote `%What` (the `OC` — origin C).  For `Seem:working` it is the fabricated
   clone we feed as the second `n**` (see below).
-- **`topU`** — the D-sphere root (`process_D`).  Named `topU` not `topD` because
-  the whole point is that D *is* the U sphere here (`D/U/U ≡ D/D/U`).
+- **`topD`** — the D-sphere root (`process_D`).  
 
 ### `Seem:origin` — reading OC**
 
@@ -213,19 +149,17 @@ tree into `topU` tagged `Seem:'origin'`.  This is the awareness: re-walking
 `Seem:origin` gives `goners`/`neus` as **clues about when to pull** — the remote
 changed, time to refresh working.  It is *not* the push-state diff.
 
-### `Seem:working` — holding the editable U**
+### `Seem:working` — holding the editable C**
 
 `Seem:working`'s `n**` is **not** the remote.  It is a C** we **fabricate by
-cloning from OC**** at pull time, then feed as the second `n` thenceforth.  The
-working Seem walks *that* clone, not the origin.  Editing happens on the working
-clone; `Seem:working`'s own `topU` is where the **U** particles get fabricated,
-when they happen — on demand, not eagerly at pull.
+cloning from OC**** at pull time, and monitor for our own changes thenceforth.  The
+working Seem walks *that* clone, not the origin.  Editing happens on C, the working
+clone; `Seem:working`'s **U\*\***  is where some of-not-in-the-Point properties live,
+and springs up where-ever **C\*\*** leads, as **D\*\*** does.
 
-The fabricated clone is the clean identity-sc tree (`%What/%Point**`, no
-`U_clone`, no `Seem` tag — those live on the D/U nodes, never in `n.sc`).  This
-is what fixes the push leak: the working `n` we push back from is clean by
-construction, because the D-sphere tagging is on the D nodes, and the `n` tree
-is separate from them.
+The C fabricated clone is nice and tidy, identical to the eg `%What/%Point**` it
+pulled, `%Demonstrations` or `%Understandable` mainkey tag that the `Seem` spheres
+have because they join one another D/U
 
 ### The diff that matters — Waft-encode compare
 
@@ -284,11 +218,27 @@ understanding of it accumulates in the U sphere and on the ropeway.
 
 ---
 
-## Revised open / deferred
+## beware
+
+
+The single-`Se` `LE_pull` above conflates two jobs that want separating: reading
+the remote, and holding our editable working set.  The push bug that motivated
+this makes it concrete — when the working clone's `.sc` carries the D-sphere
+tagging (`U_clone:1`), pushing `D.sc` back leaks that tagging onto the source.
+The clone's identity sc and its D-sphere bookkeeping must not be the same thing.
+
+What seemed jarring to you:
+Seem.oai(Seem.sc.trace_sc) — that would create e.g. LE/%Seem:origin/%Demonstrations:origin as topD.
+Seem%opt.*_fn — the spec notes // < wanting to Seem%opt.each|trace|etc_fn here. The cleanest approach is probably Seem.sc.opt = { trace_fn, each_fn, ... } so LE_pull does Se.process({ ...Seem.sc.opt, n: Seem.sc.topn, process_D: topD }). No need to particle-ify the functions — they're already on .sc.
+The U_clone strip in LE_push — this is what the two-Seem model retires. In the two-Seem world Seem:working fabricates a clean C** with no D-sphere tags in n.sc, so push just does target.i(n.sc) directly off the working clone tree. The strip is an honest interim hack and the comment says so clearly.
+One thing the spec doesn't yet say: how does Seem:working actually get its fabricated n tree populated on the first arm? It says "fabricate by cloning from OC** at pull time" but doesn't pin down the mechanics. I'd expect LE_pull to: walk Seem:origin first, then if Seem:working has no topn yet, walk the origin's D nodes and i clean copies into a fresh C** which becomes Seem:working's topn. That "clone from D nodes, strip D-sphere tags" is the same strip we're currently doing at push time — just moved earlier and made durable.
+
+## todo
 
 ```
-// < i_Seem + two-Seem LE_pull: origin-walk for awareness, working-walk for the
-//   editable U**.  fabricate working n by cloning OC** at pull; feed thereafter.
+// < i_Seem + two-Seem LE_pull: Seem:origin for awareness, Seem:working for the
+//   editable C** and its U**.  fabricate working n (C) by cloning OC** at pull;
+//   feed thereafter. make the C//U navigable via C.c.U = U.
 // < enWaft-of-a-Seem: encode origin slice and working state; compare for push.
 //   retire resolve_strict from the diff path once this lands.
 // < fabricate-U-on-demand in Seem:working — U** made when a meaning is first

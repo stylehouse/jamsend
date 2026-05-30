@@ -42,16 +42,16 @@ Library
         sample:0.013,at:1780138361
         sample:0.013,at:1780138365
         sample:0.013,at:1780138366
-  Book:Understandium,active,ok_pct:0,done:10,last_run_ms:1780144655.688
+  Book:Understandium,active,ok_pct,done:8,last_run_ms:1780144704.275
     TimeSpool
-      TimeTotal:beliefs,avg:0.06
-        sample:0.056,at:1780144629
-        sample:0.06,at:1780144635
-        sample:0.06,at:1780144635
-        sample:0.06,at:1780144636
-        sample:0.06,at:1780144647
-        sample:0.06,at:1780144647
-        sample:0.06,at:1780144648
-        sample:0.06,at:1780144651
-        sample:0.06,at:1780144652
-        sample:0.06,at:1780144655
+      TimeTotal:beliefs,avg:0.068
+        sample:0.068,at:1780144697
+        sample:0.068,at:1780144697
+        sample:0.068,at:1780144698
+        sample:0.068,at:1780144698
+        sample:0.068,at:1780144699
+        sample:0.068,at:1780144702
+        sample:0.068,at:1780144703
+        sample:0.068,at:1780144703
+        sample:0.068,at:1780144703
+        sample:0.068,at:1780144704
