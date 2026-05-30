@@ -1,0 +1,10 @@
+Snap:H
+  H:Understandity,Run
+    A:Understandity
+      {"mung":["age"]}	self,round
+      w:Understandity
+        {"mung":["age"]}	self,round
+        this_is
+          test_data
+            we:snap
+    {"mung":["id"]}	mo:main,interval:3.6
