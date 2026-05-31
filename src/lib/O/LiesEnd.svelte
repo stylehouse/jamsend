@@ -182,6 +182,13 @@ await M.eatfunc({
 
         const od = await H.o_Seem(origin, strict)
 
+        // Re-link c.up / c.waft on the origin target after each pull — fresh
+        // children (neus from a remote edit) need the back-refs stamped.
+        // Waft_link_up stops early on already-linked subtrees, so this is cheap.
+        const origin_C    = origin.sc.C as TheC | undefined
+        const origin_waft = (LE.sc.target as TheC | undefined)?.c.waft as TheC | undefined
+        if (origin_C && origin_waft) await H.Waft_link_up(origin_C, origin_waft)
+
         if (working.sc.C === undefined) {
             working.sc.C = H.Seem_clone_C(origin)
         }
@@ -362,9 +369,10 @@ await M.eatfunc({
 
 //#region navigation — c.up traversal helpers
 //
-//   These helpers read the c.up back-ref chain that Lies_stamp_up maintains on
-//   every What and Doc in a loaded Waft.  The chain stops at the Waft particle
-//   (sc.Waft is set); never follow c.up past a node with sc.Waft defined.
+//   These helpers read the c.up / c.waft back-ref chain that Waft_link_up
+//   maintains on every What and Doc in a loaded Waft.  The chain stops at the
+//   Waft particle (sc.Waft is set); never follow c.up past a node with sc.Waft.
+//   Re-linked by Waft_link_up on every LE_pull so fresh children are covered.
 //
 //   LE.sc.target is the current %What being checked out.  All helpers take that
 //   as their entry point; NaviCado passes it in without knowing the tree shape.
@@ -417,8 +425,8 @@ await M.eatfunc({
 
     // ── LE_what_waft ──────────────────────────────────────────────────────
     // The containing Waft particle for a What.  Cached on c.waft by
-    // Lies_stamp_up; falls back to a c.up walk for particles inserted after
-    // the initial stamp (e.g. LE_add_clone'd Whats before the next stamp).
+    // Waft_link_up; falls back to a c.up walk for particles not yet linked
+    // (e.g. LE_add_clone'd Whats before the next LE_pull re-links).
     LE_what_waft(what: TheC): TheC | undefined {
         if (what.c.waft) return what.c.waft as TheC
         let node = what.c.up as TheC | undefined

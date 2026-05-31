@@ -126,6 +126,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     `
 
     import { _C, TheC }     from "$lib/data/Stuff.svelte"
+    import { Travel }        from "$lib/mostly/Selection.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
     import { throttle, dig } from "$lib/Y.svelte"
     import { onMount }      from "svelte"
@@ -417,7 +418,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // and Liesui's keyed each would throw each_key_duplicate.
             await w.r({ Waft: path }, {})
             w.i(waft)
-            H.Lies_stamp_up(waft, waft)   // What.c.up back-refs; Waft is its own ceiling
+            await H.Waft_link_up(waft, waft)   // C.c.up back-refs; Waft is its own ceiling
             H.Lies_sync_waft_docs(w, waft)
 
             // Every CRUD mutation triggers a throttled wormhole write.
@@ -555,28 +556,34 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
 //#region helpers
 
-    // ── Lies_stamp_up ─────────────────────────────────────────────────────────
+    // ── Waft_link_up ──────────────────────────────────────────────────────────
     //
-    //   Walk a Waft's %What** tree and stamp C.c.up on every What and Doc,
-    //   pointing at its immediate parent (or the Waft itself at the top level).
-    //   Waft is the ceiling: What.c.up chains upward and stops at the Waft
-    //   particle — NaviCado detects it via `parent.sc.Waft !== undefined`.
+    //   Walk a Waft subtree with Travel and stamp C.c.up / C.c.waft on every
+    //   child.  Travel handles loop detection; we stop early when a node's
+    //   c.up already points to the right parent — the subtree below is assumed
+    //   already linked.
     //
-    //   Called after deWaft inserts a Waft, and after any What/Doc is inserted.
-    //   The walk mirrors deWaft's tree grammar (shallow-recursive).
+    //   Call with the Waft itself as top; top gets no c.up (there is no above).
+    //   Also callable from LE_pull's done_fn after a push lands fresh children.
     //
-    //   Security note: the chain always terminates at the Waft particle.
-    //   Callers must never follow c.up past a node whose sc.Waft is set.
-    Lies_stamp_up(parent: TheC, waft: TheC) {
-        for (const what of parent.o({ What: 1 }) as TheC[]) {
-            what.c.up   = parent
-            what.c.waft = waft
-            this.Lies_stamp_up(what, waft)   // recurse into nested Whats
-        }
-        for (const doc of parent.o({ Doc: 1 }) as TheC[]) {
-            doc.c.up   = parent
-            doc.c.waft = waft
-        }
+    //   Security: the chain terminates at the Waft particle (sc.Waft defined).
+    //   NaviCado detects the ceiling via node.sc.Waft !== undefined.
+    async Waft_link_up(top: TheC, waft: TheC) {
+        await new Travel().dive({
+            n: top,
+            match_sc: {},
+            each_fn: async (n: TheC, T: Travel) => {
+                const parent_n = T.sc.up?.sc.n as TheC | undefined
+                if (!parent_n) return   // top node — no c.up to set
+                if (n.c.up === parent_n && n.c.waft === waft) {
+                    // subtree already linked from a prior call — stop early
+                    T.sc.no_further = 'already linked'
+                    return
+                }
+                n.c.up   = parent_n
+                n.c.waft = waft
+            },
+        })
     },
 
     // ── e_Lies_point_issues ────────────────────────────────────────────────────
