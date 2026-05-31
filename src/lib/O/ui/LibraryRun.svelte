@@ -88,6 +88,9 @@
 
     function activate(book: TheC) {
         H.i_elvisto('Auto/Auto', 'activateBook', { Book: book.sc.Book })
+        // seek to Story once the new house appears — auto_reset_story already
+        // sets restore_window_until, so NaviScroll will chase it when it arrives
+        H.scroll_to_house?.('Story')
     }
 
     function reset_story() {

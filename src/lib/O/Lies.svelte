@@ -89,10 +89,11 @@
     //   w/{Opt:1}                              — options container
     //
     //   w/{req:'desire'}                       — the will to play; finds Waft via req:acquire
-    //     /{req:'acquire'}                       one-shot lock; stamps desire.sc.waft_C
-    //     /{req:'completion',playing:0|1}        open-ended session; steps when playing:1
+    //     /{req:'acquire'}                       one-shot lock; stamps desire.sc.waft_C / .waft_key
+    //     /{req:'completion',playing:0|1}        open-ended; reqonce open_What lands cursor once
     //     /{req:'git'}                           Waftlet accumulator; commits patches
-    //     < req:completion / req:git do_fns — Chunk 4b
+    //     // < req:git do_fn — Chunk 4b+
+    //     // < auto-advance when playing:1 — UI-side timer, not a Story ttlilt
     //
     // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
     //
@@ -549,15 +550,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //
         //   w/{req:'desire'}
         //     /{req:'acquire'}              one-shot Waft lock; stamps desire.sc.waft_C
-        //     /{req:'completion',playing}   open-ended session; steps on playing:1
+        //     /{req:'completion',playing}   open-ended session; user navigates at own pace
         //     /{req:'git'}                  Waftlet accumulator; patches via LE_push
         //
-        //   < req:completion do_fn — reqonce open_What, ttlilt step   Chunk 4b
         //   < req:git do_fn — flush Waftlets to disk / remote          Chunk 4b+
+        //   < auto-advance (playing:1): a UI-side timer, not a Story ttlilt
         const rq = H.reqy(w)
-        // doai delegates to roai; roai stamps meta.existed so doai knows fresh vs seen.
-        // First call (fresh req): returns setter fn → ?.() lands fn in req.c.do_fn once.
-        // Subsequent calls: meta.existed true → null → ?.() no-ops. Safe every tick.
         ;(await rq.doai({ req: 'desire' }))?.(async (desire: TheC) => {
             const rq = H.reqy(desire)
 
@@ -576,9 +574,28 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 rq.finish(acquire)
             })
 
-            // req:completion — open-ended playing session; playing:0|1.
-            // < do_fn: reqonce open_What; step on ttlilt when playing:1.
-            await rq.doai({ req: 'completion' }, { playing: 0 })
+            // req:completion — open-ended; left open, user soaks and navigates away.
+            //   reqonce open_What fires once after acquire: lands the cursor on the
+            //   first point-bearing %What.  No ttlilt — Story must not be held here.
+            //   playing:0|1 is on sc for NaviCado's transport bar; UI-side timer
+            //   drives auto-advance when playing:1, never Story-side.
+            ;(await rq.doai({ req: 'completion' }, { playing: 0 }))?.(async (completion: TheC) => {
+                if (!desire.sc.waft_C) return   // acquire not yet done — retry next tick
+
+                if (H.reqonce(completion, 'open_What')) {
+                    const waft  = desire.sc.waft_C as TheC
+                    const first = (waft.o({ What: 1 }) as TheC[])
+                        .find(wh => H.Lies_what_has_points(wh))
+                    if (first) {
+                        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+                        if (examining) {
+                            H.Lies_ensure_doc_loaded(w, H.Lies_what_first_doc_path(first), desire.sc.waft_key as string)
+                            await H.Lies_set_examining(examining, first, desire.sc.waft_key as string)
+                        }
+                    }
+                }
+                // completion stays open — no finish() here.
+            })
 
             // req:git — Waftlet accumulator; /%Waftlet children pile up here.
             // < do_fn: flush committed Waftlets to disk/remote; drop flushed.

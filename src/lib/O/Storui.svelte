@@ -676,27 +676,25 @@
         setTimeout(() => { diff_status = '' }, 3000)
     }
 
-    // start_diff_collect: "copy" calls this directly — arms immediately, no menu step.
-    // Synchronous so the throbbing cancel renders on the same frame as the click.
-    // Clipboard warmup is fire-and-forget; collect_range will prompt if needed.
-    function start_diff_collect() {
+    // start_diff_collect: first click — arms the collector on this step.
+    // Warms clipboard permission on this user gesture via a harmless empty
+    // writeText(''), so the write inside collect_range doesn't need to prompt.
+    async function start_diff_collect() {
         const n = display.open_at
         if (n == null) return
+        try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
         diff_anchor     = n
         diff_collecting = true
         diff_menu       = false
         diff_status     = ''
-        navigator.clipboard.writeText('').catch(() => { /* prompt on actual write */ })
     }
 
-    // copy_single: copies just this step and returns to idle — diff_collecting reset so
-    // the buttons collapse back to "copy" once the write completes.
+    // copy_single: immediately copies the open step without entering collect mode.
     async function copy_single() {
         const n = display.open_at
         if (n == null) return
-        diff_collecting = false
-        diff_anchor     = null
         try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
+        diff_menu = false
         await collect_range(n, n, eff_mode)
     }
 
@@ -733,6 +731,9 @@
         }
         diff_menu      = false
         last_user_pick = n
+        // tell NaviScroll not to seek Story's house while the user is navigating pips
+        H.stashed ??= {}
+        H.stashed.pip_user_engaged_until = Date.now() + 2 * 60 * 1000
         H.i_elvisto('Story/Story', 'story_sel', { open_at: n })
     }
 
@@ -740,6 +741,8 @@
         diff_mode      = null
         diff_menu      = false
         last_user_pick = null
+        // user explicitly dismissed — NaviScroll may seek freely again
+        if (H.stashed) H.stashed.pip_user_engaged_until = 0
         H.i_elvisto('Story/Story', 'story_sel', { open_at: null })
     }
     $effect(() => {
@@ -765,10 +768,12 @@
     })
     // when the panel opens from outside (server-pushed open_at: end of run,
     // failed step, stash restore), return focus to the strip so arrow keys work.
-    // Guard: if focus is already inside .sr the user is driving — don't interrupt.
+    // Guards: if focus is already inside .sr the user is driving — don't interrupt.
+    //         if last_user_pick is set the user chose a step and owns focus.
     $effect(() => {
         void display.open_at   // subscribe
         if (!display.open_at) return
+        if (last_user_pick != null) return   // user is driving — don't steal focus
         if (sr_el && !sr_el.contains(document.activeElement)) {
             setTimeout(() => strip_el?.focus(), 0)
         }
@@ -1051,20 +1056,32 @@
                     {/if}
 
                     <!-- copy: single-step and range collector ─────────── -->
-                    <!-- "copy" arms immediately — no intermediate menu.   -->
-                    <!-- Collecting: "just NNN" copies this step and exits; -->
-                    <!--   throbbing cancel exits without collecting;       -->
-                    <!--   clicking any other pip collects [anchor, n].    -->
+                    <!-- idle: "copy" opens the choice menu.               -->
+                    <!-- menu: "just NNN" copies immediately; "pick end"   -->
+                    <!--   arms this step as anchor for a range, then click -->
+                    <!--   any other pip to collect [anchor, n].            -->
+                    <!-- Collecting state: shows anchor + cancel (×).      -->
                     <!-- Output: Step/Snap/Dif:* block, enL-compatible.    -->
                     <!-- T.deDif(lines, 2) decodes it back to DiffRow[].   -->
                     {#if !hollow}
                         {#if diff_collecting}
+                            <!-- cancel (×) always available; "to NNN" completes the range
+                                 immediately when the open step differs from the anchor -->
+                            {#if n !== diff_anchor}
+                                <button class="sr-diffrange" onclick={() => { collect_range(diff_anchor!, n, eff_mode); diff_collecting = false; diff_anchor = null }}>
+                                    to {String(n).padStart(3,'0')}
+                                </button>
+                            {/if}
+                            <button class="sr-diffrange collecting" onclick={cancel_collect}>
+                                from {String(diff_anchor).padStart(3,'0')} — pick end ×
+                            </button>
+                        {:else if diff_menu}
                             <button class="sr-diffrange" onclick={copy_single}>
                                 just {String(n).padStart(3,'0')}
                             </button>
-                            <button class="sr-diffrange collecting" onclick={cancel_collect}>pick end ×</button>
+                            <button class="sr-diffrange" onclick={start_diff_collect}>pick end</button>
                         {:else}
-                            <button class="sr-diffrange" onclick={start_diff_collect}>copy</button>
+                            <button class="sr-diffrange" onclick={() => diff_menu = true}>copy</button>
                         {/if}
                     {/if}
 

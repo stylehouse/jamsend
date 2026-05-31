@@ -159,6 +159,8 @@
         if (!gazed_path || restored_once) return
         if (Date.now() > deadline) return
         if (!newcomers.length) return
+        // don't steal scroll focus while the user is navigating story pips
+        if ((H?.stashed?.pip_user_engaged_until ?? 0) > Date.now()) return
 
         const target = house_by_path(gazed_path)
         if (!target || !newcomers.includes(target.c.ip)) return

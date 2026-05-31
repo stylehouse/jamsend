@@ -271,10 +271,15 @@
             //   Fresh (new) req: returns setter fn → ?.() lands fn in req.c.do_fn.
             //   Existed req:     req.c.do_fn already set → returns null → ?.() no-ops.
             //   req.c.do_fn lives in .c (never snaps); do_one checks it before reqcon.c.do_fn.
+            // Seed a named req and return a one-shot do_fn setter.
+            //   roai(c) finds or creates the req — no sc here, so re-entry never
+            //   clobbers live sc fields like playing:0.
+            //   Fresh req (no .c.do_fn yet): copy sc defaults onto req.sc, return setter.
+            //   Seen req (.c.do_fn already wired): return null → ?.() no-ops.
             async doai(c: Record<string,any>, sc: Record<string,any> = {}): Promise<((fn: Function) => void) | null> {
-                const meta: { existed?: boolean } = {}
-                const req = await q.roai(c, sc, meta)
-                if (meta.existed) return null
+                const req = await q.roai(c)
+                if (req.c.do_fn) return null
+                Object.assign(req.sc, sc)
                 return (fn: Function) => { req.c.do_fn = fn }
             },
  
