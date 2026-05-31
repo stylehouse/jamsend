@@ -831,6 +831,12 @@
             matching_any: [{ sc_only: { reqcons: 1 } }],
             means: { skip: true }
         },
+        {
+            // %see particles carrying a raw string payload (encode dumps, etc.)
+            // BQ-renders the string key so multi-line text reads at odd indent.
+            matching_any: [{ sc_has: { see: 1, string: 1 } }],
+            means: { blockquote_these_sc: { string: 1 } },
+        },
     ] as Array<any>,
 
     // classify one particle during the snap walk.

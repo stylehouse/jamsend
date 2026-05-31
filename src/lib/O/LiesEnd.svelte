@@ -234,6 +234,14 @@ await M.eatfunc({
     // deletions.  U%unshowing has no effect here (Lang UI concern only).
     // U meanings live on C.c.U, never in C.sc, so enWaft never sees them.
     //
+    // Origin is bounded to working's shallow extent — a nested %What on origin's
+    // live tree has real children (deep %Points that were never checked out), but
+    // working holds only a childless stub.  Encoding origin fully would make the
+    // snaps structurally unequal even with no edits.  Instead, origin encodes
+    // each top-level child shallowly via max_child_depth:0 — the child's own
+    // line encodes (d=0), its children are cut (d=1 exceeds the limit).  Working
+    // encodes normally; its clone stubs already have no children to descend into.
+    //
     // Returns { snap, errors }; errors mean a child failed enWaft protocol
     // (real fault — the clone tree should only hold Waft vocabulary).
     async Seem_toString(Seem: TheC): Promise<{ snap: string, errors: string[] }> {
@@ -241,12 +249,14 @@ await M.eatfunc({
         const C = Seem.sc.C as TheC | undefined
         if (!C) return { snap: '', errors: [] }
 
-        const is_working = Seem.sc.Seem === 'working'
+        const is_origin = Seem.sc.Seem === 'origin'
         let snap = ''
         const errors: string[] = []
         for (const child of C.o({}) as TheC[]) {
             if (Seem.sc.opt.use_Understandable && child.c.U?.sc.unaccepted) continue
-            const r = await H.enWaft(child)
+            const r = is_origin
+                ? await H.enWaft(child, { max_child_depth: 0 })
+                : await H.enWaft(child)
             snap += r.snap
             if (r.errors.length) errors.push(...r.errors)
         }

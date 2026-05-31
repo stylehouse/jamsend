@@ -132,9 +132,10 @@
     async encode_wh_lines(
         C:   TheC,
         opt?: {
-            matching?:    Array<any>
-            all_knowing?: boolean
-            muted_log?:   Array<{ depth: number, mainkey: string, omitted: string[] }>
+            matching?:        Array<any>
+            all_knowing?:     boolean
+            muted_log?:       Array<{ depth: number, mainkey: string, omitted: string[] }>
+            max_child_depth?: number   // inclusive; children beyond this depth are silently cut
         }
     ): Promise<{ snap: string, errors: string[] }> {
         const H = this as any
@@ -158,6 +159,12 @@
             match_sc: {},
             each_fn: async (n: TheC, T: Travel) => {
                 const d = T.c.path.length - 1  // 0 for root, 1 for depth-1 children, etc.
+
+                // Depth gate: silently cut any node beyond max_child_depth.
+                if (opt?.max_child_depth !== undefined && d > opt.max_child_depth) {
+                    T.sc.not = 1
+                    return
+                }
 
                 if (seen.has(n)) {
                     const path_str = T.c.path

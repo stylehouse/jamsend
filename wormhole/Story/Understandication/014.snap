@@ -3,9 +3,9 @@ Snap:H
     A:Understandication
       {"mung":["age"]}	self,round:14
       w:Understandication
-        tally,passed:41,failed:2
+        tally,passed:42,failed
         {"ref":{"target":"%What:1, label:routing"}}	LE
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\n  Point,method:resolve_path\n  Point,method:normalise_ext\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"1"}
+          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"0"}
           push_dirty,stale_goners:0,stale_neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -46,5 +46,5 @@ Snap:H
         see:step 14 unshowing wander hygiene
           PASS,t:no unshowing on fresh routing clones after re-arm wander
           PASS,t:Lang_compile unshowing never in routing sphere
-        VERDICT:RED,passed:41,failed:2
+        VERDICT:RED,passed:42,failed
     {"mung":["id"]}	mo:main,interval:3.6

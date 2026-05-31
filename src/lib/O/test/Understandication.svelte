@@ -251,8 +251,12 @@ await M.eatfunc({
                 const on_source = routing.o({ Point: 1, method: 'new_route_handler' })
                 r.i({ found_on_source: '' + on_source.length })
 
-                const { dirty } = await H.LE_encode_compare(LE)
+                const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE)
                 r.i({ dirty_after_push: dirty ? '1' : '0' })
+
+                // Two %see,string particles — story_matching BQ-renders the snap text.
+                r.i({ see: 'origin',  via_toString: 1, string: snap_origin  })
+                r.i({ see: 'working', via_toString: 1, string: snap_working })
 
                 check(r, 'added Point landed on source', on_source.length === 1)
                 check(r, 'encode-compare clean after push add', !dirty)

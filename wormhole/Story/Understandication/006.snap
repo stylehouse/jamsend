@@ -3,7 +3,7 @@ Snap:H
     A:Understandication
       {"mung":["age"]}	self,round:6
       w:Understandication
-        tally,passed:17,failed:2
+        tally,passed:18,failed
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -28,7 +28,7 @@ Snap:H
                 Understandable
             News:working,goners:0,neus:0
           push_dirty,stale_goners:0,stale_neus
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\n  Point,method:resolve_path\n  Point,method:normalise_ext\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"1"}
+          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Doc_open
@@ -48,9 +48,23 @@ Snap:H
         {"mung":["age"]}	self,round:6
         see:step 6 push addition
           found_on_source
-          dirty_after_push
+          dirty_after_push:0
+          see:origin,via_toString
+           string: |
+             Point,method:e_Doc_open
+             Point,method:Lang_doc_from_event
+             Point,method:path_guard
+             What,label:routing_detail
+             Point,method:new_route_handler
+          see:working,via_toString
+           string: |
+             Point,method:e_Doc_open
+             Point,method:Lang_doc_from_event
+             Point,method:path_guard
+             What,label:routing_detail
+             Point,method:new_route_handler
           PASS,t:added Point landed on source
-          FAIL,t:encode-compare clean after push add
+          PASS,t:encode-compare clean after push add
           FAIL,t:no push_dirty on LE
           PASS,t:routing source has 5 children now
     {"mung":["id"]}	mo:main,interval:3.6
