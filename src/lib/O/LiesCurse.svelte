@@ -78,7 +78,7 @@
                         const found = H.Lies_find_doc_in_wafts(w, path)
                         if (found) {
                             H.Lies_ensure_doc_loaded(w, path, found.waft_key)
-                            H.Lies_set_examining(examining, found.doc, found.waft_key)
+                            await H.Lies_set_examining(examining, found.doc, found.waft_key)
                         }
                     }
                 }
@@ -109,7 +109,7 @@
             const found = H.Lies_find_doc_in_wafts(w, active_path)
             if (found) {
                 H.Lies_ensure_doc_loaded(w, active_path, found.waft_key)
-                H.Lies_set_examining(examining, found.doc, found.waft_key)
+                await H.Lies_set_examining(examining, found.doc, found.waft_key)
             }
         } else if (!examining_path) {
             // case 2: no active doc, no cursor — pick first Point-bearing Doc,
@@ -117,7 +117,7 @@
             const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
             if (first) {
                 H.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
-                H.Lies_set_examining(examining, first.doc, first.waft_key)
+                await H.Lies_set_examining(examining, first.doc, first.waft_key)
             }
         }
     },
@@ -143,7 +143,7 @@
         const waft_key = e.sc.waft_key as string | undefined
         if (!src || !waft_key) return
         this.Lies_ensure_doc_loaded(w, (src.sc as any).path as string | undefined, waft_key)
-        this.Lies_set_examining(examining, src, waft_key)
+        await this.Lies_set_examining(examining, src, waft_key)
     },
 
     // ── Lies_seed_cursor_target ───────────────────────────────────────────────
@@ -225,11 +225,17 @@
     // ── Lies_set_examining ────────────────────────────────────────────────────
     //
     //   Install or update the %What_Points,1 child on %examining.
-    //   Carries src (the %Dock,path TheC whose %Point,N are grafted) and src_Waft
+    //   Carries src (the %What or %Doc TheC being examined) and src_Waft
     //   (the containing Waft key).  Using a child particle means:
     //   - visible in the snap as a proper particle, not a buried ref in sc
     //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
     //   - three-step is one call — src, src_Waft, and bump never go half-done
+    //
+    //   When src is a %What: arms the Understanding, pulls, then fires
+    //   Lang_LE_arm cross-world.  The pull is the reason this is async.
+    //   When src is a %Doc (cold-start, active_dock watch, e_Lies_set_cursor):
+    //   no %What to check out; the LE hold on Languinio is left as-is.
+    //   < e_Lies_set_cursor should eventually deliver the parent %What.
     //
     //   Cold-start rehydration: reads sc.accepted + sc.showing from %Point
     //   particles directly on src and injects them as accepted_entries on
@@ -239,9 +245,6 @@
     //   is also 0, but the guard is `push_id === _our_last_push_id`, so it
     //   would match and skip.  Use 1 as the seed so the first real push at
     //   Date.now() (always > 1) is always distinguishable.
-    //
-    //   oai() is sync (unlike roai) — safe to call from watch_c callbacks.
-    //   The child is stable across calls; only its sc fields change each time.
     async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
         const wpt = examining.oai({ What_Points: 1 })
         wpt.sc.src      = src
@@ -265,28 +268,20 @@
         }
 
         wpt.bump_version()
-        console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
+        console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).path ?? '?')}`)
 
         // ── LE graft seam ─────────────────────────────────────────────────────
         //
-        //   When src is a %What, arm the Understanding and fire Lang_LE_arm
-        //   cross-world once the first pull completes.
-        //
-        //   Lies_set_examining is sync (called from watch_c) — LE_pull is
-        //   fire-and-forget here.  The cursor stamp is never blocked on it.
-        //
-        //   When src is a %Doc (cold-start, active_dock watch, e_Lies_set_cursor)
-        //   there is no %What to check out; the LE hold on Languinio is left as-is.
-        //   < e_Lies_set_cursor should eventually deliver the parent %What.
+        //   %What src: arm + pull the Understanding, then fire Lang_LE_arm
+        //   cross-world.  %Doc src: leave the Languinio hold as-is.
         if ((src.sc as any).What !== undefined) {
             const w_lies = examining.c.w as TheC | undefined
             if (w_lies) {
-                const LE = w_lies.oai({ LE: 1 })
                 const H  = this as House
+                const LE = w_lies.oai({ LE: 1 })
                 H.LE_arm(LE, src)
-                H.LE_pull(LE).then(() => {
-                    H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
-                })
+                await H.LE_pull(LE)
+                H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
             }
         }
     },
