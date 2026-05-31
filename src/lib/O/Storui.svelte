@@ -676,17 +676,17 @@
         setTimeout(() => { diff_status = '' }, 3000)
     }
 
-    // start_diff_collect: first click — arms the collector on this step.
-    // Warms clipboard permission on this user gesture via a harmless empty
-    // writeText(''), so the write inside collect_range doesn't need to prompt.
-    async function start_diff_collect() {
+    // start_diff_collect: "copy" calls this directly — arms immediately, no menu step.
+    // Synchronous so the throbbing cancel renders on the same frame as the click.
+    // Clipboard warmup is fire-and-forget; collect_range will prompt if needed.
+    function start_diff_collect() {
         const n = display.open_at
         if (n == null) return
-        try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
         diff_anchor     = n
         diff_collecting = true
         diff_menu       = false
         diff_status     = ''
+        navigator.clipboard.writeText('').catch(() => { /* prompt on actual write */ })
     }
 
     // copy_single: immediately copies the open step without entering collect mode.
@@ -1049,25 +1049,20 @@
                     {/if}
 
                     <!-- copy: single-step and range collector ─────────── -->
-                    <!-- idle: "copy" opens the choice menu.               -->
-                    <!-- menu: "just NNN" copies immediately; "pick end"   -->
-                    <!--   arms this step as anchor for a range, then click -->
-                    <!--   any other pip to collect [anchor, n].            -->
-                    <!-- Collecting state: shows anchor + cancel (×).      -->
+                    <!-- "copy" arms immediately — no intermediate menu.   -->
+                    <!-- Collecting: "just NNN" copies this step and exits; -->
+                    <!--   throbbing cancel exits without collecting;       -->
+                    <!--   clicking any other pip collects [anchor, n].    -->
                     <!-- Output: Step/Snap/Dif:* block, enL-compatible.    -->
                     <!-- T.deDif(lines, 2) decodes it back to DiffRow[].   -->
                     {#if !hollow}
                         {#if diff_collecting}
-                            <button class="sr-diffrange collecting" onclick={cancel_collect}>
-                                from {String(diff_anchor).padStart(3,'0')} — pick end ×
-                            </button>
-                        {:else if diff_menu}
                             <button class="sr-diffrange" onclick={copy_single}>
                                 just {String(n).padStart(3,'0')}
                             </button>
-                            <button class="sr-diffrange" onclick={start_diff_collect}>pick end</button>
+                            <button class="sr-diffrange collecting" onclick={cancel_collect}>pick end ×</button>
                         {:else}
-                            <button class="sr-diffrange" onclick={() => diff_menu = true}>copy</button>
+                            <button class="sr-diffrange" onclick={start_diff_collect}>copy</button>
                         {/if}
                     {/if}
 
