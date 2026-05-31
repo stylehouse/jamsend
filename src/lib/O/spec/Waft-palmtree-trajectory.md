@@ -77,13 +77,15 @@ Understandication).  Now wired onto the live Lies+Lang cluster via Steps A–C.*
 **A** — `LiesEnd.svelte` unchanged; comment was already correct: `w/{LE}` under
 `w:Lies`.
 
-**B** — `LiesCurse.svelte` / `Lies_set_examining`: after stamping `wpt` and
-bumping, now:
+**B** — `LiesCurse.svelte` / `Lies_set_examining`: now `async`; after stamping
+`wpt` and bumping:
 - gets `w` via `examining.c.w`
 - gets `LE` via `w.oai({LE:1})`
 - calls `H.LE_arm(LE, src)` (sync)
-- calls `H.LE_pull(LE).then(() => H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE }))`
-  (async, fire-and-forget — cursor stamp is not blocked)
+- `await H.LE_pull(LE)` then `H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })`
+
+`watch_c` handlers are now `async () =>` and the flush loop `await`s each handler
+(`Housing_svelte.ts`).  All call sites of `Lies_set_examining` use `await`.
 
 **C** — `Lang.svelte`: new `e_Lang_LE_arm` handler after `e_Lang_open_dock`.
 Receives `e.sc.LE`, drops prior hold via `await languinio.r({LE:1},{})`, then
@@ -136,38 +138,39 @@ is `undefined` for a `%What` and the guard short-circuits harmlessly.
 //   rows as clickable targets first.
 ```
 
-### 4b — `req:desire` + playing/pause loop (next)
+### 4b — `req:desire` skeleton ✓ landed; playing/pause loop next
 
-The system carries an intention that it pursues toward showing the audience
-something.  Right now it goes dormant once the Waft is open.  It should want:
+`req:desire` lives on `w:Lies` directly — one wanderer, not one per Waft.
+Erupts in `LiesRealised` via `rq.doai`.  Structure now in place:
 
 ```
 w:Lies
-  req:desire,Waft:Ghost/Tour
-    req_sent
-    started:1
-    req:open_What           ← reqonce: opened first What, cursor set
-      ttlilt:until_ts:T,playing   ← armed only in auto-advance mode
-    req:next_What           ← when advancing: step sibling, or exhausted
+  /{req:'desire'}                  ← the wanderer; finds Waft via req:acquire
+    /{req:'acquire'}               ← one-shot lock; stamps desire.sc.waft_C
+                                     sc.active → src_Waft → first Waft
+    /{req:'completion',playing:0}  ← open-ended session; steps when playing:1
+    /{req:'git'}                   ← Waftlet accumulator; patches via LE_push
 ```
 
-`reqonce(desire_req, 'open_What')` fires once: opens the first `%What` in the
-Waft, sets the cursor to it, arms a ttlilt if playing.  When the ttlilt expires
-Story wakes, `do_fn` mints `req:next_What` and steps.  In pause mode the ttlilt
-is never armed — `→` advances manually.
+`doai` is the new gesture for seeding a req and wiring its `do_fn` in one call
+(`Hovercraft.svelte`).  It delegates to `roai(c, sc, meta)` — `meta.existed`
+tells `doai` whether the req is fresh; only fresh reqs get the setter back.
+`?.()` on the return makes every re-entry tick a no-op.
 
-End-of-Waft: when no further `%What` exists, `req:next_What` transitions to
-`req:waft_exhausted` and fires an `o_elvis` for the UI (loop, stop, prompt
-for `+time`).
+```js
+;(await rq.doai({ req: 'desire' }))?.(async (desire) => { ... })
+```
 
-**Before coding 4b, decide:**
-- Where does `req:desire` live — on `w:Lies` directly, or on the `%Waft`
-  particle?  On `w:Lies` means one desire at a time; on `%Waft` means one per
-  open Waft (cleaner, but needs `reqy(waft)` scheme setup).
-- What arms the initial `req:desire`?  Candidate: a `reqonce` in the main `Lies`
-  tick when a Waft is first loaded, or an explicit user gesture from Liesui.
-- What does the transport bar look like in Liesui — does it live on `%examining`,
-  on `%Languinio`, or separately?
+**Still to wire for 4b:**
+- `req:acquire` do_fn is live — picks active/src_Waft/first Waft, finishes once locked.
+- `req:completion` do_fn — `reqonce(completion, 'open_What')` sets cursor to first
+  `%What`; when `playing:1` arms a ttlilt so Story advances automatically.
+- `req:next_What` — minted by completion's ttlilt expiry; steps sibling, or
+  transitions to `req:waft_exhausted` at end of Waft.
+- Transport bar in NaviCado reads `desire.sc.waft_C` and `completion.sc.playing`.
+
+**`req:git` — deferred** (`// < Chunk 4b+`): receives `/%Waftlet` children as
+`LE_push` patches land; do_fn flushes them to disk/remote.
 
 ### 4c — `↘` / `↓` branch and dive gestures
 
@@ -194,10 +197,17 @@ read-only).  Depends on 4c for the ghost stamping.
 
 ```
 →   continue     step to next %What — e_Lies_cursor_next ✓ done (4a)
+↑←→  NaviCado   up/prev/next via c.up chain — ✓ landed (e_Lies_cursor_what)
 ↘   sibling +time   e_Lies_branch_What — 4c
 ↓   child +time     e_Lies_dive_What   — 4c
 ◀◀  rwnd         reverse step        — 4d
 ```
+
+`NaviCado.svelte` — toolbar above DocMinimap capsule strip; receives `%LE` via
+Languinio; derives position from `LE_what_depth/siblings/next/prev` helpers in
+`LiesEnd`.  `Waft_link_up` stamps `What.c.up` / `What.c.waft` on every node
+after Waft decode (and after LE_push lands fresh children).  Waft is the ceiling:
+`c.up` chain stops at `node.sc.Waft !== undefined`.
 
 ### The caving metaphor
 
@@ -222,6 +232,12 @@ knows where they came from.  `↘` is "we'll return to this junction."  `↓` is
 - `oai` sync, `roai` async.  `roai` from sync context returns a Promise and
   silently breaks the assignment — verify call-site async-ness when touching
   particle-creation code.
+- `rq.doai(c, sc?)` — seed a named req and wire `req.c.do_fn` in one gesture.
+  Delegates to `roai(c, sc, meta)`; `meta.existed` distinguishes fresh from seen.
+  Returns setter fn first time, `null` thereafter — `?.()` makes re-entry a no-op.
+  `await` required at call site: `;(await rq.doai({...}))?.(async (req) => {...})`.
+- `watch_c` handlers are now `async () =>` and the flush loop awaits each one
+  (`Housing_svelte.ts`).  All `Lies_set_examining` call sites use `await`.
 - `i()` always inserts — never deduplicates by identity.  When a same-object
   hold needs replacing, drop via `r({key:val},{})` or explicit `drop()` first.
 - `i_req_ttlilt(req, secs, sc)` sets `w.c.has_req_ttlilt` — Story's quiescence
