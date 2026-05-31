@@ -16,19 +16,19 @@ Library
   Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403
   Book:MundaneStation,ok_pct:0,last_pct_change:1779845683.836,done:5,last_run_ms:1779949732.752
   Book:MundaneStaying,ok_pct:0.67,last_pct_change:1779949738.82,done:3,last_run_ms:1780039978.795
-  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780220098.216,time_avg:0.173,active
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780220329.745,time_avg:0.173
     TimeSpool
-      TimeTotal:beliefs,avg:0.222
-        sample:0.222,at:1780220094
-        sample:0.222,at:1780220094
-        sample:0.222,at:1780220095
-        sample:0.222,at:1780220095
-        sample:0.222,at:1780220096
-        sample:0.222,at:1780220096
-        sample:0.222,at:1780220097
-        sample:0.222,at:1780220097
-        sample:0.222,at:1780220097
-        sample:0.222,at:1780220098
+      TimeTotal:beliefs,avg:0.31
+        sample:0.31,at:1780220297
+        sample:0.31,at:1780220300
+        sample:0.31,at:1780220304
+        sample:0.31,at:1780220308
+        sample:0.31,at:1780220311
+        sample:0.31,at:1780220315
+        sample:0.31,at:1780220318
+        sample:0.31,at:1780220322
+        sample:0.31,at:1780220326
+        sample:0.31,at:1780220329
   Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg:0.013
@@ -55,16 +55,16 @@ Library
         sample:0.054,at:1780207556
         sample:0.054,at:1780207560
         sample:0.054,at:1780207564
-  Book:Understandication,ok_pct:0.29,done:14,last_run_ms:1780216668.11
+  Book:Understandication,ok_pct:0,done:8,last_run_ms:1780220606.441,active
     TimeSpool
-      TimeTotal:beliefs,avg:0.119
-        sample:0.119,at:1780216635
-        sample:0.119,at:1780216639
-        sample:0.119,at:1780216642
-        sample:0.119,at:1780216646
-        sample:0.119,at:1780216650
-        sample:0.119,at:1780216653
-        sample:0.119,at:1780216657
-        sample:0.119,at:1780216660
-        sample:0.119,at:1780216664
-        sample:0.119,at:1780216668
+      TimeTotal:beliefs,avg:0.109
+        sample:0.109,at:1780220603
+        sample:0.109,at:1780220603
+        sample:0.109,at:1780220603
+        sample:0.109,at:1780220604
+        sample:0.109,at:1780220604
+        sample:0.109,at:1780220604
+        sample:0.109,at:1780220605
+        sample:0.109,at:1780220605
+        sample:0.109,at:1780220606
+        sample:0.109,at:1780220606

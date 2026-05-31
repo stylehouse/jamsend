@@ -7,32 +7,11 @@ tree and its transport semantics; this doc owns the *implementation slice*.
 
 ## Lang/LE architecture
 
-```
-w:Lies
+```w:Lies
   /%examining
     /%What_Points
         sc.src      $C → %What    ← checkout target (arm point)
         sc.src_Waft string
-  /%LE                             ← stable; not inside replace()
-    /%State                        ← synthesised: armed/changey/stale (see LiesEnd_spec)
-    // %push_dirty — fault child; present only when push didn't land clean
-    /%Seem:origin
-        sc.Se  Selection()
-        sc.C   → live %What        ← the remote; never edited
-        /%Demonstrations:origin
-          /…D   one per child      ← awareness sphere; neus/goners = stale signal
-        /%News:origin
-    /%Seem:working
-        sc.Se  Selection()
-        sc.C   → clone root        ← our editable tree
-        /%Demonstrations:working
-          /…D   one per clone
-            /%Understandable       ← U node; unshowing/unaccepted live here
-        /%News:working
-
-ave/%active_dock                   ← reactive signal: which %Dock is foregrounded
-  sc.path  string
-  c.dock   $C → %Dock              ← direct ref; Langui reads for bookmarks
 
 w:Lang
   /%docks
@@ -40,12 +19,29 @@ w:Lang
       /%Compile
         /%Output
       /%bookmark,N
-      // < /%LE — per-Dock Understanding; armed when Lies_set_examining aims here
+      /%LE                             ← stable; not inside replace()
+        /%State                        ← synthesised: armed/changey/stale (see LiesEnd_spec)
+        // %push_dirty — fault; present when push didn't land clean
+        /%Seem:origin
+            sc.Se  Selection()
+            sc.C   → live OC%What        ← the remote; never edited
+            /D%Demonstrations:origin**   ← awareness sphere; neus/goners = stale signal
+            /%News:origin
+        /%Seem:working
+            sc.Se  Selection()
+            sc.C   → clone C%What        ← our editable tree
+            /D%Demonstrations:origin**   ← awareness sphere (** means this stuff is recursive)
+              /%Understandable           ← U node; unshowing/unaccepted live here
+            /%News:working
 
   /%Languinio
     /%Change                       ← three-leg display strip (storage/backend/compile)
-    // < /%LE — same-object hold on w:Lies/%LE for whichever Dock is foregrounded
-    //   re-pointed on each Lies_set_examining call
+    // /%LE — same-object hold on whichever Dock/%LE is foregrounded
+    //   re-pointed on active_dock change
+
+ave/%active_dock                   ← reactive signal: which %Dock is foregrounded
+  sc.path  string
+  c.dock   $C → %Dock              ← direct ref; Langui reads for bookmarks
 
 ave/%lang_dock,path                ← text sync; sc.text / sc.text_dige / sc.disk_dige
 ```

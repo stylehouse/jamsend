@@ -156,8 +156,10 @@ await M.eatfunc({
         // Seem:working%C is absent — Seem_clone_C sets it on the first LE_pull
 
         // fresh arm: spheres empty, no clone tree yet — armed until first pull.
-        // replace so stale/changey from a prior arm don't linger.
-        LE.oai({ State: 1 }).sc = { armed: 1 }
+        // Assign sc wholesale so stale/changey from a prior arm don't linger;
+        // keep State:1 as the identity key so o({State:1}) finds it.
+        const state = LE.oai({ State: 1 })
+        state.sc = { State: 1, armed: 1 }
         for (const pd of LE.o({ push_dirty: 1 }) as TheC[]) LE.drop(pd)
     },
 
@@ -186,9 +188,12 @@ await M.eatfunc({
 
         const wd = await H.o_Seem(working, strict)
 
-        // %State — replaced each pull so old flags don't linger.
+        // %State — oai then mutate, so the particle always exists after a pull.
+        // r({State:1},{}) drops the child entirely; we want a live particle with
+        // only the flags that are true right now.
         const stale = od.goners.length > 0 || od.neus.length > 0
-        await LE.r({ State: 1 }, { ...(stale ? { stale: 1 } : {}) })
+        const state = LE.oai({ State: 1 })
+        state.sc = { State: 1, ...(stale ? { stale: 1 } : {}) }
 
         return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },

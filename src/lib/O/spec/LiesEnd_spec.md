@@ -48,7 +48,7 @@ C:Point//U%unaccepted  ← virtual deletion: omit from next push and encode
 No JS classes.  Everything is methods on `this` (House mixin), operating on
 `C**` particles.  `LE` is a `%LE` particle, stable for the lifetime of the
 checkout — not inside a `replace()`, so `LE/*` and `LE.c.*` survive pulls.
-Lives at `w/{LE}` under `w:Lies`; passed into every LE_* function.
+Lives at `/%Dock/%LE` under `w:Lang`; passed into every LE_* function.
 
 `%What_Points` impulsing defines where we check out.  A req should check the
 return-pull after we navigate or push.  After a push we should pull a no-diff.
