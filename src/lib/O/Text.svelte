@@ -769,17 +769,19 @@
         if (!text_right) return text_left.split('\n').filter(Boolean)
             .map(line => ({ kind: 'left_only', line: line.trimEnd() }))
 
-        // norm_line: canonical stringies JSON for alignment, indent preserved for depth.
-        // BQ key lines ("  key: |") and body lines pass through as-is since they
-        // don't parse as snap lines — that's fine, they'll align with their counterparts.
+        // norm_line: indent + canonical objecties JSON + tab + canonical stringies JSON.
+        // Both halves included — a line whose stringies are unchanged but objecties changed
+        // (e.g. a ref key renamed) must not align as equal.
         const norm_line = (line: string): string => {
             const indent  = line.match(/^ */)?.[0] ?? ''
             const tab     = line.indexOf('\t')
-            const str_raw = tab >= 0 ? line.slice(tab + 1).trimEnd() : line.trimEnd()
+            const obj_raw = tab >= 0 ? line.slice(indent.length, tab) : ''
+            const str_raw = tab >= 0 ? line.slice(tab + 1).trimEnd() : line.slice(indent.length).trimEnd()
             try {
+                const obj_norm  = obj_raw ? JSON.stringify(JSON.parse(obj_raw)) : ''
                 const stringies = str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw)
-                return indent + JSON.stringify(stringies)
-            } catch { return indent + str_raw }
+                return indent + obj_norm + '\t' + JSON.stringify(stringies)
+            } catch { return indent + obj_raw + '\t' + str_raw }
         }
 
         const left_lines  = text_left.split('\n').filter(Boolean)
