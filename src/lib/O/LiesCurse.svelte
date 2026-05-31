@@ -232,9 +232,9 @@
     //   - three-step is one call — src, src_Waft, and bump never go half-done
     //
     //   Cold-start rehydration: reads sc.accepted + sc.showing from %Point
-    //   particles and injects them as accepted_entries on %What_Points.
-    //   DocMinimap's accepted_push_id $effect fires on the bump and installs
-    //   the in-group from the snap without a push/echo round-trip.
+    //   particles directly on src and injects them as accepted_entries on
+    //   %What_Points.  DocMinimap's accepted_push_id $effect fires on the bump
+    //   and installs the in-group from the snap without a push/echo round-trip.
     //   accepted_push_id = 0 on a fresh load — DocMinimap's _our_last_push_id
     //   is also 0, but the guard is `push_id === _our_last_push_id`, so it
     //   would match and skip.  Use 1 as the seed so the first real push at
@@ -248,22 +248,20 @@
         wpt.sc.src_Waft = waft_key
 
         // Rehydrate accepted set from persisted sc.accepted on %Point particles.
+        // Points live directly on the %Doc — no %Points,1 container.
         // Only inject when there are accepted Points — avoids overwriting a live
         // accepted_entries that arrived from a prior push in this session.
-        const pointsC = src.o({ Points: 1 })[0] as TheC | undefined
-        if (pointsC) {
-            const pts = pointsC.o({ Point: 1 }) as TheC[]
-            const accepted = pts.filter(pt => pt.sc.accepted)
-            if (accepted.length) {
-                const entries = accepted.map(pt => ({
-                    spec:    pt.sc.method as string,
-                    showing: !!pt.sc.showing,
-                }))
-                // Use push_id = 1 as a cold-start sentinel (always < any real Date.now()).
-                // DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
-                wpt.sc.accepted_push_id = 1
-                wpt.sc.accepted_entries = entries
-            }
+        const pts = src.o({ Point: 1 }) as TheC[]
+        const accepted = pts.filter(pt => pt.sc.accepted)
+        if (accepted.length) {
+            const entries = accepted.map(pt => ({
+                spec:    pt.sc.method as string,
+                showing: !!pt.sc.showing,
+            }))
+            // Use push_id = 1 as a cold-start sentinel (always < any real Date.now()).
+            // DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
+            wpt.sc.accepted_push_id = 1
+            wpt.sc.accepted_entries = entries
         }
 
         wpt.bump_version()
@@ -332,14 +330,13 @@
         if (!doc_path || !what_point) return
 
         // Stamp accepted/showing on the %Point particles so the Waft snap persists them.
+        // Points live directly on the %Doc particle — no %Points,1 container.
         const accepted_specs = new Set(what_point.map(e => e.spec))
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
             if (!doc) continue
-            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
-            if (!pointsC) continue
             let dirty = false
-            for (const pt of pointsC.o({ Point: 1 }) as TheC[]) {
+            for (const pt of doc.o({ Point: 1 }) as TheC[]) {
                 const spec    = pt.sc.method as string
                 const was_acc = !!pt.sc.accepted
                 const now_acc = accepted_specs.has(spec)

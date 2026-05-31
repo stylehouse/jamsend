@@ -36,44 +36,6 @@ const throwOnFail = false
 onMount(async () => {
 await M.eatfunc({
 
-//#region helpers — LE API surface candidates
-//
-//   These three will migrate to LiesEnd.svelte once the test confirms them.
-//   They operate only on Seem:working's C tree and the U sphere — no D rewiring.
-
-    // ── LE_add_clone ────────────────────────────────────────────────────────
-    // Append a new child to the working clone tree with the given sc.
-    // The caller is responsible for supplying valid Waft sc (Point, What…).
-    // Returns the new clone so the caller can immediately write U meanings if
-    // needed.  The next LE_pull wires C.c.D and C.c.U for the new child.
-    LE_add_clone(LE: TheC, sc: Record<string, unknown>): TheC {
-        const H = this as House
-        const working = LE.oai({ Seem: 'working' })
-        const root    = working.sc.C as TheC | undefined
-        if (!root) throw 'LE_add_clone: no working C — call LE_pull first'
-        return root.i({ ...sc })
-    },
-
-    // ── LE_drop_clone ────────────────────────────────────────────────────────
-    // Mark a clone as a virtual deletion by setting U%unaccepted.
-    // The clone stays in the working tree so LE_accepted_clones can filter it;
-    // LE_push skips it. encode-compare omits it from working's snap via Seem_toString.
-    // Requires C.c.U — call LE_pull at least once after LE_arm before dropping.
-    LE_drop_clone(LE: TheC, clone: TheC) {
-        if (!clone.c.U) throw 'LE_drop_clone: clone has no U node — has LE_pull been called?'
-        clone.c.U.sc.unaccepted = 1
-    },
-
-    // ── LE_accepted_clones ──────────────────────────────────────────────────
-    // The working set minus virtual deletions.  What LE_push and Seem_toString
-    // will include in the next push / encode.
-    LE_accepted_clones(LE: TheC): TheC[] {
-        const H = this as House
-        return (H.LE_clones(LE) as TheC[]).filter(c => !c.c.U?.sc.unaccepted)
-    },
-
-//#endregion
-
 //#region Understandication
 
     async Understandication(A: TheC, w: TheC) {

@@ -31,8 +31,7 @@
     //   Snap format (wormhole/Ghost/Tour/toc.snap):
     //     Waft:Ghost/Tour
     //       Doc:1,path:Ghost/test/Hello.g
-    //         Points:1
-    //           Point:1,method:Idzeugnosis
+    //         Point:1,method:Idzeugnosis
     //
     //   codetype is derived from path extension — never stored on the particle.
     //   Waft,path is derived: path == sc.Waft (no redundant field stored).
@@ -554,19 +553,18 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!doc_path || !spec) return
 
         // Find the Point particle across all Wafts that own this doc.
+        // Points live directly on the %Doc particle — no %Points,1 container.
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
             if (!doc) continue
-            const pointsC = doc.o({ Points: 1 })[0] as TheC | undefined
-            if (!pointsC) continue
-            const point = pointsC.o({ Point: 1, method: spec })[0] as TheC | undefined
+            const point = doc.o({ Point: 1, method: spec })[0] as TheC | undefined
             if (!point) continue
 
             // Clear stale resolve metadata and issue children from prior navigate.
             delete point.sc.diag_kind
             delete point.sc.diag_from
             delete point.sc.diag_to
-            await pointsC.r({ Point_issue: 1, method: spec }, {})
+            await doc.r({ Point_issue: 1, method: spec }, {})
 
             // Stamp fresh resolve metadata.
             if (e.sc.kind  != null) point.sc.diag_kind = e.sc.kind
@@ -576,12 +574,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // Create a child for each imperfection so Liesui can list them.
             if (issues?.length) {
                 for (const msg of issues) {
-                    pointsC.i({ Point_issue: 1, method: spec, msg })
+                    doc.i({ Point_issue: 1, method: spec, msg })
                 }
                 console.warn(`📍 Point '${spec}' issues:`, issues)
             }
 
-            pointsC.bump_version()
+            doc.bump_version()
             return
         }
 
@@ -598,9 +596,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   the Point there.  If no Doc exists, creates it first.  If no Waft
     //   exists at all, spawns an hourly Look Waft.
     //
+    //   Points live directly on the %Doc particle — no %Points,1 container.
+    //   Identity is {Point:1,method}: a Point with the same method is the same
+    //   logical pointer and is skipped if already present.
+    //
     //   Point serial: a session-unique integer stored on w.c.  Seeds from
     //   Date.now() on first use so serials are monotonically increasing
-    //   across reloads even without disk persistence.
+    //   across reloads even without disk persistence.  Stored in sc only —
+    //   not part of the mainkey.
     //   < persist the counter in a stable Waft particle for true cross-session
     //     uniqueness once the snap format has a dedicated global-state Waft.
     //
@@ -632,16 +635,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         // Find or create the Doc row for this path in the target Waft.
-        const doc     = target_waft.oai({ Doc: 1, path })
-        const pointsC = doc.oai({ Points: 1 })
+        const doc = target_waft.oai({ Doc: 1, path })
 
         // Skip if a Point with the same method already exists (same logical pointer).
-        const already = pointsC.o({ Point: 1, method })[0] as TheC | undefined
+        const already = doc.o({ Point: 1, method })[0] as TheC | undefined
         if (!already) {
-            pointsC.i({ Point: serial, method, label, from, to })
+            doc.i({ Point: 1, method, label, from, to, serial })
             target_waft.bump_version()
             H.Lies_waft_save(w, target_waft)
-            console.log(`📌 exported Point ${serial} method='${method}' to Waft:${target_waft.sc.Waft}`)
+            console.log(`📌 exported Point method='${method}' to Waft:${target_waft.sc.Waft}`)
         } else {
             console.log(`📌 Point method='${method}' already in Waft — skipping`)
         }
