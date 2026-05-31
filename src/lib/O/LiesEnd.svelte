@@ -93,8 +93,8 @@ await M.eatfunc({
         for (const s of LE.o({ Seem: 1 })) LE.drop(s)
 
         H.i_Seem(LE, { Seem: 'origin', C: what_C })
-        const working = H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
-        working.sc.C = undefined   // < fabricated lazily on first pull
+        H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
+        // working.sc.C is absent — Seem_clone_C sets it on the first LE_pull
     },
 
     // ── o_Seem ──────────────────────────────────────────────────────────────

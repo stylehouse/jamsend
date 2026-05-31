@@ -76,23 +76,51 @@ So: **two Seems**, each its own `Selection`, both hung off one `%LiesEnd`.
 ```
 LE/%Seem:origin,Se:Selection(),C:$OC,topD         ← reads the remote OC**
   /D%Demonstrations:origin    ← is topD
-  
+
 LE/%Seem:working,Se:Selection(),C:$C,topD         ← holds the editable C**
   /D%Demonstrations:working   ← is topD
     /%Understandable           ← per-D U node, only when use_Understandable:1
 ```
 
-`use_Understandable:1` on `i_Seem` switches on the U sphere for that Seem:
-`traced_fn` stamps `C.c.D = D` and springs `D.oai({ Understandable:1 })`,
-caching it as `C.c.U`.  Only `Seem:working` uses this; `Seem:origin` does not.
-Callers navigate `C.c.U` directly to read or write meanings.
+`use_Understandable:1` on `i_Seem` switches on the U sphere for that Seem.
+In `traced_fn`: `C.c.D` is stamped with the D node, then `D.oai({ Understandable:1 })`
+is sprung and cached as `C.c.U`.  The U node survives re-walks because
+`%Understandable` is outside the `trace_sc` partial in `D.replace` — `resolve()`/
+`resume_X` carry it across as the same object.  Only `Seem:working` uses this;
+`Seem:origin` does not get a U sphere.  Callers navigate `C.c.U` directly:
 
-`H.i_Seem(LE, { Seem:'origin', ... })` embeds a Seem under LE.
+```
+C.c.U.i({ showing: 1 })           // write a meaning
+C.c.U.o({ showing: 1 })           // read it
 ```
 
-- **`C`** — the tree root this Seem walks.  For `Seem:origin` this is the remote
-  `%What` (the OC).  For `Seem:working` it is the fabricated clone (`Seem_clone_C`).
-- **`topD`** — the D-sphere root (`process_D`), r()'d fresh each pull.
+### How target and C arrive
+
+`LE_arm(LE, what_C)` sets `LE.sc.target = what_C`, drops any prior Seems, then
+creates both fresh.  `Seem:origin` gets `C: what_C` immediately — it IS the
+remote `%What`.  `Seem:working`'s `C` is absent until the first `LE_pull`, which
+runs `Seem_clone_C` to build it from origin's D nodes.  Thereafter `working.sc.C`
+persists across pulls as the editable clone tree.
+
+A typical session:
+
+```
+H.LE_arm(LE, target)              // aim at a %What; origin.C = target
+
+await H.LE_pull(LE)               // walk remote → origin D sphere (awareness)
+                                  // first pull also: Seem_clone_C → working.C
+                                  // walk working.C → working D/U sphere
+
+H.LE_clones(LE)[0].sc.method = 'renamed'   // edit a clone in place
+
+await H.LE_push(LE)               // replace-back; post-push LE_pull checks no-diff
+
+const { dirty } = await H.LE_encode_compare(LE)   // snap-compare for push-state
+```
+
+`LE_arm` drops both Seems on re-arm so their D/U spheres start empty — without
+this, `resolve()` pairs a fresh clone against a stale D node of similar shape and
+`resume_X` bleeds old meanings across to an unrelated target.
 
 ### `Seem:origin` — reading OC**
 
@@ -142,43 +170,6 @@ without re-deriving it from the live ropeways (the resumability note, applied).
 
 ---
 
-## then: pull · clones · push
-
-`Seem:origin` pulls for awareness; `Seem:working` walks the
-fabricated clone.  Clones are read off `Seem:working`'s `C` tree; push replaces
-the target's children with them.
-
-## Push — replace-back
-
-After modifying our clones and deciding they're modified via encoding, we mutate
-`%What` and replace everything within it with everything in our clone right now
-— such that if there was a `%What/%What/%Point`, it would resume on our newly
-replaced `%What/%What`.
-
-```
-LE_push(LE):
-  working = LE.oai({ Seem:'working' })   // the editable Seem
-  target  = LE.sc.target
-
-  // working.sc.C is the fabricated clean C** — no D-sphere tags in C.sc —
-  // so push is a straight copy.
-  await target.replace({}, async () =>
-    for C of working.sc.C.o({}):    // the working clones
-      target.i(C.sc)                // C.sc is clean — no filter, no strip
-      // local meanings on U (C.c.U) stay in the D sphere, invisible to push.
-      // nested %What resumes its deep Points via resume_X.
-  )
-
-  await LE_pull(LE)                  // post-push pull must be a no-diff
-  if LE.o({ neus:1 })[0]?.sc.neus > 0 || LE.o({ goners:1 })[0]?.sc.goners > 0:
-    LE.i({ push_dirty:1 })          // < fault C: push didn't land clean
-```
-
-you can't modify target.sc with this, you'd have to seek to the What above it
-so it's a C we can replace.
-
----
-
 ## Open / deferred
 
 ```
@@ -190,35 +181,3 @@ so it's a C we can replace.
 //   reads clone.oa({ accepted:1 }) at branch time — Chunk 4, not here.
 // < e_Lies_export_point still writes deprecated /%Doc/%Points,1/%Point,N.
 ```
-
----
-# U sphere — `use_Understandable` on `i_Seem`
-
-## What it does
-
-`use_Understandable:1` is an option to `i_Seem`.  When set, the Seem's
-`traced_fn` does two things after the D node is established for each clone:
-
-- stamps `C.c.D = D` — the clone knows its D node, re-set each walk.
-- springs `D.oai({ Understandable:1 })` and caches it as `C.c.U` — the
-  companion U node, ready for meanings.
-
-Only `Seem:working` uses this.  `Seem:origin` does not get a U sphere.
-
-Callers write and read meanings directly via `C.c.U`:
-
-```
-C.c.U.i({ showing: 1 })           // write
-C.c.U.o({ showing: 1 })           // read
-```
-
-## Why U survives re-walks
-
-A U node under D is out-of-partial in `D.replace` — `trace_sc` only covers the
-`Demonstrations:` tag, not `Understandable:`.  So `resolve()`/`resume_X` carry
-the U node across as the *same object* every time the working Seem re-walks.
-`C.c.U` stays valid without re-springing.
-
-Because U lives in the D sphere — hanging off D, not in the clone tree C — push
-(`target.i(C.sc)`) and `enWaft` (`Seem_toString`) never see meanings.
-The clone `C.sc` stays a clean pushable mirror.
