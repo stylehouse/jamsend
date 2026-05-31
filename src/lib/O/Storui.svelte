@@ -689,12 +689,14 @@
         navigator.clipboard.writeText('').catch(() => { /* prompt on actual write */ })
     }
 
-    // copy_single: immediately copies the open step without entering collect mode.
+    // copy_single: copies just this step and returns to idle — diff_collecting reset so
+    // the buttons collapse back to "copy" once the write completes.
     async function copy_single() {
         const n = display.open_at
         if (n == null) return
+        diff_collecting = false
+        diff_anchor     = null
         try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
-        diff_menu = false
         await collect_range(n, n, eff_mode)
     }
 
