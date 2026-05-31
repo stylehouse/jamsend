@@ -26,18 +26,18 @@ A `C:Point` is resolved by D and understood by U.  D is `%Demonstrations` —
 mainkey|match|trace-based.  U is `%Understandable`, hanging under one D node:
 `/%Demonstrations/%Understandable`.
 
-The `//` in `C:Point//U%showing` means: reach the D node for this C, then its
-`/%Understandable` child, and read `%showing`.  Every particle the checkout walk
+The `//` in `C:Point//U%unshowing` means: reach the D node for this C, then its
+`/%Understandable` child, and read `%unshowing`.  Every particle the checkout walk
 sees gets a D node (the D sphere), and the D node's `%Understandable` child is
-where the local meanings live:
+where local meanings live.  Absence is the positive case — C are showing and
+accepted by default:
 
 ```
-C:Point//U%showing     ← orb visible in this Understanding  (on the U node)
-C:Point//U%accepted    ← curated into this What's set        (on the U node)
+C:Point//U%unshowing   ← opt this clone out of the Lang UI display
+C:Point//U%unaccepted  ← virtual deletion: omit from next push and encode
 
-// these meanings are OF the Point within this Understanding, not IN the Point.
-// they imply positivity (inclusion, showing) and are kept out of the push
-// encoding.  the durable identity rides on the Point; showing|accepted ride on U.
+// meanings are OF the Point within this Understanding, not IN the Point.
+// the durable identity rides on the Point; unshowing|unaccepted ride on U.
 // the C** is clean — the entire .sc can be taken to replace the target/*.
 ```
 
@@ -87,40 +87,37 @@ In `traced_fn`: `C.c.D` is stamped with the D node, then `D.oai({ Understandable
 is sprung and cached as `C.c.U`.  The U node survives re-walks because
 `%Understandable` is outside the `trace_sc` partial in `D.replace` — `resolve()`/
 `resume_X` carry it across as the same object.  Only `Seem:working` uses this;
-`Seem:origin` does not get a U sphere.  Callers navigate `C.c.U` directly:
-
-```
-C.c.U.i({ showing: 1 })           // write a meaning
-C.c.U.o({ showing: 1 })           // read it
-```
+`Seem:origin` does not get a U sphere.  Callers navigate `C.c.U` directly.
 
 ### How target and C arrive
 
 `LE_arm(LE, what_C)` sets `LE.sc.target = what_C`, drops any prior Seems, then
-creates both fresh.  `Seem:origin` gets `C: what_C` immediately — it IS the
-remote `%What`.  `Seem:working`'s `C` is absent until the first `LE_pull`, which
-runs `Seem_clone_C` to build it from origin's D nodes.  Thereafter `working.sc.C`
-persists across pulls as the editable clone tree.
-
-A typical session:
-
-```
-H.LE_arm(LE, target)              // aim at a %What; origin.C = target
-
-await H.LE_pull(LE)               // walk remote → origin D sphere (awareness)
-                                  // first pull also: Seem_clone_C → working.C
-                                  // walk working.C → working D/U sphere
-
-H.LE_clones(LE)[0].sc.method = 'renamed'   // edit a clone in place
-
-await H.LE_push(LE)               // replace-back; post-push LE_pull checks no-diff
-
-const { dirty } = await H.LE_encode_compare(LE)   // snap-compare for push-state
-```
+creates both fresh.  `Seem:origin%C` is `what_C` immediately — it IS the remote
+`%What`.  `Seem:working%C` is absent until the first `LE_pull`, which runs
+`Seem_clone_C` to copy the source C** children directly (no strip — C.sc never
+carried D-sphere tags).  Thereafter `Seem:working%C` persists across pulls as the
+editable clone tree.
 
 `LE_arm` drops both Seems on re-arm so their D/U spheres start empty — without
 this, `resolve()` pairs a fresh clone against a stale D node of similar shape and
 `resume_X` bleeds old meanings across to an unrelated target.
+
+A typical session:
+
+```
+H.LE_arm(LE, target)              // aim at a %What; Seem:origin%C = target
+
+await H.LE_pull(LE)               // walk remote → origin D sphere (awareness)
+                                  // first pull: Seem_clone_C → Seem:working%C
+                                  // walk Seem:working%C → working D/U sphere
+
+H.LE_clones(LE)[0].sc.method = 'renamed'   // edit a clone in place
+H.LE_clones(LE)[1].c.U.sc.unaccepted = 1   // mark a clone for deletion
+
+await H.LE_push(LE)               // replace-back skipping unaccepted
+
+const { dirty } = await H.LE_encode_compare(LE)   // snap-compare for push-state
+```
 
 ### `Seem:origin` — reading OC**
 
@@ -131,13 +128,11 @@ the remote changed, time to refresh working.  It is *not* the push-state diff.
 
 ### `Seem:working` — holding the editable C**
 
-`Seem:working`'s `C` is **not** the remote.  It is a tree we **fabricate by
-cloning from OC** at pull time (`Seem_clone_C`), and walk thereafter.  Editing
-happens on C, the working clone; with `use_Understandable:1`, each D node gets a
-`/%Understandable` child where the of-not-in-the-Point meanings live.
-
-The fabricated clone is clean: strip the `Demonstrations:` trace tag from each D
-node's sc and you have a faithful `%What/%Point**` tree ready to push back.
+`Seem:working%C` is **not** the remote.  It is a tree we **fabricate by cloning
+the source C** children** at pull time (`Seem_clone_C`), and walk thereafter.
+`Seem_clone_C` copies directly from `Seem:origin%C` — no strip needed since C.sc
+never carries D-sphere tags.  With `use_Understandable:1`, each D node gets a
+`/%Understandable` child where of-not-in-the-Point meanings live.
 
 ### The diff that matters — Waft-encode compare
 
@@ -177,7 +172,14 @@ without re-deriving it from the live ropeways (the resumability note, applied).
 // < push_dirty not yet wired to a req fault particle in the reqy system.
 // < integration to Lang/Lies (Languinio/LE switching, wpt.sc.src = LE,
 //   path-match guards) excluded — LE must be a being-for-itself first.
-// < accepted|showing carry-forward into a new %What (+time / ↘ / ↓)
-//   reads clone.oa({ accepted:1 }) at branch time — Chunk 4, not here.
+// < unaccepted carry-forward into a new %What (+time / ↘ / ↓)
+//   reads clone.c.U?.sc.unaccepted at branch time — Chunk 4, not here.
 // < e_Lies_export_point still writes deprecated /%Doc/%Points,1/%Point,N.
+// < vanish: when an unaccepted clone's absence lands as a goner on the post-push
+//   awareness pull, push_dirty fires.  The fix: LE_push stamps bD/was_disincluded:1
+//   before the replace-back; resolved_fn recognises that goner as expected and
+//   suppresses push_dirty.  Needed before unaccepted is usable in production.
+// < unshowing: C.c.U?.sc.unshowing opts a clone out of the Lang UI; no
+//   effect on push or encode.  Lang reads it from each clone's U node when
+//   building fold/decoration state.
 ```

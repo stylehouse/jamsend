@@ -12,17 +12,24 @@
 //   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
 //   so LE/* is stable across pulls.
 //
+//   Seem_clone_C copies from the source C** directly — C.sc never carries
+//   D-sphere tags, so no strip is needed.  Working's D/U sphere is then built
+//   by walking that clone, keeping the two representations separate throughout.
+//
 //   use_Understandable:1 on i_Seem wires the U sphere for that Seem.  In
 //   traced_fn: C.c.D is stamped with the D node, then D.oai({ Understandable:1 })
-//   is sprung and cached as C.c.U.  Meanings are written on that U node, never
-//   on C.sc — C.sc is the pushable mirror and must stay clean.  Only
+//   is sprung and cached as C.c.U.  Local meanings are written on that U node,
+//   never on C.sc — C.sc is the pushable mirror and must stay clean.  Only
 //   Seem:working uses this; Seem:origin does not get a U sphere.
 //
-//   Encode compare: Seem_toString(Seem) encodes the Seem.sc.C tree's children via
-//   the real enWaft (Text.svelte); origin's C is the source %What, working's
-//   is the fabricated %What clone.  Both are clean Waft vocabulary, so enWaft's
-//   all_knowing protocol accepts them.  Encoding children-only drops the root
-//   line so two Whats with different labels compare equal on contents.
+//   U meanings are negative (absence = positive): C are showing and accepted by
+//   default.  U%unshowing opts a clone out of the Lang UI display; U%unaccepted
+//   omits it from the next push (treated as a virtual deletion).
+//
+//   Encode compare: Seem_toString(Seem) encodes the Seem:*%C tree's children via
+//   the real enWaft (Text.svelte).  Both Seems' C trees are clean Waft vocabulary
+//   so enWaft's all_knowing protocol accepts them.  Encoding children-only drops
+//   the root line so two Whats with different labels compare equal on contents.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
@@ -94,7 +101,7 @@ await M.eatfunc({
 
         H.i_Seem(LE, { Seem: 'origin', C: what_C })
         H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
-        // working.sc.C is absent — Seem_clone_C sets it on the first LE_pull
+        // Seem:working%C is absent — Seem_clone_C sets it on the first LE_pull
     },
 
     // ── o_Seem ──────────────────────────────────────────────────────────────
@@ -138,25 +145,16 @@ await M.eatfunc({
     },
 
     // ── Seem_clone_C ────────────────────────────────────────────────────────
-    // Build working's clean clone tree from origin's current D nodes.  Strips the
-    // D-sphere tag so each clone's .sc is a faithful, pushable mirror of the
-    // origin child — the strip the old single-Se model did at push time, moved
-    // earlier and made durable.  This is what retires the U_clone push-strip.
+    // Build working's clean clone tree by copying the source %What and its
+    // immediate C** children.  C.sc never carries D-sphere tags — that's the
+    // whole point of keeping C and D separate — so no strip is needed.
     //
-    // The root mirrors the source %What (same mainkey + label) because it IS the
-    // What we push back — the data flows origin → working and shouldn't be aware
-    // of which Seem holds it.  Being a %What also keeps it inside enWaft's
-    // all_knowing protocol, so it encodes without a fatal unknown-mainkey error.
-    Seem_clone_C(origin: TheC, topD: TheC): TheC {
+    // The root mirrors the source %What (same label) because it IS the What we
+    // push back.  Being a %What keeps it inside enWaft's all_knowing protocol.
+    Seem_clone_C(origin: TheC): TheC {
         const src_What = origin.sc.C as TheC
-        const tagKeys = Object.keys(origin.sc.opt.trace_sc)
-        const strip = (sc: any) => {
-            const clean = { ...sc }
-            for (const k of tagKeys) delete clean[k]
-            return clean
-        }
-        const root = _C(strip(src_What.sc))   // a %What:label, the pushable mirror
-        for (const D of topD.o({})) root.i(strip(D.sc))
+        const root = _C({ ...src_What.sc })
+        for (const child of src_What.o({}) as TheC[]) root.i({ ...child.sc })
         return root
     },
 
@@ -177,7 +175,7 @@ await M.eatfunc({
         const od = await H.o_Seem(origin, strict)
 
         if (working.sc.C === undefined) {
-            working.sc.C = H.Seem_clone_C(origin, od.topD)
+            working.sc.C = H.Seem_clone_C(origin)
         }
 
         const wd = await H.o_Seem(working, strict)
@@ -186,35 +184,42 @@ await M.eatfunc({
     },
 
     // ── LE_clones ─────────────────────────────────────────────────────────────
-    // The editable working clones (clean C**).  Meanings live on each one's
-    // C.c.U, never in C.sc — so the .sc stays pushable as-is.
+    // All editable working clones (clean C**).  Meanings live on C.c.U.
+    // Callers that push or encode filter out U%unaccepted themselves.
     LE_clones(LE: TheC): TheC[] {
         const working = LE.oai({ Seem: 'working' })
         return working.sc.C ? (working.sc.C as TheC).o({}) : []
     },
 
     // ── LE_push ─────────────────────────────────────────────────────────────
-    // Replace-back: put the working clones back as target's children.  C.sc is
-    // already clean (fabricated stripped), so push is a straight copy — no strip.
-    // A nested %What clone is shallow; resolve pairs it with the live source and
-    // resume_X hands its deep /%What/%Point back, untouched.
+    // Replace-back: put the accepted working clones back as target's children.
+    // C.sc is clean (copied from source), so push is a straight copy — no strip.
+    // A nested %What clone is shallow; resume_X hands its deep Points back.
     //
-    // (You replace target's children here, not target's own sc; to rename the
-    //  %What itself you'd replace from the What above it — see spec, Push.)
+    // Clones with U%unaccepted are omitted — they are virtual deletions.
+    // The post-push pull then sees their absence as expected goners; the
+    // vanish mechanism (bD/was_disincluded) to suppress push_dirty is deferred.
+    //
+    // (Replacing target's children, not target.sc — to rename the %What itself
+    //  you'd replace from the What above it.)
     async LE_push(LE: TheC) {
         const H = this as House
         const target = LE.sc.target as TheC
         const clones = H.LE_clones(LE)
 
         await target.replace({}, async () => {
-            for (const C of clones) target.i(C.sc)
+            for (const C of clones) {
+                if (C.c.U?.sc.unaccepted) continue   // U%unaccepted — virtual deletion
+                target.i(C.sc)
+            }
         })
 
-        // post-push awareness pull must be a no-diff
+        // post-push awareness pull must be a no-diff for accepted clones.
+        // < unaccepted clones cause structural goners; push_dirty fires until
+        //   was_disincluded is wired to suppress it. see Open/deferred.
         const { goners, neus } = await H.LE_pull(LE)
         if (goners.length || neus.length) {
-            // < structural awareness only catches whole-C drift; value-edit drift
-            //   needs the enWaft compare (LE_encode_compare).  < not yet a reqy fault C.
+            // < not yet a reqy fault C.
             LE.i({ push_dirty: 1, stale_goners: '' + goners.length, stale_neus: '' + neus.length })
         }
     },
@@ -222,26 +227,27 @@ await M.eatfunc({
     // ── Seem_toString ───────────────────────────────────────────────────────
     // Encode a Seem's C tree to snap text via the real enWaft (Text.svelte).
     //   origin's C  = the live source %What   (what the remote looks like)
-    //   working's C = the fabricated %What clone (what we'd push)
+    //   working's C = the clone tree           (what we'd push)
     //
-    // Both are now %What roots (Seem_clone_C mirrors the source), so either
-    // could be encoded whole.  We encode each *child* and join instead — this
-    // drops the root %What line so two Whats with different labels still compare
-    // equal on contents alone, which is what the push-state diff cares about.
+    // Encoding children-only drops the root %What line so two Whats with
+    // different labels compare equal on contents alone.
     //
-    // %showing/%accepted live on C.c.U, never in C.sc, so enWaft never sees them
-    // regardless of its SESSION_KEYS — the snap stays a pure push encoding.
+    // U%unaccepted clones are omitted from working's snap — they are virtual
+    // deletions.  U%unshowing has no effect here (Lang UI concern only).
+    // U meanings live on C.c.U, never in C.sc, so enWaft never sees them.
     //
-    // Returns { snap, errors }; errors non-empty means a child failed protocol
-    // (a real fault — the clone tree should only ever hold Waft vocabulary).
+    // Returns { snap, errors }; errors mean a child failed enWaft protocol
+    // (real fault — the clone tree should only hold Waft vocabulary).
     async Seem_toString(Seem: TheC): Promise<{ snap: string, errors: string[] }> {
         const H = this as House
         const C = Seem.sc.C as TheC | undefined
         if (!C) return { snap: '', errors: [] }
 
+        const is_working = Seem.sc.Seem === 'working'
         let snap = ''
         const errors: string[] = []
         for (const child of C.o({}) as TheC[]) {
+            if (is_working && child.c.U?.sc.unaccepted) continue   // U%unaccepted
             const r = await H.enWaft(child)
             snap += r.snap
             if (r.errors.length) errors.push(...r.errors)

@@ -8,13 +8,13 @@
 //     2  re-pull unchanged            (no-diff; D/** persists)
 //     3  source gains a Point         (1 neu)
 //     4  source drops that Point      (1 goner)
-//     5  write a local meaning        (%showing via C.c.U; clone .sc stays clean)
-//     6  re-pull with local meaning   (no-diff; %showing survives in U sphere; never on source)
+//     5  write a local meaning        (%unshowing via C.c.U; clone .sc stays clean)
+//     6  re-pull with local meaning   (no-diff; %unshowing survives in U sphere; never on source)
 //     7  edit a clone; push           (replace-back; post-push no-diff)
 //     8  deep %What resumes on push   (resume_X; /%What/%Point never moved)
 //     9  re-arm on a new target       (checkout switches; next pull diffs fresh)
 //    10  resolve_strict fork          (characterises resolve() primitive; < retire)
-//    11  encode-compare clean         (Seem_toString on both topns; equal after no-edit pull)
+//    11  encode-compare clean         (Seem_toString on both C trees; equal after no-edit pull)
 //    12  encode-compare dirty         (clone sc edit makes snap_working diverge)
 //    13  encode-compare after push    (push lands; compare clean; enc_src/LE3 dropped)
 
@@ -145,43 +145,44 @@ await M.eatfunc({
             },
 
             // ── Step 5: write a local meaning on the clone ────────────────────
-            //   %showing written on chosen.c.U — the %Understandable node sprung
-            //   under chosen's D node by traced_fn (use_Understandable:1).  The
-            //   clone's .sc is untouched, so it stays a clean pushable mirror;
-            //   the U node lives in the D sphere, invisible to push.
+            //   %unshowing written on chosen.c.U — the %Understandable node sprung
+            //   under chosen's D node by traced_fn (use_Understandable:1).  Absence
+            //   is the positive case; setting %unshowing opts the clone out of the
+            //   Lang UI.  The clone's .sc is untouched, so it stays a clean pushable
+            //   mirror; the U node lives in the D sphere, invisible to push.
             5: async () => {
                 const r = w.i({ see: 'step 5 local meaning' })
 
                 const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
-                chosen.c.U.i({ showing: 1 })
-                r.i({ wrote_showing_onto: lm(chosen) })
+                chosen.c.U.sc.unshowing = 1
+                r.i({ wrote_unshowing_onto: lm(chosen) })
 
                 const U = chosen.c.U
-                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
-                check(r, 'clone sc stays clean (no showing in .sc)', !chosen.oa({ showing: 1 }))
-                check(r, '%showing readable on the U node', chosen.c.U.o({ showing: 1 }).length === 1)
+                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].sc.unshowing
+                check(r, 'clone sc stays clean (no unshowing in .sc)', !chosen.sc.unshowing)
+                check(r, '%unshowing readable on the U node', !!chosen.c.U.sc.unshowing)
                 check(r, 'U is a separate %Understandable node hung under D',
                     U !== chosen.c.D && U.sc.Understandable === 1 &&
                     chosen.c.D.o({ Understandable: 1 })[0] === U)
-                check(r, '%showing not on source %Point', !onSource)
+                check(r, '%unshowing not on source %Point', !onSource)
             },
 
             // ── Step 6: re-pull with local meaning present ────────────────────
             6: async () => {
-                const r = w.i({ see: 'step 6 repull with showing' })
+                const r = w.i({ see: 'step 6 repull with unshowing' })
 
                 const { goners, neus } = await H.LE_pull(LE)
                 r.i({ goners: '' + goners.length, neus: '' + neus.length })
-                check(r, 're-pull no-diff with %showing present',
+                check(r, 're-pull no-diff with %unshowing present',
                     goners.length === 0 && neus.length === 0)
 
                 const chosen   = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
-                const onClone  = chosen.c.U.o({ showing: 1 })
-                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].oa({ showing: 1 })
-                check(r, '%showing survived re-pull (found through the join)', onClone.length === 1)
+                const onClone  = chosen.c.U.sc.unshowing
+                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].sc.unshowing
+                check(r, '%unshowing survived re-pull on the U node', !!onClone)
                 check(r, 'U re-found under the freshly-traced D node (resume_X)',
                     chosen.c.D.o({ Understandable: 1 })[0] === chosen.c.U)
-                check(r, '%showing never reached the source %Point', !onSource)
+                check(r, '%unshowing never reached the source %Point', !onSource)
             },
 
             // ── Step 7: edit a clone's sc; push ───────────────────────────────
@@ -218,7 +219,7 @@ await M.eatfunc({
             //   NOT a clean swap — resolve() pairs greedily by sc similarity, so
             //   old clones may pair with new Points as survivors.  What we assert
             //   is the end state: the U holds exactly the new target's children,
-            //   and no %showing leaked across from the prior Understanding.
+            //   and no meaning leaked across from the prior Understanding.
             9: async () => {
                 const r = w.i({ see: 'step 9 rearm' })
 
@@ -240,14 +241,13 @@ await M.eatfunc({
                 check(r, 're-arm: U holds the new target Points',
                     methods.length === 2 && methods[0] === 'alpha' && methods[1] === 'beta')
 
-                // neus are origin D nodes — checking them for showing is vacuous (they
-                // never carry it).  The real hazard is a new working clone's U
-                // inheriting a meaning from a prior Understanding via sphere-resume:
-                // resolve() pairs a fresh clone against a stale D node of similar shape
-                // and resume_X hands back the old U node with its showing.  A fresh arm
-                // drops both Seems so the spheres reset; this check catches any regression.
-                const showingOnCloneU = H.LE_clones(LE).some(c => !!c.c.D?.o({ Understandable: 1 })[0]?.oa({ showing: 1 }))
-                check(r, "no meaning on any new clone's companion U", !showingOnCloneU)
+                // The real hazard is a new working clone's U inheriting a meaning
+                // from a prior Understanding via sphere-resume: resolve() pairs a
+                // fresh clone against a stale D node of similar shape and resume_X
+                // hands back the old U node with its unshowing.  A fresh arm drops
+                // both Seems so the spheres reset; this check catches any regression.
+                const unshowingOnCloneU = H.LE_clones(LE).some(c => !!c.c.D?.o({ Understandable: 1 })[0]?.sc.unshowing)
+                check(r, "no meaning on any new clone's companion U", !unshowingOnCloneU)
             },
 
             // ── Step 10: resolve_strict — characterising the primitive ────────
@@ -286,11 +286,10 @@ await M.eatfunc({
             },
 
             // ── Step 11: encode-compare clean ─────────────────────────────────
-            //   After a no-edit pull the two snaps are identical: working's clone
-            //   tree mirrors origin's source %What.  Seem_toString walks topn
-            //   directly — no D-sphere tags, no strip needed.  %showing lives on
-            //   the U node in the D sphere (C.c.U), never in C.sc, so it
-            //   never reaches the snap.
+            //   After a no-edit pull the two snaps are identical: Seem:working%C
+            //   mirrors Seem:origin%C.  Seem_toString walks C directly — no D-sphere
+            //   tags, no strip needed.  U%unshowing lives on C.c.U in the D sphere,
+            //   never in C.sc, so it never reaches the snap.
             11: async () => {
                 // drop step 10's LE2/src2 now they've been snapped — particles
                 // are dropped the step AFTER they're captured, not the step that
@@ -311,14 +310,14 @@ await M.eatfunc({
                 await H.LE_pull(LE3)
 
                 // local meaning — must not appear in the snap
-                H.LE_clones(LE3).find(c => c.sc.method === 'one')!.c.U.i({ showing: 1 })
+                H.LE_clones(LE3).find(c => c.sc.method === 'one')!.c.U.sc.unshowing = 1
 
                 const { snap_origin, snap_working, dirty } = await H.LE_encode_compare(LE3)
                 r.i({ snap_origin, snap_working, dirty: dirty ? '1' : '0' })
 
                 check(r, 'clean compare: not dirty', !dirty)
                 check(r, 'snaps are equal', snap_origin === snap_working)
-                check(r, '%showing absent from working snap', !snap_working.includes('showing'))
+                check(r, '%unshowing absent from working snap', !snap_working.includes('unshowing'))
                 check(r, 'encode record on LE3 — replaced not piled', LE3.o({ encode: 1 }).length === 1)
             },
 
