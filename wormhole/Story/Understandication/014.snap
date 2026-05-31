@@ -3,10 +3,8 @@ Snap:H
     A:Understandication
       {"mung":["age"]}	self,round:14
       w:Understandication
-        tally,passed:42,failed
+        tally,passed:43,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"0"}
-          push_dirty,stale_goners:0,stale_neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Doc_open
@@ -46,5 +44,5 @@ Snap:H
         see:step 14 unshowing wander hygiene
           PASS,t:no unshowing on fresh routing clones after re-arm wander
           PASS,t:Lang_compile unshowing never in routing sphere
-        VERDICT:RED,passed:42,failed
+        VERDICT:ALL_GREEN,passed:43
     {"mung":["id"]}	mo:main,interval:3.6

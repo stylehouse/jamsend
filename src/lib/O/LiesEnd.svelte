@@ -193,8 +193,8 @@ await M.eatfunc({
     // A nested %What clone is shallow; resume_X hands its deep Points back.
     //
     // Clones with U%unaccepted are omitted — they are virtual deletions.
-    // The post-push pull then sees their absence as expected goners; the
-    // vanish mechanism (bD/was_disincluded) to suppress push_dirty is deferred.
+    // Post-push encode-compare handles both cases cleanly: after a deletion push,
+    // origin's snap no longer has the absent child either, so the snaps match.
     //
     // (Replacing target's children, not target.sc — to rename the %What itself
     //  you'd replace from the What above it.)
@@ -210,13 +210,16 @@ await M.eatfunc({
             }
         })
 
-        // post-push awareness pull must be a no-diff for accepted clones.
-        // < unaccepted clones cause structural goners; push_dirty fires until
-        //   was_disincluded is wired to suppress it. see Open/deferred.
-        const { goners, neus } = await H.LE_pull(LE)
-        if (goners.length || neus.length) {
-            // < not yet a reqy fault C.
-            LE.i({ push_dirty: 1, stale_goners: '' + goners.length, stale_neus: '' + neus.length })
+        // Post-push check: encode-compare is the right signal for drift.
+        // The structural goners/neus diff would fire on anything we just pushed
+        // (additions land as neus; unaccepted deletions land as goners) — false
+        // positives in both directions.  Encode-compare sees the same shallow
+        // extent on both sides so it's clean when the push landed cleanly.
+        // < push_dirty not yet a reqy fault C.
+        await H.LE_pull(LE)
+        const { dirty } = await H.LE_encode_compare(LE)
+        if (dirty) {
+            LE.i({ push_dirty: 1 })
         }
     },
 
@@ -265,28 +268,26 @@ await M.eatfunc({
 
     // ── LE_encode_compare ───────────────────────────────────────────────────
     // Encode origin and working Seems via Seem_toString and compare.  Equal snaps
-    // mean the push would carry nothing.  Stores the result on LE/%encode
-    // (replaced, not piled) so a reload or "push anyway" resumes push-state
-    // without re-deriving it from the live ropeways.
+    // mean the push would carry nothing.
+    //
+    // Result cached on Seem:working.c.encode — transient, never snapped.
+    // Callers that want to surface the snaps do so explicitly (e.g. via
+    // %see,string particles in tests).
     //
     // encode_errors flags a malformed clone tree (a non-Waft mainkey slipped into
-    // working) — surfaced on the encode record, not swallowed.
+    // working) — returned to caller, not swallowed.
     async LE_encode_compare(LE: TheC) {
         const H = this as House
         const origin  = LE.oai({ Seem: 'origin' })
         const working = LE.oai({ Seem: 'working' })
 
-        const o = await H.Seem_toString(origin)
+        const o  = await H.Seem_toString(origin)
         const wk = await H.Seem_toString(working)
         const dirty = o.snap !== wk.snap
         const encode_errors = [...o.errors, ...wk.errors]
 
-        await LE.r({ encode: 1 }, {
-            snap_origin:  o.snap,
-            snap_working: wk.snap,
-            dirty:        dirty ? '1' : '0',
-            ...(encode_errors.length ? { encode_errors: encode_errors.join('; ') } : {}),
-        })
+        // Cache on .c — invisible to snap, survives across calls without piling.
+        working.c.encode = { snap_origin: o.snap, snap_working: wk.snap, dirty, encode_errors }
 
         return { snap_origin: o.snap, snap_working: wk.snap, dirty, encode_errors }
     },

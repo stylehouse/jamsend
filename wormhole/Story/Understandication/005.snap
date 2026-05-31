@@ -26,7 +26,6 @@ Snap:H
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
             News:working,goners:0,neus
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"1"}
         src
           What,label:routing
             Point,method:e_Doc_open

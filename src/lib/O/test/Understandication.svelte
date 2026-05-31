@@ -56,8 +56,8 @@ await M.eatfunc({
 
     // ── LE_drop_clone ────────────────────────────────────────────────────────
     // Mark a clone as a virtual deletion by setting U%unaccepted.
-    // The clone stays in the working tree so callers and the encode snap can see
-    // it is gone; LE_push skips it, and LE_accepted_clones filters it out.
+    // The clone stays in the working tree so LE_accepted_clones can filter it;
+    // LE_push skips it. encode-compare omits it from working's snap via Seem_toString.
     // Requires C.c.U — call LE_pull at least once after LE_arm before dropping.
     LE_drop_clone(LE: TheC, clone: TheC) {
         if (!clone.c.U) throw 'LE_drop_clone: clone has no U node — has LE_pull been called?'
@@ -305,9 +305,8 @@ await M.eatfunc({
 
             // ── Step 9: push the deletion ─────────────────────────────────────
             //   path_guard must be absent from the source after push.
-            //   post-push pull sees path_guard as a goner on origin — this fires
-            //   push_dirty until was_disincluded is wired (known open fault).
-            //   Test documents the open fault rather than asserting its absence.
+            //   encode-compare sees the same shallow extent on both sides after push —
+            //   origin no longer has path_guard either, so the snaps match, no push_dirty.
             9: async () => {
                 const r = w.i({ see: 'step 9 push deletion' })
 
@@ -320,9 +319,9 @@ await M.eatfunc({
                 r.i({ push_dirty_fires: push_dirty ? '1' : '0' })
 
                 check(r, 'path_guard gone from source', on_source.length === 0)
-                // < push_dirty fires because was_disincluded is not yet wired.
-                //   Once vanish mechanism lands this check should flip to !push_dirty.
-                check(r, 'push_dirty fires for unaccepted (expected open fault)', !!push_dirty)
+                // encode-compare gates push_dirty: after a clean deletion push the
+                // snaps match on both sides, so push_dirty should not fire.
+                check(r, 'no push_dirty after clean deletion push', !push_dirty)
             },
 
             // ── Step 10: combined — add one + drop one, push both at once ─────
@@ -332,9 +331,6 @@ await M.eatfunc({
             //   pipeline_start, loses new_route_handler.
             10: async () => {
                 const r = w.i({ see: 'step 10 compound edit push' })
-
-                // drop any leftover push_dirty from step 9
-                for (const pd of LE.o({ push_dirty: 1 }) as TheC[]) LE.drop(pd)
 
                 // clean slate — re-arm to clear the stale unaccepted U meaning
                 H.LE_arm(LE, routing)

@@ -3,7 +3,7 @@ Snap:H
     A:Understandication
       {"mung":["age"]}	self,round:9
       w:Understandication
-        tally,passed:27,failed
+        tally,passed:28,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -26,9 +26,6 @@ Snap:H
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
             News:working,goners:0,neus:0
-          push_dirty,stale_goners:0,stale_neus
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"1"}
-          push_dirty,stale_goners,stale_neus:0
         src
           What,label:routing
             Point,method:e_Doc_open
@@ -47,7 +44,7 @@ Snap:H
         {"mung":["age"]}	self,round:9
         see:step 9 push deletion
           path_guard_on_source:0
-          push_dirty_fires
+          push_dirty_fires:0
           PASS,t:path_guard gone from source
-          PASS,t:push_dirty fires for unaccepted (expected open fault)
+          PASS,t:no push_dirty after clean deletion push
     {"mung":["id"]}	mo:main,interval:3.6

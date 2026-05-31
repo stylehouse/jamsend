@@ -3,7 +3,7 @@ Snap:H
     A:Understandication
       {"mung":["age"]}	self,round:10
       w:Understandication
-        tally,passed:31,failed
+        tally,passed:32,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -26,7 +26,6 @@ Snap:H
               Demonstrations:working,Point,method:pipeline_start
                 Understandable
             News:working,goners:0,neus:0
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Doc_open

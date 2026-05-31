@@ -3,10 +3,8 @@ Snap:H
     A:Understandication
       {"mung":["age"]}	self,round:12
       w:Understandication
-        tally,passed:38,failed
+        tally,passed:39,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
-          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"0"}
-          push_dirty,stale_goners:0,stale_neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Doc_open
