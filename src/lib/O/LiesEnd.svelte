@@ -144,25 +144,17 @@ await M.eatfunc({
     },
 
     // ── LE_fabricate ────────────────────────────────────────────────────────
-    // Build working's clean clone tree from origin's current D nodes.  Strips the
-    // D-sphere tag so each clone's .sc is a faithful, pushable mirror of the
-    // origin child — the strip the old single-Se model did at push time, moved
-    // earlier and made durable.  This is what retires the U_clone push-strip.
+    // Build working's clean clone tree directly from the origin source particles —
+    // not from the D nodes.  D nodes carry trace tags ({Demonstrations:…}) mixed
+    // into their sc; unwrapping them is fragile and wrong: D nodes are tracing
+    // artifacts, not the source of truth.  od.topn.o({}) gives the actual source
+    // children with clean sc, no strip needed.
     //
-    // The root mirrors the source %What (same mainkey + label) because it IS the
-    // What we push back — the data flows origin → working and shouldn't be aware
-    // of which Seem holds it.  Being a %What also keeps it inside enWaft's
-    // all_knowing protocol, so it encodes without a fatal unknown-mainkey error.
-    LE_fabricate(origin: TheC, topD: TheC): TheC {
+    // The root mirrors the source %What (same sc): it IS the What pushed back.
+    LE_fabricate(origin: TheC): TheC {
         const src_What = origin.sc.topn as TheC
-        const tagKeys = Object.keys(origin.sc.opt.trace_sc)
-        const strip = (sc: any) => {
-            const clean = { ...sc }
-            for (const k of tagKeys) delete clean[k]
-            return clean
-        }
-        const root = _C(strip(src_What.sc))   // a %What:label, the pushable mirror
-        for (const D of topD.o({})) root.i(strip(D.sc))
+        const root = _C({ ...src_What.sc })
+        for (const child of src_What.o({})) root.i({ ...child.sc })
         return root
     },
 
@@ -183,7 +175,7 @@ await M.eatfunc({
         const od = await H.o_Seem(origin, strict)
 
         if (working.sc.topn === undefined) {
-            working.sc.topn = H.LE_fabricate(origin, od.topD)
+            working.sc.topn = H.LE_fabricate(origin)
         }
 
         const wd = await H.o_Seem(working, strict)
@@ -222,7 +214,7 @@ await M.eatfunc({
 
     // ── LE_push ─────────────────────────────────────────────────────────────
     // Replace-back: put the working clones back as target's children.  C.sc is
-    // already clean (fabricated stripped), so push is a straight copy — no strip.
+    // already clean (fabricated directly from source sc), so push is a straight copy.
     // A nested %What clone is shallow; resolve pairs it with the live source and
     // resume_X hands its deep /%What/%Point back, untouched.
     //

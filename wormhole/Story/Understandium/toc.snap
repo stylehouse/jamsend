@@ -19,8 +19,7 @@ story:Understandium
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.144
-      sample:0.126,at:1780168634
+    TimeTotal:beliefs,avg:0.142
       sample:0.107,at:1780169435
       sample:0.098,at:1780169478
       sample:0.098,at:1780169521
@@ -30,6 +29,7 @@ story:Understandium
       sample:0.132,at:1780192959
       sample:0.16,at:1780195133
       sample:0.16,at:1780196222
+      sample:0.104,at:1780196255
   step,dige:d54453f6a7b7bd5a
   step:2,dige:b5ff0d7fe237282c
   step:3,dige:be4284cda7f9aace
