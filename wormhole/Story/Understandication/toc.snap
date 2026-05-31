@@ -1,0 +1,18 @@
+story:Understandication
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+  Plan
+  Opt
+    For
+    noCyto
+  TimeSpool
+    TimeTotal:beliefs,avg:0.004
+      sample:0.004,at:1780207565
+      sample:0.002,at:1780207592
+      sample:0.001,at:1780207597
+      sample:0.001,at:1780207600
+      sample:0.014,at:1780207635
+  step,dige:acb492ef95f01b6f

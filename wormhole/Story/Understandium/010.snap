@@ -5,12 +5,12 @@ Snap:H
       w:Understandium
         tally,passed:25,failed:0
         {"ref":{"target":"%What:1, label:second"}}	LE
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%Demonstrations:origin"}}	Seem:origin
+          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:alpha2
               Demonstrations:origin,Point,method:beta
             News:origin,goners:0,neus:0
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%Demonstrations:working"}}	Seem:working
+          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
               Demonstrations:working,Point,method:alpha2
@@ -38,13 +38,13 @@ Snap:H
             neu:e_Doc_open_v2
           {"PASS":1,"t":"resolve_strict: rename is goner + neu"}
         {"ref":{"target":"%What:1, label:routing"}}	LE2
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
+          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Doc_open_v2
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners,neus
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
+          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
               Demonstrations:working,Point,method:e_Doc_open

@@ -5,18 +5,17 @@ Snap:H
       w:Understandium
         tally,passed:17,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
+          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Doc_open
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners:0,neus:0
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
+          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
               Demonstrations:working,Point,method:e_Doc_open
-                Understandable
-                  showing
+                Understandable,unshowing
               Demonstrations:working,Point,method:Lang_doc_from_event
                 Understandable
               Demonstrations:working,What,label:deeper
@@ -29,10 +28,10 @@ Snap:H
             What,label:deeper
               Point,method:inner_secret
         {"mung":["age"]}	self,round:6
-        see:step 6 repull with showing
+        see:step 6 repull with unshowing
           goners:0,neus:0
-          PASS,t:re-pull no-diff with %showing present
-          PASS,t:%showing survived re-pull (found through the join)
+          PASS,t:re-pull no-diff with %unshowing present
+          PASS,t:%unshowing survived re-pull on the U node
           PASS,t:U re-found under the freshly-traced D node (resume_X)
-          PASS,t:%showing never reached the source %Point
+          PASS,t:%unshowing never reached the source %Point
     {"mung":["id"]}	mo:main,interval:3.6

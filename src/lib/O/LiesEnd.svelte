@@ -1,5 +1,4 @@
 <script lang="ts">
-//#region LiesEnd
 // LiesEnd.svelte — the Understanding housing (two-Seem model).
 //
 //   Lies commissions Lang to look at an area of the Waft/%What** graph; an
@@ -12,24 +11,10 @@
 //   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
 //   so LE/* is stable across pulls.
 //
-//   Seem_clone_C copies from the source C** directly — C.sc never carries
-//   D-sphere tags, so no strip is needed.  Working's D/U sphere is then built
-//   by walking that clone, keeping the two representations separate throughout.
-//
-//   use_Understandable:1 on i_Seem wires the U sphere for that Seem.  In
-//   traced_fn: C.c.D is stamped with the D node, then D.oai({ Understandable:1 })
-//   is sprung and cached as C.c.U.  Local meanings are written on that U node,
-//   never on C.sc — C.sc is the pushable mirror and must stay clean.  Only
-//   Seem:working uses this; Seem:origin does not get a U sphere.
-//
-//   U meanings are negative (absence = positive): C are showing and accepted by
-//   default.  U%unshowing opts a clone out of the Lang UI display; U%unaccepted
-//   omits it from the next push (treated as a virtual deletion).
-//
-//   Encode compare: Seem_toString(Seem) encodes the Seem:*%C tree's children via
-//   the real enWaft (Text.svelte).  Both Seems' C trees are clean Waft vocabulary
-//   so enWaft's all_knowing protocol accepts them.  Encoding children-only drops
-//   the root line so two Whats with different labels compare equal on contents.
+//   C.sc never carries D-sphere tags; local meanings live on C.c.U (the
+//   %Understandable node).  Regarding the U%* we know about so far, absence is
+//   positive: they (meaning C) are showing and accepted by default.
+//   U%unshowing opts a clone out of the Lang UI; U%unaccepted omits it from push.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
@@ -41,7 +26,7 @@ let { M } = $props()
 onMount(async () => {
 await M.eatfunc({
 
-//#region LiesEnd
+//#region Seem
 
 
     // ── i_Seem ──────────────────────────────────────────────────────────────
@@ -51,20 +36,16 @@ await M.eatfunc({
     //
     //   opt: { Seem, match_sc?, trace_sc?, C?, use_Understandable?,
     //          each_fn?, trace_fn?, traced_fn? }
-    //
-    // use_Understandable:1 — in traced_fn, stamps C.c.D and springs
-    //   D.oai({ Understandable:1 }) cached as C.c.U.  U survives re-walks
-    //   because %Understandable is outside the trace_sc partial in D.replace.
-    //
-    // The D-sphere root (topD) is NOT created here — it is r()'d fresh each pull
-    // (fresh .c.T while D/** resumes via resume_X), so i_Seem only records intent.
+
     i_Seem(LE: TheC, opt: any): TheC {
+        const H = this as House
         const Seem = LE.oai({ Seem: opt.Seem })
         Seem.sc.Se ??= new Selection({})
         const trace_sc = opt.trace_sc ?? { Demonstrations: opt.Seem }
         Seem.sc.opt = {
             match_sc: opt.match_sc ?? {},
             trace_sc,
+            use_Understandable: opt.use_Understandable,
             // shallow: clone the immediate child layer only.  A nested %What gets
             // a D node but is never entered — its deep Points resume on push.
             each_fn: opt.each_fn ?? (async (_D: TheC, _C: TheC, T: any) => {
@@ -76,8 +57,9 @@ await M.eatfunc({
                 uD.i({ ...trace_sc, ...C.sc })),
             traced_fn: opt.traced_fn ?? (opt.use_Understandable
                 ? async (D: TheC, _bD: TheC, C: TheC, _T: any) => {
-                    C.c.D = D
-                    C.c.U = D.oai({ Understandable: 1 })
+                    H._Seem_CDUsive(C, D, Seem)
+                    // < extendo protocol: custom traced_fn callers call _Seem_CDUsive
+                    //   first, then add their own per-D logic.
                 }
                 : undefined),
         }
@@ -85,23 +67,12 @@ await M.eatfunc({
         return Seem
     },
 
-    // ── LE_arm ──────────────────────────────────────────────────────────────
-    // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
-    // the remote for awareness; working holds the editable clones (Seem.sc.C
-    // fabricated lazily on first pull).
-    LE_arm(LE: TheC, what_C: TheC) {
-        const H = this as House
-        LE.sc.target = what_C
-        // A re-arm is a new Understanding: drop any prior Seems so their D/U
-        // spheres start empty.  Otherwise resolve() on the next walk pairs a
-        // fresh clone against a stale D node of a similar shape (Point↔Point)
-        // and resume_X carries the old U node — and its meanings — across to an
-        // unrelated target.  Fresh C alone is not enough; the sphere leaks.
-        for (const s of LE.o({ Seem: 1 })) LE.drop(s)
-
-        H.i_Seem(LE, { Seem: 'origin', C: what_C })
-        H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
-        // Seem:working%C is absent — Seem_clone_C sets it on the first LE_pull
+    // ── _Seem_CDUsive ────────────────────────────────────────────
+    // Wire C to its D node (and U node if use_Understandable).
+    // Custom traced_fn callers call this first, then extend.
+    _Seem_CDUsive(C: TheC, D: TheC, Seem: TheC) {
+        C.c.D = D
+        if (Seem.sc.opt.use_Understandable) C.c.U = D.oai({ Understandable: 1 })
     },
 
     // ── o_Seem ──────────────────────────────────────────────────────────────
@@ -112,6 +83,7 @@ await M.eatfunc({
     // Seem/%News is r()'d each call so the count particle never piles up.
     // Callers read Seem.o({ News: seemName })[0] for the latest counts.
     async o_Seem(Seem: TheC, strict = 0) {
+        const H = this as House
         const Se: Selection = Seem.sc.Se
         const seemName = Seem.sc.Seem
         const topD = await Seem.r({ Demonstrations: seemName })
@@ -133,6 +105,12 @@ await M.eatfunc({
             },
         })
 
+        // traced_fn fires for each child D node, not the root.  Wire the root
+        // clone's D and U via _Seem_CDUsive so the root matches its children.
+        if (Seem.sc.opt.use_Understandable && Seem.sc.C) {
+            H._Seem_CDUsive(Seem.sc.C as TheC, topD, Seem)
+        }
+
         // replace-not-pile: Seem/%News carries the latest counts only.
         // stringified so bare 1 never reads as the has-key wildcard.
         await Seem.r({ News: seemName }, {
@@ -145,17 +123,35 @@ await M.eatfunc({
     },
 
     // ── Seem_clone_C ────────────────────────────────────────────────────────
-    // Build working's clean clone tree by copying the source %What and its
-    // immediate C** children.  C.sc never carries D-sphere tags — that's the
-    // whole point of keeping C and D separate — so no strip is needed.
-    //
-    // The root mirrors the source %What (same label) because it IS the What we
-    // push back.  Being a %What keeps it inside enWaft's all_knowing protocol.
+    // Shallow copy of origin's C** children into a fresh root.  Root mirrors
+    // the source %What so it stays inside enWaft's all_knowing protocol on push.
     Seem_clone_C(origin: TheC): TheC {
         const src_What = origin.sc.C as TheC
         const root = _C({ ...src_What.sc })
         for (const child of src_What.o({}) as TheC[]) root.i({ ...child.sc })
         return root
+    },
+
+//#endregion
+//#region LE_*
+    // ── LE_arm ──────────────────────────────────────────────────────────────
+    // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
+    // the remote for awareness; working holds the editable clones (Seem.sc.C
+    // fabricated lazily on first pull).
+    //
+    // A re-arm is a new Understanding: drop any prior Seems so their D/U
+    // spheres start empty.  Otherwise resolve() on the next walk pairs a fresh
+    // clone against a stale D node of similar shape (Point↔Point) and resume_X
+    // carries the old U node — and its meanings — across to an unrelated target.
+    // Fresh C alone is not enough; the sphere leaks.
+    LE_arm(LE: TheC, what_C: TheC) {
+        const H = this as House
+        LE.sc.target = what_C
+        for (const s of LE.o({ Seem: 1 })) LE.drop(s)
+
+        H.i_Seem(LE, { Seem: 'origin', C: what_C })
+        H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
+        // Seem:working%C is absent — Seem_clone_C sets it on the first LE_pull
     },
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
@@ -224,6 +220,8 @@ await M.eatfunc({
         }
     },
 
+//#endregion
+//#region encoding
     // ── Seem_toString ───────────────────────────────────────────────────────
     // Encode a Seem's C tree to snap text via the real enWaft (Text.svelte).
     //   origin's C  = the live source %What   (what the remote looks like)
@@ -247,7 +245,7 @@ await M.eatfunc({
         let snap = ''
         const errors: string[] = []
         for (const child of C.o({}) as TheC[]) {
-            if (is_working && child.c.U?.sc.unaccepted) continue   // U%unaccepted
+            if (Seem.sc.opt.use_Understandable && child.c.U?.sc.unaccepted) continue
             const r = await H.enWaft(child)
             snap += r.snap
             if (r.errors.length) errors.push(...r.errors)

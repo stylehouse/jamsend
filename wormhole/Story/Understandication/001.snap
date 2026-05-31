@@ -1,0 +1,7 @@
+Snap:H
+  H:Understandication,Run
+    A:Understandication
+      {"mung":["age"]}	self,round
+      w:Understandication
+        {"mung":["age"]}	self,round
+    {"mung":["id"]}	mo:main,interval:3.6

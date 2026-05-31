@@ -11,6 +11,7 @@
     import Mundane from "./Mundane.svelte";
     import Understandity from "./Understandity.svelte";
     import Understandium from "./Understandium.svelte";
+    import Understandication from "./Understandication.svelte";
 
     let {M} = $props()
 
@@ -1557,3 +1558,4 @@ The double-envelopment became the template for every subsequent battle of annihi
 <Mundane {M} />
 <Understandity {M} />
 <Understandium {M} />
+<Understandication {M} />
