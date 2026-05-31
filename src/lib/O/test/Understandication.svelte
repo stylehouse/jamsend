@@ -54,7 +54,7 @@ await M.eatfunc({
         // ── fixture ─────────────────────────────────────────────────────────
         //
         //   %What:routing
-        //     %Point:e_Doc_open
+        //     %Point:e_Dock_open
         //     %Point:Lang_doc_from_event
         //     %Point:path_guard
         //     %What:routing_detail           ← shallow; deep Points resume on push
@@ -71,7 +71,7 @@ await M.eatfunc({
         //
         const build_cave = (parent: TheC): { routing: TheC, compilation: TheC } => {
             const routing = parent.i({ What: 1, label: 'routing' })
-            routing.i({ Point: 1, method: 'e_Doc_open' })
+            routing.i({ Point: 1, method: 'e_Dock_open' })
             routing.i({ Point: 1, method: 'Lang_doc_from_event' })
             routing.i({ Point: 1, method: 'path_guard' })
             const rd = routing.i({ What: 1, label: 'routing_detail' })
@@ -151,7 +151,7 @@ await M.eatfunc({
                     neus.length === 4 && goners.length === 0)
                 check(r, 'Lang_compile present', clones.some(c => c.sc.method === 'Lang_compile'))
                 check(r, 'routing Points gone — different What',
-                    !clones.some(c => c.sc.method === 'e_Doc_open') &&
+                    !clones.some(c => c.sc.method === 'e_Dock_open') &&
                     !clones.some(c => c.sc.method === 'path_guard'))
             },
 
@@ -175,8 +175,8 @@ await M.eatfunc({
                 check(r, 'routing: 4 neus after re-arm (fresh sphere)',
                     neus.length === 4 && goners.length === 0)
                 check(r, 'no unshowing bled from compilation U', !any_unshowing)
-                check(r, 'e_Doc_open back in clones',
-                    clones.some(c => c.sc.method === 'e_Doc_open'))
+                check(r, 'e_Dock_open back in clones',
+                    clones.some(c => c.sc.method === 'e_Dock_open'))
             },
 
             // ── Step 5: LE_add_clone — add a Point to working set ────────────
@@ -373,8 +373,8 @@ await M.eatfunc({
                 routing_methods.forEach(m => r.i({ routing_clone: m }))
 
                 check(r, 'codegen_pass not in routing after wander back', !codegen_in_routing)
-                check(r, 'e_Doc_open back in routing clones',
-                    routing_clones.some(c => c.sc.method === 'e_Doc_open'))
+                check(r, 'e_Dock_open back in routing clones',
+                    routing_clones.some(c => c.sc.method === 'e_Dock_open'))
             },
 
             // ── Step 13: LE_accepted_clones helper correctness ────────────────
@@ -392,7 +392,7 @@ await M.eatfunc({
                 r.i({ total_clones: '' + total })
 
                 // mark two as unaccepted
-                const a = all.find(c => c.sc.method === 'e_Doc_open')!
+                const a = all.find(c => c.sc.method === 'e_Dock_open')!
                 const b = all.find(c => c.sc.method === 'Lang_doc_from_event')!
                 H.LE_drop_clone(LE, a)
                 H.LE_drop_clone(LE, b)
@@ -420,7 +420,7 @@ await M.eatfunc({
                 H.LE_arm(LE, routing)
                 await H.LE_pull(LE)
 
-                const rclone = (H.LE_clones(LE) as TheC[]).find(c => c.sc.method === 'e_Doc_open')!
+                const rclone = (H.LE_clones(LE) as TheC[]).find(c => c.sc.method === 'e_Dock_open')!
                 rclone.c.U.sc.unshowing = 1
 
                 H.LE_arm(LE, compilation)
@@ -437,7 +437,7 @@ await M.eatfunc({
                 any_unshowing.forEach(c => r.i({ unshowing_on: c.sc.method ?? `What:${c.sc.label}` }))
 
                 // after a full re-arm, the sphere is fresh — no stale U nodes.
-                // routing's e_Doc_open clone should NOT have unshowing (new sphere).
+                // routing's e_Dock_open clone should NOT have unshowing (new sphere).
                 check(r, 'no unshowing on fresh routing clones after re-arm wander', any_unshowing.length === 0)
                 // compilation's unshowing did not bleed into routing
                 check(r, 'Lang_compile unshowing never in routing sphere',

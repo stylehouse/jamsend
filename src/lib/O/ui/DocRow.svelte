@@ -113,7 +113,7 @@
              and notifies Lies (via on_focus) to move the graft cursor -->
         <button class="ls-doc-path ls-doc-open-btn" title="open in editor"
                 class:ls-doc-examining={is_examining}
-                onclick={() => { H.i_elvisto('Lang/Lang', 'Doc_open', { path }); on_focus?.(doc) }}>
+                onclick={() => { H.i_elvisto('Lang/Lang', 'Dock_open', { path }); on_focus?.(doc) }}>
             {path}
         </button>
         {#if codetype}<span class="ls-badge">{codetype}</span>{/if}

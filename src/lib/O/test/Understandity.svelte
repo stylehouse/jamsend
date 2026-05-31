@@ -38,13 +38,13 @@ await M.eatfunc({
 
         // build the fixture %What:routing under $parent; return it as the target.
         //   /%What:routing
-        //     /%Point:e_Doc_open
+        //     /%Point:e_Dock_open
         //     /%Point:Lang_doc_from_event
         //     /%What:deeper            ← cloned shallow, never descended into
         //       /%Point:inner_secret   ← deep leaf; must survive a replace-back
         const build_fixture = (parent: TheC): TheC => {
             const routing = parent.i({ What: 1, label: 'routing' })
-            routing.i({ Point: 1, method: 'e_Doc_open' })
+            routing.i({ Point: 1, method: 'e_Dock_open' })
             routing.i({ Point: 1, method: 'Lang_doc_from_event' })
             const deeper = routing.i({ What: 1, label: 'deeper' })
             deeper.i({ Point: 1, method: 'inner_secret' })
@@ -129,8 +129,8 @@ await M.eatfunc({
         {
             const B = w.i({ B_shallow_replace_back: 1 })
             const clones = u_kids(U)
-            const edited = clones.find(c => c.sc.method === 'e_Doc_open')!
-            edited.sc.method = 'e_Doc_open_RENAMED'
+            const edited = clones.find(c => c.sc.method === 'e_Dock_open')!
+            edited.sc.method = 'e_Dock_open_RENAMED'
 
             // push = replace the source %What's children with our (edited) clones.
             //   the empty %deeper clone pairs with the live one by label, and
@@ -144,7 +144,7 @@ await M.eatfunc({
             check(B, 'nested %What survived the replace-back', !!nested)
             check(B, 'deep /%What/%What/%Point resumed', deep.length === 1 && deep[0] === 'inner_secret')
             check(B, 'edit landed on the source',
-                target.o({ Point: 1, method: 'e_Doc_open_RENAMED' }).length === 1)
+                target.o({ Point: 1, method: 'e_Dock_open_RENAMED' }).length === 1)
         }
 
         // ── C — post-push pull is a no-diff ──
@@ -159,15 +159,15 @@ await M.eatfunc({
         {
             const D = w.i({ D_local_meanings: 1 })
             // a messy local meaning, written on the U clone — kept out of push encoding
-            u_kids(U).find(c => c.sc.method === 'e_Doc_open_RENAMED')!.i({ showing: 1 })
+            u_kids(U).find(c => c.sc.method === 'e_Dock_open_RENAMED')!.i({ showing: 1 })
 
             const d = await pull(target, U)
             n_of(D, d.goners, d.neus)
             check(D, 're-pull stays no-diff with %showing present',
                 d.goners.length === 0 && d.neus.length === 0)
-            const onClone = u_kids(U).find(c => c.sc.method === 'e_Doc_open_RENAMED')!.oa({ showing: 1 })
+            const onClone = u_kids(U).find(c => c.sc.method === 'e_Dock_open_RENAMED')!.oa({ showing: 1 })
             check(D, '%showing rode across the re-pull on the clone', !!onClone)
-            const onSource = target.o({ Point: 1, method: 'e_Doc_open_RENAMED' })[0].oa({ showing: 1 })
+            const onSource = target.o({ Point: 1, method: 'e_Dock_open_RENAMED' })[0].oa({ showing: 1 })
             check(D, '%showing never reached the source %Point', !onSource)
         }
 
@@ -182,7 +182,7 @@ await M.eatfunc({
             const sL = build_fixture(eL.i({ src: 1 }))
             const uL = eL.i({ U: 1 })
             await pull(sL, uL)
-            sL.o({ Point: 1, method: 'e_Doc_open' })[0].sc.method = 'e_Doc_open_v2'
+            sL.o({ Point: 1, method: 'e_Dock_open' })[0].sc.method = 'e_Dock_open_v2'
             const loose = await pull(sL, uL)
             n_of(eL, loose.goners, loose.neus)
             check(eL, 'default: a rename is a survivor (no diff)',
@@ -192,15 +192,15 @@ await M.eatfunc({
             const sS = build_fixture(eS.i({ src: 1 }))
             const uS = eS.i({ U: 1 })
             await pull(sS, uS, 1)
-            sS.o({ Point: 1, method: 'e_Doc_open' })[0].sc.method = 'e_Doc_open_v2'
+            sS.o({ Point: 1, method: 'e_Dock_open' })[0].sc.method = 'e_Dock_open_v2'
             const strict = await pull(sS, uS, 1)
             n_of(eS, strict.goners, strict.neus)
             strict.goners.forEach(n => eS.i({ goner: lm(n) }))
             strict.neus.forEach(n => eS.i({ neu: lm(n) }))
             check(eS, 'resolve_strict: the same rename is goner + neu',
                 strict.goners.length === 1 && strict.neus.length === 1 &&
-                strict.goners[0].sc.method === 'e_Doc_open' &&
-                strict.neus[0].sc.method === 'e_Doc_open_v2')
+                strict.goners[0].sc.method === 'e_Dock_open' &&
+                strict.neus[0].sc.method === 'e_Dock_open_v2')
         }
 
         // ── verdict ──

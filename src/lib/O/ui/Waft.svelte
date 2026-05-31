@@ -273,7 +273,7 @@
                                 <!-- method is set by fuzzify/export; Point value is the fallback for hand-entered Points -->
                                 <button class="ls-point-peel ls-point-open-btn"
                                         title="open {dpath} at this point"
-                                        onclick={() => H.i_elvisto('Lang/Lang', 'Doc_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}>
+                                        onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}>
                                     {point_to_peel(pt)}
                                 </button>
                                 <button class="ls-icon-btn" title="edit"

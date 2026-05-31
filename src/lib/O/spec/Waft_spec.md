@@ -65,7 +65,7 @@ Waft:Ghost/Tour
         Point:1,method:Lang_plan
         Point:1,method:Lang_compile
       What:1,label:routing
-        Point:1,method:e_Doc_open
+        Point:1,method:e_Dock_open
         Point:1,method:Lang_doc_from_event
 ```
 
@@ -99,7 +99,7 @@ autovivified.
 A Point can carry `class` in its sc alongside `method` (or `label`):
 
 ```
-Point:1, method:'e_Doc_open', class:'focus'
+Point:1, method:'e_Dock_open', class:'focus'
 Point:1, method:'Lang_plan', class:'ghost'
 Point:1, method:'Lang_compile'           — no class; defaults apply
 ```
@@ -309,9 +309,9 @@ With a single Doc and one working codemirror:
 
 - Open a Waft pointing at `Ghost/Lang.svelte`.
 - Add a `What:1,label:setup` with Points for `Lang_plan`, `Lang_compile`.
-- Add a sibling `What:1,label:routing` with Points for `e_Doc_open`,
+- Add a sibling `What:1,label:routing` with Points for `e_Dock_open`,
   `Lang_doc_from_event`.
-- Click `e_Doc_open` in the minimap → CM folds to show only the `e` region, squishing
+- Click `e_Dock_open` in the minimap → CM folds to show only the `e` region, squishing
   everything above to 2-line crumbs, with the target line enlarged and lavender-glowing.
 - Press +time → a new sibling What appears; `routing` Points ghost to 18% opacity.
   Add `Lang_apply_openness` and `Lang_build_regions` to the new What.

@@ -269,7 +269,7 @@
         const path = w.c.active_dock_path as string | undefined
         if (!path) return undefined
         const docks = w.o({docks: 1})[0] as TheC | undefined
-        return docs?.o({dock: path})[0] as TheC | undefined
+        return docks?.o({dock: path})[0] as TheC | undefined
     },
 
     // ── Lang_set_active_dock ──────────────────────────────────────────────────
@@ -281,7 +281,7 @@
     Lang_set_active_dock(w: TheC, path: string) {
         w.c.active_dock_path = path
         const docks = w.o({docks: 1})[0] as TheC | undefined
-        if (docs) {
+        if (docks) {
             for (const d of docks.o({dock: 1}) as TheC[]) {
                 if (d.sc.dock === path) d.sc.active = 1
                 else delete d.sc.active
@@ -292,10 +292,10 @@
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
         const sig = ave.oai({ active_dock: 1 })
         sig.sc.path = path
-        // sig.c.dock: the actual {dock: path} particle (holds bookmarks, view, state).
-        // Langui reads this via sig?.c.doc to derive its bookmark list.
+        // sig.c.dock: the actual {dock:path} particle (holds bookmarks, view, state).
+        // Langui reads this via sig?.c.dock to derive its bookmark list.
         // Stored on .c (not .sc) because TheC references don't belong in the index.
-        sig.c.dock = docs?.o({dock: path})[0] as TheC | undefined
+        sig.c.dock = docks?.o({dock: path})[0] as TheC | undefined
         sig.bump_version()
     },
 

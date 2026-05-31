@@ -340,7 +340,7 @@
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
             const settled_path = ev.sc.path as string
             const docks = w.o({docks: 1})[0] as TheC | undefined
-            const targetDocC = docs?.o({dock: settled_path})[0] as TheC | undefined
+            const targetDocC = docks?.o({dock: settled_path})[0] as TheC | undefined
             if (!targetDocC) continue
             const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
             if (targetJob) {

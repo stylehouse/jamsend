@@ -60,7 +60,7 @@
         //   Lies_find_doc_in_wafts does the lookup and Lies_set_examining stamps
         //   the three fields atomically.
         //
-        //   active_dock is created lazily by Lang on first Doc_open, so retry each tick.
+        //   active_dock is created lazily by Lang on first Dock_open, so retry each tick.
         const active_dock = ave?.o({ active_dock: 1 })[0] as TheC | undefined
         if (active_dock && !w.c.examining_sig_watch) {
             w.c.examining_sig_watch = true

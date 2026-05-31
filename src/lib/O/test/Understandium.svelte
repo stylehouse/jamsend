@@ -55,13 +55,13 @@ await M.eatfunc({
         }
 
         // /%What:routing
-        //   /%Point:e_Doc_open
+        //   /%Point:e_Dock_open
         //   /%Point:Lang_doc_from_event
         //   /%What:deeper            ← cloned shallow, never descended into
         //     /%Point:inner_secret   ← deep leaf; must survive a replace-back
         const build_fixture = (parent: TheC): TheC => {
             const routing = parent.i({ What: 1, label: 'routing' })
-            routing.i({ Point: 1, method: 'e_Doc_open' })
+            routing.i({ Point: 1, method: 'e_Dock_open' })
             routing.i({ Point: 1, method: 'Lang_doc_from_event' })
             const deeper = routing.i({ What: 1, label: 'deeper' })
             deeper.i({ Point: 1, method: 'inner_secret' })
@@ -153,12 +153,12 @@ await M.eatfunc({
             5: async () => {
                 const r = w.i({ see: 'step 5 local meaning' })
 
-                const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
+                const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Dock_open')!
                 chosen.c.U.sc.unshowing = 1
                 r.i({ wrote_unshowing_onto: lm(chosen) })
 
                 const U = chosen.c.U
-                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].sc.unshowing
+                const onSource = target.o({ Point: 1, method: 'e_Dock_open' })[0].sc.unshowing
                 check(r, 'clone sc stays clean (no unshowing in .sc)', !chosen.sc.unshowing)
                 check(r, '%unshowing readable on the U node', !!chosen.c.U.sc.unshowing)
                 check(r, 'U is a separate %Understandable node hung under D',
@@ -176,9 +176,9 @@ await M.eatfunc({
                 check(r, 're-pull no-diff with %unshowing present',
                     goners.length === 0 && neus.length === 0)
 
-                const chosen   = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
+                const chosen   = H.LE_clones(LE).find(c => c.sc.method === 'e_Dock_open')!
                 const onClone  = chosen.c.U.sc.unshowing
-                const onSource = target.o({ Point: 1, method: 'e_Doc_open' })[0].sc.unshowing
+                const onSource = target.o({ Point: 1, method: 'e_Dock_open' })[0].sc.unshowing
                 check(r, '%unshowing survived re-pull on the U node', !!onClone)
                 check(r, 'U re-found under the freshly-traced D node (resume_X)',
                     chosen.c.D.o({ Understandable: 1 })[0] === chosen.c.U)
@@ -189,12 +189,12 @@ await M.eatfunc({
             7: async () => {
                 const r = w.i({ see: 'step 7 edit push' })
 
-                const edited = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
-                edited.sc.method = 'e_Doc_open_RENAMED'
+                const edited = H.LE_clones(LE).find(c => c.sc.method === 'e_Dock_open')!
+                edited.sc.method = 'e_Dock_open_RENAMED'
 
                 await H.LE_push(LE)
 
-                const renamed    = (LE.sc.target as TheC).o({ Point: 1, method: 'e_Doc_open_RENAMED' })
+                const renamed    = (LE.sc.target as TheC).o({ Point: 1, method: 'e_Dock_open_RENAMED' })
                 const push_dirty = LE.oa({ push_dirty: 1 })
                 r.i({ renamed_in_source: renamed.length })
                 check(r, 'edit landed on the source', renamed.length === 1)
@@ -272,7 +272,7 @@ await M.eatfunc({
                 const t2  = build_fixture(w.oai({ src2: 1 }))
                 H.LE_arm(LE2, t2)
                 await H.LE_pull(LE2, 1)
-                t2.o({ Point: 1, method: 'e_Doc_open' })[0].sc.method = 'e_Doc_open_v2'
+                t2.o({ Point: 1, method: 'e_Dock_open' })[0].sc.method = 'e_Dock_open_v2'
                 const strict = await H.LE_pull(LE2, 1)
 
                 const rs = r.i({ strict_rename: 1 })
@@ -281,8 +281,8 @@ await M.eatfunc({
                 strict.neus.forEach(n   => rs.i({ neu:   lm(n) }))
                 check(r, 'resolve_strict: rename is goner + neu',
                     strict.goners.length === 1 && strict.neus.length === 1 &&
-                    strict.goners[0].sc.method === 'e_Doc_open' &&
-                    strict.neus[0].sc.method   === 'e_Doc_open_v2')
+                    strict.goners[0].sc.method === 'e_Dock_open' &&
+                    strict.neus[0].sc.method   === 'e_Dock_open_v2')
             },
 
             // ── Step 11: encode-compare clean ─────────────────────────────────
