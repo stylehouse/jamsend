@@ -69,10 +69,6 @@ Waft:Ghost/Tour
         Point:1,method:Lang_doc_from_event
 ```
 
-No `Points` container — that was a reactivity workaround from an earlier iteration.
-Points sit directly under their parent.  The `Points:1` encoding is still read on
-load for backward compatibility but is not written.
-
 ---
 
 ## Active-What tracking
@@ -231,27 +227,7 @@ squishes.  Where Points have conflicting fold preferences the more-open one wins
 
 ## Encoder / decoder
 
-is enWaft() etc.
-
-### Throttled writes
-
-Waft mutations (Point add/remove, What add/rename/reorder, ghost stamp) do not write
-immediately — they schedule a write by stamping `w/{waft_save_pending:1, path}` on
-Lies's w.  LiesPersist drains these the same way it drains `open_waft_req`, but with
-a debounce: first pending fires after 2 s of quiescence (no further mutations to that
-Waft).
-
-```
-w/{waft_save_pending:1, path:'Ghost/Tour', due_at: Date.now() + 2000}
-```
-
-LiesPersist checks `due_at` each tick and writes when it has passed.  A mutation
-before the 2 s window simply bumps `due_at` forward — last-write-wins with a sliding
-delay.  This matches the `saveEffect` debounce in Langui for bookmark position sync.
-
-The ghost-decay timer in Waft.svelte fires `H.i_elvisto('Lies/Lies',
-'Lies_waft_mutated', { path })` when it drops a Point, which stamps the pending
-particle on Lies's w so the save gets scheduled.
+is enWaft() etc. uses Lies_waft_save with a per-waft JS throttle() closure on w.c, posting via post_do.
 
 ---
 
@@ -362,7 +338,7 @@ w/{Waft:'Ghost/Tour'}
     /{Doc:1, path}
       /{What:1, label}                  — time-slice Whats under a Doc
         /{Point:1, method, class?}
-      /{Point:1, method, class?}        — Points directly on Doc (compat; still read)
+      /{Point:1, method, class?}        — Points directly on Doc
 
 // Not persisted — session state
 ave/{active_what:1}

@@ -553,7 +553,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!doc_path || !spec) return
 
         // Find the Point particle across all Wafts that own this doc.
-        // Points live directly on the %Doc particle — no %Points,1 container.
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
             if (!doc) continue

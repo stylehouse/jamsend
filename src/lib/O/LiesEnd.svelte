@@ -15,6 +15,7 @@
 //   %Understandable node).  Regarding the U%* we know about so far, absence is
 //   positive: they (meaning C) are showing and accepted by default.
 //   U%unshowing opts a clone out of the Lang UI; U%unaccepted omits it from push.
+//   Selection()'s' usually a D tracing a C, but we have a U hung off a D tracing a C.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"

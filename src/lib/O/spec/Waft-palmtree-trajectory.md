@@ -5,12 +5,12 @@ tree and its transport semantics; this doc owns the *implementation slice*.
 
 
 
-## Chunk U — the Understanding (precursor to Chunk 4)
+## Chunk U — the Understanding ✓ done
 
-*New prerequisite.  Chunk 4's navigation gestures all manipulate a checked-out
-extent of the Waft; this chunk is that checkout.  Design here; build in an
-isolated harness (see Sequencing) — it does **not** graft onto the live
-Lies+Lang cluster yet.*
+*Chunk 4's navigation gestures all manipulate a checked-out extent of the Waft;
+this chunk is that checkout.  Built and proven in an isolated harness
+(Understandity → Understandium → Understandication); not yet grafted onto the
+live Lies+Lang cluster.*
 
 ### The reframing
 
@@ -22,116 +22,111 @@ manipulates it from that grasp.  The area we focus on is a `%What`'s immediate
 The checked-out area is an **Understanding** (`U`): a small, bounded clone of a
 big graph.  Bounded size is the joke in the name — for now an Understanding is
 deliberately tiny, one What's worth of Points.  A checked-out Point inside an
-Understanding is a **UPoint**.  (This retires `%Pointo` — the wrapper-capsule
-idea collapses into the U-sphere clone, below.)
+Understanding is a **UPoint**.  (`%Pointo` is retired — the wrapper-capsule idea
+collapses into the U-sphere clone below.)
 
 ### The two-sphere stitch
 
 A `%Point` is resolved by the **D sphere** and understood by the **U sphere**.
 
-- **D — `/%Demonstrations`** — mainkey|match|trace-based, like the rest of the
-  reqy/Travel machinery.  Resolving a `C:Point` means tracing it into D.
-- **U — `/%Understandable`** — hangs *under* D: `/%Demonstrations/%Understandable`
-  is how a U lives in the graph.  The stitch identity is `D/U/U` ≡ `D/D/U` — a
-  U reached through a U is the same node as a U reached directly through D, so
-  the sphere has no seam where Understandings nest.
+- **D — `/%Demonstrations`** — mainkey|match|trace-based.  Tracing a `C:Point`
+  into D gives its durable resolved node.
+- **U — `/%Understandable`** — hangs *under* one D node:
+  `/%Demonstrations/%Understandable`.  The U node is where **local meanings**
+  live — written on the U, never on the source `%Point`.
 
-Every particle the checkout walk sees gets a treeing clone whose provenance is
-stamped `n.c.U` ($C, an `%Understandable`).  The clone is where we hang our
-**messy, local meanings** — written on the clone, never on the source Point:
+Absence is the positive case.  The meanings we know about so far are negative
+flags:
 
 ```
-C:Point//U/%showing      ← orb visible in this Understanding
-C:Point//U/%accepted     ← curated into this What's set
+C:Point//U%unshowing   ← opt this clone out of the Lang UI display
+C:Point//U%unaccepted  ← virtual deletion: omit from next push and encode
 ```
 
-These meanings imply *positivity* — inclusion, showing — and are kept **out of
-the push encoding**.  The encoding we posit as "what to push back to the Waft"
-is the pure `/%Point**` cluster: `$method`/`$label`/`$class` and structure.
-So the durable identity rides on the Point; `accepted`/`showing` ride on the U
-clone.  This is the answer to "is `%accepted` ok inside the stored Point" — no.
-Storing the Point at all already models its existence; whether it's *accepted*
-is a fact about an Understanding of it, and lives in U.
+The durable identity rides on the Point; `unshowing`/`unaccepted` ride on U.
+The C** is clean — its entire `.sc` can be taken to replace the target's
+children on push.
 
-### Se_i / Se_o — pull and push
+### The two-Seem model — origin and working
 
-`Se/*` already exists as the local Selection's configuration and state.  Two
-named faces of it carry the transport:
+Two `Selection` walks hang off one `%LiesEnd`, each its own Seem:
 
-- **`Se_i`** — read the remote (Lies).  The checkout walk itself: pull the
-  `%What/*Point` extent into an Understanding.
-- **`Se_o`** — read our changes, continuously.  Diff the Understanding against
-  what it was pulled from, so we always know what a push would carry.
+```
+LE/%Seem:origin,Se:Selection(),C:$OC,topD    ← reads the remote OC**
+  /D%Demonstrations:origin                   ← is topD
 
-Both are one `Se.process()` walk.  The walk builds a transient `Travel` ropeway
-(`T**`) that Lang holds out-of-band — that ropeway *is* the grasp.  Its
-`trace_fn` mirrors each `n.sc` into D; because D nodes `replace()` rather than
-recreate, the `D/U` we build **persists across walks** (unlike a `match_sc:{}`
-all-inclusive walk, which keeps nothing).  The walk's `resolved_fn` hands back
-`(T, N, goners, neus)` — survivors, dropped-Ds, new-Ds — and that triple **is**
-the diff.  Se_o is just reading `goners`/`neus` each walk; no diff-match-patch
-needed, the resolve step already computed it.
+LE/%Seem:working,Se:Selection(),C:$C,topD   ← holds the editable clone tree
+  /D%Demonstrations:working                  ← is topD
+    /%Understandable                          ← per-D U node (use_Understandable:1)
+```
 
-`match_sc` bounds the walk to the `%What/*Point` layer so we don't trickle into
-a nested What's contents — which is exactly the shallow-clone rule below.
+`Seem:origin` walks the live `%What` for awareness — its `goners`/`neus` are
+clues about when the remote moved.  `Seem:working` walks the fabricated clone
+tree; its D nodes carry `/%Understandable` children where local meanings live.
+Only `Seem:working` uses the U sphere.
+
+`LE_arm(LE, what_C)` drops both Seems on re-arm so their D/U spheres start
+empty — without this, `resolve()` pairs a fresh clone against a stale D node of
+similar shape and `resume_X` bleeds old meanings across to an unrelated target.
+
+### The checkout / replace-back mechanism
+
+- **Clone `What/*` only** — the immediate child layer.  A nested `%What` child
+  gets a D node but is never entered; its deep `%Point` children resume on push.
+- Edit clones in place; detect edits via `LE_encode_compare` (enWaft snap
+  comparison, not structural `goners`/`neus`).
+- **Push** = `target.replace({}, ...)` inserting accepted clones back as the
+  target's children.  Clones with `U%unaccepted` are omitted — virtual deletion.
+
+The crucial trick: because we cloned shallowly, replacing back **resumes**
+`What/*/*`.  A nested `%What/%What/%Point` we never touched was never detached;
+it rides back in under the replaced stub.
+
+```
+checkout:   What → [ Pa, Pb, What2 ]     clone 3 children, shallow
+            What2 → [ Pc ]               ← NOT cloned, left in place
+
+push-back:  replace What's children with our (possibly-edited) clones
+            What2 resumes → [ Pc ]       ← deep layer never moved
+```
+
+### The diff that matters — encode-compare
+
+`goners`/`neus` from either Seem is the *structural* diff (whole-C in/out).
+The push-state diff is:
+
+```
+enWaft( Seem:origin slice )   vs   enWaft( Seem:working state )
+```
+
+String-equal snaps → nothing to push.  This is `LE_encode_compare`.  Origin
+encodes each top-level child shallowly (`max_child_depth:0`) to match working's
+childless stubs; working encodes normally.  `U%unaccepted` clones are omitted
+from working's snap.
+
+### API surface (in LiesEnd.svelte)
+
+Core: `LE_arm`, `LE_pull`, `LE_push`, `LE_clones`, `LE_encode_compare`,
+`Seem_toString`.  Proven helpers now resident: `LE_add_clone`, `LE_drop_clone`,
+`LE_accepted_clones`.
 
 ### `%What_Points` — the checkout cursor
 
-`%What_Points` stays.  Its job is sharpened: it names **where we check out** —
-`{ src $C, src_Waft }`, the one `%What` whose `/%Point` extent the Understanding
-mirrors.  It may be what Lang *just asked* to check out; we sanity-check that
-each round with a req that **waits for the return-pull** after we navigate or
-push, and after a push we expect to pull a **no-diff** (`goners`/`neus` empty).
-A non-empty diff right after a push means the push didn't land cleanly — a real,
-catchable fault, not a silent drift.
+`%What_Points` names where we check out — `{ src $C, src_Waft }`, the one
+`%What` whose `/%Point` extent the Understanding mirrors.  After a push we
+expect a no-diff on the return-pull.  A non-empty diff means the push didn't
+land cleanly — a catchable fault.
 
-### The checkout / replace-back mechanism *(crucial)*
+### Open faults
 
-The checkout always looks at a `%What/*Point`.
-
-- **Clone `What/*` only** — the immediate child layer.  If a child is itself a
-  `%What` (`/%What/%What`), we clone that What *node* but do **not** descend into
-  or touch its contents.  Shallow, by `match_sc`.
-- Modify the clones; decide they're modified via the Se_o encoding.
-- **Push** = mutate the source `%What`, replacing everything within it with
-  everything in our clone, right now.
-
-The crucial trick: because we cloned `What/*` shallowly, replacing it back into
-the Waft **resumes** `What/*/*`.  A nested `/%What/%What/%Point` we never cloned
-was never detached; when the replaced `/%What/%What` node goes back, its old
-contents resume under it.  We only ever owned the top layer; the deep layers
-ride along untouched.
-
-```
-checkout:   What → [ Pa, Pb, What2 ]          clone the 3 children, shallow
-            What2 → [ Pc ]                     ← NOT cloned, left in place
-
-push-back:  replace What's children with our (possibly-edited) clones
-            What2 resumes → [ Pc ]             ← deep layer never moved
-```
-
-`C.i(C)` is the same-object insert (not a copy): used where the *same* particle
-should appear in two places — e.g. `/%Languinio` holding the active
-Understanding is `C.i(C)` of the live U, not a snapshot of it.  Switching docs
-or `%What_Points` re-points that same-object hold.
-
-### Encoding / resumability
-
-Dump the Se_o encoding regularly, and on any change.  Each dump is a resumable
-description of the Understanding's push-state — so a reload, or a later "push
-anyway", can pick the working set back up without re-deriving it from the live
-ropeway.
-
-### Open faults to chase *(not blocking the spec)*
-
-- `e_Lies_export_point` (the `↑` button) still writes the **deprecated**
-  `/%Doc/%Points,1/%Point,N` container via plain `.i()`.  The Point it makes has
-  no `.c.up` (plain `.i()`/`oai()` don't set it — only `reqy.roai()` does, at
-  Hovercraft `req.c.up = w`).  First concrete cleanup: write Points into the
-  flat `/%What/%Point` shape, and decide whether Waft-tree particles need a
-  `.c.up` pass or whether the D/U walk supplies the parentage instead.
-- `// <` the no-diff-after-push check needs a home: probably a `reqonce` on the
-  push req that arms a return-pull and raises a fault C if the diff is non-empty.
+- `// <` the no-diff-after-push check needs a home: a `reqonce` on the push req
+  that arms a return-pull and raises a fault C if the diff is non-empty.
+- `// <` `U%unaccepted` vanish: the absent clone lands as a goner on the
+  post-push awareness pull, firing `push_dirty`.  Fix: `LE_push` stamps
+  `bD/was_disincluded:1` before replace-back; `resolved_fn` recognises that
+  goner and suppresses `push_dirty`.
+- `// <` integration to Lang/Lies (Languinio/LE switching, `wpt.sc.src = LE`,
+  path-match guards) — LE must be a being-for-itself first.
 
 ---
 
@@ -196,12 +191,13 @@ they're in — its Points are the walls.  `→` is legible because the audience
 knows where they came from.  `↘` is "we'll return to this junction."  `↓` is
 "look what's down here" — a sub-thread that resurfaces to the parent when done.
 
-`accepted:1` Points carry forward (Chunk 3) because the spelunker marks the
-wall and that mark survives the return trip.
+Accepted Points carry forward (Chunk 3) because the spelunker marks the wall and
+that mark survives the return trip.
 
 ### `+time` carry-over heuristic
 
-When a new `%What` is created (→ or ↘ or ↓), the heuristic seeds its in-group:
+When a new `%What` is created (`→` or `↘` or `↓`), the heuristic seeds its
+in-group:
 
 - Points with `accepted:1` AND `showing` → copied forward.
 - Points created `< 30s` ago → moved forward (part of this thought).
@@ -229,21 +225,13 @@ The "you were here" marker.
 ## Sequencing
 
 - **1** first — graft ttlilt, ~ten lines, immediately visible.
-  Needs `scheme:req` on `w:Lang` as a prerequisite (see `scheme-req-spec.md`).
 - **2** — internal tidiness, one PR after 1.
 - **3** — small, prerequisite for 4.
-- **U** — the Understanding.  **Test-first, in an isolated harness** — do *not*
-  graft it onto the live Lies+Lang cluster, that's too much too soon.  Stand up
-  a `Se.process()` checkout over a fixture `%What/*Point` extent, assert the
-  `resolved_fn` diff (`goners`/`neus`), assert the shallow-clone + replace-back
-  resumes a nested `What/*/*`, and assert post-push pull is a no-diff.  Only once
-  that harness is green does any of it touch Lang's real cursor.
-- **4** — multi-reset, design sub-slices before each.  Now sits **on top of U**:
+- **U** ✓ — the Understanding.  Built and proven in isolation; harness is green.
+  Not yet wired onto the live Lies+Lang cluster — that wiring is the next step
+  before Chunk 4 begins.
+- **4** — multi-reset, design sub-slices before each.  Sits on top of U:
   each gesture is "re-aim `%What_Points`, re-pull, push".
-
-Single-convo highest value: **1 + 3** — "Points resolve on open" and
-"accepted set survives reload".  **U** is the next standalone piece of value
-and the gate to 4; build and prove it in isolation before wiring.
 
 ---
 
@@ -267,8 +255,8 @@ and the gate to 4; build and prove it in isolation before wiring.
   ropeway (`T**`).  `trace_fn` mirrors `n.sc` into D; D nodes `replace()` so a
   kept `D/U` persists across walks.  `resolved_fn(T, N, goners, neus)` is the
   diff.  `match_sc:{}` is all-inclusive and keeps no D/U.
-- Vocabulary settled this round: **Understanding** (`U`) the bounded checkout;
-  **UPoint** a checked-out Point; **`/%Understandable`** the U-sphere clone
-  hanging under **`/%Demonstrations`** (the D sphere); `n.c.U` the clone's
-  provenance $C.  `%Pointo` is retired.  Local meanings live on the clone
-  (`C:Point//U/%showing`), never on the source `%Point`.
+- Vocabulary: **Understanding** (`U`) the bounded checkout; **UPoint** a
+  checked-out Point; **`/%Understandable`** the U-sphere node hanging under
+  **`/%Demonstrations`** (the D sphere); `C.c.U` the clone's direct ref to its
+  U node, `C.c.D` to its D node.  `%Pointo` is retired.  Local meanings live on
+  U (`C:Point//U%unshowing`), never on the source `%Point`.

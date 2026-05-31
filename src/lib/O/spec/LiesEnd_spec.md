@@ -174,7 +174,6 @@ without re-deriving it from the live ropeways (the resumability note, applied).
 //   path-match guards) excluded — LE must be a being-for-itself first.
 // < unaccepted carry-forward into a new %What (+time / ↘ / ↓)
 //   reads clone.c.U?.sc.unaccepted at branch time — Chunk 4, not here.
-// < e_Lies_export_point still writes deprecated /%Doc/%Points,1/%Point,N.
 // < vanish: when an unaccepted clone's absence lands as a goner on the post-push
 //   awareness pull, push_dirty fires.  The fix: LE_push stamps bD/was_disincluded:1
 //   before the replace-back; resolved_fn recognises that goner as expected and

@@ -263,36 +263,18 @@
 
     // ── deWaft ─────────────────────────────────────────────────────────────────
     // Decode snap-line text to a live Waft TheC tree.
-    // Wraps decode_wh_lines and applies backward-compat fixups:
+    // Wraps decode_wh_lines and applies a path fixup:
     //
     //   path — canonical Waft path; stamped onto C.sc.Waft regardless of
     //     what the snap root line encoded (snap root is informational only).
-    //
-    //   Points:1 hoist — old format had Doc → Points:1 → Point:1.
-    //     Any 'Points' container is detected by mainkey; its children are
-    //     moved onto the parent and the container is dropped.
-    //     Snapshot the child list before mutating (drop() changes X.z in place).
+    //     Means you can copy and rename the files and they'll get the new path.
     //
     // Returns { waft_C, errors }.  waft_C is null on fatal parse error.
     deWaft(snap: string, path: string): { waft_C: TheC | null, errors: string[] } {
         const { C, errors } = (this as any).decode_wh_lines(snap)
         if (!C) return { waft_C: null, errors }
 
-        C.sc.Waft = path  // caller's path is authoritative
-
-        const mainkey = (n: TheC) => Object.keys(n.sc ?? {})[0]
-
-        const hoist_points = (parent: TheC) => {
-            for (const child of [...((parent.X?.z ?? []) as TheC[])]) {
-                if (mainkey(child) === 'Points') {
-                    for (const pt of [...((child.X?.z ?? []) as TheC[])]) parent.i(pt)
-                    parent.drop(child)
-                } else {
-                    hoist_points(child)
-                }
-            }
-        }
-        hoist_points(C)
+        C.sc.Waft = path  
 
         return { waft_C: C, errors }
     },
