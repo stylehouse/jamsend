@@ -240,7 +240,8 @@
             //  - mainkey prefixing, ie %req,...c,...sc (c can set again)
             //  - serial numbering when %req:1 and !noserial
             //  - %mutated detection on sc for existing reqs
-            async roai(c: TheUniversal, sc?: TheUniversal): Promise<TheC> {
+            //  - optional meta out-arg: pass {} and read meta.existed after await
+            async roai(c: TheUniversal, sc?: TheUniversal, meta?: { existed?: boolean }): Promise<TheC> {
                 if (c.maz == 1) delete c.maz
                 let premix = { ...keying, ...exactly(c) }
                 let req = q.o(premix)[0]
@@ -248,6 +249,7 @@
                     // existed
                     if (req.c.up != w) throw "req~up"
                     q.maybe_mutate_sc(req, sc)
+                    if (meta) meta.existed = true
                     return req
                 }
                 // create
@@ -260,7 +262,20 @@
                 req.c.up = w
                 req.c.on = reqcon
                 if (req.sc.maz == 1) delete req.sc.maz  // maz:1 is implied
+                if (meta) meta.existed = false
                 return req
+            },
+
+            // seed a named req and wire its do_fn in one gesture.
+            //   Delegates to roai; reads meta.existed to know if the req is fresh.
+            //   Fresh (new) req: returns setter fn → ?.() lands fn in req.c.do_fn.
+            //   Existed req:     req.c.do_fn already set → returns null → ?.() no-ops.
+            //   req.c.do_fn lives in .c (never snaps); do_one checks it before reqcon.c.do_fn.
+            async doai(c: Record<string,any>, sc: Record<string,any> = {}): Promise<((fn: Function) => void) | null> {
+                const meta: { existed?: boolean } = {}
+                const req = await q.roai(c, sc, meta)
+                if (meta.existed) return null
+                return (fn: Function) => { req.c.do_fn = fn }
             },
  
             // update req%* and do %mutated detection

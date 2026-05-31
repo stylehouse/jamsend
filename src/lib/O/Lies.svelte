@@ -555,15 +555,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   < req:completion do_fn — reqonce open_What, ttlilt step   Chunk 4b
         //   < req:git do_fn — flush Waftlets to disk / remote          Chunk 4b+
         const rq = H.reqy(w)
-        const desire = await rq.roai({ req: 'desire' })
-        desire.c.do_fn = async (desire: TheC) => {
+        // doai delegates to roai; roai stamps meta.existed so doai knows fresh vs seen.
+        // First call (fresh req): returns setter fn → ?.() lands fn in req.c.do_fn once.
+        // Subsequent calls: meta.existed true → null → ?.() no-ops. Safe every tick.
+        ;(await rq.doai({ req: 'desire' }))?.(async (desire: TheC) => {
             const rq = H.reqy(desire)
 
             // req:acquire — lock onto the active Waft.
             //   sc.active → cursor's src_Waft → first loaded Waft.
             //   Stays unfinished until a Waft is present; retries next tick.
-            const acquire = await rq.roai({ req: 'acquire' })
-            acquire.c.do_fn = async (acquire: TheC) => {
+            ;(await rq.doai({ req: 'acquire' }))?.(async (acquire: TheC) => {
                 const examining = w.o({ examining: 1 })[0] as TheC | undefined
                 const src_Waft  = examining?.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
                 const waft = (w.o({ Waft: 1 }) as TheC[]).find(wf => wf.sc.active)
@@ -573,20 +574,18 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 desire.sc.waft_C   = waft
                 desire.sc.waft_key = waft.sc.Waft as string
                 rq.finish(acquire)
-            }
+            })
 
-            // req:completion — the open-ended playing session.
-            // playing:0|1 toggled by NaviCado / Liesui.
+            // req:completion — open-ended playing session; playing:0|1.
             // < do_fn: reqonce open_What; step on ttlilt when playing:1.
-            await rq.roai({ req: 'completion' }, { playing: 0 })
+            await rq.doai({ req: 'completion' }, { playing: 0 })
 
-            // req:git — Waftlet accumulator.
-            // /%Waftlet children pile up here as LE_push patches land.
+            // req:git — Waftlet accumulator; /%Waftlet children pile up here.
             // < do_fn: flush committed Waftlets to disk/remote; drop flushed.
-            await rq.roai({ req: 'git' })
+            await rq.doai({ req: 'git' })
 
             await rq.do()
-        }
+        })
         await rq.do()
     },
 
