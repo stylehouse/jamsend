@@ -28,7 +28,7 @@ mainkey|match|trace-based.  U is `%Understandable`, hanging under one D node:
 
 The `//` in `C:Point//U%unshowing` means: reach the D node for this C, then its
 `/%Understandable` child, and read `%unshowing`.  Every particle the checkout walk
-sees gets a D node (the D sphere), and the D node's `%Understandable` child is
+sees gets a D node (the D sphere), and the D node's `/%Understandable` child is
 where local meanings live.  Absence is the positive case — C are showing and
 accepted by default:
 
@@ -43,26 +43,59 @@ C:Point//U%unaccepted  ← virtual deletion: omit from next push and encode
 
 ---
 
-## `LE%LiesEnd` — the housing
+## `%LE` — the housing
 
 No JS classes.  Everything is methods on `this` (House mixin), operating on
-`C**` particles.  `LE` is a `%LiesEnd` particle made for us — passed in to
-every function.  LE` is not itself inside a `replace()` so its `C.c.*` and `C/*` are
-stable across pulls. Tend not to use C.c.* though?
+`C**` particles.  `LE` is a `%LE` particle, stable for the lifetime of the
+checkout — not inside a `replace()`, so `LE/*` and `LE.c.*` survive pulls.
+Lives at `w/{LE}` under `w:Lies`; passed into every LE_* function.
 
-
-## ignore the context, but...
-
-`%What_Points` impulsing defines where we checkout. A req should check the
+`%What_Points` impulsing defines where we check out.  A req should check the
 return-pull after we navigate or push.  After a push we should pull a no-diff.
+
+---
+
+## LE states
+
+These are the states `%LE` can be in from the `Seem:working` perspective.
+`%LE/%State` (replaced on each `LE_pull` / `LE_encode_compare` call) carries
+the synthesised view; `%push_dirty` on `%LE` is the fault particle.
+
+- **armed** — `LE_arm` called, `Seem:working%C` not yet fabricated.
+  `LE_clones()` returns `[]`; call `LE_pull` before editing.
+- **clean** — `LE_encode_compare` found equal snaps.  Working mirrors origin.
+  Nothing to push.
+- **changey** — working has diverged from origin (clone edits, additions, drops).
+  The intended editing state; not a fault.
+- **stale** — `Seem:origin` awareness pull returned non-zero goners or neus.
+  The remote moved; working may be operating on an outdated picture.
+  Can coexist with changey (local edits + remote drift simultaneously).
+- **dirty** — fault: push happened but post-push `LE_encode_compare` is
+  non-empty.  The push did not land cleanly.  Signalled by `%push_dirty` on
+  `%LE` (not in `%State`).
+
+Transitions: armed → clean (first pull), clean ↔ changey (edit / push),
+clean → stale (remote moves), changey → dirty (push fault).
+
+```
+LE/%State
+  sc.armed:   1 | undefined
+  sc.changey: 1 | undefined   ← encode-compare found snap mismatch
+  sc.stale:   1 | undefined   ← origin pull returned neus or goners
+  // %push_dirty child on %LE is the fault signal — not inside %State
+```
+
+`Seem:working/%News` carries the raw structural counts (`goners`/`neus`) from
+the last `o_Seem` walk.  `%State` is the synthesised view that `LE_pull` and
+`LE_encode_compare` maintain together.  Liesui and Lang read `%State`.
 
 ---
 
 ## Workflows and Awarenesses — the two-Seem model
 
-`i_Seem` central — it does the two things LE needs (read the remote,
-hold our editable working set), and pull / clones / push below are a breakdown of
-what it sets up.
+`%Seem` do the two things LE needs (read the remote, hold our
+editable working set), and pull / clones / push below are a breakdown of what
+it sets up.
 
 The single-`Se` `LE_pull` we began with conflates two jobs that want separating:
 reading the remote, and holding our editable working set.  The push bug that
@@ -71,19 +104,23 @@ D-sphere tagging (`U_clone:1`), pushing `D.sc` back leaks that tagging onto the
 source.  The clone's identity sc and its D-sphere bookkeeping must not be the
 same thing.
 
-So: **two Seems**, each its own `Selection`, both hung off one `%LiesEnd`.
+So: **two Seems**, each its own `Selection`, both hung off one `%LE`.
 
 ```
-LE/%Seem:origin,Se:Selection(),C:$OC,topD         ← reads the remote OC**
-  /D%Demonstrations:origin    ← is topD
+w/{LE}
+  /%Seem:origin,Se:Selection(),C:$OC,topD    ← reads the remote %What
+    /%Demonstrations:origin                  ← topD; awareness sphere
 
-LE/%Seem:working,Se:Selection(),C:$C,topD         ← holds the editable C**
-  /D%Demonstrations:working   ← is topD
-    /%Understandable           ← per-D U node, only when use_Understandable:1
+  /%Seem:working,Se:Selection(),C:$C,topD   ← holds the editable clone tree
+    /%Demonstrations:working                 ← topD
+      /%Understandable                       ← per-D U node (use_Understandable)
+
+  /%State                                    ← synthesised: armed/changey/stale
+  // %push_dirty child — fault; present only when push didn't land clean
 ```
 
 `use_Understandable:1` on `i_Seem` switches on the U sphere for that Seem.
-In `traced_fn`: `C.c.D` is stamped with the D node, then `D.oai({ Understandable:1 })`
+In `traced_fn`: `C.c.D` is stamped with the D node, then `D.oai({Understandable:1})`
 is sprung and cached as `C.c.U`.  The U node survives re-walks because
 `%Understandable` is outside the `trace_sc` partial in `D.replace` — `resolve()`/
 `resume_X` carry it across as the same object.  Only `Seem:working` uses this;
@@ -95,8 +132,8 @@ is sprung and cached as `C.c.U`.  The U node survives re-walks because
 creates both fresh.  `Seem:origin%C` is `what_C` immediately — it IS the remote
 `%What`.  `Seem:working%C` is absent until the first `LE_pull`, which runs
 `Seem_clone_C` to copy the source C** children directly (no strip — C.sc never
-carried D-sphere tags).  Thereafter `Seem:working%C` persists across pulls as the
-editable clone tree.
+carried D-sphere tags).  Thereafter `Seem:working%C` persists across pulls as
+the editable clone tree.
 
 `LE_arm` drops both Seems on re-arm so their D/U spheres start empty — without
 this, `resolve()` pairs a fresh clone against a stale D node of similar shape and
@@ -105,16 +142,19 @@ this, `resolve()` pairs a fresh clone against a stale D node of similar shape an
 A typical session:
 
 ```
-H.LE_arm(LE, target)              // aim at a %What; Seem:origin%C = target
+H.LE_arm(LE, target)            // aim at a %What; Seem:origin%C = target
+                                // %State.armed = 1
 
-await H.LE_pull(LE)               // walk remote → origin D sphere (awareness)
-                                  // first pull: Seem_clone_C → Seem:working%C
-                                  // walk Seem:working%C → working D/U sphere
+await H.LE_pull(LE)             // walk remote → origin D sphere (awareness)
+                                // first pull: Seem_clone_C → Seem:working%C
+                                // walk Seem:working%C → working D/U sphere
+                                // %State.armed cleared; .stale if neus/goners
 
-H.LE_clones(LE)[0].sc.method = 'renamed'   // edit a clone in place
-H.LE_clones(LE)[1].c.U.sc.unaccepted = 1   // mark a clone for deletion
+H.LE_clones(LE)[0].sc.method = 'renamed'   // edit a clone → %State.changey
+H.LE_clones(LE)[1].c.U.sc.unaccepted = 1   // mark for deletion
 
-await H.LE_push(LE)               // replace-back skipping unaccepted
+await H.LE_push(LE)             // replace-back skipping unaccepted
+                                // LE_push re-pulls; %push_dirty if non-clean
 
 const { dirty } = await H.LE_encode_compare(LE)   // snap-compare for push-state
 ```
@@ -155,9 +195,9 @@ a characterisation of the resolve primitive, not of LE's intended diff path.)
 ### When to encode
 
 - `Seem:origin` re-walk fires `neus`/`goners` → remote moved → schedule a
-  working refresh and re-encode origin's slice.
+  working refresh and re-encode origin's slice.  Set `%State.stale`.
 - `Seem:working` edit (UPoint mutated, meaning written) → schedule a working
-  re-encode.
+  re-encode.  Set `%State.changey`.
 - Compare the two latest encodes → that's `push would carry`.  Empty → clean.
 
 Dump each encode on `LE/*` so a reload or "push anyway" resumes the push-state

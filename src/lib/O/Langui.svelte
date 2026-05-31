@@ -5,7 +5,7 @@
     //
     //   One EditorView, many EditorStates.  On doc switch:
     //     1. Bookmark positions for the departing doc are flushed immediately
-    //        (bypassing the 800ms debounce) so docC never has stale positions.
+    //        (bypassing the 800ms debounce) so dock never has stale positions.
     //     2. Scroll position is saved to scrollCache (EditorState doesn't carry it).
     //     3. Current EditorState (undo history, selection, bookmark decorations)
     //        is saved to stateCache[prev_path].
@@ -18,7 +18,7 @@
     //   survive.  All EditorStates on one view must share the same extension list
     //   (editorExtensions) — stho() theme is called once at construction.
     //
-    //   Every CM event carries { doc, view, state } so Lang_doc_from_event
+    //   Every CM event carries { doc, view, state } so Lang_dock_from_event
     //   on the backend can DRY the state update in exactly one place.
     //
     // ── Bookmark pipeline ────────────────────────────────────────────────────
@@ -37,10 +37,10 @@
     //
     //   Bookmark flush on switch: flush_update_bookmarks_for_path(prev_path) is
     //   called before saving the departing EditorState.  This cancels any pending
-    //   800ms debounce and immediately sends the live positions to docC so they
+    //   800ms debounce and immediately sends the live positions to dock so they
     //   can't be clobbered by a stale timer firing after the switch.
     //   editorBegins also carries `updates` so the backend can re-apply any
-    //   bookmarks that exist in docC but are absent from a freshly-restored CM state.
+    //   bookmarks that exist in dock but are absent from a freshly-restored CM state.
     //
     // ── saveEffect ───────────────────────────────────────────────────────────
     //
@@ -52,8 +52,8 @@
     //
     // ── Reactive chain ───────────────────────────────────────────────────────
     //
-    //   Signal $effect: reads H.ave.ob({active_doc:1}) + sig?.ob() to subscribe
-    //     to sig.version changes.  Writes active_path ($state) and docC ($state).
+    //   Signal $effect: reads H.ave.ob({active_dock:1}) + sig?.ob() to subscribe
+    //     to sig.version changes.  Writes active_path ($state) and dock ($state).
     //
     //   Switch $effect: reads active_path (only reactive dep).  When it changes,
     //     flushes bookmarks + scroll for departing doc → saves departing state →
@@ -65,7 +65,7 @@
     //
     // ── Echo guard / text spool (the high-frequency-git seed) ────────────────
     //
-    //   The same ave/%lang_doc particle is used for two flows that look
+    //   The same ave/%lang_dock particle is used for two flows that look
     //   identical from the particle's POV but are not at all the same:
     //     (a) disk/remote pulls — Lies has loaded a new file, or in future a
     //         peer has merged something in.  These should be applied to the view.
@@ -107,7 +107,7 @@
     let { H }: { H: House } = $props()
 
     // container is $state so the creation $effect tracks when the div appears.
-    // The div only renders once docC is truthy, so this naturally gates construction.
+    // The div only renders once dock is truthy, so this naturally gates construction.
     let container: HTMLDivElement | undefined = $state()
     // view is $state so child components passed `view` as a prop get the
     // EditorView reference once construction has completed (otherwise the
@@ -259,9 +259,9 @@
     //   immediately send the live bookmark positions for `path` to the backend.
     //
     //   Called before a doc switch so the departing doc's positions land in
-    //   docC before active_path changes — preventing a stale debounce timer
+    //   dock before active_path changes — preventing a stale debounce timer
     //   from firing later and sending the wrong doc's (empty) bookmark list to
-    //   the arriving doc's docC, which would flag all its bookmarks as vanished.
+    //   the arriving doc's dock, which would flag all its bookmarks as vanished.
     function flush_update_bookmarks_for_path(path: string) {
         if (update_timer) { clearTimeout(update_timer); update_timer = null }
         if (!view || !path) return
@@ -278,21 +278,21 @@
     // ── reactive signals from ave ─────────────────────────────────────────────
     //   lang_actions: action buttons registered by Lang ghost
     //   active_path:  path of the currently-shown doc ($state so template reacts)
-    //   docC:         the ave/{lang_doc:path} particle (text length display,
+    //   dock:         the ave/{lang_dock:path} particle (text length display,
     //                 disk-reload detection)
-    //   active_doc:   the actual {doc:path} particle from w:Lang
-    //                 (holds bookmarks; sig.c.doc set by Lang_set_active_doc)
+    //   active_dock:   the actual {dock: path} particle from w:Lang
+    //                 (holds bookmarks; sig.c.dock set by Lang_set_active_dock)
     let lang_actions: TheC[] = $state([])
     let active_path  = $state('')
-    let docC:       TheC | undefined = $state()   // text-sync particle
-    let active_doc: TheC | undefined = $state()   // {doc:path} particle — has bookmarks
+    let dock:       TheC | undefined = $state()   // text-sync particle
+    let active_dock: TheC | undefined = $state()   // {dock: path} particle — has bookmarks
 
     // Short filename for the bar header.
     let active_name = $derived(active_path ? (active_path.split('/').pop() ?? active_path) : 'no doc')
 
     let bookmarks: TheC[] = $derived(
-        !active_doc ? []
-            : (active_doc.ob({ bookmark: 1 }) as TheC[]).filter(bm => !bm.sc.graft)
+        !active_dock ? []
+            : (active_dock.ob({ bookmark: 1 }) as TheC[]).filter(bm => !bm.sc.graft)
     )
 
     // lang_model: the w:Lang model particle passed to each DocPoint for the eye tree.
@@ -303,7 +303,7 @@
     // we just need the reference. DocPoint subscribes to model.version via ob().
     let lang_model: TheC | undefined = $state()
     $effect(() => {
-        void active_doc   // re-run once active_doc arrives (Lang_plan has run by then)
+        void active_dock   // re-run once active_dock arrives (Lang_plan has run by then)
         H.clear(async () => {
             try {
                 lang_model = H.Awo('Lang', 'Lang')?.c?.model as TheC | undefined
@@ -320,24 +320,24 @@
     let expanded = $state(false)
 
     // ── signal $effect ────────────────────────────────────────────────────────
-    //   Reads H.ave for lang_actions, active_doc, and lang_doc.
+    //   Reads H.ave for lang_actions, active_dock, and lang_dock.
     //   sig?.ob() subscribes to sig.version so path changes inside the same
     //   sig particle (bump_version only, no re-i()) still wake this effect.
     //
-    //   sig.c.doc is the {doc:path} particle stamped by Lang_set_active_doc.
+    //   sig.c.dock is the {dock: path} particle stamped by Lang_set_active_dock.
     //   It lives on .c (not .sc) because TheC references don't belong in the
     //   index; the signal's version bump is what wakes this effect up.
     $effect(() => {
         const la = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
 
-        const sig  = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
+        const sig  = H.ave.ob({ active_dock: 1 })[0] as TheC | undefined
         sig?.ob()  // track sig.version — path changes bump it without re-enrolling
         const path = (sig?.sc.path as string | undefined) ?? ''
         if (path) active_path = path
-        docC       = path ? H.ave.ob({ lang_doc: path })[0] as TheC | undefined : undefined
-        active_doc = sig?.c.doc as TheC | undefined
-        console.log(`🔭 signal $effect: sig=${!!sig} path=${path} docC=${!!docC} active_doc=${!!active_doc}`)
+        dock       = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
+        active_dock = sig?.c.doc as TheC | undefined
+        console.log(`🔭 signal $effect: sig=${!!sig} path=${path} dock=${!!dock} active_dock=${!!active_dock}`)
     })
 
     // ── change strip ─────────────────────────────────────────────────────────────
@@ -348,7 +348,7 @@
     let _storage: TheC | undefined = $state()
     let _compile: TheC | undefined = $state()
     $effect(() => {
-        void docC?.version   // re-fires when Lang_update_change bumps ave/lang_doc
+        void dock?.version   // re-fires when Lang_update_change bumps ave/lang_dock
         const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
         const change    = languinio?.ob({ Change: 1 })[0] as TheC | undefined
         _backend = change?.ob({ backend: 1 })[0] as TheC | undefined
@@ -362,7 +362,7 @@
     //   view.setState() with the arriving one.
     //   view.setState() is CM's documented multi-doc API — it replaces all state
     //   atomically without destroying the view or its plugins.
-    //   untrack() around the save prevents docC reads from creating a dependency.
+    //   untrack() around the save prevents dock reads from creating a dependency.
     let prev_path = ''   // plain let — not reactive; switch $effect is sole writer
     $effect(() => {
         const arriving = active_path
@@ -380,9 +380,9 @@
                 flush_autosave_now()
 
                 // Flush departing bookmark positions immediately — bypass the
-                // 800ms debounce so docC always holds current positions.
+                // 800ms debounce so dock always holds current positions.
                 // A stale timer firing later would otherwise send the arriving
-                // doc's (possibly empty) bookmark list to the wrong docC.
+                // doc's (possibly empty) bookmark list to the wrong dock.
                 flush_update_bookmarks_for_path(prev_path)
 
                 // Snapshot full scroll state before departing.
@@ -399,7 +399,7 @@
                 view!.setState(cached)
             } else {
                 // First visit: build a fresh state from ave text.
-                const text = (docC?.sc.text as string | undefined) ?? ''
+                const text = (dock?.sc.text as string | undefined) ?? ''
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
             }
 
@@ -413,7 +413,7 @@
             if (snap) view!.dispatch({ effects: snap })
 
             // Re-register view+state with backend so CM events carry the right doc.
-            // Pass current bookmark + graft positions so the backend can reconcile docC
+            // Pass current bookmark + graft positions so the backend can reconcile dock
             // and the Pmirror %graft children against the restored CM state.
             Lang_i_elvis(view!, 'Lang_editorBegins',
                 { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
@@ -423,23 +423,23 @@
     })
 
     // ── disk-reload $effect ───────────────────────────────────────────────────
-    //   When the active doc is reloaded from disk (docC text installed by a
+    //   When the active doc is reloaded from disk (dock text installed by a
     //   disk-origin write — open or external reload), push the new content into
     //   the editor.  Replacing history is acceptable here because the file
     //   changed on disk, not in the editor.
     //   Guards with active_path === prev_path to avoid firing mid-switch.
     //
-    //   disk_rev gate: docC.version bumps on every text write, including the
+    //   disk_rev gate: dock.version bumps on every text write, including the
     //   echoes of our own keystrokes (e_Lang_set_doc).  Only disk-origin writes
-    //   (req_text_loaded) advance docC.sc.disk_rev, so gating on a per-path
+    //   (req_text_loaded) advance dock.sc.disk_rev, so gating on a per-path
     //   disk_rev key means editor echoes hit `key === _applied` and return
     //   without dispatching back into the view.  The spool below is a second
     //   line of defence for any text that does reach the dispatch.
     let _applied_disk_key: string | null = null   // `${path}#${disk_rev}` last applied
     $effect(() => {
-        void docC?.version   // wake on any text-particle change
-        const disk_rev = (docC?.sc.disk_rev as number | undefined) ?? 0
-        const incoming = (docC?.sc.text as string | undefined) ?? ''
+        void dock?.version   // wake on any text-particle change
+        const disk_rev = (dock?.sc.disk_rev as number | undefined) ?? 0
+        const incoming = (dock?.sc.text as string | undefined) ?? ''
         if (!view || !incoming) return
         if (active_path !== prev_path) return   // switch in progress
         const key = `${active_path}#${disk_rev}`
@@ -454,16 +454,16 @@
     })
 
     // ── language reconfigure $effect ─────────────────────────────────────────
-    //   Tracks active_doc.sc.lang_override (and falls back to lang_for_path on
+    //   Tracks active_dock.sc.lang_override (and falls back to lang_for_path on
     //   the active_path). When it differs from the last applied language,
     //   resolves the new lang() extensions and dispatches a Compartment
     //   reconfigure on the view — no remount, undo history and selection
     //   survive. last_applied_lang is set optimistically; if the async
     //   lang() resolve rejects we revert it so a retry can fire.
     $effect(() => {
-        void active_doc?.version
+        void active_dock?.version
         if (!view || !active_path) return
-        const want = (active_doc?.sc.lang_override as string)
+        const want = (active_dock?.sc.lang_override as string)
             ?? lang_for_path(active_path)
         if (want === last_applied_lang) return
         const prev = last_applied_lang
@@ -483,7 +483,7 @@
     // ── Lang_i_elvis ─────────────────────────────────────────────────────────
     //
     //   Central CM→backend bridge.  Stamps { doc, view, state } on every event
-    //   so Lang_doc_from_event can update docC.c.view/state in one place,
+    //   so Lang_dock_from_event can update dock.c.view/state in one place,
     //   and the backend always knows which document the event came from.
     //   Uses active_path (not a fixed prop) so the stamp stays correct
     //   after a doc switch.
@@ -717,8 +717,8 @@
 
     // ── EditorView construction ──────────────────────────────────────────────
     //
-    //   Deferred until container is bound, which only happens after {#if docC}
-    //   becomes true (first ave/%lang_doc particle arrived).
+    //   Deferred until container is bound, which only happens after {#if dock}
+    //   becomes true (first ave/%lang_dock particle arrived).
     //
     //   editorExtensions is extracted and stored so every subsequent EditorState
     //   created by the switch $effect shares the identical extension set — CM
@@ -729,14 +729,14 @@
     //
     //   `view` is $state (so child components see its assignment), but reading
     //   it here would make this effect depend on itself.  untrack() around
-    //   the read keeps the only reactive dep on `container` and `docC`.
+    //   the read keeps the only reactive dep on `container` and `dock`.
     // ── ResizeObserver for late layout settling ──────────────────────────────
     //   See construction $effect for context.  Stored at module scope so
     //   onDestroy can disconnect it.
     let container_ro: ResizeObserver | undefined
 
     $effect(() => {
-        console.log(`🏗 construction $effect: container=${!!container} docC=${!!docC} view=${!!untrack(()=>view)}`)
+        console.log(`🏗 construction $effect: container=${!!container} dock=${!!dock} view=${!!untrack(()=>view)}`)
         if (!container || !active_path) return
         const already = untrack(() => view)
         if (already) { console.log(`🏗 construction $effect: already have view, bailing`); return }
@@ -744,11 +744,11 @@
         // Capture what we need from reactive scope before the setTimeout.
         const captured_container = container
         const captured_path      = active_path
-        const captured_docC      = docC
+        const captured_dock      = dock
         console.log(`🏗 construction $effect: scheduling setTimeout for path=${captured_path} container.clientHeight=${captured_container.clientHeight}`)
 
         // Defer EditorView construction by one task so the browser has done
-        // a layout pass after {#if docC} flips.  The $effect fires in the
+        // a layout pass after {#if dock} flips.  The $effect fires in the
         // same microtask as the DOM insertion — the container exists but has
         // zero clientHeight, so CM measures 0 and stops painting.
         // HMR works because Svelte remounts into a settled layout; cold load
@@ -757,13 +757,13 @@
         console.log(`🏗 setTimeout fired: isConnected=${captured_container.isConnected} clientHeight=${captured_container.clientHeight}`)
         if (!captured_container.isConnected) return   // destroyed while we waited
 
-        // Read docC fresh — text may have arrived during the delay.
-        const fresh_docC = H.ave.ob({ lang_doc: captured_path })[0] as TheC | undefined
-        const initial    = (fresh_docC?.sc.text as string) ?? (captured_docC?.sc.text as string) ?? ''
+        // Read dock fresh — text may have arrived during the delay.
+        const fresh_dock = H.ave.ob({ lang_dock: captured_path })[0] as TheC | undefined
+        const initial    = (fresh_dock?.sc.text as string) ?? (captured_dock?.sc.text as string) ?? ''
 
         // Pick the initial language by extension. The per-doc override (if
         // any) is applied a moment later by the reconfigure $effect once it
-        // sees active_doc.sc.lang_override.
+        // sees active_dock.sc.lang_override.
         const initial_lang_name = lang_for_path(captured_path)
         const initial_lang_exts = await lang(initial_lang_name)
         if (initial_lang_exts.warnings?.length) {
@@ -811,7 +811,7 @@
         console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 
         // Seed the spool with the initial text so the very first echo
-        // (e_Lang_set_doc bumping docC after our first keystroke) is
+        // (e_Lang_set_doc bumping dock after our first keystroke) is
         // recognised cleanly even before any local edits land.
         spool_remember(captured_path, initial)
 
@@ -857,7 +857,7 @@
 
 {#if active_path}
 <div class="lte" class:lte-expanded={expanded}>
-    {#if docC}
+    {#if dock}
     <div class="lte-bar">
         <!-- doc-picker dropdown + any other Lang actions (compo/compi toggles etc) -->
         <Actions N={lang_actions} />
@@ -882,7 +882,7 @@
         {/if}
         <span class="lte-hint">Ctrl+B</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
-        <span class="lte-len">{(docC.sc.text as string ?? '').length}c</span>
+        <span class="lte-len">{(dock.sc.text as string ?? '').length}c</span>
         <!-- "map" button: toggles minimap overlay, active when open -->
         <button class="lte-map-btn" class:active={minimap_open}
                 onclick={() => minimap_open = !minimap_open}
@@ -909,11 +909,11 @@
         </div>
         {/if}
     </div>
-    {#if active_doc && bookmarks.length}
+    {#if active_dock && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">
         {#each bookmarks as bm (bm.sc.bookmark)}
-            <DocPoint {H} {bm} doc_path={active_path} {lang_model} />
+            <DocPoint {H} {bm} dock_path={active_path} {lang_model} />
         {/each}
     </div>
     {/if}

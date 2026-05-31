@@ -1,14 +1,14 @@
 <script lang="ts">
     // ui/DocPoint.svelte — CRUD for a single bookmark / Point.
     //
-    // A bookmark starts as a raw char-range anchor {from,to,label} on docC.
+    // A bookmark starts as a raw char-range anchor {from,to,label} on dock.
     // Here the user can:
     //   rename       — edit bm.sc.label and optionally bm.sc.method
     //   fuzzify  (~) — resolve the offset range to the enclosing def name
     //                  via e:Lang_point_fuzzify → stamps bm.sc.method
     //   export   (↑) — push bookmark up to the active Waft as a proper Point
     //                  via e:Lies_export_point → stamps bm.sc.point_serial
-    //   delete   (×) — remove from docC and CM via e:Lang_remove_bookmark
+    //   delete   (×) — remove from dock and CM via e:Lang_remove_bookmark
     //
     // bm.sc layout:
     //   bookmark:string     — unique id (bm_${from}_${to})
@@ -24,10 +24,10 @@
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
-    let { H, bm, doc_path, lang_model }: {
+    let { H, bm, dock_path, lang_model }: {
         H:          House
         bm:         TheC
-        doc_path:   string
+        dock_path:   string
         lang_model?: TheC
     } = $props()
 
@@ -57,7 +57,7 @@
 
     function remove() {
         H.i_elvisto('Lang/Lang', 'Lang_remove_bookmark', {
-            doc: doc_path, bookmark_id: bm.sc.bookmark,
+            doc: dock_path, bookmark_id: bm.sc.bookmark,
         })
     }
 
@@ -65,7 +65,7 @@
     // compile index.  No-op and shows a hint if index is absent.
     function fuzzify() {
         H.i_elvisto('Lang/Lang', 'Lang_point_fuzzify', {
-            doc: doc_path, bookmark_id: bm.sc.bookmark,
+            doc: dock_path, bookmark_id: bm.sc.bookmark,
         })
     }
 
@@ -73,7 +73,7 @@
     // Lies will find-or-create the Doc row and assign a serial.
     function export_to_doc() {
         H.i_elvisto('Lies/Lies', 'Lies_export_point', {
-            path:        doc_path,
+            path:        dock_path,
             bookmark_id: bm.sc.bookmark as string,
             from:        bm.sc.from     as number,
             to:          bm.sc.to       as number,

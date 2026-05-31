@@ -3,7 +3,65 @@
 Carry-forward for post-🌴 work.  `Waft_spec.md` owns the *design* of the What
 tree and its transport semantics; this doc owns the *implementation slice*.
 
+---
 
+## Lang/LE architecture
+
+```
+w:Lies
+  /%examining
+    /%What_Points
+        sc.src      $C → %What    ← checkout target (arm point)
+        sc.src_Waft string
+  /%LE                             ← stable; not inside replace()
+    /%State                        ← synthesised: armed/changey/stale (see LiesEnd_spec)
+    // %push_dirty — fault child; present only when push didn't land clean
+    /%Seem:origin
+        sc.Se  Selection()
+        sc.C   → live %What        ← the remote; never edited
+        /%Demonstrations:origin
+          /…D   one per child      ← awareness sphere; neus/goners = stale signal
+        /%News:origin
+    /%Seem:working
+        sc.Se  Selection()
+        sc.C   → clone root        ← our editable tree
+        /%Demonstrations:working
+          /…D   one per clone
+            /%Understandable       ← U node; unshowing/unaccepted live here
+        /%News:working
+
+ave/%active_dock                   ← reactive signal: which %Dock is foregrounded
+  sc.path  string
+  c.dock   $C → %Dock              ← direct ref; Langui reads for bookmarks
+
+w:Lang
+  /%docks
+    /%Dock,path                    ← one per open file; carries CM state + compile
+      /%Compile
+        /%Output
+      /%bookmark,N
+      // < /%LE — per-Dock Understanding; armed when Lies_set_examining aims here
+
+  /%Languinio
+    /%Change                       ← three-leg display strip (storage/backend/compile)
+    // < /%LE — same-object hold on w:Lies/%LE for whichever Dock is foregrounded
+    //   re-pointed on each Lies_set_examining call
+
+ave/%lang_dock,path                ← text sync; sc.text / sc.text_dige / sc.disk_dige
+```
+
+Key structural facts:
+
+- `LiesEnd` methods run on the same House as `Lies` — `H.LE_arm`, `H.LE_pull`
+  etc. are available from any Lies tick or LiesCurse callback without a
+  cross-world round-trip.
+- The Understanding is **Lies's checkout, Lang's read**: Lang reaches it through
+  the `%Languinio/%LE` same-object hold (`C.i(C)` of the live `%LE`), so it
+  can call `LE_clones()` and check `%State` without messaging.
+- `Lies_set_examining` is the single seam: on a cursor move it calls
+  `LE_arm(w.oai({LE}), what_C)` and re-points the Languinio hold.
+
+---
 
 ## Chunk U — the Understanding ✓ done
 
@@ -49,15 +107,16 @@ children on push.
 
 ### The two-Seem model — origin and working
 
-Two `Selection` walks hang off one `%LiesEnd`, each its own Seem:
+Two `Selection` walks hang off one `%LE`, each its own Seem:
 
 ```
-LE/%Seem:origin,Se:Selection(),C:$OC,topD    ← reads the remote OC**
-  /D%Demonstrations:origin                   ← is topD
+w/{LE}
+  /%Seem:origin,Se:Selection(),C:$OC,topD    ← reads the remote %What
+    /%Demonstrations:origin                  ← topD; awareness sphere
 
-LE/%Seem:working,Se:Selection(),C:$C,topD   ← holds the editable clone tree
-  /D%Demonstrations:working                  ← is topD
-    /%Understandable                          ← per-D U node (use_Understandable:1)
+  /%Seem:working,Se:Selection(),C:$C,topD   ← holds the editable clone tree
+    /%Demonstrations:working                 ← topD
+      /%Understandable                       ← per-D U node (use_Understandable)
 ```
 
 `Seem:origin` walks the live `%What` for awareness — its `goners`/`neus` are
@@ -117,6 +176,11 @@ Core: `LE_arm`, `LE_pull`, `LE_push`, `LE_clones`, `LE_encode_compare`,
 expect a no-diff on the return-pull.  A non-empty diff means the push didn't
 land cleanly — a catchable fault.
 
+### LE states
+
+See `LiesEnd_spec.md` for the full state vocabulary (armed / clean / changey /
+stale / dirty) and `%State` particle layout.
+
 ### Open faults
 
 - `// <` the no-diff-after-push check needs a home: a `reqonce` on the push req
@@ -146,7 +210,7 @@ w:Lies
     req_sent
     started:1
     req:open_What           ← reqonce: opened first What, cursor set
-      ttlilt:1,until_ts:T,playing:1   ← armed only in auto-advance mode
+      ttlilt:until_ts:T,playing   ← armed only in auto-advance mode
     req:next_What           ← when advancing: step sibling, or exhausted
 ```
 
@@ -210,7 +274,7 @@ arms a ttlilt for 10s; after expiry, unrescued ghosts are dropped.
 ### `◀◀ rwnd`
 
 Steps back through `%What` siblings in reverse, re-loading their showing set
-into `%What_Points,1`.  Read-only — no mutations to accepted state.
+into `%What_Points`.  Read-only — no mutations to accepted state.
 The "you were here" marker.
 
 ### Sub-slices
@@ -260,3 +324,8 @@ The "you were here" marker.
   **`/%Demonstrations`** (the D sphere); `C.c.U` the clone's direct ref to its
   U node, `C.c.D` to its D node.  `%Pointo` is retired.  Local meanings live on
   U (`C:Point//U%unshowing`), never on the source `%Point`.
+- Particle rename (Lang-side only): `docC` → `dock`, `{doc:path}` → `{dock:path}`,
+  `lang_doc` → `lang_dock`, `active_doc` → `active_dock`.  `loaded_doc` keeps its
+  full name (Lies-side loaded-file record, not a Dock).  Waft-side `%Doc` particles
+  are unchanged — `%Doc` is a document in the tour; `%Dock` is Lang's docked-file
+  particle (carries `/Compile`, `/Pmirror`, `/bookmark`).

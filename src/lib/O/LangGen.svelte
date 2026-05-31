@@ -69,7 +69,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
 
         // gen_parser starts disabled. LangGen_tick flips it on when the
         // active doc is a registered .grammar source. The fn re-derives the
-        // target language name from the active docC at fire time, so the
+        // target language name from the active dock at fire time, so the
         // closure doesn't need updating per tick.
         wa.oai({ action: 1, role: 'gen_parser' }, {
             label:    'gen',
@@ -85,13 +85,13 @@ export const grammar_hash = ${JSON.stringify(hash)}
         const H   = this as House
         const wa  = H.o({ watched: 'actions' })[0] as TheC | undefined
         if (!wa) return
-        const docC = H.Lang_active_docC(w) as TheC | undefined
-        const path = docC?.sc.doc as string | undefined
+        const dock = H.Lang_active_dock(w) as TheC | undefined
+        const path = dock?.sc.dock as string | undefined
 
         // ── lang_pick.value tracks the active doc ────────────────────────
         const pickC = wa.o({ action: 1, role: 'lang_pick' })[0] as TheC | undefined
         if (pickC) {
-            const want = (docC?.sc.lang_override as string)
+            const want = (dock?.sc.lang_override as string)
                 ?? (path ? lang_for_path(path) : 'stho')
             if (pickC.sc.value !== want) {
                 pickC.sc.value = want
@@ -99,7 +99,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
             }
         }
 
-        // ── gen_parser.disabled/label track whether docC is a .grammar ──
+        // ── gen_parser.disabled/label track whether dock is a .grammar ──
         const matched = path
             ? Object.entries(REGISTRY).find(([, e]) => e.grammar_path === path)
             : null
@@ -121,17 +121,17 @@ export const grammar_hash = ${JSON.stringify(hash)}
     },
 
     // Update the per-doc language override. Langui's $effect notices the
-    // change via active_doc.version and reconfigures the language
+    // change via active_dock.version and reconfigures the language
     // Compartment.
     async e_Lang_set_lang(A: TheC, w: TheC, e: TheC) {
         const H = this as House
-        const docC = H.Lang_active_docC(w) as TheC | undefined
-        if (!docC) return
+        const dock = H.Lang_active_dock(w) as TheC | undefined
+        if (!dock) return
         const next = e.sc.lang as string
         if (!next) return
-        if (docC.sc.lang_override === next) return
-        docC.sc.lang_override = next
-        docC.bump_version()
+        if (dock.sc.lang_override === next) return
+        dock.sc.lang_override = next
+        dock.bump_version()
         H.i_elvisto(w, 'think')
     },
 
@@ -139,13 +139,13 @@ export const grammar_hash = ${JSON.stringify(hash)}
     // stamp a hash header, write to the registry entry's generated_path
     // via the same Wormhole rw_op pathway Lies uses.
     //
-    // Target language name re-derived from active docC when e.sc.name is
+    // Target language name re-derived from active dock when e.sc.name is
     // absent — lets the plan-time button closure stay constant.
     async e_Lang_generate_parser(A: TheC, w: TheC, e: TheC) {
         const H = this as House
         let name = e.sc.name as string | undefined
-        const docC = H.Lang_active_docC(w) as TheC | undefined
-        const path = docC?.sc.doc as string | undefined
+        const dock = H.Lang_active_dock(w) as TheC | undefined
+        const path = dock?.sc.dock as string | undefined
         if (!name && path) {
             const matched = Object.entries(REGISTRY).find(([, en]) => en.grammar_path === path)
             if (matched) name = matched[0]
@@ -158,7 +158,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
             return
         }
 
-        const state = docC?.c.state as { doc: { toString(): string } } | undefined
+        const state = dock?.c.state as { doc: { toString(): string } } | undefined
         if (!state) { w.i({ see: '⚠ gen: no active editor state' }); return }
         const source = state.doc.toString()
 

@@ -22,7 +22,7 @@
     //   doc       — Doc TheC (sc.path, sc.new?, sc.not_found?) or a loaded_doc
     //   waft      — parent Waft particle; null in the flat loaded-docs list
     //   examining — from Liesui; carries examining.sc.active_path (Lang's active doc).
-    //               version bumps when Lang_set_active_doc fires — is_examining reacts
+    //               version bumps when Lang_set_active_dock fires — is_examining reacts
     //               without a Liesui re-render (pure Svelte 5 $derived reactivity).
     //   on_del    — deletion callback; omit in flat list (no × button)
     //   on_rename — (old_path, new_path) → void; omit in flat list (no ✎ button)
@@ -61,8 +61,8 @@
     })())
 
     // Glow when this doc is the one currently open in Lang.
-    // examining.sc.active_path mirrors ave/{active_doc:1}.sc.path and bumps when
-    // Lang_set_active_doc fires — no Liesui re-render required, pure Svelte 5.
+    // examining.sc.active_path mirrors ave/{active_dock:1}.sc.path and bumps when
+    // Lang_set_active_dock fires — no Liesui re-render required, pure Svelte 5.
     let is_examining = $derived((() => {
         void examining?.version
         return !!examining && examining.sc.active_path === path

@@ -38,7 +38,7 @@ combination.  The tree grammar:
 ```
 Waft → (What | Doc)*
 What → (What | Doc | Point)*
-Doc  → (What | Point)*
+Doc → (What | Point)*
 Point → (nothing — leaf)
 ```
 
@@ -73,7 +73,7 @@ Waft:Ghost/Tour
 
 ## Active-What tracking
 
-`active` is **not stored on the particle** — it is session state, like `ave/%active_doc`.
+`active` is **not stored on the particle** — it is session state, like `ave/%active_dock`.
 
 ```
 ave/{active_what:1}

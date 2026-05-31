@@ -10,9 +10,9 @@
     //     Each RegionEntry: { label, depth, from_line, to_line, from_char, to_char, children }
     //     Used by Lang_apply_openness to know which char spans to fold/unfold.
     //
-    //   Lang_resolve_point(state, docC, method_spec)
+    //   Lang_resolve_point(state, dock, method_spec)
     //     Parses `method_spec` and matches against the compiled methods index
-    //     (docC / Compile / Output / methods / {def|call|region|controlflow:1, …}).
+    //     (dock / Compile / Output / methods / {def|call|region|controlflow:1, …}).
     //     Returns { from, to, line, kind, issues[] } or null (no index yet).
     //
     //     Spec forms (tried in order):
@@ -31,7 +31,7 @@
     //     Requires codeFolding() (or foldGutter()) in the editor's extensions.
     //
     //   e_Lang_point_navigate(A, w, e)
-    //     Fired from e_Doc_open when e.sc.point is present, or from Liesui when
+    //     Fired from e_Dock_open when e.sc.point is present, or from Liesui when
     //     a Point row is clicked.  Resolves → applies openness → scrolls → reports.
     //     e.sc: { point: string, doc?: string }
     //
@@ -147,22 +147,22 @@
 //#endregion
 //#region Lang_resolve_point
 
-    // Resolve a Point method_spec against docC's compiled methods index.
+    // Resolve a Point method_spec against dock's compiled methods index.
     //
     // Returns null when there is no compiled index yet — the caller should
     // show a hint and ask the user to run compile first.
     //
-    // The methods index lives at: docC / Compile / Output / methods
+    // The methods index lives at: dock / Compile / Output / methods
     //   {def:1, method, from, to, line, region_path}
     //   {call:1, method, via?, from, to, line, region_path}
     //   {region:1, label, from, to, line, depth}
     //   {controlflow:1, keyword, title, from, to, line, via?, region_path}
     Lang_resolve_point(
         state:       EditorState,
-        docC:        TheC,
+        dock:        TheC,
         method_spec: string,
     ): { from: number, to: number, line: number, kind: string, issues: string[] } | null {
-        const job     = docC.o({ Compile: 1 })[0]  as TheC | undefined
+        const job     = dock.o({ Compile: 1 })[0]  as TheC | undefined
         // methods is a direct child of Compile, not nested under Output.
         // (Output holds source/dige; methods is a sibling.)
         const methods = job?.o({ methods: 1 })[0]  as TheC | undefined
@@ -413,9 +413,9 @@
     //
     //   Used by e_Lang_point_fuzzify to upgrade a positional bookmark to a
     //   named method pointer without requiring the user to type a name.
-    Lang_def_at_offset(docC: TheC, offset: number): string | undefined {
+    Lang_def_at_offset(dock: TheC, offset: number): string | undefined {
         // methods is a direct child of Compile (sibling of Output)
-        const job     = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const job     = dock.o({ Compile: 1 })[0] as TheC | undefined
         const methods = job?.o({ methods: 1 })[0]  as TheC | undefined
         if (!methods) return undefined
 
@@ -482,7 +482,7 @@
     // ── e_Lang_point_navigate ─────────────────────────────────────────────────
     //
     //   Full resolution → openness → scroll cycle for a Point spec.
-    //   Called from e_Doc_open (point navigation TODO is now done here) and
+    //   Called from e_Dock_open (point navigation TODO is now done here) and
     //   directly from Liesui when a Point row is clicked.
     //
     //   Flow:
@@ -499,19 +499,19 @@
         const spec = e.sc.point as string | undefined
         if (!spec) return
 
-        const docC  = this.Lang_active_docC(w)
-        if (!docC) return
-        const view  = docC.c.view  as EditorView | undefined
-        const state = docC.c.state as EditorState | undefined
+        const dock  = this.Lang_active_dock(w)
+        if (!dock) return
+        const view  = dock.c.view  as EditorView | undefined
+        const state = dock.c.state as EditorState | undefined
         if (!view || !state) return
 
-        const result = this.Lang_resolve_point(state, docC, spec)
+        const result = this.Lang_resolve_point(state, dock, spec)
 
         if (!result) {
             // No compiled index — ask user to compile first.
             w.i({ see: `⏳ Point '${spec}': no index yet — run compile first` })
             H.i_elvisto('Lies/Lies', 'Lies_point_issues', {
-                doc:    docC.sc.doc  as string,
+                doc:    dock.sc.dock  as string,
                 point:  spec,
                 issues: [`no compiled index for this doc; run compile first`],
             })
@@ -530,7 +530,7 @@
 
         // Report issues back to Lies (even when empty — clears stale diagnostics).
         H.i_elvisto('Lies/Lies', 'Lies_point_issues', {
-            doc:    docC.sc.doc as string,
+            doc:    dock.sc.dock as string,
             point:  spec,
             kind:   result.kind,
             from:   result.from,

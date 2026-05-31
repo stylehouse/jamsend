@@ -11,11 +11,11 @@
     // ── Data ─────────────────────────────────────────────────────────────────
     //
     //   Reads the compiled methods index that LangCompiling deposits at
-    //     w:Lang/{docs}/{doc:path}/{Compile:1}/{methods:1}  (via lang_docC).
+    //     w:Lang/{docks}/{dock:path}/{Compile:1}/{methods:1}  (via lang_dock).
     //   %methods is a direct child of %Compile; %Output only appears for
     //   hard-compiled (gen_path) docs.  Soft compiles have no %Output.
     //
-    //   Points come from %Pmirror,N under lang_docC/%Pmirrors,1.
+    //   Points come from %Pmirror,N under lang_dock/%Pmirrors,1.
     //   They are auto-promoted to in_group on first appearance (unless the user
     //   has explicitly demoted that spec this session via ×).  Auto-promotion
     //   sets pushed_snapshot to match so the bar doesn't appear until the user
@@ -142,7 +142,7 @@
         const snap = current_what_point_json()
         _our_last_push_id = Date.now()
         H.i_elvisto('Lies/Lies', 'Lies_accept_What_Point', {
-            doc_path:   active_path,
+            dock_path:   active_path,
             what_point: JSON.parse(snap),
         })
         pushed_snapshot = snap
@@ -166,7 +166,7 @@
 
     // Called when Lies sends a new What_Point replacing what Lang is working from.
     // Drops any unpushed local state and installs the Lies-side view.
-    // < call site: when lang_docC Pmirror identity changes substantially.
+    // < call site: when lang_dock Pmirror identity changes substantially.
     function receive_what_point_from_lies(entries: { spec: string, showing: boolean }[]) {
         _auto_promoted  = new Set(entries.map(e => e.spec))
         _user_demoted   = new Set()
@@ -196,7 +196,7 @@
     // Advance the Lies cursor to the next Doc across all loaded Wafts.
     // < What-level navigation (sibling time-slices) is a future arc.
     function cursor_next() {
-        H.i_elvisto('Lies/Lies', 'Lies_cursor_next', { doc_path: active_path })
+        H.i_elvisto('Lies/Lies', 'Lies_cursor_next', { dock_path: active_path })
     }
 
     // ── doc switch ────────────────────────────────────────────────────────────
@@ -258,15 +258,15 @@
     })
 
     // ── data sources ──────────────────────────────────────────────────────────
-    let docC: TheC | undefined = $state()
-    let lang_docC: TheC | undefined = $state()
+    let dock: TheC | undefined = $state()
+    let lang_dock: TheC | undefined = $state()
     $effect(() => {
-        docC = active_path
-            ? H.ave.ob({ lang_doc: active_path })[0] as TheC | undefined
+        dock = active_path
+            ? H.ave.ob({ lang_dock: active_path })[0] as TheC | undefined
             : undefined
-        const sig = H.ave.ob({ active_doc: 1 })[0] as TheC | undefined
+        const sig = H.ave.ob({ active_dock: 1 })[0] as TheC | undefined
         void sig?.version
-        lang_docC = (sig?.sc.path === active_path)
+        lang_dock = (sig?.sc.path === active_path)
             ? sig?.c.doc as TheC | undefined
             : undefined
     })
@@ -288,8 +288,8 @@
     })
 
     let total_lines = $derived.by(() => {
-        void docC?.version
-        const text = (docC?.sc.text as string) ?? ''
+        void dock?.version
+        const text = (dock?.sc.text as string) ?? ''
         if (!text) return 1
         let n = 1
         for (const ch of text) if (ch === '\n') n++
@@ -315,22 +315,22 @@
     }
 
     $effect(() => {
-        void docC?.version
-        void lang_docC?.version
+        void dock?.version
+        void lang_dock?.version
         void active_path
         schedule_rebuild()
     })
 
     function rebuild() {
-        if (!docC) {
+        if (!dock) {
             _structure = { regions: [], top_level_defs: [], all_marks: [] }
             return
         }
 
-        // Compile output lives on the Lang-side lang_docC, not the ave text particle.
+        // Compile output lives on the Lang-side lang_dock, not the ave text particle.
         // %methods is a direct child of %Compile regardless of whether %Output exists.
         // %Output is only present for hard-compiled gen_path docs.
-        const job     = lang_docC?.o({ Compile: 1 })[0]  as TheC | undefined
+        const job     = lang_dock?.o({ Compile: 1 })[0]  as TheC | undefined
         const methods = job?.o({ methods: 1 })[0]        as TheC | undefined
         const point_marks = collect_graft_marks()
 
@@ -370,7 +370,7 @@
                 points:    [],
             }))
 
-            const text = (docC.sc.text as string) ?? ''
+            const text = (dock.sc.text as string) ?? ''
             patch_region_extents(list, text, total_lines)
 
             const top_defs: Def[] = []
@@ -404,7 +404,7 @@
         }
 
         // Fallback: no compile index yet.  Scan regions from text.
-        const fallback_regions = scan_regions_from_text((docC.sc.text as string) ?? '')
+        const fallback_regions = scan_regions_from_text((dock.sc.text as string) ?? '')
         const summary = `${fallback_regions.length}r 0d ${point_marks.length}p (no compile)`
         if (summary !== last_log_summary) {
             console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_marks.length}`)
@@ -415,12 +415,12 @@
 
     // ── collect_graft_marks ───────────────────────────────────────────────────
     //
-    //   Walk lang_docC/%Pmirrors,1/%Pmirror,N.  A Pmirror with %graft,1 has been
+    //   Walk lang_dock/%Pmirrors,1/%Pmirror,N.  A Pmirror with %graft,1 has been
     //   resolved (live position from compile index); one without is unresolved.
     function collect_graft_marks(): PointMark[] {
         const out: PointMark[] = []
-        if (!lang_docC) return out
-        const Pmirrors = lang_docC.o({ Pmirrors: 1 })[0] as TheC | undefined
+        if (!lang_dock) return out
+        const Pmirrors = lang_dock.o({ Pmirrors: 1 })[0] as TheC | undefined
         if (!Pmirrors) return out
         for (const pm of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
             const spec = (pm.sc.spec as string) || ''

@@ -73,55 +73,55 @@
     //     Intent: expose what is normally
     //       await w.r({key:'ing',field:'s'}, {})
     //     as a squishy verb line, e.g.  w r key:ing,field:s {}  and the
-    //     multi-leg capture form  w oai docs/doc,$path$docC  (where $path is a
+    //     multi-leg capture form  w oai docs/doc,$path$dock  (where $path is a
     //     {variable}-style shorthand keyed by its own name, and the trailing
-    //     $docC assigns the result to docC).
+    //     $dock assigns the result to dock).
     //     Open questions before this can land:
     //       · these verbs are async — we'd want the def/method async index
     //         (groundwork above) to know when to inject `await`.
     //       · bareword values: "key:ing" wants 'ing' as a STRING here, which
     //         diverges from the i/o convention where a bareword is an
     //         identifier.  That value-semantics fork is unresolved.
-    //       · the $path$docC jammed double-sigil form needs grammar support;
+    //       · the $path$dock jammed double-sigil form needs grammar support;
     //         the clean capture today is name$ / name$:var.
     //     < not implemented; the verb set would extend IOness (or a sibling
     //       IOverb token) and reuse the Leg machinery once semantics are fixed.
     //
     // ── Document registry ────────────────────────────────────────────────────
     //
-    //   w/{docs:1}/{doc:path} — one particle per open document.
+    //   w/{docks: 1}/{dock: path} — one particle per open document.
     //     c: { view, state, addBookmarkMark, clearAllBookmarks, saveEffect,
-    //          last_whatsthis_doc }
+    //          last_whatsthis_dock }
     //     sc: { doc:path, active:1? }
     //     {bookmark:'bm_…', from, to, label}
     //     {Compile:1}
     //       {Output:1, name, source, dige}
     //       {Pending:1}
     //
-    //   Bookmarks and compile live on docC, not w, so they can be r()'d per doc.
+    //   Bookmarks and compile live on dock, not w, so they can be r()'d per doc.
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
-    //   ave/{lang_doc:path} — one per doc, holds sc.text.
+    //   ave/{lang_dock:path} — one per doc, holds sc.text.
     //   Lang_plan seeds it with default text on first run.
     //   Langui (keyed by `doc` prop) watches its own particle.
     //
     // ── Active doc ───────────────────────────────────────────────────────────
     //
-    //   w.c.active_doc_path — routing concern (not business state, not r()'able).
-    //   Lang_active_docC(w) resolves it to the {doc:path} particle.
-    //   Lang_set_active_doc(w, path) sets it and marks docC.sc.active.
+    //   w.c.active_dock_path — routing concern (not business state, not r()'able).
+    //   Lang_active_dock(w) resolves it to the {dock: path} particle.
+    //   Lang_set_active_dock(w, path) sets it and marks dock.sc.active.
     //
     // ── DRY state update ─────────────────────────────────────────────────────
     //
     //   All CM events carry { doc:path, view, state } in e.sc.
-    //   Lang_doc_from_event(w, e) finds-or-creates the docC particle and
-    //   writes docC.c.view / docC.c.state in exactly one place — eliminating
+    //   Lang_dock_from_event(w, e) finds-or-creates the dock particle and
+    //   writes dock.c.view / dock.c.state in exactly one place — eliminating
     //   the scattered w.c.editorState = e.sc.state pattern.
     //
     // ── whatsthis cache ──────────────────────────────────────────────────────
     //
-    //   docC.c.last_whatsthis_doc — the EditorState.doc rope from the last
+    //   dock.c.last_whatsthis_dock — the EditorState.doc rope from the last
     //   whatsthis() call.  CM doc ropes are immutable value objects; identity
     //   equality is O(1) and reliable.  Skipped when doc and bookmarks haven't
     //   changed since last tick.
@@ -187,13 +187,13 @@
         await this.LangGen_plan(A, w)
 
         // ── doc registry ────────────────────────────────────────────
-        // w/{docs:1} — container for all open document particles.
-        // Individual {doc:path} particles are created lazily via
-        // e_Lang_open_doc when Lies hands us a loaded file.
-        w.oai({ docs: 1 })
+        // w/{docks: 1} — container for all open document particles.
+        // Individual {dock: path} particles are created lazily via
+        // e_Lang_open_dock when Lies hands us a loaded file.
+        w.oai({docks: 1})
 
-        // Declare req spaces so i_Story_o_req_ttlilt finds reqs on %docC particles.
-        H.i_scheme_req(w, [{ docs: 1 }, { doc: 1 }])
+        // Declare req spaces so i_Story_o_req_ttlilt finds reqs on %dock particles.
+        H.i_scheme_req(w, [{docks: 1}, {dock: 1}])
 
         // ── reach across to Story's Styles ──────────────────────────
         // Story persists Styles under its w.c.The/{Styles:1}.
@@ -238,64 +238,64 @@
 
 //#region doc routing helpers
 
-    // ── Lang_doc_from_event ──────────────────────────────────────────────────
+    // ── Lang_dock_from_event ──────────────────────────────────────────────────
     //
     //   DRY central router called at the top of every CM event handler.
     //   Every event from Langui carries { doc:path, view, state } in e.sc.
-    //   This creates-or-finds the {doc:path} particle under w/{docs:1} and
-    //   updates docC.c.view / docC.c.state in exactly one place.
+    //   This creates-or-finds the {dock: path} particle under w/{docks: 1} and
+    //   updates dock.c.view / dock.c.state in exactly one place.
     //
-    //   Returns the docC so the caller can operate on it directly.
-    Lang_doc_from_event(w: TheC, e: TheC): TheC {
-        // e.sc.doc is stamped by Langui's Lang_i_elvis on every CM-sourced event.
+    //   Returns the dock so the caller can operate on it directly.
+    Lang_dock_from_event(w: TheC, e: TheC): TheC {
+        // e.sc.dock is stamped by Langui's Lang_i_elvis on every CM-sourced event.
         // Internally-fired events (e.g. e_Lang_i_bookmark → Lang_add_bookmark,
         // or automated test macros) don't go through Langui, so fall back to
         // the active doc — which is always the right target in that case.
-        const path = (e.sc.doc as string) || (w.c.active_doc_path as string)
-        if (!path) throw 'Lang_doc_from_event: no doc and no active doc yet'
-        const docs = w.oai({ docs: 1 })
-        const docC = docs.oai({ doc: path })
+        const path = (e.sc.dock as string) || (w.c.active_dock_path as string)
+        if (!path) throw 'Lang_dock_from_event: no doc and no active doc yet'
+        const docks = w.oai({docks: 1})
+        const dock = docks.oai({dock: path})
         // update view + state in exactly one place
-        if (e.sc.view)  docC.c.view  = e.sc.view
-        if (e.sc.state) docC.c.state = e.sc.state
-        return docC
+        if (e.sc.view)  dock.c.view  = e.sc.view
+        if (e.sc.state) dock.c.state = e.sc.state
+        return dock
     },
 
-    // ── Lang_active_docC ─────────────────────────────────────────────────────
+    // ── Lang_active_dock ─────────────────────────────────────────────────────
     //
-    //   Returns the {doc:path} particle for the currently active doc, or
+    //   Returns the {dock: path} particle for the currently active doc, or
     //   undefined if no doc has been registered yet (pre-editorBegins).
-    Lang_active_docC(w: TheC): TheC | undefined {
-        const path = w.c.active_doc_path as string | undefined
+    Lang_active_dock(w: TheC): TheC | undefined {
+        const path = w.c.active_dock_path as string | undefined
         if (!path) return undefined
-        const docs = w.o({ docs: 1 })[0] as TheC | undefined
-        return docs?.o({ doc: path })[0] as TheC | undefined
+        const docks = w.o({docks: 1})[0] as TheC | undefined
+        return docs?.o({dock: path})[0] as TheC | undefined
     },
 
-    // ── Lang_set_active_doc ──────────────────────────────────────────────────
+    // ── Lang_set_active_dock ──────────────────────────────────────────────────
     //
-    //   Marks a path as active. Stamps docC.sc.active so a tabs UI can see
-    //   which doc is foregrounded, and updates ave/{active_doc:1}.path so
+    //   Marks a path as active. Stamps dock.sc.active so a tabs UI can see
+    //   which doc is foregrounded, and updates ave/{active_dock:1}.path so
     //   Langui can reactively switch its EditorView to the right content
     //   without needing to know the path at mount time.
-    Lang_set_active_doc(w: TheC, path: string) {
-        w.c.active_doc_path = path
-        const docs = w.o({ docs: 1 })[0] as TheC | undefined
+    Lang_set_active_dock(w: TheC, path: string) {
+        w.c.active_dock_path = path
+        const docks = w.o({docks: 1})[0] as TheC | undefined
         if (docs) {
-            for (const d of docs.o({ doc: 1 }) as TheC[]) {
-                if (d.sc.doc === path) d.sc.active = 1
+            for (const d of docks.o({dock: 1}) as TheC[]) {
+                if (d.sc.dock === path) d.sc.active = 1
                 else delete d.sc.active
             }
         }
-        // ave/{active_doc:1} is the reactive signal Langui watches to know
-        // which ave/{lang_doc:path} particle to pull text from.
+        // ave/{active_dock:1} is the reactive signal Langui watches to know
+        // which ave/{lang_dock:path} particle to pull text from.
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
-        const sig = ave.oai({ active_doc: 1 })
+        const sig = ave.oai({ active_dock: 1 })
         sig.sc.path = path
-        // sig.c.doc: the actual {doc:path} particle (holds bookmarks, view, state).
+        // sig.c.dock: the actual {dock: path} particle (holds bookmarks, view, state).
         // Langui reads this via sig?.c.doc to derive its bookmark list.
         // Stored on .c (not .sc) because TheC references don't belong in the index.
-        sig.c.doc = docs?.o({ doc: path })[0] as TheC | undefined
+        sig.c.dock = docs?.o({dock: path})[0] as TheC | undefined
         sig.bump_version()
     },
 
@@ -303,7 +303,7 @@
 
     async e_Lang_editorBegins(A, w, e) {
         // Register view + state via the DRY router.
-        const doc = this.Lang_doc_from_event(w, e)
+        const doc = this.Lang_dock_from_event(w, e)
 
         // CM StateEffects are per-view, so they live on doc.c — not w.c.
         doc.c.addBookmarkMark    = e.sc.addBookmarkMark
@@ -318,18 +318,18 @@
         doc.c.clearAllGrafts     = e.sc.clearAllGrafts
 
         // Only activate if we have a real path — empty string means the doc
-        // isn't known yet and Lies hasn't fired e_Lang_open_doc yet.
+        // isn't known yet and Lies hasn't fired e_Lang_open_dock yet.
         // The $effect in Langui re-fires editorBegins once active_path is real.
-        if (!w.c.active_doc_path && e.sc.doc) {
-            this.Lang_set_active_doc(w, e.sc.doc as string)
+        if (!w.c.active_dock_path && e.sc.dock) {
+            this.Lang_set_active_dock(w, e.sc.dock as string)
         }
-        // sig.c.doc may have been set before the doc particle existed (first open).
+        // sig.c.dock may have been set before the doc particle existed (first open).
         // Refresh it now that the particle is guaranteed to exist.
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
-        const sig = ave.o({ active_doc: 1 })[0] as TheC | undefined
-        if (sig && !sig.c.doc) sig.c.doc = doc
+        const sig = ave.o({ active_dock: 1 })[0] as TheC | undefined
+        if (sig && !sig.c.dock) sig.c.dock = doc
 
-        w.i({ received: 1, editorBegins: 1, doc: doc.sc.doc })
+        w.i({ received: 1, editorBegins: 1, doc: doc.sc.dock })
 
         // ── Bookmark position sync ────────────────────────────────────────────
         //
@@ -363,13 +363,13 @@
             }
         }
 
-        // docC.c.state has just been stamped (by Lang_doc_from_event above).
+        // dock.c.state has just been stamped (by Lang_dock_from_event above).
         // A req:text_loaded phase may be holding Story open waiting for exactly
         // this — wake a think so its monitor re-checks and descends to compile.
         ;(this as House).feebly_ponder()
     },
 
-    // ── e_Doc_open ───────────────────────────────────────────────────────────
+    // ── e_Dock_open ───────────────────────────────────────────────────────────
     //
     //   Fired by Liesui / Waft / DocRow when the user clicks a Doc label or a
     //   Point inside one.  Switches the active doc to `path`.
@@ -379,13 +379,13 @@
     //   the UI just passes the raw Point sc value and forgets about it.
     //
     //   e.sc: { path, point? }
-    async e_Doc_open(A: TheC, w: TheC, e: TheC) {
+    async e_Dock_open(A: TheC, w: TheC, e: TheC) {
         const path  = e.sc.path  as string | undefined
         const point = e.sc.point as string | undefined
         if (!path) return
 
-        // Switch active doc — Langui's $effect on ave/{active_doc:1} reacts.
-        this.Lang_set_active_doc(w, path)
+        // Switch active doc — Langui's $effect on ave/{active_dock:1} reacts.
+        this.Lang_set_active_dock(w, path)
 
         // Point navigation: resolve the point spec against the compiled methods
         // index, apply region-based openness (fold/unfold), and scroll the view.
@@ -398,12 +398,12 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── e_Lang_open_doc ──────────────────────────────────────────────────────
+    // ── e_Lang_open_dock ──────────────────────────────────────────────────────
     //
     //   Called by Lies after it loads a Ghost source file.  Mints (or refreshes)
     //   the per-doc req:Languish on w:Lang and drives it.  Languish is Lang's
     //   mind for one doc: it stages three maz-ordered phases — text_loaded
-    //   (mint docC + install text, wait for CM mount), compile (build the
+    //   (mint dock + install text, wait for CM mount), compile (build the
     //   methods index), grafted (resolve Pmirrors) — so the first graft is
     //   guaranteed to run before Story snaps, killing the open-time race where
     //   a snap captured unresolved Pmirrors.
@@ -417,12 +417,12 @@
     //   written to disk).
     //
     //   e.sc: { path, text, gen_path? }
-    async e_Lang_open_doc(A: TheC, w: TheC, e: TheC) {
+    async e_Lang_open_dock(A: TheC, w: TheC, e: TheC) {
         const H = this as House
         const path     = e.sc.path as string
         const gen_path = e.sc.gen_path as string | undefined   // optional
         const text     = (e.sc.text as string) ?? ''
-        if (!path) throw 'e_Lang_open_doc: needs path'
+        if (!path) throw 'e_Lang_open_dock: needs path'
 
         const rq = H.reqy(w)
         let languish = await rq.roai({ req: 'Languish', path })
@@ -437,7 +437,7 @@
         if (gen_path) languish.sc.gen_path = gen_path
         languish.c.open_text = text
 
-        console.log(`📄 Lang open_doc → req:Languish ${path}`)
+        console.log(`📄 Lang open_dock → req:Languish ${path}`)
         await rq.do()
     },
 
@@ -451,7 +451,7 @@
     //   one pass when each fully finishes, so on a fast (soft) compile all three
     //   phases can complete in a single tick.
     //
-    //     req:text_loaded, maz:3   mint docC + install text; wait for CM mount
+    //     req:text_loaded, maz:3   mint dock + install text; wait for CM mount
     //     req:compile,     maz:2   build the methods index; hold for hard-write
     //     req:grafted,     maz:1   resolve Pmirrors against the index
     //
@@ -472,14 +472,14 @@
 
     // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
     //
-    //   reqonce: mint the docC particle, stamp gen_path, install the source into
-    //   the ave/{lang_doc:path} text particle, set the doc active.  Records
-    //   languish.sc.docC so the later phases find it without re-deriving.
+    //   reqonce: mint the dock particle, stamp gen_path, install the source into
+    //   the ave/{lang_dock:path} text particle, set the doc active.  Records
+    //   languish.sc.dock so the later phases find it without re-deriving.
     //
     //   The genuinely-async wait is the CodeMirror round-trip: Lang writes the
     //   ave text → Langui renders → CM mounts → e_Lang_editorBegins stamps
-    //   docC.c.state and feebly_ponders.  We hold Story open with a ttlilt until
-    //   docC.c.state appears; the feebly_ponder wakes this monitor precisely
+    //   dock.c.state and feebly_ponders.  We hold Story open with a ttlilt until
+    //   dock.c.state appears; the feebly_ponder wakes this monitor precisely
     //   when it lands.
     async req_text_loaded(req: TheC, q: any) {
         const H = this as House
@@ -489,20 +489,20 @@
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
 
         if (H.reqonce(req, 'opening')) {
-            // one chance: mint docC + install text.  Replaces the old inline
-            // e_Lang_open_doc body.
+            // one chance: mint dock + install text.  Replaces the old inline
+            // e_Lang_open_dock body.
             languinio?.oai({ spinner: 'text_load' })
 
             const gen_path = languish.sc.gen_path as string | undefined
             const text     = (languish.c.open_text as string) ?? ''
 
-            const docs = w.oai({ docs: 1 })
-            const docC = docs.oai({ doc: path })
-            if (gen_path) docC.sc.gen_path = gen_path
-            languish.sc.docC = docC
+            const docks = w.oai({docks: 1})
+            const dock = docks.oai({dock: path})
+            if (gen_path) dock.sc.gen_path = gen_path
+            languish.sc.dock = dock
 
             const ave = H.oai_enroll(H, { watched: 'ave' })
-            const docTextC = ave.oai({ lang_doc: path })
+            const docTextC = ave.oai({ lang_dock: path })
             // disk_dige / text_dige: both start equal to the on-disk content.
             // They diverge once the user edits (text_dige moves, disk_dige stays
             // until LiesStore confirms the write).  disk_rev marks disk-origin
@@ -517,15 +517,15 @@
             }
 
             // always activate — Lies owns doc order, last open wins for now
-            this.Lang_set_active_doc(w, path)
+            this.Lang_set_active_dock(w, path)
             w.i({ received: 1, doc_opened: 1, doc: path })
         }
 
         // monitor: CM has mounted and handed us its EditorState.  Until then
         // there is nothing to compile.  e_Lang_editorBegins feebly_ponders when
-        // it stamps docC.c.state, which re-enters here.
-        const docC = languish.sc.docC as TheC | undefined
-        if (!docC?.c.state) {
+        // it stamps dock.c.state, which re-enters here.
+        const dock = languish.sc.dock as TheC | undefined
+        if (!dock?.c.state) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'cm_mount' })
             return
         }
@@ -535,34 +535,34 @@
 
     // ── req:compile, maz:2 ────────────────────────────────────────────────────
     //
-    //   reqonce: run the synchronous index build (Lang_compile_docC) once.  With
+    //   reqonce: run the synchronous index build (Lang_compile_dock) once.  With
     //   multi-maz do(), this fires in the same tick text_loaded finishes.
     //
-    //   %Compile/%methods is populated synchronously by Lang_compile_docC, so a
+    //   %Compile/%methods is populated synchronously by Lang_compile_dock, so a
     //   soft-compile finishes this phase immediately.  For a hard-compile the
     //   %Pending flag stays set while Lies writes the gen file; we hold Story
     //   open with a ttlilt until %Pending clears, so the gen file exists before
     //   the snap.  Either way %methods — the only thing grafting needs — is
-    //   present the instant Lang_compile_docC returns.
+    //   present the instant Lang_compile_dock returns.
     async req_compile(req: TheC, q: any) {
         const H = this as House
         const languish = req.c.up as TheC
         const w        = languish.c.up as TheC
-        const docC     = languish.sc.docC as TheC
+        const dock     = languish.sc.dock as TheC
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
 
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
             languinio?.oai({ spinner: 'compile' })
-            await this.Lang_compile_docC(w, docC)
+            await this.Lang_compile_dock(w, dock)
         }
 
-        const job = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const job = dock.o({ Compile: 1 })[0] as TheC | undefined
 
         // compile error is a terminal: methods will never appear and Pending
         // never clears, so don't ttlilt forever — finish and let grafting find
         // nothing (the minimap surfaces unresolved Pmirrors).
-        if (docC.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
+        if (dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
             languinio?.o({ spinner: 'compile' }).map(s => languinio.drop(s))
             q.finish(req)
             return
@@ -594,12 +594,12 @@
         const H = this as House
         const languish = req.c.up as TheC
         const w        = languish.c.up as TheC
-        const docC     = languish.sc.docC as TheC
+        const dock     = languish.sc.dock as TheC
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
 
         if (H.reqonce(req, 'ran')) {
             languinio?.oai({ spinner: 'grafted' })
-            await this.Lang_graft_points_once(w, docC)
+            await this.Lang_graft_points_once(w, dock)
         }
         languinio?.o({ spinner: 'grafted' }).map(s => languinio.drop(s))
         q.finish(req)
@@ -609,11 +609,11 @@
 
     async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
-        const path = e.sc.doc as string | undefined
+        const path = e.sc.dock as string | undefined
         if (!path) return
         // update the ave text-sync particle for this doc path
         const ave = this.oai_enroll(this as House, { watched: 'ave' })
-        const docTextC = ave.oai({ lang_doc: path })
+        const docTextC = ave.oai({ lang_dock: path })
         const text = e?.sc.text as string | undefined
         if (text == null) return
         if (docTextC.sc.text === text) return
@@ -628,7 +628,7 @@
     //   Writes the three-leg change strip into w/{Languinio:1}/{Change:1}.
     //   Three child particles, one per leg:
     //
-    //     /{backend:1}  sc.dige — current editor-text dige (from ave/lang_doc)
+    //     /{backend:1}  sc.dige — current editor-text dige (from ave/lang_dock)
     //     /{storage:1}  sc.dige — last dige confirmed written to disk
     //                   sc.dim  — text has moved ahead (unsaved edits exist)
     //     /{compile:1}  sc.dige — source_dige of last Compile/Output
@@ -640,18 +640,18 @@
     //   Langui holds _backend/_storage/_compile as $state() C refs — only a new
     //   reference triggers a Svelte re-render, so oai+bump_version isn't enough.
     //
-    //   Called from the Lang tick each time the active docC is known.
-    async Lang_update_change(w: TheC, docC: TheC) {
+    //   Called from the Lang tick each time the active dock is known.
+    async Lang_update_change(w: TheC, dock: TheC) {
         const H   = this as House
         const ave = H.oai_enroll(H, { watched: 'ave' })
-        const path = docC.sc.doc as string
+        const path = dock.sc.dock as string
 
         // Read current dige values.
-        const lang_doc      = ave.o({ lang_doc: path })[0] as TheC | undefined
-        const text_dige     = (lang_doc?.sc.text_dige as string ?? '').slice(0, 5)
-        const disk_dige     = (lang_doc?.sc.disk_dige as string ?? '').slice(0, 5)
+        const lang_dock      = ave.o({ lang_dock: path })[0] as TheC | undefined
+        const text_dige     = (lang_dock?.sc.text_dige as string ?? '').slice(0, 5)
+        const disk_dige     = (lang_dock?.sc.disk_dige as string ?? '').slice(0, 5)
 
-        const job           = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const job           = dock.o({ Compile: 1 })[0] as TheC | undefined
         const output        = job?.o({ Output: 1 })[0]  as TheC | undefined
         const compiled_dige = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
         // sc.compile from %time is the synchronous cost — what the compiler actually spent.
@@ -688,11 +688,11 @@
         // whether Lang-Cyto does compound_nodes
         await this.i_actions_to_c(w, 'compo',{ stashed: true, on_change })
 
-        const docC = this.Lang_active_docC(w)
+        const dock = this.Lang_active_dock(w)
 
-        // compile reply polling — re-polls i_elvis_req while w/{docC}/Compile/Pending
+        // compile reply polling — re-polls i_elvis_req while w/{dock}/Compile/Pending
         // is set; when the Wormhole reply lands, notifies Pantheate.
-        if (docC?.oa({ Compile: 1 })) {
+        if (dock?.oa({ Compile: 1 })) {
             await this.Lang_compile_step(A, w)
         }
 
@@ -715,32 +715,32 @@
         // run the graft directly here once the index exists.  The per-doc cache
         // key inside Lang_graft_points_once makes this a cheap skip when neither
         // the cursor nor the compile has changed.
-        if (docC?.o({ Compile: 1 })[0]?.oa({ methods: 1 })) {
-            await this.Lang_graft_points_once(w, docC)
+        if (dock?.o({ Compile: 1 })[0]?.oa({ methods: 1 })) {
+            await this.Lang_graft_points_once(w, dock)
         }
 
         const model     = w.c.model as TheC
-        const state     = docC?.c.state
+        const state     = dock?.c.state
         const opt       = {compound_nodes: !!w.c.compo}
-        const bookmarks = (docC?.o({ bookmark: 1 }) ?? []) as TheC[]
+        const bookmarks = (dock?.o({ bookmark: 1 }) ?? []) as TheC[]
 
         // ── whatsthis cache check ────────────────────────────────────
         // CM doc ropes are immutable — identity equality is O(1) and reliable.
-        // docC.version covers everything on the doc particle: bookmark adds,
+        // dock.version covers everything on the doc particle: bookmark adds,
         // removes, position updates, compile state — no need to sum child
         // versions (they all start at 0 anyway, making a sum unreliable).
-        const doc_unchanged  = state && state.doc === docC?.c.last_whatsthis_doc
-        const docC_unchanged = docC?.version === docC?.c.last_docC_version
+        const dock_unchanged  = state && state.doc === dock?.c.last_whatsthis_dock
+        const docC_unchanged = dock?.version === dock?.c.last_dock_version
 
-        if (state && bookmarks.length && !(doc_unchanged && docC_unchanged)) {
+        if (state && bookmarks.length && !(dock_unchanged && docC_unchanged)) {
             if (0) {
                 // Cyto path — flat Line/{node,text} model + cyto_fold constraints
                 model.empty()
                 this.whatsthis(state, model, bookmarks, opt)
                 this.wherewhatis(model, opt)
-                if (docC) {
-                    docC.c.last_whatsthis_doc = state.doc
-                    docC.c.last_docC_version  = docC.version
+                if (dock) {
+                    dock.c.last_whatsthis_dock = state.doc
+                    dock.c.last_dock_version  = dock.version
                 }
                 H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
             }
@@ -751,9 +751,9 @@
                 this.whatsthis_txt(state, model, bookmarks)
                 // bump so DocPoint's $derived(model.ob()) re-fires
                 model.bump_version()
-                if (docC) {
-                    docC.c.last_whatsthis_doc = state.doc
-                    docC.c.last_docC_version  = docC.version
+                if (dock) {
+                    dock.c.last_whatsthis_dock = state.doc
+                    dock.c.last_dock_version  = dock.version
                 }
             }
         }
@@ -762,7 +762,7 @@
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
 
         // Push the three-leg change strip into Languinio/Change for Langui.
-        if (docC) await this.Lang_update_change(w, docC)
+        if (dock) await this.Lang_update_change(w, dock)
 
         // < first compile per doc is now Languish's req:compile phase, not a
         //   tick-time ever_compiled guard.  Re-compile on edit / manual compile
@@ -938,13 +938,13 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto('Lang/Lang', 'Lang_i_bookmark', { from: 98, to: 132 })
     },
     async Lang_debookmark(w) {
-        const docC = this.Lang_active_docC(w)
-        const view = docC?.c.view
-        if (view && docC?.c.clearAllBookmarks) {
-            view.dispatch({ effects: docC.c.clearAllBookmarks.of(null) })
+        const dock = this.Lang_active_dock(w)
+        const view = dock?.c.view
+        if (view && dock?.c.clearAllBookmarks) {
+            view.dispatch({ effects: dock.c.clearAllBookmarks.of(null) })
         }
-        // r() on the docC particle — bookmarks live there, not on w
-        if (docC) await docC.r({ bookmark: 1 }, {})
+        // r() on the dock particle — bookmarks live there, not on w
+        if (dock) await dock.r({ bookmark: 1 }, {})
         this.i_elvisto(w, 'think', {})
     },
 
@@ -955,8 +955,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //   from / to are char offsets into the doc.  If omitted or equal, the
     //   handler expands to the enclosing line (same as Ctrl+B on empty selection).
     async e_Lang_i_bookmark(A, w, e) {
-        const docC = this.Lang_active_docC(w)
-        const view = docC?.c.view
+        const dock = this.Lang_active_dock(w)
+        const view = dock?.c.view
         if (!view) throw new Error("e_Lang_i_bookmark — no editor view")
         await new Promise(resolve => setTimeout(resolve, 30))
         await tick()
@@ -1000,8 +1000,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //   match and replacement are JSON-encoded so commas in values don't collide
     //   with the snap key:value,key:value delimiter format.
     async e_Lang_i_alterationStation(A, w, e) {
-        const docC = this.Lang_active_docC(w)
-        const view = docC?.c.view
+        const dock = this.Lang_active_dock(w)
+        const view = dock?.c.view
         if (!view) throw new Error("e_Lang_i_alterationStation — no editor view")
 
         const line_n      = e?.sc.line_n      as number
@@ -1025,18 +1025,18 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
         // Surgical replace — CM remaps any decoration whose range spans this
         // position, so bookmarks within the line survive intact.
-        // updateListener fires Lang_set_doc (docC updated) and arms the 800ms timer.
+        // updateListener fires Lang_set_doc (dock updated) and arms the 800ms timer.
         view.dispatch({ changes: { from: line.from + idx, to: line.from + idx + match.length, insert: replacement } })
 
         // saveEffect flushes bookmark positions immediately — updateListener cancels
         // the debounce and fires Lang_update_bookmarks with the fresh editorState.
-        view.dispatch({ effects: docC.c.saveEffect.of(null) })
+        view.dispatch({ effects: dock.c.saveEffect.of(null) })
         console.log(`Lang_i_alterationStation — line ${line_n} [${match}] → [${replacement}], saveEffect dispatched`)
     },
 
 
 //#region bm e
-    // Ctrl+B from the editor — create a w/{docC}/%bookmark at the current selection.
+    // Ctrl+B from the editor — create a w/{dock}/%bookmark at the current selection.
     //
     // The editor marks the range with a CodeMirror Decoration.mark so from/to
     // track document edits automatically. Periodic e_Lang_update_bookmarks
@@ -1044,7 +1044,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //
     // e.sc carries: doc, from, to, label?, view, state
     async e_Lang_add_bookmark(A: TheC, w: TheC, e: TheC) {
-        const docC = this.Lang_doc_from_event(w, e)
+        const dock = this.Lang_dock_from_event(w, e)
 
         let from  = e?.sc.from  as number | undefined;
         let to    = e?.sc.to    as number | undefined;
@@ -1062,14 +1062,14 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
             to = line.to;
         }
 
-        // bookmarks live on docC, not w, so they can be r()'d per doc
-        const existingBookmark = docC.o({ bookmark: 1 }).find((bm: TheC) =>
+        // bookmarks live on dock, not w, so they can be r()'d per doc
+        const existingBookmark = dock.o({ bookmark: 1 }).find((bm: TheC) =>
             bm.sc.from === from && bm.sc.to === to
         ) as TheC | undefined;
         if (existingBookmark) {
             // Ctrl+B on an already-bookmarked range removes it
-            view.dispatch({ effects: docC.c.removeBookmarkMark.of({ id: existingBookmark.sc.bookmark }) })
-            await docC.r({ bookmark: existingBookmark.sc.bookmark }, {})
+            view.dispatch({ effects: dock.c.removeBookmarkMark.of({ id: existingBookmark.sc.bookmark }) })
+            await dock.r({ bookmark: existingBookmark.sc.bookmark }, {})
             console.log(`🔖 remove_bookmark id=${existingBookmark.sc.bookmark} [${from}..${to}]`)
             this.i_elvisto(w, 'think', {})
             return
@@ -1079,10 +1079,10 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         // so TheC keys and CodeMirror decoration ids survive reloads and round-trips.
         const id = `bm_${from}_${to}`;
         view.dispatch({
-            effects: docC.c.addBookmarkMark.of({ id, from, to }),
+            effects: dock.c.addBookmarkMark.of({ id, from, to }),
         });
 
-        docC.i({ bookmark: id, from, to, label });
+        dock.i({ bookmark: id, from, to, label });
         console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${label}`);
         this.i_elvisto(w, 'think', {});
     },
@@ -1098,7 +1098,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     // e.sc carries: doc, updates=[{id, from, to}], view, state
     async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
-        const doc = this.Lang_doc_from_event(w, e)
+        const doc = this.Lang_dock_from_event(w, e)
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
         if (updates) {
             const seen = new Set(updates.map(u => u.id))
@@ -1117,7 +1117,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
                 }
             }
         }
-        // state already updated by Lang_doc_from_event above
+        // state already updated by Lang_dock_from_event above
         this.i_elvisto(w, 'think', {})
     },
 
@@ -1167,7 +1167,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //
     //   e.sc: { bookmark_id }
     async e_Lang_remove_bookmark(A: TheC, w: TheC, e: TheC) {
-        const doc = this.Lang_active_docC(w)
+        const doc = this.Lang_active_dock(w)
         if (!doc) return
         const id = e.sc.bookmark_id as string | undefined
         if (!id) return
@@ -1190,7 +1190,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //
     //   e.sc: { bookmark_id }
     async e_Lang_point_fuzzify(A: TheC, w: TheC, e: TheC) {
-        const doc = this.Lang_active_docC(w)
+        const doc = this.Lang_active_dock(w)
         if (!doc) return
         const bm = doc.o({ bookmark: e.sc.bookmark_id })[0] as TheC | undefined
         if (!bm) return
@@ -1213,7 +1213,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //
     //   e.sc: { bookmark_id, serial }
     async e_Lang_stamp_bookmark_serial(A: TheC, w: TheC, e: TheC) {
-        const doc = this.Lang_active_docC(w)
+        const doc = this.Lang_active_dock(w)
         if (!doc) return
         const bm = doc.o({ bookmark: e.sc.bookmark_id })[0] as TheC | undefined
         if (!bm) return

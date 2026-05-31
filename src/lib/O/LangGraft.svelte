@@ -9,7 +9,7 @@
     //   across edits CM needs the range in a RangeSet that auto-remaps.
     //
     //   The bridge is the %Pmirror — Lang-owned, session-only, living under
-    //   docC/%Pmirrors.  Each Pmirror corresponds to one source Lies Point
+    //   dock/%Pmirrors.  Each Pmirror corresponds to one source Lies Point
     //   in the currently-cursored Something.  When the cursor moves to a
     //   different set of Points, %Pmirrors,1 .replace() builds a fresh set
     //   and pairs continuous ones up by identity sc, dropping the rest.
@@ -27,7 +27,7 @@
     //
     // ── Shape ────────────────────────────────────────────────────────────────
     //
-    //   docC / %Pmirrors
+    //   dock / %Pmirrors
     //          / %Pmirror,$src_Waft,$spec
     //               sc.src_Point     : $C   the Lies Point (read-only ref)
     //               / %graft,1                ← survives replace via resume_X
@@ -50,9 +50,9 @@
     //   sc.
     //
     //     Lies / Waft     — user Point identity, persisted
-    //     Lang / docC     — Pmirrors with graft bookkeeping
+    //     Lang / dock     — Pmirrors with graft bookkeeping
     //     ave             — UI session state, the cursor
-    //     docC.bookmark   — user Ctrl+B marks (different StateField)
+    //     dock.bookmark   — user Ctrl+B marks (different StateField)
     //
     //   The Pmirror reads %src_Point.sc.method to know what to resolve.
     //   It never writes to %src_Point.sc.
@@ -64,7 +64,7 @@
     //
     //   No %sc,graft flag, no cross-contamination.  A bookmark is either
     //   user-owned (round-trips to Lies persistence) or Pmirror-owned (born
-    //   + dies within a session, no corresponding docC particle).  CM's
+    //   + dies within a session, no corresponding dock particle).  CM's
     //   graftMarkField is the source of truth for graft position; the
     //   Pmirror's %graft,1 child holds the last-flushed copy.
     //
@@ -90,24 +90,24 @@
     //
     //   A plain pass (no longer a free-running every-tick function): reads the
     //   cursor, runs one %Pmirrors,1 .replace() to mirror the cursor's Points
-    //   onto the given docC, then walks the result to mint graft children and
+    //   onto the given dock, then walks the result to mint graft children and
     //   dispatch CM effects for the new (un-paired) Pmirrors.  Goners are caught
     //   in pairs_fn.
     //
-    //   docC is passed in — by req:grafted (Languish's final phase, the
+    //   dock is passed in — by req:grafted (Languish's final phase, the
     //   open-time graft that beats the snap) and by the cursor-move re-graft in
     //   Lang().  The per-doc cache key still makes a no-op call cheap.
-    async Lang_graft_points_once(w: TheC, docC: TheC) {
+    async Lang_graft_points_once(w: TheC, dock: TheC) {
         const H = this as House
         const ave = H.oai_enroll(H, { watched: 'ave' })
-        if (!docC) return
+        if (!dock) return
 
         // cursor: ave/%examining/%What_Points,1 carries the C whose %Point,N we graft
         const ex           = ave.o({ examining: 1 })[0] as TheC | undefined
         const what_pts_C   = ex?.o({ What_Points: 1 })[0] as TheC | undefined
         if (!what_pts_C) {
             // nothing cursored — wipe Pmirrors for this doc
-            await this.Lang_wipe_pmirrors(docC)
+            await this.Lang_wipe_pmirrors(dock)
             return
         }
 
@@ -116,7 +116,7 @@
         const src_C     = what_pts_C.sc.src as TheC | undefined
         if (!src_C) {
             console.warn(`🔩 Lang_graft_points_once: What_Points has no src — cursor half-set?`)
-            await this.Lang_wipe_pmirrors(docC)
+            await this.Lang_wipe_pmirrors(dock)
             return
         }
 
@@ -125,9 +125,9 @@
         // Peerily's Points onto LangTiles.g's editor view.  Wipe and wait for
         // the next tick where both converge.
         const src_path    = (src_C.sc as any).path as string | undefined
-        const active_path = (docC.sc as any).doc   as string | undefined
+        const active_path = (dock.sc as any).doc   as string | undefined
         if (src_path && active_path && src_path !== active_path) {
-            await this.Lang_wipe_pmirrors(docC)
+            await this.Lang_wipe_pmirrors(dock)
             return
         }
 
@@ -137,7 +137,7 @@
 
         // compile output for resolution — %methods lives directly on %Compile,
         // whether or not an %Output child exists (soft-compiled docs never get Output).
-        const job     = docC.o({ Compile: 1 })[0]       as TheC | undefined
+        const job     = dock.o({ Compile: 1 })[0]       as TheC | undefined
         const methods = job?.o({ methods: 1 })[0]       as TheC | undefined
         // defs: method functions; regions: //#region blocks — both are valid targets
         const defs    = (methods?.o({ def: 1 })    ?? []) as TheC[]
@@ -147,16 +147,16 @@
 
         // cache guard: same fingerprint → identical work, nothing to do.
         // Different point set or different compile → re-graft.  Cursor
-        // version covers cursor jumps; docC.version covers user-bookmark
+        // version covers cursor jumps; dock.version covers user-bookmark
         // and Lies-side activity that doesn't affect grafts but is cheap
         // to include.
         const fingerprint = points
             .map(pt => this.Lang_point_spec(pt) ?? '')
             .join(';')
         // what_pts_C.version bumps when Lies_set_examining installs a new cursor
-        const cache_key = `${docC.version}:${job?.version ?? 0}:${what_pts_C?.version ?? 0}:${waft_key}|${fingerprint}`
-        if (docC.c.graft_cache_key === cache_key) return
-        docC.c.graft_cache_key = cache_key
+        const cache_key = `${dock.version}:${job?.version ?? 0}:${what_pts_C?.version ?? 0}:${waft_key}|${fingerprint}`
+        if (dock.c.graft_cache_key === cache_key) return
+        dock.c.graft_cache_key = cache_key
 
         // Inside replace() we just materialise Pmirrors with their identity
         // sc + the volatile %src_Point ref.  The graft child (if any from
@@ -164,7 +164,7 @@
         // handled in pairs_fn — their bookmark_id is still readable on the
         // before-side particle's graft child.
         const gone_bm_ids: string[] = []
-        const Pmirrors = docC.oai({ Pmirrors: 1 })
+        const Pmirrors = dock.oai({ Pmirrors: 1 })
 
         await Pmirrors.replace({ Pmirror: 1 }, async () => {
             for (const pt of points) {
@@ -190,7 +190,7 @@
         })
 
         // Drop goner marks from CM.
-        for (const id of gone_bm_ids) this.Lang_remove_graft_mark(docC, id)
+        for (const id of gone_bm_ids) this.Lang_remove_graft_mark(dock, id)
 
         // Walk the new Pmirrors to ensure each has a %graft,1 child
         // (resolving fresh ones now that replace is done).  Continuous
@@ -206,7 +206,7 @@
                 unresolved_specs.push(spec)
                 continue
             }
-            this.Lang_ensure_graft(pmirror, def, docC)
+            this.Lang_ensure_graft(pmirror, def, dock)
         }
 
         // Diagnostic: log what the resolver had available when something failed
@@ -221,10 +221,10 @@
             )
         }
 
-        // DocMinimap watches lang_docC.version via its rebuild $effect.
+        // DocMinimap watches lang_dock.version via its rebuild $effect.
         // Child mutations (Pmirrors, graft children) don't propagate up
-        // automatically, so we bump docC explicitly here to wake it.
-        docC.bump_version()
+        // automatically, so we bump dock explicitly here to wake it.
+        dock.bump_version()
     },
 
     // ── Lang_point_spec ──────────────────────────────────────────────────
@@ -287,7 +287,7 @@
     //   Bookmark id is a fresh serial each time a graft is born, so a
     //   reborn Pmirror (different identity → goner+new) gets a new id and
     //   the old mark can be unambiguously removed by its id.
-    Lang_ensure_graft(pmirror: TheC, def: TheC, docC: TheC) {
+    Lang_ensure_graft(pmirror: TheC, def: TheC, dock: TheC) {
         const def_from = def.sc.from as number
         const def_to   = def.sc.to   as number
         const def_line = def.sc.line as number
@@ -306,12 +306,12 @@
         }
 
         // fresh — mint id, install mark, attach graft child
-        const serial = (docC.c.graft_serial = (docC.c.graft_serial ?? 0) + 1)
+        const serial = (dock.c.graft_serial = (dock.c.graft_serial ?? 0) + 1)
         const bm_id  = `g_${serial}`
 
-        if (docC.c.addGraftMark && docC.c.view) {
-            docC.c.view.dispatch({
-                effects: docC.c.addGraftMark.of({ id: bm_id, from: def_from, to: def_to })
+        if (dock.c.addGraftMark && dock.c.view) {
+            dock.c.view.dispatch({
+                effects: dock.c.addGraftMark.of({ id: bm_id, from: def_from, to: def_to })
             })
         }
 
@@ -325,14 +325,14 @@
         graft.bump_version()
 
         const def_name = (def.sc.method ?? def.sc.label) as string
-        console.log(`🔩 graft ${pmirror.sc.spec} → ${bm_id} [${def_from}..${def_to}] line ${def_line} (${def.sc.def ? 'def' : 'region'}:${def_name}) doc=${docC.sc.doc}`)
+        console.log(`🔩 graft ${pmirror.sc.spec} → ${bm_id} [${def_from}..${def_to}] line ${def_line} (${def.sc.def ? 'def' : 'region'}:${def_name}) doc=${dock.sc.dock}`)
     },
 
     // ── Lang_remove_graft_mark ───────────────────────────────────────────
-    Lang_remove_graft_mark(docC: TheC, bm_id: string) {
-        if (docC.c.removeGraftMark && docC.c.view) {
-            docC.c.view.dispatch({
-                effects: docC.c.removeGraftMark.of({ id: bm_id })
+    Lang_remove_graft_mark(dock: TheC, bm_id: string) {
+        if (dock.c.removeGraftMark && dock.c.view) {
+            dock.c.view.dispatch({
+                effects: dock.c.removeGraftMark.of({ id: bm_id })
             })
         }
         console.log(`🔩 graft drop ${bm_id}`)
@@ -341,21 +341,21 @@
     // ── Lang_wipe_pmirrors ───────────────────────────────────────────────
     //
     //   Called when the cursor goes empty.  Drops every Pmirror and every
-    //   graft mark off the docC's editor view.
+    //   graft mark off the dock's editor view.
     //   < doc-close path is future work; would call this from a hook
-    async Lang_wipe_pmirrors(docC: TheC) {
-        const Pmirrors = docC.o({ Pmirrors: 1 })[0] as TheC | undefined
+    async Lang_wipe_pmirrors(dock: TheC) {
+        const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
         if (!Pmirrors) return
         const existing = Pmirrors.o({ Pmirror: 1 }) as TheC[]
         if (!existing.length) return
         for (const pm of existing) {
             const bm_id = pm.o({ graft: 1 })[0]?.sc.bookmark_id as string | undefined
-            if (bm_id) this.Lang_remove_graft_mark(docC, bm_id)
+            if (bm_id) this.Lang_remove_graft_mark(dock, bm_id)
         }
         await Pmirrors.replace({ Pmirror: 1 }, async () => {
             // intentionally empty
         })
-        docC.c.graft_cache_key = null
+        dock.c.graft_cache_key = null
     },
 
     // ── Lang_update_grafts ───────────────────────────────────────────────
@@ -368,10 +368,10 @@
     Lang_update_grafts(w: TheC, updates: Array<{ id: string, from: number, to: number }>) {
         const H = this as House
         const ave = H.oai_enroll(H, { watched: 'ave' })
-        const sig = ave.o({ active_doc: 1 })[0] as TheC | undefined
-        const docC = sig?.c.doc as TheC | undefined
-        if (!docC) return
-        const Pmirrors = docC.o({ Pmirrors: 1 })[0] as TheC | undefined
+        const sig = ave.o({ active_dock: 1 })[0] as TheC | undefined
+        const dock = sig?.c.doc as TheC | undefined
+        if (!dock) return
+        const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
         if (!Pmirrors) return
 
         const by_id = new Map<string, { from: number, to: number }>()

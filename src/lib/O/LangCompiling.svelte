@@ -8,20 +8,20 @@
     // Deposits onto H via M.eatfunc():
     //
     //   Lang_compile(A, w)
-    //     Entry.  Resolves the active docC via Lang_active_docC(w).
+    //     Entry.  Resolves the active dock via Lang_active_dock(w).
     //     Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
     //     translated JS.  For hard-compiles (gen_path present), hands off
     //     to Lies via e:Lies_compiled — Lies owns the
-    //     write and optional Pantheate notify.  Stashes docC/Compile/Output.
+    //     write and optional Pantheate notify.  Stashes dock/Compile/Output.
     //
     //   Lang_compile_step(A, w)
-    //     Called from Lang(A,w) on every tick while docC/Compile/Pending is set.
+    //     Called from Lang(A,w) on every tick while dock/Compile/Pending is set.
     //     Waits for e:Lies_compile_settled {path} fired back by Lies,
-    //     then clears docC/Compile/Pending so Story sees Lang settle.
+    //     then clears dock/Compile/Pending so Story sees Lang settle.
     //
     //   All compile state (Compile, compile_error) lives on
-    //   docC — not on w — so it can be r()'d independently per document and
+    //   dock — not on w — so it can be r()'d independently per document and
     //   multiple open docs don't share compile state.
     //   compile_write has moved to Lies's w (keyed by path).
     //
@@ -190,30 +190,30 @@
     // to one compile cycle rather than N sequential ones.
     async e_Lang_compile(A: TheC, w: TheC, e: TheC) {
         if (!e.sc.misdirectioner) {
-            // Stamp the live CM state onto docC before bouncing — the second pass
-            // has no e.sc.state (misdirectioner carries none), so Lang_compile_docC
+            // Stamp the live CM state onto dock before bouncing — the second pass
+            // has no e.sc.state (misdirectioner carries none), so Lang_compile_dock
             // would otherwise compile from the last bookmark-debounce state (~800ms
             // stale), making every Esc compile one push behind the current text.
-            this.Lang_doc_from_event(w, e)
+            this.Lang_dock_from_event(w, e)
             return this.i_elvisto(w,'Lang_compile',{misdirectioner:1})
         }
-        const docC = this.Lang_active_docC(w)
+        const dock = this.Lang_active_dock(w)
         // Drop the compile when one is already in-flight for this doc.
-        if (docC?.o({ Compile: 1 })[0]?.oa({ Pending: 1 })) {
-            console.log(`⏭ Lang_compile: skipped — in-flight for ${docC.sc.doc}`)
+        if (dock?.o({ Compile: 1 })[0]?.oa({ Pending: 1 })) {
+            console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
             return
         }
         await this.Lang_compile(A, w)
     },
 
     // Fired by the "compile" action button in Lang_plan.  Resolves the active
-    // doc and hands off to Lang_compile_docC.  The split lets a req:compile
-    // phase (Languish) drive the compile for a specific docC rather than
+    // doc and hands off to Lang_compile_dock.  The split lets a req:compile
+    // phase (Languish) drive the compile for a specific dock rather than
     // "whatever happens to be active".
     async Lang_compile(A: TheC, w: TheC) {
-        const docC = this.Lang_active_docC(w)
-        if (!docC) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
-        await this.Lang_compile_docC(w, docC)
+        const dock = this.Lang_active_dock(w)
+        if (!dock) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
+        await this.Lang_compile_dock(w, dock)
     },
 
     // Synchronously builds the module source (so the user gets immediate
@@ -236,31 +236,31 @@
     // cases — %Pending tracks only the hard-compile disk write, never the
     // index build.  A resolver that needs %methods can rely on it the instant
     // this resolves; only the gen-file write outlives it.
-    async Lang_compile_docC(w: TheC, docC: TheC) {
+    async Lang_compile_dock(w: TheC, dock: TheC) {
         const H = this
 
-        const state = docC.c.state as EditorState | undefined
+        const state = dock.c.state as EditorState | undefined
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
         if (state.doc.length === 0) return
 
         // Park the job as a particle so Lang_compile_step (and Story) can
         // observe it properly.  Large source stays in .c to keep sc clean.
-        const job = docC.oai({ Compile: 1 })
+        const job = dock.oai({ Compile: 1 })
         job.empty()
         job.oai({Pending: 1})
         // compile_t0 on .c: transient, not in snap.  %time child closes the legs.
         job.c.compile_t0 = Date.now()
 
         // clear previous outputs / errors so a fresh compile is visible
-        await docC.r({ compile_error: 1 }, {})
+        await dock.r({ compile_error: 1 }, {})
 
-        // gen_path comes from docC (set by e_Lang_open_doc via Lies).
+        // gen_path comes from dock (set by e_Lang_open_dock via Lies).
         // Absent gen_path means soft-compile only — methods/calls are indexed
         // but the eatfunc-wrapped source is meaningless for a non-stho file,
         // so Output is suppressed.  Only gen_path docs get an Output particle.
         // < softgen: a future Opt flag to show Output without writing to gen/
         //   would set gen_path on the doc but let do_write=false pass through.
-        const gen_path = docC.sc.gen_path as string | undefined
+        const gen_path = dock.sc.gen_path as string | undefined
 
         let source: string
         let source_dige = ''   // dige of the raw source text; populated for hard-compiles
@@ -272,7 +272,7 @@
             for (let i = 0; i < lines.length; i++) {
                 const ln = lines[i]
                 if (0 && ln.kind === 'translated') {
-                    docC.i({
+                    dock.i({
                         result: 1, chunk_i: translated_i++,
                         line_number: i + 1,
                         str: ln.text,
@@ -289,11 +289,11 @@
                 // version is live after mount.  Computed before render so it's independent
                 // of the generated wrapper boilerplate.
                 source_dige = await dig(state.doc.sliceString(0))
-                ghost = { ghostmeta_name: this.Lang_ghostmeta_name(docC.sc.doc as string), source_dige }
+                ghost = { ghostmeta_name: this.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
             }
             source = this.Lang_compile_render_module(body, ghost)
         } catch (err: any) {
-            docC.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
+            dock.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
             return
         }
 
@@ -302,7 +302,7 @@
             // %time/compile: synchronous cost (collect + render).  No write leg.
             const compile_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
             job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
-            w.i({ see: `🔍 soft-compiled ${docC.sc.doc}` })
+            w.i({ see: `🔍 soft-compiled ${dock.sc.dock}` })
             return
         }
 
@@ -318,20 +318,20 @@
         // and/or notifies Pantheate, then fires e:Lies_compile_settled
         // back to w so Lang_compile_step can clear Pending.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: docC.sc.doc, gen_path, source, dige, source_dige,
+            path: dock.sc.dock, gen_path, source, dige, source_dige,
         })
         H.i_elvisto(w, 'think')
     },
 
-    // Called from Lang(A,w) while docC/Compile/Pending is set.
+    // Called from Lang(A,w) while dock/Compile/Pending is set.
     // Waits for e:Lies_compile_settled {path, write_ms} fired back by Lies,
-    // then clears docC/Compile/Pending and closes %time with all + write legs.
+    // then clears dock/Compile/Pending and closes %time with all + write legs.
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
-        const docC = this.Lang_active_docC(w)
-        if (!docC) return
+        const dock = this.Lang_active_dock(w)
+        if (!dock) return
 
-        const job = docC.o({ Compile: 1 })[0] as TheC | undefined
+        const job = dock.o({ Compile: 1 })[0] as TheC | undefined
         if (!job) throw "!job"
         if (!job.oa({Pending:1})) return
 
@@ -339,8 +339,8 @@
         // There may be one per recently-settled doc (multi-doc scenario).
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
             const settled_path = ev.sc.path as string
-            const docs = w.o({ docs: 1 })[0] as TheC | undefined
-            const targetDocC = docs?.o({ doc: settled_path })[0] as TheC | undefined
+            const docks = w.o({docks: 1})[0] as TheC | undefined
+            const targetDocC = docs?.o({dock: settled_path})[0] as TheC | undefined
             if (!targetDocC) continue
             const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
             if (targetJob) {
@@ -770,7 +770,7 @@
             const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
 
             // Record control-flow header in the words index so Point resolution
-            // can match stack-path segments like "e_Doc_open / if point".
+            // can match stack-path segments like "e_Dock_open / if point".
             ctx.words.push({
                 controlflow: 1,
                 keyword: keyword.trim(),

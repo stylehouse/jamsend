@@ -5,13 +5,13 @@
     //
     //   Owns everything that reads and writes %examining's cursor fields.
     //   %examining itself is created by Lies's one-time setup (like Lang
-    //   creating docC while LangGraft owns the Pmirror layer).  LiesCurse
+    //   creating dock while LangGraft owns the Pmirror layer).  LiesCurse
     //   reads it via w.o({ examining:1 })[0] and returns early if Lies
     //   hasn't run setup yet — retries naturally next tick.
     //
     // ── Responsibilities ─────────────────────────────────────────────────────
     //
-    //   - watch_c on ave/%active_doc: keeps examining.sc.active_path in sync
+    //   - watch_c on ave/%active_dock: keeps examining.sc.active_path in sync
     //     and advances the graft cursor whenever the active doc changes.
     //   - Cold-start placement: on the first tick where Wafts are loaded,
     //     lands the cursor if the watch above hadn't yet fired.
@@ -45,12 +45,12 @@
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return   // Lies one-time setup hasn't run yet; retry next tick
 
-        // ── active_doc → examining — lazy wire for the DocRow glow ───────────
+        // ── active_dock → examining — lazy wire for the DocRow glow ───────────
         //
-        //   Lang's ave/%active_doc bumps when the user opens a doc
-        //   (e_Doc_open → Lang_set_active_doc → active_doc.bump_version()).
+        //   Lang's ave/%active_dock bumps when the user opens a doc
+        //   (e_Dock_open → Lang_set_active_dock → active_dock.bump_version()).
         //   watch_c propagates that bump without a Lies tick:
-        //     active_doc.bump_version()
+        //     active_dock.bump_version()
         //     → examining.sc.active_path updated + examining.bump_version()
         //     → DocRow's $derived on examining.version re-runs (pure Svelte 5)
         //     → is_examining glow toggles live, no Liesui re-render needed.
@@ -60,16 +60,16 @@
         //   Lies_find_doc_in_wafts does the lookup and Lies_set_examining stamps
         //   the three fields atomically.
         //
-        //   active_doc is created lazily by Lang on first Doc_open, so retry each tick.
-        const active_doc = ave?.o({ active_doc: 1 })[0] as TheC | undefined
-        if (active_doc && !w.c.examining_sig_watch) {
+        //   active_dock is created lazily by Lang on first Doc_open, so retry each tick.
+        const active_dock = ave?.o({ active_dock: 1 })[0] as TheC | undefined
+        if (active_dock && !w.c.examining_sig_watch) {
             w.c.examining_sig_watch = true
-            H.watch_c(active_doc, () => {
-                console.log(`Lies saw ave/%active_doc=${active_doc.sc.path}  ~`)
-                examining.sc.active_path = active_doc.sc.path as string | undefined
+            H.watch_c(active_dock, () => {
+                console.log(`Lies saw ave/%active_dock=${active_dock.sc.path}  ~`)
+                examining.sc.active_path = active_dock.sc.path as string | undefined
                 examining.bump_version()
                 // Advance graft cursor to match the newly-active doc.
-                const path = active_doc.sc.path as string | undefined
+                const path = active_dock.sc.path as string | undefined
                 if (path) {
                     // Only advance cursor if the new active path differs from what's cursored
                     const cur_wpt  = examining.o({ What_Points: 1 })[0] as TheC | undefined
@@ -84,8 +84,8 @@
                 }
             })
         }
-        // Initial sync on this tick in case active_doc existed before the watch was wired.
-        const active_path = active_doc?.sc.path as string | undefined
+        // Initial sync on this tick in case active_dock existed before the watch was wired.
+        const active_path = active_dock?.sc.path as string | undefined
         if (active_path !== examining.sc.active_path) {
             examining.sc.active_path = active_path
             examining.bump_version()
@@ -99,7 +99,7 @@
         //      the Waft finishes loading.
         //   2. No active doc yet — pick the first Point-bearing Doc across all
         //      loaded Wafts.  Queues its open_req via Lies_ensure_doc_loaded;
-        //      the doc loads, Lang opens it, active_doc follows naturally.
+        //      the doc loads, Lang opens it, active_dock follows naturally.
         //   Both skip when the cursor already points at the right place.
         const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
         const examining_path = (wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
@@ -125,7 +125,7 @@
     // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
     //
     //   Fired by Liesui / Waft when the user focuses a Doc.  Stamps
-    //   %src_Point_root (the %Doc,path TheC whose %Point,N children are grafted)
+    //   %src_Point_root (the %Dock,path TheC whose %Point,N children are grafted)
     //   and %src_Waft (the containing Waft key) on %examining, then bumps its
     //   version so Lang_graft_points sees a new cache key and re-grafts.
     //
@@ -134,7 +134,7 @@
     //   never half-done.
     //
     //   e.sc: { doc_C: TheC, waft_key: string }
-    //   (doc_C is the %Doc,path particle inside the Waft — direct TheC ref,
+    //   (doc_C is the %Dock,path particle inside the Waft — direct TheC ref,
     //    not a path string — because %Point,N children live on it.)
     async e_Lies_set_cursor(A: TheC, w: TheC, e: TheC) {
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
@@ -166,9 +166,9 @@
 
     // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
     //
-    //   Walk all loaded Wafts looking for a %Doc,path particle matching `path`.
+    //   Walk all loaded Wafts looking for a %Dock,path particle matching `path`.
     //   Returns { doc, waft_key } on the first hit, undefined if not found.
-    //   Used to land the graft cursor when active_doc changes.
+    //   Used to land the graft cursor when active_dock changes.
     Lies_find_doc_in_wafts(w: TheC, path: string): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
@@ -225,7 +225,7 @@
     // ── Lies_set_examining ────────────────────────────────────────────────────
     //
     //   Install or update the %What_Points,1 child on %examining.
-    //   Carries src (the %Doc,path TheC whose %Point,N are grafted) and src_Waft
+    //   Carries src (the %Dock,path TheC whose %Point,N are grafted) and src_Waft
     //   (the containing Waft key).  Using a child particle means:
     //   - visible in the snap as a proper particle, not a buried ref in sc
     //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
@@ -275,7 +275,7 @@
     //   The order is Waft-insertion order, then Doc-insertion order within
     //   each Waft — stable across ticks since particles are ordered by i().
     //
-    //   e.sc: { doc_path: string }  — current active doc path (for finding position)
+    //   e.sc: { dock_path: string }  — current active doc path (for finding position)
     //
     //   < What-level navigation (sibling time-slices) is a future arc —
     //     for now this only steps across Docs, not Whats.
@@ -283,7 +283,7 @@
         const H          = this as House
         const examining  = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const current_path = e.sc.doc_path as string | undefined
+        const current_path = e.sc.dock_path as string | undefined
 
         // Collect all Docs that carry at least one Point, in order.
         const candidates: Array<{ doc: TheC, waft_key: string }> = []
@@ -316,7 +316,7 @@
     //   sc.showing mirrors the minimap's orb toggle so carry-forward (+time)
     //   knows which accepted Points were actively illuminated.
     //
-    //   e.sc: { doc_path: string, what_point: { spec, showing }[] }
+    //   e.sc: { dock_path: string, what_point: { spec, showing }[] }
     //
     //   < carry-forward: seed the next %What's in-group from accepted+showing
     //     entries when +time branches (Chunk 4 ↘ / ↓ gestures).
@@ -325,15 +325,15 @@
         const H          = this as House
         const examining  = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const doc_path   = e.sc.doc_path   as string | undefined
+        const dock_path   = e.sc.dock_path   as string | undefined
         const what_point = e.sc.what_point as { spec: string, showing: boolean }[] | undefined
-        if (!doc_path || !what_point) return
+        if (!dock_path || !what_point) return
 
         // Stamp accepted/showing on the %Point particles so the Waft snap persists them.
         // Points live directly on the %Doc particle — no %Points,1 container.
         const accepted_specs = new Set(what_point.map(e => e.spec))
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
+            const doc = waft.o({ Doc: 1, path: dock_path })[0] as TheC | undefined
             if (!doc) continue
             let dirty = false
             for (const pt of doc.o({ Point: 1 }) as TheC[]) {
@@ -362,7 +362,7 @@
         wpt.sc.accepted_push_id  = Date.now()
         wpt.sc.accepted_entries  = what_point
         wpt.bump_version()
-        console.log(`👁 accept_What_Point: ${doc_path} (${what_point.length} specs, ${accepted_specs.size} accepted)`)
+        console.log(`👁 accept_What_Point: ${dock_path} (${what_point.length} specs, ${accepted_specs.size} accepted)`)
     },
 
 //#endregion

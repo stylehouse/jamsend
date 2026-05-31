@@ -9,7 +9,7 @@
     //   - Loads source from disk via rw_op:'read'.
     //   - Derives gen_path when the source is under Ghost/ and its codetype
     //     (extension) is in GEN_ABLE_CODETYPES — absent means soft-compile only.
-    //   - Hands text to Lang via e:Lang_open_doc.
+    //   - Hands text to Lang via e:Lang_open_dock.
     //
     //   Plan Preps open Wafts (not individual docs) via e:Lies_open_Waft.
     //   Each Waft carries Doc children that drive the open_req loop.
@@ -67,10 +67,10 @@
     // ── Particle layout ───────────────────────────────────────────────────────
     //
     //   w/{examining:1,active_path?}            — reactive signal in watched:ave;
-    //                                            bumps when w changes or active_doc changes,
+    //                                            bumps when w changes or active_dock changes,
     //                                            and when Lies_set_examining is called.
     //                                            examining.c.w = w (back-ref for Liesui).
-    //                                            examining.sc.active_path mirrors ave/{active_doc:1}.
+    //                                            examining.sc.active_path mirrors ave/{active_dock:1}.
     //     /{What_Points:1}                       — child of examining; Lies_set_examining
     //                                              installs/updates it via examining.oai() (sync).
     //                                              sc.src     : $C  the %Doc,path whose %Point,N are grafted
@@ -106,7 +106,7 @@ future directions for Lies as a code editor trainstation
 
 Small/crisp:
 
-Escape → Lang_compile with permission — the belief that the current editor state is trustworthy enough to compile. Probably a flag on loaded_doc or docC that the user explicitly arms, and the escape key checks it before firing.
+Escape → Lang_compile with permission — the belief that the current editor state is trustworthy enough to compile. Probably a flag on loaded_doc or dock that the user explicitly arms, and the escape key checks it before firing.
 Dige tracking — stamp each gen/* write with the dige of the source it came from; DocRow shows a ⚠ when the source has changed since last write.
 
 Medium:
@@ -445,7 +445,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // File absent — open as empty so Lang has an editable slot.
                 // Set not_found; keep new if already set (new takes display priority).
                 H.Lies_flag_doc(w, path, 'not_found', 1)
-                H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text: '' })
+                H.i_elvisto('Lang/Lang', 'Lang_open_dock', { path, gen_path, text: '' })
                 console.warn(`🗂 Lies: not found: ${path} (opened empty)`)
             } else {
                 const text: string = req.sc.reply?.content ?? ''
@@ -453,7 +453,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 H.Lies_flag_doc(w, path, 'not_found', undefined)
                 // Clear new only when the file has actual content; empty = not yet written.
                 if (text) H.Lies_flag_doc(w, path, 'new', undefined)
-                H.i_elvisto('Lang/Lang', 'Lang_open_doc', { path, gen_path, text })
+                H.i_elvisto('Lang/Lang', 'Lang_open_dock', { path, gen_path, text })
                 console.log(`🗂 Lies opened ${path}${gen_path ? ` → ${gen_path}` : ' (soft only)'}`)
             }
 
@@ -547,14 +547,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //
     //   e.sc: { doc, point, kind?, from?, to?, issues: string[] }
     async e_Lies_point_issues(A: TheC, w: TheC, e: TheC) {
-        const doc_path = e.sc.doc    as string   | undefined
+        const dock_path = e.sc.dock    as string   | undefined
         const spec     = e.sc.point  as string   | undefined
         const issues   = e.sc.issues as string[] | undefined
-        if (!doc_path || !spec) return
+        if (!dock_path || !spec) return
 
         // Find the Point particle across all Wafts that own this doc.
+        // Points live directly on the %Doc particle — no %Points,1 container.
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1, path: doc_path })[0] as TheC | undefined
+            const doc = waft.o({ Doc: 1, path: dock_path })[0] as TheC | undefined
             if (!doc) continue
             const point = doc.o({ Point: 1, method: spec })[0] as TheC | undefined
             if (!point) continue
@@ -584,7 +585,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // Point not in any Waft — log but don't crash (doc may not have a Waft yet).
         if (issues?.length) {
-            console.warn(`Lies_point_issues: Point method='${spec}' not in any Waft for ${doc_path}:`, issues)
+            console.warn(`Lies_point_issues: Point method='${spec}' not in any Waft for ${dock_path}:`, issues)
         }
     },
 

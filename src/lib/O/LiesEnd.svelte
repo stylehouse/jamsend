@@ -3,19 +3,20 @@
 //
 //   Lies commissions Lang to look at an area of the Waft/%What** graph; an
 //   Understanding (U) is a bounded checkout of one %What's /%Point extent.
-//   Two Seems hang off one %LiesEnd:
+//   Two Seems hang off one %LE (at w/{LE} under w:Lies):
 //     origin  — reads the remote %What for awareness (when to pull)
 //     working — holds the editable clone tree (clean C**) and its U sphere
 //
 //   No JS classes; methods on `this` (House mixin) over C** particles.  %LE is
-//   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
-//   so LE/* is stable across pulls.
+//   stable — not inside a replace() — so LE/* survives pulls.
 //
 //   C.sc never carries D-sphere tags; local meanings live on C.c.U (the
-//   %Understandable node).  Regarding the U%* we know about so far, absence is
-//   positive: they (meaning C) are showing and accepted by default.
-//   U%unshowing opts a clone out of the Lang UI; U%unaccepted omits it from push.
-//   Selection()'s' usually a D tracing a C, but we have a U hung off a D tracing a C.
+//   %Understandable node).  Absence is positive: C are showing and accepted by
+//   default.  U%unshowing opts a clone out of the Lang UI; U%unaccepted omits
+//   it from push and encode.
+//
+//   %State on %LE is the synthesised view: armed/stale set by LE_pull,
+//   changey set by LE_encode_compare.  %push_dirty is the fault particle.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
@@ -153,6 +154,11 @@ await M.eatfunc({
         H.i_Seem(LE, { Seem: 'origin', C: what_C })
         H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
         // Seem:working%C is absent — Seem_clone_C sets it on the first LE_pull
+
+        // fresh arm: spheres empty, no clone tree yet — armed until first pull.
+        // replace so stale/changey from a prior arm don't linger.
+        LE.oai({ State: 1 }).sc = { armed: 1 }
+        for (const pd of LE.o({ push_dirty: 1 }) as TheC[]) LE.drop(pd)
     },
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
@@ -164,6 +170,9 @@ await M.eatfunc({
     // Top-level { goners, neus } is the awareness (source-change) diff; the
     // working diff is on .working.  Both Seems record their latest counts in
     // Seem/%News (replaced, not piled).
+    //
+    // Stamps %State on LE: armed cleared on first pull; stale set when the
+    // origin diff is non-empty.  changey is set by LE_encode_compare, not here.
     async LE_pull(LE: TheC, strict = 0) {
         const H = this as House
         const origin  = LE.oai({ Seem: 'origin' })
@@ -176,6 +185,10 @@ await M.eatfunc({
         }
 
         const wd = await H.o_Seem(working, strict)
+
+        // %State — replaced each pull so old flags don't linger.
+        const stale = od.goners.length > 0 || od.neus.length > 0
+        await LE.r({ State: 1 }, { ...(stale ? { stale: 1 } : {}) })
 
         return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },
@@ -313,9 +326,8 @@ await M.eatfunc({
     // Encode origin and working Seems via Seem_toString and compare.  Equal snaps
     // mean the push would carry nothing.
     //
-    // Result cached on Seem:working.c.encode — transient, never snapped.
-    // Callers that want to surface the snaps do so explicitly (e.g. via
-    // %see,string particles in tests).
+    // Updates %State.changey: set when snaps differ, cleared when equal.  Does
+    // not touch %State.stale — that's LE_pull's concern.
     //
     // encode_errors flags a malformed clone tree (a non-Waft mainkey slipped into
     // working) — returned to caller, not swallowed.
@@ -326,13 +338,18 @@ await M.eatfunc({
 
         const o  = await H.Seem_toString(origin)
         const wk = await H.Seem_toString(working)
-        const dirty = o.snap !== wk.snap
+        const changey = o.snap !== wk.snap
         const encode_errors = [...o.errors, ...wk.errors]
 
         // Cache on .c — invisible to snap, survives across calls without piling.
-        working.c.encode = { snap_origin: o.snap, snap_working: wk.snap, dirty, encode_errors }
+        working.c.encode = { snap_origin: o.snap, snap_working: wk.snap, changey, encode_errors }
 
-        return { snap_origin: o.snap, snap_working: wk.snap, dirty, encode_errors }
+        // Merge changey into the existing %State without replacing stale/armed.
+        const state = LE.oai({ State: 1 })
+        if (changey) state.sc.changey = 1
+        else delete state.sc.changey
+
+        return { snap_origin: o.snap, snap_working: wk.snap, dirty: changey, encode_errors }
     },
 
 //#endregion
