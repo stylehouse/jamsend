@@ -88,6 +88,10 @@
     //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
     //   w/{Opt:1}                              — options container
     //
+    //   w/{desire:1,Waft:key}                  — erupts when the Waft loads;
+    //     sc.playing: 0|1                        0=paused, 1=auto-advance
+    //     < req:open_What / req:next_What children — Chunk 4b
+    //
     // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
     //
     //   doc.sc.new = 1         — set by Liesui on creation; cleared on load
@@ -338,7 +342,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
             // UI reads some w/*
-            H.watch_c(w, async () => {
+            H.watch_c(w, () => {
                 examining.bump_version()
             })
         }
@@ -407,11 +411,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 return C
             })()
 
+            // r() clears any prior {Waft:path} child before inserting the fresh one.
+            // i() always inserts — without the r() a second load tick (stale done flag,
+            // duplicate open_waft_req) would give two children with the same Waft key
+            // and Liesui's keyed each would throw each_key_duplicate.
+            await w.r({ Waft: path }, {})
             w.i(waft)
+            H.Lies_stamp_up(waft, waft)   // What.c.up back-refs; Waft is its own ceiling
             H.Lies_sync_waft_docs(w, waft)
 
             // Every CRUD mutation triggers a throttled wormhole write.
-            H.watch_c(waft, async () => {
+            H.watch_c(waft, () => {
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
             })
@@ -528,9 +538,46 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             }
             // do_write: settle deferred to LiesStore_run Phase 1 after the wwrite finishes.
         }
+
+        // ── req:desire — the will to play through the loaded Waft ─────────────
+        //
+        //   Erupts as soon as any Waft is loaded; one req per Waft key.
+        //   Sits directly on w so Liesui and NaviCado can read it.
+        //   playing:0 = paused (manual → advance); playing:1 = auto-advance.
+        //
+        //   < req:open_What (reqonce) and req:next_What loop — Chunk 4b.
+        //   < ttlilt auto-advance — Chunk 4b.
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            const waft_key = waft.sc.Waft as string
+            w.oai({ desire: 1, Waft: waft_key }, { playing: 0 })
+        }
     },
 
 //#region helpers
+
+    // ── Lies_stamp_up ─────────────────────────────────────────────────────────
+    //
+    //   Walk a Waft's %What** tree and stamp C.c.up on every What and Doc,
+    //   pointing at its immediate parent (or the Waft itself at the top level).
+    //   Waft is the ceiling: What.c.up chains upward and stops at the Waft
+    //   particle — NaviCado detects it via `parent.sc.Waft !== undefined`.
+    //
+    //   Called after deWaft inserts a Waft, and after any What/Doc is inserted.
+    //   The walk mirrors deWaft's tree grammar (shallow-recursive).
+    //
+    //   Security note: the chain always terminates at the Waft particle.
+    //   Callers must never follow c.up past a node whose sc.Waft is set.
+    Lies_stamp_up(parent: TheC, waft: TheC) {
+        for (const what of parent.o({ What: 1 }) as TheC[]) {
+            what.c.up   = parent
+            what.c.waft = waft
+            this.Lies_stamp_up(what, waft)   // recurse into nested Whats
+        }
+        for (const doc of parent.o({ Doc: 1 }) as TheC[]) {
+            doc.c.up   = parent
+            doc.c.waft = waft
+        }
+    },
 
     // ── e_Lies_point_issues ────────────────────────────────────────────────────
     //

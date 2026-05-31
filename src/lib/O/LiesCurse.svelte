@@ -339,7 +339,41 @@
         await H.Lies_set_examining(examining, what, waft_key)
     },
 
-    // ── Lies_what_has_points ──────────────────────────────────────────────────
+    // ── e_Lies_cursor_what ────────────────────────────────────────────────────
+    //
+    //   Fired by NaviCado's ↑ / ← / → buttons.  The caller already resolved the
+    //   target %What particle (via LE_what_parent / LE_what_prev / LE_what_next)
+    //   and passes it directly — no candidate scan needed.
+    //
+    //   Uses c.waft (stamped by Lies_stamp_up) to recover the waft_key without
+    //   a full Waft scan.  Falls back to a scan when c.waft is absent (newly
+    //   added Whats before the next Lies_stamp_up pass).
+    //
+    //   e.sc: { what: TheC }  — the target %What particle
+    async e_Lies_cursor_what(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const what = e.sc.what as TheC | undefined
+        if (!what) return
+
+        // Recover waft_key from the cached c.waft or fall back to a scan.
+        const waft_C = what.c.waft as TheC | undefined
+        let waft_key = waft_C?.sc.Waft as string | undefined
+        if (!waft_key) {
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+                if ((waft.o({ What: 1 }) as TheC[]).some(wh => wh === what)) {
+                    waft_key = waft.sc.Waft as string
+                    break
+                }
+            }
+        }
+        if (!waft_key) return
+
+        const doc_path = H.Lies_what_first_doc_path(what)
+        H.Lies_ensure_doc_loaded(w, doc_path, waft_key)
+        await H.Lies_set_examining(examining, what, waft_key)
+    },
     //
     //   True when a %What carries at least one %Point in its immediate child
     //   layer — either a direct %Point child, or a %Point inside any direct

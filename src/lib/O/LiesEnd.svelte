@@ -359,6 +359,78 @@ await M.eatfunc({
 
 //#endregion
 
+
+//#region navigation — c.up traversal helpers
+//
+//   These helpers read the c.up back-ref chain that Lies_stamp_up maintains on
+//   every What and Doc in a loaded Waft.  The chain stops at the Waft particle
+//   (sc.Waft is set); never follow c.up past a node with sc.Waft defined.
+//
+//   LE.sc.target is the current %What being checked out.  All helpers take that
+//   as their entry point; NaviCado passes it in without knowing the tree shape.
+
+    // ── LE_what_depth ──────────────────────────────────────────────────────
+    // Depth of a %What in its Waft tree.  0 = direct child of Waft.
+    // Used by NaviCado to ghost the ↑ button at depth 0 (already at the top).
+    LE_what_depth(what: TheC): number {
+        let depth = 0
+        let node  = what.c.up as TheC | undefined
+        while (node && node.sc.Waft === undefined) {
+            depth++
+            node = node.c.up as TheC | undefined
+        }
+        return depth
+    },
+
+    // ── LE_what_parent ─────────────────────────────────────────────────────
+    // The immediate parent %What, or undefined when already at the top level
+    // (parent is the Waft itself).
+    LE_what_parent(what: TheC): TheC | undefined {
+        const up = what.c.up as TheC | undefined
+        if (!up || up.sc.Waft !== undefined) return undefined
+        return up
+    },
+
+    // ── LE_what_siblings ──────────────────────────────────────────────────
+    // All %What siblings at the same level (children of the same parent),
+    // including `what` itself.  Insertion order preserved.
+    LE_what_siblings(what: TheC): TheC[] {
+        const parent = (what.c.up as TheC | undefined) ?? what.c.waft as TheC | undefined
+        if (!parent) return [what]
+        return parent.o({ What: 1 }) as TheC[]
+    },
+
+    // ── LE_what_next / LE_what_prev ────────────────────────────────────────
+    // Next or previous sibling %What at the same level.  Returns undefined
+    // when already at the boundary — NaviCado ghosts the button.
+    LE_what_next(what: TheC): TheC | undefined {
+        const sibs = this.LE_what_siblings(what)
+        const idx  = sibs.indexOf(what)
+        return idx >= 0 && idx < sibs.length - 1 ? sibs[idx + 1] : undefined
+    },
+
+    LE_what_prev(what: TheC): TheC | undefined {
+        const sibs = this.LE_what_siblings(what)
+        const idx  = sibs.indexOf(what)
+        return idx > 0 ? sibs[idx - 1] : undefined
+    },
+
+    // ── LE_what_waft ──────────────────────────────────────────────────────
+    // The containing Waft particle for a What.  Cached on c.waft by
+    // Lies_stamp_up; falls back to a c.up walk for particles inserted after
+    // the initial stamp (e.g. LE_add_clone'd Whats before the next stamp).
+    LE_what_waft(what: TheC): TheC | undefined {
+        if (what.c.waft) return what.c.waft as TheC
+        let node = what.c.up as TheC | undefined
+        while (node) {
+            if (node.sc.Waft !== undefined) return node
+            node = node.c.up as TheC | undefined
+        }
+        return undefined
+    },
+
+//#endregion
+
 })
 })
 
