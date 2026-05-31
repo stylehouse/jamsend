@@ -100,6 +100,13 @@
     //
     //   Bookmarks and compile live on dock, not w, so they can be r()'d per doc.
     //
+    // ── Understanding hold ───────────────────────────────────────────────────
+    //
+    //   w/{Languinio:1}/{LE:1} — same-object hold on w:Lies/{LE:1}.
+    //   Installed by e_Lang_LE_arm each time Lies_set_examining fires.
+    //   Langui reads LE_clones() and %State directly from it.
+    //   The hold is a reference, not a copy — %LE lives on w:Lies.
+    //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
     //   ave/{lang_dock:path} — one per doc, holds sc.text.
@@ -228,6 +235,10 @@
         // (Langui, DocMinimap) can read it without a new prop.  Languish
         // phase handlers oai/drop %spinner children on it; at rest it is
         // empty.  c.w is a back-ref so a reader can climb to w:Lang.
+        // %LE is inserted as a same-object hold (languinio.i(LE)) each time
+        // Lies_set_examining fires — e_Lang_LE_arm does that insertion.
+        // Langui reads it via languinio.o({LE:1})[0] to check %State without
+        // a cross-world round-trip.
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const languinio = w.oai({ Languinio: 1 })
         ave.i(languinio)
@@ -439,6 +450,34 @@
 
         console.log(`📄 Lang open_dock → req:Languish ${path}`)
         await rq.do()
+    },
+
+    // ── e_Lang_LE_arm ─────────────────────────────────────────────────────────
+    //
+    //   Fired by Lies (via Lies_set_examining) whenever the Understanding is
+    //   re-aimed at a new src.  Installs the live %LE particle as a same-object
+    //   hold inside %Languinio so Langui can read LE_clones() and %State without
+    //   a cross-world round-trip.
+    //
+    //   i() always inserts — it does not deduplicate by reference.  Calling
+    //   languinio.i(LE) twice gives two /%LE children pointing at the same object.
+    //   The canonical fix: r({LE:1},{}) clears all prior holds, then i(LE) after.
+    //
+    //   %LE itself is stable for the Lies session — LE_arm mutates it in place
+    //   rather than replacing it, so the same TheC ref survives every re-arm.
+    //
+    //   e.sc: { LE: TheC }  — the live w:Lies/{LE:1} particle
+    async e_Lang_LE_arm(A: TheC, w: TheC, e: TheC) {
+        const LE = e.sc.LE as TheC | undefined
+        if (!LE) return
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (!languinio) return
+        // r({LE:1},{}) clears all prior holds; i(LE) inserts once after.
+        // i() always inserts — never deduplicates by reference — so the r() first
+        // is necessary: two i(LE) calls would give two /%LE children, same ref.
+        await languinio.r({ LE: 1 }, {})
+        languinio.i(LE)
+        console.log(`🔗 Lang got %LE hold from Lies`)
     },
 
 //#region Languish

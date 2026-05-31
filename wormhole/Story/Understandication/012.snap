@@ -5,16 +5,17 @@ Snap:H
       w:Understandication
         tally,passed:39,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
+          State,stale
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
-              Demonstrations:origin,Point,method:e_Doc_open
+              Demonstrations:origin,Point,method:e_Dock_open
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:routing_detail
               Demonstrations:origin,Point,method:pipeline_start
             News:origin,goners:0,neus:4
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
-              Demonstrations:working,Point,method:e_Doc_open
+              Demonstrations:working,Point,method:e_Dock_open
                 Understandable
               Demonstrations:working,Point,method:Lang_doc_from_event
                 Understandable
@@ -26,7 +27,7 @@ Snap:H
             News:working,goners:0,neus:4
         src
           What,label:routing
-            Point,method:e_Doc_open
+            Point,method:e_Dock_open
             Point,method:Lang_doc_from_event
             What,label:routing_detail
               Point,method:resolve_path
@@ -44,9 +45,9 @@ Snap:H
         see:step 12 wander compile add push back
           codegen_on_compilation
           PASS,t:codegen_pass landed on compilation
-          routing_clone:e_Doc_open
+          routing_clone:e_Dock_open
           routing_clone:Lang_doc_from_event
           routing_clone:pipeline_start
           PASS,t:codegen_pass not in routing after wander back
-          PASS,t:e_Doc_open back in routing clones
+          PASS,t:e_Dock_open back in routing clones
     {"mung":["id"]}	mo:main,interval:3.6

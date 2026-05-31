@@ -17,13 +17,17 @@
     //     lands the cursor if the watch above hadn't yet fired.
     //   - e:Lies_set_cursor — explicit cursor jump from Waft/DocRow click.
     //   - Lies_find_doc_in_wafts — walk loaded Wafts by path.
-    //   - Lies_set_examining — atomic three-step: src, src_Waft, bump.
+    //   - Lies_set_examining — atomic three-step: src, src_Waft, bump; also
+    //     arms the Understanding (LE_arm + LE_pull) and fires e_Lang_LE_arm so
+    //     Lang's %Languinio gets the same-object %LE hold.
     //
     // ── Particle ownership ───────────────────────────────────────────────────
     //
     //   %examining is Lies's.  LiesCurse never oai()s it — only reads it.
     //   %examining/%What_Points,1 is written only through Lies_set_examining,
     //   so the three-step is always atomic.
+    //   %LE is Lies's; created lazily via examining.c.w.oai({LE:1}) inside
+    //   Lies_set_examining.  LiesCurse arms it but does not walk it directly.
     //
     //   < Lies_cursor_next (→ button): step cursor to next Doc across Wafts.
     //   < Lies_accept_What_Point: echo accepted_push_id back to DocMinimap.
@@ -231,6 +235,10 @@
     //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
     //   - three-step is one call — src, src_Waft, and bump never go half-done
     //
+    //   Also re-arms the Understanding: w/{LE} is aimed at src, then pulled so
+    //   it transitions armed → clean.  e_Lang_LE_arm fires cross-world so Lang
+    //   can install the same-object hold in %Languinio.
+    //
     //   Cold-start rehydration: reads sc.accepted + sc.showing from %Point
     //   particles directly on src and injects them as accepted_entries on
     //   %What_Points.  DocMinimap's accepted_push_id $effect fires on the bump
@@ -240,9 +248,12 @@
     //   would match and skip.  Use 1 as the seed so the first real push at
     //   Date.now() (always > 1) is always distinguishable.
     //
-    //   oai() is sync (unlike roai) — safe to call from watch_c callbacks.
-    //   The child is stable across calls; only its sc fields change each time.
+    //   Sync on wpt + LE_arm; LE_pull is async — fired without await so the
+    //   cursor stamp is never blocked on the first walk.  oai() is sync — safe
+    //   to call from watch_c callbacks.  The child is stable across calls; only
+    //   its sc fields change each time.
     Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
+        const H = this as House
         const wpt = examining.oai({ What_Points: 1 })
         wpt.sc.src      = src
         wpt.sc.src_Waft = waft_key
@@ -265,6 +276,19 @@
         }
 
         wpt.bump_version()
+
+        // Arm the Understanding at the new src, then pull asynchronously.
+        // examining.c.w is the back-ref to w:Lies (set in Lies one-time setup).
+        const w = examining.c.w as TheC
+        const LE = w.oai({ LE: 1 })
+        H.LE_arm(LE, src)
+        // Fire without await — the cursor stamp above is the synchronous signal;
+        // LE_pull arms the working clone tree in the background.
+        H.LE_pull(LE).then(() => {
+            // Cross-world: hand w:Lang the live %LE ref so %Languinio can hold it.
+            H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
+        })
+
         console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? '?'}`)
     },
 

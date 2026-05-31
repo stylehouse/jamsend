@@ -9,10 +9,7 @@ story:Understandication
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.135
-      sample:0.141,at:1780210276
-      sample:0.108,at:1780210443
-      sample:0.108,at:1780210664
+    TimeTotal:beliefs,avg:0.149
       sample:0.127,at:1780210765
       sample:0.119,at:1780211529
       sample:0.119,at:1780211573
@@ -20,17 +17,20 @@ story:Understandication
       sample:0.209,at:1780220489
       sample:0.161,at:1780220567
       sample:0.109,at:1780220603
-  step,dige:c74de7250a60552a
-  step:2,dige:f6a2bbec9fee4ae0
-  step:3,dige:90b7e59f8496976d
-  step:4,dige:a94a6afb483d4e84
-  step:5,dige:97d43b37ae2f1790
-  step:6,dige:ef74e59777ca2c5b
-  step:7,dige:222c1058195897fc
-  step:8,dige:23925e8225dd6876
-  step:9,dige:55f890467616b0c0
-  step:10,dige:ebb3048023f8b2a0
-  step:11,dige:11ebb6515b4c2bb2
-  step:12,dige:d90de6fab448a846
-  step:13,dige:4aa4a0dc54d658d2
-  step:14,dige:5b1523c75db0db05
+      sample:0.235,at:1780226488
+      sample:0.131,at:1780230137
+      sample:0.131,at:1780230152
+  step,dige:c61d36650dd29c86
+  step:2,dige:bc7f845e5b0dc89a
+  step:3,dige:43e90ab5f1c91cae
+  step:4,dige:b274a0809090bce1
+  step:5,dige:5410f9302365065a
+  step:6,dige:58c4103dc05a3335
+  step:7,dige:9fca905e470db2ea
+  step:8,dige:bc36b7c3b0013756
+  step:9,dige:08b98ee690e0df2d
+  step:10,dige:42bee93e0c656737
+  step:11,dige:f9f8f622554cea06
+  step:12,dige:003fe417baa5af4c
+  step:13,dige:eec7ddc3c7a9ee03
+  step:14,dige:7cc19c6cabfc2760

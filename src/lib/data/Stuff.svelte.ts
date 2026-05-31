@@ -201,6 +201,10 @@ class StuffIO {
     }
 
     // attachment, materialisation. indexes build up, forming X/.../$n to be with
+    // n joins X.z (ordered), X/$k (key bucket), and X/$k/$v (value bucket)
+    // you can many-place C object by C.i(C), aka same ref
+    // C.i(LE) twice will cause two /LE with same ref, C.i(LE.sc) without same ref
+    //  you might want: C.r({LE:1},{}); C.i(LE), to be the only %LE
     i(n: TheC|TheUniversal):TheC {
         n = _C(n)
         this.Xify()
