@@ -3,17 +3,20 @@ Snap:H
     A:Understandium
       {"mung":["age"]}	self,round:12
       w:Understandium
-        tally,passed:30,failed:0
+        tally,passed:32,failed:0
         {"ref":{"target":"%What:1, label:second"}}	LE
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:origin"}}	Seem:origin
-            topD:origin
-              Seem:origin,Point,method:alpha2
-              Seem:origin,Point,method:beta
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%Demonstrations:origin"}}	Seem:origin
+            Demonstrations:origin
+              Demonstrations:origin,Point,method:alpha2
+              Demonstrations:origin,Point,method:beta
             News:origin,goners:0,neus:0
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%topD:working"}}	Seem:working
-            topD:working
-              Seem:working,Point,method:alpha2
-              Seem:working,Point,method:beta
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:second","topD":"%Demonstrations:working"}}	Seem:working
+            Demonstrations:working
+              Understandable
+              Demonstrations:working,Point,method:alpha2
+                Understandable
+              Demonstrations:working,Point,method:beta
+                Understandable
             News:working,goners:0,neus:0
         src
           What,label:routing
@@ -30,16 +33,19 @@ Snap:H
             Point,method:one
             Point,method:two
         {"ref":{"target":"%What:1, label:enc"}}	LE3
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:enc","topD":"%topD:origin"}}	Seem:origin
-            topD:origin
-              Seem:origin,Point,method:one
-              Seem:origin,Point,method:two
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:enc","topD":"%Demonstrations:origin"}}	Seem:origin
+            Demonstrations:origin
+              Demonstrations:origin,Point,method:one
+              Demonstrations:origin,Point,method:two
             News:origin,goners:0,neus:0
-          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:enc","topD":"%topD:working"}}	Seem:working
-            topD:working
-              Seem:working,Point,method:one
-                showing
-              Seem:working,Point,method:two_EDITED
+          {"ref":{"Se":"Selection()","opt":"Object()","topn":"%What:1, label:enc","topD":"%Demonstrations:working"}}	Seem:working
+            Demonstrations:working
+              Understandable
+              Demonstrations:working,Point,method:one
+                Understandable
+                  showing
+              Demonstrations:working,Point,method:two_EDITED
+                Understandable
             News:working,goners:0,neus:0
           {"encode":1,"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two_EDITED\n","dirty":"1"}
         {"mung":["age"]}	self,round:12

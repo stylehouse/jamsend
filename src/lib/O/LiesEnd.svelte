@@ -12,18 +12,20 @@
 //   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
 //   so LE/* is stable across pulls.
 //
-//   U** is its own sphere, never collapsed onto D.  Each working clone C learns
-//   its D node (C.c.D) at trace time; its single %Understandable node is reached
-//   through the C//D//U join — U_of(C) goes C → C.c.D → oai({Understandable:1}),
-//   springing the U the first time and finding it thereafter.  No cache, no flag:
-//   finding it through the join is also why it survives a re-walk (it rides the D
-//   node's resumed X, and oai re-finds it).  U_of is fatal on a %Understandable
-//   node — you reach U through C, never by U_of-ing a U.
+//   Two Seems hang off LE:
+//     Seem:origin  — reads the remote %What (awareness: when to pull again).
+//     Seem:working — holds the editable clone tree and the C/D/U trio.
 //
-//   %showing goes on the U node (H.U_of(clone).i({ showing:1 })), not on the clone
-//   .sc — the clone .sc is the pushable mirror and must stay clean.  Because U
-//   lives in the D sphere beside the clone tree, push (target.i(C.sc)) and enWaft
-//   (which walk the clone tree) never see it.
+//   Each Seem's D-sphere root is a %Demonstrations node (`Seem.r({Demonstrations:
+//   seemName})`).  D nodes inside it carry `{Demonstrations: seemName}` — not
+//   `{Seem:…}`, which would make a D node look like a Seem particle.
+//
+//   In Seem:working every clone C is part of an eager C/D/U trio:
+//     C      — the editable clone, .sc clean and pushable
+//     C.c.D  — its %Demonstrations node
+//     U_of(C)— its %Understandable companion, sprung under D in traced_fn
+//   The U is sprung eagerly (every clone has one from birth) so U_of always
+//   re-finds — it never needs to decide whether to build.
 //
 //   Encode compare: Seem_toString(Seem) encodes the topn tree's children via
 //   the real enWaft (Text.svelte); origin's topn is the source %What, working's
@@ -55,7 +57,7 @@ await M.eatfunc({
     i_Seem(LE: TheC, opt: any): TheC {
         const Seem = LE.oai({ Seem: opt.Seem })
         Seem.sc.Se ??= new Selection({})
-        const trace_sc = opt.trace_sc ?? { Seem: opt.Seem }
+        const trace_sc = opt.trace_sc ?? { Demonstrations: opt.Seem }
         Seem.sc.opt = {
             match_sc: opt.match_sc ?? {},
             trace_sc,
@@ -91,11 +93,12 @@ await M.eatfunc({
         H.i_Seem(LE, { Seem: 'origin', topn: what_C })
         const working = H.i_Seem(LE, {
             Seem: 'working',
-            // C//D navigable: each working clone learns its D node, re-set every
-            // walk (the D object is fresh per walk; its /** resumes via resume_X).
-            // The U node springs from C.c.D on demand — see U_of — so nothing is
-            // built here, and a clone that never gets a meaning never grows a U.
-            traced_fn: async (D: TheC, _bD: TheC, n: TheC, _T: any) => { n.c.D = D },
+            // C, D, U are an eager trio in Seem:working.  Sprung together in traced_fn so
+            // every clone has a companion U from birth; U_of always re-finds, never builds.
+            traced_fn: async (D: TheC, _bD: TheC, n: TheC, _T: any) => {
+                n.c.D = D
+                D.oai({ Understandable: 1 })   // spring companion U; oai is idempotent
+            },
         })
         working.sc.topn = undefined   // < fabricated lazily on first pull
     },
@@ -110,7 +113,7 @@ await M.eatfunc({
     async o_Seem(Seem: TheC, strict = 0) {
         const Se: Selection = Seem.sc.Se
         const seemName = Seem.sc.Seem
-        const topD = await Seem.r({ topD: seemName })
+        const topD = await Seem.r({ Demonstrations: seemName })
 
         // structural diff — whole-C in/out; resolve_strict makes value-edits
         // show up as goner+neu rather than a survivor.  The intended edit-diff
@@ -184,28 +187,24 @@ await M.eatfunc({
         }
 
         const wd = await H.o_Seem(working, strict)
-        // the root's D is topD, so U_of(topn) springs topU = topD/%Understandable,
-        // the U-sphere root — every C's U hangs under that C's D, root included.
+        // the root is also in the C/D/U trio: point its .c.D at topD so U_of(topn)
+        // reaches topD/%Understandable, consistent with every other clone in working.
         working.sc.topn.c.D = wd.topD
+        wd.topD.oai({ Understandable: 1 })   // root's companion U
 
         return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },
 
     // ── U_of ──────────────────────────────────────────────────────────────────
-    // The U node for a working C, reached through the C//D//U join: from C to its
-    // D node (C.c.D), then the single %Understandable hung under it
-    // (/%Demonstrations/%Understandable).  oai springs it the first time and finds
-    // it thereafter, so it survives every re-walk — the U node rides the D node's
-    // resumed X — with no separate cache.  It lives in the D sphere beside the
-    // clone tree, so push and enWaft (which walk the clone tree) never see it.
+    // Reach the companion U node for a working clone C, via the C//D//U join:
+    // C → C.c.D → oai({Understandable}).  In Seem:working the U is sprung eagerly
+    // in traced_fn alongside D, so U_of always re-finds an existing node.
     //
     //   write a meaning:  H.U_of(C).i({ showing: 1 })
     //   read a meaning:   H.U_of(C).o({ showing: 1 })
-    //   read no-spring:   C.c.D.o({ Understandable: 1 })[0]
     //
-    // Fatal on a %Understandable node — you reach U through C, never by U_of-ing a
-    // U.  The stitch D/U/U ≡ D/D/U makes a U-through-a-U the same node, so there is
-    // never a reason to; passing one is a bug.
+    // Fatal on a %Understandable node: reach U through C, never by U_of-ing a U.
+    // The D/U/U ≡ D/D/U stitch makes that the same node; passing one here is a bug.
     U_of(LE_C: TheC): TheC {
         if (LE_C.sc.Understandable) throw `U_of: ${keyser(LE_C)} is already a U — reach U through C`
         const D = LE_C.c.D

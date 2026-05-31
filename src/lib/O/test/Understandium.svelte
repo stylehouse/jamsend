@@ -145,15 +145,15 @@ await M.eatfunc({
             },
 
             // ── Step 5: write a local meaning on the clone ────────────────────
-            //   %showing written via H.U_of(chosen).i(...), which reaches the U
-            //   node through the C//D//U join (C → C.c.D → oai %Understandable) and
-            //   writes there.  The clone's .sc is untouched, so it stays a clean
+            //   %showing written via H.U_of(chosen).i(...), which reaches C's companion U
+            //   through the C//D//U join and writes there.  The U exists from birth
+            //   (sprung in traced_fn); U_of just re-finds it.  The clone's .sc is untouched, so it stays a clean
             //   pushable mirror; the U node lives in the D sphere, invisible to push.
             5: async () => {
                 const r = w.i({ see: 'step 5 local meaning' })
 
                 const chosen = H.LE_clones(LE).find(c => c.sc.method === 'e_Doc_open')!
-                H.U_of(chosen).i({ showing: 1 })   // springs U through the join; clone .sc stays clean
+                H.U_of(chosen).i({ showing: 1 })   // re-finds companion U through the join; clone .sc stays clean
                 r.i({ wrote_showing_onto: lm(chosen) })
 
                 const U = H.U_of(chosen)
@@ -247,7 +247,7 @@ await M.eatfunc({
                 // and resume_X hands back the old U node with its showing.  A fresh arm
                 // drops both Seems so the spheres reset; this check catches any regression.
                 const showingOnCloneU = H.LE_clones(LE).some(c => !!c.c.D?.o({ Understandable: 1 })[0]?.oa({ showing: 1 }))
-                check(r, `prior %showing did not leak onto a new clone's U`, !showingOnCloneU)
+                check(r, "no meaning on any new clone's companion U", !showingOnCloneU)
             },
 
             // ── Step 10: resolve_strict — characterising the primitive ────────
