@@ -89,7 +89,8 @@
     //   w/{Opt:1}                              — options container
     //
     //   w/{req:'desire'}                       — the will to play; finds Waft via req:acquire
-    //     /{req:'acquire'}                       one-shot lock; stamps desire.sc.waft_C / .waft_key
+    //     /{req:'acquire'}                       one-shot lock; inserts desire/{Waft:$waftpath}
+    //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
     //     /{req:'completion',playing:0|1}        open-ended; reqonce open_What lands cursor once
     //     /{req:'git'}                           Waftlet accumulator; commits patches
     //     // < req:git do_fn — Chunk 4b+
@@ -549,7 +550,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   Invisible to o({Waft:1}) — mainkey is req, not Waft.
         //
         //   w/{req:'desire'}
-        //     /{req:'acquire'}              one-shot Waft lock; stamps desire.sc.waft_C
+        //     /{req:'acquire'}              one-shot Waft lock; inserts desire/{Waft:$waftpath}
+        //     /{Waft:$waftpath}             correlates to w/{Waft:$waftpath}
         //     /{req:'completion',playing}   open-ended session; user navigates at own pace
         //     /{req:'git'}                  Waftlet accumulator; patches via LE_push
         //
@@ -569,8 +571,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     ?? (src_Waft ? w.o({ Waft: src_Waft })[0] as TheC | undefined : undefined)
                     ?? w.o({ Waft: 1 })[0] as TheC | undefined
                 if (!waft) return   // no Waft yet — stall, retry next tick
-                desire.sc.waft_C   = waft
-                desire.sc.waft_key = waft.sc.Waft as string
+                // correlates to w/{Waft:$waftpath} by the same key
+                desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
                 rq.finish(acquire)
             })
 
@@ -580,17 +582,19 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             //   playing:0|1 is on sc for NaviCado's transport bar; UI-side timer
             //   drives auto-advance when playing:1, never Story-side.
             ;(await rq.doai({ req: 'completion' }, { playing: 0 }))?.(async (completion: TheC) => {
-                if (!desire.sc.waft_C) return   // acquire not yet done — retry next tick
+                const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
+                if (!waft_node) return   // acquire not yet done — retry next tick
 
                 if (H.reqonce(completion, 'open_What')) {
-                    const waft  = desire.sc.waft_C as TheC
+                    const waft     = waft_node.sc.src as TheC
+                    const waft_key = waft_node.sc.Waft as string
                     const first = (waft.o({ What: 1 }) as TheC[])
                         .find(wh => H.Lies_what_has_points(wh))
                     if (first) {
                         const examining = w.o({ examining: 1 })[0] as TheC | undefined
                         if (examining) {
-                            H.Lies_ensure_doc_loaded(w, H.Lies_what_first_doc_path(first), desire.sc.waft_key as string)
-                            await H.Lies_set_examining(examining, first, desire.sc.waft_key as string)
+                            H.Lies_ensure_doc_loaded(w, H.Lies_what_first_doc_path(first), waft_key)
+                            await H.Lies_set_examining(examining, first, waft_key)
                         }
                     }
                 }

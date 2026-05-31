@@ -248,14 +248,10 @@ guard short-circuits harmlessly.
 ## Open / deferred
 
 ```
-// < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
 // < push_dirty not yet wired to a req fault particle in the reqy system.
+// < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
 // < unaccepted carry-forward into a new %What (+time / ↘ / ↓)
 //   reads clone.c.U?.sc.unaccepted at branch time — Chunk 4c, not here.
-// < vanish: when an unaccepted clone's absence lands as a goner on the post-push
-//   awareness pull, push_dirty fires.  The fix: LE_push stamps bD/was_disincluded:1
-//   before the replace-back; resolved_fn recognises that goner as expected and
-//   suppresses push_dirty.  Needed before unaccepted is usable in production.
 // < unshowing: C.c.U?.sc.unshowing opts a clone out of the Lang UI; no
 //   effect on push or encode.  Lang reads it from each clone's U node when
 //   building fold/decoration state.

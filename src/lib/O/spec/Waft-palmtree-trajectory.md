@@ -94,8 +94,6 @@ Receives `e.sc.LE`, drops prior hold via `await languinio.r({LE:1},{})`, then
 ### Open faults from Chunk U
 
 ```
-// < vanish: unaccepted clone lands as goner on post-push awareness pull, firing
-//   push_dirty.  Fix: LE_push stamps bD/was_disincluded:1; resolved_fn suppresses.
 // < push_dirty not yet wired to a req fault particle in the reqy system.
 // < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
 ```
@@ -146,7 +144,7 @@ Erupts in `LiesRealised` via `rq.doai`.  Structure now in place:
 ```
 w:Lies
   /{req:'desire'}                  ← the wanderer; finds Waft via req:acquire
-    /{req:'acquire'}               ← one-shot lock; stamps desire.sc.waft_C
+    /{req:'acquire'}               ← one-shot lock; inserts desire/{Waft:$waftpath}
                                      sc.active → src_Waft → first Waft
     /{req:'completion',playing:0}  ← open-ended session; steps when playing:1
     /{req:'git'}                   ← Waftlet accumulator; patches via LE_push
@@ -167,7 +165,7 @@ tells `doai` whether the req is fresh; only fresh reqs get the setter back.
   `%What`; when `playing:1` arms a ttlilt so Story advances automatically.
 - `req:next_What` — minted by completion's ttlilt expiry; steps sibling, or
   transitions to `req:waft_exhausted` at end of Waft.
-- Transport bar in NaviCado reads `desire.sc.waft_C` and `completion.sc.playing`.
+- Transport bar in NaviCado reads `desire.o({Waft:1})[0]` and `completion.sc.playing`.
 
 **`req:git` — deferred** (`// < Chunk 4b+`): receives `/%Waftlet` children as
 `LE_push` patches land; do_fn flushes them to disk/remote.
@@ -185,7 +183,6 @@ mechanism — each gesture is "re-aim `%What_Points`, clone, edit, push".
 
 ```
 // < unaccepted carry-forward reads clone.c.U?.sc.unaccepted at branch time
-// < vanish fix (from Chunk U) must land before unaccepted is usable here
 ```
 
 ### 4d — ghost + rescue window + `◀◀ rwnd`

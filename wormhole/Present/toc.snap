@@ -16,19 +16,19 @@ Library
   Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403
   Book:MundaneStation,ok_pct:0,last_pct_change:1779845683.836,done:5,last_run_ms:1779949732.752
   Book:MundaneStaying,ok_pct:0.67,last_pct_change:1779949738.82,done:3,last_run_ms:1780039978.795
-  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780249430.042,time_avg:0.173,active
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780251155.15,time_avg:0.173,active
     TimeSpool
-      TimeTotal:beliefs,avg:0.21
-        sample:0.214,at:1780249401
-        sample:0.21,at:1780249414
-        sample:0.21,at:1780249414
-        sample:0.21,at:1780249414
-        sample:0.21,at:1780249418
-        sample:0.21,at:1780249418
-        sample:0.21,at:1780249422
-        sample:0.21,at:1780249426
-        sample:0.21,at:1780249426
-        sample:0.21,at:1780249430
+      TimeTotal:beliefs,avg:0.214
+        sample:0.214,at:1780251151
+        sample:0.214,at:1780251151
+        sample:0.214,at:1780251152
+        sample:0.214,at:1780251152
+        sample:0.214,at:1780251153
+        sample:0.214,at:1780251153
+        sample:0.214,at:1780251154
+        sample:0.214,at:1780251154
+        sample:0.214,at:1780251154
+        sample:0.214,at:1780251155
   Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg:0.013
@@ -55,10 +55,9 @@ Library
         sample:0.054,at:1780207556
         sample:0.054,at:1780207560
         sample:0.054,at:1780207564
-  Book:Understandication,ok_pct,done:7,last_run_ms:1780249409.184
+  Book:Understandication,ok_pct,done:7,last_run_ms:1780250592.081
     TimeSpool
-      TimeTotal:beliefs,avg:0.074
-        sample:0.065,at:1780249362
+      TimeTotal:beliefs,avg:0.073
         sample:0.065,at:1780249365
         sample:0.065,at:1780249369
         sample:0.065,at:1780249373
@@ -68,3 +67,4 @@ Library
         sample:0.063,at:1780249407
         sample:0.12,at:1780249409
         sample:0.12,at:1780249409
+        sample:0.054,at:1780250592
