@@ -12,28 +12,19 @@
 //   the %LiesEnd particle passed into every call.  LE is not inside a replace(),
 //   so LE/* is stable across pulls.
 //
-//   Two Seems hang off LE:
-//     Seem:origin  — reads the remote %What (awareness: when to pull again).
-//     Seem:working — holds the editable clone tree and the C/D/U trio.
+//   use_Understandable:1 on i_Seem wires the U sphere for that Seem.  In
+//   traced_fn: C.c.D is stamped with the D node, then D.oai({ Understandable:1 })
+//   is sprung and cached as C.c.U.  Meanings are written on that U node, never
+//   on C.sc — C.sc is the pushable mirror and must stay clean.  Only
+//   Seem:working uses this; Seem:origin does not get a U sphere.
 //
-//   Each Seem's D-sphere root is a %Demonstrations node (`Seem.r({Demonstrations:
-//   seemName})`).  D nodes inside it carry `{Demonstrations: seemName}` — not
-//   `{Seem:…}`, which would make a D node look like a Seem particle.
-//
-//   In Seem:working every clone C is part of an eager C/D/U trio:
-//     C      — the editable clone, .sc clean and pushable
-//     C.c.D  — its %Demonstrations node
-//     U_of(C)— its %Understandable companion, sprung under D in traced_fn
-//   The U is sprung eagerly (every clone has one from birth) so U_of always
-//   re-finds — it never needs to decide whether to build.
-//
-//   Encode compare: Seem_toString(Seem) encodes the topn tree's children via
-//   the real enWaft (Text.svelte); origin's topn is the source %What, working's
+//   Encode compare: Seem_toString(Seem) encodes the Seem.sc.C tree's children via
+//   the real enWaft (Text.svelte); origin's C is the source %What, working's
 //   is the fabricated %What clone.  Both are clean Waft vocabulary, so enWaft's
 //   all_knowing protocol accepts them.  Encoding children-only drops the root
 //   line so two Whats with different labels compare equal on contents.
 
-import { _C, keyser, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
@@ -45,12 +36,18 @@ await M.eatfunc({
 
 //#region LiesEnd
 
+
     // ── i_Seem ──────────────────────────────────────────────────────────────
     // Embed a Seem under LE: its own Selection, its match/trace shape, and the
     // walk hooks — all held on Seem.sc.opt so o_Seem can spread them into
     // Se.process().  The functions ride .sc directly; no need to particle-ify.
     //
-    //   opt: { Seem, match_sc?, trace_sc?, topn?, each_fn?, trace_fn?, traced_fn? }
+    //   opt: { Seem, match_sc?, trace_sc?, C?, use_Understandable?,
+    //          each_fn?, trace_fn?, traced_fn? }
+    //
+    // use_Understandable:1 — in traced_fn, stamps C.c.D and springs
+    //   D.oai({ Understandable:1 }) cached as C.c.U.  U survives re-walks
+    //   because %Understandable is outside the trace_sc partial in D.replace.
     //
     // The D-sphere root (topD) is NOT created here — it is r()'d fresh each pull
     // (fresh .c.T while D/** resumes via resume_X), so i_Seem only records intent.
@@ -63,22 +60,27 @@ await M.eatfunc({
             trace_sc,
             // shallow: clone the immediate child layer only.  A nested %What gets
             // a D node but is never entered — its deep Points resume on push.
-            each_fn: opt.each_fn ?? (async (_D: TheC, _n: TheC, T: any) => {
+            each_fn: opt.each_fn ?? (async (_D: TheC, _C: TheC, T: any) => {
                 if (T.c.d > 1) T.sc.no_further = 'shallow'
             }),
             // mirror the source child's clean sc into a D node, tagged trace_sc.
             // est_D_T sets D.c.T after trace_fn returns, so no T access in here.
-            trace_fn: opt.trace_fn ?? (async (uD: TheC, n: TheC) =>
-                uD.i({ ...trace_sc, ...n.sc })),
-            traced_fn: opt.traced_fn,
+            trace_fn: opt.trace_fn ?? (async (uD: TheC, C: TheC) =>
+                uD.i({ ...trace_sc, ...C.sc })),
+            traced_fn: opt.traced_fn ?? (opt.use_Understandable
+                ? async (D: TheC, _bD: TheC, C: TheC, _T: any) => {
+                    C.c.D = D
+                    C.c.U = D.oai({ Understandable: 1 })
+                }
+                : undefined),
         }
-        if (opt.topn !== undefined) Seem.sc.topn = opt.topn
+        if (opt.C !== undefined) Seem.sc.C = opt.C
         return Seem
     },
 
     // ── LE_arm ──────────────────────────────────────────────────────────────
     // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
-    // the remote for awareness; working holds the editable clones (topn
+    // the remote for awareness; working holds the editable clones (Seem.sc.C
     // fabricated lazily on first pull).
     LE_arm(LE: TheC, what_C: TheC) {
         const H = this as House
@@ -87,20 +89,12 @@ await M.eatfunc({
         // spheres start empty.  Otherwise resolve() on the next walk pairs a
         // fresh clone against a stale D node of a similar shape (Point↔Point)
         // and resume_X carries the old U node — and its meanings — across to an
-        // unrelated target.  Fresh topn alone is not enough; the sphere leaks.
+        // unrelated target.  Fresh C alone is not enough; the sphere leaks.
         for (const s of LE.o({ Seem: 1 })) LE.drop(s)
 
-        H.i_Seem(LE, { Seem: 'origin', topn: what_C })
-        const working = H.i_Seem(LE, {
-            Seem: 'working',
-            // C, D, U are an eager trio in Seem:working.  Sprung together in traced_fn so
-            // every clone has a companion U from birth; U_of always re-finds, never builds.
-            traced_fn: async (D: TheC, _bD: TheC, n: TheC, _T: any) => {
-                n.c.D = D
-                D.oai({ Understandable: 1 })   // spring companion U; oai is idempotent
-            },
-        })
-        working.sc.topn = undefined   // < fabricated lazily on first pull
+        H.i_Seem(LE, { Seem: 'origin', C: what_C })
+        const working = H.i_Seem(LE, { Seem: 'working', use_Understandable: 1 })
+        working.sc.C = undefined   // < fabricated lazily on first pull
     },
 
     // ── o_Seem ──────────────────────────────────────────────────────────────
@@ -122,7 +116,7 @@ await M.eatfunc({
         const neus: TheC[] = []
 
         await Se.process({
-            n: Seem.sc.topn,
+            n: Seem.sc.C,
             process_D: topD,
             ...Seem.sc.opt,
             resolve_strict: strict || undefined,
@@ -139,29 +133,37 @@ await M.eatfunc({
             neus:   '' + neus.length,
         })
 
-        Seem.sc.topD = topD   // mirrors the spec diagram: Seem,topD alongside topn
+        Seem.sc.topD = topD   // the D-sphere root for this walk; stale after next pull
         return { goners, neus, topD }
     },
 
-    // ── LE_fabricate ────────────────────────────────────────────────────────
-    // Build working's clean clone tree directly from the origin source particles —
-    // not from the D nodes.  D nodes carry trace tags ({Demonstrations:…}) mixed
-    // into their sc; unwrapping them is fragile and wrong: D nodes are tracing
-    // artifacts, not the source of truth.  od.topn.o({}) gives the actual source
-    // children with clean sc, no strip needed.
+    // ── Seem_clone_C ────────────────────────────────────────────────────────
+    // Build working's clean clone tree from origin's current D nodes.  Strips the
+    // D-sphere tag so each clone's .sc is a faithful, pushable mirror of the
+    // origin child — the strip the old single-Se model did at push time, moved
+    // earlier and made durable.  This is what retires the U_clone push-strip.
     //
-    // The root mirrors the source %What (same sc): it IS the What pushed back.
-    LE_fabricate(origin: TheC): TheC {
-        const src_What = origin.sc.topn as TheC
-        const root = _C({ ...src_What.sc })
-        for (const child of src_What.o({})) root.i({ ...child.sc })
+    // The root mirrors the source %What (same mainkey + label) because it IS the
+    // What we push back — the data flows origin → working and shouldn't be aware
+    // of which Seem holds it.  Being a %What also keeps it inside enWaft's
+    // all_knowing protocol, so it encodes without a fatal unknown-mainkey error.
+    Seem_clone_C(origin: TheC, topD: TheC): TheC {
+        const src_What = origin.sc.C as TheC
+        const tagKeys = Object.keys(origin.sc.opt.trace_sc)
+        const strip = (sc: any) => {
+            const clean = { ...sc }
+            for (const k of tagKeys) delete clean[k]
+            return clean
+        }
+        const root = _C(strip(src_What.sc))   // a %What:label, the pushable mirror
+        for (const D of topD.o({})) root.i(strip(D.sc))
         return root
     },
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
     // Orchestration:
     //   1. walk the remote into origin's D sphere   — awareness diff
-    //   2. fabricate working's clean clone tree once per arm
+    //   2. Seem_clone_C working's clean clone tree once per arm
     //   3. walk our editable clone tree into working's D/U sphere — edit diff
     //
     // Top-level { goners, neus } is the awareness (source-change) diff; the
@@ -174,47 +176,26 @@ await M.eatfunc({
 
         const od = await H.o_Seem(origin, strict)
 
-        if (working.sc.topn === undefined) {
-            working.sc.topn = H.LE_fabricate(origin)
+        if (working.sc.C === undefined) {
+            working.sc.C = H.Seem_clone_C(origin, od.topD)
         }
 
         const wd = await H.o_Seem(working, strict)
-        // the root is also in the C/D/U trio: point its .c.D at topD so U_of(topn)
-        // reaches topD/%Understandable, consistent with every other clone in working.
-        working.sc.topn.c.D = wd.topD
-        wd.topD.oai({ Understandable: 1 })   // root's companion U
 
         return { goners: od.goners, neus: od.neus, origin: od, working: wd }
     },
 
-    // ── U_of ──────────────────────────────────────────────────────────────────
-    // Reach the companion U node for a working clone C, via the C//D//U join:
-    // C → C.c.D → oai({Understandable}).  In Seem:working the U is sprung eagerly
-    // in traced_fn alongside D, so U_of always re-finds an existing node.
-    //
-    //   write a meaning:  H.U_of(C).i({ showing: 1 })
-    //   read a meaning:   H.U_of(C).o({ showing: 1 })
-    //
-    // Fatal on a %Understandable node: reach U through C, never by U_of-ing a U.
-    // The D/U/U ≡ D/D/U stitch makes that the same node; passing one here is a bug.
-    U_of(LE_C: TheC): TheC {
-        if (LE_C.sc.Understandable) throw `U_of: ${keyser(LE_C)} is already a U — reach U through C`
-        const D = LE_C.c.D
-        if (!D) throw `U_of: ${keyser(LE_C)} has no c.D — walk working first`
-        return D.oai({ Understandable: 1 })
-    },
-
     // ── LE_clones ─────────────────────────────────────────────────────────────
-    // The editable working clones (clean C**).  Meanings live on each one's U node
-    // (reached by U_of), never in C.sc — so the .sc stays pushable as-is.
+    // The editable working clones (clean C**).  Meanings live on each one's
+    // C.c.U, never in C.sc — so the .sc stays pushable as-is.
     LE_clones(LE: TheC): TheC[] {
         const working = LE.oai({ Seem: 'working' })
-        return working.sc.topn ? working.sc.topn.o({}) : []
+        return working.sc.C ? (working.sc.C as TheC).o({}) : []
     },
 
     // ── LE_push ─────────────────────────────────────────────────────────────
     // Replace-back: put the working clones back as target's children.  C.sc is
-    // already clean (fabricated directly from source sc), so push is a straight copy.
+    // already clean (fabricated stripped), so push is a straight copy — no strip.
     // A nested %What clone is shallow; resolve pairs it with the live source and
     // resume_X hands its deep /%What/%Point back, untouched.
     //
@@ -239,11 +220,11 @@ await M.eatfunc({
     },
 
     // ── Seem_toString ───────────────────────────────────────────────────────
-    // Encode a Seem's topn tree to snap text via the real enWaft (Text.svelte).
-    //   origin's topn  = the live source %What   (what the remote looks like)
-    //   working's topn = the fabricated %What clone (what we'd push)
+    // Encode a Seem's C tree to snap text via the real enWaft (Text.svelte).
+    //   origin's C  = the live source %What   (what the remote looks like)
+    //   working's C = the fabricated %What clone (what we'd push)
     //
-    // Both topns are now %What roots (LE_fabricate mirrors the source), so either
+    // Both are now %What roots (Seem_clone_C mirrors the source), so either
     // could be encoded whole.  We encode each *child* and join instead — this
     // drops the root %What line so two Whats with different labels still compare
     // equal on contents alone, which is what the push-state diff cares about.
@@ -255,12 +236,12 @@ await M.eatfunc({
     // (a real fault — the clone tree should only ever hold Waft vocabulary).
     async Seem_toString(Seem: TheC): Promise<{ snap: string, errors: string[] }> {
         const H = this as House
-        const topn = Seem.sc.topn as TheC | undefined
-        if (!topn) return { snap: '', errors: [] }
+        const C = Seem.sc.C as TheC | undefined
+        if (!C) return { snap: '', errors: [] }
 
         let snap = ''
         const errors: string[] = []
-        for (const child of topn.o({}) as TheC[]) {
+        for (const child of C.o({}) as TheC[]) {
             const r = await H.enWaft(child)
             snap += r.snap
             if (r.errors.length) errors.push(...r.errors)
