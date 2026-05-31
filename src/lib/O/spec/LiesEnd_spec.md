@@ -48,7 +48,7 @@ C:Point//U%unaccepted  ← virtual deletion: omit from next push and encode
 No JS classes.  Everything is methods on `this` (House mixin), operating on
 `C**` particles.  `LE` is a `%LE` particle, stable for the lifetime of the
 checkout — not inside a `replace()`, so `LE/*` and `LE.c.*` survive pulls.
-Lives at `/%Dock/%LE` under `w:Lang`; passed into every LE_* function.
+Lives at `w/{LE}` under `w:Lies`; passed into every LE_* function.
 
 `%What_Points` impulsing defines where we check out.  A req should check the
 return-pull after we navigate or push.  After a push we should pull a no-diff.
@@ -205,15 +205,53 @@ without re-deriving it from the live ropeways (the resumability note, applied).
 
 ---
 
+## Graft seam — how Lies hands LE to Lang
+
+`Lies_set_examining` (in `LiesCurse.svelte`) is the single seam.  When the
+cursor moves it:
+
+1. Stamps `wpt.sc.src` and `wpt.sc.src_Waft` on `%What_Points` (sync).
+2. Gets `w:Lies` via `examining.c.w`, gets `%LE` via `w.oai({LE:1})`.
+3. Calls `H.LE_arm(LE, src)` — sync; arms the Understanding at the new target.
+4. Calls `H.LE_pull(LE).then(() => H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE }))` —
+   the pull is async / fire-and-forget.  Once the first pull completes (armed →
+   clean), `Lang_LE_arm` fires cross-world.
+
+`e_Lang_LE_arm` (in `Lang.svelte`) receives `e.sc.LE` — the live `w:Lies/{LE:1}`
+particle — and installs it as a same-object hold in `%Languinio`:
+
+```
+await languinio.r({ LE: 1 }, {})   // drop any prior hold
+languinio.i(LE)                    // same-object insert
+```
+
+Langui reads `languinio.o({LE:1})[0]` to reach `LE_clones()` and `%State`
+without a cross-world round-trip.
+
+### What still delivers %Doc as src (not %What)
+
+Cold-start placement, the `active_dock` watch, and `e_Lies_set_cursor` (click on
+a Doc row in Liesui) all still deliver a `%Doc` particle to `Lies_set_examining`
+as `src`.  That's correct — those paths are driven by `active_dock.sc.path` and
+`Lies_find_doc_in_wafts`, which are path-based.  LangGraft tolerates either: the
+`src_path` check (`(src_C.sc as any).path`) is `undefined` for a `%What` and the
+guard short-circuits harmlessly.
+
+```
+// < e_Lies_set_cursor should eventually arm the parent %What when a %Doc
+//   is clicked inside a %What-structured Waft, not the %Doc directly.
+//   Deferred until Liesui surfaces %What rows as clickable targets.
+```
+
+---
+
 ## Open / deferred
 
 ```
 // < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
 // < push_dirty not yet wired to a req fault particle in the reqy system.
-// < integration to Lang/Lies (Languinio/LE switching, wpt.sc.src = LE,
-//   path-match guards) excluded — LE must be a being-for-itself first.
 // < unaccepted carry-forward into a new %What (+time / ↘ / ↓)
-//   reads clone.c.U?.sc.unaccepted at branch time — Chunk 4, not here.
+//   reads clone.c.U?.sc.unaccepted at branch time — Chunk 4c, not here.
 // < vanish: when an unaccepted clone's absence lands as a goner on the post-push
 //   awareness pull, push_dirty fires.  The fix: LE_push stamps bD/was_disincluded:1
 //   before the replace-back; resolved_fn recognises that goner as expected and
