@@ -1023,10 +1023,10 @@
         uis.oai({ UI: 'Story', component: Storui })
 
         const stylesC = this.The_Styles(w)
-        H.watch_c(stylesC, () => H.story_save())
+        H.watch_c(stylesC, async () => await H.story_save())
 
         // i The/Opt
-        H.watch_c(this.The_Opt(w), () => H.story_save())
+        H.watch_c(this.The_Opt(w), async () => await H.story_save())
 
         // ── commission Cyto ───────────────────────────────────────────
         // Cyto reads Scannable/Styles/client_w/capability flags from this

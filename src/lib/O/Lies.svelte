@@ -338,7 +338,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
             // UI reads some w/*
-            H.watch_c(w, () => {
+            H.watch_c(w, async () => {
                 examining.bump_version()
             })
         }
@@ -411,7 +411,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             H.Lies_sync_waft_docs(w, waft)
 
             // Every CRUD mutation triggers a throttled wormhole write.
-            H.watch_c(waft, () => {
+            H.watch_c(waft, async () => {
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
             })

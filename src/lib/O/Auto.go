@@ -122,7 +122,7 @@
             w.c.ave.i(Li_new)
 
             // Now that setup is complete, watch for subsequent mutations.
-            H.watch_c(Li_new, () => {
+            H.watch_c(Li_new, async () => {
                 w.c.ave?.bump_version()
                 H.auto_save_library(w, Li_new)
             })

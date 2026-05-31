@@ -64,7 +64,7 @@
         const active_dock = ave?.o({ active_dock: 1 })[0] as TheC | undefined
         if (active_dock && !w.c.examining_sig_watch) {
             w.c.examining_sig_watch = true
-            H.watch_c(active_dock, () => {
+            H.watch_c(active_dock, async () => {
                 console.log(`Lies saw ave/%active_dock=${active_dock.sc.path}  ~`)
                 examining.sc.active_path = active_dock.sc.path as string | undefined
                 examining.bump_version()
@@ -242,7 +242,7 @@
     //
     //   oai() is sync (unlike roai) — safe to call from watch_c callbacks.
     //   The child is stable across calls; only its sc fields change each time.
-    Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
+    async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
         const wpt = examining.oai({ What_Points: 1 })
         wpt.sc.src      = src
         wpt.sc.src_Waft = waft_key
@@ -265,7 +265,30 @@
         }
 
         wpt.bump_version()
-        console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? '?'}`)
+        console.log(`👁 cursor → Waft:${waft_key} doc:${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
+
+        // ── LE graft seam ─────────────────────────────────────────────────────
+        //
+        //   When src is a %What, arm the Understanding and fire Lang_LE_arm
+        //   cross-world once the first pull completes.
+        //
+        //   Lies_set_examining is sync (called from watch_c) — LE_pull is
+        //   fire-and-forget here.  The cursor stamp is never blocked on it.
+        //
+        //   When src is a %Doc (cold-start, active_dock watch, e_Lies_set_cursor)
+        //   there is no %What to check out; the LE hold on Languinio is left as-is.
+        //   < e_Lies_set_cursor should eventually deliver the parent %What.
+        if ((src.sc as any).What !== undefined) {
+            const w_lies = examining.c.w as TheC | undefined
+            if (w_lies) {
+                const LE = w_lies.oai({ LE: 1 })
+                const H  = this as House
+                H.LE_arm(LE, src)
+                H.LE_pull(LE).then(() => {
+                    H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
+                })
+            }
+        }
     },
 
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────
@@ -318,7 +341,7 @@
         // (section grouping) — either way we queue a load so CM is ready.
         const doc_path = H.Lies_what_first_doc_path(what)
         H.Lies_ensure_doc_loaded(w, doc_path, waft_key)
-        H.Lies_set_examining(examining, what, waft_key)
+        await H.Lies_set_examining(examining, what, waft_key)
     },
 
     // ── Lies_what_has_points ──────────────────────────────────────────────────

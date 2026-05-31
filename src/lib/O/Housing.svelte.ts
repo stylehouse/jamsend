@@ -1156,7 +1156,7 @@ export class House extends StorableHousing {
     // The debounced flush means handlers always read a fully committed X —
     // they fire ~half a tick after the version bump, well after mutex release.
 
-    watched:   Array<{ C: TheC, handler: Function }> = $state([])
+    watched: Array<{ C: TheC, handler: () => Promise<void> | void }> = $state([])
     watched_v: number[] = []
 
     // high level: create|return eg H/%watched:ave to .i(C_to_give_UI)
@@ -1164,7 +1164,7 @@ export class House extends StorableHousing {
         return this.oai_enroll(this, { watched: channel_name }) 
     }
     // low level: your handler reacts to ~C
-    watch_c(C: TheC, handler: Function) {
+    watch_c(C: TheC, handler: () => Promise<void> | void) {
         if (this.watched.some(w => w.C === C)) return
         this.watched.push({ C, handler })
         this.watched_v.push(C.version)
@@ -1183,7 +1183,7 @@ export class House extends StorableHousing {
                 const v = C.version
                 if (v !== this.watched_v[i]) {
                     this.watched_v[i] = v
-                    this.watched[i].handler()
+                    await this.watched[i].handler()
                 }
             }
         })
