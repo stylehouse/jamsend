@@ -1,10 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round
+      {"mung":["age"]}	self,round:7
       w:Understandication
-        {"mung":["age"]}	self,round
-        tally,passed:3,failed:0
+        tally,passed:21,failed:2
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -12,19 +11,24 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,Point,method:path_guard
               Demonstrations:origin,What,label:routing_detail
-            News:origin,goners:0,neus:4
+              Demonstrations:origin,Point,method:new_route_handler
+            News:origin,goners:0,neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
+              Understandable
               Demonstrations:working,Point,method:e_Doc_open
                 Understandable
               Demonstrations:working,Point,method:Lang_doc_from_event
                 Understandable
               Demonstrations:working,Point,method:path_guard
-                Understandable
+                Understandable,unaccepted
               Demonstrations:working,What,label:routing_detail
                 Understandable
-              Understandable
-            News:working,goners:0,neus:4
+              Demonstrations:working,Point,method:new_route_handler
+                Understandable
+            News:working,goners:0,neus:0
+          push_dirty,stale_goners:0,stale_neus
+          {"encode":1,"snap_origin":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\n  Point,method:resolve_path\n  Point,method:normalise_ext\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Doc_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"1"}
         src
           What,label:routing
             Point,method:e_Doc_open
@@ -33,6 +37,7 @@ Snap:H
             What,label:routing_detail
               Point,method:resolve_path
               Point,method:normalise_ext
+            Point,method:new_route_handler
           What,label:compilation
             Point,method:Lang_compile
             Point,method:LangCompiling_run
@@ -40,17 +45,12 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        see:step 1 arm routing pull
-          goners:0,neus:4
-          neu:e_Doc_open
-          neu:Lang_doc_from_event
-          neu:path_guard
-          {"neu":"What:routing_detail"}
-          clone_method:e_Doc_open
-          clone_method:Lang_doc_from_event
-          clone_method:path_guard
-          clone_label:routing_detail
-          {"PASS":1,"t":"arm routing: 4 neus (3 Points + nested What)"}
-          PASS,t:routing_detail cloned shallow — inner Points not in clones
-          PASS,t:path_guard present in working set
+        {"mung":["age"]}	self,round:7
+        see:step 7 drop clone (unaccepted)
+          dropped:path_guard
+          unaccepted_on_U
+          PASS,t:U%unaccepted set on the dropped clone
+          PASS,t:clone sc stays clean (no unaccepted in .sc)
+          PASS,t:LE_clones still includes unaccepted
+          PASS,t:LE_accepted_clones excludes it
     {"mung":["id"]}	mo:main,interval:3.6

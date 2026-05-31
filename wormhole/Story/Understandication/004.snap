@@ -1,10 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round
+      {"mung":["age"]}	self,round:4
       w:Understandication
-        {"mung":["age"]}	self,round
-        tally,passed:3,failed:0
+        tally,passed:11,failed:0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -40,17 +39,10 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        see:step 1 arm routing pull
+        {"mung":["age"]}	self,round:4
+        see:step 4 wander back routing
           goners:0,neus:4
-          neu:e_Doc_open
-          neu:Lang_doc_from_event
-          neu:path_guard
-          {"neu":"What:routing_detail"}
-          clone_method:e_Doc_open
-          clone_method:Lang_doc_from_event
-          clone_method:path_guard
-          clone_label:routing_detail
-          {"PASS":1,"t":"arm routing: 4 neus (3 Points + nested What)"}
-          PASS,t:routing_detail cloned shallow — inner Points not in clones
-          PASS,t:path_guard present in working set
+          {"PASS":1,"t":"routing: 4 neus after re-arm (fresh sphere)"}
+          PASS,t:no unshowing bled from compilation U
+          PASS,t:e_Doc_open back in clones
     {"mung":["id"]}	mo:main,interval:3.6
