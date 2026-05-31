@@ -88,9 +88,10 @@
     //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
     //   w/{Opt:1}                              — options container
     //
-    //   w/{desire:1,Waft:key}                  — erupts when the Waft loads;
-    //     sc.playing: 0|1                        0=paused, 1=auto-advance
-    //     < req:open_What / req:next_What children — Chunk 4b
+    //   w/{desire:1}                           — the will to play; finds its Waft via req:acquire
+    //     /{req:'acquire'}                       — one-shot Waft lock; stamps desire.sc.waft_C
+    //     /{req:'completion',playing:0|1}        — open-ended session; steps Whats when playing:1
+    //     < req:acquire / req:completion do_fns — Chunk 4b
     //
     // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
     //
@@ -542,16 +543,46 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── req:desire — the will to play through the loaded Waft ─────────────
         //
-        //   Erupts as soon as any Waft is loaded; one req per Waft key.
-        //   Sits directly on w so Liesui and NaviCado can read it.
-        //   playing:0 = paused (manual → advance); playing:1 = auto-advance.
+        //   One desire per w:Lies — not one per Waft.  It wanders and finds the
+        //   active Waft itself via req:acquire.  Keyed desire:1 only so o({Waft:1})
+        //   never sees it.
         //
-        //   < req:open_What (reqonce) and req:next_What loop — Chunk 4b.
-        //   < ttlilt auto-advance — Chunk 4b.
-        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const waft_key = waft.sc.Waft as string
-            w.oai({ desire: 1, Waft: waft_key }, { playing: 0 })
-        }
+        //   Structure:
+        //     req:desire                   — the wanderer; dormant until a Waft exists
+        //       req:acquire                — one-shot: finds the active Waft, stamps
+        //                                    desire.sc.waft_C and desire.sc.waft_key
+        //       req:completion             — open-ended session over that Waft;
+        //                                    holds playing state, steps through Whats,
+        //                                    stalls or commits at the end
+        //
+        //   req:desire lives for the Lies session; req:completion is not finished
+        //   until the user explicitly closes or the Waft is exhausted (Chunk 4b).
+        //   For now: acquire finds the Waft, completion gets playing:0 and stalls.
+        //
+        //   < req:acquire do_fn — find first/active Waft, stamp desire.sc.waft_C   Chunk 4b
+        //   < req:completion do_fn — step through Whats on ttlilt when playing:1    Chunk 4b
+        //   < reqonce(desire, 'open_What') one-shot cursor arm                      Chunk 4b
+        const rq_desire = H.reqy(w)
+        await rq_desire.roai({ desire: 1 })
+        await rq_desire.do(async (desire: TheC) => {
+            const rq_sub = H.reqy(desire)
+
+            // req:acquire — locate and lock onto the active Waft.
+            // Stamps desire.sc.waft_C (TheC ref) and desire.sc.waft_key (string).
+            // Finished once the Waft is found; re-acquire if the target changes.
+            // < do_fn: pick desire.sc.waft_C = first Waft with Points, or first Waft.
+            await rq_sub.roai({ req: 'acquire' })
+
+            // req:completion — the open-ended playing session.
+            // Not finished until Waft is exhausted or user closes.
+            // Carries playing:0|1 so NaviCado / Liesui can read and toggle it.
+            // < do_fn: when playing:1, reqonce open_What, then step on ttlilt.
+            await rq_sub.roai({ req: 'completion' }, { playing: 0 })
+
+            // skeleton: stall here until Chunk 4b wires the do_fns.
+            // Without do_fns the sub-reqs never finish so desire never finishes —
+            // which is correct: this is an open-ended session worker.
+        })
     },
 
 //#region helpers

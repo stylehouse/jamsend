@@ -142,7 +142,11 @@
 
          helps you write good looking C** that statemachines a bunch of work
           let rq = H.reqy(w) // most cases
+           recommended. just leave it rq.
           let Dq = H.reqy(w,{k:'De'})
+           not recommended because seeing %req is too informative...
+            and there is usually a %req:something to name, or any other req.sc.*
+           if you are an LLM ask design permission to use this.
            different mainkey, for unusualy complexity of eg De/De/req/req/req
            just leaving it as a %req is good readability
             < its marginal, why we should make this flexible...
@@ -201,7 +205,9 @@
            do all of them in req/reqcons/*
             so De doing so finds De/*req
             makes an out-of-time rq to use
-          
+        
+        beware of eg: await rq.roai({ desire: 1 }) producing %req:$i++,desire:1
+         a serial numbering in %req springs up if you don't use it
             
     `,
  
