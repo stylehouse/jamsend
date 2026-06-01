@@ -563,7 +563,7 @@
                 const docks = w.o({ docks: 1 })[0] as TheC | undefined
                 const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
                 if (!dock) {
-                    H.i_req_ttlilt(load_doc, 0.4, { waiting: 'dock' })
+                    H.i_req_ttlilt(load_doc, 5, { waiting: 'dock' })
                     return
                 }
 

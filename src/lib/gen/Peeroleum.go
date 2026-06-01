@@ -8,11 +8,11 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Peeroleum(): string { return '29cb25588309ed0f' },
+    Ghostmeta_Ghost_Peeroleum(): string { return '69f9fd8539393ad7' },
 
 
 Peeroleum(A,w) {
-    w.i({see:'y Peeroleum'})
+    w.i({see:'y Peeroleum!'})
     // < actually
 },
 transport(A,w) {

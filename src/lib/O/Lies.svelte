@@ -440,9 +440,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         // ── drive req:Open — demand-loaded doc reads ──────────────────────────
-        //   Lang req:load_doc calls Lies_roai_Open which roais a req:Open here.
-        //   req_Open holds itself via 0.4s ttlilt while the wread is in flight;
-        //   LiesPersist returns true once the Waft layer is settled.
+        //   Lies_roai_Open seeds req:Open on the default reqy; do_one finds
+        //   H.req_Open by name.  Holds itself via ttlilt while wread is in flight.
         const rq = H.reqy(w)
         await rq.do()
 
@@ -516,13 +515,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   fresh req.  sc.new can be seeded at roai time for Liesui-created docs.
     async Lies_roai_Open(w: TheC, src: TheC, opts: { waft_key?: string, new?: 1 } = {}): Promise<TheC> {
         const H = this as House
-        const rq = H.reqy(w, { k: 'Open', noserial: 1, do_fn: (req: TheC, q: any) => H.req_Open(req, q) })
-        for (const old of rq.o({ src }) as TheC[]) {
+        const rq = H.reqy(w)   // default k:'req' — do_one finds H.req_Open by name
+        // Drop any finished Open for this src so a re-navigate gets a fresh req.
+        for (const old of rq.o({ req: 'Open', src }) as TheC[]) {
             if (old.sc.finished) w.drop(old)
         }
         const sc: any = { waft_key: opts.waft_key ?? '' }
         if (opts.new) sc.new = 1
-        return rq.roai({ Open: 1, src }, sc)
+        return rq.roai({ req: 'Open', src }, sc)
     },
 
 //#region LiesRealised — compile airlock and future thinking
@@ -887,8 +887,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.path as string)
         )
         // Drop unfinished req:Open that lost their Doc from this Waft.
-        const rq = (this as House).reqy(w, { k: 'Open', noserial: 1 })
-        for (const req of rq.o({ waft_key: wpath }) as TheC[]) {
+        const rq = (this as House).reqy(w)
+        for (const req of rq.o({ req: 'Open', waft_key: wpath }) as TheC[]) {
             if (req.sc.finished) continue
             const src  = req.sc.src as TheC | undefined
             const path = (src?.sc as any)?.path as string | undefined
