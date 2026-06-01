@@ -125,8 +125,7 @@
     //   so the snap records exactly when each include became live.
     async Pantheate(A: TheC, w: TheC) {
         const H = this
-        w.c.A = A   // stash so req_run_method can call methods with the right A
-        w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop(n))
+        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit).map(n => n.drop(n))
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"
@@ -209,15 +208,22 @@
 
     // ── req:run_method ────────────────────────────────────────────────────────
     //
+    // ── req:run_method ────────────────────────────────────────────────────────
+    //
     //   Polls the ghostmeta until the expected version is live, then calls
-    //   H[method](A, w).  Uses i_req_ttlilt to hold Story open while waiting.
+    //   H[method](blastA, blastW) on a fresh BlastPit pair.
+    //
+    //   BlastPit lives at w:Pantheate/{BlastPit:1}/{A:1} and /{w:'blast'}.
+    //   Each run wipes both and re-seeds them fresh so the method's side
+    //   effects land in a clean, visible scratch space rather than clobbering
+    //   real Pantheate state.  The snap shows w:Pantheate/BlastPit/** as output.
     async req_run_method(req: TheC, q: any) {
         const H            = this as House
         const method         = req.sc.method         as string
         const source_dige    = req.sc.source_dige    as string | undefined
         const ghostmeta_name = req.sc.ghostmeta_name as string | undefined
 
-        // If we have a ghostmeta name, wait until the right version is live.
+        // Poll ghostmeta until the right version is live on disk.
         if (ghostmeta_name && source_dige) {
             const live = (H as any)[ghostmeta_name]?.() as string | undefined
             if (live !== source_dige) {
@@ -226,16 +232,22 @@
             }
         }
 
-        // Module is live — call the method on Pantheate's A/w.
+        // Module is live — call the method with a fresh BlastPit A/w.
         const fn = (H as any)[method] as ((...args: any[]) => any) | undefined
         if (!fn) {
             console.warn(`👻 run_method: '${method}' not found on H`)
         } else {
-            // req.c.up is w:Pantheate; w.c.A is stashed by Pantheate() each tick.
-            const pw = req.c.up as TheC
-            const pA = pw.c.A as TheC | undefined
-            console.log(`👻 run_method: calling ${method}(A, w)`)
-            await fn.call(H, pA, pw)
+            // BlastPit: stable container on w:Pantheate, wiped + re-seeded each run.
+            // blastA and blastW are plain TheC particles — their sc children hold
+            // the compiled method's i()/o() output, visible in the snap.
+            const pw     = req.c.up as TheC
+            const pit    = pw.oai({ BlastPit: 1 })
+            await pit.r({ A: 1 }, {})
+            await pit.r({ w: 'blast' }, {})
+            const blastA = pit.i({ A: 1 })
+            const blastW = pit.i({ w: 'blast' })
+            console.log(`👻 run_method: calling ${method}(blastA, blastW)`)
+            await fn.call(H, blastA, blastW)
         }
         q.finish(req)
     },
@@ -266,10 +278,11 @@
             console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
             return
         }
-        // Stash optional run_method before the compile so Lang_compile_step
-        // can fire e_Pantheate_run_method once the module lands on disk.
+        // Stash run_method on dock.sc (snap-visible, persists across compiles).
+        // A new Pantheate_method on the esc overwrites; absent esc keeps existing.
+        // Every compile on this dock re-runs the method after the module lands.
         if (e.sc.Pantheate_method && dock) {
-            dock.c.run_method = e.sc.Pantheate_method as string
+            dock.sc.run_method = e.sc.Pantheate_method as string
         }
         await this.Lang_compile(A, w)
     },
@@ -423,11 +436,11 @@
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
             }
-            // If a run_method was requested, ask Pantheate to run it once the
-            // module's ghostmeta confirms the right version is live.
-            const run_method = targetDocC?.c.run_method as string | undefined
+            // If a run_method is set on the dock (snap-persisted), ask Pantheate
+            // to run it once the module's ghostmeta confirms the right version is live.
+            // Not deleted — every compile on this dock re-runs the method.
+            const run_method = targetDocC?.sc.run_method as string | undefined
             if (run_method) {
-                delete targetDocC!.c.run_method   // one-shot
                 const output = targetDocC?.o({ Compile: 1 })[0]?.o({ Output: 1 })[0] as TheC | undefined
                 const source_dige = output?.sc.source_dige as string | undefined
                 const ghostmeta_name = H.Lang_ghostmeta_name(settled_path)

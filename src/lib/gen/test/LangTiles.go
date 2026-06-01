@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '0350bbaf88f64c6c' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return 'f4528947e09ff4e0' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -37,7 +37,7 @@ theCompiledStuff(A,w) {
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
     //w i angles/are:$ang,etc:3/so:ont.$
     // this is what we're avoiding wither doing .$:othername above
-    debugger
+    
     // you can declare let variables like this:
     let its = 'ferv'
     // should be strings 'stuff', 'levels', 'its', but then sits='ferv'
@@ -48,6 +48,7 @@ theCompiledStuff(A,w) {
     this.nothinging(A,w,{figuira:'out', all_these:3})
     if (this.nothinging(A,w,{figuira:'out', all_these:3})) 3+2+4
     if (this.nothinging(A,w,{figuira:'out', all_these:3}) && 6) {
+        3 + 3
     }
     // we should prefer no semicolon on the end of control structures
     //  just continuating expr and indent indicate:

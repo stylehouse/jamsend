@@ -25,7 +25,7 @@ theCompiledStuff(A,w) {
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
     //w i angles/are:$ang,etc:3/so:ont.$
     // this is what we're avoiding wither doing .$:othername above
-    debugger
+    
     // you can declare let variables like this:
     $its = 'ferv'
     // should be strings 'stuff', 'levels', 'its', but then sits='ferv'

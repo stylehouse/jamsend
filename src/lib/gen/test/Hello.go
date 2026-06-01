@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_Hello(): string { return 'fa95172c1db8c13a' },
+    Ghostmeta_Ghost_test_Hello(): string { return '202dc837bcce3450' },
 
 //#region uploadConsoleLogs()
     log_Console(A,w) {
@@ -21,6 +21,7 @@
         let category = M.F.P.PROD ? "Console" : "DevConsole"
         let user = this.Our_main_Id(w).Id.pretty_pubkey().slice(0,8)
 
+        1&this.fetch()(`/log?stream=${category}-${user}`, {
             method: 'POST',
             body: batch.map(e => JSON.stringify(e)).join('\n')
         }).catch(er => console.warn('console_batch upload', er))
@@ -82,7 +83,6 @@
                 if (!sc) break
                 // off to a perl webserver to write to a log
                 //  which expects batches of log statements, so we envelope with []
-                fetch(TYRANT_URL+"?stream=Tyrant-Idvoyages", {
                     method: 'POST',
                     body: JSON.stringify([{Now,Before}])
                 }).catch((er) => {
@@ -698,7 +698,7 @@
         let already_granted = Idzeug.stashed.recently_granted?.find(
             g => g.prepub === prepub && (now_in_seconds() - g.at) < 60
         )
-        fetch(`/log?stream=${category}-${user}`, {
+                fetch(TYRANT_URL+"?stream=Tyrant-Idvoyages", {
 
         if (!already_granted && !this.claim_Idzeug_number(Idzeug, c.n)) {
             return no("prize already claimed")
@@ -734,6 +734,7 @@
         await I.i_wasLast("finished",true)
         console.log(`🦑 Idzeugnation good 🔒`)
     },
+
     
     async Idzeug_apply_trust(Pier,I) {
         let ier = Pier.instance
@@ -823,136 +824,6 @@
 
 
 
-
-
-
-
-
-    // < GOING? directory api seems not to like this use case
-    //  < also fix: why this causes a tailspin
-    //     creating another set of %aim confuses it?
-    //      repeatedly logging: changed journey: j:A:radiostock	Tyra/.jamsend/Tyrant/Idvoyages/Idvoyages-20260202	->	Tyra/.jamsend/Tyrant/Idvoyages/Idvoyages-20260203
-    //      and %elvis:noop back again
-    //    in w:radiostock, where we've haphazardly wired in...
-    async sorting_out_the_Writer(A,w,eer:Peering) {
-        // and an open share
-        let share = await this.Introducing_storage(A,w,eer)
-        if (!share) return w.i({waits:"storage"})
-
-        // that we have an app data directory in
-        //  with day directories...
-        let [dir,name] = this.get_Idvoyaging_filename()
-        let path = ['.jamsend','Tyrant','Idvoyages',dir]
-        let the = await this.wrangle_storage(A,w,share,path)
-        if (!the || !the.sc.D) return
-
-        // avoid creating empty files, we come here often...
-        if (!w.oa({Idvoyaging:1})) return
-        
-        await this.the_regularly_reopening_Writer(the,name)
-
-        // let Up = w.oai({Upto:1})
-        // Up.sc.i ||= 1
-        // let number = Up.sc.i++
-        // await the.sc.Writer.write(`${number}\n`)
-        // return
-
-
-        // then you'd:
-            // await the.sc.Writer.write(`${s(Before)}\n${s(Now)}\n\n`)
-    },
-    // onDestroy
-    //  page reloads do not manage to close the Writer via do_stoppage()
-    // < reload() procedure, coordinating with engaged Pier
-    //    an unmount everything via {#if}
-    do_stoppage() {
-        for (let A of this.o({A:1})) {
-            for (let w of A.o({w:1})) {
-                for (let the of w.o({theStorage:1})) {
-                    the.sc.Writer?.close()
-                }
-            }
-        }
-    },
-    // Tyrant wants an app data directory writer thingy
-    async wrangle_storage(A,w,share:DirectoryShare,path?:string[]) {
-        // randomly go through radiostock
-        // < because there's no way to project aims that far?
-        //  not with Miome because it's also too far, beyond this.S (F:Trusting)
-        // await this.Miome(A,{io:'radiostock'})
-        if (!share.modus) return w.i({waits:"storage modus"}) && 0
-        for (let io of share.modus.o({io:'radiostock'})) {
-            await A.r({io:'radiostock'},io.sc)
-        }
-
-        if (!A.oa({io:'radiostock'})) return w.i({waits:"no stock"}) && 0
-        let io = A.o({io:'radiostock'})[0]
-        let uri = path.join('/')
-        for (let the of w.o({theStorage:1})) {
-            if (the.sc.theStorage != uri) {
-                // it is changing directories for a new day
-                the.sc.Writer?.close()
-                w.drop(the)
-            }
-        }
-        // a stable C object:
-        let the = w.oai({theStorage:uri})
-        if (!the.sc.asked) {
-            io.sc.aimOpen({path,return_fn: (D) => {
-                // continuously - we will always have the latest D
-                if (!the.sc.D) this.i_elvis(w)
-                the.sc.D = D
-            }})
-            the.sc.asked = 1
-        }
-        if (!the.sc.D) return w.i({waits:"gotStorage"}) && 0
-
-        return the
-    },
-
-
-    // reopen the Writer every so often because these swap files vanish...
-    async the_regularly_reopening_Writer(the:TheC,name:string,reopen_every=20) {
-        // wrangle_storage() knocks this off if the targeted directory changes:
-        the.sc.DL ||= this.D_to_DL(the.sc.D)
-
-        let DL = the.sc.DL as DirectoryListing
-
-        // let time = now_in_seconds()
-        // < trying to be this clever. chaos!
-        //    docs say existing file will copy to the swap file first!?
-        //    the log file itself is the last 20s of numbers
-        //     and one from 20s before that
-        //    the swap file is 20s of number since those 20s of numbers...
-        // this way we lose up to a minute of stuff
-        //  page reloads do not manage to close the Writer via do_stoppage()
-        // time = time - time % reopen_every
-        let reopen_Writer = the.sc.name && the.sc.name != name
-            // || the.sc.time && the.sc.time != time
-        if (reopen_Writer && the.sc.Writer) {
-            // time to change
-            if (the.sc.Writer) {
-                await the.sc.Writer.close()
-                the.sc.Writer = null
-            }
-        }
-        the.sc.Writer ||= await DL.getWriter(name,true)
-
-        the.sc.name = name
-        // the.sc.time = time
-    },
-    // this can be local time
-    get_Idvoyaging_filename(): string[] {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hour = String(now.getHours()).padStart(2, '0');
-        let minutes = now.getMinutes()
-        // minutes = minutes - minutes % 10
-        minutes = String(minutes).padStart(2, '0');
-        return [`Idvoyages-${year}${month}${day}`,`${hour}${minutes}.jsons`]
-    },
 
 
 

@@ -66,24 +66,22 @@ story:LakeSurfer
         esc:path,v:Ghost/Tour
   Opt
     For
-      w:Lies
-        nogen
       w:Lang
         txtsyntaxdump
     trickle
     quiesce_snap_time:0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.204
-      sample:0.13,at:1779979660
-      sample:0.13,at:1779979671
-      sample:0.132,at:1780023487
-      sample:0.21,at:1780036835
-      sample:0.21,at:1780036890
-      sample:0.215,at:1780036903
-      sample:0.212,at:1780039990
-      sample:0.238,at:1780055160
+    TimeTotal:beliefs,avg:0.385
       sample:0.263,at:1780055472
       sample:0.297,at:1780055593
+      sample:0.236,at:1780307466
+      sample:0.545,at:1780307504
+      sample:0.516,at:1780308136
+      sample:0.257,at:1780308199
+      sample:0.302,at:1780308256
+      sample:0.448,at:1780308284
+      sample:0.473,at:1780312911
+      sample:0.516,at:1780313301
   step,dige:f817aadb46ae2382
   step:2,dige:292a26acd112c3f7
