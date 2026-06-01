@@ -532,10 +532,12 @@
         ;(await sub.doai({ req: 'maneuvre' }))?.(async (maneuvre: TheC) => {
             const msub = H.reqy(maneuvre)
 
-            // req:checkout — LE_arm + LE_pull for this src.
-            //   First phase; subsequent phases read LE_clones().
-            //   Each maneuvre is a fresh particle so the do_fn fires exactly once.
-            ;(await msub.doai({ req: 'checkout' }))?.(async (checkout: TheC) => {
+            // Three phases in maz order — do() descends 3→2→1 only when each level finishes.
+            //   maz:3  checkout  — LE_arm + LE_pull
+            //   maz:2  load_doc  — fire req:Open to Lies; poll until dock exists
+            //   maz:1  graft     — Pmirror pass once dock + compile index are ready
+
+            ;(await msub.doai({ req: 'checkout', maz: 3 }))?.(async (checkout: TheC) => {
                 H.LE_arm(LE, src)
                 await H.LE_pull(LE)
                 console.log(`🔗 workon checkout: LE armed at ${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
@@ -543,27 +545,21 @@
             })
 
             // req:load_doc — fire Lies_roai_Open cross-world; poll via ttlilt until
-            //   loaded_doc appears on w:Lang's dock.  Finishes immediately for the
-            //   title-page case (no doc_path from a pure time-slice %What).
-            //
-            //   reqonce gates the i_elvis_req so only one cross-world call goes;
-            //   subsequent ttlilt re-entries just poll the dock.
-            ;(await msub.doai({ req: 'load_doc' }))?.(async (load_doc: TheC) => {
+            //   the dock appears (Languish req:text_loaded mints it).
+            //   reqonce gates the elvis so only one cross-world call fires.
+            //   Title-page (no doc_path): finish immediately — valid, no CM doc needed.
+            const waft_key = (src.c.waft as TheC | undefined)?.sc.Waft as string | undefined ?? ''
+            ;(await msub.doai({ req: 'load_doc', maz: 2 }))?.(async (load_doc: TheC) => {
                 const doc_path = H.Lang_src_doc_path(src)
                 load_doc.sc.doc_path = doc_path ?? null
 
-                if (!doc_path) {
-                    // Title-page: valid state — no doc to open.
-                    msub.finish(load_doc)
-                    return
-                }
+                if (!doc_path) { msub.finish(load_doc); return }
 
-                // Fire once — ask Lies to roai a req:Open for this src.
                 if (H.reqonce(load_doc, 'fired')) {
-                    H.i_elvisto('Lies/Lies', 'Lies_roai_Open_req', { src, waft_key: (workon.sc as any).waft_key ?? '' })
+                    H.i_elvisto('Lies/Lies', 'Lies_roai_Open_req', { src, waft_key })
                 }
 
-                // Poll: once Languish has run req:text_loaded, the dock exists.
+                // Poll for the dock — Languish mints it after wread settles.
                 const docks = w.o({ docks: 1 })[0] as TheC | undefined
                 const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
                 if (!dock) {
@@ -571,15 +567,11 @@
                     return
                 }
 
-                // Dock arrived — activate and finish.
                 H.Lang_set_active_dock(w, doc_path)
                 msub.finish(load_doc)
             })
 
-            // req:graft — drive the Pmirror graft pass for the active dock.
-            //   Cursor-driven (not open-driven), so it fires on every cursor jump
-            //   once the compile index exists.
-            ;(await msub.doai({ req: 'graft' }))?.(async (graft: TheC) => {
+            ;(await msub.doai({ req: 'graft', maz: 1 }))?.(async (graft: TheC) => {
                 const doc_path = H.Lang_src_doc_path(src)
                 if (doc_path) {
                     const docks = w.o({ docks: 1 })[0] as TheC | undefined
@@ -876,10 +868,22 @@
 
         // ── drive Languish + workon ──────────────────────────────────
         // Languish stages text_loaded → compile → grafted for each open doc.
-        // workon's req:maneuvre drives the per-cursor checkout → load_doc → graft.
-        // do() is cheap (skip) once reqs are finished.
+        // workon/maneuvre drives checkout → load_doc → graft per cursor move.
+        // do() is cheap (skip) once reqs are finished; reqy_recurse drives nested.
         const rq = H.reqy(w)
         await rq.do()
+        // Drive workon's inner cluster (maneuvre + its phases) from the tick
+        // so ttlilt re-entries on req:load_doc re-check the dock each think.
+        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
+        if (workon) {
+            const sub = H.reqy(workon)
+            await sub.do()
+            const maneuvre = sub.o({ req: 'maneuvre' })[0] as TheC | undefined
+            if (maneuvre && !maneuvre.sc.finished) {
+                const msub = H.reqy(maneuvre)
+                await msub.do()
+            }
+        }
 
         const model     = w.c.model as TheC
         const state     = dock?.c.state

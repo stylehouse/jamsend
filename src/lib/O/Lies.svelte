@@ -443,7 +443,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   Lang req:load_doc calls Lies_roai_Open which roais a req:Open here.
         //   req_Open holds itself via 0.4s ttlilt while the wread is in flight;
         //   LiesPersist returns true once the Waft layer is settled.
-        const rq = H.reqy(w, { k: 'Open' })
+        const rq = H.reqy(w)
         await rq.do()
 
         return true   // Waft layer settled — LiesRealised may proceed
@@ -516,7 +516,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   fresh req.  sc.new can be seeded at roai time for Liesui-created docs.
     async Lies_roai_Open(w: TheC, src: TheC, opts: { waft_key?: string, new?: 1 } = {}): Promise<TheC> {
         const H = this as House
-        const rq = H.reqy(w, { k: 'Open' })
+        const rq = H.reqy(w, { k: 'Open', noserial: 1, do_fn: (req: TheC, q: any) => H.req_Open(req, q) })
         for (const old of rq.o({ src }) as TheC[]) {
             if (old.sc.finished) w.drop(old)
         }
@@ -634,9 +634,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 const examining  = w.o({ examining: 1 })[0] as TheC | undefined
                 const cur_waft   = examining?.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
                 if (examining && cur_waft !== waft_key) {
-                    const first = (await H.Lies_waft_candidates(waft))[0]
+                    // First %What with Points, then first %Doc with Points, then first %Doc.
+                    const whats = waft.o({ What: 1 }) as TheC[]
+                    const first: TheC | undefined =
+                        whats.find(wh => H.Lies_what_has_points(wh))
+                        ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
+                        ?? waft.o({ Doc: 1 })[0] as TheC | undefined
                     if (first) {
-                        // Demand-load via req:Open so the load tracks through the reqy system.
                         await H.Lies_roai_Open(w, first, { waft_key })
                         await H.Lies_set_examining(examining, first, waft_key)
                     }
@@ -883,7 +887,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.path as string)
         )
         // Drop unfinished req:Open that lost their Doc from this Waft.
-        const rq = (this as House).reqy(w, { k: 'Open' })
+        const rq = (this as House).reqy(w, { k: 'Open', noserial: 1 })
         for (const req of rq.o({ waft_key: wpath }) as TheC[]) {
             if (req.sc.finished) continue
             const src  = req.sc.src as TheC | undefined
