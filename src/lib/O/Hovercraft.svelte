@@ -366,7 +366,6 @@
                 if (!q.all_finished() || w.sc.finished) return
                 if (w.sc.w || w.sc.eternal) return
                 over_rq ||= w.c.on?.c?.rq
-                if (w.c.on?.c?.rq != over_rq) throw "over!=c.on"
                 over_rq.finish(w)
             },
  
