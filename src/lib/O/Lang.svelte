@@ -910,9 +910,13 @@
         const path = dock.sc.dock as string
 
         // Read current dige values.
+        // lang_dock is absent until req_text_loaded's dig() resolves — bail rather
+        // than blanking Change with empty strings.  The tick will re-run once
+        // e_Lang_open_dock lands and populates the text particle.
         const lang_dock      = ave.o({ lang_dock: path })[0] as TheC | undefined
-        const text_dige     = (lang_dock?.sc.text_dige as string ?? '').slice(0, 5)
-        const disk_dige     = (lang_dock?.sc.disk_dige as string ?? '').slice(0, 5)
+        if (!lang_dock) return
+        const text_dige     = (lang_dock.sc.text_dige as string ?? '').slice(0, 5)
+        const disk_dige     = (lang_dock.sc.disk_dige as string ?? '').slice(0, 5)
 
         const job           = dock.o({ Compile: 1 })[0] as TheC | undefined
         const output        = job?.o({ Output: 1 })[0]  as TheC | undefined

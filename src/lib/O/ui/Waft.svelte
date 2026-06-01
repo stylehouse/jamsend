@@ -246,85 +246,10 @@
         </div>
     {/if}
 
-    <!-- What list — keyed on label; each What shows its label then its Docs
-         and their Points nested inside.  Clicking the label fires Lies_set_cursor
-         on the %What directly so NaviCado + graft can work at the What level. -->
-    {#each waft_whats as what (what.sc.What ?? what.sc.label ?? what.sc.id)}
-        {@const what_label = (what.sc.label ?? what.sc.What ?? '?') as string}
-        {@const what_docs  = (() => { void what.version; return what.o({ Doc: 1 }) as TheC[] })()}
-        {@const what_pts   = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
-        {@const is_what_active = (() => {
-            // glow when the Spotlight is aimed directly at this %What
-            void examining?.version
-            const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
-            return spot?.sc.src === what
-        })()}
-        <div class="ls-what">
-            <div class="ls-what-hdr" class:ls-what-active={is_what_active}>
-                <button class="ls-what-label"
-                        title="cursor to What:{what_label}"
-                        onclick={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what })}>
-                    {what_label}
-                </button>
-            </div>
-
-            <!-- Direct %Point children on the %What (time-slice style) -->
-            {#if what_pts.length}
-                <div class="ls-points ls-what-pts">
-                    {#each what_pts as pt, idx (idx)}
-                        <div class="ls-point">
-                            <button class="ls-point-peel ls-point-open-btn"
-                                    title="point in What:{what_label}"
-                                    onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { point: pt.sc.method ?? pt.sc.Point })}>
-                                {point_to_peel(pt)}
-                            </button>
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-
-            <!-- %Doc children of this %What, with their Points -->
-            {#each what_docs as doc (doc.sc.path)}
-                {@const dpath = doc.sc.path as string}
-                {@const pts   = (() => { void doc.version; return doc.o({ Point: 1 }) as TheC[] })()}
-                {@const pform = !!point_form_open[dpath]}
-                <div class="ls-doc"
-                     class:ls-doc-new={!!doc.sc.new}
-                     class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
-                    <DocRow {H} {w} {doc} {waft} {examining}
-                        on_del={delete_doc}
-                        on_focus={focus_doc}
-                        on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
-                    {#if pts.length}
-                        <div class="ls-points">
-                            {#each pts as pt, idx (idx)}
-                                <div class="ls-point">
-                                    {#if pform && point_edit_idx[dpath] === idx}
-                                        {@render point_input(dpath, doc, '✓')}
-                                    {:else}
-                                        <button class="ls-point-peel ls-point-open-btn"
-                                                title="open {dpath} at this point"
-                                                onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}>
-                                            {point_to_peel(pt)}
-                                        </button>
-                                        <button class="ls-icon-btn" title="edit"
-                                                onclick={() => start_edit_point(dpath, idx, pt)}>✎</button>
-                                        <button class="ls-icon-btn ls-del-btn"
-                                                onclick={() => delete_point(pt, doc)}>×</button>
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
-                    {#if pform && point_edit_idx[dpath] == null}
-                        {@render point_input(dpath, doc, '+')}
-                    {:else if !pform}
-                        <button class="ls-add-point-btn"
-                                onclick={() => toggle_point_form(dpath)}>+ Point</button>
-                    {/if}
-                </div>
-            {/each}
-        </div>
+    <!-- What tree — render_what is a recursive snippet; handles What/What/Doc
+         nesting at any depth.  wdepth is the indent level within this Waft. -->
+    {#each waft_whats as what (what.sc.label ?? what.sc.What ?? what.sc.id)}
+        {@render render_what(what, 0)}
     {/each}
 
     <!-- Doc list — keyed on path; key changes after rename so a fresh
@@ -386,6 +311,90 @@
     {/each}
 
 </div>
+
+{#snippet render_what(what: TheC, wdepth: number)}
+    {@const what_label    = (what.sc.label ?? what.sc.What ?? '?') as string}
+    {@const what_docs     = (() => { void what.version; return what.o({ Doc: 1 })   as TheC[] })()}
+    {@const what_pts      = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
+    {@const what_subwhats = (() => { void what.version; return what.o({ What: 1 })  as TheC[] })()}
+    {@const is_what_active = (() => {
+        // glow when the Spotlight is aimed directly at this %What
+        void examining?.version
+        const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
+        return spot?.sc.src === what
+    })()}
+    <div class="ls-what" style="margin-left: {wdepth * 10}px">
+        <div class="ls-what-hdr" class:ls-what-active={is_what_active}>
+            <button class="ls-what-label"
+                    title="cursor to What:{what_label}"
+                    onclick={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what })}>
+                {what_label}
+            </button>
+        </div>
+
+        <!-- Direct %Point children on the %What (time-slice style — no Doc container) -->
+        {#if what_pts.length}
+            <div class="ls-points ls-what-pts">
+                {#each what_pts as pt, idx (idx)}
+                    <div class="ls-point">
+                        <button class="ls-point-peel ls-point-open-btn"
+                                title="point in What:{what_label}"
+                                onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { point: pt.sc.method ?? pt.sc.Point })}>
+                            {point_to_peel(pt)}
+                        </button>
+                    </div>
+                {/each}
+            </div>
+        {/if}
+
+        <!-- %Doc children of this %What, with their Points -->
+        {#each what_docs as doc (doc.sc.path)}
+            {@const dpath = doc.sc.path as string}
+            {@const pts   = (() => { void doc.version; return doc.o({ Point: 1 }) as TheC[] })()}
+            {@const pform = !!point_form_open[dpath]}
+            <div class="ls-doc"
+                 class:ls-doc-new={!!doc.sc.new}
+                 class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
+                <DocRow {H} {w} {doc} {waft} {examining}
+                    on_del={delete_doc}
+                    on_focus={focus_doc}
+                    on_rename={(old_p, new_p) => do_rename_doc(doc, old_p, new_p)} />
+                {#if pts.length}
+                    <div class="ls-points">
+                        {#each pts as pt, idx (idx)}
+                            <div class="ls-point">
+                                {#if pform && point_edit_idx[dpath] === idx}
+                                    {@render point_input(dpath, doc, '✓')}
+                                {:else}
+                                    <button class="ls-point-peel ls-point-open-btn"
+                                            title="open {dpath} at this point"
+                                            onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}>
+                                        {point_to_peel(pt)}
+                                    </button>
+                                    <button class="ls-icon-btn" title="edit"
+                                            onclick={() => start_edit_point(dpath, idx, pt)}>✎</button>
+                                    <button class="ls-icon-btn ls-del-btn"
+                                            onclick={() => delete_point(pt, doc)}>×</button>
+                                {/if}
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+                {#if pform && point_edit_idx[dpath] == null}
+                    {@render point_input(dpath, doc, '+')}
+                {:else if !pform}
+                    <button class="ls-add-point-btn"
+                            onclick={() => toggle_point_form(dpath)}>+ Point</button>
+                {/if}
+            </div>
+        {/each}
+
+        <!-- Nested %What children — recurse -->
+        {#each what_subwhats as subwhat (subwhat.sc.label ?? subwhat.sc.What ?? subwhat.sc.id)}
+            {@render render_what(subwhat, wdepth + 1)}
+        {/each}
+    </div>
+{/snippet}
 
 {#snippet point_input(dpath: string, doc: TheC, submit_label: string)}
     <div class="ls-point-form">
@@ -463,6 +472,9 @@
         border-left: 2px solid #2a3a4a;
         padding-left: 0.35rem;
     }
+    /* nested Whats step the border colour cooler so depth reads visually */
+    .ls-what .ls-what { border-left-color: #223040; }
+    .ls-what .ls-what .ls-what { border-left-color: #1a2530; }
     .ls-what-hdr {
         display: flex; align-items: center; min-height: 1.2rem;
         margin-bottom: 0.05rem;

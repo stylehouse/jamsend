@@ -4,49 +4,6 @@
 
 ---
 
-## State as of this session
-
-- `%What_Points` → `%Spotlight` rename complete (LiesCurse, LangGraft, Lies,
-  DocMinimap).  `Lies_i_What_Points` → `Lies_i_Spotlight`.
-  Snap now reads `ave/%examining/%Spotlight,src=%What:choice`.
-- Waft `ls-what-active` glow landed: `::before` beam on `.ls-what-hdr` when
-  `%Spotlight.sc.src === what`.  `examining` prop already flowed; derived
-  per-`#each` in the What loop.
-- `%State,stale` false-positive fixed in `LiesEnd.LE_pull`: first pull after
-  `LE_arm` has an empty D sphere — all Points arrive as neus by definition,
-  not remote drift.  `was_fresh` guard skips stale on the arm pull.
-- `req:load_doc` `reqonce('fired')` gate removed: it was preventing retries
-  after ttlilt expiry.  `Lies_roai_Open` is idempotent — re-firing safe.
-  Poll interval tightened 5s → 0.5s.
-- Stale spinner wired: `%State.stale` after `LE_pull` installs
-  `spinner:'stale'` in `%Languinio`; DocMinimap shows amber `↻` at 0.8s.
-
-### Still broken: Waft UI doc navigation
-
-Clicking a `%What` whose doc differs from the current active doc navigates
-the cursor (Spotlight moves, glow follows) but the CM doesn't switch.
-Symptom: `dock:Ghost/Peeroleum.g` appears in the snap, `editorBegins` fires,
-but `req:load_doc` stays stuck with `waiting:dock,timed_out`.
-
-Diagnosis: `req_text_loaded` mints the dock inside `req:Languish`, which is
-driven by `rq.do()` in the Lang tick.  `req:load_doc` polls `docks.o({dock:path})`.
-Both should be in the same tick pass — Languish is older so runs first.
-The dock should be present when `req:load_doc` re-enters.  Not confirmed why
-it isn't; needs a fresh console trace with the `reqonce` fix applied.
-
-Suspects in order:
-1. `Lang_set_active_dock` in `req_text_loaded` fires unconditionally and
-   triggers the `active_dock` watch in LiesCurse.  The `cur_is_what` guard
-   should suppress the re-examine, but confirm it holds after the fix.
-2. Timing: `Lang_open_dock` elvis from Lies may arrive after `req:load_doc`
-   ttlilt fires; next re-entry (0.5s) should find the dock.  May just need
-   a fresh trace to confirm the retry actually lands.
-3. `req_text_loaded` `reqonce('opening')` is per-req lifetime.  If
-   `e_Lang_open_dock` fires for an already-loaded path and the Languish is
-   dropped+reminted, `opening` starts fresh — dock should be minted again.
-
----
-
 ## What cursor model (the real design)
 
 A Waft is a tree of What, Doc, and Point — but **What is the base type**.
@@ -123,9 +80,14 @@ w:Lang
 ## Open faults
 
 ```
-// < Waft UI doc navigation stuck: clicking %What with different doc doesn't
-//   switch CM.  req:load_doc fires, dock is minted, but poll misses it.
-//   See "Still broken" section above.  Needs fresh trace with reqonce fix.
+// < clicking a Waft Doc repeatedly (~7x) loses the What glow until re-clicked.
+//   Likely the active_dock watch firing Lies_set_examining with a %Doc src,
+//   overwriting the %What cursor — the cur_is_what guard should catch it but
+//   something's slipping through on rapid re-fires.
+// < second Doc (Ghost/Peeroleum.g) doesn't load into CM — empty editor, no
+//   spinner.  req:load_doc polls find the dock but Languish never completes for
+//   that path.  The editorBegins storm (7 pairs in the snap) suggests the
+//   active_dock watch is ping-ponging between the two docs on each tick.
 // < e_Lies_cursor_next and e_Lies_desire_step duplicate "next candidate" logic;
 //   should converge on Waft_cursor_next(w, examining) helper.
 // < LiesCurse active_dock watch: when src is %What, active_dock following is

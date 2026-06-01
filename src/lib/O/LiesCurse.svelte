@@ -150,42 +150,66 @@
         await this.Lies_set_examining(examining, src, waft_key)
     },
 
+    // ── Lies_walk_docs ────────────────────────────────────────────────────────
+    //
+    //   Yield every %Doc reachable from a container C (Waft or What),
+    //   descending into %What children at any depth before sibling %Doc children.
+    //   Caller supplies a visitor; returning true from it stops the walk.
+    Lies_walk_docs(container: TheC, visit: (doc: TheC) => boolean): boolean {
+        for (const what of container.o({ What: 1 }) as TheC[]) {
+            if (this.Lies_walk_docs(what, visit)) return true
+        }
+        for (const doc of container.o({ Doc: 1 }) as TheC[]) {
+            if (visit(doc)) return true
+        }
+        return false
+    },
+
     // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
     //
-    //   Walk all loaded Wafts looking for a %Doc,path particle matching `path`.
-    //   Returns { doc, waft_key } on the first hit, undefined if not found.
+    //   Walk all loaded Wafts — descending into %What children at any depth —
+    //   looking for a %Doc,path matching `path`.
     Lies_find_doc_in_wafts(w: TheC, path: string): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
-            if (doc) return { doc, waft_key: waft.sc.Waft as string }
+            const waft_key = waft.sc.Waft as string
+            let found: TheC | undefined
+            this.Lies_walk_docs(waft, doc => {
+                if ((doc.sc.path as string) === path) { found = doc; return true }
+                return false
+            })
+            if (found) return { doc: found, waft_key }
         }
         return undefined
     },
 
     // ── Lies_first_point_doc ──────────────────────────────────────────────────
     //
-    //   Walk all loaded Wafts and return the first %Doc that carries at least
-    //   one %Point,N child.  Prefer over Lies_first_doc when the intent is to
-    //   land the cursor on something that already has graft work to do.
+    //   Walk all loaded Wafts — descending into %What children at any depth —
+    //   and return the first %Doc carrying at least one %Point child.
     Lies_first_point_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            for (const doc of waft.o({ Doc: 1 }) as TheC[]) {
-                if ((doc.o({ Point: 1 }) as TheC[]).length)
-                    return { doc, waft_key: waft.sc.Waft as string }
-            }
+            const waft_key = waft.sc.Waft as string
+            let found: TheC | undefined
+            this.Lies_walk_docs(waft, doc => {
+                if ((doc.o({ Point: 1 }) as TheC[]).length) { found = doc; return true }
+                return false
+            })
+            if (found) return { doc: found, waft_key }
         }
         return undefined
     },
 
     // ── Lies_first_doc ────────────────────────────────────────────────────────
     //
-    //   Walk all loaded Wafts and return the very first %Doc regardless of
-    //   whether it carries any %Point,N children.  Fallback for freshly created
-    //   Wafts with no Points yet.
+    //   Walk all loaded Wafts — descending into %What children at any depth —
+    //   and return the very first %Doc, regardless of Points.
+    //   Fallback for freshly created Wafts with no Points yet.
     Lies_first_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1 })[0] as TheC | undefined
-            if (doc) return { doc, waft_key: waft.sc.Waft as string }
+            const waft_key = waft.sc.Waft as string
+            let found: TheC | undefined
+            this.Lies_walk_docs(waft, doc => { found = doc; return true })
+            if (found) return { doc: found, waft_key }
         }
         return undefined
     },
@@ -272,17 +296,19 @@
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
 
-        // Collect candidate %What particles across all loaded Wafts, in order.
-        // A %What is a candidate when it has at least one Point in its immediate
-        // child layer — direct %Point children, or %Point inside any %Doc child.
-        // Depth is one — we do not recurse into nested %What children here.
+        // Collect all candidate %What particles across all loaded Wafts, in
+        // depth-first order.  A %What is a candidate when it has at least one
+        // Point at any depth — direct, inside a %Doc child, or inside a nested %What.
         const candidates: Array<{ what: TheC, waft_key: string }> = []
-        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const waft_key = waft.sc.Waft as string
-            for (const what of waft.o({ What: 1 }) as TheC[]) {
+        const collect_whats = (container: TheC, waft_key: string) => {
+            for (const what of container.o({ What: 1 }) as TheC[]) {
                 if (H.Lies_what_has_points(what))
                     candidates.push({ what, waft_key })
+                collect_whats(what, waft_key)   // recurse into sub-Whats
             }
+        }
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            collect_whats(waft, waft.sc.Waft as string)
         }
         if (!candidates.length) return
 
@@ -308,8 +334,8 @@
     //   and passes it directly — no candidate scan needed.
     //
     //   Uses c.waft (stamped by Lies_stamp_up) to recover the waft_key without
-    //   a full Waft scan.  Falls back to a scan when c.waft is absent (newly
-    //   added Whats before the next Lies_stamp_up pass).
+    //   a full Waft scan.  Falls back to a recursive scan when c.waft is absent
+    //   (newly added Whats before the next Lies_stamp_up pass).
     //
     //   e.sc: { what: TheC }  — the target %What particle
     async e_Lies_cursor_what(A: TheC, w: TheC, e: TheC) {
@@ -319,15 +345,21 @@
         const what = e.sc.what as TheC | undefined
         if (!what) return
 
-        // Recover waft_key from the cached c.waft or fall back to a scan.
+        // Recover waft_key from the cached c.waft or fall back to a recursive scan.
         const waft_C = what.c.waft as TheC | undefined
         let waft_key = waft_C?.sc.Waft as string | undefined
         if (!waft_key) {
-            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-                if ((waft.o({ What: 1 }) as TheC[]).some(wh => wh === what)) {
-                    waft_key = waft.sc.Waft as string
-                    break
+            const find_in = (container: TheC, key: string): string | undefined => {
+                for (const wh of container.o({ What: 1 }) as TheC[]) {
+                    if (wh === what) return key
+                    const found = find_in(wh, key)
+                    if (found) return found
                 }
+                return undefined
+            }
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+                waft_key = find_in(waft, waft.sc.Waft as string)
+                if (waft_key) break
             }
         }
         if (!waft_key) return
@@ -337,13 +369,16 @@
         await H.Lies_set_examining(examining, what, waft_key)
     },
     //
-    //   True when a %What carries at least one %Point in its immediate child
-    //   layer — either a direct %Point child, or a %Point inside any direct
-    //   %Doc child.  Does not recurse into nested %What children.
+    //   True when a %What carries at least one %Point anywhere in its subtree —
+    //   direct %Point child, %Point inside a %Doc child, or %Point inside a
+    //   nested %What at any depth.
     Lies_what_has_points(what: TheC): boolean {
         if ((what.o({ Point: 1 }) as TheC[]).length) return true
         for (const doc of what.o({ Doc: 1 }) as TheC[]) {
             if ((doc.o({ Point: 1 }) as TheC[]).length) return true
+        }
+        for (const sub of what.o({ What: 1 }) as TheC[]) {
+            if (this.Lies_what_has_points(sub)) return true
         }
         return false
     },
