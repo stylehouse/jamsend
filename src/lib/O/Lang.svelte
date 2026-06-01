@@ -578,74 +578,85 @@
         if (!src) return
 
         // req:workon seeded in Lang_plan; find it.
-        const workon = w.o({ req: 'workon' })[0] as TheC | undefined
+        const rq     = H.reqy(w)
+        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
         if (!workon) return
 
         // /{LE:1} — stable on workon across all cursor moves.
         const LE = workon.oai({ LE: 1 })
-        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
-        if (languinio && languinio.o({LE:1})[0] != LE) {
-            await languinio.r({ LE: 1 }, {})
-            languinio.i(LE)
-        }
 
-
-        const wq = H.reqy(workon)
-
+        const sub = H.reqy(workon)
 
         // req:awaiting — install the Languinio same-object hold exactly once.
         //   reqonce('satisfied') gates the body; finish() keeps it out of do()'s
         //   active set forever after.  Subsequent updates skip straight past it.
-        ;(await wq.doai({ req: 'awaiting' }))?.(async (awaiting: TheC) => {
-            if (!H.reqonce(awaiting, 'satisfied')) { wq.finish(awaiting); return }
-            wq.finish(awaiting)
+        ;(await sub.doai({ req: 'awaiting' }))?.(async (awaiting: TheC) => {
+            if (!H.reqonce(awaiting, 'satisfied')) { sub.finish(awaiting); return }
+            const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+            if (languinio) {
+                await languinio.r({ LE: 1 }, {})
+                languinio.i(LE)
+            }
+            sub.finish(awaiting)
             console.log(`🔗 workon: awaiting satisfied — Languinio/%LE installed`)
         })
 
-        workon.o({req:'maneuvre'}).map(req => req.drop())
-        ;(await wq.doai({ req: 'maneuvre' }))?.(async (maneuvre: TheC) => {
-            const mq = H.reqy(maneuvre)
+        // req:maneuvre — drop any live one, then seed a fresh cluster for this src.
+        //   Finished maneuvres are left in place (visible in snap as evidence);
+        //   only the live (unfinished) one is dropped so the new src runs clean.
+        for (const old of sub.o({ req: 'maneuvre' }) as TheC[]) {
+            if (!old.sc.finished) workon.drop(old)
+        }
+        ;(await sub.doai({ req: 'maneuvre' }))?.(async (maneuvre: TheC) => {
+            const msub = H.reqy(maneuvre)
 
             // Three phases in maz order — do() descends 3→2→1 only when each level finishes.
             //   maz:3  checkout  — LE_arm + LE_pull
             //   maz:2  load_doc  — fire req:Open to Lies; poll until dock exists
             //   maz:1  graft     — Pmirror pass once dock + compile index are ready
 
-            ;(await mq.doai({ req: 'checkout', maz: 3 }))?.(async (checkout: TheC) => {
+            ;(await msub.doai({ req: 'checkout', maz: 3 }))?.(async (checkout: TheC) => {
                 H.LE_arm(LE, src)
                 await H.LE_pull(LE)
                 console.log(`🔗 workon checkout: LE armed at ${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
-                mq.finish(checkout)
+                // Show a stale spinner in Languinio while the remote has drifted
+                // (origin pull returned neus/goners) — cleared when encode finds clean.
+                const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+                const state = LE.o({ State: 1 })[0] as TheC | undefined
+                if (state?.sc.stale) languinio?.oai({ spinner: 'stale' })
+                else languinio?.o({ spinner: 'stale' }).forEach((s: TheC) => languinio.drop(s))
+                msub.finish(checkout)
             })
 
             // req:load_doc — fire Lies_roai_Open cross-world; poll via ttlilt until
             //   the dock appears (Languish req:text_loaded mints it).
-            //   reqonce gates the elvis so only one cross-world call fires.
+            //   Lies_roai_Open is idempotent (drops finished reqs, returns live one)
+            //   so re-firing on each ttlilt re-entry is safe and necessary — the
+            //   prior reqonce gate was preventing retries after ttlilt expiry.
             //   Title-page (no doc_path): finish immediately — valid, no CM doc needed.
             const waft_key = (src.c.waft as TheC | undefined)?.sc.Waft as string | undefined ?? ''
-            ;(await mq.doai({ req: 'load_doc', maz: 2 }))?.(async (load_doc: TheC) => {
+            ;(await msub.doai({ req: 'load_doc', maz: 2 }))?.(async (load_doc: TheC) => {
                 const doc_path = H.Lang_src_doc_path(src)
                 load_doc.sc.doc_path = doc_path ?? null
 
-                if (!doc_path) { mq.finish(load_doc); return }
+                if (!doc_path) { msub.finish(load_doc); return }
 
-                if (H.reqonce(load_doc, 'fired')) {
-                    H.i_elvisto('Lies/Lies', 'Lies_roai_Open_req', { src, waft_key })
-                }
+                // Re-fire on every re-entry — Lies_roai_Open is idempotent.
+                H.i_elvisto('Lies/Lies', 'Lies_roai_Open_req', { src, waft_key })
 
                 // Poll for the dock — Languish mints it after wread settles.
                 const docks = w.o({ docks: 1 })[0] as TheC | undefined
                 const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
                 if (!dock) {
-                    H.i_req_ttlilt(load_doc, 5, { waiting: 'dock' })
+                    H.i_req_ttlilt(load_doc, 0.5, { waiting: 'dock' })
                     return
                 }
 
                 H.Lang_set_active_dock(w, doc_path)
-                mq.finish(load_doc)
+                msub.finish(load_doc)
             })
 
-            ;(await mq.doai({ req: 'graft', maz: 1 }))?.(async (graft: TheC) => {
+            ;(await msub.doai({ req: 'graft', maz: 1 }))?.(async (graft: TheC) => {
                 const doc_path = H.Lang_src_doc_path(src)
                 if (doc_path) {
                     const docks = w.o({ docks: 1 })[0] as TheC | undefined
@@ -654,26 +665,26 @@
                         await H.Lang_graft_points_once(w, dock)
                     }
                 }
-                mq.finish(graft)
+                msub.finish(graft)
             })
 
             // req:encode — run LE_encode_compare once after graft, sets %State.changey.
             //   maz:0 so do() only reaches it after maz:1 (graft) has finished.
             //   One-shot per maneuvre: the cursor moved → fresh src → fresh Understanding.
             //   NaviCado reads %State.changey from LE to decide whether push is meaningful.
-            ;(await mq.doai({ req: 'encode', maz: 0 }))?.(async (encode: TheC) => {
+            ;(await msub.doai({ req: 'encode', maz: 0 }))?.(async (encode: TheC) => {
                 const working = LE.o({ Seem: 'working' })[0] as TheC | undefined
                 if (working?.sc.C !== undefined) {
                     await H.LE_encode_compare(LE)
                 }
-                mq.finish(encode)
+                msub.finish(encode)
             })
 
-            await mq.do()
-            mq.unify_finished(wq)
+            await msub.do()
+            msub.unify_finished(sub)
         })
 
-        await wq.do()
+        await sub.do()
         H.i_elvisto(w, 'think')
     },
 

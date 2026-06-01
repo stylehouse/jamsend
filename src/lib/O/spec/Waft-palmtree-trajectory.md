@@ -6,13 +6,44 @@
 
 ## State as of this session
 
-- NaviCado navigation working; active_dock override bug fixed (cursor parked
-  on a %What was being stomped by the active_dock watch)
-- `req:desire` / `req:completion` cleaned up: `desire_sig` indirection gone,
-  replaced by `ave/%active_what` with a direct `c.completion` ref
-- `Lies_desire_completion` and `Lies_desire_land_cursor` extracted as w-methods
-- `Lies_what_has_points`, `LE_what_siblings` etc. remain frail low-level logic
-  — see "What cursor model" section for the intended abstraction
+- `%What_Points` → `%Spotlight` rename complete (LiesCurse, LangGraft, Lies,
+  DocMinimap).  `Lies_i_What_Points` → `Lies_i_Spotlight`.
+  Snap now reads `ave/%examining/%Spotlight,src=%What:choice`.
+- Waft `ls-what-active` glow landed: `::before` beam on `.ls-what-hdr` when
+  `%Spotlight.sc.src === what`.  `examining` prop already flowed; derived
+  per-`#each` in the What loop.
+- `%State,stale` false-positive fixed in `LiesEnd.LE_pull`: first pull after
+  `LE_arm` has an empty D sphere — all Points arrive as neus by definition,
+  not remote drift.  `was_fresh` guard skips stale on the arm pull.
+- `req:load_doc` `reqonce('fired')` gate removed: it was preventing retries
+  after ttlilt expiry.  `Lies_roai_Open` is idempotent — re-firing safe.
+  Poll interval tightened 5s → 0.5s.
+- Stale spinner wired: `%State.stale` after `LE_pull` installs
+  `spinner:'stale'` in `%Languinio`; DocMinimap shows amber `↻` at 0.8s.
+
+### Still broken: Waft UI doc navigation
+
+Clicking a `%What` whose doc differs from the current active doc navigates
+the cursor (Spotlight moves, glow follows) but the CM doesn't switch.
+Symptom: `dock:Ghost/Peeroleum.g` appears in the snap, `editorBegins` fires,
+but `req:load_doc` stays stuck with `waiting:dock,timed_out`.
+
+Diagnosis: `req_text_loaded` mints the dock inside `req:Languish`, which is
+driven by `rq.do()` in the Lang tick.  `req:load_doc` polls `docks.o({dock:path})`.
+Both should be in the same tick pass — Languish is older so runs first.
+The dock should be present when `req:load_doc` re-enters.  Not confirmed why
+it isn't; needs a fresh console trace with the `reqonce` fix applied.
+
+Suspects in order:
+1. `Lang_set_active_dock` in `req_text_loaded` fires unconditionally and
+   triggers the `active_dock` watch in LiesCurse.  The `cur_is_what` guard
+   should suppress the re-examine, but confirm it holds after the fix.
+2. Timing: `Lang_open_dock` elvis from Lies may arrive after `req:load_doc`
+   ttlilt fires; next re-entry (0.5s) should find the dock.  May just need
+   a fresh trace to confirm the retry actually lands.
+3. `req_text_loaded` `reqonce('opening')` is per-req lifetime.  If
+   `e_Lang_open_dock` fires for an already-loaded path and the Languish is
+   dropped+reminted, `opening` starts fresh — dock should be minted again.
 
 ---
 
@@ -32,23 +63,9 @@ What/Doc/What/Point    the full inhabited case
 What/What              nested section — cursor recurses before returning
 ```
 
-A `What/Doc` is a distinct moment from the first `What/Doc/What` below it.
-The viewer sees the doc in full (or birds-eye) before the first What takes
-its turn.  Multiple `What/Doc/What` siblings are successive moments within
-that doc; the cursor visits each one.
-
-`What/Doc` with no `What` children is the same — one cursor stop, all Points
-(if any) shown at once.
-
-If something sits where a Point would be but isn't a Point, it's a nested
-cursor destination — the cursor visits it, then returns to the parent What
-when the nested thing's own children are exhausted.
-
 **Consequence for the cursor API:** `LiesCurse` should not be the place that
 knows about Waft tree shape.  The "what is a valid cursor stop" and "what is
-the next stop" logic belongs in helpers on the Waft side — ideally close to
-`LE_what_*` in LiesEnd, or a `Waft_cursor_*` family on Lies.  LiesCurse
-should call them abstractly:
+the next stop" logic belongs in helpers on the Waft side:
 
 ```
 H.Waft_cursor_next(w, examining)   // advance to next stop
@@ -64,8 +81,8 @@ logic.  They should converge on the same helper.
 
 ```
 ave/%examining         — cursor state; c.w → w:Lies
-  /%What_Points        — sc.src ($C → %What or %Doc), sc.src_Waft
-                       — also called %active_what in some comments; pick one
+  /%Spotlight,1        — sc.src ($C → %What or %Doc), sc.src_Waft
+                         written only via Lies_i_Spotlight
 
 ave/%active_what       — transport state for NaviCado
   c.completion → req:completion   sc.playing:0|1
@@ -74,11 +91,6 @@ ave/%active_dock       — Lang-side active doc
   sc.path, c.dock → %Dock
 ```
 
-The `%What_Points` child of `%examining` may be better named `%active_what`
-to match the concept.  The two are distinct: `%examining` is the cursor host,
-`%active_what` is the transport signal.  Leave the rename for later when
-there's a clear migration moment.
-
 ---
 
 ## Architecture (current)
@@ -86,20 +98,24 @@ there's a clear migration moment.
 ```
 w:Lies
   /%examining
-    /%What_Points,1   sc.src / sc.src_Waft — the cursor
-  /%active_what       c.completion → req:completion (sc.playing)
+    /%Spotlight,1      sc.src ($C → %What or %Doc), sc.src_Waft
+  /%active_what        c.completion → req:completion (sc.playing)
   /req:desire
-    /req:acquire      one-shot Waft lock
-    /req:completion   open-ended; sc.playing drives NaviCado 4s timer
-    /req:git          < Waftlet accumulator
+    /req:acquire       one-shot Waft lock
+    /req:completion    open-ended; sc.playing drives NaviCado 4s timer
+    /req:git           < Waftlet accumulator
 
 w:Lang
   /%Languinio
-    /%LE              same-object hold on workon/{LE:1}
-    /%Dock,path       same-object hold on active dock
-  /req:workon         sc.following:1
-    /req:awaiting / /req:maneuvre
-      /req:checkout / /req:load_doc / /req:graft / /req:encode
+    /%LE               same-object hold on workon/{LE:1}
+    /%Dock,path        same-object hold on active dock
+  /req:workon          sc.following:1
+    /req:awaiting,finished
+    /req:maneuvre      reset on each cursor move
+      /req:checkout,maz:3   LE_arm + LE_pull; installs spinner:stale if needed
+      /req:load_doc,maz:2   re-fires Lies_roai_Open_req until dock appears
+      /req:graft,maz:1      Lang_graft_points_once
+      /req:encode,maz:0     LE_encode_compare; sets %State.changey
 ```
 
 ---
@@ -107,6 +123,9 @@ w:Lang
 ## Open faults
 
 ```
+// < Waft UI doc navigation stuck: clicking %What with different doc doesn't
+//   switch CM.  req:load_doc fires, dock is minted, but poll misses it.
+//   See "Still broken" section above.  Needs fresh trace with reqonce fix.
 // < e_Lies_cursor_next and e_Lies_desire_step duplicate "next candidate" logic;
 //   should converge on Waft_cursor_next(w, examining) helper.
 // < LiesCurse active_dock watch: when src is %What, active_dock following is
@@ -122,33 +141,16 @@ w:Lang
 // < Languinio dock hold: DocMinimap still reads lang_dock from sig.c.dock
 //   directly; migrate to languinio.o({dock:1})[0].
 // < req:git do_fn — flush Waftlets to disk/remote.
-// < What_Points rename: %examining/%What_Points could be %active_what to match
-//   ave/%active_what — pick one name.
+// < stale spinner: req:encode should also clear spinner:stale after a clean
+//   encode-compare, in case stale lingers past checkout.
 ```
-
----
-
-## Waft visual — glow on the active What
-
-The Waft** list should show a glowing blur in the left margin beside the What
-(or Doc) that `%What_Points.sc.src` is currently pointing at.  This is the
-visual answer to "where is the cursor right now" — analogous to how a
-text cursor blinks at its line.
-
-Implementation: Waft.svelte (and DocRow.svelte for Doc-level cursoring) reads
-`examining.vers` and checks `wpt.sc.src === what` / `wpt.sc.src === doc`.
-The `examining` prop already flows from Liesui → Waft → DocRow for the
-DocRow glow; extend it to the What header row.
-
-CSS: a `::before` pseudo-element on `.ls-what-hdr` with `box-shadow: -2px 0
-0 4px #446a` or similar.  Class `ls-what-active` toggled by the check above.
 
 ---
 
 ## Chunk 4 roadmap
 
 ```
-4a  cursor_next steps %What  ✓ (but see "cursor API" above — logic is scattered)
+4a  cursor_next steps %What  ✓ (logic still scattered — Waft_cursor_next pending)
 4b  req:desire playing loop  ✓
 4c  ↘ / ↓  branch + dive     — write paths exist (e_Lang_LE_add/push); needs
                                +time carry-over heuristic design

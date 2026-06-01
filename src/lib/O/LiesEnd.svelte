@@ -189,7 +189,10 @@ await M.eatfunc({
         const origin_waft = (LE.sc.target as TheC | undefined)?.c.waft as TheC | undefined
         if (origin_C && origin_waft) await H.Waft_link_up(origin_C, origin_waft)
 
-        if (working.sc.C === undefined) {
+        // was_fresh: true when this is the first pull after LE_arm — the D sphere
+        // was empty so every Point arrives as a neu, which is not a remote drift.
+        const was_fresh = working.sc.C === undefined
+        if (was_fresh) {
             working.sc.C = H.Seem_clone_C(origin)
         }
 
@@ -198,7 +201,8 @@ await M.eatfunc({
         // %State — oai then mutate, so the particle always exists after a pull.
         // r({State:1},{}) drops the child entirely; we want a live particle with
         // only the flags that are true right now.
-        const stale = od.goners.length > 0 || od.neus.length > 0
+        // stale only on subsequent pulls — first pull neus are expected (fresh D sphere).
+        const stale = !was_fresh && (od.goners.length > 0 || od.neus.length > 0)
         const state = LE.oai({ State: 1 })
         state.sc = { State: 1, ...(stale ? { stale: 1 } : {}) }
 
@@ -377,35 +381,9 @@ await M.eatfunc({
 //   LE.sc.target is the current %What being checked out.  All helpers take that
 //   as their entry point; NaviCado passes it in without knowing the tree shape.
 
-    // ── LE_what_parent ─────────────────────────────────────────────────────
-    // The immediate parent %What (or %Waft for top-level nodes), or undefined
-    // when already at the tree ceiling.
-    // Works for both %What and %Doc nodes as `what` — c.up is stamped on both
-    // by Waft_link_up.
-    LE_what_parent(what: TheC): TheC | undefined {
-        const up = what.c.up as TheC | undefined
-        if (!up || up.sc.Waft !== undefined) return undefined
-        return up
-    },
-
-    // ── LE_what_siblings ──────────────────────────────────────────────────
-    // All siblings at the same level (children of the same parent), including
-    // `what` itself.  Insertion order preserved.
-    //
-    // When `what` is a %Doc (has sc.path), siblings are the other %Doc children
-    // of the parent — stepping between Docs within a %What, or directly within
-    // a flat Waft.  When `what` is a %What, siblings are the %What children.
-    LE_what_siblings(what: TheC): TheC[] {
-        const parent = (what.c.up as TheC | undefined) ?? what.c.waft as TheC | undefined
-        if (!parent) return [what]
-        const is_doc = (what.sc as any).path !== undefined
-        return (is_doc ? parent.o({ Doc: 1 }) : parent.o({ What: 1 })) as TheC[]
-    },
-
     // ── LE_what_depth ──────────────────────────────────────────────────────
-    // Depth of a node in its Waft tree.  0 = direct child of Waft.
-    // Used by NaviCado to ghost the ↑ button at depth 0.
-    // Works for both %What and %Doc nodes.
+    // Depth of a %What in its Waft tree.  0 = direct child of Waft.
+    // Used by NaviCado to ghost the ↑ button at depth 0 (already at the top).
     LE_what_depth(what: TheC): number {
         let depth = 0
         let node  = what.c.up as TheC | undefined
@@ -416,9 +394,27 @@ await M.eatfunc({
         return depth
     },
 
+    // ── LE_what_parent ─────────────────────────────────────────────────────
+    // The immediate parent %What, or undefined when already at the top level
+    // (parent is the Waft itself).
+    LE_what_parent(what: TheC): TheC | undefined {
+        const up = what.c.up as TheC | undefined
+        if (!up || up.sc.Waft !== undefined) return undefined
+        return up
+    },
+
+    // ── LE_what_siblings ──────────────────────────────────────────────────
+    // All %What siblings at the same level (children of the same parent),
+    // including `what` itself.  Insertion order preserved.
+    LE_what_siblings(what: TheC): TheC[] {
+        const parent = (what.c.up as TheC | undefined) ?? what.c.waft as TheC | undefined
+        if (!parent) return [what]
+        return parent.o({ What: 1 }) as TheC[]
+    },
+
     // ── LE_what_next / LE_what_prev ────────────────────────────────────────
-    // Next or previous sibling at the same level.  Works for %What and %Doc
-    // nodes alike.  Returns undefined at the boundary — NaviCado ghosts.
+    // Next or previous sibling %What at the same level.  Returns undefined
+    // when already at the boundary — NaviCado ghosts the button.
     LE_what_next(what: TheC): TheC | undefined {
         const sibs = this.LE_what_siblings(what)
         const idx  = sibs.indexOf(what)
@@ -430,6 +426,8 @@ await M.eatfunc({
         const idx  = sibs.indexOf(what)
         return idx > 0 ? sibs[idx - 1] : undefined
     },
+
+    // ── LE_what_waft ──────────────────────────────────────────────────────
     // The containing Waft particle for a What.  Cached on c.waft by
     // Waft_link_up; falls back to a c.up walk for particles not yet linked
     // (e.g. LE_add_clone'd Whats before the next LE_pull re-links).

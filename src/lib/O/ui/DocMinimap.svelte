@@ -291,11 +291,13 @@
         return languinio?.ob({ LE: 1 })[0] as TheC | undefined
     })
     let _graft_spin = $state(false)
+    let _stale_spin = $state(false)
     $effect(() => {
         void languinio?.vers
         const grafting = !!languinio?.ob({ spinner: 'grafted' }).length
         if (grafting) { _graft_spin = true }
         else          { setTimeout(() => { _graft_spin = false }, 333) }
+        _stale_spin = !!languinio?.ob({ spinner: 'stale' }).length
     })
 
     let total_lines = $derived.by(() => {
@@ -657,6 +659,7 @@
             {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
         </span>
         {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
+        {#if _stale_spin}<span class="lmm-stale-spin" title="Understanding stale — remote moved">↻</span>{/if}
     </div>
 
     <NaviCado {H} {LE} />
@@ -827,6 +830,16 @@
         animation: lmm-graft-spin 0.3s linear infinite;
     }
     @keyframes lmm-graft-spin { to { transform: rotate(360deg); } }
+
+    /* stale-phase spinner — amber; Understanding remote has drifted */
+    .lmm-stale-spin {
+        color: rgb(200, 120, 40);
+        font-size: 12px; line-height: 1;
+        flex-shrink: 0;
+        display: inline-block;
+        animation: lmm-stale-spin 0.8s linear infinite;
+    }
+    @keyframes lmm-stale-spin { to { transform: rotate(360deg); } }
 
     /* Unsent bar — only when user changed something since last push. */
     .lmm-wp-bar {
