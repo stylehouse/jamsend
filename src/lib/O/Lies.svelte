@@ -177,46 +177,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Land cursor on the first navigable What in `waft`.
     //   No-op when the cursor is already inside this Waft.
     async Lies_desire_land_cursor(w: TheC, waft: TheC, waft_key: string) {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-        const cur_waft = examining.o({ Spotlight: 1 })[0]?.sc.src_Waft as string | undefined
-        if (cur_waft === waft_key) return
-        const whats = waft.o({ What: 1 }) as TheC[]
-        const first: TheC | undefined =
-            whats.find(wh => H.Lies_what_has_points(wh))
-            ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
-            ?? waft.o({ Doc: 1 })[0] as TheC | undefined
-        if (!first) return
-        await H.Lies_roai_Open(w, first, { waft_key })
-        await H.Lies_set_examining(examining, first, waft_key)
+        await (this as House).Waft_cursor_first(w, waft, waft_key)
     },
 
     // ── Lies_desire_step_once ─────────────────────────────────────────────────
     //   Advance cursor to the next candidate What in the acquired Waft.
     //   Returns true when a step happened, false at the end (pauses playing).
     async Lies_desire_step_once(w: TheC, desire: TheC, waft: TheC, waft_key: string, completion: TheC): Promise<boolean> {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return false
-
-        const all        = waft.o({ What: 1 }) as TheC[]
-        const inhabited  = all.filter(wh => H.Lies_what_has_points(wh))
-        const candidates = inhabited.length ? inhabited : all
-        if (!candidates.length) return false
-
-        const cur_src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
-        const cur_idx  = candidates.findIndex(c => c === cur_src)
-        const next_idx = cur_idx + 1
-
-        if (next_idx >= candidates.length) {
+        const H = this as House
+        const stepped = await H.Waft_cursor_next(w, waft, waft_key)
+        if (!stepped) {
             completion.sc.playing = 0
             ;(w.o({ active_what: 1 })[0] as TheC | undefined)?.bump_version()
-            return false
         }
-        await H.Lies_roai_Open(w, candidates[next_idx], { waft_key })
-        await H.Lies_set_examining(examining, candidates[next_idx], waft_key)
-        return true
+        return stepped
     },
 
     // ── e_Lies_now_Waft ────────────────────────────────────────────────

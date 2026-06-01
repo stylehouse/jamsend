@@ -25,7 +25,10 @@
     //   %examining/%Spotlight,1 is written only through Lies_set_examining,
     //   so the three-step is always atomic.
     //
-    //   - Lies_cursor_next (→ button): step cursor to next %What across Wafts.
+    //   - Waft_cursor_candidates: depth-first collect of inhabited Whats (shared).
+    //   - Waft_cursor_first: land cursor on first candidate in a Waft.
+    //   - Waft_cursor_next: step cursor to next candidate within a Waft.
+    //   - e_Lies_cursor_next (→ button): step cursor across all loaded Wafts.
     //   < Lies_accept_What_Point: echo accepted_push_id back to DocMinimap.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -272,20 +275,96 @@
         await this.Lies_i_Spotlight(examining, src, waft_key)
     },
 
+    // ── Waft_cursor_candidates ────────────────────────────────────────────────
+    //
+    //   Depth-first collect of all %What particles in a Waft (or sub-tree)
+    //   that carry at least one %Point anywhere in their extent.
+    //   Pre-order: a parent What with its own Points appears before its children.
+    //   Returns every inhabited What across all loaded Wafts when w is supplied,
+    //   or within a single Waft subtree when called with the Waft/What directly.
+    //
+    //   Shared by Waft_cursor_first, Waft_cursor_next, and e_Lies_cursor_next
+    //   so "what counts as a cursor stop" is defined in one place.
+    Waft_cursor_candidates(w: TheC): Array<{ what: TheC, waft_key: string }> {
+        const H = this as House
+        const out: Array<{ what: TheC, waft_key: string }> = []
+        const collect = (container: TheC, waft_key: string) => {
+            for (const what of container.o({ What: 1 }) as TheC[]) {
+                if (H.Lies_what_has_points(what)) out.push({ what, waft_key })
+                collect(what, waft_key)
+            }
+        }
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
+            collect(waft, waft.sc.Waft as string)
+        }
+        return out
+    },
+
+    // ── Waft_cursor_first ─────────────────────────────────────────────────────
+    //
+    //   Land the cursor on the first inhabited %What in `waft`.
+    //   No-op when the cursor is already inside this Waft.
+    //   Called by req:desire's land step and by the acquire cold-start path.
+    async Waft_cursor_first(w: TheC, waft: TheC, waft_key: string) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const cur_waft = examining.o({ Spotlight: 1 })[0]?.sc.src_Waft as string | undefined
+        if (cur_waft === waft_key) return
+
+        // Prefer an inhabited %What; fall back to first %Doc when the Waft is fresh.
+        const candidates: Array<TheC> = []
+        const collect = (container: TheC) => {
+            for (const what of container.o({ What: 1 }) as TheC[]) {
+                if (H.Lies_what_has_points(what)) candidates.push(what)
+                collect(what)
+            }
+        }
+        collect(waft)
+        const first: TheC | undefined =
+            candidates[0]
+            ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
+            ?? waft.o({ Doc: 1 })[0] as TheC | undefined
+        if (!first) return
+        await H.Lies_roai_Open(w, first, { waft_key })
+        await H.Lies_set_examining(examining, first, waft_key)
+    },
+
+    // ── Waft_cursor_next ──────────────────────────────────────────────────────
+    //
+    //   Step the cursor to the next inhabited %What inside `waft`.
+    //   Returns true when a step happened, false when already at the end
+    //   (caller can stop playing when false).
+    //
+    //   Scoped to a single Waft — cross-Waft stepping lives in e_Lies_cursor_next.
+    //   < sibling time-slice stepping (↘ / ↓) is Chunk 4c.
+    async Waft_cursor_next(w: TheC, waft: TheC, waft_key: string): Promise<boolean> {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return false
+
+        const all       = waft.o({ What: 1 }) as TheC[]
+        const inhabited = all.filter(wh => H.Lies_what_has_points(wh))
+        const candidates = inhabited.length ? inhabited : all
+        if (!candidates.length) return false
+
+        const cur_src = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const cur_idx = candidates.findIndex(c => c === cur_src)
+        const next_idx = cur_idx + 1
+        if (next_idx >= candidates.length) return false
+
+        await H.Lies_roai_Open(w, candidates[next_idx], { waft_key })
+        await H.Lies_set_examining(examining, candidates[next_idx], waft_key)
+        return true
+    },
+
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────
     //
     //   Fired by the → button in DocMinimap.  Steps the graft cursor to the
-    //   next %What (across all loaded Wafts, in insertion order) that carries
-    //   at least one %Point in its immediate extent.  Wraps around.
+    //   next %What (across all loaded Wafts, depth-first) that carries at
+    //   least one %Point in its extent.  Wraps around across Wafts.
     //
-    //   The cursor unit is now a %What, not a %Doc.  wpt.sc.src is set to the
-    //   %What particle; LangGraft reads %Point children off it directly.  If the
-    //   %What holds %Doc children instead of direct %Points (section-level
-    //   grouping rather than time-slice), Lies_ensure_doc_loaded loads the first
-    //   Doc inside so CM has something to show.
-    //
-    //   Position is tracked by particle identity (cur_src === candidate.what),
-    //   not path — a %What has a label, not a path.
+    //   Position is tracked by particle identity — a %What has a label, not a path.
     //
     //   e.sc: { dock_path: string }  — current active doc path (unused; kept for
     //     caller compat; identity tracking supersedes path-based position finding)
@@ -296,33 +375,15 @@
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
 
-        // Collect all candidate %What particles across all loaded Wafts, in
-        // depth-first order.  A %What is a candidate when it has at least one
-        // Point at any depth — direct, inside a %Doc child, or inside a nested %What.
-        const candidates: Array<{ what: TheC, waft_key: string }> = []
-        const collect_whats = (container: TheC, waft_key: string) => {
-            for (const what of container.o({ What: 1 }) as TheC[]) {
-                if (H.Lies_what_has_points(what))
-                    candidates.push({ what, waft_key })
-                collect_whats(what, waft_key)   // recurse into sub-Whats
-            }
-        }
-        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            collect_whats(waft, waft.sc.Waft as string)
-        }
+        const candidates = H.Waft_cursor_candidates(w)
         if (!candidates.length) return
 
-        // Find position by identity of the current src particle.
         const cur_src  = (examining.o({ Spotlight: 1 })[0] as TheC | undefined)
             ?.sc.src as TheC | undefined
         const cur_idx  = candidates.findIndex(c => c.what === cur_src)
         const next_idx = (cur_idx + 1) % candidates.length
         const { what, waft_key } = candidates[next_idx]
 
-        // Ensure a Doc is loaded so CM has something to show.
-        // %What may carry direct %Point children (time-slice) or %Doc children
-        // (section grouping) — either way we queue a load so CM is ready.
-        const doc_path = H.Lies_what_first_doc_path(what)
         await H.Lies_roai_Open(w, what, { waft_key })
         await H.Lies_set_examining(examining, what, waft_key)
     },
