@@ -102,10 +102,11 @@
     //
     // ── Understanding hold ───────────────────────────────────────────────────
     //
-    //   w/{Languinio:1}/{LE:1} — same-object hold on w:Lies/{LE:1}.
+    //   w/{Languinio:1}/{LE:1} — same-object hold on the active /%Dock/%LE.
     //   Installed by e_Lang_LE_arm each time Lies_set_examining fires.
-    //   Langui reads LE_clones() and %State directly from it.
-    //   The hold is a reference, not a copy — %LE lives on w:Lies.
+    //   Re-pointed on active_dock change; Langui reads LE_clones() and %State
+    //   directly from it without a cross-world round-trip.
+    //   /%LE lives on the Dock, not on w:Lies.
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
@@ -454,30 +455,42 @@
 
     // ── e_Lang_LE_arm ─────────────────────────────────────────────────────────
     //
-    //   Fired by Lies (via Lies_set_examining) whenever the Understanding is
-    //   re-aimed at a new src.  Installs the live %LE particle as a same-object
-    //   hold inside %Languinio so Langui can read LE_clones() and %State without
-    //   a cross-world round-trip.
+    //   Fired by Lies (via Lies_set_examining) whenever the cursor moves to a
+    //   new src.  Finds or creates /%LE on the active Dock, arms + pulls it,
+    //   then installs it as a same-object hold inside %Languinio so Langui can
+    //   reach LE_clones() and %State without a cross-world round-trip.
     //
-    //   i() always inserts — it does not deduplicate by reference.  Calling
-    //   languinio.i(LE) twice gives two /%LE children pointing at the same object.
-    //   The canonical fix: r({LE:1},{}) clears all prior holds, then i(LE) after.
+    //   /%LE is stable on the Dock — LE_arm mutates it in place rather than
+    //   replacing it, so the same TheC ref survives every re-arm.
     //
-    //   %LE itself is stable for the Lies session — LE_arm mutates it in place
-    //   rather than replacing it, so the same TheC ref survives every re-arm.
+    //   i() always inserts — not deduplicated by reference.  r({LE:1},{}) first
+    //   clears any prior hold; then i(LE) inserts once.
     //
-    //   e.sc: { LE: TheC }  — the live w:Lies/{LE:1} particle
+    //   e.sc: { src: TheC, waft_key: string }
     async e_Lang_LE_arm(A: TheC, w: TheC, e: TheC) {
-        const LE = e.sc.LE as TheC | undefined
-        if (!LE) return
+        const H        = this as House
+        const src      = e.sc.src as TheC | undefined
+        const waft_key = e.sc.waft_key as string | undefined
+        if (!src || !waft_key) return
+
+        // find active Dock — the one that matches the src's doc path
+        const doc_path = src.sc.path as string | undefined
+            ?? (src.o({ Doc: 1 })[0] as TheC | undefined)?.sc.path as string | undefined
+        const dock = doc_path
+            ? w.o({ dock: doc_path })[0] as TheC | undefined
+            : (w.o({ dock: 1 }) as TheC[]).find(d => d.sc.active)
+        if (!dock) return
+
+        // /%LE lives on the Dock — stable, not inside replace()
+        const LE = dock.oai({ LE: 1 })
+        H.LE_arm(LE, src)
+        await H.LE_pull(LE)
+
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
-        // r({LE:1},{}) clears all prior holds; i(LE) inserts once after.
-        // i() always inserts — never deduplicates by reference — so the r() first
-        // is necessary: two i(LE) calls would give two /%LE children, same ref.
         await languinio.r({ LE: 1 }, {})
         languinio.i(LE)
-        console.log(`🔗 Lang got %LE hold from Lies`)
+        console.log(`🔗 Lang got /%LE on dock:${doc_path ?? '?'} from Lies`)
     },
 
 //#region Languish

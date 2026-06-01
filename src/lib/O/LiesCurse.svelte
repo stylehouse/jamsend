@@ -272,16 +272,11 @@
 
         // ── LE graft seam ─────────────────────────────────────────────────────
         //
-        //   Arm + pull the Understanding for any src, then fire Lang_LE_arm
-        //   cross-world so Lang installs the same-object hold in Languinio.
-        const w_lies = examining.c.w as TheC | undefined
-        if (w_lies) {
-            const H  = this as House
-            const LE = w_lies.oai({ LE: 1 })
-            H.LE_arm(LE, src)
-            await H.LE_pull(LE)
-            H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
-        }
+        //   Fire e_Lang_LE_arm cross-world with the src and waft_key.
+        //   Lang finds or creates /%Dock/%LE, arms it, pulls, and installs
+        //   the Languinio same-object hold.  LE lives in the Dock, not here.
+        const H = this as House
+        H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { src, waft_key })
     },
 
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────

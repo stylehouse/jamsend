@@ -14,22 +14,6 @@ w:Lies
         sc.src      $C → %What or %Doc    ← cursor target; %What from cursor_next,
                                              %Doc from cold-start / active_dock watch
         sc.src_Waft string
-  /%LE                                    ← stable; not inside replace()
-    /%State                               ← synthesised: armed/changey/stale
-    // %push_dirty — fault child; present only when push didn't land clean
-    /%Seem:origin
-        sc.Se  Selection()
-        sc.C   → live %What               ← the remote; never edited
-        /%Demonstrations:origin
-          /…D   one per child             ← awareness sphere; neus/goners = stale signal
-        /%News:origin
-    /%Seem:working
-        sc.Se  Selection()
-        sc.C   → clone root               ← our editable tree
-        /%Demonstrations:working
-          /…D   one per clone
-            /%Understandable              ← U node; unshowing/unaccepted live here
-        /%News:working
 
 ave/%active_dock                          ← reactive signal: which %Dock is foregrounded
   sc.path  string
@@ -41,13 +25,25 @@ w:Lang
       /%Compile
         /%Output
       /%bookmark,N
-      // < /%LE — per-Dock Understanding; armed when Lies_set_examining aims here
+      /%LE                                ← stable; not inside replace()
+        /%State                           ← synthesised: armed/changey/stale
+        // %push_dirty — fault; present only when push didn't land clean
+        /%Seem:origin
+            sc.Se  Selection()
+            sc.C   → live OC%What         ← the remote; never edited
+            /D%Demonstrations:origin**    ← awareness sphere; neus/goners = stale signal
+            /%News:origin
+        /%Seem:working
+            sc.Se  Selection()
+            sc.C   → clone C%What         ← our editable tree
+            /D%Demonstrations:working**
+              /%Understandable            ← U node; unshowing/unaccepted live here
+            /%News:working
 
   /%Languinio
     /%Change                              ← three-leg display strip (storage/backend/compile)
-    /%LE                                  ← same-object hold on w:Lies/{LE:1} ✓ wired
-                                          //   re-installed on each Lies_set_examining call
-                                          //   via e_Lang_LE_arm cross-world event
+    // /%LE — same-object hold on whichever /%Dock/%LE is foregrounded
+    //   re-pointed on active_dock change via e_Lang_LE_arm
 
 ave/%lang_dock,path                       ← text sync; sc.text / sc.text_dige / sc.disk_dige
 ```
@@ -57,9 +53,11 @@ Key structural facts:
 - `LiesEnd` methods run on the same House as `Lies` — `H.LE_arm`, `H.LE_pull`
   etc. are available from any Lies tick or LiesCurse callback without a
   cross-world round-trip.
-- The Understanding is **Lies's checkout, Lang's read**: Lang reaches it through
-  the `%Languinio/%LE` same-object hold, so it can call `LE_clones()` and check
-  `%State` without messaging.
+- `/%LE` lives under `/%Dock,path` in `w:Lang` — stable, not inside `replace()`,
+  so `LE/*` and `LE.c.*` survive pulls.  One LE per Dock.
+- The Understanding is **Lies's checkout, Lang's read**: Lang reaches the active
+  LE through the `%Languinio` same-object hold (`/%Languinio/%LE`), re-pointed
+  on each `active_dock` change via `e_Lang_LE_arm`.
 - `Lies_set_examining` is the single seam: on a cursor move it calls
   `H.LE_arm(LE, src)` then fires `e_Lang_LE_arm` cross-world after the first pull.
 - `i()` always inserts (never deduplicates), so `e_Lang_LE_arm` does
@@ -133,9 +131,9 @@ correct for now — they are path-driven.  LangGraft tolerates either: `src_path
 is `undefined` for a `%What` and the guard short-circuits harmlessly.
 
 ```
-// < e_Lies_set_cursor (Liesui Doc-row click) passes a %Doc src — valid now
-//   that LE arms for any src type.  Needs Liesui to surface Waft-level rows
-//   as clickable targets before it can navigate at %What granularity.
+// < e_Lies_set_cursor should eventually arm the parent %What when a %Doc is
+//   clicked inside a %What-structured Waft.  Needs Liesui to surface %What
+//   rows as clickable targets first.
 ```
 
 ### 4b — `req:desire` skeleton ✓ landed; playing/pause loop next
