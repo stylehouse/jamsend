@@ -533,49 +533,43 @@
             const msub = H.reqy(maneuvre)
 
             // req:checkout — LE_arm + LE_pull for this src.
-            //   Always the first phase; subsequent phases read LE_clones().
+            //   First phase; subsequent phases read LE_clones().
+            //   Each maneuvre is a fresh particle so the do_fn fires exactly once.
             ;(await msub.doai({ req: 'checkout' }))?.(async (checkout: TheC) => {
-                if (H.reqonce(checkout, 'ran')) {
-                    H.LE_arm(LE, src)
-                    await H.LE_pull(LE)
-                    console.log(`🔗 workon checkout: LE armed at ${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
-                }
+                H.LE_arm(LE, src)
+                await H.LE_pull(LE)
+                console.log(`🔗 workon checkout: LE armed at ${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
                 msub.finish(checkout)
             })
 
             // req:load_doc — derive a doc path from src and ensure CM has it open.
-            //   %What src: use Lies_what_first_doc_path (first %Doc child's path).
+            //   %What src: use first %Doc child's path.
             //   %Doc src:  use sc.path directly.
-            //   No doc (pure %What with direct %Points only, no %Doc child):
-            //     NaviCado surfaces "no doc" state; CM is left on whatever was last
-            //     open.  This is a valid title-page state, not an error.
+            //   No doc (pure %What with direct %Points, no %Doc child):
+            //     valid title-page state — CM stays on whatever was last open.
             ;(await msub.doai({ req: 'load_doc' }))?.(async (load_doc: TheC) => {
-                if (H.reqonce(load_doc, 'ran')) {
-                    const doc_path = H.Lang_src_doc_path(src)
-                    load_doc.sc.doc_path = doc_path ?? null
-                    if (doc_path) {
-                        // Activate the dock if it already exists; otherwise wait
-                        // for Languish to open it (LiesCurse queued the open_req).
-                        const docks = w.o({ docks: 1 })[0] as TheC | undefined
-                        const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
-                        if (dock) H.Lang_set_active_dock(w, doc_path)
-                    }
+                const doc_path = H.Lang_src_doc_path(src)
+                load_doc.sc.doc_path = doc_path ?? null
+                if (doc_path) {
+                    // Activate the dock if already present; otherwise Languish will
+                    // open it (LiesCurse queued the open_req alongside the cursor move).
+                    const docks = w.o({ docks: 1 })[0] as TheC | undefined
+                    const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
+                    if (dock) H.Lang_set_active_dock(w, doc_path)
                 }
                 msub.finish(load_doc)
             })
 
             // req:graft — drive the Pmirror graft pass for the active dock.
-            //   Mirrors req:grafted inside Languish but is cursor-driven, not
-            //   open-driven, so it fires on every cursor jump after the index exists.
+            //   Cursor-driven (not open-driven), so it fires on every cursor jump
+            //   once the compile index exists.
             ;(await msub.doai({ req: 'graft' }))?.(async (graft: TheC) => {
-                if (H.reqonce(graft, 'ran')) {
-                    const doc_path = H.Lang_src_doc_path(src)
-                    if (doc_path) {
-                        const docks = w.o({ docks: 1 })[0] as TheC | undefined
-                        const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
-                        if (dock?.o({ Compile: 1 })[0]?.oa({ methods: 1 })) {
-                            await H.Lang_graft_points_once(w, dock)
-                        }
+                const doc_path = H.Lang_src_doc_path(src)
+                if (doc_path) {
+                    const docks = w.o({ docks: 1 })[0] as TheC | undefined
+                    const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
+                    if (dock?.o({ Compile: 1 })[0]?.oa({ methods: 1 })) {
+                        await H.Lang_graft_points_once(w, dock)
                     }
                 }
                 msub.finish(graft)
