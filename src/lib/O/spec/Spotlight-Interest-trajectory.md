@@ -1,304 +1,326 @@
 # Spotlight ↔ Interest — the cursor modernisation
 
 `Waft_spec.md` owns the decoration design.  `Waft-palmtree-trajectory.md` owns
-the reqy slice.  This doc owns the **cursor symmetry** slice: who holds "what is
-being looked at" on each side, where playback lives, and how the LE clone tree
-finally reaches the screen.
+the reqy slice.  This doc owns the **cursor symmetry**: who holds "what is being
+looked at" on each side, where playback lives, how a doc gets furnished, and how
+the clone tree finally reaches the screen.
 
-The thesis in one line: **Lies holds an intention (`%Spotlight`), Lang holds a
-realisation (`%Interest`), and the second is derived from the first plus the
-Understanding — not a third free-floating particle.**
+The crux, in two lines:
+
+```
+%examining/%Spotlight   src = LE.sc.target        — the original, live in the Waft
+%Languinio/%Interest    src = working clone root  — the Understanding of it
+```
+
+These are not two views of one thing.  They are the **two ends of the checkout** —
+the source and its clone — and they divide the labour: Spotlight (original) owns
+navigation and glow; Interest (clone) owns render and edit.  Everything below
+follows from that split.
 
 ---
 
 ## 0. Spec-vs-built drift (reconcile first)
 
-Before proposing, three places where the running code has already moved past
-the prose:
-
-- `LiesEnd_spec.md` "Graft seam" still describes Lies owning `%LE` on its own
-  `/%Dock/%LE` and handing the live particle across via
-  `i_elvisto(Lang, 'Lang_LE_arm', {LE})`.  **The built code does not do this.**
-  `Lies_i_Spotlight` fires `Lang_workon_update,{src}`; Lang arms *its own*
-  `/req:workon/{LE:1}` in `req:checkout`.  `e_Lang_LE_arm` is gone.  So **LE is
-  Lang's now** — Lies only ships `%src`.  Good change; the spec is stale, not
-  the code.
-
-- `Waft_spec.md` defines `/%active_what/sc:path/sc:what_keys/c:what` as the
-  breadcrumb.  The built `%active_what` carries none of that — only
-  `c.completion` and (through it) `sc.playing`.  It became a transport handle,
-  not a breadcrumb.  Its name now lies.
-
-- `Seem:working%C` (the clone tree, the whole reason the two-Seem model exists)
-  is read by the **edit** paths (`e_Lang_LE_edit|add|drop` → `LE_clones`) but
-  **not** by the **render** path.  `Lang_graft_points_once` reads
-  `%Spotlight.sc.src` → `src_C.o({Point:1})` — the live source, never the
-  clones.  The U sphere is stranded.
-
-These three are the same shape of problem: **two notions of "what we're looking
-at" that should be one notion seen from two ends.**  The modernisation collapses
-them.
+- `LiesEnd_spec.md` "Graft seam" still has Lies owning `%LE` and handing the live
+  particle across via `Lang_LE_arm`.  **Gone.**  `Lies_i_Spotlight` fires
+  `Lang_workon_update,{src}`; Lang arms its own `/req:workon/{LE:1}` in
+  `req:checkout`.  **LE is Lang's**; Lies only ships `%src`.
+- `%active_what` and `sc.what_keys` are deleted from `Waft_spec.md` (done).  They
+  are deleted here too — see §3d.
+- `Seem:working%C` (the clones) is read by the edit paths
+  (`e_Lang_LE_edit|add|drop` → `LE_clones`) but **not** by the render path —
+  `Lang_graft_points_once` reads `%Spotlight.sc.src` → the live source.  The U
+  sphere is write-only.  §3c fixes this; it is the keystone.
 
 ---
 
 ## 1. Catalogue — the cursor systems as they stand
 
-### `%Spotlight` — the Lies cursor (the one real cursor)
+### `%Spotlight` — the Lies cursor (healthy)
 
 ```
 w:Lies/%examining/%Spotlight,1
   sc.src              $C → %What | %Doc      ← the live Waft particle
-  sc.src_Waft         waft_key (snap-readable; c.up chain also reaches it)
-  sc.accepted_push_id Date.now() | 1(cold)  ← DocMinimap round-trip token
+  sc.src_Waft         waft_key               ← redundant; dropped in §3a
+  sc.accepted_push_id Date.now() | 1(cold)
   sc.accepted_entries { spec, showing }[]
 ```
 
-Written **only** through `Lies_i_Spotlight` (LiesCurse) — the atomic seam.  Every
-cursor move (cold-start, `e_Lies_active_doc_changed`, `e_Lies_set_cursor`,
-`e_Lies_cursor_next`, `e_Lies_cursor_what`, desire step) funnels here, and the
-seam ends by firing `Lang_workon_update,{src}` across worlds.  `Waft.svelte`
-glows the row whose `%What` is `===` `Spotlight.sc.src`.
+Written only through `Lies_i_Spotlight` — the atomic seam.  Every move funnels
+here and ends by firing `Lang_workon_update,{src}` across worlds.  `Waft.svelte`
+glows the row whose `%What` is `===` `Spotlight.sc.src`.  This is the model.
 
-This particle is healthy.  It is the model for everything below.
-
-### `%Languinio` — Lang's signal particle (a half-built Interest)
+### `%Languinio` — Lang's signal particle (a bag of holds → §3b makes it a focus)
 
 ```
 w:Lang/%Languinio
   c.w                 back-ref
-  /%LE                same-object hold → /req:workon/{LE:1}   (installed by req:awaiting)
-  /%dock,path         same-object hold → docks/{dock:path}    (re-pointed by Lang_set_active_dock)
+  /%LE                same-object hold → /req:workon/{LE:1}
+  /%dock,path         same-object hold → docks/{dock:path}
   /%spinner,stale     present while origin pull drifted
 ```
 
-`%Languinio` is already "Lang's `%examining`" — enrolled in ave, parallel
-signal.  But it has no single concept of *focus*; it is a bag of three
-same-object holds (`%LE`, `%dock`, `%spinner`) that consumers reach into
-individually.  Langui reads `languinio.o({LE:1})[0]`; DocMinimap still reads
-`sig.c.dock` directly (migration `// <` pending).  This is the thing that wants
-to *become* `%Interest`.
+Enrolled in ave, parallel to `%examining`, but with no single notion of focus —
+consumers reach `o({LE:1})`, `c.dock`, `o({spinner})` separately.
 
-### `%active_what` — the identity-crisis particle
+### `%active_what` — deleted (was the identity-crisis particle)
 
-```
-w:Lies/%active_what          (in ave)
-  c.w                  back-ref
-  c.completion         → /req:desire/req:completion
-  // sc.playing read THROUGH completion, not stored here
-```
+Named for a breadcrumb, used as a `c.completion` handle, while the genuine
+"active What" was always `%Spotlight.sc.src`.  Three referents, wrong name.
+Gone — its jobs reassigned in §3a/§3d.
 
-Named for the breadcrumb (`Waft_spec`), used as a completion handle (NaviCado's
-transport bar).  It carries no `path|what_keys|c.what`.  Its only readers are
-NaviCado (`H.ave.ob({active_what:1})` → `c.completion` → `sc.playing`) and
-`Lies_desire_step_once` (bumps it when playback hits the end).  **Everything it
-is actually used for is either the playback (`req:completion`) or recomputable
-from `LE.sc.target`.**
-
-### The LE engine — push / pull (healthy, Lang-side)
+### The LE engine — push / pull (Lang-side, sound)
 
 ```
 /req:workon/{LE:1}                     stable for the Lang instance
   /%State          sc.armed|changey|stale
-  // %push_dirty   fault child; present only when a push didn't land clean
+  // %push_dirty   fault child; §3e moves this onto req:push
   /%Seem:origin    Se:Selection, C:$src    — awareness: re-walk → goners/neus
   /%Seem:working   Se:Selection, C:clones  — the editable clone tree + U sphere
     .../%Demonstrations:working/%Understandable   per-clone meanings (c.U)
 ```
 
-`LE_arm(LE,src)` → `LE_pull` (origin awareness walk, first-pull `Seem_clone_C`,
-working walk, `%State`) → edits on `LE_clones` / `clone.c.U` →
-`LE_encode_compare` (enWaft origin-slice vs working) → `LE_push` (replace-back
-skipping `U%unaccepted`, re-pull, `%push_dirty` on fault).  This is the strong
-part of the system and the modernisation leaves its internals alone.  The U
-sphere — `unshowing`, `unaccepted`, and the coming `class` — lives on
-`clone.c.U`, never in `clone.sc`, so enWaft never sees it.
+`LE_arm` → `LE_pull` (origin awareness, first-pull `Seem_clone_C`, working walk,
+`%State`) → edits on `LE_clones`/`clone.c.U` → `LE_encode_compare` → `LE_push`.
+The U sphere (`unshowing`, `unaccepted`, the coming `class`) lives on `clone.c.U`,
+never in `clone.sc`, so enWaft never sees it.
 
 ### The graft — LangGraft (the stranded render path)
 
-`Lang_graft_points_once(w, dock)` is what actually paints.  It reads the cursor
-cross-world (`ave/%examining/%Spotlight`), takes `points = src_C.o({Point:1})`
-**off the live source**, and `.replace()`s `dock/%Pmirrors/%Pmirror,$waft,$spec`
-to mint CM marks.  It never touches `LE_clones`.  So:
+`Lang_graft_points_once` reads the cursor cross-world, takes
+`points = src_C.o({Point:1})` off the **live source**, and `.replace()`s
+`dock/%Pmirrors/%Pmirror,$waft,$spec` to mint CM marks.  It never touches the
+clones, so `unaccepted` still paints, `unshowing` can't fold, `class` can't reach
+CM.
 
-- a clone marked `U%unaccepted` still grafts (it's still on the source);
-- a clone's `class:'focus'` can't reach the Pmirror;
-- `U%unshowing` can't fold a row out of CM.
-
-The Understanding edits one tree; the screen renders another.
-
-### desire / completion — the transport
+### Doc-open today (the poll we will kill)
 
 ```
-w:Lies/req:desire
-  /req:acquire        one-shot Waft lock
-  /%Waft,key          c.src → the Waft particle
-  /req:completion     open-ended; sc.playing:0|1; drains play/pause/step elvises
-  /req:git            < Waftlet accumulator
+Lang/maneuvre/req:load_doc            re-fires Lies_roai_Open_req every ttlilt re-entry
+  → Lies_roai_Open → req:Open (wread)        loads text from the Lies store
+    → elvis Lang_open_dock,{path,text}       crosses to Lang
+      → Lang/req:Languish,path               mints the dock (text_loaded/compile phases)
+  ← Lang polls w.o({docks}) until the dock appears
 ```
 
-`req:completion`'s do_fn lands the cursor (`Lies_desire_land_cursor` →
-`Waft_cursor_first`), drains `Lies_desire_play|pause|step` elvises, and
-auto-advances `Waft_cursor_next` while `playing`.  It is wired to NaviCado only
-through `active_what.c.completion`.
+Fire-and-forget elvises bridged by a ttlilt poll.  §3f replaces the poll with an
+RPC.
 
 ---
 
-## 2. The three faults, named
+## 2. The faults, named
 
-1. **Stranded U sphere.**  Render reads source, edits write clones.  The two-Seem
-   model's payload (`clone.c.U`) cannot reach CM.  This blocks `unshowing`,
-   blocks `class` decoration (the entire point of `Waft_spec`), and lets
-   `unaccepted` clones keep painting.
-
-2. **`%active_what` means two things and is named for a third.**  Breadcrumb in
-   the spec, completion-handle in the code, and the genuine "active What" is
-   actually `%Spotlight.sc.src`.  Three referents, one particle, wrong name.
-
-3. **Lang has no single focus object.**  `%Languinio` is a bag of holds.
-   Consumers reach `o({LE:1})`, `c.dock`, `o({spinner})` separately, and the
-   breadcrumb (depth / siblings / parent) is recomputed ad-hoc in NaviCado from
-   the LE prop.  No one place answers "what is Lang attending to right now."
+1. **Stranded U sphere.**  Render reads source, edits write clones.  `unshowing`,
+   `class`, and `unaccepted` cannot reach CM.  Blocks all of `Waft_spec`'s
+   decoration.
+2. **No single focus on Lang.**  `%Languinio` is three loose holds; nothing
+   answers "what is Lang attending to."
+3. **Doc-open is a poll.**  `req:load_doc` drives a cross-world load by re-firing
+   an elvis and polling for the result.
 
 ---
 
-## 3. The modernisation — `%Spotlight` ↔ `%Interest`
+## 3. The modernisation
 
-Two particles, one per world, related as **intention → realisation**.
+### 3a. The crux — Spotlight (original) ↔ Interest (clone), and `src_Waft` drops
 
-```
-Lies (the showy end)                    Lang (the understanding end)
-─────────────────────                   ────────────────────────────
-%examining/%Spotlight   ───src──▶        %Languinio/%Interest
-  the intention:                          the realisation:
-    src ($What|$Doc)                        c.LE      → /req:workon/{LE:1}
-    src_Waft                                c.dock    → docks/{dock:path}
-    accepted_*                              c.what    → LE.sc.target  (the active %What)
-    /req:completion  ◀── transport          (depth | siblings | parent: derived via LE_what_*)
-                       (moved here)          c.spinner (folded in from the loose hold)
-```
-
-Lies owns intention because Lies is the commissioning, showy end — it decides
-*what to light up* and *whether to auto-advance*.  Lang owns realisation because
-Lang is the one that actually checked the thing out, holds the clones, and walks
-the What tree.  Neither side reaches into the other's particle; the only wire
-between them is the existing `src` on `Lang_workon_update` (and the same-object
-`c.*` refs the holds already use).
-
-### 3a. `%Spotlight` gains the transport — kill `active_what.c.completion`
-
-Move `req:completion` to hang off `%examining` so the cursor particle carries
-both *what is shown* and *whether it is advancing*:
+The invariant the seam already maintains, now named and leaned on:
 
 ```
-w:Lies/%examining
-  /%Spotlight,1            the lit target  (unchanged)
-  /req:completion          sc.playing:0|1  (was reached via active_what.c.completion)
+%Spotlight.src  ≡  LE.sc.target        the original %What, structurally in the Waft
+%Interest.src   ≡  working.sc.C         the clone root, the Understanding of it
 ```
 
-`req:desire/req:acquire/req:git` stay where they are (the *will* and the Waft
-lock are desire's, not the cursor's).  Only `req:completion` — the live
-play/pause/step state that the UI watches — climbs onto `%examining`, the
-already-enrolled signal.  NaviCado then reads transport from the same particle
-it reads the cursor from, and `active_what` loses its only real job.
+- **Spotlight = original → navigation + glow.**  `LE_what_depth|parent|prev|next`
+  run on `LE.sc.target`; the glow tests `=== Spotlight.src`.  "Where am I in the
+  Waft" is an original-tree question.
+- **Interest = clone → render + edit.**  Graft reads `Interest.src.o({Point:1})`
+  — clones carrying `c.U` (§3c); `LE_clones` editing already writes here.  "What
+  does my Understanding say" is a clone question.
 
-`Lies_desire_step_once`'s end-of-playback bump retargets from
-`active_what` to `examining` (or to `completion` directly — it already has the
-ref in scope).
+The clone never needs internal up-links (nav rides the original), so it stays
+detached.  Its waft is reached by a **scalar back-ref stamped at clone time**:
 
-> Trade-off: `req:completion` is a reqy particle and `%examining` is an ave
-> signal.  Hanging a req under a signal is slightly unusual, but `%examining`
-> already mixes a child particle (`%Spotlight`) with a back-ref (`c.w`), so the
-> precedent holds.  If that grates, the lighter-touch version is to keep
-> `req:completion` under `req:desire` and add `examining.c.completion` — i.e.
-> move the *handle* off `active_what` onto `%examining` without moving the
-> particle.  That alone dissolves `active_what`; the full move is the tidier end
-> state.
+```
+// Seem_clone_C — stamp the clone root's Waft once, at birth.
+//   The clone is detached from the live tree (no c.up into the real Waft, by
+//   design), so it carries a direct scalar ref to its origin's Waft instead.
+//   Cross-domain ref = scalar $C in c.*, never another domain's sc.
+Seem_clone_C(origin) {
+    const src_What = origin.sc.C
+    const root = _C({ ...src_What.sc })
+    root.c.waft = src_What.c.waft          // ← every clone root knows its Waft
+    for (const child of src_What.o({})) root.i({ ...child.sc })
+    return root
+}
+```
+
+So `src_Waft` is gone on both sides: Spotlight reads its own `c.up`/`c.waft`
+(stamped by `Waft_link_up`); Interest reads `Interest.src.c.waft` (stamped above).
+And the safety net the prompt named — "walk across to the Spotlight side and go
+up" — holds as the fallback: LE always knows its target, so
+`LE.sc.target.c.waft` recovers the Waft if a clone ever lands unstamped.
 
 ### 3b. `%Interest` — Lang's one focus object
 
-Promote `%Languinio`'s loose holds into one `%Interest` child whose `c.*` are
-the same-object refs that already exist, plus the derived active-What:
+`%Languinio` keeps its dock hold and gains a focus object:
 
 ```
-w:Lang/%Languinio/%Interest,1
-  c.LE       → /req:workon/{LE:1}        (same-object; was Languinio/%LE)
-  c.dock     → docks/{dock:path}         (same-object; was Languinio/%dock)
-  c.what     → LE.sc.target              (the active %What — the breadcrumb anchor)
-  c.spinner  → folded from the loose %spinner hold
+w:Lang/%Languinio
+  /%Interest,1      src   = working clone root        — the Understanding-pointer
+                    c.LE  → /req:workon/{LE:1}        — handle for nav (LE.sc.target)
+  /%dock,path       same-object hold → docks/{dock:path}   — §3d: replaces ave/%active_dock
 ```
 
-`c.what` is *not* new state — it is `LE.sc.target`, the thing NaviCado already
-derives `depth | has_prev | has_next` from via `LE_what_*`.  Putting it on
-`%Interest` gives the breadcrumb a home that `Waft.svelte` and DocMinimap can
-read (`languinio.ob({Interest:1})[0].c.what`) without each recomputing from a raw
-LE prop.  `req:awaiting` (which already installs the `%LE` hold once) becomes
-"install `%Interest` once"; `Lang_set_active_dock` re-points `Interest.c.dock`
-and `Interest.c.spinner` instead of the loose holds, then bumps `%Interest`.
+`%Interest` is the answer to fault 2 — one particle that *is* "what Lang is
+attending to": the clone (its `src`) and the LE handle (its `c.LE`).  NaviCado
+reads `languinio.ob({Interest:1})[0]` and reaches both the clone and (via `c.LE`)
+the original for nav.  The dock hold sits beside it (foreground doc ≠ cursored
+What — you can tab docs independently, which is why active-dock can't be derived
+from Interest and needs its own hold).
 
-The breadcrumb *labels* (`what_keys`) the spec wanted are then a pure read:
-walk `LE_what_parent` up from `c.what`, collecting `.sc.label`.  No stored
-`what_keys` array to keep in sync — `// <` the spec's `sc.what_keys` is replaced
-by a derivation, which is the more-elegant form the prompt is reaching for.
+**Lifecycle: drop + recreate per move, driven by LE action.**  `LE_arm` drops the
+Seems and re-clones on first pull; `req:checkout` recreates `%Interest` pointing
+at the fresh `working.sc.C` once `LE_pull` mints it.  The stale Interest (old
+clone) is dropped on re-arm — same drop discipline LE already runs on its Seems.
 
-> Reactivity note (`reactivity_docs.md`): readers use `languinio.ob({Interest:1})`
-> (not `.o()`) so a re-point bumps them, and chain on `vers`
-> (`$derived(Interest && Interest.vers && Interest.c.what)`) rather than
-> `$derived.by(void …)`.  NaviCado collapses from "two particles (LE prop +
-> `ave/active_what`)" to "one particle (`%Interest`)", and its `$derived.by(void
-> …)` transport blocks become inline `vers &&` chains once `completion` is read
-> off `%examining`.
+### 3c. The graft reads clones — wire the U sphere (keystone)
 
-### 3c. The graft reads clones — wire the U sphere at last
-
-This is the load-bearing change.  `Lang_graft_points_once` stops sourcing Points
-from the live `src_C` and sources them from the Understanding:
+`Lang_graft_points_once` sources Points from the Understanding, not the source:
 
 ```
 // before — renders the source, blind to the Understanding
 const points = src_C.o({ Point: 1 })
 
-// after — renders what Lang actually understands; U sphere included
-const LE     = interest?.c.LE as TheC | undefined
-const points = LE ? H.LE_accepted_clones(LE) : src_C.o({ Point: 1 })
-//  LE_accepted_clones already drops U%unaccepted.
-//  each clone.c.U carries unshowing | class for the Pmirror to honour.
+// after — renders what Lang understands; U sphere included
+const interest = languinio?.o({ Interest: 1 })[0]
+const LE       = interest?.c.LE
+const clones   = LE ? H.LE_accepted_clones(LE) : undefined   // drops U%unaccepted
+const points   = clones ?? src_C.o({ Point: 1 })             // src_C: pre-pull fallback only
+//  per clone:  clone.c.U?.sc.unshowing  → skip minting a Pmirror
+//              clone.c.U?.sc.class       → stamp on the Pmirror for the CM decoration field
 ```
 
-Consequences, each closing one of today's `// <`:
+This closes four standing `// <`s at once:
 
-- `unaccepted` clones drop out of CM for free (filtered by
-  `LE_accepted_clones`) — same predicate `LE_push` and `Seem_toString` use, so
-  screen, push, and encode finally agree on what exists.
-- `unshowing` (`clone.c.U?.sc.unshowing`) skips minting a Pmirror — the
-  `Waft_spec` fold-out behaviour, now reachable.
-- `class` (`clone.c.U?.sc.class`, the coming `focus|caution|dim|ghost` set)
-  rides onto the Pmirror so the CM decoration field can paint it.  The clone is
-  where presentation meaning belongs; the source `%Point` stays clean.
+- `unaccepted` clones drop from CM for free — same predicate `LE_push` and
+  `Seem_toString` use, so screen, push, and encode finally agree on what exists.
+- `unshowing` folds a clone out of the Lang UI (`Waft_spec` behaviour, reachable).
+- `class` (`focus|caution|dim|ghost`) rides to the Pmirror; presentation meaning
+  stays on the clone, the source `%Point` stays clean.
 
-The `src_C` fallback stays for the pre-pull window (cursor set, `LE_pull` not
-yet run — `LE_clones` returns `[]`), so a freshly-armed cursor still grafts the
-raw source until the Understanding catches up.  The Pmirror identity stays
-`$waft,$spec`, so resolve()'s carry-over is unaffected by the source swap.
+Decoration (applying `unshowing`/`class`) is folded into the graft tail rather
+than split into a separate `req:Showing` — minting the Pmirror and stamping its
+class are one pass over the same clones, so a second phase buys nothing.  (If a
+case later wants to re-decorate without re-grafting, split it then; `// <` until
+there's a reason.)
 
-> Subtlety: the graft must read `clone.c.U`, and `c.U` is only wired after the
-> first `LE_pull` (it's `_Seem_CDUsive`'s job).  `req:encode` already runs after
-> `req:graft` in the maneuvre maz-order — but graft now *depends on* the pull's U
-> wiring, which `req:checkout` (maz:3) does before graft (maz:1).  Order already
-> holds.  The only new requirement: graft's cache key must include the working
-> Seem's version (a clone edit should re-graft), so extend
-> `dock.c.graft_cache_key` with `LE working.version` alongside
-> `what_pts_C.version`.
+The `src_C` fallback covers only the pre-pull window (`LE_clones` is `[]` between
+`LE_arm` and the first `LE_pull`), so a freshly-armed cursor still grafts the raw
+source for one tick.  Pmirror identity stays `$waft,$spec`, so resolve()'s
+carry-over is unaffected by the source swap.  The graft cache key gains the
+working Seem's version so a clone edit re-grafts:
 
-### 3d. What dissolves
+```
+const cache_key = `${dock.version}:${job?.version ?? 0}:${what_pts_C?.version ?? 0}:${working?.version ?? 0}|${fingerprint}`
+```
 
-`%active_what` is removed.  Its two readers retarget:
+### 3d. Dissolve `%active_what` and `ave/%active_dock`
 
-- NaviCado transport → `%examining/req:completion` (3a).
-- breadcrumb / "current What" → `%Languinio/%Interest.c.what` (3b).
+- **`%active_what`** is removed.  Its breadcrumb role is gone (breadcrumb deleted —
+  §3g); its transport-handle role moves to `%examining/req:timemachine` (§3a-below).
+- **`ave/%active_dock`** is removed.  `%Languinio/%dock` (the same-object hold that
+  already exists) becomes the single foreground-doc truth; Langui watches
+  `%Languinio` (already enrolled in ave) instead of `ave/%active_dock`.
+  `Lang_set_active_dock` re-points `%Languinio/%dock` and keeps the
+  `Lies_active_doc_changed` elvis (the cross-world notify stays; only the ave
+  storage goes).  `w.c.active_dock_path` stays as a cheap routing string (it's
+  free) or reads off `Languinio.o({dock})[0].sc.dock`.
 
-Nothing else holds it.  `Lies.svelte`'s one-time setup drops the
-`oai({active_what:1})` block; the desire cluster wires `completion` under
-`%examining` instead of `active_what.c.completion`.
+### 3e/3a-below. `req:timemachine` — the transport, on the cursor
+
+`req:completion` is renamed `req:timemachine` (vivid: it steps the What tree
+forward/back in time) and hangs off the cursor:
+
+```
+w:Lies/%examining
+  /%Spotlight,1            the lit target
+  /req:timemachine         sc.playing:0|1  — drains play/pause/step elvises; auto-advances
+
+w:Lies/req:desire          the *will* and the Waft lock stay here
+  /req:acquire             one-shot Waft lock
+  /%Waft,key               c.src → the Waft
+  /req:git                 the push home (§3e)
+```
+
+Playback now hangs off the thing being played.  NaviCado reads cursor *and*
+transport from the one enrolled signal (`%examining`).
+`Lies_desire_step_once`'s end-of-play bump retargets from `%active_what` to
+`%examining` (the ref is already in scope as `completion`/timemachine).
+
+### 3e. `req:push` — a coherent push machine
+
+`LE_push` stops being a monolith and becomes a cluster under `req:git`, giving
+push-state a C** home that encode errors, fault flags, and "push anyway" can hang
+off.  **maz bottoms at 1**, so three phases:
+
+```
+w:Lies/req:desire/req:git/req:push     one per attempt; a durable, inspectable fact
+  maz:3 encode     LE_encode_compare — clean? finish the cluster (nothing to push)
+                     // encode_errors children hang here on a malformed clone tree
+  maz:2 replace     LE_push's replace-back, skipping U%unaccepted
+  maz:1 verify      LE_pull + re-encode; clean → finish;
+                     dirty → stamp push/%dirty,1 (the fault), leave unfinished
+```
+
+This wires `push_dirty` to a real reqy fault particle (`req:push/%dirty`),
+closing the standing `// <`, and makes push **resumable**: "push anyway" after a
+reload re-enters the cluster from `maz:1 verify` instead of re-deriving the
+push-state from the live ropeways — the resumability the LiesEnd spec keeps
+gesturing at.  The two encode snaps already cache on `working.c.encode`; dumping
+them onto `req:push` makes a reload resume the exact push-state.
+
+> The existing maneuvre cluster runs `req:encode` at **maz:0**, which the
+> maz-bottoms-at-1 rule forbids.  Fold that encode into the graft phase tail
+> (graft at maz:1 runs `LE_encode_compare` after minting Pmirrors) so the
+> maneuvre needs only `checkout(3) → furnish(2) → graft+encode(1)`.  `// <`
+> verify maz:0 is truly disallowed before relying on the fold.
+
+### 3f. `req:Furnishing` — doc-open as an RPC to Languish
+
+Doc-open gets an owner on the showy end and the cross-world poll dies.  The
+Furnishing↔Languish link is an **RPC** (`i_elvis_req(...).reply(...)`), not a
+fire-and-forget elvis + ttlilt poll:
+
+```
+w:Lies/req:desire/req:Furnishing,path       the intent to open one path
+  do_fn:
+    wread the text (req:Open's job — Lies owns the store)
+    i_elvis_req('Lang/Lang', 'Lang_open_dock', { path, text, gen_path })
+        .reply(({ ready }) => { if (ready) rq.finish(furnishing) })
+
+w:Lang  e_Lang_open_dock                     drives req:Languish,path (mints the dock)
+  on Languish finish:  reply({ path, ready: 1 })   ← the RPC return
+```
+
+Lies owns *intent to furnish* and the text; Lang's `req:Languish` owns the
+*mechanism* (mint the dock) and **replies** when the dock exists.  Furnishing
+finishes on the reply, so "this path is furnished" is a finished, inspectable req
+on Lies.  Lang's maneuvre drops `req:load_doc` entirely — its graft phase already
+guards on dock-exists, and the RPC makes the dock appear promptly instead of via
+poll.
+
+> `i_elvis_req`/`.reply` is the house RPC primitive; it does not appear in the
+> SI file set (only `i_elvisto` fire-and-forget, `ttlilt`, `reqonce` are here),
+> so this section trusts its described shape.  `// <` confirm the reply channel
+> survives the beliefs-mutex round-trip the way `i_elvisto` does.
+
+### 3g. Breadcrumb — removed
+
+The DocMinimap header breadcrumb is gone (tiresome).  No `LE_what_keys`, no
+`what_keys` array, no crumb row.  NaviCado keeps only its ↑ ← → derives
+(`depth`, `has_prev`, `has_next`) computed locally off `Interest.c.LE` —
+single-component, no duplication to dedupe.
 
 ---
 
@@ -306,90 +328,93 @@ Nothing else holds it.  `Lies.svelte`'s one-time setup drops the
 
 ```
 Lies.svelte
-  - one-time setup: drop %active_what creation.
-  - req:completion: hang under %examining (3a) OR set examining.c.completion (light).
-  - Lies_desire_step_once: bump examining/completion at end-of-play, not active_what.
+  - one-time setup: drop %active_what.
+  - desire: rename req:completion → req:timemachine; hang it under %examining.
+  - add req:Furnishing,path under req:desire (RPC to Lang_open_dock).
+  - move req:git push handling into the req:push cluster (§3e).
+  - Lies_desire_step_once: end-of-play bump on %examining, not %active_what.
 
 LiesCurse.svelte
-  - Lies_i_Spotlight: unchanged seam; still fires Lang_workon_update,{src}.
-    // < it may also stamp examining/req:completion.sc.playing=0 on a manual jump
-    //   so a hand-move pauses the slideshow — small, optional.
+  - Lies_i_Spotlight: stop writing sc.src_Waft (§3a); seam otherwise unchanged.
+    // < optionally stamp examining/req:timemachine.sc.playing=0 on a hand jump
+    //   so a manual move pauses the slideshow.
 
 LiesEnd.svelte
-  - no engine change.  Add LE_what_keys(what): string[]  — parent-walk collecting
-    .sc.label, so Interest's breadcrumb is a one-call read.  (Frail/identity-based
-    like its LE_what_* siblings — // < Travel-based when the tree grows.)
+  - Seem_clone_C: stamp root.c.waft = src_What.c.waft (§3a).
+  - req:push phases call LE_encode_compare / replace-back / LE_pull (§3e);
+    LE_push proper becomes the maz:2 body, not a standalone monolith.
 
 Lang.svelte
-  - %Languinio setup: create %Interest child.
-  - req:awaiting: install %Interest once (folds in the old %LE hold).
-  - Lang_set_active_dock: re-point Interest.c.dock / c.spinner + bump %Interest,
-    instead of the loose holds.  Keep ave/%active_dock for Langui's EditorView
-    switch (routing, not focus).
-  - req:checkout: after LE_arm, set Interest.c.what = LE.sc.target.
+  - %Languinio: add %Interest,1 (src=clone, c.LE→LE); keep %dock hold.
+  - req:checkout: after LE_pull, (re)create %Interest at working.sc.C.
+  - maneuvre: drop req:load_doc; phases become checkout(3) → furnish(2) →
+    graft+encode(1).  furnish(2) awaits the Furnishing RPC's effect (dock exists).
+  - Lang_set_active_dock: re-point %Languinio/%dock; drop ave/%active_dock.
+  - e_Lang_open_dock: reply({path,ready}) when Languish finishes (§3f).
 
 LangGraft.svelte
-  - Lang_graft_points_once: source points from LE_accepted_clones (3c), fall back
-    to src_C only pre-pull.  Honour clone.c.U.unshowing (skip) and .class (stamp
-    on Pmirror).  Extend graft_cache_key with the working Seem version.
+  - Lang_graft_points_once: source points from LE_accepted_clones via Interest.c.LE;
+    honour clone.c.U.unshowing (skip) and .class (stamp on Pmirror); fall back to
+    src_C only pre-pull; add working.version to graft_cache_key.
 
 NaviCado.svelte
-  - read LE + breadcrumb from %Interest (one particle); read transport from
-    %examining/req:completion.  Collapse $derived.by(void …) to vers && chains.
+  - read LE via Languinio/%Interest.c.LE; transport via %examining/req:timemachine.
+  - collapse $derived.by(void …) to vers && chains.
 
-Waft.svelte / DocMinimap
-  - breadcrumb row reads %Interest.c.what + LE_what_keys (Waft_spec's header).
-  - // < DocMinimap dock read migrates to Interest.c.dock (the standing migration).
+Langui / DocMinimap / Waft.svelte
+  - Langui watches %Languinio for the active dock instead of ave/%active_dock.
+  - DocMinimap: remove breadcrumb header; read dock via Languinio/%dock.
 ```
 
 ---
 
 ## 5. Sequencing against Chunk 4c
 
-Do this *before* 4c (`↘`/`↓` branch + dive), not after.  4c's carry-over
-heuristic reads `clone.c.U?.sc.unaccepted` at branch time and stamps
-`class:'ghost'` on prior-What Points — both of which are U-sphere reads that
-only mean something once the graft honours the U sphere (3c).  Branch/dive that
-writes `class` onto clones whose `class` the screen ignores is untestable.  So:
+Before 4c, not after.  4c's carry-over heuristic reads
+`clone.c.U?.sc.unaccepted` at branch time and stamps `class:'ghost'` on
+prior-What Points — both U-sphere reads that only *mean* something once the graft
+honours the U sphere (§3c).  Branch/dive writing `class` the screen ignores is
+untestable.
 
 ```
-4b.5  Spotlight↔Interest               this doc
-        3a  completion → %examining     (dissolve active_what, half 1)
-        3b  %Interest particle          (dissolve active_what, half 2)
-        3c  graft reads clones          (wire the U sphere — the unlock)
-        3d  remove %active_what
-4c    ↘ / ↓  branch + dive             now class:'ghost' actually renders
+4b.5  Spotlight↔Interest                 this doc
+        3a  crux + src_Waft drop + clone.c.waft
+        3b  %Interest focus object
+        3c  graft reads clones            ← the unlock
+        3d  dissolve %active_what + ave/%active_dock
+        3e  req:push cluster
+        3f  req:Furnishing RPC
+        3g  remove breadcrumb
+4c    ↘ / ↓  branch + dive               class:'ghost' now actually renders
 ```
 
-3c is the keystone: it converts `unshowing`/`unaccepted`/`class` from
-write-only flags into visible behaviour, which is the precondition for 4c being
-demonstrable rather than merely coded.
+§3c is the keystone: it turns `unshowing`/`unaccepted`/`class` from write-only
+flags into visible behaviour — the precondition for 4c being demonstrable.
 
 ---
 
 ## 6. Open faults (carried + updated)
 
 ```
-// < Interest.c.what is LE.sc.target by ref — fine while one LE per Lang.  Multi-
-//   Lang-per-Lies (out of scope) would need an Interest per dock.
-// < LE_what_keys / LE_what_* stay identity-based and frail; a Travel-based
-//   implementation is more robust once the What tree outgrows small.
-// < graft fallback to src_C in the pre-pull window means a freshly-armed cursor
-//   briefly renders unaccepted/unshowing Points until LE_pull wires c.U.  One
-//   tick of stale; acceptable, but note it.
-// < req:completion-under-%examining mixes a reqy particle into an ave signal.
-//   Tolerated (precedent: %Spotlight child + c.w back-ref).  Revisit if reqy
-//   lifecycle (finish/unify) ever needs the completion to live in a reqy tree.
-// < DocMinimap still reads lang_dock from ave/%active_dock.c.dock; migrate to
-//   Interest.c.dock (was: Languinio.o({dock})).  Standing migration, now with a
-//   cleaner target.
-// < push_dirty still not wired to a reqy fault particle.  Unchanged by this.
-// < vanish: unaccepted clone goner fires push_dirty.  Unchanged; 3c makes the
-//   unaccepted-is-invisible half true on screen, which is the visible companion
-//   to the still-pending push fix.
-// < clicking a Waft Doc ~7x loses the What glow (active_dock ping-pong).  The
-//   cur_is_what guard in e_Lies_active_doc_changed should still catch it; a
-//   single Interest object may make the storm easier to see, not fix it.
+// < clone.c.waft is one scalar per clone root; nested Whats inside a clone are
+//   not separately linked (nav rides the original, so they don't need it).
+// < LE_what_* stay identity-based and frail; Travel-based when the tree grows.
+// < graft fallback to src_C in the pre-pull window briefly renders
+//   unaccepted/unshowing Points until LE_pull wires c.U.  One stale tick.
+// < req:timemachine is a reqy particle under %examining (an ave signal).
+//   Tolerated (precedent: %Spotlight child + c.w back-ref).
+// < i_elvis_req/.reply reply channel surviving the beliefs-mutex round-trip —
+//   confirm it behaves like i_elvisto across the Atime gate.
+// < verify at maz:0 is disallowed (maz bottoms at 1); confirm before relying on
+//   the encode-into-graft-tail fold.
+// < req:push/%dirty still needs surfacing in the reqy fault UI.
+// < vanish: unaccepted clone goner fires push_dirty on the verify re-pull; §3c
+//   makes unaccepted-is-invisible true on screen, the visible companion to the
+//   still-pending suppress-the-goner fix (bD/was_disincluded).
+// < clicking a Waft Doc ~7x loses the What glow (active_dock ping-pong).  Killing
+//   ave/%active_dock removes one of the two ping-ponging signals; re-test.
+// < Furnishing is keyed by path; a Waft with two Docs at the same path (unlikely)
+//   would collide — fine for now.
 ```
 
 ---
@@ -399,7 +424,8 @@ demonstrable rather than merely coded.
 - `// < …` marks a lack of development.
 - `%like,this` for a lone C object; `/%like,this/written:is` for structures.
 - `oai` sync, `roai` async; `i()` always inserts.
-- Cross-domain refs are scalar `$C` pointers in `sc`/`c`; no domain writes
-  another domain's `sc`.  `%Interest.c.*` are same-object holds, not copies.
+- Cross-domain refs are scalar `$C` pointers in `c.*`; no domain writes another
+  domain's `sc`.  `%Interest.src`, `%Interest.c.LE`, `clone.c.waft` are
+  same-object holds, not copies.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not
   `$derived.by(void …)`.
