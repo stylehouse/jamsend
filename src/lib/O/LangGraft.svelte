@@ -124,14 +124,28 @@
         // the user clicked around while docs were still loading), don't graft
         // Peerily's Points onto LangTiles.g's editor view.  Wipe and wait for
         // the next tick where both converge.
-        const src_path    = (src_C.sc as any).path as string | undefined
+        //
+        // %Doc src: sc.path directly.
+        // %What src: path comes from first %Doc child (Lies_what_first_doc_path logic).
+        // Pure title-page %What with no %Doc: src_path is undefined — no path guard fires.
+        const src_sc: any = src_C.sc
+        const src_path = src_sc.path as string | undefined
+            ?? (src_C.o({ Doc: 1 })[0] as TheC | undefined)?.sc.path as string | undefined
         const active_path = (dock.sc as any).doc   as string | undefined
         if (src_path && active_path && src_path !== active_path) {
             await this.Lang_wipe_pmirrors(dock)
             return
         }
 
-        const points: TheC[] = src_C.o({ Point: 1 }) as TheC[]
+        // Collect Points from src — tolerates %What and %Doc as src.
+        //   %Doc src:  direct %Point children
+        //   %What src: %Point children directly + %Point children of each %Doc child
+        //   Title-page (no Doc, no Point): empty — Pmirrors stay empty, not an error.
+        const points: TheC[] = []
+        for (const pt of src_C.o({ Point: 1 }) as TheC[]) points.push(pt)
+        for (const doc of src_C.o({ Doc: 1 }) as TheC[]) {
+            for (const pt of doc.o({ Point: 1 }) as TheC[]) points.push(pt)
+        }
         // src_Waft is stored on the %What_Points child alongside src
         const waft_key = (what_pts_C.sc.src_Waft as string | undefined) ?? '?'
 

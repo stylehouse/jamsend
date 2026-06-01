@@ -68,20 +68,21 @@ story:LakeNets
     For
       w:Lang
         txtsyntaxdump
+        nogen
     trickle
     quiesce_snap_time:0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.278
-      sample:0.152,at:1780302257
-      sample:0.125,at:1780302369
-      sample:0.111,at:1780302851
-      sample:0.251,at:1780303195
-      sample:0.337,at:1780304132
-      sample:0.337,at:1780304142
-      sample:0.366,at:1780305232
-      sample:0.405,at:1780305595
+    TimeTotal:beliefs,avg:0.414
       sample:0.405,at:1780305635
       sample:0.289,at:1780305652
+      sample:0.233,at:1780306373
+      sample:1.194,at:1780313657
+      sample:0.442,at:1780313685
+      sample:0.289,at:1780313826
+      sample:0.278,at:1780313867
+      sample:0.43,at:1780315452
+      sample:0.33,at:1780315479
+      sample:0.245,at:1780316379
   step,dige:c6bd8cfac44e2c94
   step:2,dige:84cd53012592e651

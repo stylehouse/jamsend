@@ -1,4 +1,6 @@
 Waft:Ghost/LakeNets
-  Doc,path:Ghost/Story/Peeroleum.g
-  Doc,path:Ghost/Peeroleum.g
-    Point:transport
+  What:choice
+    Doc,path:Ghost/Story/Peeroleum.g
+  What:chance
+    Doc,path:Ghost/Peeroleum.g
+      Point:transport

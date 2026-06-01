@@ -25,13 +25,6 @@
     //   region body.  The region/def data still carries point positions so the
     //   capsule strip can navigate on click.
     //
-    // ── NaviCado ─────────────────────────────────────────────────────────────
-    //
-    //   NaviCado sits above the unsent bar.  It reads %LE from %Languinio
-    //   (the same-object hold workon/{LE:1} installs there) and uses the
-    //   LE_what_* helpers to render ↑ ← label → ↘ ↓ buttons.  NaviCado
-    //   renders nothing when LE or LE.sc.target is absent.
-    //
     // ── In-group / showing ───────────────────────────────────────────────────
     //
     //   in_group — specs currently in the capsule strip (session only).
@@ -275,7 +268,7 @@
         const sig = H.ave.ob({ active_dock: 1 })[0] as TheC | undefined
         void sig?.version
         lang_dock = (sig?.sc.path === active_path)
-            ? sig?.c.doc as TheC | undefined
+            ? sig?.c.dock as TheC | undefined
             : undefined
     })
 
@@ -283,13 +276,15 @@
     //   %Languinio is the same ave signal Langui reads; DocMinimap only cares
     //   about the grafted phase (gold).  333ms floor so a fast graft doesn't
     //   strobe a single frame.
+    //
+    // ── NaviCado / LE ─────────────────────────────────────────────────────────
+    //   %LE is the live Understanding; same-object hold via Languinio/%LE.
+    //   Derived here so NaviCado gets a fresh ref whenever Languinio is re-pointed
+    //   (cursor move → e_Lang_LE_arm → languinio.i(LE)).
     let languinio: TheC | undefined = $state()
     $effect(() => {
         languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
     })
-
-    // LE from the Languinio same-object hold — NaviCado reads LE.sc.target
-    // and the LE_what_* helpers to drive the What navigation toolbar.
     let LE: TheC | undefined = $derived.by(() => {
         void languinio?.vers
         return languinio?.o({ LE: 1 })[0] as TheC | undefined
@@ -624,7 +619,6 @@
         {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
     </div>
 
-    <!-- NaviCado — What-navigation toolbar: ↑ ← label → ↘ ↓ -->
     <NaviCado {H} {LE} />
 
     <!-- Unsent bar — only when user has changed something since last push. -->

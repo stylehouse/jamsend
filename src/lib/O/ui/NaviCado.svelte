@@ -99,11 +99,18 @@
     }
 
     // Label for the current What — shown in the middle of the toolbar.
+    // Falls back to the path stem when target is a %Doc (no .label or .What on sc).
     let what_label = $derived(
-        target ? ((target.sc as any).label as string | undefined) ?? ((target.sc as any).What as string | undefined) ?? '?' : ''
+        target
+            ? ((target.sc as any).label as string | undefined)
+              ?? ((target.sc as any).What as string | undefined)
+              ?? ((target.sc as any).path as string | undefined)?.split('/').pop()
+              ?? '?'
+            : ''
     )
 </script>
 
+{#if target}target!{/if}
 {#if LE && target}
 <div class="nvc-bar">
 
