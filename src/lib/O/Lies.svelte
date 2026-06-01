@@ -20,8 +20,8 @@
     //   LiesPersist sets w.see and returns false — LiesRealised does not run
     //   until all Waft loads and open_reqs are fully settled.
     //
-    //   LiesPersist — all disk IO: Waft loading, open_req loading.
-    //   LiesRealised — compile airlock, future thinking/analysis.
+    //   LiesPersist — Waft snap IO + drives req:Open (doc reads, async).
+    //   LiesRealised — compile airlock and future thinking.
     //
     // ── Waft — wormhole-backed document sets ──────────────────────────────────
     //
@@ -82,8 +82,11 @@
     //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
     //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
     //     sc.active = 1                        — session-only; never written to snap
-    //   w/{open_req:1,path,from_waft?}         — reflected from Doc or stray
-    //   w/{loaded_doc:1,path,gen_path}         — after load + Lang handoff
+    //   w/{req:'Open',src}             — demand-loaded doc; keyed by src C ref
+    //                                    sc.waft_key, sc.new?
+    //                                    → sc.loaded=1 on completion
+    //                                    → sc.not_found=1 when file absent
+    //   w/{loaded_doc:1,path,gen_path} — after load + Lang handoff
     //   w/{compile_pending:1,path,...}         — waiting for gen/ write
     //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
     //   w/{Opt:1}                              — options container
@@ -377,8 +380,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
 //#region LiesPersist — disk IO phase
     //
-    //   Returns true when every open_waft_req and open_req is done.
-    //   Returns false (and sets w.see) if any IO is still in flight.
+    //   Returns true when the Waft snap layer is settled.
+    //   req:Open reqs (doc reads) are driven by rq.do() and finish async via
+    //   ttlilt — LiesPersist no longer blocks on them.
 
     async LiesPersist(A: TheC, w: TheC): Promise<boolean> {
         const H = this as House
@@ -387,7 +391,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         for (const waft_req of w.o({ open_waft_req: 1 }) as TheC[]) {
             const path = waft_req.sc.path as string
             if (waft_req.sc.done) {
-                // Already loaded — re-sync Doc→open_req in case CRUD changed.
+                // Already loaded — trim orphaned req:Open if CRUD removed a Doc.
                 const waft = w.o({ Waft: path })[0] as TheC | undefined
                 if (waft) H.Lies_sync_waft_docs(w, waft)
                 continue
@@ -423,9 +427,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             await w.r({ Waft: path }, {})
             w.i(waft)
             await H.Waft_link_up(waft, waft)   // C.c.up back-refs; Waft is its own ceiling
-            H.Lies_sync_waft_docs(w, waft)
 
-            // Every CRUD mutation triggers a throttled wormhole write.
+            // Lies_sync_waft_docs now only trims; doc open_reqs come via cursor/workon.
             H.watch_c(waft, () => {
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
@@ -436,52 +439,90 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }
 
-        // Seed: before the open_req loop, ensure the cursor's target doc has an
-        // open_req queued so LiesPersist can load it in this same tick.
-        // LiesCurse (at the bottom of the Lies tick) sets the cursor proper;
-        // this just pre-queues the load so the doc arrives one step earlier.
-        this.Lies_seed_cursor_target(w)
+        // ── drive req:Open — demand-loaded doc reads ──────────────────────────
+        //   Lang req:load_doc calls Lies_roai_Open which roais a req:Open here.
+        //   req_Open holds itself via 0.4s ttlilt while the wread is in flight;
+        //   LiesPersist returns true once the Waft layer is settled.
+        const rq = H.reqy(w, { k: 'Open' })
+        await rq.do()
 
-        // ── load open_reqs from disk ──────────────────────────────────────────
-        for (const req_p of w.o({ open_req: 1 }) as TheC[]) {
-            const path = req_p.sc.path as string
-            if (req_p.sc.done) continue   // already loaded
+        return true   // Waft layer settled — LiesRealised may proceed
+    },
 
-            // gen_path only for Ghost/ sources with gen-able codetype.
-            const gen_path = H.Lies_gen_path(path)
+    // ── req_Open — load one source doc from disk ──────────────────────────────
+    //
+    //   do_fn for /req:Open particles.  src is the %What or %Doc C from
+    //   %What_Points whose path we need to load.
+    //
+    //   On completion the req carries:
+    //     req.sc.loaded    = 1   — loaded_doc exists; Lang has the text
+    //     req.sc.not_found = 1   — file absent; Lang opened an empty slot
+    //   sc.new is preserved if set at roai time (doc was created in Liesui).
+    //
+    //   not_found / new live on the req — not scattered on the Waft Doc particle.
+    async req_Open(req: TheC, q: any) {
+        const H = this as House
+        const w   = req.c.up as TheC
+        const src = req.sc.src as TheC | undefined
+        if (!src) { q.finish(req); return }
 
-            const req = await H.LiesStore_read(w, path)
-            if (!req.sc.finished) {
-                w.i({ see: `⏳ loading ${path}…` })
-                return false
-            }
+        // Derive path — %Doc has sc.path; %What exposes first %Doc child.
+        const path = (src.sc as any).path as string | undefined
+            ?? ((src.o({ Doc: 1 }) as TheC[])[0]?.sc.path as string | undefined)
+        if (!path) { q.finish(req); return }   // pure time-slice %What, no doc
 
-            if (req.sc.reply?.not_found) {
-                // File absent — open as empty so Lang has an editable slot.
-                // Set not_found; keep new if already set (new takes display priority).
-                H.Lies_flag_doc(w, path, 'not_found', 1)
-                H.i_elvisto('Lang/Lang', 'Lang_open_dock', { path, gen_path, text: '' })
-                console.warn(`🗂 Lies: not found: ${path} (opened empty)`)
-            } else {
-                const text: string = req.sc.reply?.content ?? ''
-                // File found — clear not_found regardless.
-                H.Lies_flag_doc(w, path, 'not_found', undefined)
-                // Clear new only when the file has actual content; empty = not yet written.
-                if (text) H.Lies_flag_doc(w, path, 'new', undefined)
-                H.i_elvisto('Lang/Lang', 'Lang_open_dock', { path, gen_path, text })
-                console.log(`🗂 Lies opened ${path}${gen_path ? ` → ${gen_path}` : ' (soft only)'}`)
-            }
+        // Already loaded from a prior req — nothing to do.
+        if (w.o({ loaded_doc: 1, path })[0]) { req.sc.loaded = 1; q.finish(req); return }
 
-            req_p.sc.done = 1
-            w.bump_version()
-            const ld = w.oai({ loaded_doc: 1, path, gen_path })
-            // base_dige: dige of the text as it came off disk.  Used by
-            // Lies_source_write to detect external changes before writing back.
-            const loaded_text: string = req.sc.reply?.content ?? ''
-            if (loaded_text) ld.sc.base_dige = await dig(loaded_text)
+        // gen_path only for Ghost/ sources with a gen-able codetype.
+        const gen_path = H.Lies_gen_path(path)
+
+        // Fire the wread; hold via ttlilt while in flight.
+        const read = await H.LiesStore_read(w, path)
+        if (!read.sc.finished) {
+            H.i_req_ttlilt(req, 0.4, { waiting: 'wread' })
+            return
         }
 
-        return true   // all IO settled — LiesRealised may proceed
+        if (read.sc.reply?.not_found) {
+            req.sc.not_found = 1
+            H.i_elvisto('Lang/Lang', 'Lang_open_dock', { path, gen_path, text: '' })
+            console.warn(`🗂 req:Open not found: ${path} (opened empty)`)
+        } else {
+            const text: string = read.sc.reply?.content ?? ''
+            // sc.new was set at roai time for Liesui-created docs; clear when
+            // the file has real content (not yet written = keep new).
+            if (text) delete req.sc.new
+            H.i_elvisto('Lang/Lang', 'Lang_open_dock', { path, gen_path, text })
+            console.log(`🗂 req:Open loaded: ${path}${gen_path ? ` → ${gen_path}` : ''}`)
+        }
+
+        const ld = w.oai({ loaded_doc: 1, path, gen_path })
+        const loaded_text: string = read.sc.reply?.content ?? ''
+        if (loaded_text) ld.sc.base_dige = await dig(loaded_text)
+
+        req.sc.loaded = 1
+        q.finish(req)
+    },
+
+    // ── Lies_roai_Open ────────────────────────────────────────────────────────
+    //
+    //   Find-or-create a req:Open for the given src.  Returns the req so
+    //   callers (Lang req:load_doc, LiesCurse cold-start) can poll
+    //   req.sc.loaded / req.sc.not_found / req.sc.finished.
+    //
+    //   Keyed by src identity — same C ref → same req.  Finished reqs are
+    //   dropped first so a re-navigate to the same src after unload gets a
+    //   fresh req.  sc.new can be seeded at roai time for Liesui-created docs.
+    async Lies_roai_Open(w: TheC, src: TheC, opts: { waft_key?: string, new?: 1 } = {}): Promise<TheC> {
+        const H = this as House
+        const rq = H.reqy(w, { k: 'Open' })
+        for (const old of rq.o({ src }) as TheC[]) {
+            if (old.sc.finished) w.drop(old)
+        }
+        const sc: any = { waft_key: opts.waft_key ?? '' }
+        if (opts.new) sc.new = 1
+        return rq.roai({ Open: 1, src }, sc)
     },
 
 //#region LiesRealised — compile airlock and future thinking
@@ -595,7 +636,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 if (examining && cur_waft !== waft_key) {
                     const first = (await H.Lies_waft_candidates(waft))[0]
                     if (first) {
-                        H.Lies_ensure_doc_loaded(w, await H.Lies_src_doc_path(first), waft_key)
+                        // Demand-load via req:Open so the load tracks through the reqy system.
+                        await H.Lies_roai_Open(w, first, { waft_key })
                         await H.Lies_set_examining(examining, first, waft_key)
                     }
                 }
@@ -700,7 +742,22 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
     },
 
-    // ── e_Lies_export_point ───────────────────────────────────────────────────
+    // ── e_Lies_roai_Open_req ──────────────────────────────────────────────────
+    //
+    //   Cross-world entry fired by Lang's req:load_doc (once per maneuvre, via
+    //   reqonce).  Delegates to Lies_roai_Open so the req:Open is seeded on
+    //   w:Lies and driven by LiesPersist's rq.do() loop.
+    //
+    //   e.sc: { src: TheC, waft_key: string }
+    async e_Lies_roai_Open_req(A: TheC, w: TheC, e: TheC) {
+        const src      = e.sc.src      as TheC | undefined
+        const waft_key = e.sc.waft_key as string | undefined
+        if (!src) return
+        await this.Lies_roai_Open(w, src, { waft_key })
+        this.i_elvisto(w, 'think')
+    },
+
+
     //
     //   Export a Lang bookmark as a Point under a Waft Doc.
     //   If the active (or first) Waft already has a Doc for this path, adds
@@ -816,52 +873,22 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
     //
-    //   Reflect {Doc:1,path} children of waft into {open_req:1,path,from_waft}
-    //   on w.  Adds open_reqs for new Docs; drops unloaded open_reqs whose Doc
-    //   has been removed (from_waft tag identifies ownership).
-    //
-    //   Already-loaded docs (loaded_doc exists) are left open — full close on
-    //   Doc removal is future work.
+    //   Trim req:Open particles for Docs removed from this Waft (CRUD removal).
+    //   Doc loading is demand-driven via Lies_roai_Open — this function no
+    //   longer mints load requests.  Already-loaded docs are left open.
+    //   < full close on Doc removal: future work.
     Lies_sync_waft_docs(w: TheC, waft: TheC) {
         const wpath = waft.sc.Waft as string
         const live_paths = new Set(
-            waft.o({ Doc: 1 }).map(d => (d as TheC).sc.path as string)
+            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.path as string)
         )
-
-        // Ensure an open_req exists for each live Doc.
-        // < lazy loading: once Chunk 2 (cursor autostart) is reliable, gate this loop
-        //   behind w.c.eager_waft_load and let Lies_ensure_doc_loaded (in LiesCurse)
-        //   be the only path that queues open_reqs — cursor jumps trigger loads.
-        //   Until then, cold-start has no cursor to bootstrap from, so eager is required.
-        if (w.c.eager_waft_load) {
-            for (const p of live_paths) {
-                w.oai({ open_req: 1, path: p }, { from_waft: wpath })
-            }
-        }
-
-        // Drop open_reqs from this waft that no longer have a matching Doc.
-        // Skip done ones — their loaded_doc owns the open state now.
-        for (const req of w.o({ open_req: 1, from_waft: wpath }) as TheC[]) {
-            if (req.sc.done) continue   // < future: close loaded doc on removal
-            if (!live_paths.has(req.sc.path as string)) {
-                w.drop(req)
-            }
-        }
-    },
-
-    // ── Lies_flag_doc ─────────────────────────────────────────────────────────
-    //
-    //   Set or clear a flag key on the Doc particle in any Waft that owns
-    //   the given path.  Used to surface not_found / new state to Liesui.
-    //   No-ops silently when no Doc with that path exists.
-    Lies_flag_doc(w: TheC, path: string, key: string, val: any) {
-        for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
-            if (!doc) continue
-            if (val === undefined) delete doc.sc[key]
-            else doc.sc[key] = val
-            waft.bump_version()
-            return
+        // Drop unfinished req:Open that lost their Doc from this Waft.
+        const rq = (this as House).reqy(w, { k: 'Open' })
+        for (const req of rq.o({ waft_key: wpath }) as TheC[]) {
+            if (req.sc.finished) continue
+            const src  = req.sc.src as TheC | undefined
+            const path = (src?.sc as any)?.path as string | undefined
+            if (path && !live_paths.has(path)) w.drop(req)
         }
     },
 

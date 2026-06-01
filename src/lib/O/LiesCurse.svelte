@@ -77,7 +77,7 @@
                     if (cur_path !== path) {
                         const found = H.Lies_find_doc_in_wafts(w, path)
                         if (found) {
-                            H.Lies_ensure_doc_loaded(w, path, found.waft_key)
+                            await H.Lies_roai_Open(w, found.doc, { waft_key: found.waft_key })
                             await H.Lies_set_examining(examining, found.doc, found.waft_key)
                         }
                     }
@@ -98,8 +98,7 @@
         //      Covers reloading a session where a doc was already open when
         //      the Waft finishes loading.
         //   2. No active doc yet — pick the first Point-bearing Doc across all
-        //      loaded Wafts.  Queues its open_req via Lies_ensure_doc_loaded;
-        //      the doc loads, Lang opens it, active_dock follows naturally.
+        //      loaded Wafts; roai a req:Open so Lies loads it.
         //   Both skip when the cursor already points at the right place.
         const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
         const examining_path = (wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
@@ -108,7 +107,7 @@
             // case 1: known active doc, cursor hasn't caught up yet
             const found = H.Lies_find_doc_in_wafts(w, active_path)
             if (found) {
-                H.Lies_ensure_doc_loaded(w, active_path, found.waft_key)
+                await H.Lies_roai_Open(w, found.doc, { waft_key: found.waft_key })
                 await H.Lies_set_examining(examining, found.doc, found.waft_key)
             }
         } else if (!examining_path) {
@@ -116,7 +115,7 @@
             // or just the first Doc if the Waft is fresh and has no Points yet.
             const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
             if (first) {
-                H.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
+                await H.Lies_roai_Open(w, first.doc, { waft_key: first.waft_key })
                 await H.Lies_set_examining(examining, first.doc, first.waft_key)
             }
         }
@@ -124,51 +123,22 @@
 
     // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
     //
-    //   Fired by Liesui / Waft when the user focuses a Doc.  Stamps
-    //   %src_Point_root (the %Dock,path TheC whose %Point,N children are grafted)
-    //   and %src_Waft (the containing Waft key) on %examining, then bumps its
-    //   version so Lang_graft_points sees a new cache key and re-grafts.
-    //
-    //   The two sc fields and the bump must all happen together — use this
-    //   handler rather than setting them individually, so the three-step is
-    //   never half-done.
-    //
+    //   Fired by Liesui / Waft when the user focuses a Doc.
     //   e.sc: { doc_C: TheC, waft_key: string }
-    //   (doc_C is the %Dock,path particle inside the Waft — direct TheC ref,
-    //    not a path string — because %Point,N children live on it.)
     async e_Lies_set_cursor(A: TheC, w: TheC, e: TheC) {
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
         const src      = e.sc.doc_C    as TheC | undefined
         const waft_key = e.sc.waft_key as string | undefined
         if (!src || !waft_key) return
-        this.Lies_ensure_doc_loaded(w, (src.sc as any).path as string | undefined, waft_key)
+        await this.Lies_roai_Open(w, src, { waft_key })
         await this.Lies_set_examining(examining, src, waft_key)
-    },
-
-    // ── Lies_seed_cursor_target ───────────────────────────────────────────────
-    //
-    //   Called from LiesPersist between the Waft-loading and doc-loading phases.
-    //   If no cursor is set yet, pre-queues an open_req for the first Point-bearing
-    //   Doc so LiesPersist can load it in the same tick it loaded the Waft.
-    //   Does not set the cursor — LiesCurse does that at the end of the Lies tick,
-    //   by which point the doc is already in %loaded_doc.
-    Lies_seed_cursor_target(w: TheC) {
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-        const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
-        if (wpt?.sc.src) return   // cursor already set — load already queued or done
-        const first = this.Lies_first_point_doc(w) ?? this.Lies_first_doc(w)
-        if (first) {
-            this.Lies_ensure_doc_loaded(w, (first.doc.sc as any).path, first.waft_key)
-        }
     },
 
     // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
     //
-    //   Walk all loaded Wafts looking for a %Dock,path particle matching `path`.
+    //   Walk all loaded Wafts looking for a %Doc,path particle matching `path`.
     //   Returns { doc, waft_key } on the first hit, undefined if not found.
-    //   Used to land the graft cursor when active_dock changes.
     Lies_find_doc_in_wafts(w: TheC, path: string): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1, path })[0] as TheC | undefined
@@ -195,31 +165,14 @@
     // ── Lies_first_doc ────────────────────────────────────────────────────────
     //
     //   Walk all loaded Wafts and return the very first %Doc regardless of
-    //   whether it carries any %Point,N children.  Fallback for Wafts that
-    //   are freshly created and have no Points yet — we still want the cursor
-    //   to land somewhere so Liesui renders the Waft rather than "no docs open".
+    //   whether it carries any %Point,N children.  Fallback for freshly created
+    //   Wafts with no Points yet.
     Lies_first_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const doc = waft.o({ Doc: 1 })[0] as TheC | undefined
             if (doc) return { doc, waft_key: waft.sc.Waft as string }
         }
         return undefined
-    },
-
-    // ── Lies_ensure_doc_loaded ────────────────────────────────────────────────
-    //
-    //   Queue an %open_req for the given path if no %loaded_doc exists yet.
-    //   LiesPersist picks it up next tick; idempotent via oai().
-    //   Called alongside every Lies_set_examining so cursor jumps trigger lazy
-    //   loads — the only path that queues open_reqs now that Lies_sync_waft_docs
-    //   no longer does so eagerly.
-    //
-    //   oai() is sync — safe to call from watch_c callbacks.
-    Lies_ensure_doc_loaded(w: TheC, path: string | undefined, waft_key: string) {
-        if (!path) return
-        if (w.o({ loaded_doc: 1, path })[0]) return   // already loaded
-        w.oai({ open_req: 1, path }, { from_waft: waft_key })
-        console.log(`📂 Lies_ensure_doc_loaded: queued ${path}`)
     },
 
     // ── Lies_i_What_Points ───────────────────────────────────────────────────
@@ -329,7 +282,7 @@
         // %What may carry direct %Point children (time-slice) or %Doc children
         // (section grouping) — either way we queue a load so CM is ready.
         const doc_path = H.Lies_what_first_doc_path(what)
-        H.Lies_ensure_doc_loaded(w, doc_path, waft_key)
+        await H.Lies_roai_Open(w, what, { waft_key })
         await H.Lies_set_examining(examining, what, waft_key)
     },
 
@@ -365,7 +318,7 @@
         if (!waft_key) return
 
         const doc_path = H.Lies_what_first_doc_path(what)
-        H.Lies_ensure_doc_loaded(w, doc_path, waft_key)
+        await H.Lies_roai_Open(w, what, { waft_key })
         await H.Lies_set_examining(examining, what, waft_key)
     },
     //

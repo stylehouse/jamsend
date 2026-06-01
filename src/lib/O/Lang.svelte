@@ -542,21 +542,37 @@
                 msub.finish(checkout)
             })
 
-            // req:load_doc — derive a doc path from src and ensure CM has it open.
-            //   %What src: use first %Doc child's path.
-            //   %Doc src:  use sc.path directly.
-            //   No doc (pure %What with direct %Points, no %Doc child):
-            //     valid title-page state — CM stays on whatever was last open.
+            // req:load_doc — fire Lies_roai_Open cross-world; poll via ttlilt until
+            //   loaded_doc appears on w:Lang's dock.  Finishes immediately for the
+            //   title-page case (no doc_path from a pure time-slice %What).
+            //
+            //   reqonce gates the i_elvis_req so only one cross-world call goes;
+            //   subsequent ttlilt re-entries just poll the dock.
             ;(await msub.doai({ req: 'load_doc' }))?.(async (load_doc: TheC) => {
                 const doc_path = H.Lang_src_doc_path(src)
                 load_doc.sc.doc_path = doc_path ?? null
-                if (doc_path) {
-                    // Activate the dock if already present; otherwise Languish will
-                    // open it (LiesCurse queued the open_req alongside the cursor move).
-                    const docks = w.o({ docks: 1 })[0] as TheC | undefined
-                    const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
-                    if (dock) H.Lang_set_active_dock(w, doc_path)
+
+                if (!doc_path) {
+                    // Title-page: valid state — no doc to open.
+                    msub.finish(load_doc)
+                    return
                 }
+
+                // Fire once — ask Lies to roai a req:Open for this src.
+                if (H.reqonce(load_doc, 'fired')) {
+                    H.i_elvisto('Lies/Lies', 'Lies_roai_Open_req', { src, waft_key: (workon.sc as any).waft_key ?? '' })
+                }
+
+                // Poll: once Languish has run req:text_loaded, the dock exists.
+                const docks = w.o({ docks: 1 })[0] as TheC | undefined
+                const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
+                if (!dock) {
+                    H.i_req_ttlilt(load_doc, 0.4, { waiting: 'dock' })
+                    return
+                }
+
+                // Dock arrived — activate and finish.
+                H.Lang_set_active_dock(w, doc_path)
                 msub.finish(load_doc)
             })
 
