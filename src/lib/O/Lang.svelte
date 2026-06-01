@@ -324,6 +324,7 @@
     //   DocMinimap and other Languinio readers get lang_dock without reaching
     //   back through ave/{active_dock:1}.c.dock.
     Lang_set_active_dock(w: TheC, path: string) {
+        const H = this as House
         w.c.active_dock_path = path
         const docks = w.o({docks: 1})[0] as TheC | undefined
         if (docks) {
@@ -332,7 +333,7 @@
                 else delete d.sc.active
             }
         }
-        const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
+        const ave = H.oai_enroll(H, { watched: 'ave' })
         const sig = ave.oai({ active_dock: 1 })
         sig.sc.path = path
         // sig.c.dock: the actual {dock:path} particle (holds bookmarks, view, state).
@@ -346,6 +347,9 @@
                 if (sig.c.dock) languinio.i(sig.c.dock)
             })
         }
+        // Tell w:Lies the foregrounded doc changed — direct Atime elvis,
+        // replacing the old watch_c on %active_dock which caused loop re-entry.
+        H.i_elvisto('Lies/Lies', 'Lies_active_doc_changed', { path })
     },
 
 //#region e

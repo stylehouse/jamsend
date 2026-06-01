@@ -11,10 +11,11 @@
     //
     // ── Responsibilities ─────────────────────────────────────────────────────
     //
-    //   - watch_c on ave/%active_dock: keeps examining.sc.active_path in sync
-    //     and advances the graft cursor whenever the active doc changes.
-    //   - Cold-start placement: on the first tick where Wafts are loaded,
-    //     lands the cursor if the watch above hadn't yet fired.
+    //   - Cold-start placement: on the first tick where Wafts are loaded and
+    //     the cursor has no target, land on the first inhabited %What.
+    //   - e:Lies_active_doc_changed — fired directly by Lang_set_active_dock;
+    //     advances cursor when the foregrounded doc is in a loaded Waft and
+    //     the cursor is not already on a %What.  Replaces watch_c on %active_dock.
     //   - e:Lies_set_cursor — explicit cursor jump from Waft/DocRow click.
     //   - Lies_find_doc_in_wafts — walk loaded Wafts by path.
     //   - Lies_set_examining — atomic three-step: src, src_Waft, bump.
@@ -25,9 +26,7 @@
     //   %examining/%Spotlight,1 is written only through Lies_set_examining,
     //   so the three-step is always atomic.
     //
-    //   - Waft_cursor_candidates: depth-first collect of inhabited Whats (shared).
-    //   - Waft_cursor_first: land cursor on first candidate in a Waft.
-    //   - Waft_cursor_next: step cursor to next candidate within a Waft.
+    //   - Waft_cursor_candidates / Waft_cursor_first / Waft_cursor_next: shared stepping helpers.
     //   - e_Lies_cursor_next (→ button): step cursor across all loaded Wafts.
     //   < Lies_accept_What_Point: echo accepted_push_id back to DocMinimap.
 
@@ -43,88 +42,68 @@
 //#region LiesCurse
 
     async LiesCurse(A: TheC, w: TheC) {
-        const H = this as House
-        const ave      = H.oai_enroll(H, { watched: 'ave' })
+        const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return   // Lies one-time setup hasn't run yet; retry next tick
 
-        // ── active_dock → examining — lazy wire for the DocRow glow ───────────
-        //
-        //   Lang's ave/%active_dock bumps when the user opens a doc
-        //   (e_Dock_open → Lang_set_active_dock → active_dock.bump_version()).
-        //   watch_c propagates that bump without a Lies tick:
-        //     active_dock.bump_version()
-        //     → examining.sc.active_path updated + examining.bump_version()
-        //     → DocRow's $derived on examining.version re-runs (pure Svelte 5)
-        //     → is_examining glow toggles live, no Liesui re-render needed.
-        //
-        //   The same watch also advances the graft cursor when the newly-active
-        //   path belongs to a loaded Waft Doc, so LangGraft grafts its Points.
-        //   Lies_find_doc_in_wafts does the lookup and Lies_set_examining stamps
-        //   the three fields atomically.
-        //
-        //   active_dock is created lazily by Lang on first Dock_open, so retry each tick.
-        const active_dock = ave?.o({ active_dock: 1 })[0] as TheC | undefined
-        if (active_dock && !w.c.examining_sig_watch) {
-            w.c.examining_sig_watch = true
-            H.watch_c(active_dock, async () => {
-                console.log(`Lies saw ave/%active_dock=${active_dock.sc.path}  ~`)
-                examining.sc.active_path = active_dock.sc.path as string | undefined
-                examining.bump_version()
-                // Advance graft cursor to match the newly-active doc.
-                // Skip when the cursor is parked on a %What — it was moved there
-                // deliberately; active_dock following only applies when tracking a %Doc.
-                const path = active_dock.sc.path as string | undefined
-                if (path) {
-                    const cur_spot   = examining.o({ Spotlight: 1 })[0] as TheC | undefined
-                    const cur_src    = cur_spot?.sc.src as TheC | undefined
-                    const cur_is_what = cur_src && (cur_src.sc as any).What !== undefined
-                    const cur_path   = cur_src?.sc.path as string | undefined
-                    if (!cur_is_what && cur_path !== path) {
-                        const found = H.Lies_find_doc_in_wafts(w, path)
-                        if (found) {
-                            await H.Lies_roai_Open(w, found.doc, { waft_key: found.waft_key })
-                            await H.Lies_set_examining(examining, found.doc, found.waft_key)
-                        }
-                    }
-                }
-            })
-        }
-        // Initial sync on this tick in case active_dock existed before the watch was wired.
-        const active_path = active_dock?.sc.path as string | undefined
-        if (active_path !== examining.sc.active_path) {
-            examining.sc.active_path = active_path
-            examining.bump_version()
-        }
-
         // ── cold-start cursor placement ───────────────────────────────────────
         //
-        //   Two cases, tried in preference order:
-        //   1. An active doc is already known — land on its Waft Doc particle.
-        //      Covers reloading a session where a doc was already open when
-        //      the Waft finishes loading.
-        //   2. No active doc yet — pick the first Point-bearing Doc across all
-        //      loaded Wafts; roai a req:Open so Lies loads it.
-        //   Both skip when the cursor already points at the right place.
+        //   Only fires when the cursor has no target yet — i.e. the Waft just
+        //   finished loading for the first time.  Pick the first inhabited %What,
+        //   or the first %Doc if the Waft is fresh and has no Points yet.
+        //
+        //   Doc-switch following now lives in e_Lies_active_doc_changed, fired
+        //   directly from Lang_set_active_dock as an elvis — no watch_c loop.
         const spot = examining.o({ Spotlight: 1 })[0] as TheC | undefined
-        const examining_path = (spot?.sc.src as TheC | undefined)?.sc.path as string | undefined
-
-        if (active_path && examining_path !== active_path) {
-            // case 1: known active doc, cursor hasn't caught up yet
-            const found = H.Lies_find_doc_in_wafts(w, active_path)
-            if (found) {
-                await H.Lies_roai_Open(w, found.doc, { waft_key: found.waft_key })
-                await H.Lies_set_examining(examining, found.doc, found.waft_key)
-            }
-        } else if (!examining_path) {
-            // case 2: no active doc, no cursor — pick first Point-bearing Doc,
-            // or just the first Doc if the Waft is fresh and has no Points yet.
+        if (!spot?.sc.src) {
             const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
             if (first) {
-                await H.Lies_roai_Open(w, first.doc, { waft_key: first.waft_key })
-                await H.Lies_set_examining(examining, first.doc, first.waft_key)
+                const up  = first.doc.c.up as TheC | undefined
+                const src = (up && up.sc.Waft === undefined) ? up : first.doc
+                await H.Lies_roai_Open(w, src, { waft_key: first.waft_key })
+                await H.Lies_set_examining(examining, src, first.waft_key)
             }
         }
+    },
+
+    // ── e_Lies_active_doc_changed ─────────────────────────────────────────────
+    //
+    //   Fired by Lang_set_active_dock whenever the foregrounded doc changes.
+    //   Replaces the old watch_c on ave/%active_dock — direct Atime elvis,
+    //   no UItime observer, no loop.
+    //
+    //   Behaviour:
+    //   - Skip when the cursor is already on a %What (deliberate placement).
+    //   - Skip when already aimed at this path (same-target no-op).
+    //   - Otherwise find the doc in loaded Wafts, lift to parent %What, and
+    //     set examining.  No-op when the path isn't in any Waft.
+    //
+    //   e.sc: { path: string }
+    async e_Lies_active_doc_changed(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const path      = e.sc.path as string | undefined
+        if (!path) return
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+
+        const cur_spot    = examining.o({ Spotlight: 1 })[0] as TheC | undefined
+        const cur_src     = cur_spot?.sc.src as TheC | undefined
+        const cur_is_what = cur_src && (cur_src.sc as any).What !== undefined
+        if (cur_is_what) return   // cursor deliberately on a %What — don't follow
+
+        const cur_path = cur_src?.sc.path as string | undefined
+        if (cur_path === path) return   // already here
+
+        const found = H.Lies_find_doc_in_wafts(w, path)
+        if (!found) return   // doc not in any Waft — Lang opened it independently
+
+        const up  = found.doc.c.up as TheC | undefined
+        const src = (up && up.sc.Waft === undefined) ? up : found.doc
+        if (src === cur_src) return   // same-object guard
+
+        console.log(`👁 active_doc_changed → Waft:${found.waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + path}`)
+        await H.Lies_roai_Open(w, src, { waft_key: found.waft_key })
+        await H.Lies_set_examining(examining, src, found.waft_key)
     },
 
     // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
@@ -268,7 +247,7 @@
     //   - three fields (src, src_Waft, bump) never go half-done
     //
     //   When src is a %What: req:workon in w:Lang arms the Understanding.
-    //   When src is a %Doc (cold-start, active_dock watch, e_Lies_set_cursor):
+    //   When src is a %Doc (cold-start, e_Lies_active_doc_changed, e_Lies_set_cursor):
     //   workon will find the path on sc.path and proceed to req:checkout.
     //   < e_Lies_set_cursor should eventually deliver the parent %What.
     async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
@@ -277,11 +256,9 @@
 
     // ── Waft_cursor_candidates ────────────────────────────────────────────────
     //
-    //   Depth-first collect of all %What particles in a Waft (or sub-tree)
+    //   Depth-first collect of all %What particles across all loaded Wafts
     //   that carry at least one %Point anywhere in their extent.
     //   Pre-order: a parent What with its own Points appears before its children.
-    //   Returns every inhabited What across all loaded Wafts when w is supplied,
-    //   or within a single Waft subtree when called with the Waft/What directly.
     //
     //   Shared by Waft_cursor_first, Waft_cursor_next, and e_Lies_cursor_next
     //   so "what counts as a cursor stop" is defined in one place.
@@ -343,13 +320,13 @@
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return false
 
-        const all       = waft.o({ What: 1 }) as TheC[]
-        const inhabited = all.filter(wh => H.Lies_what_has_points(wh))
+        const all        = waft.o({ What: 1 }) as TheC[]
+        const inhabited  = all.filter(wh => H.Lies_what_has_points(wh))
         const candidates = inhabited.length ? inhabited : all
         if (!candidates.length) return false
 
-        const cur_src = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
-        const cur_idx = candidates.findIndex(c => c === cur_src)
+        const cur_src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const cur_idx  = candidates.findIndex(c => c === cur_src)
         const next_idx = cur_idx + 1
         if (next_idx >= candidates.length) return false
 
