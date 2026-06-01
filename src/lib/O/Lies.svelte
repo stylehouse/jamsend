@@ -173,6 +173,67 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
+    // ── e_Lies_desire_play ────────────────────────────────────────────────────
+    //   Fired by NaviCado's ‖/▶ toggle.  Sets completion.sc.playing = 1;
+    //   NaviCado's UI-side timer drives auto-advance via e_Lies_desire_step.
+    async e_Lies_desire_play(A: TheC, w: TheC, _e: TheC) {
+        const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
+        const completion = desire_sig?.c.completion as TheC | undefined
+        if (!completion || completion.sc.playing) return
+        completion.sc.playing = 1
+        completion.bump_version()
+        desire_sig!.bump_version()
+    },
+
+    // ── e_Lies_desire_pause ───────────────────────────────────────────────────
+    async e_Lies_desire_pause(A: TheC, w: TheC, _e: TheC) {
+        const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
+        const completion = desire_sig?.c.completion as TheC | undefined
+        if (!completion || !completion.sc.playing) return
+        completion.sc.playing = 0
+        completion.bump_version()
+        desire_sig!.bump_version()
+    },
+
+    // ── e_Lies_desire_step ────────────────────────────────────────────────────
+    //   Advance to the next %What in the acquired Waft.  Fired manually by
+    //   NaviCado's → button, or on a UI-side timer when playing:1.
+    //   Wraps around; pauses when the Waft is exhausted (last sibling reached).
+    async e_Lies_desire_step(A: TheC, w: TheC, _e: TheC) {
+        const H          = this as House
+        const examining  = w.o({ examining: 1 })[0] as TheC | undefined
+        const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
+        const desire     = desire_sig?.c.desire    as TheC | undefined
+        const completion = desire_sig?.c.completion as TheC | undefined
+        if (!examining || !desire) return
+
+        const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
+        if (!waft_node) return
+        const waft     = waft_node.sc.src    as TheC
+        const waft_key = waft_node.sc.Waft   as string
+
+        // Collect all Whats in the acquired Waft (prefer inhabited, fall back to all).
+        const all = waft.o({ What: 1 }) as TheC[]
+        const inhabited = all.filter(wh => H.Lies_what_has_points(wh))
+        const candidates = inhabited.length ? inhabited : all
+        if (!candidates.length) return
+
+        const cur_src = examining.o({ What_Points: 1 })[0]?.sc.src as TheC | undefined
+        const cur_idx = candidates.findIndex(c => c === cur_src)
+        const next_idx = cur_idx + 1
+
+        if (next_idx >= candidates.length) {
+            // Waft exhausted — pause and stay on last.
+            if (completion) { completion.sc.playing = 0; completion.bump_version() }
+            desire_sig!.bump_version()
+            return
+        }
+
+        const next = candidates[next_idx]
+        await H.Lies_roai_Open(w, next, { waft_key })
+        await H.Lies_set_examining(examining, next, waft_key)
+    },
+
     // ── e_Lies_now_Waft ────────────────────────────────────────────────
     //
     //   Fired by the +Now button in Liesui.  Spawns or reuses the
@@ -346,6 +407,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             w.c.Lies_setup = true
             ave.i(examining)
             examining.c.w = w   // back-ref so Liesui can reach w from examining
+            // %desire: reactive signal for NaviCado's transport bar.
+            // Holds refs to req:desire and req:completion once they're seeded.
+            const desire_sig = w.oai({ desire: 1 })
+            ave.i(desire_sig)
+            desire_sig.c.w = w
             w.oai({ Opt: 1 })
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
@@ -429,9 +495,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             await H.Waft_link_up(waft, waft)   // C.c.up back-refs; Waft is its own ceiling
 
             // Lies_sync_waft_docs now only trims; doc open_reqs come via cursor/workon.
-            H.watch_c(waft, () => {
+            H.watch_c(waft, async () => {
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
+                // Re-stamp c.up / c.waft so Doc-click lifting in e_Lies_set_cursor
+                // works immediately after any structural change.  Bails early on
+                // already-linked subtrees so the cost is proportional to the delta.
+                await H.Waft_link_up(waft, waft)
             })
 
             waft_req.sc.done = 1
@@ -617,6 +687,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
                 const waft     = waft_node.sc.src as TheC
                 const waft_key = waft_node.sc.Waft as string
+
+                // Expose desire + completion to NaviCado via ave/%desire.
+                const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
+                if (desire_sig) {
+                    desire_sig.c.desire    = desire
+                    desire_sig.c.completion = completion
+                    desire_sig.bump_version()
+                }
 
                 // Land cursor on first candidate if not already inside this Waft.
                 const examining  = w.o({ examining: 1 })[0] as TheC | undefined

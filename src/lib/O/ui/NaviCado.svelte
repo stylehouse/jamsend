@@ -3,55 +3,43 @@
     //
     // ── What this is ─────────────────────────────────────────────────────────
     //
-    //   A small toolbar that renders navigation controls for the active
-    //   Understanding (%LE).  Sits above the Pmirror capsule strip in
-    //   DocMinimap; receives %LE as a prop via Languinio and uses the
-    //   LE_what_* helpers to know its position in the Waft tree.
+    //   Toolbar for the active Understanding (%LE) plus the transport bar for
+    //   req:desire playback.  Sits above the Pmirror capsule strip in DocMinimap.
     //
-    //   The button slots (avocados) are generalised: NaviCado accepts Svelte
-    //   snippets for each slot so any caller can put anything button-shaped
-    //   inside them.  The default render is the What-navigation arrow set.
+    // ── Particle sources ──────────────────────────────────────────────────────
     //
-    // ── Particle source ───────────────────────────────────────────────────────
-    //
-    //   LE        — w:Lies/{LE:1}; same-object hold via Languinio/%LE.
-    //   LE.sc.target — the %What currently checked out.
-    //   target.c.up  — back-ref chain to Waft (set by Lies_stamp_up).
+    //   LE              — w:Lies/{LE:1}; same-object hold via Languinio/%LE.
+    //   ave/%desire     — reactive signal; c.desire / c.completion carry the
+    //                     live req particles; .sc.playing:0|1 drives the timer.
     //
     // ── Buttons ───────────────────────────────────────────────────────────────
     //
-    //   ↑   up       — move to parent %What.  Ghosted at depth 0 (top level).
-    //   ←   prev     — step to previous sibling %What.  Ghosted at first sibling.
-    //   →   next     — step to next sibling %What.  Ghosted at last sibling.
-    //   ↘   branch   — create a new sibling %What after current, step into it.
-    //   ↓   dive     — create a child %What inside current, step into it.
-    //                  < branch and dive are Chunk 4c; buttons render but are ghosted.
+    //   ↑   up       — parent %What.  Ghosted at depth 0.
+    //   ←   prev     — previous sibling.  Ghosted at first.
+    //   →   next     — next sibling.  Ghosted at last.
+    //   ↘   branch   — < Chunk 4c; ghosted.
+    //   ↓   dive     — < Chunk 4c; ghosted.
     //
-    // ── Slot generalisation ───────────────────────────────────────────────────
+    //   Transport bar (below nav row, shown when req:desire is active):
+    //   ‖/▶  pause/play toggle   — e_Lies_desire_pause / e_Lies_desire_play
+    //   →    step                — e_Lies_desire_step (also fired by UI timer)
     //
-    //   Each button position is a Svelte snippet slot.  DocMinimap passes no
-    //   custom snippets — the defaults render the What-nav set.  Future callers
-    //   can pass their own to reuse this toolbar layout for other navigation
-    //   contexts (e.g. a bookmark navigator, a Point-set browser).
+    // ── Auto-advance ─────────────────────────────────────────────────────────
     //
-    //   The avocado metaphor: each slot is a seed-shaped receptacle; the
-    //   rendered snippet is the seed.  Empty seeds (no navigation target) are
-    //   shown as ghost-opacity placeholders so the toolbar width stays stable.
-    //
-    // ── Reactivity ────────────────────────────────────────────────────────────
-    //
-    //   LE is a direct TheC ref (same object as w:Lies/%LE).  Reads LE.vers to
-    //   subscribe — any LE_arm/LE_pull bumps it.  target is derived from
-    //   LE.sc.target; siblings and depth re-derive on each target change.
+    //   UI-side setInterval at 4s when playing:1.  Fires e_Lies_desire_step
+    //   each tick; Lies pauses when the Waft is exhausted.  Not a Story ttlilt —
+    //   purely a presentation timer that doesn't hold Story open.
 
+    import { onDestroy } from "svelte"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import type { Snippet } from "svelte"
 
+    const PLAY_INTERVAL_MS = 4000   // advance every 4s when playing
+
     let { H, LE, slot_up, slot_prev, slot_next, slot_branch, slot_dive }: {
         H:           House
         LE:          TheC | undefined
-        // Snippet slots — each receives { ghosted: boolean, onclick: () => void }
         slot_up?:     Snippet<[{ ghosted: boolean, onclick: () => void }]>
         slot_prev?:   Snippet<[{ ghosted: boolean, onclick: () => void }]>
         slot_next?:   Snippet<[{ ghosted: boolean, onclick: () => void }]>
@@ -61,12 +49,46 @@
 
     // ── reactive derivation from LE ───────────────────────────────────────────
 
-    // $derived.by so void LE.vers fires as a statement — bumped by LE_arm (oai State) and LE_pull.
-    let target  = $derived(LE && LE.vers && LE.sc.target)
+    // LE.vers is always ≥ 1 (truthy) — safe chain link that registers the reactive read.
+    let target   = $derived(LE && LE.vers && LE.sc.target as TheC | undefined)
     let depth    = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
     let has_prev = $derived(target ? !!(H as any).LE_what_prev(target) : false)
     let has_next = $derived(target ? !!(H as any).LE_what_next(target) : false)
     let has_up   = $derived(depth > 0)
+
+    // ── desire / transport ────────────────────────────────────────────────────
+
+    let desire_sig  = $derived(H.ave.ob({ desire: 1 })[0] as TheC | undefined)
+    let completion  = $derived.by(() => {
+        void desire_sig?.vers
+        return desire_sig?.c.completion as TheC | undefined
+    })
+    let is_playing  = $derived.by(() => {
+        void completion?.vers
+        return !!(completion?.sc.playing)
+    })
+    let has_desire  = $derived(!!desire_sig?.c.desire)
+
+    // Auto-advance timer — fires e_Lies_desire_step every PLAY_INTERVAL_MS
+    // while playing.  Managed imperatively so the interval is always in sync
+    // with the is_playing derived.
+    let _play_timer: ReturnType<typeof setInterval> | null = null
+
+    $effect(() => {
+        if (is_playing) {
+            if (!_play_timer) {
+                _play_timer = setInterval(() => {
+                    H.i_elvisto('Lies/Lies', 'Lies_desire_step', {})
+                }, PLAY_INTERVAL_MS)
+            }
+        } else {
+            if (_play_timer) { clearInterval(_play_timer); _play_timer = null }
+        }
+    })
+
+    onDestroy(() => {
+        if (_play_timer) clearInterval(_play_timer)
+    })
 
     // ── nav actions ──────────────────────────────────────────────────────────
 
@@ -166,6 +188,21 @@
     </div>
 
 </div>
+
+<!-- Transport bar — only when req:desire is active -->
+{#if has_desire}
+<div class="nvc-transport">
+    <button class="nvc-t-btn" class:nvc-t-playing={is_playing}
+            title={is_playing ? 'Pause' : 'Play'}
+            onclick={() => H.i_elvisto('Lies/Lies', is_playing ? 'Lies_desire_pause' : 'Lies_desire_play', {})}>
+        {is_playing ? '‖' : '▶'}
+    </button>
+    <button class="nvc-t-btn" title="Step to next What"
+            onclick={() => H.i_elvisto('Lies/Lies', 'Lies_desire_step', {})}>→</button>
+    <span class="nvc-t-label">{is_playing ? 'playing' : 'paused'}</span>
+</div>
+{/if}
+
 {/if}
 
 <style>
@@ -224,5 +261,37 @@
         white-space:   nowrap;
         padding:       0 4px;
         letter-spacing: 0.02em;
+    }
+
+    /* Transport bar — play/pause + step for req:desire playback. */
+    .nvc-transport {
+        display:       flex;
+        align-items:   center;
+        gap:           4px;
+        padding:       2px 4px;
+        background:    rgba(20, 25, 32, 0.9);
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        min-height:    18px;
+    }
+
+    .nvc-t-btn {
+        background:    transparent;
+        border:        1px solid rgba(255,255,255,0.1);
+        border-radius: 3px;
+        color:         #556678;
+        cursor:        pointer;
+        font-size:     10px;
+        line-height:   1;
+        padding:       1px 4px;
+        transition:    color 0.1s;
+    }
+    .nvc-t-btn:hover { color: #9aa5b4; border-color: rgba(255,255,255,0.25); }
+    .nvc-t-btn.nvc-t-playing { color: #7ab0c0; border-color: rgba(122,176,192,0.4); }
+
+    .nvc-t-label {
+        font-size:  9px;
+        color:      #3a4555;
+        font-style: italic;
+        flex:       1;
     }
 </style>

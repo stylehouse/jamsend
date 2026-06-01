@@ -314,11 +314,13 @@
         regions:          Region[]
         top_level_defs:   Def[]
         all_marks:        PointMark[]   // flat list for capsule nav lookup
-    } = $state({ regions: [], top_level_defs: [], all_marks: [] })
+        le_membership:    Map<string, { unaccepted: boolean, unshowing: boolean }>
+    } = $state({ regions: [], top_level_defs: [], all_marks: [], le_membership: new Map() })
 
     let regions        = $derived(_structure.regions)
     let top_level_defs = $derived(_structure.top_level_defs)
     let all_marks      = $derived(_structure.all_marks)
+    let le_membership  = $derived(_structure.le_membership)
 
     function schedule_rebuild() {
         cancelAnimationFrame(_raf)
@@ -329,12 +331,15 @@
         void dock?.version
         void lang_dock?.version
         void active_path
+        // LE.vers bumps when e_Lang_LE_drop/add/edit fire feebly_ponder —
+        // ensures collect_le_membership() re-runs on Understanding mutations.
+        void LE?.vers
         schedule_rebuild()
     })
 
     function rebuild() {
         if (!dock) {
-            _structure = { regions: [], top_level_defs: [], all_marks: [] }
+            _structure = { regions: [], top_level_defs: [], all_marks: [], le_membership: new Map() }
             return
         }
 
@@ -343,7 +348,8 @@
         // %Output is only present for hard-compiled gen_path docs.
         const job     = lang_dock?.o({ Compile: 1 })[0]  as TheC | undefined
         const methods = job?.o({ methods: 1 })[0]        as TheC | undefined
-        const point_marks = collect_graft_marks()
+        const point_marks  = collect_graft_marks()
+        const le_membership = collect_le_membership()
 
         // Auto-promote newly arrived specs into in_group + showing.
         // Skips specs the user has explicitly demoted this session.
@@ -410,7 +416,7 @@
                 console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_marks.length} unresolved=${unres}`)
                 last_log_summary = summary
             }
-            _structure = { regions: list, top_level_defs: top_defs, all_marks: point_marks }
+            _structure = { regions: list, top_level_defs: top_defs, all_marks: point_marks, le_membership }
             return
         }
 
@@ -421,7 +427,7 @@
             console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_marks.length}`)
             last_log_summary = summary
         }
-        _structure = { regions: fallback_regions, top_level_defs: [], all_marks: point_marks }
+        _structure = { regions: fallback_regions, top_level_defs: [], all_marks: point_marks, le_membership }
     }
 
     // ── collect_graft_marks ───────────────────────────────────────────────────
@@ -448,6 +454,39 @@
                 from:       graft.sc.from as number,
                 to:         graft.sc.to   as number,
                 unresolved: false,
+            })
+        }
+        return out
+    }
+
+    // ── collect_le_membership ─────────────────────────────────────────────────
+    //
+    //   Walk LE's working clones and return a Map of spec → membership flags.
+    //   Membership (unaccepted, unshowing) is OF the Point within the Understanding,
+    //   not IN the Point — it lives on clone.c.U.sc.
+    //   Position (line, from, to) still comes from collect_graft_marks.
+    //
+    //   Spec resolution mirrors Lang_point_spec: method ?? label ?? Point-value.
+    //   Points keyed by value (Point:transport) join correctly against capsule specs.
+    //
+    //   Gate: LE must be armed at a %What src so the clone list is the What's
+    //   Points; returns an empty Map for bare %Doc sessions.
+    function collect_le_membership(): Map<string, { unaccepted: boolean, unshowing: boolean }> {
+        const out = new Map<string, { unaccepted: boolean, unshowing: boolean }>()
+        if (!LE) return out
+        const target = LE.sc.target as TheC | undefined
+        // bare %Doc as target has no .What on sc — skip
+        if (!target || (target.sc as any).What === undefined) return out
+        const clones = (H as any).LE_clones(LE) as TheC[]
+        for (const c of clones) {
+            const sc  = c.sc as any
+            // mirror Lang_point_spec resolution order
+            const raw = sc.method ?? sc.label ?? sc.Point
+            if (raw == null || raw === 1 || raw === true) continue
+            const spec = String(raw)
+            out.set(spec, {
+                unaccepted: !!(c.c?.U?.sc?.unaccepted),
+                unshowing:  !!(c.c?.U?.sc?.unshowing),
             })
         }
         return out
@@ -645,11 +684,14 @@
             {#each [...in_group] as spec (spec)}
                 {@const mark = all_marks.find(p => p.spec === spec)}
                 {@const is_sh = showing.has(spec)}
+                {@const mem  = le_membership.get(spec)}
                 <div class="lmm-capsule"
                      class:lmm-capsule-bad={mark?.unresolved}
-                     class:lmm-capsule-dormant={!is_sh}>
+                     class:lmm-capsule-dormant={!is_sh}
+                     class:lmm-capsule-unaccepted={mem?.unaccepted}>
                     <button class="lmm-capsule-orb"
-                            class:lmm-capsule-orb-show={is_sh}
+                            class:lmm-capsule-orb-show={is_sh && !mem?.unshowing}
+                            class:lmm-capsule-orb-unshowing={mem?.unshowing}
                             title={is_sh ? 'Showing — click to make dormant' : 'Dormant — click to show'}
                             onclick={() => toggle_showing(spec)}>
                     </button>
@@ -659,12 +701,20 @@
                         {spec}
                     </button>
                     {#if !is_sh}
-                        <button class="lmm-capsule-demote" title="Remove Point" onclick={() => demote(spec)}>×</button>
+                        <!-- × fires e_Lang_LE_drop when LE is armed at a %What;
+                             falls back to local demote() for bare %Doc sessions. -->
+                        <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
+                            if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
+                                H.i_elvisto('Lang/Lang', 'Lang_LE_drop', { spec })
+                            } else {
+                                demote(spec)
+                            }
+                        }}>×</button>
                     {/if}
                 </div>
             {/each}
-            <!-- Step Lies cursor to the next Doc in the Waft order. -->
-            <button class="lmm-cursor-next" title="Next Doc in Waft" onclick={cursor_next}>→</button>
+            <!-- Step Lies cursor to the next What in the Waft order. -->
+            <button class="lmm-cursor-next" title="Next What in Waft" onclick={cursor_next}>→</button>
         </div>
     {/if}
 
@@ -825,6 +875,16 @@
     }
     .lmm-capsule-bad { border-color: rgba(224, 108, 117, 0.35); }
 
+    /* U%unaccepted — virtual deletion; cross out the label, amber tint */
+    .lmm-capsule-unaccepted {
+        background: rgba(224, 108, 117, 0.06);
+        border-color: rgba(224, 108, 117, 0.2);
+    }
+    .lmm-capsule-unaccepted .lmm-capsule-label {
+        text-decoration: line-through;
+        color: rgba(224, 108, 117, 0.5);
+    }
+
     /* Orb inside capsule — the showing toggle. */
     .lmm-capsule-orb {
         display: block; width: 8px; height: 8px;
@@ -841,6 +901,12 @@
     }
     .lmm-capsule-bad .lmm-capsule-orb      { border-color: rgba(224, 108, 117, 0.5); }
     .lmm-capsule-bad .lmm-capsule-orb-show { background: #e06c75; border-color: #e06c75; box-shadow: 0 0 4px #e06c7588; }
+    /* U%unshowing — orb shows a dim ring rather than full gold */
+    .lmm-capsule-orb.lmm-capsule-orb-unshowing {
+        background: transparent;
+        border-color: rgba(229, 192, 123, 0.2);
+        box-shadow: none;
+    }
     .lmm-capsule-orb:hover { opacity: 0.75; }
 
     .lmm-capsule-label {

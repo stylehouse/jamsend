@@ -1,174 +1,106 @@
 # Waft palmtree trajectory — reqy migration + What transport
 
-Carry-forward for post-🌴 work.  `Waft_spec.md` owns the *design* of the What
-tree and its transport semantics; this doc owns the *implementation slice*.
+Carry-forward for post-🌴 work.  `Waft_spec.md` owns the *design*; this doc
+owns the *implementation slice*.
 
 ---
 
-## Lang/LE architecture
+## State as of this session
+
+Design problems 1–4 and 6 from last session closed.  4b (`req:desire` playing
+loop + NaviCado transport bar) landed.  Languinio-as-bus wired for active dock.
+
+### Files touched this session
+
+- `DocMinimap.svelte` — `void LE?.vers` in rebuild `$effect` (problem 6 reactivity);
+  `collect_le_membership` mirrors `Lang_point_spec` spec resolution (problem 2)
+- `LiesEnd.svelte` — `LE_what_siblings` handles `%Doc` nodes (problem 4);
+  `LE_what_depth` / `LE_what_parent` generalised for any node type
+- `Lies.svelte` — `Waft_link_up` in `watch_c` handler (problem 1 c.up latency);
+  `ave/%desire` signal enrolled at setup; `e_Lies_desire_play/pause/step` handlers;
+  `req:completion` do_fn stamps `desire_sig.c.completion`
+- `NaviCado.svelte` — transport bar (‖/▶, →); UI-side 4s play timer;
+  reads `ave/%desire` for playing state
+- `Lang.svelte` — `Lang_set_active_dock` pushes same-object dock hold into
+  `%Languinio` (Languinio-as-bus first wire)
+
+---
+
+## Lang/LE architecture (current)
 
 ```
 w:Lies
   /%examining
     /%What_Points
-        sc.src      $C → %What or %Doc    ← cursor target; %What from cursor_next,
-                                             %Doc from cold-start / active_dock watch
+        sc.src      $C → %What or %Doc
         sc.src_Waft string
+  /%desire             reactive signal for NaviCado transport bar
+        c.desire    $C → req:desire
+        c.completion $C → req:completion (sc.playing:0|1)
 
-ave/%active_dock                          ← reactive signal: which %Dock is foregrounded
+  /req:desire
+    /req:acquire         one-shot Waft lock
+    /req:completion      open-ended; sc.playing drives UI timer in NaviCado
+    /req:git             < Waftlet accumulator; deferred
+
+ave/%active_dock
   sc.path  string
-  c.dock   $C → %Dock                    ← direct ref; Langui reads for bookmarks
+  c.dock   $C → %Dock
 
 w:Lang
   /%docks
-    /%Dock,path                           ← one per open file; carries CM state + compile
-      /%Compile
-        /%Output
+    /%Dock,path
+      /%Compile / /%Output
       /%bookmark,N
-      /%LE                                ← stable; not inside replace()
-        /%State                           ← synthesised: armed/changey/stale
+      /%LE
+        /%State           sc.armed / sc.changey / sc.stale
         // %push_dirty — fault; present only when push didn't land clean
-        /%Seem:origin
-            sc.Se  Selection()
-            sc.C   → live OC%What         ← the remote; never edited
-            /D%Demonstrations:origin**    ← awareness sphere; neus/goners = stale signal
-            /%News:origin
-        /%Seem:working
-            sc.Se  Selection()
-            sc.C   → clone C%What         ← our editable tree
-            /D%Demonstrations:working**
-              /%Understandable            ← U node; unshowing/unaccepted live here
-            /%News:working
+        /%Seem:origin     sc.Se / sc.C → live OC%What
+        /%Seem:working    sc.Se / sc.C → clone C%What
+          /%Demonstrations:working
+            /%Understandable   C.c.U; unshowing/unaccepted live here
 
   /%Languinio
-    /%Change                              ← three-leg display strip (storage/backend/compile)
-    // /%LE — same-object hold on whichever /%Dock/%LE is foregrounded
-    //   re-pointed on active_dock change via e_Lang_LE_arm
+    /%Change              three-leg display strip
+    /%LE                  same-object hold on workon/{LE:1}
+    /%Dock,path           same-object hold on active dock ← NEW
 
-ave/%lang_dock,path                       ← text sync; sc.text / sc.text_dige / sc.disk_dige
+  /req:workon             sc.following:1 (default — tracks group cursor)
+    /req:awaiting         one-shot; installs Languinio/%LE
+    /req:maneuvre         reset on each cursor move
+      /req:checkout / /req:load_doc / /req:graft / /req:encode
+
+ave/%lang_dock,path       sc.text / sc.text_dige / sc.disk_dige
 ```
-
-Key structural facts:
-
-- `LiesEnd` methods run on the same House as `Lies` — `H.LE_arm`, `H.LE_pull`
-  etc. are available from any Lies tick or LiesCurse callback without a
-  cross-world round-trip.
-- `/%LE` lives under `/%Dock,path` in `w:Lang` — stable, not inside `replace()`,
-  so `LE/*` and `LE.c.*` survive pulls.  One LE per Dock.
-- The Understanding is **Lies's checkout, Lang's read**: Lang reaches the active
-  LE through the `%Languinio` same-object hold (`/%Languinio/%LE`), re-pointed
-  on each `active_dock` change via `e_Lang_LE_arm`.
-- `Lies_set_examining` is the single seam: on a cursor move it calls
-  `H.LE_arm(LE, src)` then fires `e_Lang_LE_arm` cross-world after the first pull.
-- `i()` always inserts (never deduplicates), so `e_Lang_LE_arm` does
-  `await languinio.r({LE:1},{})` before `languinio.i(LE)`.
 
 ---
 
-## Chunk U — the Understanding ✓ done + grafted
-
-*Built and proven in an isolated harness (Understandity → Understandium →
-Understandication).  Now wired onto the live Lies+Lang cluster via Steps A–C.*
-
-### Steps A–C (done)
-
-**A** — `LiesEnd.svelte` unchanged; comment was already correct: `w/{LE}` under
-`w:Lies`.
-
-**B** — `LiesCurse.svelte` / `Lies_set_examining`: now `async`; after stamping
-`wpt` and bumping:
-- gets `w` via `examining.c.w`
-- gets `LE` via `w.oai({LE:1})`
-- calls `H.LE_arm(LE, src)` (sync)
-- `await H.LE_pull(LE)` then `H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })`
-
-`watch_c` handlers are now `async () =>` and the flush loop `await`s each handler
-(`Housing_svelte.ts`).  All call sites of `Lies_set_examining` use `await`.
-
-**C** — `Lang.svelte`: new `e_Lang_LE_arm` handler after `e_Lang_open_dock`.
-Receives `e.sc.LE`, drops prior hold via `await languinio.r({LE:1},{})`, then
-`languinio.i(LE)`.  Particle layout comment updated to document `%Languinio/%LE`.
-
-### Open faults from Chunk U
+## Open faults
 
 ```
-// < vanish: unaccepted clone lands as goner on post-push awareness pull, firing
-//   push_dirty.  Fix: LE_push stamps bD/was_disincluded:1; resolved_fn suppresses.
+// < vanish: unaccepted clone lands as goner on post-push awareness pull,
+//   firing push_dirty.  Fix: LE_push stamps bD/was_disincluded:1;
+//   resolved_fn suppresses that goner.  Needed before unaccepted is usable.
 // < push_dirty not yet wired to a req fault particle in the reqy system.
 // < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
+// < e_Lang_LE_drop demote vs Lies-side accepted: takes a full cursor-move cycle
+//   to reconcile.  Faster path: LE_push fires e_Lies_What_Point_changed.
+// < workon.sc.following = 1 stamped but not read; thought-balloon needs a
+//   UI hook in NaviCado breadcrumb when following:0.
+// < Languinio dock hold: DocMinimap still reads lang_dock from ave/{active_dock:1}.c.dock
+//   directly; migrate to languinio.o({dock:1})[0] to complete the bus wire.
 ```
-
-### The two-sphere stitch, API, and LE states
-
-See `LiesEnd_spec.md`.
 
 ---
 
 ## Chunk 4 — What-level transport and navigation
 
-*Depends on Chunk U.  Multi-reset sub-project; design sub-slices before each.*
-
 ### 4a — cursor_next steps %What ✓ done
+### Chunk U — Understanding ✓ done + grafted
+### 4b — `req:desire` playing loop ✓ done
 
-`e_Lies_cursor_next` in `LiesCurse.svelte` now steps `%What` particles (direct
-children of loaded Wafts), not `%Doc` particles.  Two new helpers:
-
-- `Lies_what_has_points(what)` — true when a `%What` has at least one `%Point`
-  in its immediate layer (direct children, or inside a direct `%Doc` child).
-  Does not recurse into nested `%What` children.
-- `Lies_what_first_doc_path(what)` — returns the first `%Doc` child's path, or
-  `undefined` for a pure time-slice `%What` with direct Points (no Doc container).
-  Used so `Lies_ensure_doc_loaded` can queue a load.
-
-Position is tracked by **particle identity** (`c.what === cur_src`), not path —
-`%What` has a label, not a path.
-
-`e.sc.dock_path` is kept on the event for caller compat but is no longer read.
-
-**Open seam:** `e_Lies_set_cursor` (click on a Doc row in Liesui) and the
-cold-start / `active_dock` watch paths still deliver a `%Doc` as `src`.  That's
-correct for now — they are path-driven.  LangGraft tolerates either: `src_path`
-is `undefined` for a `%What` and the guard short-circuits harmlessly.
-
-```
-// < e_Lies_set_cursor should eventually arm the parent %What when a %Doc is
-//   clicked inside a %What-structured Waft.  Needs Liesui to surface %What
-//   rows as clickable targets first.
-```
-
-### 4b — `req:desire` skeleton ✓ landed; playing/pause loop next
-
-`req:desire` lives on `w:Lies` directly — one wanderer, not one per Waft.
-Erupts in `LiesRealised` via `rq.doai`.  Structure now in place:
-
-```
-w:Lies
-  /{req:'desire'}                  ← the wanderer; finds Waft via req:acquire
-    /{req:'acquire'}               ← one-shot lock; stamps desire.sc.waft_C
-                                     sc.active → src_Waft → first Waft
-    /{req:'completion',playing:0}  ← open-ended session; steps when playing:1
-    /{req:'git'}                   ← Waftlet accumulator; patches via LE_push
-```
-
-`doai` is the new gesture for seeding a req and wiring its `do_fn` in one call
-(`Hovercraft.svelte`).  It delegates to `roai(c, sc, meta)` — `meta.existed`
-tells `doai` whether the req is fresh; only fresh reqs get the setter back.
-`?.()` on the return makes every re-entry tick a no-op.
-
-```js
-;(await rq.doai({ req: 'desire' }))?.(async (desire) => { ... })
-```
-
-**Still to wire for 4b:**
-- `req:acquire` do_fn is live — picks active/src_Waft/first Waft, finishes once locked.
-- `req:completion` do_fn — `reqonce(completion, 'open_What')` sets cursor to first
-  `%What`; when `playing:1` arms a ttlilt so Story advances automatically.
-- `req:next_What` — minted by completion's ttlilt expiry; steps sibling, or
-  transitions to `req:waft_exhausted` at end of Waft.
-- Transport bar in NaviCado reads `desire.sc.waft_C` and `completion.sc.playing`.
-
-**`req:git` — deferred** (`// < Chunk 4b+`): receives `/%Waftlet` children as
-`LE_push` patches land; do_fn flushes them to disk/remote.
+Transport bar renders in NaviCado when `req:desire` is active.  Auto-advance
+fires every 4s when playing; pauses at Waft end.
 
 ### 4c — `↘` / `↓` branch and dive gestures
 
@@ -177,85 +109,49 @@ tells `doai` whether the req is fresh; only fresh reqs get the setter back.
 ↓   child +time       dive: create a new %What inside the current one
 ```
 
-Needs `+time` carry-over heuristic (accepted+showing → forward, recent →
-move, rest → ghost with 10s rescue window).  Sits on top of the `LE_push`
-mechanism — each gesture is "re-aim `%What_Points`, clone, edit, push".
+Both gestures use `e_Lang_LE_add` / `LE_push` now that the write paths exist.
+Carry-over heuristic (accepted+showing → forward, recent → move, rest → ghost)
+needs `+time` semantics nailed down first.
 
 ```
 // < unaccepted carry-forward reads clone.c.U?.sc.unaccepted at branch time
-// < vanish fix (from Chunk U) must land before unaccepted is usable here
+// < vanish fix must land before unaccepted is usable here
 ```
 
 ### 4d — ghost + rescue window + `◀◀ rwnd`
 
-Ghost decorations and `rwnd` (step backward through `%What` siblings in reverse,
-read-only).  Depends on 4c for the ghost stamping.
+Ghost decorations and `rwnd` (step backward, read-only).  Depends on 4c.
 
-### Navigation gestures summary
+---
+
+## Architecture: Languinio as display bus — remaining wires
+
+1. DocMinimap `lang_dock` source — migrate from `sig.c.dock` to
+   `languinio.o({dock:1})[0]` now that `Lang_set_active_dock` inserts the hold.
+2. `/%Languinio/{cursor:1}` — What label, depth, sibling count for NaviCado,
+   so NaviCado doesn't need to call `LE_what_*` helpers directly.
+
+---
+
+## Navigation gestures summary
 
 ```
-→   continue     step to next %What — e_Lies_cursor_next ✓ done (4a)
-↑←→  NaviCado   up/prev/next via c.up chain — ✓ landed (e_Lies_cursor_what)
+→   continue     step to next %What — e_Lies_cursor_next ✓
+↑←→  NaviCado   up/prev/next via c.up chain — ✓
+‖/▶  play/pause  req:desire transport — ✓ 4b
+→    step        manual advance — ✓ 4b
 ↘   sibling +time   e_Lies_branch_What — 4c
 ↓   child +time     e_Lies_dive_What   — 4c
 ◀◀  rwnd         reverse step        — 4d
 ```
 
-`NaviCado.svelte` — toolbar above DocMinimap capsule strip; receives `%LE` via
-Languinio; derives position from `LE_what_depth/siblings/next/prev` helpers in
-`LiesEnd`.  `Waft_link_up` stamps `What.c.up` / `What.c.waft` on every node
-after Waft decode (and after LE_push lands fresh children).  Waft is the ceiling:
-`c.up` chain stops at `node.sc.Waft !== undefined`.
-
-### The caving metaphor
-
-A Waft is a cave system.  Each `%What` is a chamber — a moment of focused
-attention with particular Points illuminated on the walls.  `→` walks the main
-passage.  `↘` carves a side-tunnel from the current chamber.  `↓` drops into
-a pit discovered between two Points in the floor.
-
-The audience follows the spelunker.  The frame of reference is the chamber
-they're in — its Points are the walls.  `→` is legible because the audience
-knows where they came from.  `↘` is "we'll return to this junction."  `↓` is
-"look what's down here" — a sub-thread that resurfaces to the parent when done.
-
 ---
 
-## Style notes
+## Style notes (standing)
 
-- Keep comments that stay true on rewrite; drop dev-mumbling.
 - `// < …` marks a *lack* of development.
 - `%like,this` naming a lone C object; `/%like,this/written:is` for structures.
-  `$values` for sc scalars, `$C` for TheC refs in sc.
-- `oai` sync, `roai` async.  `roai` from sync context returns a Promise and
-  silently breaks the assignment — verify call-site async-ness when touching
-  particle-creation code.
-- `rq.doai(c, sc?)` — seed a named req and wire `req.c.do_fn` in one gesture.
-  Delegates to `roai(c, sc, meta)`; `meta.existed` distinguishes fresh from seen.
-  Returns setter fn first time, `null` thereafter — `?.()` makes re-entry a no-op.
-  `await` required at call site: `;(await rq.doai({...}))?.(async (req) => {...})`.
-- `watch_c` handlers are now `async () =>` and the flush loop awaits each one
-  (`Housing_svelte.ts`).  All `Lies_set_examining` call sites use `await`.
-- `i()` always inserts — never deduplicates by identity.  When a same-object
-  hold needs replacing, drop via `r({key:val},{})` or explicit `drop()` first.
-- `i_req_ttlilt(req, secs, sc)` sets `w.c.has_req_ttlilt` — Story's quiescence
-  gate.  No separate `demand_time_to_think` needed.
-- `reqonce(req, name)` stamps `req.sc[name]=1` once per req lifetime (via
-  `req.c.oncelers`).  Gate one-shot setup inside `do_fn` with it.
-- The `req` mainkey is the default; no need to customise it unless genuinely
-  distinguishing different classes of request on the same host particle.
-- `Se.process({ n, process_D, match_sc, trace_sc, each_fn, trace_fn,
-  resolved_fn, done_fn })` walks `n` against a D, building a transient `Travel`
-  ropeway (`T**`).  `trace_fn` mirrors `n.sc` into D; D nodes `replace()` so a
-  kept `D/U` persists across walks.  `resolved_fn(T, N, goners, neus)` is the
-  diff.  `match_sc:{}` is all-inclusive and keeps no D/U.
-- Vocabulary: **Understanding** (`U`) the bounded checkout; **UPoint** a
-  checked-out Point; **`/%Understandable`** the U-sphere node hanging under
-  **`/%Demonstrations`** (the D sphere); `C.c.U` the clone's direct ref to its
-  U node, `C.c.D` to its D node.  `%Pointo` is retired.  Local meanings live on
-  U (`C:Point//U%unshowing`), never on the source `%Point`.
-- Particle rename (Lang-side only): `docC` → `dock`, `{doc:path}` → `{dock:path}`,
-  `lang_doc` → `lang_dock`, `active_doc` → `active_dock`.  `loaded_doc` keeps its
-  full name (Lies-side loaded-file record, not a Dock).  Waft-side `%Doc` particles
-  are unchanged — `%Doc` is a document in the tour; `%Dock` is Lang's docked-file
-  particle (carries `/Compile`, `/Pmirror`, `/bookmark`).
+- `oai` sync, `roai` async.
+- `i()` always inserts — never deduplicates by identity.
+- `watch_c` handlers are `async () =>` and the flush loop awaits each one.
+- `reqonce(req, name)` stamps `req.sc[name]=1` once per req lifetime.

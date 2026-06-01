@@ -268,6 +268,13 @@
             // e_Lang_workon_update drives the inner cluster directly.
         })
 
+        // Seed following flag on workon after doai resolves it.
+        const workon_seed = rq_w.o({ req: 'workon' })[0] as TheC | undefined
+        if (workon_seed) {
+            workon_seed.sc.following = 1   // track group cursor (default)
+            // < following:0 = diverged; thought-balloon on breadcrumb
+        }
+
         w.c.plan_done = true
     },
 
@@ -311,8 +318,11 @@
     //
     //   Marks a path as active. Stamps dock.sc.active so a tabs UI can see
     //   which doc is foregrounded, and updates ave/{active_dock:1}.path so
-    //   Langui can reactively switch its EditorView to the right content
-    //   without needing to know the path at mount time.
+    //   Langui can reactively switch its EditorView to the right content.
+    //
+    //   Also pushes a same-object hold on the dock into %Languinio so
+    //   DocMinimap and other Languinio readers get lang_dock without reaching
+    //   back through ave/{active_dock:1}.c.dock.
     Lang_set_active_dock(w: TheC, path: string) {
         w.c.active_dock_path = path
         const docks = w.o({docks: 1})[0] as TheC | undefined
@@ -322,16 +332,20 @@
                 else delete d.sc.active
             }
         }
-        // ave/{active_dock:1} is the reactive signal Langui watches to know
-        // which ave/{lang_dock:path} particle to pull text from.
         const ave = (this as House).oai_enroll(this as House, { watched: 'ave' })
         const sig = ave.oai({ active_dock: 1 })
         sig.sc.path = path
         // sig.c.dock: the actual {dock:path} particle (holds bookmarks, view, state).
-        // Langui reads this via sig?.c.dock to derive its bookmark list.
-        // Stored on .c (not .sc) because TheC references don't belong in the index.
         sig.c.dock = docks?.o({dock: path})[0] as TheC | undefined
         sig.bump_version()
+        // Push same-object hold on the active dock into %Languinio so consumers
+        // can reach it via languinio.o({dock:path})[0] without a separate ave lookup.
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (languinio && sig.c.dock) {
+            languinio.r({ dock: 1 }, {}).then(() => {
+                if (sig.c.dock) languinio.i(sig.c.dock)
+            })
+        }
     },
 
 //#region e
@@ -474,6 +488,68 @@
 
         console.log(`📄 Lang open_dock → req:Languish ${path}`)
         await rq.do()
+    },
+
+    // ── e_Lang_LE_drop ────────────────────────────────────────────────────────
+    //
+    //   Mark a clone as a virtual deletion by setting U%unaccepted.
+    //   The clone stays in the working tree; LE_push and encode-compare skip it.
+    //   DocMinimap's × demote button fires this instead of local demote().
+    //
+    //   e.sc: { spec: string }
+    async e_Lang_LE_drop(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const rq     = H.reqy(w)
+        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
+        if (!workon) return
+        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
+        if (!LE) return
+        const spec  = e.sc.spec as string | undefined
+        if (!spec) return
+        const clone = (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
+        if (!clone) return
+        H.LE_drop_clone(LE, clone)
+        H.feebly_ponder()
+    },
+
+    // ── e_Lang_LE_add ─────────────────────────────────────────────────────────
+    //
+    //   Append a fresh clone to the working tree.
+    //   maneuvre reset will re-encode on next cursor tick.
+    //
+    //   e.sc: { sc: Record<string, any> }   — the sc for the new Point
+    async e_Lang_LE_add(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const rq     = H.reqy(w)
+        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
+        if (!workon) return
+        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
+        if (!LE) return
+        const sc = e.sc.sc as Record<string, any> | undefined
+        if (!sc) return
+        H.LE_add_clone(LE, sc)
+        H.feebly_ponder()
+    },
+
+    // ── e_Lang_LE_edit ────────────────────────────────────────────────────────
+    //
+    //   Patch a clone's sc in place.  maneuvre reset will re-encode on next tick.
+    //
+    //   e.sc: { spec: string, patch: Record<string, any> }
+    async e_Lang_LE_edit(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const rq     = H.reqy(w)
+        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
+        if (!workon) return
+        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
+        if (!LE) return
+        const spec  = e.sc.spec  as string | undefined
+        const patch = e.sc.patch as Record<string, any> | undefined
+        if (!spec || !patch) return
+        const clone = (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
+        if (!clone) return
+        Object.assign(clone.sc, patch)
+        H.feebly_ponder()
     },
 
     // ── e_Lang_workon_update ──────────────────────────────────────────────────
