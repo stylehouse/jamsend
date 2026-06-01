@@ -170,6 +170,14 @@ tells `doai` whether the req is fresh; only fresh reqs get the setter back.
 **`req:git` — deferred** (`// < Chunk 4b+`): receives `/%Waftlet` children as
 `LE_push` patches land; do_fn flushes them to disk/remote.
 
+### 4b2 — gaps
+
+LE arm gate — the src.sc.What !== undefined check should be "is this not a bare %Doc", or better: arm whenever src is something that has an LE-suitable extent (any non-leaf Waft node).
+
+LE_what_siblings — parent.o({ What: 1 }) should be parent.o({ What: 1, ...or Doc:1... }) — or rather, whatever the parent's direct Waft children are.
+
+LangGraft path guard — when src is a %What with %Doc children, the graft needs to read Points from inside the first matching %Doc, not from src directly.
+
 ### 4c — `↘` / `↓` branch and dive gestures
 
 ```

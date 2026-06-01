@@ -578,7 +578,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             // req:completion — open-ended; left open, user soaks and navigates away.
             //   reqonce open_What fires once after acquire: lands the cursor on the
-            //   first point-bearing %What.  No ttlilt — Story must not be held here.
+            //   first point-bearing direct child of the Waft (%What or %Doc).
+            //   No ttlilt — Story must not be held here.
             //   playing:0|1 is on sc for NaviCado's transport bar; UI-side timer
             //   drives auto-advance when playing:1, never Story-side.
             ;(await rq.doai({ req: 'completion' }, { playing: 0 }))?.(async (completion: TheC) => {
@@ -588,12 +589,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 if (H.reqonce(completion, 'open_What')) {
                     const waft     = waft_node.sc.src as TheC
                     const waft_key = waft_node.sc.Waft as string
-                    const first = (waft.o({ What: 1 }) as TheC[])
-                        .find(wh => H.Lies_what_has_points(wh))
+                    const first    = (await H.Lies_waft_candidates(waft))[0]
                     if (first) {
                         const examining = w.o({ examining: 1 })[0] as TheC | undefined
                         if (examining) {
-                            H.Lies_ensure_doc_loaded(w, H.Lies_what_first_doc_path(first), waft_key)
+                            H.Lies_ensure_doc_loaded(w, await H.Lies_src_doc_path(first), waft_key)
                             await H.Lies_set_examining(examining, first, waft_key)
                         }
                     }

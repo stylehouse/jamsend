@@ -121,6 +121,13 @@ export class Travel extends TheC {
         //  < graph behaviour
         // T.c.top.sc.N.push(T)
     }
+
+    // bail(reason) — stamp not on every Travel in the path back to the root,
+    // stopping the entire walk.  Call from each_fn when you've found what you
+    // need and want no further visits.
+    bail(reason: string) {
+        for (const T of this.c.path) T.sc.not = reason
+    }
     async dive_middle() {
         const T = this
         if (T.sc.not) return 
@@ -151,6 +158,7 @@ export class Travel extends TheC {
 
         // recurse into $n/*
         for (const oT of N) {
+            if (T.sc.not) break   // bail() was called inside many_fn or a sibling
             // into topT/**T
             T.c.top.sc.N.push(oT)
             await oT.dive_middle()
