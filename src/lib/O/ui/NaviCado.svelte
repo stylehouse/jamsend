@@ -61,7 +61,8 @@
 
     // ── reactive derivation from LE ───────────────────────────────────────────
 
-    let target   = $derived(LE && (void (LE as any).vers) && (LE.sc.target as TheC | undefined))
+    // $derived.by so void LE.vers fires as a statement — bumped by LE_arm (oai State) and LE_pull.
+    let target  = $derived(LE && LE.vers && LE.sc.target)
     let depth    = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
     let has_prev = $derived(target ? !!(H as any).LE_what_prev(target) : false)
     let has_next = $derived(target ? !!(H as any).LE_what_next(target) : false)
@@ -110,7 +111,6 @@
     )
 </script>
 
-{#if target}target!{/if}
 {#if LE && target}
 <div class="nvc-bar">
 

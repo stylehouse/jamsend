@@ -2,32 +2,32 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms:1779622781.774,done:4,last_pct_change:1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms:1779622753.198,done:6,last_pct_change:1778378075.558
   Book:StuffFlipping,ok_pct:0,last_run_ms:1779622717.748,done,last_pct_change:1779622702.753
-  Book:LangTiles,ok_pct:0,last_pct_change:1780029934.789,done:5,last_run_ms:1780312904.506
+  Book:LangTiles,ok_pct:0,last_pct_change:1780029934.789,done:5,last_run_ms:1780317891.068
     TimeSpool
-      TimeTotal:beliefs,avg:0.517
-        sample:0.517,at:1780312888
-        sample:0.517,at:1780312889
-        sample:0.517,at:1780312889
-        sample:0.517,at:1780312889
-        sample:0.517,at:1780312890
-        sample:0.517,at:1780312890
-        sample:0.517,at:1780312890
-        sample:0.517,at:1780312897
-        sample:0.517,at:1780312900
-        sample:0.517,at:1780312904
-  Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1780313651.555
+      TimeTotal:beliefs,avg:4.125
+        sample:4.125,at:1780317858
+        sample:4.125,at:1780317862
+        sample:4.125,at:1780317865
+        sample:4.125,at:1780317869
+        sample:4.125,at:1780317873
+        sample:4.125,at:1780317876
+        sample:4.125,at:1780317880
+        sample:4.125,at:1780317883
+        sample:4.125,at:1780317887
+        sample:4.125,at:1780317891
+  Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1780318013.006
     TimeSpool
-      TimeTotal:beliefs,avg:0.516
-        sample:0.516,at:1780313619
-        sample:0.516,at:1780313622
-        sample:0.516,at:1780313626
-        sample:0.516,at:1780313629
-        sample:0.516,at:1780313633
-        sample:0.516,at:1780313637
-        sample:0.516,at:1780313640
-        sample:0.516,at:1780313644
-        sample:0.516,at:1780313647
-        sample:0.516,at:1780313651
+      TimeTotal:beliefs,avg:0.226
+        sample:0.226,at:1780318009
+        sample:0.226,at:1780318010
+        sample:0.226,at:1780318010
+        sample:0.226,at:1780318010
+        sample:0.226,at:1780318011
+        sample:0.226,at:1780318011
+        sample:0.226,at:1780318011
+        sample:0.226,at:1780318012
+        sample:0.226,at:1780318012
+        sample:0.226,at:1780318013
   Book:Peeringinst,ok_pct:0.5,last_pct_change:1779063073.279,done:2,last_run_ms:1779063093.816
   Book:PeeringLive,ok_pct:0.17,last_pct_change:1780023433.073,done:6,last_run_ms:1780023480.372
   Book:StuffResolving,ok_pct,last_pct_change:1778646781.957,done,last_run_ms:1778804562.08
@@ -40,19 +40,19 @@ Library
   Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403
   Book:MundaneStation,ok_pct:0,last_pct_change:1779845683.836,done:5,last_run_ms:1779949732.752
   Book:MundaneStaying,ok_pct:0.67,last_pct_change:1779949738.82,done:3,last_run_ms:1780039978.795
-  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780316382.547,time_avg:0.173,active
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780318022.23,time_avg:0.173,active
     TimeSpool
-      TimeTotal:beliefs,avg:0.245
-        sample:0.245,at:1780316379
-        sample:0.245,at:1780316379
-        sample:0.245,at:1780316380
-        sample:0.245,at:1780316380
-        sample:0.245,at:1780316380
-        sample:0.245,at:1780316381
-        sample:0.245,at:1780316381
-        sample:0.245,at:1780316381
-        sample:0.245,at:1780316382
-        sample:0.245,at:1780316382
+      TimeTotal:beliefs,avg:0.301
+        sample:0.301,at:1780318018
+        sample:0.301,at:1780318018
+        sample:0.301,at:1780318019
+        sample:0.301,at:1780318019
+        sample:0.301,at:1780318020
+        sample:0.301,at:1780318020
+        sample:0.301,at:1780318021
+        sample:0.301,at:1780318021
+        sample:0.301,at:1780318021
+        sample:0.301,at:1780318022
   Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg:0.013

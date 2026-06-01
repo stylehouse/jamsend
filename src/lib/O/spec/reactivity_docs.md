@@ -78,6 +78,26 @@ The outer `$state()` on `H.ave` etc. is defensive; those fields are never reassi
 
 `void particle.vers` inside a `$derived` subscribes to only that particle — useful for fine-grained per-row reactivity without subscribing to a whole container.
 
+**`void` inside single-expression `$derived` is a trap.** `void X` returns `undefined`, so in `$derived(A && (void X) && B)` the `void` expression is falsy and `&&` short-circuits — B is never reached and the expression always evaluates to `undefined`. The same problem appears in `$derived(A && (void X) || B)` — the `||` always fires.
+
+The safe pattern — `vers` is always ≥ 1 (truthy), use it as a chain link:
+
+```ts
+let target = $derived(LE && LE.vers && LE.sc.target)
+```
+
+`LE.vers` never breaks the chain, but Svelte still registers the read. Prefer this over `$derived.by` — it puts pressure on keeping UI-facing interfaces simple and inline. `$derived.by` is a last resort for genuinely multi-step logic that can't be factored out.
+
+**`.o()` vs `.ob()` in `$derived`:** `.o()` has no version tracking — a `$derived` that calls `languinio.o({ LE: 1 })` will not re-run when Languinio's children change. Use `.ob()` when the derived value depends on a particle's children:
+
+```ts
+// wrong — re-derives only when languinio reference changes
+let LE = $derived(languinio?.o({ LE: 1 })[0])
+
+// right — re-derives whenever languinio is bumped (e.g. after languinio.i(LE))
+let LE = $derived(languinio?.ob({ LE: 1 })[0])
+```
+
 ---
 
 ## Enrolling and reading — UItime pattern

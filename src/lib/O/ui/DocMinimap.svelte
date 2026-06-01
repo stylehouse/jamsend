@@ -286,8 +286,9 @@
         languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
     })
     let LE: TheC | undefined = $derived.by(() => {
-        void languinio?.vers
-        return languinio?.o({ LE: 1 })[0] as TheC | undefined
+        // ob() tracks languinio.version so this re-derives when e_Lang_LE_arm
+        // replaces the %LE same-object hold (languinio.i(LE) bumps languinio).
+        return languinio?.ob({ LE: 1 })[0] as TheC | undefined
     })
     let _graft_spin = $state(false)
     $effect(() => {
