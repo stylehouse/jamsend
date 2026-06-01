@@ -803,7 +803,7 @@
             // contains a // comment (which would eat our closing ") {").
             // We still convert any &method,args calls inside, but inject no
             // braces of our own (the user manages those, plus any inline body).
-            if (condition.startsWith('(') || condition.includes('//')) {
+            if (condition.startsWith('(') || condition.includes('//') || line.text.trimEnd().endsWith('{')) {
                 out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(line.text) })
                 return n + 1
             }

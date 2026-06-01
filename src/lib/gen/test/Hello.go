@@ -8,8 +8,8 @@
     onMount(async () => {
     await H.eatfunc({
 
+    Ghostmeta_Ghost_test_Hello(): string { return 'fa95172c1db8c13a' },
 
-//#endregion
 //#region uploadConsoleLogs()
     log_Console(A,w) {
         let batch = M.F.P.ConsoleLogs
@@ -404,8 +404,7 @@
             let signier = await Id.sig(whowhat)
             signier = signier.slice(0,16)
             I.sc.sign_ok = sign == signier
-        }
-        else {
+        } else {
             I.sc.sign_ok = await Id.ver(sign,`${prepub}-${advice}`)
         }
     },

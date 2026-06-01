@@ -393,8 +393,7 @@
             let signier = await Id.sig(whowhat)
             signier = signier.slice(0,16)
             I.sc.sign_ok = sign == signier
-        }
-        else {
+        } else {
             I.sc.sign_ok = await Id.ver(sign,`${prepub}-${advice}`)
         }
     },
