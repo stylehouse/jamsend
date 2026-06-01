@@ -25,6 +25,13 @@
     //   region body.  The region/def data still carries point positions so the
     //   capsule strip can navigate on click.
     //
+    // ── NaviCado ─────────────────────────────────────────────────────────────
+    //
+    //   NaviCado sits above the unsent bar.  It reads %LE from %Languinio
+    //   (the same-object hold workon/{LE:1} installs there) and uses the
+    //   LE_what_* helpers to render ↑ ← label → ↘ ↓ buttons.  NaviCado
+    //   renders nothing when LE or LE.sc.target is absent.
+    //
     // ── In-group / showing ───────────────────────────────────────────────────
     //
     //   in_group — specs currently in the capsule strip (session only).
@@ -50,6 +57,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { EditorView } from "@codemirror/view"
     import { foldEffect, unfoldEffect, foldedRanges } from "@codemirror/language"
+    import NaviCado from "$lib/O/ui/NaviCado.svelte"
 
     type Region = {
         label:     string
@@ -278,6 +286,13 @@
     let languinio: TheC | undefined = $state()
     $effect(() => {
         languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+    })
+
+    // LE from the Languinio same-object hold — NaviCado reads LE.sc.target
+    // and the LE_what_* helpers to drive the What navigation toolbar.
+    let LE: TheC | undefined = $derived.by(() => {
+        void languinio?.vers
+        return languinio?.o({ LE: 1 })[0] as TheC | undefined
     })
     let _graft_spin = $state(false)
     $effect(() => {
@@ -608,6 +623,9 @@
         </span>
         {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
     </div>
+
+    <!-- NaviCado — What-navigation toolbar: ↑ ← label → ↘ ↓ -->
+    <NaviCado {H} {LE} />
 
     <!-- Unsent bar — only when user has changed something since last push. -->
     {#if is_dirty}

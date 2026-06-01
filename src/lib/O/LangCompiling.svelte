@@ -11,9 +11,12 @@
     //     Entry.  Resolves the active dock via Lang_active_dock(w).
     //     Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
-    //     translated JS.  For hard-compiles (gen_path present), hands off
-    //     to Lies via e:Lies_compiled — Lies owns the
-    //     write and optional Pantheate notify.  Stashes dock/Compile/Output.
+    //     translated JS.  For hard-compiles (gen_path present), decides
+    //     do_write / do_run from its own nogen opt, fires Ghost_update_notify
+    //     to Pantheate if do_run, then hands off to Lies via e:Lies_compiled
+    //     with write:bool.  Lies is a transparent write airlock: it writes
+    //     the gen/ file and fires e:Lies_compile_settled back when done.
+    //     Stashes dock/Compile/Output.
     //
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) on every tick while dock/Compile/Pending is set.
@@ -313,12 +316,26 @@
         job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
         job.oai({Output:1, gen_path, source, dige, source_dige})
 
-        // Hand off to Lies as the compile airlock.
-        // Lies checks opt_write and opt_run, does the Wormhole write
-        // and/or notifies Pantheate, then fires e:Lies_compile_settled
-        // back to w so Lang_compile_step can clear Pending.
+        // Lang owns the write/run decision — Lies is a transparent write airlock.
+        // nogen on w:Lang suppresses both; Lies's own nogen still gates its side.
+        const nogen    = !!H.o_Opt_val(w, 'nogen')
+        const do_write = !nogen
+        const do_run   = !nogen
+
+        // Notify Pantheate from Lang — Lies has no business knowing about gen/ modules.
+        if (do_run) {
+            H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
+                include:     gen_path,
+                path:        dock.sc.dock as string,
+                source_dige,
+            })
+        }
+
+        // Hand off to Lies as the write airlock.
+        // write:true  — Lies parks a wwrite req and fires Lies_compile_settled when done.
+        // write:false — Lies fires Lies_compile_settled immediately (no disk write).
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: dock.sc.dock, gen_path, source, dige, source_dige,
+            path: dock.sc.dock, gen_path, source, dige, source_dige, write: do_write,
         })
         H.i_elvisto(w, 'think')
     },

@@ -109,6 +109,7 @@
     //       /{req:'checkout'}     — LE_arm + LE_pull on workon's own /{LE:1}.
     //       /{req:'load_doc'}     — derive doc_path from src; activate dock in CM.
     //       /{req:'graft'}        — drive Lang_graft_points_once on the active dock.
+    //       /{req:'encode'}       — LE_encode_compare after graft; sets %State.changey.
     //     /{LE:1}                 — stable on workon across all cursor moves.
     //       /%State               — synthesised: armed/changey/stale
     //       // %push_dirty — fault; present only when push didn't land clean
@@ -487,6 +488,7 @@
     //         /req:checkout         — LE_arm + LE_pull on workon/{LE:1}
     //         /req:load_doc         — derive doc_path from src; open in CM if needed
     //         /req:graft            — drive Lang_graft_points_once on the active dock
+    //         /req:encode           — LE_encode_compare; sets %State.changey
     //
     //   /{LE:1} and /req:awaiting are never dropped — workon and awaiting are
     //   stable for the lifetime of the Lang instance.  /req:maneuvre is the
@@ -581,6 +583,18 @@
                     }
                 }
                 msub.finish(graft)
+            })
+
+            // req:encode — run LE_encode_compare once after graft, sets %State.changey.
+            //   maz:0 so do() only reaches it after maz:1 (graft) has finished.
+            //   One-shot per maneuvre: the cursor moved → fresh src → fresh Understanding.
+            //   NaviCado reads %State.changey from LE to decide whether push is meaningful.
+            ;(await msub.doai({ req: 'encode', maz: 0 }))?.(async (encode: TheC) => {
+                const working = LE.o({ Seem: 'working' })[0] as TheC | undefined
+                if (working?.sc.C !== undefined) {
+                    await H.LE_encode_compare(LE)
+                }
+                msub.finish(encode)
             })
 
             await msub.do()
