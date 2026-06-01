@@ -11,12 +11,9 @@
     //     Entry.  Resolves the active dock via Lang_active_dock(w).
     //     Walks the document line-by-line; passes each line through
     //     verbatim, swapping only the IOing/Sunpit span (if any) for its
-    //     translated JS.  For hard-compiles (gen_path present), decides
-    //     do_write / do_run from its own nogen opt, fires Ghost_update_notify
-    //     to Pantheate if do_run, then hands off to Lies via e:Lies_compiled
-    //     with write:bool.  Lies is a transparent write airlock: it writes
-    //     the gen/ file and fires e:Lies_compile_settled back when done.
-    //     Stashes dock/Compile/Output.
+    //     translated JS.  For hard-compiles (gen_path present), hands off
+    //     to Lies via e:Lies_compiled — Lies owns the
+    //     write and optional Pantheate notify.  Stashes dock/Compile/Output.
     //
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) on every tick while dock/Compile/Pending is set.
@@ -127,6 +124,7 @@
     //   so the snap records exactly when each include became live.
     async Pantheate(A: TheC, w: TheC) {
         const H = this
+        w.c.A = A   // stash so req_run_method can call methods with the right A
         w.o().filter(n => !n.sc.self && !n.sc.include).map(n => n.drop(n))
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
@@ -183,6 +181,64 @@
         console.log(`👻 include live: ${ghostmeta_name} = ${live}`)
     },
 
+    // ── e_Pantheate_run_method ────────────────────────────────────────────────
+    //
+    //   Fired by Lang_compile_step when a compile had a Pantheate_method esc.
+    //   Waits until the compiled module's ghostmeta confirms the right version
+    //   is live (polls the same req:include mechanism Pantheate uses for HMR),
+    //   then calls H[method](A, w) on Pantheate's A/w as if it were a normal
+    //   Pantheate tick.  One-shot: the req finishes after the call.
+    //
+    //   e.sc: { method: string, source_dige: string, ghostmeta_name: string }
+    async e_Pantheate_run_method(A: TheC, w: TheC, e: TheC) {
+        const H            = this as House
+        const method         = e.sc.method         as string | undefined
+        const source_dige    = e.sc.source_dige    as string | undefined
+        const ghostmeta_name = e.sc.ghostmeta_name as string | undefined
+        if (!method) return
+
+        const rq = H.reqy(w)
+        // Drop any finished run_method req for this method so re-compile retries cleanly.
+        for (const old of rq.o({ req: 'run_method', method }) as TheC[]) {
+            if (old.sc.finished) w.drop(old)
+        }
+        await rq.roai({ req: 'run_method', method }, { source_dige, ghostmeta_name })
+        await rq.do()
+    },
+
+    // ── req:run_method ────────────────────────────────────────────────────────
+    //
+    //   Polls the ghostmeta until the expected version is live, then calls
+    //   H[method](A, w).  Uses i_req_ttlilt to hold Story open while waiting.
+    async req_run_method(req: TheC, q: any) {
+        const H            = this as House
+        const method         = req.sc.method         as string
+        const source_dige    = req.sc.source_dige    as string | undefined
+        const ghostmeta_name = req.sc.ghostmeta_name as string | undefined
+
+        // If we have a ghostmeta name, wait until the right version is live.
+        if (ghostmeta_name && source_dige) {
+            const live = (H as any)[ghostmeta_name]?.() as string | undefined
+            if (live !== source_dige) {
+                H.i_req_ttlilt(req, 2, { waiting: 'ghostmeta' })
+                return
+            }
+        }
+
+        // Module is live — call the method on Pantheate's A/w.
+        const fn = (H as any)[method] as ((...args: any[]) => any) | undefined
+        if (!fn) {
+            console.warn(`👻 run_method: '${method}' not found on H`)
+        } else {
+            // req.c.up is w:Pantheate; w.c.A is stashed by Pantheate() each tick.
+            const pw = req.c.up as TheC
+            const pA = pw.c.A as TheC | undefined
+            console.log(`👻 run_method: calling ${method}(A, w)`)
+            await fn.call(H, pA, pw)
+        }
+        q.finish(req)
+    },
+
 //#endregion
 //#region entry
 
@@ -198,13 +254,21 @@
             // would otherwise compile from the last bookmark-debounce state (~800ms
             // stale), making every Esc compile one push behind the current text.
             this.Lang_dock_from_event(w, e)
-            return this.i_elvisto(w,'Lang_compile',{misdirectioner:1})
+            return this.i_elvisto(w,'Lang_compile',{
+                misdirectioner:   1,
+                Pantheate_method: e.sc.Pantheate_method,   // carry through bounce
+            })
         }
         const dock = this.Lang_active_dock(w)
         // Drop the compile when one is already in-flight for this doc.
         if (dock?.o({ Compile: 1 })[0]?.oa({ Pending: 1 })) {
             console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
             return
+        }
+        // Stash optional run_method before the compile so Lang_compile_step
+        // can fire e_Pantheate_run_method once the module lands on disk.
+        if (e.sc.Pantheate_method && dock) {
+            dock.c.run_method = e.sc.Pantheate_method as string
         }
         await this.Lang_compile(A, w)
     },
@@ -316,26 +380,12 @@
         job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
         job.oai({Output:1, gen_path, source, dige, source_dige})
 
-        // Lang owns the write/run decision — Lies is a transparent write airlock.
-        // nogen on w:Lang suppresses both; Lies's own nogen still gates its side.
-        const nogen    = !!H.o_Opt_val(w, 'nogen')
-        const do_write = !nogen
-        const do_run   = !nogen
-
-        // Notify Pantheate from Lang — Lies has no business knowing about gen/ modules.
-        if (do_run) {
-            H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
-                include:     gen_path,
-                path:        dock.sc.dock as string,
-                source_dige,
-            })
-        }
-
-        // Hand off to Lies as the write airlock.
-        // write:true  — Lies parks a wwrite req and fires Lies_compile_settled when done.
-        // write:false — Lies fires Lies_compile_settled immediately (no disk write).
+        // Hand off to Lies as the compile airlock.
+        // Lies checks opt_write and opt_run, does the Wormhole write
+        // and/or notifies Pantheate, then fires e:Lies_compile_settled
+        // back to w so Lang_compile_step can clear Pending.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: dock.sc.dock, gen_path, source, dige, source_dige, write: do_write,
+            path: dock.sc.dock, gen_path, source, dige, source_dige,
         })
         H.i_elvisto(w, 'think')
     },
@@ -343,6 +393,9 @@
     // Called from Lang(A,w) while dock/Compile/Pending is set.
     // Waits for e:Lies_compile_settled {path, write_ms} fired back by Lies,
     // then clears dock/Compile/Pending and closes %time with all + write legs.
+    // If dock.c.run_method is set (from e_Lang_compile's Pantheate_method esc),
+    // fires e_Pantheate_run_method cross-world so the method runs once the
+    // module is live on disk.
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
         const dock = this.Lang_active_dock(w)
@@ -352,8 +405,7 @@
         if (!job) throw "!job"
         if (!job.oa({Pending:1})) return
 
-        // Consume any Lies_compile_settled elvises that landed on w.
-        // There may be one per recently-settled doc (multi-doc scenario).
+        // Consume any Lies_compile_settled elvises that landed on w.\n        // There may be one per recently-settled doc (multi-doc scenario).
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
             const settled_path = ev.sc.path as string
             const docks = w.o({docks: 1})[0] as TheC | undefined
@@ -361,8 +413,7 @@
             if (!targetDocC) continue
             const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
             if (targetJob) {
-                await targetJob.r({ Pending: 1 }, {})
-                // Close %time: all = wall time from job-park to Pending clear.
+                await targetJob.r({ Pending: 1 }, {})                // Close %time: all = wall time from job-park to Pending clear.
                 // write = Wormhole round-trip for the gen/ file (from e_Lies_compiled
                 // dispatching the wwrite to LiesStore_run Phase 1 completing it).
                 const all_ms   = Date.now() - (targetJob.c.compile_t0 ?? Date.now())
@@ -370,6 +421,20 @@
                 const time = targetJob.oai({ time: 1 })
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
+            }
+            // If a run_method was requested, ask Pantheate to run it once the
+            // module's ghostmeta confirms the right version is live.
+            const run_method = targetDocC?.c.run_method as string | undefined
+            if (run_method) {
+                delete targetDocC!.c.run_method   // one-shot
+                const output = targetDocC?.o({ Compile: 1 })[0]?.o({ Output: 1 })[0] as TheC | undefined
+                const source_dige = output?.sc.source_dige as string | undefined
+                const ghostmeta_name = H.Lang_ghostmeta_name(settled_path)
+                H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
+                    method:          run_method,
+                    source_dige,
+                    ghostmeta_name,
+                })
             }
             w.i({ see: `✅ compiled ${settled_path}` })
         }
