@@ -71,29 +71,6 @@ Waft:Ghost/Tour
 
 ---
 
-## Active-What tracking
-
-`active` is **not stored on the particle** — it is session state, like `ave/%active_dock`.
-
-```
-ave/{active_what:1}
-  sc.path: 'Ghost/Tour'               — which Waft
-  sc.what_keys: ['setup', 'routing']  — breadcrumb of What labels to the active What
-  c.what: <TheC>                      — direct ref to the active What particle
-```
-
-`active_what` bumps whenever the user navigates.  Waft.svelte and DocMinimap read it
-via `H.ave.ob({active_what:1})`.
-
-The breadcrumb drives a row in the Waft header: each crumb is a button that jumps to
-that What level; each level shows its siblings as a submenu for sideways jumps.
-
-Push-up bookmarks (Ctrl+B exports from Lang → Lies) land in the active What's Doc for
-the current active path.  If no Doc with that path exists under the active What, one is
-autovivified.
-
----
-
 ## Point class
 
 A Point can carry `class` in its sc alongside `method` (or `label`):
@@ -162,8 +139,6 @@ active What.  It sits at the bottom of the minimap strip:
 ```
   ◀◀ rwnd   ‖ pause   ＋time
 ```
-
-Session-only — not persisted.  The transport updates `ave/{active_what:1}`.
 
 ### rwnd
 
@@ -343,7 +318,6 @@ w/{Waft:'Ghost/Tour'}
 // Not persisted — session state
 ave/{active_what:1}
   sc.path: string                       — Waft sc.Waft
-  sc.what_keys: string[]                — breadcrumb of What labels
   c.what: TheC                          — direct ref to the active What particle
 
 // CM state (not particles)
