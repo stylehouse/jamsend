@@ -222,47 +222,35 @@
         console.log(`📂 Lies_ensure_doc_loaded: queued ${path}`)
     },
 
-    // ── Lies_set_examining ────────────────────────────────────────────────────
+    // ── Lies_i_What_Points ───────────────────────────────────────────────────
     //
-    //   Install or update the %What_Points,1 child on %examining.
-    //   Carries src (the %What or %Doc TheC being examined) and src_Waft
-    //   (the containing Waft key).  Using a child particle means:
-    //   - visible in the snap as a proper particle, not a buried ref in sc
-    //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
-    //   - three-step is one call — src, src_Waft, and bump never go half-done
+    //   Single seam for all cursor moves.  Stamps %What_Points with the new
+    //   src and waft_key, bumps, then fires a generic e_Lang_workon_update so
+    //   w:Lang's req:workon cluster can reset and re-checkout.
     //
-    //   When src is a %What: arms the Understanding, pulls, then fires
-    //   Lang_LE_arm cross-world.  The pull is the reason this is async.
-    //   When src is a %Doc (cold-start, active_dock watch, e_Lies_set_cursor):
-    //   no %What to check out; the LE hold on Languinio is left as-is.
-    //   < e_Lies_set_cursor should eventually deliver the parent %What.
+    //   Replaces the scattered wpt.sc.src = … + bump + i_elvisto(Lang_LE_arm)
+    //   pattern.  src.c.up chain (stamped by Waft_link_up) reaches %Waft, so
+    //   Lang can traverse it without needing waft_key passed separately; we keep
+    //   src_Waft as a readable snap field nonetheless.
     //
-    //   Cold-start rehydration: reads sc.accepted + sc.showing from %Point
-    //   particles directly on src and injects them as accepted_entries on
-    //   %What_Points.  DocMinimap's accepted_push_id $effect fires on the bump
-    //   and installs the in-group from the snap without a push/echo round-trip.
-    //   accepted_push_id = 0 on a fresh load — DocMinimap's _our_last_push_id
-    //   is also 0, but the guard is `push_id === _our_last_push_id`, so it
-    //   would match and skip.  Use 1 as the seed so the first real push at
-    //   Date.now() (always > 1) is always distinguishable.
-    async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
+    //   Cold-start rehydration of sc.accepted / sc.showing from %Point children
+    //   lives here too — only injected when accepted Points exist so a live
+    //   accepted_entries from a prior push isn't overwritten.
+    //   accepted_push_id = 1 as a cold-start sentinel (always < any real Date.now());
+    //   DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
+    async Lies_i_What_Points(examining: TheC, src: TheC, waft_key: string) {
+        const H = this as House
         const wpt = examining.oai({ What_Points: 1 })
         wpt.sc.src      = src
         wpt.sc.src_Waft = waft_key
 
-        // Rehydrate accepted set from persisted sc.accepted on %Point particles.
-        // Points live directly on the %Doc — no %Points,1 container.
-        // Only inject when there are accepted Points — avoids overwriting a live
-        // accepted_entries that arrived from a prior push in this session.
-        const pts = src.o({ Point: 1 }) as TheC[]
+        const pts      = src.o({ Point: 1 }) as TheC[]
         const accepted = pts.filter(pt => pt.sc.accepted)
         if (accepted.length) {
             const entries = accepted.map(pt => ({
                 spec:    pt.sc.method as string,
                 showing: !!pt.sc.showing,
             }))
-            // Use push_id = 1 as a cold-start sentinel (always < any real Date.now()).
-            // DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
             wpt.sc.accepted_push_id = 1
             wpt.sc.accepted_entries = entries
         }
@@ -270,13 +258,26 @@
         wpt.bump_version()
         console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).path ?? '?')}`)
 
-        // ── LE graft seam ─────────────────────────────────────────────────────
-        //
-        //   Fire e_Lang_LE_arm cross-world with the src and waft_key.
-        //   Lang finds or creates /%Dock/%LE, arms it, pulls, and installs
-        //   the Languinio same-object hold.  LE lives in the Dock, not here.
-        const H = this as House
-        H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { src, waft_key })
+        // Fire generic workon update — req:workon in w:Lang resets the cluster.
+        H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
+    },
+
+    // ── Lies_set_examining ────────────────────────────────────────────────────
+    //
+    //   Install or update the %What_Points,1 child on %examining by delegating
+    //   to Lies_i_What_Points (the single seam for all cursor moves).
+    //
+    //   Using a child particle means:
+    //   - visible in the snap as a proper particle, not a buried ref in sc
+    //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
+    //   - three fields (src, src_Waft, bump) never go half-done
+    //
+    //   When src is a %What: req:workon in w:Lang arms the Understanding.
+    //   When src is a %Doc (cold-start, active_dock watch, e_Lies_set_cursor):
+    //   workon will find the path on sc.path and proceed to req:checkout.
+    //   < e_Lies_set_cursor should eventually deliver the parent %What.
+    async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
+        await this.Lies_i_What_Points(examining, src, waft_key)
     },
 
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────

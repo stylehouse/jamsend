@@ -102,11 +102,20 @@
     //
     // ── Understanding hold ───────────────────────────────────────────────────
     //
-    //   w/{Languinio:1}/{LE:1} — same-object hold on the active /%Dock/%LE.
-    //   Installed by e_Lang_LE_arm each time Lies_set_examining fires.
-    //   Re-pointed on active_dock change; Langui reads LE_clones() and %State
-    //   directly from it without a cross-world round-trip.
-    //   /%LE lives on the Dock, not on w:Lies.
+    //   w/{req:'workon'}        — open-ended; one per Lang instance.
+    //     /{req:'awaiting'}     — satisfied when first src arrives with a ^Waft.
+    //     /{req:'checkout'}     — LE_arm + LE_pull on workon's own /%LE   < Chunk next
+    //     /{req:'load_doc'}     — ensure CM has the right doc; none = title page  < Chunk next
+    //     /{req:'graft'}        — push Pmirrors against the compile index  < Chunk next
+    //     /{LE:1}               — stable on workon; not per-Dock.
+    //       /%State             — synthesised: armed/changey/stale
+    //       // %push_dirty — fault; present only when push didn't land clean
+    //       /%Seem:origin / /%Seem:working
+    //
+    //   w/{Languinio:1}/{LE:1}  — same-object hold pointing at workon/{LE:1}.
+    //   Installed by e_Lang_workon_update each time Lies_i_What_Points fires.
+    //   Langui reads LE_clones() and %State directly from it without a
+    //   cross-world round-trip.
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
@@ -237,13 +246,32 @@
         // phase handlers oai/drop %spinner children on it; at rest it is
         // empty.  c.w is a back-ref so a reader can climb to w:Lang.
         // %LE is inserted as a same-object hold (languinio.i(LE)) each time
-        // Lies_set_examining fires — e_Lang_LE_arm does that insertion.
+        // e_Lang_workon_update fires — req:awaiting's do_fn does that insertion.
         // Langui reads it via languinio.o({LE:1})[0] to check %State without
         // a cross-world round-trip.
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const languinio = w.oai({ Languinio: 1 })
         ave.i(languinio)
         languinio.c.w = w
+
+        // ── req:workon — cursor-driven Understanding checkout ────────────
+        // Open-ended; one per Lang instance.  Seeded here so the do_fn is
+        // wired before the first e_Lang_workon_update arrives from Lies.
+        // /{LE:1} lives stably on workon (not per-Dock) — the Understanding
+        // follows the cursor, not the open file.
+        const rq_w = H.reqy(w)
+        ;(await rq_w.doai({ req: 'workon' }))?.(async (workon: TheC) => {
+            const sub = H.reqy(workon)
+
+            // req:awaiting — satisfied when the first src arrives with a ^Waft.
+            //   stays unfinished until e_Lang_workon_update fires.
+            ;(await sub.doai({ req: 'awaiting' }))?.(async (awaiting: TheC) => {
+                // no-op body: waits here until e_Lang_workon_update resets the cluster
+                H.i_req_ttlilt(awaiting, 1, { waiting: 'first_src' })
+            })
+
+            await sub.do()
+        })
 
         w.c.plan_done = true
     },
@@ -453,44 +481,67 @@
         await rq.do()
     },
 
-    // ── e_Lang_LE_arm ─────────────────────────────────────────────────────────
+    // ── e_Lang_workon_update ──────────────────────────────────────────────────
     //
-    //   Fired by Lies (via Lies_set_examining) whenever the cursor moves to a
-    //   new src.  Finds or creates /%LE on the active Dock, arms + pulls it,
-    //   then installs it as a same-object hold inside %Languinio so Langui can
-    //   reach LE_clones() and %State without a cross-world round-trip.
+    //   Fired by Lies_i_What_Points whenever the cursor moves to a new src.
+    //   Resets the req:workon cluster: drops and re-seeds req:awaiting (and,
+    //   once implemented, req:checkout / req:load_doc / req:graft) so they
+    //   run fresh against the new src.
     //
-    //   /%LE is stable on the Dock — LE_arm mutates it in place rather than
-    //   replacing it, so the same TheC ref survives every re-arm.
+    //   req:awaiting satisfies itself on the first valid src that carries a
+    //   ^Waft back-ref (c.waft set by Waft_link_up); thereafter it passes through.
+    //   Subsequent updates always re-enter here to reset the cluster.
     //
-    //   i() always inserts — not deduplicated by reference.  r({LE:1},{}) first
-    //   clears any prior hold; then i(LE) inserts once.
+    //   /{LE:1} is stable on workon and survives the cluster reset — LE_arm
+    //   mutates it in place.
     //
-    //   e.sc: { src: TheC, waft_key: string }
-    async e_Lang_LE_arm(A: TheC, w: TheC, e: TheC) {
-        const H        = this as House
-        const src      = e.sc.src as TheC | undefined
-        const waft_key = e.sc.waft_key as string | undefined
-        if (!src || !waft_key) return
+    //   e.sc: { src: TheC }
+    async e_Lang_workon_update(A: TheC, w: TheC, e: TheC) {
+        const H   = this as House
+        const src = e.sc.src as TheC | undefined
+        if (!src) return
 
-        // find active Dock — the one that matches the src's doc path
-        const doc_path = src.sc.path as string | undefined
-            ?? (src.o({ Doc: 1 })[0] as TheC | undefined)?.sc.path as string | undefined
-        const dock = doc_path
-            ? w.o({ dock: doc_path })[0] as TheC | undefined
-            : (w.o({ dock: 1 }) as TheC[]).find(d => d.sc.active)
-        if (!dock) return
+        // Find the req:workon particle seeded in Lang_plan.
+        const rq      = H.reqy(w)
+        const workon  = rq.o({ req: 'workon' })[0] as TheC | undefined
+        if (!workon) return
 
-        // /%LE lives on the Dock — stable, not inside replace()
-        const LE = dock.oai({ LE: 1 })
-        H.LE_arm(LE, src)
-        await H.LE_pull(LE)
+        const sub = H.reqy(workon)
 
-        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
-        if (!languinio) return
-        await languinio.r({ LE: 1 }, {})
-        languinio.i(LE)
-        console.log(`🔗 Lang got /%LE on dock:${doc_path ?? '?'} from Lies`)
+        // Reset the cluster: drop sub-reqs so they re-run against the new src.
+        // /{LE:1} is not dropped — it persists across cursor moves as the stable
+        // Understanding housing; LE_arm mutates it in place.
+        for (const old of sub.o() as TheC[]) {
+            if (!old.sc.finished) workon.drop(old)
+        }
+
+        // /{LE:1} — stable on workon, created here on first arrival.
+        const LE = workon.oai({ LE: 1 })
+
+        // req:awaiting — satisfied once on first valid src with a ^Waft.
+        ;(await sub.doai({ req: 'awaiting' }))?.(async (awaiting: TheC) => {
+            if (!H.reqonce(awaiting, 'satisfied')) return
+            // arm the Understanding at the new src and pull.
+            H.LE_arm(LE, src)
+            await H.LE_pull(LE)
+            // install same-object hold in %Languinio so Langui reads LE_clones()
+            // and %State without a cross-world round-trip.
+            const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+            if (languinio) {
+                await languinio.r({ LE: 1 }, {})
+                languinio.i(LE)
+            }
+            sub.finish(awaiting)
+            console.log(`🔗 workon: awaiting satisfied — LE armed at ${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
+        })
+
+        // < req:checkout  — LE_arm + LE_pull on workon's own /{LE:1}
+        // < req:load_doc  — ensure CM has the right doc; may be none (title page)
+        // < req:graft     — push Pmirrors; mirrors current req:grafted job
+
+        await sub.do()
+
+        H.i_elvisto(w, 'think')
     },
 
 //#region Languish

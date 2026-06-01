@@ -11,7 +11,7 @@ Snap:H
           req:completion,playing:0
           req:git
           {"ref":{"src":"%Waft:Ghost/LakeNets"}}	Waft:Ghost/LakeNets
-        {"Store":1,"wrote_at:wormhole/Ghost/LakeNets/toc.snap":1780289892.555,"wrote_at:gen/Peeroleum.go":1780289893.889}
+        {"Store":1,"wrote_at:wormhole/Ghost/LakeNets/toc.snap":1780297333.418,"wrote_at:gen/Peeroleum.go":1780297333.97}
         open_waft_req,path:Ghost/LakeNets,done
         Waft:Ghost/LakeNets
           Doc,path:Ghost/Story/Peeroleum.g
@@ -23,7 +23,7 @@ Snap:H
         {"mung":["age"]}	self,round:13
         see:🗂 1 doc · 1 Waft
     A:Lang
-      {"mung":["age"]}	self,round:12
+      {"mung":["age"]}	self,round:14
       w:Lang
         model,cyto_dir
         docks
@@ -34,7 +34,7 @@ Snap:H
                 {"ref":{"region_path":"[]"}}	def,method:transport,from:64,to:74,line:5
                 {"ref":{"region_path":"[]"}}	def,method:PeerJS,from:107,to:114,line:7
                 {"ref":{"region_path":"[]"}}	def,method:Socket,from:144,to:151,line:9
-              time,compile:0.002,all:1.394,write:0
+              time,compile:0.004,all:0.597,write:0
               Output,gen_path:gen/Peeroleum.go,dige:98f3b2a577eaa766,source_dige:29cb25588309ed0f
                source: |
                  <script lang="ts">
@@ -75,10 +75,24 @@ Snap:H
           {"ref":{"sc_has":"Object()"}}	lematch
             {"ref":{"sc_has":"Object()"}}	lematch
         Languinio
+          {"ref":{"target":"%Doc:1, path:Ghost/Peeroleum.g"}}	LE
+            {"ref":{"Se":"Selection()","opt":"Object()","C":"%Doc:1, path:Ghost/Peeroleum.g","topD":"%Demonstrations:origin"}}	Seem:origin
+              Demonstrations:origin
+                Demonstrations:origin,Point:transport
+              News:origin,goners:0,neus
+            {"ref":{"Se":"Selection()","opt":"Object()","C":"%Doc:1, path:Ghost/Peeroleum.g","topD":"%Demonstrations:working"}}	Seem:working
+              Demonstrations:working
+                Demonstrations:working,Point:transport
+                  Understandable
+                Understandable
+              News:working,goners:0,neus
+            State,stale
           Change
             backend,dige:29cb2
             storage,dige:29cb2,dim:false
-            compile,dige:29cb2,dim:false,secs:0.002
+            compile,dige:29cb2,dim:false,secs:0.004
+        req:workon
+          req:awaiting,finished
         Opt
           txtsyntaxdump
         {"ref":{"dock":"%dock:Ghost/Peeroleum.g, gen_path:gen/Peeroleum.go, active:1"}}	req:Languish,path:Ghost/Peeroleum.g,gen_path:gen/Peeroleum.go,finished
@@ -88,7 +102,7 @@ Snap:H
         received,doc_opened,doc:Ghost/Peeroleum.g
         received,editorBegins,doc:Ghost/Peeroleum.g
         o_elvis:Lies_compile_settled
-        {"mung":["age"]}	self,round:12
+        {"mung":["age"]}	self,round:14
         see:🟦 tiles 0 bookmarks
     A:Pantheate
       {"mung":["age"]}	self,round:9
