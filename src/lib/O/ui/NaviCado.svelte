@@ -8,34 +8,22 @@
     //
     // ── Particle sources ──────────────────────────────────────────────────────
     //
-    //   LE              — w:Lies/{LE:1}; same-object hold via Languinio/%LE.
-    //   ave/%desire     — reactive signal; c.desire / c.completion carry the
-    //                     live req particles; .sc.playing:0|1 drives the timer.
+    //   LE               — w:Lies/{LE:1}; same-object hold via Languinio/%LE.
+    //   ave/%active_what — c.completion → req:completion; sc.playing:0|1.
     //
     // ── Buttons ───────────────────────────────────────────────────────────────
     //
-    //   ↑   up       — parent %What.  Ghosted at depth 0.
-    //   ←   prev     — previous sibling.  Ghosted at first.
-    //   →   next     — next sibling.  Ghosted at last.
-    //   ↘   branch   — < Chunk 4c; ghosted.
-    //   ↓   dive     — < Chunk 4c; ghosted.
+    //   ↑  ←  →  — up / prev / next What via c.up chain
+    //   ↘  ↓     — < Chunk 4c; ghosted
     //
-    //   Transport bar (below nav row, shown when req:desire is active):
-    //   ‖/▶  pause/play toggle   — e_Lies_desire_pause / e_Lies_desire_play
-    //   →    step                — e_Lies_desire_step (also fired by UI timer)
-    //
-    // ── Auto-advance ─────────────────────────────────────────────────────────
-    //
-    //   UI-side setInterval at 4s when playing:1.  Fires e_Lies_desire_step
-    //   each tick; Lies pauses when the Waft is exhausted.  Not a Story ttlilt —
-    //   purely a presentation timer that doesn't hold Story open.
+    //   Transport bar (when req:desire is active):
+    //   ‖/▶  — i_elvisto Lies_desire_pause / Lies_desire_play → drained by req:completion do_fn
+    //   →    — i_elvisto Lies_desire_step  → same
+    //   Auto-advance: req:completion manages a 7s ttlilt; no UI-side timer here.
 
-    import { onDestroy } from "svelte"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import type { Snippet } from "svelte"
-
-    const PLAY_INTERVAL_MS = 4000   // advance every 4s when playing
 
     let { H, LE, slot_up, slot_prev, slot_next, slot_branch, slot_dive }: {
         H:           House
@@ -56,39 +44,13 @@
     let has_next = $derived(target ? !!(H as any).LE_what_next(target) : false)
     let has_up   = $derived(depth > 0)
 
-    // ── desire / transport ────────────────────────────────────────────────────
+    // ── transport ─────────────────────────────────────────────────────────────
+    //   Buttons fire i_elvisto; req:completion's do_fn drains the elvises.
 
-    let desire_sig  = $derived(H.ave.ob({ desire: 1 })[0] as TheC | undefined)
-    let completion  = $derived.by(() => {
-        void desire_sig?.vers
-        return desire_sig?.c.completion as TheC | undefined
-    })
-    let is_playing  = $derived.by(() => {
-        void completion?.vers
-        return !!(completion?.sc.playing)
-    })
-    let has_desire  = $derived(!!desire_sig?.c.desire)
-
-    // Auto-advance timer — fires e_Lies_desire_step every PLAY_INTERVAL_MS
-    // while playing.  Managed imperatively so the interval is always in sync
-    // with the is_playing derived.
-    let _play_timer: ReturnType<typeof setInterval> | null = null
-
-    $effect(() => {
-        if (is_playing) {
-            if (!_play_timer) {
-                _play_timer = setInterval(() => {
-                    H.i_elvisto('Lies/Lies', 'Lies_desire_step', {})
-                }, PLAY_INTERVAL_MS)
-            }
-        } else {
-            if (_play_timer) { clearInterval(_play_timer); _play_timer = null }
-        }
-    })
-
-    onDestroy(() => {
-        if (_play_timer) clearInterval(_play_timer)
-    })
+    let active_what = $derived(H.ave.ob({ active_what: 1 })[0] as TheC | undefined)
+    let completion  = $derived.by(() => { void active_what?.vers; return active_what?.c.completion as TheC | undefined })
+    let is_playing  = $derived.by(() => { void completion?.vers;  return !!(completion?.sc.playing) })
+    let has_desire  = $derived(!!completion)
 
     // ── nav actions ──────────────────────────────────────────────────────────
 

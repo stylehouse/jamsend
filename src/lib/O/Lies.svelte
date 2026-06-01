@@ -94,10 +94,10 @@
     //   w/{req:'desire'}                       — the will to play; finds Waft via req:acquire
     //     /{req:'acquire'}                       one-shot lock; inserts desire/{Waft:$waftpath}
     //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
-    //     /{req:'completion',playing:0|1}        open-ended; lands cursor when not yet in Waft
+    //     /{req:'completion',playing:0|1}        open-ended; drains play/pause/step elvises each tick
+    //                                            7s ttlilt drives auto-advance when playing:1
     //     /{req:'git'}                           Waftlet accumulator; commits patches
     //     // < req:git do_fn — Chunk 4b+
-    //     // < auto-advance when playing:1 — UI-side timer, not a Story ttlilt
     //
     // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
     //
@@ -173,65 +173,50 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
-    // ── e_Lies_desire_play ────────────────────────────────────────────────────
-    //   Fired by NaviCado's ‖/▶ toggle.  Sets completion.sc.playing = 1;
-    //   NaviCado's UI-side timer drives auto-advance via e_Lies_desire_step.
-    async e_Lies_desire_play(A: TheC, w: TheC, _e: TheC) {
-        const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
-        const completion = desire_sig?.c.completion as TheC | undefined
-        if (!completion || completion.sc.playing) return
-        completion.sc.playing = 1
-        completion.bump_version()
-        desire_sig!.bump_version()
+    // ── Lies_desire_land_cursor ───────────────────────────────────────────────
+    //   Land cursor on the first navigable What in `waft`.
+    //   No-op when the cursor is already inside this Waft.
+    async Lies_desire_land_cursor(w: TheC, waft: TheC, waft_key: string) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const cur_waft = examining.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
+        if (cur_waft === waft_key) return
+        const whats = waft.o({ What: 1 }) as TheC[]
+        const first: TheC | undefined =
+            whats.find(wh => H.Lies_what_has_points(wh))
+            ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
+            ?? waft.o({ Doc: 1 })[0] as TheC | undefined
+        if (!first) return
+        await H.Lies_roai_Open(w, first, { waft_key })
+        await H.Lies_set_examining(examining, first, waft_key)
     },
 
-    // ── e_Lies_desire_pause ───────────────────────────────────────────────────
-    async e_Lies_desire_pause(A: TheC, w: TheC, _e: TheC) {
-        const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
-        const completion = desire_sig?.c.completion as TheC | undefined
-        if (!completion || !completion.sc.playing) return
-        completion.sc.playing = 0
-        completion.bump_version()
-        desire_sig!.bump_version()
-    },
+    // ── Lies_desire_step_once ─────────────────────────────────────────────────
+    //   Advance cursor to the next candidate What in the acquired Waft.
+    //   Returns true when a step happened, false at the end (pauses playing).
+    async Lies_desire_step_once(w: TheC, desire: TheC, waft: TheC, waft_key: string, completion: TheC): Promise<boolean> {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return false
 
-    // ── e_Lies_desire_step ────────────────────────────────────────────────────
-    //   Advance to the next %What in the acquired Waft.  Fired manually by
-    //   NaviCado's → button, or on a UI-side timer when playing:1.
-    //   Wraps around; pauses when the Waft is exhausted (last sibling reached).
-    async e_Lies_desire_step(A: TheC, w: TheC, _e: TheC) {
-        const H          = this as House
-        const examining  = w.o({ examining: 1 })[0] as TheC | undefined
-        const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
-        const desire     = desire_sig?.c.desire    as TheC | undefined
-        const completion = desire_sig?.c.completion as TheC | undefined
-        if (!examining || !desire) return
-
-        const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
-        if (!waft_node) return
-        const waft     = waft_node.sc.src    as TheC
-        const waft_key = waft_node.sc.Waft   as string
-
-        // Collect all Whats in the acquired Waft (prefer inhabited, fall back to all).
-        const all = waft.o({ What: 1 }) as TheC[]
-        const inhabited = all.filter(wh => H.Lies_what_has_points(wh))
+        const all        = waft.o({ What: 1 }) as TheC[]
+        const inhabited  = all.filter(wh => H.Lies_what_has_points(wh))
         const candidates = inhabited.length ? inhabited : all
-        if (!candidates.length) return
+        if (!candidates.length) return false
 
-        const cur_src = examining.o({ What_Points: 1 })[0]?.sc.src as TheC | undefined
-        const cur_idx = candidates.findIndex(c => c === cur_src)
+        const cur_src  = examining.o({ What_Points: 1 })[0]?.sc.src as TheC | undefined
+        const cur_idx  = candidates.findIndex(c => c === cur_src)
         const next_idx = cur_idx + 1
 
         if (next_idx >= candidates.length) {
-            // Waft exhausted — pause and stay on last.
-            if (completion) { completion.sc.playing = 0; completion.bump_version() }
-            desire_sig!.bump_version()
-            return
+            completion.sc.playing = 0
+            ;(w.o({ active_what: 1 })[0] as TheC | undefined)?.bump_version()
+            return false
         }
-
-        const next = candidates[next_idx]
-        await H.Lies_roai_Open(w, next, { waft_key })
-        await H.Lies_set_examining(examining, next, waft_key)
+        await H.Lies_roai_Open(w, candidates[next_idx], { waft_key })
+        await H.Lies_set_examining(examining, candidates[next_idx], waft_key)
+        return true
     },
 
     // ── e_Lies_now_Waft ────────────────────────────────────────────────
@@ -407,11 +392,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             w.c.Lies_setup = true
             ave.i(examining)
             examining.c.w = w   // back-ref so Liesui can reach w from examining
-            // %desire: reactive signal for NaviCado's transport bar.
-            // Holds refs to req:desire and req:completion once they're seeded.
-            const desire_sig = w.oai({ desire: 1 })
-            ave.i(desire_sig)
-            desire_sig.c.w = w
+            // %active_what: reactive signal for NaviCado's transport bar.
+            // c.completion holds the live req:completion particle once req:desire acquires.
+            const active_what = w.oai({ active_what: 1 })
+            ave.i(active_what)
+            active_what.c.w = w
             w.oai({ Opt: 1 })
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
@@ -651,11 +636,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   w/{req:'desire'}
         //     /{req:'acquire'}              one-shot Waft lock; inserts desire/{Waft:$waftpath}
         //     /{Waft:$waftpath}             correlates to w/{Waft:$waftpath}
-        //     /{req:'completion',playing}   open-ended session; user navigates at own pace
+        //     /{req:'completion',playing}   open-ended; drains play/pause/step elvises each tick
         //     /{req:'git'}                  Waftlet accumulator; patches via LE_push
         //
         //   < req:git do_fn — flush Waftlets to disk / remote          Chunk 4b+
-        //   < auto-advance (playing:1): a UI-side timer, not a Story ttlilt
         const rq = H.reqy(w)
         ;(await rq.doai({ req: 'desire' }))?.(async (desire: TheC) => {
             const rq = H.reqy(desire)
@@ -670,46 +654,41 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     ?? (src_Waft ? w.o({ Waft: src_Waft })[0] as TheC | undefined : undefined)
                     ?? w.o({ Waft: 1 })[0] as TheC | undefined
                 if (!waft) return   // no Waft yet — stall, retry next tick
-                // correlates to w/{Waft:$waftpath} by the same key
                 desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
                 rq.finish(acquire)
             })
 
-            // req:completion — open-ended; left open, user soaks and navigates away.
-            //   Lands the cursor on the first point-bearing candidate when the
-            //   cursor isn't already inside the acquired Waft.  Idempotent —
-            //   re-checked each tick so it self-heals across deploys and re-arms.
-            //   playing:0|1 is on sc for NaviCado's transport bar; UI-side timer
-            //   drives auto-advance when playing:1, never Story-side.
+            // req:completion — open-ended; drains play/pause/step elvises on every think.
             ;(await rq.doai({ req: 'completion' }, { playing: 0 }))?.(async (completion: TheC) => {
                 const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
                 if (!waft_node) return   // acquire not yet done — retry next tick
 
-                const waft     = waft_node.sc.src as TheC
+                const waft     = waft_node.sc.src  as TheC
                 const waft_key = waft_node.sc.Waft as string
 
-                // Expose desire + completion to NaviCado via ave/%desire.
-                const desire_sig = w.o({ desire: 1 })[0] as TheC | undefined
-                if (desire_sig) {
-                    desire_sig.c.desire    = desire
-                    desire_sig.c.completion = completion
-                    desire_sig.bump_version()
+                // Wire completion into ave/%active_what once.
+                const active_what = w.o({ active_what: 1 })[0] as TheC | undefined
+                if (active_what && active_what.c.completion !== completion) {
+                    active_what.c.completion = completion
+                    active_what.bump_version()
                 }
 
-                // Land cursor on first candidate if not already inside this Waft.
-                const examining  = w.o({ examining: 1 })[0] as TheC | undefined
-                const cur_waft   = examining?.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
-                if (examining && cur_waft !== waft_key) {
-                    // First %What with Points, then first %Doc with Points, then first %Doc.
-                    const whats = waft.o({ What: 1 }) as TheC[]
-                    const first: TheC | undefined =
-                        whats.find(wh => H.Lies_what_has_points(wh))
-                        ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
-                        ?? waft.o({ Doc: 1 })[0] as TheC | undefined
-                    if (first) {
-                        await H.Lies_roai_Open(w, first, { waft_key })
-                        await H.Lies_set_examining(examining, first, waft_key)
-                    }
+                // Land cursor on first candidate when not yet inside this Waft.
+                await H.Lies_desire_land_cursor(w, waft, waft_key)
+
+                // Drain play / pause gestures.
+                for (const _e of H.o_elvis(w, 'Lies_desire_play'))  completion.sc.playing = 1
+                for (const _e of H.o_elvis(w, 'Lies_desire_pause')) completion.sc.playing = 0
+
+                // Drain manual step gestures.
+                for (const _e of H.o_elvis(w, 'Lies_desire_step')) {
+                    await H.Lies_desire_step_once(w, desire, waft, waft_key, completion)
+                }
+
+                // Auto-advance: when playing, step on each think.
+                // < automate the slideshow with scheduling here
+                if (completion.sc.playing) {
+                    await H.Lies_desire_step_once(w, desire, waft, waft_key, completion)
                 }
                 // completion stays open — no finish() here.
             })

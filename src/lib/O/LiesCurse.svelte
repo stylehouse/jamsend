@@ -69,12 +69,15 @@
                 examining.sc.active_path = active_dock.sc.path as string | undefined
                 examining.bump_version()
                 // Advance graft cursor to match the newly-active doc.
+                // Skip when the cursor is parked on a %What — it was moved there
+                // deliberately; active_dock following only applies when tracking a %Doc.
                 const path = active_dock.sc.path as string | undefined
                 if (path) {
-                    // Only advance cursor if the new active path differs from what's cursored
-                    const cur_wpt  = examining.o({ What_Points: 1 })[0] as TheC | undefined
-                    const cur_path = (cur_wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
-                    if (cur_path !== path) {
+                    const cur_wpt    = examining.o({ What_Points: 1 })[0] as TheC | undefined
+                    const cur_src    = cur_wpt?.sc.src as TheC | undefined
+                    const cur_is_what = cur_src && (cur_src.sc as any).What !== undefined
+                    const cur_path   = cur_src?.sc.path as string | undefined
+                    if (!cur_is_what && cur_path !== path) {
                         const found = H.Lies_find_doc_in_wafts(w, path)
                         if (found) {
                             await H.Lies_roai_Open(w, found.doc, { waft_key: found.waft_key })
@@ -123,14 +126,26 @@
 
     // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
     //
-    //   Fired by Liesui / Waft when the user focuses a Doc.
+    //   Fired by Liesui / Waft when the user focuses a Doc row.
     //   e.sc: { doc_C: TheC, waft_key: string }
+    //
+    //   If the Doc lives inside a %What (c.up points to a particle without
+    //   sc.Waft), arm the Understanding at the parent %What rather than the
+    //   bare Doc — so NaviCado and LE_clones see the full What extent.
+    //   The Doc path is still what gets loaded; Lang_src_doc_path handles both.
     async e_Lies_set_cursor(A: TheC, w: TheC, e: TheC) {
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const src      = e.sc.doc_C    as TheC | undefined
+        const doc_C    = e.sc.doc_C    as TheC | undefined
         const waft_key = e.sc.waft_key as string | undefined
-        if (!src || !waft_key) return
+        if (!doc_C || !waft_key) return
+
+        // Lift to parent %What when the doc is nested inside one.
+        // c.up is stamped by Waft_link_up; absent means the Waft hasn't been
+        // walked yet — fall back to the Doc itself (safe, just less context).
+        const up  = doc_C.c.up as TheC | undefined
+        const src = (up && up.sc.Waft === undefined) ? up : doc_C
+
         await this.Lies_roai_Open(w, src, { waft_key })
         await this.Lies_set_examining(examining, src, waft_key)
     },
@@ -236,37 +251,39 @@
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────
     //
     //   Fired by the → button in DocMinimap.  Steps the graft cursor to the
-    //   next %What (across all loaded Wafts, in insertion order).  Wraps around.
+    //   next %What (across all loaded Wafts, in insertion order) that carries
+    //   at least one %Point in its immediate extent.  Wraps around.
     //
-    //   The cursor unit is a %What.  Every %What is a valid stop in the
-    //   permissive model — a bare %What with no Doc and no Points is a title-page
-    //   or interstitial moment; Lang shows whatever was last open, NaviCado still
-    //   navigates.  Prefers Whats with a %Doc or %Point child so purely empty
-    //   stubs don't dominate the scan, but falls back to all Whats if none qualify.
+    //   The cursor unit is now a %What, not a %Doc.  wpt.sc.src is set to the
+    //   %What particle; LangGraft reads %Point children off it directly.  If the
+    //   %What holds %Doc children instead of direct %Points (section-level
+    //   grouping rather than time-slice), Lies_ensure_doc_loaded loads the first
+    //   Doc inside so CM has something to show.
     //
     //   Position is tracked by particle identity (cur_src === candidate.what),
     //   not path — a %What has a label, not a path.
     //
-    //   e.sc: { dock_path: string }  — kept for caller compat; unused
+    //   e.sc: { dock_path: string }  — current active doc path (unused; kept for
+    //     caller compat; identity tracking supersedes path-based position finding)
+    //
     //   < stepping within nested %What hierarchies (sibling time-slices, ↘ / ↓) is Chunk 4c.
     async e_Lies_cursor_next(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
 
-        // Collect all top-level %What particles across loaded Wafts.
-        // Prefer inhabited Whats (have a %Doc or %Point child); fall back to all.
-        const all: Array<{ what: TheC, waft_key: string }> = []
-        const inhabited: Array<{ what: TheC, waft_key: string }> = []
+        // Collect candidate %What particles across all loaded Wafts, in order.
+        // A %What is a candidate when it has at least one Point in its immediate
+        // child layer — direct %Point children, or %Point inside any %Doc child.
+        // Depth is one — we do not recurse into nested %What children here.
+        const candidates: Array<{ what: TheC, waft_key: string }> = []
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const waft_key = waft.sc.Waft as string
             for (const what of waft.o({ What: 1 }) as TheC[]) {
-                all.push({ what, waft_key })
                 if (H.Lies_what_has_points(what))
-                    inhabited.push({ what, waft_key })
+                    candidates.push({ what, waft_key })
             }
         }
-        const candidates = inhabited.length ? inhabited : all
         if (!candidates.length) return
 
         // Find position by identity of the current src particle.
@@ -276,7 +293,9 @@
         const next_idx = (cur_idx + 1) % candidates.length
         const { what, waft_key } = candidates[next_idx]
 
-        // Queue a doc load so CM has something to show when the What has one.
+        // Ensure a Doc is loaded so CM has something to show.
+        // %What may carry direct %Point children (time-slice) or %Doc children
+        // (section grouping) — either way we queue a load so CM is ready.
         const doc_path = H.Lies_what_first_doc_path(what)
         await H.Lies_roai_Open(w, what, { waft_key })
         await H.Lies_set_examining(examining, what, waft_key)
@@ -318,14 +337,10 @@
         await H.Lies_set_examining(examining, what, waft_key)
     },
     //
-    //   True when a %What is a valid cursor stop in the permissive model:
-    //   any src that has a %Doc child (doc can open even with no Points) or at
-    //   least one %Point anywhere in its immediate child layer.  A bare %What
-    //   with neither is still valid (title-page / interstitial) — this helper
-    //   is used only for the → scan which prefers Point-bearing stops; see
-    //   e_Lies_cursor_next for the full permissive fallback.
+    //   True when a %What carries at least one %Point in its immediate child
+    //   layer — either a direct %Point child, or a %Point inside any direct
+    //   %Doc child.  Does not recurse into nested %What children.
     Lies_what_has_points(what: TheC): boolean {
-        if ((what.o({ Doc: 1 }) as TheC[]).length) return true
         if ((what.o({ Point: 1 }) as TheC[]).length) return true
         for (const doc of what.o({ Doc: 1 }) as TheC[]) {
             if ((doc.o({ Point: 1 }) as TheC[]).length) return true
