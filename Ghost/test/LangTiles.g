@@ -1,11 +1,9 @@
-// yeti etc
-nothinging():
-    return true
+// yeti etc!!!!!
 theCompiledStuff(A,w) {
     i hut/toot:3
     o hut/toot$
     let la = i hut/$toot
-    o hut/although:1,they,can,be,mixed
+    o hut/although:1/they,can,be,mixed
     i $la/something
     i thung/wither/etc
     i yeses/because,it:2
@@ -17,7 +15,7 @@ theCompiledStuff(A,w) {
     A o %wither$
     A o yeses$
     // should be wither:1, and let vish = it (the C%prefixy,wither)
-    A o wither$:vish
+    //A o wither$:vish
 
     // since . binds|associates tighly, it grabs the %wither value
     //  and wants to assign|tuple it  amongst other stuff
@@ -25,9 +23,9 @@ theCompiledStuff(A,w) {
     // uses that assigned ang variable,
     //  assigns so, grabs the %so value
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    w i angles/are:$ang,etc:3/so:ont.$
+    //w i angles/are:$ang,etc:3/so:ont.$
     // this is what we're avoiding wither doing .$:othername above
-    
+    debugger
     // you can declare let variables like this:
     $its = 'ferv'
     // should be strings 'stuff', 'levels', 'its', but then sits='ferv'
@@ -37,8 +35,9 @@ theCompiledStuff(A,w) {
     &nothinging,A,w,555
     &nothinging,A,w,{figuira:'out', all_these:3}
     if (&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4
-    if &nothinging,A,w,{figuira:'out', all_these:3}:
+    if &nothinging,A,w,{figuira:'out', all_these:3}
         && 6
+        3 + 3
     // we should prefer no semicolon on the end of control structures
     //  just continuating expr and indent indicate:
     if &nothinging,A,w,{figuira:'out', all_these:3}
@@ -66,6 +65,8 @@ theCompiledStuff(A,w) {
     i yep
     &severally,A,w,555
 },
+nothinging():
+    return true && true
 severally(A,w,thing):
     i miles,of,words
     i miles,of,wordings

@@ -60,10 +60,11 @@
     //                        }   — pythonic-indented body capture
     //
     //   Key shapes within an sc:
-    //     $name as a key → {name}   (ES6 shorthand; uses the variable `name` in scope)
+    //     $name as a key → {name}        (ES6 shorthand; uses the variable `name` in scope)
     //     key:$var       → {key: var}
-    //     key:3          → {key: 3}  (+ exactly_for:'key')
-    //     key            → {key: 1}  (wildcard)
+    //     key:3          → {key: 3}      (+ exactly_for:'key')
+    //     key:word       → {key: "word"} (+ exactly_for:'key')
+    //     key            → {key: 1}      (wildcard)
     //
     //   .i drops `exactly` from its leg objects (insertion doesn't filter).
     //   .o / Sunpit keep it so the helper can pass { exactly } along to C.o().
@@ -675,7 +676,7 @@
 
         while (n <= doc.lines) {
             try {
-                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, region_stack, lineHits })
+                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, method_floor: -1, region_stack, lineHits })
             } catch (err: any) {
                 const text = n <= doc.lines ? doc.line(n).text : ''
                 line_errors.push({ n, text, msg: String(err?.message ?? err) })
@@ -717,12 +718,17 @@
     // ctx carries:
     //   words          — accumulated {def|call|region|controlflow,…} entries
     //   current_method — name of the enclosing MethodLike decl, or null at top level
+    //   method_floor   — indent level of the enclosing decl; any MethodLike at or
+    //                    deeper than this floor is a call, never a declaration.
+    //                    Prevents fetch(, setTimeout( etc. inside a body from being
+    //                    mistaken for declarations when their args are more indented.
     //   region_stack   — stack of region labels currently open (push on //#region,
     //                    pop on //#endregion); persists across all doc lines
     //   lineHits       — pre-built line-number→hit map from Lang_compile_collect;
     //                    avoids a tree.iterate call per line (O(n²) → O(n))
     _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
-        words: any[], current_method: string | null, region_stack: string[],
+        words: any[], current_method: string | null, method_floor: number,
+        region_stack: string[],
         lineHits: Map<number, { name: string, node: SyntaxNode }>,
     }): number {
         const line = doc.line(n)
@@ -959,7 +965,11 @@
             while (peekN <= doc.lines && !doc.line(peekN).text.trim()) peekN++
             const nextIndent = peekN <= doc.lines
                 ? (doc.line(peekN).text.match(/^(\s*)/) ?? ['', ''])[1].length : -1
-            const isDecl = nextIndent > decl_indent
+            // method_floor: inside a method body, no nested MethodLike can be a
+            // declaration — only the top-level eatfunc methods qualify.
+            // This stops fetch(, setTimeout( etc. from eating their indented args
+            // as a body when they sit inside an already-declared method.
+            const isDecl = nextIndent > decl_indent && decl_indent > ctx.method_floor
 
             if (isDecl) {
                 // record definition with position info.  async:1 records whether
@@ -981,6 +991,7 @@
                 // recurse into body with current_method set, for both brace and pythonic styles,
                 // so that via tracking works for H./this. calls inside the body
                 const inner_ctx = { words: ctx.words, current_method: funcName,
+                                    method_floor: decl_indent,
                                     region_stack: ctx.region_stack, lineHits: ctx.lineHits }
                 while (n <= doc.lines) {
                     const peek = doc.line(n)
@@ -1306,7 +1317,7 @@
     //                     final .o({name:1})[0] can pick the row out
     //   name:3         →  name: 3              (+ exactly_for:'name')
     //   name:$v        →  name: v              (+ exactly_for:'name')
-    //   name:other     →  name: other          (+ exactly_for:'name')
+    //   name:other     →  name: "other"        (+ exactly_for:'name')
     //   %name:'str'    →  name: 'str'          (puddle — value is verbatim TS;
     //                                           no exactly_for since it's an expression)
     Lang_compile_PeelItem(item: SyntaxNode, state: EditorState, ctx: any): {
@@ -1372,9 +1383,11 @@
         if (strNode) return doc.sliceString(strNode.from, strNode.to)
         const nameNode = val.getChild('Name')
         if (!nameNode) throw new Error('PeelVal: no Number, StringVal, or Name')
-        // Name in PeelVal is always an identifier — whether the user wrote
-        // `$val` or just `val`, they mean the variable `val` in scope.
-        return doc.sliceString(nameNode.from, nameNode.to)
+        // $name → variable reference; bare name → quoted string literal.
+        // key:$var means use the variable `var`; key:word means the string "word".
+        const hasSigil = !!val.getChild('Sigil')
+        const text = doc.sliceString(nameNode.from, nameNode.to)
+        return hasSigil ? text : JSON.stringify(text)
     },
 
     // IOness is "i " | "o " — trim to one of the two

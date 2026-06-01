@@ -50,10 +50,9 @@
     //
     // ── Compile airlock (LiesRealised) ───────────────────────────────────────
     //
-    //   Lang decides do_write (from its own nogen opt) and fires
-    //   Ghost_update_notify to Pantheate.  Lang fires e:Lies_compiled {write}.
-    //   Lies is a transparent write airlock: write:false → settle immediately;
-    //   write:true → park compile_pending, write gen/, settle via Phase 1.
+    //   LangCompiling fires e:Lies_compiled {path, gen_path, source, dige}.
+    //   Lies decides — based on Opt — whether to write gen/ and notify Pantheate.
+    //   Fires e:Lies_compile_settled {path} back to w:Lang when done.
     //
     // ── Gen-able codetypes ────────────────────────────────────────────────────
     //
@@ -310,39 +309,26 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
     //
-    //   Fired by Lang after a hard-compile succeeds.  Lang has already decided
-    //   do_write (from its own nogen opt) and fired Ghost_update_notify to
-    //   Pantheate when appropriate.  Lies is a transparent write airlock:
-    //   it parks the source, writes the gen/ file, then fires
-    //   e:Lies_compile_settled back to Lang.
+    //   Fired by LangCompiling after a hard-compile succeeds (gen_path present).
+    //   Parks a compile_pending particle for LiesRealised to process.
     //
-    //   write:false → settle immediately, no disk write.
-    //   write:true  → park compile_pending; LiesRealised writes + settles.
-    //
-    //   Soft-compile (no gen_path) never reaches here — Lang settles it directly.
-    //   e.sc: { path, gen_path, source, dige, write: bool }
+    //   Soft-compile (no gen_path) goes nowhere — Lang settles it immediately.
+    //   e.sc: { path, gen_path, source, dige, source_dige }
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
-        const H        = this as House
         const path     = e.sc.path     as string
         const gen_path = e.sc.gen_path as string
         const source   = e.sc.source   as string
         const dige     = e.sc.dige
-        const do_write = !!(e.sc.write)
         if (!path || !gen_path) throw 'e_Lies_compiled: needs path + gen_path'
 
-        if (!do_write) {
-            H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-            console.log(`🔪 Lies compile settled: ${path} [no write]`)
-            return
-        }
-
-        // oai: idempotent — a previous compile_pending for the same path that's
-        // still in flight gets its payload overwritten with the freshest source.
+        // oai: idempotent — if a previous compile for the same path is still pending
+        // (write I/O stalled), overwrite its payload with the freshest source.
         const pending = w.oai({ compile_pending: 1, path })
-        pending.sc.gen_path = gen_path
-        pending.sc.source   = source
-        pending.sc.dige     = dige
-        delete pending.sc.done
+        pending.sc.gen_path    = gen_path
+        pending.sc.source      = source
+        pending.sc.dige        = dige
+        pending.sc.source_dige = e.sc.source_dige   // threads through to Ghost_update_notify
+        delete pending.sc.done   // reset in case a prior compile_pending had settled
         this.i_elvisto(w, 'think')
     },
 
@@ -539,24 +525,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         return rq.roai({ req: 'Open', src }, sc)
     },
 
-//#region LiesRealised — write airlock and future thinking
+//#region LiesRealised — compile airlock and future thinking
     //
     //   Only called when LiesPersist returns true (no IO in flight).
-    //   compile_pending is now a thin write-only req: Lang decided do_write,
-    //   fired Ghost_update_notify, and told Lies whether to write.  Lies just
-    //   does the wwrite and fires Lies_compile_settled when done.
 
     async LiesRealised(A: TheC, w: TheC) {
         const H = this as House
 
         // ── write airlock ─────────────────────────────────────────────────────
         //
-        //   Process each compile_pending particle (do_write:true path only —
-        //   write:false compiles settle in e_Lies_compiled immediately).
-        //   Key on gen_path so LiesStore_run Phase 1's base_dige stamp lands on
-        //   the gen target's namespace, not the source file's — mixing them made
-        //   source writes read as external changes and block the next save.
-        //   Phase 1 closes the settle elvis when the wwrite finishes.
+        //   Process each compile_pending particle.  Decides whether to write
+        //   the gen/ file.  Ghost_update_notify and Lies_compile_settled both
+        //   fire from LiesStore_run Phase 1 after the wwrite completes — only
+        //   then is the file on disk and safe to dynamic-import in Pantheate.
+        //   source_dige rides on compile_pending so Phase 1 can pass it through.
         for (const pending of w.o({ compile_pending: 1 }) as TheC[]) {
             if (pending.sc.done) continue
 
@@ -564,11 +546,31 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const gen_path = pending.sc.gen_path  as string
             const source   = pending.sc.source    as string
 
-            await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
-            // write_t0 on .c so Phase 1 can compute write_ms on the settle elvis.
-            pending.c.write_t0 = Date.now()
+            const do_write = !H.o_Opt_val(w, 'nogen')
+
+            if (do_write) {
+                // Key the write on gen_path, not the source path.  The source has a
+                // loaded_doc whose base_dige tracks source-on-disk for
+                // Lies_source_write's surprise_read check; keying by path made
+                // LiesStore_run Phase 1 stamp that base_dige with the gen output
+                // dige, which then read as an external change and blocked the next
+                // source write.  gen_path has no loaded_doc so its namespace and
+                // base_dige stay the gen target's own.
+                await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
+                // write_t0 on .c: Phase 1 uses it to compute write_ms on the settle elvis.
+                // Phase 1 also fires Ghost_update_notify — after the file is on disk.
+                pending.c.write_t0 = Date.now()
+                // < surface write errors when reply carries one.
+            }
+
             pending.sc.done = 1
-            // < surface write errors (compile_error on dock) when reply carries one.
+            if (!do_write) {
+                // nogen: no file written, no Pantheate notify — settle immediately.
+                H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
+                console.log(`🔪 Lies compile settled: ${path} [nogen]`)
+            }
+            // do_write: Lies_compile_settled and Ghost_update_notify both deferred
+            // to LiesStore_run Phase 1 after the wwrite finishes.
         }
 
         // ── req:desire — the will to play through the loaded Waft ─────────────

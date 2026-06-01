@@ -121,20 +121,20 @@ story:LangTiles
       w:Lang
         txtsyntaxdump
   TimeSpool
-    TimeTotal:beliefs,avg:2.036
-      sample:0.431,at:1780307456
-      sample:0.526,at:1780308222
-      sample:0.496,at:1780309033
-      sample:0.365,at:1780309498
-      sample:0.519,at:1780309576
+    TimeTotal:beliefs,avg:22.266
       sample:0.722,at:1780309767
       sample:0.516,at:1780310568
       sample:0.516,at:1780310624
       sample:15.75,at:1780310677
       sample:0.517,at:1780310932
-  step,dige:8e5a4a6565e59c92
-  step:2,dige:df73f87e5eb122b2
-  step:3,dige:52a4f7e4eb12e211
-  step:4,dige:aae38f78876a8857
+      sample:36.708,at:1780311393
+      sample:12.006,at:1780311470
+      sample:0.681,at:1780311585
+      sample:77.624,at:1780311691
+      sample:77.624,at:1780311896
+  step,dige:cbe1f96251e6d445
+  step:2,dige:7d040c419bd79449
+  step:3,dige:52a14afe1c8f30c8
+  step:4,dige:cf5ada5aa090bb34
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step:5,dige:34ba582a6532345f
+  step:5,dige:62424b044b41c79d

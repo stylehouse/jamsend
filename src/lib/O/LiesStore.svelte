@@ -252,11 +252,11 @@
                 const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
                 if (ld) {
                     ld.sc.base_dige = req.sc.dige as string
-                    // Mirror the new disk dige into ave/lang_dock so the DocRow
+                    // Mirror the new disk dige into ave/lang_doc so the DocRow
                     // change strip sees it without an extra cross-world round-trip.
                     // Only source files have a loaded_doc; gen/ writes skip this.
                     const ave = H.oai_enroll(H, { watched: 'ave' })
-                    const docTextC = ave.oai({ lang_dock: path })
+                    const docTextC = ave.oai({ lang_doc: path })
                     docTextC.sc.disk_dige = req.sc.dige as string
                     docTextC.bump_version()
                 }
@@ -264,13 +264,24 @@
 
                 // Deferred settle for gen/ writes: LiesRealised parked write_t0 on
                 // the matching %compile_pending and skipped firing Lies_compile_settled.
-                // Now that the wwrite is done we have the full round-trip time.
+                // Now that the wwrite is done the file is on disk — safe to notify
+                // Pantheate (dynamic import will find the file) and settle Lang.
                 const rw_name = req.sc.rw_name as string | undefined
                 const pending = rw_name
                     ? (w.o({ compile_pending: 1 }) as TheC[]).find(p => p.sc.gen_path === path && p.c.write_t0)
                     : undefined
                 if (pending) {
                     const write_ms = pending.c.write_t0 ? Date.now() - (pending.c.write_t0 as number) : undefined
+                    // Notify Pantheate only after the file is on disk — dynamic import
+                    // needs the file to exist.  source_dige was parked on compile_pending
+                    // by e_Lies_compiled for exactly this moment.
+                    if (pending.sc.source_dige) {
+                        H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
+                            include:     pending.sc.gen_path as string,
+                            path:        pending.sc.path     as string,
+                            source_dige: pending.sc.source_dige,
+                        })
+                    }
                     H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
                         path:     pending.sc.path as string,
                         write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
