@@ -94,6 +94,8 @@ Receives `e.sc.LE`, drops prior hold via `await languinio.r({LE:1},{})`, then
 ### Open faults from Chunk U
 
 ```
+// < vanish: unaccepted clone lands as goner on post-push awareness pull, firing
+//   push_dirty.  Fix: LE_push stamps bD/was_disincluded:1; resolved_fn suppresses.
 // < push_dirty not yet wired to a req fault particle in the reqy system.
 // < Se_o as a standing watch (fire on every source mutation) — call-driven for now.
 ```
@@ -131,9 +133,9 @@ correct for now — they are path-driven.  LangGraft tolerates either: `src_path
 is `undefined` for a `%What` and the guard short-circuits harmlessly.
 
 ```
-// < e_Lies_set_cursor should eventually arm the parent %What when a %Doc is
-//   clicked inside a %What-structured Waft.  Needs Liesui to surface %What
-//   rows as clickable targets first.
+// < e_Lies_set_cursor (Liesui Doc-row click) passes a %Doc src — valid now
+//   that LE arms for any src type.  Needs Liesui to surface Waft-level rows
+//   as clickable targets before it can navigate at %What granularity.
 ```
 
 ### 4b — `req:desire` skeleton ✓ landed; playing/pause loop next
@@ -144,7 +146,7 @@ Erupts in `LiesRealised` via `rq.doai`.  Structure now in place:
 ```
 w:Lies
   /{req:'desire'}                  ← the wanderer; finds Waft via req:acquire
-    /{req:'acquire'}               ← one-shot lock; inserts desire/{Waft:$waftpath}
+    /{req:'acquire'}               ← one-shot lock; stamps desire.sc.waft_C
                                      sc.active → src_Waft → first Waft
     /{req:'completion',playing:0}  ← open-ended session; steps when playing:1
     /{req:'git'}                   ← Waftlet accumulator; patches via LE_push
@@ -165,18 +167,10 @@ tells `doai` whether the req is fresh; only fresh reqs get the setter back.
   `%What`; when `playing:1` arms a ttlilt so Story advances automatically.
 - `req:next_What` — minted by completion's ttlilt expiry; steps sibling, or
   transitions to `req:waft_exhausted` at end of Waft.
-- Transport bar in NaviCado reads `desire.o({Waft:1})[0]` and `completion.sc.playing`.
+- Transport bar in NaviCado reads `desire.sc.waft_C` and `completion.sc.playing`.
 
 **`req:git` — deferred** (`// < Chunk 4b+`): receives `/%Waftlet` children as
 `LE_push` patches land; do_fn flushes them to disk/remote.
-
-### 4b2 — gaps
-
-LE arm gate — the src.sc.What !== undefined check should be "is this not a bare %Doc", or better: arm whenever src is something that has an LE-suitable extent (any non-leaf Waft node).
-
-LE_what_siblings — parent.o({ What: 1 }) should be parent.o({ What: 1, ...or Doc:1... }) — or rather, whatever the parent's direct Waft children are.
-
-LangGraft path guard — when src is a %What with %Doc children, the graft needs to read Points from inside the first matching %Doc, not from src directly.
 
 ### 4c — `↘` / `↓` branch and dive gestures
 
@@ -191,6 +185,7 @@ mechanism — each gesture is "re-aim `%What_Points`, clone, edit, push".
 
 ```
 // < unaccepted carry-forward reads clone.c.U?.sc.unaccepted at branch time
+// < vanish fix (from Chunk U) must land before unaccepted is usable here
 ```
 
 ### 4d — ghost + rescue window + `◀◀ rwnd`

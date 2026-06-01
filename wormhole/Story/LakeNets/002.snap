@@ -6,11 +6,12 @@ Snap:H
         examining,active_path:Ghost/Peeroleum.g
           {"ref":{"src":"%Doc:1, path:Ghost/Peeroleum.g"}}	What_Points,src_Waft:Ghost/LakeNets
         Opt
-        {"ref":{"waft_C":"%Waft:Ghost/LakeNets"}}	req:desire,waft_key:Ghost/LakeNets
+        req:desire
           req:acquire,finished
-          req:completion,playing:0,open_What
+          req:completion,playing:0
           req:git
-        {"Store":1,"wrote_at:wormhole/Ghost/LakeNets/toc.snap":1780249411.808,"wrote_at:gen/Peeroleum.go":1780249413.071}
+          {"ref":{"src":"%Waft:Ghost/LakeNets"}}	Waft:Ghost/LakeNets
+        {"Store":1,"wrote_at:wormhole/Ghost/LakeNets/toc.snap":1780289892.555,"wrote_at:gen/Peeroleum.go":1780289893.889}
         open_waft_req,path:Ghost/LakeNets,done
         Waft:Ghost/LakeNets
           Doc,path:Ghost/Story/Peeroleum.g
@@ -33,7 +34,7 @@ Snap:H
                 {"ref":{"region_path":"[]"}}	def,method:transport,from:64,to:74,line:5
                 {"ref":{"region_path":"[]"}}	def,method:PeerJS,from:107,to:114,line:7
                 {"ref":{"region_path":"[]"}}	def,method:Socket,from:144,to:151,line:9
-              time,compile:0.001,all:1.307,write:0
+              time,compile:0.002,all:1.394,write:0
               Output,gen_path:gen/Peeroleum.go,dige:98f3b2a577eaa766,source_dige:29cb25588309ed0f
                source: |
                  <script lang="ts">
@@ -77,7 +78,7 @@ Snap:H
           Change
             backend,dige:29cb2
             storage,dige:29cb2,dim:false
-            compile,dige:29cb2,dim:false,secs:0.001
+            compile,dige:29cb2,dim:false,secs:0.002
         Opt
           txtsyntaxdump
         {"ref":{"dock":"%dock:Ghost/Peeroleum.g, gen_path:gen/Peeroleum.go, active:1"}}	req:Languish,path:Ghost/Peeroleum.g,gen_path:gen/Peeroleum.go,finished

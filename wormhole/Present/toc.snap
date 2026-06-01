@@ -16,19 +16,19 @@ Library
   Book:PortPlant,ok_pct,last_pct_change:1779532868.769,done:5,last_run_ms:1779622910.403
   Book:MundaneStation,ok_pct:0,last_pct_change:1779845683.836,done:5,last_run_ms:1779949732.752
   Book:MundaneStaying,ok_pct:0.67,last_pct_change:1779949738.82,done:3,last_run_ms:1780039978.795
-  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780251546.227,time_avg:0.173,active
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780290783.81,time_avg:0.173,active
     TimeSpool
-      TimeTotal:beliefs,avg:0.221
-        sample:0.221,at:1780251533
-        sample:0.221,at:1780251533
-        sample:0.221,at:1780251533
-        sample:0.221,at:1780251534
-        sample:0.221,at:1780251537
-        sample:0.221,at:1780251538
-        sample:0.221,at:1780251538
-        sample:0.221,at:1780251542
-        sample:0.221,at:1780251542
-        sample:0.221,at:1780251546
+      TimeTotal:beliefs,avg:0.228
+        sample:0.228,at:1780290780
+        sample:0.228,at:1780290780
+        sample:0.228,at:1780290781
+        sample:0.228,at:1780290781
+        sample:0.228,at:1780290781
+        sample:0.228,at:1780290782
+        sample:0.228,at:1780290782
+        sample:0.228,at:1780290782
+        sample:0.228,at:1780290783
+        sample:0.228,at:1780290783
   Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg:0.013

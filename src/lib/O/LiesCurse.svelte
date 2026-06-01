@@ -30,7 +30,6 @@
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
-    import { Travel } from "$lib/mostly/Selection.svelte"
     import { onMount } from "svelte"
 
     let { M } = $props()
@@ -273,53 +272,69 @@
 
         // ── LE graft seam ─────────────────────────────────────────────────────
         //
-        //   %What src: arm + pull the Understanding, then fire Lang_LE_arm
-        //   cross-world.  %Doc src: leave the Languinio hold as-is.
-        if ((src.sc as any).What !== undefined) {
-            const w_lies = examining.c.w as TheC | undefined
-            if (w_lies) {
-                const H  = this as House
-                const LE = w_lies.oai({ LE: 1 })
-                H.LE_arm(LE, src)
-                await H.LE_pull(LE)
-                H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
-            }
+        //   Arm + pull the Understanding for any src, then fire Lang_LE_arm
+        //   cross-world so Lang installs the same-object hold in Languinio.
+        const w_lies = examining.c.w as TheC | undefined
+        if (w_lies) {
+            const H  = this as House
+            const LE = w_lies.oai({ LE: 1 })
+            H.LE_arm(LE, src)
+            await H.LE_pull(LE)
+            H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })
         }
     },
 
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────
     //
     //   Fired by the → button in DocMinimap.  Steps the graft cursor to the
-    //   next point-bearing direct child of any loaded Waft (across all Wafts,
-    //   in insertion order).  Wraps around.
+    //   next %What (across all loaded Wafts, in insertion order) that carries
+    //   at least one %Point in its immediate extent.  Wraps around.
     //
-    //   Candidates are %What and %Doc direct children that carry Points —
-    //   see Lies_waft_candidates.  Position is tracked by particle identity.
+    //   The cursor unit is now a %What, not a %Doc.  wpt.sc.src is set to the
+    //   %What particle; LangGraft reads %Point children off it directly.  If the
+    //   %What holds %Doc children instead of direct %Points (section-level
+    //   grouping rather than time-slice), Lies_ensure_doc_loaded loads the first
+    //   Doc inside so CM has something to show.
     //
-    //   e.sc: { dock_path: string }  — unused; kept for caller compat.
+    //   Position is tracked by particle identity (cur_src === candidate.what),
+    //   not path — a %What has a label, not a path.
+    //
+    //   e.sc: { dock_path: string }  — current active doc path (unused; kept for
+    //     caller compat; identity tracking supersedes path-based position finding)
+    //
     //   < stepping within nested %What hierarchies (sibling time-slices, ↘ / ↓) is Chunk 4c.
     async e_Lies_cursor_next(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
 
-        // Collect candidates across all loaded Wafts in order.
-        const candidates: Array<{ src: TheC, waft_key: string }> = []
+        // Collect candidate %What particles across all loaded Wafts, in order.
+        // A %What is a candidate when it has at least one Point in its immediate
+        // child layer — direct %Point children, or %Point inside any %Doc child.
+        // Depth is one — we do not recurse into nested %What children here.
+        const candidates: Array<{ what: TheC, waft_key: string }> = []
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const waft_key = waft.sc.Waft as string
-            for (const src of await H.Lies_waft_candidates(waft))
-                candidates.push({ src, waft_key })
+            for (const what of waft.o({ What: 1 }) as TheC[]) {
+                if (H.Lies_what_has_points(what))
+                    candidates.push({ what, waft_key })
+            }
         }
         if (!candidates.length) return
 
+        // Find position by identity of the current src particle.
         const cur_src  = (examining.o({ What_Points: 1 })[0] as TheC | undefined)
             ?.sc.src as TheC | undefined
-        const cur_idx  = candidates.findIndex(c => c.src === cur_src)
+        const cur_idx  = candidates.findIndex(c => c.what === cur_src)
         const next_idx = (cur_idx + 1) % candidates.length
-        const { src, waft_key } = candidates[next_idx]
+        const { what, waft_key } = candidates[next_idx]
 
-        H.Lies_ensure_doc_loaded(w, await H.Lies_src_doc_path(src), waft_key)
-        await H.Lies_set_examining(examining, src, waft_key)
+        // Ensure a Doc is loaded so CM has something to show.
+        // %What may carry direct %Point children (time-slice) or %Doc children
+        // (section grouping) — either way we queue a load so CM is ready.
+        const doc_path = H.Lies_what_first_doc_path(what)
+        H.Lies_ensure_doc_loaded(w, doc_path, waft_key)
+        await H.Lies_set_examining(examining, what, waft_key)
     },
 
     // ── e_Lies_cursor_what ────────────────────────────────────────────────────
@@ -357,75 +372,25 @@
         H.Lies_ensure_doc_loaded(w, doc_path, waft_key)
         await H.Lies_set_examining(examining, what, waft_key)
     },
+    //
+    //   True when a %What carries at least one %Point in its immediate child
+    //   layer — either a direct %Point child, or a %Point inside any direct
+    //   %Doc child.  Does not recurse into nested %What children.
+    Lies_what_has_points(what: TheC): boolean {
+        if ((what.o({ Point: 1 }) as TheC[]).length) return true
+        for (const doc of what.o({ Doc: 1 }) as TheC[]) {
+            if ((doc.o({ Point: 1 }) as TheC[]).length) return true
+        }
+        return false
+    },
+
     // ── Lies_what_first_doc_path ──────────────────────────────────────────────
     //
-    //   Return the path of the first %Doc child of a %What, or undefined for a
-    //   pure time-slice %What with direct Points and no %Doc container.
+    //   Return the path of the first %Doc child of a %What, or undefined when
+    //   the %What holds direct %Point children with no %Doc container (the pure
+    //   time-slice case — doc is implied by the Points' methods).
     Lies_what_first_doc_path(what: TheC): string | undefined {
         const doc = what.o({ Doc: 1 })[0] as TheC | undefined
-        return doc?.sc.path as string | undefined
-    },
-
-    // ── Lies_waft_candidates ─────────────────────────────────────────────────
-    //
-    //   Point-bearing direct children of a Waft in insertion order.
-    //   A child is a candidate when Lies_src_first_doc_point finds a %Point
-    //   reachable under it — works for any Waft** shape.
-    //   Depth is one — nested %What children are not candidates here (Chunk 4c).
-    async Lies_waft_candidates(waft: TheC): Promise<TheC[]> {
-        const H = this as House
-        const out: TheC[] = []
-        for (const child of waft.o({}) as TheC[])
-            if (await H.Lies_src_first_doc_point(child)) out.push(child)
-        return out
-    },
-
-    // ── Lies_src_first_doc_point ─────────────────────────────────────────────
-    //
-    //   Depth-first walk of any Waft src node; returns the first %Point that
-    //   has a %Doc ancestor on its path — { point, doc_path }.
-    //   The nearest ^Doc (closest to the Point on the path) is used.
-    //
-    //   Used to resolve which Doc to load and which Point to graft when the
-    //   cursor lands on a src of arbitrary depth (Waft/What/Doc/What…/Point).
-    //
-    //   // < Points without a ^Doc ancestor are not yet handled — returned undefined.
-    async Lies_src_first_doc_point(src: TheC): Promise<{ point: TheC, doc_path: string } | undefined> {
-        let result: { point: TheC, doc_path: string } | undefined
-        await new Travel().dive({
-            n: src,
-            match_sc: {},
-            each_fn: async (n: TheC, T: Travel) => {
-                if (n.sc.Point === undefined) return
-                for (let i = T.c.path.length - 1; i >= 0; i--) {
-                    const ancestor = T.c.path[i].sc.n as TheC | undefined
-                    if (ancestor?.sc.Doc !== undefined) {
-                        result = { point: n, doc_path: ancestor.sc.path as string }
-                        T.bail('found')
-                        return
-                    }
-                }
-            },
-        })
-        return result
-    },
-
-    // ── Lies_src_doc_path ────────────────────────────────────────────────────
-    //
-    //   The doc path to load for a given cursor src — whatever it is.
-    //   Delegates to Lies_src_first_doc_point for the general case; falls back
-    //   to the src's own path when src is itself a %Doc with no %Point yet
-    //   (freshly created Waft with no Points — we still want CM to open something).
-    //
-    //   // < when Points without a ^Doc ancestor are supported, this path
-    //   //   will return undefined and the caller queues no load.
-    async Lies_src_doc_path(src: TheC): Promise<string | undefined> {
-        const H = this as House
-        const hit = await H.Lies_src_first_doc_point(src)
-        if (hit) return hit.doc_path
-        // fallback: src is itself a %Doc (or contains one), no Points yet
-        if (src.sc.Doc !== undefined) return src.sc.path as string | undefined
-        const doc = src.o({ Doc: 1 })[0] as TheC | undefined
         return doc?.sc.path as string | undefined
     },
 

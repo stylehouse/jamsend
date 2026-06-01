@@ -91,7 +91,7 @@
     //   w/{req:'desire'}                       — the will to play; finds Waft via req:acquire
     //     /{req:'acquire'}                       one-shot lock; inserts desire/{Waft:$waftpath}
     //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
-    //     /{req:'completion',playing:0|1}        open-ended; reqonce open_What lands cursor once
+    //     /{req:'completion',playing:0|1}        open-ended; lands cursor when not yet in Waft
     //     /{req:'git'}                           Waftlet accumulator; commits patches
     //     // < req:git do_fn — Chunk 4b+
     //     // < auto-advance when playing:1 — UI-side timer, not a Story ttlilt
@@ -577,25 +577,26 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             })
 
             // req:completion — open-ended; left open, user soaks and navigates away.
-            //   reqonce open_What fires once after acquire: lands the cursor on the
-            //   first point-bearing direct child of the Waft (%What or %Doc).
-            //   No ttlilt — Story must not be held here.
+            //   Lands the cursor on the first point-bearing candidate when the
+            //   cursor isn't already inside the acquired Waft.  Idempotent —
+            //   re-checked each tick so it self-heals across deploys and re-arms.
             //   playing:0|1 is on sc for NaviCado's transport bar; UI-side timer
             //   drives auto-advance when playing:1, never Story-side.
             ;(await rq.doai({ req: 'completion' }, { playing: 0 }))?.(async (completion: TheC) => {
                 const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
                 if (!waft_node) return   // acquire not yet done — retry next tick
 
-                if (H.reqonce(completion, 'open_What')) {
-                    const waft     = waft_node.sc.src as TheC
-                    const waft_key = waft_node.sc.Waft as string
-                    const first    = (await H.Lies_waft_candidates(waft))[0]
+                const waft     = waft_node.sc.src as TheC
+                const waft_key = waft_node.sc.Waft as string
+
+                // Land cursor on first candidate if not already inside this Waft.
+                const examining  = w.o({ examining: 1 })[0] as TheC | undefined
+                const cur_waft   = examining?.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
+                if (examining && cur_waft !== waft_key) {
+                    const first = (await H.Lies_waft_candidates(waft))[0]
                     if (first) {
-                        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-                        if (examining) {
-                            H.Lies_ensure_doc_loaded(w, await H.Lies_src_doc_path(first), waft_key)
-                            await H.Lies_set_examining(examining, first, waft_key)
-                        }
+                        H.Lies_ensure_doc_loaded(w, await H.Lies_src_doc_path(first), waft_key)
+                        await H.Lies_set_examining(examining, first, waft_key)
                     }
                 }
                 // completion stays open — no finish() here.
