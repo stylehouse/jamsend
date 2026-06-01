@@ -22,7 +22,7 @@
     // ── Particle ownership ───────────────────────────────────────────────────
     //
     //   %examining is Lies's.  LiesCurse never oai()s it — only reads it.
-    //   %examining/%What_Points,1 is written only through Lies_set_examining,
+    //   %examining/%Spotlight,1 is written only through Lies_set_examining,
     //   so the three-step is always atomic.
     //
     //   - Lies_cursor_next (→ button): step cursor to next %What across Wafts.
@@ -73,8 +73,8 @@
                 // deliberately; active_dock following only applies when tracking a %Doc.
                 const path = active_dock.sc.path as string | undefined
                 if (path) {
-                    const cur_wpt    = examining.o({ What_Points: 1 })[0] as TheC | undefined
-                    const cur_src    = cur_wpt?.sc.src as TheC | undefined
+                    const cur_spot   = examining.o({ Spotlight: 1 })[0] as TheC | undefined
+                    const cur_src    = cur_spot?.sc.src as TheC | undefined
                     const cur_is_what = cur_src && (cur_src.sc as any).What !== undefined
                     const cur_path   = cur_src?.sc.path as string | undefined
                     if (!cur_is_what && cur_path !== path) {
@@ -103,8 +103,8 @@
         //   2. No active doc yet — pick the first Point-bearing Doc across all
         //      loaded Wafts; roai a req:Open so Lies loads it.
         //   Both skip when the cursor already points at the right place.
-        const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
-        const examining_path = (wpt?.sc.src as TheC | undefined)?.sc.path as string | undefined
+        const spot = examining.o({ Spotlight: 1 })[0] as TheC | undefined
+        const examining_path = (spot?.sc.src as TheC | undefined)?.sc.path as string | undefined
 
         if (active_path && examining_path !== active_path) {
             // case 1: known active doc, cursor hasn't caught up yet
@@ -190,13 +190,13 @@
         return undefined
     },
 
-    // ── Lies_i_What_Points ───────────────────────────────────────────────────
+    // ── Lies_i_Spotlight ──────────────────────────────────────────────────────
     //
-    //   Single seam for all cursor moves.  Stamps %What_Points with the new
+    //   Single seam for all cursor moves.  Stamps %Spotlight with the new
     //   src and waft_key, bumps, then fires a generic e_Lang_workon_update so
     //   w:Lang's req:workon cluster can reset and re-checkout.
     //
-    //   Replaces the scattered wpt.sc.src = … + bump + i_elvisto(Lang_LE_arm)
+    //   Replaces the scattered spot.sc.src = … + bump + i_elvisto(Lang_LE_arm)
     //   pattern.  src.c.up chain (stamped by Waft_link_up) reaches %Waft, so
     //   Lang can traverse it without needing waft_key passed separately; we keep
     //   src_Waft as a readable snap field nonetheless.
@@ -206,11 +206,11 @@
     //   accepted_entries from a prior push isn't overwritten.
     //   accepted_push_id = 1 as a cold-start sentinel (always < any real Date.now());
     //   DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
-    async Lies_i_What_Points(examining: TheC, src: TheC, waft_key: string) {
+    async Lies_i_Spotlight(examining: TheC, src: TheC, waft_key: string) {
         const H = this as House
-        const wpt = examining.oai({ What_Points: 1 })
-        wpt.sc.src      = src
-        wpt.sc.src_Waft = waft_key
+        const spot = examining.oai({ Spotlight: 1 })
+        spot.sc.src      = src
+        spot.sc.src_Waft = waft_key
 
         const pts      = src.o({ Point: 1 }) as TheC[]
         const accepted = pts.filter(pt => pt.sc.accepted)
@@ -219,11 +219,11 @@
                 spec:    pt.sc.method as string,
                 showing: !!pt.sc.showing,
             }))
-            wpt.sc.accepted_push_id = 1
-            wpt.sc.accepted_entries = entries
+            spot.sc.accepted_push_id = 1
+            spot.sc.accepted_entries = entries
         }
 
-        wpt.bump_version()
+        spot.bump_version()
         console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).path ?? '?')}`)
 
         // Fire generic workon update — req:workon in w:Lang resets the cluster.
@@ -232,8 +232,8 @@
 
     // ── Lies_set_examining ────────────────────────────────────────────────────
     //
-    //   Install or update the %What_Points,1 child on %examining by delegating
-    //   to Lies_i_What_Points (the single seam for all cursor moves).
+    //   Install or update the %Spotlight,1 child on %examining by delegating
+    //   to Lies_i_Spotlight (the single seam for all cursor moves).
     //
     //   Using a child particle means:
     //   - visible in the snap as a proper particle, not a buried ref in sc
@@ -245,7 +245,7 @@
     //   workon will find the path on sc.path and proceed to req:checkout.
     //   < e_Lies_set_cursor should eventually deliver the parent %What.
     async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
-        await this.Lies_i_What_Points(examining, src, waft_key)
+        await this.Lies_i_Spotlight(examining, src, waft_key)
     },
 
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────
@@ -287,7 +287,7 @@
         if (!candidates.length) return
 
         // Find position by identity of the current src particle.
-        const cur_src  = (examining.o({ What_Points: 1 })[0] as TheC | undefined)
+        const cur_src  = (examining.o({ Spotlight: 1 })[0] as TheC | undefined)
             ?.sc.src as TheC | undefined
         const cur_idx  = candidates.findIndex(c => c.what === cur_src)
         const next_idx = (cur_idx + 1) % candidates.length
@@ -362,7 +362,7 @@
     //
     //   Fired by DocMinimap's "push" button.  The minimap sends its current
     //   in_group + showing state for a doc; we acknowledge it by echoing
-    //   accepted_push_id and accepted_entries back onto %What_Points so the
+    //   accepted_push_id and accepted_entries back onto %Spotlight so the
     //   minimap's $effect sees the round-trip and clears the unsent bar.
     //
     //   Persistence: stamps sc.accepted on %Point particles so their status
@@ -409,14 +409,14 @@
             break
         }
 
-        // Echo back on %What_Points so DocMinimap's $effect fires.
+        // Echo back on %Spotlight so DocMinimap's $effect fires.
         // push_id uniqueness: Date.now() is sufficient — the minimap guards
         // against its own pushes via _our_last_push_id.
-        const wpt = examining.o({ What_Points: 1 })[0] as TheC | undefined
-        if (!wpt) return
-        wpt.sc.accepted_push_id  = Date.now()
-        wpt.sc.accepted_entries  = what_point
-        wpt.bump_version()
+        const spot = examining.o({ Spotlight: 1 })[0] as TheC | undefined
+        if (!spot) return
+        spot.sc.accepted_push_id  = Date.now()
+        spot.sc.accepted_entries  = what_point
+        spot.bump_version()
         console.log(`👁 accept_What_Point: ${dock_path} (${what_point.length} specs, ${accepted_specs.size} accepted)`)
     },
 

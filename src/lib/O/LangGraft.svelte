@@ -16,9 +16,9 @@
     //
     // ── The cursor ───────────────────────────────────────────────────────────
     //
-    //   ave/%examining / %What_Points,1 carries the C to look at — a What
+    //   ave/%examining / %Spotlight,1 carries the C to look at — a What
     //   or a Doc within the Waft identified by sc.src_Waft.  Lang reads
-    //   %Point,N off that C directly.  %What_Points is a child (not sc field)
+    //   %Point,N off that C directly.  %Spotlight is a child (not sc field)
     //   so it shows up in the snap and bumps %examining on change.
     //   The cursor is always within one Doc.
     //
@@ -102,9 +102,9 @@
         const ave = H.oai_enroll(H, { watched: 'ave' })
         if (!dock) return
 
-        // cursor: ave/%examining/%What_Points,1 carries the C whose %Point,N we graft
+        // cursor: ave/%examining/%Spotlight,1 carries the C whose %Point,N we graft
         const ex           = ave.o({ examining: 1 })[0] as TheC | undefined
-        const what_pts_C   = ex?.o({ What_Points: 1 })[0] as TheC | undefined
+        const what_pts_C   = ex?.o({ Spotlight: 1 })[0] as TheC | undefined
         if (!what_pts_C) {
             // nothing cursored — wipe Pmirrors for this doc
             await this.Lang_wipe_pmirrors(dock)
@@ -115,7 +115,7 @@
         // job is to land at the right Something within a Waft.
         const src_C     = what_pts_C.sc.src as TheC | undefined
         if (!src_C) {
-            console.warn(`🔩 Lang_graft_points_once: What_Points has no src — cursor half-set?`)
+            console.warn(`🔩 Lang_graft_points_once: Spotlight has no src — cursor half-set?`)
             await this.Lang_wipe_pmirrors(dock)
             return
         }
@@ -124,29 +124,15 @@
         // the user clicked around while docs were still loading), don't graft
         // Peerily's Points onto LangTiles.g's editor view.  Wipe and wait for
         // the next tick where both converge.
-        //
-        // %Doc src: sc.path directly.
-        // %What src: path comes from first %Doc child (Lies_what_first_doc_path logic).
-        // Pure title-page %What with no %Doc: src_path is undefined — no path guard fires.
-        const src_sc: any = src_C.sc
-        const src_path = src_sc.path as string | undefined
-            ?? (src_C.o({ Doc: 1 })[0] as TheC | undefined)?.sc.path as string | undefined
+        const src_path    = (src_C.sc as any).path as string | undefined
         const active_path = (dock.sc as any).doc   as string | undefined
         if (src_path && active_path && src_path !== active_path) {
             await this.Lang_wipe_pmirrors(dock)
             return
         }
 
-        // Collect Points from src — tolerates %What and %Doc as src.
-        //   %Doc src:  direct %Point children
-        //   %What src: %Point children directly + %Point children of each %Doc child
-        //   Title-page (no Doc, no Point): empty — Pmirrors stay empty, not an error.
-        const points: TheC[] = []
-        for (const pt of src_C.o({ Point: 1 }) as TheC[]) points.push(pt)
-        for (const doc of src_C.o({ Doc: 1 }) as TheC[]) {
-            for (const pt of doc.o({ Point: 1 }) as TheC[]) points.push(pt)
-        }
-        // src_Waft is stored on the %What_Points child alongside src
+        const points: TheC[] = src_C.o({ Point: 1 }) as TheC[]
+        // src_Waft is stored on the %Spotlight child alongside src
         const waft_key = (what_pts_C.sc.src_Waft as string | undefined) ?? '?'
 
         // compile output for resolution — %methods lives directly on %Compile,

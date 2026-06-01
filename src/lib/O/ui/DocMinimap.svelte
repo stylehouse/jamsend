@@ -177,17 +177,17 @@
         reset_confirm   = false
     }
 
-    // Watch ave/%examining/%What_Points,1.sc.accepted_push_id.
+    // Watch ave/%examining/%Spotlight,1.sc.accepted_push_id.
     // When Lies echoes an accepted_push_id that we didn't generate ourselves
     // (push_what_point stamps _our_last_push_id), adopt the incoming entries.
     // This fires on both e_Lies_accept_What_Point round-trips and on
-    // e_Lies_cursor_next (the restored What_Point from the next Doc's stored set).
+    // e_Lies_cursor_next (the restored Spotlight from the next Doc's stored set).
     let _our_last_push_id = 0
     $effect(() => {
         const ex       = H.ave.ob({ examining: 1 })[0] as any
-        const wpt      = ex?.o?.({ What_Points: 1 })?.[0]
-        const push_id  = wpt?.sc.accepted_push_id as number | undefined
-        const entries  = wpt?.sc.accepted_entries as { spec: string, showing: boolean }[] | undefined
+        const spot     = ex?.o?.({ Spotlight: 1 })?.[0]
+        const push_id  = spot?.sc.accepted_push_id as number | undefined
+        const entries  = spot?.sc.accepted_entries as { spec: string, showing: boolean }[] | undefined
         if (!push_id || !entries) return
         if (push_id === _our_last_push_id) return   // our own push echoed back — ignore
         // Lies sent something new; drop local state and install it.

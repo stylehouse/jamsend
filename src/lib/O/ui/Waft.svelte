@@ -253,8 +253,14 @@
         {@const what_label = (what.sc.label ?? what.sc.What ?? '?') as string}
         {@const what_docs  = (() => { void what.version; return what.o({ Doc: 1 }) as TheC[] })()}
         {@const what_pts   = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
+        {@const is_what_active = (() => {
+            // glow when the Spotlight is aimed directly at this %What
+            void examining?.version
+            const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
+            return spot?.sc.src === what
+        })()}
         <div class="ls-what">
-            <div class="ls-what-hdr">
+            <div class="ls-what-hdr" class:ls-what-active={is_what_active}>
                 <button class="ls-what-label"
                         title="cursor to What:{what_label}"
                         onclick={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what })}>
@@ -461,6 +467,16 @@
         display: flex; align-items: center; min-height: 1.2rem;
         margin-bottom: 0.05rem;
     }
+    /* Spotlight glow — left-margin beam when the cursor is aimed at this What */
+    .ls-what-hdr.ls-what-active::before {
+        content: '';
+        position: absolute; left: 0;
+        width: 3px; height: 1.2rem;
+        background: #446a;
+        box-shadow: 0 0 6px 2px #446a;
+        border-radius: 2px;
+    }
+    .ls-what-hdr.ls-what-active { position: relative; }
     /* What label — clickable to set graft cursor at the What level */
     .ls-what-label {
         background: none; border: none; cursor: pointer;

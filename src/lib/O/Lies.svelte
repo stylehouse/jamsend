@@ -71,7 +71,7 @@
     //                                            and when Lies_set_examining is called.
     //                                            examining.c.w = w (back-ref for Liesui).
     //                                            examining.sc.active_path mirrors ave/{active_dock:1}.
-    //     /{What_Points:1}                       — child of examining; Lies_set_examining
+    //     /{Spotlight:1}                         — child of examining; Lies_set_examining
     //                                              installs/updates it via examining.oai() (sync).
     //                                              sc.src     : $C  the %Doc,path whose %Point,N are grafted
     //                                              sc.src_Waft: str  its containing Waft key
@@ -180,7 +180,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const cur_waft = examining.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
+        const cur_waft = examining.o({ Spotlight: 1 })[0]?.sc.src_Waft as string | undefined
         if (cur_waft === waft_key) return
         const whats = waft.o({ What: 1 }) as TheC[]
         const first: TheC | undefined =
@@ -205,7 +205,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const candidates = inhabited.length ? inhabited : all
         if (!candidates.length) return false
 
-        const cur_src  = examining.o({ What_Points: 1 })[0]?.sc.src as TheC | undefined
+        const cur_src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
         const cur_idx  = candidates.findIndex(c => c === cur_src)
         const next_idx = cur_idx + 1
 
@@ -506,7 +506,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── req_Open — load one source doc from disk ──────────────────────────────
     //
     //   do_fn for /req:Open particles.  src is the %What or %Doc C from
-    //   %What_Points whose path we need to load.
+    //   %Spotlight whose path we need to load.
     //
     //   On completion the req carries:
     //     req.sc.loaded    = 1   — loaded_doc exists; Lang has the text
@@ -649,7 +649,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             //   Stays unfinished until a Waft is present; retries next tick.
             ;(await rq.doai({ req: 'acquire' }))?.(async (acquire: TheC) => {
                 const examining = w.o({ examining: 1 })[0] as TheC | undefined
-                const src_Waft  = examining?.o({ What_Points: 1 })[0]?.sc.src_Waft as string | undefined
+                const src_Waft  = examining?.o({ Spotlight: 1 })[0]?.sc.src_Waft as string | undefined
                 const waft = (w.o({ Waft: 1 }) as TheC[]).find(wf => wf.sc.active)
                     ?? (src_Waft ? w.o({ Waft: src_Waft })[0] as TheC | undefined : undefined)
                     ?? w.o({ Waft: 1 })[0] as TheC | undefined
