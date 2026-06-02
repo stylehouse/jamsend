@@ -4,9 +4,10 @@
     // ── Mount ────────────────────────────────────────────────────────────────
     //
     //   Mounted by Langui as a sibling of .lte-cm.  Receives:
-    //     H           — the House
-    //     view        — the live EditorView (for scroll dispatch and viewport reads)
-    //     active_path — current doc path ($state from Langui)
+    //     H    — the House
+    //     view — the live EditorView (for scroll dispatch and viewport reads)
+    //
+    //   active_path is derived internally from Languinio/%dock,active:1.
     //
     // ── Data ─────────────────────────────────────────────────────────────────
     //
@@ -15,30 +16,8 @@
     //   %methods is a direct child of %Compile; %Output only appears for
     //   hard-compiled (gen_path) docs.  Soft compiles have no %Output.
     //
-    //   Points come from %Pmirror,N under lang_dock/%Pmirrors,1.
-    //   They are auto-promoted to in_group on first appearance (unless the user
-    //   has explicitly demoted that spec this session via ×).  Auto-promotion
-    //   sets pushed_snapshot to match so the bar doesn't appear until the user
-    //   actually changes something.
-    //
-    //   Points are only rendered in the capsule strip — not strewn through the
-    //   region body.  The region/def data still carries point positions so the
-    //   capsule strip can navigate on click.
-    //
-    // ── In-group / showing ───────────────────────────────────────────────────
-    //
-    //   in_group — specs currently in the capsule strip (session only).
-    //   showing  — subset of in_group whose fold/glow is active (session only).
-    //
-    //   Capsule orb = showing toggle (gold glow = showing; ring = dormant).
-    //   × = demote: removes from in_group and marks spec in _user_demoted so
-    //     auto-promote won't re-add it on the next rebuild.
-    //
-    //   "Not showing" excludes a spec from carry-forward on +time (future transport).
-    //
-    //   The unsent bar appears only once the user has changed something since
-    //   the last push (or since auto-promote synced the snapshot).
-    //   < What-level transport (rwnd / +time / pause) not yet implemented.
+    //   Points (Pmirrors) are owned by NaviCado — not rendered in the region body.
+    //   The region/def body (lmm-strip) shows only region headers and def chips.
     //
     // ── Scroll sync ──────────────────────────────────────────────────────────
     //
@@ -60,26 +39,13 @@
         from_char: number
         to_char:   number
         defs:      Def[]
-        points:    PointMark[]   // < not rendered in body; kept for capsule nav lookup
+        // < points: PointMark[] lived here for capsule nav lookup — now in NaviCado
     }
     type Def = { method: string, class?: string, line: number, from: number, to: number }
 
-    // A Point becomes a PointMark once its graft fields have been stamped by
-    // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
-    // method in the compile index yet (pre-compile, or name changed).
-    type PointMark = {
-        spec:       string
-        method:     string
-        line:       number
-        from:       number
-        to:         number
-        unresolved: boolean
-    }
-
-    let { H, view, active_path }: {
-        H:           House
-        view:        EditorView | undefined
-        active_path: string
+    let { H, view }: {
+        H:    House
+        view: EditorView | undefined
     } = $props()
 
     $effect(() => {
@@ -96,123 +62,16 @@
     let can_back    = $derived(nav_pos > 0)
     let can_forward = $derived(nav_pos < nav_hist.length - 1)
 
-    // ── in-group + showing ────────────────────────────────────────────────────
-
-    let in_group:        Set<string> = $state(new Set())
-    let showing:         Set<string> = $state(new Set())
-    // JSON of the in_group+showing state at last push (or auto-promote sync).
-    // '' means nothing has been pushed/synced yet — bar stays hidden.
-    let pushed_snapshot: string  = $state('')
-    let reset_confirm:   boolean = $state(false)
-
-    // Non-reactive tracking — reset on doc switch alongside the reactive state.
-    let _auto_promoted: Set<string> = new Set()   // specs ever auto-promoted this session
-    let _user_demoted:  Set<string> = new Set()   // specs user explicitly ×'d; never re-auto-promote
-
-    function current_what_point_json(): string {
-        const entries = [...in_group].map(spec => ({ spec, showing: showing.has(spec) }))
-        return JSON.stringify(entries)
-    }
-
-    // Only show the unsent bar once the user has changed something from the
-    // last auto-synced or pushed state.  Never show if nothing was ever synced.
-    let is_dirty = $derived(pushed_snapshot !== '' && current_what_point_json() !== pushed_snapshot)
-
-    // Demote: remove from in_group+showing and prevent future auto-promotion.
-    function demote(spec: string) {
-        _user_demoted.add(spec)
-        const ig = new Set(in_group); ig.delete(spec)
-        const sh = new Set(showing);  sh.delete(spec)
-        in_group      = ig
-        showing       = sh
-        reset_confirm = false
-    }
-
-    // Toggle showing for an in-group spec (active ↔ dormant).
-    // < should also fire i_elvisto to update fold/glow in CM for this spec.
-    function toggle_showing(spec: string) {
-        const sh = new Set(showing)
-        if (sh.has(spec)) sh.delete(spec)
-        else              sh.add(spec)
-        showing       = sh
-        reset_confirm = false
-    }
-
-    // Push current in_group+showing to Lies.
-    function push_what_point() {
-        const snap = current_what_point_json()
-        _our_last_push_id = Date.now()
-        H.i_elvisto('Lies/Lies', 'Lies_accept_What_Point', {
-            dock_path:   active_path,
-            what_point: JSON.parse(snap),
-        })
-        pushed_snapshot = snap
-        reset_confirm   = false
-    }
-
-    // Revert local in_group+showing to the last pushed/synced state.
-    // Two-tap: first tap arms; second tap executes.
-    function reset_what_point() {
-        if (!reset_confirm) { reset_confirm = true; return }
-        if (pushed_snapshot) {
-            const entries: { spec: string, showing: boolean }[] = JSON.parse(pushed_snapshot)
-            in_group = new Set(entries.map(e => e.spec))
-            showing  = new Set(entries.filter(e => e.showing).map(e => e.spec))
-        } else {
-            in_group = new Set()
-            showing  = new Set()
-        }
-        reset_confirm = false
-    }
-
-    // Called when Lies sends a new What_Point replacing what Lang is working from.
-    // Drops any unpushed local state and installs the Lies-side view.
-    // < call site: when lang_dock Pmirror identity changes substantially.
-    function receive_what_point_from_lies(entries: { spec: string, showing: boolean }[]) {
-        _auto_promoted  = new Set(entries.map(e => e.spec))
-        _user_demoted   = new Set()
-        in_group        = new Set(entries.map(e => e.spec))
-        showing         = new Set(entries.filter(e => e.showing).map(e => e.spec))
-        pushed_snapshot = JSON.stringify(entries)
-        reset_confirm   = false
-    }
-
-    // Watch ave/%examining/%Spotlight,1.sc.accepted_push_id.
-    // When Lies echoes an accepted_push_id that we didn't generate ourselves
-    // (push_what_point stamps _our_last_push_id), adopt the incoming entries.
-    // This fires on both e_Lies_accept_What_Point round-trips and on
-    // e_Lies_cursor_next (the restored Spotlight from the next Doc's stored set).
-    let _our_last_push_id = 0
-    $effect(() => {
-        const ex       = H.ave.ob({ examining: 1 })[0] as any
-        const spot     = ex?.o?.({ Spotlight: 1 })?.[0]
-        const push_id  = spot?.sc.accepted_push_id as number | undefined
-        const entries  = spot?.sc.accepted_entries as { spec: string, showing: boolean }[] | undefined
-        if (!push_id || !entries) return
-        if (push_id === _our_last_push_id) return   // our own push echoed back — ignore
-        // Lies sent something new; drop local state and install it.
-        receive_what_point_from_lies(entries)
-    })
-
     // Advance the Lies cursor to the next Doc across all loaded Wafts.
-    // < What-level navigation (sibling time-slices) is a future arc.
-    function cursor_next() {
-        H.i_elvisto('Lies/Lies', 'Lies_cursor_next', { dock_path: active_path })
-    }
+    // < What-level navigation (sibling time-slices) is in NaviCado.
 
     // ── doc switch ────────────────────────────────────────────────────────────
     let _last_path = ''
     $effect(() => {
         if (active_path !== _last_path) {
-            nav_hist        = []
-            nav_pos         = -1
-            in_group        = new Set()
-            showing         = new Set()
-            pushed_snapshot = ''
-            reset_confirm   = false
-            _auto_promoted  = new Set()
-            _user_demoted   = new Set()
-            _last_path      = active_path
+            nav_hist = []
+            nav_pos  = -1
+            _last_path = active_path
         }
     })
 
@@ -266,31 +125,32 @@
             ? H.ave.ob({ lang_dock: active_path })[0] as TheC | undefined
             : undefined
         // lang_dock is the actual %Dock particle (carries Compile, Pmirrors etc.).
-        // ave/%active_dock is gone; the same-object hold now lives at
-        // Languinio/%dock,path.  languinio is $state so reading it here subscribes.
+        // Same derivation as NaviCado — both read from Languinio directly.
         lang_dock = active_path
             ? languinio?.ob({ dock: active_path })[0] as TheC | undefined
             : undefined
     })
 
-    // ── grafted spinner ───────────────────────────────────────────────────────
-    //   %Languinio is the same ave signal Langui reads; DocMinimap only cares
-    //   about the grafted phase (gold).  333ms floor so a fast graft doesn't
-    //   strobe a single frame.
-    //
     // ── NaviCado / LE ─────────────────────────────────────────────────────────
-    //   %LE is the live Understanding; same-object hold via Languinio/%LE.
-    //   Derived here so NaviCado gets a fresh ref whenever Languinio is re-pointed
-    //   (cursor move → e_Lang_LE_arm → languinio.i(LE)).
+    //   %Languinio is the same ave signal Langui reads; DocMinimap only cares
+    //   about the grafted phase (gold) and stale phase (amber) spinners.
+    //   active_path, LE, lang_dock are all derived by NaviCado from languinio
+    //   directly — DocMinimap derives them here only for its own data sources.
     let languinio: TheC | undefined = $state()
     $effect(() => {
         languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
     })
+    // active_path: which dock is foregrounded.
+    // %Languinio/%dock,path with active:1 carries sc.dock = the path string.
+    let active_path = $derived(
+        (languinio?.ob({ active: 1 })[0]?.sc.dock as string | undefined) ?? ''
+    )
     let LE: TheC | undefined = $derived.by(() => {
-        // ob() tracks languinio.version so this re-derives when e_Lang_LE_arm
-        // replaces the %LE same-object hold (languinio.i(LE) bumps languinio).
+        // ob() tracks languinio.vers so this re-derives when e_Lang_LE_arm fires.
         return languinio?.ob({ LE: 1 })[0] as TheC | undefined
     })
+    // ── grafted / stale spinners ──────────────────────────────────────────────
+    //   333ms floor on the graft spinner so a fast graft doesn't strobe a frame.
     let _graft_spin = $state(false)
     let _stale_spin = $state(false)
     $effect(() => {
@@ -314,16 +174,12 @@
     let _raf = 0
 
     let _structure: {
-        regions:          Region[]
-        top_level_defs:   Def[]
-        all_marks:        PointMark[]   // flat list for capsule nav lookup
-        le_membership:    Map<string, { unaccepted: boolean, unshowing: boolean }>
-    } = $state({ regions: [], top_level_defs: [], all_marks: [], le_membership: new Map() })
+        regions:        Region[]
+        top_level_defs: Def[]
+    } = $state({ regions: [], top_level_defs: [] })
 
     let regions        = $derived(_structure.regions)
     let top_level_defs = $derived(_structure.top_level_defs)
-    let all_marks      = $derived(_structure.all_marks)
-    let le_membership  = $derived(_structure.le_membership)
 
     function schedule_rebuild() {
         cancelAnimationFrame(_raf)
@@ -334,15 +190,12 @@
         void dock?.vers
         void lang_dock?.vers
         void active_path
-        // LE.vers bumps when e_Lang_LE_drop/add/edit fire feebly_ponder —
-        // ensures collect_le_membership() re-runs on Understanding mutations.
-        void LE?.vers
         schedule_rebuild()
     })
 
     function rebuild() {
         if (!dock) {
-            _structure = { regions: [], top_level_defs: [], all_marks: [], le_membership: new Map() }
+            _structure = { regions: [], top_level_defs: [] }
             return
         }
 
@@ -351,29 +204,6 @@
         // %Output is only present for hard-compiled gen_path docs.
         const job     = lang_dock?.o({ Compile: 1 })[0]  as TheC | undefined
         const methods = job?.o({ methods: 1 })[0]        as TheC | undefined
-        const point_marks  = collect_graft_marks()
-        const le_membership = collect_le_membership()
-
-        // Auto-promote newly arrived specs into in_group + showing.
-        // Skips specs the user has explicitly demoted this session.
-        // After promotion, syncs pushed_snapshot so the bar doesn't appear yet.
-        const auto_ig = new Set(in_group)
-        const auto_sh = new Set(showing)
-        let did_promote = false
-        for (const mark of point_marks) {
-            if (_user_demoted.has(mark.spec))  continue
-            if (_auto_promoted.has(mark.spec)) continue
-            _auto_promoted.add(mark.spec)
-            auto_ig.add(mark.spec)
-            auto_sh.add(mark.spec)
-            did_promote = true
-        }
-        if (did_promote) {
-            in_group = auto_ig
-            showing  = auto_sh
-            pushed_snapshot = JSON.stringify([...auto_ig].map(s => ({ spec: s, showing: auto_sh.has(s) })))
-            reset_confirm   = false
-        }
 
         if (methods) {
             const region_entries = methods.o({ region: 1 }) as TheC[]
@@ -387,7 +217,6 @@
                 from_char: r.sc.from  as number,
                 to_char:   r.sc.to    as number,
                 defs:      [],
-                points:    [],
             }))
 
             const text = (dock.sc.text as string) ?? ''
@@ -407,92 +236,23 @@
                 else top_defs.push(def)
             }
 
-            // Point marks are sorted into regions for position lookup only.
-            for (const mark of point_marks) {
-                const owner = innermost_region_for_line(list, mark.line)
-                if (owner) owner.points.push(mark)
-            }
-
-            const unres   = point_marks.filter(p => p.unresolved).length
-            const summary = `${list.length}r ${def_entries.length}d ${point_marks.length}p`
+            const summary = `${list.length}r ${def_entries.length}d`
             if (summary !== last_log_summary) {
-                console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length} points=${point_marks.length} unresolved=${unres}`)
+                console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length}`)
                 last_log_summary = summary
             }
-            _structure = { regions: list, top_level_defs: top_defs, all_marks: point_marks, le_membership }
+            _structure = { regions: list, top_level_defs: top_defs }
             return
         }
 
         // Fallback: no compile index yet.  Scan regions from text.
         const fallback_regions = scan_regions_from_text((dock.sc.text as string) ?? '')
-        const summary = `${fallback_regions.length}r 0d ${point_marks.length}p (no compile)`
+        const summary = `${fallback_regions.length}r 0d (no compile)`
         if (summary !== last_log_summary) {
-            console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length} points=${point_marks.length}`)
+            console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length}`)
             last_log_summary = summary
         }
-        _structure = { regions: fallback_regions, top_level_defs: [], all_marks: point_marks, le_membership }
-    }
-
-    // ── collect_graft_marks ───────────────────────────────────────────────────
-    //
-    //   Walk lang_dock/%Pmirrors,1/%Pmirror,N.  A Pmirror with %graft,1 has been
-    //   resolved (live position from compile index); one without is unresolved.
-    function collect_graft_marks(): PointMark[] {
-        const out: PointMark[] = []
-        if (!lang_dock) return out
-        const Pmirrors = lang_dock.o({ Pmirrors: 1 })[0] as TheC | undefined
-        if (!Pmirrors) return out
-        for (const pm of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
-            const spec = (pm.sc.spec as string) || ''
-            if (!spec) continue
-            const graft = pm.o({ graft: 1 })[0] as TheC | undefined
-            if (!graft) {
-                out.push({ spec, method: spec, line: 1, from: 0, to: 0, unresolved: true })
-                continue
-            }
-            out.push({
-                spec,
-                method:     spec,
-                line:       graft.sc.line as number,
-                from:       graft.sc.from as number,
-                to:         graft.sc.to   as number,
-                unresolved: false,
-            })
-        }
-        return out
-    }
-
-    // ── collect_le_membership ─────────────────────────────────────────────────
-    //
-    //   Walk LE's working clones and return a Map of spec → membership flags.
-    //   Membership (unaccepted, unshowing) is OF the Point within the Understanding,
-    //   not IN the Point — it lives on clone.c.U.sc.
-    //   Position (line, from, to) still comes from collect_graft_marks.
-    //
-    //   Spec resolution mirrors Lang_point_spec: method ?? label ?? Point-value.
-    //   Points keyed by value (Point:transport) join correctly against capsule specs.
-    //
-    //   Gate: LE must be armed at a %What src so the clone list is the What's
-    //   Points; returns an empty Map for bare %Doc sessions.
-    function collect_le_membership(): Map<string, { unaccepted: boolean, unshowing: boolean }> {
-        const out = new Map<string, { unaccepted: boolean, unshowing: boolean }>()
-        if (!LE) return out
-        const target = LE.sc.target as TheC | undefined
-        // bare %Doc as target has no .What on sc — skip
-        if (!target || (target.sc as any).What === undefined) return out
-        const clones = (H as any).LE_clones(LE) as TheC[]
-        for (const c of clones) {
-            const sc  = c.sc as any
-            // mirror Lang_point_spec resolution order
-            const raw = sc.method ?? sc.label ?? sc.Point
-            if (raw == null || raw === 1 || raw === true) continue
-            const spec = String(raw)
-            out.set(spec, {
-                unaccepted: !!(c.c?.U?.sc?.unaccepted),
-                unshowing:  !!(c.c?.U?.sc?.unshowing),
-            })
-        }
-        return out
+        _structure = { regions: fallback_regions, top_level_defs: [] }
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
@@ -663,64 +423,7 @@
         {#if _stale_spin}<span class="lmm-stale-spin" title="Understanding stale — remote moved">↻</span>{/if}
     </div>
 
-    <NaviCado {H} {LE} />
-
-    <!-- Unsent bar — only when user has changed something since last push. -->
-    {#if is_dirty}
-        <div class="lmm-wp-bar">
-            <span class="lmm-wp-tilde">~</span>
-            {#if !reset_confirm}
-                <div class="lmm-wp-arrows">
-                    <button class="lmm-wp-arrow" onclick={push_what_point} title="Push to Lies">↑</button>
-                    <button class="lmm-wp-arrow" onclick={reset_what_point} title="Reset">↩</button>
-                </div>
-            {:else}
-                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset_what_point}>sure?</button>
-            {/if}
-        </div>
-    {/if}
-
-    <!-- In-group capsule strip.
-         All Pmirrors auto-promote here on arrival.
-         Orb = showing toggle.  × = demote (always visible). -->
-    {#if in_group.size > 0}
-        <div class="lmm-inbox">
-            {#each [...in_group] as spec (spec)}
-                {@const mark = all_marks.find(p => p.spec === spec)}
-                {@const is_sh = showing.has(spec)}
-                {@const mem  = le_membership.get(spec)}
-                <div class="lmm-capsule"
-                     class:lmm-capsule-bad={mark?.unresolved}
-                     class:lmm-capsule-dormant={!is_sh}
-                     class:lmm-capsule-unaccepted={mem?.unaccepted}>
-                    <button class="lmm-capsule-orb"
-                            class:lmm-capsule-orb-show={is_sh && !mem?.unshowing}
-                            class:lmm-capsule-orb-unshowing={mem?.unshowing}
-                            title={is_sh ? 'Showing — click to make dormant' : 'Dormant — click to show'}
-                            onclick={() => toggle_showing(spec)}>
-                    </button>
-                    <button class="lmm-capsule-label"
-                            title="{spec}{mark?.unresolved ? ' (unresolved)' : mark ? ` → line ${mark.line}` : ''}"
-                            onclick={() => mark && go_to(mark.from, mark.to, spec)}>
-                        {spec}
-                    </button>
-                    {#if !is_sh}
-                        <!-- × fires e_Lang_LE_drop when LE is armed at a %What;
-                             falls back to local demote() for bare %Doc sessions. -->
-                        <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
-                            if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                                H.i_elvisto('Lang/Lang', 'Lang_LE_drop', { spec })
-                            } else {
-                                demote(spec)
-                            }
-                        }}>×</button>
-                    {/if}
-                </div>
-            {/each}
-            <!-- Step Lies cursor to the next What in the Waft order. -->
-            <button class="lmm-cursor-next" title="Next What in Waft" onclick={cursor_next}>→</button>
-        </div>
-    {/if}
+    <NaviCado {H} />
 
     <div class="lmm-scroll" bind:this={scroll_container_el}>
         <div class="lmm-strip" bind:this={strip_el}>
@@ -841,113 +544,6 @@
         animation: lmm-stale-spin 0.8s linear infinite;
     }
     @keyframes lmm-stale-spin { to { transform: rotate(360deg); } }
-
-    /* Unsent bar — only when user changed something since last push. */
-    .lmm-wp-bar {
-        display: flex; flex-direction: column; align-items: center;
-        padding: 3px 0 4px;
-        background: rgba(229, 192, 123, 0.05);
-        border-bottom: 1px solid rgba(229, 192, 123, 0.1);
-        flex-shrink: 0; gap: 2px;
-    }
-    .lmm-wp-tilde {
-        font-size: 17px; line-height: 1;
-        color: rgba(229, 192, 123, 0.5);
-    }
-    .lmm-wp-arrows { display: flex; gap: 8px; }
-    .lmm-wp-arrow {
-        background: none; border: none; cursor: pointer;
-        font-family: inherit; font-size: 13px; line-height: 1;
-        color: rgba(229, 192, 123, 0.45); padding: 0 3px;
-    }
-    .lmm-wp-arrow:hover   { color: #e5c07b; }
-    .lmm-wp-confirm       { color: rgba(224, 108, 117, 0.7) !important; font-size: 10px !important; }
-    .lmm-wp-confirm:hover { color: #e06c75 !important; }
-
-    /* In-group capsule strip — all Pmirrors live here, none in the region body. */
-    .lmm-inbox {
-        display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
-        padding: 5px 6px;
-        min-height: 30px;
-        background: rgba(0, 0, 0, 0.35);
-        border-bottom: 1px solid rgba(229, 192, 123, 0.12);
-        flex-shrink: 0;
-    }
-
-    .lmm-capsule {
-        display: flex; align-items: center; gap: 3px;
-        background: rgba(229, 192, 123, 0.08);
-        border: 1px solid rgba(229, 192, 123, 0.28);
-        border-radius: 3px;
-        padding: 3px 4px 3px 3px;
-        font-family: inherit;
-        line-height: 1;
-    }
-    .lmm-capsule-dormant {
-        background: rgba(80, 90, 100, 0.12);
-        border-color: rgba(80, 100, 120, 0.25);
-    }
-    .lmm-capsule-bad { border-color: rgba(224, 108, 117, 0.35); }
-
-    /* U%unaccepted — virtual deletion; cross out the label, amber tint */
-    .lmm-capsule-unaccepted {
-        background: rgba(224, 108, 117, 0.06);
-        border-color: rgba(224, 108, 117, 0.2);
-    }
-    .lmm-capsule-unaccepted .lmm-capsule-label {
-        text-decoration: line-through;
-        color: rgba(224, 108, 117, 0.5);
-    }
-
-    /* Orb inside capsule — the showing toggle. */
-    .lmm-capsule-orb {
-        display: block; width: 8px; height: 8px;
-        border-radius: 50%; flex-shrink: 0;
-        background: transparent;
-        border: 1px solid rgba(229, 192, 123, 0.4);
-        cursor: pointer; padding: 0;
-        transition: background 0.12s, box-shadow 0.12s;
-    }
-    .lmm-capsule-orb.lmm-capsule-orb-show {
-        background: #e5c07b;
-        border-color: #e5c07b;
-        box-shadow: 0 0 4px #e5c07b88;
-    }
-    .lmm-capsule-bad .lmm-capsule-orb      { border-color: rgba(224, 108, 117, 0.5); }
-    .lmm-capsule-bad .lmm-capsule-orb-show { background: #e06c75; border-color: #e06c75; box-shadow: 0 0 4px #e06c7588; }
-    /* U%unshowing — orb shows a dim ring rather than full gold */
-    .lmm-capsule-orb.lmm-capsule-orb-unshowing {
-        background: transparent;
-        border-color: rgba(229, 192, 123, 0.2);
-        box-shadow: none;
-    }
-    .lmm-capsule-orb:hover { opacity: 0.75; }
-
-    .lmm-capsule-label {
-        background: none; border: none; cursor: pointer;
-        color: #e5c07b; font-family: inherit; font-size: 10px; line-height: 1.3;
-        padding: 0; max-width: 90px;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .lmm-capsule-label:hover              { color: #fff; }
-    .lmm-capsule-dormant .lmm-capsule-label { color: #4a6070; }
-    .lmm-capsule-bad     .lmm-capsule-label { color: #e06c75; text-decoration: line-through; }
-
-    /* × always visible — primary demote control. */
-    .lmm-capsule-demote {
-        background: none; border: none; cursor: pointer;
-        color: #3a5060; font-family: inherit; font-size: 10px;
-        padding: 0 1px; line-height: 1;
-    }
-    .lmm-capsule-demote:hover { color: #e06c75; }
-
-    /* Cursor advance — steps Lies to next What_Point. */
-    .lmm-cursor-next {
-        background: none; border: none; cursor: pointer;
-        color: #2a4a5a; font-size: 11px; padding: 0 3px;
-        font-family: inherit; margin-left: auto;
-    }
-    .lmm-cursor-next:hover { color: #c0d0e0; }
 
     /* Strip:
          .lmm-scroll     — overflow:hidden scroll container (invisible bar)

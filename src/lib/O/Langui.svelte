@@ -916,7 +916,7 @@
         {#if minimap_open}
         <!-- lte-mm-host overlays the editor canvas; chevron floats over the top corner (z-index 3) -->
         <div class="lte-mm-host">
-            <DocMinimap {H} {view} {active_path} />
+            <DocMinimap {H} {view} />
         </div>
         {/if}
     </div>
