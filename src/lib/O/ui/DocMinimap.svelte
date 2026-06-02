@@ -279,7 +279,7 @@
                     label: m[1].trim(), depth,
                     from_line: line_num, to_line: lines.length,
                     from_char: line_from, to_char: text.length,
-                    defs: [], points: [],
+                    defs: [],
                 }
                 all.push(r); stack.push(r)
             } else if (ENDREGION_RE.test(line_text) && stack.length) {
@@ -412,10 +412,14 @@
      onwheel={on_wheel}>
 
     <div class="lmm-head">
-        <button class="lmm-nav" onclick={go_back}    disabled={!can_back}
-                title="Back"    aria-label="Back">◂</button>
-        <button class="lmm-nav" onclick={go_forward} disabled={!can_forward}
-                title="Forward" aria-label="Forward">▸</button>
+        <!-- nav history — only shown once there's something to navigate; before
+             that, both buttons would just be disabled and the count reads fine alone. -->
+        {#if nav_hist.length}
+            <button class="lmm-nav" onclick={go_back}    disabled={!can_back}
+                    title="Back"    aria-label="Back">◂</button>
+            <button class="lmm-nav" onclick={go_forward} disabled={!can_forward}
+                    title="Forward" aria-label="Forward">▸</button>
+        {/if}
         <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
             {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
         </span>

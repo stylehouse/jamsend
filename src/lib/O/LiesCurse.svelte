@@ -23,6 +23,7 @@
     //     already on a %What.
     //   - e:Lies_set_cursor — explicit cursor jump from Waft/DocRow click.
     //   - e:Lies_cursor_next / e:Lies_cursor_what — NaviCado / → stepping.
+    //   - e:Lies_branch_what / e:Lies_dive_what — ↘ / ↓ +time gestures.
     //   - Lies_find_doc_in_wafts — walk loaded Wafts by path.
     //   - Lies_i_Spotlight — the seam: stamp src + bump + fire Lang_workon_update.
     //
@@ -303,7 +304,7 @@
     //   timemachine emits a %want with the result (§3f).
     //
     //   Scoped to a single Waft — cross-Waft stepping is e_Lies_cursor_next.
-    //   < sibling time-slice stepping (↘ / ↓) is Chunk 4c.
+    //   < e_Lies_cursor_next steps flat siblings; branch/dive hierarchy not yet traversed.
     Waft_cursor_next_candidate(w: TheC, waft: TheC): TheC | undefined {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
@@ -332,7 +333,7 @@
     //   e.sc: { dock_path: string }  — current active doc path (unused; kept for
     //     caller compat; identity tracking supersedes path-based position finding)
     //
-    //   < stepping within nested %What hierarchies (sibling time-slices, ↘ / ↓) is Chunk 4c.
+    //   < e_Lies_cursor_next steps flat siblings; branch/dive hierarchy not yet traversed.
     async e_Lies_cursor_next(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
@@ -372,6 +373,157 @@
         // we just emit the want.  NaviCado's ↑/←/→ already resolved the target.
         H.i_elvisto(w, 'Lies_want', { src: what, kind: 'next' })
     },
+
+    // ── Lies_what_carry_over ──────────────────────────────────────────────────
+    //
+    //   Collect accepted+showing Points from a %What's extent for carry-forward
+    //   into a new sibling (branch) or child (dive) What.
+    //   "Accepted and showing" is the user's active working set at last push.
+    //
+    //   Returns { doc_path, pt_scs } per Doc container so the caller can
+    //   recreate the same Doc/Point structure in the new What.  Direct Points
+    //   on the What itself (no Doc container) land as doc_path:undefined.
+    //
+    //   session flags (accepted/showing) are stripped — the new What starts
+    //   with clean acceptance state; the user pushes when ready.
+    Lies_what_carry_over(what: TheC): Array<{ doc_path: string | undefined, pt_scs: Record<string, unknown>[] }> {
+        const out: Array<{ doc_path: string | undefined, pt_scs: Record<string, unknown>[] }> = []
+        for (const doc of what.o({ Doc: 1 }) as TheC[]) {
+            const scs = (doc.o({ Point: 1 }) as TheC[])
+                .filter(pt => pt.sc.accepted && pt.sc.showing)
+                .map(pt => {
+                    const { accepted, showing, ...rest } = pt.sc as any
+                    return rest as Record<string, unknown>
+                })
+            if (scs.length) out.push({ doc_path: doc.sc.path as string, pt_scs: scs })
+        }
+        // direct %Point children on the What (time-slice style, no Doc container)
+        const direct = (what.o({ Point: 1 }) as TheC[])
+            .filter(pt => pt.sc.accepted && pt.sc.showing)
+            .map(pt => {
+                const { accepted, showing, ...rest } = pt.sc as any
+                return rest as Record<string, unknown>
+            })
+        if (direct.length) out.push({ doc_path: undefined, pt_scs: direct })
+        return out
+    },
+
+    // ── Lies_seed_what_carry_over ─────────────────────────────────────────────
+    //
+    //   Write carry-over Points into a freshly created %What, recreating the
+    //   same Doc/Point structure.  Called right after new What creation so the
+    //   LE checkout that follows already sees the seeded Points.
+    Lies_seed_what_carry_over(new_what: TheC, carry: Array<{ doc_path: string | undefined, pt_scs: Record<string, unknown>[] }>) {
+        for (const { doc_path, pt_scs } of carry) {
+            if (doc_path !== undefined) {
+                const doc = new_what.oai({ Doc: 1, path: doc_path })
+                for (const sc of pt_scs) doc.i(sc)
+            } else {
+                for (const sc of pt_scs) new_what.i(sc)
+            }
+        }
+    },
+
+    // ── e_Lies_branch_what ────────────────────────────────────────────────────
+    //
+    //   Fired by NaviCado's ↘ button.  Inserts a new sibling %What immediately
+    //   after the current one in the parent's child list, seeds it with
+    //   accepted+showing Points from the current What, and steps the cursor in.
+    //
+    //   Uses parent.replace() to rebuild the child list in order with the new
+    //   What spliced in after the target.  Existing children are re-inserted as
+    //   the same objects (same-object path in resume_X) so their sub-trees and
+    //   c.* references survive the replace intact.
+    //
+    //   Insertion order in the replace fn determines how resolve() pairs sc
+    //   duplicates — existing particles go first, so a second unnamed sibling
+    //   won't steal the first one's pairing slot.
+    //
+    //   e.sc: { what: TheC }
+    async e_Lies_branch_what(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const what = e.sc.what as TheC | undefined
+        if (!what) return
+
+        // parent is the containing %What or the %Waft itself (top-level What)
+        const parent = (what.c.up as TheC | undefined) ?? (what.c.waft as TheC | undefined)
+        if (!parent) return
+        const waft_C = H.LE_what_waft(what)
+        if (!waft_C) return
+
+        const carry      = H.Lies_what_carry_over(what)
+        const all        = parent.o({}) as TheC[]        // all children, insertion order
+        const tgt_idx    = all.indexOf(what)
+        const pre_whats  = parent.o({ What: 1 }) as TheC[]
+        const what_idx   = pre_whats.indexOf(what)       // position among %What children only
+
+        if (tgt_idx < 0) {
+            // c.up stale — can't splice; fall back to appending
+            const new_what = parent.i({ What: 1, label: '' })
+            H.Lies_seed_what_carry_over(new_what, carry)
+            new_what.c.up   = parent
+            new_what.c.waft = waft_C
+            H.Lies_waft_save(w, waft_C)
+            H.i_elvisto(w, 'Lies_want', { src: new_what, kind: 'next' })
+            return
+        }
+
+        // Rebuild parent's children in their original order with new What spliced
+        // in after the target.  parent.i(existing) is the same-object path —
+        // resume_X on a matching sc is a no-op, c.* fields are preserved.
+        await parent.replace({}, async () => {
+            for (let i = 0; i < all.length; i++) {
+                parent.i(all[i])
+                if (i === tgt_idx) parent.i({ What: 1, label: '' })
+            }
+        })
+
+        // new What is at what_idx+1 in the updated %What child list
+        const new_what = (parent.o({ What: 1 }) as TheC[])[what_idx + 1]
+        if (!new_what) return
+
+        H.Lies_seed_what_carry_over(new_what, carry)
+        // stamp back-refs so navigation helpers work before the next LE_pull
+        // re-links; Waft_link_up stamps the new What's children at checkout time
+        new_what.c.up   = parent
+        new_what.c.waft = waft_C
+
+        H.Lies_waft_save(w, waft_C)
+        H.i_elvisto(w, 'Lies_want', { src: new_what, kind: 'next' })
+    },
+
+    // ── e_Lies_dive_what ──────────────────────────────────────────────────────
+    //
+    //   Fired by NaviCado's ↓ button.  Creates a new child %What inside the
+    //   current one, seeds it with accepted+showing Points, and steps in.
+    //   The parent What keeps its original Points intact — this is a copy,
+    //   not a move.  The secondary strip (prev-What ghost layer) is Chunk 4d.
+    //
+    //   e.sc: { what: TheC }
+    async e_Lies_dive_what(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const what = e.sc.what as TheC | undefined
+        if (!what) return
+
+        const waft_C = H.LE_what_waft(what)
+        if (!waft_C) return
+
+        const carry    = H.Lies_what_carry_over(what)
+        const new_what = what.i({ What: 1, label: '' })
+        H.Lies_seed_what_carry_over(new_what, carry)
+        // stamp back-refs immediately; Waft_link_up fills in the new What's
+        // children at the next LE_pull
+        new_what.c.up   = what
+        new_what.c.waft = waft_C
+
+        H.Lies_waft_save(w, waft_C)
+        H.i_elvisto(w, 'Lies_want', { src: new_what, kind: 'next' })
+    },
+
     //
     //   True when a %What carries at least one %Point anywhere in its subtree —
     //   direct %Point child, %Point inside a %Doc child, or %Point inside a

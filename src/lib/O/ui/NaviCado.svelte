@@ -19,7 +19,7 @@
     // ── Nav buttons ──────────────────────────────────────────────────────────
     //
     //   ↑  ←  →  — up / prev / next What via c.up chain
-    //   ↘  ↓     — < Chunk 4c; ghosted
+    //   ↘  ↓     — branch (new sibling) / dive (new child) What
     //
     //   Transport bar (when req:timemachine exists):
     //   ‖/▶  — i_elvisto Lies_desire_pause / Lies_desire_play
@@ -88,16 +88,18 @@
 
     // ── nav bar reactive derivation ───────────────────────────────────────────
 
-    // LE.vers is always ≥ 1 (truthy) — safe chain link that registers the read.
-    let target   = $derived(LE && LE.vers && LE.sc.target as TheC | undefined)
-    let depth    = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
-    let has_prev = $derived(target ? !!(H as any).LE_what_prev(target) : false)
-    let has_next = $derived(target ? !!(H as any).LE_what_next(target) : false)
-    let has_up   = $derived(depth > 0)
+    // LE.vers is always >= 1 (truthy) — safe chain link that registers the read.
+    let target     = $derived(LE && LE.vers && LE.sc.target as TheC | undefined)
+    let depth      = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
+    let has_prev   = $derived(target ? !!(H as any).LE_what_prev(target) : false)
+    let has_next   = $derived(target ? !!(H as any).LE_what_next(target) : false)
+    let has_up     = $derived(depth > 0)
+    let has_branch = $derived(!!target)   // can always branch to a new sibling
+    let has_dive   = $derived(!!target)   // can always dive into a new child
 
     // ── transport ─────────────────────────────────────────────────────────────
-    //   The timemachine lives on %examining (§3f).  vers-chains keep reads
-    //   reactive — vers is always ≥ 1 (truthy).
+    //   The timemachine lives on %examining (s3f).  vers-chains keep reads
+    //   reactive — vers is always >= 1 (truthy).
 
     let examining   = $derived(H.ave.ob({ examining: 1 })[0] as TheC | undefined)
     let timemachine = $derived(examining && examining.vers
@@ -116,7 +118,7 @@
 
     // Non-reactive; reset on path switch alongside the reactive state.
     let _auto_promoted: Set<string> = new Set()   // specs ever auto-promoted this session
-    let _user_demoted:  Set<string> = new Set()   // specs user explicitly ×'d; never re-auto-promote
+    let _user_demoted:  Set<string> = new Set()   // specs user explicitly x'd; never re-auto-promote
     let _our_last_push_id = 0
 
     let all_marks:    PointMark[]                                               = $state([])
@@ -177,7 +179,7 @@
 
     // ── collect_le_membership ─────────────────────────────────────────────────
     //
-    //   Walk LE's working clones and return a Map of spec → membership flags.
+    //   Walk LE's working clones and return a Map of spec to membership flags.
     //   Membership (unaccepted, unshowing) is OF the Point within the Understanding,
     //   not IN the Point — it lives on clone.c.U.sc.
     //   class lives on clone.sc directly (not U).
@@ -279,7 +281,7 @@
         reset_confirm = false
     }
 
-    // Toggle showing for an in-group spec (active ↔ dormant).
+    // Toggle showing for an in-group spec (active vs dormant).
     // < should also fire i_elvisto to update fold/glow in CM for this spec.
     function toggle_showing(spec: string) {
         const sh = new Set(showing)
@@ -346,11 +348,13 @@
     }
 
     function go_branch() {
-        // < Chunk 4c — create sibling %What after current and step into it.
+        if (!target) return
+        H.i_elvisto('Lies/Lies', 'Lies_branch_what', { what: target })
     }
 
     function go_dive() {
-        // < Chunk 4c — create child %What inside current and step into it.
+        if (!target) return
+        H.i_elvisto('Lies/Lies', 'Lies_dive_what', { what: target })
     }
 
     // Label for the current What — shown in the middle of the toolbar.
@@ -368,7 +372,7 @@
 {#if LE && target}
 <div class="nvc-bar">
 
-    <!-- ↑ up — ghosted at top level -->
+    <!-- up — ghosted at top level -->
     <div class="nvc-seed" class:nvc-ghost={!has_up}>
         {#if slot_up}
             {@render slot_up({ ghosted: !has_up, onclick: go_up })}
@@ -378,7 +382,7 @@
         {/if}
     </div>
 
-    <!-- ← prev -->
+    <!-- prev -->
     <div class="nvc-seed" class:nvc-ghost={!has_prev}>
         {#if slot_prev}
             {@render slot_prev({ ghosted: !has_prev, onclick: go_prev })}
@@ -391,7 +395,7 @@
     <!-- current What label — mid-strip breadcrumb -->
     <div class="nvc-label" title="Current What: {what_label}">{what_label}</div>
 
-    <!-- → next -->
+    <!-- next -->
     <div class="nvc-seed" class:nvc-ghost={!has_next}>
         {#if slot_next}
             {@render slot_next({ ghosted: !has_next, onclick: go_next })}
@@ -401,29 +405,33 @@
         {/if}
     </div>
 
-    <!-- ↘ branch — ghosted until Chunk 4c -->
-    <div class="nvc-seed nvc-ghost">
+    <!-- branch — new sibling %What after current -->
+    <div class="nvc-seed" class:nvc-ghost={!has_branch}>
         {#if slot_branch}
-            {@render slot_branch({ ghosted: true, onclick: go_branch })}
+            {@render slot_branch({ ghosted: !has_branch, onclick: go_branch })}
         {:else}
-            <button class="nvc-btn nvc-ghosted" disabled onclick={go_branch}
-                    title="Branch (↘ new sibling What) — coming soon">↘</button>
+            <button class="nvc-btn" class:nvc-ghosted={!has_branch}
+                    disabled={!has_branch} onclick={go_branch}
+                    title="Branch (new sibling What)">↘</button>
         {/if}
     </div>
 
-    <!-- ↓ dive — ghosted until Chunk 4c -->
-    <div class="nvc-seed nvc-ghost">
+    <!-- dive — new child %What inside current -->
+    <div class="nvc-seed" class:nvc-ghost={!has_dive}>
         {#if slot_dive}
-            {@render slot_dive({ ghosted: true, onclick: go_dive })}
+            {@render slot_dive({ ghosted: !has_dive, onclick: go_dive })}
         {:else}
-            <button class="nvc-btn nvc-ghosted" disabled onclick={go_dive}
-                    title="Dive (↓ new child What) — coming soon">↓</button>
+            <button class="nvc-btn" class:nvc-ghosted={!has_dive}
+                    disabled={!has_dive} onclick={go_dive}
+                    title="Dive (new child What)">↓</button>
         {/if}
     </div>
 
 </div>
 
-<!-- Transport bar — only when req:desire is active -->
+<!-- Transport bar — only when req:desire is active.
+     The unsent bar overlays the right side of this row absolutely so it
+     doesn't add any height; stays hidden until something is dirty. -->
 {#if has_desire}
 <div class="nvc-transport">
     <button class="nvc-t-btn" class:nvc-t-playing={is_playing}
@@ -434,29 +442,26 @@
     <button class="nvc-t-btn" title="Step to next What"
             onclick={() => H.i_elvisto('Lies/Lies', 'Lies_desire_step', {})}>→</button>
     <span class="nvc-t-label">{is_playing ? 'playing' : 'paused'}</span>
+    {#if is_dirty}
+        <div class="lmm-wp-bar"
+             onmouseleave={() => { reset_confirm = false }}>
+            <span class="lmm-wp-tilde">~</span>
+            {#if !reset_confirm}
+                <button class="lmm-wp-arrow" onclick={push_what_point} title="Push">↑</button>
+                <button class="lmm-wp-arrow" onclick={reset_what_point} title="Reset">↩</button>
+            {:else}
+                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset_what_point}>sure?</button>
+            {/if}
+        </div>
+    {/if}
 </div>
 {/if}
 
 {/if}
 
-<!-- Unsent bar — only when user has changed something since last push. -->
-{#if is_dirty}
-    <div class="lmm-wp-bar">
-        <span class="lmm-wp-tilde">~</span>
-        {#if !reset_confirm}
-            <div class="lmm-wp-arrows">
-                <button class="lmm-wp-arrow" onclick={push_what_point} title="Push to Lies">↑</button>
-                <button class="lmm-wp-arrow" onclick={reset_what_point} title="Reset">↩</button>
-            </div>
-        {:else}
-            <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset_what_point}>sure?</button>
-        {/if}
-    </div>
-{/if}
-
 <!-- In-group capsule strip.
      All Pmirrors auto-promote here on arrival.
-     Orb = showing toggle.  × = demote (always visible). -->
+     Orb = showing toggle.  x = demote (always visible). -->
 {#if in_group.size > 0}
     <div class="lmm-inbox"
          onmouseleave={() => { reset_confirm = false }}>
@@ -483,7 +488,7 @@
                     {spec}
                 </button>
                 {#if !is_sh}
-                    <!-- × fires e_Lang_LE_drop when LE is armed at a %What;
+                    <!-- x fires e_Lang_LE_drop when LE is armed at a %What;
                          falls back to local demote() for bare %Doc sessions. -->
                     <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
                         if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
@@ -558,7 +563,8 @@
         letter-spacing: 0.02em;
     }
 
-    /* Transport bar — play/pause + step for req:desire playback. */
+    /* Transport bar — play/pause + step for req:desire playback.
+       position:relative anchors the unsent bar overlay. */
     .nvc-transport {
         display:       flex;
         align-items:   center;
@@ -567,6 +573,7 @@
         background:    rgba(20, 25, 32, 0.9);
         border-bottom: 1px solid rgba(255,255,255,0.04);
         min-height:    18px;
+        position:      relative;
     }
 
     .nvc-t-btn {
@@ -590,23 +597,28 @@
         flex:       1;
     }
 
-    /* Unsent bar — only when user changed something since last push. */
+    /* Unsent bar — abs overlay on the right of the transport row.
+       ~ up reset floats over the label area; adds no row height. */
     .lmm-wp-bar {
-        display:          flex;
-        flex-direction:   column;
-        align-items:      center;
-        padding:          3px 0 4px;
-        background:       rgba(229, 192, 123, 0.05);
-        border-bottom:    1px solid rgba(229, 192, 123, 0.1);
-        flex-shrink:      0;
-        gap:              2px;
+        position:    absolute;
+        right:       0;
+        top:         0;
+        bottom:      0;
+        display:     flex;
+        flex-direction: row;
+        align-items: center;
+        gap:         3px;
+        padding:     0 6px;
+        background:  rgba(16, 20, 28, 0.96);
+        border-left: 1px solid rgba(229, 192, 123, 0.15);
     }
+
     .lmm-wp-tilde {
-        font-size:  17px;
+        font-size:   11px;
         line-height: 1;
-        color:       rgba(229, 192, 123, 0.5);
+        color:       rgba(229, 192, 123, 0.4);
     }
-    .lmm-wp-arrows { display: flex; gap: 8px; }
+
     .lmm-wp-arrow {
         background:   none;
         border:       none;
@@ -615,7 +627,7 @@
         font-size:    13px;
         line-height:  1;
         color:        rgba(229, 192, 123, 0.45);
-        padding:      0 3px;
+        padding:      0 2px;
     }
     .lmm-wp-arrow:hover   { color: #e5c07b; }
     .lmm-wp-confirm       { color: rgba(224, 108, 117, 0.7) !important; font-size: 10px !important; }
@@ -675,7 +687,7 @@
         transition:    background 0.12s, box-shadow 0.12s;
     }
     .lmm-capsule-orb.lmm-capsule-orb-show {
-        background:  #e5c07b;
+        background:   #e5c07b;
         border-color: #e5c07b;
         box-shadow:   0 0 4px #e5c07b88;
     }
@@ -707,7 +719,7 @@
     .lmm-capsule-dormant .lmm-capsule-label { color: #4a6070; }
     .lmm-capsule-bad     .lmm-capsule-label { color: #e06c75; text-decoration: line-through; }
 
-    /* × always visible — primary demote control. */
+    /* x always visible — primary demote control. */
     .lmm-capsule-demote {
         background:  none;
         border:      none;

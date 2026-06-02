@@ -109,11 +109,7 @@ blockers for 4c.
 
 **The pending integration: two systems for acceptance.**
 
-`sc.accepted`|`sc.showing` on source %Points barely exists — very little showing/accepted
-handling is wired yet.  DocMinimap has local `$state in_group`/`showing` and a
-`push_what_point` round-trip to Lies, but these are stubs ahead of NaviCado.
-The U sphere (`U%unshowing`, `U%unaccepted`) is the intended single truth; NaviCado
-consolidation is where that gets wired.
+The U sphere (`U%unshowing`, `U%unaccepted`) is that.
 
 The consolidation: move the capsule strip and its state management from
 DocMinimap into NaviCado, making the U sphere the single truth for
@@ -135,7 +131,7 @@ the `%What` being rendered:
 
 ```ts
 {@const is_what_active = (() => {
-    void examining?.version
+    examining?.vers
     const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
     if (!spot?.sc.src) return false
     // glow any %What that is src itself, or an ancestor of src via c.up
@@ -154,7 +150,6 @@ Three lines in Waft.svelte.  `c.up` is stamped by `Waft_link_up` on every
 **Sequencing:**
 
 ```
-now     glow fix — Waft.svelte, three lines
 next    NaviCado / accepted_entries consolidation
           capsule strip + in_group/showing state → NaviCado
           U sphere becomes the single truth for showing/accepted
@@ -258,19 +253,6 @@ attention with particular Points illuminated on the walls.
 // < Waft glow walks only the direct %What identity check; should walk
 //   src.c.up so any ancestor %What of the cursored node also glows.
 //   Three-line fix in Waft.svelte (see §Where we are).
-
-// < showing/accepted handling: very little exists yet — sc.accepted / sc.showing
-//   on source %Points, and DocMinimap's in_group/$state, are stubs.
-//   NaviCado consolidation will make U sphere the single truth for these.
-
-// ✓ DocMinimap lang_dock: now reads from languinio.ob({dock:active_path})[0]
-//   (the Languinio/%dock same-object hold).  ave/%active_dock is gone.
-
-// < C%class not U%class: class lives on clone.sc directly (copied from source
-//   %Point.sc.class via Seem_clone_C's { ...child.sc }).  The graft currently
-//   reads src_clone.c.U?.sc.class which is wrong — should read
-//   (clone.sc as any).class.  U%* is strictly meta (unshowing, unaccepted);
-//   class is a persisted decoration, lives in sc.
 
 // < created_at session field on clones — stripped by Seem_toString / enWaft;
 //   needs wiring in LE_add_clone and the strip list.
