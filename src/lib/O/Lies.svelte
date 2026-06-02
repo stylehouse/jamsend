@@ -725,15 +725,21 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     },
 
     // ── Lies_roai_Furnishing ────────────────────────────────────────────────────
-    //   Find-or-create the req:Furnishing for a path.  The req IS the courier
-    //   (i_elvis_req carries it to Lang); req_sent:1 gates the double-fire and
-    //   finish(reply) lands req.sc.finished + pings Lies back with reqturn:1.
+    //   Find-or-create the req:Furnishing for a path.  A finished Furnishing means
+    //   the dock already exists in Lang — keep it rather than dropping and restarting
+    //   Languish (which would wipe the compile result on every cursor re-visit).
+    //   Genuine re-opens (source text changed) go through Lies_source_write →
+    //   e_Lang_open_dock directly, bypassing this path.
     Lies_roai_Furnishing(w: TheC, src: TheC, path: string): Promise<TheC> {
         const H = this as House
         const rqg = H.reqy(w)
-        // A finished Furnishing for this path: drop so a re-open re-fires fresh.
-        for (const old of rqg.o({ req: 'Furnishing', path }) as TheC[]) {
-            if (old.sc.finished) w.drop(old)
+        // Reuse any existing Furnishing — finished or in-progress.  Dropping a
+        // finished one causes Lang_drive_languish to see languish.sc.finished and
+        // recreate Languish, re-running the full compile on every cursor move.
+        const existing = rqg.o({ req: 'Furnishing', path })[0] as TheC | undefined
+        if (existing) {
+            existing.c.src = src   // update src ref in case it moved
+            return Promise.resolve(existing)
         }
         return rqg.roai({ req: 'Furnishing', path }).then((req: TheC) => {
             req.c.src = src

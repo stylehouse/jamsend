@@ -397,6 +397,7 @@
         }
 
         w.i({ received: 1, editorBegins: 1, doc: doc.sc.dock })
+        console.log(`📐 editorBegins: path=${doc.sc.dock} active_dock_path=${w.c.active_dock_path} has_state=${!!doc.c.state} state_text_len=${(doc.c.state as any)?.doc?.toString()?.length ?? 'no-state'}`)
 
         // ── Bookmark position sync ────────────────────────────────────────────
         //
@@ -890,6 +891,7 @@
 
             const gen_path = languish.sc.gen_path as string | undefined
             const text     = (languish.c.open_text as string) ?? ''
+            console.log(`📝 text_loaded reqonce path=${path} text_len=${text.length} open_text_defined=${languish.c.open_text !== undefined}`)
 
             const docks = w.oai({docks: 1})
             const dock = docks.oai({dock: path})
@@ -949,7 +951,10 @@
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
             languinio?.oai({ spinner: 'compile' })
+            console.log(`🔨 compile reqonce path=${dock?.sc?.dock} has_state=${!!dock?.c?.state} state_text_len=${(dock?.c?.state as any)?.doc?.toString()?.length ?? 'no-state'}`)
             await this.Lang_compile_dock(w, dock)
+            const job_check = dock.o({ Compile: 1 })[0] as TheC | undefined
+            console.log(`🔨 compile_dock returned: has_Compile=${!!job_check} has_methods=${!!job_check?.oa({ methods: 1 })} has_error=${!!dock.oa({ compile_error: 1 })}`)
         }
 
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
@@ -1100,16 +1105,18 @@
         await this.LangGen_tick(A, w)
 
         // ── drive Languish + workon + Furnishing + push ──────────────
+        // §3i — drain Furnishing FIRST so languish.c.open_text is set before
+        // rq.do() drives req_text_loaded (whose reqonce fires once; if it fires
+        // before open_text arrives, the CM gets an empty doc and compile fails).
+        // o_elvis self-declares 'Lang_open_dock' on first call so subsequent
+        // Furnishing couriers route to this main method.
+        await this.e_Lang_open_dock(A, w)
+
         // Languish stages text_loaded → compile → grafted for each open doc.
         // workon/maneuvre drives checkout → furnish → graft per cursor move.
         // do() is cheap (skip) once reqs are finished; reqy_recurse drives nested.
         const rq = H.reqy(w)
         await rq.do()
-
-        // §3i — drain Lies' Furnishing RPC each tick.  o_elvis(self-declares the
-        // type) so the courier elvis routes to this main method, not an e_ handler;
-        // the first drain enrols 'Lang_open_dock' so subsequent ones land here too.
-        await this.e_Lang_open_dock(A, w)
 
         // Drive workon's inner cluster (maneuvre + push + their phases) from the
         // tick so a furnish-phase ttlilt re-checks the dock on each think, and a
