@@ -4,23 +4,23 @@ Snap:H
       {"mung":["age"]}	self,round:5
       w:PortPlant
         body,hands:2
-        shelf
-        yard
-          soil,dose:6
           pot:rose
             plant
             soil,dose:5
           pot:fern
             plant
             soil,dose:5
+        shelf
+        yard
+          soil,dose:6
           pot:cactus
             plant
             soil,dose:5
-        De:repot,maz:2
+        req:repot,maz:2
           req:move_outside,maz:3,finished
           req:repot,maz:2,finished
           req:move_inside
-        De:celebrate
+        req:celebrate
         log
           msg:cactus in yard
           {"msg":"repotted rose (yard soil: 10)"}

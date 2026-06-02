@@ -3,13 +3,8 @@
     //
     // ── Channels ─────────────────────────────────────────────────────────────
     //
-    //   %wwrite:1,path,dige   — one stable req per (path, content-hash) pair.
-    //   %wread:1,rw_name      — one stable req per wormhole path (+ optional label).
-    //
-    //   Both channels use noserial so roai can find existing reqs by their full
-    //   identity.  Without noserial, reqy would replace the :1 with a serial N,
-    //   and exactly({wwrite:1,...}) would never match {wwrite:N,...} — every
-    //   roai call would create a new req instead of finding the in-flight one.
+    //   %req:wwrite,path,dige   — one stable req per (path, content-hash) pair.
+    //   %req:wread,rw_name      — one stable req per wormhole path (+ optional label).
     //
     //   Both channels live on w (not %Store:1) so i_Story_o_req_ttlilt's
     //   reqcons walker finds them — it starts at w and only follows w's direct
@@ -46,20 +41,6 @@
     //   finished dropped → roai creates fresh → fires again → Wormhole replies
     //   → think → loop.
     //
-    // ── Particle layout ───────────────────────────────────────────────────────
-    //
-    //   w:Lies
-    //     reqcons:1
-    //       reqcon:wwrite           noserial:1
-    //       reqcon:wread            noserial:1
-    //     wwrite:1,path,dige
-    //       req_sent
-    //       ttlilt:1,until_ts:T     serialize wait
-    //     wread:1,rw_name[,label]
-    //       req_sent
-    //     Store:1
-    //       wrote_at:PATH: T        last successful write timestamp
-
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { dig }        from "$lib/Y.svelte"
@@ -85,7 +66,7 @@
     // ── LiesStore_write ───────────────────────────────────────────────────────
     //
     //   Returns null when content matches %loaded_doc.sc.base_dige (already on
-    //   disk).  Returns the %wwrite req otherwise — check req.sc.finished.
+    //   disk).  Returns the %req:wwrite otherwise — check req.sc.finished.
     //
     //   rw_name defaults to path; pass explicitly for compile writes
     //   (src/lib/gen/…) or any other target that differs from the source path.
@@ -103,11 +84,7 @@
         const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
         if (ld?.sc.base_dige && ld.sc.base_dige === new_dige) return null
 
-        const wq = H.reqy(w, {
-            k:        'wwrite',
-            noserial: 1,
-            do_fn:    (req: TheC, q: any) => H.LiesStore_write_do_fn(req, q),
-        })
+        const wq = H.reqy(w)
 
         // Drop stale finished write reqs for this path so roai can create a fresh one.
         for (const old of wq.o({ path }) as TheC[]) {
@@ -122,7 +99,7 @@
         if (existing) return existing
 
         const req = await wq.roai(
-            { wwrite: 1, path, dige: new_dige },
+            { req: 'wwrite', path, dige: new_dige },
             { rw_data: text, rw_name, rw_op: 'write' },
         )
 
@@ -151,10 +128,10 @@
         opts:    { label?: string } = {}
     ): Promise<TheC> {
         const H = this as House
-        const rq = H.reqy(w, { k: 'wread', noserial: 1 })
+        const rq = H.reqy(w)
         const c = opts.label
-            ? { wread: 1, rw_name, label: opts.label }
-            : { wread: 1, rw_name }
+            ? { req: 'wread', rw_name, label: opts.label }
+            : { req: 'wread', rw_name }
 
         const req = await rq.roai(c, { rw_op: 'read' })
 
@@ -165,7 +142,7 @@
         return req
     },
 
-    // ── LiesStore_write_do_fn ─────────────────────────────────────────────────
+    // ── req_wwrite ─────────────────────────────────────────────────
     //
     //   Handles write reqs that LiesStore_write left queued (in-flight sibling).
     //
@@ -176,7 +153,9 @@
     //   (c) Serialize — another write for this path is still in-flight.
     //       Arms a short ttlilt + demand_time_to_think and waits.
     //   (d) Dispatch.
-    async LiesStore_write_do_fn(req: TheC, q: any) {
+    // < merge with req:pending_write, make it an option to
+    //    check to-be-overwritten data is what we expect, reasonable timeframes, etc
+    async req_wwrite(req: TheC, q: any) {
         const H     = this as House
         const w     = req.c.up as TheC
         const Store = H.LiesStore_store(w)
@@ -210,103 +189,82 @@
         // (d) Dispatch.
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
     },
+    // < all compiley stuff should goelsewhere, as a consequence of %finished
+    async req_wwrite_done(w: TheC, req: TheC) {
+        const H     = this as House
+        const Store = H.LiesStore_store(w)
+        const path  = req.sc.path  as string
+        const reply = req.sc.reply as any
+
+        if (reply?.error) {
+            console.error(`💾 LiesStore write error on ${path}:`, reply.error)
+        } else {
+            Store.sc[`wrote_at:${path}`] = now_in_seconds_with_ms()
+            
+            const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
+            if (ld) {
+                ld.sc.base_dige = req.sc.dige as string
+                // Mirror the new disk dige into ave/lang_doc so the DocRow
+                // change strip sees it without an extra cross-world round-trip.
+                // Only source files have a loaded_doc; gen/ writes skip this.
+                const ave = H.oai_enroll(H, { watched: 'ave' })
+                const docTextC = ave.oai({ lang_doc: path })
+                docTextC.sc.disk_dige = req.sc.dige as string
+                docTextC.bump_version()
+            }
+            console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
+
+            // Deferred settle for gen/ writes: LiesRealised parked write_t0 on
+            // the matching %compile_pending and skipped firing Lies_compile_settled.
+            // Now that the wwrite is done the file is on disk — safe to notify
+            // Pantheate (dynamic import will find the file) and settle Lang.
+            const rw_name = req.sc.rw_name as string | undefined
+            const pending = rw_name
+                ? (w.o({ compile_pending: 1 }) as TheC[]).find(p => p.sc.gen_path === path && p.c.write_t0)
+                : undefined
+            if (pending) {
+                const write_ms = pending.c.write_t0 ? Date.now() - (pending.c.write_t0 as number) : undefined
+                // Notify Pantheate only after the file is on disk — dynamic import
+                // needs the file to exist.  source_dige was parked on compile_pending
+                // by e_Lies_compiled for exactly this moment.
+                if (pending.sc.source_dige) {
+                    H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
+                        include:     pending.sc.gen_path as string,
+                        path:        pending.sc.path     as string,
+                        source_dige: pending.sc.source_dige,
+                    })
+                }
+                H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
+                    path:     pending.sc.path as string,
+                    write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
+                })
+                console.log(`🔪 Lies compile settled: ${pending.sc.path} [write+run] write=${write_ms}ms`)
+            }
+        }
+        w.drop(req)
+    },
 
     // ── LiesStore_run ─────────────────────────────────────────────────────────
     //
     //   Called from the Lies tick after LiesPersist + LiesCurse.
     //
-    //   Phase 1 — completed write reqs.  Wormhole sets req.sc.finished before
-    //     reqy.do() sees it; do() skips finished reqs, so we scan here.
-    //     Stamps wrote_at, updates base_dige, drops the req.
-    //
-    //   Phase 1.5 — parked source writes.  Drives /%pending_write via do_fn,
-    //     before Phase 2 so the do_fn's /%source_check read survives to be read.
-    //
-    //   Phase 2 — finished read reqs.  LiesPersist (earlier in the same tick)
-    //     has already consumed reply; safe to drop.
-    //
-    //   Phase 3 — queued write reqs.  Drives reqs left unsent by LiesStore_write
-    //     (in-flight sibling existed at creation time) via do_fn.
     async LiesStore_run(A: TheC, w: TheC) {
         const H     = this as House
-        const Store = H.LiesStore_store(w)
+        const rq = H.reqy(w)
+        // call their methods req_wwrite() etc
+        await rq.do()
 
-        const wq = H.reqy(w, {
-            k:        'wwrite',
-            noserial: 1,
-            do_fn:    (req: TheC, q: any) => H.LiesStore_write_do_fn(req, q),
-        })
-        const rq = H.reqy(w, { k: 'wread', noserial: 1 })
-
-        // ── Phase 1 ───────────────────────────────────────────────────────────
-        for (const req of wq.o() as TheC[]) {
-            if (!req.sc.finished) continue
-
-            const path  = req.sc.path  as string
-            const reply = req.sc.reply as any
-
-            if (reply?.error) {
-                console.error(`💾 LiesStore write error on ${path}:`, reply.error)
-            } else {
-                Store.sc[`wrote_at:${path}`] = now_in_seconds_with_ms()
-                const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
-                if (ld) {
-                    ld.sc.base_dige = req.sc.dige as string
-                    // Mirror the new disk dige into ave/lang_doc so the DocRow
-                    // change strip sees it without an extra cross-world round-trip.
-                    // Only source files have a loaded_doc; gen/ writes skip this.
-                    const ave = H.oai_enroll(H, { watched: 'ave' })
-                    const docTextC = ave.oai({ lang_doc: path })
-                    docTextC.sc.disk_dige = req.sc.dige as string
-                    docTextC.bump_version()
-                }
-                console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
-
-                // Deferred settle for gen/ writes: LiesRealised parked write_t0 on
-                // the matching %compile_pending and skipped firing Lies_compile_settled.
-                // Now that the wwrite is done the file is on disk — safe to notify
-                // Pantheate (dynamic import will find the file) and settle Lang.
-                const rw_name = req.sc.rw_name as string | undefined
-                const pending = rw_name
-                    ? (w.o({ compile_pending: 1 }) as TheC[]).find(p => p.sc.gen_path === path && p.c.write_t0)
-                    : undefined
-                if (pending) {
-                    const write_ms = pending.c.write_t0 ? Date.now() - (pending.c.write_t0 as number) : undefined
-                    // Notify Pantheate only after the file is on disk — dynamic import
-                    // needs the file to exist.  source_dige was parked on compile_pending
-                    // by e_Lies_compiled for exactly this moment.
-                    if (pending.sc.source_dige) {
-                        H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
-                            include:     pending.sc.gen_path as string,
-                            path:        pending.sc.path     as string,
-                            source_dige: pending.sc.source_dige,
-                        })
-                    }
-                    H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
-                        path:     pending.sc.path as string,
-                        write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
-                    })
-                    console.log(`🔪 Lies compile settled: ${pending.sc.path} [write+run] write=${write_ms}ms`)
-                }
-            }
-            w.drop(req)
-        }
-
-        // ── Phase 1.5 ─────────────────────────────────────────────────────────
-        //   Drive parked source writes (Lies_pending_write_do_fn).  Must run
-        //   before Phase 2: the do_fn polls a /%source_check read and needs it
-        //   still alive to read the reply — Phase 2 drops finished reads.
-        const pwq = H.Lies_pending_write_reqy(w)
-        await pwq.do()
-        for (const req of pwq.o() as TheC[]) if (req.sc.finished) w.drop(req)
-
-        // ── Phase 2 ───────────────────────────────────────────────────────────
+        // drop completed req:wwrite
         for (const req of rq.o() as TheC[]) {
-            if (req.sc.finished) w.drop(req)
+            if (req.sc.finished) {
+                if (req.sc.req == 'wwrite') H.req_wwrite_done(w,req)
+                w.drop(req)
+            }
         }
+
+
 
         // ── Phase 3 ───────────────────────────────────────────────────────────
-        await wq.do()
     },
 
 //#endregion

@@ -22,19 +22,19 @@
     // Depths: Plan d=1, Prep d=2, i_elvisto d=3, esc d=4.
     //
     // ── Desire particles (De) ─────────────────────────────────────────────────
-    // De:listen — both sides; drives keygen → PeerServer registration.
+    // req:listen — both sides; drives keygen → PeerServer registration.
     //   reqs: keygen → register → listening (terminal)
     //   each req has c.do set once at seeding time; _De_run calls the frontier one.
     //   out-of-time async completions (keygen) return via i_elvisto De_listen_keygen.
     //
-    // De:connect,target:prepub — Bearing only, seeded when Nearing's prepub is known.
+    // req:connect,target:prepub — Bearing only, seeded when Nearing's prepub is known.
     //   reqs: dial → connected (terminal, set by Pier_init_completo in the shim)
     //   higher-level Desires (Desire:5, community-wide) may reference this De and
     //   keep it alive or spawn new ones; for now it's seeded automatically.
     //
     // De particles persist across steps — they are the primary causal narrative.
     //   Pier/protocol state lives in more_visuals (rebuilt from ier each tick).
-    //   w/%De:listen/req:* tells you how we got here; Pier tells you what we have.
+    //   w/%req:listen/req:* tells you how we got here; Pier tells you what we have.
     //
     // ── want_savepoint ────────────────────────────────────────────────────────
     // After an async op completes, the Runtime zeroes leave_running_until and
@@ -47,23 +47,23 @@
 
 ── baseline: no Prep needed, auto-Desires seed themselves ─────────────────────
 
-  step 1 snap (keygen async, De:listen running):
+  step 1 snap (keygen async, req:listen running):
   w:Bearing
-    De:listen
+    req:listen
       req:keygen,running
     scheme:Peering
     scheme:Pier
 
   step 2 snap (connected and trusted):
   w:Bearing
-    De:listen,finished
+    req:listen,finished
       req:keygen,maz:3,finished
       req:register,maz:2,finished
       req:listening,finished
-    De:connect,target:8cbc667b…,finished
+    req:connect,target:8cbc667b…,finished
       req:dial,finished
       req:connected,finished
-    De:handshake,finished
+    req:handshake,finished
       req:said_hello,maz:4,finished
       req:heard_hello,maz:3,finished
       req:said_trust,maz:2,finished
@@ -93,7 +93,7 @@
 			{"i_elvisto":"PeeringLive/PeeringLive","e":"hold_offline"}
 				{"esc":"side","v":"Nearing"}
 
-  snap: Bearing/De:connect/%state:failed,reason:peer-unavailable — no Pier
+  snap: Bearing/req:connect/%state:failed,reason:peer-unavailable — no Pier
 
 ── scenario B: online, Bearing sends a corrupt hello ──────────────────────────
 
@@ -117,9 +117,9 @@
 
   step 4 snap (Tearing dials Bearing, sends corrupt hello):
   w:Tearing
-    De:listen,finished
-    De:connect,target:8cbc667b…,finished
-    De:handshake          ← req:said_hello finished; heard_hello never arrives
+    req:listen,finished
+    req:connect,target:8cbc667b…,finished
+    req:handshake          ← req:said_hello finished; heard_hello never arrives
       req:said_hello,maz:4,finished
       req:heard_hello,maz:3
 
@@ -150,14 +150,14 @@
 // Two real Peerily/Peering/Pier objects connecting inside one House.
 //   At step 4 a third side, Tearing, activates and cheats hello|trust crypto.
 //
-// A:PeeringLive/w:PeeringLive — manager: De:p2pman owns init, De:emit_corruption owns meddle.
-//   H.c.sides — single source of truth for all side names, set by De:p2pman/req:init.
+// A:PeeringLive/w:PeeringLive — manager: req:p2pman owns init, req:emit_corruption owns meddle.
+//   H.c.sides — single source of truth for all side names, set by req:p2pman/req:init.
 //   H.o_sides(filter?) — returns side worker particles.
 // A:Bearing/w:Bearing, A:Nearing/w:Nearing — each side's worker.
 // A:Tearing/w:Tearing — listens from step 1; dials Bearing at step 4 with meddle armed.
 //
 // De particles are the causal record of what each side is trying to do.
-//   Both sides have De:listen; Bearing also gets De:connect.
+//   Both sides have req:listen; Bearing also gets req:connect.
 //
 // Protocol bools (said_hello, heard_hello…) don't fire H.main() on their
 //   own; a shared heartbeat interval + per-req recheck timers surface them.
@@ -166,11 +166,11 @@
 //
 // Particle layout per side (Bearing shown):
 //   A:Bearing/w:Bearing
-//     %De:listen[,finished]                        De_listen drives this
+//     %req:listen[,finished]                        De_listen drives this
 //       /req:keygen[,running][,finished]
 //       /req:register[,finished]
 //       /req:listening[,finished]
-//     %De:connect,target:prepub[,finished]         De_connect drives this
+//     %req:connect,target:prepub[,finished]         De_connect drives this
 //       /req:dial[,finished]
 //       /req:connected[,finished]
 //       /%state:failed,reason:…                    set by Pier_wont_connect
@@ -182,15 +182,15 @@
 //       %protocol_faulty                           set by shim on_error wrap (unemit throws)
 //         %Unemit_Error
 //           %error:…                               thrown string from process_single_unemit
-//     %De:handshake,target:prepub[,finished]       PL_i_Pier — protocol round-trip
+//     %req:handshake,target:prepub[,finished]       PL_i_Pier — protocol round-trip
 //       /req:said_hello,maz:4,demand:800[,finished]
 //       /req:heard_hello,maz:3,demand:800[,finished]
 //       /req:said_trust,maz:2,demand:1500[,finished]
 //       /req:heard_trust,demand:1500[,finished]
-//     %De:binary_test,seq:S[,finished]             Lab — seeded by send_test_binary
+//     %req:binary_test,seq:S[,finished]             Lab — seeded by send_test_binary
 //       /req:sent[,finished]
 //       /req:received[,finished]
-//     %De:disconnect_test,seq:S,role:…[,finished]  Lab — seeded by force_disconnect
+//     %req:disconnect_test,seq:S,role:…[,finished]  Lab — seeded by force_disconnect
 //       /req:phase_disc,maz:4[,finished]
 //       /req:phase_open,maz:3[,finished]
 //       /req:phase_hello,maz:2[,finished]
@@ -203,12 +203,12 @@
 //       /expects:1                                 absent in a clean run
 //
 // Manager layout on w:PeeringLive:
-//   De:p2pman,finished                                     lean — req:init only; finishes immediately
+//   req:p2pman,finished                                     lean — req:init only; finishes immediately
 //     req:init,finished
-//   De:emit_corruption,target:Tearing,eternal              eternal; wrap + active lie only
+//   req:emit_corruption,target:Tearing,eternal              eternal; wrap + active lie only
 //     req:wrap_emit,finished                               pre-hello wrap installed by Pier_init_completo
 //     req:N,corruption:X,meddle_fn:Function,finished       req IS the mf; De.r swaps on re-arm
-//   De:step_N,Destep[,finished]                            per-step; PL_i_step force-closes the prior one
+//   req:step_N,Destep[,finished]                            per-step; PL_i_step force-closes the prior one
 //     req:send_hello,maz:2[,finished]                      optional; fires say_hello() (no free init_completo)
 //     req:watch_error[,finished]                           polls error above baseline; zeroes demand on finish
 //
@@ -227,7 +227,7 @@
 
         H.i({ A: 'PeeringLive' }).i({ w: 'PeeringLive' })
         // Tearing: a third side activated lazily at step 4 to cheat hello|trust crypto.
-        //   De:listen only starts on w.c._start.
+        //   req:listen only starts on w.c._start.
         for (const side of ['Bearing', 'Nearing', 'Tearing']) {
             H.i({ A: side }).i({ w: side })
         }
@@ -282,17 +282,17 @@
                 H.trace('shim', `Pier_init_completo  ${tag}`)
                 H.demand_time_to_think(1500)
 
-                // poke De:connect — req:connected's do_fn will see c.inst and finish the chain.
-                const Deco = H.Awo(side).o({ De: 'connect' })[0] as TheC | undefined
+                // poke req:connect — req:connected's do_fn will see c.inst and finish the chain.
+                const Deco = H.Awo(side).o({ req: 'connect' })[0] as TheC | undefined
                 if (Deco) void H.reqyoncile(Deco, 'connected')
 
                 // meddle wrap — installed synchronously before hello fires.
-                //   De:emit_corruption on the manager targets this side; if present, wrap now.
+                //   req:emit_corruption on the manager targets this side; if present, wrap now.
                 //   Stamps req:wrap_emit finished (creating the particle if not yet seeded)
                 //   so De_emit_meddling/drq.do() skips the do_fn — no double-wrap, no flag.
                 //   meddle_fn lives on the active req,corruption particle — read live each call.
                 const ce = H.Awo('PeeringLive')
-                    .o({ De: 'emit_corruption', target: side })[0] as TheC | undefined
+                    .o({ req: 'emit_corruption', target: side })[0] as TheC | undefined
                 if (ce) {
                     const real_emit = ier.emit.bind(ier)
                     ier.emit = (type: string, data: any, emit_opts: any = {}) => {
@@ -325,8 +325,8 @@
                     const seq = data.seq as number
                     const len = (data.buffer as ArrayBuffer | undefined)?.byteLength ?? 0
                     const received_dige = await H._PeeringLive_dige(data.buffer)
-                    // stamp onto De:binary_test so De_binary/req:received can finish
-                    const De_bt = sw.o({ De: 'binary_test', seq })[0] as TheC | undefined
+                    // stamp onto req:binary_test so De_binary/req:received can finish
+                    const De_bt = sw.o({ req: 'binary_test', seq })[0] as TheC | undefined
                     if (De_bt) {
                         De_bt.sc.received_len  = len
                         De_bt.sc.received_dige = received_dige
@@ -349,9 +349,9 @@
                 H.trace('shim', `Pier_wont_connect  ${tag}`)
                 const sw = H.Awo(side)
 
-                // De:connect sub-particle records the failure — De particle itself
+                // req:connect sub-particle records the failure — De particle itself
                 //   persists as a record of what was attempted and why it stopped
-                const dConnect = sw.o({ De: 'connect' })[0] as TheC | undefined
+                const dConnect = sw.o({ req: 'connect' })[0] as TheC | undefined
                 dConnect?.roai({ state: 1 }, { state: 'failed', reason: 'peer-unavailable' })
 
                 const Pier = sw.o({ Pier: 1, pub })[0] as TheC | undefined
@@ -390,16 +390,16 @@
 
 //#region Manager
 
-    // De:p2pman — one-time manager init: on_step_ending and on_hangup wiring.
-    //   req:init finishes immediately and De:p2pman finishes with it.
+    // req:p2pman — one-time manager init: on_step_ending and on_hangup wiring.
+    //   req:init finishes immediately and req:p2pman finishes with it.
     //   H.c.sides is the single source of truth for all side names.
     //   o_sides() and o_sides(name) read from here — add new sides here only.
 
     async PeeringLive(A: TheC, w: TheC) {
         const H = this as House
-        const dq = H.reqy(w, {k:'De'})
+        const dq = H.reqy(w)
 
-        const p2pman = await dq.roai({ De: 'p2pman' })
+        const p2pman = await dq.roai({ req: 'p2pman' })
         p2pman.c.do_fn ||= async (De: TheC) => {
             await H.De_p2pman(De, dq)
         }
@@ -417,7 +417,7 @@
                 const npub = H.Awo('Nearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
                 if (npub) {
                     const bw  = H.Awo('Bearing')
-                    const bdq = H.reqy(bw, {k:'De'})
+                    const bdq = H.reqy(bw)
                     await H.PL_i_Pier(bw, bdq, { target: npub, hello: true, trust: true })
                 }
                 H.demand_time_to_think(2000)
@@ -425,11 +425,11 @@
             4: async () => {
                 // Tearing dials Bearing with publicKey lie already armed.
                 //   say_hello() fires free from Pier_init_completo (outbound, non-inbound).
-                //   De:step_4 seeds req:watch_error; on finish it zeroes demand so the snap lands.
+                //   req:step_4 seeds req:watch_error; on finish it zeroes demand so the snap lands.
                 const bpub = H.Awo('Bearing').o({ Peering: 1 })[0]?.sc.prepub as string | undefined
                 if (!bpub) return
                 const tw  = H.Awo('Tearing')
-                const tdq = H.reqy(tw, {k:'De'})
+                const tdq = H.reqy(tw)
                 await H.PL_i_Pier(tw, tdq, { target: bpub, hello: true, trust: true })
 
                 // corrupt the publicKey field in hello — signature still covers original json
@@ -450,7 +450,7 @@
                 H.feebly_ponder()
             },
             5: async () => {
-                // Arm sign corruption then seed De:step_5 which says hello from req:send_hello.
+                // Arm sign corruption then seed req:step_5 which says hello from req:send_hello.
                 //   Bearing's Ud is set from the clean retry that closed step 4 → verify runs →
                 //   corrupted sign throws 'invalid signature' (not 'not them').
                 await H.PL_i_emit_corruption(dq, 'Tearing', { corruption: 'sign' }, {
@@ -468,11 +468,11 @@
     },
 
     // De_p2pman — lean: one-time wiring only.
-    //   req:init finishes immediately; De:p2pman,finished stamps here.
+    //   req:init finishes immediately; req:p2pman,finished stamps here.
     //   H.c.sides is the single source of truth for all side names.
     async De_p2pman(De: TheC, dq: any) {
         const H   = this as House
-        const drq = H.reqy(De, {k:'req'})
+        const drq = H.reqy(De)
 
         ;(await drq.roai({ req: 'init' })).c.do_fn ||= async (req: TheC) => {
             // sides: set once; o_sides() reads from here on every tick
@@ -507,7 +507,7 @@
                     H.trace('timeSatisfied', 'Destep confirmed error before demand elapsed')
                 } else {
                     if (ts) mgr.drop(ts)
-                    const active_sides = H.o_sides().filter(sw => sw.o({ De: 1 }).length > 0)
+                    const active_sides = H.o_sides().filter(sw => sw.o({ req: 1 }).length > 0)
                     const unsettled = active_sides.filter(sw => !H._PeeringLive_settled(sw))
                     mgr.oai({ timeDoubt: 1 })
                     H.trace('timeDoubt', `demand elapsed, no Destep witness — unsettled: ${unsettled.map(sw => sw.sc.w).join(', ')}`)
@@ -515,13 +515,13 @@
             }
 
             drq.finish(req)
-            drq.unify_finished()   // stamps De:p2pman,finished
+            drq.unify_finished()   // stamps req:p2pman,finished
         }
 
         await drq.do()
     },
 
-    // PL_i_step — seeds De:step_N,Destep for a corruption test step.
+    // PL_i_step — seeds req:step_N,Destep for a corruption test step.
     //   Force-finishes any prior De,Destep so it cuts off from the think() elvis.
     //   Snapshots the current Bearing error count as err_baseline before seeding —
     //     req:watch_error detects any new error arriving above this count.
@@ -534,7 +534,7 @@
         // force-finish any prior Destep — cuts it off from further think() calls
         for (const prev of mgr.o({ Destep: 1 }) as TheC[]) {
             if (prev.sc.finished) continue
-            const pdrq = H.reqy(prev, {k:'req'})
+            const pdrq = H.reqy(prev)
             for (const req of prev.o({ req: 1 }) as TheC[]) {
                 if (!req.sc.finished) pdrq.finish(req)
             }
@@ -549,7 +549,7 @@
         const ue           = pier_n?.oa({ protocol_faulty: 1 })?.[0]?.o({ Unemit_Error: 1 })[0] as TheC | undefined
         const err_baseline = ue?.o({ error: 1 }).length ?? 0
 
-        const De_step = await dq.roai({ De: `step_${i}`, Destep: 1 })
+        const De_step = await dq.roai({ req: `step_${i}`, Destep: 1 })
         De_step.c.do_fn ||= async (De: TheC) => {
             await H.De_step(De, dq, { ...opts, err_baseline })
         }
@@ -559,7 +559,7 @@
     //   Keeps the De body minimal — helpers own their own req logic.
     async De_step(De: TheC, _dq: any, opts: { send_hello?: boolean; err_baseline?: number }) {
         const H   = this as House
-        const drq = H.reqy(De, {k:'req'})
+        const drq = H.reqy(De)
         let maz = opts.send_hello ? 2 : 1
         if (opts.send_hello) await H.PL_step_i_send_hello(De, drq, maz--)
         await H.PL_step_i_watch_error(De, drq, maz, opts.err_baseline ?? 0)
@@ -587,13 +587,13 @@
             ier.said_hello = false
             ier.say_hello()
             drq.finish(req)
-            H.trace('meddle', `De:step_${De.sc.De} send_hello`)
+            H.trace('meddle', `req:step_${De.sc.req} send_hello`)
         }
     },
 
     // PL_step_i_watch_error — seeds req:watch_error on a Destep.
     //   Polls until Bearing's Unemit_Error count for Tearing's Pier exceeds err_baseline.
-    //   On natural finish: stamps De:step_N,finished, zeroes leave_running_until so
+    //   On natural finish: stamps req:step_N,finished, zeroes leave_running_until so
     //     the snap lands immediately, and sets _pl_step_error_witnessed for on_step_ending.
     //   500ms demand — a WebRTC round trip is well within that; keeps the step tight.
     async PL_step_i_watch_error(De: TheC, drq: any, maz: number, err_baseline: number) {
@@ -607,10 +607,10 @@
 
             if (count > err_baseline) {
                 drq.finish(req)
-                drq.unify_finished()         // stamps De:step_N,finished
+                drq.unify_finished()         // stamps req:step_N,finished
                 H.c._pl_step_error_witnessed = true
                 H.c.leave_running_until = 0      // cancel demand — snap can land now
-                H.trace('De', `De:step_${De.sc.De} watch_error confirmed (${count} > ${err_baseline})`)
+                H.trace('De', `req:step_${De.sc.req} watch_error confirmed (${count} > ${err_baseline})`)
             } else {
                 if (req.sc.initialdo) H.demand_time_to_think(600)
                 if (!req.c.recheck_pending) {
@@ -638,12 +638,12 @@
             }, 250)
         }
     },
-    // settled: De:handshake done, plus all Lab De:binary_test and De:disconnect_test done.
-    //   De:handshake must exist — if Pier hasn't arrived yet, we are not settled.
+    // settled: req:handshake done, plus all Lab req:binary_test and req:disconnect_test done.
+    //   req:handshake must exist — if Pier hasn't arrived yet, we are not settled.
     //   protocol_faulty on any Pier ends the exchange definitively — De won't complete.
     _PeeringLive_settled(side_w: TheC): boolean {
         if ((side_w.o({ Pier: 1 }) as TheC[]).some(n => n.oa({ protocol_faulty: 1 }))) return true
-        return !side_w.o({ De: 1 }).some(n => !n.sc.finished)
+        return !side_w.o({ req: 1 }).some(n => !n.sc.finished)
     },
 
 
@@ -667,9 +667,9 @@
 
     async _PeeringLive_main(_A: TheC, w: TheC, side: string) {
         const H = this as House
-        const dq = H.reqy(w, {k:'De'})
+        const dq = H.reqy(w)
 
-        // De:listen — keygen → register → listening (both sides always)
+        // req:listen — keygen → register → listening (both sides always)
         await H.PL_i_Peering(w, dq, { side })
         await dq.do()
 
@@ -679,11 +679,11 @@
         //   buffer to drain here — the ier is fully wired by the time we see it.
         // Iterate all Piers — a side may receive multiple inbound connections
         //   (e.g. Bearing gets both Nearing and Tearing).
-        // De:connect is seeded only from on_step, never here — outbound sides already
+        // req:connect is seeded only from on_step, never here — outbound sides already
         //   have it; inbound Piers don't initiate a connection from their side.
         for (const Pier_n of (w.o({ Pier: 1 }) as TheC[])) {
             // handshake per-Pier pub — idempotent via roai keyed on target
-            const Dehs = await dq.roai({ De: 'handshake', target: Pier_n.sc.pub as string })
+            const Dehs = await dq.roai({ req: 'handshake', target: Pier_n.sc.pub as string })
             Dehs.c.do_fn ||= async (Dehs: TheC) => {
                 await H.De_handshake(Dehs, dq, { hello: true, trust: true, target: Pier_n.sc.pub as string })
             }
@@ -707,48 +707,48 @@
         return (filter ? sides.filter(s => s === filter) : sides).map(s => H.Awo(s))
     },
 
-    // PL_i_Peering: wire De:listen for a side — idempotent via roai.
+    // PL_i_Peering: wire req:listen for a side — idempotent via roai.
     //   opts.side — used for deterministic keygen and trace labels
     //   opts.Id   — skip keygen; use this Idento directly (req:at path)
     async PL_i_Peering(w: TheC, dq: any, opts: { side: string; Id?: any }) {
         const H = this as House
-        const Deli = await dq.roai({ De: 'listen' })
+        const Deli = await dq.roai({ req: 'listen' })
         Deli.c.do_fn ||= async (Deli: TheC) => {
             await H.De_listen(Deli, dq, opts)
         }
     },
 
-    // PL_i_Pier: wire De:connect (outbound) and/or De:handshake (protocol).
+    // PL_i_Pier: wire req:connect (outbound) and/or req:handshake (protocol).
     //   opts.target — npub; for outbound this is what we dial, for inbound it's the Pier pub.
-    //     Always passed explicitly — De:handshake is keyed on target so each Pier gets its own.
+    //     Always passed explicitly — req:handshake is keyed on target so each Pier gets its own.
     //   opts.hello  — track said_hello + heard_hello
     //   opts.trust  — track said_trust + heard_trust (gates on heard_hello via maz)
     async PL_i_Pier(w: TheC, dq: any, opts: { target?: string; hello?: boolean; trust?: boolean } = {}) {
         const H = this as House
         if (opts.target) {
-            const Deco = await dq.roai({ De: 'connect', target: opts.target })
+            const Deco = await dq.roai({ req: 'connect', target: opts.target })
             Deco.c.do_fn ||= async (Deco: TheC) => {
                 await H.De_connect(Deco, dq)
             }
         }
         if (opts.hello && opts.target) {
-            const Dehs = await dq.roai({ De: 'handshake', target: opts.target })
+            const Dehs = await dq.roai({ req: 'handshake', target: opts.target })
             Dehs.c.do_fn ||= async (Dehs: TheC) => {
                 await H.De_handshake(Dehs, dq, opts)
             }
         }
     },
 
-    // PL_i_emit_corruption — arms or re-arms De:emit_corruption on w:PeeringLive.
+    // PL_i_emit_corruption — arms or re-arms req:emit_corruption on w:PeeringLive.
     //   First call: De doesn't have a do_fn yet → De_emit_meddling installs the wrap + req:1.
     //   Subsequent calls: De already wired → find it and seed req:N directly.
     //   id_sc:  {corruption:'publicKey'|'sign'} — stamped on req.sc alongside meddling index.
     //   payload_sc: {meddle_fn:Function} — merged into req.sc via two-arg roai (req IS the mf).
-    //   De:emit_corruption is eternal — unify_finished is never called.
+    //   req:emit_corruption is eternal — unify_finished is never called.
     async PL_i_emit_corruption(dq: any, target: string, id_sc: { corruption: string }, payload_sc: { meddle_fn: Function }) {
         const H   = this as House
 
-        const De = await dq.roai({ De: 'emit_corruption', target, eternal: 1 })
+        const De = await dq.roai({ req: 'emit_corruption', target, eternal: 1 })
         if (!De.c.do_fn) {
             // first call — De_emit_meddling seeds wrap + the first meddle req
             De.c.do_fn = async (De: TheC) => {
@@ -757,7 +757,7 @@
         } else {
             // De already exists — seed the next meddle req directly onto it
             //   Next dq.do() drives De_emit_meddling again → drq.do() fires the new req's do_fn.
-            const drq = H.reqy(De, {k:'req'})
+            const drq = H.reqy(De)
             const n   = (De.o({ req: 1, corruption: 1 }).length + 1).toString()
             const mreq = await drq.roai({ req: n, corruption: id_sc.corruption }, payload_sc)
             mreq.c.do_fn ||= async (req: TheC) => {
@@ -782,12 +782,12 @@
     //     Only the current req is readable; the prior one is gone from the snap.
     //
     // Particle layout:
-    //   De:emit_corruption,target:Tearing,eternal,maz:2
+    //   req:emit_corruption,target:Tearing,eternal,maz:2
     //     req:wrap_emit,finished
     //     req:N,corruption:X,meddle_fn:Function,finished   ← live req/mf; De.r swaps on re-arm
     async De_emit_meddling(De: TheC, opts: { target: string; id_sc: { corruption: string }; payload_sc: { meddle_fn: Function } }) {
         const H   = this as House
-        const drq = H.reqy(De, {k:'req'})
+        const drq = H.reqy(De)
         const tw  = H.Awo(opts.target)
 
         // req:wrap_emit — install emit wrapper on target Pier.
@@ -803,7 +803,7 @@
             }
             drq.finish(req)
             H.trace('meddle', `${opts.target} emit wrapped via fallback`)
-            // no unify_finished — De:emit_corruption is eternal
+            // no unify_finished — req:emit_corruption is eternal
         }
 
         // req:'1',corruption:X — first lie, seeded at De birth via De_emit_meddling opts.
@@ -813,7 +813,7 @@
             await De.r({ meddle_fn: 1 }, req)   // req IS the mf — De.r latest-onlys it
             drq.finish(req)
             H.trace('meddle', `req:1 corruption:${opts.id_sc.corruption} armed`)
-            // no unify_finished — De:emit_corruption is eternal
+            // no unify_finished — req:emit_corruption is eternal
         }
 
         await drq.do()
@@ -834,7 +834,7 @@
         const H    = this as House
         const w    = De.c.up as TheC
         const side = w.sc.w as string
-        const drq  = H.reqy(De, {k:'req'})
+        const drq  = H.reqy(De)
 
         H.trace('De', `${side} De_listen`)
 
@@ -930,12 +930,12 @@
             }
         }
 
-        // req:listening — terminal; De:listen concludes.
-        //   want_savepoint: Story snaps the listen-done state before De:connect begins.
+        // req:listening — terminal; req:listen concludes.
+        //   want_savepoint: Story snaps the listen-done state before req:connect begins.
         ;(await drq.roai({ req: 'listening' })).c.do_fn ||= async (req: TheC) => {
             H.trace('De', `${side} req:listening → want_savepoint`)
             drq.finish(req)
-            drq.unify_finished()   // stamps %De:listen,finished
+            drq.unify_finished()   // stamps %req:listen,finished
             // H.want_savepoint()
         }
 
@@ -943,18 +943,18 @@
     },
 
 
-    // De:connect — drives outbound dialling for any side.
-    //   Waits for De:listen to finish (Peering must be open) before dialling.
+    // req:connect — drives outbound dialling for any side.
+    //   Waits for req:listen to finish (Peering must be open) before dialling.
     //   req:connected do_fn self-detects Pier init; Pier_init_completo just reqyoncile(Deco).
     async De_connect(De: TheC, dq: any) {
         const H    = this as House
         const w    = De.c.up as TheC
         const side = w.sc.w as string
         const npub = De.sc.target as string
-        const drq  = H.reqy(De, {k:'req'})
+        const drq  = H.reqy(De)
         const drq_frontier = () => (drq as any).frontier ?? '?'
 
-        const listen_done = !!w.oa({ De: 'listen', finished:1 })
+        const listen_done = !!w.oa({ req: 'listen', finished:1 })
         H.trace('De', `${side} De_connect — listen_done:${listen_done} req frontier:${drq_frontier()}`)
         if (!listen_done) return
 
@@ -990,7 +990,7 @@
             console.log(`🐻 ${side} → ${target_w?.sc.w ?? npub.slice(0,8)}  ${npub}`)
         }
 
-        // req:connected — terminal; De:connect concludes.
+        // req:connected — terminal; req:connect concludes.
         //   Pier_init_completo fires reqyoncile(Deco) which re-enters here via e_reqyonciliation.
         //   c.inst is set inline by req:dial / Peering_i_Pier before init_completo fires.
         ;(await drq.roai({ req: 'connected' })).c.do_fn ||= async (req: TheC) => {
@@ -998,7 +998,7 @@
             const t_con  = H.trace('De', `${side} req:connected — inst:${!!inst}`)
             if (!inst) { t_con('→ waiting'); return }   // < waiting for Pier_init_completo
             drq.finish(req); t_con('→ finished')
-            drq.unify_finished()   // stamps %De:connect,finished
+            drq.unify_finished()   // stamps %req:connect,finished
             // w-level dq is never finished — host.sc.w blocks unify_finished there
         }
 
@@ -1020,7 +1020,7 @@
         const H    = this as House
         const w    = De.c.up as TheC
         const side = w.sc.w as string
-        const drq  = H.reqy(De, {k:'req'})
+        const drq  = H.reqy(De)
         // other: the counterpart we're trying to talk to.
         //   for Bearing↔Nearing, first non-self suffices.
         //   for Tearing→Bearing, Bearing is first after Tearing in H.c.sides.
@@ -1053,7 +1053,7 @@
         ;(await drq.roai({ req: 'heard_trust', demand: 1500 })).c.do_fn ||= async (req: TheC) => {
             if (ier()?.heard_trust) {
                 drq.finish(req)
-                drq.unify_finished()   // stamps %De:handshake,finished
+                drq.unify_finished()   // stamps %req:handshake,finished
             } else {
                 recheck(req, 1500)
             }
@@ -1069,11 +1069,11 @@
     // send_test_binary fires PL_De_binary on sender (opts.sent) and receiver (opts.received).
     // The Pier_init_completo handler stamps De_bt.sc.received when the message arrives;
     //   De_binary/req:received polls for that flag.
-    // De:binary_test persists across steps — its finished state is the durable record.
+    // req:binary_test persists across steps — its finished state is the durable record.
 
     async PL_De_binary(w: TheC, dq: any, opts: { seq: number; sent?: boolean; received?: boolean }) {
         const H = this as House
-        const De = await dq.roai({ De: 'binary_test', seq: opts.seq })
+        const De = await dq.roai({ req: 'binary_test', seq: opts.seq })
         De.c.do_fn ||= async (De: TheC) => {
             await H.De_binary(De, dq, opts)
         }
@@ -1082,7 +1082,7 @@
     async De_binary(De: TheC, dq: any, opts: { sent?: boolean; received?: boolean }) {
         const H    = this as House
         const w    = De.c.up as TheC
-        const drq  = H.reqy(De, {k:'req'})
+        const drq  = H.reqy(De)
         const seq  = De.sc.seq as number
 
         const recheck = (req: TheC, demand: number) => {
@@ -1128,7 +1128,7 @@
 
     async PL_De_disconnect(w: TheC, dq: any, opts: { seq: number; role: string }) {
         const H = this as House
-        const De = await dq.roai({ De: 'disconnect_test', seq: opts.seq, role: opts.role })
+        const De = await dq.roai({ req: 'disconnect_test', seq: opts.seq, role: opts.role })
         De.c.do_fn ||= async (De: TheC) => {
             await H.De_disconnect(De, dq)
         }
@@ -1138,7 +1138,7 @@
         const H    = this as House
         const w    = De.c.up as TheC
         const side = w.sc.w as string
-        const drq  = H.reqy(De, {k:'req'})
+        const drq  = H.reqy(De)
         const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
 
         const ier     = () => (w.o({ Pier: 1 })[0] as TheC | undefined)?.c.inst as Pier | undefined
@@ -1185,7 +1185,7 @@
     // Triggered by Story Prep — The/Plan/{Prep:N}/{i_elvisto,e,esc[{esc,v}]}.
     //   Each receives (A, w, e?) where w is the target worker and e carries the esc fields.
 
-    // Send a deterministic binary buffer side→other and seed De:binary_test on both sides.
+    // Send a deterministic binary buffer side→other and seed req:binary_test on both sides.
     //   Buffer content is seq-seeded so the dige is stable across runs.
     //   Pier_init_completo's test_binary handler stamps De_bt.sc.received on arrival.
     async send_test_binary(_A: TheC, w: TheC, e?: TheC) {
@@ -1202,8 +1202,8 @@
 
         const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
         const ow  = H.Awo(other)
-        const dq  = H.reqy(w,  {k:'De'})
-        const odq = H.reqy(ow, {k:'De'})
+        const dq  = H.reqy(w)
+        const odq = H.reqy(ow)
 
         await H.PL_De_binary(w,  dq,  { seq, sent:     true })
         await H.PL_De_binary(ow, odq, { seq, received: true })
@@ -1213,7 +1213,7 @@
         H.feebly_ponder()
     },
 
-    // Close this side's connection and seed De:disconnect_test on both sides.
+    // Close this side's connection and seed req:disconnect_test on both sides.
     //   auto_reconnect in Peerily drives the reconnect; phase reqs track each stage.
     //   Use a distinct seq per Prep step for multiple disconnects.
     async force_disconnect(_A: TheC, w: TheC, e?: TheC) {
@@ -1225,8 +1225,8 @@
 
         const other = (H.c.sides as string[]).find(s => s !== side) ?? 'Nearing'
         const ow  = H.Awo(other)
-        const dq  = H.reqy(w,  {k:'De'})
-        const odq = H.reqy(ow, {k:'De'})
+        const dq  = H.reqy(w)
+        const odq = H.reqy(ow)
 
         await H.PL_De_disconnect(w,  dq,  { seq, role: 'closer'   })
         await H.PL_De_disconnect(ow, odq, { seq, role: 'receiver' })
@@ -1236,7 +1236,7 @@
         H.feebly_ponder()
     },
 
-    // < corrupt_hello (hook particle) is superseded by De:emit_corruption
+    // < corrupt_hello (hook particle) is superseded by req:emit_corruption
     //   Prep i_elvisto:'PeeringLive/PeeringLive', e:'emit_corruption',
     //   esc:{target, corrupt} now routes through on_step:4 / PL_i_emit_corruption.
 

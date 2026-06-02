@@ -3,7 +3,7 @@ Snap:H
     A:PeeringLive
       {"mung":["age"]}	self,round:14
       w:PeeringLive
-        De:p2pman,finished
+        req:p2pman,finished
           req:init,finished
         {"mung":["age"]}	self,round:14
         {"see":"PeeringLive  open:3/3"}
@@ -11,7 +11,7 @@ Snap:H
     A:Bearing
       {"mung":["age"]}	self,round:16
       w:Bearing
-        De:listen,finished
+        req:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
           req:listening,finished
@@ -26,7 +26,7 @@ Snap:H
     A:Nearing
       {"mung":["age"]}	self,round:16
       w:Nearing
-        De:listen,finished
+        req:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
           req:listening,finished
@@ -41,7 +41,7 @@ Snap:H
     A:Tearing
       {"mung":["age"]}	self,round:16
       w:Tearing
-        De:listen,finished
+        req:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
           req:listening,finished

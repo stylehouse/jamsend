@@ -678,7 +678,7 @@ export class Pier {
             
             // json is already string, crypto isn't
             let stuff = {crypto,data:json,buffer}
-            // meddle_fn is injected by De:corrupt_emissions wrap; mutates stuff post-sign
+            // meddle_fn is injected by req:corrupt_emissions wrap; mutates stuff post-sign
             meddle_fn?.(stuff)
 
             // Queue handling

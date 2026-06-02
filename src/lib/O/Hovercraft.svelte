@@ -134,29 +134,27 @@
 //#region reqy
  
     reqy_spec: `
-        any req%talk is a req object from this function
+        any req%talk or req:4,dialup,thing is one of these
           identified or qualified by having %talk
           so a multitude can exist with slightly different %talk, etc
           and they're kind of a proto w, lighter and curlier...
          this is the only place to spawn a %req, don't use that property elsewhere.
 
          helps you write good looking C** that statemachines a bunch of work
-          let rq = H.reqy(w) // most cases
-           recommended. just leave it rq.
-          let Dq = H.reqy(w,{k:'De'})
-           not recommended because seeing %req is too informative...
-            and there is usually a %req:something to name, or any other req.sc.*
-           if you are an LLM ask design permission to use this.
-           different mainkey, for unusualy complexity of eg De/De/req/req/req
-           just leaving it as a %req is good readability
-            < its marginal, why we should make this flexible...
+          let rq = H.reqy(w)
          define protocols, then you put particles in:
           await rq.roai({enid,path},{urgency})
            these will become %req:$i++,enid,path,urgency
-            you can also put %req:doc_load,path
+           a unique {enid,path} per $i++
+           {urgency} mutates req%*
+          you can also put %req:doc_load,path to avoid $i++
          you then do stuff:
-          rq.do(async(req) => { ... })
-          rq.do_fn = async(req) => { ... }
+          rq.do(async(req) => { ...process each req, call rq.finish(req) })
+         
+         can also make a pile of thinking to get through:
+          ;(await pq.doai({ req: 'push' }))?.(async (push: TheC) => { ... })
+              
+          
  
          {enid,path} will locate a req,
           {urgency} will mutate req%urgency if ~, and set req%mutated.urgency=oldvalue
@@ -177,6 +175,8 @@
           req.c.on = reqcon
            the protocol of req is findable from a req
           
+          req.c.do_fn = Function
+
           reqcon.c.do_fn = Function
            can be supplied here: reqy(..., q:{do_fn:...})
            allowing reqyoncile(req) out of time to come through:
@@ -190,8 +190,10 @@
             
           so,
            reqy() calls full of protocol specs live in w:ClientCode
-            reqy() calls identifying only the q.k can occur from elsewhere
-             to use the rq.do() API
+            reqy() calls elsewhere only need the host (w) and to be in Atime
+             but to use rq.do() need the do_fn stored on req or reqcon
+              not given as rq.do(() => {...}) in w:ClientCode
+              
             so protocol specs have to live on reqcon
              so all rq are made equal whether in time or kinda out
           
@@ -212,12 +214,12 @@
     `,
  
     // w|De|req, the host
-    reqy(w: TheC, q: { k?:string,
+    reqy(w: TheC, q: {
         mutated_fn?:Function,
         do_fn?:Function,
      } & any = {}) {
         const H = this
-        q.k ||= 'req'
+        q.k = 'req'
         const keying = { [q.k]: 1 } // matches %req, roai(c) may redefine it
         let reqcons: TheC
         let reqcon:  TheC

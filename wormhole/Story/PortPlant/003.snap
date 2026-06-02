@@ -16,11 +16,11 @@ Snap:H
           pot:fern
             plant
             soil,dose:3
-        De:repot,maz:2
+        req:repot,maz:2
           req:move_outside,maz:3
           req:repot,maz:2
           req:move_inside
-        De:celebrate
+        req:celebrate
         {"mung":["age"]}	self,round:3
         log
           msg:rose in yard

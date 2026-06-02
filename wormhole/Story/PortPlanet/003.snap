@@ -6,10 +6,10 @@ Snap:H
         orders
           order:rose,dose:3
           order:fern,dose:7
-        De:receive
+        req:receive
           req:2,order:rose,dose:3,out
           req:3,order:fern,dose:7,out
-        De:transport
+        req:transport
         world
           order:rose,dose:3
           order:fern,dose:7

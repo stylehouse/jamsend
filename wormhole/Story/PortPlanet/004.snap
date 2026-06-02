@@ -6,13 +6,13 @@ Snap:H
         orders
           order:rose,dose:5
           order:fern,dose:7
-        De:receive
+        req:receive
           req:2,order:rose,dose:5,out
             already_sent,dose:3
           req:3,order:fern,dose:7,out
           req:4,order:rose_extra,dose:2
-        De:transport
-          van:rose_extra,dose:2
+        req:transport
+          req,van:rose_extra,dose:2
             waits:in transit
         world
           order:rose,dose:3

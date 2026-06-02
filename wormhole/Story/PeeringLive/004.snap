@@ -1,22 +1,22 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:32
+      {"mung":["age"]}	self,round:28
       w:PeeringLive
-        De:p2pman,finished
+        req:p2pman,finished
           req:init,finished
-        De:emit_corruption,target:Tearing,eternal
+        req:emit_corruption,target:Tearing,eternal
           req:wrap_emit,finished:true
           {"ref":{"meddle_fn":"Function()"}}	req,corruption:publicKey,finished
-        De:step_4,Destep,finished
+        req:step_4,Destep,finished
           req:watch_error,finished
-        {"mung":["age"]}	self,round:32
+        {"mung":["age"]}	self,round:28
         {"see":"PeeringLive  open:3/3"}
         timeSatisfied
     A:Bearing
-      {"mung":["age"]}	self,round:36
+      {"mung":["age"]}	self,round:32
       w:Bearing
-        De:listen,finished
+        req:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
           req:listening,finished
@@ -27,10 +27,10 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           {"ref":{"Id":"Idento()"}}	prepri:923f9316
           open
-        De:connect,target:8cbc667bb0c8e748,finished
+        req:connect,target:8cbc667bb0c8e748,finished
           req:dial,finished
           req:connected,finished
-        De:handshake,target:8cbc667bb0c8e748,finished
+        req:handshake,target:8cbc667bb0c8e748,finished
           req:said_hello,maz:4,demand:800,finished
           req:heard_hello,maz:3,demand:800,finished
           req:said_trust,maz:2,demand:1500,finished
@@ -40,16 +40,16 @@ Snap:H
           protocol_faulty
             Unemit_Error
               error:not them!
-        De:handshake,target:962af4326c28f29b,finished
+        req:handshake,target:962af4326c28f29b,finished
           req:said_hello,maz:4,demand:800,finished
           req:heard_hello,maz:3,demand:800,finished
           req:said_trust,maz:2,demand:1500,finished
           req:heard_trust,demand:1500,finished
-        {"mung":["age"]}	self,round:36
+        {"mung":["age"]}	self,round:32
     A:Nearing
-      {"mung":["age"]}	self,round:34
+      {"mung":["age"]}	self,round:30
       w:Nearing
-        De:listen,finished
+        req:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
           req:listening,finished
@@ -61,16 +61,16 @@ Snap:H
           {"ref":{"Id":"Idento()"}}	prepri:b4c5b5e9
           open
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        De:handshake,target:7acf614d876d69a4,finished
+        req:handshake,target:7acf614d876d69a4,finished
           req:said_hello,maz:4,demand:800,finished
           req:heard_hello,maz:3,demand:800,finished
           req:said_trust,maz:2,demand:1500,finished
           req:heard_trust,demand:1500,finished
-        {"mung":["age"]}	self,round:34
+        {"mung":["age"]}	self,round:30
     A:Tearing
-      {"mung":["age"]}	self,round:35
+      {"mung":["age"]}	self,round:31
       w:Tearing
-        De:listen,finished
+        req:listen,finished
           {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
           req:register,maz:2,finished
           req:listening,finished
@@ -81,14 +81,14 @@ Snap:H
         Peering,name:tearing,prepub:962af4326c28f29b
           {"ref":{"Id":"Idento()"}}	prepri:386df6d9
           open
-        De:connect,target:7acf614d876d69a4,finished
+        req:connect,target:7acf614d876d69a4,finished
           req:dial,finished
           req:connected,finished
-        De:handshake,target:7acf614d876d69a4
+        req:handshake,target:7acf614d876d69a4
           req:said_hello,maz:4,demand:800,finished
           req:heard_hello,maz:3,demand:800
           req:said_trust,maz:2,demand:1500
           req:heard_trust,demand:1500
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        {"mung":["age"]}	self,round:35
+        {"mung":["age"]}	self,round:31
     {"mung":["id"]}	mo:main,interval:3.6

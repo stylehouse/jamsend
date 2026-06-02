@@ -111,7 +111,7 @@
     //
     // ── future ────────────────────────────────────────────────────────────────
     //   < full close on Doc removal (drop loaded_doc, tell Lang)
-    //   < %pending_write / %surprise_read / diff per loaded_doc
+    //   < %req:pending_write / %req:surprise_read / diff per loaded_doc
     //   < nested Waft save
     //   < rename Waft: write fresh snap at new path
     let future = `
@@ -237,27 +237,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // mutates the in-flight req's text rather than racing a second write.
         // Drop a finished sibling first so roai builds a fresh req, not a
         // mutate-on-a-dead-one that do() would skip.
-        const pwq = H.Lies_pending_write_reqy(w)
-        for (const old of pwq.o({ path }) as TheC[]) if (old.sc.finished) w.drop(old)
-        await pwq.roai({ pending_write: 1, path }, { text, dige: await dig(text) })
+        // < the above "mutates the in-flight req's text" is flawed!
+        //    throttle writes, but always get the latest one done
+        const rq = H.reqy(w)
+        let c = { req: 'pending_write', path }
+        for (const old of rq.o(c) as TheC[]) if (old.sc.finished) w.drop(old)
+        await rq.roai(c, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
-    // ── %pending_write channel ──────────────────────────────────────────────
-    //
-    //   One reqy handle, shared by the parker (e_Lies_source_write) and the
-    //   driver (LiesStore_run Phase 1.5) so both attach the same do_fn to the
-    //   one reqcon — whoever opens the channel first wins, the other reuses it.
-    Lies_pending_write_reqy(w: TheC) {
-        const H = this as House
-        return H.reqy(w, {
-            k:        'pending_write',
-            noserial: 1,
-            do_fn:    (req: TheC, q: any) => H.Lies_pending_write_do_fn(req, q),
-        })
-    },
 
-    // ── Lies_pending_write_do_fn ──────────────────────────────────────────────
+    // ── req:pending_write do_fn ──────────────────────────────────────────────
     //
     //   Drives one parked save across ticks:
     //     1. content gate — text already on disk (echo, or a sibling write
@@ -273,7 +263,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //
     //   < the surprise path blocks the write but doesn't yet resume it; the
     //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
-    async Lies_pending_write_do_fn(req: TheC, q: any) {
+    async req_pending_write(req: TheC, q: any) {
         const H    = this as House
         const w    = req.c.up as TheC
         const path = req.sc.path as string

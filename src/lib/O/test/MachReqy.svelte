@@ -20,7 +20,7 @@
 
     // w/plan                            — world
     //
-    // De:sort
+    // req:sort
     //   req:wait,time:5000              — stalls; do_fn arms a one-shot timer
     //     setTimeout → reqyoncile(req,'sorted out',{thing:3})
     //       merges thing:3 into req.sc at e_reqyonciliation Atime
@@ -29,12 +29,12 @@
     // demand_time_to_think is manual here — may move into the wall
 
     async PortPlan(A, w) {
-        const dq = this.reqy(w, {k:'De'})
+        const dq = this.reqy(w)
 
-        const dSort = await dq.roai({De:'sort', maz:2})
+        const dSort = await dq.roai({req:'sort', maz:2})
         dSort.c.do_fn ||= async (De: TheC) => {
-            this.trace("De:sort")
-            const rq = this.reqy(De, {k:'req'})
+            this.trace("req:sort")
+            const rq = this.reqy(De)
 
             // req:wait,time:123
             //   armed guard: one timer only; reqyoncile brings re-entry
@@ -42,7 +42,7 @@
             const rWait = await rq.roai({req:'wait', time:123})
             rWait.c.do_fn ||= async (req: TheC, rq: any) => {
                 if (req.sc.thing) {
-                    this.trace("De:sort -> finito")
+                    this.trace("req:sort -> finito")
                     this.want_savepoint()
                     rq.finish(req); return
                 }
@@ -50,8 +50,8 @@
                 req.c.armed = true
                 // this.demand_time_to_think(req.sc.time + 20)
                 setTimeout(() => {
-                    this.trace("De:sort -> reqyoncile")
-                    this.reqyoncile(req, 'sorted out', {thing:3})
+                    this.trace("req:sort -> reqyoncile")
+                    this.reqyoncile(req, {see:'sorted out', thing:3})
                 }, req.sc.time)
             }
 
@@ -59,9 +59,9 @@
             rq.unify_finished()
         }
 
-        const dYay = await dq.roai({De:'yay'})
+        const dYay = await dq.roai({req:'yay'})
         dYay.c.do_fn ||= async (De: TheC) => {
-            this.trace("De:yay")
+            this.trace("req:yay")
             w.i({confetti:"!!!"})
             dq.finish(De); return
         }
@@ -76,24 +76,24 @@
 
     // Fiction: a standing order desk receives two orders (rose:3, fern:7 doses).
     //   Mid-flight, rose is bumped to 5 — the delta of 2 spawns a rogue order
-    //   that arrived sideways into De:receive, not through the orders pipeline.
+    //   that arrived sideways into req:receive, not through the orders pipeline.
     //
     // w/orders/order:rose,dose:3         — source; driver mutates dose here
     //          order:fern,dose:7           orders loop flows changes → reqs via roai(c,sc)
     // w/world/order:*,dose:N             — committed record; written by van on delivery
     //
-    // De:receive                              — never finishes; permanent order ledger
+    // req:receive                              — never finishes; permanent order ledger
     //   req:2,order:rose,dose,out          serial reqs (no do_fn); transparent to do()
     //   req:3,order:fern,dose,out            roai(c,sc); maybe_mutate_sc → %mutated → mutated_fn
     //                                           %out once van delivers; immutable but live for mutated_fn
     //   req:4,order:rose_extra,dose:2      rogue; seeded by mutated_fn; no do_fn; never finishes
     //
-    // De:transport                           — created by driver dispatch (on_step:2)
-    //   van:rose,dose:N                    one van per undelivered (%out-less) order in De:receive
+    // req:transport                           — created by driver dispatch (on_step:2)
+    //   van:rose,dose:N                    one van per undelivered (%out-less) order in req:receive
     //   van:fern,dose:N                      initialdo → waits:'in transit'; then world write, %out on src, finish
-    //                                           finished vans dropped at next De:transport entry
+    //                                           finished vans dropped at next req:transport entry
     //
-    // De:reportPortPlaneting                 — created by driver (on_step:4); named handler
+    // req:reportPortPlaneting                 — created by driver (on_step:4); named handler
     //   req:gatherself                         own do_fn; initialdo: one snap waits:'finding a pen'
     //   req:summarise                          all_finished() → inline finish
 
@@ -112,16 +112,16 @@
         this.logger(w)
         const li = this.c.loggeri
 
-        const dq = this.reqy(w, {k:'De'})
+        const dq = this.reqy(w)
 
         // ── test driver ───────────────────────────────────────────────────────
-        // step 2: dispatch → creates De:transport
+        // step 2: dispatch → creates req:transport
         // step 3: mutate rose dose → propagates via roai → mutated_fn → rogue
-        // step 4: creates De:reportPortPlaneting (can't wait on Dere%finished)
+        // step 4: creates req:reportPortPlaneting (can't wait on Dere%finished)
         await this.on_step({
             2: async () => {
                 li('driver[2]', { dispatch: 1 })
-                await dq.roai({De:'transport'})
+                await dq.roai({req:'transport'})
             },
             4: async () => {
                 li('driver[3]', { order: 'rose', dose: 5 })
@@ -129,20 +129,21 @@
             },
             5: async () => {
                 li('driver[4]', { report: 1 })
-                await dq.roai({De:'reportPortPlaneting'})
+                let like = await dq.roai({req:'reportPortPlaneting'})
+                like.sc.things = 444
             },
         })
 
         // ── business logic ────────────────────────────────────────────────────
 
-        // ── De:receive ────────────────────────────────────────────────────────
+        // ── req:receive ────────────────────────────────────────────────────────
         // req.c.up = De set by roai; reqyoncile climbs De.c.up = w to reach %w
-        const dReceive = await dq.roai({De:'receive'})
+        const dReceive = await dq.roai({req:'receive'})
         dReceive.c.do_fn ||= async (De: TheC) => {
             // order_update — mutated_fn; fires for any req carrying %mutated
             //   req.sc.mutated.dose is the pre-merge value; gap = delta only
             //   rogue seeded directly into rq — not from w/orders pipeline
-            const rq = this.reqy(De, {k:'req', mutated_fn: async (req: TheC, rq: any) => {
+            const rq = this.reqy(De, {mutated_fn: async (req: TheC, rq: any) => {
                 const old_dose = req.sc.mutated?.dose as number || 0
                 const new_dose = req.sc.dose as number || 0
                 const gap      = new_dose - old_dose
@@ -168,19 +169,19 @@
             await rq.do()
         }
 
-        // ── De:transport ──────────────────────────────────────────────────────
+        // ── req:transport ──────────────────────────────────────────────────────
         // created by driver dispatch (on_step:2); not present before then
-        const dTransport = w.o({ De: 'transport' })[0] as TheC | undefined
+        const dTransport = w.o({ req: 'transport' })[0] as TheC | undefined
         if (dTransport) {
             dTransport.c.do_fn ||= async (De: TheC) => {
-                const rq = this.reqy(De, {k:'van'})
+                const rq = this.reqy(De, { noserial: 1 })
 
                 // drop finished vans — visible in the last do() of steptime, then gone
                 for (const van of rq.o({}) as TheC[]) {
                     if (van.sc.finished) De.drop(van)
                 }
 
-                // van each undelivered order (and rogue) in De:receive
+                // van each undelivered order (and rogue) in req:receive
                 for (const or of dReceive.o({ req: 1, order: 1 }) as TheC[]) {
                     if (or.sc.out) continue
                     const van = await rq.roai(
@@ -203,15 +204,15 @@
         await dq.do()
     },
 
-    // named handler: H.De_reportPortPlaneting(De, dq)
+    // named handler req:reportPortPlaneting will find if no .c.do_fn
     //   w reached via De.c.up (set by dq.roai); li via this.c.loggeri
-    //   created from on_step:4 — waits for all De:receive orders to have %out
-    async De_reportPortPlaneting(De: TheC, dq: any) {
+    //   created from on_step:4 — waits for all req:receive orders to have %out
+    async req_reportPortPlaneting(De: TheC, dq: any) {
         const w  = De.c.up as TheC
         const li = this.c.loggeri
 
-        // wait for all orders (including rogues) in De:receive to be delivered
-        const dReceive = w.o({ De: 'receive' })[0] as TheC | undefined
+        // wait for all orders (including rogues) in req:receive to be delivered
+        const dReceive = w.o({ req: 'receive' })[0] as TheC | undefined
         const orders = (dReceive?.o({ req: 1, order: 1 }) ?? []) as TheC[]
         if (!orders.length || !orders.every((or: TheC) => or.sc.out)) {
             De.i({ waits: 'delivery' })
@@ -219,7 +220,7 @@
         }
 
         // do_fn on reqcon.c: fallback for any req with no c.do_fn — carries req:summarise
-        const rq = this.reqy(De, {k:'req', do_fn: async (req: TheC, rq: any) => {
+        const rq = this.reqy(De, {do_fn: async (req: TheC, rq: any) => {
             const world = w.oai({ world: 1 })
             const total = (world.o({ order: 1 }) as TheC[])
                 .reduce((s, o) => s + (o.sc.dose as number || 0), 0)
@@ -255,11 +256,11 @@
     // w/yard/soil,dose:12               — bulk supply; 2 doses per pot (3→5)
     // w/arrival                         — blocks move_outside until step:1 snap
     //
-    // De:repot,maz:2
+    // req:repot,maz:2
     //   req:move_outside,maz:3  — shelf→body→yard; body pots on entry = last step's load
     //   req:repot,maz:2         — draw 2 from yard/soil per pot, dose:3→5
     //   req:move_inside         — yard→body→shelf; same transit pattern
-    // De:celebrate
+    // req:celebrate
 
     Run_A_PortPlant(this: House) {
         const A = this.o({ A: 'PortPlant' })[0] || this.i({ A: 'PortPlant' })
@@ -288,12 +289,12 @@
         const yard  = w.oai({ yard:  1 })
         const body  = w.oai({ body:  1 })
 
-        const dq = this.reqy(w, {k:'De'})
+        const dq = this.reqy(w)
 
-        // ── De:repot ──────────────────────────────────────────────────────────
-        const dRepot = await dq.roai({De:'repot', maz:2})
+        // ── req:repot ──────────────────────────────────────────────────────────
+        const dRepot = await dq.roai({req:'repot', maz:2})
         dRepot.c.do_fn ||= async (De: TheC) => {
-            const rq = this.reqy(De, {k:'req'})
+            const rq = this.reqy(De)
 
             // req:move_outside,maz:3
             //   body pots on entry = loaded last step and snapped → safe to unload now
@@ -384,10 +385,10 @@
             if (rq.all_finished() && !De.sc.finished) dq.finish(De)
         }
 
-        // ── De:celebrate ─────────────────────────────────────────────────────
-        const dCelebrate = await dq.roai({De:'celebrate'})
+        // ── req:celebrate ─────────────────────────────────────────────────────
+        const dCelebrate = await dq.roai({req:'celebrate'})
         dCelebrate.c.do_fn ||= async (De: TheC) => {
-            const rq = this.reqy(De, {k:'req'})
+            const rq = this.reqy(De)
 
             const rConfetti = await rq.roai({req:'confetti'})
             rConfetti.c.do_fn ||= async (req: TheC, rq: any) => {

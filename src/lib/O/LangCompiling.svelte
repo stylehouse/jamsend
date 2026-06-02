@@ -62,8 +62,8 @@
     //   Key shapes within an sc:
     //     $name as a key → {name}        (ES6 shorthand; uses the variable `name` in scope)
     //     key:$var       → {key: var}
-    //     key:3          → {key: 3}      (+ exactly_for:'key')
-    //     key:word       → {key: "word"} (+ exactly_for:'key')
+    //     key:3          → {key: 3}
+    //     key:word       → {key: "word"}
     //     key            → {key: 1}      (wildcard)
     //
     //   .i drops `exactly` from its leg objects (insertion doesn't filter).

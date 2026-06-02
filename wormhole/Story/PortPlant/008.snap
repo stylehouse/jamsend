@@ -16,11 +16,11 @@ Snap:H
             soil,dose:5
         yard
           soil,dose:6
-        De:repot,maz:2,finished
+        req:repot,maz:2,finished
           req:move_outside,maz:3,finished
           req:repot,maz:2,finished
           req:move_inside,finished
-        De:celebrate,finished
+        req:celebrate,finished
           req:confetti,finished
         thus:🎉 all repotted and shelved!
         {"mung":["age"]}	self,round:12

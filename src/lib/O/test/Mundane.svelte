@@ -59,7 +59,7 @@ await M.eatfunc({
             reason == 'timeout' && w.i({see:'Step ending with a timeout'})
         }
 
-        const rq = H.reqy(w, { k: 'req' })
+        const rq = H.reqy(w)
         // Set up the reqy protocol once. All reqs in this test use this do_fn.
         rq.con.c.do_fn = async (req: TheC) => {
             if (!H.reqonce(req, 'armed')) return
@@ -249,7 +249,7 @@ await M.eatfunc({
             { in: 'videos', name: 'clip_2', mins: 5 },
         ]
 
-        const rq = H.reqy(w, { k: 'req' })
+        const rq = H.reqy(w)
         rq.con.c.do_fn = async (req: TheC) => {
             if (req.sc.done) {
                 rq.finish(req)

@@ -6,15 +6,15 @@ Snap:H
         orders
           order:rose,dose:3
           order:fern,dose:7
-        De:receive
+        req:receive
           req:2,order:rose,dose:3
           req:3,order:fern,dose:7
         {"mung":["age"]}	self,round:2
         logger,n
           driver[2],dispatch,inA
-        De:transport
-          van:rose,dose:3
+        req:transport
+          req,van:rose,dose:3
             waits:in transit
-          van:fern,dose:7
+          req,van:fern,dose:7
             waits:in transit
     {"mung":["id"]}	mo:main,interval:3.6

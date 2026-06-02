@@ -6,20 +6,18 @@ Snap:H
         orders
           order:rose,dose:5
           order:fern,dose:7
-        De:receive
+        req:receive
           req:2,order:rose,dose:5,out
             already_sent,dose:3
           req:3,order:fern,dose:7,out
           req:4,order:rose_extra,dose:2,out
-        De:transport
+        req:transport
         world
           order:rose,dose:3
           order:fern,dose:7
           order:rose_extra,dose:2
-        De:reportPortPlaneting,finished
+        req:reportPortPlaneting,things:444,finished
           req:gatherself,maz:2,finished
           req:summarise,finished
-        logger,n
-          report_final,total:12,inA
         {"mung":["age"]}	self,round:10
     {"mung":["id"]}	mo:main,interval:3.6
