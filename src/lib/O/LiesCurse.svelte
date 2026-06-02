@@ -235,6 +235,7 @@
         }
 
         spot.bump_version()
+        examining.bump_version()   // Waft snippet reads void examining?.version for glow reactivity
         console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).path ?? '?')}`)
 
         // Fire generic workon update — req:workon in w:Lang resets the cluster.

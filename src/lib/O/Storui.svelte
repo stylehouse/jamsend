@@ -244,6 +244,9 @@
         void step?.version          // also re-check when snap arrives async
         if (step?.sc.got_snap) {
             restore_pip = null
+            // if the run already opened a different step (end-of-run failure/lenient),
+            // defer to it — the stash restore must not stomp run.sc.open_at
+            if (display.open_at != null && display.open_at !== n) return
             pick(n)
         }
     })

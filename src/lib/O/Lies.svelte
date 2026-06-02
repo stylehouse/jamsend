@@ -743,24 +743,27 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── req_Furnishing ──────────────────────────────────────────────────────────
     //   do_fn for /req:Furnishing,path.  Fires each think until finished:
-    //     1. no text yet  → wread it (a req:Open child); ttlilt as a backstop.
-    //     2. text present → courier this req to Lang via i_elvis_req.  The req IS
-    //        the req; req_sent:1 gates the double-fire.  When Lang finish()es it,
-    //        reqturn:1 pings us and req.sc.finished lands — we close out.
+    //     1. no c.text yet  → wread it; ttlilt as a backstop while in flight.
+    //     2. c.text present → courier this req to Lang via i_elvis_req.
+    //        req_sent:1 gates double-fire.  When Lang finish()es it, reqturn:1
+    //        pings us and req.sc.finished lands — we close out.
+    //
+    //   text on c (not sc) — kept out of the snap; can be a full source file.
+    //   path and gen_path stay on sc (small, snap-visible, stable after load).
     async req_Furnishing(req: TheC, q: any) {
         const H = this as House
         const w   = req.c.up as TheC
         const path = req.sc.path as string
         if (!path) { q.finish(req); return }
 
-        if (req.sc.text === undefined) {
+        if (req.c.text === undefined) {
             const read = await H.LiesStore_read(w, path)
             if (!read.sc.finished) {
                 H.i_req_ttlilt(req, 0.4, { waiting: 'wread' })
                 return
             }
             const text: string = read.sc.reply?.content ?? ''
-            req.sc.text = text
+            req.c.text = text
             const gen_path = H.Lies_gen_path(path)
             if (gen_path) req.sc.gen_path = gen_path
             // Record loaded_doc so Lies_sync_waft_docs and source-write checks see the path.
@@ -769,8 +772,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             console.log(`🗂 Furnishing loaded: ${path}${gen_path ? ` → ${gen_path}` : ''}`)
         }
 
-        // Courier the req to Lang (i_elvis_req stamps req_sent:1 on first fire;
-        // returns true once Lang finish()es it via reqturn:1).
+        // Courier: req_sent:1 gates double-fire; returns true when req.sc.finished.
         if (H.i_elvis_req(w, 'Lang/Lang', 'Lang_open_dock', { req })) {
             q.finish(req)
         }

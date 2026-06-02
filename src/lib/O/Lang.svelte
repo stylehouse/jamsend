@@ -486,7 +486,7 @@
         for (const { req: furnishing, finish } of H.o_elvis_req(w, 'Lang_open_dock')) {
             const path     = furnishing.sc.path as string
             const gen_path = furnishing.sc.gen_path as string | undefined   // optional
-            const text     = (furnishing.sc.text as string) ?? ''
+            const text     = (furnishing.c.text as string | undefined) ?? ''   // large, on c
             if (!path) continue
 
             const dock = await H.Lang_drive_languish(w, path, text, gen_path)

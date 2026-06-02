@@ -278,10 +278,10 @@
     // ── reactive signals from ave ─────────────────────────────────────────────
     //   lang_actions: action buttons registered by Lang ghost
     //   active_path:  path of the currently-shown doc ($state so template reacts)
-    //   dock:         the ave/{lang_dock:path} particle (text length display,
-    //                 disk-reload detection)
-    //   active_dock:   the actual {dock: path} particle from w:Lang
-    //                 (holds bookmarks; sig.c.dock set by Lang_set_active_dock)
+    //   dock:         the ave/{lang_dock:path} particle (text sync, disk-reload)
+    //   active_dock:  the actual {dock:path} particle from w:Lang (holds bookmarks).
+    //                 §3d: no longer a separate ave/active_dock signal — read via
+    //                 %Languinio/%dock (same-object hold updated by Lang_set_active_dock).
     let lang_actions: TheC[] = $state([])
     let active_path  = $state('')
     let dock:       TheC | undefined = $state()   // text-sync particle
@@ -320,24 +320,23 @@
     let expanded = $state(false)
 
     // ── signal $effect ────────────────────────────────────────────────────────
-    //   Reads H.ave for lang_actions, active_dock, and lang_dock.
-    //   sig?.ob() subscribes to sig.version so path changes inside the same
-    //   sig particle (bump_version only, no re-i()) still wake this effect.
-    //
-    //   sig.c.dock is the {dock: path} particle stamped by Lang_set_active_dock.
-    //   It lives on .c (not .sc) because TheC references don't belong in the
-    //   index; the signal's version bump is what wakes this effect up.
+    //   Reads H.ave for lang_actions and active path.
+    //   §3d: active dock comes from %Languinio/%dock (same-object hold), not a
+    //   separate ave/active_dock signal.  languinio.ob() subscribes to its version
+    //   so a dock change (Lang_set_active_dock → languinio.bump_version) wakes
+    //   this effect.  The dock particle's sc.dock IS the path.
     $effect(() => {
         const la = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
 
-        const sig  = H.ave.ob({ active_dock: 1 })[0] as TheC | undefined
-        sig?.ob()  // track sig.version — path changes bump it without re-enrolling
-        const path = (sig?.sc.path as string | undefined) ?? ''
+        const languinio   = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+        languinio?.ob()   // track languinio.version — dock changes bump it
+        const active_dock_C = languinio?.ob({ dock: 1 })[0] as TheC | undefined
+        const path = (active_dock_C?.sc.dock as string | undefined) ?? ''
         if (path) active_path = path
-        dock       = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
-        active_dock = sig?.c.doc as TheC | undefined
-        console.log(`🔭 signal $effect: sig=${!!sig} path=${path} dock=${!!dock} active_dock=${!!active_dock}`)
+        dock        = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
+        active_dock = active_dock_C
+        console.log(`🔭 signal $effect: languinio=${!!languinio} path=${path} dock=${!!dock} active_dock=${!!active_dock}`)
     })
 
     // ── change strip ─────────────────────────────────────────────────────────────
