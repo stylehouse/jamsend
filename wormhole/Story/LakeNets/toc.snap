@@ -73,16 +73,16 @@ story:LakeNets
     quiesce_snap_time:0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.61
-      sample:0.486,at:1780421714
-      sample:0.486,at:1780421774
-      sample:0.442,at:1780422125
-      sample:0.461,at:1780422242
+    TimeTotal:beliefs,avg:0.614
       sample:0.821,at:1780422325
       sample:0.669,at:1780424767
       sample:0.441,at:1780425027
       sample:0.682,at:1780425215
       sample:0.351,at:1780425235
       sample:1.257,at:1780435755
+      sample:0.403,at:1780437207
+      sample:0.52,at:1780439151
+      sample:0.557,at:1780439239
+      sample:0.435,at:1780439274
   step,dige:890cdd7cf20a8cfb
   step:2,dige:cee3ee45d23b6cfd

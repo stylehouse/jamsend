@@ -248,7 +248,7 @@
 
     <!-- What tree — render_what is a recursive snippet; handles What/What/Doc
          nesting at any depth.  wdepth is the indent level within this Waft. -->
-    {#each waft_whats as what (what.sc.label ?? what.sc.What ?? what.sc.id)}
+    {#each waft_whats as what (what)}
         {@render render_what(what, 0)}
     {/each}
 
@@ -313,7 +313,7 @@
 </div>
 
 {#snippet render_what(what: TheC, wdepth: number)}
-    {@const what_label    = (what.sc.label ?? what.sc.What ?? '?') as string}
+    {@const what_label    = (what.sc.label ?? '·') as string}
     {@const what_docs     = (() => { void what.version; return what.o({ Doc: 1 })   as TheC[] })()}
     {@const what_pts      = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
     {@const what_subwhats = (() => { void what.version; return what.o({ What: 1 })  as TheC[] })()}
@@ -394,14 +394,14 @@
                 <!-- %What children of this %Doc (Doc > What nesting, e.g. time-slices).
                      Rendered here for visibility; cursor candidates don't reach
                      these yet — one-Doc-per-What restructuring avoids the nesting. -->
-                {#each doc_whats as dw (dw.sc.label ?? dw.sc.What ?? dw.sc.id)}
+                {#each doc_whats as dw (dw)}
                     {@render render_what(dw, wdepth + 1)}
                 {/each}
             </div>
         {/each}
 
         <!-- Nested %What children — recurse -->
-        {#each what_subwhats as subwhat (subwhat.sc.label ?? subwhat.sc.What ?? subwhat.sc.id)}
+        {#each what_subwhats as subwhat (subwhat)}
             {@render render_what(subwhat, wdepth + 1)}
         {/each}
     </div>

@@ -92,10 +92,21 @@
     let target     = $derived(LE && LE.vers && LE.sc.target as TheC | undefined)
     let depth      = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
     let has_prev   = $derived(target ? !!(H as any).LE_what_prev(target) : false)
-    let has_next   = $derived(target ? !!(H as any).LE_what_next(target) : false)
+    let has_next   = $derived(has_next_val)
     let has_up     = $derived(depth > 0)
-    let has_branch = $derived(!!target)   // can always branch to a new sibling
-    let has_dive   = $derived(!!target)   // can always dive into a new child
+    let has_branch = $derived(!!target)   // ↓ new next sibling — always possible
+    let has_dive   = $derived(!!target)   // ↘ new child — always possible
+    // has_prev: direct sibling only (no fall-back for ←)
+    // has_next: walks c.up so → stays live when the current level has no more siblings
+    //   but an ancestor does — "falling out of depth"
+    let has_next_val = $derived(target && LE?.vers ? (() => {
+        let node: any = target
+        while (node) {
+            if ((H as any).LE_what_next(node)) return true
+            node = (H as any).LE_what_parent(node) as any
+        }
+        return false
+    })() : false)
 
     // ── transport ─────────────────────────────────────────────────────────────
     //   The timemachine lives on %examining (s3f).  vers-chains keep reads
@@ -342,9 +353,13 @@
 
     function go_next() {
         if (!target) return
-        const next = (H as any).LE_what_next(target) as TheC | undefined
-        if (!next) return
-        H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: next })
+        // fall out of depth: climb until we find an ancestor with a next sibling
+        let node: any = target
+        while (node) {
+            const next = (H as any).LE_what_next(node) as TheC | undefined
+            if (next) { H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: next }); return }
+            node = (H as any).LE_what_parent(node) as any
+        }
     }
 
     function go_branch() {
@@ -362,9 +377,8 @@
     let what_label = $derived(
         target
             ? ((target.sc as any).label as string | undefined)
-              ?? ((target.sc as any).What as string | undefined)
               ?? ((target.sc as any).path as string | undefined)?.split('/').pop()
-              ?? '?'
+              ?? ''
             : ''
     )
 </script>
@@ -405,25 +419,25 @@
         {/if}
     </div>
 
-    <!-- branch — new sibling %What after current -->
-    <div class="nvc-seed" class:nvc-ghost={!has_branch}>
-        {#if slot_branch}
-            {@render slot_branch({ ghosted: !has_branch, onclick: go_branch })}
-        {:else}
-            <button class="nvc-btn" class:nvc-ghosted={!has_branch}
-                    disabled={!has_branch} onclick={go_branch}
-                    title="Branch (new sibling What)">↘</button>
-        {/if}
-    </div>
-
-    <!-- dive — new child %What inside current -->
+    <!-- ↘ dive — new child %What inside current (go deeper) -->
     <div class="nvc-seed" class:nvc-ghost={!has_dive}>
-        {#if slot_dive}
-            {@render slot_dive({ ghosted: !has_dive, onclick: go_dive })}
+        {#if slot_branch}
+            {@render slot_branch({ ghosted: !has_dive, onclick: go_dive })}
         {:else}
             <button class="nvc-btn" class:nvc-ghosted={!has_dive}
                     disabled={!has_dive} onclick={go_dive}
-                    title="Dive (new child What)">↓</button>
+                    title="Child (↘ new What inside current)">↘</button>
+        {/if}
+    </div>
+
+    <!-- ↓ branch — new next sibling %What after current -->
+    <div class="nvc-seed" class:nvc-ghost={!has_branch}>
+        {#if slot_dive}
+            {@render slot_dive({ ghosted: !has_branch, onclick: go_branch })}
+        {:else}
+            <button class="nvc-btn" class:nvc-ghosted={!has_branch}
+                    disabled={!has_branch} onclick={go_branch}
+                    title="Next (↓ new sibling What after current)">↓</button>
         {/if}
     </div>
 

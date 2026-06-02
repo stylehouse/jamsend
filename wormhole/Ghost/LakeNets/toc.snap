@@ -3,7 +3,6 @@ Waft:Ghost/LakeNets,Ghost/LakeNets
     What,label:story
       Doc,path:Ghost/Story/Peeroleum.g
       Point,method:LakeNetherland
-    What,label:
     What,label:peer
       Doc,path:Ghost/Peeroleum.g
       Point,method:Peeroleum

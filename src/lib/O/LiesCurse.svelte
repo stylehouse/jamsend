@@ -440,7 +440,7 @@
     //   won't steal the first one's pairing slot.
     //
     //   e.sc: { what: TheC }
-    async e_Lies_branch_what(A: TheC, w: TheC, e: TheC) {
+    e_Lies_branch_what(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
@@ -453,36 +453,14 @@
         const waft_C = H.LE_what_waft(what)
         if (!waft_C) return
 
-        const carry      = H.Lies_what_carry_over(what)
-        const all        = parent.o({}) as TheC[]        // all children, insertion order
-        const tgt_idx    = all.indexOf(what)
-        const pre_whats  = parent.o({ What: 1 }) as TheC[]
-        const what_idx   = pre_whats.indexOf(what)       // position among %What children only
+        const carry = H.Lies_what_carry_over(what)
 
-        if (tgt_idx < 0) {
-            // c.up stale — can't splice; fall back to appending
-            const new_what = parent.i({ What: 1, label: '' })
-            H.Lies_seed_what_carry_over(new_what, carry)
-            new_what.c.up   = parent
-            new_what.c.waft = waft_C
-            H.Lies_waft_save(w, waft_C)
-            H.i_elvisto(w, 'Lies_want', { src: new_what, kind: 'next' })
-            return
-        }
-
-        // Rebuild parent's children in their original order with new What spliced
-        // in after the target.  parent.i(existing) is the same-object path —
-        // resume_X on a matching sc is a no-op, c.* fields are preserved.
-        await parent.replace({}, async () => {
-            for (let i = 0; i < all.length; i++) {
-                parent.i(all[i])
-                if (i === tgt_idx) parent.i({ What: 1, label: '' })
-            }
-        })
-
-        // new What is at what_idx+1 in the updated %What child list
-        const new_what = (parent.o({ What: 1 }) as TheC[])[what_idx + 1]
-        if (!new_what) return
+        // replace() disallows re-entering existing particles that already carry
+        // /* children before the replace commits — can't use it to splice in place.
+        // Append the new What; it lands right after what when branching from the
+        // last position, which is the common case.
+        // < splice-after ordering: needs TheC.insert_after or a Travel-based approach.
+        const new_what = parent.i({ What: 1 })
 
         H.Lies_seed_what_carry_over(new_what, carry)
         // stamp back-refs so navigation helpers work before the next LE_pull
@@ -513,7 +491,7 @@
         if (!waft_C) return
 
         const carry    = H.Lies_what_carry_over(what)
-        const new_what = what.i({ What: 1, label: '' })
+        const new_what = what.i({ What: 1 })
         H.Lies_seed_what_carry_over(new_what, carry)
         // stamp back-refs immediately; Waft_link_up fills in the new What's
         // children at the next LE_pull
