@@ -1259,6 +1259,14 @@
         <div class="sr-trace-axis">
             <span class="sr-trace-axis-lbl">trace</span>
             <span>{span.toFixed(1)}ms</span>
+            <button class="sr-trace-copy" onclick={async () => {
+                const lines = events.map(ev => {
+                    const pos   = scale(ev.t)
+                    const label = `${ev.kind}${ev.tag ? ':' + ev.tag : ''}`
+                    return ' '.repeat(pos) + label
+                })
+                try { await navigator.clipboard.writeText(lines.join('\n') + '\n') } catch {}
+            }} title="copy trace">⎘</button>
         </div>
         {#each events as ev, i}
             {@const pos         = scale(ev.t)}
@@ -1598,11 +1606,17 @@
     max-height: 26vh; min-height: 6em;
 }
 .sr-trace-axis {
-    display:flex; justify-content:space-between;
+    display:flex; justify-content:space-between; gap:8px;
     color:#333; font-size:8px; padding:0 4px 2px;
     border-bottom:1px solid #161616;
 }
 .sr-trace-axis-lbl { color:#254535; letter-spacing:0.08em; text-transform:uppercase; }
+/* copy button in the axis bar — quiet until hovered */
+.sr-trace-copy {
+    background:none; border:none; color:#2a4a3a; cursor:pointer;
+    font-size:11px; line-height:1; padding:0 2px; margin-left:auto;
+}
+.sr-trace-copy:hover { color:#4a9; }
 .sr-trace-row { white-space:pre; }
 /* sr-trace-lbl: colour inline via trace_fg(); no background — just tinted text trickling down */
 .sr-trace-lbl { }
