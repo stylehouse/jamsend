@@ -4,20 +4,25 @@
 
 ---
 
-## What cursor model (the real design)
+## What cursor model
 
 A Waft is a tree of What, Doc, and Point — but **What is the base type**.
 Doc and Point are refinements; when something sits in the position of a Point
 but isn't one, it's another place the cursor wants to visit before returning.
+It might stop and take in a Doc with no Points, even.
 
-Types stack up positionally. Reading top-down through the tree:
+But for now it's quite strictly `Waft(/What/(Doc|Point*)*)*`, so we can clone
+a simple flat list of What/* to manipulate...
 
 ```
-What                   title-page / interstitial — valid cursor stop
-What/Doc               a doc before any time-slice What arrives — its own moment
-What/Doc/What          time-slices inside a doc; each is a cursor stop
-What/Doc/What/Point    the full inhabited case
-What/What              nested section — cursor recurses before returning
+Waft,Ghost/LakeNets
+  What,label:foundations
+    What,label:story
+      Doc,path:Ghost/Story/Peeroleum.g
+      Point,method:LakeNetherland
+    What,label:peer
+      Doc,path:Ghost/Peeroleum.g
+      Point,method:Peeroleum
 ```
 
 **Consequence for the cursor API:** `LiesCurse` should not be the place that
@@ -28,9 +33,6 @@ the next stop" logic belongs in helpers on the Waft side:
 H.Waft_cursor_next(w, examining)   // advance to next stop
 H.Waft_cursor_first(waft)          // first stop in a Waft
 ```
-
-`e_Lies_cursor_next` and `e_Lies_desire_step` both inline this logic.
-They should converge on the same helper.
 
 ---
 
@@ -52,7 +54,8 @@ w:Lies
 
 w:Lang
   /%Languinio
-    /%Interest            sc.src = working clone root; c.LE → /%LE
+    /%LE                  the active one, primarily lives in a /dock
+    /%Interest            sc.src = working clone root
     /%dock,path           same-object hold → docks/{dock:path}
     // /%spinner,stale / /%spinner,grafted
   /req:workon
@@ -62,7 +65,7 @@ w:Lang
       /req:furnish,maz:2    wait for dock (req:Furnishing mints it)
       /req:graft,maz:1      Lang_graft_points_once + open-ended req:Showing tail
 
-  /docks/{dock:path}
+  /docks/dock:path
     /%Compile → %methods, %Output
     /%Pmirrors
       /%Pmirror,$waft_key,$spec
@@ -74,7 +77,9 @@ w:Lang
       /%Seem:working    Se:Selection, C:clones  — editable clone tree
         /%Demonstrations:working
           /%Understandable   per-clone U sphere
-              sc.unshowing / sc.unaccepted / sc.class
+              sc.unshowing|unaccepted
+          //$C
+              sc.class
 ```
 
 Key structural facts post-SI:
@@ -82,9 +87,6 @@ Key structural facts post-SI:
 - `src_Waft` is gone.  `waft_key_of(src)` walks `c.waft`/`c.up` — available on
   any Waft-linked node.  `Seem_clone_C` stamps `root.c.waft` so clone roots are
   also reachable.
-- `%Interest` is Lang's one focus object: the clone root (`src`) plus a
-  `c.LE` back-ref to the working LE.  NaviCado reads it for nav; the graft reads
-  it for render.  Dropped and re-created on each checkout.
 - `req:Showing` is the cache-key-independent repaint path: fold/glow effects
   without rebuilding Pmirror identity.  Each Pmirror carries `c.src_clone` so
   Showing reaches `c.U` without re-resolving by spec.
@@ -107,7 +109,7 @@ blockers for 4c.
 
 **The pending integration: two systems for acceptance.**
 
-`sc.accepted`/`sc.showing` on source %Points barely exists — very little showing/accepted
+`sc.accepted`|`sc.showing` on source %Points barely exists — very little showing/accepted
 handling is wired yet.  DocMinimap has local `$state in_group`/`showing` and a
 `push_what_point` round-trip to Lies, but these are stubs ahead of NaviCado.
 The U sphere (`U%unshowing`, `U%unaccepted`) is the intended single truth; NaviCado
@@ -115,7 +117,8 @@ consolidation is where that gets wired.
 
 The consolidation: move the capsule strip and its state management from
 DocMinimap into NaviCado, making the U sphere the single truth for
-showing/accepted.  DocMinimap keeps: regions, def chips, scroll sync, nav history,
+showing|accepted-ness and expressed in the negative.  DocMinimap keeps:
+regions, def chips, scroll sync, nav history,
 fold toggle.  NaviCado gains: the capsule `{#each}`, `in_group`/`showing`,
 `push_what_point`, `reset_what_point`, `receive_what_point_from_lies`,
 `collect_le_membership`.  The unsent bar goes with them.

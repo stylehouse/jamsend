@@ -117,7 +117,7 @@
     //
     //   w/{Languinio:1}           — Lang's one focus object (§3b).
     //     /{LE:1}                  — same-object hold → workon/{LE:1}.
-    //     /{Interest:1}            — sc.src = working clone root; c.LE → /{LE:1}.
+    //     /{Interest:1}            — sc.src = working clone root.
     //                                Recreated per cursor move by req:checkout;
     //                                the render/edit end of the checkout.
     //     /{dock:path}             — same-object hold on the active dock (§3d:
@@ -742,8 +742,8 @@
                 await H.LE_pull(LE)
                 console.log(`🔗 workon checkout: LE armed at ${(src.sc as any).path ?? (src.sc as any).What ?? '?'}`)
 
-                // §3b — %Interest is Lang's one focus object: the working clone
-                // root (its render/edit end) plus a c.LE handle for navigation.
+                // §3b — %Interest is Lang's focus object within the %Languinio all-UI stuff
+                // root (its render/edit end)
                 // Drop + recreate per move, the same discipline LE runs on its
                 // Seems, so a stale Interest never points at an old clone tree.
                 const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
@@ -752,7 +752,6 @@
                     const working_C = LE.o({ Seem: 'working' })[0]?.sc.C as TheC | undefined
                     const interest  = languinio.oai({ Interest: 1 })
                     interest.sc.src = working_C   // the clone root — the Understanding-pointer
-                    interest.c.LE   = LE          // handle for nav: LE.sc.target is the original
                     interest.bump_version()
                 }
 

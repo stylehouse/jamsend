@@ -76,7 +76,12 @@ await M.eatfunc({
     // Custom traced_fn callers call this first, then extend.
     _Seem_CDUsive(C: TheC, D: TheC, Seem: TheC) {
         C.c.D = D
-        if (Seem.sc.opt.use_Understandable) C.c.U = D.oai({ Understandable: 1 })
+        D.c.C = C
+        if (Seem.sc.opt.use_Understandable) {
+            let U = D.c.U = C.c.U = D.oai({ Understandable: 1 })
+            U.c.D = D
+            U.c.C = C
+        }
     },
 
     // ── o_Seem ──────────────────────────────────────────────────────────────

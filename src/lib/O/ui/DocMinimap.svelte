@@ -146,7 +146,7 @@
         (languinio?.ob({ active: 1 })[0]?.sc.dock as string | undefined) ?? ''
     )
     let LE: TheC | undefined = $derived.by(() => {
-        // ob() tracks languinio.vers so this re-derives when e_Lang_LE_arm fires.
+        // ob() tracks languinio.vers so this re-derives when LE_arm fires.
         return languinio?.ob({ LE: 1 })[0] as TheC | undefined
     })
     // ── grafted / stale spinners ──────────────────────────────────────────────
@@ -408,7 +408,7 @@
      mouseleave also clears reset_confirm so it doesn't linger. -->
 <div class="lmm"
      onmouseenter={() => _hovering = true}
-     onmouseleave={() => { _hovering = false; reset_confirm = false }}
+     onmouseleave={() => { _hovering = false }}
      onwheel={on_wheel}>
 
     <div class="lmm-head">

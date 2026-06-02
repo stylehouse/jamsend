@@ -243,10 +243,9 @@
             const pw     = req.c.up as TheC
             const pit    = pw.oai({ BlastPit: 1 })
             await pit.r({ A: 1 }, {})
-            await pit.r({ w: 'blast' }, {})
-            const blastA = pit.i({ A: 1 })
-            const blastW = pit.i({ w: 'blast' })
-            console.log(`👻 run_method: calling ${method}(blastA, blastW)`)
+            const blastA = pit.i({ A: 'blast' })
+            const blastW = blastA.i({ w: 'blast' })
+            console.log(`👻 run_method: calling ${method}(A,w:blast)`)
             await fn.call(H, blastA, blastW)
         }
         q.finish(req)

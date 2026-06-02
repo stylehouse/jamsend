@@ -205,34 +205,10 @@ without re-deriving it from the live ropeways (the resumability note, applied).
 
 ---
 
-## Graft seam — how Lies hands LE to Lang
-
-`Lies_set_examining` (in `LiesCurse.svelte`) is the single seam.  When the
-cursor moves it:
-
-1. Stamps `wpt.sc.src` and `wpt.sc.src_Waft` on `%What_Points` (sync).
-2. Gets `w:Lies` via `examining.c.w`; gets the active `%Dock` and its `/%LE`
-   via `dock.oai({LE:1})` — stable, not inside `replace()`.
-3. Calls `H.LE_arm(LE, src)` — sync; arms the Understanding at the new target.
-4. `await H.LE_pull(LE)` then fires `H.i_elvisto('Lang/Lang', 'Lang_LE_arm', { LE })` —
-   once the first pull completes (armed → clean), `Lang_LE_arm` crosses worlds.
-
-`e_Lang_LE_arm` (in `Lang.svelte`) receives `e.sc.LE` — the live `/%Dock/%LE`
-particle — and installs it as a same-object hold in `%Languinio`:
-
-```
-await languinio.r({ LE: 1 }, {})   // drop any prior hold
-languinio.i(LE)                    // same-object insert; re-pointed on active_dock change
-```
-
-Langui reads `languinio.o({LE:1})[0]` to reach `LE_clones()` and `%State`
-without a cross-world round-trip.
-
 ### What still delivers %Doc as src
 
-`e_Lies_set_cursor` (click on a Doc row in Liesui) delivers a `%Doc` particle
-to `Lies_set_examining` as `src`.  That's valid — LE now arms for any src type.
-`%Doc` is a legitimate checkout target; `Lies_src_first_doc_point` finds its Points.
+`e_Lies_set_cursor`, then maybe `e:Lies_wants`.
+The rest of the schema is very tightly Waft/(What/(Doc|Point+))+ however.
 
 ---
 

@@ -21,7 +21,7 @@
     //                                       owns navigation + glow.
     //     %Languinio/%Interest  (Lang)   — the working clone root; owns render.
     //   This graft is the render end: it reads the *accepted working clones*
-    //   (via Interest.c.LE → LE_accepted_clones), not the live source — so the
+    //   (via Languinio/LE → LE_accepted_clones), not the live source — so the
     //   U sphere (class / unshowing / unaccepted) reaches CM.  The live source
     //   is read only as a pre-pull fallback, before the first LE_pull mints the
     //   clone tree.  The waft_key comes from waft_key_of (c.waft / c.up), so no
@@ -118,7 +118,7 @@
         // the clones (§3c).
         const languinio = w.o({ Languinio: 1 })[0]      as TheC | undefined
         const interest  = languinio?.o({ Interest: 1 })[0] as TheC | undefined
-        const LE         = interest?.c.LE as TheC | undefined
+        const LE         = languinio?.o({ LE: 1 })[0] as TheC | undefined
 
         // src_C: the live source — Interest.src (clone root) when armed, else the
         // Spotlight's src.  Used for the doc-match guard and the pre-pull point

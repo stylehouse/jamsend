@@ -72,7 +72,7 @@
     // active_path: which dock is currently foregrounded.
     // %Languinio/%dock,path with active:1 carries sc.dock = the path string.
     let active_path = $derived(
-        (languinio?.ob({ active: 1 })[0]?.sc.dock as string | undefined) ?? ''
+        (languinio?.ob({ dock:1,active: 1 })[0]?.sc.dock as string | undefined) ?? ''
     )
 
     // lang_dock: the actual %Dock particle (carries Compile, Pmirrors etc.).
@@ -82,10 +82,6 @@
             ? languinio?.ob({ dock: active_path })[0] as TheC | undefined
             : undefined
     })
-
-    // LE: the live Understanding; same-object hold via Languinio/%LE.
-    // ob() tracks languinio.vers so this re-derives when e_Lang_LE_arm fires
-    // (languinio.i(LE) bumps languinio).
     let LE: TheC | undefined = $derived(
         languinio?.ob({ LE: 1 })[0] as TheC | undefined
     )
