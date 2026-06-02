@@ -488,13 +488,14 @@
 
     // ── Lang_i_elvis ─────────────────────────────────────────────────────────
     //
-    //   Central CM→backend bridge.  Stamps { doc, view, state } on every event
-    //   so Lang_dock_from_event can update dock.c.view/state in one place,
-    //   and the backend always knows which document the event came from.
-    //   Uses active_path (not a fixed prop) so the stamp stays correct
-    //   after a doc switch.
+    //   Central CM→backend bridge.  Stamps { dock, view, state } on every event
+    //   so Lang_dock_from_event can update dock.c.view/state in one place, and
+    //   handlers like e_Lang_set_doc know which dock they're updating.
+    //   `dock` is the dock path (string); `view` and `state` carry the CM objects.
+    //   state.doc (CM Text) is separate from the dock particle — `cmdoc` when
+    //   disambiguating in code; `state.doc` as CM's own property name.
     function Lang_i_elvis(view, method, sc) {
-        sc = { doc: active_path, view, state: view.state, ...(sc || {}) }
+        sc = { dock: active_path, view, state: view.state, ...(sc || {}) }
         H.i_elvisto('Lang/Lang', method, sc)
     }
 
@@ -865,7 +866,6 @@
         view?.destroy()
     })
 </script>
-CKM!E!
 {#if active_path}
 <div class="lte" class:lte-expanded={expanded}>
     {#if dock}

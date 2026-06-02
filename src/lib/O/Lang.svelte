@@ -360,69 +360,66 @@
 
     async e_Lang_editorBegins(A, w, e) {
         // Register view + state via the DRY router.
-        const doc = this.Lang_dock_from_event(w, e)
+        const dock = this.Lang_dock_from_event(w, e)
 
-        // CM StateEffects are per-view, so they live on doc.c — not w.c.
-        doc.c.addBookmarkMark    = e.sc.addBookmarkMark
-        doc.c.removeBookmarkMark = e.sc.removeBookmarkMark
-        doc.c.clearAllBookmarks  = e.sc.clearAllBookmarks
-        doc.c.saveEffect         = e.sc.saveEffect
+        // CM StateEffects are per-view, so they live on dock.c — not w.c.
+        dock.c.addBookmarkMark    = e.sc.addBookmarkMark
+        dock.c.removeBookmarkMark = e.sc.removeBookmarkMark
+        dock.c.clearAllBookmarks  = e.sc.clearAllBookmarks
+        dock.c.saveEffect         = e.sc.saveEffect
         // Pmirror graft marks live in their own StateField with parallel
         // effects.  LangGraft dispatches these to install/remove graft
         // marks as Pmirrors are minted and reaped.
-        doc.c.addGraftMark       = e.sc.addGraftMark
-        doc.c.removeGraftMark    = e.sc.removeGraftMark
-        doc.c.clearAllGrafts     = e.sc.clearAllGrafts
+        dock.c.addGraftMark       = e.sc.addGraftMark
+        dock.c.removeGraftMark    = e.sc.removeGraftMark
+        dock.c.clearAllGrafts     = e.sc.clearAllGrafts
 
-        // Only activate if we have a real path — empty string means the doc
+        // Only activate if we have a real path — empty string means the dock
         // isn't known yet and Lies hasn't fired e_Lang_open_dock yet.
-        // The $effect in Langui re-fires editorBegins once active_path is real.
         if (!w.c.active_dock_path && e.sc.dock) {
             this.Lang_set_active_dock(w, e.sc.dock as string)
         }
-        // §3d — the dock hold lives on %Languinio, not ave/%active_dock.  On the
-        // first open the hold may have been re-pointed before the doc particle
-        // existed; Lang_set_active_dock above (when it fired) already installs the
-        // real particle, so re-point here only if this is the active path and the
-        // hold is missing or stale.
-        if (w.c.active_dock_path === doc.sc.dock) {
+        // §3d — the dock hold lives on %Languinio.  On the first open the hold
+        // may have been re-pointed before the dock particle existed;
+        // Lang_set_active_dock above (when it fired) already installs the real
+        // particle, so re-point here only if active and the hold is missing or stale.
+        if (w.c.active_dock_path === dock.sc.dock) {
             const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
             const held = languinio?.o({ dock: 1 })[0] as TheC | undefined
-            if (languinio && held !== doc) {
+            if (languinio && held !== dock) {
                 languinio.r({ dock: 1 }, {}).then(() => {
-                    languinio.i(doc)
+                    languinio.i(dock)
                     languinio.bump_version()
                 })
             }
         }
 
-        w.i({ received: 1, editorBegins: 1, doc: doc.sc.dock })
-        console.log(`📐 editorBegins: path=${doc.sc.dock} active_dock_path=${w.c.active_dock_path} has_state=${!!doc.c.state} state_text_len=${(doc.c.state as any)?.doc?.toString()?.length ?? 'no-state'}`)
+        w.i({ received: 1, editorBegins: 1, doc: dock.sc.dock })
 
         // ── Bookmark position sync ────────────────────────────────────────────
         //
         // Langui passes `updates` (live CM positions) on every editorBegins,
-        // including after each doc switch.  Reconcile them against the doc
+        // including after each doc switch.  Reconcile them against the dock
         // particles so whatsthis() never starts from stale from/to values.
         //
         // Also re-dispatch addBookmarkMark for any bookmarks that exist in
-        // doc but are absent from the restored CM state (can happen when a
-        // bookmark was created programmatically and the doc was switched
+        // dock but are absent from the restored CM state (can happen when a
+        // bookmark was created programmatically and the dock was switched
         // before the StateField had a chance to capture it).
         const updates = e.sc.updates as Array<{id:string,from:number,to:number}> | undefined
         if (updates) {
             const seen = new Set(updates.map((u: any) => u.id))
             for (const u of updates) {
-                const bm = doc.o({ bookmark: u.id })[0] as TheC | undefined
+                const bm = dock.o({ bookmark: u.id })[0] as TheC | undefined
                 if (!bm) continue
                 if (bm.sc.from !== u.from || bm.sc.to !== u.to) {
                     bm.sc.from = u.from; bm.sc.to = u.to; bm.bump_version()
                 }
             }
-            // Re-apply bookmarks present in doc but absent from CM's live set.
-            for (const bm of doc.o({ bookmark: 1 }) as TheC[]) {
+            // Re-apply bookmarks present in dock but absent from CM's live set.
+            for (const bm of dock.o({ bookmark: 1 }) as TheC[]) {
                 if (!seen.has(bm.sc.bookmark as string) && !bm.sc.vanished) {
-                    doc.c.addBookmarkMark && doc.c.view?.dispatch({ effects: doc.c.addBookmarkMark.of({
+                    dock.c.addBookmarkMark && dock.c.view?.dispatch({ effects: dock.c.addBookmarkMark.of({
                         id:   bm.sc.bookmark as string,
                         from: bm.sc.from     as number,
                         to:   bm.sc.to       as number,
@@ -891,7 +888,6 @@
 
             const gen_path = languish.sc.gen_path as string | undefined
             const text     = (languish.c.open_text as string) ?? ''
-            console.log(`📝 text_loaded reqonce path=${path} text_len=${text.length} open_text_defined=${languish.c.open_text !== undefined}`)
 
             const docks = w.oai({docks: 1})
             const dock = docks.oai({dock: path})
@@ -952,10 +948,7 @@
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
             languinio?.oai({ spinner: 'compile' })
-            console.log(`🔨 compile reqonce path=${dock?.sc?.dock} has_state=${!!dock?.c?.state} state_text_len=${(dock?.c?.state as any)?.doc?.toString()?.length ?? 'no-state'}`)
             await this.Lang_compile_dock(w, dock)
-            const job_check = dock.o({ Compile: 1 })[0] as TheC | undefined
-            console.log(`🔨 compile_dock returned: has_Compile=${!!job_check} has_methods=${!!job_check?.oa({ methods: 1 })} has_error=${!!dock.oa({ compile_error: 1 })}`)
         }
 
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined

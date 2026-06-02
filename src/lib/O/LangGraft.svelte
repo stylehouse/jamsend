@@ -132,24 +132,77 @@
             return
         }
 
-        // The cursor's doc must match the active CM doc.  If they differ (e.g.
-        // the user clicked around while docs were still loading), don't graft
-        // Peerily's Points onto LangTiles.g's editor view.  Wipe and wait for
-        // the next tick where both converge.  The clone root carries no path of
-        // its own, so the source path comes from the live target via Lang_src_doc_path.
+        // The cursor's doc must match the active CM dock.
+        // src_path comes from the live %What via Lang_src_doc_path (first %Doc child);
+        // dock_path is dock.sc.dock.  If they diverge, wipe and wait.
+        const dock_path   = dock.sc.dock as string | undefined
         const src_path    = LE ? this.Lang_src_doc_path(LE.sc.target as TheC)
                                : (src_C.sc as any).path as string | undefined
-        const active_path = (dock.sc as any).doc   as string | undefined
-        if (src_path && active_path && src_path !== active_path) {
+        if (src_path && dock_path && src_path !== dock_path) {
             await this.Lang_wipe_pmirrors(dock)
             return
         }
 
-        // The point source: accepted working clones when pulled (U%unaccepted
-        // already filtered — screen, push and encode agree on what exists), the
-        // live source's %Points as the pre-pull fallback.
+        // ── Point collection from the Understanding ──────────────────────────
+        //
+        //   LE clones are the IMMEDIATE children of %What (one shallow level):
+        //     %Doc clone  — U sphere gates the whole doc; Points live in the LIVE
+        //                   %What tree (clone is too shallow to carry them).
+        //     %Point clone — direct Point on %What (no Doc wrapper, e.g. "loose ends");
+        //                   clone itself is the Point; use it directly.
+        //
+        //   We only graft Points that belong to the active dock's doc.  Points
+        //   from other Docs in the same %What are resolved on those docks when
+        //   those docks are active.
+        //
+        //   src_clone on each Pmirror is the DOC clone (not the live Point) so
+        //   req:Showing can reach the Doc-level U sphere (unshowing/class).
+        //   For direct %Point clones the clone IS the C with U; src_clone = itself.
+        //
+        //   Pre-pull fallback (no LE yet): read live Points off src_C directly.
         const clones: TheC[] | undefined = LE ? (H.LE_accepted_clones(LE) as TheC[]) : undefined
-        const points: TheC[] = clones ?? (src_C.o({ Point: 1 }) as TheC[])
+        let points:   TheC[]
+        let point_to_clone: Map<TheC, TheC>   // live Point → its governing Doc clone
+
+        if (clones && dock_path) {
+            const target = LE!.sc.target as TheC   // live %What
+            const live_pts: TheC[]       = []
+            const clone_map              = new Map<TheC, TheC>()
+
+            for (const clone of clones) {
+                if (clone.c.U?.sc.unaccepted) continue   // virtual deletion
+                const cs = clone.sc as any
+
+                if (cs.method !== undefined || cs.Point !== undefined) {
+                    // Direct %Point on %What — no Doc wrapper (e.g. "loose ends").
+                    // Include regardless of dock; the resolve step will find or miss.
+                    if (!clone.c.U?.sc.unshowing) {
+                        live_pts.push(clone)
+                        clone_map.set(clone, clone)   // src_clone = itself
+                    }
+                } else if (cs.path === dock_path) {
+                    // %Doc clone matching the active dock — descend into the live %What
+                    // to find the %Points for this doc (clones are too shallow).
+                    if (clone.c.U?.sc.unshowing) continue
+                    const live_doc = (target.o({ Doc: 1 }) as TheC[])
+                        .find(d => (d.sc as any).path === dock_path)
+                    if (live_doc) {
+                        for (const pt of live_doc.o({ Point: 1 }) as TheC[]) {
+                            live_pts.push(pt)
+                            clone_map.set(pt, clone)   // src_clone = the Doc clone (has U)
+                        }
+                    }
+                }
+                // %Doc clones for other paths are irrelevant to this dock — skip.
+            }
+            points       = live_pts
+            point_to_clone = clone_map
+        } else {
+            // Pre-pull: read directly off src_C.  No clone tree yet.
+            points       = (src_C.o({ Point: 1 }) as TheC[])
+            point_to_clone = new Map()
+        }
+
         // waft_key derives from whichever src we have — c.waft on the clone root
         // (Seem_clone_C) or the c.up chain on the original (Waft_link_up).
         const waft_key = H.waft_key_of(interest?.sc.src ?? src_C) ?? '?'
@@ -190,10 +243,6 @@
 
         await Pmirrors.replace({ Pmirror: 1 }, async () => {
             for (const pt of points) {
-                // One Pmirror per accepted clone — the Pmirror set tracks the
-                // *clone* set, not the show state.  unshowing is a fold applied
-                // by req:Showing (§3g), not a reason to omit the Pmirror; that
-                // keeps a fold-toggle off the graft cache key.
                 const spec = this.Lang_point_spec(pt)
                 const pmirror = Pmirrors.i({
                     Pmirror:  1,
@@ -201,13 +250,13 @@
                     spec:     spec ?? '',
                 }) as TheC
                 pmirror.sc.src_Point = pt
-                // src_clone: the working clone this Pmirror mirrors — req:Showing
-                // reads its c.U for fold / class without re-resolving by spec.
-                pmirror.c.src_clone = pt
-                // class hint from the clone's U node, for the CM decoration field
-                // (focus|caution|dim|ghost).  req:Showing re-reads it live, so a
-                // 4c ghost-stamp lands without a re-graft; this is just the seed.
-                const cls = pt.c.U?.sc.class as string | undefined
+                // src_clone: the Doc clone whose U sphere (unshowing/class) governs
+                // this Point.  For direct %Point clones (no Doc wrapper) the Point
+                // IS the clone; req:Showing reads .c.U from whichever it is.
+                const src_clone = point_to_clone.get(pt) ?? pt
+                pmirror.c.src_clone = src_clone
+                // class hint seeded from the governing clone's U node.
+                const cls = src_clone.c.U?.sc.class as string | undefined
                 if (cls) pmirror.sc.class = cls
                 else delete pmirror.sc.class
             }
