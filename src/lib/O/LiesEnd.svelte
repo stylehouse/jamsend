@@ -16,7 +16,9 @@
 //   it from push and encode.
 //
 //   %State on %LE is the synthesised view: armed/stale set by LE_pull,
-//   changey set by LE_encode_compare.  %push_dirty is the fault particle.
+//   changey set by LE_encode_compare.  The push fault is req:push/%dirty —
+//   owned by the push cluster, not %LE (so a push can be inspected and
+//   resumed independently of the Understanding).
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection } from "$lib/mostly/Selection.svelte"
@@ -127,9 +129,15 @@ await M.eatfunc({
     // ── Seem_clone_C ────────────────────────────────────────────────────────
     // Shallow copy of origin's C** children into a fresh root.  Root mirrors
     // the source %What so it stays inside enWaft's all_knowing protocol on push.
+    //
+    // The clone is structurally detached from the live Waft (navigation rides
+    // the original via Spotlight, so the clone has no internal up-links).  Its
+    // waft_key would therefore be unreachable, so we stamp the same c.waft
+    // back-ref Waft_link_up puts on originals — waft_key_of reads it directly.
     Seem_clone_C(origin: TheC): TheC {
         const src_What = origin.sc.C as TheC
         const root = _C({ ...src_What.sc })
+        root.c.waft = src_What.c.waft          // same field Waft_link_up stamps on originals
         for (const child of src_What.o({}) as TheC[]) root.i({ ...child.sc })
         return root
     },
@@ -160,7 +168,8 @@ await M.eatfunc({
         // keep State:1 as the identity key so o({State:1}) finds it.
         const state = LE.oai({ State: 1 })
         state.sc = { State: 1, armed: 1 }
-        for (const pd of LE.o({ push_dirty: 1 }) as TheC[]) LE.drop(pd)
+        // The push fault now lives at req:push/%dirty (the push cluster owns it),
+        // not on %LE — nothing to clear here.
     },
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
@@ -217,18 +226,21 @@ await M.eatfunc({
         return working.sc.C ? (working.sc.C as TheC).o({}) : []
     },
 
-    // ── LE_push ─────────────────────────────────────────────────────────────
+    // ── LE_replace_back ───────────────────────────────────────────────────────
     // Replace-back: put the accepted working clones back as target's children.
     // C.sc is clean (copied from source), so push is a straight copy — no strip.
     // A nested %What clone is shallow; resume_X hands its deep Points back.
     //
     // Clones with U%unaccepted are omitted — they are virtual deletions.
-    // Post-push encode-compare handles both cases cleanly: after a deletion push,
-    // origin's snap no longer has the absent child either, so the snaps match.
     //
     // (Replacing target's children, not target.sc — to rename the %What itself
     //  you'd replace from the What above it.)
-    async LE_push(LE: TheC) {
+    //
+    // This is the maz:2 body of the req:push cluster.  Encode-compare (maz:3
+    // gate) and the post-push verify pull + re-encode (maz:1) live on the
+    // cluster — LE_replace_back is the irreversible step in the middle, kept
+    // separate so the cluster can be resumed from verify on a "push anyway".
+    async LE_replace_back(LE: TheC) {
         const H = this as House
         const target = LE.sc.target as TheC
         const clones = H.LE_clones(LE)
@@ -239,18 +251,6 @@ await M.eatfunc({
                 target.i(C.sc)
             }
         })
-
-        // Post-push check: encode-compare is the right signal for drift.
-        // The structural goners/neus diff would fire on anything we just pushed
-        // (additions land as neus; unaccepted deletions land as goners) — false
-        // positives in both directions.  Encode-compare sees the same shallow
-        // extent on both sides so it's clean when the push landed cleanly.
-        // < push_dirty not yet a reqy fault C.
-        await H.LE_pull(LE)
-        const { dirty } = await H.LE_encode_compare(LE)
-        if (dirty) {
-            LE.i({ push_dirty: 1 })
-        }
     },
 
 //#endregion
@@ -380,6 +380,23 @@ await M.eatfunc({
 //
 //   LE.sc.target is the current %What being checked out.  All helpers take that
 //   as their entry point; NaviCado passes it in without knowing the tree shape.
+
+    // ── waft_key_of ────────────────────────────────────────────────────────
+    // Derive a waft_key from any src — %What, %Doc, or a detached clone root.
+    //   c.waft is stamped by Waft_link_up (originals) and Seem_clone_C (clones);
+    //   the c.up walk is the fallback for a not-yet-linked node.  This is the
+    //   key-level generalisation of LE_what_waft (which returns the particle);
+    //   the graft and req:acquire read the key through here so neither stores a
+    //   redundant src_Waft.
+    waft_key_of(src: TheC): string | undefined {
+        let node: TheC | undefined = src
+        while (node) {
+            if (node.c.waft) return (node.c.waft as TheC).sc.Waft as string
+            if ((node.sc as any).Waft !== undefined) return (node.sc as any).Waft as string
+            node = node.c.up as TheC | undefined
+        }
+        return undefined
+    },
 
     // ── LE_what_depth ──────────────────────────────────────────────────────
     // Depth of a %What in its Waft tree.  0 = direct child of Waft.

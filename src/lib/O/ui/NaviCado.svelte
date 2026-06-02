@@ -8,18 +8,19 @@
     //
     // ── Particle sources ──────────────────────────────────────────────────────
     //
-    //   LE               — w:Lies/{LE:1}; same-object hold via Languinio/%LE.
-    //   ave/%active_what — c.completion → req:completion; sc.playing:0|1.
+    //   LE             — via %Languinio/%Interest.c.LE (the clone's nav handle).
+    //                    LE.sc.target is the original %What for the ↑/←/→ walk.
+    //   %examining/req:timemachine — sc.playing:0|1; the playback engine + state.
     //
     // ── Buttons ───────────────────────────────────────────────────────────────
     //
     //   ↑  ←  →  — up / prev / next What via c.up chain
     //   ↘  ↓     — < Chunk 4c; ghosted
     //
-    //   Transport bar (when req:desire is active):
-    //   ‖/▶  — i_elvisto Lies_desire_pause / Lies_desire_play → drained by req:completion do_fn
+    //   Transport bar (when req:timemachine exists):
+    //   ‖/▶  — i_elvisto Lies_desire_pause / Lies_desire_play → drained by timemachine
     //   →    — i_elvisto Lies_desire_step  → same
-    //   Auto-advance: req:completion manages a 7s ttlilt; no UI-side timer here.
+    //   Auto-advance: timemachine manages the pacing; no UI-side timer here.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -45,12 +46,15 @@
     let has_up   = $derived(depth > 0)
 
     // ── transport ─────────────────────────────────────────────────────────────
-    //   Buttons fire i_elvisto; req:completion's do_fn drains the elvises.
+    //   The timemachine lives on %examining (§3f).  vers-chains keep the reads
+    //   reactive without $derived.by(void …) — vers is always ≥ 1 (truthy).
 
-    let active_what = $derived(H.ave.ob({ active_what: 1 })[0] as TheC | undefined)
-    let completion  = $derived.by(() => { void active_what?.vers; return active_what?.c.completion as TheC | undefined })
-    let is_playing  = $derived.by(() => { void completion?.vers;  return !!(completion?.sc.playing) })
-    let has_desire  = $derived(!!completion)
+    let examining  = $derived(H.ave.ob({ examining: 1 })[0] as TheC | undefined)
+    // req:timemachine is a child req of %examining; o({req:'timemachine'}).
+    let timemachine = $derived(examining && examining.vers
+        && examining.o({ req: 'timemachine' })[0] as TheC | undefined)
+    let is_playing = $derived(!!(timemachine && timemachine.vers && timemachine.sc.playing))
+    let has_desire = $derived(!!timemachine)
 
     // ── nav actions ──────────────────────────────────────────────────────────
 

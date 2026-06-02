@@ -11,22 +11,29 @@
     //
     // ── Responsibilities ─────────────────────────────────────────────────────
     //
-    //   - Cold-start placement: on the first tick where Wafts are loaded and
-    //     the cursor has no target, land on the first inhabited %What.
-    //   - e:Lies_active_doc_changed — fired directly by Lang_set_active_dock;
-    //     advances cursor when the foregrounded doc is in a loaded Waft and
-    //     the cursor is not already on a %What.  Replaces watch_c on %active_dock.
+    //   Every cursor gesture becomes a %want (Spotlight-Interest-trajectory §3e):
+    //   the handlers below emit i_elvisto(w, 'Lies_want', { src, kind }) instead
+    //   of setting the cursor in-place.  Lies' wants resolver (Lies_resolve_wants)
+    //   picks the newest and funnels it through Lies_i_Spotlight — the one seam.
+    //
+    //   - Cold-start placement: on the first tick where Wafts are loaded and the
+    //     cursor has no target, emit a cold want for the first inhabited %What.
+    //   - e:Lies_active_doc_changed — fired by Lang_set_active_dock; emits a doc
+    //     want when the foreground doc is in a loaded Waft and the cursor is not
+    //     already on a %What.
     //   - e:Lies_set_cursor — explicit cursor jump from Waft/DocRow click.
+    //   - e:Lies_cursor_next / e:Lies_cursor_what — NaviCado / → stepping.
     //   - Lies_find_doc_in_wafts — walk loaded Wafts by path.
-    //   - Lies_set_examining — atomic three-step: src, src_Waft, bump.
+    //   - Lies_i_Spotlight — the seam: stamp src + bump + fire Lang_workon_update.
     //
     // ── Particle ownership ───────────────────────────────────────────────────
     //
     //   %examining is Lies's.  LiesCurse never oai()s it — only reads it.
-    //   %examining/%Spotlight,1 is written only through Lies_set_examining,
-    //   so the three-step is always atomic.
+    //   %examining/%Spotlight,1 is written only through Lies_i_Spotlight (called
+    //   by the resolver), so the stamp is always atomic.
     //
-    //   - Waft_cursor_candidates / Waft_cursor_first / Waft_cursor_next: shared stepping helpers.
+    //   - Waft_cursor_candidates / Waft_cursor_first / Waft_cursor_next_candidate:
+    //     shared stepping helpers (finders; they emit wants, they don't set).
     //   - e_Lies_cursor_next (→ button): step cursor across all loaded Wafts.
     //   < Lies_accept_What_Point: echo accepted_push_id back to DocMinimap.
 
@@ -60,8 +67,9 @@
             if (first) {
                 const up  = first.doc.c.up as TheC | undefined
                 const src = (up && up.sc.Waft === undefined) ? up : first.doc
-                await H.Lies_roai_Open(w, src, { waft_key: first.waft_key })
-                await H.Lies_set_examining(examining, src, first.waft_key)
+                // §3e — emit a cold want; the resolver opens the doc (Furnishing)
+                // and lands the cursor through the one seam.
+                H.i_elvisto(w, 'Lies_want', { src, kind: 'cold' })
             }
         }
     },
@@ -102,8 +110,7 @@
         if (src === cur_src) return   // same-object guard
 
         console.log(`👁 active_doc_changed → Waft:${found.waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + path}`)
-        await H.Lies_roai_Open(w, src, { waft_key: found.waft_key })
-        await H.Lies_set_examining(examining, src, found.waft_key)
+        H.i_elvisto(w, 'Lies_want', { src, kind: 'doc' })
     },
 
     // ── e_Lies_set_cursor ─────────────────────────────────────────────────────
@@ -128,8 +135,7 @@
         const up  = doc_C.c.up as TheC | undefined
         const src = (up && up.sc.Waft === undefined) ? up : doc_C
 
-        await this.Lies_roai_Open(w, src, { waft_key })
-        await this.Lies_set_examining(examining, src, waft_key)
+        this.i_elvisto(w, 'Lies_want', { src, kind: 'click' })
     },
 
     // ── Lies_walk_docs ────────────────────────────────────────────────────────
@@ -198,14 +204,14 @@
 
     // ── Lies_i_Spotlight ──────────────────────────────────────────────────────
     //
-    //   Single seam for all cursor moves.  Stamps %Spotlight with the new
-    //   src and waft_key, bumps, then fires a generic e_Lang_workon_update so
-    //   w:Lang's req:workon cluster can reset and re-checkout.
+    //   Single seam for all cursor moves — now called only from the wants
+    //   resolver (§3e), never from a click handler directly.  Stamps %Spotlight
+    //   with the new src, bumps, then fires Lang_workon_update so w:Lang's
+    //   req:workon cluster resets and re-checkouts.
     //
-    //   Replaces the scattered spot.sc.src = … + bump + i_elvisto(Lang_LE_arm)
-    //   pattern.  src.c.up chain (stamped by Waft_link_up) reaches %Waft, so
-    //   Lang can traverse it without needing waft_key passed separately; we keep
-    //   src_Waft as a readable snap field nonetheless.
+    //   §3a: src_Waft drops.  The waft_key is derivable from src by waft_key_of
+    //   (c.waft / c.up), so nothing stores it; readers that needed it (req:acquire,
+    //   the graft) call waft_key_of instead.
     //
     //   Cold-start rehydration of sc.accepted / sc.showing from %Point children
     //   lives here too — only injected when accepted Points exist so a live
@@ -215,8 +221,7 @@
     async Lies_i_Spotlight(examining: TheC, src: TheC, waft_key: string) {
         const H = this as House
         const spot = examining.oai({ Spotlight: 1 })
-        spot.sc.src      = src
-        spot.sc.src_Waft = waft_key
+        spot.sc.src = src
 
         const pts      = src.o({ Point: 1 }) as TheC[]
         const accepted = pts.filter(pt => pt.sc.accepted)
@@ -234,24 +239,6 @@
 
         // Fire generic workon update — req:workon in w:Lang resets the cluster.
         H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
-    },
-
-    // ── Lies_set_examining ────────────────────────────────────────────────────
-    //
-    //   Install or update the %Spotlight,1 child on %examining by delegating
-    //   to Lies_i_Spotlight (the single seam for all cursor moves).
-    //
-    //   Using a child particle means:
-    //   - visible in the snap as a proper particle, not a buried ref in sc
-    //   - LangGraft's cache key tracks what_pts_C.version, not ex.version
-    //   - three fields (src, src_Waft, bump) never go half-done
-    //
-    //   When src is a %What: req:workon in w:Lang arms the Understanding.
-    //   When src is a %Doc (cold-start, e_Lies_active_doc_changed, e_Lies_set_cursor):
-    //   workon will find the path on sc.path and proceed to req:checkout.
-    //   < e_Lies_set_cursor should eventually deliver the parent %What.
-    async Lies_set_examining(examining: TheC, src: TheC, waft_key: string) {
-        await this.Lies_i_Spotlight(examining, src, waft_key)
     },
 
     // ── Waft_cursor_candidates ────────────────────────────────────────────────
@@ -281,12 +268,14 @@
     //
     //   Land the cursor on the first inhabited %What in `waft`.
     //   No-op when the cursor is already inside this Waft.
-    //   Called by req:desire's land step and by the acquire cold-start path.
+    //   Called by the timemachine's land step and the acquire cold-start path.
+    //   §3e: emits a want rather than setting the cursor directly.
     async Waft_cursor_first(w: TheC, waft: TheC, waft_key: string) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const cur_waft = examining.o({ Spotlight: 1 })[0]?.sc.src_Waft as string | undefined
+        const cur_src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const cur_waft = cur_src ? H.waft_key_of(cur_src) : undefined
         if (cur_waft === waft_key) return
 
         // Prefer an inhabited %What; fall back to first %Doc when the Waft is fresh.
@@ -303,36 +292,32 @@
             ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
             ?? waft.o({ Doc: 1 })[0] as TheC | undefined
         if (!first) return
-        await H.Lies_roai_Open(w, first, { waft_key })
-        await H.Lies_set_examining(examining, first, waft_key)
+        H.i_elvisto(w, 'Lies_want', { src: first, kind: 'cold' })
     },
 
-    // ── Waft_cursor_next ──────────────────────────────────────────────────────
+    // ── Waft_cursor_next_candidate ─────────────────────────────────────────────
     //
-    //   Step the cursor to the next inhabited %What inside `waft`.
-    //   Returns true when a step happened, false when already at the end
-    //   (caller can stop playing when false).
+    //   Pure finder: the next inhabited %What after the current cursor inside
+    //   `waft`, or undefined at the end of the trail.  Sets nothing — the
+    //   timemachine emits a %want with the result (§3f).
     //
-    //   Scoped to a single Waft — cross-Waft stepping lives in e_Lies_cursor_next.
+    //   Scoped to a single Waft — cross-Waft stepping is e_Lies_cursor_next.
     //   < sibling time-slice stepping (↘ / ↓) is Chunk 4c.
-    async Waft_cursor_next(w: TheC, waft: TheC, waft_key: string): Promise<boolean> {
+    Waft_cursor_next_candidate(w: TheC, waft: TheC): TheC | undefined {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return false
+        if (!examining) return undefined
 
         const all        = waft.o({ What: 1 }) as TheC[]
         const inhabited  = all.filter(wh => H.Lies_what_has_points(wh))
         const candidates = inhabited.length ? inhabited : all
-        if (!candidates.length) return false
+        if (!candidates.length) return undefined
 
         const cur_src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
         const cur_idx  = candidates.findIndex(c => c === cur_src)
         const next_idx = cur_idx + 1
-        if (next_idx >= candidates.length) return false
-
-        await H.Lies_roai_Open(w, candidates[next_idx], { waft_key })
-        await H.Lies_set_examining(examining, candidates[next_idx], waft_key)
-        return true
+        if (next_idx >= candidates.length) return undefined
+        return candidates[next_idx]
     },
 
     // ── e_Lies_cursor_next ────────────────────────────────────────────────────
@@ -359,10 +344,9 @@
             ?.sc.src as TheC | undefined
         const cur_idx  = candidates.findIndex(c => c.what === cur_src)
         const next_idx = (cur_idx + 1) % candidates.length
-        const { what, waft_key } = candidates[next_idx]
+        const { what } = candidates[next_idx]
 
-        await H.Lies_roai_Open(w, what, { waft_key })
-        await H.Lies_set_examining(examining, what, waft_key)
+        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'next' })
     },
 
     // ── e_Lies_cursor_what ────────────────────────────────────────────────────
@@ -383,28 +367,9 @@
         const what = e.sc.what as TheC | undefined
         if (!what) return
 
-        // Recover waft_key from the cached c.waft or fall back to a recursive scan.
-        const waft_C = what.c.waft as TheC | undefined
-        let waft_key = waft_C?.sc.Waft as string | undefined
-        if (!waft_key) {
-            const find_in = (container: TheC, key: string): string | undefined => {
-                for (const wh of container.o({ What: 1 }) as TheC[]) {
-                    if (wh === what) return key
-                    const found = find_in(wh, key)
-                    if (found) return found
-                }
-                return undefined
-            }
-            for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-                waft_key = find_in(waft, waft.sc.Waft as string)
-                if (waft_key) break
-            }
-        }
-        if (!waft_key) return
-
-        const doc_path = H.Lies_what_first_doc_path(what)
-        await H.Lies_roai_Open(w, what, { waft_key })
-        await H.Lies_set_examining(examining, what, waft_key)
+        // §3e — the resolver derives waft_key (waft_key_of) and opens the doc;
+        // we just emit the want.  NaviCado's ↑/←/→ already resolved the target.
+        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'next' })
     },
     //
     //   True when a %What carries at least one %Point anywhere in its subtree —

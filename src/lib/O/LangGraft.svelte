@@ -14,13 +14,20 @@
     //   different set of Points, %Pmirrors,1 .replace() builds a fresh set
     //   and pairs continuous ones up by identity sc, dropping the rest.
     //
-    // ── The cursor ───────────────────────────────────────────────────────────
+    // ── The cursor: two ends of the checkout ──────────────────────────────────
     //
-    //   ave/%examining / %Spotlight,1 carries the C to look at — a What
-    //   or a Doc within the Waft identified by sc.src_Waft.  Lang reads
-    //   %Point,N off that C directly.  %Spotlight is a child (not sc field)
-    //   so it shows up in the snap and bumps %examining on change.
-    //   The cursor is always within one Doc.
+    //   Spotlight-Interest-trajectory §3a splits the cursor into two ends:
+    //     %examining/%Spotlight (Lies)   — the original, live in the Waft;
+    //                                       owns navigation + glow.
+    //     %Languinio/%Interest  (Lang)   — the working clone root; owns render.
+    //   This graft is the render end: it reads the *accepted working clones*
+    //   (via Interest.c.LE → LE_accepted_clones), not the live source — so the
+    //   U sphere (class / unshowing / unaccepted) reaches CM.  The live source
+    //   is read only as a pre-pull fallback, before the first LE_pull mints the
+    //   clone tree.  The waft_key comes from waft_key_of (c.waft / c.up), so no
+    //   src_Waft is stored on the cursor.  The Pmirror identity key %src_Waft
+    //   is still stamped at graft time from waft_key_of (§3a) — this is an
+    //   internal Pmirror key, not a cursor field.
     //
     //   < if Something itself contains nested Whats with their own Points,
     //     the cursor is responsible for landing at the right level.
@@ -102,20 +109,25 @@
         const ave = H.oai_enroll(H, { watched: 'ave' })
         if (!dock) return
 
-        // cursor: ave/%examining/%Spotlight,1 carries the C whose %Point,N we graft
-        const ex           = ave.o({ examining: 1 })[0] as TheC | undefined
-        const what_pts_C   = ex?.o({ Spotlight: 1 })[0] as TheC | undefined
-        if (!what_pts_C) {
-            // nothing cursored — wipe Pmirrors for this doc
-            await this.Lang_wipe_pmirrors(dock)
-            return
-        }
+        // The two ends of the checkout (Spotlight-Interest-trajectory §3a):
+        //   Spotlight (original, Lies side) owns navigation + glow;
+        //   Interest  (clone, Lang side)    owns render + edit — this graft.
+        // We render what Lang *understands* — the working clone tree — so the U
+        // sphere (unshowing / class / unaccepted) is honoured.  The live source
+        // is read only as a pre-pull fallback, before the first LE_pull mints
+        // the clones (§3c).
+        const languinio = w.o({ Languinio: 1 })[0]      as TheC | undefined
+        const interest  = languinio?.o({ Interest: 1 })[0] as TheC | undefined
+        const LE         = interest?.c.LE as TheC | undefined
 
-        // Points are read directly off the cursor.  No dive — the cursor's
-        // job is to land at the right Something within a Waft.
-        const src_C     = what_pts_C.sc.src as TheC | undefined
+        // src_C: the live source — Interest.src (clone root) when armed, else the
+        // Spotlight's src.  Used for the doc-match guard and the pre-pull point
+        // fallback.  No cursor at all → nothing to graft.
+        const ex         = ave.o({ examining: 1 })[0]      as TheC | undefined
+        const spot       = ex?.o({ Spotlight: 1 })[0]      as TheC | undefined
+        const src_C      = (interest?.sc.src as TheC | undefined) ?? (spot?.sc.src as TheC | undefined)
         if (!src_C) {
-            console.warn(`🔩 Lang_graft_points_once: Spotlight has no src — cursor half-set?`)
+            // nothing cursored — wipe Pmirrors for this doc
             await this.Lang_wipe_pmirrors(dock)
             return
         }
@@ -123,17 +135,24 @@
         // The cursor's doc must match the active CM doc.  If they differ (e.g.
         // the user clicked around while docs were still loading), don't graft
         // Peerily's Points onto LangTiles.g's editor view.  Wipe and wait for
-        // the next tick where both converge.
-        const src_path    = (src_C.sc as any).path as string | undefined
+        // the next tick where both converge.  The clone root carries no path of
+        // its own, so the source path comes from the live target via Lang_src_doc_path.
+        const src_path    = LE ? this.Lang_src_doc_path(LE.sc.target as TheC)
+                               : (src_C.sc as any).path as string | undefined
         const active_path = (dock.sc as any).doc   as string | undefined
         if (src_path && active_path && src_path !== active_path) {
             await this.Lang_wipe_pmirrors(dock)
             return
         }
 
-        const points: TheC[] = src_C.o({ Point: 1 }) as TheC[]
-        // src_Waft is stored on the %Spotlight child alongside src
-        const waft_key = (what_pts_C.sc.src_Waft as string | undefined) ?? '?'
+        // The point source: accepted working clones when pulled (U%unaccepted
+        // already filtered — screen, push and encode agree on what exists), the
+        // live source's %Points as the pre-pull fallback.
+        const clones: TheC[] | undefined = LE ? (H.LE_accepted_clones(LE) as TheC[]) : undefined
+        const points: TheC[] = clones ?? (src_C.o({ Point: 1 }) as TheC[])
+        // waft_key derives from whichever src we have — c.waft on the clone root
+        // (Seem_clone_C) or the c.up chain on the original (Waft_link_up).
+        const waft_key = H.waft_key_of(interest?.sc.src ?? src_C) ?? '?'
 
         // compile output for resolution — %methods lives directly on %Compile,
         // whether or not an %Output child exists (soft-compiled docs never get Output).
@@ -146,28 +165,35 @@
         // < could graft to first call-site if no def|region matches in future
 
         // cache guard: same fingerprint → identical work, nothing to do.
-        // Different point set or different compile → re-graft.  Cursor
-        // version covers cursor jumps; dock.version covers user-bookmark
-        // and Lies-side activity that doesn't affect grafts but is cheap
-        // to include.
+        // Different point set or different compile → re-graft.  working.version
+        // covers clone-set edits (add/drop/rename) that change which Pmirrors
+        // exist.  A U-edit (unshowing / class toggle) does NOT bump working.version
+        // by design — that path is req:Showing (§3g), which is cache-key-independent,
+        // so a fold-toggle never needlessly rebuilds Pmirror identity.
+        const working   = LE?.o({ Seem: 'working' })[0] as TheC | undefined
         const fingerprint = points
             .map(pt => this.Lang_point_spec(pt) ?? '')
             .join(';')
-        // what_pts_C.version bumps when Lies_set_examining installs a new cursor
-        const cache_key = `${dock.version}:${job?.version ?? 0}:${what_pts_C?.version ?? 0}:${waft_key}|${fingerprint}`
+        // spot.version bumps when the cursor is re-resolved onto a new Spotlight
+        const cache_key = `${dock.version}:${job?.version ?? 0}:${spot?.version ?? 0}:${working?.version ?? 0}:${waft_key}|${fingerprint}`
         if (dock.c.graft_cache_key === cache_key) return
         dock.c.graft_cache_key = cache_key
 
-        // Inside replace() we just materialise Pmirrors with their identity
-        // sc + the volatile %src_Point ref.  The graft child (if any from
-        // before) survives via resume_X for paired Pmirrors.  Goners are
-        // handled in pairs_fn — their bookmark_id is still readable on the
-        // before-side particle's graft child.
+        // Inside replace() we materialise Pmirrors with their identity sc, the
+        // volatile %src_Point ref, and (§3g) a c.src_clone back-ref so req:Showing
+        // can reach each clone's U node.  The graft child (if any from before)
+        // survives via resume_X for paired Pmirrors.  Goners are handled in
+        // pairs_fn — their bookmark_id is still readable on the before-side
+        // particle's graft child.
         const gone_bm_ids: string[] = []
         const Pmirrors = dock.oai({ Pmirrors: 1 })
 
         await Pmirrors.replace({ Pmirror: 1 }, async () => {
             for (const pt of points) {
+                // One Pmirror per accepted clone — the Pmirror set tracks the
+                // *clone* set, not the show state.  unshowing is a fold applied
+                // by req:Showing (§3g), not a reason to omit the Pmirror; that
+                // keeps a fold-toggle off the graft cache key.
                 const spec = this.Lang_point_spec(pt)
                 const pmirror = Pmirrors.i({
                     Pmirror:  1,
@@ -175,6 +201,15 @@
                     spec:     spec ?? '',
                 }) as TheC
                 pmirror.sc.src_Point = pt
+                // src_clone: the working clone this Pmirror mirrors — req:Showing
+                // reads its c.U for fold / class without re-resolving by spec.
+                pmirror.c.src_clone = pt
+                // class hint from the clone's U node, for the CM decoration field
+                // (focus|caution|dim|ghost).  req:Showing re-reads it live, so a
+                // 4c ghost-stamp lands without a re-graft; this is just the seed.
+                const cls = pt.c.U?.sc.class as string | undefined
+                if (cls) pmirror.sc.class = cls
+                else delete pmirror.sc.class
             }
         }, {
             pairs_fn: async (a: TheC | null, b: TheC | null) => {
@@ -367,9 +402,10 @@
     //   as e_Lang_update_bookmarks.
     Lang_update_grafts(w: TheC, updates: Array<{ id: string, from: number, to: number }>) {
         const H = this as House
-        const ave = H.oai_enroll(H, { watched: 'ave' })
-        const sig = ave.o({ active_dock: 1 })[0] as TheC | undefined
-        const dock = sig?.c.doc as TheC | undefined
+        // §3d: the foreground-doc truth is %Languinio/%dock (a same-object hold),
+        // not ave/%active_dock (removed).  Lang_set_active_dock keeps it current.
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        const dock = languinio?.o({ dock: 1 })[0] as TheC | undefined
         if (!dock) return
         const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
         if (!Pmirrors) return
@@ -392,6 +428,67 @@
                 //   is what matters for rendering
                 graft.bump_version()
             }
+        }
+    },
+
+    // ── Lang_show_pmirrors ───────────────────────────────────────────────
+    //
+    //   The body of the open-ended req:Showing tail (§3g).  Walks the existing
+    //   Pmirrors on a dock and dispatches CM fold / decoration effects from each
+    //   clone's current U node — without touching the Pmirror set.  This is the
+    //   cache-key-independent path the graft (§3c) relies on: a fold-toggle
+    //   (clone.c.U.unshowing) or a class change does not bump working.version, so
+    //   the graft never re-runs for it; Showing alone repaints.
+    //
+    //   Runs after graft has minted the Pmirrors and on every think thereafter
+    //   (cheap — it short-circuits when the U-fingerprint is unchanged).  The
+    //   feebly_ponder() that LE_drop_clone / e_Lang_LE_edit already fire re-enters
+    //   it directly; no dirty flag.
+    //
+    //   < the CM decoration field (pointDecorationField / setPointDecorationsEffect)
+    //     and the squish fold widget are Waft_spec deliverables that live in
+    //     Langui / LangRegions.  Showing dispatches through dock.c.setPointDecorations
+    //     and dock.c.setPointFolds when present; until Langui wires them this pass
+    //     computes the intent and is otherwise a no-op (the graft marks still paint
+    //     the un-decorated positions).
+    Lang_show_pmirrors(w: TheC, dock: TheC) {
+        const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
+        if (!Pmirrors) return
+
+        // Decoration list (showing Pmirrors with a resolved graft position) and
+        // fold list (unshowing Pmirrors squished out of the view).
+        const decos: Array<{ id: string, from: number, to: number, cls: string }> = []
+        const folds: Array<{ id: string, from: number, to: number }> = []
+        // Fingerprint of the U-state we'd paint — lets us skip a redundant dispatch.
+        let fp = ''
+
+        for (const pmirror of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
+            const graft = pmirror.o({ graft: 1 })[0] as TheC | undefined
+            if (!graft) continue   // unresolved Pmirror — nothing to decorate
+            const id   = graft.sc.bookmark_id as string
+            const from = graft.sc.from as number
+            const to   = graft.sc.to   as number
+
+            const u    = (pmirror.c.src_clone as TheC | undefined)?.c.U as TheC | undefined
+            const unshowing = !!u?.sc.unshowing
+            const cls       = (u?.sc.class as string | undefined) ?? ''
+
+            fp += `${id}:${unshowing ? 'x' : cls || '·'};`
+            if (unshowing) folds.push({ id, from, to })
+            else           decos.push({ id, from, to, cls })
+        }
+
+        if (dock.c.show_fp === fp) return   // U-state unchanged since last paint
+        dock.c.show_fp = fp
+
+        // Dispatch through whatever Langui has wired.  Both are full-replace
+        // effects (Waft_spec: setPointDecorationsEffect / a fold effect), so we
+        // hand the complete current set each time.
+        if (dock.c.setPointDecorations && dock.c.view) {
+            dock.c.view.dispatch({ effects: dock.c.setPointDecorations.of(decos) })
+        }
+        if (dock.c.setPointFolds && dock.c.view) {
+            dock.c.view.dispatch({ effects: dock.c.setPointFolds.of(folds) })
         }
     },
 

@@ -66,36 +66,39 @@
     //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
-    //   w/{examining:1,active_path?}            — reactive signal in watched:ave;
-    //                                            bumps when w changes or active_dock changes,
-    //                                            and when Lies_set_examining is called.
-    //                                            examining.c.w = w (back-ref for Liesui).
-    //                                            examining.sc.active_path mirrors ave/{active_dock:1}.
-    //     /{Spotlight:1}                         — child of examining; Lies_set_examining
-    //                                              installs/updates it via examining.oai() (sync).
-    //                                              sc.src     : $C  the %Doc,path whose %Point,N are grafted
-    //                                              sc.src_Waft: str  its containing Waft key
+    //   w/{examining:1}                         — reactive signal in watched:ave;
+    //                                            bumps when w changes and when the
+    //                                            cursor moves.  examining.c.w = w.
+    //     /{Spotlight:1}                         — child of examining; written only through
+    //                                              Lies_i_Spotlight (the one seam).
+    //                                              sc.src     : $C  the %What or %Doc particle
+    //                                              sc.src_Waft: gone — waft_key_of(src) replaces it
+    //     /req:timemachine                        — the playback engine (sc.playing:0|1);
+    //                                              seeded by req:desire/req:acquire (§3f)
+    //   w/{req:'wants'}                         — cursor-intent accumulator (§3e)
+    //     /{want:$ts}                              c.src → wanted C; sc.kind: click|drag|step|next|cold
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
-    //     /{Doc:1,path}                        — persisted doc entry (no codetype stored)
+    //     /{Doc:1,path}                        — persisted doc entry
     //       /{Point:1,method}                  — individual point
     //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
     //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
     //     sc.active = 1                        — session-only; never written to snap
-    //   w/{req:'Open',src}             — demand-loaded doc; keyed by src C ref
+    //   w/{req:'Open',src}             — demand-loaded doc (legacy; Furnishing is the new path)
     //                                    sc.waft_key, sc.new?
     //                                    → sc.loaded=1 on completion
     //                                    → sc.not_found=1 when file absent
+    //   w/{req:'Furnishing',path}      — doc-open RPC courier to Lang (§3i)
+    //                                    c.src → %What or %Doc; carries path/text/gen_path
     //   w/{loaded_doc:1,path,gen_path} — after load + Lang handoff
     //   w/{compile_pending:1,path,...}         — waiting for gen/ write
     //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
     //   w/{Opt:1}                              — options container
     //
-    //   w/{req:'desire'}                       — the will to play; finds Waft via req:acquire
-    //     /{req:'acquire'}                       one-shot lock; inserts desire/{Waft:$waftpath}
+    //   w/{req:'desire'}                       — the Waft lock (§3f; thinned)
+    //     /{req:'acquire',maz:9}                 one-shot lock; inserts desire/{Waft:$waftpath}
     //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
-    //     /{req:'completion',playing:0|1}        open-ended; drains play/pause/step elvises each tick
-    //                                            7s ttlilt drives auto-advance when playing:1
+    //     // req:completion → req:timemachine on %examining (§3f)
     //     /{req:'git'}                           Waftlet accumulator; commits patches
     //     // < req:git do_fn — Chunk 4b+
     //
@@ -176,21 +179,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────
     //   Land cursor on the first navigable What in `waft`.
     //   No-op when the cursor is already inside this Waft.
+    //   (Stepping the cursor forward is now Lies_timemachine_step, which emits a
+    //    %want rather than setting the cursor directly — §3e/§3f.)
     async Lies_desire_land_cursor(w: TheC, waft: TheC, waft_key: string) {
         await (this as House).Waft_cursor_first(w, waft, waft_key)
-    },
-
-    // ── Lies_desire_step_once ─────────────────────────────────────────────────
-    //   Advance cursor to the next candidate What in the acquired Waft.
-    //   Returns true when a step happened, false at the end (pauses playing).
-    async Lies_desire_step_once(w: TheC, desire: TheC, waft: TheC, waft_key: string, completion: TheC): Promise<boolean> {
-        const H = this as House
-        const stepped = await H.Waft_cursor_next(w, waft, waft_key)
-        if (!stepped) {
-            completion.sc.playing = 0
-            ;(w.o({ active_what: 1 })[0] as TheC | undefined)?.bump_version()
-        }
-        return stepped
     },
 
     // ── e_Lies_now_Waft ────────────────────────────────────────────────
@@ -366,11 +358,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             w.c.Lies_setup = true
             ave.i(examining)
             examining.c.w = w   // back-ref so Liesui can reach w from examining
-            // %active_what: reactive signal for NaviCado's transport bar.
-            // c.completion holds the live req:completion particle once req:desire acquires.
-            const active_what = w.oai({ active_what: 1 })
-            ave.i(active_what)
-            active_what.c.w = w
+            // §3d: %active_what removed — the genuine "active What" was always
+            // %Spotlight.sc.src.  NaviCado's transport handle is now
+            // %examining/req:timemachine (§3f), seeded by req:acquire.
             w.oai({ Opt: 1 })
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
@@ -602,78 +592,239 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // to LiesStore_run Phase 1 after the wwrite finishes.
         }
 
-        // ── req:desire — the will to play through the loaded Waft ─────────────
+        // ── req:desire — the Waft lock + the timemachine seed (§3f) ───────────
         //
-        //   One %req:desire per w:Lies; finds its Waft via req:acquire.
-        //   Invisible to o({Waft:1}) — mainkey is req, not Waft.
+        //   desire has thinned: it holds the Waft lock and seeds the playback
+        //   engine, nothing more.  The engine itself (req:timemachine) moved onto
+        //   %examining — it steps the What tree through time, so it belongs with
+        //   the cursor, and NaviCado shows the transport when it exists.
         //
         //   w/{req:'desire'}
-        //     /{req:'acquire'}              one-shot Waft lock; inserts desire/{Waft:$waftpath}
+        //     /{req:'acquire', maz:9}       the gate — above everything; holds (on
+        //                                   think, not ttlilt) until a Waft is
+        //                                   present.  On acquire: lock /{Waft,key}
+        //                                   and seed %examining/req:timemachine.
         //     /{Waft:$waftpath}             correlates to w/{Waft:$waftpath}
-        //     /{req:'completion',playing}   open-ended; drains play/pause/step elvises each tick
-        //     /{req:'git'}                  Waftlet accumulator; patches via LE_push
         //
-        //   < req:git do_fn — flush Waftlets to disk / remote          Chunk 4b+
+        //   < desire is now just the lock + seed; it could collapse further
+        //     (acquire moves to w:Lies, the wrapper drops).  Left as a wrapper so
+        //     the Waft lock has a visible home in the snap.
         const rq = H.reqy(w)
         ;(await rq.doai({ req: 'desire' }))?.(async (desire: TheC) => {
             const rq = H.reqy(desire)
 
-            // req:acquire — lock onto the active Waft.
-            //   sc.active → cursor's src_Waft → first loaded Waft.
-            //   Stays unfinished until a Waft is present; retries next tick.
-            ;(await rq.doai({ req: 'acquire' }))?.(async (acquire: TheC) => {
+            // req:acquire — lock onto the active Waft.  maz:9 keeps it above
+            //   everything so the playback engine never runs before a lock.
+            //   sc.active → cursor's waft_key → first loaded Waft.
+            ;(await rq.doai({ req: 'acquire', maz: 9 }))?.(async (acquire: TheC) => {
                 const examining = w.o({ examining: 1 })[0] as TheC | undefined
-                const src_Waft  = examining?.o({ Spotlight: 1 })[0]?.sc.src_Waft as string | undefined
+                const cur_src   = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+                const cur_waft  = cur_src ? H.waft_key_of(cur_src) : undefined
                 const waft = (w.o({ Waft: 1 }) as TheC[]).find(wf => wf.sc.active)
-                    ?? (src_Waft ? w.o({ Waft: src_Waft })[0] as TheC | undefined : undefined)
+                    ?? (cur_waft ? w.o({ Waft: cur_waft })[0] as TheC | undefined : undefined)
                     ?? w.o({ Waft: 1 })[0] as TheC | undefined
                 if (!waft) return   // no Waft yet — stall, retry next tick
                 desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
+
+                // Seed the playback engine on %examining once acquired.  Open-ended
+                // (playing:0); its do_fn drains play/pause/step and auto-advances.
+                if (examining) {
+                    const eq = H.reqy(examining)
+                    ;(await eq.doai({ req: 'timemachine' }, { playing: 0 }))?.(
+                        async (tm: TheC) => H.Lies_timemachine_do(w, desire, tm))
+                }
                 rq.finish(acquire)
             })
-
-            // req:completion — open-ended; drains play/pause/step elvises on every think.
-            ;(await rq.doai({ req: 'completion' }, { playing: 0 }))?.(async (completion: TheC) => {
-                const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
-                if (!waft_node) return   // acquire not yet done — retry next tick
-
-                const waft     = waft_node.sc.src  as TheC
-                const waft_key = waft_node.sc.Waft as string
-
-                // Wire completion into ave/%active_what once.
-                const active_what = w.o({ active_what: 1 })[0] as TheC | undefined
-                if (active_what && active_what.c.completion !== completion) {
-                    active_what.c.completion = completion
-                    active_what.bump_version()
-                }
-
-                // Land cursor on first candidate when not yet inside this Waft.
-                await H.Lies_desire_land_cursor(w, waft, waft_key)
-
-                // Drain play / pause gestures.
-                for (const _e of H.o_elvis(w, 'Lies_desire_play'))  completion.sc.playing = 1
-                for (const _e of H.o_elvis(w, 'Lies_desire_pause')) completion.sc.playing = 0
-
-                // Drain manual step gestures.
-                for (const _e of H.o_elvis(w, 'Lies_desire_step')) {
-                    await H.Lies_desire_step_once(w, desire, waft, waft_key, completion)
-                }
-
-                // Auto-advance: when playing, step on each think.
-                // < automate the slideshow with scheduling here
-                if (completion.sc.playing) {
-                    await H.Lies_desire_step_once(w, desire, waft, waft_key, completion)
-                }
-                // completion stays open — no finish() here.
-            })
-
-            // req:git — Waftlet accumulator; /%Waftlet children pile up here.
-            // < do_fn: flush committed Waftlets to disk/remote; drop flushed.
-            await rq.doai({ req: 'git' })
 
             await rq.do()
         })
         await rq.do()
+
+        // Drive %examining's timemachine (it lives on examining, not desire).
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (examining) await H.reqy(examining).do()
+
+        // req:git — Waftlet accumulator; lives at w:Lies/req:git now (§3h), the
+        //   push home, desire-independent.  /%Waftlet children pile up here.
+        //   < do_fn: flush committed Waftlets to disk/remote; drop flushed.
+        await H.reqy(w).doai({ req: 'git' })
+
+        // ── req:wants — the cursor-intent accumulator (§3e) ───────────────────
+        //
+        //   Every gesture (click, doc-change, step, cold-start) is appended here
+        //   as a %want,$ts via e_Lies_want.  The resolver picks the newest and
+        //   funnels it through Lies_i_Spotlight — so the cursor stops being
+        //   "whoever clicked last in-place" and becomes the output of a process
+        //   that can later weigh more than one source of intent.
+        //
+        //   w/{req:'wants'}            open-ended; one do_fn pass per think
+        //     /{want:$ts}              c.src → wanted C; sc.kind: click|drag|step|next|cold
+        //
+        //   < older %want pile up as history — drag-drop reorder, multi-select,
+        //     undo, "where was I" read them later.  Today: kept, never pruned.
+        //   < the resolver is the one place to weigh a Lies want against what Lang
+        //     is obsessively working on (a Lang-side want crossing in).  Newest wins.
+        ;(await H.reqy(w).doai({ req: 'wants' }))?.(async (_wants: TheC) => { /* open-ended */ })
+        await H.Lies_resolve_wants(w)
+
+        // ── req:Furnishing — doc-open as an RPC (§3i) ─────────────────────────
+        //   One per path the cursor wants opened; seeded by the wants resolver
+        //   when the new Spotlight has a doc path.  Desire-independent — a cursor
+        //   can land on a doc with no playback.  Its do_fn wreads the text then
+        //   couriers the req to Lang via i_elvis_req('Lang_open_dock').
+        await H.reqy(w).do()
+    },
+
+    // ── Lies_resolve_wants ──────────────────────────────────────────────────────
+    //
+    //   The wants resolver (§3e): newest %want wins.  Resolves it onto the
+    //   Spotlight via the single Lies_i_Spotlight seam, opens its doc through
+    //   req:Furnishing, and marks it resolved so a re-think is idempotent.
+    async Lies_resolve_wants(w: TheC) {
+        const H = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const wants = H.reqy(w).o({ req: 'wants' })[0] as TheC | undefined
+        if (!wants) return
+
+        // newest by $ts; want mainkey is the timestamp serial.
+        const all = wants.o({ want: 1 }) as TheC[]
+        if (!all.length) return
+        const newest = all.reduce((a, b) =>
+            (b.sc.want as number) > (a.sc.want as number) ? b : a)
+        if (newest.sc.resolved) return   // already the live cursor
+
+        const src      = newest.c.src as TheC | undefined
+        if (!src) { newest.sc.resolved = 1; return }
+        const waft_key = H.waft_key_of(src) ?? '?'
+
+        // Mark this the resolved want; clear the flag on any prior (so "where was
+        // I" history stays, but only one is live).
+        for (const wnt of all) {
+            if (wnt === newest) wnt.sc.resolved = 1
+            else delete wnt.sc.resolved
+        }
+
+        // Seed Furnishing for the doc path (if any) before the cursor lands, so
+        // Lang's furnish phase finds the dock arriving.
+        const doc_path = H.Lies_src_doc_path(src)
+        if (doc_path) await H.Lies_roai_Furnishing(w, src, doc_path)
+
+        // The one seam.  Sets %Spotlight + fires Lang_workon_update.
+        await H.Lies_i_Spotlight(examining, src, waft_key)
+    },
+
+    // ── Lies_src_doc_path ─────────────────────────────────────────────────────
+    //   Derive the doc path from a src that may be a %What or %Doc — mirrors
+    //   Lang_src_doc_path on the Lies side (the Waft tree shape lives here).
+    Lies_src_doc_path(src: TheC): string | undefined {
+        const sc = src.sc as any
+        if (sc.path) return sc.path as string
+        const doc = (src.o({ Doc: 1 }) as TheC[])[0]
+        return doc?.sc.path as string | undefined
+    },
+
+    // ── Lies_roai_Furnishing ────────────────────────────────────────────────────
+    //   Find-or-create the req:Furnishing for a path.  The req IS the courier
+    //   (i_elvis_req carries it to Lang); req_sent:1 gates the double-fire and
+    //   finish(reply) lands req.sc.finished + pings Lies back with reqturn:1.
+    Lies_roai_Furnishing(w: TheC, src: TheC, path: string): Promise<TheC> {
+        const H = this as House
+        const rqg = H.reqy(w)
+        // A finished Furnishing for this path: drop so a re-open re-fires fresh.
+        for (const old of rqg.o({ req: 'Furnishing', path }) as TheC[]) {
+            if (old.sc.finished) w.drop(old)
+        }
+        return rqg.roai({ req: 'Furnishing', path }).then((req: TheC) => {
+            req.c.src = src
+            return req
+        })
+    },
+
+    // ── req_Furnishing ──────────────────────────────────────────────────────────
+    //   do_fn for /req:Furnishing,path.  Fires each think until finished:
+    //     1. no text yet  → wread it (a req:Open child); ttlilt as a backstop.
+    //     2. text present → courier this req to Lang via i_elvis_req.  The req IS
+    //        the req; req_sent:1 gates the double-fire.  When Lang finish()es it,
+    //        reqturn:1 pings us and req.sc.finished lands — we close out.
+    async req_Furnishing(req: TheC, q: any) {
+        const H = this as House
+        const w   = req.c.up as TheC
+        const path = req.sc.path as string
+        if (!path) { q.finish(req); return }
+
+        if (req.sc.text === undefined) {
+            const read = await H.LiesStore_read(w, path)
+            if (!read.sc.finished) {
+                H.i_req_ttlilt(req, 0.4, { waiting: 'wread' })
+                return
+            }
+            const text: string = read.sc.reply?.content ?? ''
+            req.sc.text = text
+            const gen_path = H.Lies_gen_path(path)
+            if (gen_path) req.sc.gen_path = gen_path
+            // Record loaded_doc so Lies_sync_waft_docs and source-write checks see the path.
+            const ld = w.oai({ loaded_doc: 1, path, gen_path })
+            if (text) ld.sc.base_dige = await dig(text)
+            console.log(`🗂 Furnishing loaded: ${path}${gen_path ? ` → ${gen_path}` : ''}`)
+        }
+
+        // Courier the req to Lang (i_elvis_req stamps req_sent:1 on first fire;
+        // returns true once Lang finish()es it via reqturn:1).
+        if (H.i_elvis_req(w, 'Lang/Lang', 'Lang_open_dock', { req })) {
+            q.finish(req)
+        }
+    },
+
+    // ── Lies_timemachine_do ────────────────────────────────────────────────────
+    //
+    //   do_fn for %examining/req:timemachine (§3f).  The playback engine + state,
+    //   ave-visible via %examining.  Drains play / pause / step gestures and
+    //   auto-advances when playing.  Auto-advance emits a %want (kind:'step', §3e)
+    //   rather than stepping the cursor directly — the wants resolver funnels it
+    //   through the one Spotlight seam.
+    async Lies_timemachine_do(w: TheC, desire: TheC, tm: TheC) {
+        const H = this as House
+        const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
+        if (!waft_node) return   // acquire not yet done — retry next tick
+
+        const waft     = waft_node.sc.src  as TheC
+        const waft_key = waft_node.sc.Waft as string
+
+        // Land cursor on first candidate when not yet inside this Waft.
+        await H.Lies_desire_land_cursor(w, waft, waft_key)
+
+        // Drain play / pause gestures.
+        for (const _e of H.o_elvis(w, 'Lies_desire_play'))  tm.sc.playing = 1
+        for (const _e of H.o_elvis(w, 'Lies_desire_pause')) tm.sc.playing = 0
+
+        // Drain manual step gestures.
+        for (const _e of H.o_elvis(w, 'Lies_desire_step')) {
+            await H.Lies_timemachine_step(w, waft, waft_key, tm)
+        }
+
+        // Auto-advance: when playing, step on each think.
+        // < automate the slideshow with scheduling here (a ttlilt-paced advance).
+        if (tm.sc.playing) {
+            await H.Lies_timemachine_step(w, waft, waft_key, tm)
+        }
+        tm.bump_version()   // NaviCado reads sc.playing off it
+        // timemachine stays open — no finish() here.
+    },
+
+    // ── Lies_timemachine_step ────────────────────────────────────────────────
+    //   Advance to the next candidate What.  Emits a %want (kind:'step') so the
+    //   resolver moves the cursor; pauses playback at the end of the trail.
+    async Lies_timemachine_step(w: TheC, waft: TheC, waft_key: string, tm: TheC) {
+        const H = this as House
+        const next = H.Waft_cursor_next_candidate(w, waft)
+        if (!next) {
+            tm.sc.playing = 0
+            tm.bump_version()
+            return false
+        }
+        H.i_elvisto(w, 'Lies_want', { src: next, kind: 'step' })
+        return true
     },
 
 //#region helpers
@@ -765,11 +916,36 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
     },
 
+    // ── e_Lies_want ───────────────────────────────────────────────────────────
+    //
+    //   The gesture sink (§3e).  Every cursor handler emits Lies_want{src,kind}
+    //   instead of calling the cursor seam directly; this appends a %want,$ts
+    //   under req:wants.  The resolver (Lies_resolve_wants, run each think) picks
+    //   the newest and funnels it through the one Lies_i_Spotlight seam.
+    //
+    //   e.sc: { src: TheC, kind?: string }   kind ∈ click|drag|step|next|cold
+    async e_Lies_want(A: TheC, w: TheC, e: TheC) {
+        const H   = this as House
+        const src = e.sc.src as TheC | undefined
+        if (!src) return
+        const kind = (e.sc.kind as string | undefined) ?? 'click'
+
+        const wants = H.reqy(w).o({ req: 'wants' })[0] as TheC | undefined
+            ?? await H.reqy(w).roai({ req: 'wants' })
+        const ts = Date.now()
+        const want = wants.i({ want: ts, kind })
+        want.c.src = src
+        wants.bump_version()
+        this.i_elvisto(w, 'think')
+    },
+
+
     // ── e_Lies_roai_Open_req ──────────────────────────────────────────────────
     //
-    //   Cross-world entry fired by Lang's req:load_doc (once per maneuvre, via
-    //   reqonce).  Delegates to Lies_roai_Open so the req:Open is seeded on
-    //   w:Lies and driven by LiesPersist's rq.do() loop.
+    //   Legacy: formerly fired by Lang's req:load_doc.  Now superseded by
+    //   req:Furnishing (§3i) — the wants resolver seeds Furnishing directly and
+    //   Lang's maneuvre no longer fires this.  Kept so hold-over callers (old
+    //   snap re-entries, test macros) don't crash.
     //
     //   e.sc: { src: TheC, waft_key: string }
     async e_Lies_roai_Open_req(A: TheC, w: TheC, e: TheC) {
