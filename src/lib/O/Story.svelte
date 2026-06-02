@@ -114,7 +114,7 @@
     
     `
 
-    import { objectify, TheC }            from "$lib/data/Stuff.svelte"
+    import { objectify, keyser, TheC }     from "$lib/data/Stuff.svelte"
     import type { TheD }                  from "$lib/mostly/Selection.svelte"
     import { Selection, Travel }          from "$lib/mostly/Selection.svelte"
     import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
@@ -851,7 +851,11 @@
             ...this.story_matching,
             ...(T.sc.up?.sc.thence_matching ?? []),
         ]
-        const q: any = { d: T.c.path.length - 1, rules: active }
+        const q: any = {
+            d:      T.c.path.length - 1,
+            rules:  active,
+            loopy:  T.sc.loopy,   // integer serial set by snap_H ref-pass when this C appears elsewhere
+        }
         const lines = this.enLine(n, q)
 
         if (q.skip) { T.sc.not = 1; return }
@@ -873,17 +877,24 @@
 
     async snap_H(Run: House): Promise<string> {
         const lines: TheD[] = []
+        const loopy_Cs = new Set<TheC>()   // C** that appeared more than once (loopy)
 
         Run.c.snap_Se ??= new Selection()
         const Se: Selection = Run.c.snap_Se
 
         await Se.process({
-            n:          Run,
-            process_sc: { snap_root: 1 },
-            match_sc:   {},
-            trace_sc:   { snap_node: 1 },
+            n:                  Run,
+            process_sc:         { snap_root: 1 },
+            match_sc:           {},
+            trace_sc:           { snap_node: 1 },
+            loop_but_no_further: true,   // loopy C reaches each_fn with T.sc.loopy set
 
             each_fn: async (D: TheD, n: TheC, T: Travel) => {
+                if (T.sc.loopy) {
+                    // subsequent appearance of a C seen earlier in this walk
+                    loopy_Cs.add(n)
+                    return
+                }
                 this.story_process_node(n, T, D)
                 if (T.sc.not) return
                 if (T.c.path.length === 1) {
@@ -904,6 +915,46 @@
                 D.sc.is_new  = !bD
             },
         })
+
+        // ── ref pass: stamp ref_def on first appearances, stub subsequent ones ──
+        // Travel's loop_but_no_further let loopy C** reach each_fn with T.sc.loopy.
+        // loopy_Cs collects every C that appeared more than once.
+        // forward() replays all Ts in walk order — first and loopy appearances
+        // both have T.sc.D via trace_fn/est_D_T, so snap_line lands in order.
+        // Idempotent: story_process_node fully rebuilds D.sc.snap_line each call.
+        if (loopy_Cs.size > 0) {
+            let loopy_i = 0
+            const loopy_ids = new Map<TheC, number>()
+            for (const n of loopy_Cs) loopy_ids.set(n, loopy_i++)
+
+            // re-encode first appearances (now knowing they're shared) and
+            // write stub lines for subsequent appearances, in walk order
+            const first_seen = new Set<TheC>()
+            await Se.c.T!.forward(async (T: Travel) => {
+                const n  = T.sc.n as TheC
+                const id = loopy_ids.get(n)
+                if (id === undefined) return
+
+                if (!first_seen.has(n)) {
+                    first_seen.add(n)
+                    // first appearance — re-encode with loopy integer in objecties
+                    T.sc.loopy = id
+                    this.story_process_node(n, T, T.sc.D)
+                } else {
+                    // subsequent appearance — stub only: loopy id + ks thumbnail, no sc
+                    const d   = T.c.path.length - 1
+                    const ks  = keyser(n)
+                    T.sc.D.sc.snap_line = `${this.ind(d)}${this.enj({ loopy: id, ks })}\t`
+                }
+            })
+
+            // rebuild lines in walk order — loopy stubs now have snap_line too
+            lines.length = 0
+            await Se.c.T!.forward(async (T: Travel) => {
+                if (T.sc.not || !T.sc.D?.sc.snap_line) return
+                lines.push(T.sc.D)
+            })
+        }
 
         return lines.map(D => D.sc.snap_line as string).join('\n') + '\n'
     },

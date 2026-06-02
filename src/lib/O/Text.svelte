@@ -28,7 +28,7 @@
     //     "${indent}${obj_part}\t${stringies}"
     //
     //   indent:    2 spaces × depth.
-    //   obj_part:  JSON of objecties metadata (ref ids, mung list) when present;
+    //   obj_part:  JSON of objecties metadata (loopy, ks, mung list) when present;
     //              empty string otherwise.  Tab is the always-present separator
     //              when obj_part is non-empty; omitted entirely when there are no
     //              objecties (enL omits the tab — deL handles both forms).
@@ -127,7 +127,12 @@
 // opt.muted_log — if provided, omit_sc omissions are appended here.
 //   Informational: does not block saving.
 //
-// Errors are FATAL — mung keys, unknown types (all_knowing), dupe nodes.
+// Repeated C refs (C === C, same object appearing at multiple locations) are
+// encoded as a loopy pair rather than an error:
+//   first appearance:      objecties.loopy:N  (plus normal sc)
+//   subsequent appearances: objecties.loopy:N, objecties.ks:keyser(C)
+//                           with no sc at all — decoder must understand ref or throw.
+// Errors are FATAL — mung keys, unknown types (all_knowing).
 // Caller should refuse to save when errors.length > 0.
     async encode_wh_lines(
         C:   TheC,
@@ -141,7 +146,6 @@
         const H = this as any
         const errors: string[] = []
         const snap_lines: string[] = []
-        const seen = new Set<TheC>()
 
         // Derive the set of accepted mainkeys from rules that carry entry.mk.
         // Only active when all_knowing is set — otherwise any particle encodes.
@@ -152,66 +156,97 @@
               )
             : null
 
-        // Walk with Travel — match_sc:{} visits every child at every depth.
+        // ── pass 1: collect all C refs ────────────────────────────────────────
+        // Walk the tree once with a minimal each_fn that just tallies how many
+        // times each C identity appears.  No encoding yet.
+        // ref_count: C → how many times it appears in the tree.
+        const ref_count = new Map<TheC, number>()
+
         const Tr = new Travel()
         await Tr.dive({
             n: C,
             match_sc: {},
             each_fn: async (n: TheC, T: Travel) => {
-                const d = T.c.path.length - 1  // 0 for root, 1 for depth-1 children, etc.
-
-                // Depth gate: silently cut any node beyond max_child_depth.
+                const d = T.c.path.length - 1
                 if (opt?.max_child_depth !== undefined && d > opt.max_child_depth) {
                     T.sc.not = 1
                     return
                 }
-
-                if (seen.has(n)) {
-                    const path_str = T.c.path
-                        .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
-                        .join(' → ')
-                    errors.push(`dupe node at depth ${d} — path: ${path_str}`)
-                    T.sc.not = 1
-                    return
-                }
-                seen.add(n)
-
-                // all_knowing: mainkey not in protocol = fatal, skip subtree.
-                const mk = Object.keys(n.sc ?? {})[0]
-                if (known_mainkeys && mk && !known_mainkeys.has(mk)) {
-                    const path_str = T.c.path
-                        .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
-                        .join(' → ')
-                    errors.push(`unknown particle "${mk}" at depth ${d} — not in protocol — path: ${path_str}`)
-                    T.sc.not = 1
-                    return
-                }
-
-                const q: any = { d, rules: opt?.matching ?? [] }
-                const lines = H.enLine(n, q)
-
-                if (q.objecties?.mung?.length) {
-                    const path_str = T.c.path
-                        .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
-                        .join(' → ')
-                    errors.push(`mung keys [${(q.mung ?? []).join(', ')}] at depth ${d} — path: ${path_str}`)
-                    T.sc.not = 1
-                    return
-                }
-
-                for (const bqe of q.bq_errors ?? []) {
-                    errors.push(`blockquote error at depth ${d}: ${bqe}`)
-                }
-
-                // Collect omit_sc omissions into muted_log for later review.
-                // < surface muted_log in a per-mainkey review UI (see Waft_spec)
-                if (q.omitted?.length && opt?.muted_log) {
-                    opt.muted_log.push({ depth: d, mainkey: mk ?? '?', omitted: q.omitted })
-                }
-
-                n.c.snap_Line = lines?.[0] ?? ''
-                for (const line of lines ?? []) snap_lines.push(line)
+                ref_count.set(n, (ref_count.get(n) ?? 0) + 1)
             },
+        })
+
+        // ── pass 2: encode, now knowing which C are repeated ─────────────────
+        // ref_seen: C → assigned loopy integer (set on first encode of that C).
+        // ref_encoded: C → true once the first appearance line has been written.
+        let ref_i = 0
+        const ref_seen    = new Map<TheC, number>()
+        const ref_encoded = new Set<TheC>()
+
+        await Tr.forward(async (T: Travel) => {
+            const n = T.sc.n as TheC
+            if (!n) return
+
+            const d = T.c.path.length - 1
+
+            // all_knowing: mainkey not in protocol = fatal, skip subtree.
+            const mk = Object.keys(n.sc ?? {})[0]
+            if (known_mainkeys && mk && !known_mainkeys.has(mk)) {
+                const path_str = T.c.path
+                    .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
+                    .join(' → ')
+                errors.push(`unknown particle "${mk}" at depth ${d} — not in protocol — path: ${path_str}`)
+                T.sc.not = 1
+                return
+            }
+
+            // Repeated C: assign a ref id on first encounter.
+            const is_repeated = (ref_count.get(n) ?? 1) > 1
+            if (is_repeated && !ref_seen.has(n)) {
+                ref_seen.set(n, ref_i++)
+            }
+
+            if (is_repeated && ref_encoded.has(n)) {
+                // Subsequent appearance — emit stub line: ref back-pointer + ks thumbnail.
+                // No sc at all; decoder must understand the ref protocol or throw.
+                const ref_id  = ref_seen.get(n)!
+                const src_keys = Object.keys(n.sc ?? {}).slice(0, 8).join(',')
+                const objecties = { loopy: ref_id, ks: src_keys }
+                const stub_line = `${H.ind(d)}${H.enj(objecties)}\t`
+                snap_lines.push(stub_line)
+                n.c.snap_Line = stub_line
+                // Don't set T.sc.not — subtree was already skipped on first encode pass;
+                // forward() visits nodes flat so subtree children handle themselves.
+                return
+            }
+
+            const q: any = {
+                d,
+                rules: opt?.matching ?? [],
+                loopy: is_repeated ? ref_seen.get(n) : undefined,
+            }
+            const lines = H.enLine(n, q)
+
+            if (q.objecties?.mung?.length) {
+                const path_str = T.c.path
+                    .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
+                    .join(' → ')
+                errors.push(`mung keys [${(q.mung ?? []).join(', ')}] at depth ${d} — path: ${path_str}`)
+                T.sc.not = 1
+                return
+            }
+
+            for (const bqe of q.bq_errors ?? []) {
+                errors.push(`blockquote error at depth ${d}: ${bqe}`)
+            }
+
+            if (q.omitted?.length && opt?.muted_log) {
+                opt.muted_log.push({ depth: d, mainkey: mk ?? '?', omitted: q.omitted })
+            }
+
+            if (is_repeated) ref_encoded.add(n)
+            n.c.snap_Line = lines?.[0] ?? ''
+            for (const line of lines ?? []) snap_lines.push(line)
         })
 
         return { snap: snap_lines.join('\n') + '\n', errors }
@@ -417,6 +452,13 @@
                 continue
             }
 
+            // TODO: implement loopy decoding — reconstruct shared-C references.
+            // For now, a stub line with objecties.loopy (subsequent appearance) is a fatal
+            // error: we refuse to decode a snap we can't faithfully reconstruct.
+            if (typeof objecties?.loopy === 'number') {
+                throw new Error(`decode_wh_lines: loopy protocol not yet implemented (loopy=${objecties.loopy}, ks=${objecties.ks ?? '?'})`)
+            }
+
             const sc_merged = { ...sc }
 
             // Consume any BQ keys that follow this line before building the TheC,
@@ -564,6 +606,7 @@
     enLine(n: TheC, q: {
         d: number
         rules?: Array<any>
+        loopy?: number              // integer serial set by encode_wh_lines when this C appears elsewhere
         // outputs written back:
         snap_line?: string
         stringies?: Record<string, any>
@@ -634,6 +677,7 @@
         }
 
         const objecties: Record<string, any> = {}
+        if (q.loopy !== undefined) objecties.loopy = q.loopy   // first appearance of a repeated C
         if (Object.keys(ref).length) objecties.ref = ref
         if (mung.length) objecties.mung = mung
 
