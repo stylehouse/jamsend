@@ -397,8 +397,15 @@
                 // Restore previously-seen doc — history and decorations intact.
                 view!.setState(cached)
             } else {
-                // First visit: build a fresh state from ave text.
-                const text = (dock?.sc.text as string | undefined) ?? ''
+                // First visit: build a fresh state.
+                // active_dock.c.initial_text is set by req_text_loaded reqonce
+                // synchronously onto the dock particle, available the same tick
+                // Languinio's dock hold arrives — always beats the ave flush that
+                // propagates dock.sc.text.  dock.sc.text is the fallback for
+                // any code path that bypasses the reqonce.
+                const text = (active_dock?.c.initial_text as string | undefined)
+                    ?? (dock?.sc.text as string | undefined)
+                    ?? ''
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
             }
 
@@ -757,8 +764,13 @@
         if (!captured_container.isConnected) return   // destroyed while we waited
 
         // Read dock fresh — text may have arrived during the delay.
+        // Prefer active_dock.c.initial_text (set synchronously by req_text_loaded
+        // reqonce onto the dock particle — arrives with Languinio before the ave flush).
         const fresh_dock = H.ave.ob({ lang_dock: captured_path })[0] as TheC | undefined
-        const initial    = (fresh_dock?.sc.text as string) ?? (captured_dock?.sc.text as string) ?? ''
+        const initial    = (active_dock?.c.initial_text as string | undefined)
+            ?? (fresh_dock?.sc.text as string)
+            ?? (captured_dock?.sc.text as string)
+            ?? ''
 
         // Pick the initial language by extension. The per-doc override (if
         // any) is applied a moment later by the reconfigure $effect once it
@@ -853,7 +865,7 @@
         view?.destroy()
     })
 </script>
-
+CKM!E!
 {#if active_path}
 <div class="lte" class:lte-expanded={expanded}>
     {#if dock}

@@ -897,6 +897,7 @@
             const dock = docks.oai({dock: path})
             if (gen_path) dock.sc.gen_path = gen_path
             languish.sc.dock = dock
+            dock.c.initial_text = text   // Langui reads this before the ave flush propagates sc.text
 
             const ave = H.oai_enroll(H, { watched: 'ave' })
             const docTextC = ave.oai({ lang_dock: path })
