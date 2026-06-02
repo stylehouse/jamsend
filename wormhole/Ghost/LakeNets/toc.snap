@@ -1,23 +1,25 @@
-Waft:Ghost/LakeNets
-  What:1,label:foundations
-    Doc,path:Ghost/Story/Peeroleum.g
-      Point:1,method:LakeNetherland
-    Doc,path:Ghost/Peeroleum.g
-      Point:1,method:Peeroleum
-  What:1,label:transport
-    Doc,path:Ghost/Peeroleum.g
-      What:1,label:first look
-        Point:1,method:transport
-        Point:1,method:PeerJS
-      What:1,label:reliability
-        Point:1,method:Socket
-        Point:1,method:Mesh
-  What:1,label:integration
-    Doc,path:Ghost/Story/Peeroleum.g
-      Point:1,method:LakeNetherland
-    Doc,path:Ghost/Peeroleum.g
-      Point:1,method:Peeroleum
-      Point:1,method:Harbour
-  What:1,label:loose ends
-    Point:1,method:Tidal
-    Point:1,method:Drift
+Waft,Ghost/LakeNets
+  What,label:foundations
+    What,label:story
+      Doc,path:Ghost/Story/Peeroleum.g
+      Point,method:LakeNetherland
+    What,label:peer
+      Doc,path:Ghost/Peeroleum.g
+      Point,method:Peeroleum
+  What,label:transport
+    What,label:first look
+      Doc,path:Ghost/Peeroleum.g
+      Point,method:transport
+      Point,method:PeerJS
+    What,label:reliability
+      Doc,path:Ghost/Peeroleum.g
+      Point,method:Socket
+      Point,method:Mesh
+  What,label:integration
+    What,label:story
+      Doc,path:Ghost/Story/Peeroleum.g
+      Point,method:LakeNetherland
+    What,label:peer
+      Doc,path:Ghost/Peeroleum.g
+      Point,method:Peeroleum
+      Point,method:Harbour

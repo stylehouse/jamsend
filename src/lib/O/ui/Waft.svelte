@@ -318,7 +318,7 @@
     {@const what_pts      = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
     {@const what_subwhats = (() => { void what.version; return what.o({ What: 1 })  as TheC[] })()}
     {@const is_what_active = (() => {
-        // header beam: this %What is the target, or any ancestor of it via c.up.
+        // beam glow: this %What is the target, or any ancestor of the target via c.up.
         // vers is the UItime-safe $state signal — reading it subscribes this IIFE.
         void examining?.vers
         const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
@@ -327,14 +327,7 @@
         while (node) { if (node === what) return true; node = node.c?.up }
         return false
     })()}
-    {@const is_what_direct = (() => {
-        // selection border: only the directly-targeted %What, not its ancestors.
-        void examining?.vers
-        const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
-        return spot?.sc.src === what
-    })()}
-    <div class="ls-what" style="margin-left: {wdepth * 10}px"
-         class:ls-what-selected={is_what_direct}>
+    <div class="ls-what" style="margin-left: {wdepth * 10}px">
         <div class="ls-what-hdr" class:ls-what-active={is_what_active}>
             <button class="ls-what-label"
                     title="cursor to What:{what_label}"
@@ -363,6 +356,7 @@
             {@const dpath = doc.sc.path as string}
             {@const pts   = (() => { void doc.version; return doc.o({ Point: 1 }) as TheC[] })()}
             {@const pform = !!point_form_open[dpath]}
+            {@const doc_whats = (() => { void doc.version; return doc.o({ What: 1 }) as TheC[] })()}
             <div class="ls-doc"
                  class:ls-doc-new={!!doc.sc.new}
                  class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
@@ -397,6 +391,12 @@
                     <button class="ls-add-point-btn"
                             onclick={() => toggle_point_form(dpath)}>+ Point</button>
                 {/if}
+                <!-- %What children of this %Doc (Doc > What nesting, e.g. time-slices).
+                     Rendered here for visibility; cursor candidates don't reach
+                     these yet — one-Doc-per-What restructuring avoids the nesting. -->
+                {#each doc_whats as dw (dw.sc.label ?? dw.sc.What ?? dw.sc.id)}
+                    {@render render_what(dw, wdepth + 1)}
+                {/each}
             </div>
         {/each}
 
@@ -500,30 +500,6 @@
         border-radius: 2px;
     }
     .ls-what-hdr.ls-what-active { position: relative; }
-
-    /* Selection border — inset ::before on the directly-targeted %What block.
-       position:absolute so it doesn't disturb the box model. */
-    .ls-what-selected {
-        position: relative;
-    }
-    .ls-what-selected::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border: 1px solid rgba(80, 80, 160, 0.28);
-        border-radius: 2px;
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    /* Docs and Points inside the selected What get a subtle scope tint. */
-    .ls-what-selected > .ls-doc {
-        border-left-color: rgba(80, 90, 160, 0.45);
-    }
-    .ls-what-selected .ls-point-peel,
-    .ls-what-selected .ls-point-open-btn {
-        color: #b8aad8;
-    }
     /* What label — clickable to set graft cursor at the What level */
     .ls-what-label {
         background: none; border: none; cursor: pointer;

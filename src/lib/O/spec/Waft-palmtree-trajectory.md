@@ -39,8 +39,8 @@ They should converge on the same helper.
 ```
 w:Lies
   /%examining
-    /%Spotlight,1         sc.src ($C → %What | %Doc)
-                          sc.accepted_entries / sc.accepted_push_id  ← retiring; see §next
+    /%Spotlight           sc.src ($C → %What | %Doc)
+                          // < sc.accepted_entries / sc.accepted_push_id — pre-NaviCado; not yet
     /req:timemachine      sc.playing:0|1 — playback engine; seeded by req:acquire
   /req:wants              cursor-intent accumulator
     /%want,$ts            c.src → wanted C; sc.kind: click|drag|step|next|cold
@@ -52,7 +52,7 @@ w:Lies
 
 w:Lang
   /%Languinio
-    /%Interest,1          sc.src = working clone root; c.LE → /%LE
+    /%Interest            sc.src = working clone root; c.LE → /%LE
     /%dock,path           same-object hold → docks/{dock:path}
     // /%spinner,stale / /%spinner,grafted
   /req:workon
@@ -63,11 +63,11 @@ w:Lang
       /req:graft,maz:1      Lang_graft_points_once + open-ended req:Showing tail
 
   /docks/{dock:path}
-    /%Compile,1 → %methods, %Output
-    /%Pmirrors,1
+    /%Compile → %methods, %Output
+    /%Pmirrors
       /%Pmirror,$waft_key,$spec
           c.src_clone   → governing clone (for req:Showing to reach c.U)
-    /%LE,1
+    /%LE
       /%State           sc.armed | sc.changey | sc.stale
       // %push_dirty    fault child; not yet in reqy fault UI
       /%Seem:origin     Se:Selection, C:$src    — awareness; goners/neus = stale
@@ -107,12 +107,11 @@ blockers for 4c.
 
 **The pending integration: two systems for acceptance.**
 
-`showing`/`accepted` on source %Point particles (old, persisted in the Waft snap)
-still coexist with `U%unshowing`/`U%unaccepted` on the U sphere (new, session).
-DocMinimap maintains local `$state in_group`/`showing`, pushes them to Lies as
-`accepted_entries`, and receives them back as `accepted_push_id`.  The U sphere
-already drives the graft and req:Showing correctly, but the persistence mechanism
-still goes through `Lies_accept_What_Point`/`sc.accepted`/`sc.showing` on %Points.
+`sc.accepted`/`sc.showing` on source %Points barely exists — very little showing/accepted
+handling is wired yet.  DocMinimap has local `$state in_group`/`showing` and a
+`push_what_point` round-trip to Lies, but these are stubs ahead of NaviCado.
+The U sphere (`U%unshowing`, `U%unaccepted`) is the intended single truth; NaviCado
+consolidation is where that gets wired.
 
 The consolidation: move the capsule strip and its state management from
 DocMinimap into NaviCado, making the U sphere the single truth for
@@ -125,9 +124,34 @@ This matters before 4c because 4c's carry-over seeding reads `clone.c.U?.sc.unsh
 to decide what to copy forward, and stamps `class:'ghost'` via the U sphere.
 Having two competing truths about showing/accepted would confuse that read.
 
+**Glow fix (tiny, do first).**  The Waft row glow currently checks
+`spot.sc.src === what` — only the directly-targeted `%What` lights up.  When
+`src` is a `%Doc` nested inside a `%What`, or when the cursor is on a child
+`%What`, the parent row stays dark.  The fix walks `src.c.up` until it finds
+the `%What` being rendered:
+
+```ts
+{@const is_what_active = (() => {
+    void examining?.version
+    const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
+    if (!spot?.sc.src) return false
+    // glow any %What that is src itself, or an ancestor of src via c.up
+    let node: any = spot.sc.src
+    while (node) {
+        if (node === what) return true
+        node = node.c?.up
+    }
+    return false
+})()}
+```
+
+Three lines in Waft.svelte.  `c.up` is stamped by `Waft_link_up` on every
+`%Doc` and `%What` in the tree; the walk terminates at the `%Waft` ceiling.
+
 **Sequencing:**
 
 ```
+now     glow fix — Waft.svelte, three lines
 next    NaviCado / accepted_entries consolidation
           capsule strip + in_group/showing state → NaviCado
           U sphere becomes the single truth for showing/accepted
@@ -306,9 +330,9 @@ by rescue.
 //   src.c.up so any ancestor %What of the cursored node also glows.
 //   Three-line fix in Waft.svelte (see §Where we are).
 
-// < accepted_entries / accepted_push_id on %Spotlight and DocMinimap's
-//   in_group/$state — the old pre-U-sphere acceptance path.  Retiring:
-//   capsule strip moves to NaviCado; U sphere becomes single truth.
+// < showing/accepted handling: very little exists yet — sc.accepted / sc.showing
+//   on source %Points, and DocMinimap's in_group/$state, are stubs.
+//   NaviCado consolidation will make U sphere the single truth for these.
 
 // < DocMinimap still reads ave/%active_dock (sig.c.dock) for lang_dock;
 //   migrate to languinio.o({dock:1})[0] in Languinio/%dock.
