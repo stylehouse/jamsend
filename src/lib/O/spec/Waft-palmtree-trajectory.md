@@ -56,7 +56,7 @@ w:Lang
   /%Languinio
     /%LE                  the active one, primarily lives in a /dock
     /%Interest            sc.src = working clone root
-    /%dock,path           same-object hold → docks/{dock:path}
+    /%dock:$path           same-object hold → /docks/%dock:$path
     // /%spinner,stale / /%spinner,grafted
   /req:workon
     /req:push             encode → replace → verify; /%dirty fault child
@@ -65,7 +65,7 @@ w:Lang
       /req:furnish,maz:2    wait for dock (req:Furnishing mints it)
       /req:graft,maz:1      Lang_graft_points_once + open-ended req:Showing tail
 
-  /docks/dock:path
+  /docks/%dock:$path
     /%Compile → %methods, %Output
     /%Pmirrors
       /%Pmirror,$waft_key,$spec
@@ -172,45 +172,24 @@ next    NaviCado / accepted_entries consolidation
 4b  req:desire playing loop  ✓ (req:timemachine; 4s auto-advance stub)
 
 4c  ↘ / ↓  branch + dive
-4d  ghost + rescue + ◀◀ rwnd
+4d  ◀◀ rwnd
 ```
 
 ---
 
-## Chunk 4c — ↘ / ↓ branch + dive
+## Chunk 4c — branch + dive %What** space
 
 The two gestures create new `%What` particles from the current cursor position.
-Both live in NaviCado (`go_branch` / `go_dive`) and fire new elvistos on the
-Lies side.  Write paths already exist: `e_Lang_LE_add`, `e_Lang_LE_push` for
-clone-tree mutation; the Lies side needs `e_Lies_branch_What` and
-`e_Lies_dive_What`.
+They look like the vector indented lines move when encoding this structure.
 
-### ↘ sibling +time
+### ↓ onwards +time
 
 Creates a new `%What` sibling immediately after the current one in the parent's
 child list, which becomes the new cursor target.
 
-Lies side (`e_Lies_branch_What`):
+### ↘ furthermore +time
 
-1. Find the current `%What` from `Spotlight.sc.src`.
-2. Run carry-over heuristic (below) — produces a `Point** sc[]` to seed.
-3. Stamp `sc.class = 'ghost'` on source %Points not carried forward, in the Waft
-   snap.  These will appear ghosted when you ◀◀ rwnd back.
-4. Insert a new `%What,N,label:''` particle after the current one in the Waft
-   snap (parent's child list).  Populate it with the carry-over Point children.
-5. Call `Waft_link_up` to stamp `c.up`/`c.waft` on the new subtree.
-6. Save the Waft snap.
-7. Emit a want for the new What (kind: `'branch'`) — the resolver funnels it
-   through `Lies_i_Spotlight`; req:workon re-arms checkout at the new What.
-
-Lang side: `req:checkout` arms the new (empty) What, pulls (gets an empty
-clone tree), grafts (no Pmirrors minted), and waits.  The user adds Points via
-the capsule strip; each addition goes through `e_Lang_LE_add` + `e_Lang_LE_push`.
-
-### ↓ child +time (dive)
-
-Creates a new `%What` *inside* the current one, positioned between two chosen
-Points:
+Creates a new `%What` *inside* the current one.
 
 1. User selects a split point (between which two Points the new What is
    inserted) — UI TBD; simplest is between the last accepted Point and the rest.
@@ -222,107 +201,54 @@ The dive address (which Points delimit the pocket) is the Dip concept from
 `Waft_spec.md` — deferred for now.  Initial implementation: ↓ always dives
 after the last accepted/showing Point.
 
-### +time carry-over heuristic
+### +time: the carry-over heuristic
 
-When a new `%What` is created (both ↘ and ↓), seed its in-group:
+When a new `%What` is sprouted off another (both ↘ and ↓), seed its new What/*
+with Points still accepted and showing. If one was `U%created_at` recently,
+assume we are meant to take that from the old group. `U%created_at` is ephemeral.
 
-- Points with `!clone.c.U?.sc.unshowing` (currently showing) AND `clone.sc.accepted`
-  (in the capsule strip) → **copy** their sc into the new What as Point children.
-- Points created `< 30s` ago (`created_at` in sc — session-only, stripped from
-  snap writes) → **move** rather than copy; not ghosted in the old What.
-- Everything else → left in the old What; `sc.class = 'ghost'` stamped in the
-  snap.
+The `Seem:workon` may be kept around and navigated back to, turning up with
+unpushed state and the same C it checked out, if dige still matches.
 
-`created_at` is appended to each clone at `LE_add_clone` time and stripped by
-`Seem_toString` / `enWaft`.
+If we +time away from one What/*, it may play a parent relation... Perhaps if we just
+look around, the last few waves of things we have looked at kinda stay,
+lurking ever smaller at the edges...
+After +time, the prev What's uncarried Points appear in NaviCado below a horizontal line — smaller, fainter, secondary. Clicking one unretires it: `LE_add_clone(current_LE, pt.sc)` copies it into the current What's clone tree and it hides from the secondary strip (its spec is now in the current clone set). Orb-toggling it back to unshowing re-retires it: the clone is dropped from the current tree, its spec leaves the current set, and the Point reappears in the strip from the prev source — undisturbed throughout.
 
-### class:'ghost' and the U sphere
-
-`sc.class = 'ghost'` lives on the source %Point particle in the Waft snap —
-persisted, not session-only.  On the next `LE_pull` for that What, `Seem_clone_C`
-copies `{ ...child.sc }` so the clone has `sc.class:'ghost'`.  The graft currently
-reads `src_clone.c.U?.sc.class`; this means `Seem_clone_C` (or the traced_fn
-walk) needs to seed `c.U.sc.class` from `clone.sc.class` when the source
-carries a class.
+The secondary strip needs no container. It is a pure derived view:
 
 ```
-// < Seem_clone_C: after building the root, walk children and for each
-//   child.sc.class, stamp the corresponding U node's sc.class so the graft
-//   reads the right decoration without extra lookups.
-//   Alternatively: the graft falls back to (clone.sc as any).class when
-//   c.U?.sc.class is undefined — simpler but less uniform.
+prevWhat Points (direct + via Doc children)
+    filtered to: spec not in current What's clone tree
 ```
 
-Rescue (Chunk 4d) clears `sc.class` off the source particle and moves it
-into the active What's clone tree; `LE_push` lands the change; `Waft_link_up`
-re-stamps.
-
----
-
-## Chunk 4d — ghost + rescue + ◀◀ rwnd
-
-### Ghost decorations
-
-`class:'ghost'` Points in the current Working clone tree render at 18% opacity
-and 40% height via `ghostDecorationField` (a CM `StateField<DecorationSet>` at
-lower precedence than `pointDecorationField`).  `req:Showing` dispatches
-`setGhostDecorationsEffect` on each repaint alongside the normal fold/glow effects.
-
-The 10s rescue window: when a `%What` is first branched, a `reqonce` on the
-new What's req stamps a `req:rescue_window` with a ttlilt for 10 s.  After
-expiry, unrescued ghosts (still `class:'ghost'` in the source snap) are dropped
-from the old What's LE: `e_Lang_LE_drop` with `spec` matching the ghost clone.
-This calls `LE_push` via the push cluster — the old What's snap loses those Points.
+`clone.c.from_prev = true` stamped at unretire time (on `c`, invisible to encode/push) tells the orb and × apart from freshly-created clones — for those, orb means `U%unshowing` and × means `U%unaccepted` as usual.
 
 ```
-// < the rescue window needs a home: a ttlilt req under the old What's req:workon,
-//   not the new one.  After branching, both Whats may have live LE instances
-//   (NaviCado can navigate back).  The rescue timer belongs with the old What's
-//   Understanding.
+// < secondary strip looks one step back (LE_what_prev) for now;
+//   ancestry depth is open.
 ```
 
-### Rescue gesture
+So the old What/* lurks beneath the current ones, as a different but same-looking
+UI, where they can be easily individually brought back from.
 
-Clicking a ghost capsule in NaviCado (it's shown dim, struck-through):
+I suppose other paraphenalia might lurk longer than the so-ing machine is biting
+it too, in ways that can transpire more involvement...
 
-1. Clears `sc.class` from the clone's U sphere (`clone.c.U.sc.class = undefined`).
-2. The source particle's `sc.class` is cleared on the next `LE_push` (the push
-   writes back the clone sc which no longer carries class).
-3. Optionally moves the clone into the new (active) What's clone tree —
-   `LE_add_clone(active_LE, clone.sc)` — so the rescued Point lives in both
-   Whats' snaps after the double push.
-4. `feebly_ponder()` → req:Showing repaints immediately (ghost decoration drops).
+### handling
 
-### ◀◀ rwnd
+unshowing is just presentation-facing, for codemirror to do decorations. it'll need flushing to when that toggles?
 
-Steps the cursor backward through sibling `%What` particles without mutating
-anything.  A NaviCado button, already present as `go_prev()`.  `go_prev` already
-emits `Lies_cursor_what` with the prior sibling via `LE_what_prev` — this IS the
-◀◀ gesture.  What makes it rwnd-flavoured: when you ◀◀ into a What that has ghost
-Points, those Points render ghosted in CM while the cursor is there.  No new
-mechanics needed beyond the ghost decoration field above.
+we might be manipulated to show|unshow by some other system.
 
-The "you were here" marker: `req:Showing` can light a dim indicator on the
-`%What` header row when `any clone in working has class:'ghost'` — a visual cue
-that this is a prior time-slice.
+unaccepted tries (even if you leave the target, could nag to save|abandon) to push that disinclusion
 
-```
-// < ◀◀ is therefore just go_prev() — the label and any distinct icon are
-//   the only addition.
-```
+Other changes to the C push more easily? And pushing Waft to disk or where-ever is a little slower?
 
 ### The caving metaphor
 
 A Waft is a cave system.  Each `%What` is a chamber — a moment of focused
-attention with particular Points illuminated on the walls.  `→` walks the main
-passage.  `↘` carves a side-tunnel from the current chamber.  `↓` drops into
-a pocket discovered between two Points in the floor.
-
-The audience follows the spelunker.  `→` is legible because they know where
-they came from.  `↘` is "we'll return to this junction."  `↓` is "look what's
-down here."  ◀◀ is the lamp swinging back through chambers already explored.
-Ghost Points are marks chalked on the wall — faint, still readable, erasable
-by rescue.
+attention with particular Points illuminated on the walls.
 
 ---
 
@@ -406,9 +332,6 @@ by rescue.
   directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
   Whats that have points (`Lies_what_has_points`).
 - `oai` sync, `roai` async; `i()` always inserts.
-- Cross-domain refs are scalar `$C` pointers in `c.*`; no domain writes another
-  domain's `sc`.  `%Interest.src`, `%Interest.c.LE`, `clone.c.waft`,
-  `pmirror.c.src_clone` are same-object holds.
 - `i_elvis_req` carries the req particle itself; `finish(reply)` pings `reqturn:1`.
 - `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not

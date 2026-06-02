@@ -51,22 +51,12 @@
     let codetype  = $derived(ls_codetype(path))
 
     // Look up loaded / pending state from w every time w changes.
-    let is_loaded = $derived((() => {
-        void w.version
-        return !!(w.o({ loaded_doc: 1, path }) as object[])[0]
-    })())
-    let is_pending = $derived((() => {
-        void w.version
-        return (w.o({ compile_pending: 1 }) as TheC[]).some(p => !p.sc.done && p.sc.path === path)
-    })())
-
+    let is_loaded = $derived(!!(w.ob({ loaded_doc: 1, path }) as object[])[0])
+    let is_pending = $derived(!!(w.ob({ compile_pending: 1, path }) as TheC[]).some(p => !p.sc.done))
     // Glow when this doc is the one currently open in Lang.
     // examining.sc.active_path mirrors ave/{active_dock:1}.sc.path and bumps when
     // Lang_set_active_dock fires — no Liesui re-render required, pure Svelte 5.
-    let is_examining = $derived((() => {
-        void examining?.version
-        return !!examining && examining.sc.active_path === path
-    })())
+    let is_examining = $derived(examining?.vers && examining.sc.active_path === path)
 
     // ── codetype derivation ───────────────────────────────────────────
     // Second-level extensions: Housing.svelte.ts → 'svelte.ts'.
