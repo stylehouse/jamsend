@@ -75,15 +75,84 @@ w:Lang
       /req:encode,maz:0     LE_encode_compare; sets %State.changey
 ```
 
+# subproject: Spotlight-Interest
+
+afaik this is nearly all done, final bringing-it-all-together,
+probably chasing tails until this whole doc is also nearly done.
+
+this is a big chunk of another document now:
+
+
+## 5. Sequencing against Chunk 4c
+
+Before 4c.  4c's carry-over reads `clone.c.U?.sc.unaccepted` and stamps
+`class:'ghost'` — U-sphere reads that only *mean* something once the graft (§3c)
+and `req:Showing` (§3g) honour the U sphere.
+
+```
+4b.5  Spotlight↔Interest
+        3a crux + src_Waft drop + waft_key_of
+        3b %Interest                  3c graft reads clones      ← the unlock
+        3d dissolve active_what/active_dock
+        3e req:wants intake           3f desire thins, timemachine on cursor
+        3g req:Showing                3h req:push                3i req:Furnishing RPC
+        3j remove breadcrumb
+4c    ↘ / ↓ branch + dive            class:'ghost' now renders (via §3c + §3g)
+```
+
+§3c + §3g are the keystone pair: clone-sourced graft + a Showing pass turn
+`unshowing`/`unaccepted`/`class` from write-only flags into visible behaviour.
+
+---
+
+## 6. Open faults (carried + updated)
+
+```
+// < clone.c.waft is one scalar on the clone root; LE.sc.target.c.waft is the
+//   fallback for any clone landing unstamped.
+// < LE_what_* stay identity-based and frail; Travel-based when the tree grows.
+// < graft fallback to src_C in the pre-pull window: one stale tick where
+//   unaccepted/unshowing Points still paint.
+// < req:wants never prunes; history grows unbounded until a sweep exists.
+// < the wants resolver is newest-wins; a Lang-obsession want crossing in has no
+//   weighing rule yet.
+// < req:timemachine is a reqy particle under %examining (an ave signal);
+//   tolerated — precedent: %Spotlight child + c.w back-ref.
+// < req:Showing assumes pmirror.c.src_clone is stamped at graft time; wire it.
+// < maz:0 in the existing maneuvre (req:encode) is out-of-spec; fold into graft
+//   tail and confirm maz bottoms at 1.
+// < req:push/%dirty needs surfacing in the reqy fault UI.
+// < vanish: unaccepted clone goner fires push_dirty on the verify re-pull; §3c
+//   makes unaccepted-invisible true on screen — the visible companion to the
+//   pending suppress-the-goner fix (bD/was_disincluded).
+// < clicking a Waft Doc ~7x loses the What glow; killing ave/%active_dock removes
+//   one of the two ping-ponging signals — re-test after §3d.
+```
+
+---
+
+## Style notes (inherited, standing)
+
+- `// < …` marks a lack of development.
+- `%like,this` for a lone C object; `/%like,this/written:is` for structures.
+- `oai` sync, `roai` async; `i()` always inserts.
+- Cross-domain refs are scalar `$C` pointers in `c.*`; no domain writes another
+  domain's `sc`.  `%Interest.src`, `%Interest.c.LE`, `clone.c.waft`,
+  `pmirror.c.src_clone` are same-object holds.
+- `i_elvis_req` carries the req particle itself; `finish(reply)` pings `reqturn:1`.
+- `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
+- Read children-dependent derives with `.ob()`; chain on `vers`, not
+  `$derived.by(void …)`.
+
+
+
+# And now...
+
 ---
 
 ## Open faults
 
 ```
-// < clicking a Waft Doc repeatedly (~7x) loses the What glow until re-clicked.
-//   Likely the active_dock watch firing Lies_set_examining with a %Doc src,
-//   overwriting the %What cursor — the cur_is_what guard should catch it but
-//   something's slipping through on rapid re-fires.
 // < second Doc (Ghost/Peeroleum.g) doesn't load into CM — empty editor, no
 //   spinner.  req:load_doc polls find the dock but Languish never completes for
 //   that path.  The editorBegins storm (7 pairs in the snap) suggests the
@@ -113,7 +182,7 @@ w:Lang
 
 ```
 4a  cursor_next steps %What  ✓ (logic still scattered — Waft_cursor_next pending)
-4b  req:desire playing loop  ✓
+
 4c  ↘ / ↓  branch + dive     — write paths exist (e_Lang_LE_add/push); needs
                                +time carry-over heuristic design
 4d  ghost + rescue + ◀◀ rwnd  — after 4c
