@@ -334,11 +334,14 @@ by rescue.
 //   on source %Points, and DocMinimap's in_group/$state, are stubs.
 //   NaviCado consolidation will make U sphere the single truth for these.
 
-// < DocMinimap still reads ave/%active_dock (sig.c.dock) for lang_dock;
-//   migrate to languinio.o({dock:1})[0] in Languinio/%dock.
+// ✓ DocMinimap lang_dock: now reads from languinio.ob({dock:active_path})[0]
+//   (the Languinio/%dock same-object hold).  ave/%active_dock is gone.
 
-// < Seem_clone_C: seed c.U.sc.class from child.sc.class at clone time, or
-//   fall back to clone.sc.class in the graft.  Needed before ghost rendering.
+// < C%class not U%class: class lives on clone.sc directly (copied from source
+//   %Point.sc.class via Seem_clone_C's { ...child.sc }).  The graft currently
+//   reads src_clone.c.U?.sc.class which is wrong — should read
+//   (clone.sc as any).class.  U%* is strictly meta (unshowing, unaccepted);
+//   class is a persisted decoration, lives in sc.
 
 // < created_at session field on clones — stripped by Seem_toString / enWaft;
 //   needs wiring in LE_add_clone and the strip list.
@@ -370,6 +373,9 @@ by rescue.
 
 // < second Doc (Ghost/Peeroleum.g) doesn't load into CM — empty editor, no
 //   spinner.  The editorBegins storm (7 pairs) suggests active_dock ping-pong.
+// < Doc > What rendering: Waft.svelte renders Doc > What children for
+//   visibility; cursor candidates still don't reach them.  One-Doc-per-What
+//   restructuring eliminates the nesting.
 
 // < e_Lies_cursor_next and e_Lies_desire_step duplicate "next candidate" logic;
 //   should converge on Waft_cursor_next(w, examining) helper.
@@ -391,6 +397,11 @@ by rescue.
 - `// < …` marks a lack of development.
 - `%like,this` for a lone C object; `/%like,this/written:is` for structures.
   `$values` for sc scalars; `$C` for TheC refs in sc.
+- Snap notation: `:1` suffix is suppressed by depeel, so always write
+  `What,label:x` not `What:1,label:x`.  A key alone implies value 1.
+- One-Doc-per-What: section Whats are pure containers (no Doc, no Points
+  directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
+  Whats that have points (`Lies_what_has_points`).
 - `oai` sync, `roai` async; `i()` always inserts.
 - Cross-domain refs are scalar `$C` pointers in `c.*`; no domain writes another
   domain's `sc`.  `%Interest.src`, `%Interest.c.LE`, `clone.c.waft`,
@@ -399,5 +410,8 @@ by rescue.
 - `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not
   `$derived.by(void …)`.
+- UItime reactivity: always `void C.vers` (the `$state` signal), never
+  `void C.version` (the Atime counter, not tracked by Svelte).  The
+  double-click glow bug was caused by this.  Watch for it elsewhere.
 - `reqonce(req, name)` stamps `req.sc[name]=1` once per req lifetime.
 - `watch_c` handlers are `async () =>` and the flush loop awaits them.

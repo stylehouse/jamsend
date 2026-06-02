@@ -265,10 +265,11 @@
         dock = active_path
             ? H.ave.ob({ lang_dock: active_path })[0] as TheC | undefined
             : undefined
-        const sig = H.ave.ob({ active_dock: 1 })[0] as TheC | undefined
-        void sig?.version
-        lang_dock = (sig?.sc.path === active_path)
-            ? sig?.c.dock as TheC | undefined
+        // lang_dock is the actual %Dock particle (carries Compile, Pmirrors etc.).
+        // ave/%active_dock is gone; the same-object hold now lives at
+        // Languinio/%dock,path.  languinio is $state so reading it here subscribes.
+        lang_dock = active_path
+            ? languinio?.ob({ dock: active_path })[0] as TheC | undefined
             : undefined
     })
 
@@ -330,8 +331,8 @@
     }
 
     $effect(() => {
-        void dock?.version
-        void lang_dock?.version
+        void dock?.vers
+        void lang_dock?.vers
         void active_path
         // LE.vers bumps when e_Lang_LE_drop/add/edit fire feebly_ponder —
         // ensures collect_le_membership() re-runs on Understanding mutations.
