@@ -7,9 +7,8 @@
     // focused inputs stable across think() ticks.
     //
     // Single <PeelInput> callsite — everything routes through the pi snippet.
-    //   item rows:    pi(peel_item_props(item, container, t, ctx?))
-    //   add forms:    pi(add_item_props(container))
-    //   origin clones:pi(clone_props(clone))
+    //   item rows:  pi(peel_item_props(item, container, t, ctx?))
+    //   add forms:  pi(add_item_props(container))
 
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -102,7 +101,7 @@
 
     // ── PeelInput props types ─────────────────────────────────────────
     //   The union of everything pi() can receive — a plain object,
-    //   assembled by peel_item_props / add_item_props / clone_props.
+    //   assembled by peel_item_props / add_item_props.
     type PiProps = {
         label:         string
         open:          boolean
@@ -156,12 +155,6 @@
     const add_type_C  = new WeakMap<TheC, ItemType>()
 
     let renaming_waft = $state<string | null>(null)
-
-    //   Seen:origin clone editing — keyed by clone spec string
-    //   < migrate to C-keyed approach once origin clones have stable identity
-    let clone_edit_open: Record<string, boolean> = $state({})
-    let clone_edit_val:  Record<string, string>  = $state({})
-    let clone_edit_sc:   Record<string, string>  = $state({})
 
     // ── add-item form ─────────────────────────────────────────────────
     function toggle_add_pick(container: TheC) {
@@ -259,53 +252,6 @@
         return false
     }
 
-    // ── Seen:origin clone editing ─────────────────────────────────────
-    //
-    //   %Seem:origin is the immutable snapshot from the last pull.
-    //   Editing a clone fires e:Lang_LE_edit { spec, patch } — Lang patches
-    //   the working clone's sc in-place, and encode-compare on the next
-    //   maneuvre tick factors in the new value.
-    function get_LE(): TheC | undefined {
-        const lang_w = (examining?.c as any)?.lang_w as TheC | undefined
-        if (!lang_w) return undefined
-        const workon = (lang_w.o({ req: 'workon' }) as TheC[])[0]
-        return (workon?.o({ LE: 1 }) as TheC[])[0]
-    }
-    function get_origin_clones(): TheC[] {
-        throw "Ya"
-        // %LE/%Seem:origin — the snapshot root; sc.C is the clone root TheC
-        const LE = get_LE()
-        if (!LE) return []
-        const origin_seem = (LE.o({ Seem: 'origin' }) as TheC[])[0]
-        const origin_root = origin_seem?.sc.C as TheC | undefined
-        if (!origin_root) return []
-        return origin_root.o({ Point: 1 }) as TheC[]
-    }
-    function clone_spec(clone: TheC): string {
-        return String((clone.sc as any).method ?? (clone.sc as any).Point ?? '')
-    }
-    function open_clone_edit(clone: TheC) {
-        const spec = clone_spec(clone)
-        const sc   = clone.sc as Record<string, any>
-        const pval = sc.Point
-        clone_edit_val[spec]  = (pval === 1 || pval === true) ? '' : String(pval ?? '')
-        clone_edit_sc[spec]   = Object.entries(sc)
-            .filter(([k]) => k !== 'Point')
-            .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
-            .join(',')
-        clone_edit_open[spec] = true
-    }
-    function submit_clone_edit(clone: TheC) {
-        const spec   = clone_spec(clone)
-        const val    = (clone_edit_val[spec] ?? '').trim()
-        const sc_str = (clone_edit_sc[spec]  ?? '').trim()
-        const patch: Record<string, any> = { Point: val === '' ? 1 : val }
-        if (sc_str) Object.assign(patch, peel(sc_str))
-        // e:Lang_LE_edit patches the working clone; encode-compare on next tick detects the change
-        H.i_elvisto('Lang/Lang', 'Lang_LE_edit', { spec, patch })
-        clone_edit_open[spec] = false
-    }
-
     // ── Rename Waft ───────────────────────────────────────────────────
     //
     //   Fires e:Lies_rename_waft so Lies can persist a waft_rename_job before
@@ -331,9 +277,6 @@
     //
     //   add_item_props: the open add-form for a new child of container.
     //     Always open=true, submit_label='+', no on_edit/on_del/on_add.
-    //
-    //   clone_props: origin-clone row, spec-string keyed state.
-    //     on_open = open_clone_edit (no navigation, just opens the form).
 
     function peel_item_props(
         item:      TheC,
@@ -378,25 +321,6 @@
             submit_label: '+',
             on_submit:    () => submit_add(container),
             on_cancel:    () => cancel_add(container),
-        }
-    }
-
-    function clone_props(clone: TheC): PiProps {
-        const spec = clone_spec(clone)
-        return {
-            label:        'Point',
-            open:         !!clone_edit_open[spec],
-            display:      ITEM_TYPES.Point.to_display(clone),
-            mk_ph:        ITEM_TYPES.Point.mk_ph,
-            sc_ph:        ITEM_TYPES.Point.sc_ph,
-            mainkey:      clone_edit_val[spec] ?? '',
-            on_mk:        (v: string) => { clone_edit_val[spec] = v },
-            sc_str:       clone_edit_sc[spec] ?? '',
-            on_sc:        (v: string) => { clone_edit_sc[spec] = v },
-            submit_label: '✓',
-            on_open:      () => open_clone_edit(clone),
-            on_submit:    () => submit_clone_edit(clone),
-            on_cancel:    () => { clone_edit_open[spec] = false },
         }
     }
 </script>
@@ -449,21 +373,6 @@
             {@render render_doc(child as TheC, waft)}
         {/if}
     {/each}
-
-    <!-- Seen:origin clones from workon/%LE/%Seem:origin.  Editing a clone
-         fires e:Lang_LE_edit to patch the working tree; Lies is told to want
-         a fresh pull if LE still points at this src. -->
-    {#if get_LE()}
-        {@const origin_clones = get_origin_clones()}
-        {#if origin_clones.length}
-            <div class="ls-origin-section">
-                <span class="ls-origin-label">origin</span>
-                {#each origin_clones as clone (clone)}
-                    <div class="ls-origin-clone">{@render pi(clone_props(clone))}</div>
-                {/each}
-            </div>
-        {/if}
-    {/if}
 
     <!-- sub-Wafts (recursive) -->
     {#each sub_wafts as sw (sw.sc.Waft)}
@@ -686,22 +595,6 @@
 
     /* add-item row — PeelInput open for a new child */
     .ls-add-row { margin-top: 0.05rem; }
-
-    /* Seen:origin clone section — muted purple tint to distinguish from live Points */
-    .ls-origin-section {
-        margin: 0.2rem 0 0.1rem 0.3rem;
-        border-left: 2px solid #3a2a4a;
-        padding-left: 0.35rem;
-    }
-    .ls-origin-label {
-        display: block; font-family: monospace; font-size: 0.68rem;
-        color: #553a66; margin-bottom: 0.08rem; letter-spacing: 0.04em;
-    }
-    .ls-origin-clone {
-        min-height: 1.4rem;
-        padding: 0.1rem 0; border-bottom: 1px solid #1c1424;
-    }
-    .ls-origin-clone:last-child { border-bottom: none }
 
     .ls-input {
         background: #0d0d14; border: 1px solid #333; border-radius: 3px;
