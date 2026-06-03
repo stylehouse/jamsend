@@ -1,11 +1,11 @@
 Waft:Ghost/Tour
-  Doc,path:Ghost/test/Hello.g
+  Doc:Ghost/test/Hello.g
     Point,method:Idzeugnosis
     Point:Idzeuganise
     Point:Idvoyage_verify
-  Doc,path:src/lib/ghost/Radios.svelte
+  Doc:src/lib/ghost/Radios.svelte
     Point:reset
-  Doc,path:Ghost/test/LangTiles.g
-  Doc,path:src/lib/p2p/Peerily.svelte.ts
+  Doc:Ghost/test/LangTiles.g
+  Doc:src/lib/p2p/Peerily.svelte.ts
     Point:Pier
     Point:emit

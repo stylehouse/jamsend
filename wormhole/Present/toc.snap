@@ -2,19 +2,19 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms:1779622781.774,done:4,last_pct_change:1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms:1779622753.198,done:6,last_pct_change:1778378075.558
   Book:StuffFlipping,ok_pct:0,last_run_ms:1779622717.748,done,last_pct_change:1779622702.753
-  Book:LangTiles,ok_pct:0,last_pct_change:1780029934.789,done:5,last_run_ms:1780422117.235
+  Book:LangTiles,ok_pct:0,last_pct_change:1780029934.789,done:5,last_run_ms:1780519365.089,active
     TimeSpool
-      TimeTotal:beliefs,avg:0.667
-        sample:0.667,at:1780422087
-        sample:0.667,at:1780422091
-        sample:0.667,at:1780422094
-        sample:0.667,at:1780422098
-        sample:0.667,at:1780422102
-        sample:0.667,at:1780422105
-        sample:0.667,at:1780422109
-        sample:0.667,at:1780422113
-        sample:0.667,at:1780422113
-        sample:0.667,at:1780422117
+      TimeTotal:beliefs,avg:1.175
+        sample:1.175,at:1780519361
+        sample:1.175,at:1780519362
+        sample:1.175,at:1780519362
+        sample:1.175,at:1780519362
+        sample:1.175,at:1780519363
+        sample:1.175,at:1780519363
+        sample:1.175,at:1780519364
+        sample:1.175,at:1780519364
+        sample:1.175,at:1780519364
+        sample:1.175,at:1780519365
   Book:LakeSurfer,ok_pct:0,last_pct_change:1779607681.571,done:2,last_run_ms:1780422234.684
     TimeSpool
       TimeTotal:beliefs,avg:0.535
@@ -100,19 +100,19 @@ Library
         sample:0.049,at:1780418648
         sample:0.049,at:1780418651
         sample:0.049,at:1780418655
-  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780517913.37,time_avg:0.173,active
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:2,last_run_ms:1780519088.808,time_avg:0.173
     TimeSpool
-      TimeTotal:beliefs,avg:0.437
-        sample:0.437,at:1780517909
-        sample:0.437,at:1780517909
-        sample:0.437,at:1780517910
-        sample:0.437,at:1780517911
-        sample:0.437,at:1780517911
-        sample:0.437,at:1780517911
-        sample:0.437,at:1780517912
-        sample:0.437,at:1780517912
-        sample:0.437,at:1780517913
-        sample:0.437,at:1780517913
+      TimeTotal:beliefs,avg:0.603
+        sample:0.603,at:1780519056
+        sample:0.603,at:1780519060
+        sample:0.603,at:1780519063
+        sample:0.603,at:1780519067
+        sample:0.603,at:1780519070
+        sample:0.603,at:1780519074
+        sample:0.603,at:1780519078
+        sample:0.603,at:1780519081
+        sample:0.603,at:1780519085
+        sample:0.603,at:1780519088
   Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg:0.013

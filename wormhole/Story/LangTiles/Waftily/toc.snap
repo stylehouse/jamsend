@@ -1,3 +1,4 @@
 Waft:Story/LangTiles/Waftily
-  Doc,path:Ghost/test/LangTiles.g
+  What:labelofaWhat
+    Doc:Ghost/test/LangTiles.g
     Point:nothings

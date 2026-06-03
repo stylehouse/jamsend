@@ -151,6 +151,15 @@
     }
 
     // ── PiProps — the full set of props pi() accepts ──────────────────
+    type CrudProps = {
+        orb_open:       boolean
+        on_orb:         () => void
+        on_edit:        () => void
+        on_del:         () => void
+        on_add_in?:     () => void        // open the child-add form
+        add_in_types?:  string[]          // type shortcut labels shown in irow
+        on_pick_type?:  (t: string) => void
+    }
     type PiProps = {
         label:         string
         open:          boolean
@@ -165,12 +174,10 @@
         on_sc?:        (v: string) => void
         focus_sc?:     boolean
         submit_label?: string
-        on_open?:      () => void
+        on_open?:      () => void      // navigate — whole label/val row
         on_submit:     () => void
         on_cancel:     () => void
-        on_edit?:      () => void
-        on_del?:       () => void
-        on_add?:       () => void
+        on_crud?:      CrudProps       // orb + irow; absent on add-child forms
     }
 
     function resolve_doc_path(raw: string): string {
@@ -202,24 +209,17 @@
     //   Since only one form is ever open, a single $state pair holds the draft.
     //   draft_type lives in a WeakMap (non-reactive; read only on submit).
     //
-    //   add_picking_C: containers with the type-picker open.
     //   add_type_C:    the chosen ItemType for the pending add-form.
     let editing      = new SvelteSet<TheC>()
+    let orb_open_C   = new SvelteSet<TheC>()   // items whose irow is currently visible
     let draft_mk     = $state('')
     let draft_sc     = $state('')
     let draft_focus_sc = $state(false)   // focus sc field instead of mainkey on open
     const draft_type = new WeakMap<TheC, ItemType>()
-
-    let add_picking_C = new SvelteSet<TheC>()
-    const add_type_C  = new WeakMap<TheC, ItemType>()
+    const add_type_C = new WeakMap<TheC, ItemType>()
 
     // ── add-item form ─────────────────────────────────────────────────
-    function toggle_add_pick(container: TheC) {
-        if (add_picking_C.has(container)) add_picking_C.delete(container)
-        else add_picking_C.add(container)
-    }
     function pick_and_open(container: TheC, t: ItemType) {
-        add_picking_C.delete(container)
         editing.clear()
         editing.add(container)
         add_type_C.set(container, t)
@@ -346,10 +346,22 @@
             on_open:      () => td.on_open(item as any, dpath),
             // < Waft rename is a no-op — backend rewrites %Waft on load/save
             on_submit:    is_waft ? () => cancel_edit(item) : () => submit_edit(container, item),
-            on_cancel:    () => cancel_edit(item),
-            on_edit:      () => start_edit(item, t),
-            on_del:       is_waft ? () => on_delete(waft) : () => delete_item(item, container),
-            on_add:       td.can_add ? () => toggle_add_pick(item) : undefined,
+            on_cancel:    () => { cancel_edit(item); orb_open_C.delete(item) },
+            on_crud: {
+                orb_open:      orb_open_C.has(item),
+                on_orb:        () => {
+                    if (orb_open_C.has(item)) orb_open_C.delete(item)
+                    else { orb_open_C.clear(); orb_open_C.add(item) }
+                },
+                on_edit:       () => { orb_open_C.delete(item); start_edit(item, t) },
+                on_del:        is_waft ? () => on_delete(waft) : () => delete_item(item, container),
+                // < on_add_in could open a bare input; type buttons do it directly
+                on_add_in:     undefined,
+                add_in_types:  td.child_types as string[] | undefined,
+                on_pick_type:  td.can_add
+                    ? (typ: string) => { orb_open_C.delete(item); pick_and_open(item, typ as ItemType) }
+                    : undefined,
+            },
         }
     }
 
@@ -413,26 +425,16 @@
         on_open={p.on_open}
         on_submit={p.on_submit}
         on_cancel={p.on_cancel}
-        on_edit={p.on_edit}
-        on_del={p.on_del}
-        on_add={p.on_add} />
+        on_crud={p.on_crud} />
 {/snippet}
 
-<!-- type_picker — type button row before a new child type is chosen -->
-{#snippet type_picker(container: TheC, types: ItemType[])}
-    <div class="ls-type-picker">
-        {#each types as t (t)}
-            <button class="ls-pick-btn" onclick={() => pick_and_open(container, t)}>{t}</button>
-        {/each}
-        <button class="ls-cancel-btn" onclick={() => add_picking_C.delete(container)}>cancel</button>
-    </div>
-{/snippet}
 
 <!-- waftitem — the one wrapper for every Point/Doc/What in the tree.
      Detects type from C.sc mainkey, reads C.o({}) for children,
      renders .ls-item / .ls-item-hdr / .ls-items.
      All per-type personality (CSS, child_types, spotlight) comes from ITEM_TYPES.
-     upC is the containing C — used for edit/delete keying and Doc dpath. -->
+     upC is the containing C — used for edit/delete keying and Doc dpath.
+     Type selection now lives in the PeelInput irow via on_crud.on_pick_type. -->
 {#snippet waftitem(C: TheC, upC: TheC)}
     {@const t = item_type_of(C)}
     {#if t}
@@ -445,9 +447,6 @@
                 {@render pi(item_props(C, upC, t, dpath))}
             </div>
             {#if td.child_types}
-                {#if add_picking_C.has(C)}
-                    {@render type_picker(C, td.child_types)}
-                {/if}
                 {#if editing.has(C) && add_type_C.has(C)}
                     <div class="ls-add-row">{@render pi(add_item_props(C))}</div>
                 {/if}
@@ -572,8 +571,7 @@
     }
     .ls-add-btn:hover    { background: #222238; color: #aac }
     .ls-add-btn:disabled { opacity: 0.35; cursor: default }
-    .ls-add-btn-icon { color: #448; font-size: 0.8rem }
-    .ls-add-btn-icon:hover { color: #88a }
+
 
     .ls-cancel-btn {
         background: none; border: none; color: #555;
@@ -582,22 +580,7 @@
     .ls-cancel-btn:hover  { color: #999 }
     .ls-cancel-right { margin-left: auto }
 
-    :global(.ls-icon-btn) {
-        background: none; border: none; color: #444;
-        cursor: pointer; font-size: 0.8rem; line-height: 1;
-        padding: 0 0.15rem; flex-shrink: 0;
-    }
-    :global(.ls-icon-btn:hover) { color: #aaa }
-    :global(.ls-del-btn:hover)  { color: #f66 }
-
     .ls-type-picker {
-        display: flex; align-items: center; gap: 0.25rem;
-        min-height: 1.4rem; margin-top: 0.05rem; flex-wrap: wrap;
+        display: none;  /* < type picker now lives in the PeelInput irow */
     }
-    .ls-pick-btn {
-        background: none; border: 1px solid #334; border-radius: 3px;
-        color: #668; cursor: pointer; font-family: monospace; font-size: 0.72rem;
-        padding: 0.1rem 0.3rem;
-    }
-    .ls-pick-btn:hover { color: #99b; border-color: #558; }
 </style>
