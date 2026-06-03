@@ -152,13 +152,17 @@
 
     // ── PiProps — the full set of props pi() accepts ──────────────────
     type CrudProps = {
-        orb_open:       boolean
-        on_orb:         () => void
-        on_edit:        () => void
-        on_del:         () => void
-        on_add_in?:     () => void        // open the child-add form
-        add_in_types?:  string[]          // type shortcut labels shown in irow
-        on_pick_type?:  (t: string) => void
+        orb_open:            boolean
+        on_orb:              () => void   // opens irow AND immediately starts edit
+        on_cancel_orb:       () => void   // cancel edit and close irow together
+        on_del:              () => void
+        // C inputs: first typed char seeds draft_mk and opens the add form
+        on_start_after?:     (char: string) => void
+        on_start_in?:        (char: string) => void
+        // type buttons: open the add form without pre-seeding mainkey
+        on_pick_after_type?: (t: string) => void
+        on_pick_in_type?:    (t: string) => void
+        add_types?:          string[]
     }
     type PiProps = {
         label:         string
@@ -216,20 +220,39 @@
     let draft_sc     = $state('')
     let draft_focus_sc = $state(false)   // focus sc field instead of mainkey on open
     const draft_type = new WeakMap<TheC, ItemType>()
-    const add_type_C = new WeakMap<TheC, ItemType>()
+    const add_type_C   = new WeakMap<TheC, ItemType>()
+    const orb_trigger  = new WeakMap<TheC, TheC>()    // container → item whose orb opened this add
 
     // ── add-item form ─────────────────────────────────────────────────
-    function pick_and_open(container: TheC, t: ItemType) {
+    //
+    //   pick_and_open: add a child inside container (appends to container.X.z).
+    //   pick_and_open_after: add a sibling after item (splices into container.X.z).
+    //     after_item is stored in a WeakMap so submit_add_after knows where to splice.
+    const after_item_C = new WeakMap<TheC, TheC>()   // container → insert-after target
+
+    function pick_and_open(container: TheC, t: ItemType, seed = '') {
         editing.clear()
         editing.add(container)
         add_type_C.set(container, t)
-        draft_mk = ''
+        draft_mk = seed
         draft_sc = ''
-        // Point with empty mainkey submits as :1 — sc is where the action is
+        // Point add: focus sc (mainkey is :1, sc is where the action is)
+        // all others: focus mainkey — even if seed is ''
+        draft_focus_sc = (t === 'Point')
+    }
+    function pick_and_open_after(container: TheC, after: TheC, t: ItemType, seed = '') {
+        editing.clear()
+        editing.add(container)
+        add_type_C.set(container, t)
+        after_item_C.set(container, after)
+        draft_mk = seed
+        draft_sc = ''
         draft_focus_sc = (t === 'Point')
     }
     function cancel_add(container: TheC) {
         editing.delete(container)
+        after_item_C.delete(container)
+        orb_trigger.delete(container)
     }
     function submit_add(container: TheC) {
         const t    = add_type_C.get(container)!
@@ -241,6 +264,21 @@
         if (t === 'Doc' && !(sc as any).Doc) return
         const child = container.oai(sc)
         if (t === 'Doc') child.sc.new = 1
+
+        // if after_item_C is set, splice child just after the target in X.z
+        const after = after_item_C.get(container)
+        if (after && container.X?.z) {
+            const z   = container.X.z as TheC[]
+            const idx = z.indexOf(child)    // oai() already pushed it
+            const aft = z.indexOf(after)
+            if (idx >= 0 && aft >= 0 && idx !== aft + 1) {
+                z.splice(idx, 1)
+                // aft may have shifted if child was before after
+                const aft2 = z.indexOf(after)
+                z.splice(aft2 + 1, 0, child)
+            }
+        }
+
         container.bump_version()
         waft.bump_version()
         cancel_add(container)
@@ -329,6 +367,33 @@
         const mk_val  = (item.sc as any)[td.mk_key]
         const is_waft = t === 'Waft'
         const disp    = item_to_display(item, t)
+        // after_types: sibling types allowed by the container
+        const container_t  = item_type_of(container)
+        const after_types  = (!is_waft && container_t)
+            ? (ITEM_TYPES[container_t].child_types as string[] | undefined)
+            : undefined
+        // close_orb: shut irow without touching any add form that may be open on container
+        function close_orb() { orb_open_C.delete(item) }
+        // open_after: close this item's edit, open a sibling-add form on the parent container
+        function open_after(typ: ItemType, seed = '') {
+            close_orb()
+            cancel_edit(item)
+            orb_trigger.set(container, item)
+            pick_and_open_after(container, item, typ, seed)
+        }
+        // open_in: close this item's edit, open a child-add form on this item
+        function open_in(typ: ItemType, seed = '') {
+            close_orb()
+            cancel_edit(item)
+            orb_trigger.set(item, item)
+            pick_and_open(item, typ, seed)
+        }
+        // add_types: union of after_types and child_types, deduplicated
+        const add_types_set = new Set<string>([
+            ...(after_types ?? []),
+            ...(td.child_types ?? []),
+        ])
+        const add_types = add_types_set.size ? [...add_types_set] : undefined
         return {
             label:        t,
             open,
@@ -346,26 +411,54 @@
             on_open:      () => td.on_open(item as any, dpath),
             // < Waft rename is a no-op — backend rewrites %Waft on load/save
             on_submit:    is_waft ? () => cancel_edit(item) : () => submit_edit(container, item),
-            on_cancel:    () => { cancel_edit(item); orb_open_C.delete(item) },
+            on_cancel:    () => { cancel_edit(item); close_orb() },
             on_crud: {
-                orb_open:      orb_open_C.has(item),
-                on_orb:        () => {
-                    if (orb_open_C.has(item)) orb_open_C.delete(item)
-                    else { orb_open_C.clear(); orb_open_C.add(item) }
+                orb_open: orb_open_C.has(item),
+                on_orb: () => {
+                    if (orb_open_C.has(item)) {
+                        // second click on orb: close everything
+                        close_orb()
+                        cancel_edit(item)
+                    } else {
+                        // first click: open irow and immediately enter edit mode
+                        orb_open_C.clear()
+                        editing.clear()
+                        orb_open_C.add(item)
+                        start_edit(item, t)
+                    }
                 },
-                on_edit:       () => { orb_open_C.delete(item); start_edit(item, t) },
-                on_del:        is_waft ? () => on_delete(waft) : () => delete_item(item, container),
-                // < on_add_in could open a bare input; type buttons do it directly
-                on_add_in:     undefined,
-                add_in_types:  td.child_types as string[] | undefined,
-                on_pick_type:  td.can_add
-                    ? (typ: string) => { orb_open_C.delete(item); pick_and_open(item, typ as ItemType) }
+                on_cancel_orb: () => { close_orb(); cancel_edit(item) },
+                on_del: is_waft ? () => on_delete(waft) : () => delete_item(item, container),
+                // C inputs: first typed char opens the appropriate add form seeded with it
+                on_start_after: after_types?.length
+                    ? (char: string) => {
+                        // default to first after_type when no type has been picked yet
+                        open_after(after_types[0], char)
+                    }
                     : undefined,
+                on_start_in: td.can_add
+                    ? (char: string) => {
+                        const child_types = td.child_types!
+                        open_in(child_types[0], char)
+                    }
+                    : undefined,
+                // type buttons: open without seeding mainkey
+                on_pick_after_type: after_types?.length
+                    ? (typ: string) => open_after(typ as ItemType)
+                    : undefined,
+                on_pick_in_type: td.can_add
+                    ? (typ: string) => open_in(typ as ItemType)
+                    : undefined,
+                add_types,
             },
         }
     }
 
-    function add_item_props(container: TheC): PiProps {
+    // add_item_props: open add-form for a new child/sibling of container.
+    //   orb_item: the item whose orb triggered this add (to close it on cancel).
+    //   Always open=true, submit_label='+', no on_crud.
+    //   focus_sc only for Point (mainkey is :1 in that case).
+    function add_item_props(container: TheC, orb_item: TheC): PiProps {
         const t  = add_type_C.get(container)!
         const td = ITEM_TYPES[t]
         return {
@@ -380,7 +473,7 @@
             focus_sc:     draft_focus_sc,
             submit_label: '+',
             on_submit:    () => submit_add(container),
-            on_cancel:    () => cancel_add(container),
+            on_cancel:    () => { cancel_add(container); orb_open_C.delete(orb_item) },
         }
     }
 </script>
@@ -448,7 +541,7 @@
             </div>
             {#if td.child_types}
                 {#if editing.has(C) && add_type_C.has(C)}
-                    <div class="ls-add-row">{@render pi(add_item_props(C))}</div>
+                    <div class="ls-add-row">{@render pi(add_item_props(C, orb_trigger.get(C) ?? C))}</div>
                 {/if}
                 {#if items.length}
                     <div class="ls-items">
@@ -516,7 +609,8 @@
         display: flex; align-items: center; gap: 0.2rem; min-height: 1.4rem;
     }
     /* PeelInput fills the header row so cancel reaches the right edge */
-    .ls-item-hdr :global(.pi-row) { flex: 1; min-width: 0; }
+    .ls-item-hdr :global(.pi-wrap) { flex: 1; min-width: 0; }
+    .ls-item-hdr :global(.pi-row)  { flex: 1; min-width: 0; }
     /* children indented under any item type */
     .ls-items { padding-left: 0.5rem; }
 
@@ -563,15 +657,6 @@
         padding: 0.2rem 0.35rem; outline: none;
     }
     .ls-input:focus  { border-color: #446 }
-
-    .ls-add-btn {
-        background: #1a1a2a; border: 1px solid #334; border-radius: 3px;
-        color: #88a; cursor: pointer; font-size: 0.76rem; padding: 0.2rem 0.4rem;
-        white-space: nowrap; flex-shrink: 0;
-    }
-    .ls-add-btn:hover    { background: #222238; color: #aac }
-    .ls-add-btn:disabled { opacity: 0.35; cursor: default }
-
 
     .ls-cancel-btn {
         background: none; border: none; color: #555;
