@@ -6,7 +6,8 @@
     //
     // Controlled — caller owns the values and passes handlers.
     // No $bindable; no undefined bind crashes.
-    // Focused on mount when open becomes true (use:focus_first on mainkey input).
+    // focus_sc=false (default): focuses mainkey on open.
+    // focus_sc=true:            focuses sc field on open (mainkey already obvious or :1).
     //
     // on_edit / on_del / on_add are optional — when present, the ✎ × + buttons
     //  render here in the idle state so every call site is one <PeelInput />.
@@ -20,6 +21,7 @@
         mk_ph        = 'fuzzyName',
         sc_ph        = 'method:Name,call',
         submit_label = '+',
+        focus_sc     = false,          // focus sc field on open instead of mainkey
         on_mk        = (_v: string) => {},   // mainkey changed
         on_sc        = (_v: string) => {},   // sc_str changed
         on_open,
@@ -37,6 +39,7 @@
         mk_ph?:        string
         sc_ph?:        string
         submit_label?: string
+        focus_sc?:     boolean
         on_mk?:        (v: string) => void
         on_sc?:        (v: string) => void
         on_open?:      () => void
@@ -52,8 +55,10 @@
         if (ev.key === 'Escape') { ev.preventDefault(); on_cancel() }
     }
 
-    function focus_first(node: HTMLInputElement) {
-        node.focus()
+    // focus_first(node, yes) — use:focus_first={true/false} as a conditional action.
+    //   Svelte always calls the action fn; the boolean gates whether focus fires.
+    function focus_first(node: HTMLInputElement, yes: boolean = true) {
+        if (yes) node.focus()
         return {}
     }
 </script>
@@ -64,13 +69,14 @@
         <input class="pi-input pi-main"
                placeholder={mk_ph}
                value={mainkey}
-               use:focus_first
+               use:focus_first={!focus_sc}
                oninput={(ev) => on_mk((ev.target as HTMLInputElement).value)}
                onkeydown={handle_keydown} />
         {#if sc_ph !== ''}
             <input class="pi-input pi-sc"
                    placeholder={sc_ph}
                    value={sc_str}
+                   use:focus_first={focus_sc}
                    oninput={(ev) => on_sc((ev.target as HTMLInputElement).value)}
                    onkeydown={handle_keydown} />
         {/if}

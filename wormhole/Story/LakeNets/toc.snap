@@ -73,8 +73,7 @@ story:LakeNets
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.601
-      sample:0.384,at:1780487194
+    TimeTotal:beliefs,avg:0.611
       sample:0.522,at:1780487495
       sample:0.667,at:1780490072
       sample:0.775,at:1780493138
@@ -84,5 +83,6 @@ story:LakeNets
       sample:0.601,at:1780495659
       sample:0.604,at:1780495672
       sample:0.433,at:1780495687
+      sample:0.488,at:1780496758
   step,dige:d6bbbba08418cb9b
   step:2,dige:369c1f2c522be89d

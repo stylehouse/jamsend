@@ -34,9 +34,8 @@
     //
     //   mk_key:       sc key that identifies this type (first key in sc)
     //   mk_ph:        mainkey input placeholder
-    //   sc_ph:        sc extras placeholder; '' hides the field
+    //   sc_ph:        sc extras placeholder
     //   make_sc:      builds the oai() sc from (val, sc_str)
-    //   to_display:   idle-row display string from a C
     //   on_open:      navigation action when the display value is clicked
     //   item_cls:     CSS class(es) on the .ls-item wrapper
     //   item_cls_fns: dynamic class predicates — {cls: string, when: (C)=>bool}[]
@@ -44,9 +43,9 @@
     //   can_add:      whether this type shows + (add-child picker) in its header
     //   spotlight:    whether this type participates in the Spotlight glow
     //
+    //   display is handled by the shared item_to_display() below
     //   < Doc: directory-list autocomplete for Ghost/* paths
     //   < Doc: bare name auto-prefixes Ghost/ and appends .g
-    //   < What/Doc: extras sc field (tag:foo) not yet used by anything
     const ITEM_TYPES = {
         Point: {
             mk_key:     'Point' as const,
@@ -56,16 +55,6 @@
                 Point: val === '' ? 1 : val,
                 ...(sc_str ? peel(sc_str) : {})
             }),
-            to_display: (c: TheC) => {
-                const sc = c.sc as Record<string, any>
-                for (const [, v] of Object.entries(sc))
-                    if (v === null || typeof v === 'object')
-                        throw `to_display Point: non-scalar in sc`
-                const d = depeel(sc)
-                if (!d.startsWith('Point') && d !== 'Point')
-                    throw `to_display Point: 'Point' not first: ${d}`
-                return d
-            },
             on_open:    (item: TheC, dpath?: string) =>
                 H.i_elvisto('Lang/Lang', 'Dock_open', {
                     path:  dpath,
@@ -80,12 +69,11 @@
         Doc: {
             mk_key:     'Doc' as const,
             mk_ph:      'Ghost/…',
-            sc_ph:      '',
+            sc_ph:      'tag:foo',
             make_sc:    (val: string, sc_str: string) => ({
                 Doc: resolve_doc_path(val),
                 ...(sc_str ? peel(sc_str) : {})
             }),
-            to_display: (c: TheC) => String(c.sc.Doc ?? ''),
             on_open:    (item: TheC) => focus_doc(item),
             item_cls:   'ls-item ls-item-doc',
             item_cls_fns: [
@@ -99,12 +87,11 @@
         What: {
             mk_key:     'What' as const,
             mk_ph:      'label',
-            sc_ph:      '',
+            sc_ph:      'tag:foo',
             make_sc:    (val: string, sc_str: string) => ({
                 What: val,
                 ...(sc_str ? peel(sc_str) : {})
             }),
-            to_display: (c: TheC) => String(c.sc.What ?? '·'),
             on_open:    (item: TheC) =>
                 H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: item, dive: true }),
             item_cls:   'ls-item ls-item-what',
@@ -118,6 +105,28 @@
     } as const
     type ItemType = keyof typeof ITEM_TYPES
 
+    // ── item_to_display — unified display string for any item C ──────
+    //
+    //   Shows the mainkey value (omitted when :1 — the label covers it)
+    //    followed by any extras sc as a depeel string.
+    //   eg {Point:1, method:'transport'} → 'method:transport'
+    //      {Point:'MyThing'}             → 'MyThing'
+    //      {What:'label', tag:'foo'}     → 'label,tag:foo'
+    //      {Doc:'Ghost/foo.g'}           → 'Ghost/foo.g'
+    //   What falls back to '·' when empty so the row has visible click target.
+    function item_to_display(c: TheC, t: ItemType): string {
+        const sc     = c.sc as Record<string, any>
+        const mk_key = ITEM_TYPES[t].mk_key
+        const mk_val = sc[mk_key]
+        const extras = Object.entries(sc)
+            .filter(([k]) => k !== mk_key)
+            .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
+            .join(',')
+        const val_str = (mk_val === 1 || mk_val === true) ? '' : String(mk_val ?? '')
+        if (!val_str && !extras) return t === 'What' ? '·' : ''
+        return [val_str, extras].filter(Boolean).join(',')
+    }
+
     // ── PiProps — the full set of props pi() accepts ──────────────────
     type PiProps = {
         label:         string
@@ -129,6 +138,7 @@
         on_mk?:        (v: string) => void
         sc_str?:       string
         on_sc?:        (v: string) => void
+        focus_sc?:     boolean
         submit_label?: string
         on_open?:      () => void
         on_submit:     () => void
@@ -170,16 +180,34 @@
     //   add_picking_C: containers with the type-picker open.
     //   add_type_C:    the chosen ItemType for the pending add-form.
     //
-    //   Waft rename — kept separate; Waft path is special (fires e:Lies_rename_waft)
+    //   Waft rename also routes through editing/draft_mk.
+    //    editing.has(waft) with no add_type_C entry distinguishes rename from add-child.
     let editing      = new SvelteSet<TheC>()
     let draft_mk     = $state('')
     let draft_sc     = $state('')
+    let draft_focus_sc = $state(false)   // focus sc field instead of mainkey on open
     const draft_type = new WeakMap<TheC, ItemType>()
 
     let add_picking_C = new SvelteSet<TheC>()
     const add_type_C  = new WeakMap<TheC, ItemType>()
 
-    let renaming_waft = $state<string | null>(null)
+    // ── Waft rename form ──────────────────────────────────────────────
+    //   Routes through editing/draft_mk like all other item edits.
+    //   waft itself is the key — editing.has(waft) with no add_type_C entry
+    //    distinguishes rename from add-child.
+    function start_rename_waft() {
+        editing.clear()
+        editing.add(waft)
+        draft_mk = wkey
+        draft_sc = ''
+    }
+    function cancel_rename_waft() { editing.delete(waft) }
+    function commit_rename_waft() {
+        const n = draft_mk.trim()
+        editing.delete(waft)
+        if (!n || n === wkey) return
+        H.i_elvisto('Lies/Lies', 'Lies_rename_waft', { old_path: wkey, new_path: n })
+    }
 
     // ── add-item form ─────────────────────────────────────────────────
     function toggle_add_pick(container: TheC) {
@@ -193,6 +221,8 @@
         add_type_C.set(container, t)
         draft_mk = ''
         draft_sc = ''
+        // Point with empty mainkey submits as :1 — sc is where the action is
+        draft_focus_sc = (t === 'Point')
     }
     function cancel_add(container: TheC) {
         editing.delete(container)
@@ -228,6 +258,8 @@
             .filter(([ky]) => ky !== mk_key)
             .map(([ky, v]) => v === 1 ? ky : `${ky}:${v}`)
             .join(',')
+        // focus sc when mainkey is bare :1 or when there are already extras to edit
+        draft_focus_sc = (pval === 1 || pval === true) || draft_sc !== ''
     }
     function cancel_edit(item: TheC) {
         editing.delete(item)
@@ -274,17 +306,24 @@
         return false
     }
 
-    // ── Rename Waft ───────────────────────────────────────────────────
+    // ── waft_rename_props — feeds the Waft header rename into pi() ────
     //
     //   Fires e:Lies_rename_waft so Lies can persist a waft_rename_job before
     //   touching any wormhole files.  Lies mutates waft.sc.Waft after writing
     //   the new snap.  Renaming is a move; old snap is left in place.
-    function cancel_rename_waft() { renaming_waft = null }
-    function commit_rename_waft() {
-        const n = renaming_waft?.trim() ?? ''
-        renaming_waft = null
-        if (!n || n === wkey) return
-        H.i_elvisto('Lies/Lies', 'Lies_rename_waft', { old_path: wkey, new_path: n })
+    //   No sc_ph — waft path is a single string key, no extras field.
+    function waft_rename_props(): PiProps {
+        return {
+            label:        'Waft',
+            open:         true,
+            mk_ph:        'path/to/waft',
+            sc_ph:        '',
+            mainkey:      draft_mk,
+            on_mk:        (v) => { draft_mk = v },
+            submit_label: 'rename',
+            on_submit:    commit_rename_waft,
+            on_cancel:    cancel_rename_waft,
+        }
     }
 
     // ── Doc focus ─────────────────────────────────────────────────────
@@ -306,13 +345,14 @@
         return {
             label:        t,
             open,
-            display:      td.to_display(item),
+            display:      item_to_display(item, t),
             mk_ph:        td.mk_ph,
             sc_ph:        td.sc_ph,
             mainkey:      open ? draft_mk : '',
             on_mk:        (v: string) => { draft_mk = v },
             sc_str:       open ? draft_sc : '',
             on_sc:        (v: string) => { draft_sc = v },
+            focus_sc:     open ? draft_focus_sc : false,
             submit_label: '✓',
             on_open:      () => td.on_open(item as any, dpath),
             on_submit:    () => submit_edit(container, item),
@@ -335,6 +375,7 @@
             on_mk:        (v: string) => { draft_mk = v },
             sc_str:       draft_sc,
             on_sc:        (v: string) => { draft_sc = v },
+            focus_sc:     draft_focus_sc,
             submit_label: '+',
             on_submit:    () => submit_add(container),
             on_cancel:    () => cancel_add(container),
@@ -344,26 +385,19 @@
 
 <div class="ls-waft" style="margin-left: {depth * 14}px" class:ls-waft-active={is_active}>
 
-    <!-- Waft header row — rename or idle -->
+    <!-- Waft header row — rename (via pi) or idle -->
     <div class="ls-waft-hdr">
-        Waft:
-        {#if renaming_waft !== null}
-            <input class="ls-input ls-rename-input"
-                value={renaming_waft}
-                oninput={(ev) => renaming_waft = (ev.target as HTMLInputElement).value}
-                onkeydown={(ev) => { if (ev.key==='Enter') commit_rename_waft(); if (ev.key==='Escape') cancel_rename_waft() }}
-                use:place_cursor_at_stem />
-            <button class="ls-add-btn ls-add-btn-sm" onclick={commit_rename_waft}
-                    disabled={!renaming_waft?.trim() || renaming_waft.trim() === wkey}>rename</button>
-            <button class="ls-cancel-btn ls-cancel-right" onclick={cancel_rename_waft}>cancel</button>
+        {#if editing.has(waft) && !add_type_C.has(waft)}
+            {@render pi(waft_rename_props())}
         {:else}
+            Waft:
             <span class="ls-waft-key">{wkey}</span>
             <span class="ls-spacer"></span>
             <button class="ls-icon-btn ls-active-btn" class:ls-is-active={is_active}
                     title={is_active ? 'active' : 'set active'}
                     onclick={() => on_active(waft)}>{is_active ? '●' : '○'}</button>
             <button class="ls-icon-btn" title="rename Waft"
-                    onclick={() => renaming_waft = wkey}>✎</button>
+                    onclick={start_rename_waft}>✎</button>
             <button class="ls-icon-btn ls-del-btn" title="delete Waft"
                     onclick={() => on_delete(waft)}>×</button>
             <button class="ls-icon-btn ls-add-btn-icon" title="add child"
@@ -408,6 +442,7 @@
         on_mk={p.on_mk}
         sc_str={p.sc_str}
         on_sc={p.on_sc}
+        focus_sc={p.focus_sc}
         submit_label={p.submit_label}
         on_open={p.on_open}
         on_submit={p.on_submit}
@@ -556,7 +591,6 @@
         padding: 0.2rem 0.35rem; outline: none;
     }
     .ls-input:focus  { border-color: #446 }
-    .ls-rename-input { flex: 1; min-width: 6rem }
 
     .ls-add-btn {
         background: #1a1a2a; border: 1px solid #334; border-radius: 3px;
@@ -565,7 +599,6 @@
     }
     .ls-add-btn:hover    { background: #222238; color: #aac }
     .ls-add-btn:disabled { opacity: 0.35; cursor: default }
-    .ls-add-btn-sm       { padding: 0.15rem 0.3rem }
     .ls-add-btn-icon { color: #448; font-size: 0.8rem }
     .ls-add-btn-icon:hover { color: #88a }
 
