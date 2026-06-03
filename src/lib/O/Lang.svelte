@@ -174,7 +174,7 @@
     import LangCompiling from "./LangCompiling.svelte";
     import LangSion from "./LangSion.svelte";
     import LangRegions from "./LangRegions.svelte";
-    import LangGen from "./LangGen.svelte";
+    import LangLang from "./LangLang.svelte";
     import LangGraft from "./LangGraft.svelte";
 
     let { M } = $props()
@@ -208,9 +208,9 @@
         wa.oai({ action: 1, role: 'compile'      },
             { label: 'compile', fn: () => this.i_elvisto(w, 'Lang_compile') })
 
-        // header dropdown + grammar-gen button — registered by LangGen so
-        // the per-tick LangGen_tick can update them in place.
-        await this.LangGen_plan(A, w)
+        // header dropdown + grammar-gen button — registered by LangLang so
+        // the per-tick LangLang_tick can update them in place.
+        await this.LangLang_plan(A, w)
 
         // ── doc registry ────────────────────────────────────────────
         // w/{docks: 1} — container for all open document particles.
@@ -1059,7 +1059,7 @@
 
         // language picker + gen button — registered fresh each tick so the
         // dropdown reflects the active doc's current language override.
-        await this.LangGen_tick(A, w)
+        await this.LangLang_tick(A, w)
 
         // ── drive Languish + workon + Furnishing + push ──────────────
         // §3i — drain Furnishing FIRST so languish.c.open_text is set before
@@ -1646,5 +1646,5 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangCompiling {M} />
 <LangSion {M} />
 <LangRegions {M} />
-<LangGen {M} />
+<LangLang {M} />
 <LangGraft {M} />

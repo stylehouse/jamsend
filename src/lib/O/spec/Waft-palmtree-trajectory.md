@@ -16,13 +16,13 @@ a simple flat list of What/* to manipulate...
 
 ```
 Waft,Ghost/LakeNets
-  What,label:foundations
-    What,label:story
-      Doc,path:Ghost/Story/Peeroleum.g
+  What:foundations
+    What:story
+      Doc:Ghost/Story/Peeroleum.g
       Point,method:LakeNetherland
       Point,method:Something
-    What,label:peer
-      Doc,path:Ghost/Peeroleum.g
+    What:peer
+      Doc:Ghost/Peeroleum.g
       Point,method:Peeroleum
 ```
 
@@ -47,32 +47,39 @@ w:Lies
 
 w:Lang
   /%Languinio
-    /%LE                  the active one, primarily lives in a /dock
+    /%LE                  same-object hold → /docks/%dock:$path/%LE
+                          //   installed at Lang_plan; unarmed until first cursor move
     /%Interest            sc.src = working clone root
     /%dock:$path           same-object hold → /docks/%dock:$path
     // /%spinner,stale / /%spinner,grafted
   /req:workon
+    c.src                 latest cursored TheC (stashed by e_Lang_workon_update)
+    /req:settle           permanent, open-ended — Lang_settle do_fn
+      /req:checkout          c.armed_src, sc.what — identity-keyed re-arm gate
+      /req:furnish           sc.doc_path, sc.have_dock
+      /req:compile           sc.have_methods
+      /req:graft             sc.n_pmirrors
     /req:push             encode → replace → verify; /%dirty fault child
-    /req:maneuvre         reset on each cursor move
-      /req:checkout,maz:3   LE_arm + LE_pull; (re)create %Interest at clones
-      /req:furnish,maz:2    wait for dock (req:Furnishing mints it)
-      /req:graft,maz:1      Lang_graft_points_once + open-ended req:Showing tail
 
   /docks/%dock:$path
     /%Compile → %methods, %Output
     /%Pmirrors
       /%Pmirror,$waft_key,$spec
           c.src_clone   → governing clone (for req:Showing to reach c.U)
+    // req:Languish stages text_loaded → compile only;
+    //   req:grafted removed — Lang_settle owns all grafting.
     /%LE
       /%State           sc.armed | sc.changey | sc.stale
       // %push_dirty    fault child; not yet in reqy fault UI
       /%Seem:origin     Se:Selection, C:$src    — awareness; goners/neus = stale
-      /%Seem:working    Se:Selection, C:clones  — editable clone tree
+      /%Seem:working    Se:Selection, C:clones  — editable clone tree;
+                        //   clones are shallow: sc copied, no children.
+                        //   What/* cloned one level; Doc/Point sub-trees resume on push.
         /%Demonstrations:working
           /%Understandable   per-clone U sphere
               sc.unshowing|unaccepted
           //$C
-              sc.class
+              sc.class etc! culture space
 ```
 
 ## LE crux
@@ -119,11 +126,17 @@ LE could take on scurrying around the origin Waft** for some What's relative som
 
 ### LE arrives
 
-And w:Lang/req:workon - or something within it - takes charge!
+And w:Lang/req:workon - or something within it - takes charge! Perhaps req:Languish is a better term, as it is very central work... It provisions care, attention, or favorable conditions.
 
-req:settle and then req:Showing now is it? Lower-case (class, level, complexity) and upper.
+req:settle gives way to req:Showing... Lower-case (class, level, complexity) and upper.
 
-There's also req:timemachine and req:wants we need to keep in mind when distributing the systemic load into mutable machinations.
+`req:Showing` only exists as `Lang_show_pmirrors` so far.
+`pmirror.c.src_clone` is set at graft time.
+As a proper open-ended req it would survive cursor-absent ticks so U-edit
+fold-toggles repaint without needing a cursor move.
+
+
+There's also w:Lies's req:timemachine and req:wants we need to keep in mind when distributing the systemic load into mutable machinations.
 
 any more isolations or interface togetherings we'd like to imagine...
 
@@ -188,7 +201,7 @@ When a new `%What` is sprouted off another (both ↘ and ↓), seed its new What
 with Points still accepted and showing. If one was `U%created_at` recently,
 assume we are meant to take that from the old group. `U%created_at` is ephemeral.
 
-The `Seem:workon` may be kept around and navigated back to, turning up with
+The `Seem:working` may be kept around and navigated back to, turning up with
 unpushed state and the same C it checked out, if dige still matches.
 
 If we +time away from one What/*, it may play a parent relation... Perhaps if we just
@@ -250,8 +263,22 @@ attention with particular Points illuminated on the walls.
 // < req:timemachine is a reqy particle under %examining (an ave signal);
 //   tolerated — precedent: %Spotlight child + c.w back-ref.
 
-// < maz:0 in the existing maneuvre (req:encode) is out-of-spec; fold into
-//   graft tail and confirm maz bottoms at 1.
+// < U-edit encode gate: clone.c.U mutations (unaccepted/unshowing) don't bump
+//   Seem:working.version, so settle's encode gate (last_encode_ver !== wv) never
+//   fires after e_Lang_LE_drop / e_Lang_LE_edit.  Fix: stamp LE.c.u_edit_serial++
+//   in those handlers; encode_key = `${wv}:${u_edit_serial}`.
+//   Until fixed, %State.changey doesn't update after minimap × demote.
+
+// < req:Showing has no req particle yet — Lang_show_pmirrors is the body but
+//   is called directly from the tick.  As a proper open-ended req it survives
+//   cursor-absent ticks (U-edit fold toggles while settle returns early).
+
+// < pre-pull fallback in Lang_graft_points_once (interest.c.LE absent path)
+//   reads live Points off src_C directly — should be eliminated; ensure
+//   interest.c.LE is always set before graft runs.
+
+// < src_clone on Pmirrors should eventually become workingC — the whole
+//   Seem:working C** — so Showing's path is unambiguous for all clone shapes.
 
 // < e_Lang_LE_drop demote round-trip takes a full cursor-move cycle.
 
@@ -270,11 +297,12 @@ attention with particular Points illuminated on the walls.
 - `// < …` marks a lack of development.
 - `%like,this` for a lone C object; `/%like,this/written:is` for structures.
   `$values` for sc scalars; `$C` for TheC refs in sc.
-- Snap notation: `:1` suffix is suppressed by depeel, so always write
-  `What,label:x` not `What:1,label:x`.  A key alone implies value 1.
+- Snap notation: `:1` suffix suppressed by depeel; a bare key implies value 1.
+  `What` and `Doc` now use the value directly: `What:story`, `Doc:Ghost/Foo.g`.
+  Unlabelled Whats remain bare `What` (value 1).  `Point,method:foo` unchanged.
 - One-Doc-per-What: section Whats are pure containers (no Doc, no Points
   directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
-  Whats that have points (`Lies_what_has_points`).
+  Whats that have direct Points (`Lies_what_has_direct_points`).
 - `oai` sync, `roai` async; `i()` always inserts.
 - `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not
