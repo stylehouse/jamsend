@@ -243,11 +243,42 @@
         H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
     },
 
+    // ── Lies_what_has_direct_points ──────────────────────────────────────────
+    //
+    //   True when a %What has Points *directly* — either as direct %Point
+    //   children or inside its direct %Doc children.  Does NOT recurse into
+    //   sub-Whats.  Used to distinguish leaf Whats (which the LE can usefully
+    //   check out) from container Whats (which only organise leaf Whats).
+    Lies_what_has_direct_points(what: TheC): boolean {
+        if ((what.o({ Point: 1 }) as TheC[]).length) return true
+        for (const doc of what.o({ Doc: 1 }) as TheC[]) {
+            if ((doc.o({ Point: 1 }) as TheC[]).length) return true
+        }
+        return false
+    },
+
+    // ── Lies_first_what_with_direct_points ────────────────────────────────────
+    //
+    //   DFS-first What in a subtree that has_direct_points.  Returns `what`
+    //   itself when it qualifies, otherwise dives into sub-Whats in order.
+    //   Used by e_Lies_cursor_what (dive:true path) so clicking a container
+    //   What label auto-lands on the first useful leaf inside it.
+    Lies_first_what_with_direct_points(what: TheC): TheC | undefined {
+        const H = this as House
+        if (H.Lies_what_has_direct_points(what)) return what
+        for (const sub of what.o({ What: 1 }) as TheC[]) {
+            const found = H.Lies_first_what_with_direct_points(sub)
+            if (found) return found
+        }
+        return undefined
+    },
+
     // ── Waft_cursor_candidates ────────────────────────────────────────────────
     //
     //   Depth-first collect of all %What particles across all loaded Wafts
-    //   that carry at least one %Point anywhere in their extent.
-    //   Pre-order: a parent What with its own Points appears before its children.
+    //   that carry direct Points — i.e. the leaf Whats the LE can usefully
+    //   check out.  Container Whats (sub-Whats only, no direct Points) are
+    //   skipped so the cursor never lands somewhere with an empty capsule strip.
     //
     //   Shared by Waft_cursor_first, Waft_cursor_next, and e_Lies_cursor_next
     //   so "what counts as a cursor stop" is defined in one place.
@@ -256,7 +287,7 @@
         const out: Array<{ what: TheC, waft_key: string }> = []
         const collect = (container: TheC, waft_key: string) => {
             for (const what of container.o({ What: 1 }) as TheC[]) {
-                if (H.Lies_what_has_points(what)) out.push({ what, waft_key })
+                if (H.Lies_what_has_direct_points(what)) out.push({ what, waft_key })
                 collect(what, waft_key)
             }
         }
@@ -268,7 +299,7 @@
 
     // ── Waft_cursor_first ─────────────────────────────────────────────────────
     //
-    //   Land the cursor on the first inhabited %What in `waft`.
+    //   Land the cursor on the first leaf %What in `waft`.
     //   No-op when the cursor is already inside this Waft.
     //   Called by the timemachine's land step and the acquire cold-start path.
     //   §3e: emits a want rather than setting the cursor directly.
@@ -280,11 +311,11 @@
         const cur_waft = cur_src ? H.waft_key_of(cur_src) : undefined
         if (cur_waft === waft_key) return
 
-        // Prefer an inhabited %What; fall back to first %Doc when the Waft is fresh.
+        // Prefer a leaf What with direct Points; fall back to bare Doc on fresh Waft.
         const candidates: Array<TheC> = []
         const collect = (container: TheC) => {
             for (const what of container.o({ What: 1 }) as TheC[]) {
-                if (H.Lies_what_has_points(what)) candidates.push(what)
+                if (H.Lies_what_has_direct_points(what)) candidates.push(what)
                 collect(what)
             }
         }
@@ -299,9 +330,9 @@
 
     // ── Waft_cursor_next_candidate ─────────────────────────────────────────────
     //
-    //   Pure finder: the next inhabited %What after the current cursor inside
-    //   `waft`, or undefined at the end of the trail.  Sets nothing — the
-    //   timemachine emits a %want with the result (§3f).
+    //   Pure finder: the next leaf %What (direct Points) after the current
+    //   cursor inside `waft`, or undefined at the end of the trail.
+    //   Sets nothing — the timemachine emits a %want with the result (§3f).
     //
     //   Scoped to a single Waft — cross-Waft stepping is e_Lies_cursor_next.
     //   < e_Lies_cursor_next steps flat siblings; branch/dive hierarchy not yet traversed.
@@ -311,7 +342,7 @@
         if (!examining) return undefined
 
         const all        = waft.o({ What: 1 }) as TheC[]
-        const inhabited  = all.filter(wh => H.Lies_what_has_points(wh))
+        const inhabited  = all.filter(wh => H.Lies_what_has_direct_points(wh))
         const candidates = inhabited.length ? inhabited : all
         if (!candidates.length) return undefined
 
@@ -353,15 +384,17 @@
 
     // ── e_Lies_cursor_what ────────────────────────────────────────────────────
     //
-    //   Fired by NaviCado's ↑ / ← / → buttons.  The caller already resolved the
-    //   target %What particle (via LE_what_parent / LE_what_prev / LE_what_next)
-    //   and passes it directly — no candidate scan needed.
+    //   Fired by NaviCado's ↑ / ← / → buttons and by the What label click in
+    //   Waft.svelte.
     //
-    //   Uses c.waft (stamped by Lies_stamp_up) to recover the waft_key without
-    //   a full Waft scan.  Falls back to a recursive scan when c.waft is absent
-    //   (newly added Whats before the next Lies_stamp_up pass).
+    //   e.sc.dive:true (Waft label click path) — auto-dive to the first DFS
+    //   descendant with direct Points.  Lets the user click a container What
+    //   (`foundations`) and land somewhere useful rather than on an empty strip.
+    //   Nav buttons (↑/←/→) do NOT pass dive:true — structural navigation
+    //   should land exactly where requested; the DFS helpers handle diving when
+    //   pressing →.
     //
-    //   e.sc: { what: TheC }  — the target %What particle
+    //   e.sc: { what: TheC, dive?: true }
     async e_Lies_cursor_what(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
@@ -369,9 +402,11 @@
         const what = e.sc.what as TheC | undefined
         if (!what) return
 
-        // §3e — the resolver derives waft_key (waft_key_of) and opens the doc;
-        // we just emit the want.  NaviCado's ↑/←/→ already resolved the target.
-        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'next' })
+        const effective = e.sc.dive
+            ? (H.Lies_first_what_with_direct_points(what) ?? what)
+            : what
+
+        H.i_elvisto(w, 'Lies_want', { src: effective, kind: 'next' })
     },
 
     // ── Lies_what_carry_over ──────────────────────────────────────────────────
@@ -455,12 +490,16 @@
 
         const carry = H.Lies_what_carry_over(what)
 
-        // replace() disallows re-entering existing particles that already carry
-        // /* children before the replace commits — can't use it to splice in place.
-        // Append the new What; it lands right after what when branching from the
-        // last position, which is the common case.
-        // < splice-after ordering: needs TheC.insert_after or a Travel-based approach.
-        const new_what = parent.i({ What: 1 })
+        // Splice-in-after without replace(): drop the siblings that come after
+        // `what`, insert the new What, then re-insert those siblings in order.
+        // Outside of a replace() fn, parent.i(existing_particle) is fine —
+        // the particle's own X (children) and c.* refs are unaffected.
+        const sibs       = parent.o({ What: 1 }) as TheC[]
+        const what_idx   = sibs.indexOf(what)
+        const after_sibs = what_idx >= 0 ? sibs.slice(what_idx + 1) : []
+        for (const w of after_sibs) parent.drop(w)
+        const new_what   = parent.i({ What: 1 })
+        for (const w of after_sibs) parent.i(w)
 
         H.Lies_seed_what_carry_over(new_what, carry)
         // stamp back-refs so navigation helpers work before the next LE_pull

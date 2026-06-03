@@ -331,7 +331,7 @@
         <div class="ls-what-hdr" class:ls-what-active={is_what_active}>
             <button class="ls-what-label"
                     title="cursor to What:{what_label}"
-                    onclick={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what })}>
+                    onclick={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what, dive: true })}>
                 {what_label}
             </button>
         </div>

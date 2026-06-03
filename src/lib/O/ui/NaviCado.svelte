@@ -88,35 +88,32 @@
 
     // ── nav bar reactive derivation ───────────────────────────────────────────
 
-    // LE.vers is always >= 1 (truthy) — safe chain link that registers the read.
-    let target     = $derived(LE && LE.vers && LE.sc.target as TheC | undefined)
-    let depth      = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
-    let has_prev   = $derived(target ? !!(H as any).LE_what_prev(target) : false)
-    let has_next   = $derived(has_next_val)
-    let has_up     = $derived(depth > 0)
-    let has_branch = $derived(!!target)   // ↓ new next sibling — always possible
-    let has_dive   = $derived(!!target)   // ↘ new child — always possible
-    // has_prev: direct sibling only (no fall-back for ←)
-    // has_next: walks c.up so → stays live when the current level has no more siblings
-    //   but an ancestor does — "falling out of depth"
-    let has_next_val = $derived(target && LE?.vers ? (() => {
-        let node: any = target
-        while (node) {
-            if ((H as any).LE_what_next(node)) return true
-            node = (H as any).LE_what_parent(node) as any
-        }
-        return false
-    })() : false)
-
-    // ── transport ─────────────────────────────────────────────────────────────
-    //   The timemachine lives on %examining (s3f).  vers-chains keep reads
-    //   reactive — vers is always >= 1 (truthy).
-
+    // examining is declared first — target is derived from it, not from LE.sc.target.
+    // LE.sc.target lags by one LE_arm + languinio round-trip; examining.Spotlight.sc.src
+    // is stamped synchronously in Lies_i_Spotlight so the nav bar updates immediately.
     let examining   = $derived(H.ave.ob({ examining: 1 })[0] as TheC | undefined)
     let timemachine = $derived(examining && examining.vers
         && examining.o({ req: 'timemachine' })[0] as TheC | undefined)
     let is_playing  = $derived(!!(timemachine && timemachine.vers && timemachine.sc.playing))
     let has_desire  = $derived(!!timemachine)
+
+    // target — the currently cursored %What, from examining/Spotlight.
+    // Only set when src is a %What (not a bare %Doc).
+    let target = $derived((() => {
+        void examining?.vers
+        const spot = examining?.ob?.({ Spotlight: 1 })?.[0] as TheC | undefined
+        const src  = spot?.sc.src as TheC | undefined
+        return src && (src.sc as any).What !== undefined ? src as TheC : undefined
+    })())
+
+    // LE.vers is still needed for clone/state operations (capsule strip etc.)
+    let depth      = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
+    let has_up     = $derived(depth > 0)
+    let has_branch = $derived(!!target)   // ↓ new next sibling — always possible
+    let has_dive   = $derived(!!target)   // ↘ new child — always possible
+    // has_prev/has_next reflect depth-first reachability (see what_dfs_* helpers)
+    let has_prev   = $derived(target ? !!what_dfs_prev(target) : false)
+    let has_next   = $derived(target ? !!what_dfs_next(target) : false)
 
     // ── capsule state ─────────────────────────────────────────────────────────
 
@@ -346,20 +343,48 @@
 
     function go_prev() {
         if (!target) return
-        const prev = (H as any).LE_what_prev(target) as TheC | undefined
-        if (!prev) return
-        H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: prev })
+        const dest = what_dfs_prev(target)
+        if (dest) H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: dest })
     }
 
     function go_next() {
         if (!target) return
-        // fall out of depth: climb until we find an ancestor with a next sibling
-        let node: any = target
-        while (node) {
-            const next = (H as any).LE_what_next(node) as TheC | undefined
-            if (next) { H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: next }); return }
-            node = (H as any).LE_what_parent(node) as any
-        }
+        const dest = what_dfs_next(target)
+        if (dest) H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: dest })
+    }
+
+    // ── depth-first What traversal ────────────────────────────────────────────
+    //
+    //   what_dfs_next — dive into first child, else advance to next sibling,
+    //     else fall out to ancestor's next sibling.  Same order Travel uses.
+    //   what_dfs_prev — reverse: go to deepest-last of previous sibling,
+    //     else go up to parent.
+    //   what_deepest_last — rightmost leaf of a subtree (used by dfs_prev).
+
+    function what_dfs_next(what: TheC): TheC | undefined {
+        // descend into first child if any
+        const children = what.o({ What: 1 }) as TheC[]
+        if (children.length) return children[0]
+        return what_find_next_ancestor(what)
+    }
+
+    function what_find_next_ancestor(what: TheC): TheC | undefined {
+        const next = (H as any).LE_what_next(what) as TheC | undefined
+        if (next) return next
+        const parent = (H as any).LE_what_parent(what) as TheC | undefined
+        return parent ? what_find_next_ancestor(parent) : undefined
+    }
+
+    function what_dfs_prev(what: TheC): TheC | undefined {
+        const prev = (H as any).LE_what_prev(what) as TheC | undefined
+        if (prev) return what_deepest_last(prev)
+        return (H as any).LE_what_parent(what) as TheC | undefined
+    }
+
+    // last What in DFS order within a subtree: keep following the last child down
+    function what_deepest_last(what: TheC): TheC {
+        const children = what.o({ What: 1 }) as TheC[]
+        return children.length ? what_deepest_last(children[children.length - 1]) : what
     }
 
     function go_branch() {
@@ -373,7 +398,7 @@
     }
 
     // Label for the current What — shown in the middle of the toolbar.
-    // Falls back to path stem when target is a %Doc (no .label or .What on sc).
+    // target is only set for %What particles (confirmed above); unlabeled Whats show blank.
     let what_label = $derived(
         target
             ? ((target.sc as any).label as string | undefined)
