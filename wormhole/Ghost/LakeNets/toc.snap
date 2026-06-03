@@ -6,6 +6,9 @@ Waft:Ghost/LakeNets
     What:peer
       Doc:Ghost/Peeroleum.g
       Point,method:Peeroleum
+      What
+        What
+      Point:Figaro
   What:transport
     What:first look
       Doc:Ghost/Peeroleum.g

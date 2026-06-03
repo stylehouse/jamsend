@@ -311,6 +311,23 @@
         dock.bump_version()
     },
 
+    // ── Lang_src_doc_path ──────────────────────────────────────────────────
+    //
+    //   Derive the doc path from a src that may be a %What or %Doc — the Lang-
+    //   side twin of Lies_src_doc_path (the Waft tree shape is the same on both
+    //   sides; each world keeps its own copy so neither reaches across).
+    //
+    //   %Doc carries sc.Doc directly; a %What exposes the path of its first %Doc
+    //   child.  Returns undefined for a pure time-slice %What with no Doc — the
+    //   graft's doc-match guard reads that as "this src has no doc to anchor on".
+    Lang_src_doc_path(src: TheC): string | undefined {
+        if (!src) return undefined
+        const sc = src.sc as any
+        if (typeof sc.Doc === 'string') return sc.Doc
+        const doc = (src.o({ Doc: 1 }) as TheC[])[0]
+        return doc?.sc.Doc as string | undefined
+    },
+
     // ── Lang_point_spec ──────────────────────────────────────────────────
     //
     //   Extract the identifying spec from a Point — the string we resolve

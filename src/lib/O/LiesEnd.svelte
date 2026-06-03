@@ -258,6 +258,75 @@ await M.eatfunc({
         })
     },
 
+    // ── LE_push ───────────────────────────────────────────────────────────────
+    // The three-phase push, run inline.  The spec frames push as a req cluster
+    //   (req:push/req:encode|replace|verify) so a stalled or surprising push can
+    //   be inspected and resumed; this is the straight-line form the session
+    //   example calls — same three phases, no reqy, for the common case where
+    //   the push lands in one tick.
+    //
+    //   maz:3  gate     — encode-compare.  Equal snaps → nothing to push; clean.
+    //   maz:2  replace  — LE_replace_back (the irreversible middle).
+    //   maz:1  verify   — re-pull the awareness, re-encode-compare.  Still
+    //                     non-empty → the push didn't land: stamp %push_dirty.
+    //
+    //   %push_dirty rides on %LE (not in %State) — it is the fault particle,
+    //   present only when a push left working and origin still diverging.  A
+    //   clean push drops it.  Liesui / NaviCado read it as the dirty signal.
+    //
+    //   Returns { pushed, dirty }:
+    //     pushed:false — nothing diverged, no replace ran (clean before push).
+    //     pushed:true  — replace ran; dirty:true means it didn't verify clean.
+    //
+    //   < the vanish case (an unaccepted clone's absence reads as a goner on the
+    //     verify pull and falsely trips dirty) is the deferred fix in the spec:
+    //     LE_replace_back would stamp bD/was_disincluded:1 and resolved_fn would
+    //     recognise it.  Until then, a push that only drops clones may verify
+    //     dirty; treat %push_dirty as advisory while unaccepted is in flight.
+    async LE_push(LE: TheC) {
+        const H = this as House
+
+        // maz:3 — gate.  No divergence → clean, don't touch the target.
+        const before = await H.LE_encode_compare(LE)
+        if (!before.dirty) {
+            await H.LE_clear_push_dirty(LE)
+            return { pushed: false, dirty: false }
+        }
+
+        // maz:2 — the irreversible replace.
+        await H.LE_replace_back(LE)
+
+        // maz:1 — verify.  Re-pull so origin's awareness sees what we just wrote
+        //   (the replace is a remote mutation from origin's point of view), then
+        //   re-encode-compare.  Clean → the push landed; dirty → it did not.
+        await H.LE_pull(LE)
+        const after = await H.LE_encode_compare(LE)
+
+        if (after.dirty) {
+            H.LE_mark_push_dirty(LE)
+            console.warn(`📌 LE_push: post-push encode still diverges — push_dirty`)
+        } else {
+            await H.LE_clear_push_dirty(LE)
+        }
+        return { pushed: true, dirty: after.dirty }
+    },
+
+    // ── LE_mark_push_dirty / LE_clear_push_dirty ────────────────────────────────
+    // The push fault lives at %LE/%push_dirty, outside %State — a push can be
+    //   inspected and "pushed anyway" independently of the Understanding's state.
+    //   oai/r keep it a clean present-or-absent flag, never a piling child.
+    //   Both await r() (it is async — it replace()s the child slot).
+    LE_mark_push_dirty(LE: TheC) {
+        LE.oai({ push_dirty: 1 })
+        LE.bump_version()
+    },
+    async LE_clear_push_dirty(LE: TheC) {
+        if (LE.oa({ push_dirty: 1 })) {
+            await LE.r({ push_dirty: 1 }, {})
+            LE.bump_version()
+        }
+    },
+
 //#endregion
 
 

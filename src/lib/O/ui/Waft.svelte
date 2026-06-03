@@ -236,9 +236,9 @@
         add_type_C.set(container, t)
         draft_mk = seed
         draft_sc = ''
-        // Point add: focus sc (mainkey is :1, sc is where the action is)
-        // all others: focus mainkey — even if seed is ''
-        draft_focus_sc = (t === 'Point')
+        // add forms always focus mainkey — user sets the name first, refines sc after
+        // < Point :1 shortcut: user can just submit blank mainkey, sc will auto-focus next
+        draft_focus_sc = false
     }
     function pick_and_open_after(container: TheC, after: TheC, t: ItemType, seed = '') {
         editing.clear()
@@ -247,7 +247,7 @@
         after_item_C.set(container, after)
         draft_mk = seed
         draft_sc = ''
-        draft_focus_sc = (t === 'Point')
+        draft_focus_sc = false
     }
     function cancel_add(container: TheC) {
         editing.delete(container)
@@ -363,7 +363,8 @@
 
     function item_props(item: TheC, container: TheC, t: ItemType, dpath?: string): PiProps {
         const td      = ITEM_TYPES[t]
-        const open    = editing.has(item)
+        // open only when editing this specific item — not when item is acting as add-container
+        const open    = editing.has(item) && !add_type_C.has(item)
         const mk_val  = (item.sc as any)[td.mk_key]
         const is_waft = t === 'Waft'
         const disp    = item_to_display(item, t)
