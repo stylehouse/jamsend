@@ -59,10 +59,10 @@
     //
     // ── copy — range collection ───────────────────────────────────────────────
     //
-    //   A two-click gesture available in any non-hollow step.  First click sets an
-    //   anchor; second click (different step) triggers collect_range(anchor, n),
-    //   which produces enL-compatible text and copies it to clipboard.
-    //   Second click on the same step copies that single step.
+    //   Clicking "copy diff" immediately arms this step as the anchor and enters
+    //   collecting mode — the button becomes a throbbing "from NNN — pick end ×".
+    //   Click any other pip to collect [anchor, pip]; click × to cancel.
+    //   A "just NNN" button alongside lets you bail out to a single-step copy.
     //
     //   Pure text functions (compute_diff, squish_context, positional_diff,
     //   enDif, deDif, depth_of, char_diff_ops) live in Textures.svelte and
@@ -553,8 +553,6 @@
     let diff_anchor     = $state<number | null>(null)
     let diff_collecting = $state(false)
     let diff_status     = $state('')
-    // diff_menu: "copy" was clicked — show the just/pick-end choices
-    let diff_menu       = $state(false)
 
     // ── Resnapture popup ──────────────────────────────────────────────────────
     //
@@ -679,16 +677,12 @@
         setTimeout(() => { diff_status = '' }, 3000)
     }
 
-    // start_diff_collect: first click — arms the collector on this step.
-    // Warms clipboard permission on this user gesture via a harmless empty
-    // writeText(''), so the write inside collect_range doesn't need to prompt.
     async function start_diff_collect() {
         const n = display.open_at
         if (n == null) return
         try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
         diff_anchor     = n
         diff_collecting = true
-        diff_menu       = false
         diff_status     = ''
     }
 
@@ -697,7 +691,6 @@
         const n = display.open_at
         if (n == null) return
         try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
-        diff_menu = false
         await collect_range(n, n, eff_mode)
     }
 
@@ -705,7 +698,6 @@
     function cancel_collect() {
         diff_anchor     = null
         diff_collecting = false
-        diff_menu       = false
         diff_status     = ''
     }
 
@@ -732,7 +724,6 @@
             diff_collecting = false
             diff_anchor     = null
         }
-        diff_menu      = false
         last_user_pick = n
         // tell NaviScroll not to seek Story's house while the user is navigating pips
         H.stashed ??= {}
@@ -742,7 +733,6 @@
 
     function close_panel() {
         diff_mode      = null
-        diff_menu      = false
         last_user_pick = null
         // user explicitly dismissed — NaviScroll may seek freely again
         if (H.stashed) H.stashed.pip_user_engaged_until = 0
@@ -1058,33 +1048,31 @@
                         </span>
                     {/if}
 
-                    <!-- copy: single-step and range collector ─────────── -->
-                    <!-- idle: "copy" opens the choice menu.               -->
-                    <!-- menu: "just NNN" copies immediately; "pick end"   -->
-                    <!--   arms this step as anchor for a range, then click -->
-                    <!--   any other pip to collect [anchor, n].            -->
-                    <!-- Collecting state: shows anchor + cancel (×).      -->
-                    <!-- Output: Step/Snap/Dif:* block, enL-compatible.    -->
-                    <!-- T.deDif(lines, 2) decodes it back to DiffRow[].   -->
+                    <!-- copy: range collector ─────────────────────────── -->
+                    <!-- idle: "copy diff" immediately arms this step as    -->
+                    <!--   the anchor — button becomes throbbing pick-end.  -->
+                    <!-- collecting: "just NNN" copies this step alone;     -->
+                    <!--   "from NNN — pick end ×" cancels on click.        -->
+                    <!-- "to NNN" appears when open step ≠ anchor.          -->
+                    <!-- Output: Step/Snap/Dif:* block, enL-compatible.     -->
+                    <!-- T.deDif(lines, 2) decodes it back to DiffRow[].    -->
                     {#if !hollow}
                         {#if diff_collecting}
-                            <!-- cancel (×) always available; "to NNN" completes the range
-                                 immediately when the open step differs from the anchor -->
+                            <!-- "to NNN" completes the range immediately
+                                 when the open step differs from the anchor -->
                             {#if n !== diff_anchor}
                                 <button class="sr-diffrange" onclick={() => { collect_range(diff_anchor!, n, eff_mode); diff_collecting = false; diff_anchor = null }}>
                                     to {String(n).padStart(3,'0')}
                                 </button>
                             {/if}
-                            <button class="sr-diffrange collecting" onclick={cancel_collect}>
-                                from {String(diff_anchor).padStart(3,'0')} — pick end ×
-                            </button>
-                        {:else if diff_menu}
                             <button class="sr-diffrange" onclick={copy_single}>
                                 just {String(n).padStart(3,'0')}
                             </button>
-                            <button class="sr-diffrange" onclick={start_diff_collect}>pick end</button>
+                            <button class="sr-diffrange collecting" onclick={cancel_collect}>
+                                from {String(diff_anchor).padStart(3,'0')} — pick end ×
+                            </button>
                         {:else}
-                            <button class="sr-diffrange" onclick={() => diff_menu = true}>copy</button>
+                            <button class="sr-diffrange" onclick={start_diff_collect}>copy diff</button>
                         {/if}
                     {/if}
 
