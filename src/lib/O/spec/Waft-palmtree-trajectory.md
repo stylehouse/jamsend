@@ -20,19 +20,12 @@ Waft,Ghost/LakeNets
     What,label:story
       Doc,path:Ghost/Story/Peeroleum.g
       Point,method:LakeNetherland
+      Point,method:Something
     What,label:peer
       Doc,path:Ghost/Peeroleum.g
       Point,method:Peeroleum
 ```
 
-**Consequence for the cursor API:** `LiesCurse` should not be the place that
-knows about Waft tree shape.  The "what is a valid cursor stop" and "what is
-the next stop" logic belongs in helpers on the Waft side:
-
-```
-H.Waft_cursor_next(w, examining)   // advance to next stop
-H.Waft_cursor_first(waft)          // first stop in a Waft
-```
 
 ---
 
@@ -82,19 +75,58 @@ w:Lang
               sc.class
 ```
 
-Key structural facts post-SI:
+## LE crux
 
-- `src_Waft` is gone.  `waft_key_of(src)` walks `c.waft`/`c.up` — available on
-  any Waft-linked node.  `Seem_clone_C` stamps `root.c.waft` so clone roots are
-  also reachable.
-- `req:Showing` is the cache-key-independent repaint path: fold/glow effects
-  without rebuilding Pmirror identity.  Each Pmirror carries `c.src_clone` so
-  Showing reaches `c.U` without re-resolving by spec.
-- `req:Furnishing` is the doc-open RPC.  The wants resolver seeds it; Lang drains
-  it via `o_elvis_req`; `finish(reply)` pings `reqturn:1` so Lies re-thinks.
+```
+  Spotlight%src = Lies Waft**, LE/Seem:origin $OC
+  Interest%src = Lang, LE/Seem:working $C
+```
+
+...maybe LE, since it is %dock indifferent, should just be on w:Lang/LE ?
+
+and that's what we have to watch, via every act on LE setting off an elvis to update some state in a controlled fashion (involved %req to watch it complete, etc.)
+
 - `e_Lang_LE_add`, `e_Lang_LE_edit`, `e_Lang_LE_drop`, `e_Lang_LE_push` are the
   write paths for clone-tree mutation.  All call `feebly_ponder()` so the
-  maneuvre re-encodes on the next tick.
+  `req:settle` re-encodes on the next tick.
+gathering all these e_Lang_LE_drop into a generic e_LE_preen method that does e%action:drop etc as they are 80% boilerplate.
+
+they've separated their navigation into cursoring the origin right? I suppose LE could abstract that too, presenting a manifold of C** you can read or write.
+
+### LE operation
+
+really unifying and clarifying what req:Languish vs req:workon is supposed to be doing... we need to realise how to reliably set our %Interest and other intentions.
+
+
+does Seem:working C/* get put into Interest/* ? could be handy - they are invisible at the moment, we only snap the D** and its /U
+
+so ~Interest resolves a %dock to contextify the Points with (which has to be found via the Waft** origin itself, because we may not have it in the cloned subset), may be at What/Doc or What(.c.up)+ (find_Doc_from_What() ?)
+
+### LE clients (NaviCado)
+
+NaviCado wants to know the full What/What/What C-path we're in...
+  this is in the corner of the screen while talking through a series of caves full of information...
+  it's important to regularly return to depth <3, for a good coherent show.
+  having just the What** depth number (if > 1) and the latest What:$label showing 
+
+   < by the way the label isn't appearing right now, just nav arrows (which work) with a blank space where the What label usually is. reactivity problem?
+
+  is a LE feature, I think - knowing the remote....
+
+getting the Interest%src:$C, finding C/* to pump at NaviCado... NaviCado would just be given prop LE from Languinio and talk entirely to it? and not even know it's in a Minimap or Codemirror? because LE knows the remote, it can be the channel of movement between the two. it's obvious really...
+
+LE could take on scurrying around the origin Waft** for some What's relative something, eg. Lies_src_doc_path(), waft_key_of should be find_Waft_path_from_What()? and probably shouldn't exist... yeah, all the passing around waft_key looks like bad programming? we can analyse that...
+
+### LE arrives
+
+And w:Lang/req:workon - or something within it - takes charge!
+
+req:settle and then req:Showing now is it? Lower-case (class, level, complexity) and upper.
+
+There's also req:timemachine and req:wants we need to keep in mind when distributing the systemic load into mutable machinations.
+
+any more isolations or interface togetherings we'd like to imagine...
+
 
 ---
 
@@ -123,52 +155,6 @@ This matters before 4c because 4c's carry-over seeding reads `clone.c.U?.sc.unsh
 to decide what to copy forward, and stamps `class:'ghost'` via the U sphere.
 Having two competing truths about showing/accepted would confuse that read.
 
-**Glow fix (tiny, do first).**  The Waft row glow currently checks
-`spot.sc.src === what` — only the directly-targeted `%What` lights up.  When
-`src` is a `%Doc` nested inside a `%What`, or when the cursor is on a child
-`%What`, the parent row stays dark.  The fix walks `src.c.up` until it finds
-the `%What` being rendered:
-
-```ts
-{@const is_what_active = (() => {
-    examining?.vers
-    const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
-    if (!spot?.sc.src) return false
-    // glow any %What that is src itself, or an ancestor of src via c.up
-    let node: any = spot.sc.src
-    while (node) {
-        if (node === what) return true
-        node = node.c?.up
-    }
-    return false
-})()}
-```
-
-Three lines in Waft.svelte.  `c.up` is stamped by `Waft_link_up` on every
-`%Doc` and `%What` in the tree; the walk terminates at the `%Waft` ceiling.
-
-**Sequencing:**
-
-```
-next    NaviCado / accepted_entries consolidation
-          capsule strip + in_group/showing state → NaviCado
-          U sphere becomes the single truth for showing/accepted
-          DocMinimap sheds the capsule block and its state
-4c      ↘ / ↓ branch + dive
-4d      ghost + rescue + ◀◀ rwnd
-```
-
----
-
-## Chunk 4 roadmap
-
-```
-4a  cursor_next steps %What  ✓ (logic still scattered — Waft_cursor_next pending)
-4b  req:desire playing loop  ✓ (req:timemachine; 4s auto-advance stub)
-
-4c  ↘ / ↓  branch + dive
-4d  ◀◀ rwnd
-```
 
 ---
 
@@ -250,29 +236,14 @@ attention with particular Points illuminated on the walls.
 ## Open faults
 
 ```
-// < Waft glow walks only the direct %What identity check; should walk
-//   src.c.up so any ancestor %What of the cursored node also glows.
-//   Three-line fix in Waft.svelte (see §Where we are).
 
 // < created_at session field on clones — stripped by Seem_toString / enWaft;
 //   needs wiring in LE_add_clone and the strip list.
-
-// < rescue window: ttlilt req lives under old What's Understanding, not the
-//   new one.  Needs a home before ghost decay is safe.
-
-// < vanish: unaccepted clone goner fires push_dirty on verify re-pull.
-//   Fix: LE_push stamps bD/was_disincluded:1 before replace-back;
-//   resolved_fn recognises that goner and suppresses push_dirty.
 
 // < req:push/%dirty not yet surfaced in the reqy fault UI.
 
 // < clone.c.waft is one scalar on the clone root; LE.sc.target.c.waft is the
 //   fallback for any clone landing unstamped.
-
-// < LE_what_* stay identity-based and frail; Travel-based when the tree grows.
-
-// < graft fallback to src_C in the pre-pull window: one stale tick where
-//   unaccepted/unshowing Points still paint.
 
 // < req:wants never prunes; history grows unbounded until a sweep exists.
 
@@ -281,15 +252,6 @@ attention with particular Points illuminated on the walls.
 
 // < maz:0 in the existing maneuvre (req:encode) is out-of-spec; fold into
 //   graft tail and confirm maz bottoms at 1.
-
-// < second Doc (Ghost/Peeroleum.g) doesn't load into CM — empty editor, no
-//   spinner.  The editorBegins storm (7 pairs) suggests active_dock ping-pong.
-// < Doc > What rendering: Waft.svelte renders Doc > What children for
-//   visibility; cursor candidates still don't reach them.  One-Doc-per-What
-//   restructuring eliminates the nesting.
-
-// < e_Lies_cursor_next and e_Lies_desire_step duplicate "next candidate" logic;
-//   should converge on Waft_cursor_next(w, examining) helper.
 
 // < e_Lang_LE_drop demote round-trip takes a full cursor-move cycle.
 
@@ -314,7 +276,6 @@ attention with particular Points illuminated on the walls.
   directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
   Whats that have points (`Lies_what_has_points`).
 - `oai` sync, `roai` async; `i()` always inserts.
-- `i_elvis_req` carries the req particle itself; `finish(reply)` pings `reqturn:1`.
 - `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not
   `$derived.by(void …)`.

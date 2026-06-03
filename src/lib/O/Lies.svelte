@@ -751,7 +751,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   do_fn for /req:Furnishing,path.  Fires each think until finished:
     //     1. no c.text yet  → wread it; ttlilt as a backstop while in flight.
     //     2. c.text present → courier this req to Lang via i_elvis_req.
-    //        req_sent:1 gates double-fire.  When Lang finish()es it, reqturn:1
+    //        req_sent:1 gates double-fire.  When Lang finish()es it, e%reqturn:1
     //        pings us and req.sc.finished lands — we close out.
     //
     //   text on c (not sc) — kept out of the snap; can be a full source file.

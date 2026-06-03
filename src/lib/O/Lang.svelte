@@ -486,7 +486,7 @@
     //   refresh) the per-doc req:Languish — Lang's mind for one doc, staging
     //   text_loaded → compile → grafted so the first graft beats the snap — then
     //   finish({ path, ready:1 }) once the dock is minted, which pings Lies back
-    //   with reqturn:1 so its Furnishing phase resolves.
+    //   with e%reqturn:1 so its Furnishing phase resolves.
     //
     //   The doc payload (text, gen_path) rides on the Languish req so text_loaded
     //   can install it: gen_path on sc (small, snap-visible), text on .c (large,
