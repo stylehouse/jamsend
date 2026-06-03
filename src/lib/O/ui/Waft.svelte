@@ -435,33 +435,29 @@
          class:ls-doc-new={!!doc.sc.new}
          class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
 
-        <!-- Doc row — idle or edit -->
-        {#if editing}
-            <div class="ls-item-hdr">
-                <PeelInput
-                    label="Doc"
-                    open={true}
-                    mk_ph={ITEM_TYPES.Doc.mk_ph}
-                    sc_ph={ITEM_TYPES.Doc.sc_ph}
-                    mainkey={item_mk[ek] ?? ''}
-                    on_mk={(v) => item_mk[ek] = v}
-                    sc_str={item_sc[ek] ?? ''}
-                    on_sc={(v) => item_sc[ek] = v}
-                    submit_label="✓"
-                    on_submit={() => submit_edit(container, doc)}
-                    on_cancel={() => cancel_edit(container, doc)} />
-            </div>
-        {:else}
-            <div class="ls-item-hdr">
-                <span class="pi-label">Doc:</span>
-                <button class="ls-doc-open-btn" title="open {dpath} in editor"
-                        onclick={() => focus_doc(doc)}>{dpath}</button>
+        <!-- Doc row — unified PeelInput; idle: display click opens editor, ✎ renames -->
+        <div class="ls-item-hdr">
+            <PeelInput
+                label="Doc"
+                open={editing}
+                display={dpath}
+                mk_ph={ITEM_TYPES.Doc.mk_ph}
+                sc_ph={ITEM_TYPES.Doc.sc_ph}
+                mainkey={item_mk[ek] ?? ''}
+                on_mk={(v) => item_mk[ek] = v}
+                sc_str={item_sc[ek] ?? ''}
+                on_sc={(v) => item_sc[ek] = v}
+                submit_label="✓"
+                on_open={() => focus_doc(doc)}
+                on_submit={() => submit_edit(container, doc)}
+                on_cancel={() => cancel_edit(container, doc)} />
+            {#if !editing}
                 <button class="ls-icon-btn" title="rename Doc"
                         onclick={() => start_edit(container, doc, 'Doc')}>✎</button>
                 <button class="ls-icon-btn ls-del-btn" title="remove Doc"
                         onclick={() => delete_item(doc, container)}>×</button>
-            </div>
-        {/if}
+            {/if}
+        </div>
 
         <!-- existing Points on this Doc — editable in-place, added via container's + -->
         {#if pts.length}
@@ -469,26 +465,22 @@
                 {#each pts as pt, idx (idx)}
                     {@const pek = edit_key(doc, pt)}
                     <div class="ls-point">
-                        {#if item_open[pek]}
-                            <PeelInput
-                                label="Point"
-                                open={true}
-                                mk_ph={ITEM_TYPES.Point.mk_ph}
-                                sc_ph={ITEM_TYPES.Point.sc_ph}
-                                mainkey={item_mk[pek] ?? ''}
-                                on_mk={(v) => item_mk[pek] = v}
-                                sc_str={item_sc[pek] ?? ''}
-                                on_sc={(v) => item_sc[pek] = v}
-                                submit_label="✓"
-                                on_submit={() => submit_edit(doc, pt)}
-                                on_cancel={() => cancel_edit(doc, pt)} />
-                        {:else}
-                            <!-- method is set by fuzzify/export; Point value is the fallback -->
-                            <button class="ls-point-open-btn"
-                                    title="open {dpath} at this point"
-                                    onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}>
-                                {ITEM_TYPES.Point.to_display(pt)}
-                            </button>
+                        <!-- method is set by fuzzify/export; Point value is the fallback -->
+                        <PeelInput
+                            label="Point"
+                            open={!!item_open[pek]}
+                            display={ITEM_TYPES.Point.to_display(pt)}
+                            mk_ph={ITEM_TYPES.Point.mk_ph}
+                            sc_ph={ITEM_TYPES.Point.sc_ph}
+                            mainkey={item_mk[pek] ?? ''}
+                            on_mk={(v) => item_mk[pek] = v}
+                            sc_str={item_sc[pek] ?? ''}
+                            on_sc={(v) => item_sc[pek] = v}
+                            submit_label="✓"
+                            on_open={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: dpath, point: pt.sc.method ?? pt.sc.Point })}
+                            on_submit={() => submit_edit(doc, pt)}
+                            on_cancel={() => cancel_edit(doc, pt)} />
+                        {#if !item_open[pek]}
                             <button class="ls-icon-btn" title="edit Point"
                                     onclick={() => start_edit(doc, pt, 'Point')}>✎</button>
                             <button class="ls-icon-btn ls-del-btn"
@@ -518,39 +510,31 @@
     <div class="ls-what" style="margin-left: {wdepth * 10}px"
          class:ls-what-active={is_spotlight(what)}>
 
-        <!-- What header — edit or idle -->
-        {#if editing}
-            <div class="ls-item-hdr ls-what-hdr">
-                <PeelInput
-                    label="What"
-                    open={true}
-                    mk_ph={ITEM_TYPES.What.mk_ph}
-                    sc_ph={ITEM_TYPES.What.sc_ph}
-                    mainkey={item_mk[ek] ?? ''}
-                    on_mk={(v) => item_mk[ek] = v}
-                    sc_str={item_sc[ek] ?? ''}
-                    on_sc={(v) => item_sc[ek] = v}
-                    submit_label="✓"
-                    on_submit={() => submit_edit(what, what)}
-                    on_cancel={() => cancel_edit(what, what)} />
-            </div>
-        {:else}
-            <div class="ls-item-hdr ls-what-hdr">
-                <span class="pi-label">What:</span>
-                <button class="ls-what-label"
-                        title="cursor to What:{what.sc.What}"
-                        onclick={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what, dive: true })}>
-                    {what.sc.What}
-                </button>
-                <span class="ls-spacer"></span>
+        <!-- What header — unified PeelInput; idle: display click moves cursor, ✎ renames -->
+        <div class="ls-item-hdr ls-what-hdr">
+            <PeelInput
+                label="What"
+                open={editing}
+                display={String(what.sc.What ?? '·')}
+                mk_ph={ITEM_TYPES.What.mk_ph}
+                sc_ph={ITEM_TYPES.What.sc_ph}
+                mainkey={item_mk[ek] ?? ''}
+                on_mk={(v) => item_mk[ek] = v}
+                sc_str={item_sc[ek] ?? ''}
+                on_sc={(v) => item_sc[ek] = v}
+                submit_label="✓"
+                on_open={() => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what, dive: true })}
+                on_submit={() => submit_edit(what, what)}
+                on_cancel={() => cancel_edit(what, what)} />
+            {#if !editing}
                 <button class="ls-icon-btn" title="rename What"
                         onclick={() => start_edit(what, what, 'What')}>✎</button>
                 <button class="ls-icon-btn ls-del-btn" title="delete What"
                         onclick={() => delete_item(what, waft)}>×</button>
                 <button class="ls-icon-btn ls-add-btn-icon" title="add child"
                         onclick={() => toggle_add_pick(what)}>+</button>
-            </div>
-        {/if}
+            {/if}
+        </div>
 
         <!-- add-child picker + forms for this What -->
         {#if add_picking[cid(what)]}
@@ -587,25 +571,21 @@
                 {#each what_pts_only as pt, idx (idx)}
                     {@const pek = edit_key(what, pt)}
                     <div class="ls-point">
-                        {#if item_open[pek]}
-                            <PeelInput
-                                label="Point"
-                                open={true}
-                                mk_ph={ITEM_TYPES.Point.mk_ph}
-                                sc_ph={ITEM_TYPES.Point.sc_ph}
-                                mainkey={item_mk[pek] ?? ''}
-                                on_mk={(v) => item_mk[pek] = v}
-                                sc_str={item_sc[pek] ?? ''}
-                                on_sc={(v) => item_sc[pek] = v}
-                                submit_label="✓"
-                                on_submit={() => submit_edit(what, pt)}
-                                on_cancel={() => cancel_edit(what, pt)} />
-                        {:else}
-                            <button class="ls-point-open-btn"
-                                    title="point in What:{what.sc.What}"
-                                    onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { point: pt.sc.method ?? pt.sc.Point })}>
-                                {ITEM_TYPES.Point.to_display(pt)}
-                            </button>
+                        <PeelInput
+                            label="Point"
+                            open={!!item_open[pek]}
+                            display={ITEM_TYPES.Point.to_display(pt)}
+                            mk_ph={ITEM_TYPES.Point.mk_ph}
+                            sc_ph={ITEM_TYPES.Point.sc_ph}
+                            mainkey={item_mk[pek] ?? ''}
+                            on_mk={(v) => item_mk[pek] = v}
+                            sc_str={item_sc[pek] ?? ''}
+                            on_sc={(v) => item_sc[pek] = v}
+                            submit_label="✓"
+                            on_open={() => H.i_elvisto('Lang/Lang', 'Dock_open', { point: pt.sc.method ?? pt.sc.Point })}
+                            on_submit={() => submit_edit(what, pt)}
+                            on_cancel={() => cancel_edit(what, pt)} />
+                        {#if !item_open[pek]}
                             <button class="ls-icon-btn" title="edit Point"
                                     onclick={() => start_edit(what, pt, 'Point')}>✎</button>
                             <button class="ls-icon-btn ls-del-btn"
@@ -694,28 +674,12 @@
         width: 3px; height: 1.2rem;
         background: #446a; box-shadow: 0 0 6px 2px #446a; border-radius: 2px;
     }
-    /* What label — clickable to set graft cursor at the What level */
-    .ls-what-label {
-        background: none; border: none; cursor: pointer;
-        font-family: monospace; font-size: 0.76rem;
-        color: #7a9ab0; padding: 0; text-align: left;
-    }
-    .ls-what-label:hover { color: #a8c8e0; text-decoration: underline; }
 
-    .ls-doc {
-        margin: 0.1rem 0 0.2rem 0;
-        border-left: 2px solid #2a2a3a;
-        padding-left: 0.35rem;
-    }
-    .ls-doc-new     { border-left-color: #3a5a3a }
-    .ls-doc-missing { border-left-color: #5a3a2a; opacity: 0.8 }
-    /* Doc path button — clickable to open in editor */
-    .ls-doc-open-btn {
-        background: none; border: none; cursor: pointer; text-align: left; padding: 0;
-        font-family: monospace; font-size: 0.74rem;
-        color: #7a9ab0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .ls-doc-open-btn:hover { color: #a8c8e0; text-decoration: underline; }
+    /* Doc — flat like Point, no container border.
+       new/missing states tint the left margin colour of the first child row. */
+    .ls-doc         { margin: 0.1rem 0 0.2rem 0; }
+    .ls-doc-new     { border-left: 2px solid #3a5a3a; padding-left: 0.35rem; }
+    .ls-doc-missing { border-left: 2px solid #5a3a2a; padding-left: 0.35rem; opacity: 0.8 }
 
     .ls-points { margin: 0.05rem 0 0.05rem 0.3rem }
     .ls-point  {
@@ -726,11 +690,6 @@
     .ls-point:last-child { border-bottom: none }
     /* PeelInput inside a Point row fills the row so cancel reaches the right edge */
     .ls-point :global(.pi-row) { flex: 1; min-width: 0; }
-    .ls-point-open-btn {
-        background: none; border: none; cursor: pointer; text-align: left; padding: 0;
-        font-family: monospace; font-size: 0.74rem; color: #a8c; flex: 1;
-    }
-    .ls-point-open-btn:hover { color: #d0b0f0; text-decoration: underline; }
     /* Direct Points on a What (time-slice style) — slightly indented */
     .ls-what-pts { margin-left: 0.2rem; }
 
@@ -800,10 +759,4 @@
         padding: 0.1rem 0.3rem;
     }
     .ls-pick-btn:hover { color: #99b; border-color: #558; }
-
-    /* pi-label used directly in item header rows (mirrors PeelInput's class) */
-    .pi-label {
-        font-family: monospace; font-size: 0.74rem;
-        color: #556; flex-shrink: 0; white-space: nowrap;
-    }
 </style>
