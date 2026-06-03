@@ -6,9 +6,9 @@
     // this component survives Liesui re-renders, keeping form state and
     // focused inputs stable across think() ticks.
     //
-    // Single <PeelInput> callsite — everything routes through the pi snippet.
-    //   item rows:  pi(peel_item_props(item, container, t, ctx?))
-    //   add forms:  pi(add_item_props(container))
+    // Single <PeelInput> callsite via pi(). Single item wrapper via waftitem(C, upC).
+    //   waftitem detects type from C.sc mainkey, reads C.o({}) for children,
+    //   renders .ls-item / .ls-item-hdr / .ls-items — all personality from ITEM_TYPES.
 
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -30,27 +30,28 @@
 
     // ── item-type descriptor table ────────────────────────────────────
     //
-    //   Point, Doc, What all share the same PeelInput UX.
-    //   mk_key:     sc key that carries the primary value
-    //   mk_ph:      placeholder for the mainkey input
-    //   sc_ph:      placeholder for the sc extras input; '' hides it
-    //   mk_default: value used when mainkey is left empty on submit
-    //   make_sc:    builds the full sc for oai() from (val, sc_str)
-    //   to_display: renders a C as its peel string for the idle row
-    //   on_open:    the navigation action for clicking the display value
+    //   Every behavioural difference between Point/Doc/What lives here.
+    //
+    //   mk_key:       sc key that identifies this type (first key in sc)
+    //   mk_ph:        mainkey input placeholder
+    //   sc_ph:        sc extras placeholder; '' hides the field
+    //   make_sc:      builds the oai() sc from (val, sc_str)
+    //   to_display:   idle-row display string from a C
+    //   on_open:      navigation action when the display value is clicked
+    //   item_cls:     CSS class(es) on the .ls-item wrapper
+    //   item_cls_fns: dynamic class predicates — {cls: string, when: (C)=>bool}[]
+    //   child_types:  ItemTypes allowed as add-child options; undefined = leaf (no children)
+    //   can_add:      whether this type shows + (add-child picker) in its header
+    //   spotlight:    whether this type participates in the Spotlight glow
     //
     //   < Doc: directory-list autocomplete for Ghost/* paths
     //   < Doc: bare name auto-prefixes Ghost/ and appends .g
-    //   < Point: clicking 'method' part of placeholder focuses sc field
-    //     with 'method:' pre-filled; clicking 'such' appends at end of value
-    //   < What/Doc: extras sc field (tag:foo) not yet used by anything —
-    //     stub it in now so the UX accepts it, wire it up when needed
+    //   < What/Doc: extras sc field (tag:foo) not yet used by anything
     const ITEM_TYPES = {
         Point: {
             mk_key:     'Point' as const,
             mk_ph:      'fuzzyName',
             sc_ph:      'method:Name,call',
-            mk_default: 1 as string | number,
             make_sc:    (val: string, sc_str: string) => ({
                 Point: val === '' ? 1 : val,
                 ...(sc_str ? peel(sc_str) : {})
@@ -65,29 +66,40 @@
                     throw `to_display Point: 'Point' not first: ${d}`
                 return d
             },
-            on_open: (item: TheC, ctx?: { dpath?: string }) =>
+            on_open:    (item: TheC, dpath?: string) =>
                 H.i_elvisto('Lang/Lang', 'Dock_open', {
-                    path:  ctx?.dpath,
+                    path:  dpath,
                     point: (item.sc as any).method ?? item.sc.Point,
                 }),
+            item_cls:   'ls-item ls-item-point',
+            item_cls_fns: [] as { cls: string; when: (c: TheC) => boolean }[],
+            child_types: undefined,   // leaf — no children
+            can_add:    false,
+            spotlight:  false,
         },
         Doc: {
             mk_key:     'Doc' as const,
             mk_ph:      'Ghost/…',
             sc_ph:      '',
-            mk_default: '' as string | number,
             make_sc:    (val: string, sc_str: string) => ({
                 Doc: resolve_doc_path(val),
                 ...(sc_str ? peel(sc_str) : {})
             }),
             to_display: (c: TheC) => String(c.sc.Doc ?? ''),
             on_open:    (item: TheC) => focus_doc(item),
+            item_cls:   'ls-item ls-item-doc',
+            item_cls_fns: [
+                { cls: 'ls-item-doc-new',     when: (c) => !!c.sc.new },
+                { cls: 'ls-item-doc-missing', when: (c) => !!c.sc.not_found && !c.sc.new },
+            ],
+            child_types: ['Point', 'What'] as ItemType[],
+            can_add:    false,
+            spotlight:  false,
         },
         What: {
             mk_key:     'What' as const,
             mk_ph:      'label',
             sc_ph:      '',
-            mk_default: '' as string | number,
             make_sc:    (val: string, sc_str: string) => ({
                 What: val,
                 ...(sc_str ? peel(sc_str) : {})
@@ -95,13 +107,18 @@
             to_display: (c: TheC) => String(c.sc.What ?? '·'),
             on_open:    (item: TheC) =>
                 H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: item, dive: true }),
+            item_cls:   'ls-item ls-item-what',
+            item_cls_fns: [
+                { cls: 'ls-item-what-active', when: (c) => is_spotlight(c) },
+            ],
+            child_types: ['Point', 'Doc', 'What'] as ItemType[],
+            can_add:    true,
+            spotlight:  true,
         },
     } as const
     type ItemType = keyof typeof ITEM_TYPES
 
-    // ── PeelInput props types ─────────────────────────────────────────
-    //   The union of everything pi() can receive — a plain object,
-    //   assembled by peel_item_props / add_item_props.
+    // ── PiProps — the full set of props pi() accepts ──────────────────
     type PiProps = {
         label:         string
         open:          boolean
@@ -129,6 +146,14 @@
         return v
     }
 
+    // ── item_type_of — detect type from mainkey ───────────────────────
+    //   Returns the ItemType whose mk_key is the first key in C.sc, or undefined.
+    function item_type_of(c: TheC): ItemType | undefined {
+        const first_key = Object.keys(c.sc ?? {})[0] as ItemType | undefined
+        if (first_key && first_key in ITEM_TYPES) return first_key
+        return undefined
+    }
+
     // ── reactive reads ────────────────────────────────────────────────
     let wkey          = $derived(waft.sc.Waft as string)
     let is_active     = $derived(!!waft.sc.active)
@@ -138,12 +163,12 @@
 
     // ── unified item-edit form state ──────────────────────────────────
     //
-    //   editing: the one item C currently open for editing/adding.
+    //   editing: the one C currently open for editing/adding.
     //   Since only one form is ever open, a single $state pair holds the draft.
     //   draft_type lives in a WeakMap (non-reactive; read only on submit).
     //
-    //   add_picking_C: container Cs with the type-picker open.
-    //   add_type_C:    the ItemType chosen for the pending add-form on a container.
+    //   add_picking_C: containers with the type-picker open.
+    //   add_type_C:    the chosen ItemType for the pending add-form.
     //
     //   Waft rename — kept separate; Waft path is special (fires e:Lies_rename_waft)
     let editing      = new SvelteSet<TheC>()
@@ -163,9 +188,6 @@
     }
     function pick_and_open(container: TheC, t: ItemType) {
         add_picking_C.delete(container)
-        open_add(container, t)
-    }
-    function open_add(container: TheC, t: ItemType) {
         editing.clear()
         editing.add(container)
         add_type_C.set(container, t)
@@ -180,8 +202,8 @@
         const val  = draft_mk.trim()
         const sc_s = draft_sc.trim()
         if (!val && t !== 'Point') return
-        const td  = ITEM_TYPES[t]
-        const sc  = td.make_sc(val, sc_s)
+        const td   = ITEM_TYPES[t]
+        const sc   = td.make_sc(val, sc_s)
         if (t === 'Doc' && !(sc as any).Doc) return
         const child = container.oai(sc)
         if (t === 'Doc') child.sc.new = 1
@@ -272,18 +294,13 @@
 
     // ── props builders — feed into pi() ──────────────────────────────
     //
-    //   peel_item_props: edit/idle row for an existing Point/Doc/What.
-    //     on_open from ITEM_TYPES[t]; on_add only for What (the + picker).
+    //   item_props: edit/idle row for an existing item C.
+    //     dpath threads through to Point's on_open for Dock_open navigation.
     //
-    //   add_item_props: the open add-form for a new child of container.
-    //     Always open=true, submit_label='+', no on_edit/on_del/on_add.
+    //   add_item_props: open add-form for a new child of container.
+    //     Always open=true, submit_label='+', no edit/del buttons.
 
-    function peel_item_props(
-        item:      TheC,
-        container: TheC,
-        t:         ItemType,
-        ctx?:      { dpath?: string; on_add?: () => void }
-    ): PiProps {
+    function item_props(item: TheC, container: TheC, t: ItemType, dpath?: string): PiProps {
         const td   = ITEM_TYPES[t]
         const open = editing.has(item)
         return {
@@ -297,12 +314,12 @@
             sc_str:       open ? draft_sc : '',
             on_sc:        (v: string) => { draft_sc = v },
             submit_label: '✓',
-            on_open:      () => td.on_open(item, ctx),
+            on_open:      () => td.on_open(item as any, dpath),
             on_submit:    () => submit_edit(container, item),
             on_cancel:    () => cancel_edit(item),
             on_edit:      () => start_edit(item, t),
             on_del:       () => delete_item(item, container),
-            on_add:       ctx?.on_add,
+            on_add:       td.can_add ? () => toggle_add_pick(item) : undefined,
         }
     }
 
@@ -329,6 +346,7 @@
 
     <!-- Waft header row — rename or idle -->
     <div class="ls-waft-hdr">
+        Waft:
         {#if renaming_waft !== null}
             <input class="ls-input ls-rename-input"
                 value={renaming_waft}
@@ -357,21 +375,17 @@
         <EncodingSplatter {waft} />
     {/if}
 
-    <!-- add-child picker + form at Waft level -->
+    <!-- Waft-level add picker + form -->
     {#if add_picking_C.has(waft)}
-        {@render render_type_picker(waft, ['What', 'Doc', 'Point'])}
+        {@render type_picker(waft, ['What', 'Doc', 'Point'])}
     {/if}
     {#if editing.has(waft) && add_type_C.has(waft)}
         <div class="ls-add-row">{@render pi(add_item_props(waft))}</div>
     {/if}
 
-    <!-- children — iterated whole, switched by type key -->
+    <!-- children — all types rendered indifferently through waftitem -->
     {#each waft_children as child (child)}
-        {#if (child.sc as any).What}
-            {@render render_what(child as TheC)}
-        {:else if (child.sc as any).Doc}
-            {@render render_doc(child as TheC, waft)}
-        {/if}
+        {@render waftitem(child, waft)}
     {/each}
 
     <!-- sub-Wafts (recursive) -->
@@ -403,8 +417,8 @@
         on_add={p.on_add} />
 {/snippet}
 
-<!-- render_type_picker — type button row for adding a child to container -->
-{#snippet render_type_picker(container: TheC, types: ItemType[])}
+<!-- type_picker — type button row before a new child type is chosen -->
+{#snippet type_picker(container: TheC, types: ItemType[])}
     <div class="ls-type-picker">
         {#each types as t (t)}
             <button class="ls-pick-btn" onclick={() => pick_and_open(container, t)}>{t}</button>
@@ -413,86 +427,39 @@
     </div>
 {/snippet}
 
-<!-- render_doc — Doc header + its Points.
-     container is the parent C (Waft or What) — used for edit key scoping.
-     Points are added via the containing What/Waft add-child form. -->
-{#snippet render_doc(doc: TheC, container: TheC)}
-    {@const dpath     = doc.sc.Doc as string}
-    {@const pts       = (() => { void doc.version; return doc.o({ Point: 1 }) as TheC[] })()}
-    {@const doc_whats = (() => { void doc.version; return doc.o({ What: 1 }) as TheC[] })()}
-
-    <div class="ls-doc"
-         class:ls-doc-new={!!doc.sc.new}
-         class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
-
-        <div class="ls-item-hdr">
-            {@render pi(peel_item_props(doc, container, 'Doc'))}
-        </div>
-
-        {#if pts.length || doc_whats.length}
-            <div class="ls-doc-children">
-                {#each pts as pt (pt)}
-                    <div class="ls-point">
-                        {@render pi(peel_item_props(pt, doc, 'Point', { dpath }))}
-                    </div>
-                {/each}
-                <!-- %What children of this %Doc (Doc > What nesting, e.g. time-slices) -->
-                {#each doc_whats as dw (dw)}
-                    {@render render_what(dw)}
-                {/each}
+<!-- waftitem — the one wrapper for every Point/Doc/What in the tree.
+     Detects type from C.sc mainkey, reads C.o({}) for children,
+     renders .ls-item / .ls-item-hdr / .ls-items.
+     All per-type personality (CSS, child_types, spotlight) comes from ITEM_TYPES.
+     upC is the containing C — used for edit/delete keying and Doc dpath. -->
+{#snippet waftitem(C: TheC, upC: TheC)}
+    {@const t = item_type_of(C)}
+    {#if t}
+        {@const td       = ITEM_TYPES[t]}
+        {@const items    = (() => { void C.version; return C.o() as TheC[] })()} 
+        {@const dpath    = t === 'Doc' ? C.sc.Doc as string : undefined}
+        {@const dyn_cls  = td.item_cls_fns.filter(f => f.when(C)).map(f => f.cls).join(' ')}
+        <div class="{td.item_cls} {dyn_cls}">
+            <div class="ls-item-hdr">
+                {@render pi(item_props(C, upC, t, dpath))}
             </div>
-        {/if}
-
-    </div>
-{/snippet}
-
-<!-- render_what — What header + its children, all contained inside the bordered block.
-     Spotlight beam glow when cursor is aimed at this What or any ancestor.
-     No wdepth param — nesting ls-what inside ls-what-children inside ls-what
-     stacks the borders naturally; each level indents via padding-left. -->
-{#snippet render_what(what: TheC)}
-    {@const what_children = (() => { void what.version; return what.o() as TheC[] })()}
-    {@const what_pts_only = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
-
-    <div class="ls-what" class:ls-what-active={is_spotlight(what)}>
-
-        <div class="ls-what-hdr">
-            {@render pi(peel_item_props(what, what, 'What', {
-                on_add: () => toggle_add_pick(what),
-            }))}
-        </div>
-
-        <div class="ls-what-children">
-
-            {#if add_picking_C.has(what)}
-                {@render render_type_picker(what, ['Point', 'Doc', 'What'])}
-            {/if}
-            {#if editing.has(what) && add_type_C.has(what)}
-                <div class="ls-add-row">{@render pi(add_item_props(what))}</div>
-            {/if}
-
-            <!-- Points in one block so last-child border suppression works -->
-            {#if what_pts_only.length}
-                <div class="ls-points">
-                    {#each what_pts_only as pt (pt)}
-                        <div class="ls-point">
-                            {@render pi(peel_item_props(pt, what, 'Point'))}
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-
-            <!-- non-Point children in insertion order, switched by type -->
-            {#each what_children as child (child)}
-                {#if (child.sc as any).Doc}
-                    {@render render_doc(child as TheC, what)}
-                {:else if (child.sc as any).What}
-                    {@render render_what(child as TheC)}
+            {#if td.child_types}
+                {#if add_picking_C.has(C)}
+                    {@render type_picker(C, td.child_types)}
                 {/if}
-            {/each}
-
+                {#if editing.has(C) && add_type_C.has(C)}
+                    <div class="ls-add-row">{@render pi(add_item_props(C))}</div>
+                {/if}
+                {#if items.length}
+                    <div class="ls-items">
+                        {#each items as child (child)}
+                            {@render waftitem(child, C)}
+                        {/each}
+                    </div>
+                {/if}
+            {/if}
         </div>
-    </div>
+    {/if}
 {/snippet}
 
 <script module>
@@ -537,61 +504,48 @@
     .ls-active-btn.ls-is-active { color: #88c }
     .ls-active-btn:hover        { color: #88c }
 
-    /* unified item header row — used directly for Docs; wrapped in ls-what-hdr for Whats */
+    /* shared item wrapper */
+    .ls-item { margin: 0.1rem 0; }
     .ls-item-hdr {
         display: flex; align-items: center; gap: 0.2rem; min-height: 1.4rem;
     }
-    /* PeelInput inside an item header fills the row so cancel reaches the right edge */
+    /* PeelInput fills the header row so cancel reaches the right edge */
     .ls-item-hdr :global(.pi-row) { flex: 1; min-width: 0; }
+    /* children indented under any item type */
+    .ls-items { padding-left: 0.5rem; }
 
-    /* What — the whole block is bordered so it brackets header + all children */
-    .ls-what {
+    /* Point — pink left border, warm label */
+    .ls-item-point {
+        border-left: 2px solid #4a2a3a; padding-left: 0.3rem;
+        border-bottom: 1px solid #1c1c28;
+    }
+    .ls-item-point:last-child { border-bottom: none }
+    .ls-item-point :global(.pi-label) { color: #7a4a5a; }
+
+    /* Doc — no left border by default; new/missing tint via modifier classes */
+    .ls-item-doc { margin: 0.1rem 0 0.15rem 0; }
+    .ls-item-doc-new     { border-left: 2px solid #3a5a3a; padding-left: 0.35rem; }
+    .ls-item-doc-missing { border-left: 2px solid #5a3a2a; padding-left: 0.35rem; opacity: 0.8; }
+
+    /* What — bordered left margin brackets header + all children; spotlight glow */
+    .ls-item-what {
         margin: 0.15rem 0;
         border-left: 2px solid #2a3a4a;
         padding-left: 0.35rem;
     }
     /* nested Whats step the border colour cooler so depth reads visually */
-    .ls-what .ls-what { border-left-color: #223040; }
-    .ls-what .ls-what .ls-what { border-left-color: #1a2530; }
-    .ls-what-hdr {
-        display: flex; align-items: center; gap: 0.2rem; min-height: 1.4rem;
-    }
-    /* PeelInput inside a What header fills the row */
-    .ls-what-hdr :global(.pi-row) { flex: 1; min-width: 0; }
+    .ls-item-what .ls-item-what { border-left-color: #223040; }
+    .ls-item-what .ls-item-what .ls-item-what { border-left-color: #1a2530; }
     /* What label brighter than the muted Doc/Point default */
-    .ls-what-hdr :global(.pi-label) { color: #7a8fa8; }
-    /* children sit indented inside the border — the border visually brackets them */
-    .ls-what-children { padding-left: 0.5rem; }
-    /* Spotlight glow — overwrites the left border with a glowing beam for full block height */
-    .ls-what-active { position: relative; }
-    .ls-what-active::before {
+    .ls-item-what > .ls-item-hdr :global(.pi-label) { color: #7a8fa8; }
+    /* Spotlight glow — overwrites left border with a glowing beam */
+    .ls-item-what-active { position: relative; }
+    .ls-item-what-active::before {
         content: '';
         position: absolute; left: -2px; top: 0; bottom: 0;
         width: 2px;
         background: #446a; box-shadow: 0 0 6px 2px #446a;
     }
-
-    /* Doc — flat header row like a Point, no container border.
-       new/missing states tint via a left stripe on the whole block. */
-    .ls-doc         { margin: 0.1rem 0 0.15rem 0; }
-    .ls-doc-new     { border-left: 2px solid #3a5a3a; padding-left: 0.35rem; }
-    .ls-doc-missing { border-left: 2px solid #5a3a2a; padding-left: 0.35rem; opacity: 0.8 }
-    /* Points and nested Whats under a Doc are indented */
-    .ls-doc-children { padding-left: 0.5rem; }
-
-    .ls-points { margin: 0.05rem 0; }
-    .ls-point  {
-        display: flex; align-items: center; gap: 0.25rem;
-        min-height: 1.4rem;
-        padding: 0.1rem 0; border-bottom: 1px solid #1c1c28; flex-wrap: wrap;
-        /* pink left border — Points are a warm accent against the cool What/Doc palette */
-        border-left: 2px solid #4a2a3a; padding-left: 0.3rem;
-    }
-    .ls-point:last-child { border-bottom: none }
-    /* PeelInput inside a Point row fills the row so cancel reaches the right edge */
-    .ls-point :global(.pi-row) { flex: 1; min-width: 0; }
-    /* Points: label in pink family */
-    .ls-point :global(.pi-label) { color: #7a4a5a; }
 
     /* add-item row — PeelInput open for a new child */
     .ls-add-row { margin-top: 0.05rem; }
@@ -612,7 +566,6 @@
     .ls-add-btn:hover    { background: #222238; color: #aac }
     .ls-add-btn:disabled { opacity: 0.35; cursor: default }
     .ls-add-btn-sm       { padding: 0.15rem 0.3rem }
-    /* icon-sized + button in headers */
     .ls-add-btn-icon { color: #448; font-size: 0.8rem }
     .ls-add-btn-icon:hover { color: #88a }
 
@@ -623,7 +576,6 @@
     .ls-cancel-btn:hover  { color: #999 }
     .ls-cancel-right { margin-left: auto }
 
-    /* Shared icon button styles — declared :global so any child component can use them */
     :global(.ls-icon-btn) {
         background: none; border: none; color: #444;
         cursor: pointer; font-size: 0.8rem; line-height: 1;
@@ -632,7 +584,6 @@
     :global(.ls-icon-btn:hover) { color: #aaa }
     :global(.ls-del-btn:hover)  { color: #f66 }
 
-    /* type-picker row — appears after + is clicked, before a type is chosen */
     .ls-type-picker {
         display: flex; align-items: center; gap: 0.25rem;
         min-height: 1.4rem; margin-top: 0.05rem; flex-wrap: wrap;
