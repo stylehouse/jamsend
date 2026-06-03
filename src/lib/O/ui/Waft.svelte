@@ -33,6 +33,7 @@
     //   mk_default: value used when mainkey is left empty on submit
     //   make_sc:    builds the full sc for oai() from (val, sc_str)
     //   to_display: renders a C as its peel string for the idle row
+    //   on_open:    the navigation action for clicking the display value
     //
     //   < Doc: directory-list autocomplete for Ghost/* paths
     //   < Doc: bare name auto-prefixes Ghost/ and appends .g
@@ -60,6 +61,11 @@
                     throw `to_display Point: 'Point' not first: ${d}`
                 return d
             },
+            on_open: (item: TheC, ctx?: { dpath?: string }) =>
+                H.i_elvisto('Lang/Lang', 'Dock_open', {
+                    path:  ctx?.dpath,
+                    point: (item.sc as any).method ?? item.sc.Point,
+                }),
         },
         Doc: {
             mk_key:     'Doc' as const,
@@ -71,6 +77,7 @@
                 ...(sc_str ? peel(sc_str) : {})
             }),
             to_display: (c: TheC) => String(c.sc.Doc ?? ''),
+            on_open:    (item: TheC) => focus_doc(item),
         },
         What: {
             mk_key:     'What' as const,
@@ -82,6 +89,8 @@
                 ...(sc_str ? peel(sc_str) : {})
             }),
             to_display: (c: TheC) => String(c.sc.What ?? '·'),
+            on_open:    (item: TheC) =>
+                H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: item, dive: true }),
         },
     } as const
     type ItemType = keyof typeof ITEM_TYPES
@@ -103,7 +112,7 @@
 
     // ── unified item-edit form state ──────────────────────────────────
     //
-    //   active_editing_C: the one item C currently open for editing/adding.
+    //   editing: the one item C currently open for editing/adding.
     //   Since only one form is ever open, a single $state pair holds the draft.
     //   draft_type lives in a WeakMap (non-reactive; read only on submit).
     //
@@ -111,9 +120,9 @@
     //   add_type_C:    the ItemType chosen for the pending add-form on a container.
     //
     //   Waft rename — kept separate; Waft path is special (fires e:Lies_rename_waft)
-    let active_editing_C = new SvelteSet<TheC>()
-    let draft_mk   = $state('')
-    let draft_sc   = $state('')
+    let editing      = new SvelteSet<TheC>()
+    let draft_mk     = $state('')
+    let draft_sc     = $state('')
     const draft_type = new WeakMap<TheC, ItemType>()
 
     let add_picking_C = new SvelteSet<TheC>()
@@ -137,14 +146,14 @@
         open_add(container, t)
     }
     function open_add(container: TheC, t: ItemType) {
-        active_editing_C.clear()
-        active_editing_C.add(container)
+        editing.clear()
+        editing.add(container)
         add_type_C.set(container, t)
         draft_mk = ''
         draft_sc = ''
     }
     function cancel_add(container: TheC) {
-        active_editing_C.delete(container)
+        editing.delete(container)
     }
     function submit_add(container: TheC) {
         const t    = add_type_C.get(container)!
@@ -169,8 +178,8 @@
         const sc     = item.sc as Record<string, any>
         const mk_key = ITEM_TYPES[t].mk_key
         const pval   = sc[mk_key]
-        active_editing_C.clear()
-        active_editing_C.add(item)
+        editing.clear()
+        editing.add(item)
         draft_type.set(item, t)
         draft_mk = (pval === 1 || pval === true) ? '' : String(pval ?? '')
         draft_sc = Object.entries(sc)
@@ -179,7 +188,7 @@
             .join(',')
     }
     function cancel_edit(item: TheC) {
-        active_editing_C.delete(item)
+        editing.delete(item)
     }
     async function submit_edit(container: TheC, item: TheC) {
         const t      = draft_type.get(item)!
@@ -205,7 +214,7 @@
         waft.bump_version()
         // await tick so derived display values re-read updated sc before edit mode clears
         await tick()
-        active_editing_C.delete(item)
+        editing.delete(item)
     }
     function delete_item(item: TheC, container: TheC) {
         container.drop(item)
@@ -289,19 +298,22 @@
 
     // ── peel_item_props ───────────────────────────────────────────────
     //
-    //   Returns all PeelInput props for a given item C in its container.
-    //   active_editing_C.has(item) drives open/idle state reactively.
-    //   draft_mk/draft_sc are the shared $state pair for the one open form.
+    //   Returns all PeelInput props for a given item C in its container,
+    //   including on_edit, on_del, and optionally on_add — so the call site
+    //   is always a single <PeelInput /> with no surrounding button markup.
     //
-    //   on_open is type-specific:
-    //     Point → Dock_open at the point's location
-    //     Doc   → focus_doc (set Lies cursor to this doc)
-    //     What  → Lies_cursor_what (dive into What)
+    //   on_open comes from ITEM_TYPES[t].on_open, parameterised by ctx.
+    //   on_add is only supplied for What header rows (toggles the add-child picker).
     //
     //   Called once per item row — no duplication between render_doc/render_what.
-    function peel_item_props(item: TheC, container: TheC, t: ItemType, ctx?: { dpath?: string }) {
+    function peel_item_props(
+        item:      TheC,
+        container: TheC,
+        t:         ItemType,
+        ctx?:      { dpath?: string; on_add?: () => void }
+    ) {
         const td   = ITEM_TYPES[t]
-        const open = active_editing_C.has(item)
+        const open = editing.has(item)
         return {
             label:        t,
             open,
@@ -313,13 +325,12 @@
             sc_str:       open ? draft_sc : '',
             on_sc:        (v: string) => { draft_sc = v },
             submit_label: '✓' as string,
-            on_open:      t === 'Point'
-                ? () => H.i_elvisto('Lang/Lang', 'Dock_open', { path: ctx?.dpath, point: (item.sc as any).method ?? item.sc.Point })
-                : t === 'Doc'
-                ? () => focus_doc(item)
-                : () => H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: item, dive: true }),
+            on_open:      () => td.on_open(item, ctx),
             on_submit:    () => submit_edit(container, item),
             on_cancel:    () => cancel_edit(item),
+            on_edit:      () => start_edit(item, t),
+            on_del:       () => delete_item(item, container),
+            on_add:       ctx?.on_add,
         }
     }
 </script>
@@ -356,26 +367,12 @@
         <EncodingSplatter {waft} />
     {/if}
 
-    <!-- add-child picker + forms at Waft level -->
+    <!-- add-child picker + form at Waft level -->
     {#if add_picking_C.has(waft)}
-        <div class="ls-type-picker">
-            {#each (['What', 'Doc', 'Point'] as ItemType[]) as t (t)}
-                <button class="ls-pick-btn" onclick={() => pick_and_open(waft, t)}>{t}</button>
-            {/each}
-            <button class="ls-cancel-btn" onclick={() => add_picking_C.delete(waft)}>cancel</button>
-        </div>
+        {@render render_type_picker(waft, ['What', 'Doc', 'Point'])}
     {/if}
-    {#if active_editing_C.has(waft)}
-        {@const t = add_type_C.get(waft)!}
-        <div class="ls-add-row">
-            <PeelInput label={t} open={true}
-                mk_ph={ITEM_TYPES[t].mk_ph} sc_ph={ITEM_TYPES[t].sc_ph}
-                mainkey={draft_mk} on_mk={(v) => draft_mk = v}
-                sc_str={draft_sc}  on_sc={(v) => draft_sc = v}
-                submit_label="+"
-                on_submit={() => submit_add(waft)}
-                on_cancel={() => cancel_add(waft)} />
-        </div>
+    {#if editing.has(waft) && add_type_C.has(waft)}
+        {@render render_add_form(waft)}
     {/if}
 
     <!-- children — iterated whole, switched by type key -->
@@ -424,6 +421,35 @@
 
 </div>
 
+<!-- render_type_picker — type button row for adding a child to container -->
+{#snippet render_type_picker(container: TheC, types: ItemType[])}
+    <div class="ls-type-picker">
+        {#each types as t (t)}
+            <button class="ls-pick-btn" onclick={() => pick_and_open(container, t)}>{t}</button>
+        {/each}
+        <button class="ls-cancel-btn" onclick={() => add_picking_C.delete(container)}>cancel</button>
+    </div>
+{/snippet}
+
+<!-- render_add_form — PeelInput open for a new child of container -->
+{#snippet render_add_form(container: TheC)}
+    {@const t = add_type_C.get(container)!}
+    <div class="ls-add-row">
+        <PeelInput
+            label={t}
+            open={true}
+            mk_ph={ITEM_TYPES[t].mk_ph}
+            sc_ph={ITEM_TYPES[t].sc_ph}
+            mainkey={draft_mk}
+            on_mk={(v) => draft_mk = v}
+            sc_str={draft_sc}
+            on_sc={(v) => draft_sc = v}
+            submit_label="+"
+            on_submit={() => submit_add(container)}
+            on_cancel={() => cancel_add(container)} />
+    </div>
+{/snippet}
+
 <!-- render_doc — Doc header + its Points.
      container is the parent C (Waft or What) — used for edit key scoping.
      Points are added via the containing What/Waft add-child form. -->
@@ -431,24 +457,22 @@
     {@const dpath     = doc.sc.Doc as string}
     {@const pts       = (() => { void doc.version; return doc.o({ Point: 1 }) as TheC[] })()}
     {@const doc_whats = (() => { void doc.version; return doc.o({ What: 1 }) as TheC[] })()}
-    {@const dp        = peel_item_props(doc, container, 'Doc')}
 
     <div class="ls-doc"
          class:ls-doc-new={!!doc.sc.new}
          class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
 
-        <!-- Doc header row -->
+        <!-- Doc header row — single PeelInput owns display + ✎ × -->
         <div class="ls-item-hdr">
-            {@render item_row(dp, () => start_edit(doc, 'Doc'), () => delete_item(doc, container))}
+            <PeelInput {...peel_item_props(doc, container, 'Doc')} />
         </div>
 
         <!-- Points and nested Whats sit inside an indented children block -->
         {#if pts.length || doc_whats.length}
             <div class="ls-doc-children">
                 {#each pts as pt (pt)}
-                    {@const pp = peel_item_props(pt, doc, 'Point', { dpath })}
                     <div class="ls-point">
-                        {@render item_row(pp, () => start_edit(pt, 'Point'), () => delete_item(pt, doc))}
+                        <PeelInput {...peel_item_props(pt, doc, 'Point', { dpath })} />
                     </div>
                 {/each}
                 <!-- %What children of this %Doc (Doc > What nesting, e.g. time-slices) -->
@@ -468,48 +492,32 @@
 {#snippet render_what(what: TheC)}
     {@const what_children = (() => { void what.version; return what.o() as TheC[] })()}
     {@const what_pts_only = (() => { void what.version; return what.o({ Point: 1 }) as TheC[] })()}
-    {@const wp            = peel_item_props(what, what, 'What')}
 
     <div class="ls-what" class:ls-what-active={is_spotlight(what)}>
 
+        <!-- What header — single PeelInput owns display + ✎ × + -->
         <div class="ls-what-hdr">
-            {@render item_row(wp,
-                () => start_edit(what, 'What'),
-                () => delete_item(what, waft),
-                () => toggle_add_pick(what))}
+            <PeelInput {...peel_item_props(what, what, 'What', {
+                on_add: () => toggle_add_pick(what),
+            })} />
         </div>
 
         <div class="ls-what-children">
 
-            <!-- add-child picker + forms -->
+            <!-- add-child picker + form -->
             {#if add_picking_C.has(what)}
-                <div class="ls-type-picker">
-                    {#each (['Point', 'Doc', 'What'] as ItemType[]) as t (t)}
-                        <button class="ls-pick-btn" onclick={() => pick_and_open(what, t)}>{t}</button>
-                    {/each}
-                    <button class="ls-cancel-btn" onclick={() => add_picking_C.delete(what)}>cancel</button>
-                </div>
+                {@render render_type_picker(what, ['Point', 'Doc', 'What'])}
             {/if}
-            {#if active_editing_C.has(what) && add_type_C.has(what)}
-                {@const t = add_type_C.get(what)!}
-                <div class="ls-add-row">
-                    <PeelInput label={t} open={true}
-                        mk_ph={ITEM_TYPES[t].mk_ph} sc_ph={ITEM_TYPES[t].sc_ph}
-                        mainkey={draft_mk} on_mk={(v) => draft_mk = v}
-                        sc_str={draft_sc}  on_sc={(v) => draft_sc = v}
-                        submit_label="+"
-                        on_submit={() => submit_add(what)}
-                        on_cancel={() => cancel_add(what)} />
-                </div>
+            {#if editing.has(what) && add_type_C.has(what)}
+                {@render render_add_form(what)}
             {/if}
 
             <!-- Points in one block so last-child border suppression works -->
             {#if what_pts_only.length}
                 <div class="ls-points">
                     {#each what_pts_only as pt (pt)}
-                        {@const pp = peel_item_props(pt, what, 'Point')}
                         <div class="ls-point">
-                            {@render item_row(pp, () => start_edit(pt, 'Point'), () => delete_item(pt, what))}
+                            <PeelInput {...peel_item_props(pt, what, 'Point')} />
                         </div>
                     {/each}
                 </div>
@@ -526,40 +534,6 @@
 
         </div>
     </div>
-{/snippet}
-
-<!-- item_row — the one PeelInput + ✎/× (+ + for Whats) written exactly once.
-     on_add is optional; its presence indicates this is a What header row. -->
-{#snippet item_row(
-    p:        ReturnType<typeof peel_item_props>,
-    on_edit:  () => void,
-    on_del:   () => void,
-    on_add?:  () => void
-)}
-    <PeelInput
-        label={p.label}
-        open={p.open}
-        display={p.display}
-        mk_ph={p.mk_ph}
-        sc_ph={p.sc_ph}
-        mainkey={p.mainkey}
-        on_mk={p.on_mk}
-        sc_str={p.sc_str}
-        on_sc={p.on_sc}
-        submit_label={p.submit_label}
-        on_open={p.on_open}
-        on_submit={p.on_submit}
-        on_cancel={p.on_cancel} />
-    {#if !p.open}
-        <button class="ls-icon-btn" title="edit {p.label}"
-                onclick={on_edit}>✎</button>
-        <button class="ls-icon-btn ls-del-btn" title="delete {p.label}"
-                onclick={on_del}>×</button>
-        {#if on_add}
-            <button class="ls-icon-btn ls-add-btn-icon" title="add child"
-                    onclick={on_add}>+</button>
-        {/if}
-    {/if}
 {/snippet}
 
 <script module>
@@ -625,6 +599,8 @@
     }
     /* PeelInput inside a What header fills the row */
     .ls-what-hdr :global(.pi-row) { flex: 1; min-width: 0; }
+    /* What label brighter than the muted Doc/Point default */
+    .ls-what-hdr :global(.pi-label) { color: #7a8fa8; }
     /* children sit indented inside the border — the border visually brackets them */
     .ls-what-children { padding-left: 0.5rem; }
     /* Spotlight glow — overwrites the left border with a glowing beam for full block height */
@@ -649,10 +625,14 @@
         display: flex; align-items: center; gap: 0.25rem;
         min-height: 1.4rem;
         padding: 0.1rem 0; border-bottom: 1px solid #1c1c28; flex-wrap: wrap;
+        /* pink left border — Points are a warm accent against the cool What/Doc palette */
+        border-left: 2px solid #4a2a3a; padding-left: 0.3rem;
     }
     .ls-point:last-child { border-bottom: none }
     /* PeelInput inside a Point row fills the row so cancel reaches the right edge */
     .ls-point :global(.pi-row) { flex: 1; min-width: 0; }
+    /* Points: label in pink family */
+    .ls-point :global(.pi-label) { color: #7a4a5a; }
 
     /* add-item row — PeelInput open for a new child */
     .ls-add-row { margin-top: 0.05rem; }

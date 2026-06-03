@@ -1,12 +1,15 @@
 <script lang="ts">
     // PeelInput.svelte — inline add/edit form for any keyed thing.
     //
-    // Layout (collapsed):   Label: display  [+]
+    // Layout (collapsed):   Label: display  [✎] [×] [+]?  [open-btn]?
     // Layout (open):        Label: [mainkey]  [sc_str]  [✓/+]  cancel
     //
     // Controlled — caller owns the values and passes handlers.
     // No $bindable; no undefined bind crashes.
     // Focused on mount when open becomes true (use:focus_first on mainkey input).
+    //
+    // on_edit / on_del / on_add are optional — when present, the ✎ × + buttons
+    //  render here in the idle state so every call site is one <PeelInput />.
 
     let {
         label        = 'Point',
@@ -22,6 +25,9 @@
         on_open,
         on_submit,
         on_cancel,
+        on_edit,
+        on_del,
+        on_add,
     }: {
         label?:        string
         mainkey?:      string
@@ -36,6 +42,9 @@
         on_open?:      () => void
         on_submit:     () => void
         on_cancel:     () => void
+        on_edit?:      () => void   // renders ✎ when idle
+        on_del?:       () => void   // renders × when idle
+        on_add?:       () => void   // renders + when idle (What header only)
     } = $props()
 
     function handle_keydown(ev: KeyboardEvent) {
@@ -73,6 +82,15 @@
         {/if}
         {#if on_open}
             <button class="pi-add-btn" onclick={on_open}>+</button>
+        {/if}
+        {#if on_edit}
+            <button class="ls-icon-btn" title="edit {label}" onclick={on_edit}>✎</button>
+        {/if}
+        {#if on_del}
+            <button class="ls-icon-btn ls-del-btn" title="delete {label}" onclick={on_del}>×</button>
+        {/if}
+        {#if on_add}
+            <button class="ls-icon-btn ls-add-btn-icon" title="add child" onclick={on_add}>+</button>
         {/if}
     {/if}
 </div>
