@@ -1,11 +1,13 @@
 <script lang="ts">
     // PeelInput.svelte — inline add/edit form for any keyed thing.
     //
-    // Layout (collapsed):   Label: display  [✎] [×] [+]?  [open-btn]?
-    // Layout (open):        Label: [mainkey]  [sc_str]  [✓/+]  cancel
+    // Layout (collapsed):   Label: [val] [,sc]  [✎] [×] [+]?  [open-btn]?
+    // Layout (open):        Label: [mainkey input]  [sc input]  [✓/+]  cancel
     //
     // Controlled — caller owns the values and passes handlers.
     // No $bindable; no undefined bind crashes.
+    // display_val: mainkey value — rendered larger/brighter.
+    // display_sc:  extras sc string — rendered smaller, muted, comma-prefixed when val present.
     // focus_sc=false (default): focuses mainkey on open.
     // focus_sc=true:            focuses sc field on open (mainkey already obvious or :1).
     //
@@ -17,7 +19,8 @@
         mainkey      = '',
         sc_str       = '',
         open         = false,
-        display      = '',
+        display_val  = '',             // idle: mainkey value (big)
+        display_sc   = '',             // idle: extras sc string (small)
         mk_ph        = 'fuzzyName',
         sc_ph        = 'method:Name,call',
         submit_label = '+',
@@ -36,7 +39,8 @@
         mainkey?:      string
         sc_str?:       string
         open?:         boolean
-        display?:      string
+        display_val?:  string
+        display_sc?:   string
         mk_ph?:        string
         sc_ph?:        string
         submit_label?: string
@@ -66,7 +70,7 @@
 </script>
 
 <div class="pi-row">
-    <span class="pi-label">{label}{open ? ':' : mk_is_one ? (display ? ',' : '') : ':'}</span>
+    <span class="pi-label">{label}{open ? ':' : mk_is_one ? (display_val ? ',' : '') : ':'}</span>
     {#if open}
         <input class="pi-input pi-main"
                placeholder={mk_ph}
@@ -85,8 +89,11 @@
         <button class="pi-submit" onclick={on_submit}>{submit_label}</button>
         <button class="pi-cancel" onclick={on_cancel}>cancel</button>
     {:else}
-        {#if display}
-            <span class="pi-display">{display}</span>
+        {#if display_val}
+            <span class="pi-display-val">{display_val}</span>
+        {/if}
+        {#if display_sc}
+            <span class="pi-display-sc">{display_val ? ',' : ''}{display_sc}</span>
         {/if}
         {#if on_open}
             <button class="pi-add-btn" onclick={on_open}>+</button>
@@ -112,10 +119,14 @@
         font-family: monospace; font-size: 0.74rem;
         color: #556; flex-shrink: 0; white-space: nowrap;
     }
-    .pi-display {
-        font-family: monospace; font-size: 0.74rem;
-        color: #7a9ab0; flex: 1; white-space: nowrap; overflow: hidden;
-        text-overflow: ellipsis;
+    .pi-display-val {
+        font-family: monospace; font-size: 0.82rem;
+        color: #9ab8cc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pi-display-sc {
+        font-family: monospace; font-size: 0.72rem;
+        color: #5a7a8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        flex: 1;
     }
     .pi-add-btn {
         background: none; border: none; color: #448;

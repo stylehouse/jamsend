@@ -9,6 +9,8 @@
     // Single <PeelInput> callsite via pi(). Single item wrapper via waftitem(C, upC).
     //   waftitem detects type from C.sc mainkey, reads C.o({}) for children,
     //   renders .ls-item / .ls-item-hdr / .ls-items — all personality from ITEM_TYPES.
+    //   The Waft header row itself is rendered as waftitem(waft, waft) via the Waft
+    //   entry in ITEM_TYPES — no separate header block.
 
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -47,6 +49,24 @@
     //   < Doc: directory-list autocomplete for Ghost/* paths
     //   < Doc: bare name auto-prefixes Ghost/ and appends .g
     const ITEM_TYPES = {
+        Waft: {
+            mk_key:     'Waft' as const,
+            mk_ph:      'path/to/waft',
+            sc_ph:      'tag:foo',
+            make_sc:    (val: string, sc_str: string) => ({
+                Waft: val,
+                ...(sc_str ? peel(sc_str) : {})
+            }),
+            // < rename is a no-op here — backend rewrites %Waft on load/save to new path
+            on_open:    (_item: TheC) => on_active(waft),
+            item_cls:   'ls-item ls-item-waft',
+            item_cls_fns: [
+                { cls: 'ls-item-waft-active', when: (_c) => is_active },
+            ] as { cls: string; when: (c: TheC) => boolean }[],
+            child_types: ['What', 'Doc', 'Point'] as ItemType[],
+            can_add:    true,
+            spotlight:  false,
+        },
         Point: {
             mk_key:     'Point' as const,
             mk_ph:      'fuzzyName',
@@ -105,33 +125,37 @@
     } as const
     type ItemType = keyof typeof ITEM_TYPES
 
-    // ── item_to_display — unified display string for any item C ──────
+    // ── item_to_display — split display for any item C ───────────────
     //
-    //   Shows the mainkey value (omitted when :1 — the label covers it)
-    //    followed by any extras sc as a depeel string.
-    //   eg {Point:1, method:'transport'} → 'method:transport'
-    //      {Point:'MyThing'}             → 'MyThing'
-    //      {What:'label', tag:'foo'}     → 'label,tag:foo'
-    //      {Doc:'Ghost/foo.g'}           → 'Ghost/foo.g'
-    //   What falls back to '·' when empty so the row has visible click target.
-    function item_to_display(c: TheC, t: ItemType): string {
-        const sc     = c.sc as Record<string, any>
+    //   Returns { val, sc } separately so PeelInput can style them at different sizes.
+    //   val:  mainkey value string — empty when :1 (label alone covers it)
+    //   sc:   extras as depeel string — keys beyond the mainkey
+    //
+    //   eg {Point:1, method:'transport'} → { val:'',           sc:'method:transport' }
+    //      {Point:'MyThing'}             → { val:'MyThing',     sc:'' }
+    //      {What:'label', tag:'foo'}     → { val:'label',       sc:'tag:foo' }
+    //      {Doc:'Ghost/foo.g'}           → { val:'Ghost/foo.g', sc:'' }
+    //   What val falls back to '·' when both empty so the row has a visible click target.
+    //   Internal state keys (active, new, not_found) are excluded from sc extras.
+    const DISPLAY_SKIP = new Set(['active', 'new', 'not_found'])
+    function item_to_display(c: TheC, t: ItemType): { val: string; sc: string } {
+        const sc_obj = c.sc as Record<string, any>
         const mk_key = ITEM_TYPES[t].mk_key
-        const mk_val = sc[mk_key]
-        const extras = Object.entries(sc)
-            .filter(([k]) => k !== mk_key)
+        const mk_val = sc_obj[mk_key]
+        const sc = Object.entries(sc_obj)
+            .filter(([k]) => k !== mk_key && !DISPLAY_SKIP.has(k))
             .map(([k, v]) => v === 1 ? k : `${k}:${v}`)
             .join(',')
-        const val_str = (mk_val === 1 || mk_val === true) ? '' : String(mk_val ?? '')
-        if (!val_str && !extras) return t === 'What' ? '·' : ''
-        return [val_str, extras].filter(Boolean).join(',')
+        const val = (mk_val === 1 || mk_val === true) ? '' : String(mk_val ?? '')
+        return { val: (!val && !sc && t === 'What') ? '·' : val, sc }
     }
 
     // ── PiProps — the full set of props pi() accepts ──────────────────
     type PiProps = {
         label:         string
         open:          boolean
-        display?:      string
+        display_val?:  string          // idle: mainkey value (big)
+        display_sc?:   string          // idle: extras sc string (small)
         mk_ph?:        string
         sc_ph?:        string
         mk_is_one?:    boolean         // mainkey value is :1 — label shows as comma-key
@@ -168,7 +192,7 @@
     // ── reactive reads ────────────────────────────────────────────────
     let wkey          = $derived(waft.sc.Waft as string)
     let is_active     = $derived(!!waft.sc.active)
-    let waft_children = $derived((() => { void waft.version; return waft.o() as TheC[] })())
+    let waft_children = $derived((() => { void waft.version; return waft.o().filter((c: TheC) => !c.sc.Waft) as TheC[] })())
     let sub_wafts     = $derived((() => { void waft.version; return waft.o({ Waft: 1 }) as TheC[] })())
     let waft_mungs    = $derived((() => { void waft.version; return waft.o({ mung_error: 1 }) as TheC[] })())
 
@@ -180,9 +204,6 @@
     //
     //   add_picking_C: containers with the type-picker open.
     //   add_type_C:    the chosen ItemType for the pending add-form.
-    //
-    //   Waft rename also routes through editing/draft_mk.
-    //    editing.has(waft) with no add_type_C entry distinguishes rename from add-child.
     let editing      = new SvelteSet<TheC>()
     let draft_mk     = $state('')
     let draft_sc     = $state('')
@@ -191,24 +212,6 @@
 
     let add_picking_C = new SvelteSet<TheC>()
     const add_type_C  = new WeakMap<TheC, ItemType>()
-
-    // ── Waft rename form ──────────────────────────────────────────────
-    //   Routes through editing/draft_mk like all other item edits.
-    //   waft itself is the key — editing.has(waft) with no add_type_C entry
-    //    distinguishes rename from add-child.
-    function start_rename_waft() {
-        editing.clear()
-        editing.add(waft)
-        draft_mk = wkey
-        draft_sc = ''
-    }
-    function cancel_rename_waft() { editing.delete(waft) }
-    function commit_rename_waft() {
-        const n = draft_mk.trim()
-        editing.delete(waft)
-        if (!n || n === wkey) return
-        H.i_elvisto('Lies/Lies', 'Lies_rename_waft', { old_path: wkey, new_path: n })
-    }
 
     // ── add-item form ─────────────────────────────────────────────────
     function toggle_add_pick(container: TheC) {
@@ -307,26 +310,6 @@
         return false
     }
 
-    // ── waft_rename_props — feeds the Waft header rename into pi() ────
-    //
-    //   Fires e:Lies_rename_waft so Lies can persist a waft_rename_job before
-    //   touching any wormhole files.  Lies mutates waft.sc.Waft after writing
-    //   the new snap.  Renaming is a move; old snap is left in place.
-    //   No sc_ph — waft path is a single string key, no extras field.
-    function waft_rename_props(): PiProps {
-        return {
-            label:        'Waft',
-            open:         true,
-            mk_ph:        'path/to/waft',
-            sc_ph:        '',
-            mainkey:      draft_mk,
-            on_mk:        (v) => { draft_mk = v },
-            submit_label: 'rename',
-            on_submit:    commit_rename_waft,
-            on_cancel:    cancel_rename_waft,
-        }
-    }
-
     // ── Doc focus ─────────────────────────────────────────────────────
     function focus_doc(doc: TheC) {
         H.i_elvisto('Lies/Lies', 'Lies_set_cursor', { doc_C: doc, waft_key: wkey })
@@ -344,10 +327,13 @@
         const td      = ITEM_TYPES[t]
         const open    = editing.has(item)
         const mk_val  = (item.sc as any)[td.mk_key]
+        const is_waft = t === 'Waft'
+        const disp    = item_to_display(item, t)
         return {
             label:        t,
             open,
-            display:      item_to_display(item, t),
+            display_val:  disp.val,
+            display_sc:   disp.sc,
             mk_ph:        td.mk_ph,
             sc_ph:        td.sc_ph,
             mk_is_one:    mk_val === 1 || mk_val === true,
@@ -358,10 +344,11 @@
             focus_sc:     open ? draft_focus_sc : false,
             submit_label: '✓',
             on_open:      () => td.on_open(item as any, dpath),
-            on_submit:    () => submit_edit(container, item),
+            // < Waft rename is a no-op — backend rewrites %Waft on load/save
+            on_submit:    is_waft ? () => cancel_edit(item) : () => submit_edit(container, item),
             on_cancel:    () => cancel_edit(item),
             on_edit:      () => start_edit(item, t),
-            on_del:       () => delete_item(item, container),
+            on_del:       is_waft ? () => on_delete(waft) : () => delete_item(item, container),
             on_add:       td.can_add ? () => toggle_add_pick(item) : undefined,
         }
     }
@@ -388,42 +375,16 @@
 
 <div class="ls-waft" style="margin-left: {depth * 14}px" class:ls-waft-active={is_active}>
 
-    <!-- Waft header row — rename (via pi) or idle -->
-    <div class="ls-waft-hdr">
-        {#if editing.has(waft) && !add_type_C.has(waft)}
-            {@render pi(waft_rename_props())}
-        {:else}
-            Waft:
-            <span class="ls-waft-key">{wkey}</span>
-            <span class="ls-spacer"></span>
-            <button class="ls-icon-btn ls-active-btn" class:ls-is-active={is_active}
-                    title={is_active ? 'active' : 'set active'}
-                    onclick={() => on_active(waft)}>{is_active ? '●' : '○'}</button>
-            <button class="ls-icon-btn" title="rename Waft"
-                    onclick={start_rename_waft}>✎</button>
-            <button class="ls-icon-btn ls-del-btn" title="delete Waft"
-                    onclick={() => on_delete(waft)}>×</button>
-            <button class="ls-icon-btn ls-add-btn-icon" title="add child"
-                    onclick={() => toggle_add_pick(waft)}>+</button>
-        {/if}
-    </div>
-
+    <!-- Waft header row — waft C rendered as a waftitem like any other -->
     {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
         <EncodingSplatter {waft} />
     {/if}
+    {@render waftitem(waft, waft)}
 
-    <!-- Waft-level add picker + form -->
-    {#if add_picking_C.has(waft)}
-        {@render type_picker(waft, ['What', 'Doc', 'Point'])}
-    {/if}
-    {#if editing.has(waft) && add_type_C.has(waft)}
-        <div class="ls-add-row">{@render pi(add_item_props(waft))}</div>
-    {/if}
-
-    <!-- children — all types rendered indifferently through waftitem -->
-    {#each waft_children as child (child)}
+    <!-- children — all types rendered through waftitem -->
+    <!-- {#each waft_children as child (child)}
         {@render waftitem(child, waft)}
-    {/each}
+    {/each} -->
 
     <!-- sub-Wafts (recursive) -->
     {#each sub_wafts as sw (sw.sc.Waft)}
@@ -438,7 +399,8 @@
     <PeelInput
         label={p.label}
         open={p.open}
-        display={p.display}
+        display_val={p.display_val}
+        display_sc={p.display_sc}
         mk_ph={p.mk_ph}
         sc_ph={p.sc_ph}
         mk_is_one={p.mk_is_one}
@@ -532,16 +494,22 @@
         font-size: 0.83rem; color: #ccc;
     }
     .ls-waft-active { border-color: #446 }
-    .ls-waft-hdr {
-        display: flex; align-items: center; gap: 0.25rem;
-        min-height: 1.4rem; margin-bottom: 0.2rem;
-    }
-    .ls-waft-key { font-family: monospace; font-size: 0.76rem; color: #8ab; font-weight: bold }
-    .ls-spacer   { flex: 1 }
 
-    .ls-active-btn              { color: #446; font-size: 0.7rem }
-    .ls-active-btn.ls-is-active { color: #88c }
-    .ls-active-btn:hover        { color: #88c }
+    /* Waft header row — styled like a What but with active-glow on the key */
+    .ls-item-waft {
+        margin: 0 0 0.2rem 0;
+        border-left: 2px solid #334;
+        padding-left: 0.35rem;
+    }
+    .ls-item-waft :global(.pi-label) { color: #6a7fa8; font-weight: bold; }
+    .ls-item-waft :global(.pi-display-val) { color: #8ab; font-weight: bold; }
+    /* active waft: glow on the left border */
+    .ls-item-waft-active { position: relative; }
+    .ls-item-waft-active::before {
+        content: '';
+        position: absolute; left: -2px; top: 0; bottom: 0; width: 2px;
+        background: #88c; box-shadow: 0 0 6px 2px #446a;
+    }
 
     /* shared item wrapper */
     .ls-item { margin: 0.1rem 0; }
@@ -575,8 +543,9 @@
     /* nested Whats step the border colour cooler so depth reads visually */
     .ls-item-what .ls-item-what { border-left-color: #223040; }
     .ls-item-what .ls-item-what .ls-item-what { border-left-color: #1a2530; }
-    /* What label brighter than the muted Doc/Point default */
-    .ls-item-what > .ls-item-hdr :global(.pi-label) { color: #7a8fa8; }
+    /* What label brighter than the muted Doc/Point default; display larger */
+    .ls-item-what > .ls-item-hdr :global(.pi-label)       { color: #7a8fa8; }
+    .ls-item-what > .ls-item-hdr :global(.pi-display-val) { font-size: 0.9rem; color: #aac8dd; }
     /* Spotlight glow — overwrites left border with a glowing beam */
     .ls-item-what-active { position: relative; }
     .ls-item-what-active::before {
