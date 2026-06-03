@@ -1,13 +1,13 @@
 <script lang="ts">
     // Liesui.svelte — reactive UI for Lies.
     //
-    // Reactivity strategy!!!
+    // Reactivity strategy
     // ───────────────────
     //   H.ave fires every think() tick (Housing reassigns the array whenever any
     //   enrolled particle bumps its version, which Lies does on every tick).
-    //   The $effect runs on every such reassignment, but update_from_Lies is
-    //   throttled so the actual $state writes (and thus DOM updates) happen at
-    //   most once per interval — keeping focused inputs stable between ticks.
+    //   The $effect runs on every such reassignment, but H.clear throttles the
+    //   actual $state writes (and thus DOM updates) — keeping focused inputs
+    //   stable between ticks.
     //
     //   The Waft tree renders <WaftComp> components.  Components survive parent
     //   re-renders as long as their key (waft.sc.Waft) is stable.  All form state
@@ -15,12 +15,12 @@
     //
     //   Doc header rows use DocRow.svelte, which reads doc.version and w.version
     //   directly — so loaded/pending state stays live without Liesui re-rendering.
-    //   (Previously they were a snippet capturing stale closure state.)
 
     import type { House }   from "$lib/O/Housing.svelte"
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import WaftComp         from "$lib/O/ui/Waft.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
+    import PeelInput        from "$lib/O/ui/PeelInput.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -29,7 +29,6 @@
     let loaded_docs: TheC[]           = $state([])
     let errors:      TheC[]           = $state([])
     let all_wafts:   TheC[]           = $state([])
-    // pending_paths removed — DocRow derives pending state from w.version directly
 
     // examining — the %examining particle from Lies's w, placed in watched:ave.
     // Passed down to Waft and DocRow; DocRow derives is_examining from it.
@@ -37,42 +36,30 @@
     // needing a Liesui re-render — DocRow's $derived tracks examining.version directly.
     let examining: TheC | undefined = $state()
 
-    // H.ave is a stable TheC; ob() tracks H.ave.version for Svelte reactivity.
     $effect(() => {
-        console.log(`🔪 Liesui: ave++`)
         const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
         if (!ex) return
         const lies_w = ex.c?.w as TheC | undefined
         if (!lies_w) return
-        if (lies_w !== Lies) {
-            console.log(`🔪 Liesui: Lies found`)
-            Lies = lies_w
-        }
+        if (lies_w !== Lies) Lies = lies_w
         H.clear(async () => {
-            loaded_docs = lies_w.o({ loaded_doc: 1 })  as TheC[]
+            loaded_docs = lies_w.o({ loaded_doc: 1 })   as TheC[]
             errors      = lies_w.o({ compile_error: 1 }) as TheC[]
-            all_wafts   = lies_w.o({ Waft: 1 })         as TheC[]
+            all_wafts   = lies_w.o({ Waft: 1 })          as TheC[]
             examining   = ex
         })
     })
 
-    // ── header state ─────────────────────────────────────────────────
-    let waft_input_open = $state(false)
-    let new_waft_path   = $state('')
+    // ── + Waft form ──────────────────────────────────────────────────
+    let waft_form_open = $state(false)
+    let new_waft_path  = $state('')
 
-    function toggle_waft_input() {
-        waft_input_open = !waft_input_open
-        if (!waft_input_open) new_waft_path = ''
-    }
     function submit_new_waft() {
         const path = new_waft_path.trim()
         if (!path) return
         H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
-        new_waft_path = ''
-        waft_input_open = false
-    }
-    function fire_now_waft() {
-        H.i_elvisto('Lies/Lies', 'Lies_now_Waft', {})
+        new_waft_path  = ''
+        waft_form_open = false
     }
 
     // ── active / delete (need Lies to touch siblings) ─────────────────
@@ -98,24 +85,20 @@
 
 <div class="ls-ui">
 
-    <!-- ── header ── -->
+    <!-- header — just the + Waft PeelInput row; no title, no + Now -->
     <div class="ls-header">
-        <span class="ls-title">🔪 Lies</span>
-        <div class="ls-header-btns">
-            <button class="ls-hdr-btn" class:ls-hdr-btn-active={waft_input_open}
-                    onclick={toggle_waft_input}>+ Waft</button>
-            <button class="ls-hdr-btn" onclick={fire_now_waft} title="Spawn hourly Look waft">+ Now</button>
-        </div>
+        <PeelInput
+            label="Waft"
+            open={waft_form_open}
+            mk_ph="path/to/waft"
+            sc_ph=""
+            mainkey={new_waft_path}
+            on_mk={(v) => new_waft_path = v}
+            submit_label="+"
+            on_open={() => { waft_form_open = true }}
+            on_submit={submit_new_waft}
+            on_cancel={() => { waft_form_open = false; new_waft_path = '' }} />
     </div>
-
-    {#if waft_input_open}
-        <div class="ls-waft-input-row">
-            <input class="ls-input ls-waft-path-input" bind:value={new_waft_path}
-                onkeydown={(ev) => { if (ev.key==='Enter') submit_new_waft(); if (ev.key==='Escape') toggle_waft_input() }}
-                use:focus_on_mount />
-            <button class="ls-add-btn" onclick={submit_new_waft} disabled={!new_waft_path.trim()}>+</button>
-        </div>
-    {/if}
 
     {#if !Lies}
         <div class="ls-empty">waiting for Lies…</div>
@@ -131,44 +114,34 @@
         </div>
     {/if}
 
-    <!-- ── loaded docs flat list ── -->
-    <!-- Shows w/{loaded_doc:1} entries — confirmation that Lies handed each
-         doc to Lang.  DocRow reads w.version directly so pending state is live. -->
+    <!-- loaded docs flat list — w/{loaded_doc:1} entries confirm Lies handed
+         each doc to Lang.  DocRow reads w.version directly so pending/active
+         state is live without Liesui re-rendering. -->
     {#if loaded_docs.length}
         <div class="ls-loaded-section">
             {#each loaded_docs as ld (ld.sc.path)}
                 <DocRow {H} w={Lies} doc={ld} {examining} />
             {/each}
         </div>
-    {:else}
-        <div class="ls-empty">no docs open</div>
     {/if}
 
-    <!-- ── Waft tree ── -->
-    <!-- Pass Lies (the w particle) as w so DocRow inside WaftComp has live state. -->
+    <!-- Waft tree — pass Lies (w particle) as w so DocRow inside WaftComp has
+         live state.  WaftComp is keyed by waft.sc.Waft so it survives re-renders. -->
     {#if all_wafts.length}
-        {@const thing = console.log("! all_wafts!!")}
         <div class="ls-waft-section">
             {#each all_wafts as waft (waft.sc.Waft)}
                 <WaftComp {H} w={Lies} {waft} depth={0}
                     {examining}
                     on_active={set_waft_active}
                     on_delete={delete_waft} />
-
             {/each}
         </div>
+    {:else}
+        <div class="ls-empty">no wafts</div>
     {/if}
 
     {/if}
 </div>
-
-<script module>
-    export function focus_on_mount(node: HTMLElement) {
-        node.focus()
-        if (node instanceof HTMLInputElement) node.select()
-        return {}
-    }
-</script>
 
 <style>
     .ls-ui {
@@ -176,17 +149,7 @@
         border: 1px solid #444; border-radius: 4px;
         background: #111; color: #ccc; min-width: 360px;
     }
-    .ls-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem }
-    .ls-title  { font-weight: bold; flex-shrink: 0 }
-    .ls-header-btns { display: flex; gap: 0.25rem; margin-left: auto }
-    .ls-hdr-btn {
-        background: #1a1a28; border: 1px solid #334; border-radius: 3px;
-        color: #88a; cursor: pointer; font-size: 0.74rem; padding: 0.15rem 0.4rem;
-    }
-    .ls-hdr-btn:hover     { background: #222238; color: #aac }
-    .ls-hdr-btn-active    { background: #222238; border-color: #556; color: #aac }
-    .ls-waft-input-row    { display: flex; gap: 0.25rem; margin-bottom: 0.3rem }
-    .ls-waft-path-input   { flex: 1 }
+    .ls-header { margin-bottom: 0.3rem }
     .ls-errors {
         background: #300; border: 1px solid #c44; border-radius: 3px;
         padding: 0.3rem 0.5rem; margin-bottom: 0.4rem;
@@ -196,19 +159,5 @@
     .ls-error-msg { width: 100%; font-size: 0.76rem; font-family: monospace }
     .ls-loaded-section { margin-bottom: 0.4rem }
     .ls-empty  { color: #666; padding: 0.2rem 0; font-style: italic }
-    .ls-waft-section { margin-top: 0.4rem; border-top: 1px solid #222; padding-top: 0.3rem }
-
-    .ls-input {
-        background: #0d0d14; border: 1px solid #333; border-radius: 3px;
-        color: #aaa; font-family: monospace; font-size: 0.76rem;
-        padding: 0.2rem 0.35rem; outline: none;
-    }
-    .ls-input:focus { border-color: #446 }
-    .ls-add-btn {
-        background: #1a1a2a; border: 1px solid #334; border-radius: 3px;
-        color: #88a; cursor: pointer; font-size: 0.76rem; padding: 0.2rem 0.4rem;
-        white-space: nowrap; flex-shrink: 0;
-    }
-    .ls-add-btn:hover    { background: #222238; color: #aac }
-    .ls-add-btn:disabled { opacity: 0.35; cursor: default }
+    .ls-waft-section { margin-top: 0.2rem }
 </style>
