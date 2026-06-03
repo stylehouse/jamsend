@@ -5,6 +5,11 @@
     // Svelte reconciles {#each} items by component key (waft.sc.Waft) so
     // this component survives Liesui re-renders, keeping form state and
     // focused inputs stable across think() ticks.
+    //
+    // Single <PeelInput> callsite — everything routes through the pi snippet.
+    //   item rows:    pi(peel_item_props(item, container, t, ctx?))
+    //   add forms:    pi(add_item_props(container))
+    //   origin clones:pi(clone_props(clone))
 
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -94,6 +99,28 @@
         },
     } as const
     type ItemType = keyof typeof ITEM_TYPES
+
+    // ── PeelInput props types ─────────────────────────────────────────
+    //   The union of everything pi() can receive — a plain object,
+    //   assembled by peel_item_props / add_item_props / clone_props.
+    type PiProps = {
+        label:         string
+        open:          boolean
+        display?:      string
+        mk_ph?:        string
+        sc_ph?:        string
+        mainkey?:      string
+        on_mk?:        (v: string) => void
+        sc_str?:       string
+        on_sc?:        (v: string) => void
+        submit_label?: string
+        on_open?:      () => void
+        on_submit:     () => void
+        on_cancel:     () => void
+        on_edit?:      () => void
+        on_del?:       () => void
+        on_add?:       () => void
+    }
 
     function resolve_doc_path(raw: string): string {
         const v = raw.trim()
@@ -245,6 +272,7 @@
         return (workon?.o({ LE: 1 }) as TheC[])[0]
     }
     function get_origin_clones(): TheC[] {
+        throw "Ya"
         // %LE/%Seem:origin — the snapshot root; sc.C is the clone root TheC
         const LE = get_LE()
         if (!LE) return []
@@ -296,22 +324,23 @@
         H.i_elvisto('Lies/Lies', 'Lies_set_cursor', { doc_C: doc, waft_key: wkey })
     }
 
-    // ── peel_item_props ───────────────────────────────────────────────
+    // ── props builders — feed into pi() ──────────────────────────────
     //
-    //   Returns all PeelInput props for a given item C in its container,
-    //   including on_edit, on_del, and optionally on_add — so the call site
-    //   is always a single <PeelInput /> with no surrounding button markup.
+    //   peel_item_props: edit/idle row for an existing Point/Doc/What.
+    //     on_open from ITEM_TYPES[t]; on_add only for What (the + picker).
     //
-    //   on_open comes from ITEM_TYPES[t].on_open, parameterised by ctx.
-    //   on_add is only supplied for What header rows (toggles the add-child picker).
+    //   add_item_props: the open add-form for a new child of container.
+    //     Always open=true, submit_label='+', no on_edit/on_del/on_add.
     //
-    //   Called once per item row — no duplication between render_doc/render_what.
+    //   clone_props: origin-clone row, spec-string keyed state.
+    //     on_open = open_clone_edit (no navigation, just opens the form).
+
     function peel_item_props(
         item:      TheC,
         container: TheC,
         t:         ItemType,
         ctx?:      { dpath?: string; on_add?: () => void }
-    ) {
+    ): PiProps {
         const td   = ITEM_TYPES[t]
         const open = editing.has(item)
         return {
@@ -324,13 +353,50 @@
             on_mk:        (v: string) => { draft_mk = v },
             sc_str:       open ? draft_sc : '',
             on_sc:        (v: string) => { draft_sc = v },
-            submit_label: '✓' as string,
+            submit_label: '✓',
             on_open:      () => td.on_open(item, ctx),
             on_submit:    () => submit_edit(container, item),
             on_cancel:    () => cancel_edit(item),
             on_edit:      () => start_edit(item, t),
             on_del:       () => delete_item(item, container),
             on_add:       ctx?.on_add,
+        }
+    }
+
+    function add_item_props(container: TheC): PiProps {
+        const t  = add_type_C.get(container)!
+        const td = ITEM_TYPES[t]
+        return {
+            label:        t,
+            open:         true,
+            mk_ph:        td.mk_ph,
+            sc_ph:        td.sc_ph,
+            mainkey:      draft_mk,
+            on_mk:        (v: string) => { draft_mk = v },
+            sc_str:       draft_sc,
+            on_sc:        (v: string) => { draft_sc = v },
+            submit_label: '+',
+            on_submit:    () => submit_add(container),
+            on_cancel:    () => cancel_add(container),
+        }
+    }
+
+    function clone_props(clone: TheC): PiProps {
+        const spec = clone_spec(clone)
+        return {
+            label:        'Point',
+            open:         !!clone_edit_open[spec],
+            display:      ITEM_TYPES.Point.to_display(clone),
+            mk_ph:        ITEM_TYPES.Point.mk_ph,
+            sc_ph:        ITEM_TYPES.Point.sc_ph,
+            mainkey:      clone_edit_val[spec] ?? '',
+            on_mk:        (v: string) => { clone_edit_val[spec] = v },
+            sc_str:       clone_edit_sc[spec] ?? '',
+            on_sc:        (v: string) => { clone_edit_sc[spec] = v },
+            submit_label: '✓',
+            on_open:      () => open_clone_edit(clone),
+            on_submit:    () => submit_clone_edit(clone),
+            on_cancel:    () => { clone_edit_open[spec] = false },
         }
     }
 </script>
@@ -372,7 +438,7 @@
         {@render render_type_picker(waft, ['What', 'Doc', 'Point'])}
     {/if}
     {#if editing.has(waft) && add_type_C.has(waft)}
-        {@render render_add_form(waft)}
+        <div class="ls-add-row">{@render pi(add_item_props(waft))}</div>
     {/if}
 
     <!-- children — iterated whole, switched by type key -->
@@ -393,21 +459,7 @@
             <div class="ls-origin-section">
                 <span class="ls-origin-label">origin</span>
                 {#each origin_clones as clone (clone)}
-                    {@const spec = clone_spec(clone)}
-                    <div class="ls-origin-clone">
-                        <PeelInput
-                            label="Point"
-                            open={!!clone_edit_open[spec]}
-                            display={ITEM_TYPES.Point.to_display(clone)}
-                            mainkey={clone_edit_val[spec] ?? ''}
-                            on_mk={(v) => clone_edit_val[spec] = v}
-                            sc_str={clone_edit_sc[spec] ?? ''}
-                            on_sc={(v) => clone_edit_sc[spec] = v}
-                            submit_label="✓"
-                            on_open={() => open_clone_edit(clone)}
-                            on_submit={() => submit_clone_edit(clone)}
-                            on_cancel={() => { clone_edit_open[spec] = false }} />
-                    </div>
+                    <div class="ls-origin-clone">{@render pi(clone_props(clone))}</div>
                 {/each}
             </div>
         {/if}
@@ -421,6 +473,27 @@
 
 </div>
 
+<!-- pi — the one and only <PeelInput> callsite in this file. -->
+{#snippet pi(p: PiProps)}
+    <PeelInput
+        label={p.label}
+        open={p.open}
+        display={p.display}
+        mk_ph={p.mk_ph}
+        sc_ph={p.sc_ph}
+        mainkey={p.mainkey}
+        on_mk={p.on_mk}
+        sc_str={p.sc_str}
+        on_sc={p.on_sc}
+        submit_label={p.submit_label}
+        on_open={p.on_open}
+        on_submit={p.on_submit}
+        on_cancel={p.on_cancel}
+        on_edit={p.on_edit}
+        on_del={p.on_del}
+        on_add={p.on_add} />
+{/snippet}
+
 <!-- render_type_picker — type button row for adding a child to container -->
 {#snippet render_type_picker(container: TheC, types: ItemType[])}
     <div class="ls-type-picker">
@@ -428,25 +501,6 @@
             <button class="ls-pick-btn" onclick={() => pick_and_open(container, t)}>{t}</button>
         {/each}
         <button class="ls-cancel-btn" onclick={() => add_picking_C.delete(container)}>cancel</button>
-    </div>
-{/snippet}
-
-<!-- render_add_form — PeelInput open for a new child of container -->
-{#snippet render_add_form(container: TheC)}
-    {@const t = add_type_C.get(container)!}
-    <div class="ls-add-row">
-        <PeelInput
-            label={t}
-            open={true}
-            mk_ph={ITEM_TYPES[t].mk_ph}
-            sc_ph={ITEM_TYPES[t].sc_ph}
-            mainkey={draft_mk}
-            on_mk={(v) => draft_mk = v}
-            sc_str={draft_sc}
-            on_sc={(v) => draft_sc = v}
-            submit_label="+"
-            on_submit={() => submit_add(container)}
-            on_cancel={() => cancel_add(container)} />
     </div>
 {/snippet}
 
@@ -462,17 +516,15 @@
          class:ls-doc-new={!!doc.sc.new}
          class:ls-doc-missing={!!doc.sc.not_found && !doc.sc.new}>
 
-        <!-- Doc header row — single PeelInput owns display + ✎ × -->
         <div class="ls-item-hdr">
-            <PeelInput {...peel_item_props(doc, container, 'Doc')} />
+            {@render pi(peel_item_props(doc, container, 'Doc'))}
         </div>
 
-        <!-- Points and nested Whats sit inside an indented children block -->
         {#if pts.length || doc_whats.length}
             <div class="ls-doc-children">
                 {#each pts as pt (pt)}
                     <div class="ls-point">
-                        <PeelInput {...peel_item_props(pt, doc, 'Point', { dpath })} />
+                        {@render pi(peel_item_props(pt, doc, 'Point', { dpath }))}
                     </div>
                 {/each}
                 <!-- %What children of this %Doc (Doc > What nesting, e.g. time-slices) -->
@@ -495,21 +547,19 @@
 
     <div class="ls-what" class:ls-what-active={is_spotlight(what)}>
 
-        <!-- What header — single PeelInput owns display + ✎ × + -->
         <div class="ls-what-hdr">
-            <PeelInput {...peel_item_props(what, what, 'What', {
+            {@render pi(peel_item_props(what, what, 'What', {
                 on_add: () => toggle_add_pick(what),
-            })} />
+            }))}
         </div>
 
         <div class="ls-what-children">
 
-            <!-- add-child picker + form -->
             {#if add_picking_C.has(what)}
                 {@render render_type_picker(what, ['Point', 'Doc', 'What'])}
             {/if}
             {#if editing.has(what) && add_type_C.has(what)}
-                {@render render_add_form(what)}
+                <div class="ls-add-row">{@render pi(add_item_props(what))}</div>
             {/if}
 
             <!-- Points in one block so last-child border suppression works -->
@@ -517,7 +567,7 @@
                 <div class="ls-points">
                     {#each what_pts_only as pt (pt)}
                         <div class="ls-point">
-                            <PeelInput {...peel_item_props(pt, what, 'Point')} />
+                            {@render pi(peel_item_props(pt, what, 'Point'))}
                         </div>
                     {/each}
                 </div>
