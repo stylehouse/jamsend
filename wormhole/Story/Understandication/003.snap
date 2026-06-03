@@ -5,7 +5,7 @@ Snap:H
       w:Understandication
         tally,passed:8,failed:0
         {"ref":{"target":"%What:1, label:compilation"}}	LE
-          State,stale
+          State
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:compilation","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:Lang_compile

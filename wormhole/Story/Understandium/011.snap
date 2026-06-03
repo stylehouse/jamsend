@@ -5,6 +5,8 @@ Snap:H
       w:Understandium
         tally,passed:29,failed:0
         {"ref":{"target":"%What:1, label:second"}}	LE
+          State
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","snap_working":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","dirty":"0"}
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:alpha2
@@ -20,7 +22,7 @@ Snap:H
             News:working,goners:0,neus:0
         src
           What,label:routing
-            Point,method:e_Doc_open_RENAMED
+            Point,method:e_Dock_open_RENAMED
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
@@ -53,5 +55,6 @@ Snap:H
                 Understandable
               Understandable
             News:working,goners:0,neus:2
+          State
           {"encode":1,"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two\n","dirty":"0"}
     {"mung":["id"]}	mo:main,interval:3.6

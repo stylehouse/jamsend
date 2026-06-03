@@ -431,8 +431,15 @@ await M.eatfunc({
         const changey = o.snap !== wk.snap
         const encode_errors = [...o.errors, ...wk.errors]
 
-        // Cache on .c — invisible to snap, survives across calls without piling.
-        working.c.encode = { snap_origin: o.snap, snap_working: wk.snap, changey, encode_errors }
+        // Persist on LE/* as a real particle so a reload or "push anyway" can resume
+        // the push-state without re-deriving from live ropeways (spec: resumability).
+        // r() replaces the single {encode:1} child each call — never piles.
+        await LE.r({ encode: 1 }, {
+            snap_origin:  o.snap,
+            snap_working: wk.snap,
+            dirty:        changey ? '1' : '0',
+            ...(encode_errors.length ? { encode_errors } : {}),
+        })
 
         // Merge changey into the existing %State without replacing stale/armed.
         const state = LE.oai({ State: 1 })

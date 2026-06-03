@@ -8,13 +8,13 @@ Snap:H
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
-              Demonstrations:origin,Point,method:e_Doc_open
+              Demonstrations:origin,Point,method:e_Dock_open
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners:0,neus:3
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
-              Demonstrations:working,Point,method:e_Doc_open
+              Demonstrations:working,Point,method:e_Dock_open
                 Understandable
               Demonstrations:working,Point,method:Lang_doc_from_event
                 Understandable
@@ -22,15 +22,16 @@ Snap:H
                 Understandable
               Understandable
             News:working,goners:0,neus:3
+          State
         src
           What,label:routing
-            Point,method:e_Doc_open
+            Point,method:e_Dock_open
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
         see:step 1 arm pull
           goners:0,neus:3
-          neu:e_Doc_open
+          neu:e_Dock_open
           neu:Lang_doc_from_event
           {"neu":"What:deeper"}
           {"PASS":1,"t":"arm+pull: 3 neus, 0 goners"}

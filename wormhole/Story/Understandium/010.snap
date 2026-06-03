@@ -5,6 +5,8 @@ Snap:H
       w:Understandium
         tally,passed:25,failed:0
         {"ref":{"target":"%What:1, label:second"}}	LE
+          State
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","snap_working":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","dirty":"0"}
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:alpha2
@@ -20,7 +22,7 @@ Snap:H
             News:working,goners:0,neus:0
         src
           What,label:routing
-            Point,method:e_Doc_open_RENAMED
+            Point,method:e_Dock_open_RENAMED
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
@@ -34,29 +36,30 @@ Snap:H
           {"PASS":1,"t":"default: rename is a survivor (no diff)"}
           strict_rename
             goners,neus
-            goner:e_Doc_open
-            neu:e_Doc_open_v2
+            goner:e_Dock_open
+            neu:e_Dock_open_v2
           {"PASS":1,"t":"resolve_strict: rename is goner + neu"}
         {"ref":{"target":"%What:1, label:routing"}}	LE2
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
-              Demonstrations:origin,Point,method:e_Doc_open_v2
+              Demonstrations:origin,Point,method:e_Dock_open_v2
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners,neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
-              Demonstrations:working,Point,method:e_Doc_open
+              Demonstrations:working,Point,method:e_Dock_open
                 Understandable
               Demonstrations:working,Point,method:Lang_doc_from_event
                 Understandable
               Demonstrations:working,What,label:deeper
                 Understandable
             News:working,goners:0,neus:0
+          State,stale
         src2
           What,label:routing
-            Point,method:e_Doc_open_v2
+            Point,method:e_Dock_open_v2
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
