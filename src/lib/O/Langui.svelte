@@ -325,18 +325,30 @@
     //   separate ave/active_dock signal.  languinio.ob() subscribes to its version
     //   so a dock change (Lang_set_active_dock → languinio.bump_version) wakes
     //   this effect.  The dock particle's sc.dock IS the path.
+    //
+    //   H.clear() gates the $state writes until beliefs has finished its current
+    //   cycle — without it, mid-mutation ave flushes briefly produce path='' or
+    //   dock=undefined, which tears down {#if active_path} / {#if dock} and
+    //   destroys+recreates the container, spawning a fresh EditorView on each wave.
+    //   Compare-before-write on path means a no-op flush never clears active_path.
     $effect(() => {
-        const la = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
-        lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
-
+        const la          = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         const languinio   = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
         languinio?.ob()   // track languinio.version — dock changes bump it
         const active_dock_C = languinio?.ob({ dock: 1 })[0] as TheC | undefined
-        const path = (active_dock_C?.sc.dock as string | undefined) ?? ''
-        if (path) active_path = path
-        dock        = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
-        active_dock = active_dock_C
-        console.log(`🔭 signal $effect: languinio=${!!languinio} path=${path} dock=${!!dock} active_dock=${!!active_dock}`)
+        const path        = (active_dock_C?.sc.dock as string | undefined) ?? ''
+        const new_dock    = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
+        console.log(`🔭 signal $effect: languinio=${!!languinio} path=${path} dock=${!!new_dock} active_dock=${!!active_dock_C}`)
+        H.clear(async () => {
+            lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
+            // only overwrite active_path when we have a real path — a mid-mutation
+            // flush with path='' must never clear it and collapse the {#if} guard.
+            if (path) active_path = path
+            // dock and active_dock are safe to update only once beliefs is stable,
+            // so the bar and minimap never see a transient undefined between ticks.
+            dock        = new_dock
+            active_dock = active_dock_C
+        })
     })
 
     // ── change strip ─────────────────────────────────────────────────────────────
