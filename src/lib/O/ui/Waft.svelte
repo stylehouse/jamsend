@@ -134,6 +134,7 @@
         display?:      string
         mk_ph?:        string
         sc_ph?:        string
+        mk_is_one?:    boolean         // mainkey value is :1 — label shows as comma-key
         mainkey?:      string
         on_mk?:        (v: string) => void
         sc_str?:       string
@@ -340,14 +341,16 @@
     //     Always open=true, submit_label='+', no edit/del buttons.
 
     function item_props(item: TheC, container: TheC, t: ItemType, dpath?: string): PiProps {
-        const td   = ITEM_TYPES[t]
-        const open = editing.has(item)
+        const td      = ITEM_TYPES[t]
+        const open    = editing.has(item)
+        const mk_val  = (item.sc as any)[td.mk_key]
         return {
             label:        t,
             open,
             display:      item_to_display(item, t),
             mk_ph:        td.mk_ph,
             sc_ph:        td.sc_ph,
+            mk_is_one:    mk_val === 1 || mk_val === true,
             mainkey:      open ? draft_mk : '',
             on_mk:        (v: string) => { draft_mk = v },
             sc_str:       open ? draft_sc : '',
@@ -438,6 +441,7 @@
         display={p.display}
         mk_ph={p.mk_ph}
         sc_ph={p.sc_ph}
+        mk_is_one={p.mk_is_one}
         mainkey={p.mainkey}
         on_mk={p.on_mk}
         sc_str={p.sc_str}

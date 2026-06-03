@@ -22,6 +22,7 @@
         sc_ph        = 'method:Name,call',
         submit_label = '+',
         focus_sc     = false,          // focus sc field on open instead of mainkey
+        mk_is_one    = false,          // mainkey value is :1 — show label as comma-key
         on_mk        = (_v: string) => {},   // mainkey changed
         on_sc        = (_v: string) => {},   // sc_str changed
         on_open,
@@ -40,6 +41,7 @@
         sc_ph?:        string
         submit_label?: string
         focus_sc?:     boolean
+        mk_is_one?:    boolean
         on_mk?:        (v: string) => void
         on_sc?:        (v: string) => void
         on_open?:      () => void
@@ -64,7 +66,7 @@
 </script>
 
 <div class="pi-row">
-    <span class="pi-label">{label}:</span>
+    <span class="pi-label">{label}{open ? ':' : mk_is_one ? (display ? ',' : '') : ':'}</span>
     {#if open}
         <input class="pi-input pi-main"
                placeholder={mk_ph}
