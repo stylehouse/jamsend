@@ -100,7 +100,7 @@
         const cur_is_what = cur_src && (cur_src.sc as any).What !== undefined
         if (cur_is_what) return   // cursor deliberately on a %What — don't follow
 
-        const cur_path = cur_src?.sc.path as string | undefined
+        const cur_path = (cur_src?.sc as any)?.Doc as string | undefined
         if (cur_path === path) return   // already here
 
         const found = H.Lies_find_doc_in_wafts(w, path)
@@ -157,13 +157,13 @@
     // ── Lies_find_doc_in_wafts ────────────────────────────────────────────────
     //
     //   Walk all loaded Wafts — descending into %What children at any depth —
-    //   looking for a %Doc,path matching `path`.
+    //   looking for a %Doc matching `path`.
     Lies_find_doc_in_wafts(w: TheC, path: string): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const waft_key = waft.sc.Waft as string
             let found: TheC | undefined
             this.Lies_walk_docs(waft, doc => {
-                if ((doc.sc.path as string) === path) { found = doc; return true }
+                if ((doc.sc.Doc as string) === path) { found = doc; return true }
                 return false
             })
             if (found) return { doc: found, waft_key }
@@ -237,7 +237,7 @@
 
         spot.bump_version()
         examining.bump_version()   // Waft snippet reads void examining?.version for glow reactivity
-        console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).path ?? '?')}`)
+        console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).Doc ?? '?')}`)
 
         // Fire generic workon update — req:workon in w:Lang resets the cluster.
         H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
@@ -430,7 +430,7 @@
                     const { accepted, showing, ...rest } = pt.sc as any
                     return rest as Record<string, unknown>
                 })
-            if (scs.length) out.push({ doc_path: doc.sc.path as string, pt_scs: scs })
+            if (scs.length) out.push({ doc_path: doc.sc.Doc as string, pt_scs: scs })
         }
         // direct %Point children on the What (time-slice style, no Doc container)
         const direct = (what.o({ Point: 1 }) as TheC[])
@@ -451,7 +451,7 @@
     Lies_seed_what_carry_over(new_what: TheC, carry: Array<{ doc_path: string | undefined, pt_scs: Record<string, unknown>[] }>) {
         for (const { doc_path, pt_scs } of carry) {
             if (doc_path !== undefined) {
-                const doc = new_what.oai({ Doc: 1, path: doc_path })
+                const doc = new_what.oai({ Doc: doc_path })
                 for (const sc of pt_scs) doc.i(sc)
             } else {
                 for (const sc of pt_scs) new_what.i(sc)
@@ -563,7 +563,7 @@
     //   time-slice case — doc is implied by the Points' methods).
     Lies_what_first_doc_path(what: TheC): string | undefined {
         const doc = what.o({ Doc: 1 })[0] as TheC | undefined
-        return doc?.sc.path as string | undefined
+        return doc?.sc.Doc as string | undefined
     },
 
     // ── e_Lies_accept_What_Point ──────────────────────────────────────────────
@@ -596,7 +596,7 @@
         // Points live directly on the %Doc particle — no %Points,1 container.
         const accepted_specs = new Set(what_point.map(e => e.spec))
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1, path: dock_path })[0] as TheC | undefined
+            const doc = waft.o({ Doc: dock_path })[0] as TheC | undefined
             if (!doc) continue
             let dirty = false
             for (const pt of doc.o({ Point: 1 }) as TheC[]) {

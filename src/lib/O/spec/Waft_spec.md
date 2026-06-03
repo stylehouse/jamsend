@@ -55,18 +55,19 @@ Because `What` is polymorph it means different things at different depths:
 ### Snap shape
 
 ```
-Waft:Ghost/Tour
-  What:1,label:setup
-    What:1,label:housing init
-      Doc:1,path:Ghost/Housing.svelte.ts
-        Point:1,method:H_plan
-    Doc:1,path:Ghost/Lang.svelte
-      What:1,label:first look
-        Point:1,method:Lang_plan
-        Point:1,method:Lang_compile
-      What:1,label:routing
-        Point:1,method:e_Dock_open
-        Point:1,method:Lang_doc_from_event
+Waft:Ghost/LakeNets,Ghost/LakeNets
+  What:foundationss
+    What:story
+      Doc:Ghost/Story/Peeroleum.g
+      Point,method:LakeNetherland
+    What:peer
+      Doc:Ghost/Peeroleum.g
+      Point,method:Peeroleum
+  What:transport
+    What:first look
+      Doc:Ghost/Peeroleum.g
+      Point,method:transport
+      Point,method:PeerJS
 ```
 
 ---

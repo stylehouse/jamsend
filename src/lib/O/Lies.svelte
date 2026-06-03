@@ -30,7 +30,7 @@
     //
     //   Snap format (wormhole/Ghost/Tour/toc.snap):
     //     Waft:Ghost/Tour
-    //       Doc:1,path:Ghost/test/Hello.g
+    //       Doc:Ghost/test/Hello.g
     //         Point:1,method:Idzeugnosis
     //
     //   codetype is derived from path extension — never stored on the particle.
@@ -79,7 +79,7 @@
     //     /{want:$ts}                              c.src → wanted C; sc.kind: click|drag|step|next|cold
     //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
-    //     /{Doc:1,path}                        — persisted doc entry
+    //     /{Doc:path}                          — persisted doc entry
     //       /{Point:1,method}                  — individual point
     //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
     //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
@@ -111,7 +111,7 @@
     //
     // ── future ────────────────────────────────────────────────────────────────
     //   < full close on Doc removal (drop loaded_doc, tell Lang)
-    //   < %req:pending_write / %req:surprise_read / diff per loaded_doc
+    //   < %pending_write / %surprise_read / diff per loaded_doc
     //   < nested Waft save
     //   < rename Waft: write fresh snap at new path
     let future = `
@@ -237,17 +237,27 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // mutates the in-flight req's text rather than racing a second write.
         // Drop a finished sibling first so roai builds a fresh req, not a
         // mutate-on-a-dead-one that do() would skip.
-        // < the above "mutates the in-flight req's text" is flawed!
-        //    throttle writes, but always get the latest one done
-        const rq = H.reqy(w)
-        let c = { req: 'pending_write', path }
-        for (const old of rq.o(c) as TheC[]) if (old.sc.finished) w.drop(old)
-        await rq.roai(c, { text, dige: await dig(text) })
+        const pwq = H.Lies_pending_write_reqy(w)
+        for (const old of pwq.o({ path }) as TheC[]) if (old.sc.finished) w.drop(old)
+        await pwq.roai({ pending_write: 1, path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
+    // ── %pending_write channel ──────────────────────────────────────────────
+    //
+    //   One reqy handle, shared by the parker (e_Lies_source_write) and the
+    //   driver (LiesStore_run Phase 1.5) so both attach the same do_fn to the
+    //   one reqcon — whoever opens the channel first wins, the other reuses it.
+    Lies_pending_write_reqy(w: TheC) {
+        const H = this as House
+        return H.reqy(w, {
+            k:        'pending_write',
+            noserial: 1,
+            do_fn:    (req: TheC, q: any) => H.Lies_pending_write_do_fn(req, q),
+        })
+    },
 
-    // ── req:pending_write do_fn ──────────────────────────────────────────────
+    // ── Lies_pending_write_do_fn ──────────────────────────────────────────────
     //
     //   Drives one parked save across ticks:
     //     1. content gate — text already on disk (echo, or a sibling write
@@ -263,7 +273,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //
     //   < the surprise path blocks the write but doesn't yet resume it; the
     //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
-    async req_pending_write(req: TheC, q: any) {
+    async Lies_pending_write_do_fn(req: TheC, q: any) {
         const H    = this as House
         const w    = req.c.up as TheC
         const path = req.sc.path as string
@@ -475,8 +485,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!src) { q.finish(req); return }
 
         // Derive path — %Doc has sc.path; %What exposes first %Doc child.
-        const path = (src.sc as any).path as string | undefined
-            ?? ((src.o({ Doc: 1 }) as TheC[])[0]?.sc.path as string | undefined)
+        const path = (typeof (src.sc as any).Doc === 'string' ? (src.sc as any).Doc : undefined)
+            ?? ((src.o({ Doc: 1 }) as TheC[])[0]?.sc.Doc as string | undefined)
         if (!path) { q.finish(req); return }   // pure time-slice %What, no doc
 
         // Already loaded from a prior req — nothing to do.
@@ -709,9 +719,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Lang_src_doc_path on the Lies side (the Waft tree shape lives here).
     Lies_src_doc_path(src: TheC): string | undefined {
         const sc = src.sc as any
-        if (sc.path) return sc.path as string
+        if (typeof sc.Doc === 'string') return sc.Doc
         const doc = (src.o({ Doc: 1 }) as TheC[])[0]
-        return doc?.sc.path as string | undefined
+        return doc?.sc.Doc as string | undefined
     },
 
     // ── Lies_roai_Furnishing ────────────────────────────────────────────────────
@@ -880,7 +890,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // Find the Point particle across all Wafts that own this doc.
         // Points live directly on the %Doc particle — no %Points,1 container.
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
-            const doc = waft.o({ Doc: 1, path: dock_path })[0] as TheC | undefined
+            const doc = waft.o({ Doc: dock_path })[0] as TheC | undefined
             if (!doc) continue
             const point = doc.o({ Point: 1, method: spec })[0] as TheC | undefined
             if (!point) continue
@@ -1000,7 +1010,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         }
 
         // Find or create the Doc row for this path in the target Waft.
-        const doc = target_waft.oai({ Doc: 1, path })
+        const doc = target_waft.oai({ Doc: path })
 
         // Skip if a Point with the same method already exists (same logical pointer).
         const already = doc.o({ Point: 1, method })[0] as TheC | undefined
@@ -1077,14 +1087,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     Lies_sync_waft_docs(w: TheC, waft: TheC) {
         const wpath = waft.sc.Waft as string
         const live_paths = new Set(
-            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.path as string)
+            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.Doc as string)
         )
         // Drop unfinished req:Open that lost their Doc from this Waft.
         const rq = (this as House).reqy(w)
         for (const req of rq.o({ req: 'Open', waft_key: wpath }) as TheC[]) {
             if (req.sc.finished) continue
             const src  = req.sc.src as TheC | undefined
-            const path = (src?.sc as any)?.path as string | undefined
+            const path = (src?.sc as any)?.Doc as string | undefined
             if (path && !live_paths.has(path)) w.drop(req)
         }
     },

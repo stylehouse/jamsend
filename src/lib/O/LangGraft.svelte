@@ -21,7 +21,7 @@
     //                                       owns navigation + glow.
     //     %Languinio/%Interest  (Lang)   — the working clone root; owns render.
     //   This graft is the render end: it reads the *accepted working clones*
-    //   (via Languinio/LE → LE_accepted_clones), not the live source — so the
+    //   (via Interest.c.LE → LE_accepted_clones), not the live source — so the
     //   U sphere (class / unshowing / unaccepted) reaches CM.  The live source
     //   is read only as a pre-pull fallback, before the first LE_pull mints the
     //   clone tree.  The waft_key comes from waft_key_of (c.waft / c.up), so no
@@ -118,7 +118,7 @@
         // the clones (§3c).
         const languinio = w.o({ Languinio: 1 })[0]      as TheC | undefined
         const interest  = languinio?.o({ Interest: 1 })[0] as TheC | undefined
-        const LE         = languinio?.o({ LE: 1 })[0] as TheC | undefined
+        const LE         = interest?.c.LE as TheC | undefined
 
         // src_C: the live source — Interest.src (clone root) when armed, else the
         // Spotlight's src.  Used for the doc-match guard and the pre-pull point
@@ -137,7 +137,7 @@
         // dock_path is dock.sc.dock.  If they diverge, wipe and wait.
         const dock_path   = dock.sc.dock as string | undefined
         const src_path    = LE ? this.Lang_src_doc_path(LE.sc.target as TheC)
-                               : (src_C.sc as any).path as string | undefined
+                               : (src_C.sc as any).Doc as string | undefined
         if (src_path && dock_path && src_path !== dock_path) {
             await this.Lang_wipe_pmirrors(dock)
             return
@@ -180,12 +180,12 @@
                         live_pts.push(clone)
                         clone_map.set(clone, clone)   // src_clone = itself
                     }
-                } else if (cs.path === dock_path) {
+                } else if (cs.Doc === dock_path) {
                     // %Doc clone matching the active dock — descend into the live %What
                     // to find the %Points for this doc (clones are too shallow).
                     if (clone.c.U?.sc.unshowing) continue
                     const live_doc = (target.o({ Doc: 1 }) as TheC[])
-                        .find(d => (d.sc as any).path === dock_path)
+                        .find(d => d.sc.Doc === dock_path)
                     if (live_doc) {
                         for (const pt of live_doc.o({ Point: 1 }) as TheC[]) {
                             live_pts.push(pt)
