@@ -1,5 +1,5 @@
 <script lang="ts">
-    // LangGen.svelte — language picker + parser-generation sub-ghost.
+    // LangLang.svelte — language picker + parser-generation sub-ghost.
     //
     // Lang-header-adjacent concerns split out from Lang.svelte:
     //
@@ -19,8 +19,8 @@
     //      check then takes the fast path.
     //
     // Deposits onto H:
-    //   LangGen_plan(A, w)            — called once by Lang_plan
-    //   LangGen_tick(A, w)            — called by Lang(A,w) every tick;
+    //   LangLang_plan(A, w)            — called once by Lang_plan
+    //   LangLang_tick(A, w)            — called by Lang(A,w) every tick;
     //                                   sync; updates dropdown value and
     //                                   gen button disabled/label
     //   e_Lang_set_lang(A, w, e)      — dropdown on_pick handler
@@ -53,7 +53,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
     // Register the two header actions once. Same shape as Lang_plan's other
     // actions — wa.oai with role in the keying universal so re-runs are
     // find-or-create (no wildcard wipe possible).
-    async LangGen_plan(A: House, w: TheC) {
+    async LangLang_plan(A: House, w: TheC) {
         const H  = this as House
         const wa = H.oai_enroll(H, { watched: 'actions' })
 
@@ -67,7 +67,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
                 H.i_elvisto('Lang/Lang', 'Lang_set_lang', { lang: next }),
         })
 
-        // gen_parser starts disabled. LangGen_tick flips it on when the
+        // gen_parser starts disabled. LangLang_tick flips it on when the
         // active doc is a registered .grammar source. The fn re-derives the
         // target language name from the active dock at fire time, so the
         // closure doesn't need updating per tick.
@@ -81,7 +81,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
 
     // Sync per-tick updates. Each particle is mutated in place and
     // bump_version'd only when a watched field actually changed.
-    LangGen_tick(A: House, w: TheC) {
+    LangLang_tick(A: House, w: TheC) {
         const H   = this as House
         const wa  = H.o({ watched: 'actions' })[0] as TheC | undefined
         if (!wa) return

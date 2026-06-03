@@ -535,10 +535,8 @@
 //   It only tells Story.poll_step "this slice of wall-clock isn't quiescent yet".
 //
 
-    // Public ttlilt API. Creates or forward-updates /req/%ttlilt,until_ts:N,...sc.
-    //   sc is both label and identity — two calls with distinct sc coexist.
-    //   Climbs req.c.up to /w and sets w.c.has_req_ttlilt so the publisher
-    //   knows to walk this w (same .c.up chain reqyoncile uses).
+    // oai req/%ttlilt,until_ts,...sc
+    //   sc any identity
     i_req_ttlilt(req: TheC, secs: number, sc: TheUniversal = {}): TheC {
         const H = this as House
         const until_ts = now_in_seconds_with_ms() + secs
@@ -550,7 +548,8 @@
             // H.trace('ttlilt', `i_req_ttlilt: new +${Math.round(secs*1000)}ms`, { ...sc })
         }
 
-        // climb to /w
+        // climb to w to let beliefs climb from w to /req
+        // < beliefs() perhaps climbs down into w(/req)+ until
         let node: TheC = req
         while (node.c.up && !node.sc.w) node = node.c.up as TheC
         if (node.sc.w) node.c.has_req_ttlilt = 1
@@ -679,22 +678,40 @@
         const now = now_in_seconds_with_ms()
         let any_expired = false  // saw /%ttlilt,until_ts:T with T<=now and req not finished
 
+        // collect all live (not-yet-expired, not-yet-finished) blockers first
+        //   so we can report how many there are, not just the first
+        const live: Array<{ t: TheC, req: TheC | undefined }> = []
+        const expired_reqs: Array<TheC | undefined> = []
+
         for (const t of Run.o({ ttlilt: 1 }) as TheC[]) {
             const req = t.sc.req as TheC | undefined
             if (req?.sc.finished) continue  // stale: finish() beat i_Story_o_req_ttlilt cleanup
 
             const until_ts = t.sc.until_ts as number
-            if (until_ts > now) {
-                const ms_left = Math.round((until_ts - now) * 1000)
-                const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
-                const rv = req?.sc[rk] ?? '?'
-                Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} ${rk}:${rv} +${ms_left}ms`)
-                // Run.trace('leave running...')
-                return true
+            if (!t.sc.timed_out && until_ts > now) {
+                live.push({ t, req })
+            } else {
+                any_expired = true
+                expired_reqs.push(req)
             }
-            any_expired = true
         }
-        if (any_expired) Run.trace('ttlilt', 'Story timeout')
+
+        if (live.length) {
+            const { t, req } = live[0]
+            const ms_left = Math.round(((t.sc.until_ts as number) - now) * 1000)
+            const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
+            const rv = req?.sc[rk] ?? '?'
+            const more = live.length > 1 ? ` +${live.length - 1} more` : ''
+            Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} ${rk}:${rv} +${ms_left}ms${more}`)
+            return true
+        }
+
+        if (any_expired) {
+            const req = expired_reqs[0]
+            const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
+            const rv = req ? keyser(req.sc) : '?'
+            Run.trace('ttlilt', `Story timeout — last req was ${rk}:${rv}`)
+        }
         Run.c.poll_ttlilt_expired = any_expired
         return false
     },

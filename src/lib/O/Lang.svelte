@@ -903,7 +903,7 @@
         // it stamps dock.c.state, which re-enters here.
         const dock = languish.sc.dock as TheC | undefined
         if (!dock?.c.state) {
-            H.i_req_ttlilt(req, 0.5, { waiting: 'cm_mount' })
+            H.i_req_ttlilt(req, 1.5, { waiting: 'cm_mount' })
             return
         }
         languinio?.o({ spinner: 'text_load' }).map(s => languinio.drop(s))
