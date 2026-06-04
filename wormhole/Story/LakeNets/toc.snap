@@ -92,8 +92,22 @@ story:LakeNets
     Prep:8
       i_elvisto:Lang,e:LE_operate
         esc:op,v:push
+    Prep:9
+      i_elvisto:Lies,e:LE_operate
+        esc:op,v:next
+    Prep:10
+      i_elvisto:Lies,e:LE_operate
+        esc:op,v:branch
+    Prep:11
+      i_elvisto:Lies,e:LE_operate
+        esc:op,v:prev
+    Prep:12
+      i_elvisto:Lies,e:LE_operate
+        esc:op,v:up
   Opt
     For
+      w:Lies
+        nowriting
       w:Lang
         txtsyntaxdump
         nogen
@@ -101,23 +115,27 @@ story:LakeNets
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:3.485
-      sample:0.966,at:1780558562
-      sample:0.966,at:1780558564
-      sample:0.966,at:1780558565
-      sample:0.966,at:1780558566
-      sample:0.966,at:1780558567
-      sample:25.354,at:1780558569
-      sample:1.273,at:1780558980
-      sample:1.064,at:1780560263
+    TimeTotal:beliefs,avg:1.681
       sample:1.029,at:1780560453
       sample:1.302,at:1780560568
-  step,dige:632561251981170a
-  step:2,dige:93fa45a1d832e577
-  step:3,dige:93fa45a1d832e577
-  step:4,dige:93fa45a1d832e577
-  step:5,dige:93fa45a1d832e577
-  step:6,dige:93fa45a1d832e577
-  step:7,dige:93fa45a1d832e577
-  step:8,dige:93fa45a1d832e577
-  step:9,dige:4752776108fd25d6
+      sample:1.749,at:1780564853
+      sample:2.356,at:1780564943
+      sample:2.363,at:1780565038
+      sample:1.63,at:1780566335
+      sample:2.022,at:1780567055
+      sample:1.437,at:1780568743
+      sample:1.459,at:1780568799
+      sample:1.459,at:1780568813
+  step,dige:89d28ecf54e4ab9e
+  step:2,dige:deacb8454977ef4b
+  step:3,dige:2a5115f513375a9e
+  step:4,dige:02f99b38538c4ef1
+  step:5,dige:d2140e1a598009b2
+  step:6,dige:7ae5ed4ab250fa53
+  step:7,dige:ce7a6590d1731d62
+  step:8,dige:65ec4beb5807baf5
+  step:9,dige:b425c71b68b78e13
+  step:10,dige:a22d48ce95f05a33
+  step:11,dige:52d1bb743ee2042f
+  step:12,dige:13b2fdcb6c59fdfe
+  step:13,dige:0f972b66c7731d46

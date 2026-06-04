@@ -1,12 +1,11 @@
 <script lang="ts">
-    // NaviCado — What-navigation toolbar + capsule strip above the DocMinimap region strip.
+    // NaviCado — What-navigation toolbar + tools row + capsule strip.
     //
     // ── What this is ─────────────────────────────────────────────────────────
     //
-    //   Toolbar for the active Understanding (%LE) plus the transport bar for
-    //   req:desire playback.  Owns the Pmirror capsule strip and the unsent bar.
-    //   Self-supplies everything from H — derives languinio, LE, active_path,
-    //   and lang_dock without props from DocMinimap.
+    //   Toolbar for the active Understanding (%LE) plus the tools row for
+    //   branch/dive gestures, Point injection, and req:desire transport.
+    //   Owns the Pmirror capsule strip and the unsent bar.
     //
     // ── Particle sources ──────────────────────────────────────────────────────
     //
@@ -16,15 +15,22 @@
     //   H.ave/%examining/%Spotlight,1 — sc.accepted_push_id / sc.accepted_entries
     //     echoed back from Lies_accept_What_Point round-trip.
     //
-    // ── Nav buttons ──────────────────────────────────────────────────────────
+    // ── Nav buttons (top row) ─────────────────────────────────────────────────
     //
-    //   ↑  ←  →  ↘  ↓  — all emit i_elvisto(w, 'LE_operate', { op }) where op
-    //   is 'up'/'prev'/'next'/'dive'/'branch'.  The handler (LiesCurse) reads the
-    //   live cursor from %examining/%Spotlight and drives movement from there.
+    //   ↑  ←  →  — emit i_elvisto(w, 'LE_operate', { op }) where op is
+    //   'up'/'prev'/'next'.  Handler (LiesCurse) reads the live cursor from
+    //   %examining/%Spotlight and drives movement from there.
     //
-    //   Transport bar (when req:timemachine exists):
-    //   ‖/▶  — i_elvisto Lies_desire_pause / Lies_desire_play
-    //   →    — i_elvisto Lies_desire_step
+    //   < once LE_available_ops is wired into req:checkout, %LE/%moves.sc.ops
+    //     replaces the static ↑←→ set with one chip per reachable move,
+    //     deduplicated (e.g. ↑ suppressed when it resolves to the same What as ←).
+    //
+    // ── Tools row (second row, always when LE armed) ──────────────────────────
+    //
+    //   ↘ dive / ↓ branch — moved here from the nav bar.
+    //   PeelItem — type a method name, Enter → LE_preen{action:'add'}.
+    //   req:desire transport (‖/▶, →step) — only when req:timemachine exists.
+    //   Unsent bar (~↑↩) — absolute overlay when in_group state has drifted.
     //
     // ── Capsule strip ────────────────────────────────────────────────────────
     //
@@ -35,7 +41,7 @@
     //   unsent bar stays hidden until the user actually changes something.
     //
     //   Capsule label click — < fires Lang_navigate_to; needs handler on Lang side.
-    //   × fires e_LE_preen{action:'drop'} when LE is armed at a %What; else
+    //   × fires LE_preen{action:'drop'} when LE is armed at a %What; else
     //   local demote() for bare %Doc sessions.
     //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
 
@@ -55,13 +61,11 @@
         unresolved: boolean
     }
 
-    let { H, slot_up, slot_prev, slot_next, slot_branch, slot_dive }: {
-        H:            House
-        slot_up?:     Snippet<[{ ghosted: boolean, onclick: () => void }]>
-        slot_prev?:   Snippet<[{ ghosted: boolean, onclick: () => void }]>
-        slot_next?:   Snippet<[{ ghosted: boolean, onclick: () => void }]>
-        slot_branch?: Snippet<[{ ghosted: boolean, onclick: () => void }]>
-        slot_dive?:   Snippet<[{ ghosted: boolean, onclick: () => void }]>
+    let { H, slot_up, slot_prev, slot_next }: {
+        H:         House
+        slot_up?:  Snippet<[{ ghosted: boolean, onclick: () => void }]>
+        slot_prev?: Snippet<[{ ghosted: boolean, onclick: () => void }]>
+        slot_next?: Snippet<[{ ghosted: boolean, onclick: () => void }]>
     } = $props()
 
     // ── particle derivation ───────────────────────────────────────────────────
@@ -72,7 +76,6 @@
     })
 
     // active_path: which dock is currently foregrounded.
-    // %Languinio/%dock,path with active:1 carries sc.dock = the path string.
     let active_path = $derived(
         (languinio?.ob({ dock:1,active: 1 })[0]?.sc.dock as string | undefined) ?? ''
     )
@@ -90,7 +93,7 @@
 
     // ── nav bar reactive derivation ───────────────────────────────────────────
 
-    // examining is declared first — target is derived from it, not from LE.sc.target.
+    // examining first — target derives from it, not LE.sc.target.
     // LE.sc.target lags by one LE_arm + languinio round-trip; examining.Spotlight.sc.src
     // is stamped synchronously in Lies_i_Spotlight so the nav bar updates immediately.
     let examining   = $derived(H.ave.ob({ examining: 1 })[0] as TheC | undefined)
@@ -108,27 +111,24 @@
         return src && (src.sc as any).What !== undefined ? src as TheC : undefined
     })())
 
-    // LE.vers is still needed for clone/state operations (capsule strip etc.)
     let depth      = $derived(target ? (H as any).LE_what_depth(target) as number : -1)
     let has_up     = $derived(depth > 0)
-    let has_branch = $derived(!!target)   // ↓ new next sibling — always possible
-    let has_dive   = $derived(!!target)   // ↘ new child — always possible
-    // has_prev/has_next: DFS reachability via LE tree helpers (LiesEnd)
     let has_prev   = $derived(target ? !!(H as any).LE_what_dfs_prev(target) : false)
     let has_next   = $derived(target ? !!(H as any).LE_what_dfs_next(target) : false)
+    // branch/dive always possible when a target is set
+    let has_target = $derived(!!target)
 
     // ── capsule state ─────────────────────────────────────────────────────────
 
     let in_group:        Set<string> = $state(new Set())
     let showing:         Set<string> = $state(new Set())
-    // JSON of in_group+showing at last push or auto-promote sync.
     // '' means nothing synced yet — unsent bar stays hidden.
     let pushed_snapshot: string      = $state('')
     let reset_confirm:   boolean     = $state(false)
 
     // Non-reactive; reset on path switch alongside the reactive state.
-    let _auto_promoted: Set<string> = new Set()   // specs ever auto-promoted this session
-    let _user_demoted:  Set<string> = new Set()   // specs user explicitly x'd; never re-auto-promote
+    let _auto_promoted: Set<string> = new Set()
+    let _user_demoted:  Set<string> = new Set()
     let _our_last_push_id = 0
 
     let all_marks:    PointMark[]                                               = $state([])
@@ -139,8 +139,6 @@
         return JSON.stringify(entries)
     }
 
-    // Only show the unsent bar once the user has changed something from the
-    // last auto-synced or pushed state.  Never show if nothing was ever synced.
     let is_dirty = $derived(pushed_snapshot !== '' && current_what_point_json() !== pushed_snapshot)
 
     // ── doc switch ────────────────────────────────────────────────────────────
@@ -195,20 +193,15 @@
     //   class lives on clone.sc directly (not U).
     //
     //   Spec resolution mirrors Lang_point_spec: method ?? label ?? Point-value.
-    //   Points keyed by value (Point:transport) join correctly against capsule specs.
-    //
-    //   Gate: LE must be armed at a %What src so the clone list is the What's
-    //   Points; returns an empty Map for bare %Doc sessions.
+    //   Gate: LE must be armed at a %What src; empty Map for bare %Doc sessions.
     function collect_le_membership(): Map<string, { unaccepted: boolean, unshowing: boolean }> {
         const out = new Map<string, { unaccepted: boolean, unshowing: boolean }>()
         if (!LE?.oa({ Seem: 'working' })) return out   // don't oai() — not ready to insert
         const target_c = LE.sc.target as TheC | undefined
-        // bare %Doc as target has no .What on sc — skip
         if (!target_c || (target_c.sc as any).What === undefined) return out
         const clones = (H as any).LE_clones(LE) as TheC[]
         for (const c of clones) {
             const sc  = c.sc as any
-            // mirror Lang_point_spec resolution order
             const raw = sc.method ?? sc.label ?? sc.Point
             if (raw == null || raw === 1 || raw === true) continue
             const spec = String(raw)
@@ -270,8 +263,6 @@
 
     // ── capsule actions ───────────────────────────────────────────────────────
 
-    // Called when Lies sends a new What_Point replacing what Lang is working from.
-    // Drops any unpushed local state and installs the Lies-side view.
     function receive_what_point_from_lies(entries: { spec: string, showing: boolean }[]) {
         _auto_promoted  = new Set(entries.map(e => e.spec))
         _user_demoted   = new Set()
@@ -302,7 +293,6 @@
         reset_confirm = false
     }
 
-    // Push current in_group+showing to Lies.
     function push_what_point() {
         const snap = current_what_point_json()
         _our_last_push_id = Date.now()
@@ -314,7 +304,6 @@
         reset_confirm   = false
     }
 
-    // Revert local in_group+showing to the last pushed/synced state.
     // Two-tap: first tap arms; second tap executes.
     function reset_what_point() {
         if (!reset_confirm) { reset_confirm = true; return }
@@ -331,30 +320,45 @@
 
     // ── nav actions ───────────────────────────────────────────────────────────
     //
-    //   Single emitter — all button presses funnel through e_LE_operate in
-    //   LiesCurse, which reads the live cursor from %examining/%Spotlight and
-    //   drives movement from there.  The op string flows through as the %want
-    //   kind so the resolver log is chatty.
+    //   Single emitter for structural cursor movement (e_LE_operate in LiesCurse).
+    //   op flows through as the %want kind — chatty in the resolver log.
     const op = (kind: string) => H.i_elvisto('Lies/Lies', 'LE_operate', { op: kind })
+
+    // ── PeelItem — inject a Point into the working C** ────────────────────────
+    //
+    //   Type a method name and press Enter.  Fires LE_preen{action:'add'} so the
+    //   working clone tree gains the new Point immediately; req:settle re-encodes
+    //   on the next think and changey updates.
+    //
+    //   Only active when LE is armed at a %What target.
+    let peel_text: string = $state('')
+
+    function peel_commit() {
+        const method = peel_text.trim()
+        if (method && LE && (LE.sc.target as any)?.sc?.What !== undefined) {
+            H.i_elvisto('Lang/Lang', 'LE_preen', { action: 'add', sc: { Point: 1, method } })
+        }
+        peel_text = ''
+    }
 
     // Label for the current What — shown in the middle of the toolbar.
     // What:story → sc.What = 'story'; sc.label is a legacy/explicit override.
-    // Unlabelled Whats show blank (bare What:1 has no string value).
     let what_label = $derived.by(() => {
         void target?.vers
         if (!target) return ''
         const wv = (target.sc as any).What
-        return (typeof wv === 'string' ? wv : undefined)   // What:story → 'story'
-            ?? (target.sc as any).label                    // explicit label, if any
+        return (typeof wv === 'string' ? wv : undefined)
+            ?? (target.sc as any).label
             ?? ((target.sc as any).path as string | undefined)?.split('/').pop()
             ?? ''
     })
 </script>
 
 {#if LE && target}
+
+<!-- Nav bar — structural cursor movement: ↑ ← label → -->
 <div class="nvc-bar">
 
-    <!-- up — ghosted at top level -->
     <div class="nvc-seed" class:nvc-ghost={!has_up}>
         {#if slot_up}
             {@render slot_up({ ghosted: !has_up, onclick: () => op('up') })}
@@ -364,7 +368,6 @@
         {/if}
     </div>
 
-    <!-- prev -->
     <div class="nvc-seed" class:nvc-ghost={!has_prev}>
         {#if slot_prev}
             {@render slot_prev({ ghosted: !has_prev, onclick: () => op('prev') })}
@@ -374,10 +377,8 @@
         {/if}
     </div>
 
-    <!-- current What label — mid-strip breadcrumb -->
     <div class="nvc-label" title="Current What: {what_label}">{what_label}</div>
 
-    <!-- next -->
     <div class="nvc-seed" class:nvc-ghost={!has_next}>
         {#if slot_next}
             {@render slot_next({ ghosted: !has_next, onclick: () => op('next') })}
@@ -387,43 +388,39 @@
         {/if}
     </div>
 
-    <!-- ↘ dive — new child %What inside current (go deeper) -->
-    <div class="nvc-seed" class:nvc-ghost={!has_dive}>
-        {#if slot_branch}
-            {@render slot_branch({ ghosted: !has_dive, onclick: () => op('dive') })}
-        {:else}
-            <button class="nvc-btn" class:nvc-ghosted={!has_dive}
-                    disabled={!has_dive} onclick={() => op('dive')}
-                    title="Child (↘ new What inside current)">↘</button>
-        {/if}
-    </div>
-
-    <!-- ↓ branch — new next sibling %What after current -->
-    <div class="nvc-seed" class:nvc-ghost={!has_branch}>
-        {#if slot_dive}
-            {@render slot_dive({ ghosted: !has_branch, onclick: () => op('branch') })}
-        {:else}
-            <button class="nvc-btn" class:nvc-ghosted={!has_branch}
-                    disabled={!has_branch} onclick={() => op('branch')}
-                    title="Next (↓ new sibling What after current)">↓</button>
-        {/if}
-    </div>
-
 </div>
 
-<!-- Transport bar — only when req:desire is active.
-     The unsent bar overlays the right side of this row absolutely so it
-     doesn't add any height; stays hidden until something is dirty. -->
-{#if has_desire}
+<!-- Tools row — always visible when LE armed.
+     ↘↓ branch/dive; PeelItem to inject Points; transport when req:desire active.
+     Unsent bar overlays the right side absolutely — adds no row height. -->
 <div class="nvc-transport">
-    <button class="nvc-t-btn" class:nvc-t-playing={is_playing}
-            title={is_playing ? 'Pause' : 'Play'}
-            onclick={() => H.i_elvisto('Lies/Lies', is_playing ? 'Lies_desire_pause' : 'Lies_desire_play', {})}>
-        {is_playing ? '‖' : '▶'}
-    </button>
-    <button class="nvc-t-btn" title="Step to next What"
-            onclick={() => H.i_elvisto('Lies/Lies', 'Lies_desire_step', {})}>→</button>
-    <span class="nvc-t-label">{is_playing ? 'playing' : 'paused'}</span>
+
+    {#if has_desire}
+        <button class="nvc-t-btn" class:nvc-t-playing={is_playing}
+                title={is_playing ? 'Pause' : 'Play'}
+                onclick={() => H.i_elvisto('Lies/Lies', is_playing ? 'Lies_desire_pause' : 'Lies_desire_play', {})}>
+            {is_playing ? '‖' : '▶'}
+        </button>
+        <button class="nvc-t-btn" title="Step to next What"
+                onclick={() => H.i_elvisto('Lies/Lies', 'Lies_desire_step', {})}>→</button>
+    {/if}
+
+    <!-- ↘ dive — new child %What inside current; ↓ branch — new next sibling -->
+    <button class="nvc-t-op" class:nvc-t-op-ghost={!has_target}
+            disabled={!has_target} onclick={() => op('dive')}
+            title="↘ new child What inside current">↘</button>
+    <button class="nvc-t-op" class:nvc-t-op-ghost={!has_target}
+            disabled={!has_target} onclick={() => op('branch')}
+            title="↓ new sibling What after current">↓</button>
+
+    <!-- PeelItem — type a method name, Enter injects into working C** -->
+    <input class="nvc-peel"
+           bind:value={peel_text}
+           placeholder="method…"
+           disabled={!has_target}
+           onkeydown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); peel_commit() } }}
+    />
+
     {#if is_dirty}
         <div class="lmm-wp-bar"
              onmouseleave={() => { reset_confirm = false }}>
@@ -436,14 +433,14 @@
             {/if}
         </div>
     {/if}
+
 </div>
-{/if}
 
 {/if}
 
 <!-- In-group capsule strip.
      All Pmirrors auto-promote here on arrival.
-     Orb = showing toggle.  x = demote (always visible). -->
+     Orb = showing toggle.  × = demote (always visible). -->
 {#if in_group.size > 0}
     <div class="lmm-inbox"
          onmouseleave={() => { reset_confirm = false }}>
@@ -482,13 +479,12 @@
                 {/if}
             </div>
         {/each}
-        <!-- Step Lies cursor to the next What in the Waft order. -->
         <button class="lmm-cursor-next" title="Next What in Waft" onclick={() => op('next_doc')}>→</button>
     </div>
 {/if}
 
 <style>
-    /* NaviCado toolbar — sits above the capsule strip in DocMinimap. */
+    /* Nav bar — ↑ ← label → structural cursor movement. */
     .nvc-bar {
         display:         flex;
         align-items:     center;
@@ -500,7 +496,6 @@
         min-height:      22px;
     }
 
-    /* Each seed slot holds one button or snippet; fixed width keeps bar stable. */
     .nvc-seed {
         display:     flex;
         align-items: center;
@@ -518,13 +513,10 @@
         padding:       1px 4px;
         transition:    color 0.1s, border-color 0.1s;
     }
-
     .nvc-btn:hover:not(:disabled) {
         color:        #fff;
         border-color: rgba(255,255,255,0.3);
     }
-
-    /* Ghosted: present but non-interactive — stable width, invisible intent. */
     .nvc-btn.nvc-ghosted,
     .nvc-ghost .nvc-btn {
         color:        rgba(154, 165, 180, 0.25);
@@ -532,7 +524,6 @@
         cursor:       default;
     }
 
-    /* Current What label — breadcrumb in the middle of the bar. */
     .nvc-label {
         flex:           1;
         text-align:     center;
@@ -545,7 +536,7 @@
         letter-spacing: 0.02em;
     }
 
-    /* Transport bar — play/pause + step for req:desire playback.
+    /* Tools row — transport, ↘↓, PeelItem, unsent bar.
        position:relative anchors the unsent bar overlay. */
     .nvc-transport {
         display:       flex;
@@ -558,6 +549,7 @@
         position:      relative;
     }
 
+    /* req:desire transport buttons */
     .nvc-t-btn {
         background:    transparent;
         border:        1px solid rgba(255,255,255,0.1);
@@ -572,50 +564,81 @@
     .nvc-t-btn:hover          { color: #9aa5b4; border-color: rgba(255,255,255,0.25); }
     .nvc-t-btn.nvc-t-playing  { color: #7ab0c0; border-color: rgba(122,176,192,0.4); }
 
-    .nvc-t-label {
-        font-size:  9px;
-        color:      #3a4555;
-        font-style: italic;
-        flex:       1;
+    /* ↘↓ in the tools row — same weight as transport buttons */
+    .nvc-t-op {
+        background:    transparent;
+        border:        1px solid rgba(255,255,255,0.1);
+        border-radius: 3px;
+        color:         #6a7d8e;
+        cursor:        pointer;
+        font-size:     11px;
+        line-height:   1;
+        padding:       1px 4px;
+        transition:    color 0.1s, border-color 0.1s;
+    }
+    .nvc-t-op:hover:not(:disabled) { color: #c0d0e0; border-color: rgba(255,255,255,0.28); }
+    .nvc-t-op.nvc-t-op-ghost,
+    .nvc-t-op:disabled {
+        color:        rgba(100,120,140,0.3);
+        border-color: rgba(255,255,255,0.04);
+        cursor:       default;
     }
 
-    /* Unsent bar — abs overlay on the right of the transport row.
-       ~ up reset floats over the label area; adds no row height. */
+    /* PeelItem — inline Point injection input. */
+    .nvc-peel {
+        background:    transparent;
+        border:        1px solid rgba(255,255,255,0.08);
+        border-radius: 3px;
+        color:         #9aa5b4;
+        font-family:   inherit;
+        font-size:     10px;
+        line-height:   1;
+        padding:       1px 5px;
+        width:         72px;
+        outline:       none;
+        transition:    border-color 0.12s, color 0.12s;
+    }
+    .nvc-peel:focus {
+        border-color: rgba(229, 192, 123, 0.45);
+        color:        #e5c07b;
+    }
+    .nvc-peel::placeholder { color: rgba(90, 110, 130, 0.55); }
+    .nvc-peel:disabled     { opacity: 0.3; }
+
+    /* Unsent bar — absolute overlay on the right of the tools row. */
     .lmm-wp-bar {
-        position:    absolute;
-        right:       0;
-        top:         0;
-        bottom:      0;
-        display:     flex;
+        position:       absolute;
+        right:          0;
+        top:            0;
+        bottom:         0;
+        display:        flex;
         flex-direction: row;
-        align-items: center;
-        gap:         3px;
-        padding:     0 6px;
-        background:  rgba(16, 20, 28, 0.96);
-        border-left: 1px solid rgba(229, 192, 123, 0.15);
+        align-items:    center;
+        gap:            3px;
+        padding:        0 6px;
+        background:     rgba(16, 20, 28, 0.96);
+        border-left:    1px solid rgba(229, 192, 123, 0.15);
     }
-
     .lmm-wp-tilde {
         font-size:   11px;
         line-height: 1;
         color:       rgba(229, 192, 123, 0.4);
     }
-
     .lmm-wp-arrow {
-        background:   none;
-        border:       none;
-        cursor:       pointer;
-        font-family:  inherit;
-        font-size:    13px;
-        line-height:  1;
-        color:        rgba(229, 192, 123, 0.45);
-        padding:      0 2px;
+        background:  none;
+        border:      none;
+        cursor:      pointer;
+        font-family: inherit;
+        font-size:   13px;
+        line-height: 1;
+        color:       rgba(229, 192, 123, 0.45);
+        padding:     0 2px;
     }
     .lmm-wp-arrow:hover   { color: #e5c07b; }
     .lmm-wp-confirm       { color: rgba(224, 108, 117, 0.7) !important; font-size: 10px !important; }
     .lmm-wp-confirm:hover { color: #e06c75 !important; }
 
-    /* In-group capsule strip — all Pmirrors live here, none in the region body. */
+    /* In-group capsule strip. */
     .lmm-inbox {
         display:       flex;
         flex-wrap:     wrap;
@@ -627,7 +650,6 @@
         border-bottom: 1px solid rgba(229, 192, 123, 0.12);
         flex-shrink:   0;
     }
-
     .lmm-capsule {
         display:       flex;
         align-items:   center;
@@ -644,8 +666,7 @@
         border-color: rgba(80, 100, 120, 0.25);
     }
     .lmm-capsule-bad { border-color: rgba(224, 108, 117, 0.35); }
-
-    /* U%unaccepted — virtual deletion; cross out the label, red tint */
+    /* U%unaccepted — virtual deletion */
     .lmm-capsule-unaccepted {
         background:   rgba(224, 108, 117, 0.06);
         border-color: rgba(224, 108, 117, 0.2);
@@ -654,8 +675,7 @@
         text-decoration: line-through;
         color:           rgba(224, 108, 117, 0.5);
     }
-
-    /* Orb inside capsule — the showing toggle. */
+    /* Orb — the showing toggle. */
     .lmm-capsule-orb {
         display:       block;
         width:         8px;
@@ -675,14 +695,13 @@
     }
     .lmm-capsule-bad .lmm-capsule-orb       { border-color: rgba(224, 108, 117, 0.5); }
     .lmm-capsule-bad .lmm-capsule-orb-show  { background: #e06c75; border-color: #e06c75; box-shadow: 0 0 4px #e06c7588; }
-    /* U%unshowing — orb shows a dim ring rather than full gold */
+    /* U%unshowing — dim ring */
     .lmm-capsule-orb.lmm-capsule-orb-unshowing {
         background:   transparent;
         border-color: rgba(229, 192, 123, 0.2);
         box-shadow:   none;
     }
     .lmm-capsule-orb:hover { opacity: 0.75; }
-
     .lmm-capsule-label {
         background:    none;
         border:        none;
@@ -700,8 +719,7 @@
     .lmm-capsule-label:hover               { color: #fff; }
     .lmm-capsule-dormant .lmm-capsule-label { color: #4a6070; }
     .lmm-capsule-bad     .lmm-capsule-label { color: #e06c75; text-decoration: line-through; }
-
-    /* x always visible — primary demote control. */
+    /* × demote */
     .lmm-capsule-demote {
         background:  none;
         border:      none;
@@ -713,8 +731,7 @@
         line-height: 1;
     }
     .lmm-capsule-demote:hover { color: #e06c75; }
-
-    /* Cursor advance — steps Lies to next What_Point. */
+    /* → next What */
     .lmm-cursor-next {
         background:  none;
         border:      none;

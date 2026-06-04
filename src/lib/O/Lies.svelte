@@ -286,6 +286,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             return q.finish(req)
         }
 
+        // nowriting opt: log write intent; source never goes to disk.
+        // Skip the pull-before-push machinery — the base_dige surprise-check is
+        // meaningless in tests where there is no disk to diverge from.
+        if (H.o_Opt_val(w, 'nowriting')) {
+            await H.Lies_log_want(w, 'source_write', path, text)
+            return q.finish(req)
+        }
+
         const base_dige = ld.sc.base_dige as string | undefined
         if (base_dige && dige === base_dige) return q.finish(req)
 
@@ -565,7 +573,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const gen_path = pending.sc.gen_path  as string
             const source   = pending.sc.source    as string
 
-            const do_write = !H.o_Opt_val(w, 'nogen')
+            const do_write = !H.o_Opt_val(w, 'nogen') && !H.o_Opt_val(w, 'nowriting')
 
             if (do_write) {
                 // Key the write on gen_path, not the source path.  The source has a
@@ -580,13 +588,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // Phase 1 also fires Ghost_update_notify — after the file is on disk.
                 pending.c.write_t0 = Date.now()
                 // < surface write errors when reply carries one.
+            } else if (H.o_Opt_val(w, 'nowriting')) {
+                // nowriting opt: record gen write was wanted
+                await H.Lies_log_want(w, 'gen_write', gen_path, source)
             }
 
             pending.sc.done = 1
             if (!do_write) {
-                // nogen: no file written, no Pantheate notify — settle immediately.
+                // nogen / nowriting: no file written, no Pantheate notify — settle immediately.
                 H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-                console.log(`🔪 Lies compile settled: ${path} [nogen]`)
+                console.log(`🔪 Lies compile settled: ${path} [${H.o_Opt_val(w, 'nowriting') ? 'nowriting' : 'nogen'}]`)
             }
             // do_write: Lies_compile_settled and Ghost_update_notify both deferred
             // to LiesStore_run Phase 1 after the wwrite finishes.
@@ -945,7 +956,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         want.c.src = src
         wants.bump_version()
         this.i_elvisto(w, 'think')
-        this.whittle_N(wants.i({ want: 1}))
     },
 
 
@@ -1115,6 +1125,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         return waft
     },
 
+    // ── Lies_log_want ─────────────────────────────────────────────────────────
+    //
+    //   Record a save that was intercepted by the nowriting opt.
+    //     kind — 'waft_save' | 'source_write' | 'gen_write'
+    //     path — the target path that would have gone to disk
+    //     content — the full content string; hashed so identical successive saves
+    //               collapse onto the same oai particle rather than piling.
+    //
+    //   Produces: w/%log:$kind,path:$path,dige:$hash
+    async Lies_log_want(w: TheC, kind: string, path: string, content: string) {
+        const dige = (await dig(content)).slice(0, 8)
+        w.oai({ log: kind, path, dige })
+    },
+
     // ── Lies_waft_save ────────────────────────────────────────────────────────
     //
     //   Throttled write of a Waft container back to its wormhole snap path.
@@ -1124,6 +1148,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   The encode root is always {Waft:path} — sc.active and other session
     //   fields on the waft particle are never included in the snap.
     //   Saves: Doc children, Points grandchildren.
+    //
+    //   With Opt nowriting active the snap is encoded but logged to
+    //   w/%log:waft_save rather than going to LiesStore_write — the test
+    //   reads the log particle's presence as the save-would-have-happened assertion.
     Lies_waft_save(w: TheC, waft: TheC) {
         const H    = this as House
         const path = waft.sc.Waft as string
@@ -1139,6 +1167,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     }
                     if (errors.length) {
                         console.error(`Waft:${path} encode errors (save aborted):`, errors)
+                        return
+                    }
+                    // nowriting opt: log intent rather than writing disk
+                    if (H.o_Opt_val(w, 'nowriting')) {
+                        await H.Lies_log_want(w, 'waft_save', path, snap)
                         return
                     }
                     const snap_path = H.Lies_waft_snap_path(path)

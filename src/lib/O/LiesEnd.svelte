@@ -569,6 +569,43 @@ await M.eatfunc({
         return kids.length ? this.LE_what_deepest_last(kids[kids.length - 1]) : what
     },
 
+    // ── LE_available_ops ──────────────────────────────────────────────────────
+    // Compute the unique, meaningful cursor moves from `what` in display order,
+    // deduplicated.  The dedup case: when DFS prev resolves to the same particle
+    // as the parent (first-child position — no same-level prev exists), `up` is
+    // omitted because ← already covers it and ↑ would be redundant.
+    //
+    // Returns { op, dest?, label } per move.  dest is the target %What for
+    // structural moves; undefined for branch/dive/next_doc (create or wrap).
+    // label is the readable dest name for a pick-your-adventure chip in NaviCado.
+    //
+    // Wire into req:checkout finish: stamp on %LE/%moves.sc.ops and bump LE.vers
+    // so NaviCado's $derived re-reads it.  NaviCado then shows one chip per
+    // reachable move instead of the static ↑←→ set.
+    //
+    //   < wiring into req:checkout finish not yet done; NaviCado falls back
+    //     to the static buttons when %LE/%moves is absent.
+    LE_available_ops(what: TheC): Array<{ op: string, dest: TheC | undefined, label: string }> {
+        const H    = this as House
+        const up   = H.LE_what_parent(what)
+        const prev = H.LE_what_dfs_prev(what)
+        const next = H.LE_what_dfs_next(what)
+        const dest_label = (d: TheC | undefined): string => {
+            if (!d) return ''
+            const wv = (d.sc as any).What
+            return typeof wv === 'string' ? wv : ((d.sc as any).label ?? '')
+        }
+        const out: Array<{ op: string, dest: TheC | undefined, label: string }> = []
+        // up omitted when DFS prev is the same particle — ← already covers it
+        if (up && up !== prev) out.push({ op: 'up',       dest: up,        label: dest_label(up) })
+        if (prev)              out.push({ op: 'prev',     dest: prev,      label: dest_label(prev) })
+        if (next)              out.push({ op: 'next',     dest: next,      label: dest_label(next) })
+        out.push({ op: 'branch',   dest: undefined, label: '↓' })
+        out.push({ op: 'dive',     dest: undefined, label: '↘' })
+        out.push({ op: 'next_doc', dest: undefined, label: '⇥' })
+        return out
+    },
+
 //#endregion
 
 })
